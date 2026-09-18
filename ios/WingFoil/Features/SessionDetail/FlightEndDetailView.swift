@@ -360,23 +360,21 @@ private struct FlightEndDetailPage: View {
             let marks = "The thick, coloured part is the flight. "
                 + "Everything past the dot is already off the foil. "
                 + "Ticks are one second apart. "
-                + "The numbers along the path are every five. "
-                + "North and the wind are marked top right."
+                + Copy.pathNumbers + " " + Copy.northAndWind
             Text(drawn + marks)
             let entryBand = "The bands are the engine's windows. \"Entry\" is the "
                 + String(Int(slice.windows.entryS)) + " s the flight was ending at. "
-            let outcomeBand = "\"Outcome\" is the " + String(Int(slice.windows.outcomeS))
-                + " s the verdict is read from. "
-                + "\"Evidence\" is how much gap-free recording there actually was."
+            let outcomeBand = Copy.outcomeWindow(seconds: Int(slice.windows.outcomeS))
+                + " \"Evidence\" is how much gap-free recording there actually was."
             Text(entryBand + outcomeBand)
             // The honest sentence about the three numbers, which is the one thing this page
             // has to say that the turn page does not.
             Text("Only \"low\" is the engine's. "
                  + "It is the slowest sample of the off-foil run, placed where this window "
-                 + "comes nearest it. "
+                 + "comes nearest it.\n\n"
                  + "\"In\" is the fastest sample of the entry window. "
                  + "\"Out\" is where the speed came back to the engine's flying-again "
-                 + "threshold. "
+                 + "threshold.\n\n"
                  + "Both are read off the drawn line. "
                  + "A flight end record holds no entry or exit speed of its own.")
             Text("Speed here is the manoeuvre channel, derived from position. "

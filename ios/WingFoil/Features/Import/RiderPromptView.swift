@@ -64,12 +64,14 @@ struct RiderPromptView: View {
                         // (docs/channels.md), so the release must not name it.
                         #if BETA
                         Text("A friend's session is shown in full. You get the map, the "
-                             + "chart, the replay, everything. It stays out of your "
-                             + "records, trends, gear totals and Apple Health.")
+                             + "chart, the replay, everything.\n\n"
+                             + "It stays out of your records, trends, gear totals and "
+                             + "Apple Health.")
                         #else
                         Text("A friend's session is shown in full. You get the map, the "
-                             + "chart, the replay, everything. It stays out of your "
-                             + "records, your trends and your gear totals.")
+                             + "chart, the replay, everything.\n\n"
+                             + "It stays out of your records, your trends and your gear "
+                             + "totals.")
                         #endif
                     }
                 }

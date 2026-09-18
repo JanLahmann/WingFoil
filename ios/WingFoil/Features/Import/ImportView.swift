@@ -231,13 +231,15 @@ struct ImportView: View {
         // **COROS, in capitals**, the way docs/channels.md and the release branch of this
         // same footer already spell it. One brand, two spellings, in two branches of one
         // file (15 Sep 2026).
-        + "AirDrop and the share sheet land here too. Polar, Suunto and "
-        + "COROS are supported through intervals.icu. Their apps sync "
-        + "there, and CleanJibe syncs from there. A FIT gives the full "
-        + "analysis. A GPX, or a TCX without a speed channel, gives a "
-        + "positions-only analysis. Its speed records are estimated from "
-        + "positions and marked uncertified. None of the three carries an "
-        + "accelerometer. Pump strokes and takeoff effort are missing."
+        + "AirDrop and the share sheet land here too.\n\n"
+        + "Polar, Suunto and COROS are supported through intervals.icu. "
+        + "Their apps sync there, and CleanJibe syncs from there.\n\n"
+        + "A FIT gives the full analysis. A GPX, or a TCX without a speed "
+        + "channel, gives a positions-only analysis.\n\n"
+        + "Its speed records are estimated from positions and marked "
+        + "uncertified.\n\n"
+        + "None of the three carries an accelerometer. Pump strokes and "
+        + "takeoff effort are missing."
     #else
     private static let filePickerLabel = "FIT or ZIP…"
     /// Not private — see the beta branch above.
@@ -248,9 +250,9 @@ struct ImportView: View {
     /// has for a Polar, a Suunto or a COROS, and both of them work today.
     private static let filePickerFooter =
         "Garmin Connect → activity → \"Export File\" gives one FIT. "
-        + "AirDrop and the share sheet land here too. Polar, Suunto and "
-        + "COROS sessions come in through Strava, or through intervals.icu. "
-        + "Their apps sync there, and CleanJibe syncs from there."
+        + "AirDrop and the share sheet land here too.\n\n"
+        + "Polar, Suunto and COROS sessions come in through Strava, or through "
+        + "intervals.icu. Their apps sync there, and CleanJibe syncs from there."
     #endif
 }
 
@@ -295,8 +297,9 @@ private enum ImportClass {
     /// Garmin classes at once and the honest footer says so rather than picking one.
     static let fullHistory =
         RecordingClass.a.name + ", or " + RecordingClass.b.name
-        + ": whichever each recording originally was. The ZIP holds the untouched files. "
-        + "A session is worth what it was worth on the day it was ridden."
+        + ": whichever each recording originally was.\n\n"
+        + "The ZIP holds the untouched files. A session is worth what it was worth on "
+        + "the day it was ridden."
 
     /// Apple's own Workout app is class B: its speed came off the watch's GPS receiver and
     /// certifies, and nothing recorded the wrist. The B+ sentence is here because this is the
@@ -319,30 +322,34 @@ private enum ImportClass {
     // Named constants type-check once, in one place, and the list reads as a list.
 
     static let fullHistoryDoor =
-        "Garmin Connect → Account → Export Your Data. The mail arrives with a ZIP of ZIPs "
-        + "holding every original FIT you ever uploaded. Pick it here: non-watersport "
-        + "activities are skipped and anything already in the library is recognised as a "
-        + "duplicate, so re-running is safe."
+        "Garmin Connect → Account → Export Your Data.\n\n"
+        + "The mail arrives with a ZIP of ZIPs holding every original FIT you ever "
+        + "uploaded.\n\n"
+        + "Pick it here. Non-watersport activities are skipped and anything already in "
+        + "the library is recognised as a duplicate, so re-running is safe."
 
     static let healthDoor =
         "Record with Apple's Workout app on an Apple Watch. Pick Surfing, Water Sports "
-        + "or Sailing. The GPS track and heart rate land in Health. CleanJibe reads the "
-        + "workouts you pick and analyses them on this phone. Speed comes off the "
-        + "watch's own GPS, so the speed records are certified. A Health workout has no "
-        + "accelerometer, so pump strokes and takeoff effort are missing."
+        + "or Sailing.\n\n"
+        + "The GPS track and heart rate land in Health. CleanJibe reads the workouts you "
+        + "pick and analyses them on this phone.\n\n"
+        + "Speed comes off the watch's own GPS, so the speed records are certified.\n\n"
+        + "A Health workout has no accelerometer, so pump strokes and takeoff effort are "
+        + "missing."
 
     // Only the opening clause changed (15 September 2026): the footer began "Connect your
     // Strava account and…", and connecting is Settings' job now. What the
     // door *brings in* — the class line, the four activity types, the two costs, the
     // intervals.icu preference — is untouched.
     static let stravaDoor =
-        "Imports the sessions you pick from your Strava account. Windsurf, Kitesurf, "
-        + "Surf and Workout come by default, and anything whose name says wing or foil. "
+        "Imports the sessions you pick from your Strava account.\n\n"
+        + "Windsurf, Kitesurf, Surf and Workout come by default, and anything whose name "
+        + "says wing or foil.\n\n"
         + "Strava hands over positions, a clock, elevation and heart rate. Two things "
-        + "are missing from the analysis. Speed is worked out from the positions, so "
-        + "those records are marked uncertified. Nothing records your wrist, so there "
-        + "are no pump strokes. If the same session is on intervals.icu, take it from "
-        + "there instead."
+        + "are missing from the analysis.\n\n"
+        + "Speed is worked out from the positions, so those records are marked "
+        + "uncertified. Nothing records your wrist, so there are no pump strokes.\n\n"
+        + "If the same session is on intervals.icu, take it from there instead."
 }
 
 /// Live counters while a container is being unpacked: found / imported / duplicates /

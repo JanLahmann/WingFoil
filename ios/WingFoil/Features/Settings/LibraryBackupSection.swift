@@ -37,12 +37,14 @@ struct LibraryBackupSection: View {
             // Short on purpose. The complete answer — save the file yourself, what is
             // inside it, what restoring does — is the `libraryBackup` help topic, which the
             // row above opens. One thing said once in each place, not twice in both.
-            Text(markdown: "Setting up a new iPhone from this one carries your library across "
-                 + "by itself, and so does an iCloud backup. This is for the case neither "
-                 + "covers: a phone set up as new, or the app deleted and installed again.\n\n"
+            Text(markdown: "Setting up a new iPhone from this one carries your library "
+                 + "across by itself, and so does an iCloud backup.\n\n"
+                 + "This is for the case neither covers: a phone set up as new, or the "
+                 + "app deleted and installed again.\n\n"
                  + "The file holds every recording you have imported **and** what nothing "
-                 + "else can bring back. That is session names, captions, riders, gear, "
-                 + "spot names, and the sessions you deleted on purpose.")
+                 + "else can bring back.\n\n"
+                 + "That is session names, captions, riders, gear, spot names, and the "
+                 + "sessions you deleted on purpose.")
         }
         .task { await store.refreshBackupEstimate() }
         .sheet(item: Binding(get: { store.restoreOffer },
@@ -206,9 +208,9 @@ struct RestoreConfirmation: View {
                         .truncationMode(.middle)
                 } footer: {
                     Text("Nothing is deleted or overwritten. Sessions you already have "
-                         + "keep their own analysis. Only details you never filled in "
-                         + "are taken from the backup. Sessions you deleted after this "
-                         + "backup stay deleted.")
+                         + "keep their own analysis.\n\n"
+                         + "Only details you never filled in are taken from the backup. "
+                         + "Sessions you deleted after this backup stay deleted.")
                 }
 
                 Section {

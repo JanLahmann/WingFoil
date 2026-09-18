@@ -543,9 +543,8 @@ struct ReplaySetupSheet: View {
                + "The countdown is not in the clip. Recording starts on the title card. "
                + "Pinch and drag the map while it plays. "
                + "A tap brings up the stop button."
-             : "Screen recording is not available right now. "
-               + "Low Power Mode, AirPlay and screen mirroring all switch it off. "
-               + "The replay plays full screen without being recorded.")
+             : Copy.screenRecordingUnavailable
+               + " The replay plays full screen without being recorded.")
             .font(.caption)
             .foregroundStyle(.secondary)
             .fixedSize(horizontal: false, vertical: true)

@@ -420,8 +420,7 @@ private struct FeedbackFallbackSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     Text("No mail account is set up on this phone, so CleanJibe cannot "
-                         + "open a mail for you. Copy the report and send it from any "
-                         + "mail app to " + FeedbackReport.recipient + ".")
+                         + "open a mail for you. " + Copy.copyTheReportInstead)
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)

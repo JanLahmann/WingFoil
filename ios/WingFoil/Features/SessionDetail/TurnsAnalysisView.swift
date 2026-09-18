@@ -303,7 +303,7 @@ struct TurnsAnalysisView: View {
         return VStack(alignment: .leading, spacing: 3) {
             Text("Flew through / touchdown / fell in is the outcome. "
                  + "It says how the turn ended. "
-                 + "Score is how much of your entry speed you held through it, 0 to 100. "
+                 + "Score is how much of your entry speed you held through it, 0 to 100.\n\n"
                  + "A clean jibe does both. "
                  + "It flies all the way through and holds at least 70 % of its entry speed.")
             if rejected > 0 {

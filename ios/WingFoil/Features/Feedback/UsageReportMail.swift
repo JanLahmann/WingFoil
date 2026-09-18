@@ -34,7 +34,7 @@ enum UsageReportMail {
     /// needs before he taps Send: what the block is, and that it is his to edit.
     static let separator =
         "The block below is what the beta counts on this phone. It helps development and "
-        + "is a key part of being in the beta. Delete any line you would rather not send."
+        + "is a key part of being in the beta. " + Copy.deleteAnyLine
 
     /// The prefilled body: the ordinary report, the sentence, the counters.
     @MainActor
@@ -141,8 +141,8 @@ private struct UsageReportFallbackSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    Text("No mail account is set up on this phone. Copy the report and "
-                         + "send it from any mail app to " + FeedbackReport.recipient + ".")
+                    Text("No mail account is set up on this phone. "
+                         + Copy.copyTheReportInstead)
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)

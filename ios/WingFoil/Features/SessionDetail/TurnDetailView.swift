@@ -480,7 +480,7 @@ private struct TurnDetailPage: View {
     static func axisLine(_ turn: TurnRecord) -> String? {
         guard let before = turn.axisBeforeDeg, let after = turn.axisAfterDeg,
               before.isFinite, after.isFinite else { return nil }
-        return String(format: "Through the axis · %.0f° before, %.0f° after", before, after)
+        return String(format: Copy.axisSweepFormat, before, after)
     }
 
     /// The direction the **board rotated**, never the tack it was entered on. The engine's
@@ -533,14 +533,13 @@ private struct TurnDetailPage: View {
             // is what the type checker gives up on inside a ViewBuilder.
             let drawn = "The drawing is " + String(lead) + " s before the sweep and "
                 + String(run) + " s after it. "
-            let ticks = "Ticks are one second apart. "
-                + "The numbers along the path are every five. "
+            let ticks = "Ticks are one second apart. " + Copy.pathNumbers + "\n\n"
                 + "The line is coloured by speed on the ramp at the foot of the picture. "
                 + "Cold is a standstill, teal is the speed you came in at, hot is above it. "
-                + "North and the wind are marked top right."
+                + Copy.northAndWind
             Text(drawn + ticks)
             Text("Tap the drawing for the reading at that sample. The strips follow it.")
-            Text("Score is how much of your entry speed you held through the turn. "
+            Text("Score is how much of your entry speed you held through the turn.\n\n"
                  + "Speed here is the manoeuvre channel the verdict was scored on, "
                  + "derived from position. "
                  + "The GPS Doppler speed the records use is smoothed through a turn. "
@@ -554,9 +553,8 @@ private struct TurnDetailPage: View {
             let sweepBand = "\"Sweep\" is where the heading turned. "
                 + "The low point is searched to " + String(Int(windows.minLagS))
                 + " s past the sweep, so it can sit after \"out\". "
-            let outcomeBand = "\"Outcome\" is the " + String(Int(windows.outcomeS))
-                + " s the verdict is read from. "
-                + "The lighter band inside it ends where you were flying again."
+            let outcomeBand = Copy.outcomeWindow(seconds: Int(windows.outcomeS))
+                + " The lighter band inside it ends where you were flying again."
             Text(entryBand + sweepBand + outcomeBand)
             // The quiet tail (engine 0.17.0). Said in the footnote whether or not the strip
             // could fit its rule mark in — at the default 10 s the mark lands past the

@@ -193,7 +193,7 @@ struct PeriodShareView: View {
         }
         Text("Rendered at " + String(Int(shape.size.width)) + " × "
              + String(Int(shape.size.height))
-             + " px. Nothing is uploaded. The image goes straight to the share sheet.")
+             + " px. " + Copy.straightToTheShareSheet)
             .font(.caption2)
             .foregroundStyle(.secondary)
             .multilineTextAlignment(.center)

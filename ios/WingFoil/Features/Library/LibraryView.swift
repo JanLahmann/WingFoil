@@ -621,7 +621,7 @@ struct LibraryView: View {
             #if BETA
             WayInRow(icon: "applewatch",
                      label: "Record on your Apple Watch",
-                     line: "The session comes to the phone by itself.",
+                     line: Copy.watchSessionArrives,
                      isBeta: true) {
                 sheet = .helpTopic(.appleWatchApp)
             }

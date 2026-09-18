@@ -549,7 +549,15 @@ final class SessionRecorder {
                                                            trackBytes: trackBytes,
                                                            heartBytes: heartBytes,
                                                            accelBytes: accelBytes)
-        let url = try SessionPaths.outbox().appendingPathComponent("\(id).cjw")
+        // Named for the rider, not for the machine: the phone keeps this name as the
+        // session's `originalFilename` and derives the library's title from it, and the
+        // recording's UUID read as "EE94C0B1 359A 4FED …" where a name belonged. The id
+        // stays in the meta inside the container, which is where it was always read from.
+        let outbox = try SessionPaths.outbox()
+        let url = WatchSessionContainer.freeURL(
+            in: outbox,
+            named: WatchSessionContainer.filename(start: start, utcOffsetS: meta.utcOffsetS,
+                                                  source: "applewatch"))
         try container.write(to: url, options: .atomic)
         return (url, meta)
     }

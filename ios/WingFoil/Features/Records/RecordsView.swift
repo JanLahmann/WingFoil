@@ -221,7 +221,7 @@ struct RecordsView: View {
         let head = "Doppler speed, GP3S windows. " + String(certified) + " of "
             + String(records.count) + " come from certified sources. "
         let tail = "A certified source is the recording device's own speed channel. "
-            + "Uncertified sources are marked. "
+            + "Uncertified sources are marked.\n\n"
             + "The dot on a record's name says how fresh it is. "
             + "Filled within a month. Hollow within the season. "
             + "Faint when it is older than 6 months."

@@ -79,11 +79,12 @@ struct StravaImportView: View {
             Text("Strava")
         } footer: {
             Text("This build of CleanJibe carries no Strava API keys, so it cannot ask "
-                 + "Strava for anything. If you built it yourself: create an application "
-                 + "at strava.com/settings/api and put its client id and secret into "
-                 + "`ios/Strava.xcconfig`. The two lines are shown in "
-                 + "`ios/Strava.example.xcconfig`. Everything else on this screen works "
-                 + "the moment they are there.")
+                 + "Strava for anything.\n\n"
+                 + "If you built it yourself: create an application at "
+                 + "strava.com/settings/api and put its client id and secret into "
+                 + "`ios/Strava.xcconfig`.\n\n"
+                 + "The two lines are shown in `ios/Strava.example.xcconfig`. Everything "
+                 + "else on this screen works the moment they are there.")
         }
     }
 
@@ -100,12 +101,12 @@ struct StravaImportView: View {
             Text("Already on Strava?")
         } footer: {
             Text(markdown: "Strava opens, you say yes, and CleanJibe can then list your "
-                 + "activities and download the GPS track of the ones you pick. It only "
-                 + "reads. It never writes, renames or posts anything to your Strava "
-                 + "account.\n\n"
+                 + "activities and download the GPS track of the ones you pick.\n\n"
+                 + "It only reads. It never writes, renames or posts anything to your "
+                 + "Strava account.\n\n"
                  + "Strava lets a new app connect a **limited number of riders**. "
-                 + "Connecting is refused while CleanJibe is full. Tell us under "
-                 + "Menu → Support & ideas, and CleanJibe asks Strava for more.")
+                 + "Connecting is refused while CleanJibe is full.\n\n"
+                 + Copy.stravaAskForMore)
         }
     }
 
@@ -137,8 +138,9 @@ struct StravaImportView: View {
             Label("Private activities are not shared", systemImage: "eye.slash")
                 .foregroundStyle(.secondary)
         } footer: {
-            Text("When you approved CleanJibe you left out permission to read activities you "
-                 + "have marked \"Only you\", so those are missing from the list below. "
+            Text("When you approved CleanJibe you left out permission to read activities "
+                 + "you have marked \"Only you\", so those are missing from the list "
+                 + "below.\n\n"
                  + "Disconnect and connect again to change your mind.")
         }
     }
@@ -170,9 +172,10 @@ struct StravaImportView: View {
             Text("Activities on Strava")
         } footer: {
             Text("Tap to pick, or use Import all new. " + importableLine
-                 + " The rest are already in your library. Strava answers 200 requests "
-                 + "every 15 minutes, and each activity costs one. A first big import "
-                 + "takes its time and may ask you to come back.")
+                 + " The rest are already in your library.\n\n"
+                 + "Strava answers 200 requests every 15 minutes, and each activity costs "
+                 + "one.\n\n"
+                 + "A first big import takes its time and may ask you to come back.")
         }
     }
 
@@ -182,9 +185,9 @@ struct StravaImportView: View {
                 get: { store.stravaAutoImport },
                 set: { store.stravaAutoImport = $0 }))
         } footer: {
-            Text("CleanJibe checks Strava when you open the app and imports anything new of "
-                 + "the types below. A session you imported and then deleted is not brought "
-                 + "back.")
+            Text("CleanJibe checks Strava when you open the app and imports anything new "
+                 + "of the types below.\n\n"
+                 + "A session you imported and then deleted is not brought back.")
         }
     }
 
@@ -204,10 +207,12 @@ struct StravaImportView: View {
         } header: {
             Text("Which activities to offer")
         } footer: {
-            Text(markdown: "Strava has no wingfoil activity, so pick whichever one you record under. "
-                 + "Sail and Stand-up paddling are off by default because for most people "
-                 + "those buckets hold boats and flat water. Whatever you choose, an activity "
-                 + "whose **name** says wing, foil, kite, surf or SUP is offered too.")
+            Text(markdown: "Strava has no wingfoil activity, so pick whichever one you "
+                 + "record under.\n\n"
+                 + "Sail and Stand-up paddling are off by default, because for most people "
+                 + "those buckets hold boats and flat water.\n\n"
+                 + "Whatever you choose, an activity whose **name** says wing, foil, kite, "
+                 + "surf or SUP is offered too.")
         }
     }
 
@@ -219,15 +224,18 @@ struct StravaImportView: View {
         } header: {
             Text("What a Strava session can show")
         } footer: {
-            Text(markdown: "Everything that comes from the track: foil time, flights, every turn with "
-                 + "its verdict, the wind axis, the map.\n\n"
+            Text(markdown: "Everything that comes from the track: foil time, flights, "
+                 + "every turn with its verdict, the wind axis, the map.\n\n"
                  + "What is missing is what Strava does not hand over. There is no speed "
-                 + "channel. Strava works speed out from the positions, the same way "
-                 + "CleanJibe would, so speed records from these sessions are marked "
-                 + "**uncertified**. Nothing records your wrist, so there are no pump "
-                 + "strokes and no failed takeoff attempts. If the same session is also "
-                 + "on intervals.icu, import it there instead. That is the original file "
-                 + "from your watch, and it certifies.")
+                 + "channel.\n\n"
+                 + "Strava works speed out from the positions, the same way CleanJibe "
+                 + "would, so speed records from these sessions are marked "
+                 + "**uncertified**.\n\n"
+                 + "Nothing records your wrist, so there are no pump strokes and no "
+                 + "failed takeoff attempts.\n\n"
+                 + "If the same session is also on intervals.icu, import it there "
+                 + "instead. That is the original file from your watch, and it "
+                 + "certifies.")
         }
     }
 
@@ -249,9 +257,10 @@ struct StravaImportView: View {
     private var emptyFooter: String {
         let opening = "No " + typeList + " activity from the last two years that is not "
             + "already in your library."
-        let ways = " Strava has no wingfoil type. If your sessions are filed under "
-            + "something else, switch that type on below. Or put \"wing\" or \"foil\" in "
-            + "the activity's name on Strava, and CleanJibe finds it whatever type it is."
+        let ways = "\n\nStrava has no wingfoil type. If your sessions are filed under "
+            + "something else, switch that type on below."
+            + "\n\nOr put \"wing\" or \"foil\" in the activity's name on Strava, and "
+            + "CleanJibe finds it whatever type it is."
         return opening + ways
     }
 

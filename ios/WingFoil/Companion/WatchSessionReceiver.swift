@@ -104,9 +104,9 @@ extension WatchSessionReceiver: WCSessionDelegate {
             // the same afternoon still both land — the library's dedupe decides what to do
             // with them, and it is much better at that than a filename is.
             let name = file.fileURL.lastPathComponent
-            let destination = inbox.appendingPathComponent(
-                name.isEmpty ? "\(UUID().uuidString).cjw" : name)
-            try? FileManager.default.removeItem(at: destination)
+            let destination = WatchSessionContainer.freeURL(
+                in: inbox,
+                named: name.isEmpty ? "\(UUID().uuidString).cjw" : name)
             try FileManager.default.copyItem(at: file.fileURL, to: destination)
             log.info("received watch session \(name) (\(file.metadata?.description ?? "no metadata"))")
         } catch {

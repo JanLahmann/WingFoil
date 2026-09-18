@@ -189,8 +189,9 @@ struct TuningView: View {
             // Built in locals: one `+` chain long enough to carry the whole footer is what
             // the type checker gives up on inside a ViewBuilder.
             let rule = "Sessions re-derive whenever a threshold moves. The tuning is part "
-                + "of the analysis' version. A stale session rebuilds the next time you "
-                + "open it, and the rest at the next launch. "
+                + "of the analysis' version.\n\n"
+                + "A stale session rebuilds the next time you open it, and the rest at "
+                + "the next launch.\n\n"
             let sweep = "The button takes that trip now. It sweeps every session whose "
                 + "stored version is no longer the one its own discipline produces. "
             Text(rule + sweep + "After a move on this screen that is the "
@@ -215,9 +216,11 @@ struct TuningView: View {
                 }
             }
         } footer: {
-            Text(markdown: "Your own verdict on a turn: *I flew · I touched · I fell*. Leave it "
-                 + "on the turn's page. It is scored against the engine here. Labels live "
-                 + "on this phone, outside the analysis, and survive every re-derivation.")
+            Text(markdown: "Your own verdict on a turn: *I flew · I touched · I fell*.\n\n"
+                 + "Leave it on the turn's page. It is scored against the engine "
+                 + "here.\n\n"
+                 + "Labels live on this phone, outside the analysis, and survive every "
+                 + "re-derivation.")
         }
     }
 
@@ -232,19 +235,23 @@ struct TuningView: View {
         } header: {
             Text("Beta · testing tool")
         } footer: {
-            Text(markdown: "These sliders override the published defaults **on this phone only**. They "
-                 + "change every number the app shows: foil time, flights, turn counts, "
-                 + "scores, outcomes, records and trends. A session analysed with them is "
-                 + "not comparable with one analysed anywhere else.\n\n"
-                 + "The watch and the web are not touched. The watch computes live with no "
-                 + "way to be told, and the web reads what the phone wrote. While anything "
-                 + "here is moved, the session header, Records and Trends carry a *tuned "
-                 + "thresholds* chip. A session's own page says how many thresholds were "
-                 + "moved. A tuned number can never be mistaken for a published one."
-                 + "\n\nThe fingerprint above is this discipline's set alone. It rides inside "
-                 + "that discipline's stamp in the analysis' version. Moving a windsurf "
-                 + "threshold therefore re-derives windsurf sessions and leaves every wingfoil "
-                 + "session on the numbers it was already analysed with.")
+            Text(markdown: "These sliders override the published defaults **on this "
+                 + "phone only**.\n\n"
+                 + "They change every number the app shows: foil time, flights, turn "
+                 + "counts, scores, outcomes, records and trends.\n\n"
+                 + "A session analysed with them is not comparable with one analysed "
+                 + "anywhere else.\n\n"
+                 + "The watch and the web are not touched.\n\n"
+                 + "The watch computes live with no way to be told, and the web reads "
+                 + "what the phone wrote.\n\n"
+                 + "While anything here is moved, the session header, Records and Trends "
+                 + "carry a *tuned thresholds* chip.\n\n"
+                 + "A session's own page says how many thresholds were moved. A tuned "
+                 + "number can never be mistaken for a published one.\n\n"
+                 + "The fingerprint above is this discipline's set alone. It rides inside "
+                 + "that discipline's stamp in the analysis' version.\n\n"
+                 + "Moving a windsurf threshold therefore re-derives windsurf sessions. "
+                 + "Every wingfoil session stays on the numbers it was analysed with.")
         }
     }
 

@@ -47,8 +47,7 @@ final class ReplayRecorder {
         var errorDescription: String? {
             switch self {
             case .unavailable:
-                "Screen recording is not available right now. Low Power Mode, AirPlay and "
-                    + "screen mirroring all switch it off."
+                Copy.screenRecordingUnavailable
             case .declined:
                 "Screen recording was not allowed, so there is no clip. You can still watch "
                     + "the replay."

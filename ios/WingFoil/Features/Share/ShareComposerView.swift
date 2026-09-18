@@ -401,7 +401,7 @@ struct ShareComposerView: View {
 
         Text("The card is rendered at " + String(Int(shape.size.width)) + " × "
              + String(Int(shape.size.height))
-             + " px. Nothing is uploaded. The image goes straight to the share sheet.")
+             + " px. " + Copy.straightToTheShareSheet)
             .font(.caption2)
             .foregroundStyle(.secondary)
             .multilineTextAlignment(.center)
@@ -439,9 +439,9 @@ struct ShareComposerView: View {
                 .font(.subheadline.weight(.semibold))
             Text("The copy you send carries the track, the speeds, the heart rate and "
                  + "every lap. It leaves out the watch serial number and the "
-                 + "paired-accessory name. It leaves out your rider profile too, so no "
-                 + "name, no weight, no height. The original in your library is never "
-                 + "touched.")
+                 + "paired-accessory name.\n\n"
+                 + "It leaves out your rider profile too, so no name, no weight, no "
+                 + "height. The original in your library is never touched.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

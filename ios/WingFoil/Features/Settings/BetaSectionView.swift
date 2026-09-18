@@ -90,7 +90,7 @@ struct BetaSectionView: View {
         let coming = "Coming in a future release lists what this build has and the App "
             + "Store one does not.\n\n"
         let mails = "Request a feature opens a mail with this build already filled in. "
-            + "Send usage report adds what this phone has counted. "
+            + "Send usage report adds what this phone has counted.\n\n"
             + "Neither sends anything until you tap Send.\n\n"
         // **The one test ask that had no home** (Jan, dev 70). It lived on /start, which
         // was cut; a beta door's ask belongs beside the beta's own feedback doors
@@ -99,7 +99,7 @@ struct BetaSectionView: View {
         let video = "Testing the session video: keep the 20 s preset, wait for the bar, "
             + "then share the clip.\n\n"
         let startOver = "Start over removes your library, your settings, your "
-            + "intervals.icu key and your Strava connection. "
+            + "intervals.icu key and your Strava connection.\n\n"
             + "Deleting the app leaves the last two behind in the iOS keychain."
         return coming + mails + video + startOver
     }
@@ -137,13 +137,14 @@ struct BetaSectionView: View {
         + "• Your intervals.icu key and your Strava connection. Both live in the iOS "
         + "keychain. Deleting the app leaves them behind. This does not.\n"
         + "• Every setting: the welcome screen's flag, map style and layers, replay "
-        + "length, framing and music, the notification choices, the map picks for the "
-        + "watch, and the tuning sliders.\n"
+        + "length, framing and music.\n"
+        + "• The notification choices, the map picks for the watch, and the tuning "
+        + "sliders.\n"
         + "• The beta's usage counters and the widgets' snapshot.\n"
         + "• Cached thumbnails, imported files and anything half-exported.\n\n"
-        + "Nothing leaves this phone, and nothing elsewhere is touched. Your sessions on "
-        + "intervals.icu, your activities on Strava and the recordings on your watch all "
-        + "stay. Make a backup first if you want one."
+        + "Nothing leaves this phone, and nothing elsewhere is touched.\n\n"
+        + "Your sessions on intervals.icu, your activities on Strava and the recordings "
+        + "on your watch all stay. Make a backup first if you want one."
 }
 #endif
 
@@ -188,7 +189,8 @@ struct ComingSoonSection: View {
     #else
     private static let footer =
         "These functions are not in this app yet. Ride every one of them today in the "
-        + "public beta. Joining takes one tap, and your library comes with you."
+        + "public beta.\n\n"
+        + "Joining takes one tap, and your library comes with you."
     #endif
 }
 
@@ -215,10 +217,11 @@ struct ComingSoonPage: View {
             } header: {
                 Text("How to join the beta")
             } footer: {
-                Text("TestFlight is Apple's own app for trying a build before it ships. "
+                Text("TestFlight is Apple's own app for trying a build before it "
+                     + "ships.\n\n"
                      + "CleanJibe's beta reads and writes the same library as this app. "
-                     + "Every session, spot and piece of gear comes with you. Go back to "
-                     + "the App Store version whenever you like.")
+                     + "Every session, spot and piece of gear comes with you.\n\n"
+                     + "Go back to the App Store version whenever you like.")
             }
             #endif
 
@@ -227,9 +230,9 @@ struct ComingSoonPage: View {
             } header: {
                 Text("In the public beta")
             } footer: {
-                Text("Ridden with every week and reported on. A feature arrives in the App "
-                     + "Store app once it has ten sessions from two riders behind it, a "
-                     + "help topic, and no open report.")
+                Text("Ridden with every week and reported on.\n\n"
+                     + "A feature arrives in the App Store app once it has ten sessions "
+                     + "from two riders behind it, a help topic, and no open report.")
             }
 
             // Beta and dev only. The dev doors are on a handful of hand-picked phones and
@@ -283,14 +286,17 @@ struct ComingSoonPage: View {
     #if BETA
     private static let intro =
         "CleanJibe grows in the open. You are holding the public beta, so everything "
-        + "below is in your hands already. Ride it and report on it. Each one moves into "
-        + "the App Store app once it has held up."
+        + "below is in your hands already.\n\n"
+        + "Ride it and report on it. Each one moves into the App Store app once it has "
+        + "held up."
     #else
     private static let intro =
-        "These functions come in a future release. Preview them now in the public beta. "
+        "These functions come in a future release. Preview them now in the public "
+        + "beta.\n\n"
         + "CleanJibe grows in the open. Everything in this app is finished and ridden "
-        + "with. A feature that is still proving itself is ridden in the beta first, "
-        + "then arrives here."
+        + "with.\n\n"
+        + "A feature that is still proving itself is ridden in the beta first, then "
+        + "arrives here."
     #endif
 
     private func row(_ feature: String) -> some View {
