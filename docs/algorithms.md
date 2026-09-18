@@ -993,6 +993,75 @@ The same code with no accel and no barometer still moves 2026-08-05 am from 15/1
 and 2026-08-04 pm from 42/7/5 to 35/11/8, so the correction is not an artifact of the one
 session that has extra channels.
 
+### Positions-only recordings and touchdowns — what class (c) really loses
+
+Jan, 17 September 2026: *the same session imported from intervals.icu and from Strava gives
+fewer touchdowns on the Strava copy.* The hypothesis was that speed differentiated from
+positions is smoothed and hides the short dips step 1 keys on. **It is not what happens**, and
+the verdict that actually goes missing is the *fall*, not the touchdown.
+
+The experiment is `lab/tools/strava_vs_icu.py`: five fixture sessions read twice, once as the
+FIT (class (a)/(b)) and once as what a Strava export carries — latitude, longitude, elevation
+and a clock, rounded to Strava's own 1e-6 deg and re-read through the class (c) door. The
+Strava copy of 2026-08-30 14:07 was checked against the real thing through the activity-stream
+API: 646 samples at a flat 1 Hz, no gaps, six decimals. Cadence and coverage are not where the
+two copies differ.
+
+| session | turns | flew through | touchdown | fell in | clean |
+|---|---|---|---|---|---|
+| 2026-08-07 am (ciq) | 30 → 28 | 11 → 12 | 12 → 14 | **7 → 2** | 3 → 3 |
+| 2026-08-29 pm (ciq) | 56 → 54 | 42 → 43 | 8 → 7 | **6 → 4** | 25 → 26 |
+| 2026-08-30 pm (ciq) | 10 → 10 | 8 → 8 | 0 → 1 | 2 → 1 | 5 → 5 |
+| 2026-08-04 pm (native) | 60 → 58 | 39 → 38 | 20 → 19 | 1 → 1 | 16 → 15 |
+| 2026-08-05 am (native) | 22 → 22 | 15 → 13 | 5 → 7 | 2 → 2 | 6 → 4 |
+| **corpus** | **178 → 172** | 115 → 114 | **45 → 48** | **18 → 10** | 55 → 53 |
+
+Touchdowns are a wash (45 → 48 on turns, 53 → 52 on the session split that adds the
+straight-line losses); **falls drop 44 %** (18 → 10 on turns, 34 → 28 on the split). 14 of the
+172 paired turns (8.1 %) get a different verdict, in both directions — 5 `fell_in` → `touchdown`,
+1 `fell_in` → `flew_through`, 3 `touchdown` → `flew_through`, 5 `flew_through` → `touchdown`.
+A further **6 turns of 178 are not detected at all** on the positional copy, and they are the
+slowest ones (minima 1.60, 2.00, 2.17, 3.37, 3.77 kn) — four touchdowns and two falls that no
+verdict is ever written for.
+
+**The cause is step 4, not step 1, and it is the loss of the `min`.** `min(Doppler, positional)`
+has no second channel to take a minimum with on class (c), because there `doppler_mps` *is* the
+positional channel. Step 1's exit test barely notices: samples below `foilExitSpeed` fall by
+0–4 % across the five sessions. The **stop** measure collapses: samples below
+`turnStopSpeedFloor` fall by 9–23 %, because a stop interval needs both end samples below the
+floor and a single jitter sample above it cuts the run in two. On the 23 turns with a stop of
+at least a second, the longest stop reads **4.96 s** on `min(Doppler, positional)` and
+**3.22 s** on the positional channel alone — and the positional channel alone, computed on the
+*FIT's own* track, reproduces the Strava copy's stop to within 1 s on **22 of 23** turns. The
+two channels' jitter is independent and the minimum bridges each one's dropouts, exactly as
+step 4 claims; with one channel there is nothing to bridge, and `turnFallStop` (5 s) sits in
+the middle of the 3.2 → 5.0 s gap.
+
+Three candidate causes were tested and are **not** it: the spike filter (`max_accel_1hz = inf`
+leaves every verdict unchanged), the sampling (1 Hz, gap-free, confirmed against Strava), and
+position precision (7 decimals instead of 6 moves one clean-jibe count and nothing else).
+
+**No per-class exit rule.** Nothing on the positional path restores the stop the two channels
+measured together. Raising `turnStopSpeedFloor` for class (c) buys the corpus total and loses
+the individual turn: at 1.4 m/s the mean stop reads 4.70 s and 9 of the 23 cross `turnFallStop`
+(against 4.96 s and 10), but the mean per-turn error is still 1.30 s, and over whole sessions
+it restores 2 of 5 falls on 2026-08-07, does nothing at all on 2026-08-29, and turns
+2026-08-04's one fall into three. Absorbing single excursions above the floor (a 3- or 5-tap
+majority on the below-mask) reaches 3.52 s and 3.87 s and closes none of it. A second channel
+cannot be manufactured from the positions that produced the first one.
+
+**So class (c) is labelled, not corrected** (docs/presentation.md, the Strava surfaces): *"Without
+the watch's own speed, a fall can read as a touchdown."* It sits beside the uncertified mark the
+speed records already wear, and it is the same kind of statement: a fact about the source, not a
+number the engine pretends to.
+
+Two further class (c) facts the same run measured. **The barometer is the other half of the
+fall.** If the Strava copy's elevation is DEM-corrected rather than the device's own — the
+`noele` variant, no `<ele>` at all — step 2 never fires and corpus falls go 18 → 5 while
+touchdowns go 45 → 52. And **an uncertified record can be badly wrong, not slightly**:
+2026-08-29's best 2 s reads 13.21 kn on the Doppler channel and **31.77 kn** differentiated from
+the same positions, 2.4×, off one bad fix.
+
 ### Submersion episodes — `submersions` (engine ≥ 0.16.0)
 
 The barometer's submersion mask (step 2 above) is computed over the **whole track** and has
