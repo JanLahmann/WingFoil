@@ -377,7 +377,7 @@ public enum FeedbackReport {
         public static let rule = String(repeating: "-", count: 40)
         public static let note =
             "Below is what the app knows about this phone and build. "
-            + "It helps analysis. Delete any line you would rather not send."
+            + "It helps analysis. " + Copy.deleteAnyLine
     }
 
     /// The prefilled body: three labelled blanks for the rider, then everything the phone

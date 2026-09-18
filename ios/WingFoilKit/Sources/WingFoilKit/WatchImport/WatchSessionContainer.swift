@@ -232,6 +232,53 @@ public enum WatchSessionContainer {
     /// The extension the archive stores a watch session under.
     public static let fileExtension = "cjw"
 
+    /// The sport word in a filename this app writes itself. The same word as the kit's
+    /// `SessionNaming.sport`, lower-cased, and pinned to it by `SessionNamingTests` — this
+    /// file is compiled into the watch app, which does not link WingFoilKit.
+    public static let filenameSport = "wingfoil"
+
+    /// **The name a container this app wrote itself is filed under.**
+    ///
+    /// `2026-09-18-1407_wingfoil_applewatch.cjw`: when, what, and which door it came in
+    /// through, in the local time of the device that recorded it.
+    ///
+    /// The middle `_`-part is what `SessionNaming.derivedTitle(fromFilename:)` reads as the
+    /// session's name, so the sport word is what the rider sees in his library. The watch
+    /// used to name the file after the recording's UUID, and the library then showed a
+    /// tester "EE94C0B1 359A 4FED …" where the name belonged.
+    ///
+    /// The session's own id is not in the name and does not need to be: it is in the meta
+    /// inside the container, `SessionTransfer` recognises an outgoing file by its URL, and
+    /// the phone's library dedupes on what the recording *is* rather than on what it is
+    /// called.
+    public static func filename(start: Date, utcOffsetS: Int?,
+                                sport: String = filenameSport,
+                                source: String) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd-HHmm"
+        formatter.timeZone = utcOffsetS.flatMap { TimeZone(secondsFromGMT: $0) } ?? .current
+        return "\(formatter.string(from: start))_\(sport)_\(source).\(fileExtension)"
+    }
+
+    /// The same name with `-2`, `-3` … before the extension until nothing is there.
+    ///
+    /// Two sessions inside one minute are rare and a lost session is not acceptable, so the
+    /// clock's resolution is not what decides whether the second one survives.
+    public static func freeURL(in directory: URL, named name: String) -> URL {
+        let manager = FileManager.default
+        var candidate = directory.appendingPathComponent(name)
+        guard manager.fileExists(atPath: candidate.path) else { return candidate }
+        let stem = (name as NSString).deletingPathExtension
+        let ext = (name as NSString).pathExtension
+        var index = 2
+        while manager.fileExists(atPath: candidate.path), index < 100 {
+            candidate = directory.appendingPathComponent("\(stem)-\(index).\(ext)")
+            index += 1
+        }
+        return candidate
+    }
+
     public enum Error: Swift.Error, CustomStringConvertible, Equatable {
         case notAContainer
         case unsupportedVersion(UInt32)

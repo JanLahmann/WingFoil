@@ -215,6 +215,63 @@ import Testing
         #expect(SessionNaming.activityNameSlug("   ") == "session")
     }
 
+    /// **The Apple Watch app files a container the way the Health importer does.**
+    ///
+    /// It used to write `<UUID>.cjw`, the phone kept that as the session's
+    /// `originalFilename`, and the library printed "EE94C0B1 359A 4FED …" where the name
+    /// belongs. One rule for every container this app writes itself: when, what, and which
+    /// door it came in through.
+    @Test func theWatchNamesItsContainerAfterTheSessionRatherThanItsId() {
+        // 2026-09-18 14:07 in a zone two hours east of UTC.
+        let start = Date(timeIntervalSince1970: 1_789_733_220)
+        let offset = 2 * 3600
+        let watch = WatchSessionContainer.filename(start: start, utcOffsetS: offset,
+                                                   source: "applewatch")
+        #expect(watch == "2026-09-18-1407_wingfoil_applewatch.cjw")
+        #expect(SessionNaming.derivedTitle(fromFilename: watch) == "Wingfoil")
+
+        // The Health importer's name is the same rule with its own door, unchanged.
+        #expect(HealthImport.filename(start: start, utcOffsetS: offset)
+                == "2026-09-18-1407_wingfoil_health.cjw")
+
+        // The watch app does not link WingFoilKit, so its copy of the sport word is pinned
+        // to the kit's here rather than by the compiler.
+        #expect(WatchSessionContainer.filenameSport == SessionNaming.sport.lowercased())
+
+        // Two sessions inside one minute: the second one is kept, not overwritten.
+        let directory = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("cjw-naming-\(UUID().uuidString)")
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let first = WatchSessionContainer.freeURL(in: directory, named: watch)
+        #expect(first.lastPathComponent == watch)
+        FileManager.default.createFile(atPath: first.path, contents: Data())
+        let second = WatchSessionContainer.freeURL(in: directory, named: watch)
+        #expect(second.lastPathComponent == "2026-09-18-1407_wingfoil_applewatch-2.cjw")
+        #expect(SessionNaming.derivedTitle(fromFilename: second.lastPathComponent) == "Wingfoil")
+    }
+
+    /// **A bare identifier is never a title.** Every container already on a phone under a
+    /// UUID name reads as the sport word instead of as hexadecimal.
+    @Test func aFilenameThatIsOnlyAnIdentifierYieldsTheSportWord() {
+        #expect(SessionNaming.derivedTitle(fromFilename: "EE94C0B1-359A-4FED-8E2B-5A0C9F1D2E34.cjw")
+                == "Wingfoil")
+        // Lower case, and the id sitting in the name's own part of a three-part stem.
+        #expect(SessionNaming.derivedTitle(fromFilename: "ee94c0b1-359a-4fed-8e2b-5a0c9f1d2e34.cjw")
+                == "Wingfoil")
+        #expect(SessionNaming.derivedTitle(
+            fromFilename: "2026-09-18-1407_EE94C0B1-359A-4FED-8E2B-5A0C9F1D2E34_applewatch.cjw")
+                == "Wingfoil")
+
+        // Only that shape. A name with the same look and a different one of anything is a
+        // rider's name and is left alone.
+        #expect(SessionNaming.isBareIdentifier("EE94C0B1-359A-4FED-8E2B-5A0C9F1D2E34"))
+        #expect(!SessionNaming.isBareIdentifier("EE94C0B1-359A-4FED-8E2B"))
+        #expect(!SessionNaming.isBareIdentifier("EE94C0B1-359A-4FED-8E2B-5A0C9F1D2E3"))
+        #expect(!SessionNaming.isBareIdentifier("SURFERS-359A-4FED-8E2B-5A0C9F1D2E34"))
+        #expect(!SessionNaming.isBareIdentifier("nago-torbole-windsurfen"))
+    }
+
     /// The Recording card's sport line: five translated spellings, everything else unbent.
     @Test func theSportLabelKeepsTheSourcesOwnWord() {
         #expect(SessionNaming.sportLabel(nil) == "Unknown")

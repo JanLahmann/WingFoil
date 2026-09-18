@@ -274,7 +274,7 @@ public enum TurnTraceBuilder {
         if let axisTs = record.axisTs, let before = record.axisBeforeDeg,
            let after = record.axisAfterDeg {
             add("Wind axis",
-                String(format: "through the axis · %.0f° before, %.0f° after",
+                String(format: Copy.axisSweepFormat,
                        before, after)
                     + (config.axisAfterDeg > 0
                        ? String(format: " · clean needs %.0f°", config.axisAfterDeg) : ""),

@@ -145,7 +145,7 @@ public enum DisciplineReview {
     /// way to answer rather than leave them.
     public static let footnote =
         "Wingfoil does not exist in Garmin, Strava, intervals.icu or Apple Health, so a "
-        + "recording cannot say which rig it was ridden on. You can change this later on any "
-        + "session — Log → \"Analyse as\" — and everything is re-derived from the original "
-        + "file."
+        + "recording cannot say which rig it was ridden on.\n\n"
+        + "You can change this later on any session with Log → \"Analyse as\". Everything "
+        + "is then re-derived from the original file."
 }

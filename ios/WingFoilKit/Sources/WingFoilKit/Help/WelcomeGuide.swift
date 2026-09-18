@@ -47,10 +47,9 @@ public enum WelcomeGuide {
     /// detection first (nothing else is possible without it), then the counts, then the
     /// verdicts, then the records, then the replay.
     public static let lede =
-        "CleanJibe takes your recording apart. It shows your time on the foil, every "
-        + "flight, every touchdown. Each jibe gets a verdict: flew through, touched down, "
-        + "or fell in. It counts your dry streak and your fastest seconds. Then it plays "
-        + "it back with a commentary."
+        "CleanJibe shows your time on the foil, every flight, every touchdown. Each "
+        + "jibe gets a verdict: flew through, touched down, or fell in. It counts your dry "
+        + "streak and your fastest seconds. Then it plays it back with a commentary."
 
     /// The vocabulary, four lines of it. Enough that the words on the session page are
     /// already familiar; short enough that nobody skips the screen to escape it.
@@ -101,8 +100,9 @@ public enum WelcomeGuide {
     public static let connectTitle = "Set up intervals.icu"
     public static let connectDetail =
         "Garmin has no open API, so CleanJibe collects your sessions through intervals.icu. "
-        + "It is free: 4 steps, about 5 minutes, once. This closes the welcome screen. "
-        + "The 4 steps are in Settings → intervals.icu. Every session then arrives on its own."
+        + "It is free: 4 steps, about 5 minutes, once.\n\n"
+        + "This closes the welcome screen. The 4 steps are in Settings → intervals.icu. "
+        + "Every session arrives on its own."
 
     /// The quiet way out. Not a hidden one: a rider who wants to import a file by hand has
     /// nothing to gain from either button above — but "Later" on its own does not tell him

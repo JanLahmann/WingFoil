@@ -46,9 +46,13 @@ public enum IcuSetupGuide {
 
     /// The same point in one breath, for the setup card — where the four steps below it
     /// are what the reader is actually there for.
-    public static let rationaleShort =
-        "Garmin has no open API, so intervals.icu is the bridge. It is free, set up once, "
-        + "and automatic from then on."
+    ///
+    /// **It is the Settings caption, not a second wording of it.** The sentence's home is
+    /// `docs/guide/getting-started.json` → `settings.intervalsIcu`, which the generator
+    /// writes into `GettingStartedGuide.settingsIcu`; the setup card and the caption above
+    /// the key field then say the same thing letter for letter (pattern F,
+    /// `docs/copy/check_duplicates.py`).
+    public static let rationaleShort = GettingStartedGuide.settingsIcu
 
     /// The label on the button the last step tells the reader to tap, and the label the
     /// button itself carries (`IcuKeyEntry`). Two literals is how a walkthrough ends up

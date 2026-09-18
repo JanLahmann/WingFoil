@@ -168,6 +168,11 @@ public enum SessionNaming {
         var stem = (file as NSString).deletingPathExtension
         let parts = stem.split(separator: "_")
         if parts.count >= 2 { stem = String(parts[1]) }
+        // An identifier is not a name. The Apple Watch app filed its containers under the
+        // recording's UUID until 0.9.13, and a tester read "EE94C0B1 359A 4FED …" off his
+        // own library where the session's name belonged. The writer names the file properly
+        // now; this is what the sessions already on a phone get.
+        if isBareIdentifier(stem) { return sport }
         let words = stem.replacingOccurrences(of: "-", with: " ")
             .split(separator: " ")
             .filter { !($0.allSatisfy(\.isNumber) && $0.count >= 4) }
@@ -177,6 +182,19 @@ public enum SessionNaming {
             .map { sourceCased ? String($0) : String($0.prefix(1)).uppercased() + String($0.dropFirst()) }
             .joined(separator: " ")
         return sportCorrected(title)
+    }
+
+    /// `8-4-4-4-12` hexadecimal: the shape of a `UUID().uuidString`, in either case.
+    ///
+    /// Only that shape. A stem is a rider's name until it is proven to be a machine's, and
+    /// "a long word with digits in it" would take real names down with it.
+    static func isBareIdentifier(_ stem: String) -> Bool {
+        let groups = stem.split(separator: "-", omittingEmptySubsequences: false)
+        let lengths = [8, 4, 4, 4, 12]
+        guard groups.count == lengths.count else { return false }
+        return zip(groups, lengths).allSatisfy { group, length in
+            group.count == length && group.allSatisfy(\.isHexDigit)
+        }
     }
 
     /// **What the Recording card calls the sport a session was recorded under.**

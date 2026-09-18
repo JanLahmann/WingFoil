@@ -296,10 +296,10 @@ public enum HelpCatalog {
                 + "and analyses them on the phone.",
                 // The one sentence that turns "a Garmin bridge" into "the way in for every
                 // other brand", and what the recording those brands leave there is worth.
-                "Polar, Suunto and Coros work this way too: their own apps sync to "
-                + "intervals.icu, and CleanJibe syncs from there. What comes back decides how "
-                + "much you get: a FIT gives the full analysis, a GPX or a speedless TCX "
-                + "gives estimated, uncertified speed records.",
+                "Polar, Suunto and Coros work this way too. Their own apps sync to "
+                + "intervals.icu, and CleanJibe syncs from there.",
+                "What comes back decides how much you get. A FIT gives the full analysis. "
+                + "A GPX or a speedless TCX gives estimated, uncertified speed records.",
             ],
             items: IcuSetupGuide.steps.map {
                 .init(term: "\($0.number). \($0.title)", detail: $0.detail)
@@ -313,9 +313,9 @@ public enum HelpCatalog {
             summary: "One real session ships with the app. Load it before you connect anything.",
             body: [
                 ExampleSession.blurb,
-                "It is not your data, and CleanJibe treats it that way: badged EXAMPLE in the "
-                + "list and on its own page, and left out of Records, Trends and the gear "
-                + "rollups. Delete it with a swipe. This screen offers it again.",
+                "It is not your data. CleanJibe badges it EXAMPLE in the list and on its "
+                + "own page, and leaves it out of Records, Trends and the gear rollups.",
+                "Delete it with a swipe. This screen offers it again.",
                 "It was recorded at " + ExampleSession.place + " with the CleanJibe watch "
                 + "app, every identifier removed. The accelerometer stream was left out "
                 + "because it is larger than the rest of the app. Pump strokes and takeoff "
@@ -333,14 +333,14 @@ public enum HelpCatalog {
         HelpTopic(
             id: .appleWatchApp, section: .setup, channel: .beta,
             title: "Recording with the CleanJibe Apple Watch app",
-            summary: "Record on your Apple Watch. The session comes to the phone by itself.",
+            summary: "Record on your Apple Watch. " + Copy.watchSessionArrives,
             body: [
                 "The watch app records the GPS track, your heart rate and the wrist "
                 + "accelerometer at 50 Hz. Start it on the watch, ride, end the workout. The "
                 + "session transfers to the phone while both are in range.",
-                "Because the wrist is recorded, pump strokes and failed takeoff attempts are "
-                + "analysed on the phone. Speed comes off the watch's own receiver, so the "
-                + "records certify.",
+                "Because the wrist is recorded, pump strokes and failed takeoff attempts "
+                + "are analysed on the phone. The speed is the watch's own, so the records "
+                + "certify.",
             ],
             items: [
                 // Jan, 15 Sep 2026: it said "keep the wrist above water" — wrong, a wrist
@@ -362,8 +362,8 @@ public enum HelpCatalog {
             body: [
                 "Record a session with Apple's own Workout app and analyse it here. No "
                 + "Garmin, no account, no cable, not even CleanJibe's own watch app.",
-                "Apple Health has no wingfoil activity, so pick the closest one. CleanJibe "
-                + "reads the workout as a wingfoil session because you asked it to.",
+                "Health has no wingfoil workout type. CleanJibe reads the one you picked "
+                + "as a wingfoil session, because you asked it to.",
                 "Then Import → Apple Health, allow CleanJibe to read workouts, and pick the "
                 + "ones you want. After the first one, switch on \"Import new Health workouts "
                 + "automatically\" and the next session is waiting when you open the app.",
@@ -402,10 +402,10 @@ public enum HelpCatalog {
                 "If your sessions are already on Strava, CleanJibe can list them and import "
                 + "the ones you pick. CleanJibe only ever reads: it never writes, renames or "
                 + "posts anything to your account.",
-                "A Strava session shows everything that comes from the track: foil time, "
-                + "flights, every turn verdict, the wind axis, the map. Strava hands over no "
-                + "speed channel, so the speed records are marked uncertified, and nothing "
-                + "recorded your wrist, so there are no pump strokes.",
+                "A Strava session shows everything that comes from the track. Foil time, "
+                + "flights, every turn verdict, the wind axis, the map.",
+                "Strava hands over no speed channel, so the speed records are marked "
+                + "uncertified. Your wrist was not recorded, so there are no pump strokes.",
                 "If the same afternoon is also on intervals.icu, import it from there "
                 + "instead: that is the original file off your watch, and those records "
                 + "certify. Importing both is harmless, because the same session is never "
@@ -434,8 +434,8 @@ public enum HelpCatalog {
                           + "import of many seasons may ask you to come back shortly."),
                 .init(term: "If connecting is refused",
                       detail: "Strava lets a new app connect a limited number of riders. "
-                          + "That is nothing to do with your account. "
-                          + "Menu → Support & ideas is the way to say so."),
+                          + "That says nothing about your account. "
+                          + "Menu → Support & ideas is the way to report it."),
                 .init(term: "Disconnecting",
                       detail: "Settings → Strava → Disconnect Strava. The sessions you "
                           + "already imported stay in your library. They are yours now, "
@@ -455,11 +455,12 @@ public enum HelpCatalog {
             body: [
                 "Every watch app can export a recording as a file, and CleanJibe reads .fit "
                 + "files. Export the session as a FIT and pick CleanJibe from the share "
-                + "sheet. If it is not in the row, Save to Files and open it from there.",
+                + "sheet.",
+                "If it is not in the row, Save to Files and open it from there.",
                 "Which format, if you are asked: FIT, every time. A FIT carries the "
-                + "receiver's own speed, so its records certify. A .gpx or a .tcx carries "
-                + "positions only, so its records are marked uncertified. Those two formats "
-                + "open in the CleanJibe beta.",
+                + "receiver's own speed, so its records certify.",
+                "A .gpx or a .tcx carries positions only, so its records are marked "
+                + "uncertified. Those two formats open in the CleanJibe beta.",
                 "Garmin Connect's phone app has no export at all, so Garmin owners have two "
                 + "better routes: intervals.icu, or connect.garmin.com on a computer.",
             ],
@@ -512,7 +513,7 @@ public enum HelpCatalog {
         // recommendation.
         HelpTopic(
             id: .phoneOnly, section: .setup, title: "Recording with a phone only",
-            summary: "No watch at all: a tracker app in a pouch, and the session comes in "
+            summary: "No watch at all. A tracker app in a pouch. The session comes in "
                 + "through Strava or as a file.",
             body: [
                 "A phone records a GPS track as well as most watches do, and CleanJibe reads "
@@ -520,8 +521,9 @@ public enum HelpCatalog {
                 + "wind axis and the map.",
                 "It is " + RecordingClass.c.name + ". " + RecordingClass.c.line,
                 "Where to put the phone: dry, still and pointing at the sky. A waterproof "
-                + "pouch on the upper arm or high on the chest works. A pocket at hip height "
-                + "spends half the session underwater. Start the recording on the beach.",
+                + "pouch on the upper arm or high on the chest works.",
+                "A pocket at hip height spends half the session underwater. Start the "
+                + "recording on the beach.",
             ],
             items: [
                 .init(term: "Strava, the route that needs no file",
@@ -653,8 +655,9 @@ public enum HelpCatalog {
             summary: "A new phone carries everything by itself. A fresh start needs a file.",
             body: [
                 "Setting up a new iPhone from this one carries your library across, and so "
-                + "does an iCloud backup. Settings → Library backup is for the case neither "
-                + "covers: a phone set up as new, or the app deleted and installed again.",
+                + "does an iCloud backup.",
+                "Settings → Library backup is for the case neither covers: a phone set up "
+                + "as new, or the app deleted and installed again.",
                 "The file holds every recording you have imported **and** the things nothing "
                 + "else can bring back: what you called each session, its caption, whose it "
                 + "was, the gear on it, your spot names, and the sessions you deleted on "
@@ -687,8 +690,8 @@ public enum HelpCatalog {
         // this is what to do when one of them did not work.
         HelpTopic(
             id: .sendingFeedback, section: .setup, title: "Sending feedback",
-            summary: "The app writes down which build, which phone and which session. "
-                + "You write the sentence. " + FeedbackInvitation.sentence,
+            summary: "The app fills in build, phone and session. You write the "
+                + "sentence. " + FeedbackInvitation.sentence,
             body: [
                 // **The invitation is said once, and the summary is where it is said**
                 // (Jan, dev 65). It opened the summary *and* this paragraph, one line
@@ -702,8 +705,8 @@ public enum HelpCatalog {
                 // from `FeedbackDoors` now, so a renamed door renames its instructions.
                 FeedbackDoors.app + " opens the mail. So do \"" + FeedbackDoors.footer
                 + "\" at the foot of every page and \"" + FeedbackDoors.share
-                + "\" in the share sheet. The mail asks three questions, with a blank line "
-                + "under each.",
+                + "\" in the share sheet.",
+                "The mail asks three questions, with a blank line under each.",
                 "Nothing leaves the phone until you tap Send. It is Apple's own composer, "
                 + "and the address is " + FeedbackReport.recipient + ". No part of CleanJibe "
                 + "sends anything by itself. There is no CleanJibe server to send it to.",
@@ -745,12 +748,13 @@ public enum HelpCatalog {
             body: [
                 "A flight starts when your speed holds above the entry threshold, "
                 + "12 km/h by default, for 2 seconds. It ends when the speed drops below the "
-                + "exit threshold, 8 km/h, for 3 seconds. Start and end are backdated to the "
-                + "first qualifying sample.",
+                + "exit threshold, 8 km/h, for 3 seconds.",
+                "Start and end are backdated to the first qualifying sample.",
                 "\"On foil\" is that flying time divided by timer time. Timer time is the "
                 + "total, minus any stretch where the recording stopped or the GPS dropped "
-                + "out. Taxiing, swimming and the drift upwind count against it. A gap in "
-                + "the recording does not.",
+                + "out.",
+                "Taxiing, swimming and the drift upwind count against it. A gap in the "
+                + "recording does not.",
                 "Anything under 5 seconds is not counted as a flight. \"Foil time\" is the "
                 + "number of minutes. \"On foil\" is the share of the session they are.",
             ],
@@ -761,9 +765,9 @@ public enum HelpCatalog {
             summary: "How many separate times you got up and stayed up.",
             body: [
                 "One flight is one continuous stretch above the entry threshold, lasting at "
-                + "least 5 seconds. A brief touchdown does not split a flight: the exit needs "
-                + "3 seconds below the exit speed, so a one- or two-second tap of the water "
-                + "stays inside it.",
+                + "least 5 seconds.",
+                "A brief touchdown does not split a flight. The exit needs 3 seconds below "
+                + "the exit speed, so a one- or two-second tap of the water stays inside it.",
                 "The flight count answers \"how many times did I have to get up again\". "
                 + "The touchdown count answers \"how clean was it\".",
             ],
@@ -859,9 +863,9 @@ public enum HelpCatalog {
                 + "whether your watch recorded at 1 Hz or 4 Hz. No minimum-speed filter is "
                 + "applied.",
                 "A window never spans a recording gap. Tap a record card to see where on the "
-                + "track and on the speed trace it happened. A record certifies only when "
-                + "the recording holds the receiver's own speed channel. The rest are marked "
-                + "uncertified.",
+                + "track and on the speed trace it happened.",
+                "A record certifies only when the recording holds the receiver's own speed "
+                + "channel. The rest are marked uncertified.",
             ],
             items: [
                 .init(term: "Best 2 s",
@@ -1130,8 +1134,8 @@ public enum HelpCatalog {
                 + "the wind came from.",
                 "Confidence combines how cleanly the two reaches separate with how decisive "
                 + "the no-go zone was. Below 50 % the axis is still shown, but your turns "
-                + "stay unnamed \"turns\" rather than tacks and jibes. A wind direction you "
-                + "set on the watch always wins.",
+                + "stay unnamed \"turns\" rather than tacks and jibes.",
+                "A wind direction you set on the watch always wins.",
             ],
             related: [.turnTypes, .portStarboard]),
 
@@ -1254,10 +1258,11 @@ public enum HelpCatalog {
             id: .engineVersion, section: .quality, title: "Analysis engine version",
             summary: "Every session is re-derived when the engine changes.",
             body: [
-                "The footer of a session shows which version of the analysis engine produced "
-                + "its numbers. When the engine changes in a way that alters results, sessions "
-                + "computed with an older version are recomputed from their archived original "
-                + "file the next time they are opened.",
+                "The footer of a session shows which version of the analysis engine "
+                + "produced its numbers.",
+                "When the engine changes in a way that alters results, sessions computed "
+                + "with an older version are recomputed from their archived original file "
+                + "the next time they are opened.",
                 "The original recording is never modified. Only the derived analysis is, "
                 + "and you can drop and rebuild it at any time from Settings.",
             ],

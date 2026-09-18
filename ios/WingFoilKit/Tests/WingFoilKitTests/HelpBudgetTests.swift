@@ -14,9 +14,14 @@ import Testing
 /// | surface | budget |
 /// |---|---|
 /// | a topic's whole body | 120 words |
-/// | one body paragraph | 45 words |
+/// | one body paragraph | 40 words |
 /// | one item's detail | 30 words |
-/// | a summary (the index line) | 25 words |
+/// | a summary (the index line) | 20 words |
+///
+/// The paragraph and the summary were cut to 40 and 20 in the second voice pass, so that
+/// the number here is the number `docs/copy/check_voice.py` holds every rider paragraph to
+/// (pattern I). A paragraph that no longer fits is split, never compressed: the facts stay,
+/// they just stop arriving in one breath.
 ///
 /// A topic that needs more than the body allows does not get a longer body: it gets an
 /// `items:` list, which is what the long topics here already are. Words are whitespace-
@@ -25,9 +30,9 @@ import Testing
 @Suite struct HelpBudgetTests {
 
     static let bodyBudget = 120
-    static let paragraphBudget = 45
+    static let paragraphBudget = 40
     static let itemBudget = 30
-    static let summaryBudget = 25
+    static let summaryBudget = 20
 
     /// Whitespace-separated tokens, with `**` and `*` emphasis markers dropped so a bolded
     /// word costs exactly what the same word costs unbolded.

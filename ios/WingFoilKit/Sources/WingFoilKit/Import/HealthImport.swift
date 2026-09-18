@@ -223,12 +223,9 @@ public enum HealthImport {
     /// health workout carries no name from anywhere (the store has none to give), so the
     /// honest derived title is the sport word this app is about.
     public static func filename(start: Date, utcOffsetS: Int?) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "yyyy-MM-dd-HHmm"
-        formatter.timeZone = utcOffsetS.flatMap { TimeZone(secondsFromGMT: $0) } ?? .current
-        return "\(formatter.string(from: start))_\(SessionNaming.sport.lowercased())"
-            + "_health.\(WatchSessionContainer.fileExtension)"
+        WatchSessionContainer.filename(start: start, utcOffsetS: utcOffsetS,
+                                       sport: SessionNaming.sport.lowercased(),
+                                       source: "health")
     }
 
     // MARK: - Internals
