@@ -36,8 +36,23 @@ import WingFoilKit
 /// furniture — the footer under every tab, the wind line's detail, the divergence table
 /// behind a banner's disclosure, and the gear card.
 struct SessionDetailView: View {
+    /// The session the rider tapped. The page can move off it — see `shownID`.
     let sessionID: String
     @Environment(SessionStore.self) private var store
+
+    /// **The session on screen**, once a swipe has moved the page off the one that was
+    /// pushed (item 5 of the 18 Sep 2026 round).
+    ///
+    /// Paging in place rather than pushing: the rider is reading his afternoons, and the
+    /// question after "how was that one" is "how was the one before it" — the same reason
+    /// the turn page swipes rather than popping (`TurnDetailSheet`). A push per session
+    /// would build a stack he then has to unwind, and the back button would lie about
+    /// where it goes. Nil until he swipes, so a cold push still draws what it was asked for.
+    @State private var shownID: String?
+    /// The title editor. Renaming used to live only inside the share composer, which is a
+    /// long way to go to fix a name the list is showing wrong (GitHub issue 13).
+    @State private var renaming = false
+    @State private var titleDraft = ""
 
     @State private var detail: SessionDetail?
     @State private var failure: String?
@@ -68,7 +83,46 @@ struct SessionDetailView: View {
     @State private var showFullScreenMap = false
     #endif
 
-    private var row: SessionRow? { store.session(id: sessionID) }
+    /// What the page is drawing, which is the pushed session until a swipe says otherwise.
+    private var shown: String { shownID ?? sessionID }
+
+    private var row: SessionRow? { store.session(id: shown) }
+
+    /// **The list's order, as the page inherits it** — the filtered, sorted run the Sessions
+    /// tab is showing (`SessionStore.visibleSessionIDs`), so a swipe walks the afternoons in
+    /// the order the rider is reading them rather than in the library's own. Falls back to
+    /// the whole library, which is what a page reached from Records or from a notification
+    /// has behind it.
+    private var order: [String] {
+        store.visibleSessionIDs.contains(shown) ? store.visibleSessionIDs
+                                                : store.sessions.map(\.id)
+    }
+
+    private var position: Int? { order.firstIndex(of: shown) }
+
+    private var previousID: String? {
+        guard let position, position > 0 else { return nil }
+        return order[position - 1]
+    }
+
+    private var nextID: String? {
+        guard let position, position + 1 < order.count else { return nil }
+        return order[position + 1]
+    }
+
+    /// Moves the page to another session and forgets everything that was about the old one.
+    /// The selected tab deliberately survives: a rider comparing his jibes stays on Turns.
+    private func show(_ id: String?) {
+        guard let id, id != shown else { return }
+        shownID = id
+        detail = nil
+        failure = nil
+        playhead = nil
+        flightFocus = nil
+        chartZoom = nil
+        milestones = []
+        selectedEffort = RecordWindowSelection.defaultKey
+    }
 
     private var effort: SessionDetail.RecordEffort? {
         guard let detail, let selectedEffort else { return nil }
@@ -114,7 +168,7 @@ struct SessionDetailView: View {
                     // which is where the recording's own facts live, and the banner's job
                     // here is to say there is something to go and read.
                     if !detail.divergences.isEmpty {
-                        DivergenceBanner(sessionID: sessionID,
+                        DivergenceBanner(sessionID: shown,
                                          divergences: detail.divergences) {
                             jump(to: "divergence", proxy: proxy)
                         }
@@ -223,6 +277,20 @@ struct SessionDetailView: View {
         }
         .navigationTitle(row.map(SessionDisplay.title) ?? "Session")
         .navigationBarTitleDisplayMode(.inline)
+        // **A horizontal flick turns the page to the next afternoon.**
+        //
+        // `simultaneousGesture`, so the vertical scroll and the map's own pan keep every
+        // touch they had — and a strict predicate, because the inline map pans horizontally
+        // too: a drag counts only when it is long, flat and mostly sideways. The `‹ ›` pair
+        // beside the date is the same move for a rider who never tries the flick, and the
+        // only chrome it costs.
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 30).onEnded { value in
+                let dx = value.translation.width
+                let dy = value.translation.height
+                guard abs(dx) >= 100, abs(dy) <= 48, abs(dx) > abs(dy) * 2.5 else { return }
+                show(dx < 0 ? nextID : previousID)
+            })
         #if DEBUG && targetEnvironment(simulator)
         .navigationDestination(isPresented: $showFullScreenMap) {
             if let detail {
@@ -231,6 +299,24 @@ struct SessionDetailView: View {
         }
         #endif
         .toolbar {
+            // **The name in the bar is the way to change it** (GitHub issue 13). Renaming
+            // lived inside the share composer, so a rider whose watch had filed the
+            // afternoon under the wrong place had to open a sheet about sharing to fix a
+            // name the list was showing him. It is the same `customTitle` either way.
+            ToolbarItem(placement: .principal) {
+                Button {
+                    titleDraft = row.map(SessionDisplay.title) ?? ""
+                    renaming = true
+                } label: {
+                    Text(row.map(SessionDisplay.title) ?? "Session")
+                        .font(.headline)
+                        .lineLimit(1)
+                        .foregroundStyle(.primary)
+                }
+                .buttonStyle(.plain)
+                .disabled(row == nil)
+                .accessibilityHint("Rename this session")
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button { showShare = true } label: {
                     Label("Share", systemImage: "square.and.arrow.up")
@@ -244,7 +330,10 @@ struct SessionDetailView: View {
                 ShareComposerView(row: row, detail: detail)
             }
         }
-        .task(id: sessionID) {
+        .sheet(isPresented: $renaming) {
+            if let row { RenameSessionSheet(row: row, draft: $titleDraft) }
+        }
+        .task(id: shown) {
             Usage.record(.sessionOpened)
             await load()
         }
@@ -371,7 +460,7 @@ struct SessionDetailView: View {
         case .ride: ride(detail)
         case .turns: SessionTurnsSection(detail: detail)
         case .takeoffs: takeoffs(detail)
-        case .log: SessionLogView(detail: detail, sessionID: sessionID)
+        case .log: SessionLogView(detail: detail, sessionID: shown)
         }
     }
 
@@ -447,8 +536,25 @@ struct SessionDetailView: View {
     private var header: some View {
         if let row {
             VStack(alignment: .leading, spacing: 6) {
-                Text(Fmt.date(row.startDate, zone: row.displayZone))
-                    .font(.title3.weight(.semibold))
+                HStack(spacing: 10) {
+                    Text(Fmt.date(row.startDate, zone: row.displayZone))
+                        .font(.title3.weight(.semibold))
+                    Spacer(minLength: 8)
+                    // The flick, for a rider who has not found the flick. Two glyphs and no
+                    // words: the arrows are beside a date, and what is on the other side of
+                    // a date needs no label.
+                    stepButton("chevron.left", to: previousID, reads: "Previous session")
+                    stepButton("chevron.right", to: nextID, reads: "Next session")
+                }
+                // **Where this recording came from**, under the date and nowhere else on
+                // this tab. It was on the Log tab only, four taps from the question — and
+                // "is this the one my watch recorded, or the copy Strava has" is asked
+                // while looking at the numbers, not while auditing the file.
+                if let source = SessionProvenance.line(importSource: row.importSource) {
+                    Text(source)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
                 if row.zoneIsEstimated { estimatedClockNote }
                 if row.isExample { exampleNote }
                 if row.rider != nil { riderNote(row) }
@@ -487,6 +593,23 @@ struct SessionDetailView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+    }
+
+    /// One step along the list, greyed at the ends rather than absent: a control that
+    /// vanishes at the last session is a control a rider stops trusting (pattern G).
+    private func stepButton(_ symbol: String, to id: String?,
+                            reads: String) -> some View {
+        Button { show(id) } label: {
+            Image(systemName: symbol)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(id == nil ? AnyShapeStyle(.tertiary)
+                                           : AnyShapeStyle(Color.accentColor))
+                .frame(width: 28, height: 28)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .disabled(id == nil)
+        .accessibilityLabel(reads)
     }
 
     #if TUNING

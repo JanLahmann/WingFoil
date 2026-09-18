@@ -49,6 +49,9 @@ struct LibraryView: View {
         @Bindable var store = store
         let visible = filter.apply(to: store.sessions)
         let groups = grouping.groups(visible, spotName: { store.spot(id: $0)?.name })
+        // The run a swipe on the session page walks, in the order the groups draw it — the
+        // filtered, grouped order, not the library's own (`SessionDetailView.order`).
+        let visibleIDs = groups.flatMap { $0.rows.map(\.id) }
         NavigationStack(path: $path) {
             ScrollViewReader { proxy in
             List {
@@ -124,56 +127,13 @@ struct LibraryView: View {
             .navigationDestination(for: String.self) { SessionDetailView(sessionID: $0) }
             .refreshable { await store.syncFromIntervals() }
             .toolbar {
-                // The app's one menu (docs/presentation.md, "The library menu"), in the
-                // order a rider meets the app (Jan, dev 65): what it is, how to start with
-                // it, then the two screens he comes back to — the switches and the
-                // reference — and last the way to reach a human. The line at the foot is
-                // the build, because it is the first thing every support mail asks and the
-                // last thing a rider can find in Settings.
+                // **The app's one menu, and it is not this screen's** (pattern M).
+                // `AppMenuButton` is the same view the other three tab roots place in the
+                // same slot, so the five doors it holds are on every tab rather than on
+                // this one. The rows, their order and their wording are the kit's
+                // (`AppMenuRow`); what each one opens is the button's.
                 ToolbarItem(placement: .topBarLeading) {
-                    Menu {
-                        // Asked for, not re-armed: the welcome screen again, raised by
-                        // RootView once the menu is gone (SessionStore.replayWelcome).
-                        // First, because *what is this* comes before *how do I start it*.
-                        Button { store.replayWelcome() } label: {
-                            Label("What CleanJibe does", systemImage: "hand.wave")
-                        }
-                        Button { sheet = .helpTopic(.gettingStarted) } label: {
-                            Label("Getting started", systemImage: "book")
-                        }
-                        Divider()
-                        Button { sheet = .settings } label: {
-                            Label("Settings", systemImage: "gearshape")
-                        }
-                        // **"What is being tested" is not a menu row** (Jan, build 58). It
-                        // sat here, in the release channel only, straight under "What
-                        // CleanJibe does" — and the app's one menu is for what a rider
-                        // needs *now*: what the app is, how to start, where the switches
-                        // are, what its numbers mean, who to write to. A list of things
-                        // this build does not have is none of those. It keeps its one home,
-                        // Settings → Coming in a future release (docs/channels.md).
-                        Button { sheet = .help } label: {
-                            Label("Help", systemImage: "questionmark.circle")
-                        }
-                        // Last of the five, under the two screens that answer a question on
-                        // their own: a rider still asking after them is the one who needs
-                        // this row, and it is the last thing his eye reaches.
-                        // "& ideas" is not decoration: the row said "Support", which a rider
-                        // reads as *the place you go when something is broken*, and Jan's
-                        // point (14 Sep 2026) is that a wish is as welcome as a bug and
-                        // nothing in the app has ever said so. The name of the door is the
-                        // cheapest place to say it.
-                        // The name is `FeedbackDoors.menuRow`, not a literal: the app's
-                        // Help, the website and both store texts quote this row by name,
-                        // and one of those quotations named a deleted screen for a week.
-                        Button { supportRequest += 1 } label: {
-                            Label(FeedbackDoors.menuRow, systemImage: "envelope")
-                        }
-                        Divider()
-                        Text(Self.buildLine)
-                    } label: {
-                        Label("Menu", systemImage: "line.3.horizontal")
-                    }
+                    AppMenuButton(sheet: $sheet, supportRequest: $supportRequest)
                 }
                 // Beside Import rather than in the list: the filter is about the list, and a
                 // control that narrows a list is not one of the list's rows.
@@ -370,6 +330,7 @@ struct LibraryView: View {
             }
             .onChange(of: store.sessions.count) { openRequestedSession() }
             #endif
+            .task(id: visibleIDs) { store.visibleSessionIDs = visibleIDs }
             .safeAreaInset(edge: .bottom) { statusBar }
             .animation(.easeInOut(duration: 0.25), value: store.status)
             .animation(.easeInOut(duration: 0.25), value: store.isBusy)
@@ -417,13 +378,6 @@ struct LibraryView: View {
                 set: { sheet = $0 ? .dateRange : nil })
     }
     #endif
-
-    /// "CleanJibe 0.15.0 (45)", with " · beta" or " · dev" after it — the same string as
-    /// Settings → About, and from the same place, so the two never disagree about which
-    /// channel this build is (docs/channels.md).
-    private static var buildLine: String {
-        "\(Branding.appName) \(SessionStore.appVersion)" + SettingsView.variantSuffix
-    }
 
     // MARK: - Grouping
 

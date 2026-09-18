@@ -33,6 +33,7 @@ struct SettingsView: View {
                 WatchLinkSection()
                 #endif
                 analysisSection
+                sessionListSection
                 // Windsurf, and the per-discipline thresholds behind it: DEV.
                 #if DEV
                 windsurfSection
@@ -344,6 +345,25 @@ struct SettingsView: View {
         return store.windsurfEnabled ? rig + wind : wind
     }
 
+    /// **The map behind a row's track** (item 6 of the 18 Sep 2026 round).
+    ///
+    /// Off by default, and it stays that way unless a rider asks: the plain outline is the
+    /// shape at a glance, and a snapshot per row costs a network round trip he did not ask
+    /// for. The ground is whatever the maps are already drawn on (`MapStyleChoice`), so
+    /// there is no second style choice to keep in step.
+    private var sessionListSection: some View {
+        Section {
+            Toggle("Map behind the track in the list", isOn: Binding(
+                get: { store.listMapBackdrop },
+                set: { store.listMapBackdrop = $0 }))
+        } header: {
+            Text("Session list")
+        } footer: {
+            Text("Each row draws its track over a map of the water it was ridden on. "
+                 + "The map style is the one your session maps use.")
+        }
+    }
+
     #if DEV
     /// **"Windsurf (experimental)"** — the one switch every windsurf-facing control hangs off
     /// (Jan, 13 Sep 2026: *"windsurf should be hidden. Maybe enable with a switch"*).
@@ -412,43 +432,53 @@ struct SettingsView: View {
     #if BETA
     /// Both directions, in one section, because the rider thinks of Health as one place.
     ///
-    /// The read toggle appears only once a session has actually arrived that way (ADR-017):
-    /// until then the door is on the Import screen where a first import belongs, and a switch
-    /// here would be a question about a source the rider has never used. The two directions
-    /// never meet — a session that came *out* of Health is excluded from what goes back in,
-    /// or importing a workout would be how you end up with two of them.
+    /// **Both switches are always here** (docs/review-checklist.md, pattern E/G). The
+    /// automatic pickup used to appear only once a workout had actually come in that way,
+    /// so a rider who wanted it armed before his first import was shown nothing and told
+    /// nothing. Visibility never depends on "has done X before": what he has done changes a
+    /// footer, never whether a control exists.
+    ///
+    /// The two directions never meet — a session that came *out* of Health is excluded from
+    /// what goes back in, or importing a workout would be how you end up with two of them.
+    ///
+    /// The titles and the footers are `HealthSwitch`'s, so the automatic pickup reads the
+    /// same here and on Import → Apple Health, which are two places showing one control.
     @ViewBuilder
     private var healthSection: some View {
         Section {
-            Toggle("Add sessions to Apple Health", isOn: Binding(
+            Toggle(HealthSwitch.write.title, isOn: Binding(
                 get: { store.healthWriteEnabled },
                 set: { store.healthWriteEnabled = $0 }))
         } header: {
             Text("Apple Health")
         } footer: {
-            Text(markdown: "Off by default. Each session is written as a **Surfing** workout. "
-                 + "Apple Health has no wingfoil or windsurf activity, and Surfing is the "
-                 + "closest. The discipline, foil share, flights and best 2 s ride in its "
-                 + "metadata. Sessions you imported *from* Health are left alone, so a "
-                 + "workout never appears twice.")
+            settingFooter(HealthSwitch.write)
         }
 
-        if store.hasImportedFromHealth {
-            Section {
-                Toggle("Import new Health workouts automatically", isOn: Binding(
-                    get: { store.healthAutoImport },
-                    set: { store.healthAutoImport = $0 }))
-            } footer: {
-                Text("CleanJibe checks Apple Health when you open it and imports any new "
-                     + "workout of the types you chose on the Import screen. Anything already "
-                     + "in your library is recognised, and a workout you imported and then "
-                     + "deleted is not brought back.\n\n"
-                     + "iOS can also wake the app when a workout is saved. iOS decides "
-                     + "when, and that may be hours later. It never happens with "
-                     + "Background App Refresh off. Open CleanJibe to pick up the "
-                     + "session you just finished.")
-            }
+        Section {
+            Toggle(HealthSwitch.autoImport.title, isOn: Binding(
+                get: { store.healthAutoImport },
+                set: { store.healthAutoImport = $0 }))
+        } footer: {
+            settingFooter(HealthSwitch.autoImport)
         }
+    }
+
+    /// **What you get, in one line, and the way to the page that says how** (pattern K and
+    /// pattern B). The footer stops explaining the mechanism; the help topic keeps it.
+    private func settingFooter(_ setting: HealthSwitch) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(setting.footer)
+                .fixedSize(horizontal: false, vertical: true)
+            Button { setupTopic = setting.helpTopic } label: {
+                Text(HelpCatalog.topic(setting.helpTopic,
+                                       channel: AppChannel.channel).title)
+                    .font(.footnote.weight(.semibold))
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.accentColor)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
     #endif
 

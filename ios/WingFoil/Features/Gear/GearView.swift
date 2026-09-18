@@ -76,6 +76,8 @@ struct GearView: View {
             // the window rather than stretched across it.
             .readableColumn()
             .navigationTitle("Gear & spots")
+            // The app menu, in the slot it occupies on all four tab roots (pattern M).
+            .appMenuHost()
             .sheet(item: $editing) { gear in
                 GearEditor(gear: gear) { saved in Task { await store.saveGear(saved) } }
             }

@@ -169,6 +169,29 @@ final class SessionStore {
         }
     }
 
+    /// **Whether a library row draws its track over a map** (item 6 of the 18 Sep 2026
+    /// round). Off by default: the plain outline is the shape at a glance, and a hundred map
+    /// tiles behind a scrolling list is a cost a rider opts into rather than inherits. The
+    /// ground is `mapStyle`, the same choice every map in the app is drawn on.
+    var listMapBackdrop: Bool = SessionStore.storedListMapBackdrop {
+        didSet {
+            guard listMapBackdrop != oldValue else { return }
+            UserDefaults.standard.set(listMapBackdrop, forKey: Self.listMapBackdropKey)
+        }
+    }
+
+    static let listMapBackdropKey = "listMapBackdrop"
+
+    private static var storedListMapBackdrop: Bool {
+        UserDefaults.standard.bool(forKey: listMapBackdropKey)
+    }
+
+    /// **The Sessions tab's run, in the order it is drawing it** — what the filter left and
+    /// the grouping ordered. The session page reads it so a swipe walks the afternoons in
+    /// the order the rider is reading them (`SessionDetailView.order`). Empty until the list
+    /// has drawn once, which is the honest answer for a page reached from a notification.
+    var visibleSessionIDs: [String] = []
+
     static let replayCommentaryKey = "replayCommentary"
 
     private static var storedReplayCommentary: Bool {
@@ -2955,6 +2978,7 @@ final class SessionStore {
         mapStyle = Self.initialMapStyle()
         mapLayersByScope = Self.initialMapLayers()
         replayCommentary = Self.storedReplayCommentary
+        listMapBackdrop = Self.storedListMapBackdrop
         replayClipLength = Self.storedReplayClipLength
         replayFraming = Self.storedReplayFraming
         replayMusic = Self.storedReplayMusic

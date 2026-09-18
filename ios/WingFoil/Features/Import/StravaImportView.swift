@@ -38,7 +38,10 @@ struct StravaImportView: View {
                         emptySection
                     } else {
                         activitySection
-                        if store.hasImportedFromStrava { automaticSection }
+                        // Always, never "once a session has come in that way"
+                        // (pattern E/G): a rider who wants the pickup armed before his
+                        // first import is the rider this switch is for.
+                        automaticSection
                     }
                     typesSection
                 }

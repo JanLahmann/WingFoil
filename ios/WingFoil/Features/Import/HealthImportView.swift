@@ -30,7 +30,10 @@ struct HealthImportView: View {
                     emptySection
                 } else {
                     workoutSection
-                    if store.hasImportedFromHealth { automaticSection }
+                    // Always, never "once a workout has come in that way" (pattern E/G):
+                    // a rider who wants the pickup armed before his first import is the
+                    // rider this switch is for.
+                    automaticSection
                 }
                 typesSection
             }
@@ -91,7 +94,11 @@ struct HealthImportView: View {
         } header: {
             Text("Nothing to import")
         } footer: {
-            Text(markdown: emptyFooter)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(markdown: emptyFooter)
+                Text(ImportDoor.appleWatchApp.footer(channel: AppChannel.channel))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
@@ -111,22 +118,31 @@ struct HealthImportView: View {
         } header: {
             Text("Workouts in Health")
         } footer: {
-            Text("Tap to pick, or use Import all. " + importableLine
-                 + " The rest are already in your library. A workout with no GPS route "
-                 + "is skipped and counted. There is nothing to analyse without one.")
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Tap to pick, or use Import all. " + importableLine
+                     + " The rest are already in your library. A workout with no GPS "
+                     + "route is skipped and counted.")
+                // **The sentence a tester went looking for and did not find** (18 Sep
+                // 2026): she recorded on her Apple Watch with CleanJibe and came here for
+                // the session. It is not here and never will be, so this screen says so
+                // rather than letting her conclude the recording was lost. The kit's own
+                // words for that door (`ImportDoor.appleWatchApp`), so Import's Apple
+                // Watch section and this page cannot drift apart.
+                Text(ImportDoor.appleWatchApp.footer(channel: AppChannel.channel))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
+    /// The same control Settings → Apple Health carries, in the same words
+    /// (`HealthSwitch.autoImport`): two places showing one switch, not two switches.
     private var automaticSection: some View {
         Section {
-            Toggle("Import new Health workouts automatically", isOn: Binding(
+            Toggle(HealthSwitch.autoImport.title, isOn: Binding(
                 get: { store.healthAutoImport },
                 set: { store.healthAutoImport = $0 }))
         } footer: {
-            Text("CleanJibe checks Health when you open the app and imports anything new "
-                 + "of the types below. iOS also wakes apps for new workouts, but it "
-                 + "decides when. Open CleanJibe to pick up the session you just "
-                 + "finished.")
+            Text(HealthSwitch.autoImport.footer)
         }
     }
 

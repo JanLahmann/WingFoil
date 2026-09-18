@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import WingFoilKit
 
 /// One library row: the track at a glance on the left, the numbers on the right.
@@ -12,6 +13,16 @@ struct SessionRowView: View {
     @Environment(SessionStore.self) private var store
 
     private var thumbnail: TrackThumbnail? { thumbnails.thumbnail(for: row.id) }
+
+    /// The map under the outline, when the rider has asked for one (Settings → Session
+    /// list) and MapKit has answered. Nil is the ordinary case and draws what the row has
+    /// always drawn.
+    private var backdrop: UIImage? {
+        guard store.listMapBackdrop else { return nil }
+        return thumbnails.backdrop(for: row.id, style: store.mapStyle)
+    }
+
+    @Environment(\.displayScale) private var displayScale
 
     /// How much of the row a rider's name may take before the title starts giving way.
     /// Scaled, because at a larger text size 130 pt stops being a name and starts being
@@ -136,6 +147,13 @@ struct SessionRowView: View {
         }
         .padding(.vertical, 4)
         .task { thumbnails.request(row) }
+        // After the outline, never instead of it: the snapshot is drawn to the box the
+        // outline was fitted into, so there is nothing to line it up with until the
+        // outline exists. Asked again when the thumbnail lands and when the style changes.
+        .task(id: backdropKey) {
+            guard store.listMapBackdrop else { return }
+            thumbnails.requestBackdrop(row, style: store.mapStyle, scale: displayScale)
+        }
     }
 
     /// Track outline over a speed sparkline. Both degrade on their own: a recording with
@@ -146,6 +164,15 @@ struct SessionRowView: View {
             ZStack {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(Color(.tertiarySystemFill))
+                if let backdrop {
+                    Image(uiImage: backdrop)
+                        .resizable()
+                        .scaledToFill()
+                    // The line is the thing being read. Photography at 62 points is texture
+                    // rather than information, and a teal stroke over sunlit chop is not
+                    // legible without something taken off the ground first.
+                    Color.black.opacity(store.mapStyle.isImagery ? 0.22 : 0.10)
+                }
                 if let thumbnail, !thumbnail.points.isEmpty {
                     TrackOutlineView(thumbnail: thumbnail)
                         .padding(3)
@@ -156,6 +183,7 @@ struct SessionRowView: View {
                 }
             }
             .frame(width: 62, height: 44)
+            .clipShape(.rect(cornerRadius: 8))
 
             if let thumbnail, thumbnail.speed.count >= 2 {
                 SpeedSparklineView(values: thumbnail.speed)
@@ -165,6 +193,14 @@ struct SessionRowView: View {
             }
         }
         .accessibilityHidden(true)
+    }
+
+    /// What a new snapshot is owed to: a session, a style, and the outline it lines up
+    /// with. The switch is in it so turning the setting on asks straight away.
+    private var backdropKey: String {
+        row.id + "-" + store.mapStyle.rawValue
+            + (store.listMapBackdrop ? "-on" : "-off")
+            + (thumbnail == nil ? "-pending" : "-ready")
     }
 
     private func metric(_ symbol: String, _ value: String, _ label: String) -> some View {
