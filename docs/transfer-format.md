@@ -134,24 +134,30 @@ page bytes.
 | `e` | 1 on the last page of the stream, absent otherwise |
 | `b` | the page bytes: `ByteArray` on API ≥ 6.0.0, `Array<Number>` (one byte per Number, 0..255) below it — dev3 packs four per Number |
 
-**ACK, phone → watch**
+**ACK, phone → watch** — flat: three keys, three integers
 
 | key | value |
 |---|---|
-| `cjrAck` | `[sid, st, p]` |
+| `cjrAck` | page index |
+| `cjrSid` | session start, epoch seconds |
+| `cjrSt` | stream number |
 
 **Need, phone → watch** — sent **always** once the page with `e = 1` has arrived
 
 | key | value |
 |---|---|
-| `cjrNeed` | `[sid, st, [p, p, …]]`, at most 32 pages |
+| `cjrNeed` | the missing pages as one comma-joined string, `"1,4"`; at most 32; `""` when nothing is missing |
+| `cjrSid`, `cjrSt` | as above |
 
-The list holds the gaps, or is **empty**, and the empty list is the watch's signal that the
-stream is whole and its buffers can be freed. Sending it only for gaps would leave a watch
-that lost nothing holding a session's pages until it was next restarted. The phone sends it
-again whenever the missing set changes, and not otherwise, so a page that fills the last gap
-produces exactly one empty list. A page that arrives twice is **acknowledged again and
-stored once**.
+The empty string is the watch's signal that the stream is whole and its buffers can be
+freed. The phone sends the list again whenever the missing set changes, and not otherwise. A
+page that arrives twice is **acknowledged again and stored once**.
+
+**Why flat.** The first shape was `cjrAck: [sid, st, p]`. On the field test of 19 September
+2026 every page reached the phone and no acknowledgement ever reached the watch: Garmin's
+phone SDK does not carry a nested array in a message to a device app, and the failure came
+back as a result the phone swallowed. Nothing phone → watch nests anything now; the wind and
+the map never did, which is why they always worked. The watch still reads the array shape.
 
 The card (`PhoneLink.summary`) is sent as before, its own message after save, and can arrive
 before, between or after the pages. It is told from a page by its key, and the two paths

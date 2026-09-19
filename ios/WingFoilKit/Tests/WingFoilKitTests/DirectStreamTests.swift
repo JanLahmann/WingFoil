@@ -308,7 +308,11 @@ import Testing
         #expect(page.pageCount == 0)
         #expect(!page.isLast)
         #expect(page.bytes == Data([1, 2, 3, 4]))
-        #expect(page.ack["cjrAck"] as? [Int] == [1_756_556_820, 0, 3])
+        #expect(page.ack["cjrAck"] as? Int == 3)
+        #expect(page.ack["cjrSid"] as? Int == 1_756_556_820)
+        #expect(page.ack["cjrSt"] as? Int == 0)
+        // Flat: no value in the message is an array or a dictionary (19 September 2026).
+        #expect(page.ack.values.allSatisfy { $0 is Int })
     }
 
     /// The fenix 7 and the fenix 5 Plus predate `ByteArray`, so a page from one is an array
@@ -347,11 +351,14 @@ import Testing
     /// the empty list is what tells the watch it may free the stream.
     @Test func theNeedListIsCappedAndAlwaysSent() {
         let none = DirectPage.need(sessionStartEpochS: 7, stream: 0, pages: [])
-        #expect(none["cjrNeed"] as? [Any] != nil)
+        #expect(none["cjrNeed"] as? String == "")
+        #expect(none["cjrSid"] as? Int == 7)
         let many = DirectPage.need(sessionStartEpochS: 7, stream: 0,
                                    pages: Array(0..<100))
-        let parts = try? #require(many["cjrNeed"] as? [Any])
-        #expect((parts?[2] as? [Int])?.count == DirectPage.maxNeed)
+        let list = try? #require(many["cjrNeed"] as? String)
+        #expect(list?.split(separator: ",").count == DirectPage.maxNeed)
+        #expect(DirectPage.need(sessionStartEpochS: 7, stream: 0, pages: [1, 4])["cjrNeed"]
+                as? String == "1,4")
     }
 
     // MARK: - The stream as a RawTrack

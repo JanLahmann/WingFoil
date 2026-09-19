@@ -120,12 +120,19 @@ public struct DirectPage: Sendable, Equatable {
 
     /// The same message from three integers, for a caller that has the numbers rather than
     /// the page — the link answers a repeat it did not store.
+    /// **Flat, on purpose.** The first shape was `cjrAck: [sid, st, p]`, and on the field
+    /// test of 19 September 2026 every page reached the phone and no acknowledgement ever
+    /// reached the watch: Garmin's phone SDK does not carry a nested array in a message, and
+    /// the failure came back as a swallowed result. Three integers under three keys is what
+    /// the wind and the map already send and what arrives.
     public static func ack(sessionStartEpochS: Int, stream: Int, index: Int) -> [String: Any] {
-        [ackKey: [sessionStartEpochS, stream, index]]
+        [ackKey: index, sidKey: sessionStartEpochS, streamKey: stream]
     }
 
     public static let ackKey = "cjrAck"
     public static let needKey = "cjrNeed"
+    public static let sidKey = "cjrSid"
+    public static let streamKey = "cjrSt"
 
     /// **The need list, phone → watch.** Sent once the page with `e = 1` has arrived, always
     /// — with the pages that are missing, or with an empty list, which is the watch's signal
@@ -133,7 +140,10 @@ public struct DirectPage: Sendable, Equatable {
     /// the message has to fit the same radio the pages do.
     public static func need(sessionStartEpochS: Int, stream: Int,
                             pages: [Int]) -> [String: Any] {
-        [needKey: [sessionStartEpochS, stream, Array(pages.prefix(maxNeed))]]
+        // The pages as one comma-joined string, for the same reason the ack is flat; an
+        // empty string is the empty list.
+        let list = pages.prefix(maxNeed).map(String.init).joined(separator: ",")
+        return [needKey: list, sidKey: sessionStartEpochS, streamKey: stream]
     }
 
     public static let maxNeed = 32
