@@ -64,6 +64,37 @@ public enum WhatsNew {
     public static let entries: [WhatsNewEntry] = [
         WhatsNewEntry(
             version: "0.15.0",
+            build: 79,
+            channel: .beta,
+            date: "2026-09-19",
+            dateText: "19 September 2026",
+            title: "Names, help and three more trend lines",
+            lines: [
+                "Every screen is named by what it does. Details, Turn 3 of 12, Import from Strava.",
+                "Trends draw jibes per hour, turns per hour and the best 2 seconds.",
+                "A best 2 s without the watch's own speed draws as an open ring. The caption names the session.",
+                "Help answers a Garmin rider: why Windsurf, where Garmin Connect shows the jibes, why Runs stays empty.",
+                "Help says why the watch shows km/h while the app shows knots.",
+                "Please check the Trends tab and the new screen names.",
+            ]),
+        WhatsNewEntry(
+            version: "0.15.0",
+            build: 78,
+            channel: .dev,
+            date: "2026-09-19",
+            dateText: "19 September 2026",
+            title: "Your round on 76",
+            lines: [
+                "Every screen is named by what it does. Details, Turn 3 of 12, Import from Strava.",
+                "Trends draw jibes per hour, turns per hour and the best 2 seconds.",
+                "A best 2 s without the watch's own speed draws as an open ring. The caption names the session.",
+                "Help answers a Garmin rider: why Windsurf, where Garmin Connect shows the jibes, why Runs stays empty.",
+                "Help says why the watch shows km/h while the app shows knots.",
+                "Settings → Garmin watch → Link probe measures the watch link. It needs the 0.9.14 watch app.",
+                "Please check the Trends tab and the link probe.",
+            ]),
+        WhatsNewEntry(
+            version: "0.15.0",
             build: 77,
             channel: .beta,
             date: "2026-09-19",
