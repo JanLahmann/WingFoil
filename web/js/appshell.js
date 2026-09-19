@@ -221,6 +221,13 @@ function wireWelcome() {
     markWelcomeSeen();
     dialog.close();
   });
+  // The phone's third door (docs/screens.md, What CleanJibe does). A rider with a Garmin
+  // takes this one, and the browser had nowhere to send him from here.
+  el("welcome-icu").addEventListener("click", () => {
+    markWelcomeSeen();
+    dialog.close();
+    showPage("settings");
+  });
   el("welcome-example").addEventListener("click", () => {
     markWelcomeSeen();
     dialog.close();
@@ -368,8 +375,10 @@ async function renderGear() {
   } catch { /* storage refused; the empty state below is the honest answer */ }
 
   if (!entries.length) {
-    host.innerHTML = `<p class="note">No sessions yet, so no spots and no gear. A session
-      brings both.</p>
+    // The phone's own sentence for this half of the tab (docs/screens.md, Gear & spots;
+    // docs/web-design-review.md, finding 4). The wings half says "No wings yet" under it,
+    // from js/gear.js, which is where the phone says it too.
+    host.innerHTML = `<p class="note">No spots yet. A session with GPS brings them.</p>
       <p><button class="ghost small-btn" type="button" data-goto="sessions">Go to
         Sessions</button></p>`;
     // r3-w1: the quiver is not a fact about the library. A rider may put his wings in

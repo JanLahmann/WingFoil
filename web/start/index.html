@@ -57,11 +57,12 @@
       <p class="sub">Wing foiling, measured.</p>
     </div>
   </a>
-  <!-- The same two doors as every other page: the free thing that needs no install, and the
-       beta beside it. -->
-  <div class="topbar-right">
-    <a class="btn ghost wide-only" href="https://github.com/JanLahmann/WingFoil" rel="noopener" data-umami-event="github">GitHub</a>
-  </div>
+  <!-- NOTHING TO THE RIGHT OF THE BRAND. The repo link sat here, in a bar of its
+       own, on every page: a third piece of furniture over a row that already
+       carries two links and two doors (docs/web-design-review.md, finding 15). It
+       is in the footer, once, where a reader looks for it.
+       ONE HEADER PER PRODUCT: /app/ has its own, the mark and the Menu button, and
+       carries no site nav at all. -->
 <!-- sitenav:begin — COPIED VERBATIM ON ALL SEVEN READER PAGES. The only thing that differs
      is which link carries `aria-current="page"`; web/tools/verify_links.py compares this
      block byte for byte across /, /start/, /help/, /invite/, /app/, /privacy/ and
@@ -112,18 +113,6 @@
       <li><a href="#history">Your old sessions</a></li>
       <li><a href="#tell">Tell us</a></li>
     </ul>
-    <label class="jump">
-      <span class="sr-only">On this page</span>
-      <select>
-        <option value="">On this page&hellip;</option>
-        <option value="#routes">The routes</option>
-        <option value="#stuck">If something breaks</option>
-        <option value="#report">What to say</option>
-        <option value="#watches">Which watch</option>
-        <option value="#history">Your old sessions</option>
-        <option value="#tell">Tell us</option>
-      </select>
-    </label>
   </div>
 </nav>
 
@@ -847,9 +836,9 @@
 <!-- The three moving parts of the page chrome, identical on every document here.
      `--topbar-h` is MEASURED rather than guessed: the topbar is sticky, carries the site nav
      and changes height at every breakpoint, and the section nav under it has to stick
-     exactly below it. The `js` class is what lets the stylesheets swap both link rows for
-     their selects on a phone — without JavaScript a select cannot navigate, so the links
-     stay instead and the nav is never a control that does nothing. -->
+     exactly below it. The `js` class marks a document whose script ran; no stylesheet
+     needs it since the section nav became a row of chips rather than a select, and a page
+     with no JavaScript at all now loses nothing but the measurement. -->
 <script>
   (function () {
     var root = document.documentElement, bar = document.querySelector(".topbar");
@@ -857,10 +846,6 @@
     function fit() { root.style.setProperty("--topbar-h", bar.offsetHeight + "px"); }
     fit();
     addEventListener("resize", fit);
-    var jump = document.querySelector(".sectionnav select");
-    if (jump) jump.addEventListener("change", function () {
-      if (this.value) { location.hash = this.value; this.selectedIndex = 0; }
-    });
   })();
 </script>
 

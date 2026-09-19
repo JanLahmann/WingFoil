@@ -32,10 +32,13 @@
  * tagline goes, the padding shrinks). The fallback below is the desktop measurement, so a
  * page whose script never ran is a few pixels out rather than broken.
  *
- * Below 720 px the row would eat three lines of a phone screen, so it becomes one select.
- * The links are still in the markup and are what a reader WITHOUT JavaScript keeps: the
- * swap is gated on the `js` class the same script sets, so the select can never be the only
- * nav on a page where nothing can act on it.
+ * Below 720 px it is a ROW OF CHIPS THAT SCROLLS SIDEWAYS, the shape the session switcher
+ * in the app already has. It used to become a full-width grey <select> saying "On this
+ * page…", which Jan photographed on 19 September 2026: under a page header, a grey box with
+ * a caret reads as a form field a reader is meant to fill in, not as the contents of the
+ * page (docs/web-design-review.md, finding 13). The anchors are the same anchors, the links
+ * are the same links, and a reader without JavaScript loses nothing, because there is no
+ * longer a control that needs any.
  */
 .sectionnav {
   position: sticky; top: var(--topbar-h, 69px); z-index: 19;
@@ -55,22 +58,37 @@
   color: var(--ink-3);
 }
 .sectionnav a:hover { color: var(--ink); }
-.sectionnav .jump { display: none; }
-.sectionnav select {
-  width: 100%; min-height: var(--tap);
-  background: var(--surface-2); color: var(--ink-2);
-  border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px;
-  font: 600 12.5px/1 var(--mono);
-}
 
 /* Both sticky bars sit over an anchor's landing point, so every target the nav can reach
    has to reserve their height above itself. */
 .home-section, .hero-card { scroll-margin-top: calc(var(--topbar-h, 69px) + 44px); }
 
+/* The chips. Same trough-less pill as the session switcher's chips, the same 12.5 px sans,
+   and the row bleeds to both screen edges so a scroll looks like a scroll rather than like
+   a clipped box — the site nav one bar above does exactly this, and the end gutter is the
+   last item's own padding for the reason written there. */
 @media (max-width: 720px) {
-  .js .sectionnav ul { display: none; }
-  .js .sectionnav .jump { display: block; }
-  .sectionnav-inner { padding-top: 7px; padding-bottom: 7px; }
+  .sectionnav-inner {
+    padding-top: 7px; padding-bottom: 7px;
+    padding-inline: 0;
+  }
+  .sectionnav ul {
+    flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; gap: 6px;
+    -webkit-overflow-scrolling: touch;
+    padding-inline-start: var(--pad-x, 16px);
+    scroll-padding-inline: var(--pad-x, 16px);
+  }
+  .sectionnav ul::-webkit-scrollbar { display: none; }
+  .sectionnav li { flex: 0 0 auto; }
+  .sectionnav li:last-child { padding-inline-end: var(--pad-x, 16px); }
+  .sectionnav a {
+    display: inline-flex; align-items: center; min-height: 34px;
+    padding: 0 12px; border-radius: 999px;
+    background: var(--surface-2); color: var(--ink-2);
+    font: 600 12.5px/1 var(--sans); letter-spacing: 0; text-transform: none;
+    white-space: nowrap;
+  }
+  .sectionnav a:hover { background: var(--surface-0); color: var(--ink); }
 }
 
 /* ---------------------------------------------------------------------- hero */

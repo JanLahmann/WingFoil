@@ -126,6 +126,15 @@ export async function refresh() {
 }
 
 async function renderSub(entries) {
+  // **A CONTROL THAT IS OFF SAYS WHY** (pattern G; docs/web-design-review.md, finding 5).
+  // `Download all (.zip)` is greyed out on a first visit and the line beside it was blank,
+  // so the panel was a heading and a dead button. The sentence is the screen's own
+  // (docs/screens.md, the web's Sessions empty state).
+  if (!entries.length) {
+    el("lib-sub").textContent =
+      "Nothing saved yet. Analyze a file and press Save to library.";
+    return;
+  }
   const u = await usage();
   const where = await storageLabel();
   const bits = [`${entries.length} session${entries.length === 1 ? "" : "s"}`];
@@ -207,6 +216,14 @@ function renderRows(entries) {
     return;
   }
 
+  // **THE BADGE'S MEANING, WITHIN REACH** (pattern H; docs/web-design-review.md, finding
+  // 12). "Example" and a rider's name carried theirs in a `title`, which a phone cannot
+  // open. One line under the list, and only where a badge is actually on it.
+  const aside = entries.some((e) => e.example || e.rider)
+    ? `<p class="muted small lib-note">Example and a friend's name mean the session stays
+        out of your records and trends.</p>`
+    : "";
+
   host.innerHTML = `<ul class="lib-list">${entries.map((e) => `
     <li class="lib-row" data-id="${esc(e.id)}">
       <button class="lib-open" type="button" data-act="open">
@@ -225,7 +242,7 @@ function renderRows(entries) {
         <button class="ghost small-btn danger" data-act="delete">Delete</button>
         <span class="dim small">${esc(mb((e.bytesFit || 0) + (e.bytesJson || 0)))}</span>
       </span>
-    </li>`).join("")}</ul>`;
+    </li>`).join("")}</ul>${aside}`;
 }
 
 /**

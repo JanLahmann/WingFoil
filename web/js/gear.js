@@ -156,8 +156,20 @@ async function useCounts() {
  */
 export async function renderQuiver(host) {
   if (!host) return;
-  const rows = await listGear();
-  const counts = await useCounts();
+  // **THE FAILURE GETS ITS SENTENCE** (pattern G; docs/web-design-review.md, finding 8).
+  // The quiver reads IndexedDB, which a locked-down browser refuses outright. The panel
+  // used to stay empty, and an empty panel is hidden by css/app.css forever, so the rider
+  // was told nothing at all.
+  let rows;
+  let counts;
+  try {
+    rows = await listGear();
+    counts = await useCounts();
+  } catch {
+    host.innerHTML = `<p class="note">Your gear could not be read. This browser is not
+      saving anything right now.</p>`;
+    return;
+  }
   const empty = host.dataset.empty || "";
   const parts = [];
   for (const kind of KINDS) {

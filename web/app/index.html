@@ -70,7 +70,20 @@
 </head>
 <body>
 
-<header class="topbar">
+<!-- THE APP'S OWN HEADER, and the only one on this page (Jan, 19 September 2026:
+     "Layout still not really nice"; docs/web-design-review.md, findings 3 and 15).
+
+     The marketing site nav used to sit here, stacked over the app's tab bar, so the page
+     carried two navigations and a loud blue "Open the app" door to the page it was already
+     on. The iPhone app has ONE toolbar, so this has one bar: the mark, the name, and the
+     Menu button. *Get started* and *Help* did not go anywhere — they are menu rows, as
+     *Getting started* and *Help*, which is where the phone keeps them.
+
+     web/tools/verify_links.py knows: it byte-pins the site nav across the six reader pages
+     and holds THIS page to the app header instead. The footer stays the site's, byte for
+     byte, and it is where the GitHub link lives now, on every page. -->
+<header class="topbar app-topbar">
+<!-- appheader:begin -->
   <!-- THE APP MENU, ON EVERY TAB, IN THE SAME PLACE (docs/review-checklist.md, pattern M).
        The iPhone app puts it at `.topBarLeading` on all four tab roots (ios/WingFoil/App/
        AppMenu.swift); this is the same button in the same corner, and it is in the page
@@ -81,57 +94,17 @@
     <span class="menu-glyph" aria-hidden="true"></span>Menu
   </button>
   <!-- The mark and the name are the way back to the project homepage at the site root —
-       the ordinary web convention, and the only navigation the analyzer needs to it. -->
+       the ordinary web convention, and the only navigation the analyzer needs to it. The
+       name is not an <h1> here: the page's own title is the tab root's, one screen down,
+       which is what the phone puts at the top of a tab. -->
   <a class="brand" href="../">
     <span class="mark" aria-hidden="true"></span>
-    <div>
-      <!-- The name and one line of what this page is. Neither says "Lab" and neither names
-           a Python module: the first tells a rider nothing and reads as unfinished, the
-           second is repo interiority in the second line of the page. What the engine is
-           made of is a fact for the README, not for someone holding a .fit file. -->
-      <h1>CleanJibe</h1>
-      <p class="sub">Wingfoil session analyzer</p>
-    </div>
+    <span class="brand-name">CleanJibe</span>
   </a>
   <div class="topbar-right">
     <span class="chip" id="engine-chip" hidden>engine</span>
   </div>
-<!-- sitenav:begin — COPIED VERBATIM ON ALL SEVEN READER PAGES. The only thing that differs
-     is which link carries `aria-current="page"`; web/tools/verify_links.py compares this
-     block byte for byte across /, /start/, /help/, /invite/, /app/, /privacy/ and
-     /impressum/ with that one attribute stripped, so an edit here is an edit everywhere or
-     it is a failed check. The three redirect stubs — /learn/, /watches/ and /whats-new/ —
-     carry no nav, because they are on screen for a frame.
-
-     ONE PRODUCT, THREE SHELLS (Jan, 19 September 2026). The row was four destinations and
-     is two: *Get started* absorbed *Which watch*, and *Help* is the app's own help
-     catalogue, which is where *What it measures* went. *What's new* is the second half of
-     *Get the beta* now. Two links a stranger can hold in his head, and the two doors beside
-     them as what they are, buttons.
-
-     THE DOORS LIVE HERE, not in `.topbar-right` beside GitHub. They used to sit one row
-     above this one and say "Open the analyzer", which is a name for a tool rather than for
-     a product: it is *Open the app*, and it is the same sentence in the hero, in the footer
-     and in the store texts. One name per door.
-
-     The hrefs are ROOT-RELATIVE so one block can serve a page at the site root and a page a
-     directory down. The site is the root of cleanjibe.org, and of `python3 -m http.server`
-     run in web/, which is the same thing; verify_links.py resolves them.
-
-     The two links wear the section nav's furniture — the eyebrow's mono, uppercase,
-     --ink-3 — because they are navigation one level up. On a phone the row stays a row and
-     scrolls sideways if a font makes it not. -->
-<nav class="sitenav" aria-label="Site">
-  <ul>
-    <li><a href="/start/">Get started</a></li>
-    <li><a href="/help/">Help</a></li>
-    <li class="doors">
-      <a class="btn primary" href="/app/" data-umami-event="app-cta-nav">Open the app</a>
-      <a class="btn ghost" href="/invite/" data-umami-event="beta-cta-nav">Get the beta</a>
-    </li>
-  </ul>
-</nav>
-<!-- sitenav:end -->
+<!-- appheader:end -->
 </header>
 
 <!-- ----------------------------------------------------------------- the app menu -->
@@ -143,16 +116,21 @@
      A real <dialog>: showModal() brings the focus trap, the backdrop and the Escape key,
      which is what the iPhone's menu does for free. Wiring: js/appshell.js. -->
 <dialog id="app-menu" class="ask app-menu" aria-label="Menu">
-  <ul class="menu-rows">
-    <li><button type="button" data-menu="whatItDoes">What CleanJibe does</button></li>
-    <li><button type="button" data-menu="gettingStarted">Getting started</button></li>
-    <li class="after-divider"><button type="button" data-menu="settings">Settings</button></li>
-    <li><button type="button" data-menu="help">Help</button></li>
-    <li><button type="button" data-menu="support">Support &amp; ideas</button></li>
-  </ul>
-  <p class="fineprint" id="menu-build"></p>
-  <div class="ask-actions">
-    <button type="button" class="ghost" id="app-menu-close">Close</button>
+  <div class="ask-form menu-sheet" tabindex="-1" autofocus>
+    <ul class="menu-rows">
+      <li><button type="button" data-menu="whatItDoes"><svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 13V6.4a1.4 1.4 0 0 1 2.8 0V12m0-6.1V4.9a1.4 1.4 0 0 1 2.8 0V12m0-5.3a1.4 1.4 0 0 1 2.8 0V13m0-2.6a1.4 1.4 0 0 1 2.8 0V15a5.5 5.5 0 0 1-5.5 5.5h-1A5.5 5.5 0 0 1 8 15v-2.3a1.4 1.4 0 0 0-2.8 0v1.6M4 5.6 2.6 4.2M6.4 3.4V1.6"/></svg>What CleanJibe does</button></li>
+      <li><button type="button" data-menu="gettingStarted"><svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.4A3 3 0 0 0 9.4 5H4.6a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h4.8A3 3 0 0 1 12 19.4a3 3 0 0 1 2.6-1.4h4.8a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-4.8A3 3 0 0 0 12 6.4zm0 0V19"/></svg>Getting started</button></li>
+      <li class="after-divider"><button type="button" data-menu="settings"><svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.1 5.4 10.2 2.9 13.8 2.9 13.9 5.4 15.3 6 17.2 4.3 19.7 6.8 18 8.7 18.6 10.1 21.1 10.2 21.1 13.8 18.6 13.9 18 15.3 19.7 17.2 17.2 19.7 15.3 18 13.9 18.6 13.8 21.1 10.2 21.1 10.1 18.6 8.7 18 6.8 19.7 4.3 17.2 6 15.3 5.4 13.9 2.9 13.8 2.9 10.2 5.4 10.1 6 8.7 4.3 6.8 6.8 4.3 8.7 6Z"/><circle cx="12" cy="12" r="3.2"/></svg>Settings</button></li>
+      <li><button type="button" data-menu="help"><svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.6a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .9-1 1.7v.3"/><circle cx="12" cy="17" r="0.9"/></svg>Help</button></li>
+      <li><button type="button" data-menu="support"><svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.3" y="5.5" width="17.4" height="13" rx="2.4"/><path d="m4.2 7.2 6.9 5a1.6 1.6 0 0 0 1.8 0l6.9-5"/></svg>Support &amp; ideas</button></li>
+    </ul>
+    <!-- The build line as a footer, under a hairline, in the sheet's quietest ink: the
+         phone puts it under its own divider at the foot of the menu, and on a screenshot
+         an unstyled version string in the middle of the rows read as a sixth row. -->
+    <p class="menu-build" id="menu-build"></p>
+    <div class="ask-actions">
+      <button type="button" class="ghost" id="app-menu-close">Close</button>
+    </div>
   </div>
 </dialog>
 
@@ -197,13 +175,18 @@
   <section class="panel" id="sessions-head">
     <div class="panel-head">
       <div>
-        <h2>Sessions</h2>
+        <h1 class="page-title">Sessions</h1>
         <p class="muted small" id="lib-sub"></p>
       </div>
       <div class="head-right">
         <button class="ghost" id="lib-export" type="button" disabled>Download all (.zip)</button>
       </div>
     </div>
+    <!-- Android handed this tab a file and the slot was empty by the time the page read it
+         (js/app.js, `takeSharedFile`). It used to call nothing and say nothing, and the
+         rider landed on an untouched Sessions tab (docs/web-design-review.md, finding 18). -->
+    <p class="note" id="shared-note" hidden>That shared file did not arrive. Share it again
+      and pick CleanJibe.</p>
   </section>
 
   <!-- ------------------------------------------------- the ways in / the drop target -->
@@ -435,7 +418,7 @@
                second line to put a footnote on. This panel has none — its head is a title
                and a badge row — so the badge is the idiom that is already here, in the
                same recessive ink as "measured speed" beside it. -->
-          <h2 id="session-title"><span id="session-date">Session</span><span class="badge" id="not-a-session-tag" hidden></span></h2>
+          <h1 class="page-title" id="session-title"><span id="session-date">Session</span><span class="badge" id="not-a-session-tag" hidden></span></h1>
           <p class="muted small" id="session-sub"></p>
         </div>
         <div class="head-right">
@@ -620,7 +603,7 @@
   <section class="panel">
     <div class="panel-head">
       <div>
-        <h2>Records</h2>
+        <h1 class="page-title">Records</h1>
         <p class="muted small">Your bests across the library. A record set without the
           watch's own speed channel is marked uncertified.</p>
       </div>
@@ -639,7 +622,7 @@
   <section class="panel">
     <div class="panel-head">
       <div>
-        <h2>Trends</h2>
+        <h1 class="page-title">Trends</h1>
         <p class="muted small">Session by session, over the library. Computed in Python, in
           the worker.</p>
       </div>
@@ -661,7 +644,7 @@
   <section class="panel">
     <div class="panel-head">
       <div>
-        <h2>Gear &amp; spots</h2>
+        <h1 class="page-title">Gear &amp; spots</h1>
         <p class="muted small">Sessions that start within 500 m of each other are one spot.
           Name your gear per session. Both stay in this browser.</p>
       </div>
@@ -677,6 +660,18 @@
 
 <!-- ================================================================== SETTINGS -->
 <div class="page" id="page-settings" data-page="settings" hidden>
+
+  <p class="crumb"><button class="linkish" type="button" data-goto="sessions">Back to
+    Sessions</button></p>
+
+  <section class="panel" id="settings-head">
+    <div class="panel-head">
+      <div>
+        <h1 class="page-title">Settings</h1>
+        <p class="muted small">Your accounts, your units and what this browser keeps.</p>
+      </div>
+    </div>
+  </section>
 
   <!-- intervals.icu, moved here from the topbar: Settings is where an account is kept, on
        this surface as on the phone. -->
@@ -764,10 +759,18 @@
 
 <!-- ====================================================================== HELP -->
 <div class="page" id="page-help" data-page="help" hidden>
+
+  <!-- A DESTINATION NAMES ITSELF, AND SAYS HOW TO LEAVE (docs/review-checklist.md, pattern
+       A; docs/web-design-review.md, finding 9). Help and Settings are menu rows, so no tab
+       is marked while they are open and a rider could not tell a page from a tab. The
+       crumb is the session page's, in the session page's words. -->
+  <p class="crumb"><button class="linkish" type="button" data-goto="sessions">Back to
+    Sessions</button></p>
+
   <section class="panel">
     <div class="panel-head">
       <div>
-        <h2>Help</h2>
+        <h1 class="page-title">Help</h1>
         <p class="muted small" id="help-sub"></p>
       </div>
     </div>
@@ -801,10 +804,22 @@
      links: the app routes on `#/sessions` and a fragment that names no element on the page
      is not an anchor, so a link here would promise a jump it never makes. -->
 <nav class="tabbar" id="tabbar" aria-label="Tabs">
-  <button type="button" data-tab="sessions" aria-current="page">Sessions<span class="count" hidden></span></button>
-  <button type="button" data-tab="records">Records</button>
-  <button type="button" data-tab="trends">Trends</button>
-  <button type="button" data-tab="gear">Gear &amp; spots</button>
+  <button type="button" data-tab="sessions" aria-current="page">
+    <span class="tab-glyph" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2.5 8q2.4-2.6 4.8 0t4.8 0 4.8 0M2.5 13q2.4-2.6 4.8 0t4.8 0 4.8 0M2.5 18q2.4-2.6 4.8 0t4.8 0 4.8 0"/></svg><span class="count" hidden></span></span>
+    <span class="tab-label">Sessions</span>
+  </button>
+  <button type="button" data-tab="records">
+    <span class="tab-glyph" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7.6 4h8.8v4.6a4.4 4.4 0 0 1-8.8 0zM7.6 5.6H5.2a2.4 2.4 0 0 0 2.6 4.3M16.4 5.6h2.4a2.4 2.4 0 0 1-2.6 4.3M12 13.1v3.2M8.4 20h7.2l-1-3.7H9.4z"/></svg></span>
+    <span class="tab-label">Records</span>
+  </button>
+  <button type="button" data-tab="trends">
+    <span class="tab-glyph" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 3.5v16a1 1 0 0 0 1 1h15M7.5 16l3.6-4.4 3 2.4 4.9-7.4"/></svg></span>
+    <span class="tab-label">Trends</span>
+  </button>
+  <button type="button" data-tab="gear">
+    <span class="tab-glyph" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5.6 7.5h12.8l-1 12.2a1 1 0 0 1-1 .8H7.6a1 1 0 0 1-1-.8zM9.2 7.5V6a2.8 2.8 0 0 1 5.6 0v1.5"/></svg></span>
+    <span class="tab-label">Gear &amp; spots</span>
+  </button>
 </nav>
 
 <!-- ------------------------------------------------------------------- welcome -->
@@ -815,8 +830,12 @@
 <dialog id="welcome-dialog" class="ask welcome" aria-labelledby="welcome-title">
   <h2 id="welcome-title">CleanJibe</h2>
   <div id="welcome-body"></div>
+  <!-- THE PHONE'S THREE DOORS, affirmative last (docs/screens.md, "What CleanJibe does").
+       *Set up intervals.icu* is the one a rider with a Garmin takes, and the welcome had
+       two doors where the phone has three. -->
   <div class="ask-actions">
     <button type="button" class="ghost" id="welcome-close">Later</button>
+    <button type="button" class="ghost" id="welcome-icu">Set up intervals.icu</button>
     <button type="button" class="primary" id="welcome-example">Try the example session</button>
   </div>
 </dialog>
@@ -1132,9 +1151,9 @@
 <!-- The three moving parts of the page chrome, identical on every document here.
      `--topbar-h` is MEASURED rather than guessed: the topbar is sticky, carries the site nav
      and changes height at every breakpoint, and the section nav under it has to stick
-     exactly below it. The `js` class is what lets the stylesheets swap both link rows for
-     their selects on a phone — without JavaScript a select cannot navigate, so the links
-     stay instead and the nav is never a control that does nothing. -->
+     exactly below it. The `js` class marks a document whose script ran; no stylesheet
+     needs it since the section nav became a row of chips rather than a select, and a page
+     with no JavaScript at all now loses nothing but the measurement. -->
 <script>
   (function () {
     var root = document.documentElement, bar = document.querySelector(".topbar");
@@ -1142,10 +1161,6 @@
     function fit() { root.style.setProperty("--topbar-h", bar.offsetHeight + "px"); }
     fit();
     addEventListener("resize", fit);
-    var jump = document.querySelector(".sectionnav select");
-    if (jump) jump.addEventListener("change", function () {
-      if (this.value) { location.hash = this.value; this.selectedIndex = 0; }
-    });
   })();
 </script>
 

@@ -3855,6 +3855,21 @@ the menu, the toolbar's Import, the empty-library card, the actions Help hands b
 one property. The `UI_SHEET=help|settings|import|tuning|discipline` and `UI_HELP_TOPIC` hooks
 are unchanged from the outside.
 
+**The browser's copy of it, and of the tab bar** (19 September 2026). The web app is the
+port, so `/app/` wears one bar and it is the app's: the mark, the name and the same **Menu**
+button in the same corner (`web/app/index.html`, between `<!-- appheader:begin -->` and
+`<!-- appheader:end -->`). The marketing site nav — *Get started · Help · Open the app · Get
+the beta* — is on the six reader pages and on none of the app, because two navigations
+stacked over the app's own tab bar is what Jan photographed that morning, and because *Open
+the app* was a loud door to the page it was on. The two links it took away are menu rows
+already, as *Getting started* and *Help*. `web/tools/verify_links.py` byte-pins the nav
+across the six and holds `/app/` to the app header instead. The menu sheet itself is the
+phone's: the five rows of `AppMenuRow.ordered` with the phone's symbols drawn as line icons,
+the one divider above *Settings*, the build line as a footer under a hairline, and *Close*.
+The **tab bar** carries the phone's four glyphs over its four words — `water.waves`,
+`trophy`, `chart.xyaxis.line`, `bag` — the chosen tab is marked by ink rather than by a box,
+and the bar's height is its content plus `env(safe-area-inset-bottom)`, paid once.
+
 ## Settings — switches and accounts, and nothing that is already in the menu
 
 Settings opened with three rows — *What CleanJibe does*, *Help* (then still called *What

@@ -153,7 +153,13 @@ app, any .fit, Strava, and the Garmin ZIP last.
     cached, and a paragraph on `/privacy` that says who sees it. The clusterer is the same
     500 m single-link rule at both ends, ported rather than called through Pyodide, because
     the lab bundle's own clusterer runs at 3 km and answers a different question (trips).
-14. **A spot row carries its totals.** The phone dropped the distance and the foil time from
+14. **`/app/` wears the app's header, not the site's.** Every reader page carries the site
+    nav; the app carries the mark, the name and the Menu button, because the iPhone app has
+    one toolbar and a second navigation over the tab bar is a second shell on one screen
+    (Jan, 19 September 2026). *Get started* and *Help* are not lost: they are the menu rows
+    *Getting started* and *Help*. The footer is the site's, byte for byte, on the app as
+    everywhere else, and it is the one place the repo link lives.
+15. **A spot row carries its totals.** The phone dropped the distance and the foil time from
     its spot rows when the list moved onto the Gear tab, because a session list one tap away
     can be sorted by spot. The browser has no such list, so the two totals stay.
 

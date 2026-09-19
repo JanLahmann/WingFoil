@@ -24,12 +24,17 @@ import { track } from "./track.js";
 
 const el = (id) => document.getElementById(id);
 
-/** The four, in the phone's order and its words. `since` is a day, `null` for all time. */
+/** The four, in the phone's order and its words. `since` is a day, `null` for all time.
+ *
+ *  `short` is what the SEGMENT prints where there is no room for the full name: at 400 px
+ *  "Custom range…" wrapped to two lines inside a one-line control, and a control that
+ *  breaks its own shape reads as a bug (docs/web-design-review.md, finding 14). The full
+ *  name stays the button's accessible name and the sheet's own title. */
 const RANGES = [
   { id: "fourWeeks", label: "4 w" },
   { id: "season", label: "Season" },
   { id: "all", label: "All" },
-  { id: "custom", label: "Custom range…" },
+  { id: "custom", label: "Custom range…", short: "Custom…" },
 ];
 
 /** The phone opens on Season, so this does (`@State private var range = TrendRange.season`). */
@@ -99,7 +104,9 @@ export function renderRange() {
     ? `<span class="dim">${esc(from || "the start")} to ${esc(to || "today")}</span>` : "";
   host.innerHTML = `<div class="trend-range seg" role="group" aria-label="Range">
     ${RANGES.map((r) => `<button type="button" class="seg-btn" data-range="${esc(r.id)}"
-      aria-pressed="${r.id === chosen}">${esc(r.label)}</button>`).join("")}
+      aria-pressed="${r.id === chosen}" aria-label="${esc(r.label)}"><span
+      class="seg-wide">${esc(r.label)}</span>${r.short
+        ? `<span class="seg-narrow">${esc(r.short)}</span>` : ""}</button>`).join("")}
     ${line}</div>`;
 }
 

@@ -7,6 +7,7 @@
 
 import { mountShell, noteEngine, offerWelcome, setSessionCount, showPage }
   from "./appshell.js";
+import { WHATS_NEW } from "./appcopy.js";
 import { mountIcu } from "./icu.js";
 import { mountLibrary, openStoredSession, refresh as refreshLibrary, saveSession }
   from "./library.js";
@@ -562,9 +563,34 @@ function onShowPage(page) {
  * user's back: a swap mid-analysis would reload the page and throw the result away. The
  * new worker waits until "Reload" is pressed.
  */
+/** *Later* on the update banner, remembered for the build it was said about.
+ *
+ * It only set `hidden`, so the bar came back on every reload and the rider said no to the
+ * same version all afternoon (docs/web-design-review.md, finding 6). The key carries the
+ * version it was dismissed at, so the NEXT update asks again. In try/catch throughout: a
+ * preference that cannot be read must never be the reason a page misbehaves, which is the
+ * contract the install banner in web/app/index.html already keeps. */
+const UPDATE_DISMISS_KEY = "cleanjibe.update.dismissed";
+
+function updateDismissed(tag) {
+  try {
+    return localStorage.getItem(UPDATE_DISMISS_KEY) === tag;
+  } catch { return false; }
+}
+
+function rememberUpdateDismissed(tag) {
+  try {
+    localStorage.setItem(UPDATE_DISMISS_KEY, tag);
+  } catch { /* private window: offer it again */ }
+}
+
 function wireServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
   const banner = el("update-banner");
+  // WHICH BUILD THE RIDER SAID *Later* ON. The worker's script URL never changes, so it
+  // cannot be the key; the build that is running while the offer is made can, and it is
+  // the one fact that moves when the update is finally taken.
+  const tag = () => String(WHATS_NEW[0]?.version || "unknown");
 
   // `sw.js` stays at the site ROOT even though the page is at /app/, and that placement is
   // the point: a worker's default scope is its own directory, so a root script controls the
@@ -576,7 +602,7 @@ function wireServiceWorker() {
       if (!worker) return;
       worker.addEventListener("statechange", () => {
         if (worker.state === "installed" && navigator.serviceWorker.controller) {
-          banner.hidden = false;
+          banner.hidden = updateDismissed(tag());
           el("update-reload").onclick = () => {
             el("update-reload").disabled = true;
             worker.postMessage({ type: "skipWaiting" });
@@ -585,7 +611,7 @@ function wireServiceWorker() {
       });
     };
     if (reg.waiting && navigator.serviceWorker.controller) {
-      banner.hidden = false;
+      banner.hidden = updateDismissed(tag());
       el("update-reload").onclick = () => {
         el("update-reload").disabled = true;
         reg.waiting.postMessage({ type: "skipWaiting" });
@@ -601,7 +627,10 @@ function wireServiceWorker() {
     location.reload();
   });
 
-  el("update-dismiss").addEventListener("click", () => { banner.hidden = true; });
+  el("update-dismiss").addEventListener("click", () => {
+    banner.hidden = true;
+    rememberUpdateDismissed(tag());
+  });
 }
 
 /* ------------------------------------------------------------------- reflow */
@@ -725,7 +754,13 @@ if (openExampleOnLoad) runExample();
 if (openSharedOnLoad) {
   history.replaceState(null, "", location.pathname + location.hash);
   takeSharedFile().then((file) => {
-    if (!file) return;
+    if (!file) {
+      // The slot was empty: the worker never parked a file, or a reload spent it. The
+      // page used to call nothing and say nothing, and the rider landed on an untouched
+      // Sessions tab (pattern G; docs/web-design-review.md, finding 18).
+      el("shared-note").hidden = false;
+      return;
+    }
     // Android's share sheet handed CleanJibe a session. Counted on its own because the
     // whole mechanism is invisible from here otherwise: the POST never reaches a server,
     // so the only evidence the share target works at all is this line.

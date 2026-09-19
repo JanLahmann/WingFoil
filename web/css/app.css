@@ -56,39 +56,99 @@
   border-top: 2px solid currentColor;
 }
 
-.app-menu { max-width: 22rem; }
+/* ------------------------------------------------------------------- the app menu
+ *
+ * Jan, 19 September 2026, on a screenshot of this sheet open on a phone: *"Unclear this is
+ * drop down."* It was a `<dialog>` with a bare list in it — no padding, rows in body type,
+ * the build line loose between the last row and Close — so it read as the browser's own
+ * action sheet rather than as the app's menu. It is the phone's menu now: a row is an icon
+ * and a word, the one divider falls where reading ends and operating begins, and the build
+ * line is a footer under a hairline. The rows themselves are untouched, and
+ * web/tools/verify_app_shell.py holds them to docs/copy/app-shell.json.
+ */
+
+.app-menu { max-width: 21rem; }
+
+/* The SHEET takes the focus when it opens, not its first row: `showModal()` focuses the
+   first focusable child otherwise, and a menu that opens with a ring around row one reads
+   as a form. A container is not a control, so it wears no ring of its own. */
+.menu-sheet { gap: 0; padding: 12px; }
+
+.menu-sheet:focus,
+.menu-sheet:focus-visible { outline: none; }
 
 .menu-rows {
   list-style: none;
-  margin: 0 0 12px;
+  margin: 0;
   padding: 0;
 }
 
 .menu-rows button {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   width: 100%;
   min-height: var(--tap);
-  padding: 10px 12px;
+  padding: 10px 10px;
   border: 0;
   border-radius: var(--radius);
   background: none;
   color: var(--ink);
-  font: inherit;
+  font: 500 15px/1.2 var(--sans);
   text-align: left;
   cursor: pointer;
 }
 
 .menu-rows button:hover { background: var(--surface-2); }
 
+/* Drawn, not typed: the phone's own symbols (`AppMenuRow.symbolName` — hand.wave, book,
+   gearshape, questionmark.circle, envelope) as line icons, in the row's quiet ink so the
+   word stays the thing being read. */
+.menu-icon {
+  flex: 0 0 auto;
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: var(--ink-3);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.menu-rows button:hover .menu-icon { stroke: var(--ink-2); }
+
 /* One divider, and it falls where reading ends and operating begins — the phone's own
    `opensAfterDivider`, which is true for Settings and nothing else. */
 .menu-rows .after-divider {
-  margin-top: 8px;
-  padding-top: 8px;
+  margin-top: 6px;
+  padding-top: 6px;
   border-top: 1px solid var(--line-soft);
 }
 
-/* -------------------------------------------------------------------- the four tabs */
+.menu-build {
+  margin: 10px 0 0;
+  padding: 10px 10px 0;
+  border-top: 1px solid var(--line-soft);
+  color: var(--ink-3);
+  font: 11.5px/1.4 var(--mono);
+}
+
+.app-menu .ask-actions { margin-top: 8px; }
+
+/* -------------------------------------------------------------------- the four tabs
+ *
+ * Jan, 19 September 2026, on a phone screenshot: *"Navigation / tabs don't look nice."*
+ * Four grey words, the chosen one inside a blue box the bar clipped, and a white band
+ * under the row the height of the bar again. It is an iOS tab bar now:
+ *
+ *   a glyph over an 11 px label     the phone's own symbols (water.waves, trophy,
+ *                                   chart.xyaxis.line, bag), drawn as line icons;
+ *   colour marks the chosen tab     ink and the brand's own stroke, no box and no outline,
+ *                                   so nothing can be clipped by the bar's edge;
+ *   the inset is paid once          the BAR carries env(safe-area-inset-bottom) and the
+ *                                   buttons carry none, so the bar is its content plus the
+ *                                   home-indicator strip and nothing else.
+ */
 
 .tabbar {
   position: fixed;
@@ -99,38 +159,76 @@
   display: flex;
   background: var(--surface-1);
   border-top: 1px solid var(--line);
-  padding-bottom: env(safe-area-inset-bottom);
+  /* The one place the inset is paid. A button that pays it too is the white band. */
+  padding: 0 0 env(safe-area-inset-bottom);
 }
 
 .tabbar button {
   flex: 1 1 0;
-  min-height: var(--tap);
-  padding: 10px 4px calc(10px + env(safe-area-inset-bottom) * 0);
+  min-width: 0;
+  /* `min-height: var(--tap)` from the phone block in style.css would add 44 px to a box
+     that is already taller than a thumb. The content is the height. */
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 7px 4px 8px;
   border: 0;
+  border-radius: 0;
   background: none;
   color: var(--ink-3);
-  font: inherit;
-  font-size: 0.8rem;
+  font: 500 11px/1.15 var(--sans);
   cursor: pointer;
 }
 
-.tabbar button[aria-current="page"] {
-  color: var(--ink);
-  box-shadow: inset 0 2px 0 var(--series-1);
+.tab-glyph {
+  position: relative;
+  display: block;
+  width: 24px;
+  height: 24px;
 }
 
+.tab-glyph svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.tab-label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Colour, and nothing that can be cut off by an edge. */
+.tabbar button[aria-current="page"] { color: var(--series-1); }
+
+.tabbar button[aria-current="page"] .tab-label { font-weight: 600; }
+
+/* The count rides the glyph, the way a badge does on a phone. */
 .tabbar .count {
-  display: inline-block;
-  margin-left: 4px;
-  padding: 0 5px;
+  position: absolute;
+  top: -3px;
+  left: 62%;
+  min-width: 16px;
+  padding: 0 4px;
   border-radius: 999px;
-  background: var(--surface-2);
-  color: var(--ink-2);
-  font-size: 0.72rem;
+  background: var(--series-1);
+  color: #fff;
+  font: 600 10px/16px var(--sans);
+  text-align: center;
 }
 
 /* The bar covers the foot of the document, so the document ends above it. */
-main { padding-bottom: calc(var(--tap) + 24px + env(safe-area-inset-bottom)); }
+main { padding-bottom: calc(var(--tap) + 34px + env(safe-area-inset-bottom)); }
 
 /* A rail down the side once there is width for one, which is what the phone's tab bar
    becomes on an iPad. The page moves over by the rail's width and the footer with it. */
@@ -152,16 +250,23 @@ main { padding-bottom: calc(var(--tap) + 24px + env(safe-area-inset-bottom)); }
 
   .tabbar button {
     flex: 0 0 auto;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 10px;
     border-radius: var(--radius);
     text-align: left;
-    padding: 12px 14px;
+    padding: 10px 12px;
     font-size: 0.95rem;
   }
 
   .tabbar button[aria-current="page"] {
     background: var(--surface-2);
-    box-shadow: inset 2px 0 0 var(--series-1);
+    color: var(--ink);
   }
+
+  .tabbar button[aria-current="page"] .tab-glyph { color: var(--series-1); }
+
+  .tab-glyph { width: 20px; height: 20px; }
 
   body > header,
   body > main,
@@ -170,7 +275,41 @@ main { padding-bottom: calc(var(--tap) + 24px + env(safe-area-inset-bottom)); }
   main { padding-bottom: 24px; }
 }
 
+/* ------------------------------------------------------------------ the app header
+ *
+ * One bar, the way the phone has one toolbar (docs/web-design-review.md, 3 and 15). The
+ * name is a wordmark rather than the page's title: the title is the tab root's, one screen
+ * down, and it is the page's <h1>.
+ */
+
+/* The bar reads left to right: the menu, then the mark and the name, then whatever the
+   engine has to say. `space-between` left the wordmark floating in the middle of a wide
+   window, which is a place a brand sits only on a marketing page. */
+.app-topbar { justify-content: flex-start; }
+
+.app-topbar .topbar-right { margin-inline-start: auto; }
+
+.brand-name {
+  font: 650 18px/1.2 var(--sans);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  color: var(--ink);
+}
+
 /* ------------------------------------------------------------------------- pages */
+
+/* ONE TYPE SCALE FOR THREE JOBS, split into two (docs/web-design-review.md, finding 10).
+   `h2` is the section eyebrow — 15 px, uppercase, letterspaced — and every panel on a
+   session keeps it. A tab root's own name is not a section label: it is the top of the
+   page, so it is the page's <h1> at the size the phone gives a large title, in sentence
+   case, with nothing above it but the mark. */
+.page-title {
+  font-size: 21px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  text-transform: none;
+  color: var(--ink);
+}
 
 .crumb { margin: 0 0 8px; }
 
@@ -271,11 +410,27 @@ main { padding-bottom: calc(var(--tap) + 24px + env(safe-area-inset-bottom)); }
 
 .row-note { color: var(--ink-3); font-size: 0.8rem; }
 
-.row-metrics { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 14px; }
+/* THREE CELLS THAT CANNOT TOUCH (Jan, 19 September 2026: *"68 %10  13.47 kn"* over
+   *"foil   jibesbest 2 s"* on a 400 px screen — a value against its neighbour's word).
+   The row was a flex box with a gap, and `.lib-open > span { display: block }` one rule
+   above it is more specific, so the box was never flex and the gap never applied. It is a
+   grid of three equal columns now, qualified by the row so it cannot lose again, with the
+   gutter between the cells rather than between the words. Three cells, as `RowMetric`'s
+   `defaultTriple` gives the phone. */
+.lib-row .row-metrics {
+  margin-top: 6px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px 12px;
+  max-width: 24rem;
+}
 
 /* A number over its word, which is what makes the row readable without decoding a glyph
    (pattern H). The word is `RowMetric.label`'s, character for character. */
-.rm { display: inline-flex; flex-direction: column; line-height: 1.15; }
+.rm { display: flex; flex-direction: column; min-width: 0; line-height: 1.15; }
+
+.rm b,
+.rm i { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .rm b { font-variant-numeric: tabular-nums; }
 
@@ -421,6 +576,17 @@ main { padding-bottom: calc(var(--tap) + 24px + env(safe-area-inset-bottom)); }
 .trend-range { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
 
 .trend-range .seg-btn[aria-pressed="true"] { font-weight: 600; }
+
+/* A segment is one line high, so its words do not wrap: the narrow spelling takes over
+   before they would (docs/web-design-review.md, finding 14). */
+.trend-range .seg-btn { white-space: nowrap; }
+
+.seg-narrow { display: none; }
+
+@media (max-width: 30rem) {
+  .trend-range .seg-wide { display: none; }
+  .trend-range .seg-narrow { display: inline; }
+}
 
 /* Four columns of numbers, as on the phone. The table scrolls sideways rather than
    squeezing the metric name to nothing. */

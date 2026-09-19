@@ -83,11 +83,18 @@ export async function showTrends(saved) {
   if (!entries.length) {
     const door = `<p><button class="ghost small-btn" type="button" data-goto="sessions">Go
       to Sessions</button></p>`;
-    el("records-body").innerHTML =
-      `<p class="note">No sessions yet. Open one and save it, and your bests appear
-        here.</p>${door}`;
-    el("trends-body").innerHTML =
-      `<p class="note">No sessions yet. Save a few, and the charts fill as you ride.</p>${door}`;
+    // **THE PHONE'S OWN SENTENCES** (docs/screens.md, Records and Trends;
+    // docs/web-design-review.md, finding 4). A tab that greets a first visitor with a
+    // title and nothing else reads as a failed load, and the words a rider meets here are
+    // the words the phone meets him with. A spot chip that filtered everything out is a
+    // different absence, so it says a different thing.
+    const filtered = saved.length > 0;
+    el("records-body").innerHTML = filtered
+      ? `<p class="note">No session matches these filters.</p>`
+      : `<p class="note">Your records start with your first session.</p>${door}`;
+    el("trends-body").innerHTML = filtered
+      ? `<p class="note">No session matches these filters.</p>`
+      : `<p class="note">Your trends start with your first session.</p>${door}`;
     return;
   }
   // r3-w1: the chosen range is part of what is memoised. The same library over two ranges

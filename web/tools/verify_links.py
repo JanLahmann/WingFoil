@@ -16,10 +16,19 @@ WHAT IT CHECKS, per document:
   3. Tags nest and close. html.parser is not a validator, but an unclosed <section> or a
      </div> too many is exactly the mistake a hand-edited page makes, and it finds those.
   4. The site nav between <!-- sitenav:begin --> and <!-- sitenav:end --> is byte-identical
-     on all seven reader-facing documents, once `aria-current="page"` is taken out, and so
-     is the footer block between <!-- sitefoot:begin --> and <!-- sitefoot:end -->. Both are
-     copied markup rather than a template — this site has no build step — so the only thing
-     keeping seven copies in step is this check.
+     on all six reader-facing documents, once `aria-current="page"` is taken out, and the
+     footer block between <!-- sitefoot:begin --> and <!-- sitefoot:end --> on all seven.
+     Both are copied markup rather than a template — this site has no build step — so the
+     only thing keeping the copies in step is this check.
+
+     /app/ IS NOT A READER PAGE. It is the app, and an app has one header (Jan, 19
+     September 2026; docs/web-design-review.md, findings 3 and 15): the marketing row stood
+     above the app's own tab bar, so the page carried two navigations and offered a blue
+     door to the page it was on. It carries the app header between <!-- appheader:begin -->
+     and <!-- appheader:end --> instead — the mark, the name and the Menu button — and that
+     is what is checked here: no site nav on it, and the menu button present. Its footer is
+     the site's, byte for byte, because the footer is where the reader goes when the chrome
+     has scrolled away.
 
      A REDIRECT is not one of the seven. /learn/, /watches/ and /whats-new/ became stubs on
      19 September 2026, when /help/, /start/ and /invite/ took their content: a meta refresh,
@@ -188,8 +197,18 @@ print("pages: %d   internal references checked: %d" % (len(PAGES), checked))
 # One navigation row, copied into nine documents by hand because a static site has nowhere
 # to put a partial. The block between the two markers must be the same bytes everywhere;
 # the only licensed difference is which link says it is the page you are on.
+#: The app, held to its own header rather than to the site's nav.
+APP_PAGE = "app/index.html"
+APP_BEGIN = "<!-- appheader:begin -->"
+APP_END = "<!-- appheader:end -->"
+#: What the app header has to carry: the menu that replaced the nav (pattern M), and the
+#: mark that is still the way back to the site.
+APP_HEADER_MUST = ['id="app-menu-btn"', 'class="brand"']
+
 NAV_PAGES = [p for p in PAGES
-             if p != "strava/callback/index.html" and p not in REDIRECTS]
+             if p != "strava/callback/index.html" and p not in REDIRECTS
+             and p != APP_PAGE]
+FOOT_PAGES = NAV_PAGES + [APP_PAGE]
 NAV_BEGIN = "<!-- sitenav:begin"
 NAV_END = "<!-- sitenav:end -->"
 CURRENT_ATTR = ' aria-current="page"'
@@ -223,6 +242,25 @@ if navs:
     print("site nav: identical on %d of %d pages" % (
         sum(1 for b in navs.values() if b == reference), len(NAV_PAGES)))
 
+# ---------------------------------------------------------------- the app header
+# The one page with a header of its own. Two questions, and they are the two the finding
+# was about: is the marketing nav gone, and is the app's own furniture there instead.
+app_src = io.open(os.path.join(ROOT, APP_PAGE), encoding="utf-8").read()
+if NAV_BEGIN in app_src:
+    errors.append("%s: the site nav is back on the app — /app/ carries the app header "
+                  "(the mark, the name, the Menu button) and no marketing row" % APP_PAGE)
+start = app_src.find(APP_BEGIN)
+end = app_src.find(APP_END)
+if start < 0 or end < 0:
+    errors.append("%s: no app header (<!-- appheader:begin --> … <!-- appheader:end -->)"
+                  % APP_PAGE)
+else:
+    block = app_src[start:end]
+    for want in APP_HEADER_MUST:
+        if want not in block:
+            errors.append("%s: the app header is missing %s" % (APP_PAGE, want))
+    print("app header: %s carries its own, with no site nav" % APP_PAGE)
+
 # ---------------------------------------------------------------- the footer
 # The same argument one screen down. Until 15 September 2026 every footer named a different
 # subset of the site — /privacy/ three pages, /impressum/ one — and the footer is where a
@@ -233,7 +271,7 @@ FOOT_BEGIN = "<!-- sitefoot:begin"
 FOOT_END = "<!-- sitefoot:end -->"
 
 feet = {}
-for page in NAV_PAGES:
+for page in FOOT_PAGES:
     path = os.path.join(ROOT, page)
     if not os.path.exists(path):
         continue
@@ -250,14 +288,14 @@ for page in NAV_PAGES:
     feet[page] = src[start:end + len(FOOT_END)]
 
 if feet:
-    reference_page = NAV_PAGES[0]
+    reference_page = FOOT_PAGES[0]
     reference = feet.get(reference_page)
     for page, block in feet.items():
         if reference is not None and block != reference:
             errors.append("%s: the footer block differs from %s — it is copied markup and "
                           "must be byte-identical" % (page, reference_page))
     print("footer: identical on %d of %d pages" % (
-        sum(1 for b in feet.values() if b == reference), len(NAV_PAGES)))
+        sum(1 for b in feet.values() if b == reference), len(FOOT_PAGES)))
 
 # The generated half of /start/ is a link problem of its own kind: a guide block that no
 # longer matches docs/guide/getting-started.json is a page saying something the app does
