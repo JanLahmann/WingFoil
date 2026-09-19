@@ -28,7 +28,18 @@ repo, so it would fail through no fault of the checkout. And three of the web ch
 that lab venv plus the fixture corpus rather than the stdlib, so they are run by hand from
 `lab/.venv/bin/python` when the engine moves: `web/tools/verify_web_entry.py`,
 `verify_library.py` and `verify_presentation.py`. `web/README.md` "Verification" lists all
-eleven web checks and says which of them `verify_links.py` already runs for you.
+twelve web checks and says which of them `verify_links.py` already runs for you.
+
+**The turn drawing has one of its own**, `web/tools/verify_turn_figure.py`, and it is
+stdlib plus `node`. The turn page and the flight-end page draw one maneuver at its own
+scale, and everything about that picture that can be wrong is arithmetic: the projection
+into local metres, the bearing on each vertex, the wind-up rotation, the padded frame, the
+three speed marks, the speed ramp, the scale bar, the angle series and the foil spans. The
+kit holds those rules in `TurnSliceTests`; this runs the browser's port of them
+(`web/js/maneuverfigure.js`, through `web/tools/turn_figure.mjs`) over a synthetic quarter
+circle and re-derives every number from the Swift. The session is synthetic because it has
+to be: an analysis golden carries the turn records but not the positional view the browser
+draws from, so there is no reachable JSON of one real turn's drawn extents.
 
 ## Golden files
 

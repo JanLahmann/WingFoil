@@ -532,6 +532,23 @@
           requested. (The iPhone app uses Apple Maps for the same job, as above.)
         </dd>
       </div>
+      <!-- r3-w3:begin — the browser app's spot names. Same shape as the tile paragraph
+           above, because it is the same promise about the same foundation's servers, and
+           the same rounding the iPhone app applies before it asks Apple. -->
+      <div class="term">
+        <dt>OpenStreetMap — only when you look a spot name up</dt>
+        <dd>
+          The browser app groups your sessions into spots and can put a name on each. That
+          name comes from <strong>Look up names again</strong>, which you press yourself,
+          and when you do, your browser asks the OpenStreetMap Foundation's reverse
+          geocoder what that place is called. What is sent is one coordinate — the centre of
+          that spot, rounded to about 110 m — and nothing else: no session, no track, no
+          name, no identifier and no account. It is asked once per spot, at most once a
+          second, and the answer is kept in this browser. Never press it and nothing is ever
+          requested. (The iPhone app asks Apple's geocoder for the same thing, as above.)
+        </dd>
+      </div>
+      <!-- r3-w3:end -->
       <div class="term">
         <dt>intervals.icu — only if you paste a key</dt>
         <dd>

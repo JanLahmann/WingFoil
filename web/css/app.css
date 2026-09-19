@@ -423,3 +423,121 @@ main { padding-bottom: calc(var(--tap) + 24px + env(safe-area-inset-bottom)); }
 .divergence-table td.delta { color: var(--warn, #e0913f); }
 
 /* r3-w1:end */
+/* r3-w3:begin — THE TURN PAGE, THE FLIGHT-END PAGE AND THE SPOT CHIP.
+   The page is a <dialog> of the site's own `.ask` family, wide rather than narrow because
+   the drawing and its three strips are one column of instruments read top to bottom. */
+
+.turn-page { width: min(680px, calc(100vw - 24px)); }
+
+.turn-page .ask-form { max-height: min(92vh, 900px); overflow-y: auto; }
+
+.tp-head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.tp-head h2 { margin: 0; }
+
+.tp-head p { margin: 2px 0 0; }
+
+.tp-nav { display: flex; gap: 6px; align-items: center; }
+
+.tp-nav button[disabled] { opacity: 0.4; }
+
+.tp-controls { display: grid; gap: 8px; }
+
+.tp-switch { display: flex; gap: 8px; align-items: center; font-size: 13px; }
+
+/* The drawing and the strips are each a figure at the container's own width, which is what
+   keeps the type on them at the size it was tuned at (js/viz.js `figureWidth`). */
+.tp-figure { position: relative; }
+
+.tp-strip { margin-top: 6px; }
+
+.tp-canvas { display: block; width: 100%; height: auto; }
+
+/* The reading under the playhead, top left of the drawing. Absent until something is
+   scrubbed, so it never competes with the drawing's own marks. */
+.tp-callout {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: var(--panel, #22221f);
+  color: var(--ink-2);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.tp-numbers {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--line-soft);
+}
+
+.tp-speeds { margin: 0; font-variant-numeric: tabular-nums; }
+
+.tp-speeds b { font-size: 19px; font-weight: 600; }
+
+.tp-speeds span { color: var(--ink-3); font-size: 11px; }
+
+.tp-held { margin: 6px 0 10px; font-size: 13px; font-weight: 500; }
+
+.tp-grid {
+  display: grid;
+  gap: 6px 16px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.tp-cell { display: flex; gap: 6px; align-items: baseline; }
+
+.tp-cell span { color: var(--ink-3); font-size: 11px; }
+
+.tp-cell b { font-weight: 500; font-variant-numeric: tabular-nums; }
+
+.tp-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; }
+
+.tp-chip {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--line-soft);
+  color: var(--ink-2);
+  font-size: 11px;
+}
+
+.tp-chip i { width: 7px; height: 7px; border-radius: 50%; }
+
+.tp-coach { margin: 12px 0 0; color: var(--ink-2); font-size: 13px; }
+
+.tp-footnote { margin-top: 12px; color: var(--ink-3); font-size: 11px; }
+
+.tp-footnote p { margin: 0 0 6px; }
+
+/* A row with a page behind it says so under the pointer. A course change has no page, so
+   its row carries no promise of one. */
+tbody tr.opens { cursor: pointer; }
+
+tbody tr.opens:hover { background: var(--line-soft); }
+
+/* The spot chip over Records and over Trends. */
+.filter-bar:empty { display: none; }
+
+.spot-chip {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+  color: var(--ink-3);
+  font-size: 12px;
+}
+
+.spot-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+/* r3-w3:end */

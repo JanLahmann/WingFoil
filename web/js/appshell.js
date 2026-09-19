@@ -42,6 +42,10 @@ import { GLOSSARY } from "./copy.js";
 import { renderQuiver } from "./gear.js";
 import { renderDeleted } from "./deleted.js";
 import { esc, hms, int, nf } from "./render.js";
+/* r3-w3: the Spots half of this tab is a screen of its own now — the phone's clusterer, a
+   rename that sticks, "Re-cluster spots" and "Look up names again". js/spots.js. */
+import { renderSpots } from "./spots.js";
+import { esc, int } from "./render.js";   // r3-w3: hms and nf left with the spots list
 import { listEntries, removeSession, storageLabel } from "./store.js";
 
 const el = (id) => document.getElementById(id);
@@ -340,84 +344,11 @@ const topicHtml = (topic) => `
 
 /* ---------------------------------------------------------------- gear & spots */
 
-/** The same radius `library.TRIP_RADIUS_M` and the phone's `SpotClusterer` use. A beach is
- *  tens of metres across and the next spot is kilometres away, so there is no cluster count
- *  to get wrong. */
-const SPOT_RADIUS_M = 500;
-const EARTH_RADIUS_M = 6371000;
-
-/** Great-circle metres — the same haversine `library._distance_m` computes. */
-function metres(a, b) {
-  const rad = Math.PI / 180;
-  const p1 = a.lat * rad;
-  const p2 = b.lat * rad;
-  const dp = (b.lat - a.lat) * rad;
-  const dl = (b.lon - a.lon) * rad;
-  const h = Math.sin(dp / 2) ** 2
-    + Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) ** 2;
-  return 2 * EARTH_RADIUS_M * Math.atan2(Math.sqrt(h), Math.sqrt(Math.max(0, 1 - h)));
-}
-
-/**
- * Group the library into places: single-link greedy assignment against a moving centroid,
- * which is what `library._spot_clusters` does and for the same reason.
- *
- * A row with no anchor cannot be placed, so it falls back to its filename-derived name —
- * weaker than coordinates, and the reason the coordinate was added, but a library saved
- * before the field existed still has to produce spots.
- */
-function clusterSpots(entries) {
-  const clusters = [];
-  const unplaced = [];
-  for (const entry of entries) {
-    const geo = entry.geo;
-    if (!geo || typeof geo.lat !== "number") {
-      unplaced.push(entry);
-      continue;
-    }
-    let best = null;
-    let bestGap = Infinity;
-    for (const c of clusters) {
-      const gap = metres(geo, c);
-      if (gap <= SPOT_RADIUS_M && gap < bestGap) {
-        best = c;
-        bestGap = gap;
-      }
-    }
-    if (!best) {
-      clusters.push({ lat: geo.lat, lon: geo.lon, n: 1, members: [entry] });
-      continue;
-    }
-    best.lat = (best.lat * best.n + geo.lat) / (best.n + 1);
-    best.lon = (best.lon * best.n + geo.lon) / (best.n + 1);
-    best.n += 1;
-    best.members.push(entry);
-  }
-  for (const entry of unplaced) {
-    const name = String(entry.spot || "");
-    const home = clusters.find((c) => c.members.some((m) => String(m.spot || "") === name));
-    if (home) home.members.push(entry);
-    else clusters.push({ lat: null, lon: null, n: 0, members: [entry] });
-  }
-  return clusters;
-}
-
-/** What to call a cluster: the name most of its afternoons carry, oldest first on a tie —
- *  `library._cluster_name`. */
-function spotName(members) {
-  const counts = new Map();
-  for (const m of members) {
-    const name = String(m.spot || "").trim();
-    if (name) counts.set(name, (counts.get(name) || 0) + 1);
-  }
-  if (!counts.size) return "Session";
-  const best = Math.max(...counts.values());
-  for (const m of members) {
-    const name = String(m.spot || "").trim();
-    if (counts.get(name) === best) return name;
-  }
-  return "Session";
-}
+/* r3-w3: the 500 m clusterer, its haversine and the cluster's name moved to js/spots.js,
+   which is also where the rename, the two doors and the "All spots" chip read them from.
+   One spelling of a greedy clusterer per product: two would produce two sets of spots out
+   of one library, and a greedy clusterer is sensitive to the order it reads its sessions
+   in, so "roughly the same rule" is not the same spots. */
 
 async function renderGear() {
   const host = el("gear-body");
@@ -437,10 +368,6 @@ async function renderGear() {
     return;
   }
 
-  const clusters = clusterSpots(entries)
-    .map((c) => ({ name: spotName(c.members), members: c.members }))
-    .sort((a, b) => b.members.length - a.members.length);
-
   const named = gearMap();
   const rollUp = new Map();
   for (const entry of entries) {
@@ -448,16 +375,11 @@ async function renderGear() {
     if (name) rollUp.set(name, (rollUp.get(name) || 0) + 1);
   }
 
+  // r3-w3:begin — the Spots section is js/spots.js now, and it is the phone's screen: the
+  // same 500 m clusterer, a rename that sticks, "Re-cluster spots" and "Look up names
+  // again". The Gear half below is untouched.
   host.innerHTML = `
-    <h3 class="sub-head">Spots</h3>
-    <ul class="spot-list">${clusters.map((c) => `
-      <li><span class="spot-name">${esc(c.name)}</span>
-        <span class="dim">${int(c.members.length)} sessions ·
-          ${nf(c.members.reduce((t, m) => t + (m.distanceKm || 0), 0), 1)} km ·
-          ${hms(c.members.reduce((t, m) => t + (m.foilTimeS || 0), 0))} on foil</span></li>`)
-      .join("")}</ul>
-    <p class="muted small">Sessions that start within 500 m of each other are one spot. The
-      name comes from the file, as on the trips list.</p>
+    <div id="spots-section"></div>
 
     <h3 class="sub-head">Gear</h3>
     ${rollUp.size
@@ -477,6 +399,9 @@ async function renderGear() {
       </li>`).join("")}</ul>
     <p class="muted small">A name is yours and stays in this browser. The iPhone app keeps
       wings, boards and foils apart, with a history behind each.</p>`;
+
+  renderSpots(el("spots-section"), entries, () => { renderGear().catch(() => {}); });
+  // r3-w3:end
 
   for (const input of host.querySelectorAll("input[data-gear]")) {
     input.addEventListener("change", () => setGearFor(input.dataset.gear, input.value));

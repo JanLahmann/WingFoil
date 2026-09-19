@@ -49,6 +49,9 @@ the same place (pattern M).
 | Sessions | **Map** (full screen) | the same map, bigger, pannable, zoomable, rotatable, with the session's name as its caption | — | the layer chips · back | release | same: the figure and its legend move into a full-viewport shell, same camera and same chips, Back or Escape to leave. No rotate — the figure is north up | recording **Map** page; **Saved map** after save (dev) |
 | Sessions | **Replay** | the scrubber, the commentary, the clip | — | Record · Play · Clear · commentary switch | release | missing | — |
 | Sessions | **Replay** (the clip) | the finished clip, playable, with Save and Discard | — | Save · Discard · Done | release | missing | — |
+| Sessions | **Turn page** | one maneuver at its own scale: the drawing, three strips, the numbers, why it ended that way | — | swipe for the next · Done | release | same, as a dialog a Turns row opens: the same drawing at the same scale, north up or wind up, the speed strip with the engine's windows, a heading strip and a foil-state strip, the numbers, the chips, why it ended that way, the coach line and the footnote. `‹ ›`, the arrow keys or a flick for the neighbour. No ghost toggle where there is nothing to compare with, and no dev workbench | the event flash and its afterglow strip are the live equivalent |
+| Sessions | **Flight-end page** | the same page for the losses no turn owns | — | swipe for the next · Done | release | same, opened from a **Flight ends** row rather than from the Log tab, which the web has no room for. The same set the phone draws: no end a turn owns, no end the recording truncated | — |
+| Sessions | **Replay clip** | the cinema run, full screen | — | scrub · stop | release | missing | — |
 | Sessions | **Share** | the card, its shape and stats, or the scrubbed original file | *That image could not be read.* | Share card · Export video (beta) · Share the .fit · rename · a photo | release | differs: the **Share card** dialog, with *Download PNG* because a tab cannot hand a file to an app | — |
 | Sessions | **Session video** | the reel, its preset and its progress | — | share the clip | beta | missing | — |
 | Sessions | **Rename session** | one field | — | Save · Cancel | release | in the card dialog | — |
@@ -57,13 +60,13 @@ the same place (pattern M).
 | Sessions | **Which rig?** | the discipline the analysis guessed | — | confirm · dismiss | dev | missing | — |
 | Sessions | **Deleted sessions** | the afternoons you deleted, to pick from | — | restore the picked · Cancel | release | differs: a Settings section rather than a sheet, one row per deletion, *Restore · Clear · Clear all*. The browser keeps the file you imported, so a restore re-reads it and goes through the same dedupe. Empty: **No deleted sessions yet.** | — |
 | Sessions | **Custom range** | two dates | — | Done | beta | same, as the **Custom range** sheet behind the range on Trends: two dates, *Cancel · Done*, both dates counting | — |
-| Records | **Records** | the all-time speed table and the session-record table, under the filter bar | **No records yet**, or **Your records start with your first session** when only the example is in | Menu · the filter bar · a spot or gear chip · **Spots** · a row opens its session | release | differs: the third tab, **Records & trends**, holds both tables plus the totals. Its own two empty states say the same thing in its own words. *Show the window* and *Open the session* are its row doors. No filter bar | recording **Records** page (best 2 s, best 10 s) and the **NEW PB** flash, live only |
-| Records | **Spots** | the clustered places, with their sessions | **No spots yet** | rename · Re-cluster spots · Look up names again · Done | release | missing. A spot is only a label and the key that groups Trips | — |
-| Trends | **Trends** | one chart per metric over the chosen range | **Nothing in this range**, or **Your trends start with your first session** | Menu · Range · the filter bar · **Periods** | release | differs: the same **Records & trends** tab, as *Session by session* and *Sessions per week*, under the phone's own range (**4 w · Season · All · Custom range…**). No filter bar | — |
+| Records | **Records** | the all-time speed table and the session-record table, under the filter bar | **No records yet**, or **Your records start with your first session** when only the example is in | Menu · the filter bar · a spot or gear chip · **Spots** · a row opens its session | release | differs: the third tab, **Records & trends**, holds both tables plus the totals. Its own two empty states say the same thing in its own words. *Show the window* and *Open the session* are its row doors. One chip of the filter bar is here now, **All spots**, and it drives Records, Trends and Periods together. No gear chip | recording **Records** page (best 2 s, best 10 s) and the **NEW PB** flash, live only |
+| Records | **Spots** | the clustered places, with their sessions | **No spots yet** | rename · Re-cluster spots · Look up names again · Done | release | same list, but inline on **Gear & spots** rather than as a sheet of its own, which is where the phone's Gear tab now shows it too. Same 500 m clusterer, same rename, same two doors. The name comes from Nominatim, not from Apple, and /privacy says so | — |
+| Trends | **Trends** | one chart per metric over the chosen range | **Nothing in this range**, or **Your trends start with your first session** | Menu · Range · the filter bar · **Periods** | release | differs: the same **Records & trends** tab, as *Session by session* and *Sessions per week*. The **All spots** chip is here too, and it is the same chip Records carries. No range picker | — |
 | Trends | **Periods** | trips, months, seasons, and a range you type | **No periods yet** | a period · a custom range | release | same, as the **Periods** block of that tab: Trips, Months, Seasons, and a from/to range with *This week*, *Last 7 days*, *This month* | — |
 | Trends | **Period page** | the aggregate block for that spell | — | Share this period · a session | release | differs: each period is a fold rather than a page | — |
 | Trends | **Share this period** | the period card | — | share · Done | release | same dialog as the session card, opened from the period's fold | — |
-| Gear & spots | **Gear & spots** | the spots section, then wings, boards and foils, each with its totals | **No spots yet**; **No wings yet** per kind | Menu · a spot (rename) · Re-cluster spots · Look up names again · a gear row · Add wing · Show retired gear | release | differs: the spots section, then **Wings**, **Boards** and **Foils**, each with its totals and an *Add*. No re-cluster, no spot rename, no retired filter: a retired row stays in its kind and says so | — |
+| Gear & spots | **Gear & spots** | the spots section, then wings, boards and foils, each with its totals | **No spots yet**; **No wings yet** per kind | Menu · a spot (rename) · Re-cluster spots · Look up names again · a gear row · Add wing · Show retired gear | release | differs: the spots section is the phone's, and the gear half is one free-text name per session rather than wings, boards and foils kept apart. A spot row carries the two totals the phone drops, because a browser has no session list to sort by spot | — |
 | Gear & spots | **New gear** / the gear's name | name, notes, in use | — | Save · Cancel | release | same, as the **New gear** sheet: name, kind, notes, *In the quiver*, *Save · Cancel* | — |
 | Menu | **Settings** | accounts and switches, nothing the menu already holds. Sections: intervals.icu · Strava · Deleted sessions · Notifications · **Garmin watch** (dev) · Analysis · Session list · Row shows · **Windsurf** (dev) · **Tuning · dev** (dev) · **Apple Health** (beta) · **Beta** (beta) · Coming in a future release · Storage · Library backup · **iCloud Drive** (dev) · About | per-section footers say why a door is off | Get a key in 4 steps · Sync not working? · Connect with Strava · Restore all · Re-run analysis · Back up library · Restore from backup… · Privacy · Done, and the gated rows above | release | missing. The intervals.icu panel is on the analyzer today | none on the watch. Every setting is in Garmin Connect. The **Wind from** menu is the one on-watch picker |
 | Menu | **Restore library** | what the backup holds and what it would add | — | Restore N sessions · Cancel | release | same, as Settings → **Restore from a backup…**: what the zip holds, how many it would add, *Restore N sessions · Cancel*. It reads the file **Download all (.zip)** wrote | — |
@@ -88,8 +91,9 @@ glossary fold **? What these numbers mean**, and the panels **Track · Speed · 
 Turns · Flight ends · The full analysis**. Library is *Session library*, *Download all
 (.zip)*, per-row *Open · .fit · .json · Delete*, and a *Where this lives* panel about
 per-origin browser storage. Records & trends holds the totals, *All-time records*, *Session
-records*, *Periods* and *Session by session*. Two dialogs: *Whose session is this?* and the
-share card. Two banners: a new version, and the install offer. Nine other pages carry the
+records*, *Periods* and *Session by session*, under the **All spots** chip. Three dialogs:
+*Whose session is this?*, the share card, and the turn page a Turns or Flight ends row
+opens. Two banners: a new version, and the install offer. Nine other pages carry the
 same site nav (*Get started · Which watch · What it measures · What's new*) and the same
 footer with its prefilled feedback mail: `/`, `/start/`, `/watches/`, `/learn/`,
 `/whats-new/`, `/invite/`, `/privacy/`, `/impressum/`, and `/strava/callback/`, which is a
@@ -143,6 +147,15 @@ app, any .fit, Strava, and the Garmin ZIP last.
     states it actually has. It is off until the rider presses Map, because a background that
     fetched a stranger's home beach unasked would break the promise the analyzer makes
     loudest.
+13. **A spot name comes from OpenStreetMap, not from Apple.** `CLGeocoder` is a phone
+    framework, so *Look up names again* asks Nominatim instead. Same rule either way: one
+    coordinate, rounded to three decimals before it is sent, one request per unnamed spot,
+    cached, and a paragraph on `/privacy` that says who sees it. The clusterer is the same
+    500 m single-link rule at both ends, ported rather than called through Pyodide, because
+    the lab bundle's own clusterer runs at 3 km and answers a different question (trips).
+14. **A spot row carries its totals.** The phone dropped the distance and the foil time from
+    its spot rows when the list moved onto the Gear tab, because a session list one tap away
+    can be sorted by spot. The browser has no such list, so the two totals stay.
 
 Everything else that differs is a gap to close, not a deviation.
 

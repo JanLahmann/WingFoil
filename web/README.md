@@ -192,6 +192,18 @@ web/
 ├── js/sharecard.js             what a share card LOOKS like: the composer dialog and the
 │                               canvas that draws the PNG at the iOS pixel sizes
 ├── js/trends.js                records table + inline-SVG trend charts
+├── js/maneuverfigure.js        ONE MANEUVER'S GEOMETRY, and nothing that touches the DOM:
+│                               the port of the kit's ManeuverFigure, TurnSlice,
+│                               FlightEndSlice, SliceAngles and TurnSpeedRamp. Held to the
+│                               Swift by tools/verify_turn_figure.py
+├── js/turnpage.js              the TURN PAGE and the FLIGHT-END PAGE: the drawing, the
+│                               three strips, the numbers, why it ended that way, the coach
+│                               line, and the neighbour one flick away. Opened from a row
+│                               of the Turns or the Flight ends table
+├── js/spots.js                 SPOTS: the phone's 500 m clusterer, the rename that sticks,
+│                               "Re-cluster spots", "Look up names again" through
+│                               Nominatim, and the "All spots" chip Records and Trends
+│                               filter through
 ├── js/icu.js                   optional intervals.icu panel
 ├── lab_bundle/
 │   ├── web_entry.py            hand-written glue: FIT bytes -> analysis JSON
@@ -952,7 +964,7 @@ Icons live in `web/icons/`, copied from `brand/` (`icon-tile-*` for the normal i
 
 ## Verification
 
-Eleven checks, none of which needs a browser:
+Twelve checks, none of which needs a browser:
 
 ```bash
 cd /path/to/WingFoil
@@ -1004,6 +1016,12 @@ lab/.venv/bin/python web/tools/verify_library.py           # ~35 s; --fast skips
 # 3. presentation: what a session screen may draw, and that the share card's stat list is
 #    the key-metrics block (needs node for the last group)
 lab/.venv/bin/python web/tools/verify_presentation.py
+
+# 3b. the turn drawing's geometry: the projection into local metres, the bearing on each
+#     vertex, the wind-up rotation, the padded frame, the three speed marks, the ramp, the
+#     scale bar, the angle series and the foil spans, all re-derived from the Swift and
+#     compared with what js/maneuverfigure.js computes (stdlib only, needs node, instant)
+python3 web/tools/verify_turn_figure.py
 
 # 4. JS syntax
 cd web && for f in js/*.js sw.js; do node --check "$f" || exit 1; done

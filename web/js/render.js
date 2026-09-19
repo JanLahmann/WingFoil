@@ -18,6 +18,9 @@ import { hm, keyMetricEntries } from "./cardstats.js";
 import { GLOSSARY, NOT_A_SESSION } from "./copy.js";
 import { EXPERIMENTAL_NOTE, lexicon } from "./lexicon.js";
 import { renderFigures } from "./session.js";
+/* r3-w3: the turn page and the flight-end page. One hook, one line below: the page reads
+   the document it is handed and wires itself to the two tables. js/turnpage.js. */
+import { setSessionDocument } from "./turnpage.js";
 import { C, OUTCOME_COLOR, OUTCOME_LABEL, SVGNS, clockAt, esc, hms, int, marker, nf,
          outcomeText, pct, pctDigits, sessionDate } from "./viz.js";
 
@@ -43,6 +46,7 @@ const el = (id) => document.getElementById(id);
  */
 export function render(result, { highlight = null, isExample = false } = {}) {
   const g = result.golden, v = result.view, meta = result.meta;
+  setSessionDocument(result);                                     // r3-w3
   renderSummary(result, isExample);
   renderFigures(result, highlight);
   renderTakeoffs(el("takeoff-body"), g, meta);

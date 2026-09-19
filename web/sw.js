@@ -104,17 +104,20 @@ const APP_SHELL = [
   "js/gear.js",
   "js/ingest.js",
   "js/log.js",
+  "js/maneuverfigure.js",                                          // r3-w3
   "js/render.js",
   "js/rider.js",
   "js/rpc.js",
   "js/sections.js",
   "js/session.js",
   "js/sharecard.js",
+  "js/spots.js",                                                   // r3-w3
   "js/store.js",
   "js/tokens.js",
   // The ground under the Ride tab's track and the full-screen map behind its door.
   "js/trackmap.js",
   "js/trends.js",
+  "js/turnpage.js",                                                // r3-w3
   "js/viz.js",
   "js/worker.js",
   "icons/icon.svg",

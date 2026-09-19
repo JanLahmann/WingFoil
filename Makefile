@@ -53,17 +53,19 @@ ios-build: ios-project
 	cd ios && xcodebuild -project WingFoil.xcodeproj -scheme "WingFoil Dev" -configuration "Dev Debug" -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO build
 
 # ------------------------------------------------------------------------------ the site
-# Four checks, stdlib only, all of them instant. verify_links.py additionally runs
-# make_start.py, make_devices.py, verify_copy.py, make_copy_js.py and verify_unique.py,
-# so the four lines below are the eleven checks in web/README.md "Verification" minus the
-# three that need the lab venv and a corpus (verify_web_entry, verify_library,
-# verify_presentation — run those from lab/.venv/bin/python when the engine moves).
+# Five checks, stdlib only, all of them instant (the last one wants node and skips without
+# it). verify_links.py additionally runs make_start.py, make_devices.py, verify_copy.py,
+# make_copy_js.py and verify_unique.py, so the five lines below are the twelve checks in
+# web/README.md "Verification" minus the three that need the lab venv and a corpus
+# (verify_web_entry, verify_library, verify_presentation — run those from
+# lab/.venv/bin/python when the engine moves).
 web-verify:
 	python3 web/tools/bundle_lab.py --check
 	python3 web/tools/verify_links.py
 	python3 docs/copy/check_release_copy.py
 	python3 docs/copy/check_voice.py
 	python3 docs/copy/check_duplicates.py
+	python3 web/tools/verify_turn_figure.py
 
 # The browser runs lab/src/wingfoil_lab unchanged. This copies it and rewrites the two
 # manifests. Run it in the same change as any engine edit, or web-verify fails.

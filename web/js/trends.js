@@ -13,6 +13,9 @@
  */
 
 import { ask } from "./rpc.js";
+/* r3-w3: the "All spots" chip. Records, Trends and Periods answer to one chip here, the way
+   they answer to one `LibraryFilterBar` on the phone. js/spots.js. */
+import { filterBySpot, renderSpotChip } from "./spots.js";
 import { speedUnit, speedValue } from "./appsettings.js";
 // r3-w1: the range over the charts. It picks which afternoons the question is asked of and
 // answers nothing itself; Records stay all-time, which is what the sheet's footer promises.
@@ -68,7 +71,13 @@ export function mountTrends(options) {
  * to Python untouched, and everything drawn below comes back from it.
  */
 export async function showTrends(saved) {
-  entries = saved;
+  // r3-w3: the chip is drawn from the WHOLE library and the aggregate from the chosen
+  // spot's half of it. A chip built from the filtered list would lose every other spot the
+  // moment one was picked, which is the classic way a filter traps its reader.
+  for (const id of ["records-spot-filter", "trends-spot-filter"]) {
+    renderSpotChip(document.getElementById(id), saved, () => showTrends(saved));
+  }
+  entries = filterBySpot(saved);
   // Every empty state names the door out of it (docs/review-checklist.md, pattern G): the
   // Sessions tab is where a session gets in, and the button goes there.
   if (!entries.length) {

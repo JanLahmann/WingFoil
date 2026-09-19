@@ -623,6 +623,11 @@
           watch's own speed channel is marked uncertified.</p>
       </div>
     </div>
+    <!-- r3-w3:begin — the spot chip, the web's half of the phone's LibraryFilterBar. One
+         chip drives Records, Trends and Periods; js/spots.js fills it and js/trends.js
+         filters through it. -->
+    <div id="records-spot-filter" class="filter-bar"></div>
+    <!-- r3-w3:end -->
     <div id="records-body"></div>
   </section>
 </div>
@@ -641,6 +646,10 @@
     <div id="trends-range" data-screen="Custom range"
          data-empty="Nothing in this range"></div>
 <!-- r3-w1:end -->
+    <!-- r3-w3:begin — the same chip over Trends, because the phone's filter bar sits on
+         Records, Trends and Periods alike. -->
+    <div id="trends-spot-filter" class="filter-bar"></div>
+    <!-- r3-w3:end -->
     <div id="trends-body"></div>
   </section>
 </div>
@@ -955,6 +964,37 @@
     </div>
   </div>
 </dialog>
+
+<!-- r3-w3:begin — THE TURN PAGE AND THE FLIGHT-END PAGE.
+
+     One maneuver at its own scale, as the iPhone app draws it: the drawing, three strips,
+     the numbers, why it ended that way, and the neighbour one flick away. A row in the
+     Turns table opens it; a row in the Flight ends table opens the same page for a loss no
+     turn owns, which is what the phone does from its Log tab.
+
+     Same <dialog> pattern as the share card above — showModal() for the focus trap, the
+     backdrop and the Escape key. Everything inside #turn-page-body is drawn by
+     js/turnpage.js out of js/maneuverfigure.js, and nothing here is authored copy: the
+     words are the phone's and live beside the drawing that says them. -->
+<dialog id="turn-page" class="ask turn-page" aria-labelledby="turn-page-title">
+  <div class="ask-form">
+    <div class="tp-head">
+      <div>
+        <h2 id="turn-page-title">Turn</h2>
+        <p class="muted small" id="turn-page-count"></p>
+      </div>
+      <div class="tp-nav">
+        <button type="button" class="ghost" id="turn-page-prev"
+                aria-label="Previous">&lsaquo;</button>
+        <button type="button" class="ghost" id="turn-page-next"
+                aria-label="Next">&rsaquo;</button>
+        <button type="button" class="primary" id="turn-page-close">Done</button>
+      </div>
+    </div>
+    <div id="turn-page-body"></div>
+  </div>
+</dialog>
+<!-- r3-w3:end -->
 
 <footer>
   <!-- The footer of a rider's page, not of a build. What it runs on is in web/README.md;
