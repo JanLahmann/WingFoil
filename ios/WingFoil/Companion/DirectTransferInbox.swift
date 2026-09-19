@@ -203,6 +203,16 @@ final class DirectTransferInbox {
         onArrival?()
     }
 
+    /// A stream the import refused, out of the sweep's way but not gone.
+    static func setAside(_ url: URL) {
+        guard let inbox = try? garminInboxURL() else { return }
+        let refused = inbox.appendingPathComponent("refused", isDirectory: true)
+        try? FileManager.default.createDirectory(at: refused, withIntermediateDirectories: true)
+        let destination = refused.appendingPathComponent(url.lastPathComponent)
+        try? FileManager.default.removeItem(at: destination)
+        try? FileManager.default.moveItem(at: url, to: destination)
+    }
+
     // MARK: - The sweep
 
     /// Assembled streams waiting to be imported, oldest first. The peer of

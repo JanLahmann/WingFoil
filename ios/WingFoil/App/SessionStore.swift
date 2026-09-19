@@ -2624,11 +2624,19 @@ final class SessionStore {
         // `.watchDirect`, never `.watch` — that one is the summary card, and a row tagged
         // with it would claim a provenance this session does not have.
         let summary = await importFiles(urls: pending, source: .watchDirect)
-        // A stream the import refused stays for the next launch: the first real one
+        // A stream the import refused is kept, not retried: the first real one
         // (19 September 2026) was dropped as "no FIT found" by a classifier that did not
-        // know the format, and deleting it would have cost the session for good.
-        guard summary.failed.isEmpty else { return }
-        for url in pending { try? FileManager.default.removeItem(at: url) }
+        // know the format, and deleting it would have cost the session for good — while
+        // retrying it at every launch put the same dialog up at every launch. It moves to
+        // `refused/`, where a later build can still find it and the feedback mail can name it.
+        for url in pending {
+            let name = url.lastPathComponent
+            if summary.failed.contains(where: { $0.hasPrefix(name) }) {
+                DirectTransferInbox.setAside(url)
+            } else {
+                try? FileManager.default.removeItem(at: url)
+            }
+        }
     }
 
     func refreshCompanionState() {

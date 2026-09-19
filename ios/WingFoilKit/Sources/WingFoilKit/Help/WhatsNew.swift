@@ -64,6 +64,18 @@ public enum WhatsNew {
     public static let entries: [WhatsNewEntry] = [
         WhatsNewEntry(
             version: "0.15.0",
+            build: 83,
+            channel: .dev,
+            date: "2026-09-19",
+            dateText: "19 September 2026",
+            title: "A refused stream is set aside",
+            lines: [
+                "A direct stream the import refuses is set aside once, not shown again at every launch.",
+                "A stream without a single position fix is refused. Wait for the watch's GPS before you start.",
+                "Please save one session with GPS locked and this build open on Settings → Garmin watch.",
+            ]),
+        WhatsNewEntry(
+            version: "0.15.0",
             build: 82,
             channel: .dev,
             date: "2026-09-19",
