@@ -1,0 +1,183 @@
+# Screens — the inventory, and what each shell does with it
+<!-- The one em-dash in this file is in its title. Rider text has none (docs/voice.md,
+     rule 4); a doc heading is not rider text, and "—" inside a table cell means "none". -->
+
+The structural twin of `docs/copy/`: that folder holds the sentences more than one surface
+says, this file holds the *screens* more than one surface has. `docs/presentation.md` says
+what a screen shows and why; `docs/channels.md` says which channel has it; this file is the
+list, with a column per shell, so a web or watch agent can see at a glance what exists, what
+it is called, and what it may leave out.
+
+## The principle
+
+**One product, three shells.** iOS is the reference: every screen is named there first, and a
+name, an empty state or a door invented anywhere else is a bug until it is named there too.
+The web is the **port**: the same screens, the same names, the same empty states, minus the
+doors a browser has no hands for, plus the two a browser has and a phone does not (drop a
+file, run without installing). The watch keeps **its own shape**, seven pages under a
+thumb, no history, no browsing, but the same voice and the same vocabulary: a jibe the
+watch calls *flew* is the jibe the phone calls *flew through*. And the website's home page is
+**one marketing front, not a shell**: it says what CleanJibe is, then sends the reader either
+into the web analyzer or to `/invite/`, which is the one page that holds the Connect IQ store
+link and the TestFlight link (and will hold the App Store one). No store URL lives anywhere
+else on the site, and the home page never analyses anything itself.
+
+## The inventory
+
+Channel is the lowest channel that has the screen (`docs/channels.md`). "Doors" are the
+buttons and links that leave the screen. *Menu* is the app menu (**What CleanJibe does ·
+Getting started · Settings · Help · Support & ideas**), which sits on all four tab roots in
+the same place (pattern M).
+
+| tab / home | screen | what it shows | empty state | doors | channel | web | watch |
+|---|---|---|---|---|---|---|---|
+| — | **Start screen** (splash) | the channel's mark, held, then a crossfade into Sessions | — | none, it dismisses itself | release | missing. A tab does not launch | **Brand splash**, once per installed version |
+| — | **What CleanJibe does** (welcome) | the headline, the promise, three highlights, three answers | — | Try the example session · Set up intervals.icu · Later | release | missing today, on the target list | **Start screen**: name, GPS state, wind, "START records · BACK saves" |
+| — | **Library newer than this build** | why this build cannot open the library | — | Open TestFlight · Restore from backup | release | missing. No schema to outrun | — |
+| — | **A newer build exists** | the update reminder, insist level | — | the link from `version.json` | beta | differs: the **A new version is ready.** banner, with *Reload to update* and *Later* | — |
+| — | (no iOS twin) | the web's install offer | — | *Install* · *Later* | — | web only: a tab can become an app, a phone app cannot | — |
+| — | **Start over needs a relaunch** | the wipe finished, the file did not reopen | — | none, the rider relaunches | beta | missing | — |
+| Sessions | **Sessions** | the afternoons, newest first, each with its track, date and three numbers | first run: *What CleanJibe does · Try the example session*, then **How your sessions get in** (intervals.icu, Apple Watch in beta, Strava, Import a file). Configured: **No sessions yet** with *Import…* and *Sync intervals.icu*. Filtered: **No session matches these filters** with *Clear filters* | Menu · Filter (beta) · Import · a row · pull to sync | release | differs: the **Library** tab, second of three, lists what this browser saved. Empty: *Nothing saved yet. Analyze a file and press Save to library.* Its doors are *Download all (.zip)*, and per row *Open · .fit · .json · Delete* | none. No history, and the summary is gone when you leave it |
+| Sessions | **Session page** | one afternoon, under a sticky four-way switcher | *Could not open this session*; provisional: **From your watch** | the name (rename) · Share · flick or `‹ ›` for the neighbour · the four sub-tabs | release | differs: the **Analyze** tab's result is one scrolling document, with chips **Map · Speed · Turns · Takeoffs · Data** on a narrow screen only. No rename | **Summary**, 3 to 7 pages, UP/DOWN |
+| Sessions | · **Ride** | map, legend, speed chart, the shared scrubber, foil facts, the session's record table | *This recording has no GPS positions. Chart and records only.* | Open map full screen · Replay · a `?` per card | release | differs: two panels, **Track** and **Speed**, under one chip. No record table of its own | Summary **Verdict**, **Speed**, **Flights**, **Track** |
+| Sessions | · **Turns** | a card per turn, then the filtered tally, map and list | *No jibes* and its line | a card opens the turn page | release | differs: the **Turns** table, one row per turn, no cards | recording **Turns** page; Summary **Turns** |
+| Sessions | · **Takeoffs** | takeoff and pumping tiles, the attempt map and list, what pumping cost | *No attempts* and its line | a row opens the attempt | release | same, as the **Takeoffs** panel, with the no-accelerometer line spelled out | Summary **Takeoffs** |
+| Sessions | · **Log** | gear, flight ends, wind, the recording, watch against phone | a missing block is absent, never zero | gear card · a flight end · *Analyse as* (dev) | release | missing as a section. **Flight ends** sits under the Turns chip, **The full analysis** under Data. No gear, no HR, so no Log chip | — |
+| Sessions | **Turn page** | one maneuver at its own scale: the drawing, three strips, the numbers, why it ended that way | — | swipe for the next · Done | release | missing. A table row is as deep as it goes | the event flash and its afterglow strip are the live equivalent |
+| Sessions | **Flight-end page** | the same page for the losses no turn owns | — | swipe for the next · Done | release | missing | — |
+| Sessions | **Map full screen** | the same map, bigger, pannable, zoomable, rotatable | — | the layer chips · back | release | missing. The web map is already the page's width | recording **Map** page; **Saved map** after save (dev) |
+| Sessions | **Replay** | the scrubber, the commentary, the clip | — | Record replay / Play replay · Clear · commentary switch | release | missing | — |
+| Sessions | **Replay clip** | the cinema run, full screen | — | scrub · stop | release | missing | — |
+| Sessions | **Share** | the card, its shape and stats, or the scrubbed original file | *That image could not be read.* | Share card · Export video (beta) · Share the .fit · rename · a photo | release | differs: the **Share card** dialog, with *Download PNG* because a tab cannot hand a file to an app | — |
+| Sessions | **Session video** | the reel, its preset and its progress | — | share the clip | beta | missing | — |
+| Sessions | **Rename session** | one field | — | Save · Cancel | release | in the card dialog | — |
+| Sessions | **Import** | one section per way in, in the guide's order, each with its class and its footer | *Not available in this build* / *Not available on this iPhone* | Sync intervals.icu · FIT or ZIP… · Import from Strava… · Import from Health… (beta) · Garmin export ZIP… (beta) · a help topic per door · Done | release | differs: the drop zone and the intervals.icu panel are the only two doors | none. The watch is the source |
+| Sessions | **Import: whose session is this** | Mine or a friend's, and what a friend's stays out of | — | Import · Cancel | release | same, as the **Whose session is this?** dialog | — |
+| Sessions | **Which rig?** | the discipline the analysis guessed | — | confirm · dismiss | dev | missing | — |
+| Sessions | **Deleted sessions** | the afternoons you deleted, to pick from | — | restore the picked · Cancel | release | missing | — |
+| Sessions | **Custom range** | two dates | — | Done | beta | missing | — |
+| Records | **Records** | the all-time speed table and the session-record table, under the filter bar | **No records yet**, or **Your records start with your first session** when only the example is in | Menu · the filter bar · a spot or gear chip · **Spots** · a row opens its session | release | differs: the third tab, **Records & trends**, holds both tables plus the totals. Its own two empty states say the same thing in its own words. *Show the window* and *Open the session* are its row doors. No filter bar | recording **Records** page (best 2 s, best 10 s) and the **NEW PB** flash, live only |
+| Records | **Spots** | the clustered places, with their sessions | **No spots yet** | rename · Re-cluster spots · Look up names again · Done | release | missing. A spot is only a label and the key that groups Trips | — |
+| Trends | **Trends** | one chart per metric over the chosen range | **Nothing in this range**, or **Your trends start with your first session** | Menu · Range · the filter bar · **Periods** | release | differs: the same **Records & trends** tab, as *Session by session* and *Sessions per week*. No range picker, no filter bar | — |
+| Trends | **Periods** | trips, months, seasons, and a range you type | **No periods yet** | a period · a custom range | release | same, as the **Periods** block of that tab: Trips, Months, Seasons, and a from/to range with *This week*, *Last 7 days*, *This month* | — |
+| Trends | **Period page** | the aggregate block for that spell | — | Share this period · a session | release | differs: each period is a fold rather than a page | — |
+| Trends | **Share this period** | the period card | — | share · Done | release | same dialog as the session card, opened from the period's fold | — |
+| Gear & spots | **Gear & spots** | the spots section, then wings, boards and foils, each with its totals | **No spots yet**; **No wings yet** per kind | Menu · a spot (rename) · Re-cluster spots · Look up names again · a gear row · Add wing · Show retired gear | release | missing | — |
+| Gear & spots | **New gear** / the gear's name | name, notes, in use | — | Save · Cancel | release | missing | — |
+| Menu | **Settings** | accounts and switches, nothing the menu already holds. Sections: intervals.icu · Strava · Deleted sessions · Notifications · **Garmin watch** (dev) · Analysis · Session list · Row shows · **Windsurf** (dev) · **Tuning · dev** (dev) · **Apple Health** (beta) · **Beta** (beta) · Coming in a future release · Storage · Library backup · **iCloud Drive** (dev) · About | per-section footers say why a door is off | Get a key in 4 steps · Sync not working? · Connect with Strava · Restore all · Re-run analysis · Back up library · Restore from backup… · Privacy · Done, and the gated rows above | release | missing. The intervals.icu panel is on the analyzer today | none on the watch. Every setting is in Garmin Connect. The **Wind from** menu is the one on-watch picker |
+| Menu | **Restore library** | what the backup holds and what it would add | — | Restore N sessions · Cancel | release | missing. **Download all (.zip)** is the whole of it |
+| Menu | **Coming in a future release** | how to join the beta, what is in it, what is further out | — | Open TestFlight · cleanjibe.org/invite | release | the same list on `/invite/#coming`, from `channels.json` | — |
+| Menu | **Tuning** | 27 thresholds on sliders, per discipline | *Every threshold at its default* | Reset all · Re-analyse stale sessions now · **Labels** | dev | missing | — |
+| Menu | **Labels** | the turn labels you typed, scored against the engine | — | clear · back | dev | missing | — |
+| Menu | **Help** | about forty topics in ten sections, searchable | the system's *No results* | a topic · Done | release | missing as a screen. The glossary fold **? What these numbers mean** and `/learn/#counts` carry a tenth of it | — |
+| Menu | **Help topic** | one metric or one door, its items, its picture, its see-also | — | Open CleanJibe Settings · Load the example session · Send feedback… · What's new · a see-also · Done | release | partly, as `/learn/` and `/start/` sections | — |
+| Menu | **Getting started** | the routes, one per watch, in one order | — | see-also topics · Done | release | `/start/`, written from the same JSON | — |
+| Menu | **What's new** | the release notes, newest first | **Nothing yet** | Done | release | `/whats-new/` | — |
+| Menu | **Send feedback** | a mail with the build and the session already in it | — | Send · Cancel | release | the footer's mail link and the GitHub issue link, on every page | — |
+| Menu | **Usage report** | seventeen counters and the failure list, before you send them | — | Send · Cancel | beta | missing | — |
+| Settings | **Map for the watch** | the spot to send, or where you are now | — | Send map to watch | dev | missing | phone-sent tiles under the **Map** page and the Summary **Track** page |
+
+**The web analyzer today**, in one paragraph. One page, three tabs: **Analyze**, **Library**
+and **Records & trends** (**Records** on a narrow screen). Analyze is the drop zone (*Drop a
+.fit, .gpx or .tcx file, or a .zip containing one*, *Choose a file…*, *open the example
+session*, and three *What you get* crops that each run the example), the optional
+**intervals.icu** panel, four progress steps, an error panel that names the likely cause, and
+then the result: a summary panel with the key metrics, *Share card*, *Save to library*, the
+glossary fold **? What these numbers mean**, and the panels **Track · Speed · Takeoffs ·
+Turns · Flight ends · The full analysis**. Library is *Session library*, *Download all
+(.zip)*, per-row *Open · .fit · .json · Delete*, and a *Where this lives* panel about
+per-origin browser storage. Records & trends holds the totals, *All-time records*, *Session
+records*, *Periods* and *Session by session*. Two dialogs: *Whose session is this?* and the
+share card. Two banners: a new version, and the install offer. Nine other pages carry the
+same site nav (*Get started · Which watch · What it measures · What's new*) and the same
+footer with its prefilled feedback mail: `/`, `/start/`, `/watches/`, `/learn/`,
+`/whats-new/`, `/invite/`, `/privacy/`, `/impressum/`, and `/strava/callback/`, which is a
+relay for the iPhone app and is in no nav.
+
+## Doors by platform
+
+`docs/channels.md` is the source for which channel has a door; this table is the same list
+by **shell**. The order is the one order (pattern J): Garmin, Apple Watch, Apple's Workout
+app, any .fit, Strava, and the Garmin ZIP last.
+
+| way in | iOS | web | watch |
+|---|---|---|---|
+| intervals.icu (Garmin and anything that syncs there) | Settings → intervals.icu, then *Sync intervals.icu*, pull to refresh, and a notification when one lands | the **intervals.icu** panel on Analyze: athlete id, API key, *List recent activities*, *Forget key* | — |
+| the CleanJibe Apple Watch app | beta. Nothing to import, the session crosses by itself | — | — |
+| Apple's Workout app, through Health | beta. *Import from Health…* | — | — |
+| any `.fit` (plus `.gpx` and `.tcx` in the beta) | *FIT or ZIP…*, the share sheet, AirDrop, Files | the drop zone and *Choose a file…*, all four types, every visit. Installed, the page joins the Android share sheet | — |
+| Strava | release. Settings → Strava, then *Import from Strava…* | missing. `/strava/callback/` only hands the iPhone app its token back | — |
+| Garmin export ZIP, the whole history | *FIT or ZIP…* in every channel; the beta adds the dedicated *Garmin export ZIP…* with its walkthrough | missing. A `.zip` is read only when it holds exactly one recording | — |
+| Garmin link, summary card from the watch | dev. Settings → Garmin watch | — | the *Send summary to phone app* setting |
+| the example session | *Try the example session*, on the welcome screen, in the empty library and from its help topic | *open the example session*, and the three crops beside it | — |
+
+## Deviations of the web, with reasons
+
+1. **No install, no account.** The analyzer runs in the tab and the install banner is an
+   offer, never a gate. A stranger with a file should get an answer before he gives anything.
+2. **Drop a file is the front door, not one of six.** A browser has no watch, no Health and
+   no share sheet, so the one door it does have is the first thing on the page.
+3. **The example session is the Sessions empty state.** A first visitor has no library, so
+   the page shows what it does before it asks for a file.
+4. **No Apple doors.** The Apple Watch app, Apple's Workout app and Health are phone
+   entitlements. A tab cannot read HealthKit.
+5. **No Strava import.** The client secret cannot live in a static page. `/strava/callback/`
+   exists only to return the iPhone app's token.
+6. **No watch link, no map to the watch.** The Bluetooth companion link belongs to the phone.
+7. **GPX and TCX are read on every visit**, though they are a beta door on iOS. The web has
+   one channel and runs the engine the beta runs.
+8. **Sessions live in the browser, so the Library page says so.** *Where this lives* and
+   *Download all (.zip)* stand in for the phone's backup and restore, which have no
+   counterpart in a tab.
+9. **The session is one scrolling document on a wide screen.** The four section chips appear
+   only on a narrow one. A phone needs the switcher; a laptop has the height.
+10. **The whole Garmin history stays the phone's job.** A tab reads a `.zip` only when it
+    holds exactly one recording, and says so when it does not.
+11. **The store links live on one page, not on the home page.** `/invite/` holds the Connect
+    IQ link and the TestFlight link. One page to keep current when a channel moves.
+
+Everything else that differs is a gap to close, not a deviation.
+
+## The web after the port, as a target
+
+Same names, same empty states, same order as iOS. Sessions is the home. The analyzer becomes
+the way a session *gets in*, not the shape of the app.
+
+| page | what it shows | empty state | doors |
+|---|---|---|---|
+| **Sessions** (home) | the saved sessions, newest first, each with its track, date and three numbers | the drop zone, then *open the example session*, under the words **What CleanJibe does** | Import (drop or pick a file) · Settings · Help · a row opens its session |
+| **Session page** | the afternoon, with the four sub-tabs **Ride · Turns · Takeoffs · Log** under one switcher | *Could not open this session* | Share card · the turn page · rename · the neighbouring session |
+| **Turn page** | one maneuver at its own scale, as on iOS | — | next turn · close |
+| **Records** | the all-time speed table and the session-record table, split out of today's *Records & trends* | **Your records start with your first session**, in the app's words | the filter bar · a row opens its session |
+| **Trends** | one chart per metric over the chosen range, the other half of today's third tab | **Your trends start with your first session** | Range · the filter bar · **Periods** |
+| **Periods** | Trips, Months, Seasons and a range you type, as they already are, one push from Trends | **No periods yet** | a period · Share this period |
+| **Gear & spots** | spots, then wings, boards and foils | **No spots yet**; **No wings yet** | rename a spot · add gear |
+| **Settings** | the **intervals.icu** panel moves here from Analyze, beside units and what the browser stores. *Where this lives* moves here from Library | footers say why a door is off | List recent activities · Forget key · Download all (.zip) · Privacy |
+| **Help** | the topics, from the kit's help export, in the same ten sections | the search's *No results* | a topic · Getting started |
+| **What CleanJibe does** (welcome) | the headline, the promise, three highlights | — | Try the example session · Set up intervals.icu · Later |
+| **Getting started** | `/start/` as it stands, generated from `docs/guide/getting-started.json` | — | the routes, the troubleshooting list |
+
+The home page does not move. It stays the one marketing front: what CleanJibe is, then
+*Open the analyzer*, *Get the beta* and *Which watch*.
+
+## Screens with no name yet (pattern A)
+
+Writing the table found seven screens whose title does not name them. Each is a pattern A
+finding, listed here rather than fixed, because a rename touches the kit, the help and the
+screenshots together.
+
+1. **Two screens are both called "Import."** The doors list and *whose session is this* share
+   one title. The web already calls the second one **Whose session is this?**, which is the
+   better name and the one the app should take.
+2. **The full-screen map wears the session's name.** Its only name is the label on the door
+   that opens it, *Open map full screen*.
+3. **The replay has two names for one thing.** The sheet is *Record replay* or *Play replay*
+   depending on what the device can do; the run it starts is *Replay clip*.
+4. **The welcome screen has three names.** *What CleanJibe does* in the menu, the headline on
+   the screen itself, and "welcome" in every file that raises it.
+5. **The turn page and the flight-end page are titled by their content** (*Jibe 3 · Flew
+   through*, *Flight 7 · Touchdown*), so neither has a name a rider could ask for.
+6. **The dev workbench is a heading inside the turn page**, not a screen, though
+   docs/presentation.md names it as one.
+7. **"Log" is the one sub-tab whose name does not say what is on it** (gear, flight ends,
+   wind, the recording, watch against phone).

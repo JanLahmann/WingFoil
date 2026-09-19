@@ -14,6 +14,9 @@ before changing anything:
   app's Beta section and the store texts are written from it, never the other way round.
 - `docs/review-checklist.md` — the patterns behind Jan's feedback (A–M); every review of a
   rider-facing surface runs it and names the pattern in its finding.
+- `docs/screens.md` — **the screen inventory**: every iOS screen with its empty state, its
+  doors and its channel, beside what the web and the watch do with it, plus the web's
+  deliberate deviations and the target the web port builds to.
 - `docs/voice.md` — **how every rider-facing sentence sounds**: three registers, ten rules,
   before/after pairs. Read it before writing or editing any text a rider sees.
 - `docs/decisions.md` — ADRs. `docs/fit-schema.md` — the watch's FIT developer fields.
