@@ -55,29 +55,53 @@ COPY = REPO / "docs" / "copy"
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import verify_copy                                                       # noqa: E402
 
-flat = verify_copy.flat
+#: Typographic punctuation, back to what an author typed.
+#:
+#: The generators render a straight apostrophe as a curly one, because that is what the page
+#: should print: make_start.py, make_whats_new.py and make_help.py all do it, and the JSON
+#: they read carries the straight one. `verify_copy.flat` must NOT do this — it compares a
+#: pinned sentence character for character, and "—" and " - " are deliberately not the same
+#: sentence there — but this file asks a different question. It asks whether two pages say
+#: the same thing, and a page's typography is not what makes a sentence its own.
+#:
+#: Found by the first sentence that landed on two pages through two generators: the Strava
+#: fall warning, which reached /invite/ as a release note and /help/ as a help item, and was
+#: "owned" in docs/copy with a straight apostrophe in both.
+SMART = str.maketrans({"\u2019": "'", "\u2018": "'", "\u201c": '"', "\u201d": '"'})
 
-#: The prose a reader reads. /app/ is the analyzer (UI labels, not prose), /privacy/ and
-#: /impressum/ are legal text whose repetitions are deliberate, and /strava/callback/ is on
-#: screen for a frame.
+
+def flat(text: str) -> str:
+    return verify_copy.flat(text).translate(SMART)
+
+#: The prose a reader reads. /app/ is the browser app (UI labels, not prose), /privacy/ and
+#: /impressum/ are legal text whose repetitions are deliberate, and /strava/callback/ and
+#: the three redirect stubs are on screen for a frame.
+#:
+#: **Four pages since 19 September 2026**, where there were six: /start/ absorbed /watches/,
+#: /invite/ absorbed /whats-new/, and /learn/ became /help/, which is rendered out of the
+#: kit's own help catalogue rather than written here.
 PAGES = [
     "index.html",
-    "learn/index.html",
     "start/index.html",
-    "watches/index.html",
+    "help/index.html",
     "invite/index.html",
-    "whats-new/index.html",
 ]
 
 #: Words inside <main>, counting only what is visible with every <details> shut. The plan's
 #: table of 15 September 2026, and the tolerance is the same everywhere: ten per cent.
+#:
+#: /start/ and /invite/ took a page each on 19 September 2026 and their budgets grew by less
+#: than the pages they swallowed: a route card's steps were already folded, the Garmin
+#: family table became one generated sentence, and the release notes past the third are in
+#: a fold. /help/ is the whole of the app's help and is **not** a prose page at all: with
+#: its ten section folds shut a reader meets the eleven glossary lines and ten handles,
+#: which is what the number below is for. Open, it is forty pages of reference, and that is
+#: the point of it.
 BUDGET = {
     "index.html": 550,
-    "start/index.html": 1200,
-    "learn/index.html": 1100,
-    "watches/index.html": 1200,
-    "invite/index.html": 850,
-    "whats-new/index.html": 700,
+    "start/index.html": 1700,
+    "help/index.html": 900,
+    "invite/index.html": 1500,
 }
 SLACK = 1.10
 
@@ -91,7 +115,7 @@ MIN_WORDS = 8
 ALLOW: list[dict] = [
     {
         "prefix": "beta in the public beta today, not yet in the App Store release.",
-        "pages": ["index.html", "learn/index.html", "watches/index.html"],
+        "pages": ["index.html", "help/index.html"],
         "why": (
             "the legend under a `beta` pill, once per page that draws one. It is not copy "
             "saying the same thing twice — it is the key to a symbol, and a key that is on "

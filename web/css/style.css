@@ -150,16 +150,27 @@ a.brand:focus-visible { outline: 2px solid var(--series-1); outline-offset: 3px;
   list-style: none; margin: 0; padding: 0;
   display: flex; flex-wrap: wrap; gap: 0 18px;
 }
-.sitenav a {
+.sitenav a:not(.btn) {
   display: inline-block; padding: 2px 0; text-decoration: none;
   font: 600 11px/1.5 var(--mono); letter-spacing: 0.07em; text-transform: uppercase;
   color: var(--ink-3); border-bottom: 2px solid transparent;
 }
-.sitenav a:hover { color: var(--ink); }
+.sitenav a:not(.btn):hover { color: var(--ink); }
 .sitenav a:focus-visible {
   outline: 2px solid var(--series-1); outline-offset: 3px; border-radius: 3px;
 }
-.sitenav a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--series-1); }
+.sitenav a:not(.btn)[aria-current="page"] {
+  color: var(--ink); border-bottom-color: var(--series-1);
+}
+/* THE TWO DOORS, at the end of the row (19 September 2026). They used to be `.btn`s in
+ * `.topbar-right`, one row up, where "Open the analyzer" sat beside GitHub and read as a
+ * third piece of furniture rather than as the way in. They are buttons still — `.btn`
+ * styles them, and `:not(.btn)` above keeps the row's mono off them — and they push to the
+ * end of the row so the two words a reader navigates by come first. */
+.sitenav .doors {
+  margin-inline-start: auto; display: flex; align-items: center; gap: 8px;
+}
+.sitenav .doors .btn { font-size: 12.5px; padding: 6px 12px; }
 /* Under 720 px the row scrolls sideways, and it bleeds to both screen edges so that the
    scroll looks like a scroll rather than like a clipped box.
  *
@@ -181,6 +192,9 @@ a.brand:focus-visible { outline: 2px solid var(--series-1); outline-offset: 3px;
   .sitenav ul::-webkit-scrollbar { display: none; }
   .sitenav li { flex: 0 0 auto; }
   .sitenav li:last-child { padding-inline-end: var(--pad-x, 16px); }
+  /* `margin-inline-start: auto` has nothing to push against inside a scrolling row, so the
+     doors simply follow the two links and scroll with them. */
+  .sitenav .doors { margin-inline-start: 12px; }
 }
 
 .chip {

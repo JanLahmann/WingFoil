@@ -16,10 +16,18 @@ WHAT IT CHECKS, per document:
   3. Tags nest and close. html.parser is not a validator, but an unclosed <section> or a
      </div> too many is exactly the mistake a hand-edited page makes, and it finds those.
   4. The site nav between <!-- sitenav:begin --> and <!-- sitenav:end --> is byte-identical
-     on all nine reader-facing documents, once `aria-current="page"` is taken out, and so is
-     the footer block between <!-- sitefoot:begin --> and <!-- sitefoot:end -->. Both are
+     on all seven reader-facing documents, once `aria-current="page"` is taken out, and so
+     is the footer block between <!-- sitefoot:begin --> and <!-- sitefoot:end -->. Both are
      copied markup rather than a template — this site has no build step — so the only thing
-     keeping nine copies in step is this check.
+     keeping seven copies in step is this check.
+
+     A REDIRECT is not one of the seven. /learn/, /watches/ and /whats-new/ became stubs on
+     19 September 2026, when /help/, /start/ and /invite/ took their content: a meta refresh,
+     one sentence and the link a reader uses if the refresh does not fire. They keep their
+     addresses because a link somebody sent a friend in March must not answer 404, and they
+     carry no nav, no footer, no word budget and no copy pin, because a page that is on
+     screen for a frame is not a page a reader navigates from. Their own links are still
+     checked, and so is what they point at.
 
   5. The words. `verify_copy.py --brief` holds every page to `docs/copy/*.json`,
      `make_copy_js.py --check` to the generated `js/copy.js`, and `verify_unique.py --brief`
@@ -42,16 +50,26 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))   # web/
 
 PAGES = [
     "index.html",
-    "learn/index.html",
+    "help/index.html",
     "invite/index.html",
     "start/index.html",
     "privacy/index.html",
     "impressum/index.html",
-    "watches/index.html",
-    "whats-new/index.html",
     "app/index.html",
     "strava/callback/index.html",
+    "learn/index.html",
+    "watches/index.html",
+    "whats-new/index.html",
 ]
+
+#: The three addresses that moved. Everything a reader-facing page owes — the nav, the
+#: footer, a word budget, a copy pin — is waived for these, and the one thing they owe is
+#: that their own link resolves.
+REDIRECTS = {
+    "learn/index.html",
+    "watches/index.html",
+    "whats-new/index.html",
+}
 
 SKIP = re.compile(r"^(https?:|mailto:|tel:|data:|javascript:|cleanjibe:|//)", re.I)
 
@@ -157,6 +175,10 @@ for page in PAGES:
                 # on arrival. Same for anything else the analyzer routes on.
                 if rel == "app/index.html" and frag in ("example", "library", "trends"):
                     continue
+                # A redirect stub has one heading and no anchors; the fragment on a link
+                # INTO one is for the page it forwards to.
+                if rel in REDIRECTS:
+                    continue
                 if frag not in tp.ids:
                     errors.append("%s: %s=\"%s\" -> no id #%s in %s" % (page, attr, ref, frag, rel))
 
@@ -166,7 +188,8 @@ print("pages: %d   internal references checked: %d" % (len(PAGES), checked))
 # One navigation row, copied into nine documents by hand because a static site has nowhere
 # to put a partial. The block between the two markers must be the same bytes everywhere;
 # the only licensed difference is which link says it is the page you are on.
-NAV_PAGES = [p for p in PAGES if p != "strava/callback/index.html"]
+NAV_PAGES = [p for p in PAGES
+             if p != "strava/callback/index.html" and p not in REDIRECTS]
 NAV_BEGIN = "<!-- sitenav:begin"
 NAV_END = "<!-- sitenav:end -->"
 CURRENT_ATTR = ' aria-current="page"'
@@ -254,8 +277,19 @@ if make_start.main(["--check"]) != 0:
 import make_whats_new                                                    # noqa: E402
 
 if make_whats_new.main(["--check"]) != 0:
-    errors.append("web/whats-new/index.html or WhatsNew.swift is stale — "
+    errors.append("the release-note cards on web/invite/ or WhatsNew.swift are stale — "
                   "run `python3 web/tools/make_whats_new.py`")
+
+# And /help/, which is the app's own help catalogue rendered: docs/copy/help.json is written
+# out of HelpCatalog by the kit's HelpExportTests, and this page is written out of that. A
+# stale one is the website explaining a screen the app no longer has — the exact failure
+# /learn/ was, in the four months it answered questions in its own words.
+import make_help                                                         # noqa: E402
+
+if make_help.main(["--check"]) != 0:
+    errors.append("web/help/index.html is stale — run `python3 web/tools/make_help.py` "
+                  "(and regenerate docs/copy/help.json from the kit first if the "
+                  "catalogue moved)")
 
 # Same argument for the Garmin product count and the watch app's version: five pages print
 # them, garmin/manifest.xml decides them, and a page that says 39 products at 0.9.10 when

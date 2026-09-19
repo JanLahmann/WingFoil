@@ -16,7 +16,14 @@ level, the product ids in sorted order, and the ids grouped into the families
 step with garmin/manifest.xml by hand"; on 15 September 2026 the tree shipped 42 products at
 0.9.11 and five web pages still said 39 at 0.9.10. This is the file that ends that.
 
-Consumers: the five pages that name the number or the version carry it in a
+The pages that print them moved on 19 September 2026: /watches/ and /whats-new/ were
+absorbed by /start/ and /invite/, and /learn/ became /help/, which prints no count at all —
+the Garmin family table on /watches/ became **one generated sentence** on /start/#watches,
+because thirteen rows of model names on a marketing page is the Connect IQ listing typed
+out by hand, and the store's install button is the only honest answer to "is mine on the
+list".
+
+Consumers: the three pages that name the number or the version carry it in a
 ``<span data-copy="garmin-count">`` / ``<span data-copy="garmin-version">`` so the check can
 be exact rather than a guess at the surrounding prose, and so a bump rewrites them rather
 than asking somebody to remember six places. ``web/tools/verify_links.py`` runs ``--check``
@@ -74,10 +81,8 @@ FAMILIES = [
 # must say what the manifests say.
 PAGES = {
     "index.html": ("count",),
-    "learn/index.html": ("count",),
-    "watches/index.html": ("count", "version"),
+    "start/index.html": ("count", "version"),
     "invite/index.html": ("count", "version"),
-    "whats-new/index.html": ("count", "version"),
 }
 
 # What the PUBLIC listing installs today, which is not always the tree: a version sits on the
@@ -193,7 +198,7 @@ def page_problems(page, src, owes, count, version):
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--check", action="store_true",
-                    help="exit 1 if the JSON or any of the five pages is stale")
+                    help="exit 1 if the JSON or any of the three pages is stale")
     args = ap.parse_args(argv)
 
     doc = build()

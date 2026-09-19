@@ -456,8 +456,8 @@ retypes a sentence — the hero's promise, the card CTA and the caption offer co
 `js/cardstats.js`'s own parts, the Strava sentence and the five phrases that may not
 accompany it, the Connect IQ listing name, the beta and dev lists and the section title on
 `/invite/` — the one page that prints them since 15 September 2026 — the four
-recording-class names and lines in `/watches/#classes`, likewise the one table that carries
-them, the glossary entries on `/learn/`, the three feedback prompts in every `mailto:` body
+recording-class names and lines in `/start/#watches`, likewise the one table that carries
+them, the glossary entries on `/help/`, the three feedback prompts in every `mailto:` body
 and the
 invitation in every *Tell us* block, and the four intervals.icu step titles and the
 **Save & check** label on `/start/` outside the generated guide block. Pages carry
@@ -474,20 +474,24 @@ forbidden-door rule are not written twice: `verify_copy.py` reads
 2026 and run by `verify_links.py` as a fourth sub-check, is the half no pin could reach: the
 site's own prose, written once and then written again on another page — the Android install
 steps twice at 110 and 95 words, the recording classes in two tables, the feedback doors on
-two pages. It reads `<main>` of `/`, `/learn/`, `/start/`, `/watches/`, `/invite/` and
-`/whats-new/`, normalises whitespace with `verify_copy.py`'s own helpers, skips everything
+two pages. It reads `<main>` of `/`, `/start/`, `/help/` and `/invite/`, normalises whitespace with
+`verify_copy.py`'s own helpers and the typographic apostrophe the generators render, skips
+everything
 between the guide markers and every string `docs/copy` owns, and **fails on any remaining
 sentence of eight words or more that is on two pages**. Threshold zero, with an `ALLOW` list
 of `{prefix, pages, why}` printed on every run — the same culture as `check_release_copy.py`'s
 exemptions, because an exemption that is not read becomes the rule. Its second half is a
-**word budget per page** (`/` 550, `/start/` 1200, `/learn/` 1100, `/watches/` 1200,
-`/invite/` 850, `/whats-new/` 700, each with ten per cent of slack), counted the way a reader
-meets the page: everything inside a `<details>` but its `<summary>` is left out. That is what
+**word budget per page** (`/` 550, `/start/` 1700, `/help/` 900, `/invite/` 1500, each with
+ten per cent of slack), counted the way a reader meets the page: everything inside a
+`<details>` but its `<summary>` is left out. The numbers moved on 19 September 2026 because
+the pages did: `/start/` absorbed `/watches/`, `/invite/` absorbed `/whats-new/`, and
+`/help/` is the app's whole help catalogue behind ten folds, which is why a reference work
+of forty pages fits inside 900 visible words. That is what
 stops `/start/` walking back to 3500 words one honest paragraph at a time, which is exactly
 how it got there the first time.
 
 `verify_links.py` also compares the **footer** block between `<!-- sitefoot:begin -->` and
-`<!-- sitefoot:end -->` byte for byte across all nine documents, the way it has always
+`<!-- sitefoot:end -->` byte for byte across all seven reader documents, the way it has always
 compared the site nav: one link set, every page, no `aria-current`.
 
 **The voice** (docs/voice.md, 15 Sep 2026): `python3 docs/copy/check_voice.py` measures every

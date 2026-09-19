@@ -3578,10 +3578,13 @@ the other one lives. A `HelpTopic` body cannot branch on the channel (the catalo
 data, and the channel-bound filtering is on the *index*), so a sentence in it has to be true
 and complete everywhere: a fact about where a feature exists is allowed, a promise is not.
 
-The **same table is public**, at cleanjibe.org/watches, beside the watch app’s Connect IQ
-product list grouped into families (`web/watches/index.html`, kept in step with
-`garmin/manifest.xml` by hand) — so “will my watch work” has one answer for a rider who has
-installed nothing yet and the same answer inside the app. The public copy carries one column
+The **same table is public**, at cleanjibe.org/start#watches since 19 September 2026
+(cleanjibe.org/watches until then, and a redirect to it since), beside one generated
+sentence about the watch app’s Connect IQ product count — so “will my watch work” has one
+answer for a rider who has installed nothing yet and the same answer inside the app. The
+family-by-family product list is gone from the site: it was `garmin/manifest.xml` typed out
+by hand, and the store’s own install button is the only honest answer to “is mine on the
+list”. The public copy carries one column
 this one does not: the **recording class** (a / b / b + wrist / c, docs/channels.md), printed
 above it as its own table — “what you need, what you get” — and repeated on the homepage,
 since the question arrives before the import rather than after it. The CleanJibe Apple Watch
@@ -3589,8 +3592,7 @@ app is **b + wrist**: class b speed, plus the 50 Hz wrist accelerometer (ADR-016
 analyses afterwards, which is why its row here says *yes* to pump and takeoff effort and
 Apple's own Workout app does not. The public page also answers *no watch at all* with real
 instructions: which phone apps record a track and can export it. The public release notes live beside
-it at cleanjibe.org/whats-new, from `ios/tools/testflight_publish.py` and
-`garmin/store/listing.md`.
+it at cleanjibe.org/invite#whats-new, generated from `docs/copy/whats-new.json`.
 
 **Where the public vocabulary lives, since 14 September 2026.** Jan: *"The entry web page is
 quite long."* The homepage (`web/index.html`) is now the short half — the share card as the
@@ -3599,9 +3601,14 @@ lists — and everything a reader goes *looking* for moved to **cleanjibe.org/le
 (`web/learn/index.html`): the three pieces in full, the FAQ, **"What it counts"** (the eleven
 glossary entries and the track motif that is their key — the same four path strings the iOS
 welcome screen and `web/tools/social_card.html` carry, character for character), and "How it
-is built". Nothing was reworded in the move, so every metric name on that page is still the
+is built". **On 19 September 2026 that page went too**, and this time nothing was rewritten
+on the web at all: cleanjibe.org/help is `HelpCatalog` rendered, out of `docs/copy/help.json`
+by `web/tools/make_help.py`, opening with the same eleven glossary lines. /learn/ redirects
+to /help/#numbers. A page that answers the app's questions in the website's own words is the
+drift this file spent September ending. Nothing was reworded in the move, so every metric name on that page is still the
 one this file fixes. Beta-channel features carry a small `beta` pill wherever they appear on
-the site — the homepage pieces, /learn, /watches and /start — written from
+the site — the homepage pieces, /start, and /help, where the pill is written from the
+exported topic's own `channels` — written from
 `docs/channels.md` and from nowhere else, with one line of legend per page: *"beta: in the
 public beta today, not yet in the App Store release."* Release features are unlabelled.
 

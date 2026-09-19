@@ -1,5 +1,5 @@
 {
-  "_readme" : [
+  "_readme": [
     "THE SHORT STRINGS EVERY SURFACE SHARES.",
     "",
     "Four of them are the kit's and are asserted equal to it by CopyContractTests:",
@@ -15,47 +15,52 @@
     "Garmin's store shows it, and not before — every page that prints the link text is",
     "checked against what a rider actually sees."
   ],
-  "appStoreName" : "CleanJibe Wingfoil Analyzer",
-  "appStoreSubtitle" : "Flights, turns, speed records",
-  "callToAction" : "analyze your wingfoil sessions free — cleanjibe.org",
-  "captionOffer" : "analysed with CleanJibe, free at cleanjibe.org",
-  "ciqListingTitle" : "CleanJibe Wingfoil Tracker (Beta)",
-  "headline" : "Every flight, every jibe, every swim.",
-  "lexicon" : {
-    "banned" : [
+  "appStoreName": "CleanJibe Wingfoil Analyzer",
+  "appStoreSubtitle": "Flights, turns, speed records",
+  "callToAction": "analyze your wingfoil sessions free — cleanjibe.org",
+  "captionOffer": "analysed with CleanJibe, free at cleanjibe.org",
+  "ciqListingTitle": "CleanJibe Wingfoil Tracker (Beta)",
+  "headline": "Every flight, every jibe, every swim.",
+  "lexicon": {
+    "banned": [
       "carried",
       "no-fall streak",
       "clean-jibe percentage",
       "swim rate",
       "success rate"
     ],
-    "exemptions" : [
+    "exemptions": [
       {
-        "path" : "ios/WingFoilKit/Sources/WingFoilKit/Presentation/Dev/",
-        "why" : "the dev workbench is Jan's engine surface, not a rider's (docs/presentation.md, 'The dev workbench'): it prints the engine's own vocabulary on purpose.",
-        "word" : "carried"
+        "path": "ios/WingFoilKit/Sources/WingFoilKit/Presentation/Dev/",
+        "why": "the dev workbench is Jan's engine surface, not a rider's (docs/presentation.md, 'The dev workbench'): it prints the engine's own vocabulary on purpose.",
+        "word": "carried"
       },
       {
-        "path" : "ios/WingFoilKit/Sources/WingFoilKit/Presentation/TurnAnalytics.swift",
-        "why" : "\"not clean · carried 18° past the axis\" is the ordinary verb — the arc carried past the axis — an engine reason on the turn page, not a rider metric. The web's turn table prints the score as a number and does not write this sentence today (checked 15 Sep 2026).",
-        "word" : "carried"
+        "path": "ios/WingFoilKit/Sources/WingFoilKit/Presentation/TurnAnalytics.swift",
+        "why": "\"not clean · carried 18° past the axis\" is the ordinary verb — the arc carried past the axis — an engine reason on the turn page, not a rider metric. The web's turn table prints the score as a number and does not write this sentence today (checked 15 Sep 2026).",
+        "word": "carried"
       },
       {
-        "path" : "ios/WingFoilKit/Sources/WingFoilKit/Help/HelpCatalog.swift",
-        "why" : "the takeoff metric, and the app's own Summary-grid card: attempts that produced a flight, out of attempts. It is not the clean-jibe rate — that is CPH — and TurnAnalytics says so at length.",
-        "word" : "success rate"
+        "path": "ios/WingFoilKit/Sources/WingFoilKit/Help/HelpCatalog.swift",
+        "why": "the takeoff metric, and the app's own Summary-grid card: attempts that produced a flight, out of attempts. It is not the clean-jibe rate — that is CPH — and TurnAnalytics says so at length.",
+        "word": "success rate"
+      },
+      {
+        "path": "web/help/index.html",
+        "why": "/help/ is HelpCatalog rendered: web/tools/make_help.py writes it out of docs/copy/help.json, which the kit exports. The page therefore carries the same exempted term the kit carries one entry above — the takeoff metric, attempts that produced a flight out of attempts. It is not the clean-jibe rate, which is CPH. It is written down twice because the two checks read two different trees, and both print it on every run.",
+        "word": "success rate"
       }
     ],
-    "preferred" : {
-      "clean" : "flew through it, held its speed, and the ten seconds after it stayed quiet",
-      "dry streak" : "the run of turns without falling in",
-      "flew through" : "kept the foil the whole way through the turn — no touchdown, no swim"
+    "preferred": {
+      "clean": "flew through it, held its speed, and the ten seconds after it stayed quiet",
+      "dry streak": "the run of turns without falling in",
+      "flew through": "kept the foil the whole way through the turn — no touchdown, no swim"
     }
   },
-  "promise" : "Did you fly through that jibe? CleanJibe reads your session off the watch. It tells you your time on the foil, every flight, your speed records, and a verdict on every turn. Flew through, touchdown, or fell in.",
-  "strava" : "Strava lets a new app connect a limited number of riders",
-  "stravaFall" : "Without the watch's own speed, a fall can read as a touchdown.",
-  "stravaForbidden" : [
+  "promise": "Did you fly through that jibe? CleanJibe reads your session off the watch. It tells you your time on the foil, every flight, your speed records, and a verdict on every turn. Flew through, touchdown, or fell in.",
+  "strava": "Strava lets a new app connect a limited number of riders",
+  "stravaFall": "Without the watch's own speed, a fall can read as a touchdown.",
+  "stravaForbidden": [
     "reviewed the app",
     "reviews the app",
     "approves the app",

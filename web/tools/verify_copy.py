@@ -21,7 +21,7 @@ WHAT IS PINNED, and where it bites
                      composition is re-done here rather than the sentence being looked for
     `captionOffer`   the tail of the share-card caption template in web/js/sharecard.js,
                      composed from the same two parts
-    `strava`         present on /learn/, /start/ and /privacy/ …
+    `strava`         present on /help/, /start/ and /privacy/ …
     `stravaForbidden`… and none of those five phrases anywhere under web/**.html
     `ciqListingTitle` every <span data-copy="ciq-title">
     `appStoreName` / `appStoreSubtitle`
@@ -52,14 +52,16 @@ WHAT IS PINNED, and where it bites
 
   recording-classes.json
     the four `name` and four `line` strings, verbatim, in the one class table
-    (/watches/#classes), in the cells marked `data-copy="class-name"` / `class-line`.
-    The /watches/ "What you ride with" table keeps its own shape; only its class LETTERS
-    are checked against the names.
+    (/start/#watches since 19 September 2026, when /start/ absorbed /watches/), in the
+    cells marked `data-copy="class-name"` / `class-line`. The "What you ride with" table
+    beside it keeps its own shape; only its class LETTERS are checked against the names.
 
   glossary.json
-    the eight `term`/`line` pairs in /learn/'s definition list, in order, in the JSON's
-    order; entries the site keeps that the kit does not have are marked
-    `data-copy="glossary-extra"` and must come after all eight.
+    the eleven `term`/`line` pairs in /help/'s definition list, in the JSON's order —
+    /learn/'s job until 19 September 2026, and a redirect to /help/#numbers since. The page
+    is rendered by web/tools/make_help.py out of the same folder, so a drift here means the
+    generator was not re-run. Entries the site keeps that the kit does not have are marked
+    `data-copy="glossary-extra"` and must come after all eleven.
 
   feedback.json
     the three `prompts` in every mailto: body on the site (percent-decoded), and the
@@ -108,15 +110,17 @@ COPY = REPO / "docs" / "copy"
 sys.path.insert(0, str(COPY))
 import check_release_copy as release                                     # noqa: E402
 
+#: The pages that carry copy. The three retired addresses — /learn/, /watches/ and
+#: /whats-new/ — are **redirect stubs** since 19 September 2026 and are deliberately not
+#: here: a page that is on screen for a frame pins nothing, and a pin that fired on one
+#: would have to be kept in step with a page nobody reads.
 PAGES = [
     "index.html",
-    "learn/index.html",
+    "help/index.html",
     "invite/index.html",
     "start/index.html",
     "privacy/index.html",
     "impressum/index.html",
-    "watches/index.html",
-    "whats-new/index.html",
     "app/index.html",
     "strava/callback/index.html",
 ]
@@ -352,7 +356,10 @@ def pin_branding(phrases: dict, report: Report):
 
 
 def pin_strava(site: Site, phrases: dict, report: Report):
-    owed = ["learn/index.html", "start/index.html", "privacy/index.html"]
+    # /help/ inherits /learn/'s half of this: the sentence is an item of the kit's own
+    # `stravaImport` topic, so the page carries it by being rendered rather than by being
+    # edited.
+    owed = ["help/index.html", "start/index.html", "privacy/index.html"]
     sentence = phrases["strava"]
     for page in owed:
         if sentence not in site.text[page]:
@@ -593,9 +600,10 @@ def pin_forbidden_doors(site: Site, channels: dict, report: Report):
 
 def pin_classes(site: Site, classes: dict, report: Report):
     rows = classes["classes"]
-    # /watches/#classes ONLY since 15 September 2026. The front door printed the same four
-    # rows above a link to this page; it now prints the link and one sentence, and the four
-    # pinned cells exist once on the site.
+    # ONE PAGE ONLY: /watches/#classes from 15 September 2026, /start/#watches from the
+    # 19th, when /start/ absorbed that page and /watches/ became a redirect to this anchor.
+    # The front door printed the same four rows above a link; it prints the link and one
+    # sentence, and the four pinned cells exist once on the site.
     # THE TABLE IS A SET, NOT A LIST, since 16 September 2026. docs/copy/recording-classes
     # .json is the kit's file and keeps the kit's order (`RecordingClass.allCases`: a, b,
     # bPlus, c); the page prints A, B+, B, C, because on this site Apple Watch comes right
@@ -605,7 +613,7 @@ def pin_classes(site: Site, classes: dict, report: Report):
     # the B+ name with the C sentence still fails.
     line_of = {row["name"]: row["line"] for row in rows}
     by_name = {row["name"]: row for row in rows}
-    for page in ("watches/index.html",):
+    for page in ("start/index.html",):
         names = marked(site.tree[page], "class-name")
         lines = marked(site.tree[page], "class-line")
         for kind, nodes in (("name", names), ("line", lines)):
@@ -630,11 +638,11 @@ def pin_classes(site: Site, classes: dict, report: Report):
         report.ok("recording-classes → the four names and four lines in web/%s, in the "
                   "page's own order" % page)
 
-    # The second /watches/ table ("What you ride with…") keeps its own shape and its own
-    # columns; what it may not do is invent a class. Its Class cells — the ones the table
+    # The second table on that page ("What you ride with…") keeps its own shape and its
+    # own columns; what it may not do is invent a class. Its Class cells — the ones the table
     # itself labels `data-th="Class"` — must each open one of the four names.
     letters = {row["name"].split(" · ")[0] for row in rows}
-    page = "watches/index.html"
+    page = "start/index.html"
     cells = [n for n in descendants(site.tree[page])
              if n.tag == "td" and n.attrs.get("data-th") == "Class"]
     # A cell may name two classes ("Class B with a FIT, Class C with a GPX"); what it may
@@ -655,12 +663,12 @@ def pin_classes(site: Site, classes: dict, report: Report):
                     % (", ".join(sorted(unknown)) if unknown
                        else "no class at all: " + "; ".join(silent)))
     else:
-        report.ok("recording-classes → the %d Class cells of /watches/'s second table name "
+        report.ok("recording-classes → the %d Class cells of the second table name "
                   "only %s" % (len(cells), ", ".join(sorted(letters))))
 
 
 def pin_glossary(site: Site, glossary: dict, report: Report):
-    page = "learn/index.html"
+    page = "help/index.html"
     entries = glossary["entries"]
     lists = marked(site.tree[page], "glossary")
     if len(lists) != 1:

@@ -375,8 +375,11 @@ def html_card(entry: dict, names: dict[str, str], *, open_: bool = False) -> lis
     short = names.get(entry.get("class", ""))
     if short:
         lines += [
+            # The class table is on this same page since 19 September 2026 (/watches/
+            # was absorbed into /start/#watches), so the pill is a jump down the page
+            # rather than a link off it.
             '      <p class="piece-class"><a class="tag class-pill" '
-            f'href="../watches/#classes">You get {short[0].lower()}{short[1:]}</a></p>',
+            f'href="#watches">You get {short[0].lower()}{short[1:]}</a></p>',
         ]
     steps = len(entry["steps"])
     lines += [

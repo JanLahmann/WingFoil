@@ -60,40 +60,41 @@
   <!-- The same two doors as every other page: the free thing that needs no install, and the
        beta beside it. -->
   <div class="topbar-right">
-    <a class="btn primary" href="../app/" data-umami-event="analyze-cta-topbar">Open the analyzer</a>
-    <a class="btn ghost" href="../invite/" data-umami-event="beta-cta-topbar">Get the beta</a>
     <a class="btn ghost wide-only" href="https://github.com/JanLahmann/WingFoil" rel="noopener" data-umami-event="github">GitHub</a>
   </div>
-<!-- sitenav:begin — COPIED VERBATIM ON ALL NINE PAGES. The only thing that differs is
-     which link carries `aria-current="page"`; web/tools/verify_links.py compares this block
-     byte for byte across /, /learn/, /start/, /watches/, /invite/, /whats-new/, /app/,
-     /privacy/ and /impressum/ with that one attribute stripped, so an edit here is an edit
-     everywhere or it is a failed check.
+<!-- sitenav:begin — COPIED VERBATIM ON ALL SEVEN READER PAGES. The only thing that differs
+     is which link carries `aria-current="page"`; web/tools/verify_links.py compares this
+     block byte for byte across /, /start/, /help/, /invite/, /app/, /privacy/ and
+     /impressum/ with that one attribute stripped, so an edit here is an edit everywhere or
+     it is a failed check. The three redirect stubs — /learn/, /watches/ and /whats-new/ —
+     carry no nav, because they are on screen for a frame.
 
-     Jan, 15 September 2026: *"es gibt nur Links auf den Seiten, aber keine richtige
-     Navigation"* — the pages did link each other, in prose and in the footer, which is
-     exactly nowhere a reader looks for navigation. Four destinations in the order a stranger
-     needs them: install, does my watch work, what does it measure, what changed. The beta is
-     NOT here: "Try the beta" is the button right above this row on every page, and Jan's
-     phone showed the two side by side ("'Try the beta' ist nochmal als Button direkt
-     darüber"). Privacy and Impressum are not here either — they are read once and reached
-     from the footer of every page, which is where a reader goes looking for them.
+     ONE PRODUCT, THREE SHELLS (Jan, 19 September 2026). The row was four destinations and
+     is two: *Get started* absorbed *Which watch*, and *Help* is the app's own help
+     catalogue, which is where *What it measures* went. *What's new* is the second half of
+     *Get the beta* now. Two links a stranger can hold in his head, and the two doors beside
+     them as what they are, buttons.
+
+     THE DOORS LIVE HERE, not in `.topbar-right` beside GitHub. They used to sit one row
+     above this one and say "Open the analyzer", which is a name for a tool rather than for
+     a product: it is *Open the app*, and it is the same sentence in the hero, in the footer
+     and in the store texts. One name per door.
 
      The hrefs are ROOT-RELATIVE so one block can serve a page at the site root and a page a
      directory down. The site is the root of cleanjibe.org, and of `python3 -m http.server`
      run in web/, which is the same thing; verify_links.py resolves them.
 
-     It wears the section nav's furniture — the eyebrow's mono, the same ink, the same
-     hairline — because it is the same kind of thing one level up. On a phone it stays a
-     row: four short items fit one line, and the row scrolls sideways if a font makes them
-     not. There is no select here on purpose — a "Go to…" above the section nav's
-     "On this page…" read as two of the same thing (Jan, same photo). -->
+     The two links wear the section nav's furniture — the eyebrow's mono, uppercase,
+     --ink-3 — because they are navigation one level up. On a phone the row stays a row and
+     scrolls sideways if a font makes it not. -->
 <nav class="sitenav" aria-label="Site">
   <ul>
     <li><a href="/start/" aria-current="page">Get started</a></li>
-    <li><a href="/watches/">Which watch</a></li>
-    <li><a href="/learn/">What it measures</a></li>
-    <li><a href="/whats-new/">What&rsquo;s new</a></li>
+    <li><a href="/help/">Help</a></li>
+    <li class="doors">
+      <a class="btn primary" href="/app/" data-umami-event="app-cta-nav">Open the app</a>
+      <a class="btn ghost" href="/invite/" data-umami-event="beta-cta-nav">Get the beta</a>
+    </li>
   </ul>
 </nav>
 <!-- sitenav:end -->
@@ -107,6 +108,7 @@
       <li><a href="#routes">The routes</a></li>
       <li><a href="#stuck">If something breaks</a></li>
       <li><a href="#report">What to say</a></li>
+      <li><a href="#watches">Which watch</a></li>
       <li><a href="#history">Your old sessions</a></li>
       <li><a href="#tell">Tell us</a></li>
     </ul>
@@ -117,6 +119,7 @@
         <option value="#routes">The routes</option>
         <option value="#stuck">If something breaks</option>
         <option value="#report">What to say</option>
+        <option value="#watches">Which watch</option>
         <option value="#history">Your old sessions</option>
         <option value="#tell">Tell us</option>
       </select>
@@ -151,7 +154,8 @@
       </p>
       <p class="lede">
         Not installed yet? <a href="../invite/" data-umami-event="start-invite">Get the
-        beta</a> first.
+        beta</a> first. Not sure your watch is in?
+        <a href="#watches" data-umami-event="start-watches">Which watch</a> is further down.
       </p>
     </div>
   </section>
@@ -180,7 +184,7 @@
         <h3>Garmin with the CleanJibe watch app</h3>
         <span class="status">fenix, epix, Forerunner and the rest</span>
       </div>
-      <p class="piece-class"><a class="tag class-pill" href="../watches/#classes">You get class A</a></p>
+      <p class="piece-class"><a class="tag class-pill" href="#watches">You get class A</a></p>
       <details open>
         <summary class="what">
           <span class="what-line">Install it from Connect IQ, ride, save. Sessions sync through intervals.icu: Settings → intervals.icu, 4 steps, once.</span>
@@ -220,7 +224,7 @@
         <h3>The CleanJibe Apple Watch app<span class="tag beta">beta</span></h3>
         <span class="status">Apple Watch · everything a Garmin gets</span>
       </div>
-      <p class="piece-class"><a class="tag class-pill" href="../watches/#classes">You get class B+</a></p>
+      <p class="piece-class"><a class="tag class-pill" href="#watches">You get class B+</a></p>
       <details>
         <summary class="what">
           <span class="what-line">Record on your Apple Watch. The session comes to the phone by itself, with pump strokes and takeoff attempts included.</span>
@@ -252,7 +256,7 @@
         <h3>Apple&rsquo;s own Workout app<span class="tag beta">beta</span></h3>
         <span class="status">Apple Watch · nothing to install</span>
       </div>
-      <p class="piece-class"><a class="tag class-pill" href="../watches/#classes">You get class B</a></p>
+      <p class="piece-class"><a class="tag class-pill" href="#watches">You get class B</a></p>
       <details>
         <summary class="what">
           <span class="what-line">No extra app on the watch: record a Surfing workout and import it from Apple Health.</span>
@@ -288,7 +292,7 @@
         <h3>Any watch that writes a .fit</h3>
         <span class="status">Polar, Suunto, COROS and everything else</span>
       </div>
-      <p class="piece-class"><a class="tag class-pill" href="../watches/#classes">You get class B</a></p>
+      <p class="piece-class"><a class="tag class-pill" href="#watches">You get class B</a></p>
       <details>
         <summary class="what">
           <span class="what-line">Sync it through intervals.icu, or share the file into CleanJibe from Files, Mail, AirDrop or any share sheet.</span>
@@ -324,7 +328,7 @@
         <h3>Strava</h3>
         <span class="status">any watch that syncs to Strava</span>
       </div>
-      <p class="piece-class"><a class="tag class-pill" href="../watches/#classes">You get class C</a></p>
+      <p class="piece-class"><a class="tag class-pill" href="#watches">You get class C</a></p>
       <details>
         <summary class="what">
           <span class="what-line">Settings → Strava → Connect with Strava, then Import → Import from Strava…. Positions only, records uncertified. Without the watch&rsquo;s own speed, a fall can read as a touchdown.</span>
@@ -493,6 +497,199 @@
 
 <!-- guide:end -->
 
+  <!-- --------------------------------------------------------------- which watch -->
+  <!-- /watches/ ABSORBED, 19 September 2026 (Jan, "one product, three shells"). The page
+       answered one question — will my watch work — and every reader who asked it was
+       already on his way here, because the answer is a route. So the class table and the
+       brands live under the routes they lead to, and /watches/ is a redirect to this
+       anchor. Nothing was cut that is not written down somewhere else:
+
+       * the Garmin family table, thirteen rows of model names, became the one generated
+         sentence below. The models a rider actually searches for are on the Connect IQ
+         listing, which installs them, and the store's own install button is the only
+         honest answer to "is mine on the list";
+       * the "Tested on the water" column, three values over thirteen rows, became the one
+         line that carried all the information in it: one family has been ridden by us and
+         the rest have not;
+       * the Android and phone-only recipes went to the app's help, which /help/ renders
+         (the browser app's own page, "CleanJibe in a browser"), so the steps have one home
+         and this page keeps the link.
+
+       THE CLASS TABLE IS THE PINNED ONE. Its four name cells and four line cells are
+       docs/copy/recording-classes.json's, written by RecordingClass.swift and held here by
+       web/tools/verify_copy.py. The four-column shape and the order are the web's own: the
+       page prints A, B+, B, C because Apple Watch comes right after Garmin wherever this
+       site lists watches. -->
+  <section class="home-section" id="watches">
+    <h2>Which watch</h2>
+    <p class="section-lede">
+      CleanJibe reads a recording, not a brand. What you get back depends on what your file
+      carries. Each row names the route that produces it.
+    </p>
+
+    <div class="table-scroll">
+      <table class="stack-sm">
+        <thead>
+          <tr>
+            <th class="l">Class</th>
+            <th class="l">You record with</th>
+            <th class="l">What you get</th>
+            <th class="l">Route</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="l stack-lead" data-copy="class-name">Class A · Garmin watch app</td>
+            <td class="l" data-th="You record with">The CleanJibe watch app on a Garmin</td>
+            <td class="l" data-th="What you get" data-copy="class-line">Everything. Foil time, flights, every turn verdict and clean jibe, certified speed records, the wind axis. Pump strokes and takeoff attempts too.</td>
+            <td class="l" data-th="Route"><a href="#guide-garmin">Garmin</a></td>
+          </tr>
+          <tr>
+            <td class="l stack-lead" data-copy="class-name beta-door">Class B+ · Apple Watch app<span class="tag beta" data-copy="aside">beta</span></td>
+            <td class="l" data-th="You record with"><span data-copy="beta-door">The CleanJibe Apple Watch app</span></td>
+            <td class="l" data-th="What you get" data-copy="class-line">Everything class B gets, plus pump strokes and takeoff attempts. The watch app records the wrist at 50 Hz. The phone analyses it.</td>
+            <td class="l" data-th="Route"><span data-copy="beta-door"><a href="#guide-appleWatchApp">Apple Watch app</a></span></td>
+          </tr>
+          <tr>
+            <td class="l stack-lead" data-copy="class-name">Class B · any speed-certified file</td>
+            <td class="l" data-th="You record with">Any other FIT with a measured speed channel.
+                Garmin&rsquo;s own Windsurf profile, Apple&rsquo;s Workout app, or another
+                Connect IQ app</td>
+            <td class="l" data-th="What you get" data-copy="class-line">Everything except pump strokes and takeoff attempts, which need a wrist accelerometer nothing
+                else records. Speed records certify.</td>
+            <td class="l" data-th="Route"><a href="#guide-fit">Any .fit</a></td>
+          </tr>
+          <tr>
+            <td class="l stack-lead" data-copy="class-name">Class C · positions only</td>
+            <td class="l" data-th="You record with">Positions only: Strava, a <code>.gpx</code>,
+                a <code>.tcx</code> without speed, a phone in a pocket</td>
+            <td class="l" data-th="What you get" data-copy="class-line">Foil time, flights, every turn verdict and clean jibe, the wind axis. Speed records are
+                estimated from positions and marked uncertified, and there are no pump strokes or takeoff
+                attempts.</td>
+            <td class="l" data-th="Route"><a href="#guide-strava">Strava</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- THE GARMIN LIST IS THE STORE'S, not a table on a marketing page. The count and the
+         version are written into the two spans by web/tools/make_devices.py out of
+         garmin/manifest*.xml, so the number here can never be the number of a fortnight
+         ago; the store's install button is the only thing that knows whether a given watch
+         is offered today, and it is one tap from this sentence. -->
+    <div class="claims">
+      <article class="panel claim">
+        <h3>Garmin</h3>
+        <p>
+          <span data-copy="garmin-count">42</span> Garmin watches run the CleanJibe watch
+          app, fenix 8 down to v&iacute;voactive. The store shows whether yours is on the
+          list. Watch app <strong><span data-copy="garmin-version">0.9.13</span></strong>
+          today.
+        </p>
+        <p class="note">
+          <strong>Only the fenix 8 has been ridden on real water by us.</strong> Every other
+          family passes in the simulator and is waiting for a rider. Ride one and
+          <a href="../invite/#feedback">tell us how it went</a>.
+        </p>
+        <p class="piece-foot">
+          <a class="btn ghost" href="https://apps.garmin.com/apps/e77867b5-e972-4eb2-be1b-90077cfac806"
+             rel="noopener" data-umami-event="start-garmin-store">The Connect IQ listing</a>
+        </p>
+      </article>
+      <!-- Apple Watch comes right after Garmin wherever this site lists watches
+           (docs/review-checklist.md, pattern J). Both routes are cards above; this says
+           which is which in one line each and links to them. -->
+      <article class="panel claim">
+        <h3>Apple Watch<span class="tag beta">beta</span></h3>
+        <p>
+          Two routes, and the first one is ours. The
+          <a href="#guide-appleWatchApp">CleanJibe watch app</a> comes with the TestFlight
+          install and records the wrist at 50 Hz. That is class B+.
+        </p>
+        <p>
+          Or record a Surfing workout in
+          <a href="#guide-appleWorkoutApp">Apple&rsquo;s own Workout app</a> and import it
+          from Apple Health. The speed is the watch&rsquo;s own, so records certify. That is
+          class B.
+        </p>
+      </article>
+      <!-- Every other brand, in one card. The old page's five-row table said the same thing
+           five times; what a rider needs is the one rule (take the FIT) and the two ways in
+           that need no file at all. -->
+      <article class="panel claim">
+        <h3>Polar, Suunto, COROS and the rest</h3>
+        <p>
+          <strong>Take the FIT</strong> wherever an app offers you one. It carries the speed
+          your watch measured. That is the difference between class B and class C.
+        </p>
+        <p>
+          Most of these watches sync to intervals.icu, and anything that reaches Strava
+          comes in without a file at all. The steps are the
+          <a href="#guide-fit">any .fit</a> route and the <a href="#guide-strava">Strava</a>
+          route above.
+        </p>
+      </article>
+    </div>
+
+    <div class="table-scroll">
+      <table class="stack-sm">
+        <thead>
+          <tr>
+            <th class="l">What you ride with</th>
+            <th class="l">Class</th>
+            <th class="l">How it gets in</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="l stack-lead">Polar · Suunto · COROS</td>
+            <td class="l" data-th="Class">Class B with a FIT, Class C with a GPX</td>
+            <td class="l" data-th="How it gets in">intervals.icu, or the iOS share sheet from the vendor&rsquo;s app</td>
+          </tr>
+          <tr>
+            <td class="l stack-lead">Anything that reaches Strava</td>
+            <td class="l" data-th="Class">Class C</td>
+            <td class="l" data-th="How it gets in">Import &rarr; Strava</td>
+          </tr>
+          <tr>
+            <td class="l stack-lead">A phone in a pouch, any GPX</td>
+            <td class="l" data-th="Class">Class C</td>
+            <td class="l" data-th="How it gets in">The iOS share sheet, or the browser app</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="note">
+      <strong>No watch at all works.</strong> A phone in a waterproof pouch on your body
+      records a <code>.gpx</code>. You get the track, the flights, the jibes and their
+      verdicts. That is class C. <a href="../help/#help-phoneOnly">Help</a> says where to
+      put the phone.
+    </p>
+
+    <!-- THE ANDROID ANSWER LIVES HERE, and only here. It was /watches/#none and /learn/#faq
+         until 19 September 2026; it is not in the app's help catalogue and must not be,
+         because an iOS app's own text may not name another platform (App Store guideline
+         2.3.10, and PresentationTests.noHelpTopicNamesAnotherPlatform holds the kit to it).
+         A website has no such rule, so the sentence keeps its home on the page that is the
+         website speaking. -->
+    <details class="note">
+      <summary>On Android</summary>
+      <p>
+        There is no CleanJibe app for Android and none is needed. Open
+        <a href="../app/" data-umami-event="start-android-app">the browser app</a> and drop
+        the file in. It keeps a library, records and trends like the iPhone app.
+      </p>
+      <p>
+        <strong>Install it, and it joins the share sheet.</strong> In Chrome, take
+        <em>Add to Home screen</em> from the menu. It may be called <em>Install app</em>.
+        After that, hold a <code>.fit</code> or <code>.gpx</code> anywhere on the phone and
+        choose <strong>Share &rarr; CleanJibe</strong>. The analysis opens on it, with the
+        file still on the phone.
+      </p>
+    </details>
+  </section>
+
 
   <!-- ------------------------------------------------------------- old sessions -->
   <!-- The test is the on-ramp; this is the reason to stay. Every session is analysed the
@@ -597,15 +794,14 @@
 </main>
 
 <footer>
-  <p>CleanJibe: open wingfoil tracking. Watch app, iPhone app, browser analyzer.</p>
-<!-- sitefoot:begin — COPIED VERBATIM ON ALL NINE PAGES, and compared byte for byte by
-     web/tools/verify_links.py exactly the way the site nav in the topbar is. Until
-     15 September 2026 every footer carried a different subset of the site — /privacy/ named
-     three pages, /impressum/ one, and the two doors a reader is actually looking for were
-     wherever the last edit left them. The footer is where a reader goes when the sticky bar
-     has scrolled past and when JavaScript never ran, so it names EVERY page, in the order
-     the site nav uses, with the two buttons as text links at the end of the row and Privacy
-     and Impressum last.
+  <p>CleanJibe: open wingfoil tracking. Watch app, iPhone app, browser app.</p>
+<!-- sitefoot:begin — COPIED VERBATIM ON ALL SEVEN READER PAGES, and compared byte for byte
+     by web/tools/verify_links.py exactly the way the site nav in the topbar is. Until
+     15 September 2026 every footer carried a different subset of the site; it names every
+     page now, in the site nav's own order, with the two doors as text links and Privacy and
+     Impressum last. It lost three rows on 19 September 2026, because the pages went: Which
+     watch is /start/#watches, What it measures is /help/, and What's new is
+     /invite/#whats-new.
 
      The hrefs are ROOT-RELATIVE for the same reason the site nav's are: one block has to
      serve a page at the site root and a page a directory down.
@@ -617,12 +813,10 @@
      /start/#tell — are where a tester with something to say is standing. -->
   <p>
     <a href="/">About CleanJibe</a> ·
+    <a href="/start/">Get started</a> ·
+    <a href="/help/">Help</a> ·
     <a href="/invite/">Get the beta</a> ·
-    <a href="/start/">Getting started</a> ·
-    <a href="/watches/">Which watch</a> ·
-    <a href="/learn/">What it measures</a> ·
-    <a href="/whats-new/">What&rsquo;s new</a> ·
-    <a href="/app/">Open the analyzer</a> ·
+    <a href="/app/">Open the app</a> ·
     <a href="https://github.com/JanLahmann/WingFoil" rel="noopener" data-umami-event="github">GitHub</a> ·
     <a href="/privacy/">Privacy</a> ·
     <a href="/impressum/">Impressum</a>
@@ -638,8 +832,8 @@
   </p>
   <!-- The one measurement this site takes, said out loud rather than behind a banner: umami
        is cookieless and stores no identifier that survives the visit, so there is nothing to
-       consent to. It does not weaken the analyzer's promise — a .fit file is read in the tab
-       and never leaves the device; what umami sees is that a page was opened. -->
+       consent to. It does not weaken the app's promise — a .fit file is read in the tab and
+       never leaves the device; what umami sees is that a page was opened. -->
   <p class="fineprint">
     Anonymous, cookie-free usage stats and feature counts by umami.
   </p>

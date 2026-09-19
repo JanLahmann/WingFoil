@@ -1,8 +1,10 @@
 # One copy, many surfaces
 
-Seven small JSON files. Each holds a piece of rider-facing wording that more than one surface
-says, so that it is written **once** and the places that say it are held to it from **both
-sides**.
+Nine JSON files. Each holds rider-facing wording that more than one surface says, so that it
+is written **once** and the places that say it are held to it from **both sides**. Eight are
+small. The ninth, `help.json`, is the whole of the app's help catalogue, exported so that
+cleanjibe.org/help can render the reference work the phone renders rather than writing its
+own.
 
 The problem this folder exists for has a date and a time. Everything decided after
 14 September 2026 12:30 landed in `docs/`, in the kit and in the app, and never reached the
@@ -17,7 +19,7 @@ anybody made twice. It was one mechanism that did not exist.
 
 | side | what it does | where |
 |---|---|---|
-| **the kit** | `CopyContractTests` asserts every kit constant equals its JSON. A kit edit that moves a fact **fails the kit tests** until the JSON moves with it. | `ios/WingFoilKit/Tests/WingFoilKitTests/CopyContractTests.swift` |
+| **the kit** | `CopyContractTests` asserts every kit constant equals its JSON. A kit edit that moves a fact **fails the kit tests** until the JSON moves with it. `HelpExportTests` does the same for the help catalogue, which is too large to pin sentence by sentence and is exported whole instead. | `ios/WingFoilKit/Tests/WingFoilKitTests/CopyContractTests.swift`, `HelpExportTests.swift` |
 | **the web** | the web verifier asserts the pages carry the same strings. The website then has to catch up before the check goes green. | `web/tools/` |
 | **the stores** | `check_release_copy.py` asserts the release copy names no door the release lacks, breaks no Strava rule and uses none of the banned vocabulary. | `docs/copy/check_release_copy.py` |
 
@@ -93,12 +95,13 @@ order, wholly kit-owned. `footerLine` is `name + ". " + line`.
 `entries`: `[{ "id", "term", "short", "expansion", "line", "sentence", "surfaces" }]` — the
 **eleven** words the product is made of (foil share, flights & touchdowns, turn verdicts, dry
 streak, JPH, CPH, TPH, WPH, speed records, best 5×10 s, alpha 500), from `MetricGlossary`. The
-welcome screen selects four of them; `web/learn`'s definition list carries all eleven.
+welcome screen selects four of them; `web/help`'s definition list carries all eleven, under
+*What the numbers mean*, which is what `/learn/` opened with until 19 September 2026.
 
 | field | what it is | authored by |
 |---|---|---|
 | `id` | a slug that outlives a rewording | kit |
-| `term` | **the label** — the iPhone card, the web tile, `/learn`'s `<dt>` | kit |
+| `term` | **the label** — the iPhone card, the web tile, `/help`'s `<dt>` | kit |
 | `short` | the same word at the watch's width: **≤ 7 characters** wherever `surfaces` names `watch` | hand |
 | `expansion` | what the phone and the web append after `" · "` — `"clean jibes per hour"`. Empty where the term is the whole of it | kit |
 | `line` | the one sentence | kit |
@@ -119,9 +122,10 @@ a MIP cell is about seven characters, three watch labels ship over that today, a
 `CopyContractTests` asserts the budget so it fails a test instead of failing a rider.
 
 The long explanations — the 12 / 8 km/h foil gates, the outcome ladder, the 70 % score — are
-**not** here. They stay in `HelpCatalog`, which is reference material behind a `?` and has no
-equivalent on the site. Same terms, different depth: pin the terms and the one-liners, leave
-the bodies alone.
+**not** here. They stay in `HelpCatalog`, which is reference material behind a `?`, and they
+reach the site through `help.json` rather than through this file: same terms, different
+depth. Pin the terms and the one-liners here, export the bodies there, and write neither
+twice.
 
 ### `feedback.json`
 
@@ -195,6 +199,35 @@ went-nowhere case and carries two placeholders:
 Both are the library row's own displayed numbers, so the line reads against the key metrics
 directly above it rather than quoting a third figure.
 
+### `help.json`
+
+**The app's whole help catalogue, and the one file here that is rendered rather than
+quoted.** Written by `HelpExportTests` (`COPY_WRITE=1 swift test --filter HelpExportTests`)
+out of `HelpCatalog`; read by `web/tools/make_help.py`, which renders
+`web/help/index.html`.
+
+```
+sections: [{ id, title, topics: [{ id, title, summary, body[], items[{term, detail,
+             channels[]}], related[], channels[] }] }]
+```
+
+Ten sections, 42 topics, 94 items today. `channels` is **the list of channels that may read
+that row** (docs/channels.md) — `["release","beta","dev"]` for almost everything, `["beta",
+"dev"]` for the two Apple doors, `["dev"]` for windsurf. An item's channels are *derived*
+rather than declared: the exporter asks each channel what `HelpCatalog.topic(_:channel:)`
+gives it and takes the lowest that sees the item, so the one topic whose items branch
+(Getting started, whose routes are the two Apple doors) needs no special case, and neither
+will the next one.
+
+The web prints a release row plainly, a beta row with the `beta` pill, and a dev row **not
+at all** — the same rule `make_whats_new.py` applies to a dev release note, and for the same
+reason: a public page that names a dev door promises a stranger a door nobody can have.
+
+Jan, 19 September 2026: *"/help is built from the app's help catalog"*. Before it,
+`/learn/` answered four of the catalogue's questions in its own words, written in the
+website's own pass; three of the four had been answered differently in the app for a month.
+`/learn/` is a redirect to `/help/#numbers` now.
+
 ### `garmin-devices.json`
 
 Generated from `garmin/manifest*.xml` — the product count, the version and the families. Not
@@ -216,8 +249,9 @@ first, one entry per shipped build:
 | `title` | string, ≤ 8 words | the card's one line |
 | `lines` | [string], ≤ 20 words each | register 1 of docs/voice.md, one thought per line |
 
-Three renderings, one source: `web/tools/make_whats_new.py` writes the cards of
-`web/whats-new/index.html` and the kit's `Help/WhatsNew.swift` (the app's *What's new*
+Three renderings, one source: `web/tools/make_whats_new.py` writes the cards on
+`web/invite/index.html` (`/whats-new/` until 19 September 2026, and a redirect to
+`/invite/#whats-new` since) and the kit's `Help/WhatsNew.swift` (the app's *What's new*
 screen), and `ios/tools/testflight_publish.py` reads the newest entry of the channel it is
 publishing to as that build's *What to Test*. `make_whats_new.py --check` runs inside
 `web/tools/verify_links.py` and fails while either generated output is stale. The word
@@ -225,8 +259,11 @@ rules are enforced on the source, so a long or dashed line fails at the generato
 
 **Dates are allowed in these sentences and nowhere else in the app.** A release note that
 does not say when it shipped is not a release note; the condition is that a generator
-writes them, which is why `/whats-new/` and `WhatsNew.swift` are the two `dated` targets of
-`check_voice.py` rather than a list of exemptions.
+writes them, which is why `/invite/` and `WhatsNew.swift` are the two `dated` targets of
+`check_voice.py` rather than a list of exemptions. On the page the generated block is
+wrapped in `data-copy="whats-new"` and stripped the way a generated `garmin-count` span is,
+so only the release notes are excused and the rest of the beta page is still held to the
+rule.
 
 ## The process rule
 
