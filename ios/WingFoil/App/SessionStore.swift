@@ -1441,6 +1441,102 @@ final class SessionStore {
             ?? "Could not read that backup: \(error)"
     }
 
+    // MARK: - iCloud Drive (dev channel only — docs/channels.md, ADR-026)
+
+    #if DEV
+    /// **Whether this phone shares its library through iCloud Drive** (issue #7).
+    ///
+    /// Off on a fresh install and off until the rider asks, because it is the one switch in
+    /// Settings that writes the whole library somewhere else. Turning it on starts a pass;
+    /// turning it off stops syncing and leaves the folder exactly as it is, so the other
+    /// device keeps what it already has.
+    var iCloudSyncEnabled: Bool = SessionStore.storedICloudSync {
+        didSet {
+            guard iCloudSyncEnabled != oldValue else { return }
+            UserDefaults.standard.set(iCloudSyncEnabled, forKey: Self.iCloudSyncKey)
+            if iCloudSyncEnabled { syncLibraryNow() } else { syncPlan = nil }
+        }
+    }
+
+    static let iCloudSyncKey = "icloudSync.enabled.v1"
+    static let iCloudSyncLastKey = "icloudSync.lastSync.v1"
+
+    private static var storedICloudSync: Bool {
+        UserDefaults.standard.bool(forKey: iCloudSyncKey)
+    }
+
+    /// What a pass would do, refreshed when Settings opens and after every pass. nil until
+    /// the folder has been looked at once, which is also the honest answer on a phone that
+    /// is not signed in to iCloud.
+    private(set) var syncPlan: LibrarySyncEngine.Plan?
+    private(set) var syncLastAt: Date? = UserDefaults.standard
+        .object(forKey: SessionStore.iCloudSyncLastKey) as? Date
+    private(set) var syncRunning = false
+    /// Set when the container cannot be reached at all — not signed in, or iCloud Drive off.
+    private(set) var syncUnavailable = false
+
+    /// The folder this build syncs through: the ubiquity container, or the path a screenshot
+    /// run handed it (`UI_SYNC_CONTAINER`, docs/testing.md).
+    nonisolated private static func syncContainer() -> LibrarySyncContainer? {
+        if let path = ProcessInfo.processInfo.environment["UI_SYNC_CONTAINER"], !path.isEmpty {
+            return LibrarySyncContainer(root: URL(fileURLWithPath: path))
+        }
+        let id = LibrarySyncLayout.containerIdentifier(bundleID: Bundle.main.bundleIdentifier)
+        return LibrarySyncContainer.ubiquitous(identifier: id)
+    }
+
+    func refreshSyncPlan() async {
+        guard iCloudSyncEnabled, !syncRunning else { return }
+        let ingestor = self.ingestor
+        let plan = await Task.detached(priority: .utility) { () -> LibrarySyncEngine.Plan? in
+            guard let container = SessionStore.syncContainer() else { return nil }
+            return try? await LibrarySyncEngine(ingestor: ingestor, container: container).plan()
+        }.value
+        syncUnavailable = plan == nil
+        syncPlan = plan
+    }
+
+    func syncLibraryNow() {
+        guard iCloudSyncEnabled, !syncRunning, !isBusy else { return }
+        Task { await runLibrarySync() }
+    }
+
+    private func runLibrarySync() async {
+        syncRunning = true
+        isBusy = true
+        status = "Syncing with iCloud Drive…"
+        defer {
+            syncRunning = false
+            isBusy = false
+        }
+        let ingestor = self.ingestor
+        // Detached: `url(forUbiquityContainerIdentifier:)` blocks while the daemon sets the
+        // folder up, and the analysis of everything that arrives runs here too.
+        let work = Task.detached(priority: .userInitiated) { () -> LibrarySyncEngine.Report? in
+            guard let container = SessionStore.syncContainer() else { return nil }
+            return try await LibrarySyncEngine(ingestor: ingestor, container: container).sync()
+        }
+        do {
+            guard let report = try await work.value else {
+                syncUnavailable = true
+                status = "iCloud Drive is not available"
+                return
+            }
+            syncUnavailable = false
+            syncLastAt = Date()
+            UserDefaults.standard.set(syncLastAt, forKey: Self.iCloudSyncLastKey)
+            status = report.shortDescription
+            if !report.isEmpty {
+                await load()
+                await refreshDerived()
+            }
+        } catch {
+            errorMessage = "Could not sync with iCloud Drive: \(error)"
+        }
+        await refreshSyncPlan()
+    }
+    #endif
+
     // MARK: - Map legend
 
     /// Tapping a legend chip on one map. Kept on the store rather than in a view's `@State`

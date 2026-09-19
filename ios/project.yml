@@ -429,6 +429,18 @@ targets:
     # group would simply leave the dev build's widget blank. Whether the profiles carry it is
     # being settled separately; if the beta archive fails signing on it, this is the one line
     # to remove here and on the three targets below.
+    #
+    # THE iCLOUD CONTAINER is the iCloud Drive library sync (issue #7, ADR-026), a **dev**
+    # door: the switch, the status line and the whole `LibrarySyncEngine` call site are
+    # `#if DEV`, so the beta binary has no UI that could open the folder and `strings` finds
+    # none of its wording. The entitlement itself cannot follow the flag — XcodeGen writes
+    # `CODE_SIGN_ENTITLEMENTS` from the key below into every configuration of this target and
+    # a per-configuration override does not survive it, so beta and dev sign against one
+    # file. The container id follows the channel instead: `$(CJ_BUNDLE_ID)` makes it
+    # `iCloud.de.lahmann.wingfoil.dev` under the two Dev configurations, so a dev build can
+    # never merge into the App Store build's folder. The release channel's own file
+    # (`WingFoilRelease.entitlements`) stays empty, which is what keeps the App Store profile
+    # free of a capability that build cannot use.
     entitlements:
       path: WingFoil/WingFoil.entitlements
       properties:
@@ -436,6 +448,12 @@ targets:
         com.apple.developer.healthkit.access: []
         com.apple.security.application-groups:
           - group.de.lahmann.wingfoil
+        com.apple.developer.icloud-container-identifiers:
+          - iCloud.$(CJ_BUNDLE_ID)
+        com.apple.developer.ubiquity-container-identifiers:
+          - iCloud.$(CJ_BUNDLE_ID)
+        com.apple.developer.icloud-services:
+          - CloudDocuments
     info:
       path: WingFoil/Info.plist
       properties:

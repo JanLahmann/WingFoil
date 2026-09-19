@@ -56,6 +56,12 @@ struct SettingsView: View {
                 // many megabytes his library is: "and here is how to keep a copy of it"
                 // is the next sentence, not a separate topic.
                 LibraryBackupSection()
+                // And right under the backup, which is the same subject one step further on:
+                // a copy of the library is for getting it back, this is for having it in two
+                // places at once. Dev only (docs/channels.md, ADR-026).
+                #if DEV
+                ICloudSyncSection()
+                #endif
                 #if DEBUG
                 debugSection
                 #endif
