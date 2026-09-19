@@ -1017,7 +1017,7 @@ final class SessionStore {
         }.value
 
         status = summary.shortDescription
-        if !summary.failed.isEmpty { errorMessage = summary.failed.joined(separator: "\n") }
+        errorMessage = Self.failureAlert(summary.failed)
         // The one counted place every file-shaped door passes through — Files, the share
         // sheet, a Garmin export ZIP, Apple Health — so each is counted once and by name.
         Usage.recordImport(source, sessions: summary.imported)
@@ -1041,6 +1041,16 @@ final class SessionStore {
         init(_ sink: @escaping @Sendable (ImportSummary) -> Void) { self.sink = sink }
 
         func send(_ summary: ImportSummary) { sink(summary) }
+    }
+
+    /// "Is anybody still listening?" — flipped once, on the way out of a job whose progress
+    /// arrives on main-actor hops that can outlive it.
+    final class LiveFlag: @unchecked Sendable {
+        private let lock = NSLock()
+        private var open = true
+
+        var isLive: Bool { lock.withLock { open } }
+        func close() { lock.withLock { open = false } }
     }
 
     /// The same trick for the two library-backup jobs, which report different shapes.
@@ -1421,9 +1431,9 @@ final class SessionStore {
             let summary = try await work.value
             status = summary.shortDescription
             Usage.record(.backupRestored)
-            if !summary.failed.isEmpty {
-                errorMessage = summary.failed.prefix(5).joined(separator: "\n")
-            }
+            // Capped like every other bulk failure list, and — unlike the old `prefix(5)` —
+            // it says how many it is not showing rather than dropping them silently.
+            errorMessage = Self.failureAlert(summary.failed)
         } catch is CancellationError {
             status = "Restore stopped — the sessions already restored are in your library"
         } catch {
@@ -1434,6 +1444,19 @@ final class SessionStore {
         // must not fire nine personal-best celebrations for records he set last summer.
         await refreshPersonalBests(celebrate: false)
         await writeNewSessionsToHealth()
+    }
+
+    /// The failure list of a bulk import, as one alert a rider can actually read.
+    ///
+    /// A first sync from an account with a year of Garmin in it can hand back seventy-odd
+    /// failures — a modal holding all of them is a wall, and the rider learns nothing from
+    /// the sixtieth line that he did not learn from the third. So: the first few by name,
+    /// then how many more there were. The full list is in the import log either way.
+    static func failureAlert(_ failures: [String], showing: Int = 4) -> String? {
+        guard !failures.isEmpty else { return nil }
+        let shown = failures.prefix(showing).joined(separator: "\n")
+        let rest = failures.count - min(showing, failures.count)
+        return rest == 0 ? shown : shown + "\n\n…and \(rest) more."
     }
 
     /// `LibraryRestore.Failure` already carries a sentence written for a rider; anything
@@ -2000,17 +2023,42 @@ final class SessionStore {
 
         let ingestor = self.ingestor
         let oldest = IcuSyncService.defaultOldest()
+        // **The rider is told which file of how many is on the wire.** A first sync from an
+        // account with a year of Garmin in it downloads and analyses seventy-odd
+        // recordings, which is minutes; a screen that says "Contacting intervals.icu…" for
+        // all of them is indistinguishable from a hung app, and gets reported as one. The
+        // service already narrates every step — it simply had nobody listening.
+        //
+        // Relayed rather than captured, exactly like the import and backup progress above:
+        // `sync` calls this from whatever thread the download finished on, and `status`
+        // belongs to the main actor. A closure that merely *looks* main-actor compiles and
+        // then dies in `dispatch_assert_queue` the first time a framework calls it
+        // elsewhere, which is how build 16 crashed.
+        //
+        // `live` closes the door on the way out: the last relayed line is delivered on a
+        // main-actor hop, and without it a late hop could land *after* this method has put
+        // the summary (or an error's nil) on screen and overwrite it with "Downloading
+        // 74/74…".
+        let live = LiveFlag()
+        let relay = Relay<String> { [weak self] line in
+            Task { @MainActor in
+                guard live.isLive else { return }
+                self?.status = line
+            }
+        }
+        defer { live.close() }
         do {
             let summary = try await Task.detached(priority: .userInitiated) {
                 let service = IcuSyncService(client: IcuClient(apiKey: key), ingestor: ingestor)
-                return try await service.sync(oldest: oldest)
+                return try await service.sync(oldest: oldest) { relay.send($0) }
             }.value
+            live.close()                       // no more progress lines past this point
             status = summary.shortDescription
             await offerReAddIfAsked(summary, previousSync: previousSync, startedAt: startedAt)
             // A sync can succeed and still leave the library empty (Garmin not connected
             // in intervals.icu yet). That is a cause the empty library names, not a crash.
             setProblem(IcuDiagnosis.describe(summary))
-            if !summary.failed.isEmpty { errorMessage = summary.failed.joined(separator: "\n") }
+            errorMessage = Self.failureAlert(summary.failed)
             Usage.recordImport(.icu, sessions: summary.imported)
             lastSyncDate = Date()
         } catch {
