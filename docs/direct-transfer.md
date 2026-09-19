@@ -211,6 +211,24 @@ throwaway Worker, **with the phone's Bluetooth off** and the watch on home Wi-Fi
 `GET /b/{id}` → blob then delete, `DELETE /b/{id}`, nothing else. If it does not, (f) is closed
 and this section is its epitaph.
 
+## 6 · The plan after the probe (Jan, 19 September 2026)
+
+**0.9.14-dev2 — the transfer.** The rules §5 fixed: pages of at most 8 KB, one in flight,
+the next from `onComplete`, an app-level ACK, the phone app open. Ring buffer and page sender
+on the watch; assembler, inbox and the ordinary import on the phone (dev build). The session
+lands as class B, positions and Doppler speed, in about 20 s on the beach. The probe loses its
+16 KB item and its burst becomes a chain, so the dev listing stops crashing.
+
+**dev3 — the whole recording, later.** Jan's call: *"Send it later, not first. The later
+transfer can then include the whole data."* So the position stream crosses first and the
+session is on the phone as class B; the wrist stream follows as a second sender over the
+same pages while the rider packs up, whole rather than windowed — 25 Hz magnitudes, 8-bit
+deltas where they hold, about 180 KB for two hours, under a minute at the measured rate —
+and the phone re-derives the session to class A when the last page lands. Nothing waits on
+it; the rider sees the class rise. Same dev3: the fenix 5 Plus encoder, four payload bytes
+packed per 32-bit Number on both sides, ~6 KB of payload per 8 KB page, and a probe run on a
+5 Plus (Leo, Alfred) because the timing is Fenix 8 only so far.
+
 ## 5 · The first experiment
 
 **Built, 19 September 2026, watch 0.9.14-dev1 and iPhone dev build:** `garmin/source/comm/LinkProbe.mc`, dev stream only. On the watch: Wind from → Link probe → 1 / 4 / 8 / 16 KB, or 8 KB ×3, then Results (the log of `onComplete` times, kept in Storage). On the phone (dev build): Settings → Garmin watch → Link probe shows what arrived. ByteArray on API 6, an Array of Numbers below it; the log names which.
