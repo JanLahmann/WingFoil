@@ -2,7 +2,7 @@ import Cocoa
 let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly], kCGNullWindowID) as! [[String: Any]]
 for w in list {
     let owner = w[kCGWindowOwnerName as String] as? String ?? ""
-    let nm = w[kCGWindowName as String] as? String ?? ""; if (owner.lowercased().contains("sim") || nm.contains("CIQ")) && nm != "CIQ Simulator" {
+    let nm = w[kCGWindowName as String] as? String ?? ""; if nm.hasPrefix("CIQ Simulator - ") {
         let b = w[kCGWindowBounds as String] as! [String: Any]
         let id = w[kCGWindowNumber as String] as! Int
         let name = w[kCGWindowName as String] as? String ?? ""

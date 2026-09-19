@@ -15,6 +15,9 @@ GARMIN=$(cd "$HERE/../.." && pwd)
 SDK="$HOME/Library/Application Support/Garmin/ConnectIQ/Sdks/$(ls "$HOME/Library/Application Support/Garmin/ConnectIQ/Sdks" | sort | tail -1)/bin"
 DEV=$1; OUT=$2; PRG="$GARMIN/bin/shots-$DEV.prg"
 [ -f "$PRG" ] || { echo "no $PRG — compile the harness first"; exit 1; }
+if ioreg -n Root -d1 2>/dev/null | grep -A1 CGSSessionScreenIsLocked | grep -q '<true/>'; then
+  echo "the screen is locked: screencapture cannot read a window (unlock the Mac first)"; exit 2
+fi
 [ -x "$HERE/winfo" ] || swiftc -O -o "$HERE/winfo" "$HERE/winfo.swift"
 pkill -f monkeydo || true; pkill -f "ConnectIQ.app/Contents/MacOS/simulator" || true; sleep 2
 open "$SDK/ConnectIQ.app"; sleep 15
