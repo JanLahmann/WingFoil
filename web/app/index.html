@@ -574,14 +574,28 @@
       <div class="table-scroll"><table id="ends-table"></table></div>
     </section>
 
-    <!-- LOG, the phone's fourth tab: the session's own facts. It carries the wind the
-         analysis assumed, the recording's provenance and the gear it was ridden on. The
-         browser app has the wind and the provenance in the badges above and no gear card at
-         all, so the tab says what is missing rather than pretending to be whole. -->
+<!-- r3-w1:begin the Log tab's gear card and its watch-against-phone block -->
+    <!-- LOG, the phone's fourth tab: the session's own facts. Gear first, because it is the
+         one block here a rider can change (ios/WingFoil/Features/SessionDetail/
+         SessionLogView.swift). The watch-against-phone table follows it, and is absent
+         whenever the recording carries no watch summary to compare. -->
+    <section class="panel" data-section="log" id="log-gear-panel">
+      <div class="panel-head"><h2>Gear</h2></div>
+      <div id="log-gear" data-screen="Gear"
+           data-empty="Add wings, boards and foils on the Gear tab to correlate sessions with what you rode."></div>
+    </section>
+
+    <section class="panel is-absent" data-section="log" id="log-divergence-panel">
+      <div class="panel-head"><h2>Watch vs phone</h2></div>
+      <div id="log-divergence" data-screen="Watch vs phone"
+           data-empty="Watch and phone agree."></div>
+    </section>
+<!-- r3-w1:end -->
+
     <section class="panel" data-section="log">
       <div class="panel-head"><h2>The recording</h2></div>
-      <p class="muted small">Your gear and the watch-against-phone check are on the iPhone
-        app. The wind and the source of this recording are in the badges above.</p>
+      <p class="muted small">The wind and the source of this recording are in the badges
+        above.</p>
     </section>
 
     <section class="panel" data-section="log">
@@ -623,6 +637,10 @@
           the worker.</p>
       </div>
     </div>
+<!-- r3-w1:begin the range over the charts, and the two dates behind it -->
+    <div id="trends-range" data-screen="Custom range"
+         data-empty="Nothing in this range"></div>
+<!-- r3-w1:end -->
     <div id="trends-body"></div>
   </section>
 </div>
@@ -639,6 +657,11 @@
     </div>
     <div id="gear-body"></div>
   </section>
+<!-- r3-w1:begin wings, boards and foils, as the phone keeps them -->
+  <section class="panel" id="gear-quiver-panel">
+    <div id="gear-quiver" data-screen="Gear &amp; spots" data-empty="No wings yet"></div>
+  </section>
+<!-- r3-w1:end -->
 </div>
 
 <!-- ================================================================== SETTINGS -->
@@ -690,6 +713,26 @@
     <p class="muted small">Start over removes your library, your settings and your
       intervals.icu key from this browser. It cannot be undone.</p>
   </section>
+
+<!-- r3-w1:begin the two Settings sections the phone has and the browser had not -->
+  <section class="panel" id="settings-deleted">
+    <div class="panel-head"><h2>Deleted sessions</h2></div>
+    <div id="deleted-body" data-screen="Deleted sessions"
+         data-empty="No deleted sessions yet."></div>
+    <p class="muted small">Deleting a session keeps its name, its date and the file you
+      imported. Restore reads that file again. Clear throws it away for good.</p>
+  </section>
+
+  <section class="panel" id="settings-backup">
+    <div class="panel-head"><h2>Library backup</h2></div>
+    <p><button class="ghost" id="restore-pick" type="button">Restore from a backup&hellip;</button></p>
+    <input id="restore-file" type="file" accept=".zip,application/zip" hidden>
+    <div id="restore-body" data-screen="Restore library"
+         data-empty="No backup picked yet."></div>
+    <p class="muted small">Download all on the Sessions tab writes the file. Pick it here
+      to put its sessions back.</p>
+  </section>
+<!-- r3-w1:end -->
 
   <section class="panel" id="settings-about">
     <div class="panel-head"><h2>About</h2></div>
@@ -766,6 +809,54 @@
     <button type="button" class="primary" id="welcome-close">Later</button>
   </div>
 </dialog>
+
+<!-- r3-w1:begin the two sheets the ported screens open -->
+<!-- ----------------------------------------------------------------- new gear -->
+<!-- The phone's gear editor (ios/WingFoil/Features/Gear/GearView.swift, `GearEditor`):
+     a name, a kind, notes, and the switch that retires a wing without losing its
+     sessions. Wiring: js/gear.js. -->
+<dialog id="gear-dialog" class="ask" aria-labelledby="gear-dialog-title"
+        data-screen="New gear">
+  <form method="dialog" class="ask-form">
+    <h2 id="gear-dialog-title">New gear</h2>
+    <label class="ask-field">Name
+      <input id="gear-name" type="text" autocomplete="off" spellcheck="false"></label>
+    <div class="seg" role="group" aria-label="Kind">
+      <button type="button" class="seg-btn" data-kind="wing" aria-pressed="true">Wing</button>
+      <button type="button" class="seg-btn" data-kind="board" aria-pressed="false">Board</button>
+      <button type="button" class="seg-btn" data-kind="foil" aria-pressed="false">Foil</button>
+    </div>
+    <p class="muted small">e.g. &ldquo;Duotone Unit 5 m&rdquo;, &ldquo;Armstrong HA 925&rdquo;.</p>
+    <label class="ask-field">Notes
+      <input id="gear-notes" type="text" placeholder="Size, year, anything worth remembering"
+             autocomplete="off"></label>
+    <label class="ask-check"><input id="gear-active" type="checkbox" checked> In the quiver</label>
+    <p class="muted small">Turn it off to retire it without losing its sessions.</p>
+    <div class="ask-actions">
+      <button type="button" class="ghost" id="gear-cancel">Cancel</button>
+      <button type="button" class="primary" id="gear-save">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- -------------------------------------------------------------- custom range -->
+<!-- The two dates behind &ldquo;Custom range&hellip;&rdquo;, with the phone's own sentence
+     (ios/WingFoil/Features/Library/LibraryFilterMenu.swift, `LibraryDateRangeSheet`).
+     Wiring: js/daterange.js. -->
+<dialog id="range-dialog" class="ask" aria-labelledby="range-dialog-title">
+  <form method="dialog" class="ask-form">
+    <h2 id="range-dialog-title">Custom range</h2>
+    <label class="ask-field">From <input id="range-from" type="date"></label>
+    <label class="ask-field">To <input id="range-to" type="date"></label>
+    <p class="muted small">Both dates count. The range narrows these charts only. Your
+      records stay all time.</p>
+    <div class="ask-actions">
+      <button type="button" class="ghost" id="range-cancel">Cancel</button>
+      <button type="button" class="primary" id="range-done">Done</button>
+    </div>
+  </form>
+</dialog>
+<!-- r3-w1:end -->
 
 <!-- ------------------------------------------------------- whose session is this? -->
 <!-- Asked on the Save press, before anything is written. A .fit a friend sent is scrubbed

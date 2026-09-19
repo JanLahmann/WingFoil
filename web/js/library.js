@@ -12,6 +12,9 @@
 
 import { ask, askBytes } from "./rpc.js";
 import { speed } from "./appsettings.js";
+// r3-w1: a delete leaves a tombstone, with the recording that made it. Settings → Deleted
+// sessions is the way back (ios/WingFoil/Features/Import/ReAddDeletedSheet.swift).
+import { keepTombstone } from "./deleted.js";
 import { sportCorrected } from "./cardstats.js";
 import { NOT_A_SESSION } from "./copy.js";
 import { esc, hms, int, nf, pct, sessionDate, zonedFormat } from "./render.js";
@@ -298,8 +301,13 @@ async function onRowClick(ev) {
       if (window.confirm(
         `Delete “${sportCorrected(entry.spot || "") || entry.fileName}” ` +
         `(${shortDate(entry)})?\n\n` +
-        `The stored FIT and its analysis are removed from this browser. ` +
-        `This cannot be undone.`)) {
+        // r3-w1: no longer "this cannot be undone" — the recording is kept under a
+        // tombstone and Settings → Deleted sessions reads it again.
+        `The session leaves your library, your records and your trends. ` +
+        `Settings keeps the file, so you can put it back.`)) {
+        // r3-w1: read the recording while it is still there, and keep it under the
+        // tombstone. Settings → Deleted sessions reads it again on a Restore.
+        await keepTombstone(entry, await getFitBlob(id).catch(() => null));
         await removeSession(id);
         invalidateTrends();                 // the records may have belonged to this one
         await refresh();

@@ -14,6 +14,9 @@
 
 import { ask } from "./rpc.js";
 import { speedUnit, speedValue } from "./appsettings.js";
+// r3-w1: the range over the charts. It picks which afternoons the question is asked of and
+// answers nothing itself; Records stay all-time, which is what the sheet's footer promises.
+import { emptyRangeNote, rangeEntries, rangeKey } from "./daterange.js";
 import { sportCorrected } from "./cardstats.js";
 import { C, esc, figureWidth, hideTip, hms, int, isNarrow, nf, pct, pctDigits, showTip, svg,
          zonedFormat } from "./render.js";
@@ -78,13 +81,20 @@ export async function showTrends(saved) {
       `<p class="note">No sessions yet. Save a few, and the charts fill as you ride.</p>${door}`;
     return;
   }
-  const signature = entries.map((e) => e.id).join("|");
+  // r3-w1: the chosen range is part of what is memoised. The same library over two ranges
+  // is two answers, so Python is asked again for the second.
+  const signature = `${entries.map((e) => e.id).join("|")}|${rangeKey()}`;
   if (cache.signature !== signature) {
     for (const host of hosts()) {
       host.innerHTML = `<p class="note">Aggregating ${entries.length} sessions in Python…</p>`;
     }
     try {
-      cache = { signature, data: await ask("aggregate", { digestsJson: JSON.stringify(entries) }) };
+      const data = await ask("aggregate", { digestsJson: JSON.stringify(entries) });
+      const narrowed = rangeEntries(entries);                              // r3-w1
+      const ranged = narrowed.length === entries.length                    // r3-w1
+        ? data
+        : await ask("aggregate", { digestsJson: JSON.stringify(narrowed) });
+      cache = { signature, data, ranged };
     } catch (err) {
       for (const host of hosts()) {
         host.innerHTML = `<p class="note">Could not aggregate the library: ${esc(err.message)}
@@ -94,12 +104,12 @@ export async function showTrends(saved) {
       return;
     }
   }
-  draw(cache.data);
+  draw(cache.data, cache.ranged || cache.data);
 }
 
 /** Drop the memoised aggregate — call after a save or a delete. */
 export function invalidateTrends() {
-  cache = { signature: null, data: null };
+  cache = { signature: null, data: null, ranged: null };
   // A saved or deleted session changes which afternoons a range holds, so the answer this
   // view is still showing for one is out of date too.
   customPeriod = null;
@@ -108,12 +118,15 @@ export function invalidateTrends() {
 /** Redraw from the memoised aggregate — the figures are sized to their container, so a
  *  rotation or a resize has to lay them out again. No Python call, nothing recomputed. */
 export function redrawTrends() {
-  if (cache.data) draw(cache.data);
+  if (cache.data) draw(cache.data, cache.ranged || cache.data);
 }
 
 /* --------------------------------------------------------------------- drawing */
 
-function draw(agg) {
+/** `trendAgg` is the same aggregate over the chosen range (r3-w1). The two halves of this
+ *  view answer different questions: the records are all-time on both surfaces, the charts
+ *  are the range the rider picked. They are one Python call over two lists. */
+function draw(agg, trendAgg = agg) {
   const [records, trends] = hosts();
   // `agg.count` is what `library.aggregate` actually aggregated, not what the library
   // holds: the bundled example and a friend's session are shown in full and counted in
@@ -145,6 +158,18 @@ function draw(agg) {
       number of jibes it holds and the minutes it lasted are not claims its speed channel
       makes.</p>
     <div class="table-scroll"><table id="session-records-table"></table></div>`;
+  // r3-w1: the record tables are filled here, before the range can cut the page short.
+  // They are all-time on both surfaces, so a range that holds nothing must not empty them.
+  renderRecords(el("records-table"), agg.records);
+  renderSessionRecords(el("session-records-table"), agg.sessionRecords || []);
+
+  // r3-w1: a range that holds nothing is the phone's own second empty screen. The library
+  // is not empty, so the door out of it is the range itself rather than the Sessions tab.
+  if (!trendAgg.count) {
+    trends.innerHTML = `<p class="note">${esc(emptyRangeNote())}</p>
+      <p class="muted small">Widen the range.</p>`;
+    return;
+  }
 
   trends.innerHTML = `
     <div class="kv" id="trend-totals"></div>
@@ -160,22 +185,20 @@ function draw(agg) {
       is a session where the value could not be measured — not a zero.</p>
     <div id="trend-charts"></div>`;
 
-  renderTotals(el("trend-totals"), agg.totals);
-  renderRecords(el("records-table"), agg.records);
-  renderSessionRecords(el("session-records-table"), agg.sessionRecords || []);
-  renderPeriods(el("period-groups"), agg.periods || {});
+  renderTotals(el("trend-totals"), trendAgg.totals);
+  renderPeriods(el("period-groups"), trendAgg.periods || {});
   renderCustomRange(el("period-custom"));
   const charts = el("trend-charts");
-  for (const chart of agg.trends.charts) {
+  for (const chart of trendAgg.trends.charts) {
     const box = document.createElement("div");
     box.className = "trend-chart";
     box.innerHTML = `<div class="trend-head"><h4>${esc(chart.label)}</h4>` +
       (chart.unit ? `<span class="trend-unit">${esc(chart.unit)}</span>` : "") +
       `</div><div class="figure"></div>`;
     charts.appendChild(box);
-    drawChart(box.querySelector(".figure"), chart, agg.trends.sessions);
+    drawChart(box.querySelector(".figure"), chart, trendAgg.trends.sessions);
   }
-  drawWeeks(charts, agg.trends.weeks || []);
+  drawWeeks(charts, trendAgg.trends.weeks || []);
 }
 
 function renderTotals(host, t) {

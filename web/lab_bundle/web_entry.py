@@ -197,6 +197,11 @@ def _meta(a, disc=None) -> dict:
         "windDirAutoDeg": wind_auto,
         "appVersion": None if app_version is None else int(app_version),
         "schemaVersion": None if app_version is None else int(app_version) & 0xFF,
+        # **What the WATCH itself wrote into this session** (docs/fit-schema.md, session
+        # fields 20-56), so the Log tab can hold the two devices side by side the way the
+        # phone does. Absent for every source without our developer fields, which is the
+        # whole of the "show it where the data exists" rule: there is nothing to compare.
+        "watch": _watch(s),
         "avgHr": _num(s.get("avg_heart_rate")),
         "maxHr": _num(s.get("max_heart_rate")),
         "calories": _num(s.get("total_calories")),
@@ -206,6 +211,56 @@ def _meta(a, disc=None) -> dict:
         "droppedNan": a.clean.dropped_nan,
         "droppedSpike": a.clean.dropped_spike,
     }
+
+
+def _watch(s: dict) -> dict | None:
+    """The watch's own session summary, in the units the phone compares it in.
+
+    The twin of `FitSessionParser.watchSummary` (ios/WingFoilKit/.../FitImport). Speeds
+    come off the wire in cm/s and leave here in knots, because knots is what the records
+    are defined in and what the table prints. Every field is absent rather than zero when
+    the watch did not write it.
+
+    `tack_count` / `jibe_count` carry the one demotion the schema demands: a `0`/`0` pair
+    with no wind axis of either kind means *unclassified*, not *none*, and older builds had
+    no other value to write. Reading those as literal zeros is what produced "Jibes: watch
+    0 vs phone 50" for an afternoon of fifty jibes.
+    """
+    def knots(key):
+        cms = _num(s.get(key))
+        return None if cms is None else round(cms / 100.0 * MPS_TO_KN, 3)
+
+    def count(key):
+        v = _num(s.get(key))
+        return None if v is None else int(v)
+
+    def wind(key):
+        v = _num(s.get(key))
+        return None if v is None or v >= 65535 else v
+
+    out = {
+        "foilTimeS": _num(s.get("foil_time")),
+        "foilPct": _num(s.get("foil_pct")),
+        "flightCount": count("flight_count"),
+        "best2sKn": knots("best_2s"),
+        "best10sKn": knots("best_10s"),
+        "best5x10sKn": knots("best_5x10s"),
+        "best500mKn": knots("best_500m"),
+        "bestNmKn": knots("best_nm"),
+        "alpha500Kn": knots("alpha500_lite"),
+        "tackCount": count("tack_count"),
+        "jibeCount": count("jibe_count"),
+        "takeoffAttempts": count("takeoff_attempts"),
+        "takeoffSuccesses": count("takeoff_successes"),
+        "totalPumpStrokes": count("total_pump_strokes"),
+        "cleanJibes": count("clean_jibes"),
+    }
+    axis = wind("wind_dir_user") is not None or wind("wind_dir_auto") is not None
+    if not axis and not out["tackCount"] and not out["jibeCount"]:
+        out["tackCount"] = None
+        out["jibeCount"] = None
+    out = {k: v for k, v in out.items() if v is not None}
+    return out or None
 
 
 def _num(v):

@@ -52,6 +52,53 @@ SESSION_SECTION = KIT / "SessionSection.swift"
 PAGE_IDS = ["page-sessions", "page-session", "page-records", "page-trends", "page-gear",
             "page-settings", "page-help"]
 
+# --------------------------------------------------------------- the ported screens
+
+#: **A screen the web took from the phone, with the name it took and the empty state it
+#: owes** (docs/screens.md, "The web after the port").
+#:
+#: Every one of these was a "missing" row in that table until it was ported, and each is a
+#: block of markup in ``web/app/index.html`` carrying two attributes: ``data-screen`` is
+#: what the phone calls it, ``data-empty`` is the sentence it shows with nothing in it.
+#: Putting both in the markup rather than in JavaScript is what makes them checkable here —
+#: there is no browser in this directory, and an empty state that only exists inside a
+#: template literal is an empty state nobody can hold to the phone's.
+#:
+#: ``swift`` is the file that NAMES the screen on iOS; the name has to be in it, verbatim.
+#: ``empty_from`` is the file the empty sentence is authored in, where iOS has one — several
+#: of these screens are absent on the phone when they are empty (the gear card's note is
+#: shown, the divergence card is not), so the sentence is the browser's own and is held
+#: only to the markup.
+PORTED_SCREENS = [
+    ("log-gear", "Gear", "ios/WingFoil/Features/Gear/SessionGearCard.swift",
+     "Add wings, boards and foils on the Gear tab to correlate sessions with what you rode.",
+     "ios/WingFoil/Features/Gear/SessionGearCard.swift"),
+    ("log-divergence", "Watch vs phone",
+     "ios/WingFoil/Features/SessionDetail/SessionLogView.swift",
+     "Watch and phone agree.", None),
+    ("deleted-body", "Deleted sessions",
+     "ios/WingFoil/Features/Import/ReAddDeletedSheet.swift",
+     "No deleted sessions yet.", None),
+    ("restore-body", "Restore library",
+     "ios/WingFoil/Features/Settings/LibraryBackupSection.swift",
+     "No backup picked yet.", None),
+    ("gear-quiver", "Gear & spots", "ios/WingFoil/Features/Gear/GearView.swift",
+     "No wings yet", None),
+    ("gear-dialog", "New gear", "ios/WingFoil/Features/Gear/GearView.swift", "", None),
+    ("trends-range", "Custom range",
+     "ios/WingFoil/Features/Library/LibraryFilterMenu.swift",
+     "Nothing in this range", "ios/WingFoil/Features/Trends/TrendsView.swift"),
+]
+
+#: A Swift string split over two literals is one authored sentence. Joining the halves
+#: before the search is what lets a verifier read a `+`-chained line the way a rider does —
+#: the same thing docs/copy/check_voice.py does to judge one.
+_CHAIN = re.compile(r'"\s*\+\s*"')
+
+
+def swift_text(path: Path) -> str:
+    return _flat(_CHAIN.sub("", path.read_text(encoding="utf-8")))
+
 
 # ------------------------------------------------------------------- the page reader
 
@@ -71,6 +118,8 @@ class Shell(HTMLParser):
         self.menu: list[tuple[str, str, bool]] = []     # (data-menu, text, after divider)
         self.ways: list[tuple[str, str, str]] = []      # (data-way, title, line)
         self.sections: list[str] = []
+        #: id -> (data-screen, data-empty), the ported screens and their empty states.
+        self.screens: dict[str, tuple[str, str]] = {}
         self._stack: list[dict] = []
         self._divider_next = False
         self._way: dict | None = None
@@ -82,6 +131,9 @@ class Shell(HTMLParser):
             self.ids.add(d["id"])
         if d.get("data-section"):
             self.sections.append(d["data-section"])
+        if d.get("data-screen"):
+            self.screens[d.get("id") or ""] = (_flat(d["data-screen"]),
+                                               _flat(d.get("data-empty") or ""))
         if tag == "li" and "after-divider" in (d.get("class") or ""):
             self._divider_next = True
         if d.get("data-way"):
@@ -256,6 +308,38 @@ def main(argv=None) -> int:
                         + ", ".join(stray))
     else:
         notes.append(f"ok    every session panel is on one of the four sub-tabs")
+
+    # 4 · the ported screens: the phone's name, and an empty state that is in the markup
+    before = len(problems)
+    for host_id, name, swift, empty, empty_from in PORTED_SCREENS:
+        found = parsed.screens.get(host_id)
+        if found is None:
+            problems.append(f"the ported screen {host_id} is not in the page\n"
+                            f"        expected:  data-screen=\"{name}\"")
+            continue
+        page_name, page_empty = found
+        if page_name != name:
+            problems.append(f"{host_id} is called something the phone does not call it\n"
+                            f"        page:      {page_name}\n"
+                            f"        expected:  {name}")
+        source = (REPO / swift)
+        if not source.exists():
+            problems.append(f"{host_id}: {swift} is gone, so the name has no source")
+        elif f'"{name}"' not in swift_text(source):
+            problems.append(f"{host_id}: {swift} does not name it \"{name}\"")
+        if empty and page_empty != empty:
+            problems.append(f"{host_id} has the wrong empty state\n"
+                            f"        page:      {page_empty}\n"
+                            f"        expected:  {empty}")
+        elif empty and empty_from and empty not in swift_text(REPO / empty_from):
+            problems.append(f"{host_id}: the empty state is not the phone's\n"
+                            f"        page:      {page_empty}\n"
+                            f"        not in:    {empty_from}")
+        elif not empty and page_empty:
+            problems.append(f"{host_id} carries an empty state the table does not know")
+    if len(problems) == before:
+        notes.append(f"ok    all {len(PORTED_SCREENS)} ported screens carry the phone's "
+                     "name and their empty state")
 
     if not args.brief:
         for note in notes:

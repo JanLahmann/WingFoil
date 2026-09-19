@@ -343,3 +343,83 @@ main { padding-bottom: calc(var(--tap) + 24px + env(safe-area-inset-bottom)); }
 .guide-routes li:first-child { border-top: 0; }
 
 .guide-routes .way-line { display: block; }
+
+/* r3-w1:begin the ported screens — gear, deleted sessions, backup, the range, watch vs phone */
+
+/* A block with no data behind it is not on the page at all (docs/presentation.md, missing
+   is absent). It cannot use `hidden`: js/sections.js owns that attribute on every panel
+   the session switcher governs, and would put the block back on the next chip press. */
+.is-absent { display: none !important; }
+
+/* A labelled field inside a sheet. The same shape `.rider-name` gives the one field the
+   rider prompt has, named for the sheets rather than for that one prompt. */
+.ask-field {
+  display: grid; gap: 5px; font: 600 11px/1 var(--sans);
+  text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3);
+}
+
+.ask-field input { width: 100%; }
+
+.ask-check { display: flex; gap: 8px; align-items: center; }
+
+/* The gear card on Log, and the quiver on Gear & spots. A row is a label and the name
+   beside it; past a phone's width the pair stacks, because the name is the half being
+   read. */
+.gear-row { display: flex; gap: 10px; align-items: baseline; padding: 6px 0; }
+
+.gear-row > span:first-child { flex: 0 0 5rem; color: var(--ink-3); }
+
+.gear-row select { flex: 1 1 8rem; min-width: 0; }
+
+@media (max-width: 30rem) {
+  .gear-row { flex-wrap: wrap; }
+  .gear-row > span:first-child { flex-basis: 100%; }
+}
+
+.quiver-list { list-style: none; margin: 6px 0 10px; padding: 0; }
+
+.quiver-list li {
+  display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline;
+  padding: 7px 0; border-top: 1px solid var(--line-soft);
+}
+
+.quiver-list li:first-child { border-top: 0; }
+
+.quiver-name { font-weight: 600; }
+
+.quiver-list .dim { flex: 1 1 6rem; }
+
+/* The tombstones, and what a picked backup turns out to hold. Both are lists of rows with
+   one action each, so they share the shape the library rows already established. */
+.stone-list { list-style: none; margin: 6px 0 10px; padding: 0; }
+
+.stone-list li {
+  display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline;
+  padding: 7px 0; border-top: 1px solid var(--line-soft);
+}
+
+.stone-list li:first-child { border-top: 0; }
+
+.stone-title { font-weight: 600; flex: 1 1 10rem; }
+
+/* The range over the charts: the three spells the phone offers, then the two dates. */
+.trend-range { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+
+.trend-range .seg-btn[aria-pressed="true"] { font-weight: 600; }
+
+/* Four columns of numbers, as on the phone. The table scrolls sideways rather than
+   squeezing the metric name to nothing. */
+.divergence-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+
+.divergence-table th {
+  text-align: right; font: 600 11px/1.4 var(--sans); color: var(--ink-3);
+  text-transform: lowercase; padding: 4px 6px;
+}
+
+.divergence-table th:first-child, .divergence-table td:first-child { text-align: left; }
+
+.divergence-table td { padding: 6px; border-top: 1px solid var(--line-soft); text-align: right; }
+
+.divergence-table td.delta { color: var(--warn, #e0913f); }
+
+/* r3-w1:end */

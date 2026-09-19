@@ -93,6 +93,17 @@ const APP_SHELL = [
   "js/install.js",
   "js/lexicon.js",
   "js/library.js",
+  // r3-w1 · the screens the port was missing: the Log tab's gear card and its
+  // watch-against-phone block, the quiver, Deleted sessions, Restore from a backup, and
+  // the range over the charts. Together about 30 KB, and every one of them is chrome the
+  // installed app draws without a network.
+  "js/appdb.js",
+  "js/backup.js",
+  "js/daterange.js",
+  "js/deleted.js",
+  "js/gear.js",
+  "js/ingest.js",
+  "js/log.js",
   "js/render.js",
   "js/rider.js",
   "js/rpc.js",

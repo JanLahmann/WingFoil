@@ -16,6 +16,14 @@ import { mountSections, resetSections } from "./sections.js";
 import { mountShareCard, openPeriodCard, openShareCard } from "./sharecard.js";
 import { listEntries } from "./store.js";
 import { invalidateTrends, mountTrends, redrawTrends, showTrends } from "./trends.js";
+// r3-w1: the four screens the port was missing — the Log tab's gear card and its
+// watch-against-phone block, the quiver's editor, Deleted sessions, Restore from a backup,
+// and the range over the charts. Each is its own file; these are the wires.
+import { mountBackup } from "./backup.js";
+import { mountRange } from "./daterange.js";
+import { mountDeleted } from "./deleted.js";
+import { mountGear, onGearChange } from "./gear.js";
+import { refreshLog, showLog } from "./log.js";
 
 const el = (id) => document.getElementById(id);
 
@@ -28,6 +36,10 @@ const state = {
   fromLibrary: false,  // true when the document on screen came out of storage
   isExample: false,    // true when it came from the "try the example session" button
   highlight: null,     // the record window marked on the figures, if any
+  // r3-w1: the library id of the document on screen, or null while it is only analysed.
+  // The Log tab's gear card hangs an assignment on it, and there is nothing to hang one
+  // on until the session has been saved.
+  sessionId: null,
 };
 
 /* The four tabs and the pages behind the menu are js/appshell.js's; this file moves bytes
@@ -158,7 +170,9 @@ function wireCancel() {
 
 /** Put an analysis document on screen. `highlight` marks a record window; see render.js. */
 function showResult(result, { digest = null, bytes = null, fromLibrary = false,
-                             isExample = false, highlight = null } = {}) {
+                             isExample = false, highlight = null,
+                             sessionId = null } = {}) {
+  state.sessionId = sessionId;                                             // r3-w1
   state.last = result;
   state.lastDigest = digest;
   state.lastBytes = bytes;
@@ -181,6 +195,9 @@ function showResult(result, { digest = null, bytes = null, fromLibrary = false,
   showPage("session");
   resetSections();
   render(result, { highlight, isExample });
+  // r3-w1: the Log tab's two blocks. The gear card needs the library id; the
+  // watch-against-phone table needs only the document, and is absent without one.
+  showLog(result, sessionId);
   updateSaveButton();
   showHighlightNote(highlight);
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -198,7 +215,8 @@ function showHighlightNote(highlight) {
     <button class="ghost small-btn" id="clear-highlight" type="button">Clear</button>`;
   el("clear-highlight").addEventListener("click", () => {
     showResult(state.last, { digest: state.lastDigest, bytes: state.lastBytes,
-                             fromLibrary: state.fromLibrary, isExample: state.isExample });
+                             fromLibrary: state.fromLibrary, isExample: state.isExample,
+                             sessionId: state.sessionId });                // r3-w1
   });
 }
 
@@ -458,6 +476,9 @@ function wireSave() {
       if (outcome.saved) {
         invalidateTrends();
         state.fromLibrary = true;
+        // r3-w1: the session now has a row, so the gear card has something to write on.
+        state.sessionId = outcome.entry?.id ?? null;
+        showLog(state.last, state.sessionId);
         button.textContent = outcome.replaced ? "Replaced in the library" : "Saved";
         // After the write, and only on `saved` — the two questions `saveSession` can ask
         // ("whose session is this?", "replace it?") both have a No that lands here as
@@ -489,7 +510,8 @@ async function openStored(id, record = null) {
     // is first analyzed: the list says EXAMPLE beside it, and the report has to agree.
     const entry = (await listEntries()).find((e) => e.id === id);
     showResult(await openStoredSession(id),
-               { fromLibrary: true, highlight, isExample: !!entry?.example });
+               { fromLibrary: true, highlight, isExample: !!entry?.example,
+                 sessionId: id });                                         // r3-w1
   } catch (err) {
     fail(err.message);
   }
@@ -629,6 +651,17 @@ wireShareCard();
 wireSections();
 wireReflow();
 wireServiceWorker();
+// r3-w1 · the ported screens. Each wires its own markup and owns its own storage; the
+// callbacks below are the one thing they share, which is that the library changed.
+mountGear();
+mountDeleted({ onChanged: async () => { invalidateTrends(); await refreshLibrary(); } });
+mountBackup({ onChanged: async () => { invalidateTrends(); await refreshLibrary(); } });
+mountRange({
+  onChange: () => listEntries().then(showTrends).catch(() => showTrends([])),
+});
+// A wing added from the session page belongs in that session's picker straight away, and
+// in the quiver on the Gear tab when the reader gets there.
+onGearChange(() => refreshLog());
 mountIcu({ analyzeBuffer });
 mountTrends({
   openSession: (id) => openStored(id),

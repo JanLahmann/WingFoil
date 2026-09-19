@@ -37,6 +37,10 @@ import {
   setUnits, units, welcomeSeen,
 } from "./appsettings.js";
 import { GLOSSARY } from "./copy.js";
+// r3-w1: wings, boards and foils, and the tombstones a delete leaves. Both are screens of
+// their own with their own files; this page only says where they are drawn.
+import { renderQuiver } from "./gear.js";
+import { renderDeleted } from "./deleted.js";
 import { esc, hms, int, nf } from "./render.js";
 import { listEntries, removeSession, storageLabel } from "./store.js";
 
@@ -84,7 +88,10 @@ export function showPage(name) {
   if (location.hash !== `#/${page}`) history.replaceState(null, "", `#/${page}`);
   hooks.onShowPage(page);
   if (page === "gear") renderGear().catch(() => {});
-  if (page === "settings") renderAbout().catch(() => {});
+  if (page === "settings") {
+    renderAbout().catch(() => {});
+    renderDeleted().catch(() => {});                                       // r3-w1
+  }
 }
 
 export function currentPage() {
@@ -424,6 +431,9 @@ async function renderGear() {
       brings both.</p>
       <p><button class="ghost small-btn" type="button" data-goto="sessions">Go to
         Sessions</button></p>`;
+    // r3-w1: the quiver is not a fact about the library. A rider may put his wings in
+    // before his first session, the way he can on the phone.
+    renderQuiver(el("gear-quiver")).catch(() => {});
     return;
   }
 
@@ -471,6 +481,7 @@ async function renderGear() {
   for (const input of host.querySelectorAll("input[data-gear]")) {
     input.addEventListener("change", () => setGearFor(input.dataset.gear, input.value));
   }
+  await renderQuiver(el("gear-quiver"));                                   // r3-w1
 }
 
 /* ------------------------------------------------------------------------- boot */
