@@ -64,6 +64,17 @@ public enum WhatsNew {
     public static let entries: [WhatsNewEntry] = [
         WhatsNewEntry(
             version: "0.15.0",
+            build: 87,
+            channel: .dev,
+            date: "2026-09-19",
+            dateText: "19 September 2026",
+            title: "The watch says what time it was",
+            lines: [
+                "A direct session carries the watch's clock offset now. The first one landed an hour off.",
+                "Pair with the 0.9.14-dev5 watch app. Older streams still import, with the zone guessed.",
+            ]),
+        WhatsNewEntry(
+            version: "0.15.0",
             build: 86,
             channel: .dev,
             date: "2026-09-19",

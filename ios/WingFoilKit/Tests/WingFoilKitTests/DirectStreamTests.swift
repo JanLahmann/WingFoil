@@ -21,7 +21,7 @@ import Testing
 
     static let exampleHeader = DirectStreamHeader(appVersion: 9 * 256 + 2,
                                                   startEpochS: 1_756_556_820,
-                                                  windDirDeg: 200)
+                                                  windDirDeg: 200, utcOffsetS: 7200)
 
     static let exampleRecords: [DirectRecord] = [
         DirectRecord(t: 1_756_556_820, lat: 45.8710000, lon: 10.8630000, speedCms: 0,
@@ -38,7 +38,7 @@ import Testing
     /// The 64 bytes docs/transfer-format.md §2.3 prints, and `lab/tools/cjr_ref.py --check`
     /// re-derives: header, keyframe, delta, delta.
     static let exampleHex =
-        "434a5231" + "01" + "00" + "0209" + "14eeb268" + "c800" + "00" + "00"
+        "434a5231" + "02" + "00" + "0209" + "14eeb268" + "c800" + "00" + "00" + "7800" + "0000"
         + "ff" + "14eeb268" + "f05b571b" + "f08f7906" + "0000" + "4200" + "62"
         + "00" + "00" + "00" + "00"
         + "01" + "0500" + "0c00" + "3601" + "00" + "65" + "01" + "00" + "00" + "01"
@@ -52,7 +52,7 @@ import Testing
 
     @Test func theWorkedExampleEncodesToThePinnedHex() {
         let bytes = Self.exampleBytes()
-        #expect(bytes.count == 64)
+        #expect(bytes.count == 68)
         #expect(Self.hex(bytes) == Self.exampleHex)
     }
 
@@ -256,6 +256,19 @@ import Testing
         }
     }
 
+    /// A schema-1 stream, the shape the first field test wrote, still reads; its header is
+    /// 16 bytes and carries no clock offset, so the phone guesses the zone as before.
+    @Test func aSchemaOneStreamStillDecodesWithoutAnOffset() throws {
+        let v1 = Self.data(hex: "434a5231" + "01" + "00" + "0209" + "14eeb268" + "c800" + "00"
+                           + "00" + String(Self.exampleHex.dropFirst(40)))
+        let (header, records) = try DirectStreamDecoder.decode(v1)
+        #expect(header.utcOffsetS == nil)
+        #expect(header.startEpochS == 1_756_556_820)
+        #expect(records.count == 3)
+        let track = try DirectStreamParser.parse(data: v1)
+        #expect(track.startUtcOffsetSource != .activity)
+    }
+
     @Test func aFutureSchemaIsRefusedRatherThanGuessedAt() {
         var bytes = Self.exampleBytes()
         bytes[bytes.startIndex + 4] = 99
@@ -276,7 +289,8 @@ import Testing
         }
         // A whole number of records is a legal short stream — the header, then a keyframe,
         // then a delta. Anything between two of those boundaries is a torn record.
-        let whole = [16: 0, 38: 1, 51: 2, 64: 3]
+        let h = DirectStream.headerBytes
+        let whole = [h: 0, h + 22: 1, h + 35: 2, h + 48: 3]
         for length in (DirectStream.headerBytes..<bytes.count) where whole[length] == nil {
             #expect(throws: DirectStreamError.self) {
                 try DirectStreamDecoder.decode(Data(bytes.prefix(length)))
@@ -606,6 +620,16 @@ import Testing
                                       turnMarker: 0, tick: i % 256))
         }
         return encoder.archive()
+    }
+
+    static func data(hex: String) -> Data {
+        var out = Data(capacity: hex.count / 2)
+        var chars = Array(hex)
+        while chars.count >= 2 {
+            out.append(UInt8(String(chars[0...1]), radix: 16)!)
+            chars.removeFirst(2)
+        }
+        return out
     }
 
     static func hex(_ data: Data) -> String {

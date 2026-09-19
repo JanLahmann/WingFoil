@@ -53,6 +53,11 @@ public enum DirectStreamParser {
         // after its own first fix would otherwise give every sample a negative `t`.
         let base = min(header.startEpochS, first.t)
         track.startDate = Date(timeIntervalSince1970: Double(base))
+        if let offset = header.utcOffsetS {
+            // The recording said so itself: the `activity` rung, exact and DST included.
+            track.startUtcOffsetS = offset
+            track.startUtcOffsetSource = .activity
+        }
 
         var samples: [RecordSample] = []
         samples.reserveCapacity(records.count)

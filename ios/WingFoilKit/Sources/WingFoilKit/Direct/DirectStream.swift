@@ -26,12 +26,17 @@ public enum DirectStream {
     }
     /// Field-meaning version. A stream that states another one is refused rather than
     /// guessed at: a delta record read at the wrong stride is a plausible-looking track.
-    public static let schema: UInt8 = 1
+    public static let schema: UInt8 = 2
+    /// Schema 1 wrote a 16-byte header without the clock offset (19 September 2026, the
+    /// day the first direct session landed an hour off). Still read; never written.
+    public static let legacySchema: UInt8 = 1
+    public static let legacyHeaderBytes = 16
+    public static let utcOffsetNone: Int16 = 0x7FFF
     /// Stream 0, one record per GPS fix, encoding `rec.v1`. Stream 1 is dev3's wrist
     /// magnitudes and gets its own encoding when it exists.
     public static let recordStream: UInt8 = 0
 
-    public static let headerBytes = 16
+    public static let headerBytes = 20
     public static let keyframeTag: UInt8 = 0xFF
     public static let keyframeBytes = 22
     public static let deltaBytes = 13
@@ -105,15 +110,20 @@ public struct DirectStreamHeader: Sendable, Equatable {
     /// 0 = wingfoil, the only value 0.9.x writes.
     public var discipline: Int
     public var flags: Int
+    /// The watch's clock offset at start, seconds east of UTC, from schema 2 on. The
+    /// recording saying so itself is the `activity` rung; without it the phone guesses
+    /// from longitude, which is the solar offset and an hour out under summer time.
+    public var utcOffsetS: Int?
 
     public init(stream: UInt8 = DirectStream.recordStream, appVersion: Int, startEpochS: Int,
-                windDirDeg: Int, discipline: Int = 0, flags: Int = 0) {
+                windDirDeg: Int, discipline: Int = 0, flags: Int = 0, utcOffsetS: Int? = nil) {
         self.stream = stream
         self.appVersion = appVersion
         self.startEpochS = startEpochS
         self.windDirDeg = windDirDeg
         self.discipline = discipline
         self.flags = flags
+        self.utcOffsetS = utcOffsetS
     }
 
     /// The rider's wind axis as the rest of the app states one, or nil where he set none.
@@ -194,22 +204,36 @@ public enum DirectStreamDecoder {
         return true
     }
 
+    /// The header's length for the schema the bytes state: 16 for schema 1, 20 from 2.
+    public static func headerLength(_ data: Data) throws -> Int {
+        guard isStream(data), data.count > 4 else { throw DirectStreamError.notAStream }
+        return data[data.startIndex + 4] == DirectStream.legacySchema
+            ? DirectStream.legacyHeaderBytes : DirectStream.headerBytes
+    }
+
     public static func header(_ data: Data) throws -> DirectStreamHeader {
         guard isStream(data) else { throw DirectStreamError.notAStream }
-        guard data.count >= DirectStream.headerBytes else {
+        let length = try headerLength(data)
+        guard data.count >= length else {
             throw DirectStreamError.truncated("stream header")
         }
-        let b = [UInt8](data.prefix(DirectStream.headerBytes))
+        let b = [UInt8](data.prefix(length))
         let schema = b[4]
-        guard schema == DirectStream.schema else {
+        guard schema == DirectStream.schema || schema == DirectStream.legacySchema else {
             throw DirectStreamError.unsupportedSchema(Int(schema))
+        }
+        var offset: Int?
+        if schema == DirectStream.schema {
+            let minutes = readInt16(b, 16)
+            if minutes != DirectStream.utcOffsetNone { offset = Int(minutes) * 60 }
         }
         return DirectStreamHeader(stream: b[5],
                                   appVersion: Int(readUInt16(b, 6)),
                                   startEpochS: Int(readUInt32(b, 8)),
                                   windDirDeg: Int(readInt16(b, 12)),
                                   discipline: Int(b[14]),
-                                  flags: Int(b[15]))
+                                  flags: Int(b[15]),
+                                  utcOffsetS: offset)
     }
 
     /// The whole stream.
@@ -222,7 +246,7 @@ public enum DirectStreamDecoder {
     public static func decode(_ data: Data) throws -> (DirectStreamHeader, [DirectRecord]) {
         let head = try header(data)
         let b = [UInt8](data)
-        var i = DirectStream.headerBytes
+        var i = try headerLength(data)
         var out: [DirectRecord] = []
         var qlat: Int32 = 0
         var qlon: Int32 = 0
@@ -333,6 +357,9 @@ public struct DirectStreamEncoder {
         out.appendLE(Int16(truncatingIfNeeded: header.windDirDeg))
         out.append(UInt8(truncatingIfNeeded: header.discipline))
         out.append(UInt8(truncatingIfNeeded: header.flags))
+        let minutes = header.utcOffsetS.map { Int16(clamping: $0 / 60) } ?? DirectStream.utcOffsetNone
+        out.appendLE(minutes)
+        out.appendLE(UInt16(0))
         return out
     }
 
