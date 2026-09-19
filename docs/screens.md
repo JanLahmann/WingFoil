@@ -163,6 +163,10 @@ app, any .fit, Strava, and the Garmin ZIP last.
     its spot rows when the list moved onto the Gear tab, because a session list one tap away
     can be sorted by spot. The browser has no such list, so the two totals stay.
 
+15. **The menu button sits top right on the web, top left on the phone.** Jan's exception
+    to pattern M (19 September 2026): the web header already differs — it carries the mark
+    and the name as the way home, which a phone tab has no reason to — so the button
+    follows the header it sits in. Same rows, same order, same sheet.
 Everything else that differs is a gap to close, not a deviation.
 
 ## The web after the port, as a target
