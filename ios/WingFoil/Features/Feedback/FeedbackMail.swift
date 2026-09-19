@@ -42,7 +42,11 @@ enum FeedbackMail {
     static func facts(store: SessionStore, session row: SessionRow? = nil) -> FeedbackFacts {
         FeedbackFacts(app: appFacts(store: store), phone: phoneFacts(),
                       watch: watchFacts(store: store), library: libraryFacts(store: store),
-                      session: row.map { sessionFacts($0, store: store) })
+                      session: row.map { sessionFacts($0, store: store) },
+                      // Every channel, the App Store one included: a crash is the one
+                      // failure a rider cannot describe, and this is the only route it has
+                      // (docs/engineering.md, "Monitoring").
+                      crashes: CrashDiagnostics.shared.kept())
     }
 
     // MARK: - The four sections

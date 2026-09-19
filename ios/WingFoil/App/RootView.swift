@@ -22,7 +22,15 @@ struct RootView: View {
     /// decide whether to". One expression carrying all three overflowed the type checker
     /// outright once the deleted-sessions sheet joined the other two presentations — and
     /// three named groups are what the comments were already describing anyway.
+    /// `UI_TEXT_SIZE` is applied here, around everything: the tabs, the overlays and every
+    /// sheet raised from them, since a sheet inherits the environment of the view that
+    /// presented it. A screenshot pass at an accessibility size has to photograph the
+    /// screens a rider at that size actually gets, not the four tabs alone.
     var body: some View {
+        ScreenshotTextSize.applied(to: screens)
+    }
+
+    private var screens: some View {
         hooks(presentations(tabs))
             // In front of everything, including the splash: a library this build cannot
             // read is not a state the four tabs have an honest picture of, and the one
@@ -284,5 +292,57 @@ struct RootView: View {
             await store.startOver()
         }
         #endif
+    }
+}
+
+/// **`UI_TEXT_SIZE=xxxl|ax1…ax5` — the screenshot pass at an accessibility text size.**
+///
+/// Nothing in the app tests Dynamic Type and nothing could photograph it: the size lives in
+/// iOS Settings → Accessibility, which is three taps `simctl` cannot make and a setting that
+/// then leaks into every other shot on that simulator. So the app takes the size from the
+/// launch environment, the same way it takes `UI_TAB` and `UI_SHEET` (docs/testing.md), and
+/// the five accessibility sizes can be shot in five launches.
+///
+/// **DEBUG and simulator only**, like every other hook of the family: a rider's own text
+/// size is his, and a build that could be told to ignore it is a build that will.
+enum ScreenshotTextSize {
+
+    /// The size the launch asked for, or nil — which means the rider's own, untouched.
+    static var override: DynamicTypeSize? {
+        #if DEBUG && targetEnvironment(simulator)
+        return named(ProcessInfo.processInfo.environment["UI_TEXT_SIZE"])
+        #else
+        return nil
+        #endif
+    }
+
+    /// The whole ladder, spelled as `DynamicTypeSize` spells it. `xxxl` is the largest
+    /// ordinary size and `ax1`…`ax5` the five accessibility ones; anything else is unknown
+    /// and nothing is overridden, which is what an unknown value means everywhere else in
+    /// the family.
+    static func named(_ raw: String?) -> DynamicTypeSize? {
+        switch raw?.lowercased() {
+        case "xs", "xsmall": .xSmall
+        case "s", "small": .small
+        case "m", "medium": .medium
+        case "l", "large": .large
+        case "xl", "xlarge": .xLarge
+        case "xxl", "xxlarge": .xxLarge
+        case "xxxl", "xxxlarge": .xxxLarge
+        case "ax1": .accessibility1
+        case "ax2": .accessibility2
+        case "ax3": .accessibility3
+        case "ax4": .accessibility4
+        case "ax5": .accessibility5
+        default: nil
+        }
+    }
+
+    @ViewBuilder static func applied(to content: some View) -> some View {
+        if let override {
+            content.dynamicTypeSize(override)
+        } else {
+            content
+        }
     }
 }

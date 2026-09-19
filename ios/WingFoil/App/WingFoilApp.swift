@@ -16,6 +16,11 @@ struct WingFoilApp: App {
         // BGTaskScheduler throws at launch over an unregistered permitted identifier, and
         // a cold start *from* a notification delivers the tap to the delegate immediately.
         ActivityNotifier.shared.register(store: store)
+        // The one field-failure signal the app has, and the only one that keeps the
+        // no-servers stance: iOS hands over its own crash and hang diagnostics, on device,
+        // and the feedback mail carries them (docs/engineering.md, "Monitoring"). Every
+        // channel, because the App Store one is the channel with no other route.
+        CrashDiagnostics.shared.subscribe()
     }
 
     var body: some Scene {

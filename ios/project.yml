@@ -896,6 +896,44 @@ targets:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
         ITSAppUsesNonExemptEncryption: false
 
+  # =======================================================================================
+  # THE APP'S OWN TESTS (docs/engineering.md, "Tests": the app layer was the only one with
+  # nothing under it — 105 Swift files of views, OAuth and watch transfer).
+  #
+  # Hosted by the `WingFoil` target under `Dev Debug`, which is the configuration that runs
+  # on a simulator and the only one a machine here ever tests. The host is what lets a test
+  # say `@testable import WingFoil` and reach `SessionDisplay`, the screenshot hooks and the
+  # feedback mail; the kit keeps its own suite in `ios/WingFoilKit`, and a rule that can be
+  # stated without a host app belongs there rather than here.
+  #
+  #     cd ios && xcodegen generate
+  #     xcodebuild test -project WingFoil.xcodeproj -scheme "WingFoil Dev" \
+  #       -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max'
+  #
+  # DEBUG only: no scheme's Release or archive action builds it, so nothing of it can reach
+  # a shipped binary.
+  # =======================================================================================
+  WingFoilTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: WingFoilTests
+    dependencies:
+      - target: WingFoil
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil.tests
+        PRODUCT_NAME: WingFoilTests
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: 685X8YLYSB
+        # Spelled out rather than left to the dependency: the two app targets both build a
+        # `WingFoil.app`, and a test host resolved by name is a test host that can silently
+        # become the release channel's.
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/WingFoil.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/WingFoil"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+
 # THREE SCHEMES, ONE PER CHANNEL (docs/channels.md). There is deliberately no plain "WingFoil"
 # scheme any more: the name meant "the public build" through build 52 and now means the beta,
 # and a scheme that silently changed what it produces is how a beta reaches the App Store.
@@ -958,8 +996,13 @@ schemes:
         - variable: ICU_API_KEY
           value: ""
           isEnabled: false
+    # The app's own tests hang off this scheme and no other: `Dev Debug` is the one
+    # configuration that runs on a simulator here, and a suite that ran under three of them
+    # would be three chances for the same assertion to mean something different.
     test:
       config: Dev Debug
+      targets:
+        - WingFoilTests
     profile:
       config: Dev Release
     analyze:
