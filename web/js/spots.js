@@ -27,6 +27,7 @@
  * so in the same words the map-tile paragraph uses.
  */
 
+import { track } from "./track.js";
 import { esc, hms, nf } from "./viz.js";
 
 /* ---------------------------------------------------------------- the clusterer */
@@ -378,7 +379,12 @@ export function renderSpots(host, entries, onChanged) {
       // eslint-disable-next-line no-alert
       const typed = window.prompt("Rename spot", spot.name);
       if (typed === null) return;
-      if (renameSpot(spot, typed) && onChanged) onChanged();
+      if (!renameSpot(spot, typed)) return;
+      // That a rename happened, and nothing about it. A spot name is a place a rider sails,
+      // which is the single most identifying string in this app — `typed` never leaves this
+      // browser and must never reach an event (docs/analytics.md).
+      track("app-spot-renamed");
+      if (onChanged) onChanged();
     });
   }
   host.querySelector("#spot-recluster").addEventListener("click", () => {

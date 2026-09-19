@@ -26,6 +26,8 @@
  * not mention it: two invitations in one sentence is neither.
  */
 
+import { track } from "./track.js";
+
 const KEY = "cleanjibe.install.ios.dismissed";
 
 /** Remembered "Later", behind try/catch: a preference that cannot be read is not a reason
@@ -91,4 +93,8 @@ if (installableOnIos() && !remembered()) {
   const after = document.getElementById("install-banner");
   if (after) after.after(bar());
   else document.body.prepend(bar());
+  // Shown, and that is all this platform can ever report. There is no programmatic install
+  // on iOS and no `appinstalled` event, so the accept side of this funnel does not exist
+  // here and is named as missing in docs/analytics.md rather than guessed at.
+  track("app-install-shown", { platform: "ios" });
 }

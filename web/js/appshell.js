@@ -41,12 +41,12 @@ import { GLOSSARY } from "./copy.js";
 // their own with their own files; this page only says where they are drawn.
 import { renderQuiver } from "./gear.js";
 import { renderDeleted } from "./deleted.js";
-import { esc, hms, int, nf } from "./render.js";
 /* r3-w3: the Spots half of this tab is a screen of its own now — the phone's clusterer, a
    rename that sticks, "Re-cluster spots" and "Look up names again". js/spots.js. */
 import { renderSpots } from "./spots.js";
 import { esc, int } from "./render.js";   // r3-w3: hms and nf left with the spots list
 import { listEntries, removeSession, storageLabel } from "./store.js";
+import { track } from "./track.js";
 
 const el = (id) => document.getElementById(id);
 
@@ -104,7 +104,14 @@ export function currentPage() {
 
 function wireTabs() {
   for (const button of document.querySelectorAll(".tabbar button[data-tab]")) {
-    button.addEventListener("click", () => showPage(button.dataset.tab));
+    button.addEventListener("click", () => {
+      // The tab bar, counted at the press rather than inside `showPage`: that function is
+      // also how a finished analysis puts the session page on screen and how a hash on a
+      // bookmark routes, and neither is somebody choosing a tab. The property is the tab's
+      // own id out of a closed set of four (docs/analytics.md).
+      track("app-tab-switched", { tab: button.dataset.tab });
+      showPage(button.dataset.tab);
+    });
   }
   window.addEventListener("hashchange", () => showPage(location.hash.replace("#/", "")));
   // One delegated listener for every "go there" control on every page — the ways-in card's
@@ -143,6 +150,9 @@ function wireMenu() {
   for (const button of menu.querySelectorAll("button[data-menu]")) {
     button.addEventListener("click", () => {
       const row = button.dataset.menu;
+      // Five rows, one closed set, one event. The menu is the phone's menu, so the same
+      // question is asked on both surfaces: which of the five is ever pressed.
+      track("app-menu-row-opened", { row });
       closeMenu();
       if (row === "whatItDoes") openWelcome();
       else if (row === "gettingStarted") showPage("help");

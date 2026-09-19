@@ -15,6 +15,7 @@ import { CANCELLED, analyze as runAnalysis, cancel as cancelWorker, on, warmUp }
 import { mountSections, resetSections } from "./sections.js";
 import { mountShareCard, openPeriodCard, openShareCard } from "./sharecard.js";
 import { listEntries } from "./store.js";
+import { track } from "./track.js";
 import { invalidateTrends, mountTrends, redrawTrends, showTrends } from "./trends.js";
 // r3-w1: the four screens the port was missing — the Log tab's gear card and its
 // watch-against-phone block, the quiver's editor, Deleted sessions, Restore from a backup,
@@ -247,11 +248,21 @@ function updateSaveButton() {
  * cannot say, and it is passed rather than sniffed from the name: a visitor who renames
  * their own FIT to the example's name must not have it silently excluded from their
  * records, and the example must not count in them.
+ *
+ * `source` is the class of door the bytes came through — drop, picker, example, shared,
+ * icu — and it exists for the counter and for nothing else (docs/analytics.md). It is a
+ * fixed word from a closed set, never anything off the file: the question it answers is
+ * which way in a visitor actually uses, which decides which way in is worth building next.
  */
-export async function analyzeFile(file, { isExample = false } = {}) {
+export async function analyzeFile(file, { isExample = false, source = "drop" } = {}) {
   if (state.busy) return;
   const name = file.name || "session.fit";
+  const format = (/\.(fit|gpx|tcx|zip)$/i.exec(name)?.[1] || "other").toLowerCase();
   if (!/\.(fit|gpx|tcx|zip)$/i.test(name)) {
+    // The turn-away is counted too, and it is the one number on this page that can change
+    // what the engine reads next: a run of rejections is riders arriving with a format
+    // CleanJibe does not take. The extension only, never the name.
+    track("app-file-rejected", { source });
     // Say what to bring instead. The rejection states the rule *and* the way out: since
     // engine 0.9.0 a GPX is a way out, and a TCX now too — so the formats people used to be
     // turned away with are offered here instead, with their limits named, because a rider
@@ -287,12 +298,12 @@ export async function analyzeFile(file, { isExample = false } = {}) {
                { digest: JSON.parse(msg.digestJson), bytes: keep, isExample });
     // Counted here and nowhere earlier: the question worth answering is how many sessions
     // the analyzer actually finished, not how many files were picked — a FIT that failed to
-    // parse is not a conversion. The event carries its NAME and nothing else: no filename,
-    // no size, no number out of the session. The optional chain is not decoration — the
-    // umami script is third-party, `defer`, pinned to one hostname, and blocked outright by
-    // plenty of browsers, so on a local server and for a good share of real visitors
-    // `window.umami` is simply never there and the analyzer must not care.
-    window.umami?.track?.(isExample ? "example-run" : "analyze-file");
+    // parse is not a conversion. Two properties travel with it and no third is allowed: the
+    // file EXTENSION and the class of door it came through. Never the name, the size, the
+    // date or a number out of the session. js/track.js is the guard — the umami script is
+    // third-party and absent for a good share of real visitors, and the analyzer must not
+    // care either way.
+    track("app-file-analyzed", { format, source });
   } catch (err) {
     // A cancel is the user getting what they asked for, not a failure: the Cancel handler
     // has already put the page back, and an "That didn't work" panel on top of it would
@@ -304,7 +315,7 @@ export async function analyzeFile(file, { isExample = false } = {}) {
 
 /** Analyze a FIT another module (icu.js) already downloaded. */
 export function analyzeBuffer(buffer, name) {
-  return analyzeFile(new File([buffer], name));
+  return analyzeFile(new File([buffer], name), { source: "icu" });
 }
 
 /* ------------------------------------------------- Android's share sheet (issue #9) */
@@ -355,7 +366,7 @@ function wireDropzone() {
     stop(ev);
     zone.classList.remove("hot");
     const file = ev.dataTransfer?.files?.[0];
-    if (file) analyzeFile(file);
+    if (file) analyzeFile(file, { source: "drop" });
   });
   // Dropping anywhere else must not navigate away from the page.
   for (const type of ["dragover", "drop"]) {
@@ -379,7 +390,7 @@ function wireDropzone() {
   });
   el("file").addEventListener("change", (ev) => {
     const file = ev.target.files?.[0];
-    if (file) analyzeFile(file);
+    if (file) analyzeFile(file, { source: "picker" });
     ev.target.value = "";
   });
 }
@@ -415,6 +426,11 @@ async function runExample() {
   if (state.busy) return;
   const buttons = exampleTriggers();
   for (const b of buttons) b.disabled = true;
+  // The PRESS, counted where it happens; the finished analysis is counted again in
+  // `analyzeFile` as `source: "example"`. Two events rather than one because the gap
+  // between them is the whole question: a visitor who taps the example and never sees a
+  // report waited out a 12 MB runtime download and left.
+  track("app-example-loaded");
   try {
     // Resolved against this module, not against the document: the page lives at /app/
     // while the example (like css/, icons/ and lab_bundle/) stays at the site root,
@@ -424,7 +440,7 @@ async function runExample() {
     if (!res.ok) throw new Error(`example/ExampleSession.fit: HTTP ${res.status}`);
     await analyzeFile(new File([await res.arrayBuffer()],
                                "example-nago-torbole-2026-08-30.fit"),
-                      { isExample: true });
+                      { isExample: true, source: "example" });
   } catch (err) {
     fail(`Could not load the example session: ${err.message}`);
   } finally {
@@ -483,7 +499,7 @@ function wireSave() {
         // After the write, and only on `saved` — the two questions `saveSession` can ask
         // ("whose session is this?", "replace it?") both have a No that lands here as
         // `saved: false`, and a cancelled save is not a save.
-        window.umami?.track?.("fit-saved-to-library");
+        track("app-session-saved", { replaced: !!outcome.replaced });
       } else {
         button.textContent = "Save to library";
         button.disabled = false;
@@ -496,8 +512,11 @@ function wireSave() {
   });
 }
 
-/** Open a stored session, optionally with one of its records marked. */
-async function openStored(id, record = null) {
+/** Open a stored session, optionally with one of its records marked. `from` is the class of
+ *  row that opened it — the library list, a record row, a trend dot — and travels to the
+ *  counter and nowhere else (docs/analytics.md). It is never the session's id. */
+async function openStored(id, record = null, from = "library") {
+  track("app-session-opened", { from });
   try {
     const highlight = record
       // The label is the record's own ("Best 2 s"), because it is also the legend chip's
@@ -664,8 +683,8 @@ mountRange({
 onGearChange(() => refreshLog());
 mountIcu({ analyzeBuffer });
 mountTrends({
-  openSession: (id) => openStored(id),
-  openRecord: (record) => openStored(record.id, record),
+  openSession: (id) => openStored(id, null, "trend"),
+  openRecord: (record) => openStored(record.id, record, "record"),
   // The period card opens the same composer the session card does — same shapes, same
   // footer, same export — with a week's block on it instead of an afternoon's.
   openPeriodCard: (period, entries) => { if (period) openPeriodCard(period, entries); },
@@ -673,7 +692,7 @@ mountTrends({
 // The library lists and stores; opening comes back through `openStored` so there is one
 // code path for "a document is on screen", whether it arrived by drop or from disk.
 mountLibrary({
-  onOpen: (id) => openStored(id),
+  onOpen: (id) => openStored(id, null, "library"),
   // The count on the Sessions tab, and which half of that tab is on screen — the ways-in
   // card or the list. js/appshell.js owns both, because they are one fact.
   setCount: (n) => {
@@ -705,5 +724,12 @@ warmUp();
 if (openExampleOnLoad) runExample();
 if (openSharedOnLoad) {
   history.replaceState(null, "", location.pathname + location.hash);
-  takeSharedFile().then((file) => { if (file) analyzeFile(file); });
+  takeSharedFile().then((file) => {
+    if (!file) return;
+    // Android's share sheet handed CleanJibe a session. Counted on its own because the
+    // whole mechanism is invisible from here otherwise: the POST never reaches a server,
+    // so the only evidence the share target works at all is this line.
+    track("app-shared-file-taken");
+    analyzeFile(file, { source: "shared" });
+  });
 }

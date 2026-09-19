@@ -11,6 +11,8 @@
  * the user how to export the FIT by hand, which is the supported path.
  */
 
+import { track } from "./track.js";
+
 const BASE = "https://intervals.icu/api/v1";
 const LS_KEY = "wingfoil.icu.key";
 const LS_ATHLETE = "wingfoil.icu.athlete";
@@ -73,6 +75,11 @@ function isoDaysAgo(days) {
 
 async function listActivities(key, athlete, analyzeBuffer) {
   say("Contacting intervals.icu…");
+  // The bridge, counted at both ends. The browser is expected to refuse this call outright
+  // (no CORS headers on intervals.icu's API), and the pair of started/finished is the only
+  // way to learn whether that expectation still holds for real readers. No key, no athlete
+  // id, no activity name ever reaches an event — the finish carries a COUNT.
+  track("app-icu-sync-started");
   el("icu-results").innerHTML = "";
   const url = `${BASE}/athlete/${encodeURIComponent(athlete)}/activities` +
               `?oldest=${isoDaysAgo(120)}&newest=${isoDaysAgo(-1)}`;
@@ -80,15 +87,23 @@ async function listActivities(key, athlete, analyzeBuffer) {
   try {
     const res = await fetch(url, { headers: { Authorization: authHeader(key) } });
     if (res.status === 401 || res.status === 403) {
+      track("app-icu-sync-failed", { reason: "key" });
       return say("intervals.icu rejected the key (401/403). Check it and try again.", true);
     }
-    if (!res.ok) return say(`intervals.icu returned HTTP ${res.status}.`, true);
+    if (!res.ok) {
+      track("app-icu-sync-failed", { reason: "http" });
+      return say(`intervals.icu returned HTTP ${res.status}.`, true);
+    }
     activities = await res.json();
   } catch (err) {
     return corsFallback(err);
   }
 
   const water = activities.filter((a) => WATERSPORTS.test(`${a.type || ""} ${a.name || ""}`));
+  // One count, and it is the watersport count rather than the whole list: how many sessions
+  // this bridge would actually carry is the number worth having, and the rest of a rider's
+  // training year is none of a counter's business.
+  track("app-icu-sync-finished", { activities: water.length });
   if (!water.length) return say("No wing/foil/windsurf activities in the last 120 days.");
 
   say(`${water.length} watersport activities found. Everything below is fetched straight ` +
@@ -127,6 +142,9 @@ async function fetchAndAnalyze(key, id, name, analyzeBuffer) {
 
 /** The expected failure: the browser blocked the cross-origin call. */
 function corsFallback(err) {
+  // The reason word, never the browser's own message: that string is the engine's and can
+  // carry a URL with an athlete id in it.
+  track("app-icu-sync-failed", { reason: "blocked" });
   say("intervals.icu could not be reached from the browser.", true);
   el("icu-results").innerHTML = `
     <p class="note" style="margin-top:12px">

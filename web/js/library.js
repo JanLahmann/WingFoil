@@ -22,6 +22,7 @@ import { askRider } from "./rider.js";
 import {
   getAnalysisJson, getFitBlob, listEntries, putSession, removeSession, storageLabel, usage,
 } from "./store.js";
+import { track } from "./track.js";
 import { invalidateTrends } from "./trends.js";
 
 const el = (id) => document.getElementById(id);
@@ -357,6 +358,9 @@ async function exportAll() {
     const buffer = await askBytes("zip", { files });
     download(new Blob([buffer], { type: "application/zip" }),
              `wingfoil-library-${new Date().toISOString().slice(0, 10)}.zip`);
+    // How big a library people actually keep in a browser, and whether the way back out is
+    // ever used. A count, never a name and never a date.
+    track("app-backup-exported", { sessions: entries.length });
   } catch (err) {
     window.alert(`The export failed: ${err.message}\n\n` +
                  `The per-session .fit / .json buttons in each row always work — they are ` +

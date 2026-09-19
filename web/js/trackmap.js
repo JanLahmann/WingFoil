@@ -33,6 +33,7 @@
  */
 
 import { CREDIT, tileCover, worldPoint } from "./cardmap.js";
+import { track as count } from "./track.js";
 import { C, svg } from "./viz.js";
 
 /* ------------------------------------------------------------------- the switch */
@@ -249,6 +250,10 @@ export function onGroundButton(ev, redraw) {
   const wanted = button.dataset.ground === "map";
   if (wanted !== groundOn()) {
     setGround(wanted);
+    // The one control on this page that starts a request to somebody else's server, so it
+    // is the one worth counting: the map background is off until a rider turns it on, and
+    // /privacy/ says so. The event is the word "map" or "plain" and no coordinate.
+    count("app-map-ground-set", { ground: wanted ? "map" : "plain" });
     redraw();
   }
   return true;
@@ -333,6 +338,9 @@ export function openFullMap() {
   if (!figure || !legend || !shell || !body || !slot) return;
 
   full = { figure, legend, parent: figure.parentNode, after: legend.nextSibling };
+  // The phone's door, in the browser. Whether it is ever pushed decides whether the
+  // full-screen shell earns the code it costs.
+  count("app-map-opened-full");
   shell.hidden = false;
   document.body.classList.add("map-full-on");
   body.appendChild(figure);

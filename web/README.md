@@ -413,8 +413,16 @@ requests the pages ever make are:
 All three documents carry a `<script defer>` for **umami** (Umami Cloud). It counts page
 views: URL, referrer, screen size, and the browser's own language and user-agent string. It
 sets **no cookie**, stores no identifier that survives the visit, and has no access to a
-session — the FIT file is read in the tab, by a worker, and is never sent anywhere. Nothing
-in `js/` calls into it; removing the tag removes the feature entirely.
+session — the FIT file is read in the tab, by a worker, and is never sent anywhere.
+
+It also counts **named actions**: the site's doors declaratively, through
+`data-umami-event` in the markup, and the browser app's own actions through one guarded
+helper, `js/track.js`, which nine modules import and which no-ops when `window.umami` is
+absent. **`docs/analytics.md` is the event map** — every name, every property, the funnel
+each belongs to, the rule that no personal data may ever travel with one, and the list of
+questions umami cannot answer. Read it before adding an event or reading a number off the
+dashboard. Removing the tag still removes the feature entirely: every call site is guarded
+and the page behaves identically without it.
 
 Three details that are deliberate rather than incidental:
 

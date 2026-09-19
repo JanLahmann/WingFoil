@@ -28,6 +28,7 @@ import {
   sliceAngles, turnFigure, typeLabel,
 } from "./maneuverfigure.js";
 import { lexicon } from "./lexicon.js";
+import { track } from "./track.js";
 import {
   C, OUTCOME_COLOR, OUTCOME_LABEL, clockAt, esc, figureWidth, nf, outcomeText, svg,
 } from "./viz.js";
@@ -145,6 +146,11 @@ function delegate(tableId, kind) {
     const index = Array.prototype.indexOf.call(row.parentNode.children, row);
     if (index < 0) return;
     if (!setFor(kind).includes(index)) return;
+    // Counted at the ROW, not inside `openPage`: that function is also how the prev/next
+    // buttons and a swipe move between turns, and a rider paging through eight of them
+    // opened the turn page once. `kind` is "turn" or "end"; the index stays here, because
+    // which turn of which afternoon is the rider's business and not a counter's.
+    track("app-turn-page-opened", { kind });
     openPage(kind, index);
   });
 }

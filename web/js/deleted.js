@@ -20,6 +20,7 @@
 import { db } from "./appdb.js";
 import { ingest } from "./ingest.js";
 import { esc, hms, zonedFormat } from "./render.js";
+import { track } from "./track.js";
 
 const store = db("wingfoil-deleted");
 const INDEX = "index.json";
@@ -121,6 +122,9 @@ async function restore(id) {
   await forget(id);
   await hooks.onChanged();
   await renderDeleted();
+  // The tombstone earned its keep. The bare name and the outcome word: whether riders ever
+  // undo a delete is the question that decides whether the recording is worth keeping.
+  track("app-deleted-restored", { outcome: outcome.status });
   say(outcome.status === "duplicate"
     ? "That session is already in your library, so nothing was added."
     : `${stone.title} is back in your library.`);

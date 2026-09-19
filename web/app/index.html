@@ -257,18 +257,19 @@
 
         <li class="way here" data-way="garmin">
           <div class="way-body">
-            <p class="way-title"><a href="/start/#guide-garmin">Garmin with the CleanJibe
+            <p class="way-title"><a href="/start/#guide-garmin" data-umami-event="app-way-garmin">Garmin with the CleanJibe
               watch app</a></p>
             <p class="way-line">Paste your intervals.icu key in Settings. Sessions arrive by
               themselves.</p>
             <p class="way-act"><button class="ghost small-btn" type="button"
-              data-goto="settings">Open Settings</button></p>
+              data-goto="settings" data-umami-event="app-way-garmin-settings">Open
+              Settings</button></p>
           </div>
         </li>
 
         <li class="way elsewhere" data-way="appleWatchApp">
           <div class="way-body">
-            <p class="way-title"><a href="/start/#guide-appleWatchApp">The CleanJibe Apple
+            <p class="way-title"><a href="/start/#guide-appleWatchApp" data-umami-event="app-way-apple-watch">The CleanJibe Apple
               Watch app</a></p>
             <p class="way-line">On the iPhone app. A browser cannot reach your watch.</p>
           </div>
@@ -276,7 +277,7 @@
 
         <li class="way elsewhere" data-way="appleWorkoutApp">
           <div class="way-body">
-            <p class="way-title"><a href="/start/#guide-appleWorkoutApp">Apple&rsquo;s own
+            <p class="way-title"><a href="/start/#guide-appleWorkoutApp" data-umami-event="app-way-apple-workout">Apple&rsquo;s own
               Workout app</a></p>
             <p class="way-line">On the iPhone app. Apple Health is closed to a browser.</p>
           </div>
@@ -284,7 +285,7 @@
 
         <li class="way here" data-way="fit">
           <div class="way-body">
-            <p class="way-title"><a href="/start/#guide-fit">Any watch that writes a
+            <p class="way-title"><a href="/start/#guide-fit" data-umami-event="app-way-fit">Any watch that writes a
               .fit</a></p>
             <p class="way-line">Export the file. Then drop it here.</p>
           </div>
@@ -292,7 +293,7 @@
 
         <li class="way elsewhere" data-way="strava">
           <div class="way-body">
-            <p class="way-title"><a href="/start/#guide-strava">Strava</a></p>
+            <p class="way-title"><a href="/start/#guide-strava" data-umami-event="app-way-strava">Strava</a></p>
             <p class="way-line">On the iPhone app. Strava sign-in needs it.</p>
           </div>
         </li>
@@ -482,9 +483,10 @@
         <summary><span class="q" aria-hidden="true">?</span>What these numbers mean</summary>
         <dl class="glossary-list" id="glossary-list"></dl>
         <p class="muted small">The same words, and the rest of the reference, are in
-          <button class="linkish" type="button" data-goto="help">Help</button>. The
+          <button class="linkish" type="button" data-goto="help"
+            data-umami-event="app-session-help">Help</button>. The
           thresholds and the full outcome ladder are on
-          <a href="../help/#numbers">How it works</a>.</p>
+          <a href="../help/#numbers" data-umami-event="app-help-numbers">How it works</a>.</p>
       </details>
       <div class="tiles" id="tiles"></div>
     </section>
@@ -747,7 +749,7 @@
     <div class="panel-head"><h2>About</h2></div>
     <div class="kv" id="about-rows"></div>
     <p class="muted small">Wind is estimated in this tab from your track.
-      <a href="../privacy/">Privacy</a></p>
+      <a href="../privacy/" data-umami-event="app-privacy">Privacy</a></p>
   </section>
 
   <section class="panel" id="settings-whats-new">
@@ -1070,11 +1072,27 @@
       try { localStorage.setItem(KEY, "1"); } catch (e) { /* private window: ask again */ }
     }
 
+    // js/track.js's guard, written out once here because this block is NOT a module and
+    // cannot import it. Same contract: absent counter, no-op; never throws; a fixed word
+    // out of a closed set and nothing else travels. See docs/analytics.md.
+    function count(name, data) {
+      try {
+        if (window.umami && typeof window.umami.track === "function") {
+          window.umami.track(name, data);
+        }
+      } catch (e) { /* a blocked counter is not a reason for a banner to fail */ }
+    }
+
     addEventListener("beforeinstallprompt", function (ev) {
       // Keep the event: Chrome only lets it be used later if its own banner was suppressed.
       ev.preventDefault();
       prompt = ev;
-      if (!remembered()) bar.hidden = false;
+      if (!remembered()) {
+        bar.hidden = false;
+        // The OFFER, not the install. How often a browser says an install is available is
+        // the denominator the accept rate below is worth nothing without.
+        count("app-install-shown", { platform: "chrome" });
+      }
     });
 
     document.getElementById("install-go").addEventListener("click", function () {
@@ -1082,8 +1100,14 @@
       if (!prompt) return;
       prompt.prompt();
       // Whatever the rider answers, the event is spent — Chrome will fire a fresh one on a
-      // later visit if the install is still available.
-      prompt.userChoice.then(function () { prompt = null; });
+      // later visit if the install is still available. The answer is counted here because
+      // it is the only place it exists: an installed PWA opens with no banner to press.
+      prompt.userChoice.then(function (choice) {
+        if (choice && choice.outcome === "accepted") {
+          count("app-install-accepted", { platform: "chrome" });
+        }
+        prompt = null;
+      });
     });
 
     document.getElementById("install-dismiss").addEventListener("click", function () {
@@ -1092,7 +1116,12 @@
     });
 
     // Installed from Chrome's own menu instead: the offer is answered, so stop making it.
-    addEventListener("appinstalled", function () { bar.hidden = true; remember(); });
+    // It is still an install, and it is the one this banner can take no credit for.
+    addEventListener("appinstalled", function () {
+      bar.hidden = true;
+      remember();
+      count("app-install-accepted", { platform: "browser-menu" });
+    });
   })();
 </script>
 <!-- The other half of the same offer: iOS Safari, which fires no `beforeinstallprompt` and

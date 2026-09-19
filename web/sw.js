@@ -21,7 +21,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v78";     // v77: the Ride tab's map background and the full-screen map (v75: two links and two doors in the site nav, /help/ from the app's help catalogue, /watches/ and /whats-new/ absorbed (v74: release notes for builds 76 and 77 (v73: v73: the apple watch live view is on the beta outlook as a plan (v72: v72: the Strava fall sentence on /start and /watches, the what's-new cards from one source (v71: v71: the store version reads 0.9.13 (v70: v67: Apple Watch comes right after Garmin wherever watches are listed; the routes lose their letters and gain a class pill; the /start/ folds say "Show the N steps"; the site nav keeps its right gutter on a phone (v65: every rider sentence on the site is in the voice of docs/voice.md (v60: the site is cut in half — the front door keeps the card and two links, /start/ folds its routes, "How it works" becomes "What it measures", one footer everywhere; v59: the example session is a button, the analyzer gains a glossary and a feedback door; v58: the copy contract on the pages)))
+const VERSION = "v79";     // v79: the umami events and the fixed import in appshell.js; v78: the log tab, deleted sessions, the turn and flight-end pages, spots, the trend lines, the design-review fixes (v77: the Ride tab's map background and the full-screen map (v75: two links and two doors in the site nav, /help/ from the app's help catalogue, /watches/ and /whats-new/ absorbed (v74: release notes for builds 76 and 77 (v73: v73: the apple watch live view is on the beta outlook as a plan (v72: v72: the Strava fall sentence on /start and /watches, the what's-new cards from one source (v71: v71: the store version reads 0.9.13 (v70: v67: Apple Watch comes right after Garmin wherever watches are listed; the routes lose their letters and gain a class pill; the /start/ folds say "Show the N steps"; the site nav keeps its right gutter on a phone (v65: every rider sentence on the site is in the voice of docs/voice.md (v60: the site is cut in half — the front door keeps the card and two links, /start/ folds its routes, "How it works" becomes "What it measures", one footer everywhere; v59: the example session is a button, the analyzer gains a glossary and a feedback door; v58: the copy contract on the pages)))
 // The cache *names* keep the historical prefix on purpose: the activate handler below
 // deletes every cache starting with it, so renaming the prefix would strand every v1–v13
 // cache on every device that ever visited, forever. Nobody sees these strings.
@@ -114,6 +114,11 @@ const APP_SHELL = [
   "js/spots.js",                                                   // r3-w3
   "js/store.js",
   "js/tokens.js",
+  // The guarded door to umami (docs/analytics.md). 2 KB, imported by nine modules, and it
+  // no-ops when the counter is absent — which is exactly the offline case this list is
+  // for. Precached so an installed app never waits on a file whose whole job is to do
+  // nothing when there is no network. The umami SCRIPT itself stays out, as it always was.
+  "js/track.js",
   // The ground under the Ride tab's track and the full-screen map behind its door.
   "js/trackmap.js",
   "js/trends.js",

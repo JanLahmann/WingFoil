@@ -20,6 +20,7 @@
  */
 
 import { esc } from "./render.js";
+import { track } from "./track.js";
 
 const el = (id) => document.getElementById(id);
 
@@ -114,6 +115,10 @@ function choose(id) {
     return;
   }
   chosen = id;
+  // The chip that was pressed, out of the fixed set the picker draws. A preset id is not a
+  // date: "90d" says which window riders read their trends in, and `custom` below says the
+  // presets were not enough. Neither event ever carries the dates themselves.
+  track("app-range-chosen", { range: id });
   renderRange();
   hooks.onChange();
 }
@@ -153,6 +158,11 @@ export function mountRange(options = {}) {
     to = a && b && a > b ? a : b;
     chosen = "custom";
     dialog.close();
+    // A custom window was actually set. The two dates stay here: a from and a to describe
+    // a rider's season, which is the kind of thing docs/analytics.md forbids an event to
+    // carry. The `days` it spans is a shape, not a date, and that is what travels.
+    track("app-range-custom-used",
+          { days: from && to ? Math.round((Date.parse(to) - Date.parse(from)) / 86400000) : 0 });
     renderRange();
     hooks.onChange();
   });

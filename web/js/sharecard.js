@@ -44,6 +44,7 @@ import {
   saveCardChoice, saveCardText,
 } from "./cardstats.js";
 import { getAnalysisJson } from "./store.js";
+import { track } from "./track.js";
 import { indexAt, phaseRuns } from "./session.js";
 import { C, OUTCOME_COLOR } from "./viz.js";
 
@@ -1295,12 +1296,20 @@ async function download() {
   a.download = fileName();
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-  // A card exists now — the PNG is rendered and the save is handed to the browser. The
-  // event is the bare name: `fileName()` two lines up is built out of the rider's own
-  // title, and that is exactly the kind of thing a counter must never be told. Guarded
-  // because the umami script is third-party and frequently absent (blocked, offline, or
-  // any host that is not cleanjibe.org).
-  window.umami?.track?.("card-created");
+  // A card exists now — the PNG is rendered and the save is handed to the browser. What
+  // travels with the event is the four CHOICES the composer offers and how the card left,
+  // because "portrait or square, complete or lean, map or plain" is the only question this
+  // dialog has that a screenshot cannot answer. Never `fileName()` two lines up: that is
+  // built out of the rider's own title, and a title is exactly what a counter may not see.
+  track("app-card-made", cardEventProps("download"));
+}
+
+/** The closed set of properties a card event may carry: what kind of card it was, the
+ *  three choices in the composer, and which button ended it. No title, no note, no date,
+ *  no number off the ride (docs/analytics.md). */
+function cardEventProps(how) {
+  return { how, kind: state.period ? "period" : "session",
+           shape: state.shape, preset: state.preset, map: !!state.map };
 }
 
 /** Feature-detected with a *file*, not with `navigator.share`: several browsers can share a
@@ -1405,6 +1414,6 @@ async function share() {
     await navigator.share(carries ? full : { files: [file] });
     // Inside the `try`, after the sheet resolves: a dismissal rejects and lands in the
     // catch, and a card the rider backed out of sharing is not a card that went anywhere.
-    window.umami?.track?.("card-created");
+    track("app-card-made", cardEventProps("share"));
   } catch { /* the rider dismissed the sheet — not an error, and not worth a message */ }
 }

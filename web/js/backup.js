@@ -26,6 +26,7 @@ import { ingest } from "./ingest.js";
 import { esc, zonedFormat } from "./render.js";
 import { ask } from "./rpc.js";
 import { listEntries } from "./store.js";
+import { track } from "./track.js";
 
 const el = (id) => document.getElementById(id);
 
@@ -212,6 +213,10 @@ async function runRestore() {
   }
   await hooks.onChanged();
   offer = null;
+  // Three counts, no names. A restore that reports mostly `skipped` is a rider re-reading
+  // a backup he already has, and a restore with a `failed` above zero is an archive this
+  // engine could not read — two different problems that one "restore" event would hide.
+  track("app-backup-restored", { added, skipped, failed: failed.length });
   const lines = [`${plural(added, "session")} restored.`];
   if (skipped) lines.push(`${skipped} were already in your library.`);
   if (failed.length) lines.push(`${plural(failed.length, "recording")} could not be read.`);
