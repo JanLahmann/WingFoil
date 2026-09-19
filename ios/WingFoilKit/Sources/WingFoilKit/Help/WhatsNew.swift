@@ -64,6 +64,18 @@ public enum WhatsNew {
     public static let entries: [WhatsNewEntry] = [
         WhatsNewEntry(
             version: "0.15.0",
+            build: 82,
+            channel: .dev,
+            date: "2026-09-19",
+            dateText: "19 September 2026",
+            title: "The stream that said no FIT found",
+            lines: [
+                "A direct session from the watch imports now. Build 80 received it whole and then refused it at the door.",
+                "A stream the import refuses stays in the inbox for the next launch.",
+                "Please save one session on the watch with this build open on Settings → Garmin watch.",
+            ]),
+        WhatsNewEntry(
+            version: "0.15.0",
             build: 81,
             channel: .beta,
             date: "2026-09-19",

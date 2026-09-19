@@ -814,9 +814,11 @@ final class SessionStore {
 
     /// Reads security-scoped picker URLs and imports them. `source` is only the tag the
     /// import log carries: a hand-picked FIT and a GDPR bulk export take the same path.
-    func importFiles(urls: [URL], source: ImportSource, rider: String? = nil) async {
-        guard let payloads = readPayloads(urls) else { return }
-        await runImport(payloads, source: source, rider: rider)
+    @discardableResult
+    func importFiles(urls: [URL], source: ImportSource, rider: String? = nil) async
+    -> ImportSummary {
+        guard let payloads = readPayloads(urls) else { return ImportSummary() }
+        return await runImport(payloads, source: source, rider: rider)
     }
 
     /// A hand-picked file, or one tapped in another app — the two paths that can carry
@@ -2621,7 +2623,11 @@ final class SessionStore {
         guard !pending.isEmpty else { return }
         // `.watchDirect`, never `.watch` — that one is the summary card, and a row tagged
         // with it would claim a provenance this session does not have.
-        await importFiles(urls: pending, source: .watchDirect)
+        let summary = await importFiles(urls: pending, source: .watchDirect)
+        // A stream the import refused stays for the next launch: the first real one
+        // (19 September 2026) was dropped as "no FIT found" by a classifier that did not
+        // know the format, and deleting it would have cost the session for good.
+        guard summary.failed.isEmpty else { return }
         for url in pending { try? FileManager.default.removeItem(at: url) }
     }
 
