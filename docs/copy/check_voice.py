@@ -15,8 +15,10 @@ Run it:
 What is read, per target: the string literals of the kit's Help/ and Presentation/ sources
 and of the watch's ui/ and alerts/ (Monkey C), the <string> values of the watch's strings.xml,
 the visible text of the website's prose pages, and the live blocks of the two store texts.
-Code comments are skipped; a literal under four words is skipped (labels are not sentences);
-a literal that is a path, a URL or a format string is skipped.
+Code comments are skipped. Sentences are judged over the CHAINED text — a `+`-joined chain of
+literals is one authored string, so a sentence split across two literals is still one sentence
+— and the message points at the chain's first line. A block under four words is skipped
+(labels are not sentences); a block that is a path, a URL or a format string is skipped.
 
 Exemptions are `{path, text, why}` entries in `docs/copy/voice-exemptions.json` — `text` is a
 substring of the offending sentence — and every one that fires is printed, like the lexicon's.
@@ -34,7 +36,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "docs" / "copy"))
-from check_release_copy import _Text, fenced_block, string_literals  # noqa: E402
+from check_release_copy import ESCAPED_TEXT, _Text, fenced_block  # noqa: E402
 
 MEAN_MAX = 14.0
 SENTENCE_MAX = 20
@@ -140,6 +142,51 @@ SKIP_PARAGRAPH = re.compile(r"^(https?://|[\w.]+/|%|[A-Za-z]+\.[A-Za-z]+$|\\\()|
 SENTENCE_END = re.compile(r"(?<=[.!?])\s+(?=[A-Z0-9\"“(])")
 
 
+#: What a `\(…)` interpolation leaves behind in the text a rider reads: one value, one word.
+#: Reading the code inside it would count identifiers as words and, worse, would hand the
+#: parenthesis rule a bracket no author typed. The chained pass needs this: a lone `"\(n)"`
+#: used to be its own short literal and fell under the four-word floor.
+INTERPOLATION = "…"
+
+
+def rider_literals_of(line: str) -> list[str]:
+    r"""Every `"…"` on a Swift or Monkey C line, interpolations reduced to one placeholder.
+
+    Same contract as `check_release_copy.string_literals` — escapes left alone, `\n` kept as
+    a line break — except that `\(expr)` becomes `…` and the code inside it, nested string
+    literals included, is not text.
+    """
+    out, current, inside, escaped, depth = [], "", False, False, 0
+    for character in line:
+        if depth:
+            if character == "(":
+                depth += 1
+            elif character == ")":
+                depth -= 1
+            continue
+        if escaped:
+            if character == "(":
+                if inside:
+                    current += INTERPOLATION
+                depth = 1
+            elif inside:
+                current += ESCAPED_TEXT.get(character, character)
+            escaped = False
+            continue
+        if character == "\\":
+            escaped = True
+            continue
+        if character == '"':
+            if inside:
+                out.append(current)
+                current = ""
+            inside = not inside
+            continue
+        if inside:
+            current += character
+    return out
+
+
 def words(sentence: str) -> int:
     return len([w for w in re.split(r"\s+", sentence.strip()) if w])
 
@@ -151,23 +198,16 @@ def sentences_of(text: str) -> list[str]:
     return [s.strip() for s in SENTENCE_END.split(text) if s.strip()]
 
 
-def rider_literals(path: Path, kind: str) -> list[tuple[int, str]]:
-    """(line, literal) pairs worth judging as sentences."""
-    out = []
-    for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
-        stripped = line.strip()
-        if stripped.startswith("//") or stripped.startswith("///") or stripped.startswith("<!--"):
-            continue
-        if kind == "xml":
-            m = re.search(r"<string id=\"[^\"]+\">(.*?)</string>", line)
-            literals = [m.group(1)] if m else []
-        else:
-            literals = string_literals(line)
-        for literal in literals:
-            if words(literal) < 4 or SKIP_LITERAL.search(literal):
-                continue
-            out.append((number, literal))
-    return out
+def rider_sentence_blocks(path: Path, kind: str) -> list[tuple[int, str]]:
+    """(line, block) pairs worth judging as sentences.
+
+    The block is the CHAINED text — the same `+`-joined authored string the paragraph pass
+    reads — not one source literal. A sentence that runs across two literals is one sentence
+    to the rider, so it is one sentence to the 20-word rule. The line is the chain's first
+    line, so the message still points at an editable place.
+    """
+    return [(number, block) for number, block in chained_blocks(path, kind)
+            if words(block) >= 4 and not SKIP_LITERAL.search(block)]
 
 
 def judge(sentences: list[tuple[str, str]], exemptions: list[dict], relative: str,
@@ -205,13 +245,13 @@ def judge(sentences: list[tuple[str, str]], exemptions: list[dict], relative: st
     return failures, honoured, (len(lengths), mean, max(lengths) if lengths else 0)
 
 
-def rider_paragraphs(path: Path, kind: str) -> list[tuple[int, str]]:
-    """(line, paragraph) pairs — the blocks a rider reads as one.
+def chained_blocks(path: Path, kind: str) -> list[tuple[int, str]]:
+    """(line, block) pairs — the blocks a rider reads as one, before any skip rule.
 
-    A paragraph is one authored string: a chain of literals joined by `+` across as many
+    A block is one authored string: a chain of literals joined by `+` across as many
     lines as it takes, cut again at every line break inside it, because a blank line in a
-    footer is a new block on the screen. Judging one source line at a time (what the
-    sentence pass does) would measure the width of the editor, not the length of the text.
+    footer is a new block on the screen. Judging one source line at a time would measure the
+    width of the editor, not the length of the text, so both passes read this.
     """
     lines = path.read_text(encoding="utf-8").splitlines()
 
@@ -225,7 +265,7 @@ def rider_paragraphs(path: Path, kind: str) -> list[tuple[int, str]]:
         if kind == "xml":
             m = re.search(r"<string id=\"[^\"]+\">(.*?)</string>", line)
             return [m.group(1)] if m else []
-        return string_literals(line)
+        return rider_literals_of(line)
 
     def continues(index: int, line: str) -> bool:
         """Does the chain go on after this line? `"a " + "b"`, or a `+` opening the next."""
@@ -262,14 +302,19 @@ def rider_paragraphs(path: Path, kind: str) -> list[tuple[int, str]]:
     if chain:
         out.append((start, "".join(chain)))
 
-    paragraphs: list[tuple[int, str]] = []
+    blocks: list[tuple[int, str]] = []
     for number, text in out:
         for block in re.split(r"\n+", text):
             block = block.strip()
-            if words(block) < 4 or SKIP_PARAGRAPH.search(block):
-                continue
-            paragraphs.append((number, block))
-    return paragraphs
+            if block:
+                blocks.append((number, block))
+    return blocks
+
+
+def rider_paragraphs(path: Path, kind: str) -> list[tuple[int, str]]:
+    """The chained blocks worth measuring as paragraphs."""
+    return [(number, block) for number, block in chained_blocks(path, kind)
+            if words(block) >= 4 and not SKIP_PARAGRAPH.search(block)]
 
 
 #: label → (where, words, text) for every paragraph over its target's budget.
@@ -298,8 +343,8 @@ def collect(target: Target) -> list[tuple[str, str]]:
                 continue
             for number, paragraph in rider_paragraphs(f, target.kind):
                 note_paragraph(target.label, f"{rel}:{number}", paragraph, target.paragraph_max)
-            for number, literal in rider_literals(f, target.kind):
-                for s in sentences_of(literal):
+            for number, block in rider_sentence_blocks(f, target.kind):
+                for s in sentences_of(block):
                     out.append((f"{rel}:{number}", s))
     elif target.kind == "html":
         raw = base.read_text(encoding="utf-8")

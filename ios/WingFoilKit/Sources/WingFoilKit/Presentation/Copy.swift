@@ -27,6 +27,12 @@ public enum Copy {
     public static let stravaFall = "Without the watch's own speed, a fall can read as a touchdown."
 
     // MARK: - The drawn track (the turn page and the flight-end page)
+    /// Why a drawn track is north up: no wind direction the engine trusts, none set on
+    /// the watch. Said under the orientation switch on the turn page and the flight-end page.
+    public static let noWindForOrientation =
+        "Wind up needs a wind direction. This session has none the engine trusts, and none "
+        + "set on the watch."
+
 
     /// The second numbers printed along a drawn track.
     public static let pathNumbers = "The numbers along the path are every five."

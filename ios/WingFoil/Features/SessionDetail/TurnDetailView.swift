@@ -303,8 +303,7 @@ private struct TurnDetailPage: View {
             .accessibilityLabel("Map orientation")
 
             if !windKnown {
-                Text("Wind up needs a wind direction. This session has none the engine "
-                     + "trusts, and none you set on the watch, so the turn is drawn north up.")
+                Text(Copy.noWindForOrientation + " The turn is drawn north up.")
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                     .fixedSize(horizontal: false, vertical: true)

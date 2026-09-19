@@ -144,8 +144,8 @@ public enum DisciplineReview {
     /// answer is "nothing" and a rider who does not know that will answer questions he has no
     /// way to answer rather than leave them.
     public static let footnote =
-        "Wingfoil does not exist in Garmin, Strava, intervals.icu or Apple Health, so a "
-        + "recording cannot say which rig it was ridden on.\n\n"
+        "Wingfoil does not exist in Garmin, Strava, intervals.icu or Apple Health. "
+        + "So a recording cannot say which rig it was ridden on.\n\n"
         + "You can change this later on any session with Log → \"Analyse as\". Everything "
         + "is then re-derived from the original file."
 }

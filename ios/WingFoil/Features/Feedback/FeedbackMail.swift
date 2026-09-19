@@ -131,7 +131,7 @@ enum FeedbackMail {
     /// needs — the minor says which watch release, the schema which FIT field set.
     private static func watchAppVersion(_ tag: Int) -> String? {
         guard tag > 0 else { return nil }
-        return "0." + String(tag >> 8) + " (FIT schema " + String(tag & 0xFF) + ")"
+        return "0." + String(tag >> 8) + " · FIT schema " + String(tag & 0xFF)
     }
     #endif
 

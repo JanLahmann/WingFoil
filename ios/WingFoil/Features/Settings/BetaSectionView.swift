@@ -132,7 +132,7 @@ struct BetaSectionView: View {
     /// — the keychain pair — are the whole reason this row exists, so they are named.
     private static let warning =
         "CleanJibe goes back to the day you installed it. This cannot be undone.\n\n"
-        + "• Your whole library: every session, its analysis and its archived recording, "
+        + "• Your whole library. Every session, its analysis and its archived recording, "
         + "the deleted-session memory, and any backup file still waiting on this phone.\n"
         + "• Your intervals.icu key and your Strava connection. Both live in the iOS "
         + "keychain. Deleting the app leaves them behind. This does not.\n"
@@ -231,8 +231,8 @@ struct ComingSoonPage: View {
                 Text("In the public beta")
             } footer: {
                 Text("Ridden with every week and reported on.\n\n"
-                     + "A feature arrives in the App Store app once it has ten sessions "
-                     + "from two riders behind it, a help topic, and no open report.")
+                     + "A feature reaches the App Store app with ten sessions from two "
+                     + "riders behind it. It also needs a help topic and no open report.")
             }
 
             // Beta and dev only. The dev doors are on a handful of hand-picked phones and

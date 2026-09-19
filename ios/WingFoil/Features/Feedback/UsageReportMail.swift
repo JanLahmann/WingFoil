@@ -222,9 +222,9 @@ struct UsageAskCard: View {
             Label("Help the beta: send your usage report", systemImage: "chart.bar.doc.horizontal")
                 .font(.subheadline.weight(.semibold))
 
-            Text("A mail you read and edit before you send it: which parts of CleanJibe you "
-                 + "have used, how often, and anything that has gone wrong on this phone. "
-                 + "It is what decides which doors open for everyone else.")
+            Text("A mail you read and edit before you send it. It carries which parts of "
+                 + "CleanJibe you have used, how often, and anything that has gone wrong "
+                 + "on this phone. It decides which doors open for everyone else.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

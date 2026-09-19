@@ -208,9 +208,9 @@ struct TuningLabelsView: View {
             Button("Delete every label", role: .destructive) { confirmClearAll = true }
                 .disabled(labels.totalLabels == 0)
         } footer: {
-            Text("The CSV is one row per labelled turn: session, turn index, your label, "
-                 + "the engine's verdict. docs/testing.md documents the format, so the lab "
-                 + "can read it beside the goldens.")
+            Text("The CSV has one row per labelled turn. Session, turn index, your label, "
+                 + "the engine's verdict. docs/testing.md documents the format. The lab "
+                 + "reads it beside the goldens.")
         }
     }
 

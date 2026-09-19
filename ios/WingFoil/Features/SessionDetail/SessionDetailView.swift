@@ -393,8 +393,8 @@ struct SessionDetailView: View {
                 Label("From your watch", systemImage: "antenna.radiowaves.left.and.right")
             } description: {
                 Text("The watch sent its summary the moment you stopped. The full recording "
-                     + "follows once Garmin Connect has synced it: pull down on Sessions "
-                     + "after intervals.icu has the activity, or share the .fit file into "
+                     + "follows once Garmin Connect has synced it. Pull down on Sessions "
+                     + "after intervals.icu has the activity. Or share the .fit file into "
                      + "CleanJibe.\n\n"
                      + "Then this page fills with the map, every turn and the records, and "
                      + "these numbers are re-derived from the recording.")

@@ -357,8 +357,8 @@ private struct WelcomeTrackMotif: View {
             draw(cross, DesignTokens.Outcome.fellIn, width: 3.5)
         }
         .accessibilityElement()
-        .accessibilityLabel("A four-minute excerpt from a real session's track: "
-                            + "five jibes flown through, one touched down, and one "
+        .accessibilityLabel("A four-minute excerpt from a real session's track. "
+                            + "Five jibes flown through, one touched down, and one "
                             + "fallen in with the swim that followed.")
     }
 

@@ -181,7 +181,7 @@ struct HealthImportView: View {
     /// Both halves are named because Health genuinely does not tell us which one it is.
     private var emptyFooter: String {
         let opening = "Either there are no " + typeList
-            + " workouts in Health from the last two years, or CleanJibe was not given "
+            + " workouts in Health from the last two years. Or CleanJibe was not given "
             + "permission to read them."
         let route = "\n\nPermission lives in the Health app: "
             + "**Health → Sharing → Apps → CleanJibe**, or "

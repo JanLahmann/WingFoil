@@ -89,9 +89,9 @@ public enum GettingStartedGuide {
             steps: [
                 .init(number: 1,
                       title: "Install the watch app",
-                      detail: "**CleanJibe Wingfoil Tracker (Beta)** on the Connect IQ store, "
-                          + "from the web or from Connect IQ inside the Garmin Connect app. "
-                          + "No key, no account."),
+                      detail: "**CleanJibe Wingfoil Tracker (Beta)** is on the Connect IQ "
+                          + "store. Take it from the web, or from Connect IQ inside the "
+                          + "Garmin Connect app. No key, no account."),
                 .init(number: 2,
                       title: "Record and save",
                       detail: "Charge the watch and the phone. Press START, pick "
@@ -140,9 +140,9 @@ public enum GettingStartedGuide {
                           + "own while phone and watch are together. Give it a minute."),
                 .init(number: 4,
                       title: "What you get",
-                      detail: "Speed off the watch's own receiver, so the records certify, and "
-                          + "the 50 Hz wrist, so pump strokes and takeoff attempts are "
-                          + "analysed."),
+                      detail: "Speed comes off the watch's own receiver, so the records "
+                          + "certify. The 50 Hz wrist gives pump strokes and takeoff "
+                          + "attempts."),
             ]),
         GettingStartedRoute(
             id: "appleWorkoutApp",
@@ -195,8 +195,8 @@ public enum GettingStartedGuide {
                           + "flow.polar.com only."),
                 .init(number: 3,
                       title: "Take the FIT where you are offered one",
-                      detail: "A FIT carries the speed your watch measured, a .gpx does not, "
-                          + "and a .tcx only when the app wrote it in."),
+                      detail: "A FIT carries the speed your watch measured. A .gpx does not. A "
+                          + ".tcx carries it only when the app wrote it in."),
                 .init(number: 4,
                       title: "Hand it to CleanJibe",
                       detail: "**Open in CleanJibe** from the iOS share sheet, or Import → "
@@ -234,8 +234,8 @@ public enum GettingStartedGuide {
                 .init(number: 4,
                       title: "What it costs",
                       detail: "Strava hands over positions rather than the speed your watch "
-                          + "measured, so these speed records are marked **uncertified**, and "
-                          + "there are no pump strokes."),
+                          + "measured. These speed records are marked **uncertified**. There "
+                          + "are no pump strokes."),
                 .init(number: 5,
                       title: "If connecting is refused",
                       detail: "Strava lets a new app connect a limited number of riders. That "
@@ -265,8 +265,8 @@ public enum GettingStartedGuide {
                           + "your phone?"),
                 .init(number: 3,
                       title: "What you should see",
-                      detail: "A map with your track on it, duration and speeds at the top, a "
-                          + "speed chart that moves when you drag along it."),
+                      detail: "A map shows your track, with duration and speeds at the top. A "
+                          + "speed chart moves when you drag along it."),
                 .init(number: 4,
                       title: "Turns and jibes reading zero",
                       detail: "Expected on a bike or on foot: there is nothing to jibe. This "
@@ -281,13 +281,13 @@ public enum GettingStartedGuide {
             steps: [
                 .init(number: 1,
                       title: "Read the verdicts against your memory",
-                      detail: "Open the session, go to **Turns**: every turn says *flew "
-                          + "through*, *touched down* or *fell in*, and the clean jibes are "
+                      detail: "Open the session and go to **Turns**. Every turn says *flew "
+                          + "through*, *touched down* or *fell in*. The clean jibes are "
                           + "marked among them."),
                 .init(number: 2,
                       title: "Say where it disagrees with you",
-                      detail: "A jibe you know you flew through marked as a touchdown, a swim "
-                          + "it never noticed, a wind direction you did not sail in."),
+                      detail: "A jibe you know you flew through, marked as a touchdown. A swim "
+                          + "it never noticed, or a wind direction you did not sail in."),
                 .init(number: 3,
                       title: "Send it from the app",
                       detail: "Menu → **Support & ideas** fills in your build, phone, iOS "

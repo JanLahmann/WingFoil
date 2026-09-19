@@ -103,7 +103,7 @@ struct StravaImportView: View {
         } header: {
             Text("Already on Strava?")
         } footer: {
-            Text(markdown: "Strava opens, you say yes, and CleanJibe can then list your "
+            Text(markdown: "Strava opens and you say yes. CleanJibe can then list your "
                  + "activities and download the GPS track of the ones you pick.\n\n"
                  + "It only reads. It never writes, renames or posts anything to your "
                  + "Strava account.\n\n"
@@ -142,7 +142,7 @@ struct StravaImportView: View {
                 .foregroundStyle(.secondary)
         } footer: {
             Text("When you approved CleanJibe you left out permission to read activities "
-                 + "you have marked \"Only you\", so those are missing from the list "
+                 + "you have marked \"Only you\". Those are missing from the list "
                  + "below.\n\n"
                  + "Disconnect and connect again to change your mind.")
         }
@@ -232,7 +232,7 @@ struct StravaImportView: View {
                  + "What is missing is what Strava does not hand over. There is no speed "
                  + "channel.\n\n"
                  + "Strava works speed out from the positions, the same way CleanJibe "
-                 + "would, so speed records from these sessions are marked "
+                 + "would. Speed records from these sessions are marked "
                  + "**uncertified**.\n\n"
                  + "Nothing records your wrist, so there are no pump strokes and no "
                  + "failed takeoff attempts.\n\n"

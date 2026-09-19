@@ -841,8 +841,8 @@ struct ReplayCinemaView: View {
             // say which, or the rider is left wondering what he is looking at.
             let lost = [wantsCrop ? "cropped to \(framing.name.lowercased())" : nil,
                         music != nil ? "given its music" : nil].compactMap { $0 }
-            framingNote = "The clip could not be \(lost.joined(separator: " or ")) (\(reason)), "
-                + "so this is the recording as it was captured."
+            framingNote = "The clip could not be \(lost.joined(separator: " or ")): \(reason). "
+                + "This is the recording as it was captured."
             return url
         }
     }

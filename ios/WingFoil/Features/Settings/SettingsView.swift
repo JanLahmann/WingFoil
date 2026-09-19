@@ -132,7 +132,7 @@ struct SettingsView: View {
             Text("intervals.icu")
         } footer: {
             Text("Downloads the original FIT of every windsurf, wing, kite, surf and SUP "
-                 + "activity in your intervals.icu account, going two years back.\n\n"
+                 + "activity in your intervals.icu account. Two years back.\n\n"
                  + "Activities already in the library are never downloaded again.")
         }
     }

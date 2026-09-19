@@ -49,7 +49,7 @@
   "dev": [
     {
       "id": "garminLink",
-      "text": "The Garmin link: a summary card from your watch the moment you stop, the map of your spot and the wind direction sent back to it"
+      "text": "The Garmin link: a summary card from your watch the moment you stop. Your spot's map and the wind direction go back to it."
     },
     {
       "id": "windsurf",

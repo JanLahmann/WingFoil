@@ -62,8 +62,8 @@ public enum ChannelFeatures {
     /// **Beta and dev only.** None of these is promised to anybody on the App Store: the
     /// release build lists what is being tested one channel up, and nothing beyond it.
     public static let dev: [String] = [
-        "The Garmin link: a summary card from your watch the moment you stop, the map of "
-            + "your spot and the wind direction sent back to it",
+        "The Garmin link: a summary card from your watch the moment you stop. "
+            + "Your spot's map and the wind direction go back to it.",
         "Windsurf, foil and fin, with thresholds of its own",
         "The tuning page: every analysis threshold on a slider, tried against your own "
             + "sessions",

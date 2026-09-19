@@ -50,6 +50,11 @@
     "why": "FeedbackReport's device table: Apple's own marketing name for that phone, printed in a diagnostic mail so a report names the device the way Apple does. It is data, not a sentence."
   },
   {
+    "path": "ios/WingFoilKit/Sources/WingFoilKit/Presentation",
+    "text": "· dev build, TUNING on · public build",
+    "why": "FeedbackReport's first line: the app name, its marketing version and its build number in brackets, the way every crash report and every App Store Connect row spells it. FeedbackReportTests pins the line character for character so a diagnostic mail can be read the same way twice. It is a stamp, not a sentence."
+  },
+  {
     "path": "web/index.html",
     "text": "CleanJibe reads your session off the watch and tells you",
     "why": "The website prints what the kit owns. web/tools/verify_copy.py holds this element to docs/copy/phrases.json `promise` (the kit's WelcomeGuide.promise) character for character, so the sentence can only move on the kit's side. Reported on 15 September 2026 as a pinned sentence that is off the voice. It is the pinned register 2 hero promise, quoted verbatim in docs/voice.md, and it runs to 25 words in its second sentence."

@@ -265,8 +265,8 @@ struct TurnDetailStripView: View {
     }
 
     private var accessibilityText: String {
-        var text = String(format: "Speed through the turn: %.1f knots coming in, "
-                          + "down to %.1f after %.0f seconds, %.1f knots at the exit "
+        var text = String(format: "Speed through the turn. %.1f knots coming in. "
+                          + "Down to %.1f after %.0f seconds. %.1f knots at the exit, "
                           + "%.0f seconds in.",
                           slice.speed.entryKn, slice.speed.minKn, slice.speed.minRt,
                           slice.speed.exitKn, slice.speed.exitRt)

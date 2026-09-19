@@ -334,9 +334,9 @@ public enum HelpCatalog {
             summary: "Four steps, about five minutes, once.",
             body: [
                 IcuSetupGuide.rationale,
-                "Nothing is uploaded and nothing is changed on either side: CleanJibe lists "
-                + "your activities, downloads the original recording of the watersport ones, "
-                + "and analyses them on the phone.",
+                "Nothing is uploaded and nothing is changed on either side. CleanJibe lists "
+                + "your activities. It downloads the original recording of the watersport "
+                + "ones. It analyses them on the phone.",
                 // The one sentence that turns "a Garmin bridge" into "the way in for every
                 // other brand", and what the recording those brands leave there is worth.
                 "Polar, Suunto and Coros work this way too. Their own apps sync to "
@@ -357,7 +357,7 @@ public enum HelpCatalog {
             body: [
                 ExampleSession.blurb,
                 "It is not your data. CleanJibe badges it EXAMPLE in the list and on its "
-                + "own page, and leaves it out of Records, Trends and the gear rollups.",
+                + "own page. It stays out of Records, Trends and the gear rollups.",
                 "Delete it with a swipe. This screen offers it again.",
                 "It was recorded at " + ExampleSession.place + " with the CleanJibe watch "
                 + "app, every identifier removed. The accelerometer stream was left out "
@@ -425,8 +425,8 @@ public enum HelpCatalog {
                       detail: "A wrist under water counts as a fall. The pressure sensor "
                           + "sees it. The GPS gap is marked, not filled."),
                 .init(term: "Let the workout finish saving",
-                      detail: "The route is written to Health when you end the workout, and "
-                          + "the watch may take a minute to hand it over."),
+                      detail: "The route is written to Health when you end the workout. "
+                          + "The watch may take a minute to hand it over."),
                 .init(term: "Nothing is uploaded",
                       detail: "CleanJibe reads the route and the heart rate of the "
                           + "workouts you pick, and analyses them on your phone. It never "
@@ -450,7 +450,7 @@ public enum HelpCatalog {
                 + "uncertified. " + Copy.stravaFall + " Your wrist was not recorded, so "
                 + "there are no pump strokes.",
                 "If the same afternoon is also on intervals.icu, import it from there "
-                + "instead: that is the original file off your watch, and those records "
+                + "instead. That is the original file off your watch, so those records "
                 + "certify. Importing both is harmless, because the same session is never "
                 + "added twice.",
             ],
@@ -504,7 +504,7 @@ public enum HelpCatalog {
                 + "receiver's own speed, so its records certify.",
                 "A .gpx or a .tcx carries positions only, so its records are marked "
                 + "uncertified. Those two formats open in the CleanJibe beta.",
-                "Garmin Connect's phone app has no export at all, so Garmin owners have two "
+                "Garmin Connect's phone app has no export at all. Garmin owners have two "
                 + "better routes: intervals.icu, or connect.garmin.com on a computer.",
             ],
             // **Every path below was walked against that vendor's own help page on
@@ -594,7 +594,7 @@ public enum HelpCatalog {
                 + "costs you.",
             body: [
                 "CleanJibe analyses a recording, not a brand. Anything that can produce a GPS "
-                + "track can be read, and a source that cannot answer a question leaves that "
+                + "track can be read. A source that cannot answer a question leaves that "
                 + "number blank and says why.",
                 "Two things separate the rows. **Certified speed** means the file holds the "
                 + "receiver's own speed. Without it, speed is worked out from positions "
@@ -637,8 +637,8 @@ public enum HelpCatalog {
             summary: "The four things that actually go wrong, and the fix for each.",
             body: [
                 "Every failure CleanJibe can see is reported as a cause, because the fix "
-                + "differs: a rejected key is your key, an empty list is usually Garmin not "
-                + "connected yet, and a network error is neither.",
+                + "differs. A rejected key is your key. An empty list is usually Garmin "
+                + "not connected yet. A network error is neither.",
             ],
             items: IcuSetupGuide.troubleshooting,
             links: [HelpLink(title: "Open intervals.icu", url: IcuSetupGuide.intervalsURL)],
@@ -673,12 +673,12 @@ public enum HelpCatalog {
             summary: "No account, no server, nothing uploaded. The whole policy is on "
                 + "the web.",
             body: [
-                "There is no CleanJibe account and no CleanJibe server, so a session you "
+                "There is no CleanJibe account and no CleanJibe server. A session you "
                 + "import is analysed on this phone and stays on it. No advertising, no "
                 + "analytics, no tracking of any kind.",
-                "Four places can be reached, each only if you choose it: intervals.icu and "
-                + "Strava with your own credential, Apple Maps while a map is on screen, and "
-                + "one rounded coordinate per new spot to look up its name.",
+                "Four places can be reached, each only if you choose it. Your own "
+                + "credential goes to intervals.icu and Strava. Apple Maps loads while a "
+                + "map is on screen. One rounded coordinate per new spot looks up its name.",
                 "CleanJibe never asks for your location. Every coordinate it draws was "
                 + "already inside a file you imported.",
             ],
@@ -702,13 +702,13 @@ public enum HelpCatalog {
                 + "does an iCloud backup.",
                 "Settings → Library backup is for the case neither covers: a phone set up "
                 + "as new, or the app deleted and installed again.",
-                "The file holds every recording you have imported **and** the things nothing "
-                + "else can bring back: what you called each session, its caption, whose it "
-                + "was, the gear on it, your spot names, and the sessions you deleted on "
-                + "purpose.",
-                "Restoring is additive: sessions already in your library keep their own "
-                + "analysis, details you changed since are left alone, and restoring the "
-                + "same file twice does nothing the second time. Sessions you deleted after "
+                "The file holds every recording you imported, and what nothing else can "
+                + "bring back. That is each session's name and caption, whose it was, its "
+                + "gear. Your spot names and the sessions you deleted on purpose are there "
+                + "too.",
+                "Restoring is additive. Sessions already in your library keep their own "
+                + "analysis. Details you changed since are left alone. Restoring the same "
+                + "file twice does nothing the second time. Sessions you deleted after "
                 + "the backup stay deleted.",
             ],
             items: [
@@ -741,8 +741,8 @@ public enum HelpCatalog {
                 // (Jan, dev 65). It opened the summary *and* this paragraph, one line
                 // under the other, which reads as a slogan rather than as an answer. The
                 // summary keeps it because that is the line the index shows.
-                "A missing column, a word that reads wrong, something you would rather the "
-                + "app did differently: the same mail carries all of it.",
+                "One mail carries all of it. Name a missing column, a word that reads "
+                + "wrong, or something you would rather the app did differently.",
                 // **Three doors that exist** (15 Sep 2026). This sentence used to name
                 // "Settings → Send feedback", a row deleted in build 58 — the app's own
                 // Help sending the rider to a screen that no longer has it. The names come
@@ -757,9 +757,9 @@ public enum HelpCatalog {
             ],
             items: [
                 .init(term: "What is already in the mail",
-                      detail: "Under a line of dashes: app and engine version, any tuned "
-                          + "thresholds, your phone, iOS and locale, the paired watch, and "
-                          + "how many sessions came in by which door."),
+                      detail: "Under a line of dashes: app and engine version, tuned "
+                          + "thresholds, your phone, iOS and locale. The paired watch is "
+                          + "there, with how many sessions came in by which door."),
                 .init(term: "From a session",
                       detail: "It also carries that session's date, spot, discipline, "
                           + "duration, source class, engine stamp and identifier, with its "
@@ -811,7 +811,7 @@ public enum HelpCatalog {
                 "One flight is one continuous stretch above the entry threshold, lasting at "
                 + "least 5 seconds.",
                 "A brief touchdown does not split a flight. The exit needs 3 seconds below "
-                + "the exit speed, so a one- or two-second tap of the water stays inside it.",
+                + "the exit speed. A one- or two-second tap of the water stays inside it.",
                 "The flight count answers \"how many times did I have to get up again\". "
                 + "The touchdown count answers \"how clean was it\".",
             ],
@@ -823,7 +823,7 @@ public enum HelpCatalog {
             body: [
                 "The longest flight by duration, with the distance covered during it shown "
                 + "underneath.",
-                "Both come from the same segmentation as foil %, so a session with a lot of "
+                "Both come from the same segmentation as foil %. So a session with many "
                 + "short flights and a session with one long one can share a foil %.",
             ],
             related: [.foilPct, .flights]),
@@ -833,8 +833,8 @@ public enum HelpCatalog {
             summary: "Distance over the water, integrated from the speed channel.",
             body: [
                 "Distance is integrated from the device's Doppler speed rather than summed "
-                + "from GPS positions: position noise inflates a distance total badly at low "
-                + "speed, and Doppler does not.",
+                + "from GPS positions. Position noise inflates a distance total badly at "
+                + "low speed. Doppler does not.",
                 "It covers the whole session: flying, taxiing and drifting.",
             ],
             related: [.sourceClass]),
@@ -862,11 +862,11 @@ public enum HelpCatalog {
                           + "riding."),
                 .init(term: "The dots",
                       detail: "Verdicts on one ladder: green flew through, orange touched "
-                          + "down, red fell in, grey a course change that is no verdict at "
+                          + "down, red fell in. Grey is a course change and no verdict at "
                           + "all."),
                 .init(term: "Solid or hollow",
-                      detail: "Fill carries the channel rather than a second colour: solid "
-                          + "is a maneuver's outcome, hollow is a straight-line flight end "
+                      detail: "Fill carries the channel rather than a second colour. Solid "
+                          + "is a maneuver's outcome. Hollow is a straight-line flight end "
                           + "that no turn explains."),
                 .init(term: "A star",
                       detail: "A clean jibe, in a green of its own, taking the place of that "
@@ -900,10 +900,10 @@ public enum HelpCatalog {
             summary: MetricGlossary.entry("speedRecords").line,
             body: [
                 "The set is fixed, so a number here means the same thing as the same number "
-                + "posted anywhere else: the six windows below, plus 100 m, 250 m and your "
-                + "best hour.",
+                + "posted anywhere else. That is the six windows below, plus 100 m, 250 m "
+                + "and your best hour.",
                 "All are computed on the device's Doppler speed, with fractional samples "
-                + "interpolated at the window edges, so the result does not depend on "
+                + "interpolated at the window edges. So the result does not depend on "
                 + "whether your watch recorded at 1 Hz or 4 Hz. No minimum-speed filter is "
                 + "applied.",
                 "A window never spans a recording gap. Tap a record card to see where on the "
@@ -948,9 +948,9 @@ public enum HelpCatalog {
             id: .turnTypes, section: .turns, title: "Tacks, jibes and course changes",
             summary: "What counts as a maneuver, and what is just a change of direction.",
             body: [
-                "A turn is detected from your course: at least 60° of net heading change "
-                + "within 8 seconds, containing a peak rate of 25°/s, while you are on the "
-                + "foil or within 3 s of it.",
+                "A turn is detected from your course. It needs at least 60° of net heading "
+                + "change within 8 seconds, with a peak rate of 25°/s. You must be on the "
+                + "foil, or within 3 s of it.",
                 "It must also carve a real arc. That means at least 12 m of path, at an "
                 + "effective radius of at least 6 m. A rider spinning around beside the "
                 + "board carves no arc.",
@@ -1009,15 +1009,15 @@ public enum HelpCatalog {
             summary: "A jibe you fly all the way through without losing much speed. The "
                 + "10 seconds after it stay quiet too.",
             body: [
-                "**Flew through** is how a turn ended: you never lost the foil, from its "
-                + "start until you were flying again. **Clean** is a jibe that flew through, "
-                + "held its speed, and stayed quiet after.",
+                "A turn that **flew through** never lost the foil, from its start until you "
+                + "were flying again. A **clean** jibe flew through, held its speed, and "
+                + "stayed quiet after.",
                 "Holding the speed: your minimum speed through the turn stays at or above "
-                + "70 % of your entry speed, and you never drop below the foil exit speed.",
-                "Staying quiet means the 10 seconds after the turn: no touchdown or fall, "
-                + "no second or more off the foil, and no wrist under water.",
-                "So clean is a strict subset of flew through: a jibe that held its speed and "
-                + "then lost the foil coming out is not clean.",
+                + "70 % of your entry speed. You never drop below the foil exit speed.",
+                "Staying quiet means the 10 seconds after the turn. They hold no touchdown "
+                + "or fall, no second or more off the foil, and no wrist under water.",
+                "So clean is a strict subset of flew through. A jibe that held its speed "
+                + "and then lost the foil coming out is not clean.",
             ],
             items: [
                 .init(term: "Flew through",
@@ -1056,7 +1056,7 @@ public enum HelpCatalog {
             body: [
                 "A fall means you stopped for more than 5 seconds, or the barometer caught "
                 + "your wrist going under.",
-                "The split matters: falls in turns are a maneuver problem, falls in a "
+                "The split matters. Falls in turns are a maneuver problem. Falls in a "
                 + "straight line are a gust, a ventilation or a tip catching. Each fall is "
                 + "counted once. A fall inside a turn's window belongs to that turn.",
             ],
@@ -1079,8 +1079,8 @@ public enum HelpCatalog {
                 "The flight ended and you kept moving. You settled onto the board and "
                 + "taxied on, or you chose to stop riding. No stop was ever measured, so "
                 + "this is not counted as a loss.",
-                "Flight ends where the recording itself stopped are reported as unknown and "
-                + "excluded from every tally: there is no evidence there.",
+                "Flight ends where the recording itself stopped are reported as unknown. "
+                + "There is no evidence there, so they are left out of every tally.",
             ],
             related: [.falls, .touchdowns, .sourceClass]),
 
@@ -1121,8 +1121,8 @@ public enum HelpCatalog {
             id: .pumpStrokes, section: .takeoff, title: "Pump strokes",
             summary: "Every stroke in the session, and the ones you did in flight.",
             body: [
-                "Strokes are detected from the wrist accelerometer, using the magnitude only, "
-                + "so it does not matter how your wrist was rotated.",
+                "Strokes are detected from the wrist accelerometer, using the magnitude "
+                + "only. How your wrist was rotated does not matter.",
                 "In-flight strokes hold or extend a glide rather than get you up. That is "
                 + "different work, so they are counted separately.",
             ],
@@ -1151,7 +1151,7 @@ public enum HelpCatalog {
                           + "coverage no number is produced."),
                 .init(term: "Why it drops out",
                       detail: "A wrist sensor under a wetsuit sleeve in cold water drops out "
-                          + "and sticks, and a made-up average is worse than a missing one."),
+                          + "and sticks. A made-up average is worse than a missing one."),
                 .init(term: "The fatigue chart",
                       detail: "20-minute bins, each showing what its takeoffs cost, with "
                           + "the share of attempts that got up underneath. Bins with nothing "
@@ -1169,13 +1169,13 @@ public enum HelpCatalog {
             id: .windAxis, section: .conditions, title: "Wind axis & confidence",
             summary: "The wind direction estimated from how you actually sailed.",
             body: [
-                "No weather station is involved. The estimate comes from your own track: your "
-                + "foiling course headings are collected into a weighted histogram, the two "
-                + "dominant reaching directions are found, and the wind axis is the line that "
-                + "bisects them.",
-                "That gives an axis but not a side. The tie is broken by the no-go zone: of "
-                + "the two ends, the one you sailed almost nothing within ±45° of is where "
-                + "the wind came from.",
+                "No weather station is involved. The estimate comes from your own track. "
+                + "Your foiling course headings are collected into a weighted histogram. "
+                + "The two dominant reaching directions are found. The wind axis is the "
+                + "line that bisects them.",
+                "That gives an axis but not a side. The tie is broken by the no-go zone. "
+                + "Of the two ends, the wind came from the one you sailed almost nothing "
+                + "within ±45° of.",
                 "Confidence combines how cleanly the two reaches separate with how decisive "
                 + "the no-go zone was. Below 50 % the axis is still shown, but your turns "
                 + "stay unnamed \"turns\" rather than tacks and jibes.",
@@ -1193,8 +1193,8 @@ public enum HelpCatalog {
             id: .shareCard, section: .sharing, title: "Share cards",
             summary: "One picture of a session, made to post.",
             body: [
-                "Any session can become a card: the track, the numbers that matter, and a "
-                + "line saying where the analysis came from. Pick portrait, square or "
+                "Any session becomes a card. It holds the track, the numbers that matter, "
+                + "and where the analysis came from. Pick portrait, square or "
                 + "landscape, and Complete or Lean. A photo from your library can go behind "
                 + "it.",
                 "Or turn on the map background and the track is drawn over the water you "
@@ -1213,11 +1213,11 @@ public enum HelpCatalog {
                 "The replay plays a session back on its own track, with a commentary that "
                 + "follows what is happening. Scrub to the part worth watching, then record "
                 + "it as a video.",
-                "Ask for a 10, 25 or 60-second clip and the app solves the playback rate to "
-                + "land on it, or take \"full detail\" and let the session run as long as it "
+                "Ask for a 10, 25 or 60-second clip. The app solves the playback rate to "
+                + "land on it. Or take \"full detail\" and let the session run as long as it "
                 + "runs.",
-                "The frame is yours too: 9:16 for a story, 1:1 for a post, 16:9 for a chat, "
-                + "or the whole screen. Photos from that afternoon can be spliced in.",
+                "The frame is yours too. Take 9:16 for a story, 1:1 for a post, 16:9 for a "
+                + "chat, or the whole screen. Photos from that afternoon can be spliced in.",
                 "You can lay your own music under it, trimmed or looped and faded at both "
                 + "ends. Nothing is uploaded: the video is rendered on the phone.",
             ],
@@ -1289,12 +1289,14 @@ public enum HelpCatalog {
             summary: "Normal, expected, and the phone's number is the right one.",
             body: [
                 "A session from the CleanJibe watch app carries the summary the watch "
-                + "computed live, in one forward pass with no memory to spare. The phone "
-                + "recomputes the same session properly, and the two are compared.",
-                "The banner appears when foil time differs by more than 5 %, any speed record "
-                + "by more than 0.3 knots, or a flight / turn / attempt count by more than one.",
-                "The phone's number is the authoritative one, so nothing is wrong with your "
-                + "session: the banner says the watch's live approximation needs tuning.",
+                + "computed live. It was computed in one forward pass with no memory to "
+                + "spare. The phone recomputes the same session properly, and the two are "
+                + "compared.",
+                "The banner appears when foil time differs by more than 5 %. It appears for "
+                + "a speed record off by more than 0.3 knots. It appears for a flight, turn "
+                + "or attempt count off by more than one.",
+                "The phone's number is the authoritative one. Nothing is wrong with your "
+                + "session. The banner says the watch's live approximation needs tuning.",
             ],
             related: [.sourceClass, .engineVersion]),
 
@@ -1304,9 +1306,9 @@ public enum HelpCatalog {
             body: [
                 "The footer of a session shows which version of the analysis engine "
                 + "produced its numbers.",
-                "When the engine changes in a way that alters results, sessions computed "
-                + "with an older version are recomputed from their archived original file "
-                + "the next time they are opened.",
+                "Sessions computed with an older version are recomputed when the engine "
+                + "changes results. The recompute reads each session's archived original "
+                + "file the next time you open it.",
                 "The original recording is never modified. Only the derived analysis is, "
                 + "and you can drop and rebuild it at any time from Settings.",
             ],
@@ -1320,9 +1322,9 @@ public enum HelpCatalog {
                 "A session can be analysed as **Wingfoil**, **Windsurf foil** or **Windsurf "
                 + "fin**. The row is on the session's Log tab, under \"Analyse as\". "
                 + "Changing it re-derives that session and nothing else.",
-                "Wingfoil is not a sport in Garmin, Strava, intervals.icu or Apple Health, so "
-                + "most riders record under the windsurf profile and a new session cannot say "
-                + "which rig it was ridden on.",
+                "None of Garmin, Strava, intervals.icu and Apple Health has a wingfoil "
+                + "sport. Most riders record under the windsurf profile. A new session "
+                + "cannot say which rig it was ridden on.",
                 "So it is read as whatever you set under Settings → \"I mostly ride\", marked "
                 + "with a **?** until you have looked, and listed after each import. Sessions "
                 + "from the CleanJibe watch app are never asked about.",
@@ -1337,13 +1339,13 @@ public enum HelpCatalog {
                           + "pumps-to-takeoff and the heart-rate cost are **absent rather "
                           + "than zero**. A takeoff becomes a planing start."),
                 .init(term: "Windsurf foil",
-                      detail: "The wingfoil reading with pumping switched off: every speed "
+                      detail: "The wingfoil reading with pumping switched off. Every speed "
                           + "and every threshold is the same, because a foil flies the same "
                           + "way under either rig."),
                 .init(term: "Windsurf fin",
-                      detail: "Also moves the two speeds that decide when you are going: "
-                          + "20 km/h to start planing, 15 km/h to stop, against 12 and 8 on "
-                          + "a foil."),
+                      detail: "Also moves the two speeds that decide when you are going. "
+                          + "20 km/h starts planing and 15 km/h stops it, against 12 and 8 "
+                          + "on a foil."),
                 .init(term: "Those two speeds are provisional",
                       detail: "A first guess, not a reading off real fin sessions. There "
                           + "are none in the corpus yet. If your planing time looks wrong, "

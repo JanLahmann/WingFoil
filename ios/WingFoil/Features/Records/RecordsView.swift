@@ -110,8 +110,8 @@ struct RecordsView: View {
                         Text("Session records")
                     } footer: {
                         Text("Best afternoons rather than best windows. No certification "
-                             + "applies here: a degraded recording can misreport a speed, "
-                             + "but the number of jibes it holds and the minutes it lasted "
+                             + "applies here. A degraded recording can misreport a speed. "
+                             + "The number of jibes it holds and the minutes it lasted "
                              + "are not claims its speed channel makes.")
                     }
                 }
