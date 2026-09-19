@@ -51,6 +51,9 @@ struct WatchLinkSection: View {
                 // whether the radio reached the app at all.
                 LabeledContent("Direct pages", value: line)
             }
+            if let line = store.directAnswerLine {
+                LabeledContent("Answer to the watch", value: line)
+            }
             if let direct = store.lastDirectTransfer {
                 // The session the watch sent straight over (docs/transfer-format.md): when
                 // it was ridden, how many pages crossed, how long they took.

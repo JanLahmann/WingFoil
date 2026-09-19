@@ -2601,6 +2601,8 @@ final class SessionStore {
     var lastDirectTransfer: DirectTransferReceipt? { DirectTransferInbox.shared.lastReceipt }
     /// The last page the inbox took or refused, as the Settings row shows it.
     var directPageLine: String?
+    /// The last answer the phone sent the watch, ack or need list, and whether it left.
+    var directAnswerLine: String?
 
     /// Starts taking delivery of direct transfers and imports anything already waiting.
     ///
@@ -2617,6 +2619,9 @@ final class SessionStore {
         }
         companion.onProbe = { [weak self] line in
             self?.linkProbeLine = line
+        }
+        companion.onDirectAnswer = { [weak self] line in
+            self?.directAnswerLine = line
         }
         DirectTransferInbox.shared.sweepStaleStreams()
         await importDirectInbox()

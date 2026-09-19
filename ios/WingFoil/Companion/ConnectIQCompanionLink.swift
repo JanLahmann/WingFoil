@@ -166,19 +166,41 @@ final class ConnectIQCompanionLink: NSObject, CompanionLink {
     /// un-`Sendable` crosses between it and the radio. Failure is swallowed on purpose — a
     /// page the watch was not acknowledged for is a page it sends again, which is exactly
     /// what an unacknowledged page should cause.
+    /// The result is reported, not swallowed: the field test of 19 September 2026 spent an
+    /// hour on an acknowledgement that never left the phone, and nothing said so.
     func acknowledgeDirect(session: Int, stream: Int, page: Int) {
         Task { [weak self] in
-            try? await self?.transmit(DirectPage.ack(sessionStartEpochS: session,
-                                                     stream: stream, index: page))
+            do {
+                try await self?.transmit(DirectPage.ack(sessionStartEpochS: session,
+                                                        stream: stream, index: page))
+                await MainActor.run { self?.onDirectAnswer?("ack page \(page + 1) sent") }
+            } catch {
+                await MainActor.run {
+                    self?.onDirectAnswer?("ack page \(page + 1) failed: \(error.localizedDescription)")
+                }
+            }
         }
     }
+
+    /// One line per answer the phone sends the watch, for the Settings row.
+    var onDirectAnswer: (@MainActor (String) -> Void)?
 
     /// The need list, sent once the last page has arrived — the gaps, or nothing at all,
     /// which is what tells the watch it may free the stream.
     func requestDirectPages(session: Int, stream: Int, pages: [Int]) {
         Task { [weak self] in
-            try? await self?.transmit(DirectPage.need(sessionStartEpochS: session,
-                                                      stream: stream, pages: pages))
+            do {
+                try await self?.transmit(DirectPage.need(sessionStartEpochS: session,
+                                                         stream: stream, pages: pages))
+                await MainActor.run {
+                    self?.onDirectAnswer?(pages.isEmpty ? "told the watch the stream is whole"
+                                                        : "asked the watch for \(pages.count) pages")
+                }
+            } catch {
+                await MainActor.run {
+                    self?.onDirectAnswer?("need list failed: \(error.localizedDescription)")
+                }
+            }
         }
     }
 
