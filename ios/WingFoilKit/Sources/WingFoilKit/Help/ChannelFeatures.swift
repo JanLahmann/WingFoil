@@ -50,6 +50,10 @@ public enum ChannelFeatures {
         "Home-screen widgets and the watch complication.",
         "The session video: your afternoon as a film rather than a card.",
         "Grouping the library by month, year or spot, and filtering it.",
+        // Not a build, a plan (Jan, 19 Sep 2026: "mention it on the beta outlook explicitly").
+        // The row says so in its first word, so the list stays honest about what installs.
+        "Planned: a live view on the Apple Watch. Foil state, flights, records and turn "
+            + "verdicts on the wrist, as the Garmin app shows them.",
     ]
 
     /// The dev doors. Unproven by construction — a handful of hand-picked testers — and
@@ -64,9 +68,5 @@ public enum ChannelFeatures {
         "The tuning page: every analysis threshold on a slider, tried against your own "
             + "sessions",
         "iPad",
-        // An idea, not a build (Jan, 16 Sep 2026): the watch app records; the Garmin app also
-        // detects live. Listed so testers can ask for it first.
-        "A live view on the Apple Watch: foil state, flights, records and turn verdicts on "
-            + "the wrist, as the Garmin app shows them",
     ]
 }
