@@ -229,6 +229,28 @@ build encodes the tail and calls the existing `PhoneLink.Radio`; log `onComplete
 | watch battery over 2 h with a flush every 90 s vs. the card alone | the cost the rider pays |
 | fenix 5 Plus: the `Array<Number>` encoder at the same payload | confirms or kills the pre-6.0.0 fleet |
 
+**Measured, 19 September 2026, Jan's fenix 8 (47 mm) → iPhone 17 Pro Max, dev build in the
+foreground, ByteArray encoding:**
+
+| page | `onComplete` | note |
+|---|---|---|
+| 1 KB | 1 214 ms | the latency floor is about a second, whatever the size |
+| 4 KB | 1 021 ms | |
+| 8 KB | 1 819 ms and 2 018 ms | two runs; about 4.3 KB/s once the floor is paid |
+| 16 KB | **the watch app crashed** | no `refused`, no `ERR` — the app left the screen |
+| 8 KB ×3 back to back | **the watch app crashed** | in the simulator the same sequence hangs after the first `transmit` |
+| 8 KB, phone locked | `ERR` after about 5 000 ms | the phone app is suspended; the SDK times out |
+
+What it decides. A 65 KB delta stream is nine 8 KB pages, one in flight at a time, about
+20 s on the beach with the phone app open. The ceiling is not the 786 KB heap: 16 KB is a
+fatal error inside `Communications.transmit`, not a catchable one, and so is a second
+`transmit` while the first is still on the radio. The rules for hold-and-send are therefore
+fixed: **pages of at most 8 KB, exactly one in flight, the next one sent from `onComplete`**,
+and the phone app open on the receiving screen — which is how the rider hands a session over
+anyway. Backgrounded delivery is answered too: it does not happen, and the design never
+needed it. The probe itself has to obey the same rules before it ships again (0.9.14-dev2):
+the 16 KB item goes, the burst becomes a chain.
+
 If 2 700 B lands in under 5 s, (a) is a transfer measured in seconds and worth building. If
 backgrounded delivery never happens, (a) still works — the rider has the watch app open while
 he rides — and (b) becomes a 1–2 minute wait he watches.
