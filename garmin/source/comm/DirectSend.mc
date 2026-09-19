@@ -48,6 +48,8 @@ module DirectSend {
     const KEY_BYTES = "b";
     const KEY_ACK = "cjrAck";
     const KEY_NEED = "cjrNeed";
+    const KEY_ANSWER_SID = "cjrSid";
+    const KEY_ANSWER_STREAM = "cjrSt";
 
     const STORE_IDX = "cjrIdx";
     const STORE_PAGE = "cjrP";
@@ -534,25 +536,54 @@ module DirectSend {
 
     // Phone → watch. Untrusted, like everything in PhoneLink.applyMessage: a malformed
     // ack is ignored, never believed.
+    // Two shapes are taken. The flat one — three keys, integers and a comma-joined
+    // string — is what the phone sends since the field test of 19 September 2026 showed
+    // that a nested array never leaves Garmin's phone SDK; the array one stays readable.
     (:dev)
     function applyMessage(d as Dictionary) as Boolean {
         var ack = d[KEY_ACK];
         if (ack instanceof Lang.Array) {
             return _onAck(ack as Array);
         }
+        if (ack instanceof Lang.Number) {
+            return _onAck([d[KEY_ANSWER_SID], d[KEY_ANSWER_STREAM], ack] as Array);
+        }
         var need = d[KEY_NEED];
         if (need instanceof Lang.Array) {
             return _onNeed(need as Array);
         }
+        if (need instanceof Lang.String) {
+            return _onNeed([d[KEY_ANSWER_SID], d[KEY_ANSWER_STREAM],
+                            _pageList(need as String)] as Array);
+        }
         return false;
+    }
+
+    // "1,4,7" → [1, 4, 7]; "" → []. Anything that is not a number is dropped.
+    (:dev)
+    function _pageList(s as String) as Array<Number> {
+        var out = [] as Array<Number>;
+        var rest = s;
+        while (rest.length() > 0) {
+            var i = rest.find(",");
+            var part = i == null ? rest : rest.substring(0, i);
+            rest = i == null ? "" : rest.substring((i as Number) + 1, rest.length());
+            var n = part.toNumber();
+            if (n != null) {
+                out.add(n as Number);
+            }
+        }
+        return out;
     }
 
     (:dev)
     function _onAck(a as Array) as Boolean {
         if (a.size() != 3 || !(a[0] instanceof Lang.Number) || !(a[2] instanceof Lang.Number)) {
+            LinkProbe.append("cjr ack odd");
             return false;
         }
         if (a[0] != _sid || a[1] != STREAM_RECORD) {
+            LinkProbe.append("cjr ack sid?");
             return false;
         }
         var p = a[2] as Number;

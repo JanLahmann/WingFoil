@@ -4479,10 +4479,26 @@ function directSendMovesOnePageAtATime(logger as Test.Logger) as Boolean {
     DirectSend.applyMessage({"cjrAck" => [1756556820, 0, 1]});
     Test.assertEqual(fake.sent.size(), n + 1);
 
-    // The empty need list is the release.
-    Test.assertMessage(DirectSend.applyMessage({"cjrNeed" => [1756556820, 0, []]}), "done");
+    // The flat shapes the phone actually sends (19 September 2026): an ack as three keys,
+    // a need list as a comma-joined string.
+    DirectSend.applyMessage({"cjrNeed" => "1", "cjrSid" => 1756556820, "cjrSt" => 0});
+    Test.assertEqual(fake.sent.size(), n + 2);
+    Test.assertMessage(DirectSend.applyMessage(
+        {"cjrAck" => 1, "cjrSid" => 1756556820, "cjrSt" => 0}), "flat ack");
+    Test.assertEqual(fake.sent.size(), n + 2);
+    Test.assertMessage(!DirectSend.applyMessage(
+        {"cjrAck" => 1, "cjrSid" => 5, "cjrSt" => 0}), "flat ack, wrong sid");
+
+    // The empty need list is the release — in the flat shape, an empty string.
+    Test.assertMessage(DirectSend.applyMessage({"cjrNeed" => "", "cjrSid" => 1756556820, "cjrSt" => 0}), "done");
     Test.assertEqual(DirectSend.pageCount(), 0);
     Test.assertEqual(DirectSend.statusLine(), "phone ok");
+    // And the array shape still reads.
+    DirectSend.begin(1756556820, 200);
+    DirectSend.recordFix(45.871d, 10.863d, 1756556820, 500, 66, 100, DirectSend.devPack(2, 0, 0, 0));
+    DirectSend.finish();
+    Test.assertMessage(DirectSend.applyMessage({"cjrAck" => [1756556820, 0, 0]}), "array ack");
+    Test.assertMessage(DirectSend.applyMessage({"cjrNeed" => [1756556820, 0, []]}), "array done");
     logger.debug(n + " pages, one at a time, " + fake.sent.size() + " sends");
 
     DirectSend.reachableOverride = null;
