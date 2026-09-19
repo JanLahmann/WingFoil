@@ -1301,17 +1301,19 @@ therefore on every section.
 - **The chart's zoom window outlives a section change.** Zoom stays transient per *session
   view* (below), but a trip to Turns and back is not a new session view, and silently
   resetting the window would make "transient" mean something the rider did not ask for.
-- **Desktop web keeps its single scroll — this is a phone rule.** Above 760 px the web
-  session view is a document, the two long tables want the continuous page, and that is
-  what makes it a lab tool. The switcher exists only below the breakpoint, and crossing the
-  breakpoint upward must restore every panel.
-- **A section with nothing in it is not shown.** The web has no HR card, so its fourth chip
-  is the raw-output panel (`Data`) rather than an empty one; an honest label beats a matching
-  one.
-- **The web still carries the pre-re-cut ids** (`mapSpeed` … `effort` on `data-section`)
-  until it is re-cut to match. The two apps are meant to be the same product and this is a
-  known, temporary divergence: the analyzer has no HR card and no gear, so `Log` and the
-  Takeoffs merge do not transfer unchanged, and the re-cut is an iOS commit.
+- **The web has the same four, at every width, since 19 September 2026.** Jan: *"iOS is the
+  reference, the web is the port"*. The analyzer's `data-section` ids are `ride`, `turns`,
+  `takeoffs`, `log` (`web/js/sections.js`), its chips carry these four words, and the
+  switcher no longer hides above 760 px. The earlier rules — the desktop session view as a
+  single scrolling document, and `mapSpeed` … `data` as the web's own ids — are retired with
+  it; the review's §3.4 note was written while the analyzer was a lab tool, and it is a tab
+  of an app now. `docs/copy/app-shell.json` carries the four for both surfaces and
+  `web/tools/verify_app_shell.py` reads `SessionSection.swift` from the other end, so
+  neither side can rename a tab alone.
+- **A section the web cannot fill says so in one line.** Takeoffs has no HR card here and
+  `Log` has no gear card and no divergence table, so each prints one sentence naming the
+  phone. A tab that is quietly half of what its name promises is worse than one that admits
+  the half it has.
 
 ### The HR card's own title
 

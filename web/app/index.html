@@ -48,6 +48,11 @@
      values from these custom properties, so it must come second. -->
 <link rel="stylesheet" href="../css/tokens.css">
 <link rel="stylesheet" href="../css/style.css">
+<!-- The shell the app got when it became a port of the iPhone app rather than a viewer of
+     its own: the tab bar, the side rail, the menu, the pages and the ways-in card. Layered
+     on style.css the way home.css is on the homepage, so the analyzer's own aesthetic is
+     untouched. -->
+<link rel="stylesheet" href="../css/app.css">
 <!-- Usage analytics: umami, cloud-hosted and cookieless — it sees that this page was
      opened, never who opened it, and it stores no identifier that survives the visit. It
      never sees a session: the .fit file is read inside this tab, by the worker, and still
@@ -66,6 +71,15 @@
 <body>
 
 <header class="topbar">
+  <!-- THE APP MENU, ON EVERY TAB, IN THE SAME PLACE (docs/review-checklist.md, pattern M).
+       The iPhone app puts it at `.topBarLeading` on all four tab roots (ios/WingFoil/App/
+       AppMenu.swift); this is the same button in the same corner, and it is in the page
+       chrome rather than in a tab, so no tab can own it. Its rows and their order are the
+       kit's `AppMenuRow.ordered`, carried here by docs/copy/app-shell.json. -->
+  <button class="menu-btn" id="app-menu-btn" type="button"
+          aria-haspopup="dialog" aria-expanded="false" aria-controls="app-menu">
+    <span class="menu-glyph" aria-hidden="true"></span>Menu
+  </button>
   <!-- The mark and the name are the way back to the project homepage at the site root —
        the ordinary web convention, and the only navigation the analyzer needs to it. -->
   <a class="brand" href="../">
@@ -80,16 +94,7 @@
     </div>
   </a>
   <div class="topbar-right">
-    <nav class="views" aria-label="Views">
-      <button type="button" data-view="analyze" aria-current="page">Analyze</button>
-      <button type="button" data-view="library">Library <span class="count" hidden></span></button>
-      <!-- The full label wraps to two lines in a third of a 390 px tab bar, so the
-           "& trends" half is dropped below 760 px (css). The accessible name stays whole. -->
-      <button type="button" data-view="trends" aria-label="Records and trends">Records<span
-        class="wide-only">&nbsp;&amp; trends</span></button>
-    </nav>
     <span class="chip" id="engine-chip" hidden>engine</span>
-    <button class="ghost" id="icu-toggle" type="button" aria-expanded="false">intervals.icu</button>
   </div>
 <!-- sitenav:begin — COPIED VERBATIM ON ALL SEVEN READER PAGES. The only thing that differs
      is which link carries `aria-current="page"`; web/tools/verify_links.py compares this
@@ -129,6 +134,28 @@
 <!-- sitenav:end -->
 </header>
 
+<!-- ----------------------------------------------------------------- the app menu -->
+<!-- The five rows the iPhone app's menu has, in its order, with its one divider above
+     Settings (ios/WingFoilKit/.../AppMenuRows.swift). They are typed here rather than built
+     by script so the page still names every door with JavaScript off, and
+     web/tools/verify_app_shell.py holds them to docs/copy/app-shell.json and to the Swift.
+
+     A real <dialog>: showModal() brings the focus trap, the backdrop and the Escape key,
+     which is what the iPhone's menu does for free. Wiring: js/appshell.js. -->
+<dialog id="app-menu" class="ask app-menu" aria-label="Menu">
+  <ul class="menu-rows">
+    <li><button type="button" data-menu="whatItDoes">What CleanJibe does</button></li>
+    <li><button type="button" data-menu="gettingStarted">Getting started</button></li>
+    <li class="after-divider"><button type="button" data-menu="settings">Settings</button></li>
+    <li><button type="button" data-menu="help">Help</button></li>
+    <li><button type="button" data-menu="support">Support &amp; ideas</button></li>
+  </ul>
+  <p class="fineprint" id="menu-build"></p>
+  <div class="ask-actions">
+    <button type="button" class="ghost" id="app-menu-close">Close</button>
+  </div>
+</dialog>
+
 <div id="update-banner" class="update-banner" role="status" hidden>
   <span>A new version is ready.</span>
   <span class="update-actions">
@@ -160,40 +187,117 @@
 
 <main>
 
-<div id="view-analyze">
+<!-- ============================================================= SESSIONS (tab 1) -->
+<!-- The home tab, as on the phone: the library, and the ways in where the library is
+     empty. The analyzer's own two doors — drop a file, open the example — lead that card
+     rather than living on a view of their own, because they are ways a session gets in and
+     that card is the list of those. -->
+<div class="page" id="page-sessions" data-page="sessions">
 
-  <!-- ------------------------------------------------------------------ drop -->
+  <section class="panel" id="sessions-head">
+    <div class="panel-head">
+      <div>
+        <h2>Sessions</h2>
+        <p class="muted small" id="lib-sub"></p>
+      </div>
+      <div class="head-right">
+        <button class="ghost" id="lib-export" type="button" disabled>Download all (.zip)</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------- the ways in / the drop target -->
+  <!-- `waysInCard` on the phone (ios/WingFoil/Features/Library/LibraryView.swift), with
+       the two rows a browser has and a phone does not at the top. The order below the first
+       two is docs/guide/getting-started.json's, which is the one order every surface prints
+       (docs/review-checklist.md, pattern J). A row a browser cannot open says so in its own
+       line and still links to the route, because the route is real on the phone.
+
+       Typed here rather than built by script: the page has to name every door before
+       Pyodide, before the worker, and with JavaScript off. web/tools/verify_app_shell.py
+       holds the rows, their order and their lines to docs/copy/app-shell.json. -->
   <section id="dropzone" class="dropzone" tabindex="0" aria-label="Drop a FIT or GPX file here">
     <div class="drop-inner">
-      <svg class="drop-icon" viewBox="0 0 48 48" aria-hidden="true">
-        <path d="M24 32V10m0 0-8 8m8-8 8 8" fill="none" stroke="currentColor" stroke-width="2.5"
-              stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M8 30v6a2 2 0 0 0 2 2h28a2 2 0 0 0 2-2v-6" fill="none" stroke="currentColor"
-              stroke-width="2.5" stroke-linecap="round"/>
-      </svg>
-      <p class="drop-title">Drop a <strong>.fit</strong>, <strong>.gpx</strong> or <strong>.tcx</strong> file, or a .zip containing one</p>
-      <p class="drop-hint">
-        <!-- A real <label for> — not a button calling input.click() — so the picker opens
-             even where scripted activation is restricted. iPhone Safari has no drag & drop,
-             so this is the ONLY intake path there and it must not depend on JS. The input is
-             visually hidden rather than `hidden`, because a display:none control is not a
-             reliable label target. -->
-        <label class="btn primary" id="pick" for="file">Choose a file…</label>
-        <input id="file" type="file" accept=".fit,.gpx,.tcx,.zip,application/gpx+xml,application/vnd.garmin.tcx+xml,application/zip" class="sr-only">
-      </p>
-      <!-- A first visitor with no .fit file to hand had nothing to look at but a drop
-           target. This is the same recording the iOS app bundles as its example (the
-           2026-08-30 Nago-Torbole session, identifiers scrubbed but otherwise whole —
-           accelerometer stream included, docs/testing.md "The bundled example session"),
-           and it goes through the ordinary analysis path so what it shows is what a real
-           file shows. Labelled as an example everywhere it appears, because a demo whose
-           numbers read as yours is worse than no demo. -->
-      <!-- The file size is gone: it is noise to a rider deciding whether to click, and the
-           duration is the part that says how much session is in there. -->
-      <p class="drop-alt">
-        …or <button class="linkish" id="try-example" type="button">open the example
-        session</button> <span class="dim">· Lago di Garda, 30 Aug · 10:45 min</span>
-      </p>
+      <h2 class="ways-title">How your sessions get in</h2>
+      <ol class="ways-in" id="ways-in">
+
+        <li class="way here" data-way="drop">
+          <svg class="drop-icon" viewBox="0 0 48 48" aria-hidden="true">
+            <path d="M24 32V10m0 0-8 8m8-8 8 8" fill="none" stroke="currentColor" stroke-width="2.5"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M8 30v6a2 2 0 0 0 2 2h28a2 2 0 0 0 2-2v-6" fill="none" stroke="currentColor"
+                  stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+          <div class="way-body">
+            <p class="way-title">Drop a <strong>.fit</strong>, <strong>.gpx</strong> or <strong>.tcx</strong> here</p>
+            <p class="way-line">Or choose a file. It never leaves this tab.</p>
+            <p class="drop-hint">
+              <!-- A real <label for> — not a button calling input.click() — so the picker
+                   opens even where scripted activation is restricted. iPhone Safari has no
+                   drag & drop, so this is the ONLY intake path there and it must not depend
+                   on JS. The input is visually hidden rather than `hidden`, because a
+                   display:none control is not a reliable label target. -->
+              <label class="btn primary" id="pick" for="file">Choose a file…</label>
+              <input id="file" type="file" accept=".fit,.gpx,.tcx,.zip,application/gpx+xml,application/vnd.garmin.tcx+xml,application/zip" class="sr-only">
+            </p>
+          </div>
+        </li>
+
+        <!-- The same recording the iOS app bundles as its example, scrubbed of identifiers
+             and otherwise whole. It goes through the ordinary analysis path, so what it
+             shows is what a real file shows. Labelled as an example everywhere it appears,
+             because a demo whose numbers read as yours is worse than no demo. -->
+        <li class="way here" data-way="example">
+          <div class="way-body">
+            <p class="way-title"><button class="linkish" id="try-example" type="button">Load
+              the example session</button></p>
+            <p class="way-line">10 real minutes on Lake Garda, already analysed.</p>
+          </div>
+        </li>
+
+        <li class="way here" data-way="garmin">
+          <div class="way-body">
+            <p class="way-title"><a href="/start/#guide-garmin">Garmin with the CleanJibe
+              watch app</a></p>
+            <p class="way-line">Paste your intervals.icu key in Settings. Sessions arrive by
+              themselves.</p>
+            <p class="way-act"><button class="ghost small-btn" type="button"
+              data-goto="settings">Open Settings</button></p>
+          </div>
+        </li>
+
+        <li class="way elsewhere" data-way="appleWatchApp">
+          <div class="way-body">
+            <p class="way-title"><a href="/start/#guide-appleWatchApp">The CleanJibe Apple
+              Watch app</a></p>
+            <p class="way-line">On the iPhone app. A browser cannot reach your watch.</p>
+          </div>
+        </li>
+
+        <li class="way elsewhere" data-way="appleWorkoutApp">
+          <div class="way-body">
+            <p class="way-title"><a href="/start/#guide-appleWorkoutApp">Apple&rsquo;s own
+              Workout app</a></p>
+            <p class="way-line">On the iPhone app. Apple Health is closed to a browser.</p>
+          </div>
+        </li>
+
+        <li class="way here" data-way="fit">
+          <div class="way-body">
+            <p class="way-title"><a href="/start/#guide-fit">Any watch that writes a
+              .fit</a></p>
+            <p class="way-line">Export the file. Then drop it here.</p>
+          </div>
+        </li>
+
+        <li class="way elsewhere" data-way="strava">
+          <div class="way-body">
+            <p class="way-title"><a href="/start/#guide-strava">Strava</a></p>
+            <p class="way-line">On the iPhone app. Strava sign-in needs it.</p>
+          </div>
+        </li>
+
+      </ol>
 
       <!-- What you get, before you have given anything. A first visitor used to see an
            upload arrow and nothing else, and had no way to know whether the thing on the
@@ -243,24 +347,10 @@
     </div>
   </section>
 
-  <!-- ------------------------------------------------------------- icu panel -->
-  <section id="icu-panel" class="panel icu" hidden>
-    <h2>intervals.icu <span class="tag">optional</span></h2>
-    <p class="muted">
-      If your Garmin activities already sync to intervals.icu, pull a session straight from
-      there instead of exporting it by hand. Your API key is stored <strong>only in this
-      browser</strong> and is sent <strong>only to <code>api.intervals.icu</code></strong>.
-      Never to this site's host, never anywhere else.
-    </p>
-    <div class="icu-form">
-      <label>Athlete ID <input id="icu-athlete" type="text" value="0" placeholder="0 = the key's own athlete" autocomplete="off" spellcheck="false"></label>
-      <label>API key <input id="icu-key" type="password" placeholder="paste API key" autocomplete="off" spellcheck="false"></label>
-      <button class="primary" id="icu-list" type="button">List recent activities</button>
-      <button class="ghost" id="icu-forget" type="button">Forget key</button>
-    </div>
-    <div id="icu-status" class="icu-status" role="status"></div>
-    <div id="icu-results"></div>
-  </section>
+  <!-- ------------------------------------------------------------ the library -->
+  <!-- The rows the phone's Sessions tab draws: title, date · duration, three numbers each
+       with its word, the outcome tally in words, distance. js/library.js fills it. -->
+  <div id="lib-body"></div>
 
   <!-- ---------------------------------------------------------------- status -->
   <!-- The elapsed clock and the Cancel button are not decoration. A 6 MB CIQ file sat on
@@ -300,6 +390,31 @@
       session you want.</p>
     <pre id="error-text"></pre>
   </section>
+
+  <!-- Shown once there is something to say it about: js/appshell.js reveals it with the
+       first saved session. An empty library needs the ways in, not a note about storage. -->
+  <section class="panel" id="where-it-lives" hidden>
+    <div class="panel-head"><h2>Where this lives</h2></div>
+    <p class="muted small">
+      Saved sessions are written to this browser's <strong>private per-origin storage</strong>.
+      That is OPFS, or IndexedDB where OPFS is unavailable. They are not synced, not backed up and
+      not visible to any other site. <strong>Clearing this site's data, or using a private
+      window, deletes them.</strong> Use <em>Download all</em>, or the per-row
+      <code>.fit</code> / <code>.json</code> buttons, to keep a copy you own.
+    </p>
+  </section>
+
+</div>
+
+<!-- ============================================================== ONE SESSION (page) -->
+<!-- The analysis, re-homed. It is not a tab: it is what a row on Sessions opens, exactly as
+     the phone pushes `SessionDetailView` from the library list. The key-metrics block sits
+     ABOVE the sub-tabs on every one of them, because the answer to "was that a good
+     session" must never be a page you can navigate away from. -->
+<div class="page" id="page-session" data-page="session" hidden>
+
+  <p class="crumb"><button class="linkish" type="button" id="session-back">Back to
+    Sessions</button></p>
 
   <!-- --------------------------------------------------------------- results -->
   <div id="results" hidden>
@@ -366,19 +481,22 @@
       <details class="glossary" id="metric-glossary">
         <summary><span class="q" aria-hidden="true">?</span>What these numbers mean</summary>
         <dl class="glossary-list" id="glossary-list"></dl>
-        <p class="muted small">The thresholds and the full outcome ladder are in
-          <a href="../help/#numbers">Help</a>.</p>
+        <p class="muted small">The same words, and the rest of the reference, are in
+          <button class="linkish" type="button" data-goto="help">Help</button>. The
+          thresholds and the full outcome ladder are on
+          <a href="../help/#numbers">How it works</a>.</p>
       </details>
       <div class="tiles" id="tiles"></div>
     </section>
 
-    <!-- The section switcher, below 760 px only (app-ui-review.md §3.4 / §7.2 — the desktop
-         session view stays one document; the review lists tabbing it as deliberately not
-         recommended). Empty here on purpose: js/sections.js builds the chips from the
-         `data-section` attributes on the panels below, so a panel added later joins the
-         switcher by carrying one. It sits BELOW #summary-panel because the block that
-         answers "was that a good session" is permanent and must never be a tab you can
-         navigate away from — the same rule the iOS key-metrics block follows. -->
+    <!-- THE FOUR SUB-TABS: Ride · Turns · Takeoffs · Log, the phone's own
+         (ios/WingFoilKit/.../SessionSection.swift), at every width since the web became a
+         port of the app rather than a lab tool of its own. Empty here on purpose:
+         js/sections.js builds the chips from the `data-section` attributes on the panels
+         below, so a panel added later joins the switcher by carrying one. It sits BELOW
+         #summary-panel because the block that answers "was that a good session" is
+         permanent and must never be a tab you can navigate away from — the same rule the
+         iOS key-metrics block follows. -->
     <nav class="sections" id="section-nav" aria-label="Session sections" hidden></nav>
 
     <!-- Track and Speed share the one chip, and that is a contract requirement rather than
@@ -386,7 +504,7 @@
          across the map dot and the strip's scrub position, and "Pairing" focuses the strip
          on the flight whose track you tapped. Separating them would put half of a visible
          link on another page. Do not give either its own section. -->
-    <section class="panel" data-section="mapSpeed">
+    <section class="panel" data-section="ride">
       <div class="panel-head">
         <h2>Track</h2>
         <p class="muted small">Local-metre projection, north up. Shape carries the outcome.
@@ -397,7 +515,7 @@
       <div class="legend" id="map-legend"></div>
     </section>
 
-    <section class="panel" data-section="mapSpeed">
+    <section class="panel" data-section="ride">
       <div class="panel-head">
         <h2>Speed</h2>
         <p class="muted small">Doppler drives the flight state. The positional channel scores
@@ -422,6 +540,10 @@
     <section class="panel" id="takeoff-panel" data-section="takeoffs">
       <div class="panel-head"><h2>Takeoffs</h2></div>
       <div id="takeoff-body"></div>
+      <!-- The phone's Takeoffs tab ends with the HR card: what the pumping cost in
+           heartbeats. This page has no heart-rate figure yet, and a tab that quietly lacks
+           half of what its name promises is worse than one that says so. -->
+      <p class="muted small">What the pumping cost in heartbeats is on the iPhone app.</p>
     </section>
 
     <!-- Turns and Flight ends share a chip: 34 rows and 23 rows are the ~2 000 px of phone
@@ -442,9 +564,17 @@
       <div class="table-scroll"><table id="ends-table"></table></div>
     </section>
 
-    <!-- "Data" rather than "Raw output" on the chip: the chip is a place to go, and three
-         words of heading do not fit a quarter of a 390 px row. The panel keeps its title. -->
-    <section class="panel" data-section="data">
+    <!-- LOG, the phone's fourth tab: the session's own facts. It carries the wind the
+         analysis assumed, the recording's provenance and the gear it was ridden on. The
+         browser app has the wind and the provenance in the badges above and no gear card at
+         all, so the tab says what is missing rather than pretending to be whole. -->
+    <section class="panel" data-section="log">
+      <div class="panel-head"><h2>The recording</h2></div>
+      <p class="muted small">Your gear and the watch-against-phone check are on the iPhone
+        app. The wind and the source of this recording are in the badges above.</p>
+    </section>
+
+    <section class="panel" data-section="log">
       <div class="panel-head"><h2>The full analysis</h2></div>
       <!-- What the file IS, in a rider's terms. The old line named a path inside the test
            fixtures directory, which is true, useful to exactly one reader, and a strange
@@ -459,46 +589,155 @@
   </div>
 </div>
 
-<!-- --------------------------------------------------------------- library -->
-<div id="view-library" hidden>
+<!-- ============================================================== RECORDS (tab 2) -->
+<div class="page" id="page-records" data-page="records" hidden>
   <section class="panel">
     <div class="panel-head">
       <div>
-        <h2>Session library</h2>
-        <p class="muted small" id="lib-sub"></p>
-      </div>
-      <div class="head-right">
-        <button class="ghost" id="lib-export" type="button" disabled>Download all (.zip)</button>
+        <h2>Records</h2>
+        <p class="muted small">Your bests across the library. A record set without the
+          watch's own speed channel is marked uncertified.</p>
       </div>
     </div>
-    <div id="lib-body"></div>
-  </section>
-  <section class="panel">
-    <div class="panel-head"><h2>Where this lives</h2></div>
-    <p class="muted small">
-      Saved sessions are written to this browser's <strong>private per-origin storage</strong>.
-      That is OPFS, or IndexedDB where OPFS is unavailable. They are not synced, not backed up and
-      not visible to any other site. <strong>Clearing this site's data, or using a private
-      window, deletes them.</strong> Use <em>Download all</em>, or the per-row
-      <code>.fit</code> / <code>.json</code> buttons, to keep a copy you own.
-    </p>
+    <div id="records-body"></div>
   </section>
 </div>
 
-<!-- ---------------------------------------------------------------- trends -->
-<div id="view-trends" hidden>
+<!-- =============================================================== TRENDS (tab 3) -->
+<div class="page" id="page-trends" data-page="trends" hidden>
   <section class="panel">
     <div class="panel-head">
       <div>
-        <h2>Records &amp; trends</h2>
-        <p class="muted small">Computed in Python, in the worker, over every saved session.</p>
+        <h2>Trends</h2>
+        <p class="muted small">Session by session, over the library. Computed in Python, in
+          the worker.</p>
       </div>
     </div>
     <div id="trends-body"></div>
   </section>
 </div>
 
+<!-- ======================================================== GEAR & SPOTS (tab 4) -->
+<div class="page" id="page-gear" data-page="gear" hidden>
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <h2>Gear &amp; spots</h2>
+        <p class="muted small">Sessions that start within 500 m of each other are one spot.
+          Name your gear per session. Both stay in this browser.</p>
+      </div>
+    </div>
+    <div id="gear-body"></div>
+  </section>
+</div>
+
+<!-- ================================================================== SETTINGS -->
+<div class="page" id="page-settings" data-page="settings" hidden>
+
+  <!-- intervals.icu, moved here from the topbar: Settings is where an account is kept, on
+       this surface as on the phone. -->
+  <section id="icu-panel" class="panel icu">
+    <h2>intervals.icu <span class="tag">optional</span></h2>
+    <p class="muted">
+      If your Garmin activities already sync to intervals.icu, pull a session straight from
+      there instead of exporting it by hand. Your API key is stored <strong>only in this
+      browser</strong> and is sent <strong>only to <code>api.intervals.icu</code></strong>.
+      Never to this site's host, never anywhere else.
+    </p>
+    <div class="icu-form">
+      <label>Athlete ID <input id="icu-athlete" type="text" value="0" placeholder="0 = the key's own athlete" autocomplete="off" spellcheck="false"></label>
+      <label>API key <input id="icu-key" type="password" placeholder="paste API key" autocomplete="off" spellcheck="false"></label>
+      <button class="primary" id="icu-list" type="button">List recent activities</button>
+      <button class="ghost" id="icu-forget" type="button">Forget key</button>
+    </div>
+    <div id="icu-status" class="icu-status" role="status"></div>
+    <div id="icu-results"></div>
+    <!-- The phone's own sentence for this section, written in by js/appshell.js out of
+         docs/guide/getting-started.json. Typing it here would be a second home for a line
+         the kit authors. -->
+    <p class="muted small" id="icu-footer"></p>
+  </section>
+
+  <section class="panel" id="settings-strava">
+    <div class="panel-head"><h2>Strava</h2></div>
+    <p class="muted small" id="strava-footer"></p>
+    <p class="muted small">Strava is on the iPhone app. Signing in needs it.</p>
+  </section>
+
+  <section class="panel" id="settings-units">
+    <div class="panel-head"><h2>Units</h2></div>
+    <div class="seg" role="group" aria-label="Speed units">
+      <button type="button" class="seg-btn" data-units="kn" aria-pressed="true">Knots</button>
+      <button type="button" class="seg-btn" data-units="kmh" aria-pressed="false">km/h</button>
+    </div>
+    <p class="muted small">Speeds are read in knots by the speedsurfing world. Pick km/h if
+      that is the number you think in.</p>
+  </section>
+
+  <section class="panel" id="settings-startover">
+    <div class="panel-head"><h2>Start over</h2></div>
+    <p><button class="ghost danger" id="start-over" type="button">Start over</button></p>
+    <p class="muted small">Start over removes your library, your settings and your
+      intervals.icu key from this browser. It cannot be undone.</p>
+  </section>
+
+  <section class="panel" id="settings-about">
+    <div class="panel-head"><h2>About</h2></div>
+    <div class="kv" id="about-rows"></div>
+    <p class="muted small">Wind is estimated in this tab from your track.
+      <a href="../privacy/">Privacy</a></p>
+  </section>
+
+  <section class="panel" id="settings-whats-new">
+    <div class="panel-head"><h2>What&rsquo;s new</h2></div>
+    <!-- Filled from js/appcopy.js, which the generator writes out of
+         docs/copy/whats-new.json. Nothing dated is typed into this page: the voice lint
+         reads it as a rider surface and fails a hand-written build number. -->
+    <div id="whats-new-body"></div>
+  </section>
+
+</div>
+
+<!-- ====================================================================== HELP -->
+<div class="page" id="page-help" data-page="help" hidden>
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <h2>Help</h2>
+        <p class="muted small" id="help-sub"></p>
+      </div>
+    </div>
+    <div id="help-body"></div>
+  </section>
+</div>
+
 </main>
+
+<!-- ============================================================== THE FOUR TABS -->
+<!-- A bar at the foot on a phone, a rail down the side above 860 px. The four the phone
+     has, in its order and its words (ios/WingFoil/App/RootView.swift). Buttons rather than
+     links: the app routes on `#/sessions` and a fragment that names no element on the page
+     is not an anchor, so a link here would promise a jump it never makes. -->
+<nav class="tabbar" id="tabbar" aria-label="Tabs">
+  <button type="button" data-tab="sessions" aria-current="page">Sessions<span class="count" hidden></span></button>
+  <button type="button" data-tab="records">Records</button>
+  <button type="button" data-tab="trends">Trends</button>
+  <button type="button" data-tab="gear">Gear &amp; spots</button>
+</nav>
+
+<!-- ------------------------------------------------------------------- welcome -->
+<!-- The first thing a first open shows, and the thing *What CleanJibe does* opens again.
+     Its headline, its promise, its four words and its list of routes are all written by
+     js/appshell.js out of js/appcopy.js, so the screen says what the phone's welcome says
+     and the generator owns every sentence in it. -->
+<dialog id="welcome-dialog" class="ask welcome" aria-labelledby="welcome-title">
+  <h2 id="welcome-title">CleanJibe</h2>
+  <div id="welcome-body"></div>
+  <div class="ask-actions">
+    <button type="button" class="ghost" id="welcome-example">Try the example session</button>
+    <button type="button" class="primary" id="welcome-close">Later</button>
+  </div>
+</dialog>
 
 <!-- ------------------------------------------------------- whose session is this? -->
 <!-- Asked on the Save press, before anything is written. A .fit a friend sent is scrubbed

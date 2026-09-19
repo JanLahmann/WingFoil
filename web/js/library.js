@@ -11,7 +11,9 @@
  */
 
 import { ask, askBytes } from "./rpc.js";
+import { speed } from "./appsettings.js";
 import { sportCorrected } from "./cardstats.js";
+import { NOT_A_SESSION } from "./copy.js";
 import { esc, hms, int, nf, pct, sessionDate, zonedFormat } from "./render.js";
 import { askRider } from "./rider.js";
 import {
@@ -144,11 +146,36 @@ const mb = (bytes) => (bytes === null || bytes === undefined ? "—"
 /** A library row's date, on the *session's* clock (`zonedFormat`) rather than the reader's
  *  — a row that changed its own time every time the reader crossed a timezone would make
  *  the library look like it had been edited. `e` is the stored digest, which carries both
- *  the instant and the offset it was recorded at. */
-const shortDate = (e) => (e && e.startUtc
-  ? zonedFormat(e.startUtc, e.utcOffsetS,
-      { year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" })
-  : "—");
+ *  the instant and the offset it was recorded at.
+ *
+ *  "Sun 30 Aug, 14:07", which is `Fmt.date` on the phone (ios/WingFoil/App/SessionDisplay
+ *  .swift). The year joins it only when the session is not in the reader's own year, for
+ *  the same reason the phone adds it: a column of "2026" says nothing. */
+const shortDate = (e) => {
+  if (!e || !e.startUtc) return "—";
+  const sameYear = String(e.dateLocal || e.dateUtc || "").slice(0, 4)
+    === String(new Date().getFullYear());
+  return zonedFormat(e.startUtc, e.utcOffsetS, {
+    weekday: "short", day: "2-digit", month: "short",
+    ...(sameYear ? {} : { year: "numeric" }),
+    hour: "2-digit", minute: "2-digit",
+  });
+};
+
+/**
+ * **The three numbers a row carries, each under its own word** — `RowMetric` on the phone,
+ * and its `defaultTriple`: how much of it he flew, how many jibes, how fast.
+ *
+ * The words are the kit's, character for character, because one wording per metric is the
+ * rule across iOS and web (docs/presentation.md). The value is a field of the Python
+ * digest, printed — nothing here derives a metric, and the speed is only put into the unit
+ * this browser reads (js/appsettings.js).
+ */
+const ROW_METRICS = [
+  { label: "foil", value: (e) => pct(e.foilPct) },
+  { label: "jibes", value: (e) => int(e.turns?.jibes) },
+  { label: "best 2 s", value: (e) => speed(e.records?.best2sKn) },
+];
 
 /** What a row is *called*. The Python digest's `spot` is derived from the filename, and the
  *  watch that wrote the filename records wingfoil under Garmin's windsurf profile — so the
@@ -157,46 +184,44 @@ const shortDate = (e) => (e && e.startUtc
  *  the filename under the label prints verbatim, and remains the row's identity. */
 const spotLabel = (entry) => sportCorrected(entry.spot || "") || "Session";
 
+/**
+ * **The list, as the phone draws it** (ios/WingFoil/Features/Library/SessionRowView.swift).
+ *
+ * A row was ten table columns, browsed one at a time and scanned as a column by nobody. It
+ * is the phone's row now: the title, the date and the clock under it, three numbers each
+ * with its word, then the outcome tally in words and the distance. Tapping it opens the
+ * session, which is what a row on the phone does and what a row here never did.
+ *
+ * An empty library draws nothing at all here: the ways-in card above it is the empty state
+ * (js/appshell.js decides which of the two is on screen), and a note under the card saying
+ * the same thing in other words would be the second empty state on one screen.
+ */
 function renderRows(entries) {
   const host = el("lib-body");
   if (!entries.length) {
-    host.innerHTML = `<p class="note">Nothing saved yet. Analyze a file and press
-      <strong>Save to library</strong>. Saved sessions build up your records and trends,
-      and stay in this browser — they are never uploaded.</p>`;
+    host.innerHTML = "";
     return;
   }
 
-  // Ten columns is a lot for a 390 px screen, and these rows are *browsed* one at a time
-  // rather than scanned as a column — so on a phone `stack-sm` (css/style.css) turns each
-  // row into a card. Every cell carries the same label its <th> has, from the same list.
-  const head = ["date", "session", "on foil", "distance", "flights", "longest", "turns",
-                "outcomes", "best 2 s", "size", ""];
-  const th = (i) => ` data-th="${esc(head[i])}"`;
-  const last = head.length - 1;
-  host.innerHTML = `<div class="table-scroll"><table class="lib-table stack-sm">
-    <thead><tr>${head.map((h, i) =>
-      `<th${i <= 1 || i === last ? ' class="l"' : ""}>${esc(h)}</th>`).join("")}</tr></thead>
-    <tbody>${entries.map((e) => `
-      <tr data-id="${esc(e.id)}">
-        <td class="l stack-lead"${th(0)}>${esc(shortDate(e))}</td>
-        <td class="l stack-block"${th(1)}><span class="lib-spot">${esc(spotLabel(e))}
-          ${tags(e)}</span>
-          <span class="lib-file">${esc(e.fileName || "")}</span></td>
-        <td${th(2)}>${pct(e.foilPct)}</td>
-        <td${th(3)}>${nf(e.distanceKm, 1)} km</td>
-        <td${th(4)}>${int(e.flightCount)}</td>
-        <td${th(5)}>${hms(e.longestFlightS)}</td>
-        <td${th(6)}>${int(e.turns?.counted)}</td>
-        <td${th(7)}>${tally(e.turns?.outcomes)}</td>
-        <td${th(8)}>${nf(e.records?.best2sKn, 2)}</td>
-        <td class="dim"${th(9)}>${esc(mb((e.bytesFit || 0) + (e.bytesJson || 0)))}</td>
-        <td class="l lib-row-actions stack-actions"${th(last)}>
-          <button class="ghost small-btn" data-act="open">Open</button>
-          <button class="ghost small-btn" data-act="fit">.fit</button>
-          <button class="ghost small-btn" data-act="json">.json</button>
-          <button class="ghost small-btn danger" data-act="delete">Delete</button>
-        </td>
-      </tr>`).join("")}</tbody></table></div>`;
+  host.innerHTML = `<ul class="lib-list">${entries.map((e) => `
+    <li class="lib-row" data-id="${esc(e.id)}">
+      <button class="lib-open" type="button" data-act="open">
+        <span class="row-title">${esc(spotLabel(e))}${tags(e)}</span>
+        <span class="row-when">${esc(shortDate(e))} · ${hms(e.rateDurationS ?? e.durationS)}</span>
+        ${e.isSession === false
+          ? `<span class="row-note">${esc(NOT_A_SESSION.tag)}</span>` : ""}
+        <span class="row-metrics">${ROW_METRICS.map((m) =>
+          `<span class="rm"><b>${m.value(e)}</b><i>${esc(m.label)}</i></span>`).join("")}</span>
+        <span class="row-foot">${tally(e.turns?.outcomes)}
+          <span class="row-km">${nf(e.distanceKm, 1)} km</span></span>
+      </button>
+      <span class="lib-row-actions">
+        <button class="ghost small-btn" data-act="fit">.fit</button>
+        <button class="ghost small-btn" data-act="json">.json</button>
+        <button class="ghost small-btn danger" data-act="delete">Delete</button>
+        <span class="dim small">${esc(mb((e.bytesFit || 0) + (e.bytesJson || 0)))}</span>
+      </span>
+    </li>`).join("")}</ul>`;
 }
 
 /**
@@ -237,9 +262,14 @@ function tags(e) {
  */
 function tally(o) {
   if (!o) return '<span class="dim">—</span>';
-  return `<span class="tally"><span class="flew">${int(o.flewThrough)}</span><i>·</i>` +
-         `<span class="touchdown">${int(o.touchdown)}</span><i>·</i>` +
-         `<span class="fell">${int(o.fellIn)}</span></span>`;
+  // **With its words** (Jan, Beta 75; pattern H). "9 · 9 · 12" is the ladder in three
+  // colours and nothing else, and a colour is not a word. The three words are the phone's
+  // own (`OutcomeTally`): flew, touch, fell.
+  const part = (value, ink, word) =>
+    `<span class="${ink}">${int(value)}<i>${word}</i></span>`;
+  return `<span class="tally">${part(o.flewThrough, "flew", "flew")}<b>·</b>` +
+         `${part(o.touchdown, "touchdown", "touch")}<b>·</b>` +
+         `${part(o.fellIn, "fell", "fell")}</span>`;
 }
 
 /* ------------------------------------------------------------------- actions */
@@ -247,7 +277,7 @@ function tally(o) {
 async function onRowClick(ev) {
   const button = ev.target.closest("button[data-act]");
   if (!button) return;
-  const id = button.closest("tr")?.dataset.id;
+  const id = button.closest("[data-id]")?.dataset.id;
   if (!id) return;
   const entries = await listEntries();
   const entry = entries.find((e) => e.id === id);

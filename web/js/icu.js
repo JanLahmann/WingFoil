@@ -28,10 +28,18 @@ export function mountIcu({ analyzeBuffer }) {
   keyInput.value = localStorage.getItem(LS_KEY) || "";
   athleteInput.value = localStorage.getItem(LS_ATHLETE) || "0";
 
-  el("icu-toggle").addEventListener("click", (ev) => {
-    panel.hidden = !panel.hidden;
-    ev.currentTarget.setAttribute("aria-expanded", String(!panel.hidden));
-  });
+  // The panel used to live behind a topbar button. It is a section of the Settings page
+  // now, on screen the moment that page is, so there is nothing left to toggle — Settings
+  // is where an account is kept, on this surface as on the phone. The listener stays
+  // guarded rather than deleted: a build that puts the button back gets it working again,
+  // and a page without one does not throw on boot.
+  const toggle = el("icu-toggle");
+  if (toggle) {
+    toggle.addEventListener("click", (ev) => {
+      panel.hidden = !panel.hidden;
+      ev.currentTarget.setAttribute("aria-expanded", String(!panel.hidden));
+    });
+  }
 
   el("icu-forget").addEventListener("click", () => {
     localStorage.removeItem(LS_KEY);

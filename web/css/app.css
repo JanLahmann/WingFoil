@@ -1,0 +1,345 @@
+/* The app shell, layered on css/style.css the way home.css is layered for the homepage.
+ *
+ * It adds the furniture the analyzer got when it became a port of the iPhone app: the menu
+ * button, the four tabs (a bar at the foot on a phone, a rail down the side on a desk), the
+ * pages, the ways-in card and the session rows. It reads style.css's own semantic tokens
+ * and defines none of its own colours, so the light theme at the foot of that file carries
+ * this one with it.
+ *
+ * Nothing here is a figure. The two session figures, the trend charts and the share card
+ * are drawn in the presentation tokens and are untouched by this file.
+ */
+
+/* ----------------------------------------------------------------- the menu button */
+
+.menu-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--tap);
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-1);
+  color: var(--ink-2);
+  font: inherit;
+  cursor: pointer;
+}
+
+.menu-btn:hover { color: var(--ink); }
+
+/* Three rules, drawn rather than typed: a glyph in a font is a character that may not be
+   there, and `line.3.horizontal` is the phone's own mark for this button. */
+.menu-glyph {
+  width: 16px;
+  height: 11px;
+  border-top: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  position: relative;
+}
+
+.menu-glyph::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  margin-top: -1px;
+  border-top: 2px solid currentColor;
+}
+
+.app-menu { max-width: 22rem; }
+
+.menu-rows {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+}
+
+.menu-rows button {
+  display: block;
+  width: 100%;
+  min-height: var(--tap);
+  padding: 10px 12px;
+  border: 0;
+  border-radius: var(--radius);
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu-rows button:hover { background: var(--surface-2); }
+
+/* One divider, and it falls where reading ends and operating begins — the phone's own
+   `opensAfterDivider`, which is true for Settings and nothing else. */
+.menu-rows .after-divider {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line-soft);
+}
+
+/* -------------------------------------------------------------------- the four tabs */
+
+.tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  display: flex;
+  background: var(--surface-1);
+  border-top: 1px solid var(--line);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.tabbar button {
+  flex: 1 1 0;
+  min-height: var(--tap);
+  padding: 10px 4px calc(10px + env(safe-area-inset-bottom) * 0);
+  border: 0;
+  background: none;
+  color: var(--ink-3);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.tabbar button[aria-current="page"] {
+  color: var(--ink);
+  box-shadow: inset 0 2px 0 var(--series-1);
+}
+
+.tabbar .count {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-size: 0.72rem;
+}
+
+/* The bar covers the foot of the document, so the document ends above it. */
+main { padding-bottom: calc(var(--tap) + 24px + env(safe-area-inset-bottom)); }
+
+/* A rail down the side once there is width for one, which is what the phone's tab bar
+   becomes on an iPad. The page moves over by the rail's width and the footer with it. */
+@media (min-width: 860px) {
+  .tabbar {
+    top: 0;
+    right: auto;
+    bottom: 0;
+    width: 190px;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    border-top: 0;
+    border-right: 1px solid var(--line);
+    padding: 0 12px;
+  }
+
+  .tabbar button {
+    flex: 0 0 auto;
+    border-radius: var(--radius);
+    text-align: left;
+    padding: 12px 14px;
+    font-size: 0.95rem;
+  }
+
+  .tabbar button[aria-current="page"] {
+    background: var(--surface-2);
+    box-shadow: inset 2px 0 0 var(--series-1);
+  }
+
+  body > header,
+  body > main,
+  body > footer { margin-left: 190px; }
+
+  main { padding-bottom: 24px; }
+}
+
+/* ------------------------------------------------------------------------- pages */
+
+.crumb { margin: 0 0 8px; }
+
+.help-section + .help-section { margin-top: 20px; }
+
+.help-topic { margin: 12px 0 0; }
+
+.help-topic h4 { margin: 0 0 2px; }
+
+.release + .release {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.release h3 { margin: 0 0 2px; }
+
+.release ul { margin: 8px 0 0; padding-left: 1.1em; }
+
+/* ------------------------------------------------------------------- the ways in */
+
+.ways-title { margin: 0 0 12px; font-size: 1rem; }
+
+.ways-in {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.way {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 0;
+  border-top: 1px solid var(--line-soft);
+}
+
+.way:first-child { border-top: 0; }
+
+.way .drop-icon { flex: 0 0 auto; width: 32px; height: 32px; }
+
+.way-body { flex: 1 1 auto; min-width: 0; }
+
+.way-title { margin: 0; font-weight: 600; }
+
+.way-line,
+.way-act { margin: 2px 0 0; color: var(--ink-3); font-size: 0.9rem; }
+
+/* A door a browser cannot open is shown, not hidden: its own line says why (pattern G).
+   Recessive, because the three doors above it are the ones to take here. */
+.way.elsewhere .way-title { font-weight: 500; }
+
+.way.elsewhere { opacity: 0.78; }
+
+/* With sessions in the library the card is a drop target again and nothing else: the list
+   below it is the answer to "how do they get in", and the reader has already had it. */
+.dropzone.compact .ways-title,
+.dropzone.compact .way:not([data-way="drop"]),
+.dropzone.compact .drop-peek,
+.dropzone.compact .drop-what { display: none; }
+
+/* --------------------------------------------------------------- the session rows */
+
+.lib-list { list-style: none; margin: 0; padding: 0; }
+
+.lib-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line-soft);
+}
+
+.lib-row:first-child { border-top: 0; }
+
+/* The whole row opens the session, which is what a row does on the phone and what these
+   rows never did — the four buttons beside it stay buttons of their own. */
+.lib-open {
+  flex: 1 1 18rem;
+  display: block;
+  min-width: 0;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lib-open > span { display: block; }
+
+.row-title { font-weight: 600; }
+
+.row-when { color: var(--ink-3); font-size: 0.92rem; }
+
+.row-note { color: var(--ink-3); font-size: 0.8rem; }
+
+.row-metrics { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 14px; }
+
+/* A number over its word, which is what makes the row readable without decoding a glyph
+   (pattern H). The word is `RowMetric.label`'s, character for character. */
+.rm { display: inline-flex; flex-direction: column; line-height: 1.15; }
+
+.rm b { font-variant-numeric: tabular-nums; }
+
+.rm i { color: var(--ink-3); font-size: 0.75rem; font-style: normal; }
+
+.row-foot {
+  margin-top: 6px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 0.82rem;
+}
+
+.row-km { color: var(--ink-3); font-variant-numeric: tabular-nums; }
+
+.lib-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* The outcome tally, in the ladder's own inks, each number carrying its word. */
+.tally { display: inline-flex; align-items: baseline; gap: 4px; }
+
+.tally > span { display: inline-flex; align-items: baseline; gap: 3px; }
+
+.tally i { font-style: normal; font-size: 0.75rem; opacity: 0.85; }
+
+.tally b { color: var(--ink-3); font-weight: 400; }
+
+.tally .flew { color: var(--good-text, var(--good)); }
+
+.tally .touchdown { color: var(--warn-text, var(--warn)); }
+
+.tally .fell { color: var(--bad-text, var(--bad)); }
+
+/* -------------------------------------------------------------- gear, spots, welcome */
+
+.spot-list,
+.gear-list { list-style: none; margin: 8px 0 0; padding: 0; }
+
+.spot-list li,
+.gear-list li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  align-items: baseline;
+  padding: 8px 0;
+  border-top: 1px solid var(--line-soft);
+}
+
+.spot-list li:first-child,
+.gear-list li:first-child { border-top: 0; }
+
+.spot-name { font-weight: 600; }
+
+.gear-list label { display: flex; flex: 1 1 100%; gap: 10px; align-items: baseline; }
+
+.gear-list input { flex: 1 1 10rem; min-width: 0; }
+
+.welcome { max-width: 34rem; }
+
+.welcome-headline { margin: 0 0 6px; font-size: 1.15rem; font-weight: 600; }
+
+.welcome-promise { margin: 0 0 12px; color: var(--ink-2); }
+
+.guide-routes { list-style: none; margin: 8px 0 0; padding: 0; }
+
+.guide-routes li {
+  padding: 8px 0;
+  border-top: 1px solid var(--line-soft);
+}
+
+.guide-routes li:first-child { border-top: 0; }
+
+.guide-routes .way-line { display: block; }

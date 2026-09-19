@@ -317,6 +317,23 @@ import make_copy_js                                                      # noqa:
 if make_copy_js.main(["--check"]) != 0:
     errors.append("web/js/copy.js is stale — run `python3 web/tools/make_copy_js.py`")
 
+# The same for the shell's own lists — the tabs, the menu, the ways in, What's new and the
+# help catalogue. A stale one is an app naming a door in words the phone does not use.
+import make_app_copy                                                     # noqa: E402
+
+if make_app_copy.main(["--check"]) != 0:
+    errors.append("web/js/appcopy.js is stale — run `python3 web/tools/make_app_copy.py`")
+
+# And the structure those lists are rendered into. There is no browser here, so this is the
+# smoke test for /app/: the four tabs, the five menu rows and the ways-in rows have to be in
+# the markup, in the phone's order, with the phone's words — and the three Swift files that
+# author them are read from the other end, so neither side can drift alone.
+import verify_app_shell                                                  # noqa: E402
+
+if verify_app_shell.main(["--brief"]) != 0:
+    errors.append("the browser app's shell has drifted from the phone or from its page — "
+                  "run `python3 web/tools/verify_app_shell.py` for the list")
+
 # And the sentences nobody owns. verify_copy holds the pages to docs/copy; what it cannot
 # see is the site's own prose written twice and then corrected once. verify_unique.py is
 # that check, plus the per-page word budget that stops /start/ walking back to 3500 words

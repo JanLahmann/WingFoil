@@ -1,0 +1,90 @@
+{
+  "_readme": [
+    "THE APP SHELL, IN ONE FILE: THE FOUR TABS, THE FIVE MENU ROWS, THE FOUR SESSION TABS.",
+    "",
+    "The iPhone app is the author of all three lists. The kit and the app hold them:",
+    "",
+    "  tabs             ios/WingFoil/App/RootView.swift, the four `tabItem` labels",
+    "  menu             ios/WingFoilKit/Sources/WingFoilKit/Presentation/AppMenuRows.swift",
+    "                   (`AppMenuRow.ordered` and `.title`; the last row's title is",
+    "                   FeedbackDoors.menuRow, which docs/copy/feedback.json already pins)",
+    "  sessionSections  ios/WingFoilKit/Sources/WingFoilKit/Presentation/SessionSection.swift",
+    "",
+    "This file is the machine-readable twin the web renders from, so the browser app and the",
+    "phone name the same doors in the same order. Both sides are pinned by",
+    "web/tools/verify_app_shell.py: it reads the three Swift files above and this JSON and",
+    "fails when they disagree, and it reads web/app/index.html and fails when the page has",
+    "drifted from the JSON. Change the Swift first, then this file.",
+    "",
+    "`waysIn` is the web's half of the empty Sessions tab, and only the half the phone has",
+    "no words for. THE ROW ORDER AND THE ROW TITLES COME FROM docs/guide/getting-started.json",
+    "(pattern J in docs/review-checklist.md: the ways in have one order everywhere), so only",
+    "the `line` is authored here. `here` says whether a browser can open that door at all. A",
+    "row that says no says why in its own line, and still links to the route on /start/.",
+    "",
+    "The two rows the phone does not have are `drop` and `example`. They are the analyzer's",
+    "own strengths, they lead the card, and they carry their own titles."
+  ],
+  "schema": "cleanjibe.app-shell/1",
+  "tabs": [
+    { "id": "sessions", "title": "Sessions" },
+    { "id": "records", "title": "Records" },
+    { "id": "trends", "title": "Trends" },
+    { "id": "gear", "title": "Gear & spots" }
+  ],
+  "menu": [
+    { "id": "whatItDoes", "title": "What CleanJibe does" },
+    { "id": "gettingStarted", "title": "Getting started" },
+    { "id": "settings", "title": "Settings", "afterDivider": true },
+    { "id": "help", "title": "Help" },
+    { "id": "support", "title": "Support & ideas" }
+  ],
+  "sessionSections": [
+    { "id": "ride", "title": "Ride" },
+    { "id": "turns", "title": "Turns" },
+    { "id": "takeoffs", "title": "Takeoffs" },
+    { "id": "log", "title": "Log" }
+  ],
+  "waysIn": {
+    "title": "How your sessions get in",
+    "rows": [
+      {
+        "id": "drop",
+        "here": true,
+        "title": "Drop a .fit, .gpx or .tcx here",
+        "line": "Or choose a file. It never leaves this tab."
+      },
+      {
+        "id": "example",
+        "here": true,
+        "title": "Load the example session",
+        "line": "10 real minutes on Lake Garda, already analysed."
+      },
+      {
+        "id": "garmin",
+        "here": true,
+        "line": "Paste your intervals.icu key in Settings. Sessions arrive by themselves."
+      },
+      {
+        "id": "appleWatchApp",
+        "here": false,
+        "line": "On the iPhone app. A browser cannot reach your watch."
+      },
+      {
+        "id": "appleWorkoutApp",
+        "here": false,
+        "line": "On the iPhone app. Apple Health is closed to a browser."
+      },
+      {
+        "id": "fit",
+        "here": true,
+        "line": "Export the file. Then drop it here."
+      },
+      {
+        "id": "strava",
+        "here": false,
+        "line": "On the iPhone app. Strava sign-in needs it."
+      }
+    ]
+  }
+}

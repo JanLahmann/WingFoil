@@ -13,6 +13,7 @@
  */
 
 import { ask } from "./rpc.js";
+import { speedUnit, speedValue } from "./appsettings.js";
 import { sportCorrected } from "./cardstats.js";
 import { C, esc, figureWidth, hideTip, hms, int, isNarrow, nf, pct, pctDigits, showTip, svg,
          zonedFormat } from "./render.js";
@@ -49,9 +50,14 @@ let customPeriod = null;
 let rangeFrom = "";
 let rangeTo = "";
 
+/** The two hosts this file writes: Records is a tab of its own now, and Trends is the tab
+ *  beside it — the same split the phone has had since its four tabs existed. One aggregate
+ *  feeds both, because one Python call over one library cannot disagree with itself. */
+const hosts = () => [el("records-body"), el("trends-body")];
+
 export function mountTrends(options) {
   hooks = { ...hooks, ...options };
-  el("trends-body").addEventListener("click", onClick);
+  for (const host of hosts()) host.addEventListener("click", onClick);
 }
 
 /**
@@ -59,26 +65,36 @@ export function mountTrends(options) {
  * to Python untouched, and everything drawn below comes back from it.
  */
 export async function showTrends(saved) {
-  const host = el("trends-body");
   entries = saved;
+  // Every empty state names the door out of it (docs/review-checklist.md, pattern G): the
+  // Sessions tab is where a session gets in, and the button goes there.
   if (!entries.length) {
-    host.innerHTML = `<p class="note">No saved sessions yet. Save a couple of sessions to
-      the library and your all-time records and season trends appear here.</p>`;
+    const door = `<p><button class="ghost small-btn" type="button" data-goto="sessions">Go
+      to Sessions</button></p>`;
+    el("records-body").innerHTML =
+      `<p class="note">No sessions yet. Open one and save it, and your bests appear
+        here.</p>${door}`;
+    el("trends-body").innerHTML =
+      `<p class="note">No sessions yet. Save a few, and the charts fill as you ride.</p>${door}`;
     return;
   }
   const signature = entries.map((e) => e.id).join("|");
   if (cache.signature !== signature) {
-    host.innerHTML = `<p class="note">Aggregating ${entries.length} sessions in Python…</p>`;
+    for (const host of hosts()) {
+      host.innerHTML = `<p class="note">Aggregating ${entries.length} sessions in Python…</p>`;
+    }
     try {
       cache = { signature, data: await ask("aggregate", { digestsJson: JSON.stringify(entries) }) };
     } catch (err) {
-      host.innerHTML = `<p class="note">Could not aggregate the library: ${esc(err.message)}
-        <br><br>The trends view needs the Python runtime; the library list itself does not,
-        so your sessions are still there and still openable.</p>`;
+      for (const host of hosts()) {
+        host.innerHTML = `<p class="note">Could not aggregate the library: ${esc(err.message)}
+          <br><br>Records and trends need the Python runtime; the library list itself does
+          not, so your sessions are still there and still openable.</p>`;
+      }
       return;
     }
   }
-  draw(host, cache.data);
+  draw(cache.data);
 }
 
 /** Drop the memoised aggregate — call after a save or a delete. */
@@ -92,26 +108,33 @@ export function invalidateTrends() {
 /** Redraw from the memoised aggregate — the figures are sized to their container, so a
  *  rotation or a resize has to lay them out again. No Python call, nothing recomputed. */
 export function redrawTrends() {
-  if (cache.data) draw(el("trends-body"), cache.data);
+  if (cache.data) draw(cache.data);
 }
 
 /* --------------------------------------------------------------------- drawing */
 
-function draw(host, agg) {
+function draw(agg) {
+  const [records, trends] = hosts();
   // `agg.count` is what `library.aggregate` actually aggregated, not what the library
   // holds: the bundled example and a friend's session are shown in full and counted in
   // nothing (`library.counts_towards_records`, the one place that rule lives). A library
   // made only of those has no records to draw and must say why, rather than drawing a
   // chart of zero sessions. This file does not know the rule and must not learn it.
   if (!agg.count) {
-    host.innerHTML = `<p class="note">Nothing saved here counts towards your records yet —
-      the example session and sessions a friend rode are kept out of them. Save one of
-      your own and the records and trends fill in.</p>`;
+    const note = `<p class="note">Nothing here counts towards your records yet. The example
+      session and sessions a friend rode are kept out of them. Save one of your own and
+      these fill in.</p>
+      <p><button class="ghost small-btn" type="button" data-goto="sessions">Go to
+        Sessions</button></p>`;
+    records.innerHTML = note;
+    trends.innerHTML = note;
     return;
   }
-  host.innerHTML = `
-    <div class="kv" id="trend-totals"></div>
-    <h3 class="sub-head">All-time records</h3>
+
+  // RECORDS: the phone's own two tables under the phone's own two headings
+  // (ios/WingFoil/Features/Records/RecordsView.swift).
+  records.innerHTML = `
+    <h3 class="sub-head">Speed records</h3>
     <p class="muted small">Each record links back to the session it was set in, and to the
       exact window inside it — the provenance is in every analysis document under
       <code>records.windows</code>.</p>
@@ -121,7 +144,10 @@ function draw(host, agg) {
       No certification applies here: a degraded recording can misreport a speed, but the
       number of jibes it holds and the minutes it lasted are not claims its speed channel
       makes.</p>
-    <div class="table-scroll"><table id="session-records-table"></table></div>
+    <div class="table-scroll"><table id="session-records-table"></table></div>`;
+
+  trends.innerHTML = `
+    <div class="kv" id="trend-totals"></div>
     <h3 class="sub-head">Periods</h3>
     <p class="muted small">A trip, a month or a season, each with the same block of numbers.
       A trip is one spot with no gap wider than ${esc(String(GAP_DAYS))} days and at least
@@ -199,7 +225,8 @@ function renderRecords(table, records) {
     <tbody>${records.map((r) => `
       <tr data-record="${esc(r.key)}">
         <td class="l stack-lead" data-th="record">${esc(r.label)}</td>
-        <td data-th="value"><strong>${nf(r.value, 2)}</strong> <span class="dim">${esc(r.unit)}</span>${
+        <td data-th="value"><strong>${nf(speedValue(r.value) ?? r.value, 2)}</strong>
+          <span class="dim">${esc(r.unit === "kn" ? speedUnit() : r.unit)}</span>${
           r.certified === false ? UNCERTIFIED : ""}</td>
         <td class="l" data-th="session">${esc(sessionLabel(r, r.fileName, r.id))}</td>
         <td class="l dim" data-th="date">${esc(localDate(r) || "—")}</td>

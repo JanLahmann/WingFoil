@@ -5,6 +5,8 @@
  * never touches a number — it moves bytes and toggles sections.
  */
 
+import { mountShell, noteEngine, offerWelcome, setSessionCount, showPage }
+  from "./appshell.js";
 import { mountIcu } from "./icu.js";
 import { mountLibrary, openStoredSession, refresh as refreshLibrary, saveSession }
   from "./library.js";
@@ -28,7 +30,8 @@ const state = {
   highlight: null,     // the record window marked on the figures, if any
 };
 
-const VIEWS = ["analyze", "library", "trends"];
+/* The four tabs and the pages behind the menu are js/appshell.js's; this file moves bytes
+ * and toggles sections, and asks the shell to show a page when a document lands. */
 
 /* ----------------------------------------------------------------- worker events */
 
@@ -39,6 +42,8 @@ on("ready", (msg) => {
   const chip = el("engine-chip");
   chip.hidden = false;
   chip.textContent = `engine ${msg.engineVersion} · pyodide ${msg.pyodideVersion}`;
+  // Settings → About prints what is actually running rather than what the bundle claims.
+  noteEngine({ engineVersion: msg.engineVersion, pyodideVersion: msg.pyodideVersion });
 });
 
 // Errors that arrive without a request id (a failed boot) still have to reach the user.
@@ -166,17 +171,19 @@ function showResult(result, { digest = null, bytes = null, fromLibrary = false,
   el("error").hidden = true;
   el("results").hidden = false;
   el("dropzone").classList.add("compact");
-  // Before render(), not after: below 760 px the switcher hides every panel but the active
-  // section's, and a figure measured inside a hidden panel falls back to the 1100-unit
-  // maximum instead of its column (js/viz.js `figureWidth`). Resetting first means the
-  // Track and Speed panels are on screen when render() draws into them. A new document
-  // also starts on Map · Speed the way a new session view starts unzoomed.
+  // BOTH BEFORE render(), and in this order. A figure measured inside a hidden element
+  // falls back to the 1100-unit maximum instead of its column (js/viz.js `figureWidth`),
+  // so the track would land in a 400 px column at a third of the type size it was tuned
+  // at. The session is a page of its own now — the way the phone pushes
+  // `SessionDetailView` off the library list — so the page has to be on screen first, and
+  // then the switcher has to put Ride's panels back on it. A new document also starts on
+  // Ride the way a new session view starts unzoomed.
+  showPage("session");
   resetSections();
   render(result, { highlight, isExample });
   updateSaveButton();
   showHighlightNote(highlight);
-  showView("analyze");
-  window.scrollTo({ top: el("results").offsetTop - 70, behavior: "smooth" });
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function showHighlightNote(highlight) {
@@ -247,7 +254,9 @@ export async function analyzeFile(file, { isExample = false } = {}) {
   el("progress").hidden = false;
   resetSteps();
   startClock();
-  showView("analyze");
+  // The progress card lives on Sessions, where the file was dropped. The reader watches it
+  // there and is moved to the session page only when there is a session to show.
+  showPage("sessions");
 
   const buffer = await file.arrayBuffer();
   // The worker takes ownership of `buffer` (transferred, so a 6 MB FIT is not copied to
@@ -337,11 +346,17 @@ function wireDropzone() {
 
   // The whole zone is a shortcut to the picker, but the <label> and the <input> activate it
   // themselves — clicking through to `file.click()` as well would open the picker twice.
+  // `a` joined the list when the zone became the ways-in card: five of its rows are links
+  // to a route on /start/, and a link that also opened a file picker on its way out would
+  // be the worst control on the page.
   zone.addEventListener("click", (ev) => {
-    if (ev.target.closest("button, label, input")) return;
+    if (ev.target.closest("a, button, label, input")) return;
     el("file").click();
   });
   zone.addEventListener("keydown", (ev) => {
+    // Same guard as the click above, for the same reason: Enter on a row's link is that
+    // link's, and it bubbles to the zone.
+    if (ev.target.closest("a, button, label, input")) return;
     if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); el("file").click(); }
   });
   el("file").addEventListener("change", (ev) => {
@@ -480,29 +495,23 @@ async function openStored(id, record = null) {
   }
 }
 
-/* -------------------------------------------------------------------- view routing */
+/* -------------------------------------------------------------------- page routing */
 
-function showView(name) {
-  const view = VIEWS.includes(name) ? name : "analyze";
-  // A marker popover is a fixed-position child of <body>, not of the session panel, so
-  // hiding the analyze view would leave it floating over the library. It belongs to the
-  // figure that opened it; when that figure goes off screen, so does it.
+/**
+ * What a page needs the moment it appears. js/appshell.js owns which page is on screen; it
+ * calls this so the two files do not both have to know that Records and Trends read one
+ * aggregate and the Sessions list reads the index.
+ *
+ * A marker popover is a fixed-position child of <body>, not of the session panel, so a page
+ * change has to close it: it belongs to the figure that opened it, and when that figure
+ * goes off screen so does it.
+ */
+function onShowPage(page) {
   closePopover();
-  for (const v of VIEWS) {
-    el(`view-${v}`).hidden = v !== view;
-    const tab = document.querySelector(`.views button[data-view="${v}"]`);
-    tab.setAttribute("aria-current", v === view ? "page" : "false");
+  if (page === "records" || page === "trends") {
+    listEntries().then(showTrends).catch(() => showTrends([]));
   }
-  if (location.hash !== `#/${view}`) history.replaceState(null, "", `#/${view}`);
-  if (view === "trends") listEntries().then(showTrends).catch(() => showTrends([]));
-  if (view === "library") refreshLibrary();
-}
-
-function wireNav() {
-  for (const button of document.querySelectorAll(".views button[data-view]")) {
-    button.addEventListener("click", () => showView(button.dataset.view));
-  }
-  window.addEventListener("hashchange", () => showView(location.hash.replace("#/", "")));
+  if (page === "sessions") refreshLibrary();
 }
 
 /* ------------------------------------------------------------- service worker / PWA */
@@ -572,10 +581,10 @@ function wireReflow() {
     width = now;
     clearTimeout(timer);
     timer = setTimeout(() => {
-      if (state.last && !el("results").hidden && !el("view-analyze").hidden) {
+      if (state.last && !el("results").hidden && !el("page-session").hidden) {
         render(state.last, { highlight: state.highlight, isExample: state.isExample });
       }
-      if (!el("view-trends").hidden) redrawTrends();
+      if (!el("page-trends").hidden || !el("page-records").hidden) redrawTrends();
     }, 180);
   });
 }
@@ -599,7 +608,7 @@ function wireReflow() {
 function wireSections() {
   mountSections({
     redrawFigures: () => {
-      if (state.last && !el("results").hidden && !el("view-analyze").hidden) {
+      if (state.last && !el("results").hidden && !el("page-session").hidden) {
         renderFigures(state.last, state.highlight);
       }
     },
@@ -617,7 +626,6 @@ wireCancel();
 wireDownload();
 wireSave();
 wireShareCard();
-wireNav();
 wireSections();
 wireReflow();
 wireServiceWorker();
@@ -633,23 +641,33 @@ mountTrends({
 // code path for "a document is on screen", whether it arrived by drop or from disk.
 mountLibrary({
   onOpen: (id) => openStored(id),
+  // The count on the Sessions tab, and which half of that tab is on screen — the ways-in
+  // card or the list. js/appshell.js owns both, because they are one fact.
   setCount: (n) => {
-    const chip = document.querySelector('.views button[data-view="library"] .count');
-    chip.textContent = n ? String(n) : "";
-    chip.hidden = !n;
+    setSessionCount(n);
+    // Once per browser, and never in front of somebody who already has sessions. The
+    // library arriving is what settles that, which is why the offer is made from here and
+    // not at boot — the same reason `RootView` waits on `libraryGeneration`.
+    offerWelcome(n);
   },
 });
 
 // `/app/#example` runs the bundled session on arrival. The homepage's second CTA points
 // here, and a link that promised an example and delivered a drop target would be the
-// worst version of this page's first impression. Read BEFORE showView, which normalizes
-// the hash to `#/analyze` on its way past.
+// worst version of this page's first impression. Read BEFORE the shell mounts, which
+// normalizes the hash to `#/sessions` on its way past.
 const openExampleOnLoad = location.hash === "#example";
-// `?shared=1` is the service worker saying "Android handed us a file". Read BEFORE showView
-// for the same reason as the hash above, and cleared from the address bar straight away: a
-// reload of this URL with the slot already emptied would otherwise look like a lost file.
+// `?shared=1` is the service worker saying "Android handed us a file". Read BEFORE the
+// shell mounts for the same reason as the hash above, and cleared from the address bar
+// straight away: a reload of this URL with the slot already emptied would otherwise look
+// like a lost file.
 const openSharedOnLoad = new URLSearchParams(location.search).get("shared") === "1";
-showView(location.hash.replace("#/", ""));
+mountShell({
+  onShowPage,
+  onExample: runExample,
+  // Start over reloads the page, so nothing this file is holding may survive it.
+  onStartOver: async () => { invalidateTrends(); },
+});
 warmUp();
 if (openExampleOnLoad) runExample();
 if (openSharedOnLoad) {
