@@ -63,5 +63,15 @@
     "path": "web/invite/index.html",
     "text": "CleanJibe Wingfoil Tracker (Beta) on apps.garmin.com",
     "why": "The Connect IQ store's own listing title, pinned in docs/copy/phrases.json as ciqListingTitle and held to this page by web/tools/verify_copy.py. A rider searches the store for the name letter by letter, so the brackets are part of it and not an aside. Same exemption as the kit's GettingStartedGuide."
+  },
+  {
+    "path": "web/start/index.html",
+    "text": "CleanJibe Wingfoil Tracker (Beta)",
+    "why": "the Connect IQ store's own listing title, on the page the getting-started guide is generated into. The kit carries the same exemption for the same string, and the page is read as well since its guide block stopped being skipped. A rider searches the store for the name letter by letter, so the brackets are part of it and not an aside."
+  },
+  {
+    "path": "web/js/sharecard.js",
+    "text": "— analysed with",
+    "why": "the share caption's tail: the counts, then the dash, then phrases.captionOffer verbatim. web/tools/verify_copy.py pins the tail character for character and web/tools/card_parity.mjs compares the card against the phone's, so the dash is part of a cross-platform mark rather than punctuation in a sentence. Same reason as Branding.callToAction in the kit."
   }
 ]

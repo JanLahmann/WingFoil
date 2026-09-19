@@ -184,8 +184,9 @@ function describe(err) {
     return `${last}\n\n${text}`;
   }
   if (/Failed to fetch|NetworkError|dynamically imported module/i.test(text)) {
-    return `${text}\n\nCould not reach the Pyodide CDN (cdn.jsdelivr.net) or PyPI. ` +
-           `Check your connection — the runtime is downloaded on first use and cached afterwards.`;
+    return `${text}\n\nCould not reach the Pyodide CDN at cdn.jsdelivr.net, or PyPI. ` +
+           `Check your connection. ` +
+           `The runtime is downloaded on first use and cached afterwards.`;
   }
   return text;
 }

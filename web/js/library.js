@@ -69,8 +69,8 @@ export async function saveSession({ digest, analysisJson, fitBytes, example = fa
     const ok = window.confirm(
       `This looks like a session you already have.\n\n` +
       `In the library: ${existing.fileName || existing.id} (${when})\n` +
-      `Start differs by ${hit.deltaStartS} s, duration by ${hit.deltaDurS} s — ` +
-      `inside the ±60 s / ±60 s rule, so it is the same session.\n\n` +
+      `Start differs by ${hit.deltaStartS} s, duration by ${hit.deltaDurS} s.\n` +
+      `Both are inside the 60 s rule, so it is the same session.\n\n` +
       `Replace the stored copy with this one?`);
     if (!ok) return { saved: false, reason: "duplicate" };
     replaceId = existing.id;
@@ -113,7 +113,7 @@ export async function refresh() {
     // is unaffected, so say so plainly instead of taking the page down.
     el("lib-sub").textContent = "Storage is unavailable in this browser context.";
     el("lib-body").innerHTML = `<p class="note">${esc(err.message)}<br><br>
-      Analyzing files still works — only saving does not.</p>`;
+      Analyzing files still works. Only saving does not.</p>`;
     el("lib-export").disabled = true;
     hooks.setCount(0);
     return [];
@@ -147,8 +147,13 @@ async function renderSub(entries) {
     bits.push(`${mb(u.originBytes)} used by this site in total` +
               (u.quotaBytes ? ` of ~${mb(u.quotaBytes)} available` : ""));
   }
+  // Two sentences since the voice pass of 19 September 2026 (pattern I, and Jan reading
+  // the site on his phone): what you have, then where it is and what deletes it. The line
+  // used to hang the place on a dash and name OPFS in brackets, which is a footnote in a
+  // subtitle. `storageLabel()` now carries the plain words, so this just prints them.
   el("lib-sub").innerHTML =
-    `${esc(bits.join(" · "))} — in ${esc(where)}. Clearing this site's data deletes it all.`;
+    `${esc(bits.join(" · "))}. Saved in ${esc(where)}. ` +
+    `Clearing this site's data deletes it all.`;
 }
 
 const mb = (bytes) => (bytes === null || bytes === undefined ? "—"
@@ -380,8 +385,8 @@ async function exportAll() {
     track("app-backup-exported", { sessions: entries.length });
   } catch (err) {
     window.alert(`The export failed: ${err.message}\n\n` +
-                 `The per-session .fit / .json buttons in each row always work — they are ` +
-                 `plain file downloads and need no Python at all.`);
+                 `The .fit and .json buttons in each row always work. ` +
+                 `They are plain downloads and need no Python.`);
   } finally {
     button.textContent = was;
     button.disabled = false;

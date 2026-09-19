@@ -1394,7 +1394,7 @@ async function copyCaption(text) {
   try { await navigator.clipboard.writeText(text); } catch { return; }
   const note = captionNote();
   if (!note) return;
-  note.textContent = "Caption copied — paste it with the picture.";
+  note.textContent = "Caption copied. Paste it with the picture.";
   note.hidden = false;
   clearTimeout(copyCaption.timer);
   copyCaption.timer = setTimeout(() => { note.hidden = true; }, 8000);

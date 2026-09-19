@@ -576,7 +576,7 @@ function drawMap() {
   // `hasPositions` is false for Doppler-only sources: the analysis (speed strip, records,
   // flights, outcomes) is all still there, there is simply no track to plot.
   if (!v.count || !v.bounds || v.hasPositions === false || v.bounds.x0 === null) {
-    host.innerHTML = `<p class="note">No GPS positions in this file — no track to draw. ` +
+    host.innerHTML = `<p class="note">No GPS positions in this file, so there is no track to draw. ` +
                      `The speed strip and the tables below are unaffected.</p>`;
     fullMapDoor(false);                                          // r3-w2: no map, no door
     return;
@@ -619,7 +619,7 @@ function drawMap() {
   host.classList.toggle("panning", zoomed);
   const root = svg("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", class: "scrubbable",
                             "data-zoom": cam.k.toFixed(3),
-                            "aria-label": "GPS track with event markers; drag to move the "
+                            "aria-label": "GPS track with event markers. Drag to move the "
                                           + "replay playhead, pinch or scroll to zoom"
                                           + (zoomed ? ", drag to pan" : "") }, host);
   svg("rect", { width: W, height: H, fill: C.surface }, root);
@@ -1146,7 +1146,7 @@ function drawStrip() {
   // asking the page what it is currently showing.
   const root = svg("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", class: "scrubbable",
                             "data-t0": t0.toFixed(2), "data-t1": t1.toFixed(2),
-                            "aria-label": "Speed over time; drag to scrub, wheel or pinch "
+                            "aria-label": "Speed over time. Drag to scrub, wheel or pinch "
                                           + "to zoom the time axis" }, host);
   svg("rect", { width: W, height: H, fill: C.surface }, root);
 
@@ -1817,14 +1817,17 @@ function drawChips() {
   host.innerHTML = group("route") + group("marker")
     + (utilities ? `<span class="chip-group chip-utilities">${utilities}</span>` : "")
     + `<p class="legend-note">Tap a chip to hide or show it on the map <em>and</em> in the
-      speed strip. Chevrons point the way you were riding. Star = a clean jibe, the ones you
-      flew all the way through carrying your speed, with no touchdown or fall in the
-      seconds after · solid shape = manoeuvre outcome ·
-      hollow square = straight-line flight end, on the same colour ladder · arrow = takeoff,
-      red u-turn = a failed attempt. A starred jibe needs both its chips: hide its outcome
-      and the star goes with it. Tap either figure to move the playhead; tap a mark —
-      or a flown stretch of track — for which flight it belongs to. Zoomed in, a drag on the
-      map pans it.</p>`;
+      speed strip. Chevrons point the way you were riding.</p>
+      <p class="legend-note">Star = a clean jibe. You flew it through and carried your speed.
+      No touchdown and no fall in the seconds after.</p>
+      <p class="legend-note">Solid shape = manoeuvre outcome. Hollow square = straight-line
+      flight end, on the same colour ladder. Arrow = takeoff. Red u-turn = a failed
+      attempt.</p>
+      <p class="legend-note">A starred jibe needs both its chips. Hide its outcome and the
+      star goes with it.</p>
+      <p class="legend-note">Tap either figure to move the playhead. Tap a mark or a flown
+      stretch of track to see which flight it belongs to. Zoomed in, a drag on the map pans
+      it.</p>`;
 
   host.onclick = (ev) => {
     if (onZoomButton(ev)) return;

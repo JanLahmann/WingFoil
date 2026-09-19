@@ -1281,8 +1281,10 @@ function footnote(turn, end, figure) {
       + "It would read lower at the low point.");
     lines.push(`The bands under the strip are the engine's windows. "Entry" is the ${entryS} `
       + `s before the sweep, where the entry speed is the maximum. "Sweep" is where the `
-      + `heading turned. The low point is searched to ${minLagS} s past the sweep, so it can `
-      + `sit after "out". ${outcomeWindowLine(outcomeS)} `
+      + `heading turned.`);
+    lines.push(`The low point is searched to ${minLagS} s past the sweep, so it can `
+      + `sit after "out".`);
+    lines.push(`${outcomeWindowLine(outcomeS)} `
       + "The lighter band inside it ends where you were flying again.");
     if (quietS > 0) {
       lines.push(`A clean jibe also needs ${Math.round(quietS)} s after the sweep with no `
@@ -1304,8 +1306,8 @@ function footnote(turn, end, figure) {
     lines.push('Only "low" is the engine\'s. It is the slowest sample of the off-foil run, '
       + "placed where this window comes nearest it.");
     lines.push('"In" is the fastest sample of the entry window. "Out" is where the speed came '
-      + "back to the engine's flying-again threshold. Both are read off the drawn line. "
-      + "A flight end record holds no entry or exit speed of its own.");
+      + "back to the engine's flying-again threshold. Both are read off the drawn line.");
+    lines.push("A flight end record holds no entry or exit speed of its own.");
     lines.push("Speed here is the manoeuvre channel, derived from position. "
       + "The GPS Doppler speed the records use is smoothed. It would read differently.");
     if (end.borderline) {

@@ -114,8 +114,8 @@ export async function showTrends(saved) {
     } catch (err) {
       for (const host of hosts()) {
         host.innerHTML = `<p class="note">Could not aggregate the library: ${esc(err.message)}
-          <br><br>Records and trends need the Python runtime; the library list itself does
-          not, so your sessions are still there and still openable.</p>`;
+          <br><br>Records and trends need the Python runtime. The library list does not, so
+          your sessions are still there and still openable.</p>`;
       }
       return;
     }
@@ -165,14 +165,13 @@ function draw(agg, trendAgg = agg) {
   records.innerHTML = `
     <h3 class="sub-head">Speed records</h3>
     <p class="muted small">Each record links back to the session it was set in, and to the
-      exact window inside it — the provenance is in every analysis document under
+      exact window inside it. The provenance is in every analysis document under
       <code>records.windows</code>.</p>
     <div class="table-scroll"><table id="records-table"></table></div>
     <h3 class="sub-head">Session records</h3>
-    <p class="muted small">All-time bests that are not speeds — the afternoons themselves.
-      No certification applies here: a degraded recording can misreport a speed, but the
-      number of jibes it holds and the minutes it lasted are not claims its speed channel
-      makes.</p>
+    <p class="muted small">All-time bests that are not speeds, the afternoons themselves.
+      No certification applies here. A degraded recording can misreport a speed. Its jibe
+      count and its minutes stay true.</p>
     <div class="table-scroll"><table id="session-records-table"></table></div>`;
   // r3-w1: the record tables are filled here, before the range can cut the page short.
   // They are all-time on both surfaces, so a range that holds nothing must not empty them.
@@ -192,13 +191,14 @@ function draw(agg, trendAgg = agg) {
     <h3 class="sub-head">Periods</h3>
     <p class="muted small">A trip, a month or a season, each with the same block of numbers.
       A trip is one spot with no gap wider than ${esc(String(GAP_DAYS))} days and at least
-      two sessions — a holiday, found rather than filed. Rates over a period divide the
-      period's own totals: they are not the average of the sessions' own.</p>
+      two sessions.</p>
+    <p class="muted small">Rates over a period divide the period's own totals. They are not
+      the average of the sessions' own.</p>
     <div id="period-custom"></div>
     <div id="period-groups"></div>
     <h3 class="sub-head">Session by session</h3>
     <p class="muted small">Oldest first. Click a point to open that session. A gap in a line
-      is a session where the value could not be measured — not a zero.</p>
+      is a session where the value could not be measured. It is not a zero.</p>
     <div id="trend-charts"></div>`;
 
   renderTotals(el("trend-totals"), trendAgg.totals);
@@ -332,7 +332,7 @@ function renderSessionRecords(table, records) {
 const GAP_DAYS = 3;
 
 const GROUPS = [
-  ["trips", "Trips", "Spells at one spot — a holiday the library noticed."],
+  ["trips", "Trips", "Spells at one spot, close together in time."],
   ["months", "Months", "Calendar months, on the day the rider had."],
   ["seasons", "Seasons", "1 April to 31 March, so a February session counts "
     + "towards the winter it belongs to."],
@@ -375,7 +375,7 @@ function renderPeriods(host, periods) {
       ${rows.map(periodRow).join("")}</div>`);
   }
   host.innerHTML = parts.join("")
-    || `<p class="note">No period has a date to sit on yet — a session needs a recorded
+    || `<p class="note">No period has a date to sit on yet. A session needs a recorded
         start before it can belong to a month.</p>`;
 }
 
@@ -571,7 +571,8 @@ function drawWeeks(host, weeks) {
   const note = document.createElement("p");
   note.className = "muted small";
   note.textContent = `${ridden} of ${weeks.length} weeks on the water. `
-    + "Weeks start on Monday (ISO-8601), in the session's own local time.";
+    + "Weeks start on Monday, the ISO-8601 week. "
+    + "Each session counts in its own local time.";
   box.appendChild(note);
 
   const figure = box.querySelector(".figure");

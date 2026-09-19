@@ -128,7 +128,7 @@ export function keyMetrics(g) {
 export function clockNoteFor(meta) {
   if (meta.utcOffsetS === null || meta.utcOffsetS === undefined
       || meta.utcOffsetSource === "device") {
-    return " · no timezone in this file — times shown on your own clock";
+    return " · no timezone in this file, times shown on your own clock";
   }
   return meta.utcOffsetSource === "longitude"
     ? " · times estimated from the track's position"
@@ -160,7 +160,7 @@ function renderSummary(result, isExample = false) {
   // is reserved for what the *file* is, not for what it is not.
   if (isExample) {
     badges.push(["Example session", false,
-                 "The bundled demonstration session — not your own data"]);
+                 "The bundled demonstration session. Not your own data."]);
   }
   if (meta.discipline) badges.push([meta.discipline, true]);
   // Beside the discipline badge and never instead of it: the badge says what the *recording*
@@ -175,12 +175,12 @@ function renderSummary(result, isExample = false) {
   // about the rider rather than a note about the file. The title carries the detail.
   badges.push([{ a: "CleanJibe recording", b: "measured speed", c: "limited data" }[meta.sourceClass],
                meta.sourceClass === "a",
-               { a: "Recorded by the CleanJibe watch app — every metric available",
-                 b: "The recording carries its own speed channel — everything but pump and "
-                    + "takeoff effort",
-                 c: "A GPX, a TCX without a speed channel, or another source with none — "
-                    + "speed records are estimated from positions and uncertified, and "
-                    + "there is no pump data"
+               { a: "Recorded by the CleanJibe watch app. Every metric available.",
+                 b: "The recording carries its own speed channel. Everything but pump and "
+                    + "takeoff effort.",
+                 c: "A GPX, a TCX without a speed channel, or another source with none. "
+                    + "Speed records are estimated from positions and uncertified. "
+                    + "There is no pump data."
                }[meta.sourceClass]]);
   if (meta.sport) badges.push([meta.sport, false]);
   if (caps.hasAccel) badges.push(["accelerometer", false]);
@@ -393,12 +393,17 @@ function renderTurns(table, caption, g, v, meta) {
     ? `flew through and held their speed${quiet}`
     : `flew through, held ≥ ${threshold} of entry speed and never dropped below ${floor}${quiet}`;
   const o = s.outcomes;
+  // voice: skip — a strip of counts, one value per segment, in the spec register of
+  // docs/voice.md. It is read as a table of numbers rather than as a sentence, so the
+  // sentence rules are handed back to the code here. The punctuation still obeys them:
+  // no dash and no bracket, the middot separates and the comma groups.
   caption.textContent =
-    `${s.turnsCounted} counted (${s.jibes} jibes, ${s.tacks} tacks), ${s.rejected} bear-aways rejected · ` +
-    `${o.flewThrough} flew through ` +
-    `(${pct(100 * o.flewThrough / (s.turnsCounted || 1))}), ` +
+    `${s.turnsCounted} counted · ${s.jibes} jibes, ${s.tacks} tacks · ` +
+    `${s.rejected} bear-aways rejected · ` +
+    `${o.flewThrough} flew through, ` +
+    `${pct(100 * o.flewThrough / (s.turnsCounted || 1))} of them · ` +
     `${o.touchdown} touchdown, ${o.fellIn} fell in · ` +
-    `${s.jibesSuccessful} clean jibes — jibes that ${cleanRule} · ` +
+    `${s.jibesSuccessful} clean jibes · clean: ${cleanRule} · ` +
     `port/starboard ${s.port}/${s.starboard}`;
 
   // `score` is a *number* — the share of the entry speed the turn held — and stays: it is

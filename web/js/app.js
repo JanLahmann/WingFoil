@@ -268,10 +268,12 @@ export async function analyzeFile(file, { isExample = false, source = "drop" } =
     // engine 0.9.0 a GPX is a way out, and a TCX now too — so the formats people used to be
     // turned away with are offered here instead, with their limits named, because a rider
     // who brings one should learn what it costs here rather than from a missing section.
-    fail(`"${name}" is not a .fit, .gpx, .tcx or .zip file. CleanJibe reads the .fit file ` +
-         `a watch records — from the CleanJibe watch app, Garmin's own Windsurf profile, ` +
-         `or another wingfoil Connect IQ app. A .gpx or .tcx works too: no pump data, and ` +
-         `unless the file carries its own speed channel the speed records are estimates.`);
+    fail(`"${name}" is not a .fit, .gpx, .tcx or .zip file. ` +
+         `CleanJibe reads the .fit file a watch records. ` +
+         `That is the CleanJibe watch app, Garmin's own Windsurf profile, or another ` +
+         `wingfoil Connect IQ app.\n\n` +
+         `A .gpx or .tcx works too. It carries no pump data. ` +
+         `Speed records are estimates unless the file has its own speed channel.`);
     return;
   }
   state.busy = true;

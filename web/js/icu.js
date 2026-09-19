@@ -88,7 +88,8 @@ async function listActivities(key, athlete, analyzeBuffer) {
     const res = await fetch(url, { headers: { Authorization: authHeader(key) } });
     if (res.status === 401 || res.status === 403) {
       track("app-icu-sync-failed", { reason: "key" });
-      return say("intervals.icu rejected the key (401/403). Check it and try again.", true);
+      return say("intervals.icu rejected the key. That is HTTP 401 or 403. "
+                 + "Check it and try again.", true);
     }
     if (!res.ok) {
       track("app-icu-sync-failed", { reason: "http" });
@@ -132,7 +133,7 @@ async function fetchAndAnalyze(key, id, name, analyzeBuffer) {
                             { headers: { Authorization: authHeader(key) } });
     if (!res.ok) return say(`Download failed: HTTP ${res.status}.`, true);
     const buffer = await res.arrayBuffer();
-    say(`Loaded ${(buffer.byteLength / 1024).toFixed(0)} KB — analyzing locally.`);
+    say(`Loaded ${(buffer.byteLength / 1024).toFixed(0)} KB. Analyzing locally.`);
     // web_entry unwraps gzip/zip itself, so hand the bytes over untouched.
     analyzeBuffer(buffer, `${id}.fit`);
   } catch (err) {
@@ -148,20 +149,22 @@ function corsFallback(err) {
   say("intervals.icu could not be reached from the browser.", true);
   el("icu-results").innerHTML = `
     <p class="note" style="margin-top:12px">
-      This is almost certainly <strong>CORS</strong>: intervals.icu does not allow its API to be
-      called from another website, and a zero-server app has no proxy to route the call through.
-      Your key was not sent anywhere else, and nothing was uploaded.
+      This is almost certainly <strong>CORS</strong>. intervals.icu does not allow its API to
+      be called from another website. A zero-server app has no proxy for the call. Your key
+      was not sent anywhere else, and nothing was uploaded.
       <br><br>
-      <strong>Do this instead — it takes 20 seconds:</strong>
+      <strong>Do this instead. It takes 20 seconds:</strong>
     </p>
     <ol class="note" style="margin-top:8px">
       <li>Open the activity on <a href="https://intervals.icu/" rel="noopener" target="_blank">intervals.icu</a>.</li>
-      <li>Use the <em>⋯</em> menu → <em>Download original file</em> — the file your watch uploaded, not intervals.icu's own CSV or GPX export.</li>
+      <li>Use the <em>⋯</em> menu → <em>Download original file</em>. Take the file your watch uploaded, not intervals.icu's own CSV or GPX export.</li>
       <li>Drop that file onto the drop zone at the top of this page.</li>
     </ol>
-    <p class="note" style="margin-top:8px">The original is what this engine needs: for a Garmin
-      it is a FIT, and only that carries the developer fields and the wrist accelerometer
-      stream. A Polar, Suunto or Coros original is usually a .gpx or .tcx, and those work
-      too — with estimated speed records unless the file carries its own speed channel.</p>
+    <p class="note" style="margin-top:8px">The original is what this engine needs. For a
+      Garmin that is a FIT. Only a FIT carries the developer fields and the wrist
+      accelerometer stream.</p>
+    <p class="note" style="margin-top:8px">A Polar, Suunto or Coros original is usually a
+      .gpx or .tcx. Those work too. Speed records are estimates unless the file carries its
+      own speed channel.</p>
     <p class="note" style="margin-top:8px">Browser said: <code>${esc(err?.message || err)}</code></p>`;
 }

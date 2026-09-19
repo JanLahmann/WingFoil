@@ -63,7 +63,7 @@ async function opfsBackend() {
 
   return {
     kind: "opfs",
-    label: "OPFS (private browser filesystem)",
+    label: "OPFS, the browser's own private filesystem",
     write: async (name, data) => {
       const handle = await (await opfsDir()).getFileHandle(name, { create: true });
       const w = await handle.createWritable();
@@ -116,7 +116,7 @@ async function idbBackend() {
   }
   return {
     kind: "idb",
-    label: "IndexedDB (OPFS unavailable in this browser)",
+    label: "IndexedDB, because this browser has no OPFS",
     write: (name, data) => idbRequest(db, "readwrite", (s) => s.put(new Blob([data]), name)),
     read: async (name) => (await idbRequest(db, "readonly", (s) => s.get(name))) || null,
     remove: (name) => idbRequest(db, "readwrite", (s) => s.delete(name)),

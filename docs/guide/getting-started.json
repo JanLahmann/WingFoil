@@ -47,7 +47,7 @@
     },
     "troubleshooting": {
       "title": "If something does not work",
-      "lede": "Try the line that matches. Then say how it went, either way. A fix that took you 3 attempts is worth hearing about."
+      "lede": "Try the line that matches. Then tell us how it went, either way."
     },
     "report": {
       "title": "What a good report says",
@@ -321,7 +321,7 @@
       },
       {
         "term": "\"Nothing to import\" from Apple Health",
-        "detail": "The workout is not in Health yet, or CleanJibe may not read it: iPhone Settings → Health → Data Access & Devices → CleanJibe, everything on."
+        "detail": "The workout is not in Health yet, or CleanJibe may not read it. Check iPhone Settings → Health → Data Access & Devices → CleanJibe, everything on."
       },
       {
         "term": "The watch says NO GPS for more than a minute",
@@ -329,7 +329,7 @@
       },
       {
         "term": "The session never reaches the iPhone",
-        "detail": "Open CleanJibe on the iPhone and leave it in front of you for a minute, Bluetooth on, the watch next to it."
+        "detail": "Open CleanJibe on the iPhone and leave it in front of you for a minute. Bluetooth on, the watch next to it."
       },
       {
         "term": "CleanJibe is not offered in Apple's Watch app",
@@ -372,7 +372,7 @@
       },
       {
         "term": "Anything odd",
-        "detail": "A permission you were never asked for, a \"Nothing to import\" screen, a NO GPS that never cleared, a crash, wording you did not understand."
+        "detail": "A permission you were never asked for. A \"Nothing to import\" screen. A NO GPS that never cleared. A crash. Wording you did not understand."
       }
     ]
   }

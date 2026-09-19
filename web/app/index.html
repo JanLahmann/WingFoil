@@ -322,7 +322,10 @@
         Garmin <code>.fit</code> files work. That means the CleanJibe watch app, Garmin's own
         Windsurf profile, or another wingfoil Connect IQ app.
         <code>.gpx</code> and <code>.tcx</code> work as well. That is
-        what a Polar, Suunto or Coros export usually is. There's no pump data in either.
+        what a Polar, Suunto or Coros export usually is.
+      </p>
+      <p class="drop-what">
+        There's no pump data in either.
         Unless the file carries its own speed channel, the speed records are estimates. Pump
         strokes and takeoff effort need the CleanJibe watch app. Everything else works from
         any of them.
@@ -369,9 +372,9 @@
          cannot read, and "Download original file" is the one instruction that helps. -->
     <p class="muted small">Most often the file is not a FIT recording. Or it is a converted
       export rather than the original file from the watch. On intervals.icu or Garmin
-      Connect, choose <em>Download original file</em>. If the message below counts
-      recordings, the <code>.zip</code> holds more than one. Unzip it and drop the single
-      session you want.</p>
+      Connect, choose <em>Download original file</em>.</p>
+    <p class="muted small">If the message below counts recordings, the <code>.zip</code>
+      holds more than one. Unzip it and drop the single session you want.</p>
     <pre id="error-text"></pre>
   </section>
 
@@ -382,9 +385,12 @@
     <p class="muted small">
       Saved sessions are written to this browser's <strong>private per-origin storage</strong>.
       That is OPFS, or IndexedDB where OPFS is unavailable. They are not synced, not backed up and
-      not visible to any other site. <strong>Clearing this site's data, or using a private
-      window, deletes them.</strong> Use <em>Download all</em>, or the per-row
-      <code>.fit</code> / <code>.json</code> buttons, to keep a copy you own.
+      not visible to any other site.
+    </p>
+    <p class="muted small">
+      <strong>Clearing this site's data, or using a private window, deletes them.</strong>
+      Use <em>Download all</em>, or the per-row <code>.fit</code> / <code>.json</code>
+      buttons, to keep a copy you own.
     </p>
   </section>
 
@@ -679,9 +685,12 @@
     <h2>intervals.icu <span class="tag">optional</span></h2>
     <p class="muted">
       If your Garmin activities already sync to intervals.icu, pull a session straight from
-      there instead of exporting it by hand. Your API key is stored <strong>only in this
-      browser</strong> and is sent <strong>only to <code>api.intervals.icu</code></strong>.
-      Never to this site's host, never anywhere else.
+      there instead of exporting it by hand.
+    </p>
+    <p class="muted">
+      Your API key is stored <strong>only in this browser</strong>. It is sent
+      <strong>only to <code>api.intervals.icu</code></strong>. Never to this site's host,
+      never anywhere else.
     </p>
     <div class="icu-form">
       <label>Athlete ID <input id="icu-athlete" type="text" value="0" placeholder="0 = the key's own athlete" autocomplete="off" spellcheck="false"></label>
@@ -1055,12 +1064,15 @@
     <a href="/privacy/">Privacy</a> ·
     <a href="/impressum/">Impressum</a>
   </p>
-  <p data-copy="feedback-invitation">
+  <p>
     A verdict you disagree with, or something you want this to do next?
     <a href="mailto:info@cleanjibe.org?subject=CleanJibe%20feedback&amp;body=What%20happened%2C%20or%20what%20you%20would%20like%3A%0A%0A%0AWhat%20you%20expected%20instead%3A%0A%0A%0AWhich%20session%2C%20its%20date%20and%20spot%2C%20if%20it%20is%20about%20one%3A%0A%0AYour%20watch%20and%20phone%20%28model%2C%20software%20version%29%3A%0A%0ACleanJibe%20version%20%28Settings%2C%20About%29%3A%0A%0AIdeas%20and%20wishes%20are%20as%20welcome%20as%20bugs.%20Attach%20a%20screenshot%20or%20the%20session%27s%20.fit%20file%20if%20you%20can.%0A"
        data-umami-event="footer-feedback-mail">info@cleanjibe.org</a>, or
     <strong>Menu &rarr; Support &amp; ideas</strong> in the iPhone app, which fills the facts
-    in for you. Ideas and wishes are as welcome as bugs. An
+    in for you.
+  </p>
+  <p data-copy="feedback-invitation">
+    Ideas and wishes are as welcome as bugs. An
     <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener">issue</a> works too,
     and the next rider can read it.
   </p>
