@@ -133,6 +133,7 @@ module WindMenu {
             menu.addItem(new WatchUi.MenuItem(AppSettings.COMPASS[i],
                 deg.toString() + "°", deg, null));
         }
+        LinkProbe.addMenuItem(menu);   // dev stream only; a no-op in beta and release
         return menu;
     }
 }
@@ -153,6 +154,9 @@ class WindMenuDelegate extends WatchUi.Menu2InputDelegate {
 
     function onSelect(item as WatchUi.MenuItem) as Void {
         var id = item.getId();
+        if (LinkProbe.handleMenu(id)) {
+            return;                    // the dev build's link probe, docs/direct-transfer.md
+        }
         AppSettings.storeWindDirection(id instanceof Lang.Number ? id as Number : -1);
         for (var i = 0; i < _pops; i++) {
             WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
