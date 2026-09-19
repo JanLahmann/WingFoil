@@ -207,6 +207,29 @@ struct TrendsView: View {
                    tone: Color.accentColor,
                    value: \.cleanJibesPerHour,
                    note: "Clean jibes per hour of session time.")
+        // **Rates are additive**: CPH keeps the front screen, and the two beside it answer
+        // the other two questions a rider asks about an afternoon — did I get away with the
+        // jibes (JPH), and how busy was it (TPH). Three lines in the order he reads them,
+        // the same three the analyzer draws (docs/algorithms.md, "Session rates"). Both
+        // numerators are dry: a swim is not a maneuver made.
+        TrendChart(title: "JPH", unit: "jibes / h", points: points,
+                   tone: Color.accentColor,
+                   value: \.jibesPerHour,
+                   note: "Jibes you sailed out of, per hour. Swims do not count.")
+        TrendChart(title: "TPH", unit: "turns / h", points: points,
+                   tone: Color.accentColor,
+                   value: \.turnsPerHour,
+                   note: "Every counted turn you stayed dry through, per hour.")
+        // The one speed line on the page, in knots like every other speed in both apps.
+        // The caption names the sessions whose speed came from positions rather than from a
+        // speed channel: the point is drawn, because it is still his afternoon, and it is
+        // said to be unverifiable, because that is where a high reading does the most damage
+        // (the analyzer draws the same point as an open ring).
+        TrendChart(title: "Best 2 s", unit: "kn", points: points,
+                   tone: DesignTokens.Phase.flying,
+                   value: \.best2sKn,
+                   uncertified: { !$0.certified },
+                   note: "Your quickest two seconds of the session.")
         TrendChart(title: "Pumps to takeoff", unit: "strokes", points: points,
                    tone: DesignTokens.Effort.window,
                    value: \.avgPumpsToTakeoff,
@@ -339,10 +362,16 @@ private struct TrendChart: View {
     var domain: ClosedRange<Double>?
     var reference: Double?
     var note: String?
+    /// Only a **speed** series sets this. A class-(c) recording differentiated its speed
+    /// from positions, which reads high, so the chart says how many of its points came from
+    /// one — the same claim, in the same word, the Records table makes about an all-time
+    /// best. The points are still drawn: they are still his afternoons.
+    var uncertified: ((TrendPoint) -> Bool)?
 
     init(title: String, unit: String, points: [TrendPoint], tone: Color,
          value: @escaping (TrendPoint) -> Double?, domain: ClosedRange<Double>? = nil,
-         reference: Double? = nil, note: String? = nil) {
+         reference: Double? = nil, uncertified: ((TrendPoint) -> Bool)? = nil,
+         note: String? = nil) {
         self.title = title
         self.unit = unit
         self.points = points
@@ -350,11 +379,18 @@ private struct TrendChart: View {
         self.value = value
         self.domain = domain
         self.reference = reference
+        self.uncertified = uncertified
         self.note = note
     }
 
     private var series: [(date: Date, value: Double)] {
         points.compactMap { point in value(point).map { (point.date, $0) } }
+    }
+
+    /// How many of the points actually drawn carry a value no recording could certify.
+    private var uncertifiedCount: Int {
+        guard let uncertified else { return 0 }
+        return points.filter { value($0) != nil && uncertified($0) }.count
     }
 
     var body: some View {
@@ -385,6 +421,13 @@ private struct TrendChart: View {
                         .foregroundStyle(.secondary)
                 } else if let note {
                     Text(note).font(.caption2).foregroundStyle(.secondary)
+                }
+                if uncertifiedCount > 0 {
+                    Text(String(uncertifiedCount) + " of " + String(series.count)
+                         + " had no speed channel. That speed came from positions and "
+                         + "reads high, so it is uncertified.")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
                 }
             }
         }
