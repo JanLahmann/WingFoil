@@ -210,6 +210,19 @@ export const WELCOME = {
 export const WHATS_NEW = [
   {
     "version": "0.15.0",
+    "build": 89,
+    "channel": "beta",
+    "date": "2026-09-19",
+    "title": "A year in one sync",
+    "lines": [
+      "A year of another rider's recordings syncs without a crash. Six traps in the file reader are closed.",
+      "A file cut off mid-download, or a broken clock, is refused with its name instead of taking the app down.",
+      "The sync shows which file it is on, and many failures become one message.",
+      "Please sync your intervals.icu again and tell us if anything still falls over."
+    ]
+  },
+  {
+    "version": "0.15.0",
     "build": 81,
     "channel": "beta",
     "date": "2026-09-19",
