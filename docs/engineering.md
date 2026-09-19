@@ -6,6 +6,11 @@ The weakness has one shape: **nearly everything that can say no is run by hand.*
 tests (2 m 29 s) and 998 Swift tests (86 s) are green today, and no machine runs them.
 Every action below fits in a day.
 
+**What has been done since** is at the foot of this file, "Acted on, 19 Sep 2026": items 1, 4,
+5, 6 and 9 of the top ten, which are the ones that touch no product code. The findings table
+below is the audit as it was written and is left that way on purpose — a finding edited into
+agreement with the fix is no longer evidence that the fix was needed.
+
 ## Findings
 
 | Area | In place | Gap | Risk | Action |
@@ -43,3 +48,229 @@ Every action below fits in a day.
 Pull-request review, coverage targets, a staging environment and a formatter are standard
 practice and wrong here: one owner, and a codebase whose contract is a golden file rather
 than a line count. The gap is CI and release safety, not ceremony.
+
+---
+
+# Acted on, 19 Sep 2026
+
+Top-ten items 1, 4, 5, 6 and 9 — everything that touches no product code. Items 2 (scrub the
+corpus), 3 (the README's "Getting started"; the `Makefile` itself is written), 7 (MetricKit),
+8 (the CIQ SDK pin) and 10 (Dynamic Type) are still open.
+
+## What CI runs — `.github/workflows/checks.yml`
+
+On every push and every pull request, four jobs, each named so a red one is a finding rather
+than a search:
+
+| job | runner | what | roughly |
+|---|---|---|---|
+| `lab` | `ubuntu-latest` | `uv sync --locked` + `uv run pytest -q` in `lab/` | 3 min |
+| `kit` | `macos-latest` | `swift test` in `ios/WingFoilKit` | 4 min |
+| `web` | `ubuntu-latest` | `verify_links.py` (which drives `verify_copy`, `verify_app_shell`, `verify_unique`, `check_voice` and `check_duplicates` in process), then `check_voice.py`, `check_duplicates.py`, `check_release_copy.py` and `bundle_lab.py --check` by name | 1 min |
+| `repo` | `ubuntu-latest` | `tools/check_release.py` and `make -n all` | seconds |
+
+uv is pinned to `0.11.19` — the version that wrote `lab/uv.lock`, because a lock file is only
+a pin if the resolver reading it is one too — Python to 3.12, and the uv cache is keyed on
+`lab/uv.lock`. `--locked` rather than a bare `uv sync`: it fails when `pyproject.toml` has
+moved and the lock has not, instead of quietly repairing the drift in CI and nowhere else.
+
+The **Xcode pin is soft**: the job selects `Xcode_26.0.app` when the runner image has it (the
+kit is built locally with Xcode 26.6 / Swift 6.3 under `SWIFT_VERSION: "6.0"` and strict
+concurrency, so the toolchain is load-bearing) and otherwise carries on with the image default
+and prints a `::warning::` naming the pin and what was installed. A hard pin to an image that
+has not shipped that Xcode yet is a red build for a reason that has nothing to do with the
+code; the warning makes the drift visible and one line fixes it.
+
+**The macOS runner is the only cost.** GitHub bills macOS minutes at 10× the Linux rate and
+counts them against a much smaller free allowance — but that is for *private* repositories,
+and this one is public, where standard runners are free with no minute cap. What a public repo
+does pay is concurrency: macOS jobs queue against a per-account limit of five, so a burst of
+pushes serialises. If the repo is ever made private, the `kit` job is the line to look at
+first — roughly 4 min × 10 = 40 billable minutes per run against the 2,000-minute free tier.
+
+**The Pages deploy** (`pages.yml`) is unchanged except for one added job: `gate`, which calls
+`checks.yml` as a reusable workflow, and `deploy` now `needs: [check, gate]`. So the site
+cannot ship on the run that first discovers a break — the audit's headline risk.
+
+`needs:` and not a `workflow_run` trigger, deliberately. `workflow_run` would fire the deploy
+after Checks finished on `main`, which loses this workflow's `paths:` filter (Checks runs on
+every push, so a docs-only commit would redeploy the site), checks out the branch head rather
+than the pushed commit, and splits one ship across two runs. Calling the workflow keeps
+deploy-on-push exactly as it was, in one run that reads top to bottom. The gate passes
+`deploy-gate: true`, which skips the `kit` job: `swift test` gates nothing the site ships, and
+running the only paid-rate runner twice per web push buys no answer. The kit still runs on the
+same push, in Checks' own run.
+
+## Branch protection — one command, Jan's to run
+
+Not run from here. It needs admin on the repository, and turning on a rule that can block a
+release is the owner's click.
+
+```sh
+gh api -X PUT repos/JanLahmann/WingFoil/branches/main/protection \
+  -H "Accept: application/vnd.github+json" \
+  -F "required_status_checks[strict]=true" \
+  -f "required_status_checks[checks][][context]=lab — pytest" \
+  -f "required_status_checks[checks][][context]=kit — swift test" \
+  -f "required_status_checks[checks][][context]=web — verifiers and copy" \
+  -f "required_status_checks[checks][][context]=repo — release check and the Makefile" \
+  -F "enforce_admins=false" \
+  -F "required_pull_request_reviews=null" \
+  -F "restrictions=null" \
+  -F "allow_force_pushes=false" \
+  -F "allow_deletions=false" \
+  -F "required_conversation_resolution=false" \
+  -F "required_linear_history=false"
+```
+
+The four checks must pass, `main` cannot be force-pushed or deleted, and **no review is
+required** — `required_pull_request_reviews=null` keeps the one-owner habit of pushing
+straight to `main` that this audit's own "Deliberately not recommended" defends.
+`enforce_admins` is **false** on purpose: it is the owner's bypass, for the release that has
+to go out while a runner is queued. Undo the whole rule with
+`gh api -X DELETE repos/JanLahmann/WingFoil/branches/main/protection`.
+
+The four context names are the jobs' `name:` values in `checks.yml`. Rename a job and this
+command has to be re-run, or the rule waits for a check that never reports.
+
+## Tags — one per shipped thing
+
+643 commits and no tag, so no shipped build maps to a commit and nothing can be bisected
+against a rider's report. The rule, from now on and retrospectively:
+
+| what shipped | tag | read from |
+|---|---|---|
+| an iPhone build uploaded to App Store Connect | `ios/<marketing>-<build>`, e.g. `ios/0.15.0-77` | `ios/project.yml` |
+| a watch `.iq` uploaded to a Connect IQ listing | `garmin/<version>`, e.g. `garmin/0.9.13` | `garmin/manifest.xml` |
+| a site deploy that bumped the service worker | `web/v<NN>`, e.g. `web/v76` | `web/sw.js` |
+
+Annotated tags, created at the commit that produced the upload, never typed by hand:
+
+```sh
+make tag-ios                 # ios/<MARKETING_VERSION>-<CURRENT_PROJECT_VERSION>
+make tag-ios VERSION=1.0.0   # …for a release-channel upload, whose line is its own
+make tag-garmin              # garmin/<manifest version>
+make tag-web                 # web/<sw.js VERSION>
+git push origin <tag>        # Jan's, like every other push here
+```
+
+Each target **refuses on a dirty tree**, and the two that name a shipped binary run
+`tools/check_release.py` first: a tag on a commit that is not what was uploaded is worse than
+no tag, because it will be believed. Dev-only uploads (`0.9.14-dev1`, the private listing) get
+no tag — they are not a shipped thing.
+
+### The tags that should exist today
+
+Recovered from `garmin/store/listing.md` (version history), `docs/copy/whats-new.json` (every
+iPhone build with release notes) and `web/sw.js` (the service worker's version line). **Not
+created from here** — a retrospective tag is a claim about which commit was uploaded, and for
+a row whose commit column says "—" the only person who can confirm that is Jan.
+
+**iPhone** — thirteen builds, all on the 0.15.0 line (the release channel's 1.0.0 has not
+shipped yet), newest first:
+
+```
+ios/0.15.0-77  ios/0.15.0-76  ios/0.15.0-75  ios/0.15.0-74  ios/0.15.0-73
+ios/0.15.0-72  ios/0.15.0-53  ios/0.15.0-51  ios/0.15.0-49  ios/0.15.0-47
+ios/0.15.0-45  ios/0.15.0-43  ios/0.15.0-41
+```
+
+**Watch** — seventeen store versions. Nine carry a commit in `listing.md` and can be tagged
+without asking anyone; the rest need Jan to name the commit.
+
+```
+with a commit:  garmin/0.9.7 347669a   garmin/0.9.6 459ae1d   garmin/0.9.3 16568d5
+                garmin/0.9.2 2b3bc66   garmin/0.9.1 b891e08   garmin/0.9.0 e2cadfe
+                garmin/0.8.2 3ccec57   garmin/0.8.1 6619d4f   garmin/0.8.0 5678a2f
+commit unknown: garmin/0.9.13  garmin/0.9.12  garmin/0.9.11  garmin/0.9.10
+                garmin/0.9.9   garmin/0.9.8   garmin/0.9.5   garmin/0.9.4
+```
+
+The data field's four store versions (`0.9.5`, `0.9.4` `8d014dc`, `0.9.3` `442ffbe` and
+`0.1.0` `cc64066`) are dormant per ADR-020 and get `garmin/field/<version>` if they are tagged
+at all.
+
+**Site** — one tag today, `web/v76`, at the commit that set `const VERSION = "v76"` in
+`web/sw.js`. The earlier versions are recoverable from that line's history with `git log -S`,
+and are worth tagging only as far back as anyone would bisect.
+
+## The release check — `tools/check_release.py`
+
+`make release-check`, first in `make all` and a job in CI. Stdlib only, instant. It holds the
+version sites together and turns docs/testing.md's four channel greps into code:
+
+- **iOS** — `CURRENT_PROJECT_VERSION` identical at every site in `ios/project.yml`, and one
+  `MARKETING_VERSION` outside the release target (which carries its own 1.0.x line).
+- **Watch** — one version across `manifest.xml`, `manifest-beta.xml` and `manifest-dev.xml`
+  (the same rule `package.sh` enforces at build time, said before the build).
+- **Engine** — `lab/src/wingfoil_lab/__init__.py`, the web bundle's copy, the kit's
+  `AnalysisEngine.version`, `docs/algorithms.md`'s head and `docs/channels.md`'s analysis
+  table, all equal.
+- **Flags** — the release target defines no `SWIFT_ACTIVE_COMPILATION_CONDITIONS`; the beta
+  configurations say `BETA`, the dev ones `BETA DEV TUNING`.
+- **Plist** — no `NSHealth` / `NSLocation` / `NSBluetooth` / `gpx` / `tcx` in the generated
+  `WingFoil/Info-Release.plist` (skipped, with a note, until `make ios-project` has run).
+- **Marks** — the release inherits `AppIcon` / `SplashMark`, beta takes `-Beta`, dev `-Dev`.
+- **Strings** — with `--binary <path>`, the two door strings docs/testing.md pins
+  (`version.json`, "Sync the library with iCloud Drive") must be absent from a release
+  binary. Without it, the source-side stand-in: no `#if BETA|DEV|TUNING` anywhere in
+  `WingFoilKit`, because the kit compiles everything in every channel (CLAUDE.md) and a gate
+  there would be a door the release cannot be trusted to lack.
+
+It found one thing on the tree it was written against: `docs/channels.md` said engine 0.18.0
+where every other site said 0.20.0. Fixed.
+
+## The rules reconciled — CLAUDE.md
+
+Two of the four "never commit" rules were already broken, which is the worst state for a list
+read at the start of every session. One decision per file:
+
+- **`ios/WingFoilKit/Package.resolved` — the rule was wrong, and is gone.** This is an
+  application repository, not a library: the resolved file is what pins GRDB 7.11.1,
+  FitFileParser 1.5.2 and ZIPFoundation 0.9.20 to the versions the shipped builds were
+  compiled against, and this audit's own Pinning row credits it as committed. The rule said
+  never; the tree said always; the tree was right.
+- **`garmin/screenshots/source/ShotsApp.mc` — the rule was right, so the file is untracked.**
+  Its own header says "THROWAWAY screenshot harness. Not shipped, not committed, not
+  referenced by any build." `git rm --cached`, and `.gitignore` now carries the path with the
+  reason, so it cannot come back by accident. The file stays on disk.
+- **"Raw FITs are never committed" — reworded, because the scrubbed corpus is committed on
+  purpose.** `fixtures/sessions/` is in the tree and is what every golden is derived from;
+  what must never be committed is an *unscrubbed* recording (`lab/tools/scrub_fit.py` is the
+  tool, top-ten item 2 is the work still outstanding) and the footage, which is gigabytes and
+  is already ignored path by path.
+
+## ADR statuses
+
+All 26 ADRs now open with a `Status:` line and `docs/decisions.md`'s head says what the four
+words mean. Read out of the prose, not decided afresh: **ADR-009** superseded by ADR-020,
+**ADR-012** retired (the lock has been off since 0.9.11), **ADR-016** narrowed by ADR-018,
+**ADR-003** narrowed by ADR-017 and extended by ADR-023, **ADR-014**'s device list overtaken
+by `docs/channels.md` "Devices", **ADR-011** accepted and since carried out (the app group is
+in `project.yml` for the beta channel), **ADR-026** already carried "Proposed", and the
+remaining nineteen Accepted.
+
+## Two corrections to the audit itself
+
+- The **Tests** row says `ios/project.yml` declares no test target. It does now:
+  `WingFoilTests`, Debug-only, hosted by the beta app target. The row's point survives only
+  for the screenshot automation.
+- The **Tests** row's `compare_speedreader.py` is removed from `docs/testing.md` rather than
+  written: it was planned in `docs/plan.md`, `fixtures/speedreader/` is empty, and the GP3S
+  rules are held by the goldens and `verify_presentation.py`. What remains is a gap in
+  cross-validation against a second implementation, and `docs/testing.md` now says that
+  instead of naming a file that does not exist.
+
+## Still open, in the audit's order
+
+2. Scrub `fixtures/sessions/` with `scrub_fit.py`, regenerate goldens, add `SECURITY.md`.
+3. A real README "Getting started" pointing at the `Makefile`.
+7. MetricKit diagnostics into the feedback mail.
+8. Pin the CIQ SDK. The line in `garmin/tools/package.sh` is the maintainer's to change:
+   `SDK="$HOME/Library/Application Support/Garmin/ConnectIQ/Sdks/$(ls "$HOME/Library/Application Support/Garmin/ConnectIQ/Sdks" | sort | tail -1)/bin"`
+   becomes
+   `SDK="$HOME/Library/Application Support/Garmin/ConnectIQ/Sdks/${CIQ_SDK:-$(ls "$HOME/Library/Application Support/Garmin/ConnectIQ/Sdks" | sort -V | tail -1)}/bin"`
+   — `sort -V` so a future 10.x is not sorted below 9.2.0, and `CIQ_SDK` in the environment to
+   pin the compiler that produced a shipped `.iq`. Record the chosen SDK and the Xcode version
+   in the README.
+10. A `UI_TEXT_SIZE` hook, one Dynamic Type pass, and the language policy as an ADR.

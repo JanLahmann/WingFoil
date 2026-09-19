@@ -1,0 +1,157 @@
+# Everything in this repo that can say no (docs/engineering.md, item 1).
+#
+# ~490 lab tests and ~998 Swift tests were green on an honour system: they existed, they
+# were fast, and no machine ran them. `pages.yml` ran five web guards and nothing else, so
+# the first thing a broken engine met was the deploy that shipped it. This workflow is the
+# other side of that: every command here is already written down in the `Makefile`, which is
+# itself written from CLAUDE.md and web/README.md. It adds no knowledge, only a machine that
+# runs it on every push and every pull request.
+#
+# Four jobs, deliberately separate so a red one names itself in the checks list:
+#
+#   lab   the authoritative Python engine        ubuntu, ~3 min
+#   kit   its Swift twin                         macOS, ~4 min (the only paid-rate runner)
+#   web   the site's verifiers and the copy      ubuntu, seconds
+#   repo  the release check and the Makefile     ubuntu, seconds
+#
+# `pages.yml` calls this workflow (`workflow_call` below) as the gate its `deploy` job needs,
+# so the site cannot ship on the same run that first discovers a break.
+name: Checks
+
+on:
+  push:
+  pull_request:
+  workflow_call:
+    inputs:
+      deploy-gate:
+        description: >-
+          Called from pages.yml as the gate its deploy job needs. It skips the kit job:
+          the site ships the Python engine and static files, so `swift test` gates nothing
+          that is being deployed, and running a macOS job on every web push would double
+          the repo's only paid-rate runner for no answer. The kit still runs on the same
+          push, in this workflow's own run.
+        type: boolean
+        default: false
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Pinned the way the repo pins: `lab/pyproject.toml` asks for >= 3.11 and the two existing
+  # workflows run 3.12, so 3.12 it is everywhere. uv is pinned to the version on the machine
+  # that wrote `lab/uv.lock` (`uv 0.11.19`); a lock file is only a pin if the resolver that
+  # reads it is one too.
+  UV_VERSION: "0.11.19"
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  # ------------------------------------------------------------------------------- the lab
+  # The authoritative engine. `--locked` rather than a bare `uv sync`: it fails when
+  # pyproject.toml has moved and uv.lock has not, which is the drift a lock file exists to
+  # catch and which a plain sync would quietly repair in CI and nowhere else.
+  lab:
+    name: lab — pytest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "lab/uv.lock"
+      - name: Sync the locked environment
+        run: uv sync --locked --project lab --python ${{ env.PYTHON_VERSION }}
+      # `--project lab` from the repo root, not `working-directory: lab` — the two together
+      # would resolve to `lab/lab`.
+      - name: pytest
+        run: uv run --locked --project lab pytest -q
+
+  # ------------------------------------------------------------------------------- the kit
+  # The Swift twin, which re-derives every golden the lab froze. No Xcode project and no
+  # ConnectIQ framework needed, so `swift test` from the package directory is the whole job.
+  #
+  # The Xcode pin is soft on purpose. The kit is built locally with Xcode 26.6 (Swift 6.3)
+  # and `SWIFT_VERSION: "6.0"` with strict concurrency, so the toolchain is load-bearing —
+  # but a hard pin to an image that has not shipped that Xcode yet turns this job red for a
+  # reason that has nothing to do with the code. So: select XCODE_VERSION when the runner
+  # image has it, otherwise carry on with the image default and say so loudly in the log and
+  # in the checks summary. When the warning appears, either the pin or the runner moved, and
+  # one line here fixes it.
+  kit:
+    name: kit — swift test
+    if: ${{ !inputs.deploy-gate }}
+    runs-on: macos-latest
+    env:
+      XCODE_VERSION: "26.0"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: |
+          set -euo pipefail
+          app="/Applications/Xcode_${XCODE_VERSION}.app"
+          if [ -d "$app" ]; then
+            sudo xcode-select -s "$app"
+          else
+            echo "::warning title=Xcode pin missed::Xcode_${XCODE_VERSION}.app is not on $(sw_vers -productVersion); using the image default. Installed: $(ls /Applications | grep -i '^Xcode' | tr '\n' ' ')"
+          fi
+          xcodebuild -version
+          swift --version
+      - name: swift test
+        run: swift test
+        working-directory: ios/WingFoilKit
+
+  # ------------------------------------------------------------------------------ the site
+  # The verifiers `pages.yml` never ran. `verify_links.py` is the big one: it also runs
+  # make_start, make_devices, verify_copy, make_copy_js, verify_app_shell, verify_unique,
+  # check_voice and check_duplicates in process. The two copy checks are listed again below
+  # anyway — deliberately, and for two seconds — because a failure named `check_voice` in the
+  # checks list is a finding and a failure named `verify_links` is a search.
+  #
+  # All of it runs inside the lab's locked environment (`uv run --project lab`): two of the
+  # verifiers `verify_links.py` drives read the engine and the corpus, and a bare interpreter
+  # would skip them rather than fail.
+  web:
+    name: web — verifiers and copy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "lab/uv.lock"
+      - name: Sync the locked environment
+        run: uv sync --locked --project lab --python ${{ env.PYTHON_VERSION }}
+      - name: Links, copy contract and the site's own prose
+        run: uv run --locked --project lab python web/tools/verify_links.py
+      - name: The voice
+        run: uv run --locked --project lab python docs/copy/check_voice.py
+      - name: No sentence with two homes
+        run: uv run --locked --project lab python docs/copy/check_duplicates.py
+      - name: The release channel's copy
+        run: uv run --locked --project lab python docs/copy/check_release_copy.py
+      - name: The web bundle is not stale
+        run: uv run --locked --project lab python web/tools/bundle_lab.py --check
+
+  # ------------------------------------------------------------------------------ the repo
+  # The two checks that are about the repository rather than about one implementation: the
+  # version sites agree and each channel is what it claims to be, and the Makefile's recipes
+  # still parse. `make -n` prints without running, so this needs neither Xcode nor the CIQ
+  # SDK — it is a smoke test of the one file a second machine starts from.
+  repo:
+    name: repo — release check and the Makefile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Version sites and channel doors
+        run: python3 tools/check_release.py
+      - name: The Makefile still parses
+        run: make -n all

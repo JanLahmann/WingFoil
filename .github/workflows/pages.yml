@@ -75,11 +75,27 @@ jobs:
       - name: Web entry point
         run: uv run --project lab python web/tools/verify_web_entry.py
 
+  # The rest of what can say no (docs/engineering.md, item 1). `checks.yml` is callable, so
+  # it runs here as a second gate rather than being copied into this file: one definition of
+  # the lab tests, the verifiers and the release check, called from two places.
+  #
+  # `needs:` rather than a `workflow_run` trigger, deliberately. A `workflow_run` deploy
+  # would fire after Checks finished on main and would therefore lose this workflow's `paths`
+  # filter (Checks runs on every push, so every docs-only commit would redeploy the site) and
+  # would check out the branch head rather than the pushed commit. Calling the workflow keeps
+  # the deploy on the push event it has always been on, in one run a human can read top to
+  # bottom. `deploy-gate: true` skips the macOS job — `swift test` gates nothing the site
+  # ships, and it still runs on the same push in Checks' own run.
+  gate:
+    uses: ./.github/workflows/checks.yml
+    with:
+      deploy-gate: true
+
   deploy:
     # Push to main and manual runs only: a pull request has nothing to deploy to, and the
     # Pages environment is a single live site.
     if: github.event_name != 'pull_request'
-    needs: check
+    needs: [check, gate]
     runs-on: ubuntu-latest
     environment:
       name: github-pages

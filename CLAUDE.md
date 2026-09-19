@@ -30,7 +30,7 @@ before changing anything:
 | `ios/WingFoil` | the iPhone app (+ watch app, widgets); `project.yml` → `xcodegen generate` | build both schemes, see below |
 | `web/` | static site; the lab runs in Pyodide from `web/lab_bundle` | `web/tools/verify_*.py`, `bundle_lab.py --check` |
 | `garmin/` | Connect IQ watch app + `barrel/WingFoilCore`; the data field is **parked** (ADR-020) | `garmin/tests` in the CIQ simulator |
-| `fixtures/` | sessions, goldens, footage. Raw FITs under `fixtures/sessions` and `fixtures/footage` are never committed | |
+| `fixtures/` | sessions, goldens, footage. The **scrubbed** corpus under `fixtures/sessions` is committed on purpose — it is what every golden is derived from; raw (unscrubbed) recordings and everything under `fixtures/footage` are not | |
 
 Engine changes go lab → kit → web bundle (and docs) in one change, goldens regenerated, the
 engine version bumped everywhere it is stamped. The watch is ported separately and its
@@ -63,10 +63,19 @@ two checks that prove it are in docs/testing.md, "Three channels".
 
 ## Rules
 
-- Never commit `ios/WingFoilKit/Package.resolved`, `garmin/screenshots/source/ShotsApp.mc`,
-  `garmin/gen/UnlockPepper.mc`, `lab/.env`, or raw recordings under `fixtures/`.
+- Never commit `garmin/screenshots/source/ShotsApp.mc` (a throwaway screenshot harness that
+  says so in its own header), `garmin/gen/UnlockPepper.mc`, `lab/.env`, or **raw (unscrubbed)
+  recordings** under `fixtures/` — the scrubbed corpus there is committed on purpose, and
+  `lab/tools/scrub_fit.py` is what makes a recording committable. `.gitignore` carries all
+  four with their reasons. `ios/WingFoilKit/Package.resolved` **is** committed: it pins the
+  library versions a shipped build was compiled against (docs/engineering.md, "The rules
+  reconciled").
 - Commit path-scoped (lab / kit / ios / web / docs / garmin), lowercase narrative messages.
   Commit and push only when Jan asks. The repo is public: GitHub issues stay terse.
+- One entry point: `make all` — the release check, lab, kit, the web verifiers, the three iOS
+  builds. `.github/workflows/checks.yml` runs the same on every push and pull request, and the
+  Pages deploy will not ship a site those checks failed. Every shipped thing gets a tag
+  (`make tag-ios` / `tag-garmin` / `tag-web`); the rule is in docs/engineering.md, "Tags".
 - Rider vocabulary: *flew through* (kept the foil, no touchdown, no swim), *clean* (flew
   through + held speed + the gates in algorithms.md), *dry* (did not fall in). "success"
   and "carried" are engine-internal and appear in no rider-facing text.

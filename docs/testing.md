@@ -581,9 +581,11 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
 
 ## Layers
 
-1. **lab pytest** — regenerate goldens, assert self-consistency (guards refactors);
-   `compare_speedreader.py` diffs GP3S numbers vs `fixtures/speedreader/` exports on every
-   fixture (drift > tolerance fails).
+1. **lab pytest** — regenerate goldens, assert self-consistency (guards refactors). A
+   `compare_speedreader.py` that diffed the GP3S numbers against GPS-Speedreader exports was
+   planned (`docs/plan.md`) and never written; `fixtures/speedreader/` is still empty. The
+   GP3S rules are held by the goldens and by `web/tools/verify_presentation.py` instead, so
+   this is a gap in the *cross-validation* against a second implementation, not in coverage.
 2. **WingFoilKitTests (Swift Testing)** — full pipeline on fixtures vs the same goldens;
    parser fail-soft tests (missing channels, truncated FIT, foreign-app FITs); importer test with
    a synthetic nested GDPR ZIP.
@@ -1439,6 +1441,20 @@ its phone (`-target WingFoilWatch`). After touching `brand/`, rerun
 `brand/tools/make_channel_marks.py` and `garmin/tools/make_brand_mark.py` and commit what
 they write.
 
+**All four checks in one command.** `make release-check` (`tools/check_release.py`) runs the
+flag, plist and mark checks above against `ios/project.yml` and the generated Info.plist, and
+asserts the version sites agree — the iPhone's build number at every site, the watch's three
+manifests, and the engine version across the lab, the kit, the web bundle,
+`docs/algorithms.md` and `docs/channels.md`. Add `BINARY=<path>` after an export for the
+fourth check, the `strings` one:
+
+```sh
+make release-check BINARY=ios/build/exportRelease/WingFoil.app/WingFoil
+```
+
+It is the first thing `make all` runs and a job in CI, so the three commands below start from
+a tree whose versions already agree.
+
 **The three archive commands.** Same commit, same `MARKETING_VERSION`; bump
 `CURRENT_PROJECT_VERSION` in `ios/project.yml` (all four targets) and re-run `xcodegen
 generate` between them. **The App Store build takes the lowest number**, and that is the point
@@ -1517,6 +1533,12 @@ internal testers need no review, and submitting a build we never intend to ship 
 in front of Apple's reviewers ahead of the one we do. `--group external` is the default and
 is unchanged: attach, set What to Test, submit for beta review (the lesson of builds 6–15,
 which sat unreviewed for weeks because attaching is not submitting).
+
+**And then tag it.** `make tag-ios` writes `ios/<MARKETING_VERSION>-<CURRENT_PROJECT_VERSION>`
+at the commit the archives came from, so a rider's report six weeks later maps to a tree.
+It refuses on a dirty tree and runs `tools/check_release.py` first. The rule, the other two
+tag shapes (`garmin/0.9.13`, `web/v76`) and the list of tags that should exist retrospectively
+are in docs/engineering.md, "Tags". Pushing a tag is Jan's, like every other push here.
 
 **Release and beta share a bundle id**, so a phone holds one of them and TestFlight swaps
 them in place with the library kept. **Dev is a second app** beside either, with a library of

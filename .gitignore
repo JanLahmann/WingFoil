@@ -44,6 +44,14 @@ developer_key*
 garmin/gen/
 garmin/source/gen/
 
+# The screenshot harness. Its own header says it: "THROWAWAY screenshot harness. Not shipped,
+# not committed, not referenced by any build." It subclasses the real app to stage the store
+# screenshots in the simulator and is rewritten for whatever shot is being taken, so a tracked
+# copy is a diff on every screenshot run and a second WingfoilApp for a reader to trip over.
+# It was tracked until 19 Sep 2026 (docs/engineering.md, "The rules reconciled"); the file
+# stays on disk, git just stops carrying it.
+garmin/screenshots/source/ShotsApp.mc
+
 # Footage fixtures: gigabytes of video per afternoon. Only the README, the ground truth
 # and the alignment result are tracked (fixtures/footage/README.md).
 fixtures/footage/**

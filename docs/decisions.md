@@ -2,6 +2,18 @@
 
 Newest first. One paragraph each: context → decision → consequence.
 
+Every entry opens with a **Status** line, because a decision log whose entries cannot be told
+apart is a history, not a contract. There are four:
+
+- **Accepted** — still true, and still the way the code works.
+- **Proposed** — written down, not yet Jan's decision.
+- **Superseded by ADR-N** — a later ADR replaced it. The entry stays, because the reasoning
+  is why the replacement is shaped the way it is.
+- **Retired** — the thing it decided is gone, and no ADR replaced it.
+
+An Accepted entry may carry a clause saying what a later ADR narrowed or what has moved since.
+That is the point of the line: it says which half of an old paragraph is still load-bearing.
+
 ## ADR-026 · The library syncs as a **folder**, not as a database — iCloud Drive, last writer wins per field
 **Status: Proposed** (dev channel; Jan's call to accept).
 
@@ -50,6 +62,8 @@ per target, so the beta shares the dev's entitlements file; the container id fol
 channel through `$(CJ_BUNDLE_ID)` instead, and the release channel's own file stays empty.
 
 ## ADR-025 · The session list's filters narrow the list, never the records
+**Status: Accepted.**
+
 The library grew past the length a flat newest-first list answers questions on, and the
 questions that arrived with it — "how many afternoons in August", "everything at Torbole",
 "what came in from Strava" — are all about sets of sessions. A filter is the obvious answer
@@ -73,6 +87,8 @@ own clock; the custom range's two ends are read on the reader's, inclusively, ex
 Periods screen's own range is.
 
 ## ADR-024 · Windsurf is a **preset, not a fork** — and it ships marked experimental
+**Status: Accepted.**
+
 Issue #6 asks for windsurf as a discipline: engine presets, a vocabulary, the share card.
 There were two ways to have it. A second detector tuned on windsurf sessions would be honest
 about the differences and would immediately give the product two engines to keep in step
@@ -117,6 +133,8 @@ a second engine (two contracts, four implementations, no corpus); switching on t
 default never reaches). The watch and the Trends/Records pages are untouched — there is no
 separate windsurf record set, which the help topic states rather than leaves to be discovered.
 ## ADR-023 · Strava as a read source: class (c) **by construction**, and read-only on purpose
+**Status: Accepted.**
+
 The second cloud source beside intervals.icu, and the one that reaches the riders who have no
 Garmin account, no Apple Watch and no intention of setting up intervals.icu — which, on the
 water, is most of them. **Decision: the mapper writes a GPX.** What
@@ -157,6 +175,8 @@ now. Rate limits (100 / 15 min) stop a run rather than retrying into them, and w
 already imported stays imported.
 
 ## ADR-022 · The pumped-out touchdown is an opinion, so it is a switch — and it asks the wrong speed
+**Status: Accepted.**
+
 Step 3 of the outcome ladder promoted a fly-through to a `touchdown` when the accelerometer
 heard a pump burst *and* the speed channels went below `foilEntrySpeed` somewhere in the same
 window. Two things were wrong with it. It is the one rung that is a **judgement about the
@@ -199,6 +219,8 @@ reference to `foilExitSpeed` (it would have made the retirement unarguable and t
 at every setting, which is a knob that lies about what it does).
 
 ## ADR-021 · A clean jibe needs a **quiet tail** — ten seconds, and only for clean
+**Status: Accepted.**
+
 A turn's outcome window closes at *recovery* (`turnRecoverPct` held for `turnRecoverHold`), so
 a jibe the rider powers straight out of is judged over a second or two and a touchdown at +7 s
 is a straight-line loss the flight-end channel counts. That is right for the ladder — charging one
@@ -218,6 +240,8 @@ not cause, 23). Rejected too: making it a requirement for *carried through*, whi
 measurement of the sweep and has no business reading a tail.
 
 ## ADR-020 · The Garmin data field is **dormant** — the app is the product
+**Status: Accepted** — it supersedes ADR-009.
+
 ADR-002 chose a device app over a data field, and the field arrived later (0.1.0, 13 Aug 2026)
 as a companion for riders who wanted to keep Garmin's native Windsurf profile. Three weeks on:
 Jan has never ridden with it, no rider has asked for it, its CPH denominator already diverges
@@ -232,6 +256,8 @@ store page, not in this repo. Reversal condition: riders asking for it, in numbe
 the app cannot serve (a customised native profile is the only one anybody has named).
 
 ## ADR-019 · Watch GPS needs the phone's permission string and the background flag — the workout session alone is not enough
+**Status: Accepted.**
+
 The first real Apple Watch session (4 Sep 2026, 68 min, heart rate throughout) reached the phone
 with **zero position fixes**, and the start screen had said "Asking for location" the whole time.
 Two separate facts, both wrong in the code since ec1e3bd, and neither produced an error anywhere:
@@ -260,6 +286,8 @@ rider cannot otherwise tell a dead recorder from a calm day. The import's "conta
 fixes" refusal stays as it is: a heart-rate-only file has nothing to analyse.
 
 ## ADR-018 · The complication is a **launcher**, the Siri intents live in the app, and neither detects anything
+**Status: Accepted** — it narrows ADR-016.
+
 ADR-016 declined a complication on the grounds that it would be "a fourth surface making claims
 about a session". That reasoning was about *claims*, and it survives intact — what it did not
 cover is the gesture. Between a watch face and a running recording there were five steps (crown,
@@ -303,6 +331,8 @@ profile, three bundles deep. **iPhone-side intents were considered and dropped**
 start a watch workout without `HKHealthStore.startWatchApp(with:)` and a WatchConnectivity handoff,
 which is a feature and not a trivial re-export, so "Start a CleanJibe session" is a watch phrase.
 ## ADR-017 · Apple Health is a **source**, and it reuses the watch container rather than becoming a fourth format
+**Status: Accepted** — it narrows ADR-003.
+
 ADR-003 ruled HealthKit out as an input and the reason it gave was about *Garmin*: HealthKit
 hands out no `HKWorkoutRoute` for a Garmin-synced workout, so it can never be the way this app
 reaches the recordings it was built around. That is still true and nothing here contradicts it.
@@ -357,6 +387,8 @@ would be maddening: a workout imported, then deliberately deleted, then silently
 an hour later.
 
 ## ADR-016 · The Apple Watch recorder is class (b) and **certifies**, and it detects nothing
+**Status: Accepted** — its "a fourth surface making claims about a session" clause is narrowed by ADR-018, which allows a launcher that makes none.
+
 An Apple Watch is the one recording device a rider already owns that can reach the library
 without an account, a cable or anybody's cloud: the watch writes a file, `WCSession.transferFile`
 queues it, the phone imports it. That removes the Garmin→Connect→intervals.icu chain from the
@@ -397,6 +429,8 @@ have collapsed the duplicate, since `HKMetadataKeyExternalUUID` carries the watc
 one copy and the library's row id on the other.
 
 ## ADR-015 · The library backup restores through the **ingest path**, never as a file copy
+**Status: Accepted.**
+
 The library lives in Application Support, so an iPhone migration and an iCloud device backup
 already carry it and nothing here replaces that. What neither covers is a *fresh* start — a
 phone set up as new, the app deleted and reinstalled — and the loss is asymmetric: the
@@ -437,6 +471,8 @@ side it opens the archive **by URL** rather than from `Data`, because a season's
 gigabytes and the GDPR reader's whole-file-in-memory shape does not survive that.
 
 ## ADR-014 · The device list stops at CIQ ≥ 5.x sports watches (Tier A), and stops there on purpose
+**Status: Accepted** — the floor has moved since. `docs/channels.md`, "Devices", is the live list: the fenix 5 Plus family joined in 0.9.11 (minApiLevel 3.3.3) and the Venu, vívoactive and Instinct 3 AMOLED families in 0.9.10, all of which this ADR excluded. What stands is the rule it wrote down — a watch joins when it runs the current code unchanged — not the 0.9.4 list.
+
 The app shipped on the fenix 8 and fenix 7 families and nothing else, which is a small slice of
 the watches that could run it. A survey of the whole SDK device catalogue against the built
 app's own footprint (the scratchpad's `device-table.txt` / `app-headroom.txt`) sorted the rest
@@ -458,6 +494,8 @@ real layout bugs surfaced on the way in (see `docs/testing.md` — a digits-only
 the Forerunner font metrics), both fixed for every watch including the ones already shipped.
 
 ## ADR-013 · The companion link carries a **card**, not data — and reuses the import dedupe rule
+**Status: Accepted.**
+
 Phase 5 asks for a session summary on the phone before the FIT has finished its trip through
 Garmin Connect. The channel for that is `Communications.transmit` to a companion app over BLE,
 which is shared with the whole Garmin ecosystem and is documented by Garmin itself as a place
@@ -498,6 +536,8 @@ assumption underneath the dedupe key — that `Activity.Info.elapsedTime` equals
 FIT before the key can be trusted.
 
 ## ADR-012 · Invite testers get a **public** listing with an obfuscation-grade lock
+**Status: Retired** — the lock has been off since 0.9.11: every stream compiles the all-zero pepper, so `LockGate.enabled()` is false everywhere (`docs/channels.md`, "Devices"). The channel it created lives on as the beta listing (`manifest-beta.xml` + `monkey-beta.jungle`); `lab/tools/make_unlock.py` and the shared test vectors stay, so the gate can be re-armed from the same secret without reissuing a key.
+
 A Connect IQ "beta app" listing is visible only to the developer account, so the one thing it
 cannot do is reach a tester. The only channel to a friend's watch is a **public** store
 listing — which anyone can install. Decision: a third build channel, then `manifest-invite.xml` +
@@ -536,6 +576,8 @@ shared test vectors hard-coded in both suites; the 64-bit FNV state is carried a
 halves on both sides so nothing depends on Monkey C's undocumented `Long` overflow behaviour.
 
 ## ADR-011 · Widgets ship without an app group, and say so
+**Status: Accepted** — and since carried out. The app group the ADR calls "configuration, not code" is in `ios/project.yml` for the beta channel's app, its widgets and the watch app; the release channel embeds neither widget nor watch app and its entitlements file still carries none. The runtime probe stands, because it is what makes both states honest.
+
 The WidgetKit extension (`de.lahmann.wingfoil.widgets`, embedded in the app) needs the app's
 data, and a widget process cannot open the GRDB library — different container, 30 MB memory
 limit. The app therefore publishes a small denormalized `WidgetSnapshot` (last session +
@@ -563,6 +605,8 @@ the half that reads library rows lives in `WidgetSnapshot+Library.swift`, which 
 compiles.
 
 ## ADR-010 · Metric explanations are kit data, not view code
+**Status: Accepted.**
+
 Every number the app shows needs a plain-language explanation, and the explanations have to
 be reachable from the card that shows the number — a glossary nobody opens is not
 documentation. `HelpCatalog` lives in `WingFoilKit` as pure data keyed by a `HelpTopicID`
@@ -597,6 +641,8 @@ because on the two legend shots a shifted chip colour would be a wrong answer ra
 compression artefact.
 
 ## ADR-009 · Data-field companion **in addition to** the device app, sharing a barrel
+**Status: Superseded by ADR-020** — the data field is dormant. `garmin/field/` still builds and still shares the barrel; it gets no new metrics.
+
 ADR-002 chose a device app and that stands — it is the only way to control recording, laps and
 the accelerometer. But it forces an either/or on the water: launching it means *not* using the
 native Windsurf profile Jan already records with. The **WingFoil Field** data field
@@ -617,6 +663,8 @@ projects stay fully independent, since a jungle's `sourcePath` is explicit and n
 sibling's sources.
 
 ## ADR-008 · Detection core extracted into the `WingFoilCore` Monkey Barrel
+**Status: Accepted.**
+
 Two apps computing "a flight" from two copies of the same state machine is how the watch and
 the field would silently disagree by next season. `RingBuffer`, `SpeedRecords`,
 `FlightDetector`, `TurnDetector` and a new `Config` moved into `garmin/barrel/WingFoilCore/`,
@@ -630,29 +678,39 @@ function at file scope fails `barrelbuild`), and class-level `const`s are instan
 shared tables like `COMPASS` belong at module scope.
 
 ## ADR-007 · Pump detector armed only while off-foil (watch); in-flight pumping on phone
+**Status: Accepted.**
+
 Wrist accel while flying is polluted by chop and steering inputs. The live watch counter arms
 only in `OFF_FOIL` (takeoff attempts — the priority metric); raw accel is logged regardless, so
 the phone can analyze in-flight pumping (lulls, downwind) later without on-watch false positives.
 
 ## ADR-006 · GRDB + immutable file archive, not SwiftData
+**Status: Accepted.**
+
 Workloads are SQL aggregations (all-time records, per-gear/spot rollups), heavy background
 imports, and schema migrations; no CloudKit requirement (local-first). Original FIT files are
 immutable under `Sessions/<uuid>/`; analysis is a versioned derived artifact (`analysis.json`),
 so the engine can always re-run. iCloud Drive folder sync is the later path, not CloudKit.
 
 ## ADR-005 · Watch approximates, phone is authoritative
+**Status: Accepted.**
+
 1 Hz + 768 KB on-watch vs unlimited offline compute: the watch ships robust approximations
 (hysteresis flight detection, greedy 5×10s, alpha-lite) and maximal raw capture (1 s records,
 laps, accel); the phone re-derives everything from the original FIT. Divergence is surfaced as a
 tuning signal, never silently reconciled.
 
 ## ADR-004 · Record FIT sport 43 (windsurfing), discipline tag in a dev field
+**Status: Accepted.**
+
 No wingfoil sport exists in FIT-as-exposed-to-CIQ/GC/Strava/intervals.icu. Sport 43 lands as
 "Windsurf" everywhere (vs the "Walk" mis-typing of FoilMotion et al.) and gets Garmin's
 least-filtered Doppler speed path. Session dev field `discipline="wingfoil"` (not the sport
 code) is our authoritative discipline marker. Sport user-overridable in settings.
 
 ## ADR-003 · Data pipeline via intervals.icu personal API, not Garmin APIs
+**Status: Accepted** — narrowed twice since: ADR-017 admits Apple Health as a source for the workouts an Apple Watch makes for itself, and ADR-023 adds Strava. What stands is the finding this ADR is about, that no Garmin route reaches the original FIT except intervals.icu.
+
 Garmin Connect Developer Program is business-only and paused (2026); unofficial APIs are
 Cloudflare-blocked with account-ban risk; HealthKit carries no Garmin GPS routes; Strava API has
 no original FIT + restrictive ToS. Jan's Garmin→intervals.icu sync is active; `GET
@@ -661,11 +719,15 @@ work: Files/AirDrop import, GC "Export Original", GDPR bulk ZIP. Importer sits b
 so an OAuth2 intervals.icu client (or future Garmin API) can swap in for a store release.
 
 ## ADR-002 · CIQ device app, not data field
+**Status: Accepted.**
+
 Data fields cannot record activities, get 32 B/message dev-field budget and 128 KB RAM on
 Fenix 8. Device app: 768 KB, 256 B/message, full UI/input/alerts, `Communications` for the
 phase-5 companion link. minApiLevel 5.0.0 (all shipped Fenix 8 firmware).
 
 ## ADR-001 · Monorepo with a Python lab and golden-file contract
+**Status: Accepted.**
+
 Detection algorithms are tuned in `lab/` (fitdecode + scipy) against real labeled sessions,
 frozen as golden JSONs, then ported: Swift (authoritative) and Monkey C (live approximation)
 assert against the same goldens/clips. Parameters live once in `docs/algorithms.md`.
