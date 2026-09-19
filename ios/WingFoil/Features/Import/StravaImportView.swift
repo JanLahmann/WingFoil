@@ -212,8 +212,8 @@ struct StravaImportView: View {
         } footer: {
             Text(markdown: "Strava has no wingfoil activity, so pick whichever one you "
                  + "record under.\n\n"
-                 + "Sail and Stand-up paddling are off by default, because for most people "
-                 + "those buckets hold boats and flat water.\n\n"
+                 + "Sail is off by default, because for most people that bucket holds "
+                 + "boats.\n\n"
                  + "Whatever you choose, an activity whose **name** says wing, foil, kite, "
                  + "surf or SUP is offered too.")
         }

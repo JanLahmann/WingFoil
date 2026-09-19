@@ -2770,8 +2770,8 @@ final class SessionStore {
     /// Which Strava activity types the Import screen offers (`StravaActivityType`).
     ///
     /// Strava has no wingfoil type, so there is nothing to infer: the rider says once what he
-    /// files his sessions under, and it is remembered. Defaults are Windsurf, Kitesurf, Surf
-    /// and Workout — the four buckets wingfoil sessions actually land in.
+    /// files his sessions under, and it is remembered. Defaults are Windsurf, Kitesurf, Surf,
+    /// Workout and Stand-up paddling — the five buckets wingfoil sessions actually land in.
     var stravaTypes: Set<StravaActivityType> {
         get {
             guard let stored = UserDefaults.standard.stringArray(forKey: Self.stravaTypesKey)
