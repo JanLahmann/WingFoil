@@ -18,6 +18,12 @@ public enum DirectStream {
     /// File and page-0 magic. `TrackParser.format` sniffs it, so it must not collide with
     /// FIT (`.FIT` at byte 8), with the watch container (`CJWS`) or with a leading `<`.
     public static let magic: [UInt8] = Array("CJR1".utf8)
+
+    /// The bytes open with the magic. What `ZipWalker.classify` asks before anything else
+    /// looks at a file; a page-0 payload and an archived stream answer alike.
+    public static func isStream(_ data: Data) -> Bool {
+        data.count >= magic.count && Array(data.prefix(magic.count)) == magic
+    }
     /// Field-meaning version. A stream that states another one is refused rather than
     /// guessed at: a delta record read at the wrong stride is a plausible-looking track.
     public static let schema: UInt8 = 1

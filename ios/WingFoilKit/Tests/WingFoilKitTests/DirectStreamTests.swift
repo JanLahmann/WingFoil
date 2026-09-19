@@ -441,6 +441,34 @@ import Testing
     }
 
     /// The card holds the afternoon's place; the stream that follows fills the same row.
+    /// **The door, not the parser.** Every file the app imports — the inbox's `.cjr`
+    /// exactly as much as a hand-picked FIT — goes through `SessionIngestor.ingestContainer`,
+    /// which asks `ZipWalker.classify` what the bytes are first. The first real stream
+    /// (19 September 2026) parsed perfectly and was dropped there as "no FIT found", because
+    /// every test above went through the parser. This one goes through the door.
+    @Test func aDirectStreamImportsThroughTheOrdinaryFileDoor() async throws {
+        let (ingestor, root) = try makeIngestor()
+        defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
+        let data = sessionBytes()
+        guard case .track(let payload) = ZipWalker.classify(data) else {
+            Issue.record("a direct stream must classify as a track, not as ignored")
+            return
+        }
+        #expect(payload == data)
+
+        let summary = await ingestor.ingestContainer(data: data, name: "1756556820.cjr",
+                                                     source: .watchDirect)
+        #expect(summary.found == 1)
+        #expect(summary.imported == 1)
+        #expect(summary.failed.isEmpty)
+        let sessions = try await ingestor.allSessions()
+        #expect(sessions.count == 1)
+        let row = try #require(sessions.first)
+        #expect(row.importSource == "watchdirect")
+        #expect(row.sourceClass == "a")
+        #expect(ingestor.archive.originalFormat(for: row.id) == .direct)
+    }
+
     @Test func aDirectStreamFillsTheCardsProvisionalRow() async throws {
         let (ingestor, root) = try makeIngestor()
         defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }

@@ -71,6 +71,11 @@ public enum ZipWalker {
         // unclassified, it is silently dropped as `.ignored` and the rider is told "no FIT
         // found" about a file the parser two modules away can read perfectly well.
         if WatchSessionContainer.isContainer(payload) { return .track(payload) }
+        // The Garmin watch's direct stream — and the second time this ladder was the bug:
+        // the first stream Jan's watch ever sent (19 September 2026) crossed whole in
+        // seconds and the phone said "no FIT found" about it. `DirectStreamTests` now
+        // imports through this door, not only through the parser.
+        if DirectStream.isStream(payload) { return .track(payload) }
         if IcuPayload.isZip(payload) { return .archive(payload) }
         return .ignored
     }
