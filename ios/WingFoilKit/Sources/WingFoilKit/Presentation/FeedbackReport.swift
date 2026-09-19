@@ -234,14 +234,23 @@ public struct FeedbackFacts: Sendable, Equatable {
     public let library: Library
     /// Nil when the mail was started from Settings rather than from a session.
     public let session: Session?
+    /// What iOS reported to this app since it was installed (`CrashDigest`), newest first.
+    ///
+    /// **Every channel, the App Store one included.** A crash is the one failure a rider
+    /// cannot describe and cannot route: TestFlight's own beta feedback does not carry the
+    /// log, and an App Store rider has no route at all except a mail. Nothing here is
+    /// personal — a binary name, an offset, a signal and a build number — and it is printed
+    /// under the same rule as everything else, which says it may be deleted.
+    public let crashes: [CrashDigest]
 
     public init(app: App, phone: Phone, watch: Watch, library: Library,
-                session: Session? = nil) {
+                session: Session? = nil, crashes: [CrashDigest] = []) {
         self.app = app
         self.phone = phone
         self.watch = watch
         self.library = library
         self.session = session
+        self.crashes = crashes
     }
 }
 
@@ -411,6 +420,10 @@ public enum FeedbackReport {
         if let session = facts.session {
             out += section("Session", lines: sessionLines(session))
         }
+        if !facts.crashes.isEmpty {
+            out += section(crashHeading,
+                           lines: crashLines(facts.crashes, build: facts.app.build))
+        }
         out.append("sent from \(Branding.appName)")
         return out.joined(separator: "\n")
     }
@@ -515,6 +528,71 @@ public enum FeedbackReport {
                 .joined(separator: " · "))
         }
         return lines
+    }
+
+    // MARK: - Recent crashes
+
+    /// The heading a reader scans for. Named for what happened rather than for the
+    /// framework that reported it: nobody is looking for "MetricKit diagnostics".
+    static let crashHeading = "Recent crashes"
+
+    /// Where the block came from, said at the top of it. A rider who finds a list of
+    /// crashes in his own mail is owed the fact that no reporting SDK put it there.
+    static let crashNote = "iOS collected these on this phone."
+
+    /// The block: where it came from, how many of each, then the newest few by name.
+    ///
+    /// **Capped at `CrashLog.listCount` lines of crash**, so the block is at most eleven
+    /// lines however bad a fortnight the phone has had. The mail is a rider's report with a
+    /// fact sheet under it, and a fact sheet that runs longer than the report stops being
+    /// read at all.
+    ///
+    /// - Parameters:
+    ///   - build: the build the mail is being written from, so a crash on an older one can
+    ///     say so. A tester who has updated since is often reporting something already fixed.
+    ///   - zone: the phone's, in every real call. A crash stamp is a machine fact, printed
+    ///     in a fixed format for the same reason the engine version is.
+    static func crashLines(_ crashes: [CrashDigest], build: String,
+                           zone: TimeZone = .current) -> [String] {
+        var lines = [crashNote, crashCounts(crashes)]
+        lines += crashes.prefix(CrashLog.listCount).map {
+            crashLine($0, build: build, zone: zone)
+        }
+        let rest = crashes.count - CrashLog.listCount
+        if rest > 0 { lines.append(String(rest) + " older, not listed") }
+        return lines
+    }
+
+    /// "Crashes 2 · Hangs 1" — the same shape the Library block counts its doors in, and a
+    /// kind with none is left out for the same reason a zero is: an absent line reads as
+    /// nothing unusual.
+    private static func crashCounts(_ crashes: [CrashDigest]) -> String {
+        CrashDigest.Kind.allCases
+            .compactMap { kind -> String? in
+                let count = crashes.filter { $0.kind == kind }.count
+                return count > 0 ? kind.plural + " " + String(count) : nil
+            }
+            .joined(separator: " · ")
+    }
+
+    /// "2026-09-14 15:05 · Crash · Namespace SIGNAL, Code 11 · WingFoil +0x1b2c3".
+    private static func crashLine(_ crash: CrashDigest, build: String,
+                                  zone: TimeZone) -> String {
+        var parts = [stamp(crash.date, zone: zone), crash.kind.label]
+        if let reason = crash.reason, !reason.isEmpty { parts.append(reason) }
+        if let frame = crash.topFrame, !frame.isEmpty { parts.append(frame) }
+        if let was = crash.build, was != build { parts.append("build " + was) }
+        return parts.joined(separator: " · ")
+    }
+
+    /// A fixed format in a fixed locale, in the phone's own zone: the crash happened on
+    /// this phone, and the reader is looking for an ordering rather than for an afternoon.
+    private static func stamp(_ date: Date, zone: TimeZone) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = zone
+        formatter.dateFormat = "yyyy-MM-dd HH:mm"
+        return formatter.string(from: date)
     }
 
     private static func sessionLines(_ session: FeedbackFacts.Session) -> [String] {

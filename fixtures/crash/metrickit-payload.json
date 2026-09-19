@@ -1,0 +1,108 @@
+{
+  "timeStampBegin": "2026-09-13 00:00:00 +0000",
+  "timeStampEnd": "2026-09-14 15:05:00 +0000",
+  "crashDiagnostics": [
+    {
+      "version": "1.0.0",
+      "diagnosticMetaData": {
+        "appVersion": "0.15.0",
+        "appBuildVersion": "74",
+        "osVersion": "iPhone OS 26.0 (23A000)",
+        "deviceType": "iPhone18,2",
+        "platformArchitecture": "arm64e",
+        "signal": 11,
+        "terminationReason": "Namespace SIGNAL, Code 11",
+        "exceptionType": 1,
+        "exceptionCode": 0
+      },
+      "callStackTree": {
+        "callStackPerThread": true,
+        "callStacks": [
+          {
+            "threadAttributed": true,
+            "callStackRootFrames": [
+              {
+                "binaryUUID": "2A6F1F9B-2C3D-4E5F-8A9B-0C1D2E3F4A5B",
+                "offsetIntoBinaryTextSegment": 4096,
+                "binaryName": "dyld",
+                "address": 4363943936,
+                "sampleCount": 1,
+                "subFrames": [
+                  {
+                    "binaryUUID": "3B7E2A0C-1D2E-3F4A-5B6C-7D8E9F0A1B2C",
+                    "offsetIntoBinaryTextSegment": 111907,
+                    "binaryName": "WingFoil",
+                    "address": 4364055843,
+                    "sampleCount": 1
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "threadAttributed": false,
+            "callStackRootFrames": [
+              {
+                "binaryName": "libsystem_kernel.dylib",
+                "offsetIntoBinaryTextSegment": 8192,
+                "sampleCount": 1
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "hangDiagnostics": [
+    {
+      "version": "1.0.0",
+      "diagnosticMetaData": {
+        "appVersion": "0.15.0",
+        "appBuildVersion": "75",
+        "osVersion": "iPhone OS 26.0 (23A000)",
+        "deviceType": "iPhone18,2",
+        "platformArchitecture": "arm64e",
+        "hangDuration": { "value": 4.5, "unit": "s" }
+      },
+      "callStackTree": {
+        "callStackPerThread": true,
+        "callStacks": [
+          {
+            "threadAttributed": true,
+            "callStackRootFrames": [
+              {
+                "binaryName": "WingFoil",
+                "offsetIntoBinaryTextSegment": 205262,
+                "sampleCount": 1
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "diskWriteExceptionDiagnostics": [
+    {
+      "version": "1.0.0",
+      "diagnosticMetaData": {
+        "appVersion": "0.15.0",
+        "appBuildVersion": "75",
+        "writesCaused": { "value": 1024, "unit": "MB" }
+      },
+      "callStackTree": {
+        "callStackPerThread": false,
+        "callStacks": [
+          {
+            "callStackRootFrames": [
+              {
+                "binaryName": "WingFoil",
+                "offsetIntoBinaryTextSegment": 48350,
+                "sampleCount": 1
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
