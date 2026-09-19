@@ -184,6 +184,24 @@
               ],
               "detail" : "Garmin has no wingfoil profile. Garmin and Strava call the session Windsurf. CleanJibe calls it Wingfoil.",
               "term" : "Why Garmin says Windsurf"
+            },
+            {
+              "channels" : [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail" : "Under Connect IQ on the activity page: jibes, tacks, foil time, flights and the best 2 seconds. They are written once a wind direction was set.",
+              "term" : "Where Garmin Connect shows the jibes"
+            },
+            {
+              "channels" : [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail" : "Runs belong to Garmin's own windsurf profile. No Connect IQ app can fill that card. CleanJibe's flights are the runs.",
+              "term" : "Why the Runs card stays empty"
             }
           ],
           "related" : [

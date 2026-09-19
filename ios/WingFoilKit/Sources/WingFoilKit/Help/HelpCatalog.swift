@@ -356,6 +356,17 @@ public enum HelpCatalog {
                 .init(term: "Why Garmin says Windsurf",
                       detail: "Garmin has no wingfoil profile. Garmin and Strava call the "
                           + "session Windsurf. CleanJibe calls it Wingfoil."),
+                // Alfred's next two screenshots, same day: Garmin Connect's activity page
+                // showed "-- Runs" and he looked for the jibes. The watch app writes its
+                // numbers as Connect IQ fields, which Garmin Connect lists under its own
+                // heading; the Runs card is the windsurf profile's and no app can fill it.
+                .init(term: "Where Garmin Connect shows the jibes",
+                      detail: "Under Connect IQ on the activity page: jibes, tacks, foil "
+                          + "time, flights and the best 2 seconds. They are written once "
+                          + "a wind direction was set."),
+                .init(term: "Why the Runs card stays empty",
+                      detail: "Runs belong to Garmin's own windsurf profile. No Connect IQ "
+                          + "app can fill that card. CleanJibe's flights are the runs."),
             ],
             links: [HelpLink(title: "Open intervals.icu", url: IcuSetupGuide.intervalsURL)],
             action: .openIcuSettings,
