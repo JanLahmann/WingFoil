@@ -4358,6 +4358,7 @@ function directStreamMatchesTheReference(logger as Test.Logger) as Boolean {
     AppSettings.phonePush = true;
     DirectSend.discard();
     DirectSend.reachableOverride = false;
+    DirectSend.utcOffsetOverride = 120;
     DirectSend.begin(1756556820, 200);
     DirectSend.recordFix(45.8710000d, 10.8630000d, 1756556820, 0, 66, 98, DirectSend.devPack(0, 0, 0, 0));
     DirectSend.recordFix(45.8710050d, 10.8630120d, 1756556821, 310, 66, 101, DirectSend.devPack(1, 0, 0, 1));
@@ -4365,12 +4366,13 @@ function directStreamMatchesTheReference(logger as Test.Logger) as Boolean {
     var open = DirectSend.openBytes();
     Test.assertMessage(open != null, "the page is open");
     var hex = hexOf(open as ByteArray);
-    var want = "434a5231010002091" + "4eeb268c8000000"
+    var want = "434a5231020002091" + "4eeb268c8000000" + "78000000"
         + "ff14eeb268f05b571bf08f79060000420062000000000"
         + "105000c0036010065010000010106000d008002ff68020c0302";
     logger.debug(hex);
     Test.assertEqualMessage(hex, want, "the bytes are the reference's");
-    Test.assertEqual((open as ByteArray).size(), 64);
+    Test.assertEqual((open as ByteArray).size(), 68);
+    DirectSend.utcOffsetOverride = null;
     DirectSend.discard();
     return true;
 }

@@ -28,9 +28,11 @@ module DirectSend {
     const DT_MAX = 254;
     const KEYFRAME_TAG = 0xFF;
     const ALT_NONE = 0x7FFF;
-    const SCHEMA = 1;
+    const SCHEMA = 2;                // the stream: 2 since the header carries the clock offset
+    const MSG_SCHEMA = 1;            // the page message (docs/transfer-format.md §3), unchanged
     const STREAM_RECORD = 0;
-    const HEADER_BYTES = 16;
+    const HEADER_BYTES = 20;
+    const UTC_OFFSET_NONE = 0x7FFF;
     const KEYFRAME_BYTES = 22;
     const DELTA_BYTES = 13;
     const ACK_TIMEOUT_MS = 6000;
@@ -122,6 +124,7 @@ module DirectSend {
     (:dev) var _lastMs as Number = 0;
     (:dev) var _partial as Boolean = false;  // persisted with pages dropped
     (:dev) var reachableOverride as Boolean? = null;   // tests: the simulator has no phone
+    (:dev) var utcOffsetOverride as Number? = null;   // tests: minutes east of UTC
     (:dev) var _pacer as Timer.Timer?;
     (:dev) var _paceTimer as PaceTimer = new PaceTimer();
 
@@ -161,6 +164,18 @@ module DirectSend {
         _s16(12, windDir);
         b[14] = 0;
         b[15] = 0;
+        // The watch's clock offset, minutes east of UTC. The first direct session landed an
+        // hour off (19 September 2026) because the phone had only the longitude to guess by.
+        var off = utcOffsetOverride;
+        if (off == null) {
+            try {
+                off = System.getClockTime().timeZoneOffset / 60;
+            } catch (e) {
+                off = UTC_OFFSET_NONE;
+            }
+        }
+        _s16(16, off as Number);
+        _u16(18, 0);
         _len = HEADER_BYTES;
     }
 
@@ -402,7 +417,7 @@ module DirectSend {
     function _send(i as Number) as Void {
         var last = _ended && i == _pages.size() - 1;
         var msg = {
-            KEY_MSG => SCHEMA,
+            KEY_MSG => MSG_SCHEMA,
             KEY_SID => _sid,
             KEY_STREAM => STREAM_RECORD,
             KEY_PAGE => i,
