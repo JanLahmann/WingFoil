@@ -32,7 +32,7 @@ the engine.
 | wrist, 25 Hz magnitude only (what `PumpDetector` eats) | 50 | 360 000 B |
 | wrist, 25 Hz three axes int16 | 150 | 1 080 000 B |
 
-## 2 · The five options
+## 2 · The options
 
 Platform facts first.
 
@@ -61,14 +61,17 @@ of the link. That asymmetry is the whole answer.
 | **c** | **pull the FIT from Garmin Connect** | no | — | no open API; no export in the iOS app; the web route and the GDPR zip are both manual | the chain #14 wants removed |
 | **d** | **watch writes FIT, phone reads it over USB** | no | — | fenix 7/8 offer MTP only, never mass storage; iOS Files mounts neither without MFi | nothing |
 | **e** | **raw BLE from the CIQ app** | no | 90–120 B/s ⇒ hours | central-only, and a backgrounded iPhone cannot be discovered | nothing |
+| **f** | **a relay server** — the watch POSTs, the phone fetches, the relay deletes (§4) | yes | 87 KB of base64 = **87–174 s**, same BLE hop | a server, a changed promise, a 24 h TTL that can eat a session | the same as (a), later |
 
-**Ranking: a > b > c > d = e.** (a) and (b) share one transport and one wire format; (a) only
+**Ranking: a > b > f > c > d = e.** (a) and (b) share one transport and one wire format; (a) only
 moves *when* the bytes go, and it is the only option the wrist stream could ride on — 50 B/s
 live is 5–10 % of the link, 360 KB as a burst is 6–12 minutes.
 
 ## 3 · Recommendation
 
-**Build (a), with (b) as its tail.** One ring buffer, one chunk encoder, one receiver. The
+**Build (a), with (b) as its tail.** (f) is feasible and is ranked above the three that are not,
+but it does not change the hop that costs the time — §4 does the arithmetic. One ring buffer,
+one chunk encoder, one receiver. The
 watch flushes a chunk while the link is up and flushes the rest on save; if the phone was
 never in range, the same buffer is the after-save send. No second mechanism.
 
@@ -101,7 +104,114 @@ rule and the intervals.icu copy replaces the row in place (ADR-013).
 four developer fields: class A minus the wrist. So **class B at first, class A once the 25 Hz
 magnitudes ride along**. No new letter (pattern L).
 
-## 4 · The first experiment
+## 4 · D in detail — the relay
+
+Issue #14 calls it **D**; this file's table spends `d` on USB, so it enters as **f**: an
+endpoint the watch POSTs to, the phone fetches from, the relay deletes on pickup.
+
+### The transport is the same BLE hop, plus a third
+
+`makeWebRequest` appears **nowhere** in `garmin/source` today — `Communications.transmit` is the
+only radio call the app makes. The `Communications` permission is already in both manifests, so
+no new permission is needed.
+
+What SDK 9.2's `api.debug.xml` allows:
+
+| | |
+|---|---|
+| request body | `parameters` is a **Dictionary**, and the only two request content types that exist are `REQUEST_CONTENT_TYPE_JSON` and `REQUEST_CONTENT_TYPE_URL_ENCODED`. **No byte body.** A blob rides as base64 (`StringUtil.convertEncodedString`, `REPRESENTATION_STRING_BASE64`): 65 KB → **87 KB**, +33 %, ~2× that in heap as a String |
+| transport | HTTPS only; the cert must chain to a CA the watch knows (fenix 7 / epix had a TLS-cert bug) |
+| per-request ceiling | `BLE_REQUEST_TOO_LARGE` −102 fires on the **outgoing** side and is a RAM error, not a size constant — one developer took −102 on a **140-byte** URL. Undocumented and heap-bound, exactly like `transmit` |
+| response ceiling | `NETWORK_RESPONSE_TOO_LARGE` −402, `NETWORK_RESPONSE_OUT_OF_MEMORY` −403; developers hit −402 between **17 and 44 KB**, Garmin's guidance is **~8 KB** of JSON. Our response is only an ack, so this binds nothing |
+| from a background service | allowed, but `compiler.json` `appTypes.background.memoryLimit` is **65 536 B** on fenix 8 and fenix 7, **32 768 B** on fenix 5 Plus, for code *and* data — a session cannot fit one wake. `registerForTemporalEvent`: **no closer than 5 minutes**, one event at a time. 8 KB a wake ⇒ 9 wakes ⇒ **45 minutes** per session |
+
+**Throughput: unchanged, then worse.** GCM does the wide-area half over Wi-Fi/LTE for free, but
+the watch→phone half is the *same* BLE link at the same **0.5–1 KB/s**. 87 KB of base64 is
+**87–174 s** against **65–130 s** for the same session over `transmit()`.
+
+**Wi-Fi: no, not from `makeWebRequest`.** fenix 7/8 have Wi-Fi, but a web request does not raise
+it. Garmin staff: *"If you want to use WiFi, you really should be using the
+`Communications.SyncDelegate`"*, and the fenix 6x *"should only enable WiFi when a
+`Communications::SyncDelegate` is active"*. `Communications.startSync` **exits the app and
+relaunches it in sync mode** (@since 3.1.0) — the only door to the watch's own radio, and the
+only place (f) beats (a).
+
+### Privacy: the crypto exists, the promise does not survive
+
+**CIQ does have crypto, on the whole fleet.** `Toybox.Cryptography` is @since **3.0.0**, the
+app's `minApiLevel` is **3.3.3**: `Cipher` with `CIPHER_AES128`/`CIPHER_AES256`, `MODE_CBC` and
+`MODE_CUSTOM` (**no CTR, no GCM, no AEAD**), HMAC with `HASH_SHA256`, ECDH over
+secp224r1/secp256r1, and `randomBytes`. AES-256-CBC + HMAC-SHA256, encrypt-then-MAC, is real
+end-to-end encryption and builds on every watch the app ships to. (ADR-012's aside that *"CIQ
+has no crypto primitives"* is true of an offline unlock check and wrong as a general statement;
+narrow it when next touched.)
+
+**No PIN, no keyboard, no QR — the channel is already there.** `PhoneLink.Callbacks` registers
+`registerForPhoneAppMessages`, and `applyMessage` already takes the phone→watch push that carries
+the 8 000 B map mask. A 32-byte key is **0.4 %** of it: the phone draws it from
+`SecRandomCopyBytes`, pushes it once, the watch keeps it in `Storage`. Nothing is typed on round
+glass. But that push needs the phone **in BLE range** — the condition the relay was sold as
+removing.
+
+**What the relay would hold:** an opaque blob under a 128-bit random id, ≤256 KB, TTL 24 h,
+deleted on first GET; no account, no listing, no log beyond the host's edge.
+
+**What the promise becomes.** Today: *"there is no CleanJibe server that your sessions are sent
+to — because there is no CleanJibe server at all"* (privacy) and *"Nothing is uploaded, because
+there is nowhere to upload it to"* (App Store). Both become false as written, and the replacement
+is longer, not shorter — *one server, a locker, encrypted, gone in 24 h* — against the privacy
+page's own rule that *"a privacy promise with an unnamed exception in it is not a promise"*.
+**GDPR**: a German controller holding pseudonymous location data needs an Art. 30 record, an
+Art. 13 notice, a processor contract and a position on edge logs. Hetzner Falkenstein keeps it in
+Germany; free Cloudflare Workers carries no EU-residency guarantee.
+
+### Hosting
+
+100 riders × 3 sessions/week × 100 KB = **30 MB/week up**, the same down: ≈ **260 MB and ~2 600
+requests a month**.
+
+| | cost | fit | effort |
+|---|---|---|---|
+| **Cloudflare Workers + KV** | **€0** | free tier: 100 000 reads and **1 000 writes/day** (we need ~43), 1 GB, **25 MB/value**, native TTL. R2 instead of KV if blobs grow: 10 GB-month, zero egress | ~1 day; no EU residency on free |
+| **Hetzner CX22, Falkenstein** | **≈ €3.79/month**, 20 TB | German soil; Caddy, ~50 lines, a sweep timer | ~1 day, then **forever**: patches, uptime, certs |
+| GitHub Pages | — | **cannot**: static, no POST. cleanjibe.org is on Pages, so this is new infrastructure, not an extension | |
+
+Abuse: 256 KB body cap, unguessable ids, no listing endpoint, ~10 uploads/hour/IP, delete on
+pickup.
+
+### The rider, end to end, and where it breaks
+
+Pair once with the watch in range. A background wake every ≥5 min then pushes a page while the
+phone is in range with internet; the phone polls when CleanJibe opens — no APNs, so a silent push
+would mean a *second* server. Breaks: relay down ⇒ nowhere to put pages; the app not opened
+inside 24 h ⇒ the blob expires and the FIT is the only copy, so the relay can never be the only
+path; partial pages ⇒ the phone holds fragments and must expire them.
+
+### Against (a), plainly
+
+The relay **does not change the watch→phone hop**. Same BLE, same 0.5–1 KB/s, 33 % more bytes,
+through GCM instead of our companion app. Two honest gains: no companion registration (the
+*"multiple companion apps"* trap and the BLE-priority worry go away), and CleanJibe need not be
+open at pickup. Against that: a server, a rewritten promise, GDPR paperwork, base64
+overhead and a 45-minute background clock. **That trade is not worth it.**
+
+**The one scenario where it wins:** the watch on its own Wi-Fi with **no phone present at all** —
+the rider's phone is at home and the session is there before he is. That needs `SyncDelegate`,
+which exits the app, and nobody has publicly shown a fenix *watch app* POSTing a body that way.
+
+**Ranking: a > b > f > c > d = e.** (f) is feasible where (c), (d) and (e) are not, and sits below
+(a) and (b) because it buys nothing on the hop that matters. **Recommendation unchanged: build
+(a), with (b) as its tail.** Park (f) behind one experiment.
+
+**The experiment that decides (f)** — one afternoon, before any server exists. A dev-build
+BACK-menu item calls `Communications.startSync` with a `SyncDelegate` that POSTs 2 700 B to a
+throwaway Worker, **with the phone's Bluetooth off** and the watch on home Wi-Fi. If it lands,
+(f) has the one reason to exist that (a) cannot supply, and the design is `POST /b` → `{id}`
+(≤256 KB base64, AES-256-CBC + HMAC-SHA256, per-session nonce, key from the PhoneLink push),
+`GET /b/{id}` → blob then delete, `DELETE /b/{id}`, nothing else. If it does not, (f) is closed
+and this section is its epitaph.
+
+## 5 · The first experiment
 
 **Transmit the last five minutes and time it.** Five minutes of delta stream is 2 700 B — one
 message, no assembler, no container, nothing rider-facing. A hidden BACK-menu item on the dev
