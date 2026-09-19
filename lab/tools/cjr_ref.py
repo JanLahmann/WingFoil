@@ -27,6 +27,8 @@ KEYFRAME_EVERY = 60     # samples; a page also always opens with one
 PAGE_BYTES = 8000       # payload per Communications.transmit; the ceiling measured is 8 KB
 LAT_LON_KEY_UNIT = 1e-7  # keyframe: int32 in 1e-7 deg
 LAT_LON_DELTA_UNIT = 1e-6  # delta: int16 in 1e-6 deg, so ±0.032 deg ≈ ±3.6 km per step
+KEY_SCALE = 10_000_000     # degrees × this, rounded half away from zero, is the keyframe unit
+DELTA_SCALE = 1_000_000
 ALT_NONE = 0x7FFF
 
 
@@ -69,7 +71,19 @@ class Sample:
 
 
 def _q(deg: float, unit: float) -> int:
-    return int(round(deg / unit))
+    """Degrees to integer units, rounded half away from zero — the arithmetic a 32-bit
+    watch does with `(deg * scale ± 0.5).toNumber()`, spelled the same way here so the two
+    ends agree on every last digit."""
+    scale = KEY_SCALE if unit == LAT_LON_KEY_UNIT else DELTA_SCALE
+    x = deg * scale
+    return int(x + 0.5) if x >= 0 else int(x - 0.5)
+
+
+def _base6(q7: int) -> int:
+    """The tracked 1e-7 position as a 1e-6 base for a delta: half away from zero, with the
+    truncating integer division C and Monkey C share."""
+    n = q7 + 5 if q7 >= 0 else q7 - 5
+    return -((-n) // 10) if n < 0 else n // 10
 
 
 class Encoder:
@@ -96,8 +110,8 @@ class Encoder:
         dt = s.t - p.t
         if dt < 1 or dt > DT_MAX:
             return None
-        dlat = _q(s.lat, LAT_LON_DELTA_UNIT) - round(self._qlat / 10)
-        dlon = _q(s.lon, LAT_LON_DELTA_UNIT) - round(self._qlon / 10)
+        dlat = _q(s.lat, LAT_LON_DELTA_UNIT) - _base6(self._qlat)
+        dlon = _q(s.lon, LAT_LON_DELTA_UNIT) - _base6(self._qlon)
         if not (-32768 <= dlat <= 32767 and -32768 <= dlon <= 32767):
             return None
         if s.alt_m is None or p.alt_m is None:
