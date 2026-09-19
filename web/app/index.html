@@ -84,15 +84,6 @@
      byte, and it is where the GitHub link lives now, on every page. -->
 <header class="topbar app-topbar">
 <!-- appheader:begin -->
-  <!-- THE APP MENU, ON EVERY TAB, IN THE SAME PLACE (docs/review-checklist.md, pattern M).
-       The iPhone app puts it at `.topBarLeading` on all four tab roots (ios/WingFoil/App/
-       AppMenu.swift); this is the same button in the same corner, and it is in the page
-       chrome rather than in a tab, so no tab can own it. Its rows and their order are the
-       kit's `AppMenuRow.ordered`, carried here by docs/copy/app-shell.json. -->
-  <button class="menu-btn" id="app-menu-btn" type="button"
-          aria-haspopup="dialog" aria-expanded="false" aria-controls="app-menu">
-    <span class="menu-glyph" aria-hidden="true"></span>Menu
-  </button>
   <!-- The mark and the name are the way back to the project homepage at the site root —
        the ordinary web convention, and the only navigation the analyzer needs to it. The
        name is not an <h1> here: the page's own title is the tab root's, one screen down,
@@ -103,6 +94,17 @@
   </a>
   <div class="topbar-right">
     <span class="chip" id="engine-chip" hidden>engine</span>
+    <!-- THE APP MENU, ON EVERY TAB, IN THE SAME PLACE (docs/review-checklist.md, pattern
+         M) — the same place on every web tab, top right. The iPhone app keeps it at
+         `.topBarLeading` (ios/WingFoil/App/AppMenu.swift); Jan made the exception on
+         19 September 2026 because the web header already differs (a mark and a name that
+         lead home, which the phone has no reason to carry), so the corner follows the
+         header it sits in. Its rows and their order are the kit's `AppMenuRow.ordered`,
+         carried here by docs/copy/app-shell.json. -->
+    <button class="menu-btn" id="app-menu-btn" type="button"
+            aria-haspopup="dialog" aria-expanded="false" aria-controls="app-menu">
+      <span class="menu-glyph" aria-hidden="true"></span>Menu
+    </button>
   </div>
 <!-- appheader:end -->
 </header>

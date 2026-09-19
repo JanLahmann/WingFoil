@@ -287,7 +287,7 @@ main { padding-bottom: calc(var(--tap) + 34px + env(safe-area-inset-bottom)); }
    window, which is a place a brand sits only on a marketing page. */
 .app-topbar { justify-content: flex-start; }
 
-.app-topbar .topbar-right { margin-inline-start: auto; }
+.app-topbar .topbar-right { margin-inline-start: auto; display: flex; align-items: center; gap: 10px; }
 
 .brand-name {
   font: 650 18px/1.2 var(--sans);
