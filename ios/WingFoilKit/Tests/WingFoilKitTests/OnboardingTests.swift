@@ -98,7 +98,7 @@ import Testing
         // do when it did not.
         #expect(HelpCatalog.topics(in: .setup).map(\.id)
                 == [.icuSetup, .exampleSession, .appleWatchApp, .appleWorkoutApp,
-                    .stravaImport, .shareFromWatchApp, .phoneOnly, .whichWatch,
+                    .stravaImport, .shareFromWatchApp, .phoneOnly, .browserApp, .whichWatch,
                     .icuTroubleshooting, .icuPrivacy, .privacy, .libraryBackup,
                     .sendingFeedback])
     }

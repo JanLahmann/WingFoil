@@ -220,6 +220,8 @@ public enum HelpTopicID: String, CaseIterable, Sendable, Identifiable {
     case icuTroubleshooting
     case icuPrivacy, privacy, libraryBackup
     case stravaImport, shareFromWatchApp, whichWatch, phoneOnly
+    /// The browser app, and the answer to "is there an Android app".
+    case browserApp
     case foilPct, flights, longestFlight, distance, mapLegend
     // **One page for the whole set** (Jan, dev 65: *"do we really need separate pages to
     // describe each distance?"*). It was eight ids — the set, six windows and the
@@ -407,9 +409,14 @@ public enum HelpCatalog {
                 + "Garmin, no account, no cable, not even CleanJibe's own watch app.",
                 "Health has no wingfoil workout type. CleanJibe reads the one you picked "
                 + "as a wingfoil session, because you asked it to.",
+                // Three sentences since 19 September 2026: the last one ran to 22 words,
+                // and the arrow at the head of the block is what kept check_voice.py from
+                // ever reading it. /help/ renders this on the web, where there is no arrow
+                // rule, and it failed on the first run.
                 "Then Import → Apple Health, allow CleanJibe to read workouts, and pick the "
-                + "ones you want. After the first one, switch on \"Import new Health workouts "
-                + "automatically\" and the next session is waiting when you open the app.",
+                + "ones you want. After the first one, switch on \"Import new Health "
+                + "workouts automatically\". The next session is then waiting when you open "
+                + "the app.",
                 "Speed comes off the watch's own GPS receiver, so these speed records are "
                 + "certified. Nothing records your wrist accelerometer, so there are no pump "
                 + "strokes and no failed takeoff attempts.",
@@ -586,6 +593,49 @@ public enum HelpCatalog {
             related: [.stravaImport, .shareFromWatchApp, .whichWatch, .sourceClass,
                       .speedRecords]),
 
+        // **The browser app.** One of the four questions on cleanjibe.org/learn until
+        // 19 September 2026 was "is there an app for the other phone", and /help/ is built
+        // from this catalogue now, so the answer lives where every other answer lives. It
+        // is a fair topic for the phone too: the reader who asks it is usually asking on
+        // behalf of a friend, or wants to hand somebody an analysis without an install.
+        //
+        // **It names no other platform** — App Store guideline 2.3.10, the rule that
+        // rewrote the phone-only topic on 14 September 2026 and that
+        // `PresentationTests.noHelpTopicNamesAnotherPlatform` holds. The browser is the
+        // subject here, which is a truthful and sufficient answer; the sentence that names
+        // the platform lives on /start/#watches, where it is the website speaking rather
+        // than the app.
+        //
+        // The browser app is a DIFFERENT PRODUCT: no channels, and it reads .gpx and .tcx
+        // in the tab the reader already has open (docs/copy/check_release_copy.py says so
+        // at its own target). That is why the formats are named here and the iPhone's own
+        // GPX door is not.
+        HelpTopic(
+            id: .browserApp, section: .setup, title: "CleanJibe in a browser",
+            summary: "The same analysis in any browser. Nothing to install, no account.",
+            body: [
+                "Open " + Branding.site + "/app and drop a recording in. You get the "
+                + "session back with its flights, its turns and its speed records.",
+                "It keeps a library, records and trends of its own. Any phone with a "
+                + "browser can read a session this way.",
+                "The file is read inside the tab. Nothing is uploaded and no account is "
+                + "asked for.",
+            ],
+            items: [
+                .init(term: "What it reads",
+                      detail: "A .fit, a .gpx or a .tcx, from any watch. The browser app is "
+                          + "not the iPhone app and has no channels."),
+                .init(term: "Install it from the browser",
+                      detail: "Where a browser offers it, the page installs. It gets an "
+                          + "icon, opens without browser chrome and works with no signal."),
+                .init(term: "Into the share sheet",
+                      detail: "Once it is installed, hold a file on the phone and pick "
+                          + "Share, then CleanJibe. The analysis opens on it."),
+            ],
+            links: [HelpLink(title: "Open the browser app",
+                             url: URL(string: Branding.siteURL + "/app")!)],
+            related: [.whichWatch, .phoneOnly, .shareFit, .privacy]),
+
         // One table, so "will my watch work" has one place to be answered instead of being
         // spread across five topics that each answer a third of it.
         HelpTopic(
@@ -700,8 +750,13 @@ public enum HelpCatalog {
             body: [
                 "Setting up a new iPhone from this one carries your library across, and so "
                 + "does an iCloud backup.",
-                "Settings → Library backup is for the case neither covers: a phone set up "
-                + "as new, or the app deleted and installed again.",
+                // Two sentences since 19 September 2026: at 23 words this was over the
+                // 20-word rule, and it only ever passed docs/copy/check_voice.py because a
+                // literal with an arrow in it is skipped as path notation. /help/ renders
+                // the catalogue on the web, where there is no arrow rule, and the page said
+                // so on the first run.
+                "Settings → Library backup is for the case neither covers. That is a phone "
+                + "set up as new, or the app deleted and installed again.",
                 "The file holds every recording you imported, and what nothing else can "
                 + "bring back. That is each session's name and caption, whose it was, its "
                 + "gear. Your spot names and the sessions you deleted on purpose are there "

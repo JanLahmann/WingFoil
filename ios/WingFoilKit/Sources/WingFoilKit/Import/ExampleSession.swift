@@ -38,10 +38,16 @@ public enum ExampleSession {
     /// Every number here is one the library row and the detail page actually show, so the
     /// promise and the screen cannot disagree — a blurb quoting a duration the row
     /// computes differently is worse than no blurb.
+    ///
+    /// **One thought per sentence** (docs/voice.md, rules 1 and 4). It was one 40-word
+    /// sentence with an em-dash in the middle until 19 September 2026, and it reached a
+    /// rider on three surfaces: the empty library's setup card, the app's Help, and — since
+    /// /help/ is that catalogue rendered — cleanjibe.org. The dash was a second sentence
+    /// hiding, which is what the rule says it always is.
     public static let blurb =
-        "A real wingfoil session on Lake Garda — ten minutes, 2 flights, 10 jibes, 2.6 km "
-        + "and 68 % foil time, with the track, the speed chart, the turn outcomes, the "
-        + "pump counts and the heart-rate cost all filled in."
+        "A real wingfoil session on Lake Garda. Ten minutes, 2 flights, 10 jibes, 2.6 km "
+        + "and 68 % foil time. The track, the speed chart, the turn outcomes, the pump "
+        + "counts and the heart-rate cost are all filled in."
 
     /// The bundled FIT inside the kit's resource bundle.
     public static var url: URL? {
