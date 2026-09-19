@@ -10,6 +10,14 @@
  * are drawn in the presentation tokens and are untouched by this file.
  */
 
+/* ------------------------------------------------------------------- one banner */
+
+/* At most one banner at a time. The page can raise three — a new version, Chrome's
+   install offer, and js/install.js's iOS home-screen hint — and nothing stopped two of
+   them stacking over the topbar. They sit in priority order in the document, so the
+   first visible one wins and every later one stands down until it is the only one left. */
+.update-banner:not([hidden]) ~ .update-banner:not([hidden]) { display: none; }
+
 /* ----------------------------------------------------------------- the menu button */
 
 .menu-btn {
@@ -133,11 +141,13 @@ main { padding-bottom: calc(var(--tap) + 24px + env(safe-area-inset-bottom)); }
     bottom: 0;
     width: 190px;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 4px;
     border-top: 0;
     border-right: 1px solid var(--line);
-    padding: 0 12px;
+    /* Top-aligned, under the topbar, the way an iPad sidebar sits. Centred down a
+       full-height column read as a leftover sidebar rather than as the phone's tab bar. */
+    padding: calc(var(--topbar-h, 69px) + 12px) 12px 12px;
   }
 
   .tabbar button {
@@ -350,6 +360,11 @@ main { padding-bottom: calc(var(--tap) + 24px + env(safe-area-inset-bottom)); }
    is absent). It cannot use `hidden`: js/sections.js owns that attribute on every panel
    the session switcher governs, and would put the block back on the next chip press. */
 .is-absent { display: none !important; }
+
+/* A panel with nothing drawn in it yet is not a panel. The quiver renders from IndexedDB,
+   which can be slow and, in a locked-down browser, never answers at all; until it does,
+   its card is an empty bordered box on the page. Missing is absent here too. */
+#gear-quiver-panel:has(#gear-quiver:empty) { display: none; }
 
 /* A labelled field inside a sheet. The same shape `.rider-name` gives the one field the
    rider prompt has, named for the sheets rather than for that one prompt. */

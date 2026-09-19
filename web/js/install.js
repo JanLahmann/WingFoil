@@ -83,6 +83,12 @@ function bar() {
   return node;
 }
 
+/* Last of the three banners, and under the topbar rather than over it. Prepending to the
+   body put this one hint above the sticky header while Chrome's identical bar sat below
+   it; sitting last also makes it the one that stands down when another banner is up
+   (css/app.css, "one banner"). */
 if (installableOnIos() && !remembered()) {
-  document.body.prepend(bar());
+  const after = document.getElementById("install-banner");
+  if (after) after.after(bar());
+  else document.body.prepend(bar());
 }
