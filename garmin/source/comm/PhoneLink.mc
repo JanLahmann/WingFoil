@@ -294,6 +294,7 @@ module PhoneLink {
         var now = phoneReachable();
         if (now && !_wasConnected) {
             send();
+            DirectSend.pump();
         }
         _wasConnected = now;
     }
@@ -375,6 +376,11 @@ module PhoneLink {
         // never a wind; the two pushes are told apart by that key, not by size.
         if (d[MapSnapshot.K_SCHEMA] != null) {
             return MapSnapshot.store(d);
+        }
+        // The direct transfer's ack and need list (docs/transfer-format.md §3); a stub
+        // that answers false outside the dev build.
+        if (DirectSend.applyMessage(d)) {
+            return true;
         }
         return applyWind(d[KEY_IN_WIND]);
     }

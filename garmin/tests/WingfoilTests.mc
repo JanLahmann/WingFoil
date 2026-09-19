@@ -4312,3 +4312,229 @@ function wordsNeverWalkTheNumberLadder(logger as Test.Logger) as Boolean {
         "textFontFrom skipped a rung that fits");
     return true;
 }
+
+// ====================================================================== the direct transfer
+// docs/transfer-format.md. Dev stream only, so these compile with monkey-dev.jungle and are
+// excluded with the beta's and the release's `excludeAnnotations = dev`.
+
+// A radio that behaves like the probe measured: onComplete arrives, the phone's ack comes
+// later, from the test. It never calls onComplete twice for one page.
+(:test :dev)
+class DirectFakeRadio extends PhoneLink.Radio {
+    var sent as Array<Number> = [] as Array<Number>;     // page indices, in order
+    var lastPayload as Dictionary?;
+    var complete as Boolean = true;
+
+    function initialize() {
+        PhoneLink.Radio.initialize();
+    }
+
+    function send(payload as Dictionary, listener as Communications.ConnectionListener) as Void {
+        sent.add(payload[DirectSend.KEY_PAGE] as Number);
+        lastPayload = payload;
+        if (complete) {
+            listener.onComplete();
+        } else {
+            listener.onError();
+        }
+    }
+}
+
+(:dev)
+function hexOf(b as ByteArray) as String {
+    var digits = "0123456789abcdef";
+    var s = "";
+    for (var i = 0; i < b.size(); i++) {
+        var v = b[i];
+        s += digits.substring(v >> 4, (v >> 4) + 1) + digits.substring(v & 15, (v & 15) + 1);
+    }
+    return s;
+}
+
+// The worked example of docs/transfer-format.md §2.3, byte for byte — the same 64 bytes
+// lab/tools/cjr_ref.py --check derives and the kit's DirectStreamTests pin.
+(:test :dev)
+function directStreamMatchesTheReference(logger as Test.Logger) as Boolean {
+    AppSettings.phonePush = true;
+    DirectSend.discard();
+    DirectSend.reachableOverride = false;
+    DirectSend.begin(1756556820, 200);
+    DirectSend.recordFix(45.8710000d, 10.8630000d, 1756556820, 0, 66, 98, DirectSend.devPack(0, 0, 0, 0));
+    DirectSend.recordFix(45.8710050d, 10.8630120d, 1756556821, 310, 66, 101, DirectSend.devPack(1, 0, 0, 1));
+    DirectSend.recordFix(45.8710110d, 10.8630250d, 1756556822, 640, 65, 104, DirectSend.devPack(2, 12, 3, 2));
+    var open = DirectSend.openBytes();
+    Test.assertMessage(open != null, "the page is open");
+    var hex = hexOf(open as ByteArray);
+    var want = "434a5231010002091" + "4eeb268c8000000"
+        + "ff14eeb268f05b571bf08f79060000420062000000000"
+        + "105000c0036010065010000010106000d008002ff68020c0302";
+    logger.debug(hex);
+    Test.assertEqualMessage(hex, want, "the bytes are the reference's");
+    Test.assertEqual((open as ByteArray).size(), 64);
+    DirectSend.discard();
+    return true;
+}
+
+// Every page opens with a keyframe, no page exceeds 8 000 bytes, and a pause longer than
+// 254 s, an altitude that appears, and the sixtieth record each force a keyframe.
+(:test :dev)
+function directStreamPagesOpenWithAKeyframe(logger as Test.Logger) as Boolean {
+    AppSettings.phonePush = true;
+    DirectSend.discard();
+    DirectSend.reachableOverride = false;
+    DirectSend.begin(1756556820, -1);
+    var t = 1756556820;
+    var lat = 45.871d;
+    var lon = 10.863d;
+    for (var i = 0; i < 1300; i++) {
+        var alt = i < 100 ? DirectSend.ALT_NONE : 66;
+        if (i == 700) { t += 400; }             // a pause
+        DirectSend.recordFix(lat, lon, t, 500 + (i % 300), alt, 100, DirectSend.devPack(2, 0, 0, i % 255));
+        lat += 0.00003d;
+        lon += 0.00002d;
+        t += 1;
+    }
+    DirectSend.finish();
+    var n = DirectSend.pageCount();
+    Test.assertMessage(n >= 3, "1 300 fixes are three pages at least, got " + n);
+    var keyframes = 0;
+    for (var p = 0; p < n; p++) {
+        var page = DirectSend.page(p);
+        Test.assertMessage(page.size() <= DirectSend.PAGE_BYTES, "page " + p + " over 8 000");
+        var first = p == 0 ? DirectSend.HEADER_BYTES : 0;
+        Test.assertMessage(page[first] == DirectSend.KEYFRAME_TAG,
+            "page " + p + " does not open with a keyframe");
+        var i = first;
+        while (i < page.size()) {
+            if (page[i] == DirectSend.KEYFRAME_TAG) {
+                keyframes += 1;
+                i += DirectSend.KEYFRAME_BYTES;
+            } else {
+                i += DirectSend.DELTA_BYTES;
+            }
+        }
+        Test.assertMessage(i == page.size(), "page " + p + " ends mid-record");
+    }
+    // 1300 / 60 → 22 scheduled, plus the pause, the altitude edge and one per page start.
+    Test.assertMessage(keyframes >= 24 && keyframes <= 30,
+        "keyframe count off: " + keyframes);
+    logger.debug(n + " pages, " + keyframes + " keyframes");
+    DirectSend.discard();
+    return true;
+}
+
+// One page in flight, the next only after the phone's ack, a need list re-sends, and the
+// empty need list frees the stream. The rules the probe wrote in blood (8 KB, one at a
+// time) are asserted on the fake radio's order.
+(:test :dev)
+function directSendMovesOnePageAtATime(logger as Test.Logger) as Boolean {
+    var saved = PhoneLink.radio;
+    var fake = new DirectFakeRadio();
+    PhoneLink.radio = fake;
+    AppSettings.phonePush = true;
+    DirectSend.discard();
+    DirectSend.reachableOverride = true;
+    DirectSend.begin(1756556820, 200);
+    var t = 1756556820;
+    for (var i = 0; i < 1300; i++) {
+        DirectSend.recordFix(45.871d, 10.863d, t, 500, 66, 100, DirectSend.devPack(2, 0, 0, i % 255));
+        t += 1;
+    }
+    DirectSend.finish();
+    var n = DirectSend.pageCount();
+    Test.assertMessage(n >= 3, "three pages at least");
+    // Page 0 left when it closed; nothing else may leave before its ack.
+    Test.assertEqual(fake.sent.size(), 1);
+    Test.assertEqual(fake.sent[0], 0);
+    Test.assertEqual(DirectSend.inFlight(), 0);
+    var p0 = fake.lastPayload as Dictionary;
+    Test.assertEqual(p0[DirectSend.KEY_MSG], 1);
+    Test.assertEqual(p0[DirectSend.KEY_SID], 1756556820);
+    Test.assertEqual(p0[DirectSend.KEY_STREAM], 0);
+
+    // The ack for page 0 releases page 1; a stray ack for a page not on the radio is
+    // taken as a record but sends nothing new while 1 is in flight.
+    Test.assertMessage(DirectSend.applyMessage({"cjrAck" => [1756556820, 0, 0]}), "ack 0");
+    Test.assertEqual(fake.sent.size(), 2);
+    Test.assertEqual(fake.sent[1], 1);
+    Test.assertMessage(DirectSend.acked(0), "page 0 acked");
+    Test.assertMessage(!DirectSend.applyMessage({"cjrAck" => [999, 0, 1]}), "wrong sid");
+    Test.assertMessage(!DirectSend.applyMessage({"cjrAck" => "no"}), "malformed");
+    Test.assertEqual(fake.sent.size(), 2);
+
+    // Ack everything; the last page carries e = 1 and n.
+    for (var p = 1; p < n; p++) {
+        DirectSend.applyMessage({"cjrAck" => [1756556820, 0, p]});
+    }
+    Test.assertEqual(fake.sent.size(), n);
+    var last = fake.lastPayload as Dictionary;
+    Test.assertEqual(last[DirectSend.KEY_END], 1);
+    Test.assertEqual(last[DirectSend.KEY_COUNT], n);
+    Test.assertEqual(DirectSend.inFlight(), -1);
+
+    // The phone missed page 1: the need list re-sends it, and only it.
+    Test.assertMessage(DirectSend.applyMessage({"cjrNeed" => [1756556820, 0, [1]]}), "need");
+    Test.assertEqual(fake.sent.size(), n + 1);
+    Test.assertEqual(fake.sent[n], 1);
+    DirectSend.applyMessage({"cjrAck" => [1756556820, 0, 1]});
+    Test.assertEqual(fake.sent.size(), n + 1);
+
+    // The empty need list is the release.
+    Test.assertMessage(DirectSend.applyMessage({"cjrNeed" => [1756556820, 0, []]}), "done");
+    Test.assertEqual(DirectSend.pageCount(), 0);
+    Test.assertEqual(DirectSend.statusLine(), "phone ok");
+    logger.debug(n + " pages, one at a time, " + fake.sent.size() + " sends");
+
+    DirectSend.reachableOverride = null;
+    PhoneLink.radio = saved;
+    return true;
+}
+
+// A radio error leaves the page for a retry; the phone out of reach sends nothing; the
+// beta's off switch (phonePush) is this stream's off switch too.
+(:test :dev)
+function directSendWaitsForThePhone(logger as Test.Logger) as Boolean {
+    var saved = PhoneLink.radio;
+    var fake = new DirectFakeRadio();
+    fake.complete = false;
+    PhoneLink.radio = fake;
+    AppSettings.phonePush = true;
+    DirectSend.discard();
+    DirectSend.reachableOverride = false;
+    DirectSend.begin(1756556820, 200);
+    for (var i = 0; i < 700; i++) {
+        DirectSend.recordFix(45.871d, 10.863d, 1756556820 + i, 500, 66, 100, DirectSend.devPack(2, 0, 0, i % 255));
+    }
+    DirectSend.finish();
+    Test.assertEqual(fake.sent.size(), 0);           // no phone, no send
+    Test.assertMessage(DirectSend.pageCount() >= 1, "pages queued");
+
+    // The phone appears: the connected edge pumps; the radio fails; three retries, then
+    // the stream waits for the next edge instead of hammering the radio.
+    DirectSend.reachableOverride = true;
+    DirectSend.pump();
+    Test.assertMessage(fake.sent.size() >= 1 && fake.sent.size() <= 1 + DirectSend.RETRIES,
+        "retries bounded: " + fake.sent.size());
+    Test.assertEqual(DirectSend.inFlight(), -1);
+    Test.assertMessage(!DirectSend.acked(0), "an errored page is not acked");
+
+    // The switch off: nothing leaves, not even with a phone.
+    fake.complete = true;
+    AppSettings.phonePush = false;
+    var before = fake.sent.size();
+    DirectSend.pump();
+    Test.assertEqual(fake.sent.size(), before);
+    AppSettings.phonePush = true;
+
+    // A recording begun with the switch off records nothing.
+    DirectSend.discard();
+    AppSettings.phonePush = false;
+    DirectSend.begin(1, -1);
+    DirectSend.recordFix(45.871d, 10.863d, 1, 500, 66, 100, DirectSend.devPack(2, 0, 0, 0));
+    Test.assertMessage(DirectSend.openBytes() == null, "switch off, no stream");
+    AppSettings.phonePush = true;
+    DirectSend.reachableOverride = null;
+    PhoneLink.radio = saved;
+    logger.debug("ok");
+    return true;
+}

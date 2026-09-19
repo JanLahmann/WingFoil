@@ -27,7 +27,7 @@ module LinkProbe {
     const KEY_PROBE = "pr";     // payload size in bytes
     const KEY_SEQ = "q";        // 1..3 within a burst
     const KEY_BYTES = "b";      // the page
-    const LOG_MAX = 8;
+    const LOG_MAX = 16;
 
     (:notdev)
     function addMenuItem(menu as WatchUi.Menu2) as Void {
@@ -58,7 +58,6 @@ module LinkProbe {
         menu.addItem(new WatchUi.MenuItem("1 KB", null, 1024, null));
         menu.addItem(new WatchUi.MenuItem("4 KB", null, 4096, null));
         menu.addItem(new WatchUi.MenuItem("8 KB", null, 8192, null));
-        menu.addItem(new WatchUi.MenuItem("16 KB", null, 16384, null));
         menu.addItem(new WatchUi.MenuItem("8 KB x3", "back to back", :burst, null));
         menu.addItem(new WatchUi.MenuItem("Results", null, :results, null));
         menu.addItem(new WatchUi.MenuItem("Clear log", null, :clear, null));
@@ -90,6 +89,26 @@ module LinkProbe {
     (:dev)
     function encodingName() as String {
         return System.getDeviceSettings().monkeyVersion[0] >= 6 ? "bytes" : "array";
+    }
+
+    (:dev) var _chainLeft as Number = 0;
+    (:dev) var _chainN as Number = 0;
+
+    // `count` pages of n bytes, one at a time: the next leaves from onComplete.
+    (:dev)
+    function chain(n as Number, count as Number) as Void {
+        _chainN = n;
+        _chainLeft = count - 1;
+        send(n, 1);
+    }
+
+    (:dev)
+    function chainNext(seq as Number) as Void {
+        if (_chainLeft <= 0) {
+            return;
+        }
+        _chainLeft -= 1;
+        send(_chainN, seq + 1);
     }
 
     // One page onto the radio, timed from here to the listener's onComplete.
@@ -168,6 +187,7 @@ class ProbeListener extends Communications.ConnectionListener {
 
     function onComplete() as Void {
         LinkProbe.record(_n, _seq, _t0, true);
+        LinkProbe.chainNext(_seq);
     }
 
     function onError() as Void {
@@ -187,9 +207,10 @@ class ProbeMenuDelegate extends WatchUi.Menu2InputDelegate {
             LinkProbe.send(id as Number, 1);
             WatchUi.pushView(new ProbeView(), new ProbeViewDelegate(), WatchUi.SLIDE_UP);
         } else if (id == :burst) {
-            LinkProbe.send(8192, 1);
-            LinkProbe.send(8192, 2);
-            LinkProbe.send(8192, 3);
+            // A chain, not a burst: the second page goes when the first completes. Three
+            // in flight crashed the app on the fenix 8 (19 September 2026), and 16 KB did
+            // too, so that item is gone — 8 KB is the page (docs/direct-transfer.md §5).
+            LinkProbe.chain(8192, 3);
             WatchUi.pushView(new ProbeView(), new ProbeViewDelegate(), WatchUi.SLIDE_UP);
         } else if (id == :results) {
             WatchUi.pushView(new ProbeView(), new ProbeViewDelegate(), WatchUi.SLIDE_UP);

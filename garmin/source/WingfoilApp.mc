@@ -17,10 +17,13 @@ class WingfoilApp extends Application.AppBase {
         // after an offline save at which a card from a previous session can still get through.
         PhoneLink.register();
         PhoneLink.send();
+        // Pages of a direct stream an earlier run could not deliver (dev build only).
+        DirectSend.restore();
     }
 
     function onStop(state as Dictionary?) as Void {
         controller.emergencySave();
+        DirectSend.persist();
     }
 
     function onSettingsChanged() as Void {

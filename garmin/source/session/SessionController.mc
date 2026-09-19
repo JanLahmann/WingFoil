@@ -139,13 +139,17 @@ class SessionController {
             if (windEvent == AutoWind.EV_LOCK) {
                 AlertManager.autoWindLocked();
             }
+            var marker = FitFields.markerFor(turnEvent, engine.turns.lastKind);
             if (_fit != null) {
-                _fit.setRecord(engine.detector.state, engine.tickCount(),
-                    FitFields.markerFor(turnEvent, engine.turns.lastKind),
+                _fit.setRecord(engine.detector.state, engine.tickCount(), marker,
                     engine.pump.cadence);
                 _fit.updateSession(engine.detector, engine.records, engine.timerS,
                     engine.turns, engine.pump);
             }
+            // The same fix, the same four developer values, onto the direct stream
+            // (docs/transfer-format.md). A stub outside the dev build.
+            DirectSend.record(info, engine.speedMps, engine.hr, engine.detector.state,
+                engine.pump.cadence, marker, engine.tickCount() % 255);
             _intervalAlerts();
         } else {
             // pre-session and paused: keep quality/speed live so the start screen shows
@@ -238,6 +242,7 @@ class SessionController {
         // Stamped here, beside the call the FIT stamps its session start_time from: any other
         // moment (view construction, GPS lock) would drift the phone's dedupe key off the FIT.
         startEpochS = Time.now().value();
+        DirectSend.begin(startEpochS, AppSettings.cfg.windDirection);
         elapsedS = 0;
         state = STATE_RECORDING;
         _startAccel();
@@ -352,6 +357,9 @@ class SessionController {
         // position was the car park. With location events off the last fix the file can hold
         // is the last one it recorded, on the water.
         stopGps();
+        // The direct stream's last page closes before the FIT does, so the two agree on
+        // the final fix; sending goes on while the SAVED screen is up.
+        DirectSend.finish();
         var ok = _session.save();
         lastSaveOk = ok;
         state = STATE_SAVED;
@@ -393,6 +401,7 @@ class SessionController {
     }
 
     function finishDiscard() as Void {
+        DirectSend.discard();
         PbFlash.stop();
         EventFlash.clearAll();
         _stopAccel();
