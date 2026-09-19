@@ -25,18 +25,24 @@ pages in order, nothing added.
 
 ## 2 · Stream 0 — `rec.v1`
 
-### 2.1 Stream header (16 B, page 0 only)
+### 2.1 Stream header (20 B, page 0 only)
 
 | offset | type | field |
 |---|---|---|
 | 0 | `char[4]` | magic `CJR1` |
-| 4 | `uint8` | schema, 1 |
+| 4 | `uint8` | schema, **2** |
 | 5 | `uint8` | stream, 0 |
 | 6 | `uint16` | app version, `minor << 8 \| fitSchema`, as `SES_APP_VERSION` |
 | 8 | `uint32` | session start, epoch seconds — the card's `KEY_START` |
 | 12 | `int16` | wind direction the rider set, 0..359, −1 unset |
 | 14 | `uint8` | discipline, 0 = wingfoil |
 | 15 | `uint8` | flags, 0 |
+| 16 | `int16` | the watch's clock offset at start, minutes east of UTC; `0x7FFF` = none |
+| 18 | `uint16` | reserved, 0 |
+
+Schema 1 (19 September 2026, the first field test) had the 16-byte header without the
+offset and is still read; the phone then guesses the zone from longitude, which is the solar
+offset and an hour out under summer time — exactly what the first direct session showed.
 
 ### 2.2 Records
 
@@ -102,13 +108,13 @@ pages, about 26 s at the measured rate.
 
 ### 2.3 Worked example
 
-Header `stream 0, app 0x0902, start 1756556820, wind 200, wingfoil`, then three fixes one
+Header `stream 0, app 0x0902, start 1756556820, wind 200, wingfoil, clock +120 min`, then three fixes one
 second apart at Lake Garda (45.871°, 10.863°), speeds 0 / 3.10 / 6.40 m/s, altitude 66, 66,
 65 m, heart rate 98, 101, 104, foil state 0, 1, 2, cadence 0, 0, 12, marker 0, 0, 3, tick
-0, 1, 2. Encoded, 64 bytes:
+0, 1, 2. Encoded, 68 bytes:
 
 ```
-434a5231 01 00 0209 14eeb268 c800 00 00                        header
+434a5231 02 00 0209 14eeb268 c800 00 00 7800 0000              header
 ff 14eeb268 f05b571b f08f7906 0000 4200 62 00 00 00 00        keyframe
 01 0500 0c00 3601 00 65 01 00 00 01                           delta
 01 0600 0d00 8002 ff 68 02 0c 03 02                           delta

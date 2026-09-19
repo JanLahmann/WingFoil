@@ -16,9 +16,11 @@ import sys
 from dataclasses import dataclass
 
 MAGIC = b"CJR1"
-SCHEMA = 1
+SCHEMA = 2                # 2: the 20-byte header carries the watch's clock offset
 STREAM_RECORD = 0
-HEADER_BYTES = 16
+HEADER_BYTES = 20
+HEADER_BYTES_V1 = 16      # schema 1 streams, read but no longer written
+UTC_OFFSET_NONE = 0x7FFF
 KEYFRAME_TAG = 0xFF
 KEYFRAME_BYTES = 22
 DELTA_BYTES = 13
@@ -40,20 +42,34 @@ class Header:
     wind_dir: int          # 0..359, or -1 when unset
     discipline: int        # 0 wingfoil (the only value 0.9.x writes)
     flags: int = 0
+    utc_offset_min: int | None = None   # the watch's clock offset at start, minutes east of UTC
 
     def pack(self) -> bytes:
-        return MAGIC + struct.pack("<BBHIhBB", SCHEMA, self.stream, self.app_version,
+        off = UTC_OFFSET_NONE if self.utc_offset_min is None else self.utc_offset_min
+        return MAGIC + struct.pack("<BBHIhBBhH", SCHEMA, self.stream, self.app_version,
                                    self.start_epoch_s, self.wind_dir, self.discipline,
-                                   self.flags)
+                                   self.flags, off, 0)
 
     @classmethod
     def unpack(cls, b: bytes) -> "Header":
         if b[:4] != MAGIC:
             raise ValueError("not a CJR1 stream")
         schema, stream, app, start, wind, disc, flags = struct.unpack("<BBHIhBB", b[4:16])
+        if schema == 1:
+            return cls(stream, app, start, wind, disc, flags, None)
         if schema != SCHEMA:
             raise ValueError(f"schema {schema}")
-        return cls(stream, app, start, wind, disc, flags)
+        off, _reserved = struct.unpack("<hH", b[16:20])
+        return cls(stream, app, start, wind, disc, flags, None if off == UTC_OFFSET_NONE else off)
+
+    @property
+    def size(self) -> int:
+        return HEADER_BYTES
+
+
+def header_size(b: bytes) -> int:
+    """16 for a schema-1 stream, 20 from schema 2."""
+    return HEADER_BYTES_V1 if b[4] == 1 else HEADER_BYTES
 
 
 @dataclass
@@ -152,7 +168,7 @@ class Encoder:
 def decode(data: bytes) -> tuple[Header, list[Sample]]:
     """Decodes the concatenation of a stream's pages, in order."""
     header = Header.unpack(data[:HEADER_BYTES])
-    i = HEADER_BYTES
+    i = header_size(data)
     out: list[Sample] = []
     qlat = qlon = 0
     prev: Sample | None = None
@@ -181,14 +197,15 @@ def decode(data: bytes) -> tuple[Header, list[Sample]]:
 
 # ------------------------------------------------------------------ the worked example
 EXAMPLE_HEADER = Header(stream=STREAM_RECORD, app_version=9 * 256 + 2,
-                        start_epoch_s=1756556820, wind_dir=200, discipline=0)
+                        start_epoch_s=1756556820, wind_dir=200, discipline=0,
+                        utc_offset_min=120)
 EXAMPLE_SAMPLES = [
     Sample(1756556820, 45.8710000, 10.8630000, 0, 66, 98, 0, 0, 0, 0),
     Sample(1756556821, 45.8710050, 10.8630120, 310, 66, 101, 1, 0, 0, 1),
     Sample(1756556822, 45.8710110, 10.8630250, 640, 65, 104, 2, 12, 3, 2),
 ]
 EXAMPLE_HEX = (
-    "434a5231" "01" "00" "0209" "14eeb268" "c800" "00" "00"                       # header
+    "434a5231" "02" "00" "0209" "14eeb268" "c800" "00" "00" "7800" "0000"         # header
     "ff" "14eeb268" "f05b571b" "f08f7906" "0000" "4200" "62" "00" "00" "00" "00"  # keyframe
     "01" "0500" "0c00" "3601" "00" "65" "01" "00" "00" "01"                        # delta
     "01" "0600" "0d00" "8002" "ff" "68" "02" "0c" "03" "02"                        # delta
