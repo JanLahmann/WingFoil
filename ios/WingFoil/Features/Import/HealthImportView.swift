@@ -37,7 +37,7 @@ struct HealthImportView: View {
                 }
                 typesSection
             }
-            .navigationTitle("Apple Health")
+            .navigationTitle("Import from Health")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }

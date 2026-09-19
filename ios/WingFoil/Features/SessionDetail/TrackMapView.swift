@@ -320,8 +320,25 @@ struct FullScreenMapView: View {
         .onGeometryChange(for: CGSize.self) { $0.size } action: { size in
             direction.resized(to: size, detail: detail)
         }
-        .navigationTitle(SessionDisplay.title(detail.row))
+        // Pattern A (docs/review-checklist.md): the screen wore the session's name, which is
+        // the name of the *session* and not of this screen — its only name was the label on
+        // the door that opens it. "Map" is what it is; the session stays under it, the way
+        // the turn and flight-end pages carry their position.
+        .navigationTitle("Map")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                VStack(spacing: 0) {
+                    Text("Map").font(.headline)
+                    Text(SessionDisplay.title(detail.row))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+                .accessibilityElement(children: .combine)
+            }
+        }
         .ignoresSafeArea(edges: .bottom)
         // The same chips, over the same model: filtering the big map is exactly where a
         // rider wants it, and a second copy of the state would be the way to make the two

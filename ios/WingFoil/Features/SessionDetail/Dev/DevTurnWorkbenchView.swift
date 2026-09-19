@@ -15,6 +15,12 @@ import WingFoilKit
 /// It is deliberately **one view** inserted at **one place** on `TurnDetailView`, so the merge
 /// with whatever else is moving in that file is a single hunk. Everything it needs is either on
 /// the `SessionDetail` it is handed or on `DevWorkbench.shared`.
+///
+/// **It is a screen since 19 September 2026** (pattern A, docs/review-checklist.md). It was a
+/// heading called *Dev workbench* stacked under the turn page's own content, which
+/// docs/presentation.md already named as if it were a screen — four tools, no title bar and
+/// no way to refer to it. `DevTurnWorkbenchLink` is the row on the turn page and
+/// `DevTurnWorkbenchScreen` is what it pushes; this view is unchanged inside it.
 struct DevTurnWorkbenchView: View {
     let detail: SessionDetail
     /// Index into `detail.analysis.turns`.
@@ -36,12 +42,6 @@ struct DevTurnWorkbenchView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Divider()
-            Text("Dev workbench")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .textCase(.uppercase)
-
             labelControl
             if let trace {
                 tracePanel(trace)
@@ -395,6 +395,53 @@ struct DevTurnWorkbenchView: View {
             return
         }
         csvURL = url
+    }
+}
+
+/// **The workbench's name**, in one place: the row on the turn page and the title of the
+/// screen it pushes say the same three words.
+///
+/// Not plain "Tuning": Settings → **Tuning** is the 27 sliders, and two screens with one name
+/// is the pattern this rename exists to remove. This one is the sliders applied to *this
+/// turn* — was the verdict right, why did the ladder say so, would the defaults have agreed.
+enum DevTurnWorkbench {
+    static let screenTitle = "Tuning this turn"
+}
+
+/// The door on the turn page. A row rather than the block itself, because the four tools are
+/// a page of their own and the turn page is already four screens tall.
+struct DevTurnWorkbenchLink: View {
+    let detail: SessionDetail
+    let index: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Divider()
+            NavigationLink {
+                DevTurnWorkbenchScreen(detail: detail, index: index)
+            } label: {
+                Label(DevTurnWorkbench.screenTitle, systemImage: "slider.horizontal.3")
+                    .font(.footnote.weight(.semibold))
+            }
+        }
+    }
+}
+
+/// The workbench, on a page with a title bar.
+struct DevTurnWorkbenchScreen: View {
+    let detail: SessionDetail
+    let index: Int
+
+    var body: some View {
+        ScrollView {
+            DevTurnWorkbenchView(detail: detail, index: index)
+                .padding(.horizontal)
+                .padding(.top, 8)
+                .padding(.bottom, 24)
+                .readableColumn()
+        }
+        .navigationTitle(DevTurnWorkbench.screenTitle)
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

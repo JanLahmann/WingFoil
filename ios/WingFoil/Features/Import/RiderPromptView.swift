@@ -76,7 +76,11 @@ struct RiderPromptView: View {
                     }
                 }
             }
-            .navigationTitle("Import")
+            // Pattern A (docs/review-checklist.md): this sheet and the doors list were
+            // both called "Import", and only one of them imports anything. The title is
+            // the question the screen asks, which is also what the browser app already
+            // calls it (docs/screens.md).
+            .navigationTitle("Whose session is this?")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

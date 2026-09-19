@@ -63,12 +63,10 @@ struct TurnDetailSheet: View {
                 ToolbarItem(placement: .principal) {
                     VStack(spacing: 0) {
                         Text(title).font(.headline)
-                        if let position {
-                            Text(String(position) + " of " + String(indices.count)
-                                 + " · swipe for the next")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
+                        Text(subtitle)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
                     }
                     .accessibilityElement(children: .combine)
                 }
@@ -88,12 +86,26 @@ struct TurnDetailSheet: View {
         .presentationDragIndicator(.visible)
     }
 
-    /// "Jibe 7 · flew through" — the session map's own wording for the turn
-    /// (`SessionDetail.turnTitle`), with the rider's ordinal in front of it. The ordinal
+    /// **"Turn 7 of 12"** — the name of the screen, and where in the set you are.
+    ///
+    /// Pattern A (docs/review-checklist.md): the title used to be *"Jibe 7 · flew through"*,
+    /// which is the turn's *content*. A screen titled by its content has no name a rider can
+    /// ask for, and the swipe position was a caption underneath. The word is the name, the
+    /// ordinal is content, and the content moves to `subtitle` — which is where the kind and
+    /// the verdict now are, unchanged.
+    private var title: String {
+        guard let position else { return "Turn" }
+        return "Turn \(position) of \(indices.count)"
+    }
+
+    /// "Jibe 7 · flew through · swipe for the next" — the session map's own wording for the
+    /// turn (`SessionDetail.turnTitle`), with the rider's ordinal in front of it. The ordinal
     /// counts turns of the same *kind*, because "jibe 7" is what a rider means: it is his
     /// seventh jibe, not the seventh thing the detector saw.
-    private var title: String {
-        guard detail.analysis.turns.indices.contains(selection) else { return "Turn" }
+    private var subtitle: String {
+        guard detail.analysis.turns.indices.contains(selection) else {
+            return "swipe for the next"
+        }
         let turn = detail.analysis.turns[selection]
         let ordinal = indices
             .filter { detail.analysis.turns[$0].type == turn.type }
@@ -101,7 +113,7 @@ struct TurnDetailSheet: View {
             .map { $0 + 1 }
         let kind = TurnAnalytics.typeLabel(turn.type)
         let head = ordinal.map { "\(kind) \($0)" } ?? kind
-        return "\(head) · \(TurnOutcomeKind(turn.outcome).label)"
+        return "\(head) · \(TurnOutcomeKind(turn.outcome).label) · swipe for the next"
     }
 }
 
@@ -203,11 +215,13 @@ private struct TurnDetailPage: View {
                     numbers(turn, slice: slice)
                     coach(turn, slice: slice)
                     #if TUNING
-                    // The dev build's turn workbench (docs/presentation.md, "Dev workbench"):
-                    // the ground-truth label, the outcome ladder's working, the what-if against
-                    // the published defaults and the per-sample evidence table. One insertion,
-                    // one view, compiled out of the app external testers get.
-                    DevTurnWorkbenchView(detail: detail, index: index)
+                    // The dev build's turn workbench (docs/presentation.md, "Tuning this
+                    // turn"): the ground-truth label, the outcome ladder's working, the
+                    // what-if against the published defaults and the per-sample evidence
+                    // table. A screen of its own since 19 Sep 2026, so this is the row that
+                    // pushes it. One insertion, one view, compiled out of the app external
+                    // testers get.
+                    DevTurnWorkbenchLink(detail: detail, index: index)
                     #endif
                     footnote(turn)
                 } else {

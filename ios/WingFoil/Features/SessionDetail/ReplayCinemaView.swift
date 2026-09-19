@@ -986,7 +986,9 @@ private struct ReplayClipSheet: View {
                 try? AVAudioSession.sharedInstance()
                     .setActive(false, options: .notifyOthersOnDeactivation)
             }
-            .navigationTitle("Replay clip")
+            // The second half of the same feature, so the same name (pattern A). What
+            // you can do to it is on the buttons: Save, Discard, Done.
+            .navigationTitle("Replay")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {

@@ -47,7 +47,7 @@ struct StravaImportView: View {
                 }
                 qualitySection
             }
-            .navigationTitle("Strava")
+            .navigationTitle("Import from Strava")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }

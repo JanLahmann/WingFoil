@@ -58,12 +58,10 @@ struct FlightEndDetailSheet: View {
                 ToolbarItem(placement: .principal) {
                     VStack(spacing: 0) {
                         Text(title).font(.headline)
-                        if let position {
-                            Text(String(position) + " of " + String(indices.count)
-                                 + " · swipe for the next")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
+                        Text(subtitle)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
                     }
                     .accessibilityElement(children: .combine)
                 }
@@ -79,13 +77,23 @@ struct FlightEndDetailSheet: View {
         .presentationDragIndicator(.visible)
     }
 
-    /// "Flight 12 · fell in" — the rider's own ordinal, which is the *flight's* number and
-    /// not the end's position in the list. He remembers the ride, not the tally.
+    /// **"Flight end 3 of 9"** — the screen's name, and where in the set you are (pattern A,
+    /// the same rename as the turn page's).
     private var title: String {
-        guard detail.analysis.flightEnds.indices.contains(selection) else { return "Flight end" }
+        guard let position else { return "Flight end" }
+        return "Flight end \(position) of \(indices.count)"
+    }
+
+    /// "Flight 12 · fell in · swipe for the next" — the rider's own ordinal, which is the
+    /// *flight's* number and not the end's position in the list. He remembers the ride, not
+    /// the tally.
+    private var subtitle: String {
+        guard detail.analysis.flightEnds.indices.contains(selection) else {
+            return "swipe for the next"
+        }
         let end = detail.analysis.flightEnds[selection]
         return "Flight " + String(end.flightIndex + 1) + " · "
-            + FlightEndAnalytics.outcomeLabel(end.outcome)
+            + FlightEndAnalytics.outcomeLabel(end.outcome) + " · swipe for the next"
     }
 }
 

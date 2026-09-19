@@ -60,6 +60,22 @@ struct WelcomeView: View {
             // supported phone the identity block alone is taller than the safe area.
             .scrollBounceBehavior(.basedOnSize)
         }
+        // **The screen's one name** (pattern A, docs/review-checklist.md). It had three —
+        // the menu row calls it *What CleanJibe does*, the screen itself led with a
+        // headline, and every file here calls it "welcome" — so a rider who wanted it again
+        // had no word to look for. The menu row's name is the name, read from the row
+        // itself so there is one home for it (`AppMenuRow.whatItDoes`).
+        .overlay(alignment: .topLeading) {
+            Text(AppMenuRow.whatItDoes.title)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Brand.paper.opacity(0.85))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                .padding(.top, 18)
+                .padding(.leading, 20)
+                .accessibilityAddTraits(.isHeader)
+        }
         // A way out that looks like one. The three buttons all leave the screen, but the
         // rider who opened it *again* from the menu is not choosing a way in, he is reading
         // — and a page with no close control reads as a gate (Jan, 13 Sep 2026). Same

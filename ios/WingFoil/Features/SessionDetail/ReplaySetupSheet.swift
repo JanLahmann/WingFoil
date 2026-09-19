@@ -160,7 +160,11 @@ struct ReplaySetupSheet: View {
                 .padding(.bottom, 24)
             }
             .safeAreaInset(edge: .bottom) { startBar }
-            .navigationTitle(ReplayRecorder.isAvailable ? "Record replay" : "Play replay")
+            // One feature, one name (pattern A). The screen was "Record replay" or
+            // "Play replay" depending on what the phone could do, which made one door
+            // read as two features. The verb is on the button at the bottom, where the
+            // difference actually is.
+            .navigationTitle("Replay")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

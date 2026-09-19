@@ -512,7 +512,7 @@ struct LibraryView: View {
             // phone's width at the default text size, and two of these on one line wrap
             // into four ragged lines before a rider has raised his text size at all.
             Button { store.replayWelcome() } label: {
-                Label("What CleanJibe does", systemImage: "hand.wave")
+                Label(AppMenuRow.whatItDoes.title, systemImage: "hand.wave")
                     .font(.footnote.weight(.semibold))
             }
             Button {
