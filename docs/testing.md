@@ -606,6 +606,21 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
      (7-day window, the
      `foilTimeS`→`foilPct` fallback for pre-v2 rows, encode/decode round-trip, and the
      invariant that the store never claims the shared container it does not have).
+   - `SessionPagingTests` — which way a flick turns the session page (`SessionPaging`). The
+     finger drags the content, so left is the **next** session in the list's order and right
+     is the previous one, mirrored at every distance that commits. A short drag stays, a
+     short drag *thrown* hard turns, a flick that reverses mid-drag stays, and a drag that is
+     not much flatter than it is tall belongs to the inline map. Plus the rubber band: the
+     page follows the finger the way it went, never past the limit, and barely at all where
+     there is no session to turn to.
+   - `RowMetricTests` — the three numbers a library row carries (`RowMetric`). Every case has
+     a word and a glyph and no two share a word (pattern H), the default triple is foil ·
+     jibes · best 2 s, each case spells its value the way the rest of the app spells it, an
+     unfilled row prints "—" rather than a zero, and the rider's choice round-trips —
+     including the half-written and unknown values, which fill from the default rather than
+     leaving the row a cell short. `TrackTileRegionTests` beside it pins the map behind the
+     track: the region is the square the inset leaves, widened to the tile's own shape, and
+     an inset that eats the tile yields no region at all.
    - `GdprImportTests` — a synthetic Garmin export (ZIP of ZIPs holding two fixture FITs, a
      gzipped member, JSON noise, `__MACOSX` junk and one unreadable FIT): every session
      imported exactly once, incremental progress callbacks, `import_log` rows, a **re-run

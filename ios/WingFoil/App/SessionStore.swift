@@ -186,6 +186,26 @@ final class SessionStore {
         UserDefaults.standard.bool(forKey: listMapBackdropKey)
     }
 
+    /// **The three numbers every library row carries** (Jan, Beta 75). Which three is a
+    /// fact about the rider — one is chasing a speed, the next is counting clean jibes —
+    /// so it is his to set (Settings → Session list → Row shows). What each one is called,
+    /// what it is drawn with and how it is spelled is the kit's (`RowMetric`).
+    ///
+    /// Always three, whatever is in the defaults: `RowMetric.triple(stored:)` fills a slot
+    /// it cannot read from the default rather than leaving the row a cell short.
+    var rowMetrics: [RowMetric] = SessionStore.storedRowMetrics {
+        didSet {
+            guard rowMetrics != oldValue else { return }
+            UserDefaults.standard.set(RowMetric.stored(rowMetrics), forKey: Self.rowMetricsKey)
+        }
+    }
+
+    static let rowMetricsKey = "sessionRowMetrics"
+
+    private static var storedRowMetrics: [RowMetric] {
+        RowMetric.triple(stored: UserDefaults.standard.string(forKey: rowMetricsKey))
+    }
+
     /// **The Sessions tab's run, in the order it is drawing it** — what the filter left and
     /// the grouping ordered. The session page reads it so a swipe walks the afternoons in
     /// the order the rider is reading them (`SessionDetailView.order`). Empty until the list
@@ -2979,6 +2999,7 @@ final class SessionStore {
         mapLayersByScope = Self.initialMapLayers()
         replayCommentary = Self.storedReplayCommentary
         listMapBackdrop = Self.storedListMapBackdrop
+        rowMetrics = Self.storedRowMetrics
         replayClipLength = Self.storedReplayClipLength
         replayFraming = Self.storedReplayFraming
         replayMusic = Self.storedReplayMusic

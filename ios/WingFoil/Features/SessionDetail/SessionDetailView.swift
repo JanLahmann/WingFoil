@@ -49,6 +49,13 @@ struct SessionDetailView: View {
     /// would build a stack he then has to unwind, and the back button would lie about
     /// where it goes. Nil until he swipes, so a cold push still draws what it was asked for.
     @State private var shownID: String?
+    /// How far the page is drawn from its resting place while a finger is on it. Zero at
+    /// rest, which is every moment except the drag itself.
+    @State private var dragX: CGFloat = 0
+    /// Which way the last page turn went, so the two halves of the slide — the page
+    /// leaving and the page arriving — are told apart (`pageTurn`). It outlives the drag
+    /// because the transition is read while the animation runs.
+    @State private var lastStep = SessionPaging.Step.next
     /// The title editor. Renaming used to live only inside the share composer, which is a
     /// long way to go to fix a name the list is showing wrong (GitHub issue 13).
     @State private var renaming = false
@@ -110,6 +117,36 @@ struct SessionDetailView: View {
         return order[position + 1]
     }
 
+    /// **Turns the page**, one step in the list's order, with the slide that says which way
+    /// it went. The flick and the `‹ ›` pair both come through here, so the two moves are
+    /// the same move and are animated once.
+    ///
+    /// A step with nothing on the other side of it — the ends of the list — still runs:
+    /// the page springs back from wherever the finger left it, which is the answer a
+    /// scroll view gives at its own ends.
+    private func turn(_ step: SessionPaging.Step) {
+        let target = switch step {
+        case .next: nextID
+        case .previous: previousID
+        case .stay: String?.none
+        }
+        withAnimation(.snappy(duration: 0.28)) {
+            dragX = 0
+            if let target {
+                lastStep = step
+                show(target)
+            }
+        }
+    }
+
+    /// The slide itself: the outgoing page leaves by the edge the finger pushed it towards
+    /// and the incoming one arrives from the opposite one. Turning back reverses both.
+    private var pageTurn: AnyTransition {
+        let forward = lastStep != .previous
+        return .asymmetric(insertion: .move(edge: forward ? .trailing : .leading),
+                           removal: .move(edge: forward ? .leading : .trailing))
+    }
+
     /// Moves the page to another session and forgets everything that was about the old one.
     /// The selected tab deliberately survives: a rider comparing his jibes stays on Turns.
     private func show(_ id: String?) {
@@ -129,7 +166,13 @@ struct SessionDetailView: View {
         return detail.efforts.first { $0.id == selectedEffort }
     }
 
-    var body: some View {
+    /// **One session's page**, as its own view so that turning to another one can animate.
+    ///
+    /// It is given `.id(shown)` by the body below, which means SwiftUI builds a second copy
+    /// of it for the session being turned to and keeps this one alive while the two slide
+    /// past each other. Nothing in here knows about that, and nothing in here changed when
+    /// the page learned to slide.
+    private var page: some View {
         ScrollView {
             ScrollViewReader { proxy in
             // `pinnedViews` is what makes the switcher sticky: it stays under the nav bar
@@ -275,22 +318,55 @@ struct SessionDetailView: View {
             #endif
             }
         }
+    }
+
+    var body: some View {
+        // **The page slides; it does not swap** (Jan, Beta 75). One session is on screen at
+        // a time and the outgoing one leaves the way the finger pushed it: drag left and
+        // the afternoon on screen goes left while the next one arrives from the right. The
+        // `ZStack` is what lets both exist for the third of a second that takes.
+        ZStack {
+            page
+                .id(shown)
+                .transition(pageTurn)
+        }
+        // Mid-drag the whole page rides under the finger (`SessionPaging.follow`), so the
+        // flick is a page turn before it is committed — and visibly nothing at all at the
+        // ends of the list, where there is no page to turn to.
+        .offset(x: dragX)
+        // The sliding pages stop at the screen's edges rather than drawing over the bars.
+        .clipped()
         .navigationTitle(row.map(SessionDisplay.title) ?? "Session")
         .navigationBarTitleDisplayMode(.inline)
         // **A horizontal flick turns the page to the next afternoon.**
         //
         // `simultaneousGesture`, so the vertical scroll and the map's own pan keep every
         // touch they had — and a strict predicate, because the inline map pans horizontally
-        // too: a drag counts only when it is long, flat and mostly sideways. The `‹ ›` pair
-        // beside the date is the same move for a rider who never tries the flick, and the
-        // only chrome it costs.
+        // too: a drag counts only when it is flat and mostly sideways
+        // (`SessionPaging.isHorizontal`). The `‹ ›` pair beside the date is the same move
+        // for a rider who never tries the flick, and the only chrome it costs.
+        //
+        // Which way it goes is the kit's rule and not a ternary typed here: the finger
+        // drags the content, so leftwards brings in the next session in the list's order
+        // (`SessionPaging`, pinned by `SessionPagingTests`).
         .simultaneousGesture(
-            DragGesture(minimumDistance: 30).onEnded { value in
-                let dx = value.translation.width
-                let dy = value.translation.height
-                guard abs(dx) >= 100, abs(dy) <= 48, abs(dx) > abs(dy) * 2.5 else { return }
-                show(dx < 0 ? nextID : previousID)
-            })
+            DragGesture(minimumDistance: 30)
+                .onChanged { value in
+                    let dx = value.translation.width
+                    let dy = value.translation.height
+                    guard SessionPaging.isHorizontal(dx: dx, dy: dy) else {
+                        if dragX != 0 { withAnimation(.snappy) { dragX = 0 } }
+                        return
+                    }
+                    dragX = SessionPaging.follow(
+                        dx: dx, hasTarget: (dx < 0 ? nextID : previousID) != nil)
+                }
+                .onEnded { value in
+                    let step = SessionPaging.step(
+                        dx: value.translation.width, dy: value.translation.height,
+                        predictedDx: value.predictedEndTranslation.width)
+                    turn(step)
+                })
         #if DEBUG && targetEnvironment(simulator)
         .navigationDestination(isPresented: $showFullScreenMap) {
             if let detail {
@@ -544,8 +620,9 @@ struct SessionDetailView: View {
                     // The flick, for a rider who has not found the flick. Two glyphs and no
                     // words: the arrows are beside a date, and what is on the other side of
                     // a date needs no label.
-                    stepButton("chevron.left", to: previousID, reads: "Previous session")
-                    stepButton("chevron.right", to: nextID, reads: "Next session")
+                    stepButton("chevron.left", .previous, to: previousID,
+                               reads: "Previous session")
+                    stepButton("chevron.right", .next, to: nextID, reads: "Next session")
                 }
                 // **Where this recording came from**, under the date and nowhere else on
                 // this tab. It was on the Log tab only, four taps from the question — and
@@ -598,9 +675,11 @@ struct SessionDetailView: View {
 
     /// One step along the list, greyed at the ends rather than absent: a control that
     /// vanishes at the last session is a control a rider stops trusting (pattern G).
-    private func stepButton(_ symbol: String, to id: String?,
+    private func stepButton(_ symbol: String, _ step: SessionPaging.Step, to id: String?,
                             reads: String) -> some View {
-        Button { show(id) } label: {
+        // Through `turn` like the flick, so the arrow slides the page the same way the
+        // finger does. A rider who uses both must not see two different animations.
+        Button { turn(step) } label: {
             Image(systemName: symbol)
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(id == nil ? AnyShapeStyle(.tertiary)

@@ -21,22 +21,34 @@ enum ListMapBackdrop {
     /// square sits in or the picture and the line would be drawn at two scales.
     static let size = CGSize(width: 62, height: 44)
 
-    /// What `TrackOutlineView` insets its fit by, on each edge.
-    static let padding: Double = 2
+    /// **The one inset between the tile's edge and the drawn square**, which the row hands
+    /// to `TrackOutlineView` and the region below is derived from.
+    ///
+    /// It was two numbers: the outline view's own 2 pt, and a `.padding(3)` the row wrapped
+    /// it in. The region knew only the first, so the map was computed for a 40 pt square
+    /// under a line drawn in a 34 pt one — an 18 % scale difference between the picture and
+    /// the track on it, which reads as a track shoved off towards an edge rather than as a
+    /// zoom (Jan, Beta 75). One constant, read by both halves, is the fix.
+    static let inset: Double = 5
 
-    /// The region that lands the unit square exactly where the outline draws it.
+    /// The region that lands the unit square exactly where the outline draws it: the square
+    /// the inset leaves, widened to the tile's own shape and centred on the track's box
+    /// (`TrackTileRegion`, pinned by `TrackTileRegionTests`).
     static func region(for thumbnail: TrackThumbnail) -> MKCoordinateRegion? {
         guard let bounds = thumbnail.bounds,
-              let centre = thumbnail.coordinate(x: 0.5, y: 0.5) else { return nil }
-        // The square the unit box is drawn into: the shorter side of the well, less the
-        // inset on both edges. Metres per point follows from it.
-        let square = min(size.width, size.height) - padding * 2
-        guard square > 0 else { return nil }
-        let metresPerPoint = bounds.spanM / Double(square)
+              let centre = thumbnail.coordinate(x: 0.5, y: 0.5),
+              let extent = TrackTileRegion.extent(spanM: bounds.spanM,
+                                                  width: Double(size.width),
+                                                  height: Double(size.height),
+                                                  inset: inset) else { return nil }
+        // `coordinate(x: 0.5, y: 0.5)` is the centre of the *normalized square*, which is
+        // the centre of the track's own bounding box — the point the outline is centred on
+        // in the tile. The region is centred there and is as many metres across as the tile
+        // is points, so the two pictures are the same picture.
         return MKCoordinateRegion(
             center: CLLocationCoordinate2D(latitude: centre.lat, longitude: centre.lon),
-            latitudinalMeters: Double(size.height) * metresPerPoint,
-            longitudinalMeters: Double(size.width) * metresPerPoint)
+            latitudinalMeters: extent.heightM,
+            longitudinalMeters: extent.widthM)
     }
 
     /// What the snapshotter is asked for, from the one choice every map in the app is drawn

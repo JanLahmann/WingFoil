@@ -3300,6 +3300,29 @@ iOS: `LibraryListing.swift` in the kit (`LibraryListFilter`, `LibraryGrouping`,
 `LibraryView`, the menu and the chips `LibraryFilterMenu.swift`. Not on the web session
 viewer, which has no library to group.
 
+### The row's three numbers, and the words under them
+
+A row carried `37 % · 3 · 13.25 kn` under three glyphs and `4 · 1 · 0 · 2.1 km` under none.
+Jan read the middle glyph — a turning arrow — as his jibes, and it was drawing the **flight**
+count (Beta 75; pattern H, docs/review-checklist.md). A number a reader has to decode is a
+number the row is not carrying, and a glyph is a guess until it has been read once with its
+word beside it.
+
+So **every number on a row has its word within reach**. The three metric cells put the word
+directly under the value in caption type, which is how the watch draws the same three facts,
+and the outcome tally spells itself out: `4 flew · 1 touch · 0 fell`, each word in its own
+number's ink. The key-metrics block is unchanged — its three counts already stand under a
+caption that says what they are out of.
+
+And **which three is the rider's**: Settings → Session list → *Row shows*, three pickers in
+the order the row draws them. The options are `RowMetric` in the kit — foil, flights, jibes,
+clean, turns, best 2 s, best 10 s, distance, time, dry streak — and each case owns its word,
+its glyph and how its value is spelled, so the picker, the row and the session page cannot
+drift apart. The default triple is **foil · jibes · best 2 s**: what the list always drew,
+with the middle cell corrected to the jibes its glyph always promised. The choice is one
+stored string (`sessionRowMetrics`), and a slot that cannot be read falls back to the default
+rather than leaving the row a cell short (`RowMetricTests`).
+
 ## The session page: source, name, neighbours
 
 The header names where the recording came from in one line under the date
@@ -3307,13 +3330,29 @@ The header names where the recording came from in one line under the date
 *Apple Health*, *File*) — provenance used to live on the Log tab only, so an Apple Watch
 recording and a Health import looked alike. The title is a button: a tap opens a rename sheet
 writing the same `customTitle` the share composer's field writes, so renaming is not a
-side-effect of sharing. A swipe left or right moves to the next or previous session in the
-list's own order (`SessionStore.visibleSessionIDs`), with a greyed ‹ › pair beside the date at
-the ends; the drag needs a horizontal intent (dx over 2.5 × dy) so the inline map keeps its pan.
+side-effect of sharing. A swipe moves to the next or previous session in the list's own order
+(`SessionStore.visibleSessionIDs`), with a greyed ‹ › pair beside the date at the ends; the
+drag needs a horizontal intent (dx over 2.5 × dy) so the inline map keeps its pan.
+
+**The finger drags the content**: a drag left takes the page left and brings in the *next*
+session in the list's order, a drag right walks back to the previous one — the platform's
+rule, and a sign that is read right and written backwards, so it is `SessionPaging` in the
+kit with `SessionPagingTests` on it rather than a ternary in a gesture closure. The page
+**slides** rather than swapping (Jan, Beta 75): it follows the finger while the drag is on
+the glass (`SessionPaging.follow`, rubber-banded, and barely moving at the ends of the list
+where there is nothing to turn to), then the outgoing page leaves by the edge it was pushed
+towards while the incoming one arrives from the other. The ‹ › pair runs the same animation —
+both go through one `turn(_:)`. A short flick counts when it was thrown hard enough
+(`predictedEndTranslation`), the way a paged scroll view reads one.
 
 The library row's track outline can sit on a map: Settings → Session list → *Map behind the
 track in the list*, off by default, an `MKMapSnapshotter` image per session cached beside the
-thumbnail and rebuilt with it. The app-wide menu (What CleanJibe does · Getting started ·
+thumbnail and rebuilt with it. The snapshot is a picture of **the square the outline is drawn
+in** — the tile's shorter side less one inset on both edges — widened to the tile's own shape
+and centred on the track's bounding box (`TrackTileRegion`, pinned by `TrackTileRegionTests`).
+There is one inset constant (`ListMapBackdrop.inset`) and the row hands it to the outline
+view: it was two numbers, so the map was computed for a 40 pt square under a line drawn in a
+34 pt one, and the track sat off towards an edge of a map of somewhere slightly else. The app-wide menu (What CleanJibe does · Getting started ·
 Settings · Help · Support & ideas) is one `AppMenuButton` on all four tab roots (pattern M).
 
 ## Import — the doors a session comes in by

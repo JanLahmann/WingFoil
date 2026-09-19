@@ -34,6 +34,7 @@ struct SettingsView: View {
                 #endif
                 analysisSection
                 sessionListSection
+                rowShowsSection
                 // Windsurf, and the per-discipline thresholds behind it: DEV.
                 #if DEV
                 windsurfSection
@@ -365,6 +366,44 @@ struct SettingsView: View {
             Text("Each row draws its track over a map of the water it was ridden on. "
                  + "The map style is the one your session maps use.")
         }
+    }
+
+    /// **Which three numbers a library row carries** (Jan, Beta 75: *"review meaning of
+    /// numbers and the icons, maybe make configurable"*).
+    ///
+    /// Directly under the switch that is also about the list, and the three pickers are the
+    /// list's three cells in the order they are drawn. Every option is offered by its word
+    /// and its glyph together (`RowMetric`), which is the same pair the row draws — so the
+    /// picker teaches the row rather than describing it.
+    private var rowShowsSection: some View {
+        Section {
+            ForEach(0..<RowMetric.slots, id: \.self) { slot in
+                Picker(Self.slotName(slot), selection: Binding(
+                    get: { Self.metric(store.rowMetrics, slot) },
+                    set: { store.rowMetrics[slot] = $0 })) {
+                        ForEach(RowMetric.allCases) { metric in
+                            Label(metric.label, systemImage: metric.icon).tag(metric)
+                        }
+                    }
+            }
+        } header: {
+            Text("Row shows")
+        } footer: {
+            Text("Each row carries three numbers, each with its word under it. "
+                 + "Pick the three you read your library by.")
+        }
+    }
+
+    /// The cells in the order the row draws them. Position, not "left": a row is read in
+    /// the reader's own direction.
+    private static func slotName(_ slot: Int) -> String {
+        ["First", "Second", "Third"][min(max(slot, 0), 2)]
+    }
+
+    /// The slot's metric, with the default standing in for a choice that is not there —
+    /// the picker must draw something even if the stored triple is short.
+    private static func metric(_ triple: [RowMetric], _ slot: Int) -> RowMetric {
+        slot < triple.count ? triple[slot] : RowMetric.defaultTriple[slot]
     }
 
     #if DEV

@@ -176,17 +176,23 @@ struct OutcomeTally: View {
     let touchdown: Int
     let fellIn: Int
     var font: Font = .caption2
+    /// **"9 flew · 9 touch · 12 fell"** instead of the three bare numbers (Jan, Beta 75;
+    /// pattern H). Three coloured figures are a code unless the reader already knows the
+    /// ladder, and the ladder is the thing the row is teaching. Off where the numbers
+    /// already stand under a caption that says what they are out of — the key-metrics
+    /// block, which owns that wording (docs/presentation.md).
+    var words = false
 
     var total: Int { flewThrough + touchdown + fellIn }
 
     var body: some View {
         if total > 0 {
             HStack(spacing: 3) {
-                part(flewThrough, EventMarkerStyle.color(.flew))
+                part(flewThrough, EventMarkerStyle.color(.flew), "flew")
                 separator
-                part(touchdown, EventMarkerStyle.color(.touchdown))
+                part(touchdown, EventMarkerStyle.color(.touchdown), "touch")
                 separator
-                part(fellIn, EventMarkerStyle.color(.fell))
+                part(fellIn, EventMarkerStyle.color(.fell), "fell")
             }
             .font(font.weight(.semibold).monospacedDigit())
             .accessibilityElement(children: .ignore)
@@ -196,8 +202,16 @@ struct OutcomeTally: View {
         }
     }
 
-    private func part(_ value: Int, _ color: Color) -> some View {
-        Text("\(value)").foregroundStyle(color)
+    /// The word rides in the same colour as its number and one weight lighter, so the
+    /// three pairs still read as three figures rather than as a sentence.
+    private func part(_ value: Int, _ color: Color, _ word: String) -> some View {
+        HStack(spacing: 2) {
+            Text("\(value)")
+            if words {
+                Text(word).fontWeight(.regular)
+            }
+        }
+        .foregroundStyle(color)
     }
 
     private var separator: some View {

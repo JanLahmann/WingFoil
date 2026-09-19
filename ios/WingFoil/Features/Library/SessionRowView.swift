@@ -118,11 +118,17 @@ struct SessionRowView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                // **Three numbers, each under its own word** (Jan, Beta 75; pattern H).
+                // The row used to read "37 % · 3 · 13.25 kn" under three glyphs, and the
+                // middle glyph — a turning arrow — drew the *flight* count, which is not
+                // what a turning arrow means to anybody. Which three they are is now the
+                // rider's (Settings → Session list → Row shows); what each one is called
+                // is the kit's, so the word is the same here, on the session page and in
+                // the picker (`RowMetric`).
                 HStack(spacing: 12) {
-                    metric("figure.wave", Fmt.pct(row.foilPct), "foil")
-                    metric("arrow.triangle.turn.up.right.diamond",
-                           "\(row.flightCount ?? 0)", "flights")
-                    metric("speedometer", Fmt.kn(row.best2sKn), "best 2s")
+                    ForEach(Array(store.rowMetrics.enumerated()), id: \.offset) { _, choice in
+                        metric(choice)
+                    }
                     Spacer(minLength: 0)
                 }
                 .font(.caption)
@@ -133,9 +139,12 @@ struct SessionRowView: View {
                 .denseRowTypeSizeCap()
 
                 HStack(spacing: 10) {
+                    // With its words. "4 · 1 · 0" is the ladder in three colours and
+                    // nothing else, and a colour is not a word (pattern H).
                     OutcomeTally(flewThrough: row.turnsFlewThrough ?? 0,
                                  touchdown: row.turnsTouchdown ?? 0,
-                                 fellIn: row.turnsFellIn ?? 0)
+                                 fellIn: row.turnsFellIn ?? 0,
+                                 words: true)
                     Text(Fmt.km(row.distanceKm))
                         .font(.caption2.monospacedDigit())
                         .foregroundStyle(.tertiary)
@@ -174,15 +183,19 @@ struct SessionRowView: View {
                     Color.black.opacity(store.mapStyle.isImagery ? 0.22 : 0.10)
                 }
                 if let thumbnail, !thumbnail.points.isEmpty {
-                    TrackOutlineView(thumbnail: thumbnail)
-                        .padding(3)
+                    // The inset is the backdrop's, not a number typed here: the map behind
+                    // the line is a picture of the square this inset leaves, and two insets
+                    // that drift apart draw the map at a different scale from the track on
+                    // top of it (Jan, Beta 75).
+                    TrackOutlineView(thumbnail: thumbnail, padding: ListMapBackdrop.inset)
                 } else {
                     Image(systemName: thumbnail == nil ? "map" : "location.slash")
                         .font(.caption)
                         .foregroundStyle(.quaternary)
                 }
             }
-            .frame(width: 62, height: 44)
+            // The tile the snapshot is taken of, from the one place that says how big it is.
+            .frame(width: ListMapBackdrop.size.width, height: ListMapBackdrop.size.height)
             .clipShape(.rect(cornerRadius: 8))
 
             if let thumbnail, thumbnail.speed.count >= 2 {
@@ -203,11 +216,20 @@ struct SessionRowView: View {
             + (thumbnail == nil ? "-pending" : "-ready")
     }
 
-    private func metric(_ symbol: String, _ value: String, _ label: String) -> some View {
-        HStack(spacing: 3) {
-            Image(systemName: symbol).imageScale(.small)
-            Text(value).monospacedDigit().foregroundStyle(.primary)
+    /// One cell: the glyph and the number, with the word directly under it — the shape the
+    /// watch draws the same three facts in. The word is what makes the glyph readable; the
+    /// glyph is what makes the row scannable once the word has been read once.
+    private func metric(_ choice: RowMetric) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            HStack(spacing: 3) {
+                Image(systemName: choice.icon).imageScale(.small)
+                Text(choice.format(row)).monospacedDigit().foregroundStyle(.primary)
+            }
+            Text(choice.label)
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
         }
-        .accessibilityLabel("\(label) \(value)")
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(choice.label + " " + choice.format(row))
     }
 }
