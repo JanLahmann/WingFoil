@@ -24,9 +24,12 @@ open "$SDK/ConnectIQ.app"; sleep 15
 (nohup "$SDK/monkeydo" "$PRG" $DEV > "$OUT.log" 2>&1 &)
 sleep 15
 rm -rf "$OUT"; mkdir -p "$OUT"
+# a dimmed display makes screencapture fail with "could not create image from window";
+# -u asserts user activity for the length of the cycle
+caffeinate -u -d -i -t 150 &
 for i in $(seq -w 1 56); do
   WID=$("$HERE/winfo" | head -1 | cut -d' ' -f1)
-  [ -n "$WID" ] && screencapture -x -o -l $WID "$OUT/cap-$i.png"
+  [ -n "$WID" ] && { screencapture -x -o -l $WID "$OUT/cap-$i.png" || true; }
   sleep 0.8
 done
 pkill -f monkeydo || true; pkill -f "ConnectIQ.app/Contents/MacOS/simulator" || true
