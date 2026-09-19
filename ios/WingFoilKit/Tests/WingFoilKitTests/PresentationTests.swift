@@ -80,8 +80,11 @@ import Testing
         #expect(terms.contains(MetricGlossary.entry("best5x10s").term))
         #expect(terms.contains(MetricGlossary.entry("alpha500").term))
         #expect(terms.last == "\"Uncertified\"", "the mark is the last item")
-        // The six windows and the mark.
-        #expect(terms.count == 7)
+        // Alfred, 18 September 2026: three apps, three units, no rule. The answer is a list
+        // of where each switch is, and it sits with the numbers it applies to.
+        #expect(terms.contains("Knots or km/h"))
+        // The six windows, the unit line and the mark.
+        #expect(terms.count == 8)
 
         // What a rider actually types. Each has to reach this one page.
         for needle in ["2 s", "10 s", "500 m", "alpha", "nautical", "uncertified",
@@ -3456,7 +3459,10 @@ import Testing
         #expect(SessionSection.allCases == [.ride, .turns, .takeoffs, .log])
         #expect(SessionSection.allCases.first == .ride, "the default is the figures")
         let labels = SessionSection.allCases.map(\.label)
-        #expect(labels == ["Ride", "Turns", "Takeoffs", "Log"])
+        // "Log" became "Details" on 19 September 2026 (pattern A: a title names what the
+        // screen does). The *case* stays `log`, because the anchors, the deep links and
+        // docs/copy/app-shell.json all address it by that id.
+        #expect(labels == ["Ride", "Turns", "Takeoffs", "Details"])
         #expect(Set(labels).count == labels.count)
         // The chart and the map's own anchors are on one section, and that is the contract's
         // "one playhead" made structural — nothing may move them apart.

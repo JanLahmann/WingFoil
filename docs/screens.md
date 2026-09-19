@@ -42,17 +42,18 @@ the same place (pattern M).
 | Sessions | · **Ride** | map, legend, speed chart, the shared scrubber, foil facts, the session's record table | *This recording has no GPS positions. Chart and records only.* | Open map full screen · Replay · a `?` per card | release | differs: two panels, **Track** and **Speed**, under one chip. No record table of its own. *Open map full screen* is there; the ground is a **Map / Plain** toggle on OpenStreetMap rather than the phone's four styles. No Replay | Summary **Verdict**, **Speed**, **Flights**, **Track** |
 | Sessions | · **Turns** | a card per turn, then the filtered tally, map and list | *No jibes* and its line | a card opens the turn page | release | differs: the **Turns** table, one row per turn, no cards | recording **Turns** page; Summary **Turns** |
 | Sessions | · **Takeoffs** | takeoff and pumping tiles, the attempt map and list, what pumping cost | *No attempts* and its line | a row opens the attempt | release | same, as the **Takeoffs** panel, with the no-accelerometer line spelled out | Summary **Takeoffs** |
-| Sessions | · **Log** | gear, flight ends, wind, the recording, watch against phone | a missing block is absent, never zero | gear card · a flight end · *Analyse as* (dev) | release | differs: the **Log** chip carries the gear card, **The recording** and **Watch vs phone**. **Flight ends** still sits under the Turns chip, and there is no HR card | — |
-| Sessions | **Turn page** | one maneuver at its own scale: the drawing, three strips, the numbers, why it ended that way | — | swipe for the next · Done | release | missing. A table row is as deep as it goes | the event flash and its afterglow strip are the live equivalent |
-| Sessions | **Flight-end page** | the same page for the losses no turn owns | — | swipe for the next · Done | release | missing | — |
-| Sessions | **Map full screen** | the same map, bigger, pannable, zoomable, rotatable | — | the layer chips · back | release | same: the figure and its legend move into a full-viewport shell, same camera and same chips, Back or Escape to leave. No rotate — the figure is north up | recording **Map** page; **Saved map** after save (dev) |
-| Sessions | **Replay** | the scrubber, the commentary, the clip | — | Record replay / Play replay · Clear · commentary switch | release | missing | — |
-| Sessions | **Replay clip** | the cinema run, full screen | — | scrub · stop | release | missing | — |
+| Sessions | · **Details** | gear, flight ends, wind, the recording, watch against phone | a missing block is absent, never zero | gear card · a flight end · *Analyse as* (dev) | release | differs: the **Log** chip carries the gear card, **The recording** and **Watch vs phone**. **Flight ends** still sits under the Turns chip, and there is no HR card | — |
+| Sessions | **Turn** *n* **of** *m* | one maneuver at its own scale: the drawing, three strips, the numbers, why it ended that way | — | swipe for the next · Done | release | missing. A table row is as deep as it goes | the event flash and its afterglow strip are the live equivalent |
+| Sessions | **Flight end** *n* **of** *m* | the same page for the losses no turn owns | — | swipe for the next · Done | release | missing | — |
+| Sessions | **Tuning this turn** | the workbench: the ground-truth label, the outcome ladder's working, the what-if against the published defaults, the per-sample table | — | share the CSV · back | dev | missing | — |
+| Sessions | **Map** (full screen) | the same map, bigger, pannable, zoomable, rotatable, with the session's name as its caption | — | the layer chips · back | release | same: the figure and its legend move into a full-viewport shell, same camera and same chips, Back or Escape to leave. No rotate — the figure is north up | recording **Map** page; **Saved map** after save (dev) |
+| Sessions | **Replay** | the scrubber, the commentary, the clip | — | Record · Play · Clear · commentary switch | release | missing | — |
+| Sessions | **Replay** (the clip) | the finished clip, playable, with Save and Discard | — | Save · Discard · Done | release | missing | — |
 | Sessions | **Share** | the card, its shape and stats, or the scrubbed original file | *That image could not be read.* | Share card · Export video (beta) · Share the .fit · rename · a photo | release | differs: the **Share card** dialog, with *Download PNG* because a tab cannot hand a file to an app | — |
 | Sessions | **Session video** | the reel, its preset and its progress | — | share the clip | beta | missing | — |
 | Sessions | **Rename session** | one field | — | Save · Cancel | release | in the card dialog | — |
 | Sessions | **Import** | one section per way in, in the guide's order, each with its class and its footer | *Not available in this build* / *Not available on this iPhone* | Sync intervals.icu · FIT or ZIP… · Import from Strava… · Import from Health… (beta) · Garmin export ZIP… (beta) · a help topic per door · Done | release | differs: the drop zone and the intervals.icu panel are the only two doors | none. The watch is the source |
-| Sessions | **Import: whose session is this** | Mine or a friend's, and what a friend's stays out of | — | Import · Cancel | release | same, as the **Whose session is this?** dialog | — |
+| Sessions | **Whose session is this?** | Mine or a friend's, and what a friend's stays out of | — | Import · Cancel | release | same, as the **Whose session is this?** dialog | — |
 | Sessions | **Which rig?** | the discipline the analysis guessed | — | confirm · dismiss | dev | missing | — |
 | Sessions | **Deleted sessions** | the afternoons you deleted, to pick from | — | restore the picked · Cancel | release | differs: a Settings section rather than a sheet, one row per deletion, *Restore · Clear · Clear all*. The browser keeps the file you imported, so a restore re-reads it and goes through the same dedupe. Empty: **No deleted sessions yet.** | — |
 | Sessions | **Custom range** | two dates | — | Done | beta | same, as the **Custom range** sheet behind the range on Trends: two dates, *Cancel · Done*, both dates counting | — |
@@ -153,7 +154,7 @@ the way a session *gets in*, not the shape of the app.
 | page | what it shows | empty state | doors |
 |---|---|---|---|
 | **Sessions** (home) | the saved sessions, newest first, each with its track, date and three numbers | the drop zone, then *open the example session*, under the words **What CleanJibe does** | Import (drop or pick a file) · Settings · Help · a row opens its session |
-| **Session page** | the afternoon, with the four sub-tabs **Ride · Turns · Takeoffs · Log** under one switcher | *Could not open this session* | Share card · the turn page · rename · the neighbouring session |
+| **Session page** | the afternoon, with the four sub-tabs **Ride · Turns · Takeoffs · Details** under one switcher | *Could not open this session* | Share card · the turn page · rename · the neighbouring session |
 | **Turn page** | one maneuver at its own scale, as on iOS | — | next turn · close |
 | **Records** | the all-time speed table and the session-record table, split out of today's *Records & trends* | **Your records start with your first session**, in the app's words | the filter bar · a row opens its session |
 | **Trends** | one chart per metric over the chosen range, the other half of today's third tab | **Your trends start with your first session** | Range · the filter bar · **Periods** |
@@ -167,24 +168,33 @@ the way a session *gets in*, not the shape of the app.
 The home page does not move. It stays the one marketing front: what CleanJibe is, then
 *Open the analyzer*, *Get the beta* and *Which watch*.
 
-## Screens with no name yet (pattern A)
+## The seven names (pattern A, settled 19 September 2026)
 
-Writing the table found seven screens whose title does not name them. Each is a pattern A
-finding, listed here rather than fixed, because a rename touches the kit, the help and the
-screenshots together.
+Writing the table found seven screens whose title did not name them. All seven are named
+now, in the kit, the app and the help together. The rule they were settled by: **a title
+names what the screen does**, the ordinal or the session is content, and the verb belongs on
+the button.
 
-1. **Two screens are both called "Import."** The doors list and *whose session is this* share
-   one title. The web already calls the second one **Whose session is this?**, which is the
-   better name and the one the app should take.
-2. **The full-screen map wears the session's name.** Its only name is the label on the door
-   that opens it, *Open map full screen*.
-3. **The replay has two names for one thing.** The sheet is *Record replay* or *Play replay*
-   depending on what the device can do; the run it starts is *Replay clip*.
-4. **The welcome screen has three names.** *What CleanJibe does* in the menu, the headline on
-   the screen itself, and "welcome" in every file that raises it.
-5. **The turn page and the flight-end page are titled by their content** (*Jibe 3 · Flew
-   through*, *Flight 7 · Touchdown*), so neither has a name a rider could ask for.
-6. **The dev workbench is a heading inside the turn page**, not a screen, though
-   docs/presentation.md names it as one.
-7. **"Log" is the one sub-tab whose name does not say what is on it** (gear, flight ends,
-   wind, the recording, watch against phone).
+1. **Two screens were both called "Import."** The doors list keeps the name, because it is
+   the list of ways in. The question sheet takes the one the browser app already used:
+   **Whose session is this?** The two sub-pages under it say what they do as well —
+   **Import from Health** and **Import from Strava**, in the words of the doors that open
+   them, instead of *Apple Health* and *Strava*.
+2. **The full-screen map wore the session's name.** It is **Map**, with the session's name as
+   the caption under it. The door is still *Open map full screen*.
+3. **The replay had two names for one thing.** One feature, one name: **Replay**, on the
+   setup sheet and on the finished clip. The verbs are on the buttons — *Record* or *Play*,
+   then *Save* or *Discard*.
+4. **The welcome screen had three names.** It is **What CleanJibe does** on the screen, in
+   the menu and in the empty library, read from `AppMenuRow.whatItDoes` so there is one home
+   for the words.
+5. **The turn page and the flight-end page were titled by their content.** They are
+   **Turn 7 of 12** and **Flight end 3 of 9**: the word is the name, the ordinal is where you
+   are. *Jibe 7 · flew through · swipe for the next* is the caption under it, unchanged.
+6. **The dev workbench was a heading inside the turn page.** It is a screen, pushed from one
+   row, titled **Tuning this turn**. Not plain *Tuning*: Settings → Tuning is the 27 sliders,
+   and two screens with one name is what this list exists to remove.
+7. **"Log" did not say what was on it.** It is **Details** — the session's own facts: the
+   kit, the wind, where the recording came from, and where the watch and the phone disagree.
+   No narrower word covers all four. The case, the scroll anchors and the `app-shell.json`
+   id stay `log`, so every deep link written before the rename still lands.

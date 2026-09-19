@@ -115,6 +115,11 @@ public enum GettingStartedGuide {
                       title: "No intervals.icu? The long way",
                       detail: "connect.garmin.com → the activity → the gear icon → **Export "
                           + "File**. AirDrop it to the iPhone, then Import → **FIT or ZIP…**."),
+                .init(number: 7,
+                      title: "Garmin calls it Windsurf",
+                      detail: "Garmin has no wingfoil profile, so Garmin and Strava call the "
+                          + "session Windsurf. The jibes and the numbers are in CleanJibe, "
+                          + "not in Garmin Connect or Strava."),
             ]),
         GettingStartedRoute(
             id: "appleWatchApp",

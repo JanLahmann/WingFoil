@@ -69,10 +69,13 @@ import Testing
     @Test func setupHelpTopicsAreCompleteAndCarryTheirLinks() {
         let setup = HelpCatalog.topic(.icuSetup)
         #expect(setup.section == .setup)
-        // The card and the topic render the *same* steps — asserted, not assumed.
-        #expect(setup.items.count == IcuSetupGuide.steps.count)
+        // The card and the topic render the *same* steps — asserted, not assumed. The topic
+        // adds one item the card has no room for: why Garmin calls the session Windsurf
+        // (Alfred, 18 September 2026), which the guide's Garmin route says too.
+        #expect(setup.items.count == IcuSetupGuide.steps.count + 1)
         #expect(setup.items.first?.term.hasPrefix("1.") == true)
-        #expect(setup.items.last?.term.hasPrefix("4.") == true)
+        #expect(setup.items[IcuSetupGuide.steps.count - 1].term.hasPrefix("4.") == true)
+        #expect(setup.items.last?.term == "Why Garmin says Windsurf")
         #expect(setup.links.contains { $0.url == IcuSetupGuide.intervalsURL })
         #expect(setup.action == .openIcuSettings)
 

@@ -348,7 +348,15 @@ public enum HelpCatalog {
             ],
             items: IcuSetupGuide.steps.map {
                 .init(term: "\($0.number). \($0.title)", detail: $0.detail)
-            },
+            } + [
+                // Alfred, 18 September 2026: *"why does Garmin call it Windsurfen?"* — the
+                // first thing a Garmin rider sees after his first session, and the app said
+                // nothing about it. The guide's Garmin route carries the same three
+                // sentences on the web (docs/guide/getting-started.json).
+                .init(term: "Why Garmin says Windsurf",
+                      detail: "Garmin has no wingfoil profile. Garmin and Strava call the "
+                          + "session Windsurf. CleanJibe calls it Wingfoil."),
+            ],
             links: [HelpLink(title: "Open intervals.icu", url: IcuSetupGuide.intervalsURL)],
             action: .openIcuSettings,
             related: [.exampleSession, .icuTroubleshooting, .icuPrivacy, .sourceClass]),
@@ -987,6 +995,14 @@ public enum HelpCatalog {
                           + "through your turns."),
                 .init(term: MetricGlossary.entry("alpha500").term,
                       detail: MetricGlossary.entry("alpha500").line),
+                // Alfred, 18 September 2026: three apps show his speed and two of them
+                // disagree with the third. Each one has its own unit, so the answer is a
+                // list of where each switch is rather than a rule.
+                .init(term: "Knots or km/h",
+                      detail: "CleanJibe shows knots. The watch app has its own switch, "
+                          + "under Garmin Connect → CleanJibe → Settings. Garmin Connect "
+                          + "follows its own setting. Strava shows a windsurf session in "
+                          + "knots."),
                 // Last, because it is the one line that is about the recording rather than
                 // about a window — and the one a rider needs before he posts a number.
                 .init(term: "\"Uncertified\"",
@@ -1375,7 +1391,7 @@ public enum HelpCatalog {
             summary: "The same engine without the wing. The planing speeds are a guess.",
             body: [
                 "A session can be analysed as **Wingfoil**, **Windsurf foil** or **Windsurf "
-                + "fin**. The row is on the session's Log tab, under \"Analyse as\". "
+                + "fin**. The row is on the session's Details tab, under \"Analyse as\". "
                 + "Changing it re-derives that session and nothing else.",
                 "None of Garmin, Strava, intervals.icu and Apple Health has a wingfoil "
                 + "sport. Most riders record under the windsurf profile. A new session "

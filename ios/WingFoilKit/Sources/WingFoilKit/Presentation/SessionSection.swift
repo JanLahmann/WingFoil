@@ -61,6 +61,14 @@ public enum SessionSection: String, CaseIterable, Sendable, Identifiable {
     /// The switcher's words. One short noun each, which is what lets four segments fit
     /// across a 390 pt phone without truncating.
     ///
+    /// **"Log" became "Details" on 19 September 2026** (pattern A of
+    /// docs/review-checklist.md: a title names what the screen does). "Log" reads as a
+    /// logbook — a list of afternoons — and the tab is not a list of anything. It is the
+    /// four facts *about this session*: the kit, the wind, where the recording came from
+    /// and where the watch and the phone disagree. No narrower word covers all four, and
+    /// "Details" is exactly as wide as the tab. The case, the anchors and the JSON id stay
+    /// `log`, so every deep link written before the rename still lands.
+    ///
     /// "Ride" replaced "Map · Speed" when the fourth tab became "Log": the middle dot was
     /// load-bearing while the name was a list of two figures, and it is dead weight beside
     /// three one-word siblings. The tab is the ride — where it went and how fast — and the
@@ -70,7 +78,7 @@ public enum SessionSection: String, CaseIterable, Sendable, Identifiable {
         case .ride: "Ride"
         case .turns: "Turns"
         case .takeoffs: "Takeoffs"
-        case .log: "Log"
+        case .log: "Details"
         }
     }
 
