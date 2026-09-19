@@ -8,7 +8,9 @@ let package = Package(
         .library(name: "WingFoilKit", targets: ["WingFoilKit"])
     ],
     dependencies: [
-        .package(url: "https://github.com/roznet/FitFileParser", from: "1.5.0"),
+        // Vendored (ios/vendor/FitFileParser/VENDORED.md): the upstream generated map traps
+        // on a value that does not fit its narrower type; ours truncates.
+        .package(path: "../vendor/FitFileParser"),
         .package(url: "https://github.com/groue/GRDB.swift", from: "7.0.0"),
         .package(url: "https://github.com/weichsel/ZIPFoundation", from: "0.9.19"),
     ],
