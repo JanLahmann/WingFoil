@@ -31,6 +31,12 @@ import {
   turnStyle,
 } from "./viz.js";
 import { TOKENS } from "./tokens.js";
+// r3-w2:begin — the ground under the track, and the door that opens it full screen
+import {
+  fullMapDoor, fullMapHeight, fullMapOpen, groundToggle, groundUnder, onGroundButton,
+  paintGround, wireFullMap,
+} from "./trackmap.js";
+// r3-w2:end
 
 const el = (id) => document.getElementById(id);
 
@@ -526,6 +532,21 @@ export function renderFigures(result, highlight = null) {
     closePopover();
   }
   state.highlight = highlight;
+  wireFullMap(redrawFigures);                                    // r3-w2
+  redrawFigures();
+}
+
+/**
+ * Draw both figures and the legend again for the document already on screen, keeping the
+ * playhead, the zoom, the camera and the chips exactly where they are.
+ *
+ * r3-w2: the one hook the ground and the full-screen door need. Both change *where* the
+ * figure is drawn or *what is behind it* and neither touches the model, so neither may go
+ * anywhere near the reset in `renderFigures` above — a rider who pressed Map would lose the
+ * mark he had open and the zoom he was reading it at.
+ */
+export function redrawFigures() {
+  if (!state.model) return;
   state.live = { map: null, strip: null };
   drawMap();
   drawStrip();
@@ -535,6 +556,7 @@ export function renderFigures(result, highlight = null) {
 
 /** Forget the on-screen session (used when the view is torn down). */
 export function resetSession() {
+  fullMapDoor(false);                                            // r3-w2: and close it
   state.result = null;
   state.model = null;
   state.playhead = null;
@@ -556,11 +578,15 @@ function drawMap() {
   if (!v.count || !v.bounds || v.hasPositions === false || v.bounds.x0 === null) {
     host.innerHTML = `<p class="note">No GPS positions in this file — no track to draw. ` +
                      `The speed strip and the tables below are unaffected.</p>`;
+    fullMapDoor(false);                                          // r3-w2: no map, no door
     return;
   }
+  fullMapDoor(true);                                             // r3-w2
 
   const b = v.bounds;
-  const W = figureWidth(host);
+  // r3-w2: the 1100-unit ceiling is about a column of prose; full screen is about a
+  // viewport, and there the figure takes whatever the shell gives it.
+  const W = figureWidth(host, fullMapOpen() ? { max: 4096 } : {});
   const narrow = isNarrow(W);
   const PAD = narrow ? 20 : 34;
   const dw = Math.max(b.x1 - b.x0, 1), dh = Math.max(b.y1 - b.y0, 1);
@@ -570,15 +596,24 @@ function drawMap() {
   // aspect at every column width. A phone gets a taller box: vertical space is what it has.
   H = Math.min(Math.max(H, Math.round(W * (narrow ? 0.85 : 0.31))),
                Math.round(W * (narrow ? 1.45 : 0.69)));
+  // r3-w2: full screen the height is the shell's, not a ratio of the width.
+  const fullH = fullMapHeight();
+  if (fullH) H = fullH;
   const s = Math.min(inner / dw, (H - 2 * PAD) / dh);
   const ox = PAD + (inner - dw * s) / 2 - b.x0 * s;
   const oy = PAD + (H - 2 * PAD - dh * s) / 2 + b.y1 * s;   // y flipped: north up
+  // r3-w2:begin — with tiles behind it the fit is Mercator's, so the breadcrumb sits on the
+  // earth the tiles are pictures of. Null (no ground, no anchor) keeps the fit above.
+  const ground = groundUnder(v, { b, W, H, PAD });
+  const px = ground ? ground.sx : s, py = ground ? ground.sy : s;
+  const gx = ground ? ground.ox : ox, gy = ground ? ground.oy : oy;
+  // r3-w2:end
   // The camera rides on top of the fit: at 1× it is the identity and this is the figure
   // that was here before. Everything downstream draws in *screen* units, so markers and
   // chevrons stay the size they were tuned at whatever `k` is (see "the camera" above).
   const cam = camera();
-  const X = (x) => (ox + x * s) * cam.k + cam.tx;
-  const Y = (y) => (oy - y * s) * cam.k + cam.ty;
+  const X = (x) => (gx + x * px) * cam.k + cam.tx;          // r3-w2: px/gx were s/ox
+  const Y = (y) => (gy - y * py) * cam.k + cam.ty;          // r3-w2: py/gy were s/oy
 
   const zoomed = cam.k > 1.0001;
   host.classList.toggle("panning", zoomed);
@@ -588,6 +623,8 @@ function drawMap() {
                                           + "replay playhead, pinch or scroll to zoom"
                                           + (zoomed ? ", drag to pan" : "") }, host);
   svg("rect", { width: W, height: H, fill: C.surface }, root);
+  // r3-w2: the tiles go straight onto the surface, under every line and every mark.
+  if (ground) paintGround(root, ground, W, H, cam);
 
   // The chevrons ride the *whole* route rather than the phase runs: spacing has to be
   // continuous across a takeoff, or every short off-foil run would collect its own cluster
@@ -597,6 +634,20 @@ function drawMap() {
   // The track, one run per phase, cut at the engine's exact flight boundaries. A hidden
   // line category keeps its route as a dimmer line: the chips filter what the colours
   // claim, not where the rider went.
+  // r3-w2: over tiles the recessive inks — the off-foil grey especially — are no longer
+  // reading against a flat dark box. A casing in the surface's own colour, the trick the
+  // effort glow below already uses, keeps every ink exactly where the contract put it.
+  // ONE pass under the whole track, before any colour, so no join is overdrawn — the same
+  // rule as the iOS `TrackHalo` (docs/presentation.md, "Map style").
+  if (ground) {
+    for (const run of model.phase) {
+      const on = visible(run.flying ? "flying" : "offFoil");
+      svg("polyline", { points: screenPoints(run.pts, X, Y), fill: "none", stroke: C.surface,
+                        "stroke-width": (run.flying && on ? 2.1 : 1.4) + 2.6, opacity: 0.7,
+                        "stroke-linecap": "round", "stroke-linejoin": "round",
+                        "pointer-events": "none" }, root);
+    }
+  }
   for (const run of model.phase) {
     const on = visible(run.flying ? "flying" : "offFoil");
     const stroke = on ? (run.flying ? C.foil : C.track) : "#2c2c2a";
@@ -671,7 +722,7 @@ function drawMap() {
   if (model.g.wind) windArrow(root, model.g.wind, W, narrow);
   // The bar is a screen ruler, so it reads the *effective* scale and re-picks its rounded
   // distance — at 4× it says 100 m where it said 500 m.
-  scaleBar(root, s * cam.k, PAD, H - 14);
+  scaleBar(root, px * cam.k, PAD, H - 14);                  // r3-w2: px was s
 
   // The playhead, drawn last so it sits above the outcome markers — it is the thing being
   // moved. Deliberately unlike them (bigger, white-ringed, with a halo) so it reads as
@@ -1756,6 +1807,8 @@ function drawChips() {
     ? `<button type="button" class="ghost small-btn" id="show-all-layers">Show all</button>` : "";
   const zoomed = !!state.camera;
   const utilities = showAll
+    // r3-w2: the ground control, where the iOS legend keeps its own (MapLegendView).
+    + (state.model.positioned ? groundToggle() : "")
     + (state.model.positioned
         ? zoomBar("map", zoomed
             ? `showing ${camera().k.toFixed(1)}×`
@@ -1775,6 +1828,7 @@ function drawChips() {
 
   host.onclick = (ev) => {
     if (onZoomButton(ev)) return;
+    if (onGroundButton(ev, redrawFigures)) return;             // r3-w2
     const chip = ev.target.closest(".chip-btn");
     if (chip) {
       const id = chip.dataset.layer;

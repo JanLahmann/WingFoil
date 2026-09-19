@@ -350,9 +350,10 @@ jibed at — cost a trip to the full-screen map and back.
 
 ## Map style — the ground under the track
 
-Four grounds, one choice, **iOS only** (the analyzer draws its track on a canvas, not on a
-map): `standard` · `muted` · `satellite` · `hybrid`, persisted per rider in `mapStyle.v1`
-(`MapStyleChoice`, `MapStyleStore`). Standard is the default and is what every map used to be.
+Four grounds on iOS, one choice: `standard` · `muted` · `satellite` · `hybrid`, persisted per
+rider in `mapStyle.v1` (`MapStyleChoice`, `MapStyleStore`). Standard is the default and is what
+every map used to be. The web has two, and they are the two it has — see "The web's ground"
+below.
 The reason the other three exist is that a rider at his home spot wants the track to be the
 loudest thing on screen, and a rider looking at somewhere new wants to see the shore — the
 launch, the pier he jibed around, the shallows he stayed off — which only photography shows.
@@ -390,6 +391,31 @@ rendering exactly.** Two rules, both in the shared drawing path (`TrackHalo`,
    dark halo under a dark grey line only merges the two. Over imagery they resolve to the
    light end at their own weights (`TrackHalo.ink`). Same intent, read against what is
    actually underneath.
+
+**The web's ground: Map or Plain.** The Ride tab's track map draws over the same
+OpenStreetMap raster tiles the share card uses (`web/js/trackmap.js` on `web/js/cardmap.js`),
+under the same `MAX_TILES` ceiling and with the same no-retry rule: a failed tile is a hole,
+a wholly failed fetch is the plain figure. It is **off until the rider presses Map**, and the
+choice is remembered per device in `wingfoil.trackMap.ground.v1`. There is no four-way picker,
+because the layer has no satellite twin and a control offering four names for one ground would
+be a control that lies. The toggle and the `© OpenStreetMap contributors` credit sit in the
+legend's utilities group, where the iOS legend keeps its own style chip, and the credit is
+drawn in the figure's corner as well — the figure travels into a screenshot and the legend
+does not.
+
+With tiles behind it the fit is **Mercator's**, not the engine's local metres, so the
+breadcrumb sits on the earth the tiles are pictures of; the framing is chosen so the ride
+lands in the box it would have occupied on the plain figure. The readability rule is the
+card's rather than the phone's: rather than flipping any ink, the ground is drawn *into* the
+dark surface at half opacity and the two phase runs gain a casing in the surface's own colour,
+so every ink stays exactly where "Colour and glyph vocabulary" put it.
+
+**The web's full-screen map is the same map.** "Open map full screen" moves the figure and its
+legend into a full-viewport shell and draws them at the window's size — same camera, same
+playhead, same layer chips, Escape or Back to leave. Not a second map: a second map would be a
+second camera and a second playhead to keep in step with the first. Rotate is not offered, as
+the figure is north-up by construction and the wind arrow and the chevrons are read against
+that.
 
 **The replay clip keeps whatever ground was chosen** — a clip of a session is a clip of the
 rider's own map. Note that MapKit draws Apple's attribution itself, so a satellite or hybrid

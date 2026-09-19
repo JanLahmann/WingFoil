@@ -20,7 +20,14 @@
  * retry of any kind: a failed tile is a hole the navy shows through, and a wholly failed
  * fetch is a plain card. The composited backdrop is cached per framing, so a rider typing a
  * caption — which redraws the card on every keystroke — asks for nothing at all after the
- * first draw. See https://operations.osmfoundation.org/policies/tiles/.
+ * first draw, and web/sw.js keeps every tile that does arrive in its RUNTIME cache. See
+ * https://operations.osmfoundation.org/policies/tiles/.
+ *
+ * **The grid is shared.** Since the Ride tab grew a map background (js/trackmap.js) the
+ * placement half of this module is `tileCover`, and both surfaces call it: the card
+ * composites what comes back onto a canvas because it exports a PNG, the page hangs the same
+ * tiles in its SVG because it pans. One grid, one zoom ladder, one ceiling — or a rider
+ * would be looking at two different pictures of one beach.
  *
  * **Attribution is not optional.** ODbL requires the credit, so `CREDIT` is drawn on the
  * card by `js/sharecard.js` whenever a single tile made it onto the picture.
@@ -116,9 +123,9 @@ export function placeOn(frame, lat, lon) {
 
 /** The tile grid that covers `cardW` × `cardH` layout points under `frame`, at the coarsest
  *  zoom that still resolves and the finest that still fits `MAX_TILES`. */
-function tileGrid(frame, cardW, cardH) {
+function tileGrid(frame, cardW, cardH, mapScale = MAP_SCALE) {
   // Raster pixels per world unit wanted, turned into the zoom whose tiles supply them.
-  let zoom = Math.round(Math.log2(Math.max(frame.scale, 1) * MAP_SCALE / TILE));
+  let zoom = Math.round(Math.log2(Math.max(frame.scale, 1) * mapScale / TILE));
   zoom = Math.max(0, Math.min(19, zoom));
   for (; zoom >= 0; zoom--) {
     const n = 2 ** zoom;
@@ -132,6 +139,43 @@ function tileGrid(frame, cardW, cardH) {
     }
   }
   return null;
+}
+
+/**
+ * **Which tiles cover a box, and where each one goes** — the placement half of this module,
+ * with no fetching in it at all.
+ *
+ * Split out for the Ride tab's map background (`js/trackmap.js`), which draws the same tiles
+ * as `<image>` elements inside an SVG rather than compositing them onto a canvas. Both
+ * surfaces have to agree about the grid, the zoom ladder and the ceiling, or a rider would
+ * be looking at two different pictures of one beach. `left`/`top`/`side` are in the caller's
+ * own layout points, through `frame`.
+ *
+ * `mapScale` is raster pixels wanted per layout point: the card asks for `MAP_SCALE`, a
+ * screen asks for its own pixel ratio. It only chooses the zoom — the placement is the
+ * frame's — so a coarser answer is a softer map and never a moved one.
+ *
+ * `null` when no grid resolves. Never more than `MAX_TILES` tiles, whatever is asked for.
+ */
+export function tileCover(frame, w, h, mapScale = MAP_SCALE) {
+  const grid = tileGrid(frame, w, h, mapScale);
+  if (!grid) return null;
+  const side = frame.scale / grid.n;                 // one tile, in layout points
+  const tiles = [];
+  for (let row = 0; row < grid.rows; row++) {
+    for (let col = 0; col < grid.cols; col++) {
+      const x = grid.x0 + col, y = grid.y0 + row;
+      // Off the top or the bottom of the world there is no tile; east–west wraps.
+      if (y < 0 || y >= grid.n) continue;
+      tiles.push({
+        x, y, side,
+        url: TILE_URL(grid.zoom, ((x % grid.n) + grid.n) % grid.n, y),
+        left: (x / grid.n - frame.originX) * frame.scale,
+        top: (y / grid.n - frame.originY) * frame.scale,
+      });
+    }
+  }
+  return { ...grid, side, tiles };
 }
 
 /** One tile, or null. Never retried: a card is made once and a hole in the water is a
@@ -169,24 +213,15 @@ let cached = { key: "", canvas: null };
  * plain card and say nothing. A rider on a train still gets a card.
  */
 export async function mapBackdrop(frame, cardW, cardH, scale) {
-  const grid = tileGrid(frame, cardW, cardH);
-  if (!grid) return null;
+  const cover = tileCover(frame, cardW, cardH);
+  if (!cover) return null;
 
-  const key = [grid.zoom, grid.x0, grid.y0, grid.cols, grid.rows,
+  const key = [cover.zoom, cover.x0, cover.y0, cover.cols, cover.rows,
                frame.originX.toFixed(9), frame.originY.toFixed(9),
                frame.scale.toFixed(4), cardW, cardH].join("|");
   if (cached.key === key && cached.canvas) return cached.canvas;
 
-  const wanted = [];
-  for (let row = 0; row < grid.rows; row++) {
-    for (let col = 0; col < grid.cols; col++) {
-      const x = grid.x0 + col, y = grid.y0 + row;
-      // Off the top or the bottom of the world there is no tile; east–west wraps.
-      if (y < 0 || y >= grid.n) continue;
-      wanted.push({ x, y, url: TILE_URL(grid.zoom, ((x % grid.n) + grid.n) % grid.n, y) });
-    }
-  }
-  const images = await Promise.all(wanted.map((t) => loadTile(t.url)));
+  const images = await Promise.all(cover.tiles.map((t) => loadTile(t.url)));
   if (!images.some(Boolean)) return null;
 
   const canvas = document.createElement("canvas");
@@ -194,16 +229,13 @@ export async function mapBackdrop(frame, cardW, cardH, scale) {
   canvas.height = Math.round(cardH * scale);
   const ctx = canvas.getContext("2d");
   ctx.setTransform(scale, 0, 0, scale, 0, 0);
-  const side = frame.scale / grid.n;                 // one tile, in layout points
   images.forEach((img, i) => {
     if (!img) return;
-    const t = wanted[i];
-    const x = (t.x / grid.n - frame.originX) * frame.scale;
-    const y = (t.y / grid.n - frame.originY) * frame.scale;
+    const t = cover.tiles[i];
     // A hair of overlap: adjacent tiles drawn at fractional positions leave a seam of
     // background between them otherwise, and a grid of hairlines over the water is the one
     // artefact a reader would notice.
-    ctx.drawImage(img, x, y, side + 0.5, side + 0.5);
+    ctx.drawImage(img, t.left, t.top, t.side + 0.5, t.side + 0.5);
   });
 
   try {

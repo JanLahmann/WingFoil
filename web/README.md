@@ -175,6 +175,9 @@ web/
 ├── js/session.js               the interactive session view: track map + speed strip, the
 │                               playhead they share, layer chips, pan/zoom on both figures,
 │                               marker popovers
+├── js/trackmap.js              the GROUND under that track: the Map / Plain toggle, the OSM
+│                               tiles on js/cardmap.js's grid and budget, the Mercator fit
+│                               they need, and the full-screen door. Off until asked
 ├── js/viz.js                   drawing primitives both figure files share: palette, SVG
 │                               helpers, the marker vocabulary, formatters, tooltip
 ├── js/tokens.js                GENERATED from design/tokens.json — do not edit
@@ -390,7 +393,7 @@ requests the pages ever make are:
 | `pypi.org` / `files.pythonhosted.org` | first load | the `fitdecode` wheel (pure Python, ~120 KB) |
 | same-origin `web/…` | first load, then on update | the app shell and `lab_bundle/*.py`, precached by the service worker |
 | `intervals.icu/api/v1/…` | only if you use the intervals.icu panel | your own activity list / FIT |
-| `tile.openstreetmap.org/…` | only when the share card's *Map background* switch is on | the map tiles under the track; never cached by the service worker, plain card offline |
+| `tile.openstreetmap.org/…` | only when the share card's *Map background* switch is on, or the Ride tab's ground is set to **Map** | the map tiles under the track; kept in the service worker's RUNTIME cache, so a session already read works offline. Off by default, and offline it is the plain figure and the plain card |
 | `cloud.umami.is/script.js` + one page-view beacon | every page load on `cleanjibe.org` | anonymous, cookieless page counts — see below |
 
 ### The one measurement

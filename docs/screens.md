@@ -39,13 +39,13 @@ the same place (pattern M).
 | — | **Start over needs a relaunch** | the wipe finished, the file did not reopen | — | none, the rider relaunches | beta | missing | — |
 | Sessions | **Sessions** | the afternoons, newest first, each with its track, date and three numbers | first run: *What CleanJibe does · Try the example session*, then **How your sessions get in** (intervals.icu, Apple Watch in beta, Strava, Import a file). Configured: **No sessions yet** with *Import…* and *Sync intervals.icu*. Filtered: **No session matches these filters** with *Clear filters* | Menu · Filter (beta) · Import · a row · pull to sync | release | differs: the **Library** tab, second of three, lists what this browser saved. Empty: *Nothing saved yet. Analyze a file and press Save to library.* Its doors are *Download all (.zip)*, and per row *Open · .fit · .json · Delete* | none. No history, and the summary is gone when you leave it |
 | Sessions | **Session page** | one afternoon, under a sticky four-way switcher | *Could not open this session*; provisional: **From your watch** | the name (rename) · Share · flick or `‹ ›` for the neighbour · the four sub-tabs | release | differs: the **Analyze** tab's result is one scrolling document, with chips **Map · Speed · Turns · Takeoffs · Data** on a narrow screen only. No rename | **Summary**, 3 to 7 pages, UP/DOWN |
-| Sessions | · **Ride** | map, legend, speed chart, the shared scrubber, foil facts, the session's record table | *This recording has no GPS positions. Chart and records only.* | Open map full screen · Replay · a `?` per card | release | differs: two panels, **Track** and **Speed**, under one chip. No record table of its own | Summary **Verdict**, **Speed**, **Flights**, **Track** |
+| Sessions | · **Ride** | map, legend, speed chart, the shared scrubber, foil facts, the session's record table | *This recording has no GPS positions. Chart and records only.* | Open map full screen · Replay · a `?` per card | release | differs: two panels, **Track** and **Speed**, under one chip. No record table of its own. *Open map full screen* is there; the ground is a **Map / Plain** toggle on OpenStreetMap rather than the phone's four styles. No Replay | Summary **Verdict**, **Speed**, **Flights**, **Track** |
 | Sessions | · **Turns** | a card per turn, then the filtered tally, map and list | *No jibes* and its line | a card opens the turn page | release | differs: the **Turns** table, one row per turn, no cards | recording **Turns** page; Summary **Turns** |
 | Sessions | · **Takeoffs** | takeoff and pumping tiles, the attempt map and list, what pumping cost | *No attempts* and its line | a row opens the attempt | release | same, as the **Takeoffs** panel, with the no-accelerometer line spelled out | Summary **Takeoffs** |
 | Sessions | · **Log** | gear, flight ends, wind, the recording, watch against phone | a missing block is absent, never zero | gear card · a flight end · *Analyse as* (dev) | release | missing as a section. **Flight ends** sits under the Turns chip, **The full analysis** under Data. No gear, no HR, so no Log chip | — |
 | Sessions | **Turn page** | one maneuver at its own scale: the drawing, three strips, the numbers, why it ended that way | — | swipe for the next · Done | release | missing. A table row is as deep as it goes | the event flash and its afterglow strip are the live equivalent |
 | Sessions | **Flight-end page** | the same page for the losses no turn owns | — | swipe for the next · Done | release | missing | — |
-| Sessions | **Map full screen** | the same map, bigger, pannable, zoomable, rotatable | — | the layer chips · back | release | missing. The web map is already the page's width | recording **Map** page; **Saved map** after save (dev) |
+| Sessions | **Map full screen** | the same map, bigger, pannable, zoomable, rotatable | — | the layer chips · back | release | same: the figure and its legend move into a full-viewport shell, same camera and same chips, Back or Escape to leave. No rotate — the figure is north up | recording **Map** page; **Saved map** after save (dev) |
 | Sessions | **Replay** | the scrubber, the commentary, the clip | — | Record replay / Play replay · Clear · commentary switch | release | missing | — |
 | Sessions | **Replay clip** | the cinema run, full screen | — | scrub · stop | release | missing | — |
 | Sessions | **Share** | the card, its shape and stats, or the scrubbed original file | *That image could not be read.* | Share card · Export video (beta) · Share the .fit · rename · a photo | release | differs: the **Share card** dialog, with *Download PNG* because a tab cannot hand a file to an app | — |
@@ -135,6 +135,11 @@ app, any .fit, Strava, and the Garmin ZIP last.
     holds exactly one recording, and says so when it does not.
 11. **The store links live on one page, not on the home page.** `/invite/` holds the Connect
     IQ link and the TestFlight link. One page to keep current when a channel moves.
+12. **The ground under the track is Map or Plain, not four styles.** The phone has Apple's
+    four; the web draws OpenStreetMap, which has no satellite twin, so it offers the two
+    states it actually has. It is off until the rider presses Map, because a background that
+    fetched a stranger's home beach unasked would break the promise the analyzer makes
+    loudest.
 
 Everything else that differs is a gap to close, not a deviation.
 

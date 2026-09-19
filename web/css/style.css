@@ -567,6 +567,55 @@ details.glossary > .muted { margin: 10px 0 0; }
 }
 .legend .zoom-btns button { white-space: nowrap; }
 
+/* r3-w2:begin --- the ground under the track, and the full-screen door.
+
+   The toggle is two buttons rather than one, because a control that says "Map" while the
+   map is off and "Plain" while it is on is a control nobody can read at a glance: both
+   states are named and the live one is lit. It lives in the legend's utilities, where the
+   iOS legend keeps its own style control (MapLegendView). */
+.legend .ground-toggle { gap: 6px; }
+.legend .ground-toggle button { white-space: nowrap; }
+.legend .ground-btn.on {
+  background: var(--surface-0); color: var(--ink); border-color: var(--line);
+}
+/* © OpenStreetMap contributors, beside the toggle while the map is on. ODbL asks for the
+   credit wherever the tiles are, and js/trackmap.js also draws it in the figure's corner —
+   the figure travels into a screenshot and the legend does not. */
+.legend .ground-credit { font-size: 11.5px; }
+
+.figure-door { margin: 10px 0 0; }
+
+/* The same map at the size of the window. A column: the bar, the figure, the chips. The
+   figure gets `flex: 1` and js/trackmap.js measures what it was left, which is why the
+   legend below it can be any height without the map guessing wrong. */
+.map-full {
+  position: fixed; inset: 0; z-index: 60;
+  display: flex; flex-direction: column;
+  background: var(--surface-1);
+}
+.map-full-bar {
+  display: flex; align-items: center; gap: 12px; flex: none;
+  padding: 8px var(--pad-x-r) 8px var(--pad-x-l);
+  padding-top: max(8px, env(safe-area-inset-top));
+  border-bottom: 1px solid var(--line-soft);
+}
+.map-full-hint { color: var(--ink-3); }
+.map-full-body { flex: 1 1 auto; min-height: 240px; }
+.map-full-body .figure { height: 100%; border-radius: 0; }
+.map-full-legend {
+  flex: none; max-height: 34vh; overflow-y: auto;
+  padding: 0 var(--pad-x-r) max(12px, env(safe-area-inset-bottom)) var(--pad-x-l);
+}
+.map-full-legend .legend { margin-top: 10px; }
+/* The page behind it must not scroll under the finger that is panning the map. */
+body.map-full-on { overflow: hidden; }
+/* The map's two readings of a mark — the hover tooltip and the tap popover — are the map's,
+   so they come up with it. Only while it is open: their ordinary stacking below the tab rail
+   is what the page wants everywhere else. */
+body.map-full-on .tip,
+body.map-full-on .popover { z-index: 70; }
+/* r3-w2:end */
+
 /* --- the playhead readout: one line, tabular, above the speed strip. */
 .readout {
   display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 18px;

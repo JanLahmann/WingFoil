@@ -6,21 +6,22 @@
  *            Precached at install, replaced wholesale when VERSION changes. The
  *            lab_bundle list is read from lab_bundle/FILES.json (the same list the worker
  *            mounts), so adding a lab module never needs an edit here.
- *   RUNTIME  the Pyodide CDN and the PyPI wheel — ~12 MB that never changes for a pinned
- *            Pyodide version. Cached the first time they are fetched, then served from
- *            cache forever. This is what makes the app work offline.
+ *   RUNTIME  the Pyodide CDN, the PyPI wheel and the map tiles — ~12 MB that never changes
+ *            for a pinned Pyodide version, plus whatever ground the rider has asked to see.
+ *            Cached the first time they are fetched, then served from cache. This is what
+ *            makes the app work offline.
  *
  * Privacy: this file never adds a request. It only stores responses the page was already
- * making, and only from the Pyodide CDN, PyPI and this site's own origin. Nothing is ever
- * sent anywhere, and intervals.icu is explicitly excluded — a cached activity list is not
- * something a privacy-first app should leave lying around.
+ * making, and only from the Pyodide CDN, PyPI, the OpenStreetMap tile layer and this site's
+ * own origin. Nothing is ever sent anywhere, and intervals.icu is explicitly excluded — a
+ * cached activity list is not something a privacy-first app should leave lying around.
  *
  * Bump VERSION whenever anything under web/ changes; the old caches are deleted on
  * activate, and the page shows an "update available" prompt (see js/app.js) rather than
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v76";     // v75: two links and two doors in the site nav, /help/ from the app's help catalogue, /watches/ and /whats-new/ absorbed (v74: release notes for builds 76 and 77 (v73: v73: the apple watch live view is on the beta outlook as a plan (v72: v72: the Strava fall sentence on /start and /watches, the what's-new cards from one source (v71: v71: the store version reads 0.9.13 (v70: v67: Apple Watch comes right after Garmin wherever watches are listed; the routes lose their letters and gain a class pill; the /start/ folds say "Show the N steps"; the site nav keeps its right gutter on a phone (v65: every rider sentence on the site is in the voice of docs/voice.md (v60: the site is cut in half — the front door keeps the card and two links, /start/ folds its routes, "How it works" becomes "What it measures", one footer everywhere; v59: the example session is a button, the analyzer gains a glossary and a feedback door; v58: the copy contract on the pages)))
+const VERSION = "v77";     // v77: the Ride tab's map background and the full-screen map (v75: two links and two doors in the site nav, /help/ from the app's help catalogue, /watches/ and /whats-new/ absorbed (v74: release notes for builds 76 and 77 (v73: v73: the apple watch live view is on the beta outlook as a plan (v72: v72: the Strava fall sentence on /start and /watches, the what's-new cards from one source (v71: v71: the store version reads 0.9.13 (v70: v67: Apple Watch comes right after Garmin wherever watches are listed; the routes lose their letters and gain a class pill; the /start/ folds say "Show the N steps"; the site nav keeps its right gutter on a phone (v65: every rider sentence on the site is in the voice of docs/voice.md (v60: the site is cut in half — the front door keeps the card and two links, /start/ folds its routes, "How it works" becomes "What it measures", one footer everywhere; v59: the example session is a button, the analyzer gains a glossary and a feedback door; v58: the copy contract on the pages)))
 // The cache *names* keep the historical prefix on purpose: the activate handler below
 // deletes every cache starting with it, so renaming the prefix would strand every v1–v13
 // cache on every device that ever visited, forever. Nobody sees these strings.
@@ -100,6 +101,8 @@ const APP_SHELL = [
   "js/sharecard.js",
   "js/store.js",
   "js/tokens.js",
+  // The ground under the Ride tab's track and the full-screen map behind its door.
+  "js/trackmap.js",
   "js/trends.js",
   "js/viz.js",
   "js/worker.js",
@@ -165,11 +168,28 @@ const NEVER_CACHE = [
   new URL(`${APP_DIR}version.json`, self.location).pathname,
 ];
 
-/** Hosts whose responses are worth keeping: the Python runtime and the one wheel. */
+/**
+ * Hosts whose responses are worth keeping: the Python runtime, the one wheel, and — since
+ * the Ride tab grew a map background — the OpenStreetMap tile layer.
+ *
+ * The tiles joined the list when the map moved from the share card, which is drawn once, to
+ * the session map, which is redrawn on every pan, every zoom step and every layer chip. A
+ * rider reading one afternoon asks for the same dozen pictures of the same beach dozens of
+ * times, and keeping them is both faster for him and far lighter on a volunteer-funded tile
+ * server than leaning on the browser's own cache alone
+ * (https://operations.osmfoundation.org/policies/tiles/). It is also what makes an
+ * already-read session's map work on a train.
+ *
+ * Nothing is requested that the page was not requesting anyway: the map is off until the
+ * rider presses Map, and with it off no tile URL ever reaches this worker. Staleness is
+ * bounded by VERSION — `activate` deletes every cache but the current one, so a bump throws
+ * the tiles away with everything else.
+ */
 const RUNTIME_HOSTS = [
   "cdn.jsdelivr.net",
   "files.pythonhosted.org",
   "pypi.org",
+  "tile.openstreetmap.org",
 ];
 
 self.addEventListener("install", (event) => {
@@ -223,11 +243,10 @@ self.addEventListener("fetch", (event) => {
     return;
   }
   // Everything else third-party is passed straight through, never stored: intervals.icu
-  // (a cached activity list is not something a privacy-first app should keep),
-  // cloud.umami.is (nothing depends on it, so offline it is simply allowed to fail), and
-  // tile.openstreetmap.org — the share card's optional map background, which the browser's
-  // own HTTP cache handles perfectly well and which this worker has no business keeping a
-  // second copy of. Offline the tiles simply fail and the card comes out plain.
+  // (a cached activity list is not something a privacy-first app should keep) and
+  // cloud.umami.is (nothing depends on it, so offline it is simply allowed to fail).
+  // Offline, an uncached tile simply fails: the card comes out plain and the session map
+  // comes out on its own dark surface, which is the figure this app has always drawn.
   if (url.origin !== self.location.origin) return;
   // The update switch, above: straight to the network, never stored, never served stale.
   if (NEVER_CACHE.includes(url.pathname)) return;

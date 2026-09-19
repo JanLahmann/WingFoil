@@ -513,6 +513,16 @@
       </div>
       <div class="figure" id="map-figure"></div>
       <div class="legend" id="map-legend"></div>
+      <!-- r3-w2:begin  The phone's door, in the phone's words
+           (ios/WingFoil/Features/SessionDetail/SessionDetailView.swift). It sits after the
+           legend because the legend is the map's own chrome on both platforms, and behind it
+           is this same figure at viewport size — js/trackmap.js moves it, it is never a
+           second map. Hidden while a document has no track to draw. -->
+      <p class="figure-door">
+        <button type="button" class="ghost small-btn" id="map-full-open" hidden>Open map
+          full screen</button>
+      </p>
+      <!-- r3-w2:end -->
     </section>
 
     <section class="panel" data-section="ride">
@@ -712,6 +722,24 @@
 </div>
 
 </main>
+
+<!-- r3-w2:begin  THE FULL-SCREEN MAP
+     Empty on purpose: js/trackmap.js moves #map-figure and #map-legend in here and puts
+     them back on the way out, so what opens is the map the rider was already reading —
+     same camera, same playhead, same layer chips — at the size of the window. A second map
+     would be a second camera and a second playhead to keep in step with the first, which is
+     the bug the one-playhead rule exists to prevent (docs/presentation.md, "Scrub and
+     zoom"). Outside <main> because it is fixed over the whole page. -->
+<div class="map-full" id="map-full" role="dialog" aria-label="Map, full screen" hidden>
+  <div class="map-full-bar">
+    <button type="button" class="ghost small-btn" id="map-full-close">Back</button>
+    <span class="map-full-hint muted small">Drag to pan. Scroll or pinch to zoom.
+      Escape closes.</span>
+  </div>
+  <div class="map-full-body" id="map-full-body"></div>
+  <div class="map-full-legend" id="map-full-legend"></div>
+</div>
+<!-- r3-w2:end -->
 
 <!-- ============================================================== THE FOUR TABS -->
 <!-- A bar at the foot on a phone, a rail down the side above 860 px. The four the phone
