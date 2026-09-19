@@ -769,6 +769,17 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
      crop and without one. A file that is not audio at all leaves the clip silent rather than
      failing the export, which is the trade the whole path is built on: the recording took as
      long to make as it lasts, and a bad pick must not cost it.
+   - `CrashDigestTests` — what a MetricKit diagnostic payload means, from
+     `fixtures/crash/metrickit-payload.json`, which is Apple's own `jsonRepresentation()`
+     layout with one crash, one hang and one disk-write exception in it. The frame walk is
+     the part worth a fixture: the tree's *root* frame is the outermost one and `subFrames`
+     descends towards the crash site, so the line worth printing is the deepest frame of the
+     **attributed** thread — the fixture carries a nested chain under `dyld` and a second,
+     unattributed thread that must not be the one that is read. Then the block as the mail
+     prints it, line for line at a fixed zone: where it came from, the counts by kind, up to
+     eight crashes by name, and the tally of what was left out. A build number is named only
+     when the crash happened on an older one. Nothing in the suite imports MetricKit, which
+     is why the parsing lives in the kit at all.
 
    iOS screenshot hooks (DEBUG **and** simulator only, passed as `SIMCTL_CHILD_…`
    environment variables to `xcrun simctl launch`): `UI_RESET=1` restores the fresh-install
@@ -789,6 +800,17 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    `UI_SYNC_CONTAINER=<path>` points the dev build's iCloud Drive sync at a plain directory
    instead of the ubiquity container, so two simulators can share one library
    ("Two devices, one library", below).
+
+   `UI_TEXT_SIZE=xxxl|ax1|ax2|ax3|ax4|ax5` sets the **whole app's Dynamic Type size** for
+   that launch (`ScreenshotTextSize`, applied at `RootView`'s root so every sheet raised
+   from it inherits it). The rest of the ladder is accepted too — `xs`, `s`, `m`, `l`, `xl`,
+   `xxl` — and an unknown value overrides nothing, which is what an unknown value means
+   everywhere else in the family. The size a rider actually reads at lives in iOS Settings →
+   Accessibility → Display & Text Size, which is three taps `simctl` cannot make and a
+   setting that then leaks into every other shot on that simulator; this is per-launch and
+   leaves the simulator as it found it. Pair it with any other hook — one launch per size is
+   how the five accessibility sizes get photographed:
+   `SIMCTL_CHILD_UI_TEXT_SIZE=ax3 SIMCTL_CHILD_UI_SHEET=help xcrun simctl launch <dev> de.lahmann.wingfoil.dev`.
    On the **Sessions** tab, `UI_GROUP_BY=none|month|year|spot` and `UI_FILTER_SOURCE=<raw>`
    (`icu`, `file`, `gdpr`, `airdrop`, `fixtures`, `example`, `watch`, `applewatch`,
    `applehealth`, `strava`) stage the list's two controls (docs/presentation.md, "Session
@@ -1082,6 +1104,41 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    Settings, Tuning, Help and both card composers. The fixture import is the slow part — about
    75 s — and it only has to happen on the run that passes `UI_IMPORT_FIXTURES=1`; every later
    launch on the same simulator opens in a few seconds against the library already there.
+   **The app's own tests — `WingFoilTests`** (`ios/WingFoilTests`, target and scheme wiring
+   in `ios/project.yml`). The kit's suite holds everything that can be stated without an app
+   around it; this holds the three rules that cannot. It is hosted by the `WingFoil` target
+   under `Dev Debug`, hangs off the **WingFoil Dev** scheme only, and is DEBUG-only — no
+   Release or archive action builds it.
+
+   ```sh
+   cd ios && xcodegen generate
+   xcodebuild test -project WingFoil.xcodeproj -scheme "WingFoil Dev" \
+       -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max'
+   ```
+
+   - `HelpButtonTests` — **every `?` in the app opens something.** `HelpCatalog.topic(_:)`
+     traps rather than returning nil, so a card pointing at a topic nobody wrote is a crash
+     on the tap. The topics are read out of the app's own sources (`AppSources`, the same
+     `#filePath` trick `CopyLintTests` uses in the kit): every `.case` token on a line that
+     names `HelpButton`, `HelpSectionHeader`, `HelpTopicSheet`, `helpTopic` or `help:` that
+     is a real `HelpTopicID`, asserted to resolve to a written title, summary and body in
+     this build's channel — and the same for every id in every topic's `related` list. The
+     scan asserts its own floor first (≥ 20 distinct topics), so a pattern that silently
+     matched nothing fails rather than passes.
+   - `SessionTitleTests` — **a session is never called by its identifier.** The Apple Watch
+     app filed its containers under the recording's UUID until 0.9.13 and a tester read
+     "EE94C0B1 359A 4FED …" off his own library; `SessionDisplay.title` is what all eleven
+     surfaces call, and four shapes of identifier filename come out as `Wingfoil` instead.
+     The other half of the rule is pinned beside it, so it cannot be satisfied by calling
+     everything Wingfoil: a real filename still becomes its own name, and the rider's own
+     title still wins.
+   - `CrashDiagnosticsTests` — the feedback mail carries the **Recent crashes** block when
+     the phone has kept one, the file survives the launch that wrote it, a re-delivered
+     payload is still one crash, and a phone that has never crashed says nothing at all.
+     What a MetricKit payload *means* is the kit's (`CrashDigestTests`); this is the file
+     and the mail. The `UI_TEXT_SIZE` ladder is pinned here too, being the one part of that
+     hook that can be read without a launch.
+
 3. **Monkey C units (Toybox.Test)** — the core suite lives in the `WingFoilCore` barrel
    (`garmin/barrel/WingFoilCore/tests/`) and is therefore compiled into **both** consumers'
    `--unit-test` builds: `bin/WingFoilTests.prg` (device app) and `bin/WingFoilFieldTests.prg`
