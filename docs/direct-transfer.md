@@ -1,224 +1,232 @@
 # Direct transfer — a Garmin session to the iPhone without intervals.icu or Strava
 
 Research spike for [issue #14](https://github.com/JanLahmann/WingFoil/issues/14). Nothing is
-built. Second pass. Jan's verdict on the first: *"streaming while riding is not feasible. The
-phone will not be in the water, just the watch. The transfer has to happen when back on
-land."* So the constraint is fixed and the question is narrower: **the rider walks up the
-beach, the phone is in the car or the drybag, and the session has to land.** Numbers are
-measured here, read out of Connect IQ SDK 9.2 on disk, or linked.
+built. Numbers are measured in this repo, read out of Connect IQ SDK 9.2 on disk, or linked.
 
-## 1 · What a recording weighs, and what the app already spends
+## 1 · What the link carries today, and what a recording weighs
 
-The link carries a **card** today: 21 integer keys, **192 B** measured, against
+The watch sends a **card**: 21 integer keys, **192 B** measured, against
 `PhoneLink.BUDGET_BYTES` = 1024 (ADR-013). The other way carries the map mask,
-`WatchMapMask.maxBytes` = **8 000 B**.
+`WatchMapMask.maxBytes` = **8 000 B**. That is the whole channel.
 
-Measured on this app's own FITs (`fixtures/sessions/ciq/`, `fitdecode`, raw chunk bytes):
+A recording is three orders bigger. Measured on this app's own FITs (`fixtures/sessions/ciq/`,
+`fitdecode`, raw chunk bytes):
 
-| stream | 1 h 57 m session (7 029 s) | per second |
+| stream | 1 h 57 m session (7 029 s) | per second | share |
+|---|---|---|---|
+| `accelerometer_data` (25 samples × 4 msg/s = 100 Hz) | 10 035 984 B | 1 428 B | 95.8 % |
+| `record` (1 Hz, 4 dev fields) | 235 720 B | 33.5 B | 2.2 % |
+| `gps_metadata` + `unknown_534` + `unknown_233` | 179 855 B | 25.6 B | 1.7 % |
+| **whole FIT** | **10 480 917 B** | 1 491 B | |
+| **FIT minus the wrist stream** | **≈ 445 000 B** | 63 B | |
+
+The wrist stream is already a switch — `accelLogging`, default **false** in `properties.xml` —
+so most riders' FITs are the 445 KB shape. And we need not ship FIT at all: `RawTrack.Sample`
+takes lat, lon, speed, altitude, heart rate and the four dev fields, and nothing else reaches
+the engine.
+
+| our own wire format, 2 h at 1 Hz | B/s | 2 h |
 |---|---|---|
-| `accelerometer_data` (25 samples × 4 msg/s) | 10 035 984 B | 1 428 B |
-| `record` (1 Hz, 4 dev fields) | 235 720 B | 33.5 B |
-| `gps_metadata` + `unknown_534` + `unknown_233` | 179 855 B | 25.6 B |
-| **whole FIT** | **10 480 917 B** | 1 491 B |
-| **FIT minus the wrist stream** | **≈ 445 000 B** | 63 B |
+| fixed (lat/lon int32, speed + alt uint16, HR uint8, dev pack uint16) | 15 | 108 000 B |
+| delta-coded, int16 position deltas, keyframe every 60 s | **9** | **≈ 67 000 B (65 KB)** |
+| wrist, 25 Hz magnitude only (what `PumpDetector` eats) | 50 | 360 000 B |
+| wrist, 25 Hz three axes int16 | 150 | 1 080 000 B |
 
-We need not ship FIT. `RawTrack.Sample` takes lat, lon, speed, altitude, heart rate and the
-four dev fields, and nothing else reaches the engine:
+## 2 · The options
 
-| our own wire format, 1 Hz | B/s | 2 h | 3 h |
-|---|---|---|---|
-| fixed (lat/lon int32, speed + alt uint16, HR uint8, dev pack uint16) | 15 | 108 000 B | 162 000 B |
-| **delta-coded, int16 deltas, keyframe every 60 s** | **9** | **65 000 B** | **97 000 B** |
-| a 10 s spine only (delta lat/lon, speed, flags) | 0.6 | 4 320 B | 6 480 B |
-| wrist, 25 Hz magnitude only (what `PumpDetector` eats) | 50 | 360 000 B | 540 000 B |
-
-**New this pass — the app's real footprint, built here** (`monkeyc -r -O 3z`, release jungle,
-SDK 9.2, against each device's `watchApp` `memoryLimit` in `ConnectIQ/Devices/*/compiler.json`):
-
-| device | code+resources | app memory | free for data |
-|---|---|---|---|
-| **fr255** (the binding one) | **104 892 B** | 524 288 B | **419 396 B** |
-| fenix 5 Plus | 125 244 B | 1 310 720 B | 1 185 476 B |
-| fenix 8 47 mm | 142 860 B | 786 432 B | 643 572 B |
-
-Live data today is an estimate, not a simulator reading: the 2 × 128 track floats, the
-256-slot `SessionHistory`, a 120 × 120 `BufferedBitmap`, the detectors' rings and one accel
-batch come to roughly **40–60 KB**. So **~360 KB is free on the worst watch we ship to**, and
-a 65 KB buffer is 18 % of it. Memory is not what decides this.
-
-**The fleet is.** `manifest.xml` ships **42 products** and **30 of them are pre-6.0.0** —
-fenix 5 Plus (3.3.3), the whole fenix 7 / epix 2 / fr255 / fr265 / venu / MARQ 2 family (5.x).
-`transmit()` accepts a `ByteArray` only since 6.0.0. The fallback is not an edge case; it is
-71 % of the watches. Costed in §5.
-
-## 2 · Platform facts
+Platform facts first.
 
 | fact | source |
 |---|---|
-| `Application.Storage`: **"Keys and values are limited to 8 KB each, and a total of 128 KB of storage is available."** The API page says 32 KB per value and "varies between devices" — design to 8 KB / 128 KB | SDK 9.2 `doc/docs/Core_Topics/Persisting_Data.html`, [Persisting Data](https://developer.garmin.com/connect-iq/core-topics/persisting-data/) |
-| Storage is **writable from a background service since API 3.2.0**; the foreground gets `AppBase.onStorageChanged()` | same page |
-| **`Toybox.Communications` runs in a Background context.** Its runtime-context list is *Audio Content Provider, **Background**, Data Field, Glance, Watch App, Widget*, and `transmit()` carries no narrower list. **A background service can transmit to the companion app** | SDK `doc/Toybox/Communications.html`, [Communications](https://developer.garmin.com/connect-iq/api-docs/Toybox/Communications.html), [forum 6168](https://forums.garmin.com/developer/connect-iq/f/discussion/6168/background-module---is-companion-app-communication-supported-in-the-background) |
-| **`Background.registerForPhoneAppMessageEvent()` (3.2.0) wakes the service when the phone sends a message** | SDK `doc/docs/Core_Topics/Backgrounding.html` |
-| A background service is **killed if it does not exit within 30 s**, and sooner to free memory for the foreground | same |
-| Background pool: **65 536 B** on every 5.x/6.x product we ship to, **32 768 B** on fenix 5 Plus. Code counts against it, hence `(:background)` | `compiler.json` |
-| Temporal events cannot recur faster than **5 minutes**; `Background.exit(data)` throws above **≈ 8 KB**; `Background.requestApplicationWake(msg)` shows a dialog asking the rider to open the app | `Background.html` |
-| `SECURE_CONNECTION_REQUIRED` = **−1001**. `makeWebRequest` takes a **Dictionary**, never a byte stream | `Communications.html`, [HTTPS](https://developer.garmin.com/connect-iq/core-topics/https/) |
-| Throughput **0.5–1 KB/s**, at most **3 transfers in flight** (−101 `BLE_QUEUE_FULL`, −102 `BLE_REQUEST_TOO_LARGE`, often a disguised out-of-memory) | [thread 2444](https://forums.garmin.com/developer/connect-iq/f/discussion/2444/communications-transmit-queue-full) |
-| **No file leaves a CIQ app.** No `File` module; `PersistedContent` is inbound; `FitContributor` write-only. *"There is no way to get access to the FIT files stored on the device from ConnectIQ."* | [forum 4697](https://forums.garmin.com/developer/connect-iq/f/discussion/4697/upload-workout-fit-files-with-connect-iq-possible) |
+| **`transmit()` has no documented size limit.** The cap is heap: the payload lives as a Monkey C object and is serialized at ~2×. Errors: `BLE_QUEUE_FULL` −101, `BLE_REQUEST_TOO_LARGE` −102, `BLE_CONNECTION_UNAVAILABLE` −104 | [Communications](https://developer.garmin.com/connect-iq/api-docs/Toybox/Communications.html) |
+| **Throughput is 0.5–1 KB/s**, 1–2 s per message, **at most 3 transfers in flight** — wait for `onComplete` or take −101 | Garmin staff, [thread 2444](https://forums.garmin.com/developer/connect-iq/f/discussion/2444/communications-transmit-queue-full), [thread 1675](https://forums.garmin.com/developer/connect-iq/f/discussion/1675/makejsonrequest-response-size-limit) |
+| **ByteArray only since API 6.0.0**: fenix 8 / fr970 / enduro 3 yes; fenix 7 (5.2.0) and fenix 5 Plus (3.3.3) no | same page; `ConnectIQ/Devices/*/compiler.json` |
+| watch-app heap: fenix 5 Plus **1 310 720 B**, fenix 8 and the whole 5.x/6.x fleet **786 432 B**. fenix 8's `:extendedCode` adds 16 MB of *code* paging, not heap | same files, [System 8](https://forums.garmin.com/developer/connect-iq/b/news-announcements/posts/system-8-beta-now-available) |
+| `Application.Storage`: **8 KB per value, ~100–128 KB per app**; the API page says 32 KB per value and "varies between devices" — design to the smaller | [Persisting Data](https://developer.garmin.com/connect-iq/core-topics/persisting-data/) |
+| **A CIQ app cannot read the FIT it recorded.** Garmin staff: *"There is no way to get access to the FIT files stored on the device from ConnectIQ."* `PersistedContent` is courses and workouts, `FitContributor` is write-only, there is no `File` module | [forum 4697](https://forums.garmin.com/developer/connect-iq/f/discussion/4697/upload-workout-fit-files-with-connect-iq-possible) |
+| `BluetoothLowEnergy` is **central-only**, 20-byte MTU, no long reads or writes ⇒ 90–120 B/s. Garmin: *"the phone must be the end that advertises"*; Apple hides a backgrounded iPhone's UUIDs in a proprietary overflow area | [Characteristic](https://developer.garmin.com/connect-iq/api-docs/Toybox/BluetoothLowEnergy/Characteristic.html), [forum 235496](https://forums.garmin.com/developer/connect-iq/f/discussion/235496/send-live-activity-data-to-a-smartphone-through-ble) |
+| `makeWebRequest` takes a URL-encoded or JSON **Dictionary** only — no byte stream | [HTTPS](https://developer.garmin.com/connect-iq/core-topics/https/) |
+| On iOS the companion app owns the BLE link; GCM only discovers and installs. Background needs *Uses Bluetooth LE accessories* + a `stateRestorationIdentifier`, and Garmin warns that backgrounded apps get *"extremely low BLE priority"* | [iOS SDK](https://developer.garmin.com/connect-iq/core-topics/mobile-sdk-for-ios/) |
+| Garmin Connect's **iOS app exports no file** — its share sheet gives an image or a link. *Export Original* (a zip holding the .fit) is a **web** route; the GDPR export is a whole-account zip with no committed turnaround | [Strava](https://support.strava.com/en-us/articles/15402167-exporting-files-from-garmin-connect), [export data](https://www.garmin.com/en-US/account/datamanagement/exportdata/) |
+| The Activity API serves FIT, but the Developer Program is **business-only, with its application form down through 2026**, and §5.2(e) forbids deriving income from the API | [FAQ](https://developer.garmin.com/gc-developer-program/program-faq/), [the5krunner](https://the5krunner.com/2026/09/14/garmin-developer-api-access-paused/); ADR-003 |
 
-## 3 · The options
+At 0.5–1 KB/s: the whole FIT is **3–6 hours**, the FIT without the wrist **7–15 min**, our
+delta stream **65–130 s**. But the delta stream is only **9 B/s while riding** — about 1–2 %
+of the link. That asymmetry is the whole answer.
 
-### A · Hold the compact stream, send it on land — and let the phone wake the watch
+| | option | feasible | cost of moving 2 h | failure modes | what the rider sees |
+|---|---|---|---|---|---|
+| **a** | **stream while riding**, flush the rest on save | yes | 9 B/s live, ~1–2 % duty; the tail is seconds | out of range an hour ⇒ ~32 KB held on a 768 KB watch; app killed loses the unsent tail | it is on the phone before he leaves the water |
+| **b** | **send after save** from kept samples | yes, needs a store the app lacks | one 65 KB burst = **65–130 s** | Storage is 8 KB/value and ~100 KB total, so a 3 h ride overflows; nothing survives a crash before save | a 1–2 minute wait, then done |
+| **c** | **pull the FIT from Garmin Connect** | no | — | no open API; no export in the iOS app; the web route and the GDPR zip are both manual | the chain #14 wants removed |
+| **d** | **watch writes FIT, phone reads it over USB** | no | — | fenix 7/8 offer MTP only, never mass storage; iOS Files mounts neither without MFi | nothing |
+| **e** | **raw BLE from the CIQ app** | no | 90–120 B/s ⇒ hours | central-only, and a backgrounded iPhone cannot be discovered | nothing |
+| **f** | **a relay server** — the watch POSTs, the phone fetches, the relay deletes (§4) | yes | 87 KB of base64 = **87–174 s**, same BLE hop | a server, a changed promise, a 24 h TTL that can eat a session | the same as (a), later |
 
-The first pass wrote off the after-save send because "the send needs the app open". **That is
-wrong**, and the correction is the whole of this pass:
+**Ranking: a > b > f > c > d = e.** (a) and (b) share one transport and one wire format; (a) only
+moves *when* the bytes go, and it is the only option the wrist stream could ride on — 50 B/s
+live is 5–10 % of the link, 360 KB as a burst is 6–12 minutes.
 
-> The rider walks up the beach with the watch asleep and the app closed. He opens CleanJibe on
-> the phone. The phone sends one small message to the watch app id. The watch's background
-> service wakes, reads page 0 out of Storage, transmits it, exits inside 30 s. The phone acks
-> and asks for page 1. Nine wakes later the session is on the phone. Nobody touched the watch.
+## 3 · Recommendation
 
-| | number |
+**Build (a), with (b) as its tail.** (f) is feasible and is ranked above the three that are not,
+but it does not change the hop that costs the time — §4 does the arithmetic. One ring buffer,
+one chunk encoder, one receiver. The
+watch flushes a chunk while the link is up and flushes the rest on save; if the phone was
+never in range, the same buffer is the after-save send. No second mechanism.
+
+**On the watch.** Acknowledged chunks are freed, so a few KB stay resident. The binding heap
+is the **fenix 8's 768 KB**, not the 5 Plus's 1.25 MB — the newer watch is the smaller one.
+The 5 Plus has the other problem: **CIQ 3.3.3 cannot transmit a ByteArray**, so it sends
+`Array<Number>`, four payload bytes per 32-bit Number, which `PhoneLink.estimateBytes` prices
+at 5 wire bytes. Ship the 6.0.2 watches first. Three transmits may be in flight, so the flush
+loop gates on `onComplete`; and — [SetSync](https://github.com/domingoruizb/setsync) learned
+this in the field — a transmit success only means the phone's *stack* took it, so chunks need
+an app-level ACK and `System.exit()` must block until the last settles. `PhoneLink.Radio`, the
+pending slot (now a queue), `pollLink` and the two fenix 7 traps are reused whole.
+
+**On the phone.** `ConnectIQCompanionLink` gains a chunk assembler writing a `.cjr` container
+into an inbox directory, exactly as `WatchSessionReceiver` already does for the Apple Watch's
+`.cjw`. New: `UIBackgroundModes: bluetooth-central` (today `ios/project.yml` has only `fetch`)
+and a `stateRestorationIdentifier` on `ConnectIQ.initialize`; both Bluetooth usage strings say
+*session summary* and must say what now crosses. One trap: *"multiple companion apps should
+never register to receive messages from the same app"* — a tester holding the dev and beta
+apps at once gets undefined delivery. **Dedupe is already solved**: the container carries the
+card's key, start epoch plus elapsed seconds, so it takes the same `SessionIngestor` ±60 s
+rule and the intervals.icu copy replaces the row in place (ADR-013).
+
+**What the rider sees.** Settings → Garmin watch, one switch:
+
+> **Send sessions straight to the phone**
+> Your session arrives while you are still on the beach. No account needed.
+
+**Which class.** The stream carries Doppler speed as its own channel, the positions and the
+four developer fields: class A minus the wrist. So **class B at first, class A once the 25 Hz
+magnitudes ride along**. No new letter (pattern L).
+
+## 4 · D in detail — the relay
+
+Issue #14 calls it **D**; this file's table spends `d` on USB, so it enters as **f**: an
+endpoint the watch POSTs to, the phone fetches from, the relay deletes on pickup.
+
+### The transport is the same BLE hop, plus a third
+
+`makeWebRequest` appears **nowhere** in `garmin/source` today — `Communications.transmit` is the
+only radio call the app makes. The `Communications` permission is already in both manifests, so
+no new permission is needed.
+
+What SDK 9.2's `api.debug.xml` allows:
+
+| | |
 |---|---|
-| RAM while riding | 12 pre-allocated 8 192 B pages = **98 304 B**, never grown, never concatenated (a `ByteArray` `+` doubles peak) — 23 % of fr255's measured 419 KB free |
-| Storage at save | 12 page keys + a header ≈ **100 KB** against 128 KB, minus MapSnapshot's 2 × 8 KB and the card. It fits, with nothing to spare |
-| a 3 h session | 97 KB = 12 pages. **Halve the cadence in place** when page 12 opens: 1 Hz for the recent hour, 0.5 Hz before — what `SessionHistory` already does to its slots. Never drop HR, it is one byte a second and the cost tracker wants it |
-| on the wire | 65 KB at 0.5–1 KB/s = **65–130 s**, or 3–5 back-to-back wakes |
-| per wake | 30 s × 1 KB/s ≈ 30 KB ceiling; one 8 KB page is comfortable, three is the in-flight cap |
-| class | Doppler speed as its own channel, the positions, the four dev fields, and pump strokes and takeoffs as the watch's **own** counts (`PumpDetector` runs on the wrist). **Class a**, with the raw 25 Hz stream absent rather than the results. Pattern **L**: no new letter, a column at most |
-| dedupe | the header carries start epoch + elapsed, so it takes the existing `SessionIngestor` ±60 s rule; the intervals.icu FIT later replaces the row in place (ADR-013) |
+| request body | `parameters` is a **Dictionary**, and the only two request content types that exist are `REQUEST_CONTENT_TYPE_JSON` and `REQUEST_CONTENT_TYPE_URL_ENCODED`. **No byte body.** A blob rides as base64 (`StringUtil.convertEncodedString`, `REPRESENTATION_STRING_BASE64`): 65 KB → **87 KB**, +33 %, ~2× that in heap as a String |
+| transport | HTTPS only; the cert must chain to a CA the watch knows (fenix 7 / epix had a TLS-cert bug) |
+| per-request ceiling | `BLE_REQUEST_TOO_LARGE` −102 fires on the **outgoing** side and is a RAM error, not a size constant — one developer took −102 on a **140-byte** URL. Undocumented and heap-bound, exactly like `transmit` |
+| response ceiling | `NETWORK_RESPONSE_TOO_LARGE` −402, `NETWORK_RESPONSE_OUT_OF_MEMORY` −403; developers hit −402 between **17 and 44 KB**, Garmin's guidance is **~8 KB** of JSON. Our response is only an ack, so this binds nothing |
+| from a background service | allowed, but `compiler.json` `appTypes.background.memoryLimit` is **65 536 B** on fenix 8 and fenix 7, **32 768 B** on fenix 5 Plus, for code *and* data — a session cannot fit one wake. `registerForTemporalEvent`: **no closer than 5 minutes**, one event at a time. 8 KB a wake ⇒ 9 wakes ⇒ **45 minutes** per session |
 
-Failure modes, each with an answer. App closed before the phone is near: **Storage keeps it**.
-Service killed at 30 s: **one page per wake, the phone asks for the next**. Two wakes fail:
-**`requestApplicationWake("Send your session?")`** — one tap opens the full app with 400 KB of
-heap and no 30 s clock. A transmit "succeeds" but never arrives: **an app-level ack per page**,
-the lesson [SetSync](https://github.com/domingoruizb/setsync) learned in the field. fenix
-5 Plus's 32 KB background pool: **4 KB pages there**, or foreground only on that family.
+**Throughput: unchanged, then worse.** GCM does the wide-area half over Wi-Fi/LTE for free, but
+the watch→phone half is the *same* BLE link at the same **0.5–1 KB/s**. 87 KB of base64 is
+**87–174 s** against **65–130 s** for the same session over `transmit()`.
 
-### B · The watch posts HTTP to the phone
+**Wi-Fi: no, not from `makeWebRequest`.** fenix 7/8 have Wi-Fi, but a web request does not raise
+it. Garmin staff: *"If you want to use WiFi, you really should be using the
+`Communications.SyncDelegate`"*, and the fenix 6x *"should only enable WiFi when a
+`Communications::SyncDelegate` is active"*. `Communications.startSync` **exits the app and
+relaunches it in sync mode** (@since 3.1.0) — the only door to the watch's own radio, and the
+only place (f) beats (a).
 
-- **https is required** (−1001). Community consensus: **`http://` is tolerated for loopback
-  only**; anything else needs a certificate the *phone* trusts
-  ([420764](https://forums.garmin.com/developer/connect-iq/f/discussion/420764/guidance-on-connect-iq-networking-http-vs-https-and-certificate-handling)).
-  No Garmin statement either way.
-- iOS **ATS does not apply to an IP-address literal**, so `http://127.0.0.1:8080` from GCM's
-  own `URLSession` is not blocked by Apple. Any blocker is Garmin's.
-- A **LAN** target works only with a root CA installed and fully trusted on the iPhone
-  ([291012](https://forums.garmin.com/developer/connect-iq/f/discussion/291012/makewebrequest-for-internal-networks)).
-  An iOS app cannot install one. Dead for riders. The watch's own **Wi-Fi** is reachable only
-  in sync mode (`startSync`/`SyncDelegate`) and `checkWifiConnection()` tests for an
-  *internet-enabled* access point, so the hotspot idea does not escape the cert problem either.
-- **The bytes still cross the same BLE pipe to GCM at 0.5–1 KB/s.** B buys no speed. It works
-  from a background service — but so does A now. iOS would need an `NWListener`, alive in the
-  foreground or ~30 s of a background task.
+### Privacy: the crypto exists, the promise does not survive
 
-**No advantage over A on the axis that matters, and one more moving part.** One hour as an
-experiment (§6), not a build.
+**CIQ does have crypto, on the whole fleet.** `Toybox.Cryptography` is @since **3.0.0**, the
+app's `minApiLevel` is **3.3.3**: `Cipher` with `CIPHER_AES128`/`CIPHER_AES256`, `MODE_CBC` and
+`MODE_CUSTOM` (**no CTR, no GCM, no AEAD**), HMAC with `HASH_SHA256`, ECDH over
+secp224r1/secp256r1, and `randomBytes`. AES-256-CBC + HMAC-SHA256, encrypt-then-MAC, is real
+end-to-end encryption and builds on every watch the app ships to. (ADR-012's aside that *"CIQ
+has no crypto primitives"* is true of an offline unlock check and wrong as a general statement;
+narrow it when next touched.)
 
-### C · Garmin Connect → Apple Health
+**No PIN, no keyboard, no QR — the channel is already there.** `PhoneLink.Callbacks` registers
+`registerForPhoneAppMessages`, and `applyMessage` already takes the phone→watch push that carries
+the 8 000 B map mask. A 32-byte key is **0.4 %** of it: the phone draws it from
+`SecRandomCopyBytes`, pushes it once, the watch keeps it in `Storage`. Nothing is typed on round
+glass. But that push needs the phone **in BLE range** — the condition the relay was sold as
+removing.
 
-**Dead, and now sourced.** Garmin's own FAQ: *"Workouts (activities uploaded to Garmin
-Connect — associated GPS track are **not** written to Apple Health)."* Garmin Connect does not
-appear under Health → Workouts → Workout Route Data Sources
-([forum 352961](https://forums.garmin.com/apps-software/mobile-apps-web/f/garmin-connect-mobile-ios/352961/garmin-connect-does-not-sync-workout-routes-i-e-gps-data-to-apple-health-app));
-HealthFit and RunGap exist *because* of this, and RunGap logs into the Garmin account rather
-than reading HealthKit. The write also needs GCM in the **foreground**, and the
-windsurf → `HKWorkoutActivityType` mapping is undocumented. Re-confirms **ADR-003**, costs no
-work. `HealthImporter` stays the Apple Watch's own recordings.
+**What the relay would hold:** an opaque blob under a 128-bit random id, ≤256 KB, TTL 24 h,
+deleted on first GET; no account, no listing, no log beyond the host's edge.
 
-### D · A relay we host
+**What the promise becomes.** Today: *"there is no CleanJibe server that your sessions are sent
+to — because there is no CleanJibe server at all"* (privacy) and *"Nothing is uploaded, because
+there is nowhere to upload it to"* (App Store). Both become false as written, and the replacement
+is longer, not shorter — *one server, a locker, encrypted, gone in 24 h* — against the privacy
+page's own rule that *"a privacy promise with an unnamed exception in it is not a promise"*.
+**GDPR**: a German controller holding pseudonymous location data needs an Art. 30 record, an
+Art. 13 notice, a processor contract and a position on edge logs. Hetzner Falkenstein keeps it in
+Germany; free Cloudflare Workers carries no EU-residency guarantee.
 
-The only option that could ever carry the wrist stream at speed: a real domain is the only way
-to a certificate GCM trusts, and that is the only way to the watch's Wi-Fi. A signed-URL
-endpoint and an object store, delete after pickup, ~€5/month.
+### Hosting
 
-The real cost is not money. `docs/channels.md` and the privacy page say the app talks to
-intervals.icu, Strava and Apple Health, and to no CleanJibe server. One relay changes: the App
-Store privacy labels (a track is location data), a privacy-page section, a retention rule
-written down and honoured, a store-review answer, and a single point of failure a rider cannot
-route around. **Not for the release promise.** Name it only if the wrist stream becomes the
-thing a rider waits for.
+100 riders × 3 sessions/week × 100 KB = **30 MB/week up**, the same down: ≈ **260 MB and ~2 600
+requests a month**.
 
-### E · Everything else
-
-| idea | verdict |
-|---|---|
-| **The card grows a spine** — a 10 s track, 720 points × 6 B = **4 320 B**, one message, ~5 s on the link | **Take it.** `transmit` has no documented size cap; 1024 B is *our* budget. Every session then arrives with a map even when the full stream never goes. A subset of A's encoder, shippable on its own |
-| `Communications.openWebPage(url)` | a `cleanjibe://` scheme would let the *watch* launch the phone app. UNVERIFIED whether GCM honours a custom scheme |
-| Garmin **Share** (device to device, 3 m, PIN) | courses, workouts, saved locations. **Not activities** ([manual](https://www8.garmin.com/manuals/webhelp/GUID-25E3235D-44D2-4384-A591-DD1D71BEBCB1/EN-US/GUID-B822FF6C-0DAB-45EB-95CC-BB9023E3961B.html)) |
-| Garmin Messenger file transfer | no evidence it exists. UNCONFIRMED |
-| Garmin Connect **iOS** export / share sheet | still none in 2025–2026 release notes; *Export Original* stays a web route |
-| FIT dev-field tricks, `PersistedContent`, "Files"; USB/MTP; raw BLE | unchanged: inbound or write-only; MTP is not mountable by iOS without MFi; BLE central-only gives 90–120 B/s |
-
-## 4 · Ranking, and the build
-
-**A > E-spine > B > D > C = the file routes.** A and the spine share one encoder, so the spine
-is A's first commit, not a rival.
-
-**On the watch.** Twelve pre-allocated pages, filled by the same 1 Hz `onPosition` tick that
-already feeds the engine. At save: pages to Storage as `cjs0`…`cjsB`, plus `cjsH` (schema,
-start epoch, elapsed, page count, bytes in the last page, cadence, and the card itself, so the
-header alone is a usable session). State machine beside the pending card:
-`IDLE → OFFER(header) → SENDING(page i) → ACK → … → DONE → clear`, gated on `onComplete`
-**and** the phone's ack, three in flight at most. `(:background)` goes on the app class, the
-service delegate, `PhoneLink` and the page reader, and on nothing else, or fenix 5 Plus's
-32 KB pool overflows. `registerForPhoneAppMessageEvent()` at app exit. Summary page, BACK menu
-→ **Send to phone**, with a percentage and a Retry; `pollLink` already fires on the connected
-edge and gets the same call.
-
-**On the phone.** `ConnectIQCompanionLink` gains a page assembler writing a `.cjr` container
-into the same `WatchInbox` directory `WatchSessionReceiver` already owns, then the existing
-ingest path. After the header it sends `{"go": n}` per page — that pull drives the background
-wakes. `UIBackgroundModes: bluetooth-central` and a `stateRestorationIdentifier` are new
-(`ios/project.yml` has only `fetch`), and both Bluetooth usage strings must say what now
-crosses. Trap: two companion apps registered for one CIQ app id (a tester holding dev and
-beta) gives undefined delivery. Provenance line: **"From your watch, over Bluetooth."**
-
-**What the rider sees** (docs/voice.md, registers 1 and 3):
-
-> Settings → Garmin watch → **Send sessions to the phone**
-> *Your session goes straight from the watch. No account needed. Open CleanJibe on the beach.*
-
-Watch: **Send to phone** · **Sending 43%** · **On your phone.** · **No phone. Try again on the
-beach.**
-
-**Which channel.** Dev. Rule 2 of `docs/channels.md` holds the Garmin link in dev until the
-link has real sessions behind it, and this is that link carrying more. It moves to beta on
-rule 1 — ten sessions, two riders, no open report — plus a help topic and a privacy line.
-
-## 5 · The pre-6.0 fallback, costed
-
-30 of 42 products cannot `transmit` a `ByteArray`.
-
-| encoding | wire bytes per 8 192 B page | RAM per page | 65 KB session |
+| | cost | fit | effort |
 |---|---|---|---|
-| `ByteArray` (≥ 6.0.0, 12 products) | 8 192 | 8 192 B | 65–130 s |
-| **`Array<Number>`, 2 048 entries** | 10 240 (`estimateBytes` prices a Number at 5 B) | ~8–12 KB | **81–162 s** |
-| base64 in a `String` | ~10 900 | ~11 KB | 87–174 s |
+| **Cloudflare Workers + KV** | **€0** | free tier: 100 000 reads and **1 000 writes/day** (we need ~43), 1 GB, **25 MB/value**, native TTL. R2 instead of KV if blobs grow: 10 GB-month, zero egress | ~1 day; no EU residency on free |
+| **Hetzner CX22, Falkenstein** | **≈ €3.79/month**, 20 TB | German soil; Caddy, ~50 lines, a sweep timer | ~1 day, then **forever**: patches, uptime, certs |
+| GitHub Pages | — | **cannot**: static, no POST. cleanjibe.org is on Pages, so this is new infrastructure, not an extension | |
 
-**Take `Array<Number>`**: the same expansion as base64 on the wire, less in RAM, no encoder.
-The 12-page buffer becomes 100–144 KB, still inside fr255's 419 KB and fenix 5 Plus's 1.18 MB.
-The choice is forced only in the **background** service on fenix 5 Plus: 32 768 B total means
-a 4 KB page there, or foreground only on that family.
+Abuse: 256 KB body cap, unguessable ids, no listing endpoint, ~10 uploads/hour/IP, delete on
+pickup.
 
-## 6 · The first experiment — *one page, timed, then nine*
+### The rider, end to end, and where it breaks
 
-A hidden BACK-menu item on the dev build encodes one 8 192 B page from the last session and
-calls the existing `PhoneLink.Radio`; log `onComplete` against `System.getTimer()`. Jan's
-**fenix 8 47 mm** first, a **fenix 5 Plus** second — the pre-6.0 half of the fleet.
+Pair once with the watch in range. A background wake every ≥5 min then pushes a page while the
+phone is in range with internet; the phone polls when CleanJibe opens — no APNs, so a silent push
+would mean a *second* server. Breaks: relay down ⇒ nowhere to put pages; the app not opened
+inside 24 h ⇒ the blob expires and the FIT is the only copy, so the relay can never be the only
+path; partial pages ⇒ the phone holds fragments and must expire them.
 
-| measure | why | pass |
-|---|---|---|
-| wall clock for one 8 192 B page, ten runs, watch on the wrist, phone in a pocket | the one unknown that decides everything | median ≤ 20 s |
-| 1, 2, 4, 8, 16 KB in one transmit, and where −102 starts | the per-message ceiling is undocumented, and is heap, not size | 8 KB lands on both |
-| nine pages back to back with the app open, each acked | the real 65 KB end-to-end time | ≤ 3 min |
-| the same driven by `registerForPhoneAppMessageEvent`, app closed | whether the background path exists at all — nobody has published this | one page per wake, exits inside 30 s |
-| the background image on fenix 5 Plus after `(:background)` scoping, and `requestApplicationWake` on both watches | 32 768 B is a hard wall; the wake dialog is the fallback | builds, runs, dialog appears |
-| a 2 KB POST to `http://127.0.0.1:8080`, phone app foregrounded | option B, answered in an hour | 200, or −1001 and B is closed |
-| battery over 2 h recording plus one 65 KB send | the cost the rider pays | ≤ 2 % over the card alone |
+### Against (a), plainly
 
-If a page lands in under 20 s, A is a two-minute transfer the rider watches finish and it is
-worth building. If the background wake never fires, A still works — the rider taps **Send to
-phone** on the summary page — and the 4 KB spine in the card covers every session he forgets
-to send.
+The relay **does not change the watch→phone hop**. Same BLE, same 0.5–1 KB/s, 33 % more bytes,
+through GCM instead of our companion app. Two honest gains: no companion registration (the
+*"multiple companion apps"* trap and the BLE-priority worry go away), and CleanJibe need not be
+open at pickup. Against that: a server, a rewritten promise, GDPR paperwork, base64
+overhead and a 45-minute background clock. **That trade is not worth it.**
+
+**The one scenario where it wins:** the watch on its own Wi-Fi with **no phone present at all** —
+the rider's phone is at home and the session is there before he is. That needs `SyncDelegate`,
+which exits the app, and nobody has publicly shown a fenix *watch app* POSTing a body that way.
+
+**Ranking: a > b > f > c > d = e.** (f) is feasible where (c), (d) and (e) are not, and sits below
+(a) and (b) because it buys nothing on the hop that matters. **Recommendation unchanged: build
+(a), with (b) as its tail.** Park (f) behind one experiment.
+
+**The experiment that decides (f)** — one afternoon, before any server exists. A dev-build
+BACK-menu item calls `Communications.startSync` with a `SyncDelegate` that POSTs 2 700 B to a
+throwaway Worker, **with the phone's Bluetooth off** and the watch on home Wi-Fi. If it lands,
+(f) has the one reason to exist that (a) cannot supply, and the design is `POST /b` → `{id}`
+(≤256 KB base64, AES-256-CBC + HMAC-SHA256, per-session nonce, key from the PhoneLink push),
+`GET /b/{id}` → blob then delete, `DELETE /b/{id}`, nothing else. If it does not, (f) is closed
+and this section is its epitaph.
+
+## 5 · The first experiment
+
+**Transmit the last five minutes and time it.** Five minutes of delta stream is 2 700 B — one
+message, no assembler, no container, nothing rider-facing. A hidden BACK-menu item on the dev
+build encodes the tail and calls the existing `PhoneLink.Radio`; log `onComplete` against
+`System.getTimer()`. Measure on Jan's fenix 8 first, a fenix 5 Plus second:
+
+| | why |
+|---|---|
+| wall clock for 2 700 B, ten runs, watch on the wrist, phone in a pocket | says whether 0.5–1 KB/s holds here; 65 KB is 65–130 s if it does |
+| the same at 1, 4, 8, 16 KB, and where −102 starts | finds the real per-message ceiling, which is undocumented and is heap, not size |
+| two sends back to back, then three, watching for −101 | confirms the three-in-flight gate |
+| the same transfer backgrounded, and again after force-quit | the one thing nobody has answered publicly in seven years |
+| watch battery over 2 h with a flush every 90 s vs. the card alone | the cost the rider pays |
+| fenix 5 Plus: the `Array<Number>` encoder at the same payload | confirms or kills the pre-6.0.0 fleet |
+
+If 2 700 B lands in under 5 s, (a) is a transfer measured in seconds and worth building. If
+backgrounded delivery never happens, (a) still works — the rider has the watch app open while
+he rides — and (b) becomes a 1–2 minute wait he watches.
