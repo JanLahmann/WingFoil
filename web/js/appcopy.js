@@ -71,7 +71,7 @@ export const SHELL = {
     },
     {
       "id": "log",
-      "title": "Log"
+      "title": "Details"
     }
   ]
 };
@@ -627,6 +627,15 @@ export const HELP = {
               ],
               "detail": "Paste it into the field below. In the app that field is Settings → intervals.icu. Tap Save & check. CleanJibe verifies it and says how many activities it can see.",
               "term": "4. Paste the key into CleanJibe"
+            },
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail": "Garmin has no wingfoil profile. Garmin and Strava call the session Windsurf. CleanJibe calls it Wingfoil.",
+              "term": "Why Garmin says Windsurf"
             }
           ],
           "related": [
@@ -1570,6 +1579,15 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
+              "detail": "CleanJibe shows knots. The watch app has its own switch, under Garmin Connect → CleanJibe → Settings. Garmin Connect follows its own setting. Strava shows a windsurf session in knots.",
+              "term": "Knots or km/h"
+            },
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
               "detail": "A recording with positions but no speed channel has its speed differentiated from them, which reads high. Every GPX is one, and some converted exports. Shown, never a personal best.",
               "term": "\"Uncertified\""
             }
@@ -2191,7 +2209,7 @@ export const HELP = {
         },
         {
           "body": [
-            "A session can be analysed as **Wingfoil**, **Windsurf foil** or **Windsurf fin**. The row is on the session's Log tab, under \"Analyse as\". Changing it re-derives that session and nothing else.",
+            "A session can be analysed as **Wingfoil**, **Windsurf foil** or **Windsurf fin**. The row is on the session's Details tab, under \"Analyse as\". Changing it re-derives that session and nothing else.",
             "None of Garmin, Strava, intervals.icu and Apple Health has a wingfoil sport. Most riders record under the windsurf profile. A new session cannot say which rig it was ridden on.",
             "So it is read as whatever you set under Settings → \"I mostly ride\", marked with a **?** until you have looked, and listed after each import. Sessions from the CleanJibe watch app are never asked about."
           ],

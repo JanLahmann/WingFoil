@@ -346,7 +346,10 @@ jibed at — cost a trip to the full-screen map and back.
   map opened on, so they stay roughly a fingertip after a zoom (iOS: the region from
   `onMapCameraChange`).
 - **"Open map full screen" stays.** The big map is still where rotation, the whole session at
-  once and the floating legend live.
+  once and the floating legend live. **The screen it opens is titled `Map`** (19 September
+  2026, pattern A): it used to wear the session's name, which named the session and not the
+  screen, so its only name was the label on this door. The session's name is the caption
+  under it.
 
 ## Map style — the ground under the track
 
@@ -1272,7 +1275,7 @@ progress, and cancels at whatever frame it is on.
 ## Sections — how a session divides
 
 Both apps open on the key-metrics block and then **switch between four sections**, in this
-order: **`Ride` · `Turns` · `Takeoffs` · `Log`**. The ids and the words are `SessionSection`
+order: **`Ride` · `Turns` · `Takeoffs` · `Details`**. The ids and the words are `SessionSection`
 in the kit. The alternative was measured: one column of ~3 800 pt on the phone and ~6 000 px
 on a phone browser, five unrelated subjects deep, with no way to the fifth except through
 the other four (`app-ui-review.md` §3.1, §7.2).
@@ -1297,7 +1300,7 @@ Two rationales, and both are about a name describing the wrong thing:
 - **The session's own facts had nowhere to live.** The recording's provenance was a footer
   repeated under all four sections, the wind axis the whole analysis is named against was one
   grey line under the date, and the watch-vs-phone table was hidden inside a warning banner
-  most riders dismiss. Three facts about the *record*, filed as page furniture. `Log` is
+  most riders dismiss. Three facts about the *record*, filed as page furniture. `Details` is
   where they are, with the gear card, which was already the same kind of fact. There are no
   placeholders on it for anything else.
 
@@ -1305,6 +1308,13 @@ Two rationales, and both are about a name describing the wrong thing:
 name was a list of two figures, and it is dead weight beside three one-word siblings. The
 section is the ride — where it went and how fast — and the two figures on it are how it says
 so.
+
+**`Log` became `Details` on 19 September 2026** (pattern A: a title names what the screen
+does). "Log" reads as a logbook, a list of afternoons, and the section is not a list of
+anything: it is the four facts about *this* session — the kit, the wind, where the recording
+came from, and where the watch and the phone disagree. No narrower word covers all four, and
+`Details` is exactly as wide as the section. The case, the anchors and the `app-shell.json`
+id stay `log`, so every deep link written before the rename still lands.
 
 **Every scroll anchor that existed keeps working, and two changed section rather than name**:
 `hr` is on `takeoffs`, `gear` is on `log`. A jump to an anchor — a deep link, a screenshot
@@ -1337,7 +1347,7 @@ therefore on every section.
   `web/tools/verify_app_shell.py` reads `SessionSection.swift` from the other end, so
   neither side can rename a tab alone.
 - **A section the web cannot fill says so in one line.** Takeoffs has no HR card here and
-  `Log` has no gear card and no divergence table, so each prints one sentence naming the
+  `Details` has no gear card and no divergence table, so each prints one sentence naming the
   phone. A tab that is quietly half of what its name promises is worse than one that admits
   the half it has.
 
@@ -1353,7 +1363,7 @@ takeoff question this half answers.
 
 The watch-vs-phone banner sits under the key-metrics block, as it did, and it is now a
 **one-line warning with a chevron**: the four-column table it used to unfold in place is on
-`Log`. Tapping the banner selects `Log` and scrolls to the table. The dismiss X is unchanged
+`Details`. Tapping the banner selects `Details` and scrolls to the table. The dismiss X is unchanged
 and still per session and per divergence (`DivergenceDismissal`). A disclosure that put the
 most technical thing on the page in the second most prominent place on it was the wrong
 weight for a provenance footnote; a banner's job is to say there is something and to take you
@@ -2141,8 +2151,8 @@ the flight", instead of a verdict it does not have.
 
 **Two ways in, one set.** The ride map's hollow-ring callout grows the same "Details ›"
 affordance a turn's dot has (`EventMarker.flightEndIndex`, carried rather than looked up by
-timestamp, because two flights can end in the same second of a gappy import); and the **Log**
-tab carries a "Flight ends" card listing them, each row opening the same page. Log rather than
+timestamp, because two flights can end in the same second of a gappy import); and the **Details**
+tab carries a "Flight ends" card listing them, each row opening the same page. Details rather than
 Ride or Turns on purpose: Ride is the map, Turns is the maneuvers, and a straight-line flight
 end is neither — it is what the *record* says happened when the foil stopped carrying, which
 is the question that tab exists to answer. On a session with no drawn ends the card is absent
@@ -2150,7 +2160,7 @@ rather than empty.
 
 iOS: `FlightEndSlice` + `FlightEndAnalytics` in the kit (pure, `ManeuverSliceTests`), drawn by
 `FlightEndDetailView` through `TurnDetailMapView` and `StripChrome`. Screenshot hook:
-`UI_OPEN_FLIGHT_END=<index>`, which selects the Log tab first — a sheet attached to an
+`UI_OPEN_FLIGHT_END=<index>`, which selects the Details tab first — a sheet attached to an
 unselected tab's subtree never appears.
 
 ## One clock — every duration a rider sees is the engine's cleaned span
@@ -2301,7 +2311,7 @@ fin. Untested: jibes and tacks work, pumping is off, planing thresholds are prov
 
 With it **off** the app is the wingfoil-only one it was before the preset existed: no "I mostly
 ride" row (the rider default is wingfoil, whatever a stored value from earlier says, and the
-Analysis footer drops the paragraph that explained it), no "Analyse as" card on the Log tab, no
+Analysis footer drops the paragraph that explained it), no "Analyse as" card on the Details tab, no
 review sheet after an import, no library banner, no `?` on any row, and no **Windsurf
 (experimental)** topic on the Help index or in its search (`HelpCatalog.indexTopics` — the topic
 stays *in* the catalogue, so a `?` on a windsurf session and any deep link still open it).
@@ -2319,15 +2329,15 @@ the question is asked at import time.
 
 ### Where the override lives
 
-**Session → Log → "Analyse as"** — with the switch above on — a three-way segmented control
+**Session → Details → "Analyse as"** — with the switch above on — a three-way segmented control
 (Wingfoil / Windsurf foil / Windsurf fin) under the Recording card, with the footnote:
 
 > Experimental. Windsurf analysis is untested. Jibes and tacks work. Pumping is off and
 > planing thresholds are provisional. Send feedback on what you see.
 
-Log rather than Ride, and a row rather than a prominent control, because Jan's brief was to
+Details rather than Ride, and a row rather than a prominent control, because Jan's brief was to
 *hide it a bit*: the rider looking for it will find it, and the rider who is not will never be
-offered a choice he has no way to evaluate. Log is the tab about the *record* rather than the
+offered a choice he has no way to evaluate. Details is the tab about the *record* rather than the
 riding, which is the question this row asks — not "what did you do", but "how should this be
 read". Changing it re-derives **this session and nothing else** (docs/algorithms.md,
 "Disciplines"); the anchor is `discipline`, and `UI_DISCIPLINE=windsurfFin` sets it for a
@@ -2778,7 +2788,7 @@ answer, and it is why the chip survives a "Reset all" until the sweep has run. T
 neutral rather than a warning: a tuned analysis is not wrong, it is measured against
 different thresholds. What it may never be is absent.
 
-### The dev workbench — five tools that show the working
+### Tuning this turn — five tools that show the working
 
 A slider moves a threshold; it does not say what the threshold *did*. The dev build therefore
 carries five tools that answer the questions a moved slider actually raises, all of them
@@ -2788,6 +2798,13 @@ everything else behind `#if TUNING`. The pure halves live in the kit
 (`Presentation/Dev/`, no `#if` there) so a test can hold them; the app gates their use. Two of
 them are one insertion each on the turn page and the Turns tab, so the files they land in stay
 readable.
+
+**It is a screen, with a title** (19 September 2026, pattern A). Four of the five tools were a
+heading called *Dev workbench* stacked under the turn page's own content — this file named it
+as if it were a screen and the app never did. The turn page now carries one row,
+**Tuning this turn**, which pushes them onto a page of that name. Not plain *Tuning*: Settings
+→ **Tuning** is the 27 sliders, and two screens with one name is the thing pattern A removes.
+This one is those sliders applied to the turn in front of you.
 
 **1. "Why this verdict" — the outcome ladder's working.** On the turn's page, a panel with one
 row per rung the ladder took, each timed in **seconds from the sweep's start** — the same clock
@@ -3355,7 +3372,7 @@ rather than leaving the row a cell short (`RowMetricTests`).
 
 The header names where the recording came from in one line under the date
 (`SessionProvenance.line(importSource:)`: *Apple Watch · CleanJibe*, *intervals.icu*, *Strava*,
-*Apple Health*, *File*) — provenance used to live on the Log tab only, so an Apple Watch
+*Apple Health*, *File*) — provenance used to live on the Details tab only, so an Apple Watch
 recording and a Health import looked alike. The title is a button: a tap opens a rename sheet
 writing the same `customTitle` the share composer's field writes, so renaming is not a
 side-effect of sharing. A swipe moves to the next or previous session in the list's own order
@@ -3511,7 +3528,7 @@ same session is on intervals.icu, take it from there instead.*
   Strava data is shown** — the *Compatible with Strava* logo sits in the Import screen's Strava
   section header, **beside** the section's own name and never above the CleanJibe mark, because
   the guideline is that Strava's logo may not be given more prominence than the app's own;
-  (3) **a link back** — *View on Strava* on a Strava-imported session's Log tab, under the
+  (3) **a link back** — *View on Strava* on a Strava-imported session's Details tab, under the
   Recording card, in Strava orange `#FC5200`. The activity id it needs is read back out of the
   recording's own filename (`StravaImport.activityId`, the first field of
   `<id>_<slug>_strava.gpx`) rather than stored in a column of its own: the fact is already on

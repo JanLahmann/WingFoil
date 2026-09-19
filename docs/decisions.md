@@ -122,7 +122,7 @@ SQL into Swift, because the version a row *should* carry now depends on the row)
 column (`session.disciplineOverride`, schema v14, no re-analysis sweep behind it — every
 existing row resolves to wingfoil), one optional config echo (`config.discipline`, **absent**
 on a wingfoil document so no committed golden moves), two cross-check goldens under
-`fixtures/goldens/discipline/`, one help topic, and one segmented control on the session's Log
+`fixtures/goldens/discipline/`, one help topic, and one segmented control on the session's Details
 tab under a footnote that calls the whole thing untested. The **FIT sport code is never
 consulted**: ADR-004 records sport 43 for wingfoiling, so a windsurf-profile recording of a
 wingfoil session — the common case in the corpus — stays wing unless the dev-field tag or the

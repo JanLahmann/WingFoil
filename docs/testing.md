@@ -900,7 +900,7 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    `UI_SCROLL_TO=<anchor>` (`chart` for the speed chart, `replay`, `summary`, `turns` for
    the turn cards and the drill-in row, `takeoff`, `takeoffsMap` / `takeoffList` for the
    attempt map and its rows, `hr` for the HR-cost card, `gear`, and `wind` / `recording` /
-   `divergence` for the Log section's three cards),
+   `divergence` for the Details section's three cards),
    `UI_PLAYHEAD=0.0…1.0`,
    `UI_FULLSCREEN_MAP=1` and `UI_HIDE_LAYERS=<MapLayer,…>` stage the session detail page:
    the last one starts with those legend chips switched off (e.g. `fellIn,courseChange`,

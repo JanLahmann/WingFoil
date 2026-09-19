@@ -43,7 +43,7 @@
     { "id": "ride", "title": "Ride" },
     { "id": "turns", "title": "Turns" },
     { "id": "takeoffs", "title": "Takeoffs" },
-    { "id": "log", "title": "Log" }
+    { "id": "log", "title": "Details" }
   ],
   "waysIn": {
     "title": "How your sessions get in",
