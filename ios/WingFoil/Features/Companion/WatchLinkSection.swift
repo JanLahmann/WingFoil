@@ -41,6 +41,11 @@ struct WatchLinkSection: View {
                 }
             }
 
+            if let probe = store.lastLinkProbe {
+                // The dev build's link probe (docs/direct-transfer.md): the watch times the
+                // send, the phone confirms what arrived.
+                LabeledContent("Link probe", value: probe)
+            }
             if let last = store.lastCardAt {
                 // `.current` deliberately: when the watch last reached this phone, which is an
                 // event on the reader's clock rather than a moment in any session.

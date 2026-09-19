@@ -6,6 +6,7 @@
 #if DEV
 import ConnectIQ
 import Foundation
+import OSLog
 import UIKit
 import WingFoilKit
 
@@ -76,6 +77,10 @@ final class ConnectIQCompanionLink: NSObject, CompanionLink {
     /// Cards that failed validation, counted rather than surfaced. A dropped card is
     /// invisible to the rider by design — the FIT is still coming — but a number that only
     /// ever goes up is the first thing to look at when the link "does not work".
+    #if DEV
+    /// The last link-probe page the watch delivered (docs/direct-transfer.md).
+    private(set) var lastProbe: String?
+    #endif
     private(set) var rejectedCards = 0
 
     override init() {
@@ -299,6 +304,22 @@ extension ConnectIQCompanionLink: IQAppMessageDelegate {
     /// phone started listening on the app id the watch actually has.
     @objc(receivedMessage:fromApp:)
     nonisolated func receivedMessage(_ message: Any!, from app: IQApp!) {
+        #if DEV
+        // The dev build's link probe (docs/direct-transfer.md): a page of bytes with its
+        // size under "pr". Counted and sized here, never stored; the watch keeps the timing.
+        if let dict = message as? [String: Any], let size = dict["pr"] as? Int {
+            let seq = dict["q"] as? Int ?? 0
+            let got: Int
+            if let data = dict["b"] as? Data { got = data.count }
+            else if let arr = dict["b"] as? [Any] { got = arr.count }
+            else { got = -1 }
+            os_log("link probe %d B #%d: %d bytes arrived", size, seq, got)
+            Task { @MainActor in
+                self.lastProbe = "\(size / 1024) KB #\(seq): \(got) bytes arrived"
+            }
+            return
+        }
+        #endif
         guard let card = try? CompanionSummary(payload: message) else {
             Task { @MainActor in self.rejectedCards += 1 }
             return

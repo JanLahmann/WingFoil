@@ -2495,6 +2495,10 @@ final class SessionStore {
     /// payload rules testable in WingFoilKit with no framework in sight.
     let companion = ConnectIQCompanionLink()
     private(set) var companionState: CompanionLinkState = .noDevice
+    #if DEV
+    /// What the last link-probe page looked like when it arrived (docs/direct-transfer.md).
+    var lastLinkProbe: String? { companion.lastProbe }
+    #endif
     /// When the last card arrived. The settings row shows it, because "it says ready" and
     /// "something has actually come through" are different facts.
     var lastCardAt: Date? {
