@@ -80,6 +80,9 @@ final class ConnectIQCompanionLink: NSObject, CompanionLink {
     #if DEV
     /// The last link-probe page the watch delivered (docs/direct-transfer.md).
     private(set) var lastProbe: String?
+    /// Raised on the main actor with each probe line, so a view can refresh — this class
+    /// publishes nothing, and a row read off `lastProbe` alone never updated (19 Sep 2026).
+    var onProbe: (@MainActor (String) -> Void)?
     #endif
     private(set) var rejectedCards = 0
 
@@ -345,7 +348,9 @@ extension ConnectIQCompanionLink: IQAppMessageDelegate {
             else { got = -1 }
             os_log("link probe %d B #%d: %d bytes arrived", size, seq, got)
             Task { @MainActor in
-                self.lastProbe = "\(size / 1024) KB #\(seq): \(got) bytes arrived"
+                let line = "\(size / 1024) KB #\(seq): \(got) bytes arrived"
+                self.lastProbe = line
+                self.onProbe?(line)
             }
             return
         }

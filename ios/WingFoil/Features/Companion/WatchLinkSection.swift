@@ -46,6 +46,11 @@ struct WatchLinkSection: View {
                 // send, the phone confirms what arrived.
                 LabeledContent("Link probe", value: probe)
             }
+            if let line = store.directPageLine {
+                // Every page as it lands, before any session is whole: the line that says
+                // whether the radio reached the app at all.
+                LabeledContent("Direct pages", value: line)
+            }
             if let direct = store.lastDirectTransfer {
                 // The session the watch sent straight over (docs/transfer-format.md): when
                 // it was ridden, how many pages crossed, how long they took.

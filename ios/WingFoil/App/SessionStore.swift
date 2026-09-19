@@ -2499,7 +2499,8 @@ final class SessionStore {
     private(set) var companionState: CompanionLinkState = .noDevice
     #if DEV
     /// What the last link-probe page looked like when it arrived (docs/direct-transfer.md).
-    var lastLinkProbe: String? { companion.lastProbe }
+    var lastLinkProbe: String? { linkProbeLine ?? companion.lastProbe }
+    var linkProbeLine: String?
     #endif
     /// When the last card arrived. The settings row shows it, because "it says ready" and
     /// "something has actually come through" are different facts.
@@ -2598,6 +2599,8 @@ final class SessionStore {
     /// What the last session the watch sent straight over looked like
     /// (docs/transfer-format.md §5). Nil until one has arrived.
     var lastDirectTransfer: DirectTransferReceipt? { DirectTransferInbox.shared.lastReceipt }
+    /// The last page the inbox took or refused, as the Settings row shows it.
+    var directPageLine: String?
 
     /// Starts taking delivery of direct transfers and imports anything already waiting.
     ///
@@ -2608,6 +2611,12 @@ final class SessionStore {
     func watchForDirectTransfers() async {
         DirectTransferInbox.shared.onArrival = { [weak self] in
             Task { await self?.importDirectInbox() }
+        }
+        DirectTransferInbox.shared.onPage = { [weak self] line in
+            self?.directPageLine = line
+        }
+        companion.onProbe = { [weak self] line in
+            self?.linkProbeLine = line
         }
         DirectTransferInbox.shared.sweepStaleStreams()
         await importDirectInbox()

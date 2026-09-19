@@ -2,6 +2,18 @@
   "entries": [
     {
       "version": "0.15.0",
+      "build": 84,
+      "channel": "dev",
+      "date": "2026-09-19",
+      "title": "Every page as it lands",
+      "lines": [
+        "Settings → Garmin watch shows each direct page as it lands, and the link probe row refreshes itself.",
+        "Pair it with the 0.9.14-dev3 watch app, which keeps trying while pages wait.",
+        "Please save one session with the app open and read the two rows."
+      ]
+    },
+    {
+      "version": "0.15.0",
       "build": 83,
       "channel": "dev",
       "date": "2026-09-19",

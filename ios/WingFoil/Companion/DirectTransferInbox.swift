@@ -73,6 +73,9 @@ final class DirectTransferInbox {
     /// Raised when a `<sid>.cjr` is ready, so a foregrounded app imports it at once rather
     /// than at the next launch.
     var onArrival: (@MainActor () -> Void)?
+    /// One line per page taken or refused, for the Settings row: the field test of
+    /// 19 September 2026 could not tell whether a page had reached the phone at all.
+    var onPage: (@MainActor (String) -> Void)?
 
     /// The last completed transfer, for the Settings row. Kept in defaults so the row
     /// survives a relaunch — "it says ready" and "something has actually come through" are
@@ -112,6 +115,9 @@ final class DirectTransferInbox {
             // else: an unacknowledged page is a page the watch will send again, and the
             // radio is the slow part.
             acknowledge?(page.sessionStartEpochS, page.stream, page.index)
+            let stamp = Date().formatted(date: .omitted, time: .standard)
+            onPage?("page \(page.index + 1)" + (page.pageCount > 0 ? " of \(page.pageCount)" : "")
+                    + (already ? " again" : "") + " · \(page.bytes.count) B · \(stamp)")
             guard !already else { return }
 
             var state = Self.state(in: directory)
@@ -130,7 +136,10 @@ final class DirectTransferInbox {
     }
 
     /// A page the link could not decode. Counted, never shown.
-    func reject() { rejectedPages += 1 }
+    func reject() {
+        rejectedPages += 1
+        onPage?("a page the phone could not read · \(rejectedPages) so far")
+    }
 
     // MARK: - Completion
 
