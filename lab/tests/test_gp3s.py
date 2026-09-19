@@ -125,3 +125,60 @@ def test_invariants_on_random_track():
                 r.best250m_kn, r.best500m_kn, r.best_nm_kn, r.best_hour_kn,
                 r.alpha500_kn):
         assert 0.0 <= val < 45.0
+
+
+# ------------------------------------------- the plausibility gate (engine 0.20.0)
+# docs/algorithms.md "The plausibility gate": on an uncertified track a window shorter
+# than 10 s is believed only up to K x the best 10 s, and falls back to the fastest 2 s
+# that passes. Certified Doppler records never see it. The Swift twin asserts the same
+# three numbers on the same track (`AnalysisEngineTests.plausibilityGate*`).
+
+
+def _one_bad_fix():
+    """6 m/s throughout, with one sample carrying a fix that never happened.
+
+    The step is 3.8 m/s in 1 s, under `maxAccel1Hz` (4.0), so this is the case the spike
+    filter is *not* going to save anyone from -- which is the whole point of the gate.
+    Trapezoid: the two intervals either side of the bad sample carry 7.9 m each, so the
+    best 2 s reads 7.9 m/s, the best 10 s 6.38, and the ratio is 1.238.
+    """
+    t = np.arange(0.0, 300.0)
+    v = np.full_like(t, 6.0)
+    v[150] = 9.8
+    return t, v
+
+
+def test_gate_leaves_a_certified_record_alone():
+    t, v = _one_bad_fix()
+    r = records(clean_from_arrays(t, v))          # has_speed -> certified
+    assert r.best2s_kn == pytest.approx(7.9 * KN, abs=1e-6)
+    assert r.best10s_kn == pytest.approx(6.38 * KN, abs=1e-6)
+
+
+def test_gate_falls_back_to_the_fastest_2s_that_passes():
+    t, v = _one_bad_fix()
+    r = records(clean_from_arrays(t, v), certified=False)
+    # 7.9 is 1.238 x the 6.38 best 10 s, over K, and refused. The fallback is the fastest
+    # 2 s that *passes* -- 6.95 m/s, the window that clips the bad sample's edge -- and
+    # not a clean one: the gate bounds the claim, it does not clean the track.
+    assert r.best2s_kn == pytest.approx(6.95 * KN, abs=1e-6)
+    assert r.best10s_kn == pytest.approx(6.38 * KN, abs=1e-6)   # 10 s is never gated
+    assert "best2s" in r.windows                                # a number, never a hole
+
+
+def test_gate_accepts_a_plausible_uncertified_peak():
+    # A real run: 2 s at 6.6 m/s inside a 10 s at 6.12 -> 1.078, well under K.
+    t = np.arange(0.0, 300.0)
+    v = np.full_like(t, 6.0)
+    v[150:153] = 6.6
+    r = records(clean_from_arrays(t, v), certified=False)
+    assert r.best2s_kn == pytest.approx(6.6 * KN, abs=1e-6)
+
+
+def test_gate_is_off_where_there_is_no_10s_to_compare_against():
+    # A segment shorter than 10 s has no reference, so nothing is refused.
+    t = np.arange(0.0, 6.0)
+    v = np.array([2.0, 2.0, 2.0, 20.0, 2.0, 2.0])
+    r = records(clean_from_arrays(t, v), certified=False)
+    assert r.best10s_kn == 0.0
+    assert r.best2s_kn == pytest.approx(11.0 * KN, abs=1e-6)

@@ -321,7 +321,13 @@ difference between the two goldens is the source class and nothing else. On this
 flights 2/2, longest flight 392.0 s both, all ten turns with identical type, side and
 outcome, wind axis to the degree; foil % 67.9 → 67.3; speed records within 0.18 kn (2 s
 13.472 → 13.655 — positional differentiation reads *high*, which is the whole reason those
-records are marked uncertified); every pump field null and `pumpEpisodes` empty.
+records are marked uncertified); every pump field null and `pumpEpisodes` empty. This pair is
+also the one the **plausibility gate** (engine 0.20.0, docs/algorithms.md) has to leave alone:
+its `best2s / best10s` is 1.05, well under K, so the gate proves itself here by moving
+nothing. The case where it *fires* has no committed fixture — the session that produces it is
+a raw FIT read through the positional arm — so it is pinned by unit test instead, the same
+constructed track in the lab (`test_gate_*`) and the kit (`plausibilityGate*`) asserting the
+same three numbers.
 
 **The TCX pair, and the element between them.** The other two converted fixtures are
 `fixtures/sessions/tcx/2026-08-30-1407_nago-torbole-{speed,nospeed}.tcx`, the same afternoon

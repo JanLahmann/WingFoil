@@ -1077,6 +1077,13 @@ biased upward on a bad fix. Those records are still shown, because they are stil
 session; they are shown **marked**, because an all-time best is exactly where a number nobody
 can verify does the most damage.
 
+Since engine 0.20.0 the shortest of them is *also* checked against the same track's best 10 s
+before it is reported at all (docs/algorithms.md, "The plausibility gate"): a best 2 s more
+than 1.2× the best 10 s is one bad fix rather than a run, and the record falls back to the
+fastest 2 s that the 10 s can account for. Nothing on the page changes — the number is simply
+one the engine can stand behind, and it still wears the mark, because the source is still a
+source that could not prove it measured anything.
+
 The rule is read from one field, `sourceClass == "c"`, and nothing downstream of the parser
 knows the word GPX:
 

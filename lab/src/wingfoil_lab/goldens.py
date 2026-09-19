@@ -230,6 +230,21 @@ cannot answer the question at all, so `ENGINE_VERSION` bumps and every stored an
 re-derives. The verdict is a label and never a deletion: presentation keeps the row, the page
 and the map, and leaves the recording out of the counts, trends, records and totals that
 describe riding.
+
+Engine 0.20.0 adds **the plausibility gate** on the uncertified speed record
+(docs/algorithms.md "The plausibility gate"). Jan, 19 Sep 2026: *"uncertified speed record:
+maybe only accept if it seems reasonable vs the 10 s record."* A best 2 s differentiated from
+positions rides on two fixes, and one of them being wrong is the whole record: 2026-08-29's
+positional copy read **31.77 kn** against the FIT's certified 13.21, 2.4x, while its best 10 s
+was 12.51 against 12.62. So on a source with `capabilities.hasDoppler` **false**, a window
+shorter than 10 s is believed only up to `config.uncertifiedShortWindowMax` (**1.2**) times
+the best 10 s, and the search falls back to the fastest 2 s that passes rather than reporting
+nothing -- 31.77 -> **13.13 kn**, which is 0.6 % off the Doppler answer the same afternoon
+gave. Certified records are untouched, and so is every window of 10 s or longer: over the
+corpus the shortest 100 m window runs 13.5 s and the distance records' certified and
+positional readings already agree to two per cent. On the committed fixtures **no number
+moves** -- both class (c) goldens sit at 1.05 -- but the config key is a schema change and a
+0.19.0 document was written by an engine that could not have refused a record.
 """
 
 from __future__ import annotations
@@ -837,6 +852,7 @@ def _config_dict(a: Analysis) -> dict:
         "alphaMaxDistance": gp3s.ALPHA_MAX_DISTANCE_M,
         "alphaCandidatePruneMinPath": gp3s.ALPHA_MIN_PATH_M,
         "alphaCandidatePruneMinCogSpread": gp3s.ALPHA_MIN_COG_SPREAD_DEG,
+        "uncertifiedShortWindowMax": gp3s.UNCERTIFIED_SHORT_WINDOW_MAX,
         "minSpeedFilter": None,
         # turn detection & classification
         "turnMinAngle": t.min_angle_deg,
