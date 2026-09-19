@@ -85,9 +85,12 @@ jobs:
   kit:
     name: kit — swift test
     if: ${{ !inputs.deploy-gate }}
-    runs-on: macos-latest
+    # macos-26 carries Xcode 26.6, the one the kit is built with on Jan's Mac. macos-latest
+    # (macOS 15) does not, and its older compiler rejected a `sending` parameter that 26.6
+    # accepts — the job was red from the day it was added for a reason outside the code.
+    runs-on: macos-26
     env:
-      XCODE_VERSION: "26.0"
+      XCODE_VERSION: "26.6"
     steps:
       - uses: actions/checkout@v4
       - name: Select Xcode

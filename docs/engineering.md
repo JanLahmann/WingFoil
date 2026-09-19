@@ -65,7 +65,7 @@ than a search:
 | job | runner | what | roughly |
 |---|---|---|---|
 | `lab` | `ubuntu-latest` | `uv sync --locked` + `uv run pytest -q` in `lab/` | 3 min |
-| `kit` | `macos-latest` | `swift test` in `ios/WingFoilKit` | 4 min |
+| `kit` | `macos-26`, Xcode 26.6 | `swift test` in `ios/WingFoilKit` | 4 min |
 | `web` | `ubuntu-latest` | `verify_links.py` (which drives `verify_copy`, `verify_app_shell`, `verify_unique`, `check_voice` and `check_duplicates` in process), then `check_voice.py`, `check_duplicates.py`, `check_release_copy.py` and `bundle_lab.py --check` by name | 1 min |
 | `repo` | `ubuntu-latest` | `tools/check_release.py` and `make -n all` | seconds |
 
