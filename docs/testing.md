@@ -1120,7 +1120,10 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    -o garmin/bin/shots-<device>.prg`; the harness manifest lists the products it may be built
    for, add one per family). Run it once per family in the product list before a store upload
    that touches a page, and read every sheet against the overlap list: clock/giant, caption/
-   digits, eyebrow/giant, pair halves, the PAUSED word.
+   digits, eyebrow/giant, pair halves, the PAUSED word. Run on 19 September 2026 across all
+   27 device ids the harness manifest lists, one per family: no overlap on any of them. The
+   Mac has to be unlocked and its display awake for the run (the script asserts user activity
+   per cycle and refuses a locked screen).
 
    The layout suite reads its canvas from `System.getDeviceSettings().screenWidth`, so the same
    assertions are genuinely different measurements per device, and every finding that has ever
