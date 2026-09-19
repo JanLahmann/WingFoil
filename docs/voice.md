@@ -103,6 +103,18 @@ retired for rider text. It lives on in code comments and in `docs/`, where it be
 - **Paragraph budgets, strict:** 40 words a paragraph, 25 in a Settings or Import footer, 20
   a help summary. A paragraph over its budget is **split, never compressed** — rule 10 decides
   where each fact goes.
+- **The web is under the same budget** since 19 September 2026 (Jan, reading the site on his
+  phone: *"Is this text in our new style?"* — the sentences were, the paragraphs were not).
+  The five pages used to be exempt because the extractor could only see a run of text between
+  two blank lines of markup. It now reads the block the author typed: every `<p>`, `<li>`,
+  `<dd>`, `<figcaption>`, `<summary>` and every table cell is one paragraph, inline tags and
+  entities resolved, cut again at every `<br>` the way a Swift literal is cut at every `\n`.
+  **The rider text a script writes is read too** — `web/js/*.js`, where a `+`-chain or a
+  template literal is one authored string and a literal counts as text once it carries a
+  sentence. A chain that builds markup is parsed as markup, so a `<p>` in a script and a `<p>`
+  on a page sit under the same 40 words. Files with no rider prose are excluded by name in
+  `check_voice.py`, each with its reason, and `// voice: skip` hands one string back to the
+  code where no sentence rule fits it (a selector, a declaration, a strip of counts).
 - **`docs/copy/check_duplicates.py`:** one sentence, one home inside the app. A line two
   screens both say lives in `WingFoilKit`'s `Copy` enum and is referenced from both.
 - Both run from `web/tools/verify_links.py` and from the kit's `CopyLintTests`, so a drift
