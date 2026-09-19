@@ -64,6 +64,18 @@ public enum WhatsNew {
     public static let entries: [WhatsNewEntry] = [
         WhatsNewEntry(
             version: "0.15.0",
+            build: 86,
+            channel: .dev,
+            date: "2026-09-19",
+            dateText: "19 September 2026",
+            title: "The answer goes to the build that asked",
+            lines: [
+                "Two CleanJibe builds on the watch: the phone answered the public one. Now it answers the sender.",
+                "Wind and map go to that build too from now on.",
+                "Please open the watch app once with this build on Settings → Garmin watch. The waiting pages should cross.",
+            ]),
+        WhatsNewEntry(
+            version: "0.15.0",
             build: 85,
             channel: .dev,
             date: "2026-09-19",

@@ -139,6 +139,13 @@ final class ConnectIQCompanionLink: NSObject, CompanionLink {
         try await transmit(message)
     }
 
+    /// The build that last sent something becomes the one sends go to.
+    private func prefer(_ uuid: UUID) {
+        if let match = apps.first(where: { $0.uuid == uuid }), app?.uuid != uuid {
+            app = match
+        }
+    }
+
     /// One message onto the radio, with Garmin's own failure word kept verbatim.
     private func transmit(_ message: sending [String: Any]) async throws {
         refresh()
@@ -359,6 +366,13 @@ extension ConnectIQCompanionLink: IQAppMessageDelegate {
     /// phone started listening on the app id the watch actually has.
     @objc(receivedMessage:fromApp:)
     nonisolated func receivedMessage(_ message: Any!, from app: IQApp!) {
+        // Whatever build just spoke is the build every answer goes to. With two CleanJibe
+        // builds on one watch the phone used to answer the first installed one in its list,
+        // the public one, while the pages came from the private one — and the sender never
+        // heard a word (19 September 2026, "ack page 1 sent", "cjr p0 no ack").
+        if let sender = app?.uuid {
+            Task { @MainActor in self.prefer(sender) }
+        }
         #if DEV
         // The dev build's link probe (docs/direct-transfer.md): a page of bytes with its
         // size under "pr". Counted and sized here, never stored; the watch keeps the timing.
