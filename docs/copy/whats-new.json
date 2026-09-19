@@ -2,6 +2,31 @@
   "entries": [
     {
       "version": "0.15.0",
+      "build": 81,
+      "channel": "beta",
+      "date": "2026-09-19",
+      "title": "SUP by default",
+      "lines": [
+        "Stand-up paddling is a Strava sport by default now. Sail is the one switch left.",
+        "Please check Import → Strava if your sessions are filed under SUP."
+      ]
+    },
+    {
+      "version": "0.15.0",
+      "build": 80,
+      "channel": "dev",
+      "date": "2026-09-19",
+      "title": "Your round on 78",
+      "lines": [
+        "Stand-up paddling is a Strava sport by default now. Sail is the one switch left.",
+        "The watch sends the recording straight to the phone. It needs the 0.9.14-dev2 watch app.",
+        "Keep the app open on Settings → Garmin watch while it arrives. The row shows the last direct session.",
+        "The session lands in the list as Garmin watch, direct. An intervals.icu copy later replaces it in place.",
+        "Please check one real session crossing, then tell us the pages and seconds the watch logged."
+      ]
+    },
+    {
+      "version": "0.15.0",
       "build": 79,
       "channel": "beta",
       "date": "2026-09-19",
