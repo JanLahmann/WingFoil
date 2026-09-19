@@ -345,11 +345,17 @@ class SessionController {
                 engine.pump);
         }
         _captureElapsed();
+        // GPS off BEFORE save, not after (0.9.14). A rider who paused on the water, drove to
+        // the road and pressed Save there got a straight line from the lake to the car in
+        // Garmin Connect (fenix 5 Plus report, 18 Sep 2026): the firmware writes the session's
+        // last known position into the file at save, and with the receiver still running that
+        // position was the car park. With location events off the last fix the file can hold
+        // is the last one it recorded, on the water.
+        stopGps();
         var ok = _session.save();
         lastSaveOk = ok;
         state = STATE_SAVED;
         _session = null;
-        stopGps();
         // The instant card. Runs after save() so the numbers it carries are the ones that went
         // into the FIT; failing (phone in the car) is normal and costs nothing — PhoneLink
         // keeps the payload and retries.

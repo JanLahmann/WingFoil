@@ -7,7 +7,12 @@
 # from manifest.xml, which the three manifests keep identical.
 set -e
 cd "$(dirname "$0")/.."
-SDK="$HOME/Library/Application Support/Garmin/ConnectIQ/Sdks/$(ls "$HOME/Library/Application Support/Garmin/ConnectIQ/Sdks" | sort | tail -1)/bin"
+# The SDK is PINNED, not "the newest folder": `ls | sort | tail -1` is a lexicographic sort
+# and would pick 9.2.0 over a future 10.x (docs/engineering.md, item 8). Bump the pin on
+# purpose, after the unit suite has run on the new SDK.
+SDK_VERSION="connectiq-sdk-mac-9.2.0-2026-06-09-92a1605b2"
+SDK="$HOME/Library/Application Support/Garmin/ConnectIQ/Sdks/$SDK_VERSION/bin"
+[ -x "$SDK/monkeyc" ] || { echo "Connect IQ SDK $SDK_VERSION is not installed (SDK Manager)"; exit 1; }
 V=$(grep -o 'entry="WingfoilApp" version="[0-9.]*"' manifest.xml | cut -d'"' -f4)
 N=${1:-1}
 for m in manifest-beta.xml manifest-dev.xml; do
