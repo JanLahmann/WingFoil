@@ -152,6 +152,9 @@ extension ImportSource {
         // is a thing this repository has, not a thing he imported.
         case .fixtures, .example: "Example"
         case .watch: "Garmin watch"
+        // The door, not the mechanism: what a rider matches against is the watch it came
+        // off, and "direct" is the half that tells it from the summary card above.
+        case .watchDirect: "Garmin watch, direct"
         case .appleWatch: "Apple Watch"
         case .appleHealth: "Apple Health"
         case .strava: "Strava"

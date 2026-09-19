@@ -16,8 +16,8 @@ public enum SessionProvenance {
     /// Nearest the water first. A door not on this list has no line, which is the honest
     /// answer for a session whose column was never written.
     static let order: [ImportSource] = [
-        .appleWatch, .watch, .appleHealth, .strava, .icu, .gdpr, .airdrop, .file,
-        .example, .fixtures,
+        .appleWatch, .watchDirect, .watch, .appleHealth, .strava, .icu, .gdpr, .airdrop,
+        .file, .example, .fixtures,
     ]
 
     /// "Apple Watch · CleanJibe", "intervals.icu", "Strava", "Apple Health", "File".

@@ -30,6 +30,15 @@ public enum ImportSource: String, Sendable, CaseIterable {
     /// `SessionStore.writeNewSessionsToHealth` (the watch already filed this workout with
     /// Health itself, live, with the ring credit the phone's after-the-fact stub cannot give).
     case appleWatch = "applewatch"
+    /// The Garmin watch's **direct** stream (docs/transfer-format.md), sent page by page over
+    /// the Connect IQ link and imported as a `.cjr` — a DEV door (docs/channels.md).
+    ///
+    /// The fourth source with a watch in its story and the fourth that means something else
+    /// by it. `.watch` is the Garmin summary card, twenty integers with no recording behind
+    /// them; this is the recording itself, off the same watch, arriving while the rider is
+    /// still on the beach. A card that came first left a provisional row and this fills it,
+    /// by the ±60 s rule every other import uses.
+    case watchDirect = "watchdirect"
     /// A workout recorded with **Apple's own Workout app** and read back out of Health
     /// (docs/decisions.md ADR-017). The third source with "watch" somewhere in its story and
     /// the third that means something different by it: `.watch` is a Garmin BLE summary card,
@@ -203,7 +212,7 @@ public struct SessionIngestor: Sendable {
 
         let existing = try await duplicate(startDate: startDate, durationS: duration,
                                           icuActivityId: icuActivityId)
-        if let existing, !existing.isProvisional {
+        if let existing, !existing.isProvisional, !Self.yields(existing, to: source) {
             let merged = try await note(existing, source: source, icuActivityId: icuActivityId)
             return .duplicate(merged)
         }
@@ -305,6 +314,29 @@ public struct SessionIngestor: Sendable {
     public static func riderName(_ raw: String?) -> String? {
         let trimmed = raw?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         return trimmed.isEmpty ? nil : trimmed
+    }
+
+    /// **Does this row step aside for the recording that just arrived?** (ADR-013.)
+    ///
+    /// A provisional row does, and always has: the card held the session's place until its
+    /// FIT synced. Since the direct transfer there is a second row of that kind — one whose
+    /// only source is the watch's own `.cjr` stream (docs/transfer-format.md). That stream is
+    /// a real recording with a real analysis behind it, so its row is **not** provisional and
+    /// counts in every total from the moment it lands. It is still the thinner copy: the
+    /// positions are quantised to half a micro-degree, there is no wrist stream, there are no
+    /// laps and there is no local clock. So when the FIT of the same afternoon reaches the
+    /// library through intervals.icu, a Garmin ZIP or a file, it takes over the same row —
+    /// same id, gear, name and note kept, sources merged — exactly as a FIT takes over a
+    /// card's.
+    ///
+    /// Only for a row the direct link brought in **alone**. Once a FIT has replaced it the
+    /// column reads `"icu+watchdirect"` and a later copy of that FIT is an ordinary duplicate
+    /// again. A second arrival of the same direct stream is one too: a stream does not step
+    /// aside for itself.
+    static func yields(_ existing: SessionRow, to source: ImportSource) -> Bool {
+        guard source != .watchDirect else { return false }
+        let sources = (existing.importSource ?? "").split(separator: "+")
+        return sources == [Substring(ImportSource.watchDirect.rawValue)]
     }
 
     public static func isWatersport(_ caps: SourceCapabilities) -> Bool {

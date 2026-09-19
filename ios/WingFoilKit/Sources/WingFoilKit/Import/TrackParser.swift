@@ -18,6 +18,12 @@ public enum TrackFormat: String, Sendable, CaseIterable {
     /// under rather than for the watch, because like the other two this is a *format* and the
     /// pipeline past this point does not know what wrote it.
     case watch = "cjw"
+    /// The Garmin watch's **direct** stream (`docs/transfer-format.md`) — the pages the
+    /// watch sends over the Connect IQ link, concatenated. Named for its extension like the
+    /// other four: past this enum nothing knows the bytes crossed a radio rather than an
+    /// account. A DEV door (docs/channels.md); the kit reads it in every channel, and only
+    /// the app's inbox is gated.
+    case direct = "cjr"
 
     /// The extension the archive stores this format under.
     public var fileExtension: String { rawValue }
@@ -36,12 +42,14 @@ public enum TrackParser {
 
     /// FIT until the bytes say otherwise. The FIT signature (`.FIT` at byte 8) is the
     /// stronger test, but the others announce themselves at the very front of the file —
-    /// `CJWS` for a watch container, a leading `<` plus a root element for the two XML
-    /// formats — so they all go first and FIT stays the fallback it has always been. TCX is
+    /// `CJWS` for a watch container, `CJR1` for a direct stream, a leading `<` plus a root
+    /// element for the two XML formats — so they all go first and FIT stays the fallback it
+    /// has always been. TCX is
     /// tested before GPX only because both start with `<`; their root elements are
     /// unambiguous, so the order is a convention rather than a tie-break.
     public static func format(_ data: Data) -> TrackFormat {
         if WatchSessionContainer.isContainer(data) { return .watch }
+        if DirectStreamDecoder.isStream(data) { return .direct }
         if TcxSessionParser.isTcx(data) { return .tcx }
         return GpxSessionParser.isGpx(data) ? .gpx : .fit
     }
@@ -51,6 +59,7 @@ public enum TrackParser {
         case .gpx: try GpxSessionParser.parse(data: data)
         case .tcx: try TcxSessionParser.parse(data: data)
         case .watch: try WatchSessionParser.parse(data: data)
+        case .direct: try DirectStreamParser.parse(data: data)
         case .fit: try FitSessionParser.parse(data: data)
         }
     }
