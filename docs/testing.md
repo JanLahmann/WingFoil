@@ -600,6 +600,63 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
 2. **WingFoilKitTests (Swift Testing)** — full pipeline on fixtures vs the same goldens;
    parser fail-soft tests (missing channels, truncated FIT, foreign-app FITs); importer test with
    a synthetic nested GDPR ZIP.
+
+   **The crash hunt** — `SyncCrashHuntTests`, `MutationFuzzTests`, `FitFactory`,
+   `DegenerateFits`. The corpus is sixteen recordings from two devices; the first sync from a
+   stranger's intervals.icu account is seventy-odd files of shapes nobody here has produced,
+   and that is the one road into the app where a bad file is not a bad row but a dead
+   process. Three families, and the assertion in all of them is the same: *finish, or throw
+   — never trap*.
+   - **named shapes** — `FitFactory` is a small FIT *writer* (tests only; nothing in
+     CleanJibe writes a FIT) so `DegenerateFits` can build the twenty-two shapes no device
+     Jan owns produces: no records, one record, two on the same second, no position, no
+     speed, speed zero throughout, one enormous spike, timestamps going backwards, a 24 h
+     gap, a 30 h session, a session entirely on land, running and cycling that slipped the
+     name filter, a sport code the profile has no name for, no `activity` message, laps of
+     zero duration, HR only, another app's float developer fields carrying NaN and ±∞, a
+     **broken clock** (complete, correct CRC, forty years between two records) and a
+     **truncated** file. Each prints its own wall time; a shape that takes a minute is not a
+     crash, but it is what a tester reports as one.
+   - **mutation fuzz** — bytes flipped inside the data section of every corpus FIT, seeded
+     so any failure reproduces. Two families, because they test different doors:
+     *damaged* (CRC left alone) must be **refused**, every one; *repaired* (CRC recomputed)
+     is well-formed and merely strange, reaches the decoder and must be read or refused.
+     The committed run is a regression guard and costs about fifty seconds: six mutants from
+     **one recording per corpus family** (native, CIQ, other-apps, synthetic — the ten native
+     files ask the same question ten times), every mutant parsed, one per source analysed.
+     Four switches open it up for a deliberate hunt: `FUZZ_MUTANTS=n` per source, `FUZZ_ALL=1`
+     for every recording, `FUZZ_DEEP=1` to analyse every mutant and not just the first, and
+     `FUZZ_TRACE=1` to print each attempt before it runs — which is the only trace left when
+     a mutant crashes instead of failing. Worth a run under
+     `swift test --sanitize=address` after any change to the FIT front end; that is how the
+     segfault was caught rather than merely observed.
+   - **a stranger's whole account** — seventy-four activities through the real `IcuClient`
+     and `IcuSyncService`, with a fake transport serving a good FIT, an HTTP 502 error page,
+     zero bytes, HTML, a download that throws, a ZIP, a gzip stub and every degenerate shape
+     above. The sync must return a summary: one bad activity may not stop the other
+     seventy-three, and each failure names its activity. `FUZZ_BIG=1` adds the 30 MB case.
+   - **memory** — seventy-four imports back to back with `mach_task_basic_info` either side.
+     On the corpus the process grows ~25 MB, which is the answer to "is it jetsam": on this
+     corpus, no.
+
+   This is how the importer's refusals were found (docs/algorithms.md, "Recordings the importer
+   refuses"). A truncated FIT took **198 seconds** and built a 24.6-million-point rate series;
+   a mutated one **segfaulted** the test process several files after the mutant that did the
+   damage. Both shapes were in the App Store build (1.0.0, build 60) —
+   `ios/WingFoilKit/Sources/WingFoilKit/FitImport/` had not changed since it was cut.
+
+   **One residual, outside our code, and it is the open end of this hunt.** A FIT that is
+   whole, correct-CRC and framable can still trap *inside* FitFileParser 1.5.2:
+   `rzfit_swift_map.swift:1030-1048` (`rzfit_swift_string_for_type`) narrows a `FIT_UINT32`
+   raw value into `FIT_ENUM` / `FIT_UINT8` / `FIT_UINT16` with the **exact** initializer, so a
+   value wider than the profile's type dies on "Not enough bits to represent the passed
+   value" — uncatchable, inside `FitFile.init`, before a line of ours runs. (`FitMessage.swift:146`
+   has the same shape.) Reproduce it with
+   `FUZZ_MUTANTS=12 swift test --filter repairedMutantsNeverTrap`: the mutant is
+   `2026-08-03-1440_nago-torbole-windsurfen_native.fit` seed 8, which is why the committed
+   budget is six. No gate of ours can see it — the file is structurally valid — and the fix
+   is one word upstream (`truncatingIfNeeded:`) or a pinned fork. Until then it is a known
+   way for a stranger's recording to kill the app on the first sync.
    Library-depth suites (phase 4, all on real fixture FITs):
    - `MigrationTests` — a database migrated only `upTo: "v1"` is filled the way the v1 app
      did (raw rows + archived FITs), then opened as the current `AppDatabase`. Asserts the

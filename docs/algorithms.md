@@ -146,6 +146,44 @@ session only sets the origin, so joining an odometer that already reads 9 km add
 Symptom that found it: the simulator's FIT replay opens at the default location and jumps to
 the clip's, which showed **37 986 km** on the session page.
 
+## Recordings the importer refuses (phone)
+
+**No engine version.** Nothing here reads a recording differently — it decides whether there
+is a recording to read at all, and every fixture and every golden is untouched. Bumping
+`AnalysisEngine.version` for it would re-derive every session in every library to arrive at
+the same numbers.
+
+Every rule above assumes a recording that *arrived*. Four kinds do not, and each is refused
+by name, before the file reaches a parser or an analyzer, so that a bulk sync reports one
+failed activity and carries on with the rest (`IcuSyncSummary.failed`).
+
+| refusal | test | why it is fatal without the gate |
+|---|---|---|
+| `truncated` | the FIT header's declared data size runs past the end of the file | the bytes past the end are decoded as records: timestamps decades apart, a session spanning half a century |
+| `damaged` | the file's own CRC-16 does not match its bytes | a corrupted definition message rebuilds the vendored C decoder's field table from garbage and walks the next message off a stack-allocated struct — a **segfault** |
+| `malformed` | `FitStreamWalker` cannot frame the record layer | our walker and the C decoder would frame the same bytes differently, which is the same failure by another route |
+| `implausibleDuration` | first to last sample spans more than **7 days** | `durationS` sizes arrays — the rolling-rate series is one point a minute — so a broken clock asks for tens of millions of entries and iOS answers by killing the app, which leaves **no crash report at all** |
+
+The first three are `FitSessionParser.ParseError`; the last is `IngestError`, checked in
+`SessionIngestor.ingest` where the duration is first known and applies to every format.
+
+**Every recording in the corpus passes all four**, and so does the bundled example session:
+the gates are written against damage, not against strangeness. A file from a device nobody
+here owns is still read — that is what the input classes are for.
+
+**Three ceilings say the same thing inside the engine**, as a second lock on the same door,
+and none of them can be reached by a session: the rolling-rate series stops at 20 000 points
+(fourteen days), the pump resample grid at four hours of 25 Hz samples, and the HR fatigue
+bins at a year of them. They move no number on any fixture; they exist so that an engine
+handed a number it did not measure cannot allocate on it. `MAX_SERIES_POINTS` in
+`lab/src/wingfoil_lab/goldens.py` is the lab's twin of the first.
+
+**And nothing converts a file's Double to an `Int` directly.** `Int(_:)` traps on NaN,
+infinity and anything past the range, and a trap is uncatchable: the app dies with nothing to
+report. Values that came out of a file go through `Int(clamped:)`, and a developer field
+whose float payload is NaN or infinite is dropped at the decoder the way an invalid sentinel
+already is (`FitDevValue.double`).
+
 ## GPX import — input class (c) (phone/web, engine ≥ 0.9.0)
 
 `lab/src/wingfoil_lab/gpx.py` · `ios/…/GpxImport/GpxSessionParser.swift`
