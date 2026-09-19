@@ -210,6 +210,17 @@ export const WELCOME = {
 export const WHATS_NEW = [
   {
     "version": "0.15.0",
+    "build": 81,
+    "channel": "beta",
+    "date": "2026-09-19",
+    "title": "SUP by default",
+    "lines": [
+      "Stand-up paddling is a Strava sport by default now. Sail is the one switch left.",
+      "Please check Import → Strava if your sessions are filed under SUP."
+    ]
+  },
+  {
+    "version": "0.15.0",
     "build": 79,
     "channel": "beta",
     "date": "2026-09-19",
