@@ -294,7 +294,7 @@ module PhoneLink {
         var now = phoneReachable();
         if (now && !_wasConnected) {
             send();
-            DirectSend.pump();
+            DirectSend.reopen();
         }
         _wasConnected = now;
     }

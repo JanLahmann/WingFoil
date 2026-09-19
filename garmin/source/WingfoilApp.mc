@@ -43,6 +43,7 @@ class WingfoilApp extends Application.AppBase {
         // A GCM settings edit is proof a phone was talking to this watch a second ago, which
         // makes it the cheapest reliable "the link is up" signal a watch-app gets.
         PhoneLink.send();
+        DirectSend.reopen();
         WatchUi.requestUpdate();
     }
 

@@ -36,6 +36,8 @@ module DirectSend {
     const ACK_TIMEOUT_MS = 6000;
     const RETRIES = 3;
     const PERSIST_MAX = 10;
+    const STUCK_MS = 15000;          // a transmit that answers neither way is dropped after this
+    const PACE_MS = 20000;           // while pages wait: retries reopen this often
 
     const KEY_MSG = "cjr";
     const KEY_SID = "sid";
@@ -92,6 +94,10 @@ module DirectSend {
     function discard() as Void {
     }
 
+    (:notdev)
+    function reopen() as Void {
+    }
+
     // ---- state (dev) ----
 
     (:dev) var _buf as ByteArray?;           // the open page
@@ -114,6 +120,8 @@ module DirectSend {
     (:dev) var _lastMs as Number = 0;
     (:dev) var _partial as Boolean = false;  // persisted with pages dropped
     (:dev) var reachableOverride as Boolean? = null;   // tests: the simulator has no phone
+    (:dev) var _pacer as Timer.Timer?;
+    (:dev) var _paceTimer as PaceTimer = new PaceTimer();
 
     // ---- the encoder ----
 
@@ -329,10 +337,17 @@ module DirectSend {
         if (!_recording) {
             return;
         }
+        // A recording without a single fix is a header and nothing else: the phone would
+        // refuse it (19 September 2026, "no position fixes"), so it is not sent at all.
+        if (_pages.size() == 0 && _len <= HEADER_BYTES) {
+            discard();
+            return;
+        }
         _closePage(true);
         _recording = false;
         _ended = true;
         _buf = null;
+        _attempts = 0;
         pump();
     }
 
@@ -340,7 +355,23 @@ module DirectSend {
 
     (:dev)
     function pump() as Void {
-        if (_inFlight >= 0 || _pages.size() == 0) {
+        if (_pages.size() == 0) {
+            _stopPacer();
+            return;
+        }
+        _startPacer();
+        // A transmit that answered neither onComplete nor onError: the field test of
+        // 19 September 2026 showed a sender that could wait forever on one. Dropped, retried.
+        if (_inFlight >= 0 && !_awaitingAck && System.getTimer() - _lastMs > STUCK_MS) {
+            LinkProbe.append("cjr p" + _inFlight + " stuck");
+            _inFlight = -1;
+        }
+        if (_inFlight >= 0) {
+            return;
+        }
+        // Three tries, then the pacer, the connected edge, save or a need list reopen them:
+        // a phone in the car is not worth a transmit every time a page closes.
+        if (_attempts > RETRIES) {
             return;
         }
         var reachable = reachableOverride != null ? (reachableOverride as Boolean)
@@ -427,10 +458,46 @@ module DirectSend {
     (:dev)
     function _retryOrWait() as Void {
         _attempts += 1;
-        if (_attempts <= RETRIES) {
-            pump();
+        pump();      // bounded by RETRIES inside; the pacer reopens it
+    }
+
+    // The pacer: while pages wait, every PACE_MS the retry budget is reset and the sender
+    // tries again — the moment the rider opens the phone app is not an event the watch can
+    // see, so it looks every twenty seconds instead.
+    (:dev)
+    function _startPacer() as Void {
+        if (_pacer != null) {
+            return;
         }
-        // else: wait for the connected edge (PhoneLink.pollLink → pump) or a cjrNeed
+        var t = new Timer.Timer();
+        _pacer = t;
+        t.start(_paceTimer.method(:fire), PACE_MS, true);
+    }
+
+    (:dev)
+    function _stopPacer() as Void {
+        if (_pacer != null) {
+            (_pacer as Timer.Timer).stop();
+            _pacer = null;
+        }
+    }
+
+    (:dev)
+    function onPace() as Void {
+        if (_pages.size() == 0) {
+            _stopPacer();
+            return;
+        }
+        _attempts = 0;
+        pump();
+    }
+
+    // The connected edge and a settings change from the phone (PhoneLink): the budget
+    // reopens, because both mean a phone that was not there a moment ago.
+    (:dev)
+    function reopen() as Void {
+        _attempts = 0;
+        pump();
     }
 
     // The timer callback belongs to an object, never to this module: PhoneLink's header
@@ -520,6 +587,7 @@ module DirectSend {
             // The stream is whole on the phone. Free it.
             LinkProbe.append("cjr whole");
             _stopTimer();
+            _stopPacer();
             _pages = [] as Array<ByteArray>;
             _acked = [] as Array<Boolean>;
             _inFlight = -1;
@@ -616,6 +684,7 @@ module DirectSend {
             }
         }
         _clearStore();
+        _attempts = 0;
         pump();
     }
 
@@ -671,6 +740,7 @@ module DirectSend {
     (:dev)
     function discard() as Void {
         _stopTimer();
+        _stopPacer();
         _pages = [] as Array<ByteArray>;
         _acked = [] as Array<Boolean>;
         _inFlight = -1;
@@ -681,6 +751,16 @@ module DirectSend {
         _buf = null;
         _len = 0;
         _sentOk = 0;
+    }
+}
+
+(:dev)
+class PaceTimer {
+    function initialize() {
+    }
+
+    function fire() as Void {
+        DirectSend.onPace();
     }
 }
 
