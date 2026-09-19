@@ -95,6 +95,9 @@ import Testing
             if let v = num(cfg["gapFactor"]) { filter.gapFactor = v }
             if let v = num(cfg["alphaProximity"]) { recCfg.alphaProximityM = v }
             if let v = num(cfg["alphaMaxDistance"]) { recCfg.alphaMaxDistanceM = v }
+            if let v = num(cfg["uncertifiedShortWindowMax"]) {
+                recCfg.uncertifiedShortWindowMax = v
+            }
             if let v = num(cfg["turnMinAngle"]) { turnCfg.minAngleDeg = v }
             if let v = num(cfg["turnMaxDuration"]) { turnCfg.maxDurationS = v }
             if let v = num(cfg["turnPeakRate"]) { turnCfg.peakRateDegS = v }
@@ -1044,7 +1047,7 @@ import Testing
         raw.capabilities.hasSpeed = true
         raw.capabilities.sampleRateHz = 1
         let analysis = SessionSummarizer.analyze(raw)
-        #expect(analysis.engineVersion == "0.19.0")
+        #expect(analysis.engineVersion == "0.20.0")
         #expect(analysis.flights.count == 1)
 
         let data = try JSONEncoder().encode(analysis)

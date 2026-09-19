@@ -8,6 +8,11 @@ public struct RecordsConfig: Sendable, Equatable {
     /// alphas — which also excludes degenerate straight-line windows.
     public var alphaPruneMinPathM: Double = 250
     public var alphaPruneMinCogSpreadDeg: Double = 90
+    /// **K, the plausibility gate** (engine 0.20.0, docs/algorithms.md "The plausibility
+    /// gate"): on an *uncertified* track a window shorter than `shortWindowS` is accepted
+    /// only up to this multiple of the best 10 s. 1.2, from the certified corpus
+    /// (p95 of best2s/best10s 1.114, max 1.159) with margin. Certified records never see it.
+    public var uncertifiedShortWindowMax: Double = 1.2
 
     public init() {}
 }
@@ -113,7 +118,14 @@ public enum GP3SCalculator {
 
     static let nmM = 1852.0
 
-    public static func records(for track: CleanTrack, config: RecordsConfig = RecordsConfig())
+    /// The reference window of the plausibility gate, and the boundary it guards: a record
+    /// whose window is shorter than this is the one a single bad fix can carry.
+    static let shortWindowS = 10.0
+
+    /// - Parameter certified: whether the speed channel was measured (`hasSpeed`). Default
+    ///   `true`: only a caller that knows the track came from positions asks for the gate.
+    public static func records(for track: CleanTrack, config: RecordsConfig = RecordsConfig(),
+                               certified: Bool = true)
     -> GP3SRecords {
         var out = GP3SRecords()
         guard let last = track.samples.last else { return out }
@@ -121,9 +133,24 @@ public enum GP3SCalculator {
         let segs = segmentArrays(track)
         guard !segs.isEmpty else { return out }
 
-        let durations: [(String, Double)] = [("best2s", 2), ("best10s", 10), ("bestHour", 3600)]
+        // The 10 s peak is found first because on an uncertified track it is the reference
+        // the shorter windows are held to: a best 2 s more than K × the best 10 s is one bad
+        // fix, not a run, and the search falls back to the fastest 2 s that passes.
+        let ten = bestDurationWindow(segs, durS: shortWindowS)
+        let cap: Double? = (certified || ten == nil)
+            ? nil : ten!.mps * config.uncertifiedShortWindowMax
+        var hits: [String: (mps: Double, startT: Double)] = [:]
+        if let ten { hits["best10s"] = ten }
+        for (name, dur) in [("best2s", 2.0), ("bestHour", 3600.0)] {
+            if let hit = bestDurationWindow(segs, durS: dur,
+                                            capMps: dur < shortWindowS ? cap : nil) {
+                hits[name] = hit
+            }
+        }
+        let durations: [(String, Double)] = [("best2s", 2), ("best10s", shortWindowS),
+                                             ("bestHour", 3600)]
         for (name, dur) in durations {
-            if let hit = bestDurationWindow(segs, durS: dur) {
+            if let hit = hits[name] {
                 let kn = hit.mps * Units.mpsToKn
                 out.windows[name] = RecordWindow(startTs: hit.startT, durS: dur)
                 switch name {
@@ -252,8 +279,11 @@ public enum GP3SCalculator {
     /// Candidate starts: every sample time (forward search) and every sample time
     /// minus `durS` (backward search — the classic 1 h bug guard), plus
     /// exclusion-zone edges; cumulative distance interpolated at the window edges.
+    /// `capMps` is the plausibility gate: candidates faster than it are not eligible, so the
+    /// answer is the fastest window that *passes*. nil means no gate.
     static func bestDurationWindow(_ segs: [SegArrays], durS: Double,
-                                   exclude: [(Double, Double)] = [])
+                                   exclude: [(Double, Double)] = [],
+                                   capMps: Double? = nil)
     -> (mps: Double, startT: Double)? {
         var bestV = -Double.infinity
         var bestS: Double?
@@ -277,6 +307,7 @@ public enum GP3SCalculator {
                     continue                           // overlaps an excluded zone
                 }
                 let avg = (interp(start + durS, t, c) - interp(start, t, c)) / durS
+                if let capMps, avg > capMps + 1e-12 { continue }
                 if avg > bestV {
                     bestV = avg
                     bestS = start

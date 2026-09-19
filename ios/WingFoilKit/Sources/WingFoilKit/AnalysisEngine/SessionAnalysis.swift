@@ -197,7 +197,17 @@ public enum AnalysisEngine {
     /// itself to "44 sessions". Nothing pre-existing moves and no fixture in the corpus is
     /// one — the shortest is 59 s and spent 30 of them flying — but the two keys are a schema
     /// change, and a 0.18.0 document cannot answer the question at all.
-    public static let version = "0.19.0"
+    ///
+    /// 0.20.0 adds **the plausibility gate** on the uncertified speed record
+    /// (docs/algorithms.md "The plausibility gate", `GP3SCalculator`). A best 2 s
+    /// differentiated from positions rides on two fixes, and one bad one is the whole
+    /// record: 2026-08-29's positional copy read 31.77 kn against the FIT's certified 13.21,
+    /// while its best 10 s was 12.51 against 12.62. On a source whose `hasDoppler` is false,
+    /// a window shorter than 10 s is now believed only up to `uncertifiedShortWindowMax`
+    /// (1.2) times the best 10 s, and the search falls back to the fastest 2 s that passes —
+    /// 31.77 → 13.13 kn. Certified Doppler records are never gated, no window of 10 s or
+    /// longer is, and no fixture in the corpus moves.
+    public static let version = "0.20.0"
 }
 
 /// **Is this recording a session?** — docs/algorithms.md "Not a session" (engine 0.19.0).
@@ -280,6 +290,9 @@ public struct AnalysisConfig: Sendable, Codable, Equatable {
     public var gapFactor: Double
     public var alphaProximity: Double
     public var alphaMaxDistance: Double
+    /// K, the plausibility gate (engine 0.20.0). Optional so a stored `analysis.json` from
+    /// before it still decodes; such a row re-derives on its version.
+    public var uncertifiedShortWindowMax: Double?
     // Turn detection & classification
     public var turnMinAngle: Double
     /// The classification floor (engine 0.13.0). Optional only so a stored `analysis.json`
@@ -363,6 +376,7 @@ public struct AnalysisConfig: Sendable, Codable, Equatable {
         gapFactor = filter.gapFactor
         alphaProximity = records.alphaProximityM
         alphaMaxDistance = records.alphaMaxDistanceM
+        uncertifiedShortWindowMax = records.uncertifiedShortWindowMax
         turnMinAngle = turn.minAngleDeg
         turnClassifyMinAngle = turn.classifyMinAngleDeg
         turnAxisBeforeDeg = turn.axisBeforeDeg
@@ -1476,7 +1490,11 @@ public enum SessionSummarizer {
         let takeoffConfig = presets.takeoff
         let clean = TrackCleaner.clean(raw, config: filterConfig)
         let segmentation = FlightSegmenter.segment(clean, config: flightConfig)
-        let records = GP3SCalculator.records(for: clean, config: recordsConfig)
+        // `certified` is the file's own answer to "did you measure this speed" — the same
+        // flag `sourceClass` reads. False puts the plausibility gate on the sub-10 s records
+        // (docs/algorithms.md "The plausibility gate").
+        let records = GP3SCalculator.records(for: clean, config: recordsConfig,
+                                             certified: raw.capabilities.hasSpeed)
         // `turnConfig` because the default-turn-type prior (docs/algorithms.md "Default turn
         // type") votes on the very sweeps `TurnDetector` is about to report — one turn
         // config, or the prior and the session would be talking about different turns.

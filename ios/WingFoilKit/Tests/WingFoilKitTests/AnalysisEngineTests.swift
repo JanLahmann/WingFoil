@@ -96,6 +96,60 @@ import Testing
         #expect(records.windows["best10s"]?.durS == 10)
     }
 
+    // MARK: - The plausibility gate (engine 0.20.0)
+
+    /// 6 m/s throughout, with one sample carrying a fix that never happened. The step is
+    /// 3.8 m/s in 1 s, under `maxAccelMps2` (4.0), so this is exactly the case the spike
+    /// filter does *not* catch. Trapezoid: the two intervals either side of the bad sample
+    /// carry 7.9 m each ⇒ best 2 s 7.9 m/s, best 10 s 6.38, ratio 1.238. Same track and
+    /// same three numbers as the lab's `test_gate_*` (docs/algorithms.md "The
+    /// plausibility gate").
+    private func oneBadFix() -> RawTrack {
+        speedTrack(dt: 1, duration: 299) { t in t == 150 ? 9.8 : 6.0 }
+    }
+
+    @Test func plausibilityGateLeavesCertifiedRecordsAlone() throws {
+        let clean = TrackCleaner.clean(oneBadFix())
+        #expect(clean.droppedSpike == 0)
+        let records = GP3SCalculator.records(for: clean)      // certified by default
+        #expect(abs(try #require(records.best2sKn) - 7.9 * kn) < 1e-9)
+        #expect(abs(try #require(records.best10sKn) - 6.38 * kn) < 1e-9)
+    }
+
+    @Test func plausibilityGateFallsBackToTheFastest2sThatPasses() throws {
+        let records = GP3SCalculator.records(for: TrackCleaner.clean(oneBadFix()),
+                                             certified: false)
+        // 7.9 is 1.238 × the 6.38 best 10 s, over K, and refused. The fallback is the
+        // fastest 2 s that *passes* — 6.95 m/s, the window clipping the bad sample's edge
+        // — not a clean one: the gate bounds the claim, it does not clean the track.
+        #expect(abs(try #require(records.best2sKn) - 6.95 * kn) < 1e-9)
+        #expect(abs(try #require(records.best10sKn) - 6.38 * kn) < 1e-9)  // never gated
+        #expect(records.windows["best2s"] != nil)             // a number, never a hole
+    }
+
+    @Test func plausibilityGateAcceptsAPlausibleUncertifiedPeak() throws {
+        // A real run: 2 s at 6.6 m/s inside a 10 s at 6.12 → 1.078, well under K.
+        let raw = speedTrack(dt: 1, duration: 299) { t in (150...152).contains(t) ? 6.6 : 6.0 }
+        let records = GP3SCalculator.records(for: TrackCleaner.clean(raw), certified: false)
+        #expect(abs(try #require(records.best2sKn) - 6.6 * kn) < 1e-9)
+    }
+
+    @Test func plausibilityGateIsOffWithNo10sToCompareAgainst() throws {
+        // A segment shorter than 10 s has no reference, so nothing is refused.
+        var raw = RawTrack()
+        for (i, v) in [2.0, 2.0, 2.0, 20.0, 2.0, 2.0].enumerated() {
+            var s = RecordSample(t: Double(i), timestamp: epoch.addingTimeInterval(Double(i)))
+            s.speedMps = v
+            raw.samples.append(s)
+        }
+        var cfg = FilterConfig()
+        cfg.maxAccelMps2 = .infinity          // keep the bad sample; the gate is the subject
+        let records = GP3SCalculator.records(for: TrackCleaner.clean(raw, config: cfg),
+                                             certified: false)
+        #expect(records.best10sKn == nil)
+        #expect(abs(try #require(records.best2sKn) - 11.0 * kn) < 1e-9)
+    }
+
     // MARK: - Distance records
 
     @Test func best500mConstantSpeed() throws {

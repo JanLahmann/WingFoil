@@ -12,7 +12,7 @@ import Testing
                        session: FeedbackFacts.Session? = nil) -> FeedbackFacts {
         FeedbackFacts(
             app: .init(version: "1.0", build: "17", isDev: dev,
-                       engineVersion: "0.19.0", tunedThresholds: tuned),
+                       engineVersion: "0.20.0", tunedThresholds: tuned),
             phone: .init(model: "iPhone18,2", system: "iOS 26.0", locale: "en_DE"),
             watch: watch ?? .init(garminModel: "fenix 8", garminAppVersion: "2.2",
                                   appleWatchPaired: false, healthImport: false),
@@ -117,7 +117,7 @@ import Testing
     @Test func theAppSectionNamesTheVariantAndTheEngine() {
         let body = FeedbackReport.body(facts())
         #expect(body.contains("  CleanJibe 1.0 (17) · public build"))
-        #expect(body.contains("  Analysis engine 0.19.0"))
+        #expect(body.contains("  Analysis engine 0.20.0"))
         #expect(FeedbackReport.body(facts(dev: true))
             .contains("  CleanJibe 1.0 (17) · dev build, TUNING on"))
     }
