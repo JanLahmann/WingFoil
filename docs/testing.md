@@ -786,6 +786,9 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    compiles in any DEBUG build. `UI_IMPORT_FIXTURES=1`, `UI_OPEN_SESSION=latest|<name>`,
    `UI_TAB=records|trends|gear`, `UI_SHEET=help|settings|import|tuning|discipline` and
    `UI_HELP_TOPIC=<HelpTopicID>` park the app on a given screen, since `simctl` cannot tap.
+   `UI_SYNC_CONTAINER=<path>` points the dev build's iCloud Drive sync at a plain directory
+   instead of the ubiquity container, so two simulators can share one library
+   ("Two devices, one library", below).
    On the **Sessions** tab, `UI_GROUP_BY=none|month|year|spot` and `UI_FILTER_SOURCE=<raw>`
    (`icu`, `file`, `gdpr`, `airdrop`, `fixtures`, `example`, `watch`, `applewatch`,
    `applehealth`, `strava`) stage the list's two controls (docs/presentation.md, "Session
@@ -1519,6 +1522,65 @@ contain the URL at all:
 ```sh
 strings ios/build/.../WingFoil.app/WingFoil | grep -c version.json    # 0
 ```
+
+### Two devices, one library — the iCloud Drive sync
+
+The dev build's **Settings → iCloud Drive** merges this phone's library with a folder in the
+rider's iCloud Drive (issue #7, ADR-026). The rules are kit-side and tested there
+(`LibrarySyncTests`: the per-field merge, the tombstones, the folder round-trip and the
+dedupe through `SessionIngestor`); what follows is how to drive the *app* side without two
+phones and without an iCloud account.
+
+**`UI_SYNC_CONTAINER=<path>`** replaces the ubiquity container with a plain directory, exactly
+as the kit tests do. Two simulators pointed at one path are two devices sharing one library,
+and the folder is then readable in Finder while the test runs — which is the point, because
+`Sessions/<uuid>/meta.json` is where a merge either happened or did not.
+
+```sh
+CONTAINER=/tmp/cleanjibe-sync
+rm -rf "$CONTAINER"
+
+# device A: a library with something in it
+xcrun simctl launch --console booted de.lahmann.wingfoil.dev \
+  UI_RESET=1 UI_IMPORT_FIXTURES=1 UI_SYNC_CONTAINER="$CONTAINER"
+# turn the switch on in Settings → iCloud Drive, then Sync now
+
+# device B: an empty library, same folder
+xcrun simctl launch --console <second-udid> de.lahmann.wingfoil.dev \
+  UI_RESET=1 UI_SYNC_CONTAINER="$CONTAINER"
+# switch on, Sync now — the sessions arrive and are analysed here
+```
+
+Four things to check by hand, in this order, because each one is a rule that only a second
+device can break:
+
+1. **Nothing doubles.** Sync both ways twice. The library count does not move and
+   `ls "$CONTAINER/Sessions" | wc -l` equals the session count — the folder is keyed by the
+   device that wrote it first, and a second folder for one afternoon is the bug ADR-026's
+   ±60 s lookup exists to prevent.
+2. **A rename crosses, and survives.** Rename on B, sync B, sync A: the name is on A. Then
+   sync B again — the name is still there, and did not revert to the folder's older copy.
+3. **A delete sticks.** Delete on A, sync both: the session is gone on B and
+   `Settings → Deleted sessions` says 1, not 2. Drop the same FIT into B by hand afterwards:
+   it is refused, not imported.
+4. **Both edit one session.** Rename on A and caption on B before either syncs, then sync
+   both: both survive. Rename the *same* session on both: the one that synced later wins.
+
+The status line is a dry run (`LibrarySyncEngine.plan`) and writes nothing, so reading it is
+always safe: "In iCloud Drive: 41 sessions · Pending: 2".
+
+**And the release check.** The whole door is `#if DEV`, so neither the App Store nor the beta
+binary may carry a word of it. Xcode 16 links the app's own code into `WingFoil.debug.dylib`
+beside the stub, so the debug builds are read there:
+
+```sh
+strings ios/build/.../WingFoil.app/WingFoil.debug.dylib \
+  | grep -c "Sync the library with iCloud Drive"     # dev 1, release 0
+```
+
+The kit is not part of that check and must not be: `WingFoilKit` compiles `LibrarySync.swift`
+in every channel by design, so its container ids are in every binary. What a channel lacks is
+the **door**, and the door is the switch's own wording.
 
 ### Ground-truth labels — the CSV the dev build exports
 

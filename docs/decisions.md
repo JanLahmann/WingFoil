@@ -2,6 +2,53 @@
 
 Newest first. One paragraph each: context → decision → consequence.
 
+## ADR-026 · The library syncs as a **folder**, not as a database — iCloud Drive, last writer wins per field
+**Status: Proposed** (dev channel; Jan's call to accept).
+
+Issue #7 asks for two devices and one library, and for a new phone to find the library
+already there. The library is a GRDB file plus an immutable per-session archive (ADR-006),
+and there are two honest ways to share it. **CloudKit records** would mirror every table and
+give per-record conflict handling for free, and would buy that with a schema that has to be
+migrated in two places for ever, a second source of truth for numbers the engine derives, and
+a container that is unreadable without the app. **A folder in iCloud Drive** carries what the
+backup already proves is the irreplaceable part — the recordings, and the handful of facts
+nothing else in the world holds — and nothing else. The backup's own lesson (ADR-015) is that
+a library is restored *through the ingest path*, never as a file copy, precisely so that one
+rule decides what a session is; a folder keeps that, and a record store would quietly add a
+second.
+
+Decision: **`iCloud.de.lahmann.wingfoil` (dev: `iCloud.de.lahmann.wingfoil.dev`), holding
+`Sessions/<uuid>/original.<ext>` and `Sessions/<uuid>/meta.json`, plus `tombstones.json` at
+the root.** The recording is the file as it was ingested — the scrubbed FIT where one exists —
+and is immutable, so it needs no clock. `meta.json` holds what the rider changed and nothing
+derived: custom title, share note, rider, discipline override, spot name, gear by **name**,
+and the deleted flag; **each field carries its own `updatedAt` and the later stamp wins**, a
+tie keeping what the reading device already has. Per field rather than per session because the
+two devices are edited for different reasons — a name on the beach, a wing in the evening —
+and a row-level rule would silently throw one of those away every pass. **The analysis cache is
+not synced**: each device re-analyses what it receives, under its own engine version, so the
+folder can never carry a number this build did not compute. **Arrivals go through
+`SessionIngestor`**, so the ±60 s dedupe key, the discipline ladder, the spot clusterer and the
+default gear all run exactly as they do for a file dropped on the app. Changes are observed
+with `NSFileCoordinator` and `NSMetadataQuery`; there are no CloudKit records.
+
+Consequence: **uuids are per device and are not renumbered.** A session that reached the two
+phones separately has two ids and is one afternoon, so the folder is keyed by whichever device
+wrote it first and everything else — pushing a rename back, refusing a resurrection, removing
+a deleted session's bytes — is decided by the ±60 s key, exactly like an import. **A deletion
+outranks an arrival**: tombstones are merged before anything is read, they carry the
+intervals.icu id *and* the dedupe key like `SessionTombstoneRow` does, and re-importing the
+same recording after a delete is refused rather than resurrected. **The clock is the sync's,
+not the edit's**: the library has no per-field `updatedAt` column and is not growing six, so a
+field is stamped when a pass first sees it differ from the last copy this device agreed with
+the folder (`Sessions/<uuid>/sync.json`, local and disposable). A rider who edits offline and
+syncs in the evening therefore loses that field to a device that edited and synced at noon —
+per field, and only where both touched the same one. The feature starts in **dev**
+(docs/channels.md): the switch, the status line and every call into `LibrarySyncEngine` are
+`#if DEV`, so no other channel has a door to it. XcodeGen writes one `CODE_SIGN_ENTITLEMENTS`
+per target, so the beta shares the dev's entitlements file; the container id follows the
+channel through `$(CJ_BUNDLE_ID)` instead, and the release channel's own file stays empty.
+
 ## ADR-025 · The session list's filters narrow the list, never the records
 The library grew past the length a flat newest-first list answers questions on, and the
 questions that arrived with it — "how many afternoons in August", "everything at Torbole",
