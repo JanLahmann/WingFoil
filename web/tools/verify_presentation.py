@@ -514,7 +514,7 @@ def check_session_clock(result: dict) -> None:
 #: copy of the contract instead of against itself — the same rule §5 follows for the card.
 EXACT_NOTE = " \u00b7 times as recorded on the water"
 ESTIMATED_NOTE = " \u00b7 times estimated from the track's position"
-NO_ZONE_NOTE = " \u00b7 no timezone in this file \u2014 times shown on your own clock"
+NO_ZONE_NOTE = " \u00b7 no timezone in this file, times shown on your own clock"
 
 CLOCK_NOTE = TOOLS / "clock_note.mjs"
 

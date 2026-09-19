@@ -784,7 +784,7 @@ session's time is a fact about the session, so it is stored with the session.
   |---|---|
   | `activity`, `icu`, or unrecorded | **times as recorded on the water** (web header note); no caption on iOS |
   | `longitude` | **times estimated from the track's position** (web header note; iOS `SessionDetailView.estimatedClockNote`, "Times estimated from the track's position — this recording carries no time zone.") |
-  | `device` / offset NULL | the existing **no timezone in this file — times shown on your own clock**, which is already the honest sentence: this is not the session's zone at all |
+  | `device` / offset NULL | the existing **no timezone in this file, times shown on your own clock**, which is already the honest sentence: this is not the session's zone at all |
 
   A **library row or a trend tick is not annotated** either, and for a different reason
   again: they print a *date*, and a whole-hour guess moves a date only for a session that
