@@ -69,6 +69,27 @@ public enum ImportSource: String, Sendable, CaseIterable {
     }
 }
 
+/// What the importer refuses, as an error rather than as a crash.
+///
+/// One entry: a recording whose own clock says it lasted longer than any session can. It is
+/// a *typed* error because it has to reach `IcuSyncSummary.failed` beside the activity id —
+/// the rider who syncs seventy-four files and loses one deserves to be told which, and the
+/// alternative (letting the number through into an engine that sizes arrays with it) is an
+/// out-of-memory kill that leaves no crash report at all.
+public enum IngestError: Error, CustomStringConvertible {
+    case implausibleDuration(durationS: TimeInterval)
+
+    public var description: String {
+        switch self {
+        case .implausibleDuration(let s):
+            guard s.isFinite else { return "the recording's timestamps are broken" }
+            let days = Int(clamped: s / 86_400)
+            return "the recording's timestamps are broken (it claims to span "
+                + "\(days) day\(days == 1 ? "" : "s"))"
+        }
+    }
+}
+
 public enum IngestOutcome: Sendable {
     case imported(SessionRow)
     /// Already in the library (dedupe key matched); the row carries the merged note.
@@ -127,6 +148,11 @@ public struct SessionIngestor: Sendable {
         "windsurf", "kitesurf", "sail", "standuppaddling", "wingfoil",
         "43", "44",
     ]
+
+    /// The longest span a recording may claim and still be read as one session — a week.
+    /// See the guard in `ingest(fitData:…)`; this is a corruption gate, not a rule about
+    /// how long anybody may stay on the water.
+    public static let maxSessionDurationS: TimeInterval = 7 * 24 * 3600
 
     public var database: AppDatabase
     public var archive: SessionArchive
@@ -209,6 +235,24 @@ public struct SessionIngestor: Sendable {
             throw FitSessionParser.ParseError.noRecords
         }
         let duration = last.t - first.t
+        // **A session has to have lasted a plausible length of time.**
+        //
+        // Every number below this line is measured against `duration`, and several of them
+        // size an array with it: the rolling-rate series is one point a minute, the HR
+        // fatigue bins one per twenty. On a recording whose clock survived the trip those
+        // are a few hundred entries. On one whose clock did not — a download cut off
+        // mid-stream, a device that stamped a record in 1989 — `duration` comes back as
+        // decades, and the same arithmetic asks for tens of millions of entries on a phone.
+        // That is not a crash anybody can report: iOS takes the memory back by killing the
+        // app, which leaves no crash log, so the rider sees the sync die on the twelfth of
+        // his seventy-four files and can say nothing about it but "it crashed".
+        //
+        // So it is refused here, by name, and the sync puts it in `failed` beside the
+        // activity id and carries on with the rest. A week is chosen to be obviously
+        // outside any session and obviously inside any clock that works.
+        guard duration.isFinite, duration >= 0, duration <= Self.maxSessionDurationS else {
+            throw IngestError.implausibleDuration(durationS: duration)
+        }
 
         let existing = try await duplicate(startDate: startDate, durationS: duration,
                                           icuActivityId: icuActivityId)

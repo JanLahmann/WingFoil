@@ -262,9 +262,12 @@ public enum WindEstimator {
         let n = Int((360.0 / binDeg).rounded())
         var hist = [Double](repeating: 0, count: n)
         for (c, w) in zip(cog, weight) {
+            // A bearing that is not a number indexes nothing. `Int(floor(nan))` traps, and
+            // a course over ground is computed from positions a file supplied.
+            guard c.isFinite, w.isFinite else { continue }
             var m = c.truncatingRemainder(dividingBy: 360)
             if m < 0 { m += 360 }
-            let idx = ((Int(floor(m / binDeg)) % n) + n) % n
+            let idx = ((Int(clamped: floor(m / binDeg)) % n) + n) % n
             hist[idx] += w
         }
         let half = max(Int((smoothDeg / binDeg).rounded()), 0)

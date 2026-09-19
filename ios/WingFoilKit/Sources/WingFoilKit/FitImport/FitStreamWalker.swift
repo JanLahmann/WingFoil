@@ -142,6 +142,30 @@ enum FitStreamWalker {
         return Layout(headerSize: headerSize, dataEnd: dataEnd)
     }
 
+    /// **Does the file's own CRC-16 match its bytes?**
+    ///
+    /// nil when these bytes are not a walkable FIT chunk at all — a different question, with
+    /// a different answer (`FitSessionParser.checkReadable` and the format sniff own that
+    /// one). True/false only for a file that *claims* to be a FIT.
+    ///
+    /// Every recording in the corpus passes, and every device writes it: the CRC is the one
+    /// thing in the format that says "these bytes arrived as they left". A file that fails it
+    /// has been damaged in transit, and handing damaged bytes to the vendored C decoder is
+    /// not a theoretical risk — its `convert_table` is reconstructed from the record layer
+    /// and a corrupted definition walks it off the end of a stack-allocated struct
+    /// (see `FitStreamSanitizer`, "Segfault"). A segfault cannot be caught, cannot be
+    /// reported, and cannot be told apart from anything else the rider might have done.
+    ///
+    /// Only the first chunk is checked. That is deliberate and sufficient: a chained FIT's
+    /// first chunk is the one the decoder starts on.
+    static func crcMatches(_ bytes: [UInt8]) -> Bool? {
+        guard let layout = layout(of: bytes), layout.dataEnd + 2 <= bytes.count else {
+            return nil
+        }
+        let stored = UInt16(bytes[layout.dataEnd]) | UInt16(bytes[layout.dataEnd + 1]) << 8
+        return stored == crc16(bytes[0..<layout.dataEnd])
+    }
+
     /// Garmin FIT CRC-16 (fit_crc.m), nibble-table form.
     static func crc16(_ bytes: ArraySlice<UInt8>) -> UInt16 {
         let table: [UInt16] = [

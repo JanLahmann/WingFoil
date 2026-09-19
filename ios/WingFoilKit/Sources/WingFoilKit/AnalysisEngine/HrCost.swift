@@ -491,6 +491,10 @@ public struct HrAnalysis: Sendable, Codable, Equatable {
 /// Mirrors `lab/src/wingfoil_lab/hrcost.py`.
 public enum HrCost {
 
+    /// Ceiling on the fatigue-bin count — a year of default 20-minute bins. Unreachable by
+    /// any session; see `edges`.
+    static let maxBins = 26_280
+
     // MARK: - Building the channel
 
     /// Build an `HrTrack` from a parsed source, or nil when it carries no HR channel.
@@ -816,7 +820,10 @@ public enum HrCost {
             return (0..<n).map { t0 + Double($0) * step } + [t1]
         }
         let step = max(binMinutes ?? config.binMinutes, 1e-6) * 60.0
-        let n = max(Int(((t1 - t0) / step).rounded(.up)), 1)
+        // Bounded for the same reason the pump grid and the rate series are: `t1 - t0` is
+        // the recording's own clock, and a broken one asks for millions of bins.
+        // `maxBins` is a year of 20-minute bins — unreachable by any session.
+        let n = min(max(Int(clamped: ((t1 - t0) / step).rounded(.up)), 1), maxBins)
         return (0..<n).map { t0 + Double($0) * step } + [t1]
     }
 

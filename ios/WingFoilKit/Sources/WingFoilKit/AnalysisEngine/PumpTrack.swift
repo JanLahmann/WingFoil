@@ -95,6 +95,10 @@ func linearInterp(_ q: Double, _ xs: [Double], _ ys: [Double]) -> Double {
 
 public enum PumpAnalyzer {
 
+    /// Ceiling on the resample grid: four hours at the default 25 Hz. A stream that asks
+    /// for more has a broken clock, not a long session — see the comment at the allocation.
+    static let maxBins = 4 * 3600 * 25
+
     /// Build a PumpTrack from a parsed source, or nil when it carries no accel stream.
     public static func track(_ raw: RawTrack, config: PumpConfig = PumpConfig()) -> PumpTrack? {
         guard !raw.accel.isEmpty else { return nil }
@@ -108,13 +112,23 @@ public enum PumpAnalyzer {
         guard times.count >= 2 else { return nil }
         let t0 = times[0]
         let step = 1.0 / config.resampleHz
-        let nBins = Int(((times[times.count - 1] - t0) / step).rounded(.down)) + 1
-        guard nBins > 0 else { return nil }
+        // **The grid is bounded, because its length comes out of a file.** `accelerometer_-
+        // data` carries a uint32 FIT timestamp; one corrupt message puts the last sample a
+        // century after the first, and at 25 Hz that asks for a hundred billion bins —
+        // eight hundred gigabytes, allocated before anything has a chance to notice the
+        // stream is nonsense. `maxBins` is four hours of 25 Hz samples, an order of
+        // magnitude more grid than the longest session in the corpus needs, so no real
+        // recording ever meets it.
+        let span = times[times.count - 1] - t0
+        guard span.isFinite else { return nil }
+        let nBins = Int(clamped: (span / step).rounded(.down)) + 1
+        guard nBins > 0, nBins <= maxBins else { return nil }
 
         var count = [Double](repeating: 0, count: nBins)
         var total = [Double](repeating: 0, count: nBins)
         for i in times.indices {
-            let idx = min(max(Int((times[i] - t0) / step), 0), nBins - 1)
+            let idx = min(max(Int(clamped: ((times[i] - t0) / step).rounded(.down)), 0),
+                          nBins - 1)
             count[idx] += 1
             total[idx] += magnitudes[i]
         }

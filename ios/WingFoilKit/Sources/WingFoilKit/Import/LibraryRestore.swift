@@ -396,7 +396,7 @@ public struct LibraryRestore: Sendable {
                 id: id, file: "original.\(format.fileExtension)")
             guard let entry = zip[path] else { continue }
             var buffer = Data()
-            buffer.reserveCapacity(Int(entry.uncompressedSize))
+            buffer.reserveCapacity(ZipSizes.reservation(entry.uncompressedSize))
             _ = try? zip.extract(entry, skipCRC32: true) { buffer.append($0) }
             if !buffer.isEmpty { return buffer }
         }

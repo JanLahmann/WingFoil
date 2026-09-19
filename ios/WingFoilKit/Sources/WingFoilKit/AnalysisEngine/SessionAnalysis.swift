@@ -1149,6 +1149,13 @@ public struct WindowRatePoint: Sendable, Codable, Equatable {
 /// and never a partial window scaled up to the hour, which is how three good minutes turn
 /// into a peak the rider never sailed.
 public struct SessionWindowRates: Sendable, Codable, Equatable {
+    /// Hard ceiling on the length of `series` — 20 000 one-minute points is fourteen days,
+    /// twice what the importer will accept as one session (`SessionIngestor.-
+    /// maxSessionDurationS`), so no recording reaches it and no golden moves. It exists only
+    /// so that a broken clock cannot make the engine allocate without bound; see the comment
+    /// at the allocation.
+    static let maxSeriesPoints = 20_000
+
     public var windowMin: Double
     public var bestJph: Double?
     public var bestJphStartTs: Double?
@@ -1184,7 +1191,20 @@ public struct SessionWindowRates: Sendable, Codable, Equatable {
             return
         }
         let hours = windowS / 3600
-        let steps = Int(((durationS - windowS) / config.gridS + 1e-9).rounded(.down))
+        // One point a minute for as long as the session lasted — and **no longer than a
+        // session can last**. `durationS` is measured off the recording's own clock, and a
+        // recording whose clock is wrong (a download cut off mid-stream decodes as records
+        // decades apart) asks for a series of tens of millions of points: half a gigabyte
+        // of `WindowRatePoint`, each one counting every event in the session, on a phone.
+        // The ceiling is a guard rather than a rule — `maxSeriesPoints` minutes is
+        // `maxSeriesPoints / 1440` days, so it cannot be reached by any afternoon on the
+        // water and moves no number on any real recording. The importer refuses such a file
+        // outright (`SessionIngestor.maxSessionDurationS`); this is the second lock on the
+        // same door, because an engine that allocates on a number it was handed is one bad
+        // file away from a crash the rider cannot report.
+        let steps = min(Int(clamped: ((durationS - windowS) / config.gridS + 1e-9)
+                                        .rounded(.down)),
+                        Self.maxSeriesPoints)
         series = (0...max(steps, 0)).map { k in
             let s = startT + Double(k) * config.gridS
             return WindowRatePoint(ts: s,

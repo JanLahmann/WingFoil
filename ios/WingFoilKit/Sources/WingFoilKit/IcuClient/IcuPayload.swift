@@ -123,7 +123,7 @@ public enum IcuPayload {
         }
         for entry in archive where entry.type == .file {
             var buffer = Data()
-            buffer.reserveCapacity(Int(entry.uncompressedSize))
+            buffer.reserveCapacity(ZipSizes.reservation(entry.uncompressedSize))
             _ = try? archive.extract(entry, skipCRC32: true) { buffer.append($0) }
             if !buffer.isEmpty { try body(entry.path, buffer) }
         }
@@ -145,7 +145,7 @@ public enum IcuPayload {
         }
         guard let entry = archive[path] else { return nil }
         var buffer = Data()
-        buffer.reserveCapacity(Int(entry.uncompressedSize))
+        buffer.reserveCapacity(ZipSizes.reservation(entry.uncompressedSize))
         _ = try? archive.extract(entry, skipCRC32: true) { buffer.append($0) }
         return buffer
     }

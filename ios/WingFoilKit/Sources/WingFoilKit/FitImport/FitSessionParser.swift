@@ -5,9 +5,30 @@ import FitFileParser
 /// `SourceCapabilities`, they never throw. Developer-field names per docs/fit-schema.md.
 public enum FitSessionParser {
 
-    public enum ParseError: Error {
+    public enum ParseError: Error, CustomStringConvertible {
         case unreadable(URL)
         case noRecords
+        /// The header declares a data section longer than the file. A download that was cut
+        /// off — which is what a bulk sync over a phone connection produces sooner or later.
+        case truncated(declared: Int, actual: Int)
+        /// The file's own CRC-16 does not match its bytes: it was damaged somewhere between
+        /// the watch and here.
+        case damaged
+        /// The record layer does not frame: a message runs past the end of the data
+        /// section, a data message names a local type nothing defined, or the last message
+        /// stops short of it.
+        case malformed
+
+        public var description: String {
+            switch self {
+            case .unreadable(let url): "could not read \(url.lastPathComponent)"
+            case .noRecords: "no records in this recording"
+            case .truncated(let declared, let actual):
+                "the file is incomplete (\(actual) bytes of a declared \(declared))"
+            case .damaged: "the file is damaged (its own checksum does not match)"
+            case .malformed: "the file's records do not line up — CleanJibe cannot read it"
+            }
+        }
     }
 
     /// FIT global message numbers we look at by number rather than by FitFileParser's enum.
@@ -35,6 +56,11 @@ public enum FitSessionParser {
     }
 
     public static func parse(data: Data) throws -> RawTrack {
+        // **A file that did not arrive whole is refused before it is read** — see
+        // `checkReadable`. It turns a cut-off download, a damaged one and an unframeable one
+        // into a named failure on one activity (`IcuSyncSummary.failed`) instead of a phone
+        // that dies on the twelfth file of seventy-four with no crash report behind it.
+        try checkReadable(data)
         // FitFileParser's C decoder overflows its 254-byte message buffer on any definition
         // larger than that (our CIQ files log 356-byte `accelerometer_data`), which silently
         // corrupts the record stream and can segfault — see FitStreamSanitizer.
@@ -133,7 +159,11 @@ public enum FitSessionParser {
         }
         if let session = sessions.first,
            let sportField = session.interpretedField(key: "sport") {
-            caps.sport = sportField.name ?? sportField.valueUnit.map { String(Int($0.value)) }
+            // A sport the profile has no name for is reported as its number — through
+            // `Int(clamped:)`, because the number came out of a file and `Int(_:)` traps on
+            // a NaN or an out-of-range Double.
+            caps.sport = sportField.name
+                ?? sportField.valueUnit.map { String(Int(clamped: $0.value)) }
         }
         // The session dev field is the authoritative discipline tag, not the sport code
         // (docs/fit-schema.md): sport 43 alone cannot tell wingfoiling from windsurfing.
@@ -146,6 +176,61 @@ public enum FitSessionParser {
         // …and if it answered, the rung is named: this is the top one (engine 0.9.1).
         track.startUtcOffsetSource = track.startUtcOffsetS == nil ? nil : .activity
         return track
+    }
+
+    /// **The front door**: three questions asked of the raw bytes before any decoder sees
+    /// them — is the file whole, are its bytes its own, and does its record layer frame?
+    ///
+    /// Deliberately narrow in one way: it says nothing at all about bytes it does not
+    /// recognise as a FIT header, which go on exactly as before, because "this is not a FIT"
+    /// is a different sentence and a different door. A **chained** FIT (several complete
+    /// chunks in one file) is judged on its first chunk, which is the one the decoder starts
+    /// on.
+    ///
+    /// Every recording in the corpus passes all three, and so does the bundled example.
+    /// docs/algorithms.md, "Recordings the importer refuses".
+    static func checkReadable(_ data: Data) throws {
+        let bytes = [UInt8](data.prefix(14))
+        guard bytes.count >= 14 else { return }
+        let headerSize = Int(bytes[0])
+        guard headerSize == 12 || headerSize == 14,
+              bytes[8] == 0x2E, bytes[9] == 0x46, bytes[10] == 0x49, bytes[11] == 0x54
+        else { return }                            // not a FIT header: not our question
+        let dataSize = Int(bytes[4]) | Int(bytes[5]) << 8
+            | Int(bytes[6]) << 16 | Int(bytes[7]) << 24
+        let declared = headerSize + dataSize + 2   // + the file CRC
+        guard data.count >= declared else {
+            throw ParseError.truncated(declared: declared, actual: data.count)
+        }
+        // **And the bytes have to be the bytes the device wrote.** A FIT carries a CRC-16
+        // over its header and data section, every device writes it, and every recording in
+        // the corpus passes it. A file that fails it has been damaged somewhere — and
+        // damaged bytes are not merely unreadable, they are *dangerous*: the vendored C
+        // decoder rebuilds its field table from the record layer, and a corrupted definition
+        // walks the next message's reassembly tens of kilobytes off the end of a
+        // stack-allocated struct. That is a segfault, and a segfault is the one failure a
+        // rider can neither survive nor report.
+        //
+        // Found by fuzzing: flipping bytes in a corpus FIT segfaults this process, and not
+        // on the mutant that did the damage — several files later, wherever the clobbered
+        // stack happens to be read. Exactly the shape of "the app crashes on sync and I
+        // can't tell you which session".
+        let raw = [UInt8](data)
+        if FitStreamWalker.crcMatches(raw) == false { throw ParseError.damaged }
+        // **And our own reader has to be able to frame it.**
+        //
+        // `FitStreamWalker` is the memory-safe Swift walk of the record layer that the
+        // sanitizer and the developer-field reader both run on. Until now a stream it could
+        // not walk was simply passed through to the vendored C decoder untouched — the
+        // sanitizer's fail-soft rule, which is right for "I found nothing to drop" and
+        // exactly wrong for "I could not read this at all". A stream our walker cannot frame
+        // is one the C decoder will frame *differently*, and the difference is where its
+        // `convert_table` gets rebuilt from garbage.
+        //
+        // Every recording in the corpus walks, the bundled example walks, and the two
+        // other-apps FITs walk. What does not walk is a damaged or alien stream, and the one
+        // thing that must never happen to one of those is being decoded.
+        guard FitStreamWalker.walk(raw, { _ in }) != nil else { throw ParseError.malformed }
     }
 
     /// The session's own UTC offset in seconds, from the `activity` message.
@@ -164,7 +249,7 @@ public enum FitSessionParser {
         for message in fit.messages(forMessageType: FitMessageType(Mesg.activity)) {
             guard let local = message.interpretedField(key: "local_timestamp")?.time,
                   let utc = message.interpretedField(key: "timestamp")?.time else { continue }
-            return Int(local.timeIntervalSince(utc).rounded())
+            return Int(clamped: local.timeIntervalSince(utc))
         }
         return nil
     }

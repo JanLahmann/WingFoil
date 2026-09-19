@@ -6,9 +6,24 @@ enum FitDevValue: Equatable {
     case number(Double)
     case text(String)
 
-    var double: Double? { if case let .number(v) = self { return v }; return nil }
+    /// The number, **finite or nothing**.
+    ///
+    /// A float32/float64 developer field is eight bytes of somebody else's arithmetic, and
+    /// two of the patterns it can legally hold — NaN and ±infinity — are not numbers this
+    /// app can do anything with. A stranger's intervals.icu account is full of files written
+    /// by apps that have never heard of CleanJibe, and one of them naming a float field
+    /// something our schema also uses is all it takes. Dropping the value here, at the
+    /// decoder, is the same fail-soft the invalid sentinels already get: "this field said
+    /// nothing" rather than a NaN travelling into the engine.
+    var double: Double? {
+        guard case let .number(v) = self, v.isFinite else { return nil }
+        return v
+    }
     var string: String? { if case let .text(v) = self { return v }; return nil }
-    var int: Int? { double.map { Int($0.rounded()) } }
+    /// Rounded to an `Int`, **clamped** (`Int(clamped:)`) — a uint64 field divided by a
+    /// foreign `field_description`'s scale lands well past `Int`'s range, and `Int(_:)` traps
+    /// there as surely as it traps on a NaN.
+    var int: Int? { double.map { Int(clamped: $0) } }
 }
 
 /// Developer fields decoded straight from the FIT byte stream, in file order per message type.

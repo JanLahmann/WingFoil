@@ -67,8 +67,16 @@ enum FitStreamSanitizer {
         guard FitStreamWalker.walk(bytes, { event in
             switch event {
             case let .definition(local, def, range):
-                dropping[local] = def.nativeBytes > maxNativeMessageBytes
-                    || def.fields.count > maxNativeFieldDefs
+                // **Both capacities count the developer layer.** `u.mesg` holds the whole
+                // reassembled message, native fields *and* developer fields, and
+                // `convert_table`'s field slots are shared between them — so a definition
+                // that fits inside the limits on its native half alone and overflows on the
+                // sum overflows the decoder exactly as the CIQ accelerometer message does.
+                // No file in the corpus is affected (the largest total is 216 bytes against
+                // 210 native), and a stranger's FIT written by an app with a wide developer
+                // block is precisely the case this was missing.
+                dropping[local] = def.totalBytes > maxNativeMessageBytes
+                    || def.fields.count + def.devFields.count > maxNativeFieldDefs
                 if dropping[local] {
                     dropped[def.globalNum] = dropped[def.globalNum] ?? 0   // register the type
                     drop(range)
