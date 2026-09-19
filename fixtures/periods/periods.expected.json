@@ -53,7 +53,10 @@
       "longestDryStreak": 6,
       "wetExits": 4,
       "best2sKn": 14.0,
-      "best10sKn": 12.0
+      "best10sKn": 12.0,
+      "jibesPerHour": 7.2,
+      "turnsPerHour": 11.5,
+      "sourceClass": "b"
     },
     {
       "id": "a2",
@@ -76,7 +79,10 @@
       "longestDryStreak": 9,
       "wetExits": 7,
       "best2sKn": 15.5,
-      "best10sKn": 13.2
+      "best10sKn": 13.2,
+      "jibesPerHour": 10.8,
+      "turnsPerHour": 14.4,
+      "sourceClass": "b"
     },
     {
       "id": "a3",
@@ -99,7 +105,10 @@
       "longestDryStreak": 3,
       "wetExits": 2,
       "best2sKn": 13.1,
-      "best10sKn": 11.4
+      "best10sKn": 11.4,
+      "jibesPerHour": 12.0,
+      "turnsPerHour": 16.8,
+      "sourceClass": "b"
     },
     {
       "id": "a4",
@@ -122,7 +131,10 @@
       "longestDryStreak": 4,
       "wetExits": 6,
       "best2sKn": 12.8,
-      "best10sKn": 10.9
+      "best10sKn": 10.9,
+      "jibesPerHour": 8.0,
+      "turnsPerHour": 12.0,
+      "sourceClass": "b"
     },
     {
       "id": "b1",
@@ -145,7 +157,10 @@
       "longestDryStreak": 5,
       "wetExits": 5,
       "best2sKn": 13.6,
-      "best10sKn": 11.8
+      "best10sKn": 11.8,
+      "jibesPerHour": 9.6,
+      "turnsPerHour": 12.8,
+      "sourceClass": "b"
     },
     {
       "id": "b2",
@@ -168,7 +183,10 @@
       "longestDryStreak": 7,
       "wetExits": 3,
       "best2sKn": 14.4,
-      "best10sKn": 12.6
+      "best10sKn": 12.6,
+      "jibesPerHour": 8.4,
+      "turnsPerHour": 10.8,
+      "sourceClass": "b"
     },
     {
       "id": "a5",
@@ -191,7 +209,10 @@
       "longestDryStreak": 2,
       "wetExits": 3,
       "best2sKn": 11.9,
-      "best10sKn": 10.2
+      "best10sKn": 10.2,
+      "jibesPerHour": 12.0,
+      "turnsPerHour": 18.0,
+      "sourceClass": "b"
     },
     {
       "id": "c1",
@@ -214,7 +235,10 @@
       "longestDryStreak": 5,
       "wetExits": 8,
       "best2sKn": 12.2,
-      "best10sKn": 10.6
+      "best10sKn": 10.6,
+      "jibesPerHour": 8.6,
+      "turnsPerHour": 11.1,
+      "sourceClass": "b"
     },
     {
       "id": "c2",
@@ -237,7 +261,10 @@
       "longestDryStreak": 4,
       "wetExits": 5,
       "best2sKn": 11.5,
-      "best10sKn": 9.8
+      "best10sKn": 9.8,
+      "jibesPerHour": 6.7,
+      "turnsPerHour": 9.3,
+      "sourceClass": "c"
     },
     {
       "id": "a6",
@@ -260,9 +287,757 @@
       "longestDryStreak": null,
       "wetExits": null,
       "best2sKn": 12.0,
-      "best10sKn": null
+      "best10sKn": null,
+      "jibesPerHour": null,
+      "turnsPerHour": null,
+      "sourceClass": "b"
     }
   ],
+  "trends": {
+    "charts": [
+      {
+        "key": "foilPct",
+        "label": "On foil",
+        "unit": "%",
+        "percent": true,
+        "lines": [
+          {
+            "key": "foilPct",
+            "label": "on foil",
+            "role": "primary",
+            "points": [
+              {
+                "i": 0,
+                "id": "a1",
+                "v": 50.0
+              },
+              {
+                "i": 1,
+                "id": "a2",
+                "v": 60.0
+              },
+              {
+                "i": 2,
+                "id": "b1",
+                "v": 50.0
+              },
+              {
+                "i": 3,
+                "id": "b2",
+                "v": 55.0
+              },
+              {
+                "i": 4,
+                "id": "a3",
+                "v": 50.0
+              },
+              {
+                "i": 5,
+                "id": "a4",
+                "v": 40.0
+              },
+              {
+                "i": 6,
+                "id": "a5",
+                "v": 40.0
+              },
+              {
+                "i": 7,
+                "id": "c1",
+                "v": 40.0
+              },
+              {
+                "i": 8,
+                "id": "c2",
+                "v": 40.0
+              },
+              {
+                "i": 9,
+                "id": "a6",
+                "v": 50.0
+              }
+            ]
+          }
+        ],
+        "yMax": 100.0,
+        "yStep": 25.0,
+        "uncertified": false
+      },
+      {
+        "key": "longestFlight",
+        "label": "Longest flight",
+        "unit": "s",
+        "lines": [
+          {
+            "key": "longestFlightS",
+            "label": "longest flight",
+            "role": "primary",
+            "points": [
+              {
+                "i": 0,
+                "id": "a1",
+                "v": 120.0
+              },
+              {
+                "i": 1,
+                "id": "a2",
+                "v": 240.0
+              },
+              {
+                "i": 2,
+                "id": "b1",
+                "v": 200.0
+              },
+              {
+                "i": 3,
+                "id": "b2",
+                "v": 130.0
+              },
+              {
+                "i": 4,
+                "id": "a3",
+                "v": 90.0
+              },
+              {
+                "i": 5,
+                "id": "a4",
+                "v": 150.0
+              },
+              {
+                "i": 6,
+                "id": "a5",
+                "v": 70.0
+              },
+              {
+                "i": 7,
+                "id": "c1",
+                "v": 110.0
+              },
+              {
+                "i": 8,
+                "id": "c2",
+                "v": 95.0
+              },
+              {
+                "i": 9,
+                "id": "a6",
+                "v": 100.0
+              }
+            ]
+          }
+        ],
+        "yMax": 250.0,
+        "yStep": 50.0,
+        "uncertified": false
+      },
+      {
+        "key": "turnSuccess",
+        "label": "Flew-through rate",
+        "unit": "%",
+        "percent": true,
+        "lines": [
+          {
+            "key": "flewThroughPct",
+            "label": "flew through",
+            "role": "primary",
+            "points": [
+              {
+                "i": 0,
+                "id": "a1",
+                "v": null
+              },
+              {
+                "i": 1,
+                "id": "a2",
+                "v": null
+              },
+              {
+                "i": 2,
+                "id": "b1",
+                "v": null
+              },
+              {
+                "i": 3,
+                "id": "b2",
+                "v": null
+              },
+              {
+                "i": 4,
+                "id": "a3",
+                "v": null
+              },
+              {
+                "i": 5,
+                "id": "a4",
+                "v": null
+              },
+              {
+                "i": 6,
+                "id": "a5",
+                "v": null
+              },
+              {
+                "i": 7,
+                "id": "c1",
+                "v": null
+              },
+              {
+                "i": 8,
+                "id": "c2",
+                "v": null
+              },
+              {
+                "i": 9,
+                "id": "a6",
+                "v": null
+              }
+            ]
+          }
+        ],
+        "yMax": 100.0,
+        "yStep": 25.0,
+        "uncertified": false
+      },
+      {
+        "key": "cleanJibes",
+        "label": "Clean jibes",
+        "unit": "per session",
+        "lines": [
+          {
+            "key": "cleanJibes",
+            "label": "clean jibes",
+            "role": "primary",
+            "points": [
+              {
+                "i": 0,
+                "id": "a1",
+                "v": 5
+              },
+              {
+                "i": 1,
+                "id": "a2",
+                "v": 11
+              },
+              {
+                "i": 2,
+                "id": "b1",
+                "v": 7
+              },
+              {
+                "i": 3,
+                "id": "b2",
+                "v": 6
+              },
+              {
+                "i": 4,
+                "id": "a3",
+                "v": 4
+              },
+              {
+                "i": 5,
+                "id": "a4",
+                "v": 3
+              },
+              {
+                "i": 6,
+                "id": "a5",
+                "v": 2
+              },
+              {
+                "i": 7,
+                "id": "c1",
+                "v": 4
+              },
+              {
+                "i": 8,
+                "id": "c2",
+                "v": 3
+              },
+              {
+                "i": 9,
+                "id": "a6",
+                "v": 2
+              }
+            ]
+          }
+        ],
+        "yMax": 12.5,
+        "yStep": 2.5,
+        "uncertified": false
+      },
+      {
+        "key": "cph",
+        "label": "CPH",
+        "unit": "clean jibes / h",
+        "lines": [
+          {
+            "key": "cph",
+            "label": "CPH",
+            "role": "primary",
+            "points": [
+              {
+                "i": 0,
+                "id": "a1",
+                "v": 6.0
+              },
+              {
+                "i": 1,
+                "id": "a2",
+                "v": 6.6
+              },
+              {
+                "i": 2,
+                "id": "b1",
+                "v": 5.6
+              },
+              {
+                "i": 3,
+                "id": "b2",
+                "v": 7.2
+              },
+              {
+                "i": 4,
+                "id": "a3",
+                "v": 9.6
+              },
+              {
+                "i": 5,
+                "id": "a4",
+                "v": 4.0
+              },
+              {
+                "i": 6,
+                "id": "a5",
+                "v": 6.0
+              },
+              {
+                "i": 7,
+                "id": "c1",
+                "v": 3.429
+              },
+              {
+                "i": 8,
+                "id": "c2",
+                "v": 4.0
+              },
+              {
+                "i": 9,
+                "id": "a6",
+                "v": 3.0
+              }
+            ]
+          }
+        ],
+        "yMax": 10.0,
+        "yStep": 2.0,
+        "uncertified": false
+      },
+      {
+        "key": "jph",
+        "label": "JPH",
+        "unit": "jibes / h",
+        "lines": [
+          {
+            "key": "jph",
+            "label": "JPH",
+            "role": "primary",
+            "points": [
+              {
+                "i": 0,
+                "id": "a1",
+                "v": 7.2
+              },
+              {
+                "i": 1,
+                "id": "a2",
+                "v": 10.8
+              },
+              {
+                "i": 2,
+                "id": "b1",
+                "v": 9.6
+              },
+              {
+                "i": 3,
+                "id": "b2",
+                "v": 8.4
+              },
+              {
+                "i": 4,
+                "id": "a3",
+                "v": 12.0
+              },
+              {
+                "i": 5,
+                "id": "a4",
+                "v": 8.0
+              },
+              {
+                "i": 6,
+                "id": "a5",
+                "v": 12.0
+              },
+              {
+                "i": 7,
+                "id": "c1",
+                "v": 8.6
+              },
+              {
+                "i": 8,
+                "id": "c2",
+                "v": 6.7
+              },
+              {
+                "i": 9,
+                "id": "a6",
+                "v": null
+              }
+            ]
+          }
+        ],
+        "yMax": 12.5,
+        "yStep": 2.5,
+        "uncertified": false
+      },
+      {
+        "key": "tph",
+        "label": "TPH",
+        "unit": "turns / h",
+        "lines": [
+          {
+            "key": "tph",
+            "label": "TPH",
+            "role": "primary",
+            "points": [
+              {
+                "i": 0,
+                "id": "a1",
+                "v": 11.5
+              },
+              {
+                "i": 1,
+                "id": "a2",
+                "v": 14.4
+              },
+              {
+                "i": 2,
+                "id": "b1",
+                "v": 12.8
+              },
+              {
+                "i": 3,
+                "id": "b2",
+                "v": 10.8
+              },
+              {
+                "i": 4,
+                "id": "a3",
+                "v": 16.8
+              },
+              {
+                "i": 5,
+                "id": "a4",
+                "v": 12.0
+              },
+              {
+                "i": 6,
+                "id": "a5",
+                "v": 18.0
+              },
+              {
+                "i": 7,
+                "id": "c1",
+                "v": 11.1
+              },
+              {
+                "i": 8,
+                "id": "c2",
+                "v": 9.3
+              },
+              {
+                "i": 9,
+                "id": "a6",
+                "v": null
+              }
+            ]
+          }
+        ],
+        "yMax": 20.0,
+        "yStep": 5.0,
+        "uncertified": false
+      },
+      {
+        "key": "best2s",
+        "label": "Best 2 s",
+        "unit": "kn",
+        "speed": true,
+        "lines": [
+          {
+            "key": "best2sKn",
+            "label": "best 2 s",
+            "role": "primary",
+            "points": [
+              {
+                "i": 0,
+                "id": "a1",
+                "v": 14.0,
+                "certified": true
+              },
+              {
+                "i": 1,
+                "id": "a2",
+                "v": 15.5,
+                "certified": true
+              },
+              {
+                "i": 2,
+                "id": "b1",
+                "v": 13.6,
+                "certified": true
+              },
+              {
+                "i": 3,
+                "id": "b2",
+                "v": 14.4,
+                "certified": true
+              },
+              {
+                "i": 4,
+                "id": "a3",
+                "v": 13.1,
+                "certified": true
+              },
+              {
+                "i": 5,
+                "id": "a4",
+                "v": 12.8,
+                "certified": true
+              },
+              {
+                "i": 6,
+                "id": "a5",
+                "v": 11.9,
+                "certified": true
+              },
+              {
+                "i": 7,
+                "id": "c1",
+                "v": 12.2,
+                "certified": true
+              },
+              {
+                "i": 8,
+                "id": "c2",
+                "v": 11.5,
+                "certified": false
+              },
+              {
+                "i": 9,
+                "id": "a6",
+                "v": 12.0,
+                "certified": true
+              }
+            ]
+          }
+        ],
+        "yMax": 20.0,
+        "yStep": 5.0,
+        "uncertified": true
+      },
+      {
+        "key": "pumps",
+        "label": "Avg pumps to takeoff",
+        "unit": "",
+        "lines": [
+          {
+            "key": "avgPumpsToTakeoff",
+            "label": "pumps",
+            "role": "primary",
+            "points": [
+              {
+                "i": 0,
+                "id": "a1",
+                "v": null
+              },
+              {
+                "i": 1,
+                "id": "a2",
+                "v": null
+              },
+              {
+                "i": 2,
+                "id": "b1",
+                "v": null
+              },
+              {
+                "i": 3,
+                "id": "b2",
+                "v": null
+              },
+              {
+                "i": 4,
+                "id": "a3",
+                "v": null
+              },
+              {
+                "i": 5,
+                "id": "a4",
+                "v": null
+              },
+              {
+                "i": 6,
+                "id": "a5",
+                "v": null
+              },
+              {
+                "i": 7,
+                "id": "c1",
+                "v": null
+              },
+              {
+                "i": 8,
+                "id": "c2",
+                "v": null
+              },
+              {
+                "i": 9,
+                "id": "a6",
+                "v": null
+              }
+            ]
+          }
+        ],
+        "yMax": 1.0,
+        "yStep": 0.5,
+        "uncertified": false
+      },
+      {
+        "key": "turnSide",
+        "label": "Flew through by entry tack",
+        "unit": "%",
+        "percent": true,
+        "lines": [
+          {
+            "key": "port",
+            "label": "port entry",
+            "role": "sidePort",
+            "points": [
+              {
+                "i": 0,
+                "id": "a1",
+                "v": null
+              },
+              {
+                "i": 1,
+                "id": "a2",
+                "v": null
+              },
+              {
+                "i": 2,
+                "id": "b1",
+                "v": null
+              },
+              {
+                "i": 3,
+                "id": "b2",
+                "v": null
+              },
+              {
+                "i": 4,
+                "id": "a3",
+                "v": null
+              },
+              {
+                "i": 5,
+                "id": "a4",
+                "v": null
+              },
+              {
+                "i": 6,
+                "id": "a5",
+                "v": null
+              },
+              {
+                "i": 7,
+                "id": "c1",
+                "v": null
+              },
+              {
+                "i": 8,
+                "id": "c2",
+                "v": null
+              },
+              {
+                "i": 9,
+                "id": "a6",
+                "v": null
+              }
+            ]
+          },
+          {
+            "key": "starboard",
+            "label": "starboard entry",
+            "role": "sideStarboard",
+            "points": [
+              {
+                "i": 0,
+                "id": "a1",
+                "v": null
+              },
+              {
+                "i": 1,
+                "id": "a2",
+                "v": null
+              },
+              {
+                "i": 2,
+                "id": "b1",
+                "v": null
+              },
+              {
+                "i": 3,
+                "id": "b2",
+                "v": null
+              },
+              {
+                "i": 4,
+                "id": "a3",
+                "v": null
+              },
+              {
+                "i": 5,
+                "id": "a4",
+                "v": null
+              },
+              {
+                "i": 6,
+                "id": "a5",
+                "v": null
+              },
+              {
+                "i": 7,
+                "id": "c1",
+                "v": null
+              },
+              {
+                "i": 8,
+                "id": "c2",
+                "v": null
+              },
+              {
+                "i": 9,
+                "id": "a6",
+                "v": null
+              }
+            ]
+          }
+        ],
+        "yMax": 100.0,
+        "yStep": 25.0,
+        "uncertified": false
+      }
+    ]
+  },
   "trips": [
     {
       "kind": "trip",

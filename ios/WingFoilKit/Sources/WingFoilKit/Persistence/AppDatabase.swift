@@ -116,7 +116,8 @@ public struct AppDatabase: Sendable {
     /// Every migration this build knows, oldest first — the migration test asserts a v1
     /// database moves through all of them.
     public static let migrationNames = ["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9",
-                                        "v10", "v11", "v12", "v13", "v14", "v15", "v16"]
+                                        "v10", "v11", "v12", "v13", "v14", "v15", "v16",
+                                        "v17"]
 
     /// The schema version this build writes — the `N` of the last `vN` migration.
     ///
@@ -480,6 +481,32 @@ public struct AppDatabase: Sendable {
             // more (`SpotClusterer.pruneEmptySpots` runs with the delete and the re-cluster);
             // the ones a library already carries go here, once.
             try SpotClusterer.pruneEmptySpots(db: db)
+        }
+
+        // v17: the other two engine rates — JPH and TPH (docs/algorithms.md "Session rates").
+        //
+        // **Rates are additive.** v11 denormalized `cleanJibesPerHour` because the Trends
+        // chart, the Records table and the period block all read it; the same three surfaces
+        // want the two rates beside it, and CPH alone answers one of the three questions a
+        // rider asks about an afternoon — JPH says he got away with them, TPH says how busy
+        // it was.
+        //
+        // Columns rather than arithmetic over the ones the row already has, for a reason the
+        // row can be inspected for: both numerators are **dry** counts, and the row carries
+        // no jibe-level `fellIn` tally at all (`jibesFlewThrough` is the flew-through count,
+        // which excludes touchdowns and is a different number). There is therefore no honest
+        // division to fall back to, and an invented one would publish a third number under the
+        // engine's name.
+        //
+        // The sweep is v11's: `engineVersion = NULL` marks every row stale and
+        // `reanalyzeStale()` fills the columns from the archived FITs. Until a row is reached
+        // its two charts simply have no point for it, which is what a gap in a line means.
+        migrator.registerMigration("v17") { db in
+            try db.alter(table: "session") { t in
+                t.add(column: "engineJibesPerHour", .double)
+                t.add(column: "engineTurnsPerHour", .double)
+            }
+            try db.execute(sql: "UPDATE session SET engineVersion = NULL")
         }
         return migrator
     }
@@ -873,6 +900,17 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
     /// lives, and it is the only thing any screen should ask.
     public var engineCleanJibesPerHour: Double?
 
+    // MARK: schema v17
+    /// The engine's own `summary.jibesPerHour` and `summary.turnsPerHour` — the two rates
+    /// that sit beside CPH on the Trends page. nil on a row this build has not re-derived yet.
+    ///
+    /// **Read `jibesPerHour` / `turnsPerHour`, never these.** Spelled apart from the accessors
+    /// for the same reason `engineCleanJibesPerHour` is: a call site must not reach the raw
+    /// column by accident. Unlike CPH there is no division behind the accessor — the dry
+    /// numerators are not on this row to divide with (docs/algorithms.md "Session rates").
+    public var engineJibesPerHour: Double?
+    public var engineTurnsPerHour: Double?
+
     // MARK: schema v12
     /// The engine's own **cleaned** session span in seconds (`summary.durationS`) — the
     /// denominator every per-hour rate divides by, and what a period's hours are summed
@@ -1046,6 +1084,16 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
         return Double(clean) * 3600 / timerSeconds
     }
 
+    /// Dry jibes and dry counted turns per hour of timer time — the engine's own
+    /// `summary.jibesPerHour` / `summary.turnsPerHour` (schema v17).
+    ///
+    /// **No fallback, on purpose.** CPH can be divided for an unswept row because its
+    /// numerator (`jibesSuccessful`) is on the row; these two subtract a `fellIn` tally the
+    /// row does not carry, so a row the v17 sweep has not reached yet has no JPH and no TPH
+    /// and its two charts have a gap there — which is what a gap in a line already means.
+    public var jibesPerHour: Double? { engineJibesPerHour }
+    public var turnsPerHour: Double? { engineTurnsPerHour }
+
     /// Share of jibes that were clean, over sessions with enough jibes to mean anything —
     /// four out of four is a good afternoon, not a rate (`SessionRecordKind.minJibesForRate`).
     public var cleanJibeRatePct: Double? {
@@ -1118,6 +1166,8 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
         // Copied, never recomputed: the engine owns every per-hour rate and the denominator
         // they share (docs/algorithms.md "Session rates").
         engineCleanJibesPerHour = s.cleanJibesPerHour
+        engineJibesPerHour = s.jibesPerHour
+        engineTurnsPerHour = s.turnsPerHour
         rateDurationS = s.durationS
         // T2, the rate denominator (v13). Both clocks, because they answer two questions:
         // `rateDurationS` is what a duration is shown as, this is what a rate divides by.

@@ -44,6 +44,37 @@ import Testing
             let wetExits: Int?
             let best2sKn: Double
             let best10sKn: Double?
+            /// The two engine rates beside CPH (digest schema 11 / GRDB v17). Optional
+            /// because `a6` carries neither — the row the v17 sweep has not reached, which
+            /// is what pins the gap in the JPH and TPH lines.
+            let jibesPerHour: Double?
+            let turnsPerHour: Double?
+            /// `c` is the recording that could not certify a speed; it is what pins the
+            /// mark on the best-2 s series.
+            let sourceClass: String
+        }
+        /// The per-session trend series the analyzer makes of the same ten afternoons.
+        struct Trends: Decodable {
+            struct Chart: Decodable {
+                struct Line: Decodable {
+                    struct Point: Decodable {
+                        let i: Int
+                        let id: String
+                        let v: Double?
+                        /// Only the speed chart's points carry one.
+                        let certified: Bool?
+                    }
+                    let key: String
+                    let label: String
+                    let points: [Point]
+                }
+                let key: String
+                let label: String
+                let unit: String
+                let uncertified: Bool
+                let lines: [Line]
+            }
+            let charts: [Chart]
         }
         struct Rules: Decodable {
             let tripGapDays: Int
@@ -72,6 +103,7 @@ import Testing
         }
         let rules: Rules
         let sessions: [Session]
+        let trends: Trends
         let trips: [Expected]
         let months: [Expected]
         let seasons: [Expected]
@@ -107,7 +139,8 @@ import Testing
             for session in fixture.sessions {
                 var row = SessionRow(id: session.id,
                                      startDate: try #require(iso(session.startUtc)),
-                                     durationS: session.durationS, sourceClass: "b")
+                                     durationS: session.durationS,
+                                     sourceClass: session.sourceClass)
                 row.startUtcOffsetS = session.utcOffsetS
                 row.startUtcOffsetSource = UtcOffsetSource.activity.rawValue
                 row.startLat = session.lat
@@ -127,6 +160,8 @@ import Testing
                 row.wetExits = session.wetExits
                 row.best2sKn = session.best2sKn
                 row.best10sKn = session.best10sKn
+                row.engineJibesPerHour = session.jibesPerHour
+                row.engineTurnsPerHour = session.turnsPerHour
                 try row.insert(db)
             }
         }

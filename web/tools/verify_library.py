@@ -167,6 +167,8 @@ def counted_entry(ident: str, best2s: float, **extra) -> dict:
         # Three clean jibes in one hour — the engine's own rate (schema 6), stated rather
         # than left for `_cph` to divide, exactly as a stored digest carries it.
         "cleanJibesPerHour": 3.0,
+        # The other two engine rates (schema 11) — additive, never derived from the counts.
+        "jibesPerHour": 7.0, "turnsPerHour": 9.0,
         "records": {"best2sKn": best2s}, "recordWindows": {"best2sKn": []},
         "turns": {"counted": 10, "successful": 4, "successPct": 40.0,
                   "jibes": 8, "jibesSuccessful": 3,
@@ -239,7 +241,7 @@ def check_attribution() -> None:
         e.pop("schema")
     check("  a schema-1 library is unchanged", library.aggregate(old)["count"], 2)
     check("  digest stamps the current schema",
-          library.digest({"golden": {}, "meta": {}}, "x.fit")["schema"], 10)
+          library.digest({"golden": {}, "meta": {}}, "x.fit")["schema"], 11)
 
     # Schema 10 (engine 0.19.0): the fourth exclusion — a recording that is not a session
     # (docs/algorithms.md "Not a session"). The stored answer when the row carries one, the
@@ -322,6 +324,10 @@ def check_digest_fidelity() -> None:
     # library used to divide the count by the hour itself, which was the same arithmetic
     # in a second place — and a second place is where two answers come from.
     check("  cleanJibesPerHour == golden", d["cleanJibesPerHour"], s["cleanJibesPerHour"])
+    # Schema 11: the two rates beside it, on the same terms. Rates are additive — the
+    # trends page draws all three — and all three are read, never divided for (`_jph`).
+    check("  jibesPerHour == golden", d["jibesPerHour"], s["jibesPerHour"])
+    check("  turnsPerHour == golden", d["turnsPerHour"], s["turnsPerHour"])
     # Schema 7: the three facts a *period* needs and a session row never carried.
     # `rateDurationS` is the engine's own cleaned span (T1) and is deliberately **not**
     # `durationS`, which is the FIT's `total_elapsed_time` and is what the stored id is
@@ -587,8 +593,9 @@ def check_trends(digests: list[dict]) -> None:
     check("  sessions are oldest first",
           [s["startUtc"] for s in tr["sessions"]],
           sorted(s["startUtc"] for s in tr["sessions"]))
-    check("  seven charts", [c["key"] for c in tr["charts"]],
-          ["foilPct", "longestFlight", "turnSuccess", "cleanJibes", "cph", "pumps", "turnSide"])
+    check("  ten charts", [c["key"] for c in tr["charts"]],
+          ["foilPct", "longestFlight", "turnSuccess", "cleanJibes", "cph", "jph", "tph",
+           "best2s", "pumps", "turnSide"])
     for c in tr["charts"]:
         for line in c["lines"]:
             check(f"  {c['key']}/{line['key']}: one point per session", len(line["points"]), n)
@@ -633,7 +640,7 @@ def check_trends(digests: list[dict]) -> None:
           library.aggregate([])["totals"]["sessions"], 0)
     check("  empty library has no records", library.aggregate([])["records"], [])
     check("  single-session library still charts",
-          len(library.aggregate([digests[0]])["trends"]["charts"]), 7)
+          len(library.aggregate([digests[0]])["trends"]["charts"]), 10)
 
     # The CPH series reads the same engine field the CPH record does, session by session.
     cph = next(c for c in tr["charts"] if c["key"] == "cph")["lines"][0]
@@ -641,6 +648,37 @@ def check_trends(digests: list[dict]) -> None:
           [p["v"] for p in cph["points"]],
           [None if d["cleanJibesPerHour"] is None else round(d["cleanJibesPerHour"], 3)
            for d in ordered])
+
+    # **Rates are additive**: the two rates beside CPH read the engine's own fields, the
+    # same way CPH does, and are null (never 0) on a row that predates schema 11.
+    for key, field in (("jph", "jibesPerHour"), ("tph", "turnsPerHour")):
+        line = next(c for c in tr["charts"] if c["key"] == key)["lines"][0]
+        check(f"  {key} == the engine's summary.{field}",
+              [p["v"] for p in line["points"]],
+              [None if d.get(field) is None else round(d[field], 3) for d in ordered])
+    # A row written before schema 11 carries neither rate, and there is no honest way to
+    # divide for it: the point is a gap, never a zero (`_jph`).
+    check("  a pre-schema-11 row has no JPH and no TPH",
+          (library._jph({"id": "old"}), library._tph({"id": "old"})), (None, None))
+
+    # The one speed series, and the one chart whose points carry a certification.
+    best2s = next(c for c in tr["charts"] if c["key"] == "best2s")
+    check("  best 2 s is knots", best2s["unit"], "kn")
+    check("  best 2 s series == the digests' own records",
+          [p["v"] for p in best2s["lines"][0]["points"]],
+          [None if (d.get("records") or {}).get("best2sKn") is None
+           else round(d["records"]["best2sKn"], 3) for d in ordered])
+    check("  every best-2s point says whether it can be certified",
+          all("certified" in p for p in best2s["lines"][0]["points"]), True)
+    check("  and only the speed chart does",
+          any("certified" in p for c in tr["charts"] if c["key"] != "best2s"
+              for l in c["lines"] for p in l["points"]), False)
+    check("  a class-(c) point is not certified",
+          [p["certified"] for p in best2s["lines"][0]["points"]],
+          [d.get("sourceClass") != "c" for d in ordered])
+    check("  the chart says so once for its head",
+          best2s["uncertified"],
+          any(d.get("sourceClass") == "c" for d in ordered))
 
     # Weeks: ISO Monday buckets in the session's own local time, zero-filled.
     weeks = tr["weeks"]

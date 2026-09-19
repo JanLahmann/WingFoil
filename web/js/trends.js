@@ -201,8 +201,12 @@ function draw(agg, trendAgg = agg) {
   for (const chart of trendAgg.trends.charts) {
     const box = document.createElement("div");
     box.className = "trend-chart";
+    // The head carries the mark once when the chart holds a value no recording could
+    // certify (`library._trends`), and the points that set it carry it again below — the
+    // same word, and the same reason, the records table uses.
     box.innerHTML = `<div class="trend-head"><h4>${esc(chart.label)}</h4>` +
       (chart.unit ? `<span class="trend-unit">${esc(chart.unit)}</span>` : "") +
+      (chart.uncertified ? UNCERTIFIED : "") +
       `</div><div class="figure"></div>`;
     charts.appendChild(box);
     drawChart(box.querySelector(".figure"), chart, trendAgg.trends.sessions);
@@ -499,14 +503,23 @@ function drawChart(host, chart, sessions) {
     for (const p of line.points) {
       if (p.v === null) continue;
       last = p;
-      const dot = svg("circle", { cx: X(p.i), cy: Y(p.v), r: 3.2, fill: style.color,
-                                  stroke: C.surface, "stroke-width": 1.2 }, root);
+      // A point whose value no recording could certify is drawn **hollow**: same place,
+      // same colour, an open ring instead of a filled dot, so the line still reads as one
+      // series and the eye can still see which afternoons it may not trust. Shape rather
+      // than a second hue, so it survives a colour-vision check — the rule the dashed
+      // second line already follows.
+      const open = p.certified === false;
+      const dot = svg("circle", { cx: X(p.i), cy: Y(p.v), r: open ? 3.6 : 3.2,
+                                  fill: open ? C.surface : style.color,
+                                  stroke: open ? style.color : C.surface,
+                                  "stroke-width": open ? 1.8 : 1.2 }, root);
       dot.dataset.session = p.id;
       dot.style.cursor = "pointer";
       const s = sessions[p.i] || {};
       const html = `<b>${esc(sessionLabel(s, s.id))}</b><br>${esc(localDate(s))}<br>` +
                    `${esc(chart.label)} · ${esc(line.label)}: ` +
-                   `<b>${nf(p.v, 2)}</b> ${esc(chart.unit)}`;
+                   `<b>${nf(p.v, 2)}</b> ${esc(chart.unit)}` +
+                   (open ? "<br>uncertified — speed from positions" : "");
       dot.addEventListener("pointerenter", (ev) => showTip(ev, html));
       dot.addEventListener("pointermove", (ev) => showTip(ev, html));
       dot.addEventListener("pointerleave", hideTip);

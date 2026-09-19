@@ -111,9 +111,20 @@ public struct TrendPoint: Sendable, Identifiable, Equatable {
     /// Trends screen adds beside the rates. nil, never 0, on a row that has no count.
     public var cleanJibes: Int?
     public var cleanJibesPerHour: Double?
+    /// **Rates are additive.** JPH says he got away with the jibes, TPH says how busy the
+    /// afternoon was, CPH says he rode them — three questions, three lines on the Trends
+    /// page, in that order. The engine's own fields (schema v17); nil, never 0, on a row the
+    /// v17 sweep has not reached (docs/algorithms.md "Session rates").
+    public var jibesPerHour: Double?
+    public var turnsPerHour: Double?
     public var avgPumpsToTakeoff: Double?
     public var portSharePct: Double?
     public var best2sKn: Double?
+    /// Could this recording certify a speed? A class-(c) session differentiated its speed
+    /// from positions, which reads high, so its `best2sKn` is drawn *marked* — the same rule
+    /// the Records table applies to an all-time best, and the analyzer's `library._stamp`
+    /// to a trend point (docs/algorithms.md, "Source classes").
+    public var certified: Bool = true
     /// Turn outcomes split by the tack the turn was *entered* on. Zero-valued (and so
     /// nil-reporting) when the session has no per-turn rows — an old row imported before
     /// the child tables existed, or a session with no counted turns at all.
@@ -140,9 +151,12 @@ public struct TrendPoint: Sendable, Identifiable, Equatable {
         turnSuccessPct = (row.turnsCounted ?? 0) > 0 ? row.turnSuccessPct : nil
         cleanJibes = row.jibesSuccessful
         cleanJibesPerHour = row.cleanJibesPerHour
+        jibesPerHour = row.jibesPerHour
+        turnsPerHour = row.turnsPerHour
         avgPumpsToTakeoff = row.avgPumpsToTakeoff
         portSharePct = row.portSharePct
         best2sKn = row.best2sKn
+        certified = row.sourceClass != "c"
         self.turnSides = turnSides
     }
 }

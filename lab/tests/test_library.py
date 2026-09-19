@@ -52,6 +52,19 @@ def entry(ident: str, day: str, epoch: float, **overrides) -> dict:
         clean, duration = e["turns"].get("jibesSuccessful"), e["durationS"]
         e["cleanJibesPerHour"] = (None if clean is None or not duration
                                   else clean * 3600.0 / duration)
+    # The other two engine rates (schema 11), on the same footing as CPH: stated by the
+    # engine, and consistent with the counts this entry carries. Their numerators are the
+    # *dry* ones, so a fellIn tally reduces them — which is what makes them a different
+    # number from `jibes / hour` and worth their own line (docs/algorithms.md "Session rates").
+    fell = (e["turns"].get("outcomes") or {}).get("fellIn") or 0
+    if "jibesPerHour" not in overrides:
+        jibes, duration = e["turns"].get("jibes"), e["durationS"]
+        e["jibesPerHour"] = (None if jibes is None or not duration
+                             else max(jibes - fell, 0) * 3600.0 / duration)
+    if "turnsPerHour" not in overrides:
+        counted, duration = e["turns"].get("counted"), e["durationS"]
+        e["turnsPerHour"] = (None if counted is None or not duration
+                             else max(counted - fell, 0) * 3600.0 / duration)
     return e
 
 
@@ -282,9 +295,49 @@ def test_the_clean_jibe_series_are_per_session_and_hole_tolerant():
     old.pop("cleanJibesPerHour")
     charts = {c["key"]: c for c in library.aggregate([good, old])["trends"]["charts"]}
     assert [c for c in charts] == ["foilPct", "longestFlight", "turnSuccess", "cleanJibes",
-                                   "cph", "pumps", "turnSide"]
+                                   "cph", "jph", "tph", "best2s", "pumps", "turnSide"]
     assert [p["v"] for p in charts["cleanJibes"]["lines"][0]["points"]] == [5.0, None]
     assert [p["v"] for p in charts["cph"]["lines"][0]["points"]] == [5.0, None]
+
+
+def test_the_three_rates_are_drawn_side_by_side_and_read_the_engine():
+    """**Rates are additive.** CPH keeps its line and JPH and TPH get one each, in that
+    order, each reading its own engine field rather than dividing a count for itself."""
+    a = entry("a", "2026-08-03", 1000.0, jibesPerHour=25.1, turnsPerHour=30.4,
+              cleanJibesPerHour=12.8)
+    # A library saved before schema 11 carries neither rate — a hole in two lines, not a
+    # pair of zeroes, because the dry numerators were never stored to divide with.
+    old = entry("old", "2026-08-10", 2000.0)
+    old.pop("jibesPerHour")
+    old.pop("turnsPerHour")
+    charts = {c["key"]: c for c in library.aggregate([a, old])["trends"]["charts"]}
+    assert charts["cph"]["unit"] == "clean jibes / h"
+    assert charts["jph"]["unit"] == "jibes / h"
+    assert charts["tph"]["unit"] == "turns / h"
+    assert [p["v"] for p in charts["jph"]["lines"][0]["points"]] == [25.1, None]
+    assert [p["v"] for p in charts["tph"]["lines"][0]["points"]] == [30.4, None]
+
+
+def test_the_best_2s_series_is_knots_and_marks_what_it_cannot_certify():
+    """The one speed series. A class-(c) session differentiated its speed from positions,
+    so the point is drawn and drawn *marked* — the same rule the records table applies."""
+    watch = entry("watch", "2026-08-03", 1000.0, records={"best2sKn": 14.2})
+    gpx = entry("gpx", "2026-08-10", 2000.0, sourceClass="c",
+                records={"best2sKn": 15.9})
+    blank = entry("blank", "2026-08-11", 3000.0, records={})
+    charts = {c["key"]: c for c in
+              library.aggregate([watch, gpx, blank])["trends"]["charts"]}
+    best = charts["best2s"]
+    assert (best["label"], best["unit"], best["speed"]) == ("Best 2 s", "kn", True)
+    assert [p["v"] for p in best["lines"][0]["points"]] == [14.2, 15.9, None]
+    assert [p["certified"] for p in best["lines"][0]["points"]] == [True, False, True]
+    assert best["uncertified"] is True
+    # No class-(c) session in the library, no mark on the chart at all.
+    assert {c["key"]: c for c in library.aggregate([watch])["trends"]["charts"]
+            }["best2s"]["uncertified"] is False
+    # And the certification is the speed chart's alone: nothing else claims a speed.
+    assert not any("certified" in p for key, c in charts.items() if key != "best2s"
+                   for line in c["lines"] for p in line["points"])
 
 
 # ------------------------------------------------------------------------- periods
@@ -585,7 +638,7 @@ def test_the_digest_carries_the_engines_verdict():
                                   "distanceKm": 0.012}},
            "meta": {"startUtc": "2026-09-14T08:00:00Z"}}
     d = library.digest(doc, "junk.fit")
-    assert d["schema"] == library.SCHEMA == 10
+    assert d["schema"] == library.SCHEMA == 11
     assert (d["isSession"], d["notASessionReason"]) == (False, "no_distance")
     # A document from an older engine carries no keys, so the digest derives them.
     older = {"golden": {"summary": {"foilTimeS": 0.0, "durationS": 24.0, "distanceKm": 0.0}},

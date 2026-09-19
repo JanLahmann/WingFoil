@@ -172,8 +172,8 @@ import Testing
         }
         #expect(columns.isSuperset(of: ["longestDryStreak", "longestFlewStreak"]))
         #expect(stale == harness.v1Ids.count)
-        #expect(AppDatabase.migrationNames.last == "v16")
-        #expect(AppDatabase.schemaVersion == 16)
+        #expect(AppDatabase.migrationNames.last == "v17")
+        #expect(AppDatabase.schemaVersion == 17)
 
         _ = try await harness.ingestor.reanalyzeStale()
         for session in try await harness.ingestor.allSessions() {
@@ -189,6 +189,33 @@ import Testing
     /// session span and the row's `durationS` is the raw sample span. The sweep must
     /// therefore actually fill the column — a NULL left standing would silently keep the
     /// old arithmetic for ever.
+    /// v17 denormalizes the other two engine rates. **Rates are additive**: the Trends page
+    /// draws CPH, JPH and TPH side by side, and unlike CPH these two have *no* fallback —
+    /// the dry numerators they subtract are not on the row — so the sweep has to fill them or
+    /// two charts stay empty for ever.
+    @Test func v17FillsJphAndTphFromTheEngine() async throws {
+        let harness = try migratedV1Library()
+        defer { try? FileManager.default.removeItem(at: harness.root.deletingLastPathComponent()) }
+
+        let columns = try await harness.database.writer.read { db in
+            Set(try db.columns(in: "session").map(\.name))
+        }
+        #expect(columns.isSuperset(of: ["engineJibesPerHour", "engineTurnsPerHour"]))
+
+        _ = try await harness.ingestor.reanalyzeStale()
+        for session in try await harness.ingestor.allSessions() {
+            let summary = try await harness.ingestor.analysis(for: session).summary
+            #expect(session.jibesPerHour == summary.jibesPerHour)
+            #expect(session.turnsPerHour == summary.turnsPerHour)
+            // The three are three different numbers about one afternoon, which is why all
+            // three are drawn: TPH counts every dry turn, JPH the dry jibes among them, CPH
+            // only the jibes he rode (docs/algorithms.md, "Session rates").
+            if let tph = session.turnsPerHour, let jph = session.jibesPerHour {
+                #expect(tph >= jph)
+            }
+        }
+    }
+
     @Test func v11FillsCphFromTheEngineRatherThanDividingForItself() async throws {
         let harness = try migratedV1Library()
         defer { try? FileManager.default.removeItem(at: harness.root.deletingLastPathComponent()) }
@@ -357,7 +384,7 @@ import Testing
         let queue = try DatabaseQueue()
         _ = try AppDatabase(queue)
         try queue.write { db in
-            try db.execute(sql: "INSERT INTO grdb_migrations (identifier) VALUES ('v17')")
+            try db.execute(sql: "INSERT INTO grdb_migrations (identifier) VALUES ('v18')")
             // …and the pragma deliberately left where this build wrote it, so the applied
             // list is the only thing that can raise the alarm.
             try db.execute(sql: "PRAGMA user_version = \(AppDatabase.schemaVersion)")

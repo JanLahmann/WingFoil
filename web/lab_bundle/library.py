@@ -84,7 +84,16 @@ from datetime import datetime, timedelta, timezone
 # digest already carried (`foilTimeS`, `rateDurationS`, `distanceKm`) — the one metric in this
 # module that *is* recomputed for an old row, because the alternative is a stored library
 # whose oldest junk never leaves the totals.
-SCHEMA = 10
+# v11 (19 Sep 2026) carries the other two engine rates — `jibesPerHour` and `turnsPerHour`
+# (docs/algorithms.md "Session rates"). **Rates are additive**: CPH says he rode the jibe, JPH
+# says he got away with it, TPH says how busy the afternoon was, and a trends page that draws
+# only the strictest of the three answers one of the three questions a rider asks. Copied from
+# the engine, never recomputed, for the same reason `cleanJibesPerHour` is: both numerators are
+# *dry* counts (`jibes − jibeOutcomes.fellIn`, `turnsCounted − outcomes.fellIn`) and the digest
+# has never carried `jibeOutcomes` at all, so a reader that divided for itself would publish a
+# third number under the engine's name. Null on every row written before it, where the two
+# charts simply have no point for that session — a gap in a line is "not measured".
+SCHEMA = 11
 
 # "Not a session" — the two floors (docs/algorithms.md "Not a session"). Only ever consulted
 # for a recording with no foil time at all, which is why they can be set generously.
@@ -451,6 +460,12 @@ def digest(doc, file_name: str | None = None) -> dict:
         # The engine's own strict jibe rate (0.10.0, schema 6). Copied, never recomputed:
         # `_cph` divides for a stored row that predates it and reads this everywhere else.
         "cleanJibesPerHour": _num(summ.get("cleanJibesPerHour")),
+        # The other two engine rates (0.13.0, schema 11). Same rule as CPH above: copied,
+        # never recomputed. Their numerators are the *dry* counts, and the digest carries no
+        # `jibeOutcomes` to subtract with, so there is no honest fallback — null on a row
+        # written before schema 11, and a gap in the line where that row sits.
+        "jibesPerHour": _num(summ.get("jibesPerHour")),
+        "turnsPerHour": _num(summ.get("turnsPerHour")),
         # The engine's *cleaned* session span (schema 7) — the denominator all four session
         # rates share (docs/algorithms.md "Session rates"). Deliberately beside `durationS`
         # rather than instead of it: `durationS` is the FIT's `total_elapsed_time` and it is
@@ -833,11 +848,23 @@ def _session_records(ds: list) -> list:
     return out
 
 
-def _points(ds: list, pick) -> list:
+def _points(ds: list, pick, certify: bool = False) -> list:
+    """One line's points, oldest first. `i` is the column, not a date: the per-session
+    charts are categorical.
+
+    `certify` is only ever set on a **speed** series. A class-(c) session had its speed
+    differentiated from positions rather than measured by the receiver, and a differentiated
+    speed reads high (docs/algorithms.md, "Source classes"); the point is still drawn,
+    because it is still the rider's afternoon, and it is drawn marked — the same rule, and
+    the same word, the records table applies to an all-time best (`_stamp`).
+    """
     pts = []
     for i, d in enumerate(ds):
         v = pick(d)
-        pts.append({"i": i, "id": d.get("id"), "v": None if v is None else round(v, 3)})
+        p = {"i": i, "id": d.get("id"), "v": None if v is None else round(v, 3)}
+        if certify:
+            p["certified"] = d.get("sourceClass") != "c"
+        pts.append(p)
     return pts
 
 
@@ -877,6 +904,32 @@ def _flew_through_pct(d: dict):
     return 100.0 * int(outcomes.get("flewThrough") or 0) / counted
 
 
+def _jph(d: dict):
+    """Dry jibes per hour — the engine's `summary.jibesPerHour` (0.7.0, schema 11).
+
+    Read, never derived. The numerator is `turns.jibes − turns.jibeOutcomes.fellIn` and the
+    digest carries no `jibeOutcomes`, so a row written before schema 11 has no point on this
+    chart rather than a plausible-looking wrong one.
+    """
+    return _num(d.get("jibesPerHour"))
+
+
+def _tph(d: dict):
+    """Dry counted turns per hour — the engine's `summary.turnsPerHour` (0.13.0, schema 11).
+    Same rule as `_jph`: the engine owns it, this reads it."""
+    return _num(d.get("turnsPerHour"))
+
+
+def _best2s(d: dict):
+    """The session's best 2 s, in knots (`records.best2sKn`).
+
+    The one GP3S window a rider quotes about an afternoon, and the only *speed* series on
+    this page. Knots, as everywhere else in both apps, and marked where the recording could
+    not certify it — see `_points(certify=True)`.
+    """
+    return _num((d.get("records") or {}).get("best2sKn"))
+
+
 def _side_pct(d: dict, side: str):
     """The **flew-through** share for one entry tack, or None.
 
@@ -903,6 +956,12 @@ def _trends(ds: list) -> dict:
     charts = _charts(ds)
     for c in charts:
         c.update(_y_axis(c["lines"], bool(c.get("percent"))))
+        # Does this chart hold a value no recording could certify? Answered here rather than
+        # in the renderer, so the head's badge and the marked points come from one reading of
+        # one rule (`_points(certify=True)`).
+        c["uncertified"] = any(p.get("certified") is False
+                               for line in c["lines"] for p in line["points"]
+                               if p.get("v") is not None)
     return {"sessions": [_stamp(d) for d in ds], "charts": charts, "weeks": _weeks(ds)}
 
 
@@ -982,6 +1041,25 @@ def _charts(ds: list) -> list:
         {"key": "cph", "label": "CPH", "unit": "clean jibes / h",
          "lines": [{"key": "cph", "label": "CPH", "role": "primary",
                     "points": _points(ds, _cph)}]},
+        # **Rates are additive.** CPH is the celebration number and it keeps the front
+        # screen, but it is one of three and the other two answer questions of their own:
+        # JPH is "did I get away with them", TPH is "how busy was the afternoon". They sit
+        # beside CPH rather than replacing it, in the order a rider reads them
+        # (docs/algorithms.md "Session rates"), and iOS draws the same three under the same
+        # three names.
+        {"key": "jph", "label": "JPH", "unit": "jibes / h",
+         "lines": [{"key": "jph", "label": "JPH", "role": "primary",
+                    "points": _points(ds, _jph)}]},
+        {"key": "tph", "label": "TPH", "unit": "turns / h",
+         "lines": [{"key": "tph", "label": "TPH", "role": "primary",
+                    "points": _points(ds, _tph)}]},
+        # The one speed series on the page, in knots like every other speed in both apps.
+        # `certify` marks the points a class-(c) recording set: the value is drawn, and it
+        # is drawn marked, exactly as the records table marks an all-time best it cannot
+        # certify.
+        {"key": "best2s", "label": "Best 2 s", "unit": "kn", "speed": True,
+         "lines": [{"key": "best2sKn", "label": "best 2 s", "role": "primary",
+                    "points": _points(ds, _best2s, certify=True)}]},
         {"key": "pumps", "label": "Avg pumps to takeoff", "unit": "",
          "lines": [{"key": "avgPumpsToTakeoff", "label": "pumps", "role": "primary",
                     "points": _points(ds, lambda d: _num((d.get("takeoff") or {}).get("avgPumpsToTakeoff")))}]},
