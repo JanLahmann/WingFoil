@@ -292,6 +292,12 @@ class RateConfig:
     grid_s: float = 60.0
 
 
+#: Hard ceiling on the length of the rolling-rate series -- 20 000 one-minute points is
+#: fourteen days. A guard against a recording whose clock is broken, never a rule about the
+#: session: nothing on the water reaches it and no golden moves. See `window_rates`.
+MAX_SERIES_POINTS = 20_000
+
+
 @dataclass
 class Analysis:
     track: RawTrack
@@ -673,7 +679,14 @@ def window_rates(dry_jibe_ts: list[float], wet_ts: list[float], start_t: float,
         return out
 
     hours = window_s / 3600.0
-    steps = int(math.floor((duration_s - window_s) / cfg.grid_s + 1e-9))
+    # One point a minute for as long as the session lasted -- and no longer than a session
+    # can last. `duration_s` is measured off the recording's own clock, and a recording whose
+    # clock is wrong (a download cut off mid-stream decodes as records decades apart) asks
+    # for a series of tens of millions of points. MAX_SERIES_POINTS minutes is fourteen days,
+    # twice what the phone's importer accepts as one session, so no recording reaches it and
+    # no golden moves. Twin of `SessionWindowRates.maxSeriesPoints` in the kit.
+    steps = min(int(math.floor((duration_s - window_s) / cfg.grid_s + 1e-9)),
+                MAX_SERIES_POINTS)
     out.series = [
         WindowRate(start_t + k * cfg.grid_s,
                    _count_in_window(dry_jibe_ts, start_t + k * cfg.grid_s, window_s) / hours,
