@@ -303,7 +303,7 @@ struct StravaImportTests {
     /// activity filed under something nobody picked.
     @Test func theTypeFilterTakesWhatTheRiderChoseAndWhatTheNameSays() {
         let defaults = StravaActivityType.defaults
-        #expect(defaults == [.windsurf, .kitesurf, .surfing, .workout])
+        #expect(defaults == [.windsurf, .kitesurf, .surfing, .workout, .standUpPaddling])
 
         func made(_ type: String?, _ name: String?,
                   latlng: [Double]? = [45.8, 10.8], manual: Bool? = false) -> StravaActivity {

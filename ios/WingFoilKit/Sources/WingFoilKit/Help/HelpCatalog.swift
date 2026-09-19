@@ -492,9 +492,9 @@ public enum HelpCatalog {
                       detail: "Tap the sessions you want, or use Import all new. Anything "
                           + "already in your library is marked and cannot be picked twice."),
                 .init(term: "Which activities are offered",
-                      detail: "Windsurf, Kitesurf, Surf and Workout by default. Sail and "
-                          + "Stand-up paddling can be switched on. Anything named wing, "
-                          + "foil, kite, surf or SUP is offered too."),
+                      detail: "Windsurf, Kitesurf, Surf, Workout and Stand-up paddling by "
+                          + "default. Sail can be switched on. Anything named wing, foil, "
+                          + "kite, surf or SUP is offered too."),
                 .init(term: "Keep it automatic",
                       detail: "Once one session has come in this way, a toggle appears: "
                           + "CleanJibe then checks Strava whenever you open the app."),

@@ -10,10 +10,11 @@ import Foundation
 /// There is no inference available here that would be better than asking, so the rider
 /// picks the set once (Import → Strava) and it is remembered.
 ///
-/// The four defaults are the four that actually hold wingfoil sessions in the wild. `sail`
-/// and `standUpPaddling` are off by default rather than absent: for most people those two
-/// buckets hold boats and flat-water paddling, and a default that imports somebody's
-/// dinghy racing is worse than one they have to switch on.
+/// The five defaults are the five that actually hold wingfoil sessions in the wild. Stand-up
+/// paddling joined them on 19 September 2026 (Jan): a rider's Strava filed his wing sessions
+/// under SUP, and a foil board on a SUP watch profile is common. `sail` stays off by default
+/// rather than absent: for most people that bucket holds boats, and a default that imports
+/// somebody's dinghy racing is worse than one they have to switch on.
 public enum StravaActivityType: String, Sendable, CaseIterable, Identifiable, Codable {
     case windsurf = "Windsurf"
     case kitesurf = "Kitesurf"
@@ -37,7 +38,7 @@ public enum StravaActivityType: String, Sendable, CaseIterable, Identifiable, Co
     }
 
     public static let defaults: Set<StravaActivityType> = [.windsurf, .kitesurf, .surfing,
-                                                           .workout]
+                                                           .workout, .standUpPaddling]
 }
 
 /// One entry of `GET /api/v3/athlete/activities` (Strava's `SummaryActivity`).

@@ -374,7 +374,7 @@
                 "beta",
                 "dev"
               ],
-              "detail" : "Windsurf, Kitesurf, Surf and Workout by default. Sail and Stand-up paddling can be switched on. Anything named wing, foil, kite, surf or SUP is offered too.",
+              "detail" : "Windsurf, Kitesurf, Surf, Workout and Stand-up paddling by default. Sail can be switched on. Anything named wing, foil, kite, surf or SUP is offered too.",
               "term" : "Which activities are offered"
             },
             {
