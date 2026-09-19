@@ -2591,6 +2591,40 @@ final class SessionStore {
         }
     }
 
+    // MARK: The direct transfer
+
+    /// What the last session the watch sent straight over looked like
+    /// (docs/transfer-format.md §5). Nil until one has arrived.
+    var lastDirectTransfer: DirectTransferReceipt? { DirectTransferInbox.shared.lastReceipt }
+
+    /// Starts taking delivery of direct transfers and imports anything already waiting.
+    ///
+    /// Called once at launch, unconditionally, for the same reason the Apple Watch sweep is:
+    /// a stream may have completed while this app was killed between two pages, and the file
+    /// it became is still on disk. The stale sweep runs in the same pass — a transfer the
+    /// rider walked away from is imported a day later as far as it got.
+    func watchForDirectTransfers() async {
+        DirectTransferInbox.shared.onArrival = { [weak self] in
+            Task { await self?.importDirectInbox() }
+        }
+        DirectTransferInbox.shared.sweepStaleStreams()
+        await importDirectInbox()
+    }
+
+    /// Imports every assembled stream in the inbox, then deletes it.
+    ///
+    /// Deleting only after `importFiles` returns is deliberate: the file is the only copy on
+    /// this device, and the library's own ±60 s dedupe makes importing one twice cost
+    /// nothing. Losing it costs an afternoon.
+    private func importDirectInbox() async {
+        let pending = DirectTransferInbox.pending()
+        guard !pending.isEmpty else { return }
+        // `.watchDirect`, never `.watch` — that one is the summary card, and a row tagged
+        // with it would claim a provenance this session does not have.
+        await importFiles(urls: pending, source: .watchDirect)
+        for url in pending { try? FileManager.default.removeItem(at: url) }
+    }
+
     func refreshCompanionState() {
         companion.refresh()
         companionState = companion.state

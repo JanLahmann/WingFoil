@@ -82,8 +82,9 @@ struct LibraryFilterMenu: View {
     /// brought nothing in is not offered — a filter that can only ever empty the list is not
     /// a filter, it is a trap.
     private var sources: [ImportSource] {
-        let order: [ImportSource] = [.watch, .appleWatch, .icu, .strava, .appleHealth,
-                                     .file, .airdrop, .gdpr, .example, .fixtures]
+        let order: [ImportSource] = [.watchDirect, .watch, .appleWatch, .icu, .strava,
+                                     .appleHealth, .file, .airdrop, .gdpr, .example,
+                                     .fixtures]
         return order.filter { source in library.contains { source.isNamed(in: $0.importSource) } }
     }
 

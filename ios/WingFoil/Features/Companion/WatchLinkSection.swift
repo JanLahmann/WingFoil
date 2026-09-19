@@ -46,6 +46,11 @@ struct WatchLinkSection: View {
                 // send, the phone confirms what arrived.
                 LabeledContent("Link probe", value: probe)
             }
+            if let direct = store.lastDirectTransfer {
+                // The session the watch sent straight over (docs/transfer-format.md): when
+                // it was ridden, how many pages crossed, how long they took.
+                LabeledContent("Last direct session", value: Self.directSummary(direct))
+            }
             if let last = store.lastCardAt {
                 // `.current` deliberately: when the watch last reached this phone, which is an
                 // event on the reader's clock rather than a moment in any session.
@@ -117,6 +122,18 @@ struct WatchLinkSection: View {
             }
             .disabled(!state.canSend || store.isSendingWatchMap)
         }
+    }
+
+    /// "18 Sep 14:07 · 13 pages · 26 s", and "cut short" where the transfer stopped part
+    /// way. Three facts on one line, in the order they answer "did it work": which session,
+    /// how much of it, how long it took. `.current` deliberately for the date — this row is
+    /// about a transfer to this phone, and the clock is the reader's.
+    static func directSummary(_ receipt: DirectTransferReceipt) -> String {
+        var parts = [Fmt.date(receipt.sessionStart, zone: .current),
+                     "\(receipt.pages) page\(receipt.pages == 1 ? "" : "s")",
+                     "\(Int(receipt.seconds.rounded())) s"]
+        if receipt.cutShort { parts.append("cut short") }
+        return parts.joined(separator: " · ")
     }
 
     /// Sixteen points would be false precision on a link whose whole job is telling port

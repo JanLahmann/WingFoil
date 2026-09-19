@@ -53,6 +53,11 @@ struct WingFoilApp: App {
                 // DEV only, with the rest of the Garmin link (docs/channels.md).
                 #if DEV
                 .task { await store.watchForCompanionCards() }
+                // And the recording behind the card, when the watch sends it straight over
+                // (docs/transfer-format.md). A separate task because it is a sweep and not a
+                // stream: the pages arrive through the same link, and this only picks up
+                // what they became.
+                .task { await store.watchForDirectTransfers() }
                 #endif
                 // The Apple Watch recorder's own link. A separate WCSession delegate from
                 // the Garmin one above and unrelated to it: this one receives whole

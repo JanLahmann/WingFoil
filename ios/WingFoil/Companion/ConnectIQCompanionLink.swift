@@ -92,6 +92,14 @@ final class ConnectIQCompanionLink: NSObject, CompanionLink {
 
         ConnectIQ.sharedInstance().initialize(withUrlScheme: Self.urlScheme,
                                               uiOverrideDelegate: self)
+        // The direct transfer's two answers go out over this link and nowhere else, so the
+        // inbox is handed them here rather than reaching for the SDK itself.
+        DirectTransferInbox.shared.acknowledge = { [weak self] session, stream, page in
+            self?.acknowledgeDirect(session: session, stream: stream, page: page)
+        }
+        DirectTransferInbox.shared.requestPages = { [weak self] session, stream, pages in
+            self?.requestDirectPages(session: session, stream: stream, pages: pages)
+        }
         // A watch the rider already chose survives a relaunch: IQDevice is reconstructable
         // from three strings, so the whole "go to GCM and pick a watch" dance happens once.
         if let stored = StoredDevice.load() { adopt(stored.device) }
@@ -146,6 +154,28 @@ final class ConnectIQCompanionLink: NSObject, CompanionLink {
         }
         guard result == .success else {
             throw CompanionLinkError.transmitFailed(NSStringFromSendMessageResult(result))
+        }
+    }
+
+    /// **The two answers the direct transfer sends back** (docs/transfer-format.md §3).
+    ///
+    /// Integers in, the dictionary built here: the inbox never holds a payload, so nothing
+    /// un-`Sendable` crosses between it and the radio. Failure is swallowed on purpose — a
+    /// page the watch was not acknowledged for is a page it sends again, which is exactly
+    /// what an unacknowledged page should cause.
+    func acknowledgeDirect(session: Int, stream: Int, page: Int) {
+        Task { [weak self] in
+            try? await self?.transmit(DirectPage.ack(sessionStartEpochS: session,
+                                                     stream: stream, index: page))
+        }
+    }
+
+    /// The need list, sent once the last page has arrived — the gaps, or nothing at all,
+    /// which is what tells the watch it may free the stream.
+    func requestDirectPages(session: Int, stream: Int, pages: [Int]) {
+        Task { [weak self] in
+            try? await self?.transmit(DirectPage.need(sessionStartEpochS: session,
+                                                      stream: stream, pages: pages))
         }
     }
 
@@ -316,6 +346,20 @@ extension ConnectIQCompanionLink: IQAppMessageDelegate {
             os_log("link probe %d B #%d: %d bytes arrived", size, seq, got)
             Task { @MainActor in
                 self.lastProbe = "\(size / 1024) KB #\(seq): \(got) bytes arrived"
+            }
+            return
+        }
+        // A page of the direct transfer (docs/transfer-format.md §3). Decoded HERE, on the
+        // delegate thread, so that only a `Sendable` `DirectPage` crosses to the main actor
+        // — the payload itself is an untyped ObjC dictionary and must not. The card path
+        // below is untouched: a message is one or the other, told apart by its key.
+        if let dictionary = message as? [AnyHashable: Any],
+           dictionary[DirectPage.messageKey] != nil {
+            do {
+                let page = try DirectPage(payload: message)
+                Task { @MainActor in DirectTransferInbox.shared.accept(page) }
+            } catch {
+                Task { @MainActor in DirectTransferInbox.shared.reject() }
             }
             return
         }
