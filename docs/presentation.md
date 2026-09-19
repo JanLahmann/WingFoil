@@ -1467,6 +1467,9 @@ three numbers, none of them clean jibes.
 | **Flew-through rate** | counted turns that never lost the foil, over counted turns |
 | **Clean jibes** | `jibesSuccessful`, per session |
 | **CPH** | `cleanJibesPerHour` |
+| **JPH** | `jibesPerHour` — dry jibes per hour |
+| **TPH** | `turnsPerHour` — dry counted turns per hour |
+| **Best 2 s** | `records.best2sKn`, in knots |
 | **Flew through by entry tack** | the flew-through share of the turns *entered* on each tack |
 
 Plus what only one platform can draw: iOS adds "Pumps to takeoff" and "Port / starboard",
@@ -1474,6 +1477,25 @@ the analyzer adds "Avg pumps to takeoff". The entry-tack split moved from the sc
 to the outcome on the web side, which is digest schema 8 (`bySide.flewThroughPct`); a
 session stored before it has no point on that chart, which is what a gap in a line already
 means.
+
+**The three rates are one row of this table, not one metric with two optional extras.**
+Rates are additive (docs/algorithms.md, "Session rates"): TPH says how busy the afternoon
+was, JPH says he got away with the jibes, CPH says he rode them, and a page that draws only
+the strictest of the three answers one of the three questions a rider asks. They sit in that
+order, each reading its own engine field — the two new ones are digest **schema 11** and GRDB
+**v17**, and neither is derived by a reader, because both numerators are *dry* counts and
+neither the digest nor the session row carries the jibe-level `fellIn` tally to subtract with.
+A row written before them has a gap in those two lines, never a zero.
+
+**Best 2 s is the one speed series, and the only chart that marks its own points.** Knots on
+both platforms, like every other speed in both apps. A class-(c) session differentiated its
+speed from positions, which reads high, so its point is drawn — it is still his afternoon —
+and drawn marked, the same claim in the same word the Records table makes about an all-time
+best. The two platforms say it in the idiom each already has: the analyzer draws that point
+as an **open ring** (shape, not a second hue, so it survives a colour-vision check) with the
+word in its tooltip and an `uncertified` badge on the chart head, and iOS writes one caption
+line under the chart — *"1 of 10 had no speed channel…"* — beside the caption it already uses
+for sessions that cannot report a metric at all.
 
 ## Trend weeks — ISO-8601, Monday, local
 
@@ -1695,7 +1717,12 @@ described.
 
 `fixtures/periods/periods.expected.json` (ten synthetic afternoons + Python's answer) is
 asserted by `PeriodTests` on iOS and re-derived by `verify_library.py` §6b, so a stale file
-cannot pin the phone to an answer the analyzer no longer gives. `verify_library.py` §6 asks
+cannot pin the phone to an answer the analyzer no longer gives. The same file now carries a
+`trends` block — every chart of "Trend charts — one set, one name each" over those same ten
+afternoons — which `TrendSeriesTests` reads back through `LibraryStore.trend`, line by line
+and session by session. Three of its charts hold no point at all (the fixture carries no turn
+outcomes, no per-side split and no pump tally) and that half is as load-bearing as the rest:
+both platforms have to answer *absent*, never a flattering zero. `verify_library.py` §6 asks
 the third question neither can — handed the fifteen real recordings in `fixtures/sessions/`,
 does the rule find the week a person would name? (It finds one Garda week of twelve
 afternoons, 31 July to 7 August 2026.) `card_parity.mjs` dumps the period card beside the
