@@ -173,7 +173,7 @@ c through GPX and TCX as well. The app's `sourceClass` column is the source of t
 | feature | channel | note |
 |---|---|---|
 | iPad and "Designed for iPad" on the Mac | dev | release and beta build for iPhone only |
-| A live view on the Apple Watch (foil state, flights, records, turn verdicts on the wrist, as the Garmin app shows them) | dev, an idea | listed 16 Sep 2026 so testers can ask for it first; nothing is built — the watch app records, the kit does not yet run on watchOS and the live detectors exist only in Monkey C |
+| A live view on the Apple Watch (foil state, flights, records, turn verdicts on the wrist, as the Garmin app shows them) | beta list, as a plan | listed 16 Sep 2026 as a dev idea; on the **beta** list since 19 Sep (Jan: name it on the beta outlook explicitly), with the row's first word saying *Planned*, because nothing is built — the watch app records, the kit does not yet run on watchOS and the live detectors exist only in Monkey C |
 
 ## The watch — the same three streams
 
