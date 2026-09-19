@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v75";     // v75: two links and two doors in the site nav, /help/ from the app's help catalogue, /watches/ and /whats-new/ absorbed (v74: release notes for builds 76 and 77 (v73: v73: the apple watch live view is on the beta outlook as a plan (v72: v72: the Strava fall sentence on /start and /watches, the what's-new cards from one source (v71: v71: the store version reads 0.9.13 (v70: v67: Apple Watch comes right after Garmin wherever watches are listed; the routes lose their letters and gain a class pill; the /start/ folds say "Show the N steps"; the site nav keeps its right gutter on a phone (v65: every rider sentence on the site is in the voice of docs/voice.md (v60: the site is cut in half — the front door keeps the card and two links, /start/ folds its routes, "How it works" becomes "What it measures", one footer everywhere; v59: the example session is a button, the analyzer gains a glossary and a feedback door; v58: the copy contract on the pages)))
+const VERSION = "v76";     // v75: two links and two doors in the site nav, /help/ from the app's help catalogue, /watches/ and /whats-new/ absorbed (v74: release notes for builds 76 and 77 (v73: v73: the apple watch live view is on the beta outlook as a plan (v72: v72: the Strava fall sentence on /start and /watches, the what's-new cards from one source (v71: v71: the store version reads 0.9.13 (v70: v67: Apple Watch comes right after Garmin wherever watches are listed; the routes lose their letters and gain a class pill; the /start/ folds say "Show the N steps"; the site nav keeps its right gutter on a phone (v65: every rider sentence on the site is in the voice of docs/voice.md (v60: the site is cut in half — the front door keeps the card and two links, /start/ folds its routes, "How it works" becomes "What it measures", one footer everywhere; v59: the example session is a button, the analyzer gains a glossary and a feedback door; v58: the copy contract on the pages)))
 // The cache *names* keep the historical prefix on purpose: the activate handler below
 // deletes every cache starting with it, so renaming the prefix would strand every v1–v13
 // cache on every device that ever visited, forever. Nobody sees these strings.
@@ -64,13 +64,11 @@ const APP_SHELL = [
   // precaching it costs nothing and buys the offline visitor a way back out of the app.
   "./",
   "index.html",
-  // /learn/ joined them on 14 September 2026, when the homepage's long half moved there.
-  // It is the ONE outbound link the front door now offers a reader who wants more than the
-  // card and the three names, and an offline visitor who followed it into a 503 would be
-  // reading a page whose only invitation is broken. ~30 KB of HTML, no pictures of its own
-  // above the fold, and the four it does carry are lazy and excluded below like the rest.
-  "learn/",
-  "learn/index.html",
+  // /help/ replaced /learn/ on 19 September 2026: it is the app's own help catalogue,
+  // rendered from docs/copy/help.json, and the one outbound link the front door offers a
+  // reader who wants more than the card. Precached for the same reason /learn/ was.
+  "help/",
+  "help/index.html",
   "app/",
   "app/index.html",
   "app/manifest.webmanifest",
@@ -78,10 +76,20 @@ const APP_SHELL = [
   "css/style.css",
   "css/home.css",
   "js/app.js",
+  // The browser app's shell since 19 September 2026: the four tabs, the app menu, the
+  // settings and help pages, and the copy those pages share with the phone.
+  "css/app.css",
+  "js/appshell.js",
+  "js/appsettings.js",
+  "js/appcopy.js",
   "js/cardmap.js",
   "js/cardstats.js",
   "js/copy.js",
   "js/icu.js",
+  // The iOS half of the install offer (Chrome's half is inline in app/index.html and costs
+  // the cache nothing). Precached like the rest of js/: it is 3 KB and the installed app
+  // must not fetch a file to render its own chrome.
+  "js/install.js",
   "js/lexicon.js",
   "js/library.js",
   "js/render.js",

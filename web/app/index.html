@@ -936,6 +936,10 @@
     addEventListener("appinstalled", function () { bar.hidden = true; remember(); });
   })();
 </script>
+<!-- The other half of the same offer: iOS Safari, which fires no `beforeinstallprompt` and
+     can only be told the gesture. A module and deferred on purpose — nothing above depends
+     on it, and an install hint must never be in front of the analyzer loading. -->
+<script type="module" src="../js/install.js"></script>
 <script type="module" src="../js/app.js"></script>
 <!-- The three moving parts of the page chrome, identical on every document here.
      `--topbar-h` is MEASURED rather than guessed: the topbar is sticky, carries the site nav

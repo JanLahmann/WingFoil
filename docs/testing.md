@@ -1,5 +1,35 @@
 # Testing & Verification
 
+## Getting started on a second machine
+
+Every check in this file is reachable from the `Makefile` at the repository root, and every
+recipe in it is a command written down here or in `web/README.md`. `make -n <target>` prints
+the command without running it, which is the fastest way to see what a target really does.
+
+```sh
+make all            # lab-test, kit-test, web-verify, ios-build — everything unattended
+make lab-test       # cd lab && uv run pytest -q
+make kit-test       # cd ios/WingFoilKit && swift test
+make ios-build      # xcodegen, then the three channels with signing off
+make web-verify     # bundle_lab --check, verify_links, check_release_copy, check_voice
+make web-bundle     # regenerate web/lab_bundle after an engine change
+make garmin-package # garmin/tools/package.sh, the three .iq files
+```
+
+The toolchain the repo pins, and what a second machine therefore needs: Xcode 26.6 (the
+project asks for Swift 6.0 and iOS 18.0), XcodeGen 2.46.0 and at least 2.42.0
+(`minimumXcodeGenVersion` in `ios/project.yml`), uv 0.11.19, Python 3.12 and at least 3.11
+(`requires-python` in `lab/pyproject.toml`), and Connect IQ SDK 9.2 for the watch. `uv`
+creates `lab/.venv` itself on the first `make lab-test`.
+
+**Two things a clean checkout cannot do, and why `make all` leaves them out.**
+`garmin-package` signs with `garmin/developer_key.der`, which is Jan's and is not in the
+repo, so it would fail through no fault of the checkout. And three of the web checks need
+that lab venv plus the fixture corpus rather than the stdlib, so they are run by hand from
+`lab/.venv/bin/python` when the engine moves: `web/tools/verify_web_entry.py`,
+`verify_library.py` and `verify_presentation.py`. `web/README.md` "Verification" lists all
+eleven web checks and says which of them `verify_links.py` already runs for you.
+
 ## Golden files
 
 `fixtures/goldens/<fixture>.expected.json` — written by `lab` (`wingfoil_lab.goldens`) once a
