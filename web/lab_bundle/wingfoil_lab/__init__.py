@@ -18,4 +18,4 @@ Module map (mirrors the analysis pipeline in docs/plan.md §3.3):
 Canonical parameters live in docs/algorithms.md — keep code defaults in sync.
 """
 
-ENGINE_VERSION = "0.19.0"
+ENGINE_VERSION = "0.20.0"

@@ -3,6 +3,12 @@
 Everything is time/distance-window based and dt-aware: windows are found by
 interpolating cumulative distance vs time (trapezoid-integrated Doppler), never by
 sample counts. Windows never span gaps (per-segment). No minimum-speed floor anywhere.
+
+One rule reads the source class (docs/algorithms.md "The plausibility gate"): on an
+**uncertified** track — `capabilities.has_speed` false, speed differentiated from
+positions — a window shorter than `SHORT_WINDOW_S` is accepted only if it stays within
+`UNCERTIFIED_SHORT_WINDOW_MAX` of the best 10 s. Certified Doppler records are never
+gated.
 """
 
 from __future__ import annotations
@@ -21,6 +27,13 @@ ALPHA_MAX_DISTANCE_M = 500.0    # total path length cap
 ALPHA_MIN_PATH_M = 250.0        # candidate prune: path >= this ...
 ALPHA_MIN_COG_SPREAD_DEG = 90.0  # ... AND COG spread >= this
 NM_M = 1852.0
+
+#: The reference window of the plausibility gate, and the boundary it guards: a record
+#: whose window is shorter than this is the one a single bad fix can carry.
+SHORT_WINDOW_S = 10.0
+#: K: how far above the best 10 s a shorter *uncertified* window may still be believed.
+#: 1.2, from the certified corpus (p95 of best2s/best10s 1.114, max 1.159) with margin.
+UNCERTIFIED_SHORT_WINDOW_MAX = 1.2
 
 
 @dataclass
@@ -46,15 +59,30 @@ class GP3SRecords:
     windows: dict[str, RecordWindow | list[RecordWindow]] = field(default_factory=dict)
 
 
-def records(clean: CleanTrack) -> GP3SRecords:
+def records(clean: CleanTrack, certified: bool | None = None) -> GP3SRecords:
+    """The record set. `certified` defaults to the track's own `has_speed` flag; pass it
+    to ask the question of a track whose capabilities are not to hand."""
     segs = _segment_arrays(clean)
     out = GP3SRecords()
     out.distance_m = float(sum(s["c"][-1] for s in segs))
+    if certified is None:
+        certified = bool(clean.capabilities.has_speed)
 
-    for name, dur in (("best2s", 2.0), ("best10s", 10.0), ("bestHour", 3600.0)):
-        hit = _best_duration_window(segs, dur)
+    # The 10 s peak is found first because on an uncertified track it is the reference the
+    # shorter windows are held to: a best 2 s more than K x the best 10 s is one bad fix,
+    # not a run, and the search falls back to the fastest 2 s that passes.
+    hits: dict[str, tuple[float, float]] = {}
+    ten = _best_duration_window(segs, SHORT_WINDOW_S)
+    if ten is not None:
+        hits["best10s"] = ten
+    cap = None if certified or ten is None else ten[0] * UNCERTIFIED_SHORT_WINDOW_MAX
+    for name, dur in (("best2s", 2.0), ("bestHour", 3600.0)):
+        hit = _best_duration_window(segs, dur, cap_mps=cap if dur < SHORT_WINDOW_S else None)
         if hit is not None:
-            mps, start = hit
+            hits[name] = hit
+    for name, dur in (("best2s", 2.0), ("best10s", SHORT_WINDOW_S), ("bestHour", 3600.0)):
+        if name in hits:
+            mps, start = hits[name]
             _set_kn(out, name, mps)
             out.windows[name] = RecordWindow(start, dur)
 
@@ -104,12 +132,16 @@ def _segment_arrays(clean: CleanTrack) -> list[dict]:
 
 
 def _best_duration_window(segs: list[dict], dur: float,
-                          exclude: list[tuple[float, float]] = ()) -> tuple[float, float] | None:
+                          exclude: list[tuple[float, float]] = (),
+                          cap_mps: float | None = None) -> tuple[float, float] | None:
     """Max average Doppler speed over any window of `dur` seconds -> (mps, start_t).
 
     Candidate starts: every sample time (forward search) and every sample time minus
     `dur` (backward search -- the classic 1 h bug guard), plus exclusion-zone edges.
     Cumulative distance is interpolated at the window edges.
+
+    `cap_mps` is the plausibility gate: candidates faster than it are not eligible, so
+    the answer is the fastest window that *passes*. None means no gate.
     """
     best_v, best_s = -math.inf, None
     for s in segs:
@@ -126,6 +158,10 @@ def _best_duration_window(segs: list[dict], dur: float,
         if cc.size == 0:
             continue
         avg = (np.interp(cc + dur, t, c) - np.interp(cc, t, c)) / dur
+        if cap_mps is not None:
+            avg = np.where(avg <= cap_mps + 1e-12, avg, -math.inf)
+            if not np.isfinite(avg).any():
+                continue
         k = int(np.argmax(avg))
         if avg[k] > best_v:
             best_v, best_s = float(avg[k]), float(cc[k])
