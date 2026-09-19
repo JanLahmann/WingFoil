@@ -14,6 +14,60 @@ apart is a history, not a contract. There are four:
 An Accepted entry may carry a clause saying what a later ADR narrowed or what has moved since.
 That is the point of the line: it says which half of an old paragraph is still load-bearing.
 
+## ADR-027 · The direct transfer's wire format — our own delta stream in 8 KB pages, not FIT
+**Status: Proposed** (dev channel; docs/channels.md, all four rules unmet).
+
+Issue #14 asks for a Garmin session on the phone without intervals.icu, Strava or a cable.
+The research spike (docs/direct-transfer.md) ranked five options and the probe of 19 September
+2026 fixed the rules the link actually has: a page of 16 KB kills the watch app, a second
+`transmit` while the first is still on the radio kills it too, a locked phone times out, and
+8 KB lands in about two seconds. So the transport is **pages of at most 8 000 payload bytes,
+exactly one in flight, the next from `onComplete`, an app-level ACK, the phone app open**.
+What is left to decide is what rides in them.
+
+**Not FIT.** A Connect IQ app cannot read the FIT it recorded — Garmin staff say so plainly —
+so "send the FIT" is not an option that exists, only one that sounds like one. Even if it did,
+a two-hour FIT is 10.5 MB with the wrist stream and 445 KB without, which is three to six
+hours and seven to fifteen minutes on a 0.5–1 KB/s link. And nothing downstream of
+`RawTrack.samples` wants a FIT: the engine reads lat, lon, speed, altitude, heart rate and the
+four record developer fields, and nothing else.
+
+Decision: **`rec.v1` — a keyframe of 22 bytes, deltas of 13, in pages of 8 000, every page
+opening with a keyframe** (docs/transfer-format.md is the contract). Nine bytes a second, so a
+two-hour session is about 97 KB, thirteen pages and roughly 26 seconds on the beach. Three
+choices carry it:
+
+* **A keyframe per page, not per session.** A page then decodes on its own, so a page that
+  never arrives costs its own seconds rather than the session, and the phone can import what
+  it has when a transfer is abandoned. The cost is 22 bytes per 8 000, which is nothing.
+* **1e-6 degree deltas in an int16.** ±0.032° per step is ±3.6 km at one fix a second, which
+  no rider approaches, and the step costs two bytes where an absolute int32 costs four. The
+  error is one micro-degree, about eleven centimetres, bounded rather than accumulating —
+  three orders below what a GNSS fix is worth. Both ends hold the identical quantised
+  integers, which matters more than the absolute error: rounding is stated as half away from
+  zero with truncating division, because Python, Swift and Monkey C disagree about `round`.
+* **8 KB pages.** Measured, not chosen. The page size is the one number in this format that
+  came off a watch rather than out of an argument.
+
+Consequence: **a third reference implementation exists on purpose.** `lab/tools/cjr_ref.py` is
+the plain-Python statement of the same bytes, and the worked example of §2.3 is pinned by it,
+by the kit's `DirectStreamTests`, by the watch's `WingfoilTests` and by
+`fixtures/direct/example.cjr`. Three encoders are two too many to keep in step by reading.
+**The session lands as class (a)**: the stream carries the four record developer fields, from
+the same detectors that write them into the FIT, so `SourceCapabilities.sourceClass` answers
+the same letter for both and no letter is invented (pattern L). It has no wrist stream, which
+is dev3's and is already the ordinary shape of a class-(a) recording because `accelLogging` is
+off by default. **Dedupe is ADR-013's and not a second rule**: the header's start is the
+card's `KEY_START`, so a card that arrived first left a provisional row the stream fills, and
+a FIT of the same afternoon later takes the direct row over in place — the FIT carries the
+laps, the wrist stream and the local clock the stream does not. **The door is dev-only in the
+app and nowhere in the kit**: `DirectStream`, `DirectPage` and `DirectStreamParser` compile in
+every channel and are tested there, while the inbox, the link's routing and the Settings row
+are `#if DEV`, so the release and beta binaries carry no inbox, no page assembler and no
+`.cjr` anywhere. And **no new switch on either side**: the watch gates the whole send on the
+card's existing `phonePush`, so a rider who lets the watch talk to the phone gets the
+recording too.
+
 ## ADR-026 · The library syncs as a **folder**, not as a database — iCloud Drive, last writer wins per field
 **Status: Proposed** (dev channel; Jan's call to accept).
 

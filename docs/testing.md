@@ -1392,6 +1392,38 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
 6. **Watch-vs-phone divergence banner** — standing field-regression alarm on every class-(a)
    import (thresholds in `algorithms.md`).
 
+## The direct transfer — `DirectStreamTests` and the pinned 64 bytes
+
+`docs/transfer-format.md` is the contract, and **three implementations encode those bytes**:
+the watch in Monkey C, `lab/tools/cjr_ref.py` in Python, and `DirectStreamEncoder` in the kit.
+Nothing keeps three encoders in step by being read, so all three are held against one hex
+string — the worked example of §2.3, three fixes a second apart at Lake Garda, **64 bytes**.
+`python3 lab/tools/cjr_ref.py --check` re-derives it and decodes it back, the watch's
+`WingfoilTests` does the same, and the kit's `DirectStreamTests` carries it copied character
+for character out of the document. A change to those bytes is a change to the format and has
+to be made in four places on purpose.
+
+`fixtures/direct/example.cjr` **is** those 64 bytes, committed, so a decoder in any language
+can be pointed at a file instead of at a hex string. It is not a recording and is not derived
+from one; `fixtures/direct/README.md` says how to regenerate it.
+
+What `DirectStreamTests` covers beyond the pin: rounding half away from zero at both scales
+and in both signs, and the truncating delta base; a 7 300-record synthetic session with a
+400 s pause, a position jump, an altitude gap and a heart rate that appears part way, encoded
+to pages and decoded back with every field exact and the positions inside a micro-degree;
+every page opening with a keyframe and decoding on its own with page 0's header in front of
+it; keyframes landing on each trigger §2.2 lists; a torn record throwing rather than trapping
+at every cut length; the page message decoding from a `ByteArray` and from an `Array<Number>`
+and being refused whole when it cannot be vouched for; the stream becoming a `RawTrack` the
+engine analyses into flights; and the three dedupe stories of ADR-013 — a card's provisional
+row filled by the stream, a later FIT replacing the direct row in place, and the same stream
+twice being an ordinary duplicate.
+
+**The cross-check that actually proves the two encoders agree** is worth running by hand after
+any change to the arithmetic: encode the same synthetic session with `DirectStreamEncoder` and
+with `cjr_ref.Encoder` and compare the hex. At 2 000 records with a pause, a jump and an
+altitude gap that is 26 349 bytes over four pages, byte for byte identical (19 September 2026).
+
 ## Three channels — release, beta and dev
 
 `docs/channels.md` is the contract: which feature ships in which channel, and the four rules a
