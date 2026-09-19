@@ -213,6 +213,8 @@ and this section is its epitaph.
 
 ## 5 · The first experiment
 
+**Built, 19 September 2026, watch 0.9.14-dev1 and iPhone dev build:** `garmin/source/comm/LinkProbe.mc`, dev stream only. On the watch: Wind from → Link probe → 1 / 4 / 8 / 16 KB, or 8 KB ×3, then Results (the log of `onComplete` times, kept in Storage). On the phone (dev build): Settings → Garmin watch → Link probe shows what arrived. ByteArray on API 6, an Array of Numbers below it; the log names which.
+
 **Transmit the last five minutes and time it.** Five minutes of delta stream is 2 700 B — one
 message, no assembler, no container, nothing rider-facing. A hidden BACK-menu item on the dev
 build encodes the tail and calls the existing `PhoneLink.Radio`; log `onComplete` against

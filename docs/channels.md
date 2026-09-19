@@ -198,7 +198,8 @@ every build, with a `-devN` suffix on the version string, and is where the exper
 
 **Gates in code.** Monkey C has no `#if`; the jungles exclude annotations instead. `(:dev)`
 marks an experiment and its switch (today: the map after save, GitHub #4, whose property and
-setting live in `resources-dev/base/`); a `(:notdev)` twin with the same name stands in for it
+setting live in `resources-dev/base/`; and the link probe, GitHub #14, a hidden item under
+Wind from that times a page of bytes to the phone, docs/direct-transfer.md); a `(:notdev)` twin with the same name stands in for it
 everywhere else. `monkey.jungle` and `monkey-beta.jungle` exclude `dev`, `monkey-dev.jungle`
 excludes `notdev`, so a release or beta build carries neither the switch nor the code behind
 it. `resources-beta/base/` turns raw accelerometer logging off for beta riders (the developer's
