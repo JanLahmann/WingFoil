@@ -178,9 +178,6 @@
         <h1 class="page-title">Sessions</h1>
         <p class="muted small" id="lib-sub"></p>
       </div>
-      <div class="head-right">
-        <button class="ghost" id="lib-export" type="button" disabled>Download all (.zip)</button>
-      </div>
     </div>
     <!-- Android handed this tab a file and the slot was empty by the time the page read it
          (js/app.js, `takeSharedFile`). It used to call nothing and say nothing, and the
@@ -221,7 +218,11 @@
                    on JS. The input is visually hidden rather than `hidden`, because a
                    display:none control is not a reliable label target. -->
               <label class="btn primary" id="pick" for="file">Choose a file…</label>
-              <input id="file" type="file" accept=".fit,.gpx,.tcx,.zip,application/gpx+xml,application/vnd.garmin.tcx+xml,application/zip" class="sr-only">
+              <!-- No `accept` list, on purpose. iPhone Safari maps every accept entry to a
+                   file type, and .fit has no system type there, so Files greyed out .fit
+                   and .gpx and the picker offered only the .zip (Jan, 19 September 2026).
+                   The extension check lives in js/ingest.js, after the read. -->
+              <input id="file" type="file" class="sr-only">
             </p>
           </div>
         </li>
@@ -392,6 +393,10 @@
       Use <em>Download all</em>, or the per-row <code>.fit</code> / <code>.json</code>
       buttons, to keep a copy you own.
     </p>
+    <!-- The whole-library export sits under the list, not over it: the ways in and the
+         sessions come first, the copy you take away last (Jan, 19 September 2026). The
+         phone keeps its export under Settings for the same reason. -->
+    <p><button class="ghost" id="lib-export" type="button" disabled>Download all (.zip)</button></p>
   </section>
 
 </div>
