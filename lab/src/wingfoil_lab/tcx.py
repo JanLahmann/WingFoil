@@ -57,7 +57,7 @@ import pandas as pd
 
 from .filters import M_PER_DEG_LAT, M_PER_DEG_LON_EQ
 from .gpx import (_child_num, _declared_offset, _find_all, _num, _point_time,
-                  _segment_speed)
+                  _segment_speed, safe_parser)
 from .parse import RawTrack, SourceCapabilities, resolve_utc_offset
 
 #: The per-point extension a TCX may carry a measured speed in. Matched on the local tag
@@ -68,12 +68,12 @@ SPEED_TAGS = {"speed"}
 def parse_tcx(path: str | Path) -> RawTrack:
     """TCX file -> `RawTrack`, shaped exactly as `parse.parse_fit` shapes a FIT."""
     path = Path(path)
-    return _track_from_root(ET.parse(path).getroot(), str(path))
+    return _track_from_root(ET.parse(path, parser=safe_parser()).getroot(), str(path))
 
 
 def parse_tcx_bytes(data: bytes, path: str = "<tcx>") -> RawTrack:
     """Same, from bytes — the browser and the share sheet never have a file path."""
-    return _track_from_root(ET.fromstring(data), path)
+    return _track_from_root(ET.fromstring(data, parser=safe_parser()), path)
 
 
 def is_tcx(data: bytes) -> bool:

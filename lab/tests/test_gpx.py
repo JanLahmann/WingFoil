@@ -13,7 +13,7 @@ import numpy as np
 import pytest
 
 from wingfoil_lab.filters import clean
-from wingfoil_lab.gpx import is_gpx, parse_gpx, parse_gpx_bytes
+from wingfoil_lab.gpx import UnsafeXml, is_gpx, parse_gpx, parse_gpx_bytes
 from wingfoil_lab.parse import parse_track
 
 FIXTURES = Path(__file__).resolve().parents[2] / "fixtures"
@@ -255,3 +255,48 @@ def test_the_converted_fixture_still_describes_the_same_afternoon():
     # offsets an hour apart, and only the provenance tells a reader which to believe.
     assert fit.start_utc_offset_source == "activity"
     assert gpx.start_utc_offset_source == "longitude"
+
+
+# --------------------------------------------------------------- the hardened door
+
+
+BILLION_LAUGHS = (
+    '<?xml version="1.0"?>\n'
+    '<!DOCTYPE gpx [\n'
+    '  <!ENTITY a "aaaaaaaaaa">\n'
+    '  <!ENTITY b "&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;">\n'
+    '  <!ENTITY c "&b;&b;&b;&b;&b;&b;&b;&b;&b;&b;">\n'
+    ']>\n'
+    '<gpx version="1.1"><trk><trkseg><trkpt lat="45.87" lon="10.87">'
+    '<time>2026-08-30T12:00:00Z</time><ele>&c;</ele>'
+    '</trkpt></trkseg></trk></gpx>'
+).encode()
+
+XXE = (
+    '<?xml version="1.0"?>\n'
+    '<!DOCTYPE gpx [<!ENTITY secret SYSTEM "file:///etc/passwd">]>\n'
+    '<gpx version="1.1"><trk><name>&secret;</name><trkseg><trkpt lat="45.87" lon="10.87">'
+    '<time>2026-08-30T12:00:00Z</time></trkpt></trkseg></trk></gpx>'
+).encode()
+
+
+def test_an_entity_bomb_is_refused_rather_than_expanded():
+    """The billion laughs: three kilobytes of file, a gigabyte of string.
+
+    A GPX arrives from a stranger — a co-rider's export, a ZIP somebody sent, a file
+    dropped on the browser page that runs this very module in Pyodide. `safe_parser`
+    refuses the `<!DOCTYPE>` that an entity needs, so the expansion never starts.
+    """
+    with pytest.raises(UnsafeXml):
+        parse_gpx_bytes(BILLION_LAUGHS)
+
+
+def test_an_external_entity_never_reads_a_file():
+    with pytest.raises(UnsafeXml):
+        parse_gpx_bytes(XXE)
+
+
+def test_the_refusal_costs_an_ordinary_gpx_nothing():
+    """The guard is a refusal of a header no exporter writes, not a stricter schema."""
+    track = parse_gpx_bytes(_doc(f"<trk><trkseg>{_line(4)}</trkseg></trk>"))
+    assert len(track.records) == 4

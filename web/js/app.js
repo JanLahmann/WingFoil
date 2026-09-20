@@ -17,6 +17,7 @@ import { mountSections, resetSections } from "./sections.js";
 import { mountShareCard, openPeriodCard, openShareCard } from "./sharecard.js";
 import { listEntries } from "./store.js";
 import { track } from "./track.js";
+import { esc } from "./viz.js";
 import { invalidateTrends, mountTrends, redrawTrends, showTrends } from "./trends.js";
 // r3-w1: the four screens the port was missing — the Log tab's gear card and its
 // watch-against-phone block, the quiver's editor, Deleted sessions, Restore from a backup,
@@ -212,7 +213,10 @@ function showHighlightNote(highlight) {
   const many = highlight.windows.length > 1 ? ` (${highlight.windows.length} windows)` : "";
   const value = highlight.value === undefined ? ""
     : ` — ${highlight.value} ${highlight.unit ?? ""}`.trimEnd();
-  note.innerHTML = `Showing <strong>${highlight.label}</strong>${value}${many} — the window
+  // `label` and `value` are the engine's own words today, so this is uniformity rather
+  // than a live hole — but "this one is safe because of where it came from" is the
+  // reasoning that has to be re-checked on every change, and `esc` is the one that does not.
+  note.innerHTML = `Showing <strong>${esc(highlight.label)}</strong>${esc(value)}${many} — the window
     is marked in orange on the track and on the speed strip.
     <button class="ghost small-btn" id="clear-highlight" type="button">Clear</button>`;
   el("clear-highlight").addEventListener("click", () => {

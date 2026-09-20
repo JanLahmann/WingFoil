@@ -208,8 +208,17 @@ export function sessionDate(meta) {
       hour: "2-digit", minute: "2-digit" });
 }
 
-export const esc = (s) => String(s).replace(/[&<>"]/g, (c) =>
-  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+/* THE escaping helper. Every string that reaches `innerHTML` anywhere in the app comes
+   through here first, and most of those strings were written by somebody else: a Strava
+   activity name, an intervals.icu title, a Nominatim place name, a spot the rider typed, a
+   filename off a file somebody sent.
+
+   The apostrophe is in the set even though no template in the app puts a value inside a
+   single-quoted attribute today. It is one character in a regex, and the failure it
+   prevents — a `value='${…}'` written a year from now, escaping that looks applied and is
+   not — is silent. */
+export const esc = (s) => String(s).replace(/[&<>"']/g, (c) =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
 /* -------------------------------------------------------------- svg helpers */
 

@@ -19,8 +19,12 @@ const LS_ATHLETE = "wingfoil.icu.athlete";
 const WATERSPORTS = /wing|foil|windsurf|kite|surf|sup/i;
 
 const el = (id) => document.getElementById(id);
-const esc = (s) => String(s).replace(/[&<>"]/g, (c) =>
-  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+// The same set `viz.esc` covers, apostrophe included — a second copy that escaped less
+// than the first would be the one door an activity name got through. (Two copies at all is
+// a wart: this module is deliberately free of viz's SVG imports. If that ever stops being
+// true, delete this one.)
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
 export function mountIcu({ analyzeBuffer }) {
   const panel = el("icu-panel");

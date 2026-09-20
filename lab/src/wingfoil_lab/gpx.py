@@ -69,16 +69,57 @@ from .parse import RawTrack, SourceCapabilities, resolve_utc_offset
 HR_TAGS = {"hr", "heartrate"}
 
 
+class UnsafeXml(ValueError):
+    """A recording whose XML declares entities. Refused, not read — see `safe_parser`."""
+
+
+class _NoDoctype(ET.TreeBuilder):
+    """A tree builder that refuses the one callback a recording never needs.
+
+    `ElementTree` hands `doctype()` to the parser's *target* — which is why the refusal
+    lives on the builder rather than on the parser: `XMLParser` stopped exposing its expat
+    object years ago, and the target callback is the supported seam.
+    """
+
+    def doctype(self, name: str, pubid: str | None, system: str | None) -> None:
+        raise UnsafeXml("this recording's XML declares a DOCTYPE, which CleanJibe refuses")
+
+
+def safe_parser() -> ET.XMLParser:
+    """An `ElementTree` parser that refuses a `<!DOCTYPE>` subset.
+
+    **The two doors that read XML read files from strangers**: a co-rider's export, an
+    intervals.icu original, a member of a ZIP somebody sent, and — in the browser — a file
+    dropped on a page that then runs this very module in Pyodide. XML is the one recording
+    format with a programmable header, and `expat`'s defaults make two of its features
+    available that a recording never needs:
+
+    * **Entity expansion** (the *billion laughs*). Ten nested entities, each ten copies of
+      the one below it, is three kilobytes of file and a gigabyte of string. In the browser
+      that is the rider's tab; on the command line it is the machine's memory.
+    * **External entities.** `expat` will not fetch a URL on its own, but an entity
+      declaration is still a request to substitute something the document did not contain
+      into text this engine will store and print.
+
+    The answer to both is blunt, because a budget or a depth counter is a thing to get
+    subtly wrong: **a `<!DOCTYPE>` is refused and the parse stops** — an entity cannot be
+    declared without one. Neither the GPX 1.1 schema nor the TCX v2 schema has a DTD subset
+    in it, and no exporter in the corpus writes one. Mirrors `SafeXML` in the Swift kit,
+    which refuses the same declarations in Foundation's `XMLParser`.
+    """
+    return ET.XMLParser(target=_NoDoctype())
+
+
 def parse_gpx(path: str | Path) -> RawTrack:
     """GPX 1.1 file -> `RawTrack`, shaped exactly as `parse.parse_fit` shapes a FIT."""
     path = Path(path)
-    root = ET.parse(path).getroot()
+    root = ET.parse(path, parser=safe_parser()).getroot()
     return _track_from_root(root, str(path))
 
 
 def parse_gpx_bytes(data: bytes, path: str = "<gpx>") -> RawTrack:
     """Same, from bytes — the browser and the share sheet never have a file path."""
-    return _track_from_root(ET.fromstring(data), path)
+    return _track_from_root(ET.fromstring(data, parser=safe_parser()), path)
 
 
 def is_gpx(data: bytes) -> bool:
