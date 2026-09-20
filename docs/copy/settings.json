@@ -1,0 +1,172 @@
+{
+  "_readme" : "GENERATED from SettingsCopy by `COPY_WRITE=1 swift test --filter SettingsCopyExportTests`. The kit is the author; web/tools/make_app_copy.py renders the browser app's Settings page from this file. Do not edit by hand.",
+  "schema" : "cleanjibe.settings/1",
+  "sections" : [
+    {
+      "channel" : "release",
+      "footer" : [
+        "Downloads the original FIT of every windsurf, wing, kite, surf and SUP activity in your intervals.icu account. Two years back.",
+        "Activities already in the library are never downloaded again."
+      ],
+      "help" : "icuSetup",
+      "id" : "icu",
+      "lead" : "Your sessions arrive by themselves, from any watch that syncs there.",
+      "phone" : true,
+      "title" : "intervals.icu",
+      "web" : true
+    },
+    {
+      "channel" : "release",
+      "footer" : [
+        "Strava opens, you say yes, and CleanJibe can list your activities on the Import screen.",
+        "CleanJibe only reads your Strava account. It never writes, renames or posts anything.",
+        "Sessions imported this way are analysed from positions alone. Their speed records are marked uncertified.",
+        "Strava lets a new app connect a limited number of riders. Connecting is refused while CleanJibe is full.",
+        "That says nothing about your account."
+      ],
+      "help" : "stravaImport",
+      "id" : "strava",
+      "lead" : "Import what you already ride with. CleanJibe only ever reads it.",
+      "phone" : true,
+      "title" : "Strava",
+      "web" : true
+    },
+    {
+      "channel" : "release",
+      "footer" : [
+        "Sessions you deleted stay deleted. Syncing intervals.icu leaves them alone, by hand and in the background.",
+        "Restoring forgets that. The next sync brings back every one of them that is still on intervals.icu."
+      ],
+      "help" : "libraryBackup",
+      "id" : "deleted",
+      "lead" : "Put back a session you deleted.",
+      "phone" : true,
+      "title" : "Deleted sessions",
+      "web" : true
+    },
+    {
+      "channel" : "release",
+      "footer" : [
+        "While the phone is idle, CleanJibe asks intervals.icu for new activity.\n\nIt looks for windsurf, wing, kite, surf and SUP, from any watch that syncs there.\n\nYou hear about the ones that are not in your library yet.\n\nThe session is downloaded and analysed in the background, so tapping the notification usually opens a finished analysis."
+      ],
+      "help" : "icuSetup",
+      "id" : "notifications",
+      "lead" : "Hear about a new session while the phone is idle.",
+      "phone" : true,
+      "title" : "Notifications",
+      "web" : false
+    },
+    {
+      "channel" : "release",
+      "footer" : [
+
+      ],
+      "help" : "turnTypes",
+      "id" : "analysis",
+      "lead" : "Say which way your turns usually go, so a flat day still reads right.",
+      "phone" : true,
+      "title" : "Analysis",
+      "web" : false
+    },
+    {
+      "channel" : "release",
+      "footer" : [
+        "Each row draws its track over a map of the water it was ridden on. The map style is the one your session maps use."
+      ],
+      "id" : "sessionList",
+      "lead" : "Draw the water behind each row's track.",
+      "phone" : true,
+      "title" : "Session list",
+      "web" : false
+    },
+    {
+      "channel" : "release",
+      "footer" : [
+        "Each row carries three numbers, each with its word under it. Pick the three you read your library by."
+      ],
+      "id" : "rowShows",
+      "lead" : "Pick the three numbers you read your library by.",
+      "phone" : true,
+      "title" : "Row shows",
+      "web" : false
+    },
+    {
+      "channel" : "release",
+      "footer" : [
+        "Speeds are read in knots by the speedsurfing world. Pick km/h if that is the number you think in."
+      ],
+      "help" : "speedRecords",
+      "id" : "units",
+      "lead" : "Read speeds in knots or in km/h.",
+      "phone" : false,
+      "title" : "Units",
+      "web" : true
+    },
+    {
+      "channel" : "release",
+      "footer" : [
+
+      ],
+      "help" : "engineVersion",
+      "id" : "storage",
+      "lead" : "What the library costs, and the way to analyse it all again.",
+      "phone" : true,
+      "title" : "Storage",
+      "web" : false
+    },
+    {
+      "channel" : "release",
+      "footer" : [
+        "Setting up a new iPhone from this one carries your library across by itself, and so does an iCloud backup.",
+        "This is for the case neither covers: a phone set up as new, or the app deleted and installed again.",
+        "The file holds every recording you have imported and what nothing else can bring back.",
+        "That is session names, captions, riders, gear, spot names, and the sessions you deleted on purpose."
+      ],
+      "help" : "libraryBackup",
+      "id" : "backup",
+      "lead" : "One file that holds every session and everything you typed on it.",
+      "phone" : true,
+      "title" : "Library backup",
+      "web" : false
+    },
+    {
+      "channel" : "release",
+      "footer" : [
+        "Saved sessions are written to this browser's private per-origin storage.",
+        "They are not synced, not backed up and not visible to any other site.",
+        "Clearing this site's data, or using a private window, deletes them.",
+        "Download all writes one zip. Restore from a backup reads that same file."
+      ],
+      "help" : "libraryBackup",
+      "id" : "data",
+      "lead" : "What this browser holds, a copy you keep, and the way to wipe it.",
+      "phone" : false,
+      "title" : "Your data",
+      "web" : true
+    },
+    {
+      "channel" : "release",
+      "footer" : [
+        "Wind is estimated on this device from your track."
+      ],
+      "help" : "privacy",
+      "id" : "about",
+      "lead" : "What is running here, and where the privacy policy is.",
+      "phone" : true,
+      "title" : "About",
+      "web" : true
+    },
+    {
+      "channel" : "release",
+      "footer" : [
+
+      ],
+      "help" : "whatsNew",
+      "id" : "whatsNew",
+      "lead" : "The release notes, newest first.",
+      "phone" : false,
+      "title" : "What's new",
+      "web" : true
+    }
+  ]
+}
