@@ -64,6 +64,27 @@ public enum WhatsNew {
     public static let entries: [WhatsNewEntry] = [
         WhatsNewEntry(
             version: "0.15.0",
+            build: 91,
+            channel: .beta,
+            date: "2026-09-20",
+            dateText: "20 September 2026",
+            title: "The last trap",
+            lines: [
+                "The file reader's library is ours now. A value past its type no longer takes the app down.",
+                "Please sync your intervals.icu once more on this build.",
+            ]),
+        WhatsNewEntry(
+            version: "0.15.0",
+            build: 90,
+            channel: .dev,
+            date: "2026-09-20",
+            dateText: "20 September 2026",
+            title: "Your round on 88",
+            lines: [
+                "The file reader's library is ours now. A value past its type no longer takes the app down.",
+            ]),
+        WhatsNewEntry(
+            version: "0.15.0",
             build: 89,
             channel: .beta,
             date: "2026-09-19",
