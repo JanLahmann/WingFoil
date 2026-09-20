@@ -21,6 +21,7 @@ class MetricsEngine {
     // 2 x 128 Floats is memory the other five pages have no use for.
     const TRACK_MAX = 128;
     const TRACK_BASE_STRIDE = 5;        // one point every ~5 s at 1 Hz
+    const TRACK_STRIDE_MAX = 1 << 20;   // see _trackTick: a doubling stride must have a roof
 
     var detector as FlightDetector;
     var turns as TurnDetector;
@@ -61,6 +62,14 @@ class MetricsEngine {
     var timerS as Float = 0.0;
     var submerged as Boolean = false;
 
+    // TEST SEAM. `tick` measures dt from System.getTimer(), which nothing outside the
+    // firmware can move — so a fuzz loop that calls tick() twenty thousand times in a row
+    // sees dt ≈ 0 every time, returns at the first guard and exercises nothing. Set this and
+    // the engine reads its clock from here instead: that is how the crash-hunt suite drives
+    // six hours at 1 Hz, a 30 s gap, a clock that runs backwards and the getTimer wrap
+    // (docs/testing.md, "The watch's crash hunt"). Null on every watch, always.
+    var clockMsOverride as Number? = null;
+
     hidden var _lastMs as Number = 0;
     // Distance comes through the barrel's teleport guard, never straight off elapsedDistance.
     hidden var _odo as Odometer = new Odometer();
@@ -83,9 +92,14 @@ class MetricsEngine {
     // Returns detector event (FlightDetector.EVENT_*) | pbEvents<<4 | turnEvent<<8
     // | pumpEvent<<12 | autoWindEvent<<16.
     function tick(info as Position.Info) as Number {
-        var now = System.getTimer();
+        var o = clockMsOverride;
+        var now = o != null ? o as Number : System.getTimer();
         var dt = _lastMs > 0 ? (now - _lastMs) / 1000.0 : 1.0;
         _lastMs = now;
+        // Negative dt is not impossible: System.getTimer() wraps (~24.8 days of uptime), and
+        // the sample after the wrap is two billion milliseconds "earlier". `dt < 0.2` already
+        // drops it — this comment is here so nobody re-derives dt as an absolute value and
+        // books 24 days of flight time into one tick.
         if (dt < 0.2) {
             return 0;
         }
@@ -93,9 +107,17 @@ class MetricsEngine {
             dt = 3.0;
         }
 
-        gpsQuality = info.accuracy != null ? info.accuracy as Number : 0;
+        // accuracy is a Position.Quality enum, but nothing guarantees the fix carries one of
+        // its five values — an unusable constant is the safe reading of anything else.
+        var acc = info.accuracy;
+        gpsQuality = acc instanceof Lang.Number ? acc as Number : 0;
         var sp = info.speed;
-        speedMps = sp != null ? sp : 0.0;
+        speedMps = 0.0;
+        if (sp instanceof Lang.Float) {
+            speedMps = sp as Float;
+        } else if (sp instanceof Lang.Number) {
+            speedMps = (sp as Number).toFloat();
+        }
         // An impossible speed is garbage, whatever the fix claims about its quality, and it
         // must not reach the records (which latch) or the distance (which integrates).
         var sane = WingFoilCore.speedPlausible(speedMps);
@@ -231,7 +253,13 @@ class MetricsEngine {
                 j++;
             }
             trackN = j;
-            _trackStride *= 2;
+            // Capped, because a Number that doubles for long enough goes NEGATIVE, and a
+            // negative stride makes `_trackSkip < _trackStride` false forever — every fix
+            // appended, the buffer halved every 128 s, for the rest of the session. Six hours
+            // reaches 320; the cap is unreachable on a battery but it is not a comment.
+            if (_trackStride < TRACK_STRIDE_MAX) {
+                _trackStride *= 2;
+            }
         }
         var d = (loc as Position.Location).toDegrees();
         lat[trackN] = d[0].toFloat();
@@ -243,16 +271,23 @@ class MetricsEngine {
     // Course over ground in degrees, or null when the fix carries no heading.
     hidden function _cogDeg(info as Position.Info) as Float? {
         var h = info.heading;
-        if (h == null) {
-            return null;
+        if (!(h instanceof Lang.Float) && !(h instanceof Lang.Number)) {
+            return null;    // no heading on this fix — and null is not the only way to say so
         }
-        // heading is radians in [-PI, PI]; the detector unwraps, so any 0-360 mapping works
-        var deg = (h as Float) * RAD2DEG;
-        while (deg < 0.0) {
-            deg += 360.0;
-        }
-        while (deg >= 360.0) {
-            deg -= 360.0;
+        // heading is radians in [-PI, PI]; the detector unwraps, so any 0-360 mapping works.
+        //
+        // THE WRAP IS ARITHMETIC, NOT A LOOP. It used to be two `while`s, which is fine for
+        // the ±PI the API promises and a freeze for anything else: a fix carrying 1e9 rad
+        // spins 2.7 million times inside a 1 Hz callback and the watchdog kills the app with
+        // nothing in the log. A modulo costs the same at ±PI and is bounded at every input.
+        var rad = h instanceof Lang.Float ? (h as Float) : (h as Number).toFloat();
+        var deg = rad * RAD2DEG;
+        deg -= Math.floor(deg / 360.0) * 360.0;     // Monkey C has no `%` for Floats
+        // The subtraction is exact at the ±PI the API promises and cancels badly at 1e9 rad,
+        // where a 32-bit Float has no digits left to spare — so the range is asserted rather
+        // than assumed. North is the honest reading of a bearing that arrived as noise.
+        if (deg < 0.0 || deg >= 360.0) {
+            deg = 0.0;
         }
         return deg;
     }

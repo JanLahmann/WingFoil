@@ -1,4 +1,5 @@
 import Toybox.Application.Properties;
+import Toybox.Application.Storage;
 import Toybox.Communications;
 import Toybox.Position;
 import Toybox.Graphics;
@@ -2705,7 +2706,8 @@ function phoneLinkPayloadShape(logger as Test.Logger) as Boolean {
         PhoneLink.KEY_BEST_2S, PhoneLink.KEY_BEST_10S, PhoneLink.KEY_TURNS,
         PhoneLink.KEY_TACKS, PhoneLink.KEY_JIBES, PhoneLink.KEY_FLEW,
         PhoneLink.KEY_TOUCHDOWN, PhoneLink.KEY_FELL, PhoneLink.KEY_TAKEOFF_ATT,
-        PhoneLink.KEY_TAKEOFF_OK, PhoneLink.KEY_WIND, PhoneLink.KEY_APP];
+        PhoneLink.KEY_TAKEOFF_OK, PhoneLink.KEY_WIND, PhoneLink.KEY_APP,
+        PhoneLink.KEY_CRASHES];
     for (var i = 0; i < expected.size(); i++) {
         Test.assertMessage(p.hasKey(expected[i]), "payload is missing key " + expected[i]);
     }
@@ -4554,5 +4556,695 @@ function directSendWaitsForThePhone(logger as Test.Logger) as Boolean {
     DirectSend.reachableOverride = null;
     PhoneLink.radio = saved;
     logger.debug("ok");
+    return true;
+}
+
+// ============================================================================
+// THE WATCH'S CRASH HUNT (docs/testing.md, "The watch's crash hunt")
+//
+// The phone's hunt (`SyncCrashHuntTests`, `MutationFuzzTests`) exists because a stranger's
+// FIT is a door into the app that nobody here has walked through. The watch has three such
+// doors and a worse consequence: there is no crash reporting on a Connect IQ device. An
+// unhandled exception drops the rider to the watch face and writes CIQ_LOG.YML onto a watch
+// on a beach, and the session goes with it.
+//
+// The doors, and what is fuzzed at each:
+//   * THE SENSOR — `MetricsEngine.tick` / `SessionController.onPosition` take one
+//     Position.Info a second for hours. Null everything, an unusable fix, a 300 m/s spike,
+//     a 30 s gap, a clock that runs backwards, the System.getTimer wrap, six hours at 1 Hz.
+//   * THE SETTINGS — `AppSettings.load` reads Application.Properties, which is a store that
+//     outlives the build that wrote it and takes any type at all.
+//   * THE PHONE — `PhoneLink.applyMessage` is a dictionary from another process on another
+//     device. It is the only input here an attacker could shape.
+//
+// The assertion in all of them is the phone hunt's: FINISH, OR THROW SOMETHING NAMED — never
+// trap. And on this runtime that bar is higher than it sounds, because three of the ways to
+// die are NOT catchable by `try`/`catch` at all (measured on fenix847mm, SDK 9.2):
+//     1.0 / 0.0          -> "Invalid Value", uncaught, whatever it is wrapped in
+//     0.0 / 0.0          -> the same
+//     5 / 0              -> the same
+//     array[past end]    -> "Array Out Of Bounds", the same
+// `null > 0` does throw a catchable UnexpectedTypeException, and Float.toNumber() saturates
+// at ±2147483647 rather than trapping. So every fix in this round is a GUARD, never a catch:
+// the try/catch in these tests is there to name the tick that failed, not to make the app
+// survive one.
+//
+// The drive loops move the engine's clock by hand through `MetricsEngine.clockMsOverride` —
+// tick() reads dt from System.getTimer(), so twenty thousand calls in a tight loop would all
+// see dt ≈ 0 and exercise nothing.
+
+// One fabricated fix. Position.Info cannot be handed to us by the simulator, but it CAN be
+// constructed — `new Position.Info()` gives an object whose five members are all null, which
+// is itself the most interesting shape in the list below.
+function fuzzFix(acc as Position.Quality?, spd as Float?, hdg as Float?, alt as Float?,
+        lat as Double?, lon as Double?) as Position.Info {
+    var i = new Position.Info();
+    i.accuracy = acc;
+    i.speed = spd;
+    i.heading = hdg;
+    i.altitude = alt;
+    if (lat != null && lon != null) {
+        i.position = new Position.Location({
+            :latitude => lat, :longitude => lon, :format => :degrees
+        });
+    }
+    return i;
+}
+
+// A plausible fix, as the baseline every shape is a deviation from.
+function fuzzGoodFix() as Position.Info {
+    return fuzzFix(Position.QUALITY_GOOD, 9.0, 0.6, 3.0, 45.8710d, 10.8712d);
+}
+
+const FUZZ_SHAPES = 20;
+
+function fuzzShapeName(k as Number) as String {
+    if (k == 0) { return "a good fix"; }
+    if (k == 1) { return "no position"; }
+    if (k == 2) { return "no speed"; }
+    if (k == 3) { return "no heading"; }
+    if (k == 4) { return "no altitude"; }
+    if (k == 5) { return "no accuracy"; }
+    if (k == 6) { return "accuracy NOT_AVAILABLE"; }
+    if (k == 7) { return "accuracy LAST_KNOWN"; }
+    if (k == 8) { return "accuracy out of the enum"; }
+    if (k == 9) { return "speed 0 all session"; }
+    if (k == 10) { return "speed 300 m/s"; }
+    if (k == 11) { return "speed negative"; }
+    if (k == 12) { return "speed as a Number, not a Float"; }
+    if (k == 13) { return "heading 1e9 rad"; }
+    if (k == 14) { return "heading -1e9 rad"; }
+    if (k == 15) { return "altitude 1e9 m"; }
+    if (k == 16) { return "the poles"; }
+    if (k == 17) { return "the antimeridian"; }
+    if (k == 18) { return "everything null"; }
+    return "speed exactly at the plausible ceiling";
+}
+
+function fuzzShape(k as Number) as Position.Info {
+    var g = Position.QUALITY_GOOD;
+    if (k == 0) { return fuzzGoodFix(); }
+    if (k == 1) { return fuzzFix(g, 9.0, 0.6, 3.0, null, null); }
+    if (k == 2) { return fuzzFix(g, null, 0.6, 3.0, 45.871d, 10.871d); }
+    if (k == 3) { return fuzzFix(g, 9.0, null, 3.0, 45.871d, 10.871d); }
+    if (k == 4) { return fuzzFix(g, 9.0, 0.6, null, 45.871d, 10.871d); }
+    if (k == 5) { return fuzzFix(null, 9.0, 0.6, 3.0, 45.871d, 10.871d); }
+    if (k == 6) {
+        return fuzzFix(Position.QUALITY_NOT_AVAILABLE, 9.0, 0.6, 3.0, 45.871d, 10.871d);
+    }
+    if (k == 7) {
+        return fuzzFix(Position.QUALITY_LAST_KNOWN, 9.0, 0.6, 3.0, 45.871d, 10.871d);
+    }
+    if (k == 8) { return fuzzFix(99 as Position.Quality, 9.0, 0.6, 3.0, 45.871d, 10.871d); }
+    if (k == 9) { return fuzzFix(g, 0.0, 0.6, 3.0, 45.871d, 10.871d); }
+    if (k == 10) { return fuzzFix(g, 300.0, 0.6, 3.0, 45.871d, 10.871d); }
+    if (k == 11) { return fuzzFix(g, -5.0, 0.6, 3.0, 45.871d, 10.871d); }
+    if (k == 12) { return fuzzFix(g, 9 as Float, 0.6, 3.0, 45.871d, 10.871d); }
+    if (k == 13) { return fuzzFix(g, 9.0, 1.0e9, 3.0, 45.871d, 10.871d); }
+    if (k == 14) { return fuzzFix(g, 9.0, -1.0e9, 3.0, 45.871d, 10.871d); }
+    if (k == 15) { return fuzzFix(g, 9.0, 0.6, 1.0e9, 45.871d, 10.871d); }
+    if (k == 16) { return fuzzFix(g, 9.0, 0.6, 3.0, 90.0d, 0.0d); }
+    if (k == 17) { return fuzzFix(g, 9.0, 0.6, 3.0, -89.9d, 179.999d); }
+    if (k == 18) { return new Position.Info(); }
+    return fuzzFix(g, WingFoilCore.MAX_SPEED_MPS, 0.6, 3.0, 45.871d, 10.871d);
+}
+
+// A controller in the state the sensor door is actually walked in: RECORDING, with no
+// ActivityRecording.Session behind it (the simulator has none, and every session call in
+// SessionController is already null-guarded — which this exercises too).
+function fuzzController() as SessionController {
+    var c = new SessionController();
+    c.state = SessionController.STATE_RECORDING;
+    c.engine.trackEnabled = true;
+    c.engine.clockMsOverride = 100000;
+    return c;
+}
+
+// ---- 1. the sensor door ----
+
+// Every degenerate fix shape, through the WHOLE door — engine, detectors, alerts, the FIT
+// writer's marker, the direct stream — five times each so a shape that only breaks on the
+// second sample of its own kind is caught too.
+//
+// FOUND HERE: `MetricsEngine._cogDeg` normalised a heading with two `while` loops, which is
+// 2.7 million iterations inside a 1 Hz callback for a fix carrying 1e9 rad — a watchdog kill
+// with nothing in the log. It is arithmetic now.
+(:test)
+function fuzzSensorDoorSurvivesEveryDegenerateFix(logger as Test.Logger) as Boolean {
+    AppSettings.load();
+    var worst = "";
+    for (var k = 0; k < FUZZ_SHAPES; k++) {
+        var c = fuzzController();
+        var t = 100000;
+        for (var i = 0; i < 5; i++) {
+            t += 1000;
+            c.engine.clockMsOverride = t;
+            worst = "shape " + k.toString() + " (" + fuzzShapeName(k) + ") tick "
+                + i.toString();
+            try {
+                c.onPosition(fuzzShape(k));
+            } catch (e) {
+                Test.assertMessage(false, worst + " threw " + e.getErrorMessage());
+            }
+        }
+        // whatever went in, what comes out is still a number the card can carry
+        Test.assertMessage(c.engine.speedMps >= 0.0
+            && c.engine.speedMps <= WingFoilCore.MAX_SPEED_MPS,
+            fuzzShapeName(k) + " left speed at " + c.engine.speedMps.toString());
+        Test.assertMessage(c.engine.distM >= 0.0,
+            fuzzShapeName(k) + " left distance at " + c.engine.distM.toString());
+    }
+    // A null fix is not a shape the API promises, and it is one member read from ending the
+    // session. The controller drops it.
+    var c2 = fuzzController();
+    c2.onPosition(null as Position.Info);
+    logger.debug(FUZZ_SHAPES.toString() + " fix shapes x 5 ticks, all survived");
+    return true;
+}
+
+// The clock, which is the other half of the sensor door: a 30 s hole, a sample that arrives
+// before the one before it, and the System.getTimer wrap (~24.8 days of uptime — a watch
+// that is never rebooted reaches it, and a wingfoiler's does not get rebooted).
+(:test)
+function fuzzTheClockRunsBackwardsAndWraps(logger as Test.Logger) as Boolean {
+    AppSettings.load();
+    var c = fuzzController();
+    var fix = fuzzGoodFix();
+    var t = 100000;
+    // a normal minute
+    for (var i = 0; i < 60; i++) {
+        t += 1000;
+        c.engine.clockMsOverride = t;
+        c.onPosition(fix);
+    }
+    var foilAfterMinute = c.engine.detector.foilTimeS;
+    // a 30 s hole: dt is clamped at 3 s, so the hole cannot become half a minute of flight
+    t += 30000;
+    c.engine.clockMsOverride = t;
+    c.onPosition(fix);
+    Test.assertMessage(c.engine.detector.foilTimeS - foilAfterMinute <= 3.5,
+        "a 30 s gap booked " + (c.engine.detector.foilTimeS - foilAfterMinute).toString()
+        + " s of flight");
+    // backwards, then the wrap itself
+    var marks = [t - 5000, 2147483000, -2147483296, -2147483000, 1000] as Array<Number>;
+    for (var i = 0; i < marks.size(); i++) {
+        c.engine.clockMsOverride = marks[i];
+        try {
+            c.onPosition(fix);
+        } catch (e) {
+            Test.assertMessage(false, "clock mark " + marks[i].toString() + " threw "
+                + e.getErrorMessage());
+        }
+        Test.assertMessage(c.engine.detector.foilTimeS < 1.0e6,
+            "clock mark " + marks[i].toString() + " booked "
+            + c.engine.detector.foilTimeS.toString() + " s of flight");
+    }
+    logger.debug("gap, reversal and the getTimer wrap: no time invented");
+    return true;
+}
+
+// ---- 2. six hours at 1 Hz ----
+
+// 21 600 ticks — a long Garda day — with the memory read either side. Two things are being
+// asked. Does anything in the chain allocate per tick (the answer has to be no: the track
+// buffer, the history and the sweep log are all fixed arrays, and the stride doubles rather
+// than the buffer growing). And does six hours of it stay inside the heap.
+//
+// THE NUMBER THIS PRINTS IS THE SIMULATOR'S, NOT THE WATCH'S. `getSystemStats` reports the
+// simulator's own 8 MB heap, where a fenix 8 gives the app 786 KB. What the assertion is
+// worth is therefore the GROWTH, which is the same arithmetic on both: MEASURED AT EXACTLY
+// 3 096 B on fenix847mm, fenix7s and fenix5plus alike — the same number on all three, which
+// is what a chain with no per-tick allocation looks like. The free floor below is a smoke
+// alarm, not the device's headroom (docs/testing.md, "The watch's crash hunt").
+(:test)
+function fuzzSixHoursAtOneHertzHoldItsMemory(logger as Test.Logger) as Boolean {
+    AppSettings.load();
+    var c = fuzzController();
+    var before = System.getSystemStats().usedMemory;
+    var freeBefore = System.getSystemStats().freeMemory;
+    var t = 100000;
+    var fix = fuzzGoodFix();
+    // A course that actually turns, so the turn detector, the sweep log and the auto-wind
+    // histogram all do their work rather than idling for six hours.
+    for (var i = 0; i < 21600; i++) {
+        t += 1000;
+        c.engine.clockMsOverride = t;
+        var leg = (i / 120) % 2;
+        var hdg = leg == 0 ? 0.7 : 3.1;
+        var spd = (i % 300) < 30 ? 2.0 : 9.5;
+        c.onPosition(fuzzFix(Position.QUALITY_GOOD, spd, hdg, 3.0,
+            45.8710d + i * 0.00002d, 10.8712d + i * 0.00001d));
+    }
+    var after = System.getSystemStats().usedMemory;
+    var freeAfter = System.getSystemStats().freeMemory;
+    var grew = after - before;
+    logger.debug("6 h at 1 Hz: used " + before.toString() + " -> " + after.toString()
+        + " (+" + grew.toString() + " B), free " + freeBefore.toString() + " -> "
+        + freeAfter.toString() + ", " + c.engine.tickCount().toString() + " ticks, "
+        + c.engine.trackN.toString() + " track points, "
+        + c.engine.history.slotCount.toString() + " history slots");
+    // Measured: 3 096 B on all three devices. 64 KB is the failure line — what this is
+    // here to catch is a per-tick allocation, not a byte.
+    Test.assertMessage(grew < 65536,
+        "six hours grew the heap by " + grew.toString() + " B");
+    Test.assertMessage(freeAfter > 102400,
+        "free memory after six hours is " + freeAfter.toString() + " B");
+    // The fixed footprints stayed fixed.
+    Test.assertMessage(c.engine.trackN <= c.engine.TRACK_MAX,
+        "the breadcrumb holds " + c.engine.trackN.toString() + " points");
+    Test.assertMessage(c.engine.history.slotCount <= c.engine.history.SLOT_MAX,
+        "the timeline holds " + c.engine.history.slotCount.toString() + " slots");
+    return true;
+}
+
+// ---- 3. the session lifecycle, in every order ----
+
+// Two hundred pause/resume cycles, a save with no ticks behind it, a save twice, and a
+// discard in the middle of a flight. None of these has a Session object behind it here,
+// which is the point: every one of those calls is null-guarded and this is what says so.
+(:test)
+function fuzzSessionLifecycleSurvivesEveryOrder(logger as Test.Logger) as Boolean {
+    AppSettings.load();
+    var saved = PhoneLink.radio;
+    PhoneLink.radio = new FakeRadio(false);
+    var push = AppSettings.phonePush;
+    AppSettings.phonePush = false;
+
+    var c = fuzzController();
+    var fix = fuzzGoodFix();
+    var t = 100000;
+    for (var i = 0; i < 200; i++) {
+        c.togglePause();
+        t += 1000;
+        c.engine.clockMsOverride = t;
+        c.onPosition(fix);
+        c.togglePause();
+    }
+
+    // zero ticks, then save
+    var fresh = new SessionController();
+    Test.assertMessage(!fresh.finishSave(), "a save with no session claimed to have written");
+    Test.assertMessage(!fresh.finishSave(), "the second save claimed to have written");
+    var card = PhoneLink.summary(fresh);
+    Test.assertEqual(card[PhoneLink.KEY_FOIL_PCT], 0);
+    Test.assertEqual(card[PhoneLink.KEY_DUR], 0);
+
+    // discard in the middle of a flight
+    var flying = fuzzController();
+    var t2 = 100000;
+    for (var i = 0; i < 30; i++) {
+        t2 += 1000;
+        flying.engine.clockMsOverride = t2;
+        flying.onPosition(fix);
+    }
+    Test.assertMessage(flying.engine.detector.state == FlightDetector.STATE_ON,
+        "the rig never got on the foil, so the discard proves nothing");
+    flying.finishDiscard();
+    Test.assertEqual(flying.state, SessionController.STATE_IDLE);
+    flying.finishDiscard();             // twice
+    flying.emergencySave();             // and with nothing left to save
+
+    AppSettings.phonePush = push;
+    PhoneLink.radio = saved;
+    logger.debug("200 pause cycles, save x2, discard mid-flight: no throw");
+    return true;
+}
+
+// ---- 4. the accelerometer batch ----
+
+// The pump detector's door. The three arrays come from the firmware and a sample that never
+// arrived is a null INSIDE them, not a shorter array — `null.toFloat()` from a sensor
+// callback is an exception nothing catches.
+(:test)
+function fuzzAccelBatchesSurviveEveryShape(logger as Test.Logger) as Boolean {
+    var p = new PumpDetector(AppSettings.cfg);
+    p.start(25);
+    var t = 50000;
+
+    var empty = [] as Array<Number>;
+    p.onAccelBatch(null, null, null, t);
+    p.onAccelBatch(empty, empty, empty, t);
+
+    var one = [1000] as Array<Number>;
+    p.onAccelBatch(one, one, one, t + 40);
+
+    var hundred = new [100] as Array<Number>;
+    for (var i = 0; i < 100; i++) {
+        hundred[i] = 900 + (i % 7) * 40;
+    }
+    p.onAccelBatch(hundred, hundred, hundred, t + 4040);
+
+    // y shorter than x: the batch is dropped, not read past its end
+    var short = [1000, 1000] as Array<Number>;
+    p.onAccelBatch(hundred, short, hundred, t + 5000);
+
+    // holes in the middle
+    var holed = new [25] as Array<Number>;
+    for (var i = 0; i < 25; i++) {
+        holed[i] = i == 7 || i == 19 ? null : 1000;
+    }
+    p.onAccelBatch(holed, holed, holed, t + 6000);
+
+    // absurd magnitudes, and the getTimer wrap between two batches
+    var huge = new [25] as Array<Number>;
+    for (var i = 0; i < 25; i++) {
+        huge[i] = 2000000000;
+    }
+    p.onAccelBatch(huge, huge, huge, t + 7000);
+    p.onAccelBatch(hundred, hundred, hundred, -2147483000);
+
+    // a listener that never started: available is false and nothing is read at all
+    var off = new PumpDetector(AppSettings.cfg);
+    off.onAccelBatch(hundred, hundred, hundred, t);
+    Test.assertEqual(off.strokes, 0);
+
+    // the HR the cost tracker prices a takeoff on: nothing, then a sprint
+    var hc = new HrCostTracker();
+    for (var i = 0; i < 40; i++) {
+        hc.tick(1.0, null, true, false);
+    }
+    for (var i = 0; i < 40; i++) {
+        hc.tick(1.0, 250, true, i == 5);
+    }
+    hc.tick(1.0, null, false, false);
+    logger.debug("accel batches: null, empty, 1, 100, ragged, holed, saturated — no throw");
+    return true;
+}
+
+// ---- 5. the settings ----
+
+// Application.Properties is a STORE, not a form. It survives an app update, a settings sync
+// can carry a value this build's settings.xml no longer allows, and setValue takes any type
+// at all (measured: a String, a Float and a null all go into a property declared `number`
+// and come back out unchanged). So every property is driven through six shapes and the
+// thresholds are asserted to land inside docs/algorithms.md afterwards.
+const FUZZ_PROPS = ["foilEntryKmh", "foilExitKmh", "entryHoldS", "exitHoldS", "minFlightS",
+    "sportChoice", "windDirDeg", "windDefaultTurnType", "autoPauseDelayS",
+    "alertIntervalMin", "alertIntervalKm", "pg1Layout", "pg1s1", "pg7Layout"];
+
+function fuzzPropValue(shape as Number) as Object? {
+    if (shape == 0) { return 0; }
+    if (shape == 1) { return -1; }
+    if (shape == 2) { return 2147483647; }
+    if (shape == 3) { return 7.25; }
+    if (shape == 4) { return "twelve"; }
+    return null;
+}
+
+function fuzzPropShapeName(shape as Number) as String {
+    if (shape == 0) { return "0"; }
+    if (shape == 1) { return "-1"; }
+    if (shape == 2) { return "a huge Number"; }
+    if (shape == 3) { return "a Float"; }
+    if (shape == 4) { return "a String"; }
+    return "null";
+}
+
+function fuzzPutProp(key as String, v as Object?) as Void {
+    try {
+        Properties.setValue(key, v as Lang.Number);
+    } catch (e) {
+    }
+}
+
+function fuzzReadProp(key as String) as Object? {
+    try {
+        return Properties.getValue(key);
+    } catch (e) {
+        return null;
+    }
+}
+
+(:test)
+function fuzzSettingsClampWhateverTheStoreSays(logger as Test.Logger) as Boolean {
+    // snapshot, so the rest of the suite reads the properties it expects
+    var keep = new [FUZZ_PROPS.size()] as Array<Object?>;
+    for (var i = 0; i < FUZZ_PROPS.size(); i++) {
+        keep[i] = fuzzReadProp(FUZZ_PROPS[i]);
+    }
+
+    for (var i = 0; i < FUZZ_PROPS.size(); i++) {
+        for (var shape = 0; shape < 6; shape++) {
+            var where = FUZZ_PROPS[i] + " = " + fuzzPropShapeName(shape);
+            fuzzPutProp(FUZZ_PROPS[i], fuzzPropValue(shape));
+            try {
+                AppSettings.load();
+                PageModel.build(null);
+                PageNav.index = PageModel.wrap(PageNav.index);
+            } catch (e) {
+                Test.assertMessage(false, where + " threw " + e.getErrorMessage());
+            }
+            var cfg = AppSettings.cfg;
+            // docs/algorithms.md: entry 6-25 km/h, exit 4-20, holds 1-10 s, minFlight 2-30 s,
+            // and the exit speed always strictly under the entry speed.
+            Test.assertMessage(cfg.foilEntryMps >= 6.0 / 3.6 && cfg.foilEntryMps <= 25.0 / 3.6,
+                where + " left foil entry at " + cfg.foilEntryMps.toString() + " m/s");
+            Test.assertMessage(cfg.foilExitMps > 0.0 && cfg.foilExitMps < cfg.foilEntryMps,
+                where + " left foil exit at " + cfg.foilExitMps.toString() + " m/s");
+            Test.assertMessage(cfg.entryHoldS >= 1 && cfg.entryHoldS <= 10,
+                where + " left entry hold at " + cfg.entryHoldS.toString());
+            Test.assertMessage(cfg.exitHoldS >= 1 && cfg.exitHoldS <= 10,
+                where + " left exit hold at " + cfg.exitHoldS.toString());
+            Test.assertMessage(cfg.minFlightS >= 2 && cfg.minFlightS <= 30,
+                where + " left min flight at " + cfg.minFlightS.toString());
+            Test.assertMessage(cfg.windDirection >= -1 && cfg.windDirection <= 359,
+                where + " left the wind axis at " + cfg.windDirection.toString());
+            Test.assertMessage(AppSettings.windDefaultTurnType >= WingFoilCore.TURN_TYPE_JIBES
+                && AppSettings.windDefaultTurnType <= WingFoilCore.TURN_TYPE_BALANCED,
+                where + " left the turn habit at "
+                + AppSettings.windDefaultTurnType.toString());
+            Test.assertMessage(AppSettings.autoPauseDelayS >= 2
+                && AppSettings.autoPauseDelayS <= 60,
+                where + " left the auto-pause delay at "
+                + AppSettings.autoPauseDelayS.toString());
+            Test.assertMessage(AppSettings.alertIntervalMin >= 0
+                && AppSettings.alertIntervalMin <= 120,
+                where + " left the time alert at "
+                + AppSettings.alertIntervalMin.toString());
+            Test.assertMessage(AppSettings.alertIntervalKm >= 0.0
+                && AppSettings.alertIntervalKm <= 50.0,
+                where + " left the distance alert at "
+                + AppSettings.alertIntervalKm.toString());
+            Test.assertMessage(AppSettings.sportChoice >= 0 && AppSettings.sportChoice <= 2,
+                where + " left the sport at " + AppSettings.sportChoice.toString());
+            // and the rider is never left with a blank watch
+            Test.assertMessage(PageModel.count() >= 1, where + " left no pages at all");
+            Test.assertMessage(PageModel.layoutAt(PageNav.index) >= 0
+                && PageModel.layoutAt(PageNav.index) <= PageModel.LAYOUT_MAX,
+                where + " left page " + PageNav.index.toString() + " on an unknown layout");
+        }
+        fuzzPutProp(FUZZ_PROPS[i], keep[i]);
+    }
+    PageNav.index = 0;
+    AppSettings.load();
+    PageModel.build(null);
+    logger.debug(FUZZ_PROPS.size().toString() + " properties x 6 shapes: every threshold "
+        + "inside its documented range");
+    return true;
+}
+
+// ---- 6. the phone ----
+
+// The one input another process shapes. `applyMessage` decides three things — a map
+// snapshot, a direct-transfer answer, a wind push — and each of them is a type check away
+// from a fatal: a snapshot whose grid is 0 divides by it, and a division by zero on this
+// runtime is not catchable.
+(:test)
+function fuzzPhoneMessagesNeverThrow(logger as Test.Logger) as Boolean {
+    var big = "0123456789";
+    for (var i = 0; i < 11; i++) {
+        big = big + big;                 // 20 KB
+    }
+    var mask = mapMask(16, 16, 0);
+
+    var msgs = [
+        null,
+        "not a dictionary",
+        42,
+        [1, 2, 3],
+        {},
+        {PhoneLink.KEY_IN_WIND => 200},
+        {PhoneLink.KEY_IN_WIND => 200.5},
+        {PhoneLink.KEY_IN_WIND => "200"},
+        {PhoneLink.KEY_IN_WIND => -2},
+        {PhoneLink.KEY_IN_WIND => 360},
+        {PhoneLink.KEY_IN_WIND => null},
+        {PhoneLink.KEY_IN_WIND => big},
+        {MapSnapshot.K_SCHEMA => 99},
+        {MapSnapshot.K_SCHEMA => "1"},
+        {MapSnapshot.K_SCHEMA => 1},
+        {MapSnapshot.K_SCHEMA => 1, MapSnapshot.K_W => 0, MapSnapshot.K_H => 0},
+        {MapSnapshot.K_SCHEMA => 1, MapSnapshot.K_W => 100000,
+            MapSnapshot.K_H => 100000, MapSnapshot.K_MASK => mask},
+        {MapSnapshot.K_SCHEMA => 1, MapSnapshot.K_NAME => big},
+        {"cjrAck" => 0},
+        {"cjrAck" => "0"},
+        {"cjrAck" => []},
+        {"cjrAck" => [1, 2, 3, 4]},
+        {"cjrNeed" => big},
+        {"cjrNeed" => ",,,,,,,,"},
+        {"cjrNeed" => []},
+        {"cjrNeed" => 7}
+    ] as Array;
+
+    for (var i = 0; i < msgs.size(); i++) {
+        try {
+            PhoneLink.applyMessage(msgs[i]);
+        } catch (e) {
+            Test.assertMessage(false, "message " + i.toString() + " threw "
+                + e.getErrorMessage());
+        }
+    }
+    // a well-formed snapshot with a 20 KB name is KEPT, with the name cut rather than the
+    // picture lost (Storage refuses a value over 8 KB, and it refuses the whole entry)
+    MapSnapshot.clearAll();
+    var good = mapMessage(4242, 4587000, 1087000, 16, 16, mask);
+    good[MapSnapshot.K_NAME] = big;
+    Test.assertMessage(PhoneLink.applyMessage(good), "a good snapshot was refused");
+    var slot = MapSnapshot.slotForPosition(45.875, 10.875);
+    Test.assertMessage(slot != null, "the snapshot did not land in a slot");
+    Test.assertMessage(MapSnapshot.name(slot as String).length()
+        <= MapSnapshot.NAME_MAX_CHARS, "the 20 KB name was stored whole");
+    MapSnapshot.clearAll();
+
+    // a slot left by another build: half a dictionary, read by the draw path every frame
+    Storage.setValue("mapA", {MapSnapshot.K_ID => 1});
+    Test.assertMessage(MapSnapshot.slotForPosition(45.875, 10.875) == null,
+        "a half-written slot answered for a position");
+    Test.assertMessage(MapSnapshot.frame("mapA", 200) == null,
+        "a half-written slot handed out a drawing frame");
+    Test.assertMessage(MapSnapshot.bitmap("mapA", 200) == null,
+        "a slot with no grid handed out a bitmap");
+    Storage.setValue("mapA", {MapSnapshot.K_ID => 1, MapSnapshot.K_LAT_S => 0,
+        MapSnapshot.K_LAT_N => 9000000, MapSnapshot.K_LON_W => 0,
+        MapSnapshot.K_LON_E => 18000000, MapSnapshot.K_W => 0, MapSnapshot.K_H => 0});
+    Test.assertMessage(MapSnapshot.bitmap("mapA", 200) == null,
+        "a slot with no grid handed out a bitmap");
+    MapSnapshot.clearAll();
+
+    logger.debug(msgs.size().toString() + " malformed phone messages: none throws, "
+        + "none is believed");
+    return true;
+}
+
+// ---- 7. the crash breadcrumb ----
+
+// The watch has no crash reporting, so this is the whole of it: a run that never reached
+// onStop is counted at the next start, with the view it was on.
+(:test)
+function crashBreadcrumbCountsAnUnclosedRun(logger as Test.Logger) as Boolean {
+    CrashBreadcrumb.reset();
+    CrashBreadcrumb.onStop();                      // start from nothing open
+
+    CrashBreadcrumb.onStart();
+    Test.assertEqual(CrashBreadcrumb.crashes, 0);
+    Test.assertMessage(CrashBreadcrumb.line() == null,
+        "a watch that never crashed has something to say");
+    CrashBreadcrumb.view(CrashBreadcrumb.V_RECORDING);
+    CrashBreadcrumb.onStop();
+
+    // a clean pair leaves nothing behind
+    CrashBreadcrumb.onStart();
+    Test.assertEqual(CrashBreadcrumb.crashes, 0);
+
+    // ...and a run that never closes is counted exactly once, with its last view
+    CrashBreadcrumb.view(CrashBreadcrumb.V_SUMMARY);
+    CrashBreadcrumb.onStart();                     // no onStop between: this IS the crash
+    Test.assertEqual(CrashBreadcrumb.crashes, 1);
+    Test.assertEqual(CrashBreadcrumb.lastView, CrashBreadcrumb.V_SUMMARY);
+    Test.assertEqual(CrashBreadcrumb.line(), "crashes 1 (last: summary)");
+    CrashBreadcrumb.onStart();
+    Test.assertEqual(CrashBreadcrumb.crashes, 2);
+
+    // one write per view CHANGE, never per frame: paging does not touch Storage
+    CrashBreadcrumb.view(CrashBreadcrumb.V_RECORDING);
+    for (var i = 0; i < 100; i++) {
+        CrashBreadcrumb.view(CrashBreadcrumb.V_RECORDING);
+    }
+    Test.assertEqual(Storage.getValue(CrashBreadcrumb.STORE_VIEW),
+        CrashBreadcrumb.V_RECORDING);
+
+    // the store is never believed: a count of the wrong type, a negative one, an absurd one
+    Storage.setValue(CrashBreadcrumb.STORE_COUNT, "many");
+    CrashBreadcrumb.onStart();
+    Test.assertEqual(CrashBreadcrumb.crashes, 1);       // 0, plus this unclosed run
+    Storage.setValue(CrashBreadcrumb.STORE_COUNT, -5);
+    CrashBreadcrumb.onStart();
+    Test.assertEqual(CrashBreadcrumb.crashes, 1);
+    Storage.setValue(CrashBreadcrumb.STORE_COUNT, 2000000000);
+    CrashBreadcrumb.onStart();
+    Test.assertEqual(CrashBreadcrumb.crashes, CrashBreadcrumb.COUNT_MAX);
+    Storage.setValue(CrashBreadcrumb.STORE_VIEW, 17);
+    CrashBreadcrumb.onStart();
+    Test.assertEqual(CrashBreadcrumb.lastView, "");
+
+    CrashBreadcrumb.reset();
+    CrashBreadcrumb.onStop();
+    logger.debug("breadcrumb: counted once per unclosed run, one write per view change");
+    return true;
+}
+
+// The number has to reach a machine we can read, and the only channel the watch has is the
+// card. It fits: twenty-two keys is 202 B of a 1024 B budget.
+(:test)
+function crashBreadcrumbRidesTheCardWithinBudget(logger as Test.Logger) as Boolean {
+    CrashBreadcrumb.reset();
+    var card = PhoneLink.summary(fullSessionController());
+    Test.assertMessage(card.hasKey(PhoneLink.KEY_CRASHES),
+        "the card does not carry the crash count");
+    Test.assertEqual(card[PhoneLink.KEY_CRASHES], 0);
+    var bytes = PhoneLink.estimateBytes(card);
+    Test.assertMessage(bytes <= PhoneLink.BUDGET_BYTES / 2,
+        "the card is " + bytes.toString() + " B, past half the budget");
+    CrashBreadcrumb.crashes = 3;
+    Test.assertEqual(PhoneLink.summary(fullSessionController())[PhoneLink.KEY_CRASHES], 3);
+    CrashBreadcrumb.crashes = 0;
+    logger.debug("card with the crash count: " + card.size().toString() + " keys, "
+        + bytes.toString() + " B of " + PhoneLink.BUDGET_BYTES.toString());
+    return true;
+}
+
+// ---- 8. the direct stream's pages (dev) ----
+
+// Thirteen pages is a two-hour session, 104 KB of an 8 MB simulator heap and of a 786 KB
+// watch one. They are held until the phone says the stream is whole; this is the proof that
+// "whole" actually gives the memory back. Measured: fourteen pages cost 108 568 B while
+// held and leave 80 B behind once the phone has them, on all three devices.
+(:test :dev)
+function fuzzDirectStreamPagesAreFreedWhenTheStreamIsWhole(logger as Test.Logger) as Boolean {
+    var saved = PhoneLink.radio;
+    var push = AppSettings.phonePush;
+    PhoneLink.radio = new FakeRadio(false);
+    AppSettings.phonePush = true;
+    DirectSend.reachableOverride = false;
+    DirectSend.discard();
+
+    var before = System.getSystemStats().usedMemory;
+    DirectSend.begin(1786000000, 200);
+    var t = 1786000000;
+    // 8000 bytes a page at 13 bytes a delta: ~615 fixes a page, so 13 pages is ~8 000 fixes
+    for (var i = 0; i < 8200; i++) {
+        t += 1;
+        DirectSend.recordFix(45.871d + i * 0.00001d, 10.871d + i * 0.00001d, t,
+            900, 3, 60, DirectSend.devPack(2, 30, 0, i % 255));
+    }
+    DirectSend.finish();
+    var held = System.getSystemStats().usedMemory;
+    var pages = DirectSend.pageCount();
+    Test.assertMessage(pages >= 13, "only " + pages.toString() + " pages were made");
+
+    // the phone says it has the lot
+    DirectSend.applyMessage({"cjrNeed" => "", "cjrSid" => 1786000000, "cjrSt" => 0});
+    Test.assertEqual(DirectSend.pageCount(), 0);
+    var after = System.getSystemStats().usedMemory;
+    logger.debug(pages.toString() + " pages: used " + before.toString() + " -> "
+        + held.toString() + " -> " + after.toString() + " B");
+    Test.assertMessage(after - before < 16384,
+        "freeing the stream left " + (after - before).toString() + " B behind");
+
+    DirectSend.discard();
+    DirectSend.reachableOverride = null;
+    AppSettings.phonePush = push;
+    PhoneLink.radio = saved;
     return true;
 }

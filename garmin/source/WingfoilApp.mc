@@ -11,6 +11,10 @@ class WingfoilApp extends Application.AppBase {
     }
 
     function onStart(state as Dictionary?) as Void {
+        // FIRST, before anything that can itself fail: a run that never reached onStop is
+        // counted here and nowhere else (CrashBreadcrumb).
+        CrashBreadcrumb.onStart();
+        CrashBreadcrumb.report();
         _applySettings();
         // Phase-5 companion link. Registering costs nothing when no phone is paired, and the
         // retry is the whole point of the pending slot: the app opening is the first moment
@@ -24,6 +28,9 @@ class WingfoilApp extends Application.AppBase {
     function onStop(state as Dictionary?) as Void {
         controller.emergencySave();
         DirectSend.persist();
+        // LAST: the session and the pages are safe, so this run closed properly. Anything
+        // that killed us before this line is what the next start counts.
+        CrashBreadcrumb.onStop();
     }
 
     function onSettingsChanged() as Void {

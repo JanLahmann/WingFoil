@@ -49,6 +49,7 @@ class StartView extends WatchUi.View {
     }
 
     function onShow() as Void {
+        CrashBreadcrumb.view(CrashBreadcrumb.V_START);
         _timer = new Timer.Timer();
         _timer.start(method(:onTick), 1000, true);
     }
@@ -227,6 +228,7 @@ class StartDelegate extends WatchUi.BehaviorDelegate {
     // ONE pop, not the session menu's two: StartView is the bottom of the stack here, and
     // popping past it would exit the app on a wind pick.
     function onMenu() as Boolean {
+        CrashBreadcrumb.view(CrashBreadcrumb.V_MENU);
         WatchUi.pushView(WindMenu.build(), new WindMenuDelegate(1), WatchUi.SLIDE_UP);
         return true;
     }

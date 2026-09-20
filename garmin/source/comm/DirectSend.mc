@@ -575,9 +575,20 @@ module DirectSend {
     }
 
     // "1,4,7" → [1, 4, 7]; "" → []. Anything that is not a number is dropped.
+    //
+    // The string is the PHONE'S, so its length is not ours to assume: a 20 KB value of commas
+    // is twenty thousand substrings inside one radio callback. A need list can name at most
+    // one page per page we hold, and the longest honest one is a few hundred bytes.
+    (:dev)
+    const NEED_MAX_CHARS = 1024;
+
     (:dev)
     function _pageList(s as String) as Array<Number> {
         var out = [] as Array<Number>;
+        if (s.length() > NEED_MAX_CHARS) {
+            LinkProbe.append("cjr need too long");
+            return out;
+        }
         var rest = s;
         while (rest.length() > 0) {
             var i = rest.find(",");
@@ -702,14 +713,22 @@ module DirectSend {
         var d = idx as Dictionary;
         var n = d["n"];
         var keep = d["pages"];
-        if (!(n instanceof Lang.Number) || !(keep instanceof Lang.Array)) {
+        var sid = d["sid"];
+        var dropped = d["dropped"];
+        // Storage outlives the build that wrote it. An index left by a version with a
+        // different key set gives `null > 0` — an UnexpectedTypeException on the first line
+        // of onStart, before a view exists — and an `n` of a hundred thousand allocates two
+        // arrays the heap cannot hold. Both are the store's word, so neither is believed.
+        if (!(n instanceof Lang.Number) || !(keep instanceof Lang.Array)
+                || !(sid instanceof Lang.Number)
+                || (n as Number) < 0 || (n as Number) > 4096) {
             _clearStore();
             return;
         }
-        _sid = d["sid"] as Number;
+        _sid = sid as Number;
         _ended = true;
         _recording = false;
-        _partial = (d["dropped"] as Number) > 0;
+        _partial = dropped instanceof Lang.Number && (dropped as Number) > 0;
         _pages = new [n as Number] as Array<ByteArray>;
         _acked = new [n as Number] as Array<Boolean>;
         for (var i = 0; i < (n as Number); i++) {
@@ -717,8 +736,12 @@ module DirectSend {
             _acked[i] = true;          // everything not restored counts as gone
         }
         var list = keep as Array;
-        for (var k = 0; k < list.size(); k++) {
-            var i = list[k] as Number;
+        for (var k = 0; k < list.size() && k < PERSIST_MAX; k++) {
+            var entry = list[k];
+            if (!(entry instanceof Lang.Number)) {
+                continue;
+            }
+            var i = entry as Number;
             var page = null;
             try {
                 page = Storage.getValue(STORE_PAGE + k);

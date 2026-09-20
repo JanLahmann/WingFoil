@@ -253,9 +253,19 @@ class PumpDetector {
         _lastBatchMs = nowMs;
         var rateHz = GRID_HZ * _decim;
         for (var i = 0; i < n; i++) {
-            var ax = x[i].toFloat();
-            var ay = y[i].toFloat();
-            var az = z[i].toFloat();
+            // The three arrays come from the firmware, and a sample that never arrived is a
+            // null INSIDE them, not a shorter array. `null.toFloat()` throws from a sensor
+            // callback, where nothing catches it, so a hole is skipped rather than converted.
+            var xi = x[i];
+            var yi = y[i];
+            var zi = z[i];
+            if (!(xi instanceof Lang.Number) || !(yi instanceof Lang.Number)
+                    || !(zi instanceof Lang.Number)) {
+                continue;
+            }
+            var ax = xi.toFloat();
+            var ay = yi.toFloat();
+            var az = zi.toFloat();
             var mag = Math.sqrt(ax * ax + ay * ay + az * az);
             // Garmin writes milli-g under a "g" label (docs/algorithms.md), so the scale is
             // sniffed from the resting magnitude exactly as the lab parser does — but only

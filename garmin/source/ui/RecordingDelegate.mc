@@ -50,6 +50,7 @@ class RecordingDelegate extends WatchUi.BehaviorDelegate {
     }
 
     function onBack() as Boolean {
+        CrashBreadcrumb.view(CrashBreadcrumb.V_MENU);
         var menu = new WatchUi.Menu2({:title => "Session"});
         menu.addItem(new WatchUi.MenuItem("Resume", null, :resume, null));
         menu.addItem(new WatchUi.MenuItem("Wind", AppSettings.windLabel(), :wind, null));

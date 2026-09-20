@@ -84,6 +84,12 @@ class SessionController {
     }
 
     function onPosition(info as Position.Info) as Void {
+        // The firmware hands this callback a fix; it has never handed us nothing, and one
+        // `info.accuracy` on a null would end the session with no log and no recording. The
+        // guard is one compare per second against a whole lost file.
+        if (info == null) {
+            return;
+        }
         if (state == STATE_RECORDING) {
             var events = engine.tick(info);
             var flightEvent = events & 0x0F;
@@ -302,6 +308,9 @@ class SessionController {
     function onAccelData(data as Sensor.SensorData) as Void {
         if (state != STATE_RECORDING) {
             engine.pump.resetFilter();
+            return;
+        }
+        if (data == null) {
             return;
         }
         var accel = data.accelerometerData;

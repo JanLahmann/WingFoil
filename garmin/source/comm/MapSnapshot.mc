@@ -19,6 +19,7 @@ import Toybox.Math;
 module MapSnapshot {
     const SCHEMA = 1;
     const MAX_CELLS = 120;
+    const NAME_MAX_CHARS = 32;           // see store(): the phone's string is not our budget
     const SLOTS = ["mapA", "mapB"];
     const STORE_NEXT = "mapNext";        // which slot the next new spot overwrites
 
@@ -75,9 +76,18 @@ module MapSnapshot {
         if (!rowsSum(mask as ByteArray, w as Number, h as Number)) {
             return false;
         }
+        // The spot name is the phone's string and the only unbounded field in the message.
+        // Storage refuses a value over 8 KB, and it refuses the WHOLE entry, mask included —
+        // so a 20 KB name would cost the snapshot rather than the name. Cut to what a watch
+        // can draw.
         var name = d[K_NAME];
+        var label = "";
+        if (name instanceof Lang.String) {
+            var str = name as String;
+            label = str.length() > NAME_MAX_CHARS ? str.substring(0, NAME_MAX_CHARS) : str;
+        }
         var entry = {
-            K_ID => id, K_NAME => (name instanceof Lang.String ? name : ""),
+            K_ID => id, K_NAME => label,
             K_LAT_S => la, K_LON_W => lo, K_LAT_N => lh, K_LON_E => lx,
             K_W => w, K_H => h, K_MASK => mask
         };
@@ -116,16 +126,22 @@ module MapSnapshot {
 
     // The slot this spot already lives in, else the slot marked next (round robin).
     function slotFor(id as Number) as String {
-        for (var s = 0; s < SLOTS.size(); s++) {
-            var v = Storage.getValue(SLOTS[s]);
-            if (v instanceof Lang.Dictionary && (v as Dictionary)[K_ID] == id) {
-                return SLOTS[s];
+        try {
+            for (var s = 0; s < SLOTS.size(); s++) {
+                var v = Storage.getValue(SLOTS[s]);
+                if (v instanceof Lang.Dictionary && (v as Dictionary)[K_ID] == id) {
+                    return SLOTS[s];
+                }
             }
+            var next = Storage.getValue(STORE_NEXT);
+            var k = next instanceof Lang.Number ? (next as Number).abs() % SLOTS.size() : 0;
+            Storage.setValue(STORE_NEXT, (k + 1) % SLOTS.size());
+            return SLOTS[k];
+        } catch (e) {
+            // A full or unreadable store still has to name a slot — store() will fail on the
+            // write and say so, which is the one place that answer belongs.
+            return SLOTS[0];
         }
-        var next = Storage.getValue(STORE_NEXT);
-        var k = next instanceof Lang.Number ? (next as Number) % SLOTS.size() : 0;
-        Storage.setValue(STORE_NEXT, (k + 1) % SLOTS.size());
-        return SLOTS[k];
     }
 
     // ---- lookup ----
@@ -140,13 +156,56 @@ module MapSnapshot {
             if (!(v instanceof Lang.Dictionary)) {
                 continue;
             }
+            // store() only ever writes all four corners, but this reads a SLOT, not a
+            // message: a dictionary left by an older build (or half-written when the app was
+            // killed) has no K_LAT_S, and `la >= null` throws out of the draw path, which is
+            // every frame. A slot that cannot answer the question is simply not the slot.
             var e = v as Dictionary;
+            if (!_hasBox(e)) {
+                continue;
+            }
             if (la >= (e[K_LAT_S] as Number) && la <= (e[K_LAT_N] as Number)
                     && lo >= (e[K_LON_W] as Number) && lo <= (e[K_LON_E] as Number)) {
                 return SLOTS[s];
             }
         }
         return null;
+    }
+
+    // Is this slot's dictionary the shape `store` writes? Asked by every reader, because a
+    // slot is Storage — it outlives the build that wrote it, and `frame`/`bitmap` divide by
+    // its grid. A `mh` of 0 in a stored slot is not a wrong picture, it is `row * side / 0`,
+    // which on this runtime is a fatal error no try/catch can hold.
+    // Written as four separate `if`s and not one `&&` chain on purpose: monkeyc 9.2's type
+    // checker takes minutes over a conjunction of `instanceof`s on Dictionary subscripts in
+    // this module (a --unit-test build went from 20 s to no answer at all). Same test, same
+    // cost at run time, and it finishes.
+    function _isNum(v as Object?) as Boolean {
+        return v instanceof Lang.Number;
+    }
+
+    function _hasBox(e as Dictionary) as Boolean {
+        if (!_isNum(e[K_LAT_S]) || !_isNum(e[K_LAT_N])) {
+            return false;
+        }
+        if (!_isNum(e[K_LON_W]) || !_isNum(e[K_LON_E])) {
+            return false;
+        }
+        return true;
+    }
+
+    function _hasGrid(e as Dictionary) as Boolean {
+        var w = e[K_W];
+        var h = e[K_H];
+        if (!_isNum(w) || !_isNum(h)) {
+            return false;
+        }
+        var wn = w as Number;
+        var hn = h as Number;
+        if (wn < 8 || wn > MAX_CELLS || hn < 8 || hn > MAX_CELLS) {
+            return false;
+        }
+        return e[K_MASK] instanceof Lang.ByteArray;
     }
 
     function entry(slot as String) as Dictionary? {
@@ -178,7 +237,7 @@ module MapSnapshot {
     // TrackDraw uses for a track. Returned as [latS, lonW, latN, lonE, squeeze, scale].
     function frame(slot as String, box as Number) as Array<Float>? {
         var e = entry(slot);
-        if (e == null) {
+        if (e == null || !_hasBox(e)) {
             return null;
         }
         var latS = (e[K_LAT_S] as Number) / 100000.0;
@@ -202,7 +261,8 @@ module MapSnapshot {
             return _bitmap;
         }
         var e = entry(slot);
-        if (e == null || side < 8 || !(Graphics has :createBufferedBitmap)) {
+        if (e == null || side < 8 || !_hasGrid(e)
+                || !(Graphics has :createBufferedBitmap)) {
             return null;
         }
         var w = e[K_W] as Number;

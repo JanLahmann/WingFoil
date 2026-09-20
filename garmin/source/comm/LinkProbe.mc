@@ -232,6 +232,10 @@ class ProbeView extends WatchUi.View {
         View.initialize();
     }
 
+    function onShow() as Void {
+        CrashBreadcrumb.view(CrashBreadcrumb.V_PROBE);
+    }
+
     function onUpdate(dc as Dc) as Void {
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
         dc.clear();

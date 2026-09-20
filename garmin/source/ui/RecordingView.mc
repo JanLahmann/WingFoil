@@ -250,6 +250,12 @@ class RecordingView extends WatchUi.View {
         View.initialize();
     }
 
+    // Paging no longer swaps the view (PageNav.step is an index and a repaint), so this fires
+    // once per entry to the recording UI. CrashBreadcrumb.view dedupes anyway.
+    function onShow() as Void {
+        CrashBreadcrumb.view(CrashBreadcrumb.V_RECORDING);
+    }
+
     // Paging swaps the whole View, which fires onHide — so cancelling the celebration here
     // is precisely what PbFlash's module-level state exists to prevent (see its header). The
     // flash clears itself at FRAMES, which is what makes it safe to leave running; the

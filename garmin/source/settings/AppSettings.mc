@@ -73,14 +73,23 @@ module AppSettings {
     // claims, and only one of them is the rider's word (FitFields.writesTurnCounts).
     var autoWindEverSet as Boolean = false;
 
+    // Every numeric property is read through `_clamped`, with the SAME min/max
+    // resources/settings/settings.xml declares. Garmin Connect enforces those bounds on the
+    // slider; nothing enforces them on the value that actually arrives. A property store
+    // survives an app update, a settings sync can carry a value the current settings.xml no
+    // longer allows, and `Properties.setValue` from our own code is unchecked — so a
+    // `minFlightS` of 0, a `foilEntryKmh` of 0 (which sanitize() then turns into a NEGATIVE
+    // exit speed) or a `windDefaultTurnType` of 7 all reach the detectors without this.
+    // Clamping here, once, is what keeps every threshold inside docs/algorithms.md whatever
+    // the store says. Change a bound here and in settings.xml together.
     function load() as Void {
-        cfg.foilEntryMps = _num("foilEntryKmh", 12.0) / 3.6;
-        cfg.foilExitMps = _num("foilExitKmh", 8.0) / 3.6;
-        cfg.entryHoldS = _num("entryHoldS", 2.0).toNumber();
-        cfg.exitHoldS = _num("exitHoldS", 3.0).toNumber();
-        cfg.minFlightS = _num("minFlightS", 5.0).toNumber();
+        cfg.foilEntryMps = _clamped("foilEntryKmh", 12.0, 6.0, 25.0) / 3.6;
+        cfg.foilExitMps = _clamped("foilExitKmh", 8.0, 4.0, 20.0) / 3.6;
+        cfg.entryHoldS = _clamped("entryHoldS", 2.0, 1.0, 10.0).toNumber();
+        cfg.exitHoldS = _clamped("exitHoldS", 3.0, 1.0, 10.0).toNumber();
+        cfg.minFlightS = _clamped("minFlightS", 5.0, 2.0, 30.0).toNumber();
         cfg.useKnots = _bool("useKnots", false);
-        sportChoice = _num("sportChoice", 0.0).toNumber();
+        sportChoice = _clamped("sportChoice", 0.0, 0.0, 2.0).toNumber();
         accelLogging = _bool("accelLogging", true);
         pumpDetection = _bool("pumpDetection", true);
         alertPb = _bool("alertPb", true);
@@ -90,20 +99,23 @@ module AppSettings {
         mapAfterSave = readMapAfterSave();
         alertTakeoff = _bool("alertTakeoff", true);
         visualAlerts = _bool("visualAlerts", true);
-        alertIntervalMin = _num("alertIntervalMin", 0.0).toNumber();
-        alertIntervalKm = _num("alertIntervalKm", 0.0);
+        alertIntervalMin = _clamped("alertIntervalMin", 0.0, 0.0, 120.0).toNumber();
+        alertIntervalKm = _clamped("alertIntervalKm", 0.0, 0.0, 50.0);
         autoPause = _bool("autoPause", false);
-        autoPauseDelayS = _num("autoPauseDelayS", 5.0).toNumber();
+        autoPauseDelayS = _clamped("autoPauseDelayS", 5.0, 2.0, 60.0).toNumber();
         showLabels = _bool("showLabels", true);
         phonePush = _bool("phonePush", false);
-        if (autoPauseDelayS < 2) {
-            autoPauseDelayS = 2;
-        }
+        // NOT `_clamped`, and the two exceptions are the same exception. A wind axis of 400
+        // clamped to 359 is a bearing the rider never gave, and it would relabel every tack
+        // as a jibe rather than leaving the turns generic; `Config.setWindDirection` reads
+        // anything outside 0-359 as UNSET, which is the honest answer and the documented one.
         cfg.setWindDirection(_num("windDirDeg", -1.0).toNumber());
         if (cfg.windManual >= 0) {
             windEverSet = true;
         }
         autoWind = _bool("autoWind", true);
+        // Likewise: a turn habit of 7 is not "balanced" (which switches the prior OFF), it is
+        // a store nobody wrote on purpose. It takes the default habit.
         windDefaultTurnType = _num("windDefaultTurnType",
             WingFoilCore.TURN_TYPE_JIBES.toFloat()).toNumber();
         if (windDefaultTurnType < WingFoilCore.TURN_TYPE_JIBES
@@ -144,6 +156,18 @@ module AppSettings {
     // estimate rather than the rider's bearing; "--" when unset.
     function windLabel() as String {
         return cfg.windLabel();
+    }
+
+    // `_num` with the property's documented bounds applied. Out of range does NOT fall back
+    // to the default — it clamps to the nearest bound, because a rider who set 40 km/h meant
+    // "as high as it goes", not "put it back to twelve". A value that is not a number at all
+    // (a String, a null, a store the firmware could not read) still takes the default.
+    function _clamped(key as String, dflt as Float, lo as Float, hi as Float) as Float {
+        var v = _num(key, dflt);
+        if (v < lo) {
+            return lo;
+        }
+        return v > hi ? hi : v;
     }
 
     function _num(key as String, dflt as Float) as Float {

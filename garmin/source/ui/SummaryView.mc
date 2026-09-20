@@ -109,6 +109,10 @@ class SummaryView extends WatchUi.View {
         View.initialize();
     }
 
+    function onShow() as Void {
+        CrashBreadcrumb.view(CrashBreadcrumb.V_SUMMARY);
+    }
+
     function onUpdate(dc as Dc) as Void {
         var c = getApp().controller;
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);

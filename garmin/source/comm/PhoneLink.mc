@@ -86,6 +86,12 @@ module PhoneLink {
     const KEY_TAKEOFF_OK = "ks";
     const KEY_WIND = "wd";
     const KEY_APP = "av";
+    // How many runs on this watch never reached onStop (CrashBreadcrumb). The watch has no
+    // crash reporting of its own, so this is the only number that crosses to a machine we can
+    // read. Always present, 0 on a watch that has never lost a run: a key that appears only
+    // sometimes is a key the phone has to guess about, and the whole card is 202 bytes of a
+    // 1024-byte budget — there is no saving worth that.
+    const KEY_CRASHES = "cx";
 
     // Inbound: the phone's wind push. Same encoding as KEY_WIND — degrees the wind blows
     // FROM, or -1 to clear.
@@ -211,7 +217,7 @@ module PhoneLink {
         if (pct < 0) {
             pct = 0;
         }
-        return {
+        var card = {
             KEY_VERSION => SCHEMA,
             KEY_START => c.startEpochS,
             KEY_DUR => c.elapsedS,
@@ -237,8 +243,10 @@ module PhoneLink {
             // one number is all this payload has room to say and the effective axis is the
             // one that explains KEY_TACKS / KEY_JIBES.
             KEY_WIND => AppSettings.cfg.windDirection,
-            KEY_APP => FitSchema.APP_MINOR * 256 + FitSchema.SCHEMA_VERSION
+            KEY_APP => FitSchema.APP_MINOR * 256 + FitSchema.SCHEMA_VERSION,
+            KEY_CRASHES => CrashBreadcrumb.crashes
         } as Dictionary;
+        return card;
     }
 
     // Encoded size of a payload, in bytes, as the message encoder would spend them: a type
