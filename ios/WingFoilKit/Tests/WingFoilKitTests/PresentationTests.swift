@@ -965,6 +965,11 @@ import Testing
     /// 0.16.0 and that is the point of the change: the seven were the turns and flight ends
     /// whose *windows* the mask fired in, and the thirty-five are the times the wrist
     /// actually went under.
+    ///
+    /// Engine 0.21.0 adds **one aborted turn** here — a sweep this rider went in halfway
+    /// through, which the scan had filed as a course change — so the session reads 57 counted
+    /// turns splitting (42 · 8 · **7**), nineteen uncounted, and one more mark on the card. A
+    /// turn that ends in the water is a verdict, and it gets a dot like every other one.
     @Test func thumbnailEventsAreTheLadderPlusTheSplashes() throws {
         let url = testFixturesDir.appendingPathComponent(
             "goldens/2026-08-29-1440_nago-torbole-windsurfen_ciq.expected.json")
@@ -975,11 +980,11 @@ import Testing
 
         #expect(counts[.flewThrough] == 42)
         #expect(counts[.touchdown] == 8)
-        #expect(counts[.fellIn] == 6)
+        #expect(counts[.fellIn] == 7)
         #expect(counts[.splash] == 35)
-        // 76 turns in the session, 56 of them counted: the twenty course changes are not
+        // 76 turns in the session, 57 of them counted: the nineteen course changes are not
         // verdicts and are not marked.
-        #expect(events.count == 91)
+        #expect(events.count == 92)
         #expect(events.map(\.t) == events.map(\.t).sorted(), "marks must be in time order")
     }
 

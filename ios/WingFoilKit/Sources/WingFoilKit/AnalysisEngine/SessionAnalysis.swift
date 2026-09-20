@@ -207,7 +207,20 @@ public enum AnalysisEngine {
     /// (1.2) times the best 10 s, and the search falls back to the fastest 2 s that passes —
     /// 31.77 → 13.13 kn. Certified Doppler records are never gated, no window of 10 s or
     /// longer is, and no fixture in the corpus moves.
-    public static let version = "0.20.0"
+    ///
+    /// 0.21.0 adds **the aborted turn** (docs/algorithms.md "The aborted turn",
+    /// `TurnDetector.abortCandidates`). Jan, 20 September 2026: *"an attempted turn that ends
+    /// in the water is a turn that fell in."* A tester tried two tacks on 19 September, went in
+    /// both times, and read back no tack and no fall in a turn — the scan asks for
+    /// `turnMinAngle` of heading change and a rider who falls halfway round never gets there.
+    /// A sweep still turning when the sailing run ended is now offered to the same scoring and
+    /// the same outcome ladder with `turnAbortMinAngle` (45°) instead, and kept only where the
+    /// ladder says `fellIn`: counted, never successful, never clean, named by the axis it was
+    /// going through. Over the 18 committed session fixtures counted turns go 560 → 569, jibes
+    /// 558 → 565, tacks 2 → 4, course changes 147 → 140, turn `fellIn` 41 → 50 and
+    /// straight-line falls 45 → 44 — clean jibes stay at 161 and no rate numerator moves.
+    /// `config.turnAbortMinAngle` and the per-turn `aborted` flag are the schema change.
+    public static let version = "0.21.0"
 }
 
 /// **Is this recording a session?** — docs/algorithms.md "Not a session" (engine 0.19.0).
@@ -295,6 +308,11 @@ public struct AnalysisConfig: Sendable, Codable, Equatable {
     public var uncertifiedShortWindowMax: Double?
     // Turn detection & classification
     public var turnMinAngle: Double
+    /// The aborted turn (engine 0.21.0): the heading change a sweep that ended in the water
+    /// needs before it is a turn the rider fell out of rather than a straight-line fall.
+    /// Optional so a stored `analysis.json` from before it still decodes; such a row
+    /// re-derives on its version.
+    public var turnAbortMinAngle: Double?
     /// The classification floor (engine 0.13.0). Optional only so a stored `analysis.json`
     /// from 0.12.0 still decodes; such a row re-derives on its version.
     public var turnClassifyMinAngle: Double?
@@ -378,6 +396,7 @@ public struct AnalysisConfig: Sendable, Codable, Equatable {
         alphaMaxDistance = records.alphaMaxDistanceM
         uncertifiedShortWindowMax = records.uncertifiedShortWindowMax
         turnMinAngle = turn.minAngleDeg
+        turnAbortMinAngle = turn.abortMinAngleDeg
         turnClassifyMinAngle = turn.classifyMinAngleDeg
         turnAxisBeforeDeg = turn.axisBeforeDeg
         turnAxisAfterDeg = turn.axisAfterDeg
@@ -534,6 +553,12 @@ public struct TurnRecord: Sendable, Codable, Equatable {
     /// `OutcomeReason` so a value written by a newer build decodes rather than throwing — the
     /// same rule `cleanBlockedBy` follows. The words are `TurnAnalytics.outcomeText`'s.
     public var outcomeReason: String?
+    /// **The aborted turn** (engine 0.21.0): the rider was still turning when he went in, so
+    /// the sweep was found from the fall backwards rather than by the main scan. Always a
+    /// counted turn with `outcome == "fell_in"`, `success` and `clean` both false. `false` in
+    /// every document written before 0.21.0 — which is the honest reading: that engine could
+    /// not have found one.
+    public var aborted: Bool
     public var borderline: Bool
     public var offFoilS: Double
     public var stoppedS: Double
@@ -567,6 +592,7 @@ public struct TurnRecord: Sendable, Codable, Equatable {
         radiusM = turn.radiusM
         outcome = turn.outcome.rawValue
         outcomeReason = turn.outcomeReason?.rawValue
+        aborted = turn.aborted
         borderline = turn.borderline
         offFoilS = turn.offFoilS
         stoppedS = turn.stoppedS
@@ -579,7 +605,7 @@ public struct TurnRecord: Sendable, Codable, Equatable {
         case ts, endTs, minTs, type, counted, entryKn, minKn, exitKn, score, success, clean
         case cleanBlockedBy
         case side, direction, netDeg, peakRateDegS, twaInDeg, twaOutDeg, arcM, radiusM
-        case outcome, outcomeReason
+        case outcome, outcomeReason, aborted
         case borderline, offFoilS, stoppedS, pumped, submerged, outcomeWindowS
         case axisTs, axisBeforeDeg, axisAfterDeg
     }
@@ -638,6 +664,9 @@ public struct TurnRecord: Sendable, Codable, Equatable {
         // exactly what the line under the chips does with it — it prints nothing rather than
         // guessing a rung from `stoppedS` the ladder may not have used.
         outcomeReason = try c.decodeIfPresent(String.self, forKey: .outcomeReason)
+        // 0.21.0: absent in every older document, and false is exact rather than a guess —
+        // an engine without the aborted pass produced no aborted turn.
+        aborted = try c.decodeIfPresent(Bool.self, forKey: .aborted) ?? false
         axisTs = try c.decodeIfPresent(Double.self, forKey: .axisTs)
         axisBeforeDeg = try c.decodeIfPresent(Double.self, forKey: .axisBeforeDeg)
         axisAfterDeg = try c.decodeIfPresent(Double.self, forKey: .axisAfterDeg)
@@ -670,6 +699,7 @@ public struct TurnRecord: Sendable, Codable, Equatable {
         try c.encode(radiusM, forKey: .radiusM)
         try c.encode(outcome, forKey: .outcome)
         try c.encode(outcomeReason, forKey: .outcomeReason)   // explicit null
+        try c.encode(aborted, forKey: .aborted)
         try c.encode(borderline, forKey: .borderline)
         try c.encode(offFoilS, forKey: .offFoilS)
         try c.encode(stoppedS, forKey: .stoppedS)

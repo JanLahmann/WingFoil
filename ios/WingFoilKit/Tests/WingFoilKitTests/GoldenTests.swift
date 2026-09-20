@@ -332,6 +332,16 @@ import Testing
             if let v = exp["borderline"] as? Bool {
                 #expect(act.borderline == v, "\(stem) turns[\(i)].borderline")
             }
+            // Engine 0.21.0: the aborted turn. Both engines have to find the *same* sweeps
+            // this way — a turn one of them read backwards from a fall and the other did not
+            // is two detectors — and an aborted turn is a fall he never came out of, never
+            // successful and never clean.
+            if let v = exp["aborted"] as? Bool {
+                #expect(act.aborted == v, "\(stem) turns[\(i)].aborted: \(act.aborted) vs \(v)")
+                #expect(!v || (act.counted && act.outcome == "fell_in"
+                               && !act.success && !act.clean),
+                        "\(stem) turns[\(i)] is aborted without the four things it means")
+            }
             // Engine 0.18.0: **why** the outcome is what it is. Both engines have to agree on
             // the rung turn by turn — a reason that differed would be two implementations of
             // one ladder, and the sentence the page prints comes straight off this code.
@@ -1047,7 +1057,7 @@ import Testing
         raw.capabilities.hasSpeed = true
         raw.capabilities.sampleRateHz = 1
         let analysis = SessionSummarizer.analyze(raw)
-        #expect(analysis.engineVersion == "0.20.0")
+        #expect(analysis.engineVersion == "0.21.0")
         #expect(analysis.flights.count == 1)
 
         let data = try JSONEncoder().encode(analysis)

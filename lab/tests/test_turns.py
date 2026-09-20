@@ -1320,3 +1320,101 @@ def test_the_spin_pass_leaves_the_maneuvers_it_overlaps_alone():
     both = [(t.kind, t.start_t, t.end_t)
             for t in detect_turns(ct, flights, WIND_N, SPIN_ON) if t.kind != THREE_SIXTY]
     assert both == plain
+
+
+# --- the aborted turn: he was still turning when he went in (engine 0.21.0) -------------
+
+#: The pass switched off, so a test can ask what the session looked like before 0.21.0.
+ABORT_OFF = TurnConfig(abort_min_angle_deg=0.0)
+
+
+def _swim(course, n=12):
+    """`n` samples going nowhere: a swim, which the ladder reads as `fell_in`."""
+    return _leg(course, n, speed=0.2)
+
+
+def _aborted_tack():
+    """Broad reach on TWA +135, luffing up hard toward head-to-wind, in at TWA +60.
+
+    75 deg of sweep: wide enough for `turnMinAngle`, so the main scan already sees it --
+    and files it as an uncounted round-up, because it is nowhere near the 90 deg
+    classification floor and it never crossed the wind. That is the tester's case of
+    19 Sep 2026 exactly.
+    """
+    return _join(_leg(135.0, 40),
+                 _ramp(135.0, 60.0, 5, [6.0, 5.5, 5.0, 4.5, 4.0]),
+                 # One more sample still making way, so the last heading the *run* can read
+                 # is the one he was on when he went in: the COG element `k` is the step
+                 # leaving sample `k`, and the step off the last moving sample is not in it.
+                 _leg(60.0, 1, speed=3.0),
+                 _swim(60.0))
+
+
+def _aborted_jibe():
+    """Beam reach on TWA +90 bearing away toward dead downwind, in at TWA +140.
+
+    50 deg of sweep -- below `turnMinAngle`, so the main scan does not see it at all.
+    """
+    return _join(_leg(90.0, 40),
+                 _ramp(90.0, 140.0, 3, [6.0, 6.0, 5.5]),
+                 _leg(140.0, 1, speed=5.0),
+                 _swim(140.0))
+
+
+def test_an_aborted_tack_is_a_tack_that_fell_in():
+    turns = _detect(*_aborted_tack())
+    assert len(turns) == 1
+    turn = turns[0]
+    assert turn.aborted and turn.counted and turn.kind == TACK
+    assert turn.outcome == FELL_IN
+    assert not turn.success and not turn.clean
+    assert abs(turn.net_deg) == pytest.approx(75.0, abs=2.0)
+    summary = summarize_turns(turns)
+    assert (summary.tacks, summary.turns_counted, summary.rejected) == (1, 1, 0)
+    assert summary.outcomes.fell_in == 1 and summary.outcomes.dry == 0
+
+
+def test_the_same_tack_was_an_uncounted_course_change_before_0_21_0():
+    turns = _detect(*_aborted_tack(), config=ABORT_OFF)
+    assert len(turns) == 1 and turns[0].kind == ROUND_UP
+    assert not turns[0].counted and not turns[0].aborted
+    assert summarize_turns(turns).rejected == 1
+
+
+def test_an_aborted_jibe_is_a_jibe_that_fell_in():
+    """Below `turnMinAngle`, so before 0.21.0 there was no sweep here at all."""
+    assert _detect(*_aborted_jibe(), config=ABORT_OFF) == []
+
+    turns = _detect(*_aborted_jibe())
+    assert len(turns) == 1
+    turn = turns[0]
+    assert turn.aborted and turn.counted and turn.kind == JIBE
+    assert turn.outcome == FELL_IN and not turn.success and not turn.clean
+    summary = summarize_turns(turns)
+    assert (summary.jibes, summary.jibes_successful) == (1, 0)
+    assert summary.jibe_outcomes.fell_in == 1
+
+
+def test_a_straight_line_fall_stays_a_straight_line_fall():
+    """The whole guard: no heading change, no turn -- however hard the rider went in."""
+    assert _detect(*_join(_leg(90.0, 40), _swim(90.0, 20))) == []
+
+
+def test_a_sweep_that_ends_in_the_water_below_the_floor_is_not_a_turn():
+    """20 deg of wobble before a swim is a swim (`turnAbortMinAngle`)."""
+    wobble = _join(_leg(90.0, 40), _ramp(90.0, 110.0, 3, [6.0, 6.0, 5.5]),
+                   _leg(110.0, 1, speed=5.0), _swim(110.0))
+    assert _detect(*wobble) == []
+
+
+def test_an_aborted_turn_needs_the_fall_not_merely_the_sweep():
+    """The same 75 deg luff, ridden out of: the ladder says no fall, so there is no turn.
+
+    What is left is what the scan always said -- an uncounted round-up.
+    """
+    rode_on = _join(_leg(135.0, 40),
+                    _ramp(135.0, 60.0, 5, [6.0, 5.5, 5.0, 4.5, 4.0]),
+                    _leg(60.0, 40, speed=6.0))   # he keeps flying
+    turns = _detect(*rode_on)
+    assert [t.kind for t in turns] == [ROUND_UP]
+    assert not turns[0].counted and not turns[0].aborted

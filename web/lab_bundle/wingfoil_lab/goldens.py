@@ -245,6 +245,19 @@ corpus the shortest 100 m window runs 13.5 s and the distance records' certified
 positional readings already agree to two per cent. On the committed fixtures **no number
 moves** -- both class (c) goldens sit at 1.05 -- but the config key is a schema change and a
 0.19.0 document was written by an engine that could not have refused a record.
+
+Engine 0.21.0 adds **the aborted turn** (docs/algorithms.md "The aborted turn"). Jan, 20 Sep
+2026: *"an attempted turn that ends in the water is a turn that fell in."* A tester tried two
+tacks on 19 Sep, went in both times, and read back no tack and no fall in a turn -- because the
+scan asks for `turnMinAngle` of heading change and a rider who falls halfway round never gets
+there. A sweep that was still turning when the sailing run ended is now offered to the same
+scoring and the same outcome ladder with `turnAbortMinAngle` (**45 deg**) instead, and kept only
+where the ladder says `fell_in`: a counted turn, never successful, never clean, named by the
+axis it was going through. Over the 18 committed session fixtures counted turns go 560 -> 569,
+jibes 558 -> 565, tacks 2 -> 4, course changes 147 -> 140, turn `fell_in` 41 -> 50 and
+straight-line falls 45 -> 44 -- **clean jibes stay at 161 and no rate numerator moves**, because
+the pass can only add a turn that fell in. `config.turnAbortMinAngle` and the per-turn `aborted`
+flag are the schema change.
 """
 
 from __future__ import annotations
@@ -869,6 +882,10 @@ def _config_dict(a: Analysis) -> dict:
         "minSpeedFilter": None,
         # turn detection & classification
         "turnMinAngle": t.min_angle_deg,
+        # The aborted turn (engine 0.21.0): the heading change a sweep that ended in the
+        # water needs before it is a turn the rider fell out of rather than a straight-line
+        # fall. 0 switches the pass off.
+        "turnAbortMinAngle": t.abort_min_angle_deg,
         "turnClassifyMinAngle": t.classify_min_angle_deg,
         "turnAxisBeforeDeg": t.axis_before_deg,
         "turnAxisAfterDeg": t.axis_after_deg,
@@ -1016,6 +1033,11 @@ def _turn_json(t: Turn) -> dict:
         # "pumped_marginal", and explicit **null** on a fly-through, which needs no
         # explanation. A code, never a sentence -- the words are presentation's.
         "outcomeReason": t.outcome_reason,
+        # **The aborted turn** (engine 0.21.0): this sweep never finished -- the rider was
+        # still turning when he went in. Always a counted turn with `outcome == "fell_in"`,
+        # `success` and `clean` both false; the flag is what lets a surface say *he fell in
+        # the turn* rather than *he turned and later fell*.
+        "aborted": bool(t.aborted),
         "borderline": bool(t.borderline),
         "offFoilS": round(t.off_foil_s, 2),
         "stoppedS": round(t.stopped_s, 2),

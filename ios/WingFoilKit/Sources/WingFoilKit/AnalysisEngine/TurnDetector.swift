@@ -31,6 +31,13 @@ public struct TurnConfig: Sendable, Equatable {
     /// Jan's rule: it is a requirement for a *successful* jibe, not for a touch-down or a
     /// failed one, so it moves `success` and never the outcome ladder.
     public var axisAfterDeg: Double = 0.0
+    /// turnAbortMinAngle (engine 0.21.0), deg: **the aborted turn**. A heading change begun at
+    /// foiling speed that ends in the water before it is wide enough to be a turn is a turn
+    /// the rider attempted and fell out of, not a straight-line fall. This is the net
+    /// unwrapped COG change such a sweep needs before the engine will say so; 0 = off, and at
+    /// 0 the pass does not run at all. Jan, 20 Sep 2026: *"an attempted turn that ends in the
+    /// water is a turn that fell in."* See `abortCandidates` and ADR-028.
+    public var abortMinAngleDeg: Double = 45.0
     /// turnCleanQuietS (engine 0.17.0): seconds after the sweep that must pass with no
     /// touchdown, no fall and no wrist under before a jibe may be called clean. Jan's rule,
     /// 7 Sep 2026: *"no touch down or fall within 10 s afterwards"* — and only for a clean
@@ -190,6 +197,12 @@ public struct Turn: Sendable, Equatable {
     /// **Why** (engine 0.18.0), or nil on a fly-through. Set on the same branch that sets
     /// `outcome`, so the two can never disagree.
     public var outcomeReason: OutcomeReason?
+    /// **The aborted turn** (engine 0.21.0): this sweep never finished — the rider was still
+    /// turning when he went in, so it was found from the fall backwards (`abortCandidates`)
+    /// rather than by the main scan. Always a counted turn with `outcome == .fellIn`,
+    /// `success` and `clean` both false; the flag is what lets a surface say *he fell in the
+    /// turn* rather than *he turned and later fell*.
+    public var aborted = false
     /// The stop landed in the ambiguous 3–5 s band.
     public var borderline = false
     public var offFoilS: Double = 0
@@ -346,15 +359,115 @@ public enum TurnDetector {
                               pump: PumpTrack? = nil,
                               evidence: OffFoilEvidence? = nil,
                               ends: [FlightEnd] = []) -> [Turn] {
-        var turns = acceptedCandidates(track, flights: flights, config: config).map {
+        let scanned = acceptedCandidates(track, flights: flights, config: config).map {
             build($0, wind: wind, config: config)
         }
-        assignOutcomes(&turns, track: track, flights: flights, config: config, pump: pump,
+        // **The aborted turn** (engine 0.21.0). Scored with the same builder and judged by
+        // the same ladder as every other sweep — only the entry condition differs — so the
+        // two lists are merged *after* the outcomes are in: whether a sweep fell in is the
+        // ladder's answer, never the scan's. See `abortCandidates` and `mergeAborted`.
+        let attempted = abortCandidates(track, flights: flights, config: config).map {
+            build($0, wind: wind, config: config, aborted: true)
+        }
+        var all = scanned + attempted
+        assignOutcomes(&all, track: track, flights: flights, config: config, pump: pump,
                        evidence: evidence, ends: ends)
-        return turns
+        return mergeAborted(Array(all[..<scanned.count]), Array(all[scanned.count...]))
     }
 
-    /// The (COG in, COG out) sweep of every turn `detect` would report, in order.
+    /// **The turns the rider did not finish** (engine 0.21.0, `turnAbortMinAngle`).
+    ///
+    /// Jan, 20 Sep 2026: *"an attempted turn that ends in the water is a turn that fell in."*
+    /// The main scan asks for `turnMinAngle` of heading change inside `turnMaxDuration`, and a
+    /// rider who falls halfway round never gets there: the COG is read only above
+    /// `turnCogSpeedFloor`, so the sailing run *ends at the fall* and what is left of the
+    /// maneuver is the part he rode. A tester tried two tacks on 19 Sep 2026, went in both
+    /// times, and read back no tack and no fall in a turn.
+    ///
+    /// So one more sweep per sailing run is offered to the same machinery — the one that was
+    /// **still turning when the run ended**, read backwards from that last heading: the widest
+    /// net change reaching it inside `turnMaxDuration`. Everything else is the entry condition
+    /// the main scan already applies, unchanged and for the same reasons: a `turnPeakRate`
+    /// spike, the `turnMinArc`/`turnMinRadius` carve gate, and `turnContext`. Only the angle is
+    /// lowered, from `turnMinAngle` to `turnAbortMinAngle`, and only for a sweep that ran into
+    /// the water.
+    ///
+    /// Nothing here decides that it *did*: these are candidates, scored by `build` and judged
+    /// by the same outcome ladder as every other turn, and `mergeAborted` keeps only the ones
+    /// the ladder called `fellIn`. A sweep cut short by a recording gap rather than by a swim
+    /// therefore produces nothing — the evidence stopped, which is the honest reading.
+    /// Mirrors `_abort_candidates` in `lab/src/wingfoil_lab/turns.py`.
+    static func abortCandidates(_ track: CleanTrack, flights: FlightSegmentation,
+                                config: TurnConfig) -> [Candidate] {
+        guard config.abortMinAngleDeg > 0 else { return [] }
+        var out: [Candidate] = []
+        for seg in track.segments where seg.count >= 3 {
+            let t = seg.map { track.samples[$0].t }
+            let x = seg.map { track.samples[$0].x ?? .nan }
+            let y = seg.map { track.samples[$0].y ?? .nan }
+            let v = seg.map { track.samples[$0].dopplerMps }
+            let man = seg.map { track.samples[$0].hybridMps }
+            guard x.contains(where: { !$0.isNaN }) else { continue }
+
+            for (a, b) in sailingRuns(v.map { $0 >= config.minCogSpeedMps }) {
+                let u = GP3SCalculator.unwrappedBearings(x: Array(x[a...b]), y: Array(y[a...b]))
+                guard u.count >= 2 else { continue }
+                let tu = Array(t[a..<(a + u.count)])
+                let rate = rates(tu, u)
+                let j = u.count - 1                     // the last heading the run could read
+                let i0 = searchSortedLeft(tu, tu[j] - config.maxDurationS)
+                guard j > i0 else { continue }
+                var i = i0
+                for k in i0..<j where abs(u[j] - u[k]) > abs(u[j] - u[i]) { i = k }
+                guard abs(u[j] - u[i]) >= config.abortMinAngleDeg else { continue }
+                var peak = 0.0
+                for r in i..<j { peak = max(peak, abs(rate[r])) }
+                guard peak >= config.peakRateDegS else { continue }
+                guard onFoil(tu[i], tu[j], flights: flights, config: config) else { continue }
+                let arc = arcAndChord(x, y, lo: a + i, hi: a + j + 1)
+                guard carved(arcM: arc.0, netDeg: u[j] - u[i], config) else { continue }
+                out.append(Candidate(t: t, man: man, dop: v, tu: tu, u: u, rate: rate,
+                                     i: i, j: j, arc: arc))
+            }
+        }
+        return out
+    }
+
+    /// Fold the aborted turns the ladder confirmed into the scan's list, in time order.
+    ///
+    /// Three rules, and each of them is about not saying the same thing twice:
+    ///
+    /// * an aborted candidate the outcome ladder did **not** call `fellIn` is dropped. The
+    ///   whole claim is "he went in during this turn"; without the fall there is no claim, and
+    ///   a sweep too narrow for `turnMinAngle` is not otherwise a maneuver;
+    /// * one that overlaps a **counted** turn is dropped. That turn already owns the fall and
+    ///   already reports it — charging it to a second, narrower sweep would double-count one
+    ///   swim, exactly what `ownedByTurn` prevents on the flight-end side;
+    /// * one that overlaps an uncounted **course change** replaces it. It is the same sweep,
+    ///   read the same way, with one more thing known about it: the rider did not come out of
+    ///   it. Mirrors `_merge_aborted` in `lab/src/wingfoil_lab/turns.py`.
+    static func mergeAborted(_ turns: [Turn], _ aborted: [Turn]) -> [Turn] {
+        var out = turns
+        for turn in aborted where turn.outcome == .fellIn {
+            let overlap = out.indices.filter {
+                turn.startT <= out[$0].endT && out[$0].startT <= turn.endT
+            }
+            if overlap.contains(where: { out[$0].counted }) { continue }
+            for k in overlap.reversed() { out.remove(at: k) }
+            out.append(turn)
+        }
+        return out.enumerated()
+            .sorted { $0.element.startT != $1.element.startT
+                        ? $0.element.startT < $1.element.startT : $0.offset < $1.offset }
+            .map(\.element)
+    }
+
+    /// The (COG in, COG out) sweep of every turn the **main scan** reports, in order.
+    ///
+    /// **Aborted turns are deliberately not here** (engine 0.21.0): the prior asks which way
+    /// the rider turns by naming each sweep under both ends of the axis, which only means
+    /// anything for a sweep that *crossed* one — and an aborted turn is very often the sweep
+    /// that did not.
     ///
     /// Exactly the same scan, non-maximum suppression, on-foil test, carve gate and overlap
     /// resolution — only the scoring and the wind classification are left off, because the
@@ -637,7 +750,7 @@ public enum TurnDetector {
     // MARK: - Scoring & classification
 
     private static func build(_ c: Candidate, wind: WindEstimate?,
-                              config: TurnConfig) -> Turn {
+                              config: TurnConfig, aborted: Bool = false) -> Turn {
         let t = c.t, man = c.man, dop = c.dop, rate = c.rate
         let i = c.i, j = c.j, arc = c.arc
         let startT = c.startT, endT = c.endT
@@ -674,12 +787,22 @@ public enum TurnDetector {
         let stayedUp = minDop > config.foilExitSpeedKmh * kmhToMps
         var success = score >= config.successPct / 100 && stayedUp
 
-        let k = classify(cogIn: c.cogIn, cogOut: c.cogOut, wind: wind,
-                         minAngleDeg: config.classifyMinAngleDeg)
+        let k = aborted
+            ? classifyAborted(cogIn: c.cogIn, cogOut: c.cogOut, wind: wind)
+            : classify(cogIn: c.cogIn, cogOut: c.cogOut, wind: wind,
+                       minAngleDeg: config.classifyMinAngleDeg)
+        if aborted { success = false }
         var kind = k.kind
         let axis = axisMeasures(c, wind: wind, kind: kind, config: config)
         var blocked: CleanBlock?
-        if let courseChange = axis.courseChange {
+        if aborted {
+            // Neither axis gate can speak about a turn that was never finished.
+            // `turnAxisBeforeDeg` asks whether the sweep was ever upwind of the axis it
+            // crossed, and an aborted turn may not have reached the axis at all — re-filing
+            // it as a course change would undo the very verdict this pass exists to record.
+            // `turnAxisAfterDeg` asks how far it carried past the axis and moves `success`,
+            // which is already false. Both are skipped, not merely satisfied.
+        } else if let courseChange = axis.courseChange {
             // Too close to the axis to have gone *through* it: filed as the same uncounted
             // course change the classification floor produces, and its axis numbers with it.
             kind = courseChange
@@ -704,6 +827,7 @@ public enum TurnDetector {
                     score: score, success: success, twaInDeg: k.twaIn, twaOutDeg: k.twaOut,
                     axisT: axis.t, axisBeforeDeg: axis.beforeDeg, axisAfterDeg: axis.afterDeg,
                     arcM: arc.0, chordM: arc.1, radiusM: radiusM)
+        turn.aborted = aborted
         turn.cleanBlockedBy = blocked
         return turn
     }
@@ -740,7 +864,11 @@ public enum TurnDetector {
         guard let crossing = nearestCrossing(lo: lo, hi: hi,
                                              offset: kind == .tack ? 0 : 180,
                                              mid: 0.5 * (lo + hi)) else {
-            return Axis()             // unreachable: the kind was named by that crossing
+            // For a completed turn this is unreachable — the kind *was* named by that
+            // crossing. An **aborted** turn reaches it, and that is the honest answer for
+            // one: it was named by the axis it was going through (`classifyAborted`) and
+            // never got there, so there is no instant, no before and no after to publish.
+            return Axis()
         }
         let before = abs(twaIn - crossing)
         if before < config.axisBeforeDeg {
@@ -827,6 +955,49 @@ public enum TurnDetector {
         }
         return classifySweep(cogIn: cogIn, cogOut: cogOut, dirDeg: wind.dirDeg,
                              minAngleDeg: minAngleDeg)
+    }
+
+    /// (kind, side, twaIn, twaOut) for a sweep the rider **did not finish** (engine 0.21.0).
+    ///
+    /// An aborted turn is named by the axis it was going through, and two things make that a
+    /// different question from `classify`'s.
+    ///
+    /// `turnClassifyMinAngle` does not apply. It exists to stop a 70° sweep that clips dead
+    /// downwind from being sold as a jibe, and it reads the angle as evidence of intent — but
+    /// an aborted turn's angle is evidence of *when the rider fell*, which is not the same
+    /// claim. A tack he went in halfway through is short because he went in.
+    ///
+    /// And a crossing cannot be required, because an aborted turn is very often the sweep that
+    /// never reached the axis — the tester's two attempts both stopped short of head-to-wind.
+    /// Requiring one would leave the label unreachable for exactly the maneuvers this pass
+    /// exists to count. So: where the sweep **did** cross, that crossing names it, exactly as
+    /// today; where it did not, the turn takes the axis its own rotation was closing on — the
+    /// first head-to-wind or dead-downwind line ahead of the last heading, in the direction the
+    /// board was turning. A rider luffing up from a broad reach who goes in 45° off the wind
+    /// was tacking; one bearing away from a reach who goes in was jibing. Without a usable wind
+    /// axis there is no axis to be closing on and the turn stays unclassified — counted,
+    /// unnamed, the reading `classify` already gives a session with no wind.
+    /// Mirrors `_classify_aborted` in `lab/src/wingfoil_lab/turns.py`.
+    static func classifyAborted(cogIn: Double, cogOut: Double, wind: WindEstimate?)
+    -> (kind: TurnKind, side: String, twaIn: Double, twaOut: Double) {
+        guard let wind, wind.usable else { return (.unclassified, "unknown", .nan, .nan) }
+        let k = classifySweep(cogIn: cogIn, cogOut: cogOut, dirDeg: wind.dirDeg)
+        if k.kind == .tack || k.kind == .jibe { return k }
+        // No crossing: the axis ahead, in the sweep's own sense of rotation.
+        let twaEnd = WindEstimator.wrap180(cogIn - wind.dirDeg) + (cogOut - cogIn)
+        let sense: Double = cogOut >= cogIn ? 1 : -1
+        let toHead = degreesAhead(twaEnd, offset: 0, sense: sense)
+        let toDown = degreesAhead(twaEnd, offset: 180, sense: sense)
+        return (toHead <= toDown ? .tack : .jibe, k.side, k.twaIn, k.twaOut)
+    }
+
+    /// Degrees of further turning, in `sense`, to reach `offset + 360k` from `twa`.
+    ///
+    /// The two axes sit 180° apart, so one of them is always within 180° ahead and the
+    /// comparison in `classifyAborted` is total. 0 means the sweep ended on the axis.
+    static func degreesAhead(_ twa: Double, offset: Double, sense: Double) -> Double {
+        let d = (offset - twa) * sense
+        return d - 360 * (d / 360).rounded(.down)
     }
 
     /// (kind, side, twaIn, twaOut) for one sweep against one candidate wind direction.

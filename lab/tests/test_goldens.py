@@ -79,7 +79,7 @@ def smoke_golden():
 def test_schema_shape(smoke_golden):
     g = smoke_golden
     assert list(g.keys()) == TOP_KEYS
-    assert g["engineVersion"] == "0.20.0"
+    assert g["engineVersion"] == "0.21.0"
     assert set(g["capabilities"].keys()) == CAP_KEYS
     assert set(g["records"].keys()) == RECORD_KEYS
     assert set(g["summary"].keys()) == SUMMARY_KEYS
@@ -238,15 +238,19 @@ def test_wet_per_hour_counts_straight_falls_as_well_as_turn_falls():
 def test_jibes_per_hour_counts_only_the_jibes_he_sailed_out_of():
     """The 0.7.0 numerator: dry jibes, not every jibe the detector named.
 
-    2026-08-29 is the session that shows the size of it -- 55 jibes, 5 of them swum, so the
-    headline reads 26.7 an hour and not 29.3. A rider cannot raise this number by falling
+    2026-08-29 is the session that shows the size of it -- 56 jibes, 6 of them swum, so the
+    headline reads 26.7 an hour and not 29.9. A rider cannot raise this number by falling
     more often, which is the whole point of the change.
+
+    It shows it twice over since engine 0.21.0: the aborted turn added one jibe *and* one
+    swum jibe to this session (55/5 before it), and the rate did not move by a hundredth --
+    which is the guarantee that pass was built to keep.
     """
     a = analyze(CIQ_LONG)
     g = build_golden(a)
     s = g["summary"]
     jibes, fell = s["turns"]["jibes"], s["turns"]["jibeOutcomes"]["fellIn"]
-    assert (jibes, fell) == (55, 5)
+    assert (jibes, fell) == (56, 6)
 
     # The per-turn list and the tally agree on what "dry" means -- flew-through and
     # touchdown alike, because pumping back up out of a touchdown is a jibe he made.
