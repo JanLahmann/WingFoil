@@ -722,3 +722,141 @@ tbody tr.opens:hover { background: var(--line-soft); }
 
 .spot-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 /* r3-w3:end */
+
+
+/* r7-w5:begin — CONCISE OR EXTENSIVE, THE FOLDED HELP, AND THE NEW SETTINGS
+   ---------------------------------------------------------------------------
+   Jan, 20 September 2026, from his phone: "/app/#/help is way too long",
+   "/app/#/settings is way too long, do we need all this?", "parts of /app/#/session are
+   too long". The rule the three share is pattern K — a line says what you get, a `?`
+   carries the mechanism — so the furniture below is a `?` and a fold, repeated. */
+
+/* The `?` beside an explanation. Small, round, quiet, and the same shape as the glossary
+   fold's own `?` one panel up, because they do the same thing. */
+.explain-q {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font: 600 11px/1 var(--sans);
+  vertical-align: -2px;
+  cursor: pointer;
+}
+
+.explain-q:hover { border-color: var(--ink-3); color: var(--ink-2); }
+
+/* The extensive reading. It sits under the line it belongs to, indented off the line's own
+   left edge so a reader can see where the answer to the `?` starts and stops. */
+.explain-more {
+  margin: 8px 0 0;
+  padding-left: 10px;
+  border-left: 2px solid var(--line-soft);
+}
+
+.explain-more > p { margin: 0 0 6px; }
+
+.explain-more > p:last-child { margin-bottom: 0; }
+
+.explain-summary { color: var(--ink-2); }
+
+/* The switch itself, in Settings and in the menu sheet's footer. */
+.detail-switch { margin-top: 12px; }
+
+.detail-switch h2 { margin: 0 0 8px; }
+
+.detail-switch .seg { width: max-content; }
+
+.detail-switch p { margin: 8px 0 0; }
+
+.menu-detail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.menu-detail-label { color: var(--ink-3); font-size: 12px; }
+
+/* ------------------------------------------------------------------- the Help page */
+
+/* Ten shut folds. The handle is the section's name and its page count, which is the
+   contents entry a reference work owes its reader. */
+details.help-section { border-top: 1px solid var(--line-soft); }
+
+details.help-section > summary {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 12px 0;
+  cursor: pointer;
+  list-style: none;
+}
+
+details.help-section > summary::-webkit-details-marker { display: none; }
+
+.help-section-name { color: var(--ink); font-weight: 600; font-size: 14px; }
+
+details.help-section[open] > summary { border-bottom: 1px solid var(--line-soft); }
+
+.help-topic { padding: 14px 0; border-bottom: 1px solid var(--line-soft); }
+
+.help-topic:last-child { border-bottom: 0; }
+
+.help-topic h4 { margin: 0 0 4px; font-size: 14px; }
+
+/* THE LADDER THE RIGHT WAY UP (finding 11): the summary was set smaller than the body it
+   introduced. It is body size, in the stronger ink, over the prose. */
+.help-topic .what { margin: 0 0 8px; color: var(--ink-2); font-size: 13.5px; }
+
+.help-topic p { margin: 0 0 8px; }
+
+/* A topic a deep link asked for says so for a beat, because a fold that merely scrolled
+   leaves a reader guessing which of ten paragraphs he was sent to. */
+.help-topic.found {
+  background: var(--line-soft);
+  box-shadow: 0 0 0 8px var(--line-soft);
+  border-radius: 4px;
+}
+
+/* --------------------------------------------------------------------- Settings */
+
+.settings-lead { margin: 0 0 12px; }
+
+.data-acts { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+
+.wipe { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line-soft); }
+
+/* The confirmation, on the page rather than in a browser dialog. It is indented and ruled
+   so it reads as a question this app is asking, which is the whole reason it is here. */
+.wipe-confirm {
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.wipe-confirm > p { margin: 0 0 10px; }
+
+.wipe-acts { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
+
+#whats-new-fold > summary {
+  padding: 4px 0;
+  color: var(--ink-2);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* The turn page's footnote: one line by default, eleven paragraphs when asked. */
+.tp-footlead { margin: 0; }
+/* r7-w5:end */

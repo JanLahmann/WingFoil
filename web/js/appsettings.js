@@ -12,6 +12,7 @@
 const LS_UNITS = "cleanjibe.units";
 const LS_WELCOME = "cleanjibe.welcomeSeen.v1";
 const LS_GEAR = "cleanjibe.gear.v1";
+const LS_DETAIL = "cleanjibe.detail.v1";
 
 /** Knots per km/h. One constant, so no caller multiplies by a number it typed. */
 const KMH_PER_KN = 1.852;
@@ -66,6 +67,31 @@ export function speed(kn, digits = 2) {
   return `${value.toFixed(digits)} ${speedUnit()}`;
 }
 
+/* --------------------------------------------------------------- how much to say */
+
+/**
+ * `"concise"` or `"extensive"`, site-wide, and **concise is the default**.
+ *
+ * Jan, 20 September 2026, from his phone: *"/app/#/help is way too long"*, *"/app/#/settings
+ * is way too long, do we need all this?"*, *"parts of /app/#/session are too long"*. The
+ * answer is not to delete the explanations — a rider meeting *CPH* or a turn verdict for
+ * the first time needs them — it is to let him say how much he wants, once, and have every
+ * surface obey (js/explain.js).
+ *
+ * Concise: one line per explanation, plus a `?` into the help topic that carries the rest.
+ * Extensive: that same `?` stays, and the help topic's own body is drawn under the line,
+ * read from the catalogue at render time so there is never a second copy of it
+ * (docs/review-checklist.md, pattern F).
+ */
+export function detail() {
+  return read(LS_DETAIL, "concise") === "extensive" ? "extensive" : "concise";
+}
+
+export function setDetail(value) {
+  write(LS_DETAIL, value === "extensive" ? "extensive" : "concise");
+  for (const fn of listeners) fn();
+}
+
 /* ------------------------------------------------------------------- first open */
 
 export function welcomeSeen() {
@@ -114,7 +140,7 @@ export function forgetSettings() {
   // here rather than imported: a start-over that forgot to forget the key would leave the
   // one piece of the reader's account behind, and a cross-import for two strings is worse
   // than two strings. Keep them in step with js/icu.js.
-  for (const key of [LS_UNITS, LS_WELCOME, LS_GEAR,
+  for (const key of [LS_UNITS, LS_WELCOME, LS_GEAR, LS_DETAIL,
                      "wingfoil.icu.key", "wingfoil.icu.athlete",
                      "cleanjibe.install.dismissed"]) {
     try {

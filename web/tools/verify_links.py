@@ -31,7 +31,8 @@ WHAT IT CHECKS, per document:
      has scrolled away.
 
      A REDIRECT is not one of the seven. /learn/, /watches/ and /whats-new/ became stubs on
-     19 September 2026, when /help/, /start/ and /invite/ took their content: a meta refresh,
+     19 September 2026, and /invite/ on the 20th, when /help/ and /start/ took their
+     content: a meta refresh,
      one sentence and the link a reader uses if the refresh does not fire. They keep their
      addresses because a link somebody sent a friend in March must not answer 404, and they
      carry no nav, no footer, no word budget and no copy pin, because a page that is on
@@ -78,6 +79,11 @@ REDIRECTS = {
     "learn/index.html",
     "watches/index.html",
     "whats-new/index.html",
+    # /invite/ joined them on 20 September 2026: the
+    # install links are /start/#apps and the release notes are /start/#whats-new. The
+    # address stays because it is in every TestFlight mail we have sent, and in the
+    # iPhone app's own "Coming in a future release" screen.
+    "invite/index.html",
 }
 
 SKIP = re.compile(r"^(https?:|mailto:|tel:|data:|javascript:|cleanjibe:|//)", re.I)
@@ -308,14 +314,14 @@ if make_start.main(["--check"]) != 0:
     errors.append("web/start/index.html or GettingStartedGuide.swift is stale — "
                   "run `python3 web/tools/make_start.py`")
 
-# The release notes are the same kind of generated half, on /whats-new/: the cards, the
+# The release notes are the same kind of generated half, on /start/: the cards, the
 # app's What's new screen and the TestFlight "What to Test" text are three renderings of
 # docs/copy/whats-new.json, and a page that has drifted from it is the changelog disagreeing
 # with the app the reader just installed.
 import make_whats_new                                                    # noqa: E402
 
 if make_whats_new.main(["--check"]) != 0:
-    errors.append("the release-note cards on web/invite/ or WhatsNew.swift are stale — "
+    errors.append("the release-note cards on web/start/ or WhatsNew.swift are stale — "
                   "run `python3 web/tools/make_whats_new.py`")
 
 # And /help/, which is the app's own help catalogue rendered: docs/copy/help.json is written

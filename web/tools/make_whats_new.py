@@ -67,7 +67,11 @@ REPO = WEB.parent
 SOURCE = REPO / "docs" / "copy" / "whats-new.json"
 SWIFT_OUT = (REPO / "ios" / "WingFoilKit" / "Sources" / "WingFoilKit" / "Help"
              / "WhatsNew.swift")
-PAGE = WEB / "invite" / "index.html"
+#: /whats-new/ became /invite/#whats-new on 19 September 2026, and /invite/ itself
+#: folded into /start/ on the 20th. The cards are the foot of Get started now: a
+#: reader of release notes either has the app or is deciding to get it, and both are
+#: one scroll from the install links at the top of that page.
+PAGE = WEB / "start" / "index.html"
 
 BEGIN = "<!-- whats-new:begin -->"
 END = "<!-- whats-new:end -->"

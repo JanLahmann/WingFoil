@@ -11,6 +11,10 @@ while somebody checks, so this holds three lists from both ends at once:
   THE FIVE MENU ROWS    ios/WingFoilKit/.../AppMenuRows.swift (the last row's title is
                         FeedbackDoors.menuRow, so docs/copy/feedback.json is read for it)
   THE SESSION SUB-TABS  ios/WingFoilKit/.../SessionSection.swift
+  THE SETTINGS SECTIONS ios/WingFoilKit/.../SettingsCopy.swift -> docs/copy/settings.json
+                        (written by ``SettingsCopyExportTests``; the page declares each
+                        section with ``data-settings`` and renders the header and the
+                        one-line lead from the JSON rather than typing either)
 
 and then holds ``web/app/index.html`` to the JSON: the tab bar, the menu rows and the
 ways-in rows have to be in the page, in that order, with those words. It is the smoke test
@@ -118,6 +122,8 @@ class Shell(HTMLParser):
         self.menu: list[tuple[str, str, bool]] = []     # (data-menu, text, after divider)
         self.ways: list[tuple[str, str, str]] = []      # (data-way, title, line)
         self.sections: list[str] = []
+        #: the Settings sections the page carries, in the order it draws them
+        self.settings: list[str] = []
         #: id -> (data-screen, data-empty), the ported screens and their empty states.
         self.screens: dict[str, tuple[str, str]] = {}
         self._stack: list[dict] = []
@@ -131,6 +137,8 @@ class Shell(HTMLParser):
             self.ids.add(d["id"])
         if d.get("data-section"):
             self.sections.append(d["data-section"])
+        if d.get("data-settings"):
+            self.settings.append(d["data-settings"])
         if d.get("data-screen"):
             self.screens[d.get("id") or ""] = (_flat(d["data-screen"]),
                                                _flat(d.get("data-empty") or ""))
@@ -294,6 +302,23 @@ def main(argv=None) -> int:
         want_ways.append((row["id"], _flat(row.get("title") or route["title"]),
                           _flat(row["line"])))
     same("the ways-in rows", parsed.ways, want_ways)
+
+    # 3b · THE SETTINGS PAGE, against the phone's own sections
+    # docs/copy/settings.json is written out of the kit's `SettingsCopy` by
+    # `SettingsCopyExportTests`, so the phone authors every header and every line. What the
+    # page owes is the same sections in the same order, and no section of its own: a
+    # browser that invented a Settings heading would be the drift docs/screens.md calls a
+    # gap rather than a deviation. `web` is the flag that says a browser has the section at
+    # all, and `channel` keeps a beta-only one off a page every stranger can open.
+    settings = json.loads((COPY / "settings.json").read_text(encoding="utf-8"))
+    want_settings = [s["id"] for s in settings["sections"]
+                     if s["web"] and s["channel"] == "release"]
+    same("the Settings sections are the phone's, in its order",
+         parsed.settings, want_settings)
+    for section in settings["sections"]:
+        if len(section["lead"].split()) > 20:
+            problems.append(f"settings section {section['id']}: the lead is "
+                            f"{len(section['lead'].split())} words, and a lead is one line")
 
     missing = [i for i in PAGE_IDS if i not in parsed.ids]
     if missing:

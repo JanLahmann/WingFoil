@@ -28,6 +28,14 @@ WHAT IS IN IT
   ``SETTINGS``   the one sentence at the top of the intervals.icu and Strava sections, out
                  of the guide's ``settings`` block — the same two the phone's own Settings
                  prints (``GettingStartedGuide.settingsIcu`` / ``.settingsStrava``).
+  ``SETTINGS_SECTIONS``
+                 docs/copy/settings.json: every Settings section the browser draws, in the
+                 order ``SettingsView`` draws it, with the phone's header, the one-line
+                 ``lead`` a rider reads by default, the phone's own footer paragraphs for
+                 the *extensive* reading, and the help topic its ``?`` opens. The kit is
+                 the author (``SettingsCopy``, exported by ``SettingsCopyExportTests``), so
+                 the browser cannot write a second wording of a switch the phone already
+                 explains (docs/review-checklist.md, pattern F).
   ``WELCOME``    docs/copy/phrases.json's ``headline`` and the four glossary ids the kit's
                  ``WelcomeGuide.highlights`` selects. The lines themselves come from
                  ``js/copy.js``'s ``GLOSSARY`` at run time, so the eleven words have one
@@ -136,6 +144,17 @@ def render() -> str:
     # `GettingStartedGuide`, so the phone's switch and the browser's say the same thing.
     settings = {key: guide["settings"][key] for key in ("intervalsIcu", "strava")}
 
+    # The Settings page itself, section by section, in the phone's order. Only the sections
+    # a browser actually has, and only what the release channel may read: a section a
+    # channel lacks has no UI at all (CLAUDE.md, "Three channels from one commit").
+    settings_doc = json.loads((COPY / "settings.json").read_text(encoding="utf-8"))
+    settings_sections = [
+        {key: section[key] for key in ("id", "title", "lead", "footer", "help")
+         if key in section}
+        for section in settings_doc["sections"]
+        if section["web"] and section["channel"] in WEB_CHANNELS
+    ]
+
     # The four ids the kit's `WelcomeGuide.highlights` selects, in its order. The lines are
     # not copied: js/copy.js already carries the eleven glossary entries, and the welcome
     # looks its four up there.
@@ -176,6 +195,15 @@ def render() -> str:
         "/** The sentence at the top of a Settings section, the phone's own\n"
         " *  (`GettingStartedGuide.settingsIcu` / `.settingsStrava`). */\n"
         "export const SETTINGS = %s;\n\n"
+        "/**\n"
+        " * The Settings page, section by section, in the order the iPhone draws it\n"
+        " * (docs/copy/settings.json, written out of the kit's `SettingsCopy`).\n"
+        " *\n"
+        " * `lead` is what a rider reads by default: what you get, in one line (pattern K).\n"
+        " * `footer` is the phone's own paragraphs, shown only in the extensive reading.\n"
+        " * `help` is the topic the section's `?` opens; a section without one has no `?`.\n"
+        " */\n"
+        "export const SETTINGS_SECTIONS = %s;\n\n"
         "/** The welcome's headline and promise, and the four glossary ids it shows.\n"
         " *  The lines come from `GLOSSARY` in ./copy.js, which is their one home. */\n"
         "export const WELCOME = %s;\n\n"
@@ -186,7 +214,8 @@ def render() -> str:
         "export const HELP = %s;\n\n"
         "/** The feedback door, word for word (docs/copy/feedback.json). */\n"
         "export const FEEDBACK = %s;\n"
-        % (_js(shell_out), _js(ways_in), _js(guide_out), _js(settings), _js(welcome),
+        % (_js(shell_out), _js(ways_in), _js(guide_out), _js(settings),
+           _js(settings_sections), _js(welcome),
            _js(entries), _js(help_out), _js(feedback_out)))
 
 

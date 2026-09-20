@@ -88,16 +88,17 @@ session*, and three *What you get* crops that each run the example), the optiona
 **intervals.icu** panel, four progress steps, an error panel that names the likely cause, and
 then the result: a summary panel with the key metrics, *Share card*, *Save to library*, the
 glossary fold **? What these numbers mean**, and the panels **Track · Speed · Takeoffs ·
-Turns · Flight ends · The full analysis**. Library is *Session library*, *Download all
-(.zip)*, per-row *Open · .fit · .json · Delete*, and a *Where this lives* panel about
-per-origin browser storage. Records & trends holds the totals, *All-time records*, *Session
+Turns · Flight ends · The full analysis**. Library is *Session library* and its count line, with per-row
+*Open · .fit · .json · Delete*. *Download all (.zip)*, *Restore from a backup…* and the
+per-origin storage note are Settings → **Your data** since 20 September 2026. Records & trends holds the totals, *All-time records*, *Session
 records*, *Periods* and *Session by session*, under the **All spots** chip. Three dialogs:
 *Whose session is this?*, the share card, and the turn page a Turns or Flight ends row
-opens. Two banners: a new version, and the install offer. Nine other pages carry the
-same site nav (*Get started · Which watch · What it measures · What's new*) and the same
-footer with its prefilled feedback mail: `/`, `/start/`, `/watches/`, `/learn/`,
-`/whats-new/`, `/invite/`, `/privacy/`, `/impressum/`, and `/strava/callback/`, which is a
-relay for the iPhone app and is in no nav.
+opens. Two banners: a new version, and the install offer. Five other pages carry the
+same site nav (*Get started · Help*, and *Open the app* as its one door) and the same
+footer with its prefilled feedback mail: `/`, `/start/`, `/help/`, `/privacy/` and
+`/impressum/`. `/strava/callback/` is a relay for the iPhone app and is in no nav, and
+`/learn/`, `/watches/`, `/whats-new/` and `/invite/` are redirect stubs into the four
+pages that took their content.
 
 ## Doors by platform
 
@@ -164,10 +165,38 @@ app, any .fit, Strava, and the Garmin ZIP last.
     its spot rows when the list moved onto the Gear tab, because a session list one tap away
     can be sorted by spot. The browser has no such list, so the two totals stay.
 
-15. **The menu button sits top right on the web, top left on the phone.** Jan's exception
+16. **The menu button sits top right on the web, top left on the phone.** Jan's exception
     to pattern M (19 September 2026): the web header already differs — it carries the mark
     and the name as the way home, which a phone tab has no reason to — so the button
     follows the header it sits in. Same rows, same order, same sheet.
+
+17. **The reader says how much every explanation says, once, site-wide.** Jan, 20 September
+    2026, from his phone: */app/#/help* and */app/#/settings* were "way too long" and parts
+    of */app/#/session* with them. A browser has a scrollbar and no push navigation, so
+    everything a phone puts behind a `?` sheet was on the page at once. The switch is in
+    Settings and in the menu sheet's footer, **concise by default**: one line under every
+    section and every figure, with a `?` into the help topic that carries the rest;
+    *extensive* draws that topic's own body under the line, read from the catalogue at
+    render time so there is never a second copy of it (`web/js/explain.js`, pattern F). The
+    phone has the same two texts — `SettingsCopy.lead` and `SettingsCopy.footer` — and
+    prints the second; it is the same copy read at two depths, not two copies.
+
+18. **Settings → Your data is the browser's own section.** The phone has *Storage* and
+    *Library backup*; a tab also has site data a rider can clear from under his library
+    (deviation 8), so the three are one section with the figures, *Download all (.zip)*,
+    *Restore from a backup…* and *Delete everything on this site*. The confirmation is on
+    the page rather than a `window.confirm`, because a browser dialog asks in the browser's
+    words over an app that has its own. *Units* and *What's new* are the web's other two
+    sections the phone does not have: the phone reads the system's units, and What's new is
+    a menu row there.
+
+19. **`/invite/` is `/start/#apps`.** The install links and the walkthrough were two
+    destinations for one job, and a reader met both before he had either app (Jan, 20
+    September 2026). *Get the apps* is the first section of Get started, the release notes
+    are its last, and `/invite/` is a redirect because the address is in every TestFlight
+    mail we have sent and in the phone's own *Coming in a future release* screen. The site
+    nav is two links and one door.
+
 Everything else that differs is a gap to close, not a deviation.
 
 ## The web after the port, as a target
@@ -184,8 +213,8 @@ the way a session *gets in*, not the shape of the app.
 | **Trends** | one chart per metric over the chosen range, the other half of today's third tab | **Your trends start with your first session** | Range · the filter bar · **Periods** |
 | **Periods** | Trips, Months, Seasons and a range you type, as they already are, one push from Trends | **No periods yet** | a period · Share this period |
 | **Gear & spots** | spots, then wings, boards and foils | **No spots yet**; **No wings yet** | rename a spot · add gear |
-| **Settings** | the **intervals.icu** panel moves here from Analyze, beside units and what the browser stores. *Where this lives* moves here from Library | footers say why a door is off | List recent activities · Forget key · Download all (.zip) · Privacy |
-| **Help** | the topics, from the kit's help export, in the same ten sections | the search's *No results* | a topic · Getting started |
+| **Settings** | the phone's sections in the phone's order, each a header and one line, from `SettingsCopy`: intervals.icu · Strava · Deleted sessions · Units · **Your data** · About · What's new. Done 20 September 2026 | footers say why a door is off | List recent activities · Forget key · Download all (.zip) · Restore from a backup… · Delete everything on this site · Privacy |
+| **Help** | the topics, from the kit's help export, in the same ten sections, as a chip index over ten shut folds with a filter. Done 20 September 2026 | the filter's *0 pages match.* | a topic · Getting started |
 | **What CleanJibe does** (welcome) | the headline, the promise, three highlights | — | Try the example session · Set up intervals.icu · Later |
 | **Getting started** | `/start/` as it stands, generated from `docs/guide/getting-started.json` | — | the routes, the troubleshooting list |
 

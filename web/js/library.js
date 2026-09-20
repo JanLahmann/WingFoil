@@ -20,7 +20,7 @@ import { NOT_A_SESSION } from "./copy.js";
 import { esc, hms, int, nf, pct, sessionDate, zonedFormat } from "./render.js";
 import { askRider } from "./rider.js";
 import {
-  getAnalysisJson, getFitBlob, listEntries, putSession, removeSession, storageLabel, usage,
+  getAnalysisJson, getFitBlob, listEntries, putSession, removeSession, usage,
 } from "./store.js";
 import { track } from "./track.js";
 import { invalidateTrends } from "./trends.js";
@@ -136,24 +136,18 @@ async function renderSub(entries) {
     return;
   }
   const u = await usage();
-  const where = await storageLabel();
   const bits = [`${entries.length} session${entries.length === 1 ? "" : "s"}`];
   // Said once, in the count, rather than left to be inferred from a badge per row: the
   // library holds everything, the records do not, and the difference is a number.
   const aside = entries.filter((e) => e.example || e.rider).length;
   if (aside) bits.push(`${aside} not counted in your records`);
   if (entries.length) bits.push(`${mb(u.libraryBytes)} stored`);
-  if (u.originBytes !== null) {
-    bits.push(`${mb(u.originBytes)} used by this site in total` +
-              (u.quotaBytes ? ` of ~${mb(u.quotaBytes)} available` : ""));
-  }
-  // Two sentences since the voice pass of 19 September 2026 (pattern I, and Jan reading
-  // the site on his phone): what you have, then where it is and what deletes it. The line
-  // used to hang the place on a dash and name OPFS in brackets, which is a footnote in a
-  // subtitle. `storageLabel()` now carries the plain words, so this just prints them.
-  el("lib-sub").innerHTML =
-    `${esc(bits.join(" · "))}. Saved in ${esc(where)}. ` +
-    `Clearing this site's data deletes it all.`;
+  // **ONE COUNT LINE, AND NOTHING ELSE** (Jan, 20 September 2026). Where the library lives
+  // and what deletes it used to be tacked on here and spelled out again in a panel under
+  // the list; both are Settings -> Your data now, which is the section that owns the
+  // subject on the phone too. The tab that lists sessions says how many there are.
+  // voice: skip
+  el("lib-sub").textContent = `${bits.join(" · ")}.`;
 }
 
 const mb = (bytes) => (bytes === null || bytes === undefined ? "—"

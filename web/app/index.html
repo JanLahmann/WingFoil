@@ -126,6 +126,19 @@
       <li><button type="button" data-menu="help"><svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.6a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .9-1 1.7v.3"/><circle cx="12" cy="17" r="0.9"/></svg>Help</button></li>
       <li><button type="button" data-menu="support"><svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.3" y="5.5" width="17.4" height="13" rx="2.4"/><path d="m4.2 7.2 6.9 5a1.6 1.6 0 0 0 1.8 0l6.9-5"/></svg>Support &amp; ideas</button></li>
     </ul>
+    <!-- HOW MUCH TO SAY, in the menu's footer as well as in Settings (Jan, 20 September
+         2026). A rider who finds a session page too wordy is on the session page, and the
+         menu is the one piece of furniture that is on every tab (pattern M). Same control,
+         same store, same switch — js/explain.js answers both. -->
+    <div class="menu-detail">
+      <span class="menu-detail-label">How much to say</span>
+      <span class="seg" role="group" aria-label="How much to say">
+        <button type="button" class="seg-btn" data-detail-set="concise"
+                aria-pressed="true">Concise</button>
+        <button type="button" class="seg-btn" data-detail-set="extensive"
+                aria-pressed="false">Extensive</button>
+      </span>
+    </div>
     <!-- The build line as a footer, under a hairline, in the sheet's quietest ink: the
          phone puts it under its own divider at the foot of the menu, and on a screenshot
          an unstyled version string in the middle of the rows read as a sixth row. -->
@@ -316,22 +329,15 @@
            sentence that used to refuse them names what they cost instead, in the same
            breath, because a rider who drops one should learn that here and not from an
            absent section. -->
-      <p class="drop-what">
-        <!-- "A .zip of several is fine too." was a promise the engine refuses:
-             lab_bundle/web_entry.py `_unzip` raises "zip contains N recordings; expected
-             exactly one" (ux-audit A3.5, change #5). The drop title eight lines above has
-             always had it right — "(or a .zip containing one)" — so the page contradicted
-             itself within one screen. The correct sentence is the one that stayed. -->
-        Garmin <code>.fit</code> files work. That means the CleanJibe watch app, Garmin's own
-        Windsurf profile, or another wingfoil Connect IQ app.
-        <code>.gpx</code> and <code>.tcx</code> work as well. That is
-        what a Polar, Suunto or Coros export usually is.
-      </p>
-      <p class="drop-what">
-        There's no pump data in either.
-        Unless the file carries its own speed channel, the speed records are estimates. Pump
-        strokes and takeoff effort need the CleanJibe watch app. Everything else works from
-        any of them.
+      <!-- WHAT A RECORDING CAN AND CANNOT SHOW, in one line and a `?` (r7-w5).
+           It was two paragraphs, and both of them were the `sourceClass` help topic said
+           again in the card's own words — the redundancy pattern F is about, on the first
+           screen a stranger reads. The topic is the home; this is the line.
+           "A .zip of several is fine too." is still not offered, and still not true:
+           lab_bundle/web_entry.py `_unzip` refuses a zip with more than one recording. -->
+      <p class="drop-what" data-explain="sourceClass">
+        <code>.fit</code>, <code>.gpx</code> and <code>.tcx</code> all work. What each one
+        can show differs.
       </p>
       <p class="privacy">Free, no account. Your file never leaves this browser tab. The analysis runs on your own device.</p>
     </div>
@@ -381,25 +387,11 @@
     <pre id="error-text"></pre>
   </section>
 
-  <!-- Shown once there is something to say it about: js/appshell.js reveals it with the
-       first saved session. An empty library needs the ways in, not a note about storage. -->
-  <section class="panel" id="where-it-lives" hidden>
-    <div class="panel-head"><h2>Where this lives</h2></div>
-    <p class="muted small">
-      Saved sessions are written to this browser's <strong>private per-origin storage</strong>.
-      That is OPFS, or IndexedDB where OPFS is unavailable. They are not synced, not backed up and
-      not visible to any other site.
-    </p>
-    <p class="muted small">
-      <strong>Clearing this site's data, or using a private window, deletes them.</strong>
-      Use <em>Download all</em>, or the per-row <code>.fit</code> / <code>.json</code>
-      buttons, to keep a copy you own.
-    </p>
-    <!-- The whole-library export sits under the list, not over it: the ways in and the
-         sessions come first, the copy you take away last (Jan, 19 September 2026). The
-         phone keeps its export under Settings for the same reason. -->
-    <p><button class="ghost" id="lib-export" type="button" disabled>Download all (.zip)</button></p>
-  </section>
+  <!-- "WHERE THIS LIVES" IS IN SETTINGS NOW, as Settings -> Your data, with the
+       storage figures, Download all and Restore beside it (Jan, 20 September 2026: "parts
+       of /app/#/session are too long", and the Sessions tab was carrying a panel about
+       browser storage over its own list). The phone keeps Storage and Library backup in
+       Settings for the same reason. This tab keeps its count line and the sessions. -->
 
 </div>
 
@@ -478,11 +470,9 @@
       <details class="glossary" id="metric-glossary">
         <summary><span class="q" aria-hidden="true">?</span>What these numbers mean</summary>
         <dl class="glossary-list" id="glossary-list"></dl>
-        <p class="muted small">The same words, and the rest of the reference, are in
+        <p class="muted small">The rest of the reference is in
           <button class="linkish" type="button" data-goto="help"
-            data-umami-event="app-session-help">Help</button>. The
-          thresholds and the full outcome ladder are on
-          <a href="../help/#numbers" data-umami-event="app-help-numbers">How it works</a>.</p>
+            data-umami-event="app-session-help">Help</button>.</p>
       </details>
       <div class="tiles" id="tiles"></div>
     </section>
@@ -505,9 +495,11 @@
     <section class="panel" data-section="ride">
       <div class="panel-head">
         <h2>Track</h2>
-        <p class="muted small">Local-metre projection, north up. Shape carries the outcome.
-          Colour reinforces it. Tap the track to move the playhead. Tap a marker for its facts.
-          Pinch, scroll or double-tap to zoom in. Zoomed, a drag pans.</p>
+        <!-- Six sentences of map legend became one line and a `?` (r7-w5). Reading the
+             map is a help topic, `mapLegend`, and the topic is where the shapes, the
+             colours and the gestures are written down once. -->
+        <p class="muted small" data-explain="mapLegend">North up. The shape of the track
+          carries the outcome. Tap it to move the playhead.</p>
       </div>
       <div class="figure" id="map-figure"></div>
       <div class="legend" id="map-legend"></div>
@@ -526,9 +518,10 @@
     <section class="panel" data-section="ride">
       <div class="panel-head">
         <h2>Speed</h2>
-        <p class="muted small">Doppler drives the flight state. The positional channel scores
-          the turns. Numbers match the map. Drag to scrub. Wheel, pinch or double-tap to zoom
-          the time axis.</p>
+        <!-- Which channel drives what is the `flights` topic's job. This says what the
+             strip is and what a finger does with it. -->
+        <p class="muted small" data-explain="flights">Every flight, over the session. Drag
+          to scrub. Pinch or double-tap to zoom the time axis.</p>
       </div>
       <div class="figure" id="strip-figure"></div>
       <!-- The playhead readout: filled in by js/session.js while a playhead is set, and
@@ -551,7 +544,8 @@
       <!-- The phone's Takeoffs tab ends with the HR card: what the pumping cost in
            heartbeats. This page has no heart-rate figure yet, and a tab that quietly lacks
            half of what its name promises is worse than one that says so. -->
-      <p class="muted small">What the pumping cost in heartbeats is on the iPhone app.</p>
+      <p class="muted small" data-explain="takeoffAttempts">What the pumping cost in
+        heartbeats is on the iPhone app.</p>
     </section>
 
     <!-- Turns and Flight ends share a chip: 34 rows and 23 rows are the ~2 000 px of phone
@@ -601,9 +595,8 @@
       <!-- What the file IS, in a rider's terms. The old line named a path inside the test
            fixtures directory, which is true, useful to exactly one reader, and a strange
            thing to meet at the bottom of your own session report. -->
-      <p class="muted small">
-        Every number on this page, plus the ones that did not fit, as one JSON file. It is
-        the same document the iPhone app and the tests read.
+      <p class="muted small" data-explain="engineVersion">
+        Every number on this page, as one JSON file.
       </p>
       <p><button class="ghost" id="download-json" type="button">Download analysis JSON</button></p>
     </section>
@@ -617,8 +610,8 @@
     <div class="panel-head">
       <div>
         <h1 class="page-title">Records</h1>
-        <p class="muted small">Your bests across the library. A record set without the
-          watch's own speed channel is marked uncertified.</p>
+        <p class="muted small" data-explain="speedRecords">Your bests across the
+          library, with the ones the watch could not certify marked.</p>
       </div>
     </div>
     <!-- r3-w3:begin — the spot chip, the web's half of the phone's LibraryFilterBar. One
@@ -658,8 +651,8 @@
     <div class="panel-head">
       <div>
         <h1 class="page-title">Gear &amp; spots</h1>
-        <p class="muted small">Sessions that start within 500 m of each other are one spot.
-          Name your gear per session. Both stay in this browser.</p>
+        <p class="muted small" data-explain="browserApp">Your spots and your gear.
+          Both stay in this browser.</p>
       </div>
     </div>
     <div id="gear-body"></div>
@@ -672,6 +665,22 @@
 </div>
 
 <!-- ================================================================== SETTINGS -->
+<!-- THE PHONE'S SECTIONS, IN THE PHONE'S ORDER (ios/WingFoil/Features/Settings/
+     SettingsView.swift). Jan, 20 September 2026: *"/app/#/settings is way too long, do we
+     need all this?"*. Two faults behind it, both patterns:
+
+       F  the words were written twice, once on the phone and once here, so neither copy
+          could be shortened without the other drifting;
+       K  a footer explained its mechanism where one line saying what you get would do.
+
+     Both are fixed in one place. Every section below declares `data-settings="<id>"` and
+     carries its CONTROLS and nothing else; js/appshell.js writes the header and the
+     one-line lead into it out of `SETTINGS_SECTIONS`, which web/tools/make_app_copy.py
+     renders from docs/copy/settings.json, which the kit's `SettingsCopyExportTests` writes
+     from `SettingsCopy`. Four hops, no retype, one home.
+
+     A reader who wants the whole of a section says so once, with the switch at the top,
+     and the phone's own footer paragraphs are drawn under every lead on the site. -->
 <div class="page" id="page-settings" data-page="settings" hidden>
 
   <p class="crumb"><button class="linkish" type="button" data-goto="sessions">Back to
@@ -684,21 +693,26 @@
         <p class="muted small">Your accounts, your units and what this browser keeps.</p>
       </div>
     </div>
+    <!-- HOW MUCH EVERY EXPLANATION ON THIS SITE SAYS, decided once. The same switch is in
+         the menu sheet's footer, so a rider reading a session page does not have to come
+         here to turn the prose up. Remembered in localStorage behind try/catch, which is
+         the rule every stored preference on this site keeps. -->
+    <div class="detail-switch">
+      <h2>How much to say</h2>
+      <div class="seg" role="group" aria-label="How much to say">
+        <button type="button" class="seg-btn" data-detail-set="concise"
+                aria-pressed="true">Concise</button>
+        <button type="button" class="seg-btn" data-detail-set="extensive"
+                aria-pressed="false">Extensive</button>
+      </div>
+      <p class="muted small">Concise keeps one line under every section. Extensive prints
+        its help page under it.</p>
+    </div>
   </section>
 
-  <!-- intervals.icu, moved here from the topbar: Settings is where an account is kept, on
-       this surface as on the phone. -->
-  <section id="icu-panel" class="panel icu">
-    <h2>intervals.icu <span class="tag">optional</span></h2>
-    <p class="muted">
-      If your Garmin activities already sync to intervals.icu, pull a session straight from
-      there instead of exporting it by hand.
-    </p>
-    <p class="muted">
-      Your API key is stored <strong>only in this browser</strong>. It is sent
-      <strong>only to <code>api.intervals.icu</code></strong>. Never to this site's host,
-      never anywhere else.
-    </p>
+  <!-- intervals.icu, the phone's first section. The account lives in Settings on both
+       shells, which is why the panel moved off the analyzer. -->
+  <section id="icu-panel" class="panel icu" data-settings="icu">
     <div class="icu-form">
       <label>Athlete ID <input id="icu-athlete" type="text" value="0" placeholder="0 = the key's own athlete" autocomplete="off" spellcheck="false"></label>
       <label>API key <input id="icu-key" type="password" placeholder="paste API key" autocomplete="off" spellcheck="false"></label>
@@ -707,68 +721,79 @@
     </div>
     <div id="icu-status" class="icu-status" role="status"></div>
     <div id="icu-results"></div>
-    <!-- The phone's own sentence for this section, written in by js/appshell.js out of
-         docs/guide/getting-started.json. Typing it here would be a second home for a line
-         the kit authors. -->
-    <p class="muted small" id="icu-footer"></p>
+    <!-- Where the key is kept is its own help topic on the phone (`icuPrivacy`), and it was
+         two paragraphs here. One line, and the `?` carries the rest. -->
+    <p class="muted small" data-explain="icuPrivacy">Your API key stays in this browser and
+      goes to <code>api.intervals.icu</code> and nowhere else.</p>
   </section>
 
-  <section class="panel" id="settings-strava">
-    <div class="panel-head"><h2>Strava</h2></div>
-    <p class="muted small" id="strava-footer"></p>
+  <section class="panel" data-settings="strava">
     <p class="muted small">Strava is on the iPhone app. Signing in needs it.</p>
   </section>
 
-  <section class="panel" id="settings-units">
-    <div class="panel-head"><h2>Units</h2></div>
+  <section class="panel" id="settings-deleted" data-settings="deleted">
+    <div id="deleted-body" data-screen="Deleted sessions"
+         data-empty="No deleted sessions yet."></div>
+  </section>
+
+  <section class="panel" id="settings-units" data-settings="units">
     <div class="seg" role="group" aria-label="Speed units">
       <button type="button" class="seg-btn" data-units="kn" aria-pressed="true">Knots</button>
       <button type="button" class="seg-btn" data-units="kmh" aria-pressed="false">km/h</button>
     </div>
-    <p class="muted small">Speeds are read in knots by the speedsurfing world. Pick km/h if
-      that is the number you think in.</p>
   </section>
 
-  <section class="panel" id="settings-startover">
-    <div class="panel-head"><h2>Start over</h2></div>
-    <p><button class="ghost danger" id="start-over" type="button">Start over</button></p>
-    <p class="muted small">Start over removes your library, your settings and your
-      intervals.icu key from this browser. It cannot be undone.</p>
-  </section>
-
-<!-- r3-w1:begin the two Settings sections the phone has and the browser had not -->
-  <section class="panel" id="settings-deleted">
-    <div class="panel-head"><h2>Deleted sessions</h2></div>
-    <div id="deleted-body" data-screen="Deleted sessions"
-         data-empty="No deleted sessions yet."></div>
-    <p class="muted small">Deleting a session keeps its name, its date and the file you
-      imported. Restore reads that file again. Clear throws it away for good.</p>
-  </section>
-
-  <section class="panel" id="settings-backup">
-    <div class="panel-head"><h2>Library backup</h2></div>
-    <p><button class="ghost" id="restore-pick" type="button">Restore from a backup&hellip;</button></p>
+  <!-- YOUR DATA: the phone's Storage and Library backup, plus the one thing only a browser
+       has to answer for — the site data a rider can clear from under his own library
+       (docs/screens.md, deviation 8). The figures, the copy you keep, the way back in, and
+       the way out, in that order. -->
+  <section class="panel" id="settings-data" data-settings="data">
+    <div class="kv" id="storage-rows"></div>
+    <p class="data-acts">
+      <button class="ghost" id="lib-export" type="button" disabled>Download all (.zip)</button>
+      <button class="ghost" id="restore-pick" type="button">Restore from a backup&hellip;</button>
+    </p>
     <input id="restore-file" type="file" accept=".zip,application/zip" hidden>
     <div id="restore-body" data-screen="Restore library"
          data-empty="No backup picked yet."></div>
-    <p class="muted small">Download all on the Sessions tab writes the file. Pick it here
-      to put its sessions back.</p>
-  </section>
-<!-- r3-w1:end -->
 
-  <section class="panel" id="settings-about">
-    <div class="panel-head"><h2>About</h2></div>
+    <!-- DELETE EVERYTHING, and the confirmation is ON THE PAGE (Jan, 20 September 2026).
+         It used to be `window.confirm`, which is a browser dialog wearing the browser's
+         words over an app that has its own: a rider could not tell what CleanJibe was
+         asking from what Safari was. The question, the answer and the way out are all
+         here, and the destructive one is never the default. -->
+    <div class="wipe">
+      <p><button class="ghost danger" id="start-over" type="button">Delete everything on
+        this site</button></p>
+      <div class="wipe-confirm" id="wipe-confirm" hidden role="alertdialog"
+           aria-labelledby="wipe-title">
+        <p class="note" id="wipe-title"><strong>Delete everything on this site?</strong>
+          Your library, your settings and your intervals.icu key go. This cannot be
+          undone.</p>
+        <p class="wipe-acts">
+          <button class="ghost" id="wipe-cancel" type="button">Cancel</button>
+          <button class="ghost danger" id="wipe-go" type="button">Delete everything</button>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="settings-about" data-settings="about">
     <div class="kv" id="about-rows"></div>
-    <p class="muted small">Wind is estimated in this tab from your track.
-      <a href="../privacy/" data-umami-event="app-privacy">Privacy</a></p>
+    <p class="muted small"><a href="../privacy/" data-umami-event="app-privacy">Privacy</a></p>
   </section>
 
-  <section class="panel" id="settings-whats-new">
-    <div class="panel-head"><h2>What&rsquo;s new</h2></div>
-    <!-- Filled from js/appcopy.js, which the generator writes out of
-         docs/copy/whats-new.json. Nothing dated is typed into this page: the voice lint
-         reads it as a rider surface and fails a hand-written build number. -->
-    <div id="whats-new-body"></div>
+  <!-- The release notes, folded. Thirty cards under a heading is the exact shape of Jan's
+       complaint about this page, and /whats-new/ is the reader's page for them; here they
+       are the answer to "what changed in the thing I am looking at". -->
+  <section class="panel" id="settings-whats-new" data-settings="whatsNew">
+    <details id="whats-new-fold">
+      <summary><span class="help-section-name">Read the release notes</span></summary>
+      <!-- Filled from js/appcopy.js, which the generator writes out of
+           docs/copy/whats-new.json. Nothing dated is typed into this page: the voice lint
+           reads it as a rider surface and fails a hand-written build number. -->
+      <div id="whats-new-body"></div>
+    </details>
   </section>
 
 </div>
@@ -783,6 +808,12 @@
   <p class="crumb"><button class="linkish" type="button" data-goto="sessions">Back to
     Sessions</button></p>
 
+  <!-- AN INDEX, A FILTER, AND TEN SHUT FOLDS (docs/web-design-review.md, finding 11; Jan,
+       20 September 2026: "/app/#/help is way too long"). Forty topics with every section
+       expanded is a dump; the phone's Help is searchable and foldable and this is the same
+       reference work, so it reads the same way. The chips are the site's section nav in the
+       session switcher's shape, and they are the contents page: one press opens one fold.
+       js/appshell.js fills all three out of HELP. -->
   <section class="panel">
     <div class="panel-head">
       <div>
@@ -790,6 +821,13 @@
         <p class="muted small" id="help-sub"></p>
       </div>
     </div>
+    <nav class="help-index" id="help-index" aria-label="Help sections"></nav>
+    <p class="help-search">
+      <label class="sr-only" for="help-filter">Filter the help</label>
+      <input id="help-filter" type="search" autocomplete="off" spellcheck="false"
+             placeholder="Filter by title or summary">
+      <span class="muted small" id="help-filter-count" role="status"></span>
+    </p>
     <div id="help-body"></div>
   </section>
 </div>
@@ -1048,10 +1086,10 @@
 <!-- sitefoot:begin — COPIED VERBATIM ON ALL SEVEN READER PAGES, and compared byte for byte
      by web/tools/verify_links.py exactly the way the site nav in the topbar is. Until
      15 September 2026 every footer carried a different subset of the site; it names every
-     page now, in the site nav's own order, with the two doors as text links and Privacy and
-     Impressum last. It lost three rows on 19 September 2026, because the pages went: Which
-     watch is /start/#watches, What it measures is /help/, and What's new is
-     /invite/#whats-new.
+     page now, in the site nav's own order, with the door as a text link and Privacy and
+     Impressum last. It lost three rows on 19 September 2026 and a fourth on the 20th,
+     because the pages went: Which watch is /start/#watches, What it measures is /help/,
+     What's new is /start/#whats-new, and Get the beta is /start/#apps.
 
      The hrefs are ROOT-RELATIVE for the same reason the site nav's are: one block has to
      serve a page at the site root and a page a directory down.
@@ -1059,13 +1097,12 @@
      The Tell us line is here rather than in <main>. It used to be a 55-word paragraph inside
      the body of six pages, saying the same thing six times; the sentence itself is
      docs/copy/feedback.json's `invitation` and is pinned by web/tools/verify_copy.py, so it
-     may move but it may not be reworded. The two real asks — /invite/#feedback and
-     /start/#tell — are where a tester with something to say is standing. -->
+     may move but it may not be reworded. The real ask is /start/#tell, which is where a
+     tester with something to say is standing. -->
   <p>
     <a href="/">About CleanJibe</a> ·
     <a href="/start/">Get started</a> ·
     <a href="/help/">Help</a> ·
-    <a href="/invite/">Get the beta</a> ·
     <a href="/app/">Open the app</a> ·
     <a href="https://github.com/JanLahmann/WingFoil" rel="noopener" data-umami-event="github">GitHub</a> ·
     <a href="/privacy/">Privacy</a> ·

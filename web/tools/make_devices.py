@@ -79,10 +79,11 @@ FAMILIES = [
 # The pages that print the number or the version, and which of the two each one owes.
 # A page listed for a kind must carry at least one span of it, and every span it carries
 # must say what the manifests say.
+# /invite/ became a redirect on 20 September 2026 and its install panel is /start/#apps,
+# which already owed both spans for the "Which watch" table further down the same page.
 PAGES = {
     "index.html": ("count",),
     "start/index.html": ("count", "version"),
-    "invite/index.html": ("count", "version"),
 }
 
 # What the PUBLIC listing installs today, which is not always the tree: a version sits on the

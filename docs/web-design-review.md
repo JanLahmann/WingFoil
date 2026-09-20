@@ -32,12 +32,12 @@ round's own shots are `tmp/shots/after-*.png` at 400 px and 1280 px, plus
 | 8 | Gear & spots | **A naked empty card.** The quiver panel drew a bordered white box with nothing in it while IndexedDB answered, and forever where storage is refused. | A blank bordered rectangle is the clearest "broken" signal a page has. | **Applied**: absent until its body is drawn, and a storage that refuses now says *Your gear could not be read. This browser is not saving anything right now.* | **applied** |
 | 9 | Settings, Help | **Two pages with no title.** `#/settings` opens straight into an `INTERVALS.ICU` panel, and neither has a way back but the tab bar. | Pattern A. A destination that does not name itself leaves the rider unsure whether he changed tab or page. | **Applied**: both carry an `h1` and *Back to Sessions*, in the session page's own words. | **applied** |
 | 10 | site + app | **One type scale for three jobs.** `h2` is 15 px uppercase and letterspaced, so the app's page titles (`SESSIONS`, `RECORDS`) wear the section-nav eyebrow's furniture. Nothing exceeds 18 px. | iOS gives a tab root a large title. Here the title is a label, so nothing is the top of the page. | **Applied**: a tab root's name is the page's `h1.page-title` at 21 px in sentence case, and `h2` stays the 15 px section eyebrow it was. The app header's wordmark is no longer an `h1`, so one page has one top. | **applied** |
-| 11 | Help tab | Forty topics, **every section expanded, no search, no index**. The ladder inverts: a topic's summary is smaller than the body under it. | The iOS Help is searchable and foldable. A wall reads as a dump. | Sections as `<details>`, a filter on top, summary at body size. **Open** — the Help tab renders from `HELP.sections` in js/appshell.js and the fold and the filter are a screen of their own, not a patch on this round. | open |
+| 11 | Help tab | Forty topics, **every section expanded, no search, no index**. The ladder inverts: a topic's summary is smaller than the body under it. | The iOS Help is searchable and foldable. A wall reads as a dump. | Sections as `<details>`, a filter on top, summary at body size. **Applied** 20 September 2026: a chip row of the ten sections, ten shut folds each carrying its page count, a filter over every title and summary that opens what still matches, the summary at body size over the body, and `#/help/<id>` opening the section and the topic. `/help/` on the site got the same three from the same renderer (`make_help.py`). | **applied** |
 | 12 | Sessions rows | **The badges explain themselves in a `title`.** *Example* and a rider's name are pills whose meaning, *not counted in your records or trends*, lives in a tooltip a phone cannot open. | Pattern H: no code without its word in reach. | **Applied**: one line under the list, and only where a badge is on it. | **applied** |
 | 13 | /invite/, /start/, /help/ | Below 720 px the section nav becomes a **full-width grey `<select>`, "On this page…"**. | It reads as an unfilled form field. The other element that looks strange. | **Applied**: the `<select>` is gone from the markup and the stylesheet. Below 720 px the same links are a row of chips that scrolls sideways, in the session switcher's shape. | **applied** |
 | 14 | Trends | At 400 px **`Custom range…` wraps to two lines inside a one-line segment** of the range control. | A control that breaks its own shape reads as a bug. | **Applied**: `Custom…` under 480 px, the full name as the button's accessible name and as the sheet's title, and the segment's words no longer wrap. | **applied** |
 | 15 | / vs /app/ | **Two site headers.** Home says *Wing foiling, measured.* with a GitHub button; `/app/` says *Wingfoil session analyzer* with the Menu button. | One product, one header. | **Applied**: one sub-line, the site's. The app header carries no tagline, because the page names itself one screen down, and the repo link is in the footer on every page. | **applied** |
-| 16 | / hero | The `h1` is *Did you fly through that jibe?* and **the lede opens with the same sentence**. | Pattern F, on the surface a stranger reads first. | Cut the repeat. **Open**: the lede is `data-copy="promise"`, pinned character for character to `docs/copy/phrases.json` by `verify_copy.py`, and the `h1` is its first sentence. Cutting the repeat means either a new headline or a new promise, and both are copy decisions rather than layout ones. | open |
+| 16 | / hero | The `h1` is *Did you fly through that jibe?* and **the lede opens with the same sentence**. | Pattern F, on the surface a stranger reads first. | Cut the repeat. **Applied** 20 September 2026: the `h1` is *Every jibe, judged.* The promise is pinned copy and is also the welcome screen's and the App Store's, so the half that moved is the headline. Register 2, three words, and the lede answers them. | **applied** |
 | 17 | app shell | **The shell is monochrome blue.** Active tab, primary buttons and links are all `--series-1`, the chart's series ink. Phase teal and clean mint live only inside the figures. | The product's colour is the mark's teal; the chrome borrows a data ink. | A decision, not a patch: the shell takes the teal for `aria-current`, or `docs/presentation.md` says the chrome is deliberately neutral. **Open, and Jan's to make.** The tab bar now marks the chosen tab with `--series-1`, so the question is live on one more surface than it was. | open |
 | 18 | app | **A shared file can vanish silently.** `?shared=1` with an empty slot calls nothing and says nothing. | Pattern G. The rider shared a `.fit` from Android and lands on an untouched Sessions tab. | **Applied**: *That shared file did not arrive. Share it again and pick CleanJibe.* on the Sessions tab. | **applied** |
 
@@ -97,10 +97,36 @@ nice. Unclear this is drop down."*, *"Navigation / tabs don't look nice."*).
 `docs/copy/check_voice.py` pass. `verify_web_entry.py` still fails on the pre-existing
 numpy/pandas ABI mismatch locally.
 
-**Still open, and why.** 2 (the rail's panel background), 11 (the Help tab's folds and its
-filter — a screen of its own), 16 (the hero repeat: the lede is pinned copy, so it is a
-copy decision), 17 (the shell's colour — Jan's to make, and the new tab bar puts
-`--series-1` on one more surface).
+**Still open, and why.** 2 (the rail's panel background), and 17 (the shell's colour —
+Jan's to make, and the tab bar puts `--series-1` on one more surface). 11 and 16 closed on
+20 September 2026; see the round below.
+
+## Round three, 20 September 2026 — "way too long"
+
+Jan, from his phone: *"/app/#/help is way too long"*, *"/app/#/settings is way too long, do
+we need all this?"*, *"parts of /app/#/session are too long"*. Three complaints, one shape:
+a browser has a scrollbar and no push navigation, so everything the phone puts behind a `?`
+sheet was on the page at once — and the Settings text had been ported by hand, so it could
+not be shortened without drifting from the phone's.
+
+1. **A concise / extensive switch, site-wide, concise by default** (`web/js/explain.js`).
+   Any element carrying `data-explain="<topic id>"` keeps its own line and gains a `?`; in
+   the extensive reading the topic's body is drawn under it, read from `HELP` at render
+   time. A surface whose detail is generated — the turn page's footnote, whose eleven
+   paragraphs quote this session's own thresholds — hands its own `.explain-more` in and
+   the module only shows and hides it. The switch is in Settings and in the menu sheet's
+   footer, remembered in `localStorage` behind try/catch. **The explanations a rider meets
+   on /app/ went from 47 paragraphs and 944 words to 37 and 520.**
+2. **Settings reads the phone's own words.** `SettingsCopy` in the kit now carries every
+   section's header, its one-line `lead` and the phone's footer paragraphs;
+   `SettingsCopyExportTests` writes `docs/copy/settings.json`, `make_app_copy.py` renders
+   it into `appcopy.js`, and `verify_app_shell.py` holds the page's `data-settings` ids to
+   the JSON's order. The sections are the phone's, in the phone's order, plus *Units*,
+   *Your data* and *What's new*, which only a browser has. Settings' own explanations went
+   from 8 paragraphs and 176 words to 7 leads and 64.
+3. **Help is a reference work again** — finding 11 above.
+4. **`/invite/` folded into `/start/`** — deviation 19 in docs/screens.md.
+5. **The hero stopped repeating itself** — finding 16 above.
 
 ## The patterns of this round
 

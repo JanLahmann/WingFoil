@@ -193,6 +193,87 @@ export const SETTINGS = {
   "strava": "Any watch that syncs to Strava, no file needed. Positions only, so speed records are uncertified. Without the watch's own speed, a fall can read as a touchdown."
 };
 
+/**
+ * The Settings page, section by section, in the order the iPhone draws it
+ * (docs/copy/settings.json, written out of the kit's `SettingsCopy`).
+ *
+ * `lead` is what a rider reads by default: what you get, in one line (pattern K).
+ * `footer` is the phone's own paragraphs, shown only in the extensive reading.
+ * `help` is the topic the section's `?` opens; a section without one has no `?`.
+ */
+export const SETTINGS_SECTIONS = [
+  {
+    "id": "icu",
+    "title": "intervals.icu",
+    "lead": "Your sessions arrive by themselves, from any watch that syncs there.",
+    "footer": [
+      "Downloads the original FIT of every windsurf, wing, kite, surf and SUP activity in your intervals.icu account. Two years back.",
+      "Activities already in the library are never downloaded again."
+    ],
+    "help": "icuSetup"
+  },
+  {
+    "id": "strava",
+    "title": "Strava",
+    "lead": "Import what you already ride with. CleanJibe only ever reads it.",
+    "footer": [
+      "Strava opens, you say yes, and CleanJibe can list your activities on the Import screen.",
+      "CleanJibe only reads your Strava account. It never writes, renames or posts anything.",
+      "Sessions imported this way are analysed from positions alone. Their speed records are marked uncertified.",
+      "Strava lets a new app connect a limited number of riders. Connecting is refused while CleanJibe is full.",
+      "That says nothing about your account."
+    ],
+    "help": "stravaImport"
+  },
+  {
+    "id": "deleted",
+    "title": "Deleted sessions",
+    "lead": "Put back a session you deleted.",
+    "footer": [
+      "Sessions you deleted stay deleted. Syncing intervals.icu leaves them alone, by hand and in the background.",
+      "Restoring forgets that. The next sync brings back every one of them that is still on intervals.icu."
+    ],
+    "help": "libraryBackup"
+  },
+  {
+    "id": "units",
+    "title": "Units",
+    "lead": "Read speeds in knots or in km/h.",
+    "footer": [
+      "Speeds are read in knots by the speedsurfing world. Pick km/h if that is the number you think in."
+    ],
+    "help": "speedRecords"
+  },
+  {
+    "id": "data",
+    "title": "Your data",
+    "lead": "What this browser holds, a copy you keep, and the way to wipe it.",
+    "footer": [
+      "Saved sessions are written to this browser's private per-origin storage.",
+      "They are not synced, not backed up and not visible to any other site.",
+      "Clearing this site's data, or using a private window, deletes them.",
+      "Download all writes one zip. Restore from a backup reads that same file."
+    ],
+    "help": "libraryBackup"
+  },
+  {
+    "id": "about",
+    "title": "About",
+    "lead": "What is running here, and where the privacy policy is.",
+    "footer": [
+      "Wind is estimated on this device from your track."
+    ],
+    "help": "privacy"
+  },
+  {
+    "id": "whatsNew",
+    "title": "What's new",
+    "lead": "The release notes, newest first.",
+    "footer": [],
+    "help": "whatsNew"
+  }
+];
+
 /** The welcome's headline and promise, and the four glossary ids it shows.
  *  The lines come from `GLOSSARY` in ./copy.js, which is their one home. */
 export const WELCOME = {

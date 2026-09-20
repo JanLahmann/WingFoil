@@ -65,16 +65,20 @@
        carries no site nav at all. -->
 <!-- sitenav:begin — COPIED VERBATIM ON ALL SEVEN READER PAGES. The only thing that differs
      is which link carries `aria-current="page"`; web/tools/verify_links.py compares this
-     block byte for byte across /, /start/, /help/, /invite/, /app/, /privacy/ and
+     block byte for byte across /, /start/, /help/, /app/, /privacy/ and
      /impressum/ with that one attribute stripped, so an edit here is an edit everywhere or
      it is a failed check. The three redirect stubs — /learn/, /watches/ and /whats-new/ —
      carry no nav, because they are on screen for a frame.
 
      ONE PRODUCT, THREE SHELLS (Jan, 19 September 2026). The row was four destinations and
      is two: *Get started* absorbed *Which watch*, and *Help* is the app's own help
-     catalogue, which is where *What it measures* went. *What's new* is the second half of
-     *Get the beta* now. Two links a stranger can hold in his head, and the two doors beside
-     them as what they are, buttons.
+     catalogue, which is where *What it measures* went. Two links a stranger can hold in his
+     head, and one door beside them as what it is, a button.
+
+     *GET THE BETA* CAME OUT ON 20 SEPTEMBER 2026. /invite/ folded into /start/ — the
+     install links are its first section, and the release notes are its last — so the nav
+     was offering a second door to a page *Get started* already is. /invite/ is a redirect,
+     because the address is in every TestFlight mail we have sent.
 
      THE DOORS LIVE HERE, not in `.topbar-right` beside GitHub. They used to sit one row
      above this one and say "Open the analyzer", which is a name for a tool rather than for
@@ -94,7 +98,6 @@
     <li><a href="/help/">Help</a></li>
     <li class="doors">
       <a class="btn primary" href="/app/" data-umami-event="app-cta-nav">Open the app</a>
-      <a class="btn ghost" href="/invite/" data-umami-event="beta-cta-nav">Get the beta</a>
     </li>
   </ul>
 </nav>
@@ -106,12 +109,15 @@
 <nav class="sectionnav" aria-label="On this page">
   <div class="sectionnav-inner">
     <ul>
+      <li><a href="#apps">Get the apps</a></li>
       <li><a href="#routes">The routes</a></li>
       <li><a href="#stuck">If something breaks</a></li>
       <li><a href="#report">What to say</a></li>
       <li><a href="#watches">Which watch</a></li>
       <li><a href="#history">Your old sessions</a></li>
       <li><a href="#tell">Tell us</a></li>
+      <li><a href="#coming">What is coming</a></li>
+      <li><a href="#whats-new">What&rsquo;s new</a></li>
     </ul>
   </div>
 </nav>
@@ -142,14 +148,96 @@
         really was.
       </p>
       <p class="lede">
-        Not installed yet? <a href="../invite/" data-umami-event="start-invite">Get the
-        beta</a> first. Not sure your watch is in?
+        Not installed yet? <a href="#apps" data-umami-event="start-apps">Get the apps</a> is
+        the first section. Not sure your watch is in?
         <a href="#watches" data-umami-event="start-watches">Which watch</a> is further down.
       </p>
     </div>
   </section>
 
 
+
+
+
+  <!-- ------------------------------------------------------------- get the apps -->
+  <!-- /invite/ FOLDED IN HERE, 20 September 2026 (Jan, reading the site on his phone). It
+       was two install links and an ask, on a page of its own, one click before the page
+       that says what to do with them — so a reader met "Get the beta" and "Get started" as
+       two destinations for one job. They are one now: get the apps, then ride, then tell us
+       what happened, with the release notes at the foot for the reader who wants to know
+       what changed. /invite/ is a redirect, because the address is in every TestFlight mail
+       we have sent.
+
+       Both stores are named ONCE on this site and it is here (docs/screens.md, deviation
+       11): one page to keep current when a channel moves. -->
+  <section class="home-section" id="apps">
+    <h2>Get the apps</h2>
+    <p class="section-lede">
+      Both apps are free, open betas. No invite, no code, nobody to wait on.
+    </p>
+
+    <div class="claims">
+      <article class="panel claim">
+        <h3>The Garmin watch app</h3>
+        <!-- `data-copy="ciq-title"` is the LIVE listing's name, not the decided one:
+             docs/channels.md renames it to "CleanJibe Wingfoil Watch App Beta", and the span
+             is what lets both places that print it flip on the day the store does. -->
+        <p>
+          <a href="https://apps.garmin.com/apps/e77867b5-e972-4eb2-be1b-90077cfac806" rel="noopener"
+             data-umami-event="invite-garmin-store"><span data-copy="ciq-title">CleanJibe
+          Wingfoil Tracker&nbsp;(Beta)</span></a> on apps.garmin.com. Install it from the web
+          store, or from Connect IQ on the phone.
+        </p>
+        <p>
+          Then open CleanJibe on the watch and start. It records as a
+          <strong>Windsurf</strong> activity. It works the wind direction out for itself
+          after a few minutes.
+        </p>
+        <!-- The version and the count are written by web/tools/make_devices.py out of
+             garmin/manifest.xml; never type them. -->
+        <p class="note">
+          <span data-copy="garmin-count">42</span> watches at
+          <strong><span data-copy="garmin-version">0.9.15</span></strong>. If the store does
+          not offer yours, the install button says so.
+          <a href="#watches">Which watch</a> says what each class of recording gets you.
+        </p>
+      </article>
+
+      <article class="panel claim">
+        <h3>The iPhone app</h3>
+        <p>
+          <a href="https://testflight.apple.com/join/nygqGGcn" rel="noopener"
+             data-umami-event="invite-testflight">testflight.apple.com/join/nygqGGcn</a>,
+          opened on the iPhone itself. No address to submit and no invite mail to wait for.
+        </p>
+        <p>
+          You need Apple&rsquo;s <strong>TestFlight</strong> app if you do not have it. The
+          link installs CleanJibe through it. TestFlight builds expire, so it asks you to
+          update now and then.
+        </p>
+        <p class="note">
+          Open the example session first. The app ships with a real one in it. See the whole
+          thing before you import anything of your own.
+        </p>
+        <!-- The Apple Watch app is not a second install and it is not on the Connect IQ
+             store, which is what a reader of the panel beside this one has just been
+             taught. One line, with the beta pill, because it is a beta door
+             (docs/channels.md). Marked `beta-door` like every other beta clause on the
+             site. -->
+        <p class="note" data-copy="beta-door">
+          <span class="tag beta">beta</span> <strong>The beta iPhone app brings the CleanJibe
+          Apple Watch app with it.</strong> Install it from the iPhone&rsquo;s Watch app. It
+          records on the wrist and hands the session over.
+        </p>
+      </article>
+    </div>
+
+    <p class="note">
+      The iPhone app does not need the watch app. The browser app needs neither:
+      <a href="/app/" data-umami-event="start-open-app">open the app</a> and drop a file
+      into it.
+    </p>
+  </section>
 
 
 <!-- guide:begin -->
@@ -582,7 +670,7 @@
         <p class="note">
           <strong>Only the fenix 8 has been ridden on real water by us.</strong> Every other
           family passes in the simulator and is waiting for a rider. Ride one and
-          <a href="../invite/#feedback">tell us how it went</a>.
+          <a href="../start/#tell">tell us how it went</a>.
         </p>
         <p class="piece-foot">
           <a class="btn ghost" href="https://apps.garmin.com/apps/e77867b5-e972-4eb2-be1b-90077cfac806"
@@ -754,7 +842,7 @@
        correctly from memory and the half that decides whether it can be acted on.
 
        TestFlight's own form and the Connect IQ store's Contact Developer are NOT named here
-       any more. They are real doors and they reach the same person — /invite/#feedback says
+       any more. They are real doors and they reach the same person — /start/#tell says
        so, in the same two paragraphs it always did, and that is their one home. -->
   <section class="home-section" id="tell">
     <h2>Tell us what you saw</h2>
@@ -782,13 +870,461 @@
               session read wrong. With the file the detection can be re-run and fixed.
               Without it there is only guesswork.</li>
         </ul>
+        <!-- The two store doors kept their home when /start/#tell folded in here
+             (rule 10 of docs/voice.md: every cut fact keeps a home). They are real doors
+             and they reach the same person, so a page that listed only its own three would
+             be telling a tester those buttons go nowhere. -->
         <p class="note">
-          Both stores have a report button of their own, and both reach the same person:
-          <a href="../invite/#feedback">Get the beta</a> names them.
+          Both stores have a report button of their own. In <strong>TestFlight</strong>,
+          <em>Send Beta Feedback</em> arrives with the build and the device attached. On the
+          Connect IQ listing, <em>Contact Developer</em> does the same.
         </p>
       </article>
     </div>
 
+  </section>
+
+  <!-- ------------------------------------------------------------- what is coming -->
+  <!-- Written from docs/channels.md and from nowhere else: that file decides which feature is
+       in which channel, and this list, the homepage's copy of it and the app's Beta section
+       are all readings of it. The beta list is what the TestFlight link above hands over
+       today; the dev list is what it deliberately does not, so that nobody installs expecting
+       a Garmin link or an iPad. -->
+  <section class="home-section" id="coming">
+    <!-- The heading is the app's own, word for word: Settings → "Coming in a future
+         release" (docs/channels.md, "Feedback and channel furniture"). -->
+    <h2 data-copy="channels-title">Coming in a future release</h2>
+    <p class="section-lede">
+      The App Store release, when it comes, will be the steady half. The beta is ahead of
+      it. A third build, dev, is ahead of the beta and is not public.
+    </p>
+    <div class="claims">
+      <article class="panel claim">
+        <h3>In the beta today</h3>
+        <p>
+          The TestFlight link above hands over all of it this afternoon. Nothing here is a
+          promise. This is what installs:
+        </p>
+        <ul data-copy="channels-beta">
+          <li>.gpx and .tcx files, so a session exported from a Polar, a Suunto or a COROS opens straight
+              from Files.</li>
+          <li>Apple Health, both ways: what Apple's Workout app recorded is read in, and your sessions are
+              written back as workouts.</li>
+          <li>The CleanJibe Apple Watch app, which records on your wrist with live numbers and hands the
+              session to the phone.</li>
+          <li>Home-screen widgets and the watch complication.</li>
+          <li>The session video: your afternoon as a film rather than a card.</li>
+          <li>Grouping the library by month, year or spot, and filtering it.</li>
+          <li>Planned: a live view on the Apple Watch. Foil state, flights, records and turn verdicts on
+              the wrist, as the Garmin app shows them.</li>
+        </ul>
+        <!-- The Garmin export ZIP is NOT on this list: it became a release door on
+             14 Sep 2026 (docs/channels.md, "Getting a session in"), so nobody has to join
+             anything for it. -->
+        <p class="note">
+          The <strong>Garmin export ZIP</strong> is in every build, beta or not. It brings
+          your whole history in one import.
+        </p>
+      </article>
+      <article class="panel claim">
+        <h3>Ideas on the bench</h3>
+        <p>
+          Beyond the beta: what we could build next. If one would matter to you, say so.
+        </p>
+        <ul data-copy="channels-dev">
+          <li>The Garmin link: a summary card from your watch the moment you stop. Your spot's map
+              and the wind direction go back to it.</li>
+          <li>Windsurf, foil and fin, with thresholds of its own</li>
+          <li>The tuning page: every analysis threshold on a slider, tried against your own sessions</li>
+          <li>iPad</li>
+          <li data-copy="extra">Your idea here.</li>
+        </ul>
+        <p>
+          <strong>Tell us what you would want.</strong> The ones asked for most move first.
+        </p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ---------------------------------------------------------------- what's new -->
+  <!-- /whats-new/ ABSORBED, 19 September 2026 (Jan, "one product, three shells"). A page of
+       release notes is read by somebody who has the app or is deciding to get it, which is
+       one scroll from here in both cases; as a fourth destination in the site nav it was a
+       changelog competing with an install. /whats-new/ is a redirect to this anchor.
+
+       THE CARDS ARE GENERATED into the block below by web/tools/make_whats_new.py, out of
+       docs/copy/whats-new.json — the same file the app's What's new screen and the
+       TestFlight "What to Test" text are written from. Do not edit between the markers.
+
+       THE DATES ARE THE ONE PLACE THIS SITE MAY CARRY THEM. docs/copy/check_voice.py's
+       stale-fact rule (pattern C) asks that no date, build or version number in rider text
+       be typed by hand; a generator writes every one of these. The `data-copy="whats-new"`
+       wrapper is how the check is told so: it strips the block the way it strips the
+       generated garmin-count spans, so the rest of this page is still held to the rule. -->
+  <section class="home-section" id="whats-new">
+    <h2>What&rsquo;s new</h2>
+    <p class="section-lede">
+      Newest first. The iPhone app ships as TestFlight builds. The watch app ships as
+      Connect IQ versions. The two number differently and land on different days.
+    </p>
+    <p class="section-lede">
+      TestFlight offers the newest build by itself. Garmin Connect updates the watch app. A
+      report is worth more with a build number in it. You find yours at the foot of the
+      app&rsquo;s menu, and under Settings &rarr; About.
+    </p>
+
+    <div data-copy="whats-new">
+<!-- whats-new:begin -->
+    <!-- GENERATED by web/tools/make_whats_new.py from docs/copy/whats-new.json —
+         the same file the app's What's new screen and the TestFlight What to Test
+         text are written from. Do not edit between the markers: regenerate, and
+         `make_whats_new.py --check` fails while it is stale. The head, the hero,
+         the section lede above, the closing note below and the footer are the
+         page's own.
+
+         THE THREE NEWEST ARE OPEN AND THE REST ARE IN THE FOLD. Nine cards of equal
+         weight made the newest look like an archive entry, and freshness cannot be
+         shown by a stack. A dated note is never rewritten either: it says what was
+         true on its day, and a correction goes in brackets inside the card.
+
+         No `dev` card, ever: those builds go to a handful of hand-picked testers,
+         so a public card about one would name a door nobody else can have
+         (docs/channels.md). -->
+
+    <article class="panel piece">
+      <div class="piece-head">
+        <h3>iPhone · build 93 <span class="tag beta">beta</span></h3>
+        <span class="status live">20 September 2026 · 1.0.1</span>
+      </div>
+      <p class="what">Eleven traps on the wrist.</p>
+      <ul>
+        <li>The watch app closes eleven traps of its own, and counts a run that never reached its end.</li>
+        <li>The feedback mail prints the watch&rsquo;s count beside the phone&rsquo;s crashes.</li>
+        <li>Version 1.0.1 across every channel now. TestFlight ranks by version first.</li>
+        <li>Pair with watch app 0.9.15 from the store.</li>
+      </ul>
+    </article>
+
+    <article class="panel piece">
+      <div class="piece-head">
+        <h3>iPhone · build 91 <span class="tag beta">beta</span></h3>
+        <span class="status">20 September 2026 · 0.15.0</span>
+      </div>
+      <p class="what">The last trap.</p>
+      <ul>
+        <li>The file reader&rsquo;s library is ours now. A value past its type no longer takes the app down.</li>
+        <li>Please sync your intervals.icu once more on this build.</li>
+      </ul>
+    </article>
+
+    <article class="panel piece">
+      <div class="piece-head">
+        <h3>iPhone · build 89 <span class="tag beta">beta</span></h3>
+        <span class="status">19 September 2026 · 0.15.0</span>
+      </div>
+      <p class="what">A year in one sync.</p>
+      <ul>
+        <li>A year of another rider&rsquo;s recordings syncs without a crash. Six traps in the file reader are closed.</li>
+        <li>A file cut off mid-download, or a broken clock, is refused with its name instead of taking the app down.</li>
+        <li>The sync shows which file it is on, and many failures become one message.</li>
+        <li>Please sync your intervals.icu again and tell us if anything still falls over.</li>
+      </ul>
+    </article>
+
+    <details>
+      <summary>Earlier builds: iPhone 81 back to 41, watch app 0.9.10, 0.9.9</summary>
+      <article class="panel piece">
+        <div class="piece-head">
+          <h3>iPhone · build 81 <span class="tag beta">beta</span></h3>
+          <span class="status">19 September 2026 · 0.15.0</span>
+        </div>
+        <p class="what">SUP by default.</p>
+        <ul>
+          <li>Stand-up paddling is a Strava sport by default now. Sail is the one switch left.</li>
+          <li>Please check Import &rarr; Strava if your sessions are filed under SUP.</li>
+        </ul>
+      </article>
+
+      <article class="panel piece">
+        <div class="piece-head">
+          <h3>iPhone · build 79 <span class="tag beta">beta</span></h3>
+          <span class="status">19 September 2026 · 0.15.0</span>
+        </div>
+        <p class="what">Names, help and three more trend lines.</p>
+        <ul>
+          <li>Every screen is named by what it does. Details, Turn 3 of 12, Import from Strava.</li>
+          <li>Trends draw jibes per hour, turns per hour and the best 2 seconds.</li>
+          <li>A best 2 s without the watch&rsquo;s own speed draws as an open ring. The caption names the session.</li>
+          <li>Help answers a Garmin rider: why Windsurf, where Garmin Connect shows the jibes, why Runs stays empty.</li>
+          <li>Help says why the watch shows km/h while the app shows knots.</li>
+          <li>Please check the Trends tab and the new screen names.</li>
+        </ul>
+      </article>
+
+      <article class="panel piece">
+        <div class="piece-head">
+          <h3>iPhone · build 77 <span class="tag beta">beta</span></h3>
+          <span class="status">19 September 2026 · 0.15.0</span>
+        </div>
+        <p class="what">Swipe, words, and a map that fits.</p>
+        <ul>
+          <li>Swipe left for the next session, right for the previous one. The page slides.</li>
+          <li>Each number in the list carries its word. Pick the three in Settings &rarr; Session list.</li>
+          <li>The map behind a track sits under the track now.</li>
+          <li>Speed records from Strava or GPX: a best 2 s far above the best 10 s is not accepted.</li>
+          <li>Without the watch&rsquo;s own speed, a fall can read as a touchdown. The Strava pages say so.</li>
+          <li>Crashes iOS collected ride along in the feedback mail. Delete the lines you would rather keep.</li>
+          <li>Every sentence is short now. Tell us where one still runs long.</li>
+          <li>Coming in a future release names the planned Apple Watch live view.</li>
+          <li>Please check the swipe, the list words and Settings &rarr; Session list.</li>
+        </ul>
+      </article>
+
+      <article class="panel piece">
+        <div class="piece-head">
+          <h3>iPhone · build 75 <span class="tag beta">beta</span></h3>
+          <span class="status">19 September 2026 · 0.15.0</span>
+        </div>
+        <p class="what">Every door, one order.</p>
+        <ul>
+          <li>Import lists its doors in one order, the Garmin export last.</li>
+          <li>Every door stays visible. A door that is off says why.</li>
+          <li>Both Apple Health switches are always in Settings.</li>
+          <li>The menu sits on all four tabs.</li>
+          <li>The session page names where the recording came from.</li>
+          <li>Tap the title to rename a session.</li>
+          <li>Swipe left or right for the next or previous session.</li>
+          <li>Settings &rarr; Session list can put a map behind each track.</li>
+          <li>Help and Settings carry What&rsquo;s new.</li>
+          <li>A Strava recording can read a fall as a touchdown. The setup pages say so.</li>
+          <li>Every paragraph is short now. Tell us where the old style still shows.</li>
+          <li>Please check Import, Settings &rarr; Apple Health and the swipe between sessions.</li>
+        </ul>
+      </article>
+
+      <article class="panel piece">
+        <div class="piece-head">
+          <h3>iPhone · build 73 <span class="tag beta">beta</span></h3>
+          <span class="status">15 September 2026 · 0.15.0</span>
+        </div>
+        <p class="what">Jan&rsquo;s morning round.</p>
+        <ul>
+          <li>The empty Sessions page shows the ways in, one row each.</li>
+          <li>intervals.icu, the Apple Watch app, Strava, a file.</li>
+          <li>The 4 intervals.icu steps live in Settings only.</li>
+          <li>Help &rarr; Share from your watch app names the brands plainly, Garmin first.</li>
+          <li>Getting started lists the Apple Watch routes right after Garmin.</li>
+          <li>Routes have no letters now.</li>
+          <li>Each route says which class you get.</li>
+          <li>cleanjibe.org follows: routes without letters, and a class table with a Route column.</li>
+          <li>Apple Watch appears once on Which watch.</li>
+          <li><em>Show the steps</em> sits on every route card.</li>
+          <li>Please check the empty Sessions page after Start over.</li>
+          <li>Please check Help &rarr; Share from your watch app, and Menu &rarr; Getting started.</li>
+        </ul>
+      </article>
+
+      <article class="panel piece">
+        <div class="piece-head">
+          <h3>iPhone · build 53 <span class="tag beta">beta</span></h3>
+          <span class="status">14 September 2026 · 0.15.0</span>
+        </div>
+        <p class="what">The beta channel, with its own icon.</p>
+        <ul>
+          <li>The first build of the <strong>beta channel</strong>.</li>
+          <li>It is the app that goes to the App Store, plus the doors still proving themselves.</li>
+          <li>GPX and TCX files, the Garmin export ZIP, Apple Health, the video export, grouping and filters, the Apple Watch app.</li>
+          <li>Settings &rarr; Beta lists them and has a <em>Request a feature</em> line.</li>
+          <li>The icon and the start screen wear a red <strong>BETA</strong> label.</li>
+          <li>This build and the App Store one are told apart at a glance.</li>
+          <li>The app follows your phone&rsquo;s <strong>text size</strong> everywhere, up to the largest accessibility sizes.</li>
+          <li>The dense tables stop growing where they would break.</li>
+          <li><strong>Feedback from every page</strong>, with a footer on each.</li>
+          <li>Menu &rarr; Support &amp; ideas opens the same mail.</li>
+          <li>The mail starts with three blanks for you and the facts below.</li>
+          <li>Settings &rarr; Beta &rarr; Send usage report mails counters kept on your phone.</li>
+          <li>Nothing leaves unless you send it.</li>
+          <li>Sessions group by month, year or spot and filter by source.</li>
+          <li>Strava shows the official <em>Connect with Strava</em> button.</li>
+          <li>An imported session links back with <em>View on Strava</em>.</li>
+          <li>The three recording classes are named before you import, and in Help.</li>
+          <li>Worth checking: the BETA icon on your home screen, and Settings &rarr; Display &rarr; Text Size at its largest.</li>
+          <li>Nothing should be cut off.</li>
+        </ul>
+      </article>
+
+      <article class="panel piece">
+        <div class="piece-head">
+          <h3>iPhone · build 51</h3>
+          <span class="status">14 September 2026 · 0.15.0</span>
+        </div>
+        <p class="what">The card from the watch.</p>
+        <ul>
+          <li>A session that arrived as a summary card from the watch opens as what it is.</li>
+          <li>You get the card&rsquo;s numbers, and how the full recording follows.</li>
+          <li>It no longer says the file is damaged.</li>
+          <li>The Sessions list&rsquo;s first grouping reads <em>All</em> instead of <em>None</em>.</li>
+          <li>The start screen shows cleanjibe.org under the name.</li>
+        </ul>
+      </article>
+
+      <article class="panel piece">
+        <div class="piece-head">
+          <h3>Garmin watch app · 0.9.10</h3>
+          <span class="status">13 September 2026</span>
+        </div>
+        <p class="what">Nine more watches, and the shore.</p>
+        <ul>
+          <li>Nine more watches.</li>
+          <li><strong>Venu 2, 2S, 2 Plus, 3 and 3S, vívoactive 5 and 6, Instinct 3 AMOLED 45 and 50 mm.</strong></li>
+          <li>That was 39 products in all when 0.9.10 shipped.</li>
+          <li>They pass the layout checks in the simulator.</li>
+          <li>They have <strong>not been ridden on a real watch</strong>.</li>
+          <li>If you have one, tell us how the pages look and whether the touch controls behave.</li>
+          <li>The live map page and the post-save Track page can draw the shore of your spot.</li>
+          <li>The shore is drawn under the trail.</li>
+          <li>The CleanJibe iPhone app sends it over Bluetooth.</li>
+          <li>Take Settings &rarr; Garmin watch &rarr; Send map to watch.</li>
+          <li>No firmware map view is involved.</li>
+          <li>The firmware&rsquo;s own map kills the app on a fenix 8.</li>
+          <li>A splash page with the mark on the first launch after an install or update.</li>
+          <li>A larger mark on the start page.</li>
+        </ul>
+      </article>
+
+      <article class="panel piece">
+        <div class="piece-head">
+          <h3>iPhone · build 49</h3>
+          <span class="status">13 September 2026 · 0.15.0</span>
+        </div>
+        <p class="what">A crash fix for the watch link.</p>
+        <ul>
+          <li>The app no longer crashes when the Garmin sends it something.</li>
+          <li>A summary card, or an answer to a map push.</li>
+          <li>Builds 43 to 47 fell over the moment a message arrived from a watch.</li>
+          <li>That watch was running a CleanJibe beta build.</li>
+          <li>Worth checking: send a map to the watch, and finish a short recording on it.</li>
+          <li>The phone should stay up and the session should appear.</li>
+        </ul>
+      </article>
+
+      <article class="panel piece">
+        <div class="piece-head">
+          <h3>iPhone · build 47</h3>
+          <span class="status">13 September 2026 · 0.15.0</span>
+        </div>
+        <p class="what">You choose which maps the watch gets.</p>
+        <ul>
+          <li><strong>Map for the watch</strong> is a page now.</li>
+          <li>The two most-ridden spots by default, or up to two picks among your own spots.</li>
+          <li><em>Where I am now</em> is one of the picks.</li>
+          <li>Settings &rarr; Garmin watch &rarr; Map for the watch.</li>
+          <li>The phone reads its own position <strong>once per send</strong>, only when you picked it.</li>
+          <li>It never reads your position in the background.</li>
+          <li>The tick asks for the permission where you can see it.</li>
+          <li>The automatic send at launch never prompts.</li>
+        </ul>
+      </article>
+
+      <article class="panel piece">
+        <div class="piece-head">
+          <h3>iPhone · build 45</h3>
+          <span class="status">13 September 2026 · 0.15.0</span>
+        </div>
+        <p class="what">The session list groups and narrows.</p>
+        <ul>
+          <li><strong>Group by</strong> None, Month, Year or Spot at the top of Sessions, newest group first.</li>
+          <li>A library of twenty or more opens grouped by month until you say otherwise.</li>
+          <li>A <strong>filter</strong> beside Import: one spot, one source, a date window.</li>
+          <li>The sources are intervals.icu, Strava, Apple Health, the Garmin watch and a file.</li>
+          <li>What is active shows as chips you can tap away.</li>
+          <li>The count line reads <em>3 of 41 sessions</em>.</li>
+          <li>Records and Trends keep reading the whole library on purpose.</li>
+          <li>The menu at the top left of Sessions, in the order a new rider needs it.</li>
+          <li>Getting started, Settings, Support, then What CleanJibe does and What the numbers mean.</li>
+          <li>The build number sits at the foot of that menu.</li>
+          <li>The welcome screen has a close button now.</li>
+          <li><strong>Something off? Send feedback</strong> sits at the foot of every page.</li>
+          <li>On a session page the mail names the session by itself.</li>
+          <li>Connect Strava from Settings &rarr; Strava as well as from Import.</li>
+          <li>The full-screen map&rsquo;s legend no longer floats to the middle of the screen.</li>
+          <li>It used to float after a keyboard was used somewhere else.</li>
+        </ul>
+      </article>
+
+      <article class="panel piece">
+        <div class="piece-head">
+          <h3>iPhone · build 43</h3>
+          <span class="status">13 September 2026 · 0.15.0</span>
+        </div>
+        <p class="what">Two fixes from build 41.</p>
+        <ul>
+          <li><strong>Send map to watch</strong> now finds whichever CleanJibe build you have on the watch.</li>
+          <li>Release, public beta or dev, instead of assuming the release one.</li>
+          <li><em>Failure_AppNotFound</em> is gone.</li>
+          <li>The turn page scrolls from anywhere again.</li>
+          <li>A vertical finger on a strip scrolls the page, a sideways one scrubs the playhead.</li>
+          <li>A tap places the playhead.</li>
+          <li>The small window words no longer overprint each other.</li>
+        </ul>
+      </article>
+
+      <article class="panel piece">
+        <div class="piece-head">
+          <h3>iPhone · build 41</h3>
+          <span class="status">13 September 2026 · 0.15.0</span>
+        </div>
+        <p class="what">The session video, and a wider way in.</p>
+        <ul>
+          <li><strong>Export video:</strong> a session becomes a short film.</li>
+          <li>The map draws itself along your track, and the numbers land.</li>
+          <li>It shares like any other clip.</li>
+          <li>Open a session &rarr; share &rarr; Export video.</li>
+          <li><strong>Send map to watch:</strong> the phone draws the shore of your spot.</li>
+          <li>It pushes the shore to a Garmin running CleanJibe 0.9.10.</li>
+          <li>The live map then has ground under the breadcrumb.</li>
+          <li>Take Settings &rarr; Garmin watch.</li>
+          <li><strong>Imports take GPX and TCX</strong> as well as FIT.</li>
+          <li>A Polar, Suunto or COROS session comes in through intervals.icu.</li>
+          <li>It also comes straight from the vendor&rsquo;s app through the share sheet.</li>
+          <li>Without a speed channel the speed records are estimated and marked uncertified.</li>
+          <li><strong>Import from Strava:</strong> connect your account under Import and pick the sessions.</li>
+          <li>Positions only, so speed records are uncertified.</li>
+          <li>One connected rider at the time this build shipped.</li>
+          <li><em>[Since 14 September: Strava lets a new app connect a limited number of riders.]</em></li>
+          <li>Analysis engine 0.18.0: the pump rung now asks the minimum foil speed.</li>
+          <li>Every touchdown and fall says <em>why</em> it ended that way on the turn page.</li>
+        </ul>
+      </article>
+
+      <article class="panel piece">
+        <div class="piece-head">
+          <h3>Garmin watch app · 0.9.9</h3>
+          <span class="status">9 September 2026</span>
+        </div>
+        <p class="what">A clean jibe needs ten quiet seconds.</p>
+        <ul>
+          <li>No touchdown, no swim and no dunked wrist in the ten seconds after the sweep.</li>
+          <li>The star, the clean count and CPH on the wrist now mean what the phone means.</li>
+          <li>cleanjibe.org means the same by them.</li>
+          <li>The clean-jibe buzz therefore arrives up to ten seconds after the turn.</li>
+          <li>The flew through, touched down and fell in verdicts are unchanged.</li>
+          <li>They still buzz at once.</li>
+        </ul>
+      </article>
+
+    </details>
+
+    <!-- whats-new:end -->
+
+      <p class="note">
+        Older watch-app versions are in the
+        <a href="https://apps.garmin.com/apps/e77867b5-e972-4eb2-be1b-90077cfac806" rel="noopener"
+           data-umami-event="whatsnew-garmin-store">Connect IQ listing&rsquo;s own What&rsquo;s
+        New</a>. The whole history of both apps, commit by commit, is in the
+        <a href="https://github.com/JanLahmann/WingFoil" rel="noopener">public repository</a>.
+      </p>
+    </div>
   </section>
 
 
@@ -799,10 +1335,10 @@
 <!-- sitefoot:begin — COPIED VERBATIM ON ALL SEVEN READER PAGES, and compared byte for byte
      by web/tools/verify_links.py exactly the way the site nav in the topbar is. Until
      15 September 2026 every footer carried a different subset of the site; it names every
-     page now, in the site nav's own order, with the two doors as text links and Privacy and
-     Impressum last. It lost three rows on 19 September 2026, because the pages went: Which
-     watch is /start/#watches, What it measures is /help/, and What's new is
-     /invite/#whats-new.
+     page now, in the site nav's own order, with the door as a text link and Privacy and
+     Impressum last. It lost three rows on 19 September 2026 and a fourth on the 20th,
+     because the pages went: Which watch is /start/#watches, What it measures is /help/,
+     What's new is /start/#whats-new, and Get the beta is /start/#apps.
 
      The hrefs are ROOT-RELATIVE for the same reason the site nav's are: one block has to
      serve a page at the site root and a page a directory down.
@@ -810,13 +1346,12 @@
      The Tell us line is here rather than in <main>. It used to be a 55-word paragraph inside
      the body of six pages, saying the same thing six times; the sentence itself is
      docs/copy/feedback.json's `invitation` and is pinned by web/tools/verify_copy.py, so it
-     may move but it may not be reworded. The two real asks — /invite/#feedback and
-     /start/#tell — are where a tester with something to say is standing. -->
+     may move but it may not be reworded. The real ask is /start/#tell, which is where a
+     tester with something to say is standing. -->
   <p>
     <a href="/">About CleanJibe</a> ·
     <a href="/start/">Get started</a> ·
     <a href="/help/">Help</a> ·
-    <a href="/invite/">Get the beta</a> ·
     <a href="/app/">Open the app</a> ·
     <a href="https://github.com/JanLahmann/WingFoil" rel="noopener" data-umami-event="github">GitHub</a> ·
     <a href="/privacy/">Privacy</a> ·

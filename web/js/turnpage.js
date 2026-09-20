@@ -1322,7 +1322,20 @@ function footnote(turn, end, figure) {
   const at = turn
     ? clockAt(doc.meta, turn.ts) : clockAt(doc.meta, doc.golden.flightEnds[open.index].ts);
   lines.push(`It happened at ${at}.`);
-  return `<div class="tp-footnote">${lines.map((l) => `<p>${esc(l)}</p>`).join("")}</div>`;
+
+  // **ELEVEN PARAGRAPHS, BEHIND ONE LINE** (Jan, 20 September 2026: *"parts of
+  // /app/#/session are too long"*). Everything below is still here and still exact — the
+  // windows quote this session's own thresholds, which is why it cannot be a help topic —
+  // but a rider who already knows how to read the drawing should not have to scroll past
+  // it to reach the next turn. js/explain.js shows it when he asks, and the `?` goes to
+  // the topic that explains the verdict itself. The handed-in `.explain-more` wins over
+  // the catalogue's body, so nothing here is a second copy of anything.
+  // voice: skip
+  const clock = `It happened at ${at}.`;
+  return `<div class="tp-footnote" data-explain="${esc(turn ? "turnOutcomes" : "glideOuts")}">`
+    + `<p class="tp-footlead">How to read this drawing. ${esc(clock)}</p>`
+    + `<div class="explain-more">${lines.map((l) => `<p>${esc(l)}</p>`).join("")}</div>`
+    + `</div>`;
 }
 
 /* ------------------------------------------------------------------- redrawing */

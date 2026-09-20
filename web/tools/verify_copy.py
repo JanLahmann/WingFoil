@@ -501,10 +501,11 @@ def pin_lexicon(site: Site, phrases: dict, report: Report):
 def pin_channels(site: Site, channels: dict, report: Report):
     # ONE HOME, and the page map is the written form of it. The two lists left the front
     # door on 15 September 2026 (a dev list on a page a stranger meets is a promise to a
-    # stranger; the app keeps those rows behind `#if BETA` for the same reason), so
-    # /invite/#coming is the only page that prints them — and a second copy anywhere now
+    # stranger; the app keeps those rows behind `#if BETA` for the same reason), and
+    # /start/#coming is the only page that prints them since /invite/
+    # folded into it on the 20th — and a second copy anywhere now
     # fails this check rather than quietly drifting out of step with the first.
-    pages = ["invite/index.html"]
+    pages = ["start/index.html"]
     for page in pages:
         for node in marked(site.tree[page], "channels-title"):
             got = text_of(node)
@@ -514,7 +515,7 @@ def pin_channels(site: Site, channels: dict, report: Report):
         if not marked(site.tree[page], "channels-title"):
             report.fail("web/" + page, "channels.sectionTitle",
                         'no heading marked data-copy="channels-title"')
-    report.ok('channels.sectionTitle → "%s" on /invite/' % channels["sectionTitle"])
+    report.ok('channels.sectionTitle → "%s" on /start/' % channels["sectionTitle"])
 
     for kind in ("beta", "dev"):
         rows = [row["text"] for row in channels[kind]]
@@ -542,7 +543,7 @@ def pin_channels(site: Site, channels: dict, report: Report):
                 if got != want:
                     report.fail("web/%s:%d" % (page, node.line), "channels." + kind,
                                 "row is not the JSON's sentence", got)
-        report.ok("channels.%s → %d rows, in order, on /invite/" % (kind, len(rows)))
+        report.ok("channels.%s → %d rows, in order, on /start/" % (kind, len(rows)))
 
     pin_forbidden_doors(site, channels, report)
 

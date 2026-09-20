@@ -84,16 +84,20 @@
        carries no site nav at all. -->
 <!-- sitenav:begin — COPIED VERBATIM ON ALL SEVEN READER PAGES. The only thing that differs
      is which link carries `aria-current="page"`; web/tools/verify_links.py compares this
-     block byte for byte across /, /start/, /help/, /invite/, /app/, /privacy/ and
+     block byte for byte across /, /start/, /help/, /app/, /privacy/ and
      /impressum/ with that one attribute stripped, so an edit here is an edit everywhere or
      it is a failed check. The three redirect stubs — /learn/, /watches/ and /whats-new/ —
      carry no nav, because they are on screen for a frame.
 
      ONE PRODUCT, THREE SHELLS (Jan, 19 September 2026). The row was four destinations and
      is two: *Get started* absorbed *Which watch*, and *Help* is the app's own help
-     catalogue, which is where *What it measures* went. *What's new* is the second half of
-     *Get the beta* now. Two links a stranger can hold in his head, and the two doors beside
-     them as what they are, buttons.
+     catalogue, which is where *What it measures* went. Two links a stranger can hold in his
+     head, and one door beside them as what it is, a button.
+
+     *GET THE BETA* CAME OUT ON 20 SEPTEMBER 2026. /invite/ folded into /start/ — the
+     install links are its first section, and the release notes are its last — so the nav
+     was offering a second door to a page *Get started* already is. /invite/ is a redirect,
+     because the address is in every TestFlight mail we have sent.
 
      THE DOORS LIVE HERE, not in `.topbar-right` beside GitHub. They used to sit one row
      above this one and say "Open the analyzer", which is a name for a tool rather than for
@@ -113,7 +117,6 @@
     <li><a href="/help/">Help</a></li>
     <li class="doors">
       <a class="btn primary" href="/app/" data-umami-event="app-cta-nav">Open the app</a>
-      <a class="btn ghost" href="/invite/" data-umami-event="beta-cta-nav">Get the beta</a>
     </li>
   </ul>
 </nav>
@@ -204,7 +207,14 @@
            list. -->
       <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Free&nbsp;browser&nbsp;app · Garmin&nbsp;watch&nbsp;app · iPhone&nbsp;app · open&nbsp;source</p>
     </div>
-    <h1>Did you fly through that jibe?</h1>
+    <!-- THE HEADLINE IS NOT THE LEDE'S FIRST SENTENCE ANY MORE (docs/web-design-review.md,
+         finding 16; pattern F, on the surface a stranger reads first). It was "Did you fly
+         through that jibe?", which is word for word how the promise under it opens — the
+         first two lines of the site said one thing twice. The promise is pinned copy
+         (`docs/copy/phrases.json`, held here by verify_copy.py) and it is also the welcome
+         screen's and the App Store's, so the half that moves is this one. Register 2, the
+         hero being one of its four places: three words, and the promise answers them. -->
+    <h1>Every jibe, judged.</h1>
     <!-- THE PROMISE, and it is not this page's sentence to edit: docs/copy/phrases.json
          `promise`, the kit's WelcomeGuide.promise, also the first line of the welcome
          screen and of the App Store description. web/tools/verify_copy.py holds the three
@@ -227,7 +237,7 @@
     <p class="cta">
       <!-- The hero CTAs are the counted doors: umami's declarative form, so a blocked script
            leaves an ordinary link behind. -->
-      <a class="btn primary" href="invite/" data-umami-event="beta-cta-hero">Get the beta</a>
+      <a class="btn primary" href="start/#apps" data-umami-event="beta-cta-hero">Get the beta</a>
       <a class="btn primary" href="app/" data-umami-event="app-cta-hero">Open the app</a>
       <!-- `#example` is a real route, not an anchor: js/app.js runs the bundled session on
            arrival, so this button delivers the example rather than a drop target. -->
@@ -274,7 +284,7 @@
               the wrist, while you ride.</li>
         </ul>
         <p class="piece-foot">
-          <a class="btn ghost" href="invite/" data-umami-event="beta-garmin">Get the beta</a>
+          <a class="btn ghost" href="start/#apps" data-umami-event="beta-garmin">Get the beta</a>
           <a class="btn ghost" href="start/#watches" data-umami-event="watches-piece">Which watch</a>
         </p>
       </article>
@@ -285,6 +295,14 @@
           <span class="status">open beta · TestFlight</span>
         </div>
         <p class="what">Your library, the replay and the season, on the phone in your pocket</p>
+        <!-- THE WAYS IN, IN THE ONE ORDER (docs/review-checklist.md, pattern J, and
+             docs/guide/getting-started.json, which is where the order is decided): Garmin,
+             the Apple Watch, any .fit, Strava. The Apple Watch was the one door this page
+             never named, and it is the one a reader without a Garmin is looking for. It
+             carries the pill because it is a beta door (docs/channels.md). -->
+        <p class="what">Sessions come from a Garmin, from the
+          <span data-copy="beta-door">Apple Watch</span><span class="tag beta">beta</span>,
+          from any <code>.fit</code>, or from Strava.</p>
         <!-- The `beta` pill is written from docs/channels.md and from nowhere else. A feature
              with no pill is in the App Store release; the clause it sits after is the half of
              this line that is not. -->
@@ -294,7 +312,7 @@
           <li>The beta adds <span data-copy="beta-door">GPX and TCX imports, the Apple Watch
               recorder and the session video</span>.<span class="tag beta">beta</span></li>
         </ul>
-        <p class="piece-foot"><a class="btn ghost" href="invite/#testflight" data-umami-event="beta-testflight">Get the beta</a></p>
+        <p class="piece-foot"><a class="btn ghost" href="start/#apps" data-umami-event="beta-testflight">Get the beta</a></p>
       </article>
 
       <article class="panel piece">
@@ -332,17 +350,17 @@
     </p>
 
     <!-- ONE LINE WHERE THE TWO CHANNEL LISTS WERE. docs/channels.md decides them,
-         docs/copy/channels.json carries them, and /invite/#coming is the one page that
+         docs/copy/channels.json carries them, and /start/#coming is the one page that
          prints them — one button away, read by somebody who has already decided. A dev list
          on the front door is a promise to a stranger; the app keeps those rows behind
          `#if BETA` for exactly that reason, and the site now matches. -->
     <p class="note">
       <strong>The App Store release is the steady half.</strong> Everything the beta has
       today, and the ideas on the bench behind it, are on
-      <a href="invite/#coming" data-umami-event="beta-cta-coming">Get the beta</a>.
+      <a href="start/#coming" data-umami-event="beta-cta-coming">Get started</a>.
     </p>
     <p class="piece-foot">
-      <a class="btn ghost" href="invite/#coming" data-umami-event="beta-coming-button">See what is in the beta</a>
+      <a class="btn ghost" href="start/#coming" data-umami-event="beta-coming-button">See what is in the beta</a>
     </p>
   </section>
 
@@ -354,10 +372,10 @@
 <!-- sitefoot:begin — COPIED VERBATIM ON ALL SEVEN READER PAGES, and compared byte for byte
      by web/tools/verify_links.py exactly the way the site nav in the topbar is. Until
      15 September 2026 every footer carried a different subset of the site; it names every
-     page now, in the site nav's own order, with the two doors as text links and Privacy and
-     Impressum last. It lost three rows on 19 September 2026, because the pages went: Which
-     watch is /start/#watches, What it measures is /help/, and What's new is
-     /invite/#whats-new.
+     page now, in the site nav's own order, with the door as a text link and Privacy and
+     Impressum last. It lost three rows on 19 September 2026 and a fourth on the 20th,
+     because the pages went: Which watch is /start/#watches, What it measures is /help/,
+     What's new is /start/#whats-new, and Get the beta is /start/#apps.
 
      The hrefs are ROOT-RELATIVE for the same reason the site nav's are: one block has to
      serve a page at the site root and a page a directory down.
@@ -365,13 +383,12 @@
      The Tell us line is here rather than in <main>. It used to be a 55-word paragraph inside
      the body of six pages, saying the same thing six times; the sentence itself is
      docs/copy/feedback.json's `invitation` and is pinned by web/tools/verify_copy.py, so it
-     may move but it may not be reworded. The two real asks — /invite/#feedback and
-     /start/#tell — are where a tester with something to say is standing. -->
+     may move but it may not be reworded. The real ask is /start/#tell, which is where a
+     tester with something to say is standing. -->
   <p>
     <a href="/">About CleanJibe</a> ·
     <a href="/start/">Get started</a> ·
     <a href="/help/">Help</a> ·
-    <a href="/invite/">Get the beta</a> ·
     <a href="/app/">Open the app</a> ·
     <a href="https://github.com/JanLahmann/WingFoil" rel="noopener" data-umami-event="github">GitHub</a> ·
     <a href="/privacy/">Privacy</a> ·

@@ -167,6 +167,8 @@ def render_sections(sections: list[dict]) -> list[str]:
     titles = {topic["id"]: topic["title"]
               for section in sections for topic in section["topics"]}
 
+    listed = [s for s in sections if [t for t in s["topics"] if public(t)]]
+
     lines = [
         '  <section class="home-section" id="topics">',
         "    <h2>Every page, by subject</h2>",
@@ -176,6 +178,29 @@ def render_sections(sections: list[dict]) -> list[str]:
         "    </p>",
         '    <p class="beta-legend">',
         f'      <span class="tag beta">beta</span> {BETA_LEGEND}',
+        "    </p>",
+        "",
+        # THE CONTENTS, AND A WAY TO SEARCH IT (docs/web-design-review.md, finding 11; the
+        # browser app got the same two on 20 September 2026 and this is the same renderer's
+        # half of it). Ten shut folds are a table of contents only if the reader can see all
+        # ten at once, and a reference work is only a reference work if he can look
+        # something up in it. The chips scroll sideways under 720 px, in the shape the
+        # section nav already takes there (finding 13).
+        '    <nav class="help-index" aria-label="Help sections">',
+    ]
+    for section in listed:
+        topics = [t for t in section["topics"] if public(t)]
+        count = "1 page" if len(topics) == 1 else f"{len(topics)} pages"
+        lines.append(f'      <a class="help-chip" href="#section-{section["id"]}">'
+                     f'{html_text(section["title"])}'
+                     f'<span class="help-count">{count}</span></a>')
+    lines += [
+        "    </nav>",
+        '    <p class="help-search">',
+        '      <label class="sr-only" for="help-filter">Filter the help</label>',
+        '      <input id="help-filter" type="search" autocomplete="off" spellcheck="false"',
+        '             placeholder="Filter by title or summary">',
+        '      <span class="muted small" id="help-filter-count" role="status"></span>',
         "    </p>",
         "",
     ]
@@ -195,8 +220,50 @@ def render_sections(sections: list[dict]) -> list[str]:
         for topic in topics:
             lines += render_topic(topic, printed, titles, indent=6)
         lines += ["    </details>", ""]
-    lines += ["  </section>", ""]
+    lines += ["  </section>", "", *FILTER_SCRIPT, ""]
     return lines
+
+
+#: The filter, and the deep link. Eighteen lines of vanilla JavaScript, inlined for the
+#: reason every other script on this site is inlined: there is no build step, and a
+#: reference work must still read with JavaScript off — which it does, because the folds
+#: are `<details>` and the chips are ordinary anchors. All this adds is *search*, and the
+#: one thing an anchor cannot do on its own: open the fold it lands in.
+FILTER_SCRIPT = [
+    "  <script>",
+    "    (function () {",
+    '      var field = document.getElementById("help-filter");',
+    '      var status = document.getElementById("help-filter-count");',
+    '      var folds = [].slice.call(document.querySelectorAll("#topics details"));',
+    "      function open(hash) {",
+    '        var target = hash && document.querySelector(hash.replace(/[^\\w#-]/g, ""));',
+    "        if (!target) return;",
+    '        var fold = target.closest("details");',
+    "        if (fold) fold.open = true;",
+    '        target.scrollIntoView({ block: "start" });',
+    "      }",
+    '      field.addEventListener("input", function () {',
+    "        var needle = field.value.trim().toLowerCase(), hits = 0;",
+    "        folds.forEach(function (fold) {",
+    '          var shown = 0, pages = fold.querySelectorAll("article.piece");',
+    "          [].forEach.call(pages, function (page) {",
+    "            var match = !needle || page.textContent.toLowerCase().indexOf(needle) >= 0;",
+    "            page.hidden = !match;",
+    "            if (match) shown += 1;",
+    "          });",
+    "          fold.hidden = needle ? shown === 0 : false;",
+    "          fold.open = needle ? shown > 0 : false;",
+    "          hits += shown;",
+    "        });",
+    '        status.textContent = needle',
+    '          ? (hits === 1 ? "1 page matches." : hits + " pages match.")',
+    '          : "";',
+    "      });",
+    "      open(location.hash);",
+    '      addEventListener("hashchange", function () { open(location.hash); });',
+    "    })();",
+    "  </script>",
+]
 
 
 def render_html(sections: list[dict], glossary: list[dict]) -> str:

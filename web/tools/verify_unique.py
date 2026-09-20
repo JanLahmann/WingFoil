@@ -84,12 +84,17 @@ PAGES = [
     "index.html",
     "start/index.html",
     "help/index.html",
-    "invite/index.html",
 ]
 
 #: Words inside <main>, counting only what is visible with every <details> shut. The plan's
 #: table of 15 September 2026, and the tolerance is the same everywhere: ten per cent.
 #:
+#: /start/ absorbed /invite/ on 20 September 2026 and its budget grew by less than the
+#: page it swallowed: the two installs became two panels, the release notes past the
+#: third are in a fold, and the feedback section was already there as *Tell us*.
+#: /start/ absorbed /invite/ on 20 September 2026 and its budget grew by less than the
+#: page it swallowed: the two installs became two panels, the release notes past the
+#: third are in a fold, and the feedback section was already there as *Tell us*.
 #: /start/ and /invite/ took a page each on 19 September 2026 and their budgets grew by less
 #: than the pages they swallowed: a route card's steps were already folded, the Garmin
 #: family table became one generated sentence, and the release notes past the third are in
@@ -99,9 +104,8 @@ PAGES = [
 #: the point of it.
 BUDGET = {
     "index.html": 550,
-    "start/index.html": 1700,
+    "start/index.html": 2200,
     "help/index.html": 900,
-    "invite/index.html": 1500,
 }
 SLACK = 1.10
 

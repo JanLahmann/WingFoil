@@ -1332,3 +1332,56 @@ a.brand:hover .mark { box-shadow: inset 0 0 0 1px var(--mark-ring-hover); }
 
 /* The pictures keep their own plate — see "WHAT STAYS DARK" above. */
 .figure { background: var(--figure-plate); }
+
+
+/* r7-w5 · THE HELP INDEX AND ITS FILTER, on /help/ and in the browser app alike.
+   Both pages draw the same reference work and both fold it the same way (Jan, 20
+   September 2026: "/app/#/help is way too long"; docs/web-design-review.md, finding 11),
+   so the chips, the counts and the search field live here, in the stylesheet both load,
+   rather than twice. /app/'s own furniture — the `?`, the extensive body, the Settings
+   switch — stays in css/app.css, because nothing outside the app has it. */
+
+/* The contents, as chips. Same row the site's section nav became under 720 px (finding
+   13): one line, scrolling sideways rather than wrapping into a block of grey words. */
+.help-index {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  margin: 4px 0 12px;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+
+.help-index::-webkit-scrollbar { display: none; }
+
+.help-chip {
+  display: inline-flex;
+  gap: 6px;
+  align-items: baseline;
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: none;
+  color: var(--ink-2);
+  font: 500 12px/1.2 var(--sans);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.help-chip:hover { border-color: var(--ink-3); color: var(--ink); }
+
+.help-count { color: var(--ink-3); font-size: 10.5px; }
+
+.help-search { display: flex; gap: 10px; align-items: center; margin: 0 0 12px; }
+
+.help-search input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-0);
+  color: var(--ink);
+  font: 400 14px/1.3 var(--sans);
+}

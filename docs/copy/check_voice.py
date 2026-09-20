@@ -131,21 +131,20 @@ TARGETS: list[Target] = [
     # the extractor could not see the typed block; it can now, so pattern I reaches the
     # site (Jan, from his phone: "Is this text in our new style?").
     Target("web · /", "web/index.html", "html", strip=("channels-beta", "channels-dev")),
-    Target("web · /start/", "web/start/index.html", "html"),
+    # **The site's one dated surface**, since /start/ absorbed /invite/ on 20 September
+    # 2026 (which had absorbed /whats-new/ the day before). The release notes are
+    # generated into a block marked `data-copy="whats-new"`, stripped below exactly the
+    # way a generated garmin-count span is, so the rest of the page is still held to the
+    # stale-fact rule. The `dated` flag is the second belt on the same trousers: a date
+    # that escapes the block still has to be a date a generator wrote.
+    Target("web · /start/", "web/start/index.html", "html", dated=True,
+           strip=("channels-beta", "channels-dev", "whats-new")),
     # **The app's help, rendered** (web/tools/make_help.py out of docs/copy/help.json).
     # Every sentence on it is already judged one target above, in the kit's Help sources,
     # which is where it can be edited; it is read again here because the page also carries
     # its own hero and its own section ledes, and those are nobody else's.
     # `related` is the row of "Read next" links under a topic: navigation, not a sentence.
     Target("web · /help/", "web/help/index.html", "html", strip=("related",)),
-    # **The site's one dated surface**, since /invite/ absorbed /whats-new/ on 19 September
-    # 2026. The release notes are generated into a block marked `data-copy="whats-new"`,
-    # which is stripped below exactly the way a generated garmin-count span is, so the rest
-    # of the beta page is still held to the stale-fact rule. The `dated` flag is the second
-    # belt on the same trousers: a date that escapes the block still has to be a date a
-    # generator wrote.
-    Target("web · /invite/", "web/invite/index.html", "html", dated=True,
-           strip=("channels-beta", "channels-dev", "whats-new")),
     Target("web · /app/", "web/app/index.html", "html"),
     # **The rider text the browser app writes at run time.** A page is linted where it is
     # typed; a sentence a script builds out of literals was linted nowhere until now, and
