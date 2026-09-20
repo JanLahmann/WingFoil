@@ -344,7 +344,7 @@ private struct RecordTableHeader: View {
         if !typeSize.isAccessibilitySize {
             HStack(spacing: 10) {
                 Text("record").scaledColumn(columns.name, relativeTo: .subheadline)
-                Text("kn")
+                Text(Fmt.knUnit)
                     .scaledColumn(columns.value, alignment: .trailing, relativeTo: .subheadline)
                 Text("+Δ PB")
                     .scaledColumn(columns.delta, alignment: .trailing, relativeTo: .caption)

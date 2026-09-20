@@ -355,12 +355,12 @@ private struct TurnDetailPage: View {
     private func numbers(_ turn: TurnRecord, slice: TurnSlice) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                speedStep(String(format: "%.1f", turn.entryKn), "in")
+                speedStep(Fmt.knValue(turn.entryKn, digits: 1), "in")
                 arrow
-                speedStep(String(format: "%.1f", turn.minKn), "low")
+                speedStep(Fmt.knValue(turn.minKn, digits: 1), "low")
                 arrow
-                speedStep(String(format: "%.1f", turn.exitKn), "out")
-                Text("kn")
+                speedStep(Fmt.knValue(turn.exitKn, digits: 1), "out")
+                Text(Fmt.knUnit)
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                 Spacer(minLength: 0)

@@ -561,7 +561,8 @@ struct SessionDetail: Sendable {
 
         for (index, turn) in analysis.turns.enumerated() {
             let tone: EventMarker.Tone = turn.counted ? outcomeTone(turn.outcome) : .course
-            var detail = String(format: "%.1f → %.1f kn", turn.entryKn, turn.minKn)
+            var detail = Fmt.knValue(turn.entryKn, digits: 1) + " → "
+                + Fmt.kn(turn.minKn, digits: 1)
             if turn.stoppedS > 0 { detail += String(format: " · stopped %.0f s", turn.stoppedS) }
             if turn.submerged { detail += " · wrist under" }
             if turn.pumped { detail += " · pumped out" }
@@ -677,7 +678,7 @@ struct SessionDetail: Sendable {
         }
 
         for takeoff in analysis.takeoffs {
-            var detail = String(format: "up at %.1f kn", takeoff.entryKn)
+            var detail = "up at " + Fmt.kn(takeoff.entryKn, digits: 1)
             if let pumps = takeoff.pumps {
                 let noun = pumps == 1 ? "stroke" : "strokes"
                 detail += " · " + String(pumps) + " " + noun

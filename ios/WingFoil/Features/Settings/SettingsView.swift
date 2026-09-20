@@ -35,6 +35,7 @@ struct SettingsView: View {
                 analysisSection
                 sessionListSection
                 rowShowsSection
+                unitsSection
                 // Windsurf, and the per-discipline thresholds behind it: DEV.
                 #if DEV
                 windsurfSection
@@ -100,6 +101,40 @@ struct SettingsView: View {
         }
     }
 
+    // MARK: - The one footer
+
+    /// **What you get, in one line, and the way to the page that says how** (pattern K in
+    /// docs/review-checklist.md, and Jan on 20 September 2026 reading the Notifications
+    /// switch: seven paragraphs under one toggle).
+    ///
+    /// Every section's footer on this screen is now the same two things: the section's
+    /// `lead` out of `SettingsCopy` — one sentence, twenty words at the outside, the same
+    /// sentence the browser app prints — and, where a topic covers the section, a row that
+    /// opens it. Nothing was deleted: rule 10 of docs/voice.md says a cut fact keeps a
+    /// home, and every paragraph that came off this screen is in the help catalogue, which
+    /// is where a reader who wants the mechanism was always going to end up.
+    ///
+    /// The channel is handed in because a topic's title can differ by channel
+    /// (`HelpCatalog.topic(_:channel:)`), exactly as `settingFooter(_: HealthSwitch)` has
+    /// always done it.
+    @ViewBuilder
+    private func settingFooter(_ id: String) -> some View {
+        let section = SettingsCopy.section(id)
+        VStack(alignment: .leading, spacing: 6) {
+            Text(section.lead)
+                .fixedSize(horizontal: false, vertical: true)
+            if let topic = section.help {
+                Button { setupTopic = topic } label: {
+                    Text(HelpCatalog.topic(topic, channel: AppChannel.channel).title)
+                        .font(.footnote.weight(.semibold))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Color.accentColor)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
     // MARK: - Sections
 
     /// **Why this account is here, before the field that asks for a key** (Jan, 15 Sep
@@ -139,8 +174,8 @@ struct SettingsView: View {
             Text(SettingsCopy.section("icu").title)
         } footer: {
             // The words are the kit's since 20 September 2026 (`SettingsCopy`), so the
-            // browser app's Settings page prints this footer rather than a second one.
-            Text(SettingsCopy.footer("icu"))
+            // browser app's Settings page prints the same line rather than a second one.
+            settingFooter("icu")
         }
     }
 
@@ -189,12 +224,10 @@ struct SettingsView: View {
             Text("Strava")
         } footer: {
             if store.isStravaConfigured {
-                // `SettingsCopy` authors the paragraphs; the bold on "reads" and the
-                // ask-for-more sentence are this screen's own furniture over them.
-                Text(markdown: SettingsCopy.footer("strava")
-                        .replacingOccurrences(of: "only reads your",
-                                              with: "only **reads** your")
-                     + " " + Copy.stravaAskForMore)
+                // One line and the topic behind it (pattern K). The five paragraphs are
+                // `SettingsCopy.footer("strava")` still, read by the browser's extensive
+                // mode and by the Strava help topic this links to.
+                settingFooter("strava")
             } else {
                 Text("This build carries no Strava API keys, so the Strava source is not "
                      + "offered. Everything else works as usual.")
@@ -225,7 +258,7 @@ struct SettingsView: View {
             } header: {
                 Text(SettingsCopy.section("deleted").title)
             } footer: {
-                Text(SettingsCopy.footer("deleted"))
+                settingFooter("deleted")
             }
         }
     }
@@ -256,23 +289,26 @@ struct SettingsView: View {
         } header: {
             Text("Notifications")
         } footer: {
-            Text(notificationsFooter)
+            notificationsFooter
         }
     }
 
-    /// What the switch does, and the one thing that decides whether it works at all:
-    /// background refresh is granted by iOS, not requested by the app.
-    private var notificationsFooter: String {
-        guard !store.apiKey.isEmpty else {
-            return "Add your intervals.icu API key above first. The check is a call to "
-                + "your account."
+    /// **One line, and the topic that holds the rest** (20 September 2026, pattern K).
+    ///
+    /// This footer was seven paragraphs under one switch — what the check does, what it
+    /// looks for, what you hear about, what happens on a tap, and three more about what
+    /// iOS grants a background app. Every one of them is now `HelpTopicID.notifications`,
+    /// which the line below opens. The disabled state keeps its own sentence, because a
+    /// switch that cannot be used has to say why on the spot (pattern G).
+    @ViewBuilder
+    private var notificationsFooter: some View {
+        if store.apiKey.isEmpty {
+            Text("Add your intervals.icu API key above first. The check is a call to "
+                 + "your account.")
+                .fixedSize(horizontal: false, vertical: true)
+        } else {
+            settingFooter("notifications")
         }
-        let ios = "iOS decides when a background app may run. It learns your habits and "
-            + "may hold a check back for hours.\n\n"
-            + "It never runs in Low Power Mode, or while Background App Refresh is off "
-            + "under Settings → General → Background App Refresh.\n\n"
-            + "Pull down on Sessions to sync now."
-        return SettingsCopy.notifyExplanation + "\n\n" + ios
     }
 
     // The "Places → Spots" section used to sit here, and that was the whole problem
@@ -324,29 +360,15 @@ struct SettingsView: View {
         } header: {
             Text("Analysis")
         } footer: {
-            Text(markdown: analysisFooter)
+            settingFooter("analysis")
         }
     }
 
-    /// The rig paragraph only where there is a rig row to explain: with the windsurf switch
-    /// off nothing above it asks which rig this was, and a footer that answers an unasked
-    /// question is the app talking to itself.
-    private var analysisFooter: String {
-        let rig = "Wingfoil is not a sport in Garmin, Strava, intervals.icu or Apple Health. "
-            + "A new session cannot say which rig you were on.\n\n"
-            + "What you mostly ride answers for it. CleanJibe asks you to confirm after "
-            + "each import.\n\n"
-            + "Sessions already in your library are not changed.\n\n"
-        // The *why* behind the habit clause, kept out of the footer: flipping the wind
-        // end for end turns every jibe into a tack, so the wrong end is not a small error.
-        let wind = "Your track gives the wind axis as a *line*. Which end the wind blew "
-            + "from is the hard half.\n\n"
-            + "The no-go zone usually settles it. You can sail any downwind course, but "
-            + "none straight into the wind.\n\n"
-            + "When a session cannot settle it, your habit does.\n\n"
-            + "Sessions already in the library change only when you re-run the analysis."
-        return store.windsurfEnabled ? rig + wind : wind
-    }
+    // The rig and wind-axis paragraphs that used to sit here are in the help catalogue
+    // now: the rig in `HelpTopicID.windsurf`, which already said all three sentences, and
+    // the wind axis in `.turnTypes` and `.windAxis`, which the footer's `?` opens
+    // (20 September 2026, pattern K and rule 10 of docs/voice.md).
+
 
     /// **The map behind a row's track** (item 6 of the 18 Sep 2026 round).
     ///
@@ -362,7 +384,7 @@ struct SettingsView: View {
         } header: {
             Text(SettingsCopy.section("sessionList").title)
         } footer: {
-            Text(SettingsCopy.footer("sessionList"))
+            settingFooter("sessionList")
         }
     }
 
@@ -387,7 +409,33 @@ struct SettingsView: View {
         } header: {
             Text(SettingsCopy.section("rowShows").title)
         } footer: {
-            Text(SettingsCopy.footer("rowShows"))
+            settingFooter("rowShows")
+        }
+    }
+
+    /// **Knots or km/h, once, for every speed the phone shows** (Jan, 20 September 2026,
+    /// relaying a user's request from a shared card).
+    ///
+    /// The engine stays in m/s and knots from end to end — the record windows are defined
+    /// in knots and a golden may not move because a rider changed a picker
+    /// (docs/algorithms.md, "Speed records"). This converts on the way to the screen only,
+    /// through the platform's one formatter (`Speed`), which is why the share card and the
+    /// records follow it without a line of their own.
+    ///
+    /// Right under "Row shows" because that is the other question about how the library
+    /// reads, and it is where the browser app already draws it.
+    private var unitsSection: some View {
+        Section {
+            Picker(SettingsCopy.section("units").title, selection: Binding(
+                get: { store.speedUnit },
+                set: { store.speedUnit = $0 })) {
+                    ForEach(SpeedUnit.allCases) { Text($0.label).tag($0) }
+                }
+                .pickerStyle(.segmented)
+        } header: {
+            Text(SettingsCopy.section("units").title)
+        } footer: {
+            settingFooter("units")
         }
     }
 
@@ -424,8 +472,8 @@ struct SettingsView: View {
             // The honest version of "experimental": what works, what is switched off, and
             // what is a guess — in that order, so a windsurfer who turns it on knows which
             // numbers he may believe before he sees one.
-            Text("Analyse sessions as windsurf foil or fin. Untested: jibes and tacks work, "
-                 + "pumping is off, planing thresholds are provisional.")
+            Text("Analyse sessions as windsurf foil or fin. Jibes and tacks work, pumping "
+                 + "is off, planing thresholds are provisional.")
         }
     }
     #endif
@@ -461,11 +509,9 @@ struct SettingsView: View {
             // and this whole section is behind `#if TUNING`.
             Text("Tuning · dev")
         } footer: {
-            Text("Dev build only. Puts the analysis thresholds on sliders.\n\n"
-                 + "A parameter can be tried against your own sessions in a minute instead "
-                 + "of a rebuild.\n\n"
-                 + "They apply on this phone only. Every screen showing a tuned number "
-                 + "says so.")
+            // One line here too (pattern K). The three paragraphs are on the Tuning page
+            // itself, which is where a reader who opened it is.
+            Text("Dev build only. Puts the analysis thresholds on sliders, on this phone.")
         }
     }
     #endif
@@ -581,7 +627,7 @@ struct SettingsView: View {
         } header: {
             Text(SettingsCopy.section("about").title)
         } footer: {
-            Text(SettingsCopy.footer("about"))
+            settingFooter("about")
         }
     }
 

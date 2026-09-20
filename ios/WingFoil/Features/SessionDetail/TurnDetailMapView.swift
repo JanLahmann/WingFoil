@@ -111,7 +111,7 @@ struct TurnDetailMapView: View {
         if let playheadRt, let point = figure.point(atRelative: playheadRt, windUp: false) {
             HStack(spacing: 8) {
                 reading(String(format: "%+.1f s", point.rt))
-                reading(String(format: "%.1f kn", point.kn))
+                reading(Fmt.kn(point.kn, digits: 1))
                 if let heading = point.headingDeg {
                     reading(String(format: "%.0f°", heading), caption: "hdg")
                 }
@@ -538,7 +538,7 @@ struct TurnDetailMapView: View {
         }
         context.draw(text(String(format: "%.1f", bottomKn)),
                      at: CGPoint(x: left, y: y - 2), anchor: .bottomLeading)
-        context.draw(text(String(format: "%.1f kn", topKn)),
+        context.draw(text(Fmt.kn(topKn, digits: 1)),
                      at: CGPoint(x: right, y: y - 2), anchor: .bottomTrailing)
         // The anchor's own tick, unless it has arrived at the top of the bar — where the two
         // numbers would be the same number printed twice.

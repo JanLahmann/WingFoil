@@ -300,7 +300,7 @@ enum ReelFrame {
         let right = ReelScene.size.width - margin
         text(context, "speed", size: 24, weight: .semibold, rounded: false,
              color: quiet, at: CGPoint(x: right, y: stripTop), align: .right)
-        text(context, String(format: "%.1f kn", moment?.kn ?? 0), size: 58, weight: .bold,
+        text(context, Fmt.kn(moment?.kn ?? 0, digits: 1), size: 58, weight: .bold,
              rounded: true, color: flying ? ink.flying : ink.paper,
              at: CGPoint(x: right, y: stripTop + 32), align: .right)
 

@@ -202,6 +202,21 @@ final class SessionStore {
 
     static let rowMetricsKey = "sessionRowMetrics"
 
+    /// **Knots or km/h, for every speed the phone shows** (Settings → Units, 20 September
+    /// 2026). Stored by `SpeedUnitStore` and applied to the kit's one formatter, which is
+    /// what the library rows, the session page, the records, the trends captions and the
+    /// share card all print through (`Speed`).
+    ///
+    /// Writing it here is what redraws the app: every view reading a formatted speed is
+    /// already observing this store.
+    var speedUnit: SpeedUnit = SpeedUnitStore.load(from: .standard) {
+        didSet {
+            guard speedUnit != oldValue else { return }
+            SpeedUnitStore.save(speedUnit, to: .standard)
+            Speed.unit = speedUnit
+        }
+    }
+
     private static var storedRowMetrics: [RowMetric] {
         RowMetric.triple(stored: UserDefaults.standard.string(forKey: rowMetricsKey))
     }
@@ -307,6 +322,10 @@ final class SessionStore {
     private(set) var libraryNewerThanApp: LibraryNewerThanApp?
 
     init() {
+        // **Before anything renders a speed.** The kit's one formatter is a process-wide
+        // setting (`Speed`), and this is the single place the app writes it from the
+        // rider's stored choice.
+        SpeedUnitStore.apply(from: .standard)
         var url: URL?
         var problem: String?
         var database: AppDatabase?

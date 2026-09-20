@@ -156,7 +156,7 @@ struct SessionRecordsTable: View {
             // "Best 5×10 s" is the widest of them. Scaled, so the column still holds that
             // name when the phone is set to a larger text size.
             Text("record").scaledColumn(92, relativeTo: .subheadline)
-            Text("kn").scaledColumn(62, alignment: .trailing, relativeTo: .subheadline)
+            Text(Fmt.knUnit).scaledColumn(62, alignment: .trailing, relativeTo: .subheadline)
             Text("where").frame(maxWidth: .infinity, alignment: .leading)
         }
         .font(.caption2)
@@ -270,10 +270,22 @@ struct SessionTurnsSection: View {
                                      + " excluded"
                                  : "entered on each tack",
                              help: .portStarboard)
-                    StatCard(title: "Falls",
-                             value: "\(split.falls)",
-                             caption: String(split.turnFalls) + " in turns · "
-                                 + String(split.straightFalls) + " straight-line",
+                    // **Every fall, from one channel** (20 September 2026). The value was
+                    // `split.falls`, which adds the *turn ladder's* fell-in count to the
+                    // *flight-end* channel's straight-line one — two different events, so
+                    // the caption need not add up to the number above it, and on a session
+                    // with a mid-turn swim that ended no flight it does not. The flight-end
+                    // channel answers the rider's question on its own: one event per actual
+                    // swim, and `all == inTurn + straight` by construction
+                    // (docs/algorithms.md, "Wet is every fall, not every fallen jibe"). It
+                    // is also what WPH divides and what the library row and the share card
+                    // now print, so the four surfaces say one number.
+                    StatCard(title: MetricGlossary.entry("fellIn").term,
+                             value: "\(summary.flightEnds.all.fellIn)",
+                             caption: String(summary.flightEnds.inTurn.fellIn)
+                                 + " in a turn · "
+                                 + String(summary.flightEnds.straight.fellIn)
+                                 + " in a straight line",
                              help: .falls)
                     StatCard(title: "Touchdowns",
                              value: "\(split.touchdowns)",
@@ -382,16 +394,31 @@ struct SessionTakeoffSection: View {
                                  : "median \(k.medianPumpsToTakeoff.map { String(format: "%.0f", $0) } ?? "—")"
                                      + " · \(k.freeTakeoffs) free",
                              dimmed: k.avgPumpsToTakeoff == nil, help: .pumpsToTakeoff)
-                    StatCard(title: "Attempts",
+                    // **Takeoffs and attempts, side by side** (20 September 2026). The
+                    // watch counted 15 tries on the afternoon this card reported 9
+                    // takeoffs, and the rider had no way to see that both were right. Each
+                    // now names the other in its caption (docs/review-checklist.md,
+                    // pattern H).
+                    StatCard(title: MetricGlossary.entry("takeoffs").term,
+                             value: "\(k.takeoffSuccesses)",
+                             caption: "of \(k.takeoffAttempts) attempts",
+                             help: .takeoffAttempts)
+                    StatCard(title: MetricGlossary.entry("takeoffAttempts").term,
                              value: "\(k.takeoffAttempts)",
                              caption: k.failedAttempts > 0
-                                 ? "\(k.failedAttempts) failed" : "all got up",
+                                 ? "\(k.failedAttempts) failed · \(k.takeoffSuccesses) got up"
+                                 : "all got up",
                              help: .takeoffAttempts)
-                    StatCard(title: "Success rate",
+                    // **"Got up", not "Success rate"** (20 September 2026). "success" is
+                    // engine vocabulary and appears in no rider text (CLAUDE.md) — and the
+                    // same afternoon it was this card's word for a takeoff rate while
+                    // Garmin Connect used *Turn success* for a turn speed verdict. Two
+                    // measurements, one word, three screens apart.
+                    StatCard(title: "Got up",
                              value: k.successPct.map { Fmt.pct($0) } ?? "—",
                              caption: k.successPct == nil
                                  ? "failures invisible without accel"
-                                 : "\(k.takeoffSuccesses) of \(k.takeoffAttempts)",
+                                 : "\(k.takeoffSuccesses) of \(k.takeoffAttempts) attempts",
                              dimmed: k.successPct == nil, help: .takeoffAttempts)
                     StatCard(title: "Takeoff run",
                              value: k.avgTakeoffS.map { String(format: "%.1f s", $0) } ?? "—",

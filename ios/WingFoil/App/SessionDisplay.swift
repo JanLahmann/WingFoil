@@ -282,10 +282,20 @@ enum Fmt {
         return String(format: "%.1f km", value)
     }
 
-    static func kn(_ value: Double?) -> String {
-        guard let value else { return "—" }
-        return String(format: "%.2f kn", value)
+    /// **The app target's speeds go through the kit's one formatter** (`Speed`, Settings →
+    /// Units). It takes knots, because the engine reports knots and always will, and it
+    /// prints whatever the rider reads in.
+    static func kn(_ value: Double?, digits: Int = 2) -> String {
+        Speed.format(value, digits: digits)
     }
+
+    /// The number alone, for a cell whose unit is a column of its own.
+    static func knValue(_ value: Double?, digits: Int = 2) -> String {
+        Speed.number(value, digits: digits)
+    }
+
+    /// The word after the number, once, for a chart axis or a column head.
+    static var knUnit: String { Speed.suffix }
 
     /// **A share, under the one percent rule** (docs/presentation.md, "Label table").
     ///

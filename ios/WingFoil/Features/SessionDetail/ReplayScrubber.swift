@@ -166,7 +166,7 @@ struct ReplayScrubber: View {
         let moment = self.moment
         HStack(alignment: .firstTextBaseline, spacing: 16) {
             field(Fmt.clock((playhead ?? range.lowerBound) - range.lowerBound), "elapsed")
-            field(moment.map { String(format: "%.1f", $0.kn) } ?? "—", "kn")
+            field(Fmt.knValue(moment?.kn, digits: 1), Fmt.knUnit)
             if detail.hasHeartRate {
                 field(moment?.hr.map { "\(Int($0.rounded()))" } ?? "—", "bpm")
             }

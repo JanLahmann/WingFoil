@@ -37,9 +37,14 @@ struct KeyMetricsView: View {
                 ForEach(metrics.speedExtras) { cell($0) }
             }
 
-            if metrics.tally != nil || metrics.streaks != nil {
+            // The tally is the **jibe** ladder and its caption says so ("of 57 jibes").
+            // The falls cell beside it is the **session**, straight-line swims included —
+            // the two are different questions and were one number until 20 September 2026,
+            // when a tester who fell three times read a 1.
+            if metrics.tally != nil || metrics.streaks != nil || metrics.falls != nil {
                 row {
                     if let tally = metrics.tally { tallyCell(tally) }
+                    if let falls = metrics.falls { cell(falls) }
                     if let streaks = metrics.streaks { cell(streaks) }
                 }
             }
@@ -86,7 +91,10 @@ struct KeyMetricsView: View {
                 .minimumScaleFactor(0.6)
             // No line limit: a label that needs four lines at the rider's text size gets
             // four. The row is `.top`-aligned, so a taller tile pushes nothing sideways.
-            Text(metric.label)
+            // The label, and the qualifier under it where the cell has one — the falls
+            // cell's split today. Same separator the tally uses, so the two captions in
+            // this row read as one kind of thing.
+            Text(metric.caption.map { metric.label + Self.captionSep + $0 } ?? metric.label)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

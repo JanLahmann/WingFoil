@@ -253,12 +253,12 @@ private struct FlightEndDetailPage: View {
     private func numbers(_ end: FlightEndRecord, slice: FlightEndSlice) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                speedStep(String(format: "%.1f", slice.speed.entryKn), "in")
+                speedStep(Fmt.knValue(slice.speed.entryKn, digits: 1), "in")
                 arrow
-                speedStep(slice.speed.lowKn.map { String(format: "%.1f", $0) } ?? "—", "low")
+                speedStep(Fmt.knValue(slice.speed.lowKn, digits: 1), "low")
                 arrow
-                speedStep(slice.speed.outKn.map { String(format: "%.1f", $0) } ?? "—", "out")
-                Text("kn").font(.footnote).foregroundStyle(.secondary)
+                speedStep(Fmt.knValue(slice.speed.outKn, digits: 1), "out")
+                Text(Fmt.knUnit).font(.footnote).foregroundStyle(.secondary)
                 Spacer(minLength: 0)
             }
             // Said here rather than only in the footnote, because it is the one place this
