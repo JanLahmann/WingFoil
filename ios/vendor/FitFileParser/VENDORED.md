@@ -5,4 +5,4 @@ Copied into the repo on 20 September 2026 with one change: the generated
 `FIT_ENUM` / `FIT_UINT8` / `FIT_UINT16` with the trapping initializer, so a structurally
 valid FIT carrying a value outside the narrower type crashed the app inside `FitFile.init`
 before any code of ours ran (found by the mutation fuzz, docs/testing.md). Every such
-conversion is `truncatingIfNeeded:` here. Upstream pull request: Jan's call.
+conversion is `truncatingIfNeeded:` here. Upstream pull request: https://github.com/roznet/FitFileParser/pull/15 (20 September 2026); drop this copy once a release carries it.
