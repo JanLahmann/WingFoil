@@ -19,6 +19,48 @@ public enum MetricSurface: String, Sendable, Equatable, CaseIterable {
     case ciq
 }
 
+/// **Where a term actually shows**, concretely enough that a rider comparing two screens
+/// can be pointed at both.
+///
+/// `MetricSurface` says which checker may *demand* the word. This says where the word is
+/// printed, which is the question the 20 September 2026 round was opened by: a tester read
+/// "turn success 29 %" in Garmin Connect, "93 % flew through" on the website and
+/// "success 44 %" on the phone, and had no way to learn that those are three different
+/// measurements. A term that names its places answers that in one line.
+public enum MetricPlace: String, Sendable, Equatable, CaseIterable {
+    /// A label on a watch page (`garmin/source/ui`, a MIP cell — see `short`).
+    case watchPage
+    /// A FIT developer field. `MetricGlossaryEntry.fit` names which (docs/fit-schema.md).
+    case fitField
+    /// The row Garmin Connect lists under *Connect IQ* on the activity page
+    /// (`garmin/resources/fitcontributions/fit_contributions.xml`).
+    case connectField
+    /// A cell of a library row (`RowMetric`).
+    case phoneRow
+    /// The session page — the key-metrics block or one of the stat cards.
+    case phonePage
+    /// The share card (`ShareCardStats`).
+    case card
+    /// cleanjibe.org and the browser app.
+    case web
+    /// The help catalogue, in the app and on /help/.
+    case help
+
+    /// The rider's name for the place, for the one line the help topic prints.
+    public var word: String {
+        switch self {
+        case .watchPage: "the watch"
+        case .fitField: "the FIT"
+        case .connectField: "Garmin Connect"
+        case .phoneRow: "the library row"
+        case .phonePage: "the session page"
+        case .card: "the share card"
+        case .web: "the website"
+        case .help: "this page"
+        }
+    }
+}
+
 /// One entry of the glossary: the metric's name, and the one line that says what it is.
 ///
 /// **Six fields and a scope, because four surfaces and two stores read this row.** It used
@@ -52,9 +94,24 @@ public struct MetricGlossaryEntry: Sendable, Equatable, Identifiable {
     public let sentence: String
     /// Which surfaces say this word at all.
     public let surfaces: [MetricSurface]
+    /// **Where it shows**, concretely. Read by `docs/copy/glossary.json` and by the help
+    /// topic *What the numbers mean*, so a rider comparing two screens is told which
+    /// screens print this word.
+    public let places: [MetricPlace]
+    /// **Every spelling a surface is allowed to print for this term**, the term itself
+    /// included — the row says `foil`, the tile says `On foil`, and both are this word.
+    ///
+    /// It is what `GlossaryLintTests` checks a rider-facing label against. A label that is
+    /// not here and not a pure unit or date is a metric with a second name, which is the
+    /// defect this whole file exists to stop (docs/review-checklist.md, pattern L).
+    public let labels: [String]
+    /// The FIT developer field this term is written into, or `""`. Names the field, not
+    /// the id: docs/fit-schema.md owns the ids.
+    public let fit: String
 
     public init(id: String, term: String, short: String, expansion: String = "",
-                line: String, sentence: String, surfaces: [MetricSurface]) {
+                line: String, sentence: String, surfaces: [MetricSurface],
+                places: [MetricPlace] = [], labels: [String] = [], fit: String = "") {
         self.id = id
         self.term = term
         self.short = short
@@ -62,6 +119,9 @@ public struct MetricGlossaryEntry: Sendable, Equatable, Identifiable {
         self.line = line
         self.sentence = sentence
         self.surfaces = surfaces
+        self.places = places
+        self.labels = labels.isEmpty ? [term] : labels
+        self.fit = fit
     }
 
     /// `"CPH · clean jibes per hour"` — the label a rates row prints, built from the two
@@ -71,7 +131,7 @@ public struct MetricGlossaryEntry: Sendable, Equatable, Identifiable {
     }
 }
 
-/// **The eleven words the product is made of**, each in one line.
+/// **The nineteen words the product is made of**, each in one line.
 ///
 /// There were three copies of this glossary on 15 September 2026: `web/learn`'s definition
 /// list, the welcome screen's four highlights, and the summaries of the matching `HelpCatalog`
@@ -87,8 +147,12 @@ public struct MetricGlossaryEntry: Sendable, Equatable, Identifiable {
 ///
 /// **What is *not* here.** The long explanations — the 12 / 8 km/h foil gates, the 70 % score,
 /// the outcome ladder — stay in `HelpCatalog`, which is a reference work behind a `?` and has
-/// no equivalent on the site. These eleven are the index lines: enough to read a session page
+/// no equivalent on the site. These nineteen are the index lines: enough to read a session page
 /// with, short enough that nobody skips them.
+///
+/// **Eight were added on 20 September 2026** — the verdict words. The reason is under the
+/// MARK at the end of the list: three surfaces printed three different numbers about one
+/// rider's turns, and not one of them named the measurement it was.
 public enum MetricGlossary {
 
     /// A record window's label, from the design tokens rather than retyped: `design/tokens.json`
@@ -113,7 +177,11 @@ public enum MetricGlossary {
             short: "on foil",
             line: "How much of the session was spent flying rather than merely moving.",
             sentence: "how much of it you spent on the foil",
-            surfaces: [.ios, .watch, .web, .appstore, .ciq]),
+            surfaces: [.ios, .watch, .web, .appstore, .ciq],
+            places: [.watchPage, .fitField, .connectField, .phoneRow, .phonePage,
+                     .card, .web, .help],
+            labels: ["On foil", "foil", "Foil time", "foil time"],
+            fit: "foil_pct"),
 
         MetricGlossaryEntry(
             id: "flights",
@@ -122,7 +190,12 @@ public enum MetricGlossary {
             line: "One takeoff starts a flight. A touchdown or a swim ends it. "
                 + "Both are counted.",
             sentence: "how long each flight lasted",
-            surfaces: [.ios, .watch, .web, .appstore, .ciq]),
+            surfaces: [.ios, .watch, .web, .appstore, .ciq],
+            places: [.watchPage, .fitField, .connectField, .phoneRow, .phonePage,
+                     .web, .help],
+            labels: ["Flights & touchdowns", "Flights", "flights", "Longest flight",
+                     "longest flight"],
+            fit: "flight_count"),
 
         // A list of **nouns**, so the middle one is a noun: `touchdown`, not "touched
         // down" (docs/presentation.md, "Label table"). The participle is right inside a
@@ -134,7 +207,10 @@ public enum MetricGlossary {
             short: "verdict",
             line: "Every turn gets one: flew through, touchdown, or fell in.",
             sentence: "whether you flew through it, touched down, or fell in",
-            surfaces: [.ios, .watch, .web, .appstore, .ciq]),
+            surfaces: [.ios, .watch, .web, .appstore, .ciq],
+            places: [.watchPage, .fitField, .phonePage, .card, .web, .help],
+            labels: ["Turn verdicts", "flew · touchdown · fell"],
+            fit: "turn_marker"),
 
         MetricGlossaryEntry(
             id: "dryStreak",
@@ -143,7 +219,9 @@ public enum MetricGlossary {
             line: "How many jibes in a row you stayed out of the water, and the best "
                 + "run of the day.",
             sentence: "your longest run of jibes without falling in",
-            surfaces: [.ios, .watch, .web, .appstore]),
+            surfaces: [.ios, .watch, .web, .appstore],
+            places: [.watchPage, .phoneRow, .phonePage, .card, .web, .help],
+            labels: ["Dry streak", "dry streak", "best streaks"]),
 
         MetricGlossaryEntry(
             id: "jph",
@@ -152,7 +230,9 @@ public enum MetricGlossary {
             expansion: "dry jibes per hour",
             line: "Dry jibes per hour. Falling in more often cannot raise it.",
             sentence: "your dry jibes per hour",
-            surfaces: [.ios, .web]),
+            surfaces: [.ios, .web],
+            places: [.phonePage, .card, .web, .help],
+            labels: ["JPH", "JPH · dry jibes per hour"]),
 
         // The clean-jibe line, and the only place in the glossary the rule is stated. The
         // quiet tail is the third requirement (engine 0.17.0, docs/algorithms.md) and was
@@ -165,7 +245,9 @@ public enum MetricGlossary {
             line: "Clean jibes per hour. Clean: flew through, held your speed, and "
                 + "10 quiet seconds after.",
             sentence: "your clean jibes per hour",
-            surfaces: [.ios, .watch, .web, .appstore, .ciq]),
+            surfaces: [.ios, .watch, .web, .appstore, .ciq],
+            places: [.watchPage, .phonePage, .card, .web, .help],
+            labels: ["CPH", "CPH · clean jibes per hour"]),
 
         // **Beside JPH and CPH, never instead of them** (CLAUDE.md: rates are additive).
         // The phone and the web have printed "TPH · turns per hour" on every session whose
@@ -179,7 +261,9 @@ public enum MetricGlossary {
             line: "Turns per hour, every counted turn and not only the jibes. It stands "
                 + "in for JPH on a session whose wind axis named no jibes.",
             sentence: "your turns per hour",
-            surfaces: [.ios, .web]),
+            surfaces: [.ios, .web],
+            places: [.phonePage, .card, .web, .help],
+            labels: ["TPH", "TPH · turns per hour"]),
 
         MetricGlossaryEntry(
             id: "wph",
@@ -188,7 +272,9 @@ public enum MetricGlossary {
             expansion: "swims per hour",
             line: "Swims per hour. The number nobody wants, kept honest anyway.",
             sentence: "your swims per hour",
-            surfaces: [.ios, .web]),
+            surfaces: [.ios, .web],
+            places: [.phonePage, .card, .web, .help],
+            labels: ["WPH", "WPH · swims per hour"]),
 
         MetricGlossaryEntry(
             id: "speedRecords",
@@ -197,7 +283,16 @@ public enum MetricGlossary {
             line: "Your fastest 2 seconds, 10 seconds, 500 m and nautical mile. The "
                 + "speedsurfing world uses the same windows.",
             sentence: "your speed records",
-            surfaces: [.ios, .watch, .web, .appstore, .ciq]),
+            surfaces: [.ios, .watch, .web, .appstore, .ciq],
+            places: [.watchPage, .fitField, .connectField, .phoneRow, .phonePage,
+                     .card, .web, .help],
+            labels: ["Speed records", "max 2 s", "avg speed",
+                     windowLabel("best2s"), windowLabel("best10s"),
+                     windowLabel("best100m"), windowLabel("best250m"),
+                     windowLabel("best500m"), windowLabel("bestNm"),
+                     "best 2 s", "best 10 s", "best 100 m", "best 250 m", "best 500 m",
+                     "best 1 NM"],
+            fit: "best_2s"),
 
         // The two windows the eight-line glossary named nowhere. Both are printed on the
         // phone's key-metrics block, on the web's tiles and on the share card; neither is
@@ -210,7 +305,9 @@ public enum MetricGlossary {
             line: "The mean of your best five separate 10-second runs. They may not "
                 + "overlap, so one lucky reach cannot carry it.",
             sentence: "your best five ten-second runs",
-            surfaces: [.ios, .web]),
+            surfaces: [.ios, .web],
+            places: [.phonePage, .web, .help],
+            labels: [windowLabel("best5x10s"), "5×10 s"]),
 
         MetricGlossaryEntry(
             id: "alpha500",
@@ -219,8 +316,182 @@ public enum MetricGlossary {
             line: "Your fastest 500 m that ends within 50 m of where it started. It "
                 + "contains a jibe, so it measures the turn as well as the speed.",
             sentence: "your fastest 500 m that comes back to where it started",
-            surfaces: [.ios, .web]),
+            surfaces: [.ios, .web],
+            places: [.phonePage, .web, .help],
+            labels: [windowLabel("alpha500"), "alpha 500"]),
+
+        // MARK: - The verdict words (20 September 2026)
+        //
+        // **Why eight more.** A tester read three numbers about the same afternoon's turns:
+        // Garmin Connect said *Turn success 29 %*, the website said *93 % flew through*,
+        // the phone said *44 %*. All three were correct and all three measured something
+        // else, and no surface said which. The four words docs/algorithms.md already keeps
+        // apart — flew through, the score verdict, clean, dry — had no row of their own
+        // here, so the two that collided could not be told apart by a reader and could not
+        // be linted apart by a test.
+        //
+        // The score verdict is **"Speed kept"** on every rider surface. It may not be
+        // called "success" or "carried" (CLAUDE.md), and *turn success* was both of those
+        // at once: the engine's word, printed in Garmin Connect, beside a phone that used
+        // "success" for a different measurement again — how often he got up.
+
+        MetricGlossaryEntry(
+            id: "flewThrough",
+            term: "Flew through",
+            short: "flew",
+            line: "The turn kept the foil, from the sweep until you were flying again.",
+            sentence: "whether you flew through it",
+            surfaces: [.ios, .watch, .web],
+            places: [.watchPage, .fitField, .phonePage, .card, .web, .help],
+            labels: ["Flew through", "flew through", "flew"],
+            fit: "turn_marker"),
+
+        MetricGlossaryEntry(
+            id: "clean",
+            term: "Clean",
+            short: "clean",
+            line: "A jibe that flew through, held 70 % of its entry speed, and stayed "
+                + "quiet for 10 s.",
+            sentence: "which of your jibes were clean",
+            surfaces: [.ios, .watch, .web],
+            places: [.watchPage, .fitField, .phoneRow, .phonePage, .card, .web, .help],
+            labels: ["Clean", "clean", "Clean jibes", "clean jibes"],
+            fit: "clean_jibes"),
+
+        // **The one the watch calls "turn success" today.** A speed verdict over every
+        // counted turn. Not the outcome, and not the takeoff rate the phone called a
+        // success rate until this round. docs/fit-schema.md field 34 carries the label
+        // change this term asks of the watch.
+        MetricGlossaryEntry(
+            id: "speedKept",
+            term: "Speed kept",
+            short: "speed",
+            line: "The share of counted turns that held 70 % of their entry speed and "
+                + "never dropped off the foil.",
+            sentence: "how many of your turns held their speed",
+            surfaces: [.ios, .watch, .web],
+            places: [.watchPage, .fitField, .connectField, .help],
+            labels: ["Speed kept", "speed kept"],
+            fit: "turn_success_pct"),
+
+        MetricGlossaryEntry(
+            id: "dry",
+            term: "Dry",
+            short: "dry",
+            line: "You did not fall in. A touchdown still counts as dry.",
+            sentence: "the jibes you did not swim out of",
+            surfaces: [.ios, .web],
+            places: [.phonePage, .web, .help],
+            labels: ["Dry", "dry"]),
+
+        MetricGlossaryEntry(
+            id: "touchdown",
+            term: "Touchdown",
+            short: "touch",
+            line: "The foil went in and you kept going. Dry, and not clean.",
+            sentence: "where you touched down",
+            surfaces: [.ios, .watch, .web],
+            places: [.watchPage, .fitField, .phonePage, .card, .web, .help],
+            labels: ["Touchdown", "touchdown", "Touchdowns", "touchdowns"],
+            fit: "turn_marker"),
+
+        // **Every fall, not every fallen jibe.** The row, the card and the session page
+        // print this number, and two of them printed the turn ladder's falls until
+        // 20 September 2026, which leaves out every swim in a straight line. A tester fell
+        // three times and read a 0 (docs/algorithms.md, "Wet is every fall, not every
+        // fallen jibe").
+        MetricGlossaryEntry(
+            id: "fellIn",
+            term: "Fell in",
+            short: "fell in",
+            line: "Every time you ended up in the water, in a turn or in a straight line.",
+            sentence: "every time you fell in",
+            surfaces: [.ios, .watch, .web],
+            places: [.watchPage, .fitField, .phoneRow, .phonePage, .card, .web, .help],
+            labels: ["Fell in", "fell in", "fell", "Falls", "falls"],
+            fit: "turn_marker"),
+
+        MetricGlossaryEntry(
+            id: "takeoffs",
+            term: "Takeoffs",
+            short: "up",
+            line: "How many times you got up on the foil. One takeoff starts every flight.",
+            sentence: "how often you got up",
+            surfaces: [.ios, .watch, .web],
+            places: [.watchPage, .fitField, .phonePage, .web, .help],
+            labels: ["Takeoffs", "takeoffs", "Got up", "got up", "Planing starts"],
+            fit: "takeoff_pack"),
+
+        // Beside `takeoffs`, never instead of it. The watch counted 15 tries on the
+        // afternoon the phone counted 9 flights, and a surface that names one of the two
+        // numbers reads as a contradiction of the other.
+        MetricGlossaryEntry(
+            id: "takeoffAttempts",
+            term: "Attempts",
+            short: "tries",
+            line: "Every pumping burst, whether you got up or not. Attempts are takeoffs "
+                + "plus failed attempts.",
+            sentence: "how often you pumped, including the times you did not get up",
+            surfaces: [.ios, .watch, .web],
+            places: [.watchPage, .fitField, .phonePage, .web, .help],
+            labels: ["Attempts", "attempts", "Takeoff attempts", "Failed attempts",
+                     "failed attempts"],
+            fit: "takeoff_pack"),
     ]
+
+    /// **Every spelling any surface may print, lowercased.** `GlossaryLintTests`' ground
+    /// truth: a rider-facing metric label that is not in here is a metric with a second
+    /// name (docs/review-checklist.md, pattern L).
+    public static var allLabels: Set<String> {
+        Set(entries.flatMap { entry in
+            (entry.labels + [entry.term, entry.labelled]).map {
+                $0.lowercased().trimmingCharacters(in: .whitespaces)
+            }
+        })
+    }
+
+    /// The entry a label belongs to, or nil where no term claims it.
+    public static func entry(forLabel label: String) -> MetricGlossaryEntry? {
+        let want = label.lowercased().trimmingCharacters(in: .whitespaces)
+        return entries.first { entry in
+            (entry.labels + [entry.term, entry.labelled])
+                .contains { $0.lowercased().trimmingCharacters(in: .whitespaces) == want }
+        }
+    }
+
+    /// **The other surface a rider might be holding**, in four words, for the help item.
+    ///
+    /// Not the whole of `places`: the phone, the card and the site are where he is reading
+    /// this, and a definition list that repeats them nineteen times says nothing and costs
+    /// a help item its word budget. What is worth saying is the surface that is *not* in
+    /// his hand — the watch, and the row Garmin Connect prints, which is where the three
+    /// numbers of 20 September 2026 disagreed. `places` keeps the full list for
+    /// `docs/copy/glossary.json`, and the site renders it there.
+    public static func alsoOn(_ entry: MetricGlossaryEntry) -> String {
+        let watch = entry.places.contains(.watchPage) || entry.places.contains(.fitField)
+        let connect = entry.places.contains(.connectField)
+        switch (watch, connect) {
+        case (true, true): return "Also on the watch and in Garmin Connect."
+        case (true, false): return "Also on the watch."
+        case (false, true): return "Also in Garmin Connect."
+        case (false, false): return ""
+        }
+    }
+
+    /// **"Where it shows"**, as the full line — `docs/copy/glossary.json`'s `places`
+    /// rendered for a doc or a report. Built from `places` rather than typed, so a term
+    /// that reaches a new screen says so on every surface at once.
+    public static func places(_ entry: MetricGlossaryEntry) -> String {
+        var words = entry.places.map(\.word)
+        if !entry.fit.isEmpty, entry.places.contains(.fitField) {
+            words = words.map {
+                $0 == MetricPlace.fitField.word ? "the FIT field " + entry.fit : $0
+            }
+        }
+        guard !words.isEmpty else { return "" }
+        if words.count == 1 { return words[0] + "." }
+        return words.dropLast().joined(separator: ", ") + " and " + words[words.count - 1] + "."
+    }
 
     /// One entry by id. Traps on a misspelling rather than returning a silent nil: every
     /// caller is a literal in this repository, and a glossary line that quietly vanishes

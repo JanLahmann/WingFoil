@@ -33,13 +33,19 @@ public struct KeyMetrics: Sendable, Equatable {
         public let key: String
         public let label: String
         public let value: String
+        /// The small line under the value, where the cell has something to qualify — the
+        /// falls cell's split, and nothing else today. `Tally` has always had one; this is
+        /// the same affordance for a plain cell, so a number that needs a qualifier does
+        /// not have to become a tally to get one.
+        public let caption: String?
 
         public var id: String { key }
 
-        public init(key: String, label: String, value: String) {
+        public init(key: String, label: String, value: String, caption: String? = nil) {
             self.key = key
             self.label = label
             self.value = value
+            self.caption = caption
         }
     }
 
@@ -89,17 +95,29 @@ public struct KeyMetrics: Sendable, Equatable {
     /// the two runs and the one the rider is chasing, and `longestFlewStreak` is always
     /// the smaller number, so the pair reads strict-then-lenient in both halves.
     public let streaks: Metric?
+    /// **Every fall of the session**, with the split in its caption. nil where no flight
+    /// ended at all, which is the only state that is an absence rather than a zero.
+    ///
+    /// The tally three cells up is the *jibe* ladder and says so in its own caption ("of
+    /// 57 jibes"), so its `fell in` count leaves out every swim that happened in a
+    /// straight line. A tester fell three times on 19 September 2026, read the tally, and
+    /// concluded the app had not noticed (docs/algorithms.md, "Wet is every fall, not
+    /// every fallen jibe"). This is the session's own number, from the flight-end channel
+    /// WPH already divides — one event per actual swim, and the two halves of the caption
+    /// add up to it exactly because they come from the same channel.
+    public let falls: Metric?
     /// JPH + CPH (or TPH alone) and WPH. **Empty** when `durationS <= 0` — the engine reports the
     /// rates as null there, and "no hour to divide by" is an absence, not a 0.0.
     public let rates: [Metric]
 
     public init(basics: [Metric], maxSpeed: Metric, speedExtras: [Metric] = [],
-                tally: Tally?, streaks: Metric?, rates: [Metric]) {
+                tally: Tally?, streaks: Metric?, falls: Metric? = nil, rates: [Metric]) {
         self.basics = basics
         self.maxSpeed = maxSpeed
         self.speedExtras = speedExtras
         self.tally = tally
         self.streaks = streaks
+        self.falls = falls
         self.rates = rates
     }
 
@@ -129,7 +147,29 @@ public struct KeyMetrics: Sendable, Equatable {
                          value: String(t.longestFlewStreak) + " flew · "
                              + String(t.longestDryStreak) + " dry")
                 : nil,
+            falls: falls(summary),
             rates: rates(summary))
+    }
+
+    /// **Every fall of the session, and where each one happened** (20 September 2026).
+    ///
+    /// Read off the flight-end channel, which is the one that answers "how often did I get
+    /// in the water": one event per actual swim, in a turn or in a straight line
+    /// (docs/algorithms.md, "Wet is every fall, not every fallen jibe"). `all` is exactly
+    /// `inTurn + straight`, so the caption adds up to the value by construction — which is
+    /// why it is not built out of `outcomeSplit`, whose falls mix the turn ladder with the
+    /// flight-end channel and therefore need not.
+    ///
+    /// nil where no flight ended at all: a session the engine found no flights in has an
+    /// unknown number of falls, not zero of them.
+    static func falls(_ s: SessionSummary) -> Metric? {
+        let ends = s.flightEnds
+        guard ends.all.total > 0 else { return nil }
+        let entry = MetricGlossary.entry("fellIn")
+        return Metric(key: "falls", label: entry.term.lowercased(),
+                      value: String(ends.all.fellIn),
+                      caption: String(ends.inTurn.fellIn) + " in a turn · "
+                          + String(ends.straight.fellIn) + " in a straight line")
     }
 
     /// The jibe ladder when the session named jibes, the whole counted-turn ladder when it
@@ -274,10 +314,11 @@ public struct KeyMetrics: Sendable, Equatable {
 
     static func km(_ value: Double) -> String { String(format: "%.1f km", value) }
 
-    static func knots(_ value: Double?) -> String {
-        guard let value else { return "—" }
-        return String(format: "%.2f kn", value)
-    }
+    /// **Every speed on the phone comes out of here**, and `Speed` is what decides the
+    /// unit (Settings → Units, 20 September 2026). The name stays `knots` because the
+    /// *argument* is knots — the engine reports knots and always will — and the return is
+    /// whatever the rider reads in.
+    public static func knots(_ value: Double?) -> String { Speed.format(value) }
 
     /// The rider's unit is knots everywhere in both apps (records, chart axis, callouts),
     /// so the one summary number the engine reports in km/h is converted rather than

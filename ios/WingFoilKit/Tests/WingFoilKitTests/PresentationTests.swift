@@ -83,8 +83,11 @@ import Testing
         // Alfred, 18 September 2026: three apps, three units, no rule. The answer is a list
         // of where each switch is, and it sits with the numbers it applies to.
         #expect(terms.contains("Knots or km/h"))
-        // The six windows, the unit line and the mark.
-        #expect(terms.count == 8)
+        // Two unit lines since 20 September 2026: the phone has a switch of its own now
+        // (Settings → Units), and the other three readers keep theirs.
+        #expect(terms.contains("The other three readers"))
+        // The six windows, the two unit lines and the mark.
+        #expect(terms.count == 9)
 
         // What a rider actually types. Each has to reach this one page.
         for needle in ["2 s", "10 s", "500 m", "alpha", "nautical", "uncertified",

@@ -44,10 +44,15 @@ public enum TakeoffOutcomeFilter: String, CaseIterable, Sendable, Identifiable, 
 
     public var id: String { rawValue }
 
+    /// **"Got up", not "Success"** (20 September 2026). `success` is engine vocabulary and
+    /// appears in no rider-facing text (CLAUDE.md) — and on the same afternoon it was the
+    /// phone's word for a takeoff rate while the watch used it for a *turn* speed verdict
+    /// in Garmin Connect. One word, two measurements, is the collision this round closed:
+    /// the turn verdict is **Speed kept**, and this is the rider getting up.
     public var label: String {
         switch self {
         case .all: return "All"
-        case .success: return "Success"
+        case .success: return "Got up"
         case .failed: return "Failed"
         case .free: return "Free"
         }

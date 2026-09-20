@@ -213,6 +213,10 @@ public enum HelpSection: String, CaseIterable, Sendable, Identifiable {
 /// Every explainable metric, as an enum so a `?` button cannot point at a missing topic.
 public enum HelpTopicID: String, CaseIterable, Sendable, Identifiable {
     case gettingStarted
+    /// **What the numbers mean** — the glossary, rendered rather than written.
+    case numbers
+    /// New sessions announcing themselves while the phone is idle.
+    case notifications
     /// The release notes, in the app at last. They had three homes and no source until
     /// 18 September 2026, and the phone was the one place that carried none of them.
     case whatsNew
@@ -293,6 +297,44 @@ public enum HelpCatalog {
             related: [.icuSetup, .shareFromWatchApp, .stravaImport, .appleWatchApp,
                       .appleWorkoutApp, .exampleSession, .whichWatch, .sendingFeedback]),
 
+        // MARK: What the numbers mean
+        //
+        // **The glossary, rendered.** Every term, its one-line rule, and where it shows.
+        // Nothing here is written: `MetricGlossary` is the source, `docs/copy/glossary.json`
+        // is its artefact, and `web/tools/make_help.py` renders the same nineteen rows into
+        // /help/#numbers. A second spelling of a rule in this file would be exactly the
+        // drift the glossary exists to stop.
+        //
+        // **Why it is a topic and not just the index it used to be** (docs/review-checklist.md,
+        // pattern A): "What the numbers mean" was the title over the whole ten-section Help,
+        // which is a title wider than its content. It is a title exactly the right width over
+        // nineteen definitions.
+        //
+        // Jan, 20 September 2026: *"the definitions of the numbers are important to clarify,
+        // make transparent, and consistent across all surfaces"*. A tester had read
+        // *Turn success 29 %* in Garmin Connect, *93 % flew through* on the site and 44 % on
+        // the phone, about one afternoon. The three are three measurements; this page is where
+        // a rider learns that, and the `where it shows` line is what points him at the screen
+        // he was comparing.
+        HelpTopic(
+            id: .numbers, section: .gettingStarted,
+            title: "What the numbers mean",
+            summary: "Every word CleanJibe counts with, and where each one shows.",
+            body: [
+                "One word per number, on the watch, on the phone, on the card and on the "
+                + "site. A number that is called two things on two screens is a bug here.",
+            ],
+            // Term and rule, and the one surface worth naming: the watch and the row
+            // Garmin Connect prints, which is where the three numbers disagreed. The full
+            // "where it shows" list is `places` in docs/copy/glossary.json, and the site
+            // renders it from there.
+            items: MetricGlossary.entries.map {
+                let also = MetricGlossary.alsoOn($0)
+                return .init(term: $0.term,
+                             detail: also.isEmpty ? $0.line : $0.line + " " + also)
+            },
+            related: [.turnSuccess, .turnOutcomes, .speedRecords, .divergence]),
+
         // MARK: What's new
         //
         // **The release notes, in the app.** Until 18 September 2026 they had three homes
@@ -371,6 +413,37 @@ public enum HelpCatalog {
             links: [HelpLink(title: "Open intervals.icu", url: IcuSetupGuide.intervalsURL)],
             action: .openIcuSettings,
             related: [.exampleSession, .icuTroubleshooting, .icuPrivacy, .sourceClass]),
+
+        // **Where the notification switch's seven paragraphs went** (20 September 2026,
+        // pattern K: a footer says what you get in one line and the how is a help link).
+        // Settings → Notifications now reads one line and links here.
+        HelpTopic(
+            id: .notifications, section: .setup,
+            title: "Notifications for new sessions",
+            summary: "Hear about a session while the phone is idle, and what decides whether "
+                + "you do.",
+            body: [
+                "While the phone is idle, CleanJibe asks intervals.icu for new activity. It "
+                + "looks for windsurf, wing, kite, surf and SUP, from any watch that syncs "
+                + "there.",
+                "You hear about the ones that are not in your library yet. The session is "
+                + "downloaded and analysed in the background, so tapping the notification "
+                + "usually opens a finished analysis.",
+                "iOS decides when a background app may run. It learns your habits and may "
+                + "hold a check back for hours. It never runs in Low Power Mode.",
+                "It never runs while Background App Refresh is off, under Settings → "
+                + "General → Background App Refresh. Pull down on Sessions to sync now.",
+            ],
+            items: [
+                .init(term: "It needs a key",
+                      detail: "The check is a call to your intervals.icu account. Add the "
+                          + "API key first, in Settings."),
+                .init(term: "Off by default",
+                      detail: "The switch itself is what asks iOS for permission. CleanJibe "
+                          + "makes the offer once, after a key has been proved."),
+            ],
+            action: .openIcuSettings,
+            related: [.icuSetup, .icuTroubleshooting]),
 
         HelpTopic(
             id: .exampleSession, section: .setup, title: "Look around with the example session",
@@ -1009,11 +1082,16 @@ public enum HelpCatalog {
                 // Alfred, 18 September 2026: three apps show his speed and two of them
                 // disagree with the third. Each one has its own unit, so the answer is a
                 // list of where each switch is rather than a rule.
+                // Four readers, four settings — so the item names each one and where it is
+                // set. The phone's own switch arrived on 20 September 2026 (Settings →
+                // Units); before it, "CleanJibe shows knots" was the whole answer.
                 .init(term: "Knots or km/h",
-                      detail: "CleanJibe shows knots. The watch app has its own switch, "
-                          + "under Garmin Connect → CleanJibe → Settings. Garmin Connect "
-                          + "follows its own setting. Strava shows a windsurf session in "
-                          + "knots."),
+                      detail: "Knots by default. Settings \u{2192} Units switches every speed "
+                          + "on the phone to km/h."),
+                .init(term: "The other three readers",
+                      detail: "The watch app has its own switch, under Garmin Connect → "
+                          + "CleanJibe → Settings. Garmin Connect follows its own. Strava "
+                          + "shows windsurf in knots."),
                 // Last, because it is the one line that is about the recording rather than
                 // about a window — and the one a rider needs before he posts a number.
                 .init(term: "\"Uncertified\"",
@@ -1048,6 +1126,13 @@ public enum HelpCatalog {
                 .init(term: "Turn",
                       detail: "A detected maneuver on a session where the wind axis was too "
                           + "uncertain to name it. Still counted, just unnamed."),
+                // Where Settings → Analysis's footer went (pattern K, 20 September 2026).
+                .init(term: "Most of my turns are",
+                      detail: "Your track gives the wind axis as a line. When a session "
+                          + "cannot say which end the wind blew from, your habit does."),
+                .init(term: "Changing it later",
+                      detail: "Sessions already in your library change only when you re-run "
+                          + "the analysis, from Settings \u{2192} Storage."),
             ],
             related: [.windAxis, .turnOutcomes, .portStarboard]),
 
@@ -1101,19 +1186,26 @@ public enum HelpCatalog {
                 "So clean is a strict subset of flew through. A jibe that held its speed "
                 + "and then lost the foil coming out is not clean.",
             ],
+            // **The four words, from the glossary rather than retyped** (20 September
+            // 2026). They were written here as well as there, which is how "flew through"
+            // and the watch's own speed verdict came to be told apart in one place and not
+            // the other. `Speed kept` is the fourth, and the one a rider meets in Garmin
+            // Connect before he ever meets it here.
             items: [
-                .init(term: "Flew through",
-                      detail: "The outcome: you kept the foil through the turn and through "
-                          + "the recovery out of it. No touchdown, no swim."),
-                .init(term: "Clean",
-                      detail: "A jibe that flew through, held at least 70 % of its entry "
-                          + "speed, and stayed quiet for 10 seconds. The jibe CPH counts."),
+                .init(term: MetricGlossary.entry("flewThrough").term,
+                      detail: MetricGlossary.entry("flewThrough").line
+                          + " No touchdown, no swim."),
+                .init(term: MetricGlossary.entry("clean").term,
+                      detail: MetricGlossary.entry("clean").line + " The jibe CPH counts."),
+                .init(term: MetricGlossary.entry("speedKept").term,
+                      detail: MetricGlossary.entry("speedKept").line
+                          + " The watch shows it live and writes it into the FIT."),
+                .init(term: MetricGlossary.entry("dry").term,
+                      detail: MetricGlossary.entry("dry").line + " JPH counts dry jibes per "
+                          + "hour, so it never sits below CPH."),
                 .init(term: "Jibes only",
                       detail: "A tack has no clean reading to carry, so the Tacks card "
                           + "reports only how its tacks ended."),
-                .init(term: "Dry",
-                      detail: "You did not fall in. A touchdown still counts as dry. JPH "
-                          + "counts dry jibes per hour, so it never sits below CPH."),
                 .init(term: "Score",
                       detail: "The share of your entry speed you held through the turn, "
                           + "0 to 100. The evidence behind \"clean\", printed beside every "
@@ -1133,14 +1225,18 @@ public enum HelpCatalog {
             related: [.turnTypes, .windAxis]),
 
         HelpTopic(
-            id: .falls, section: .turns, title: "Falls",
-            summary: "Every fall, split into the ones in turns and the ones in a straight line.",
+            id: .falls, section: .turns, title: MetricGlossary.entry("fellIn").term,
+            summary: MetricGlossary.entry("fellIn").line,
             body: [
                 "A fall means you stopped for more than 5 seconds, or the barometer caught "
                 + "your wrist going under.",
-                "The split matters. Falls in turns are a maneuver problem. Falls in a "
+                "The split matters. Falls in a turn are a maneuver problem. Falls in a "
                 + "straight line are a gust, a ventilation or a tip catching. Each fall is "
                 + "counted once. A fall inside a turn's window belongs to that turn.",
+                // The correction of 20 September 2026, said to the rider it happened to.
+                "The jibe tally is a different question. Its three counts are out of your "
+                + "jibes, so a fall in a straight line is not in them. This number is the "
+                + "session.",
             ],
             related: [.turnOutcomes, .touchdowns, .glideOuts]),
 
@@ -1169,17 +1265,29 @@ public enum HelpCatalog {
         // MARK: Takeoff & pumping
 
         HelpTopic(
-            id: .takeoffAttempts, section: .takeoff, title: "Attempts & success rate",
-            summary: "How often you pumped, including the times you did not get up.",
+            // **"Getting up", not "success rate"** (20 September 2026). The word is
+            // engine vocabulary and may not be printed to a rider (CLAUDE.md) — and on the
+            // same afternoon it named a takeoff rate here and a turn speed verdict in
+            // Garmin Connect. Two measurements, one word.
+            id: .takeoffAttempts, section: .takeoff, title: "Attempts & getting up",
+            summary: MetricGlossary.entry("takeoffAttempts").sentence + ".",
             body: [
-                "Attempts = flights + failed attempts. A pumping burst counts as a failed "
+                "Attempts are takeoffs plus failed attempts. A pumping burst is a failed "
                 + "attempt when no flight starts within 10 seconds of your last stroke. "
                 + "Bursts closer together than that are chained into one attempt.",
-                "Flights alone cannot show this. Getting up 20 times out of 22 looks like "
+                "Takeoffs alone cannot show this. Getting up 20 times out of 22 looks like "
                 + "getting up 20 out of 40.",
                 "It needs the wrist accelerometer, which only the CleanJibe watch app "
-                + "records. Without it your failures are invisible, so the success rate is "
-                + "shown as unknown rather than a flattering 100 %.",
+                + "records. Without it your failures are invisible, so the share is shown "
+                + "as unknown rather than a flattering 100 %.",
+            ],
+            items: [
+                .init(term: MetricGlossary.entry("takeoffs").term,
+                      detail: MetricGlossary.entry("takeoffs").line
+                          + " The watch counts the same event."),
+                .init(term: MetricGlossary.entry("takeoffAttempts").term,
+                      detail: MetricGlossary.entry("takeoffAttempts").line
+                          + " Both are printed, side by side."),
             ],
             related: [.pumpsToTakeoff, .sourceClass, .heartRate]),
 

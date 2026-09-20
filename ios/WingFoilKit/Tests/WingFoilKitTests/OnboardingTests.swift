@@ -102,7 +102,7 @@ import Testing
         // back out: every topic above it is how a session gets in, and that one is what to
         // do when it did not.
         #expect(HelpCatalog.topics(in: .setup).map(\.id)
-                == [.icuSetup, .exampleSession, .appleWatchApp, .appleWorkoutApp,
+                == [.icuSetup, .notifications, .exampleSession, .appleWatchApp, .appleWorkoutApp,
                     .stravaImport, .shareFromWatchApp, .phoneOnly, .browserApp, .whichWatch,
                     .icuTroubleshooting, .icuPrivacy, .privacy, .libraryBackup,
                     .sendingFeedback])

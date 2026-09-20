@@ -133,7 +133,7 @@ public enum SettingsCopy {
             title: "Notifications",
             lead: "Hear about a new session while the phone is idle.",
             footer: [notifyExplanation],
-            help: .icuSetup),
+            help: .notifications),
 
         SettingsSectionCopy(
             id: "analysis",
@@ -167,7 +167,7 @@ public enum SettingsCopy {
                 "Speeds are read in knots by the speedsurfing world. Pick km/h if that is "
                 + "the number you think in.",
             ],
-            help: .speedRecords, web: true, phone: false),
+            help: .speedRecords, web: true),
 
         SettingsSectionCopy(
             id: "storage",

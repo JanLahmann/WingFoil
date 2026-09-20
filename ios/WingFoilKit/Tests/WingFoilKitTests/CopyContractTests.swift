@@ -199,7 +199,13 @@ import Testing
                  "expansion": $0.expansion,
                  "line": $0.line,
                  "sentence": kept($0.id, "sentence", $0.sentence),
-                 "surfaces": $0.surfaces.map(\.rawValue)]
+                 "surfaces": $0.surfaces.map(\.rawValue),
+                 // Where it shows, every spelling a surface may print, and the FIT field
+                 // behind it. All three are kit-owned: they are what a lint and a help
+                 // topic read, not copy-editing decisions (20 September 2026).
+                 "places": $0.places.map(\.rawValue),
+                 "labels": $0.labels,
+                 "fit": $0.fit]
             }
             try Self.write("glossary.json", ["entries": rows])
             return
@@ -208,7 +214,8 @@ import Testing
         let json = try Self.load("glossary.json")
         let listed = try #require(json["entries"] as? [[String: Any]],
                                   "glossary.json · entries is not a list of objects")
-        #expect(listed.count == 11, "the glossary is eleven entries, found \(listed.count)")
+        #expect(listed.count == 19,
+                "the glossary is nineteen entries, found \(listed.count)")
         #expect(listed.count == MetricGlossary.entries.count)
         for (kit, file) in zip(MetricGlossary.entries, listed) {
             Self.same(kit.id, file["id"], "glossary.json", "\(kit.id).id")
@@ -217,6 +224,10 @@ import Testing
             Self.same(kit.line, file["line"], "glossary.json", "\(kit.id).line")
             Self.same(kit.surfaces.map(\.rawValue), file["surfaces"],
                       "glossary.json", "\(kit.id).surfaces")
+            Self.same(kit.places.map(\.rawValue), file["places"],
+                      "glossary.json", "\(kit.id).places")
+            Self.same(kit.labels, file["labels"], "glossary.json", "\(kit.id).labels")
+            Self.same(kit.fit, file["fit"], "glossary.json", "\(kit.id).fit")
         }
     }
 

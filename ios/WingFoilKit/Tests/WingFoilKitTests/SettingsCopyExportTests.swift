@@ -119,6 +119,9 @@ import Testing
     /// a deviation is a decision that is written down.
     @Test func theWebOnlySectionsAreTheOnesTheScreensFileNames() {
         let webOnly = SettingsCopy.sections.filter { $0.web && !$0.phone }.map(\.id)
-        #expect(webOnly == ["units", "data", "whatsNew"])
+        // **`units` left this list on 20 September 2026**: the browser had the knots /
+        // km/h switch and the phone did not, which made one setting two products. Both
+        // shells draw it now, from the same lead.
+        #expect(webOnly == ["data", "whatsNew"])
     }
 }

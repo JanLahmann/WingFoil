@@ -49,7 +49,7 @@
       "footer" : [
         "While the phone is idle, CleanJibe asks intervals.icu for new activity.\n\nIt looks for windsurf, wing, kite, surf and SUP, from any watch that syncs there.\n\nYou hear about the ones that are not in your library yet.\n\nThe session is downloaded and analysed in the background, so tapping the notification usually opens a finished analysis."
       ],
-      "help" : "icuSetup",
+      "help" : "notifications",
       "id" : "notifications",
       "lead" : "Hear about a new session while the phone is idle.",
       "phone" : true,
@@ -98,7 +98,7 @@
       "help" : "speedRecords",
       "id" : "units",
       "lead" : "Read speeds in knots or in km/h.",
-      "phone" : false,
+      "phone" : true,
       "title" : "Units",
       "web" : true
     },

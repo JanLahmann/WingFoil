@@ -514,8 +514,8 @@ public enum TurnAnalytics {
             guard let kmh = marginalSpeedKmh, kmh.isFinite else {
                 return "touchdown · pumped out below min foil speed, no sample off the foil"
             }
-            return String(format: "touchdown · pumped out below %.1f kn, "
-                          + "no sample off the foil", kmh * kmhToKn)
+            return "touchdown · pumped out below "
+                + Speed.format(kmh * kmhToKn, digits: 1) + ", no sample off the foil"
         }
     }
 
@@ -544,7 +544,10 @@ public enum TurnAnalytics {
 
     /// The same second line the map callout carries, so the two never diverge.
     public static func detail(_ turn: TurnRecord) -> String {
-        var text = String(format: "%.1f → %.1f kn", turn.entryKn, turn.minKn)
+        // One formatter for every speed the phone prints (`Speed`), so this line and the
+        // records block change unit together when the rider does.
+        var text = Speed.number(turn.entryKn, digits: 1) + " → "
+            + Speed.format(turn.minKn, digits: 1)
         if turn.stoppedS > 0 { text += String(format: " · stopped %.0f s", turn.stoppedS) }
         if turn.submerged { text += " · wrist under" }
         if turn.pumped { text += " · pumped out" }

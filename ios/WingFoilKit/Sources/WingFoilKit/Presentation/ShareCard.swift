@@ -44,9 +44,11 @@ public struct ShareCardStats: Sendable, Equatable {
             self.tally = tally
         }
 
-        /// A key-metrics entry, unchanged. The card adds nothing and rewords nothing.
+        /// A key-metrics entry, unchanged. The card adds nothing and rewords nothing —
+        /// the cell's own caption included, where the block gave it one.
         public init(_ metric: KeyMetrics.Metric) {
-            self.init(key: metric.key, label: metric.label, value: metric.value)
+            self.init(key: metric.key, label: metric.label, value: metric.value,
+                      caption: metric.caption)
         }
 
         /// The outcome tally as one cell: the three counts as a value, and the block's own
@@ -69,6 +71,9 @@ public struct ShareCardStats: Sendable, Equatable {
         public static let maxSpeed = "max2s"
         public static let tally = "tally"
         public static let streaks = "streaks"
+        /// **Every fall of the session** (20 September 2026). The tally beside it is the
+        /// jibe ladder and says so; this is the session, straight-line swims included.
+        public static let falls = "falls"
         /// **The closing card's extra cell, and nowhere else.** Not a `KeyMetrics` key: the
         /// block does not carry the longest flight, and the exported card is a strict mirror
         /// of the block — see `outro`.
@@ -111,8 +116,12 @@ public struct ShareCardStats: Sendable, Equatable {
         /// What `lean` keeps — the four a rider quotes walking off the water. Held as keys
         /// rather than as a rebuilt list so the preset cannot invent an entry: anything not
         /// produced by `KeyMetrics` is simply never there to be kept.
+        /// **`falls` is lean too** (20 September 2026). The tally counts jibe outcomes and
+        /// its caption says "of 57 jibes", so a card that showed only the tally reported
+        /// one fall on an afternoon with three in it — two of them in a straight line. A
+        /// card is read next to nothing, so the honest number travels on both presets.
         public static let leanKeys: Set<String> = [
-            Key.duration, Key.distance, Key.maxSpeed, Key.tally,
+            Key.duration, Key.distance, Key.maxSpeed, Key.tally, Key.falls,
         ]
 
         func keeps(_ key: String) -> Bool {
@@ -298,6 +307,7 @@ public struct ShareCardStats: Sendable, Equatable {
         var out = metrics.basics.map(Stat.init)
         out.append(Stat(metrics.maxSpeed))
         if let tally = metrics.tally { out.append(Stat(tally)) }
+        if let falls = metrics.falls { out.append(Stat(falls)) }
         if let streaks = metrics.streaks { out.append(Stat(streaks)) }
         out.append(contentsOf: metrics.rates.map(Stat.init))
         return preset.filter(out)

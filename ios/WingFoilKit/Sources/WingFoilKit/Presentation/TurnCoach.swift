@@ -206,7 +206,7 @@ public enum TurnCoach {
     // them and the score prints the way its `scoreText` does, so a sentence six points under
     // the numbers row cannot round differently from it.
 
-    static func kn(_ value: Double) -> String { String(format: "%.1f kn", value) }
+    static func kn(_ value: Double) -> String { Speed.format(value, digits: 1) }
 
     static func pct(_ score: Double) -> String { "\(TurnAnalytics.scoreText(score)) %" }
 

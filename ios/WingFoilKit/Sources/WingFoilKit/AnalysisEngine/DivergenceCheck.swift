@@ -56,7 +56,7 @@ public enum DivergenceCheck {
             guard abs(phoneKn - watchKn) > recordKnThreshold else { continue }
             out.append(Divergence(metric: name,
                                   watch: knots(watchKn), phone: knots(phoneKn),
-                                  delta: String(format: "%+.2f kn", phoneKn - watchKn)))
+                                  delta: signed(phoneKn - watchKn)))
         }
 
         let counts: [(String, Int?, Int)] = [
@@ -64,7 +64,7 @@ public enum DivergenceCheck {
             ("Tacks", watch.tackCount, phone.summary.turns.tacks),
             ("Jibes", watch.jibeCount, phone.summary.turns.jibes),
             ("Takeoff attempts", watch.takeoffAttempts, phone.summary.takeoff.takeoffAttempts),
-            ("Takeoff successes", watch.takeoffSuccesses, phone.summary.takeoff.takeoffSuccesses),
+            ("Takeoffs", watch.takeoffSuccesses, phone.summary.takeoff.takeoffSuccesses),
         ]
         for (name, watchCount, phoneCount) in counts {
             guard let watchCount, abs(phoneCount - watchCount) > countThreshold else { continue }
@@ -74,7 +74,14 @@ public enum DivergenceCheck {
         return out
     }
 
-    private static func knots(_ v: Double) -> String { String(format: "%.2f kn", v) }
+    /// A signed difference in the rider's unit, "+0.42 kn" or "-0.31 km/h".
+    private static func signed(_ deltaKn: Double) -> String {
+        String(format: "%+.2f %@", Speed.value(deltaKn), Speed.suffix)
+    }
+
+    /// The banner's speeds go through the platform's one speed formatter, so a rider
+    /// reading km/h is not shown two numbers in a unit he switched off (`Speed`).
+    private static func knots(_ v: Double) -> String { Speed.format(v) }
 
     private static func seconds(_ v: Double) -> String {
         let total = Int(v.rounded())
