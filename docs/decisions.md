@@ -14,6 +14,52 @@ apart is a history, not a contract. There are four:
 An Accepted entry may carry a clause saying what a later ADR narrowed or what has moved since.
 That is the point of the line: it says which half of an old paragraph is still load-bearing.
 
+## ADR-028 · An attempted turn that ends in the water is **a turn that fell in**
+**Status: Accepted.**
+
+A tester rode 19 September 2026, tried two tacks, went in on both, and the session showed him
+**0 tacks and 0 falls in a turn**. Nothing was broken: the detector's entry condition is
+`turnMinAngle` (60°) of net COG change inside `turnMaxDuration`, the COG is only read above
+`turnCogSpeedFloor`, and a rider who goes in halfway round therefore leaves a sweep that is
+both too short and cut off at the fall. Where the part he rode cleared 60° it was filed as an
+uncounted bear-away — a grey marker on the map with no name and no verdict — and the swim went
+to the flight-end channel as a straight-line fall. Jan, 20 September 2026: *"an attempted turn
+that ends in the water is a turn that fell in."*
+
+Decision: **one more sweep per sailing run — the one still turning when the run ended — read
+backwards from that last heading and offered to the same machinery, with `turnAbortMinAngle`
+(45°) in place of `turnMinAngle` and nothing else changed.** The peak-rate floor, the carve
+gate and the on-foil context all still apply: this lowers one number, it does not open a second
+detector. And the scan does not decide that the rider fell — the candidate is scored by the
+same builder and judged by the same three-channel ladder as every other turn, and only the ones
+the ladder calls `fell_in` are kept. It is therefore impossible for this pass to add a turn
+that is dry, successful or clean, which is what makes it safe to turn on by default: every
+number a rider judges his session by (JPH, TPH, CPH, clean jibes, the streaks' lengthening
+rule) reads *dry* turns, and an aborted turn is by construction not one.
+
+Two smaller decisions ride with it. **The classification floor does not apply to an aborted
+turn**: `turnClassifyMinAngle` reads a sweep's angle as evidence of intent, and an aborted
+turn's angle is evidence of when the rider fell. And **it is named by the axis it was going
+through, not the one it crossed** — an aborted tack, by definition, never got through the wind,
+so requiring a crossing would leave the tack/jibe label unreachable for exactly the maneuvers
+the rule exists to count. Where the sweep did cross, that crossing still names it.
+
+45° is half the classification floor — he has to have ridden at least half the sweep that would
+let the engine name a maneuver at all — and the corpus is the judge: at 30° four more appear
+and all four ended 66–133° from any axis, which is the mislabel ADR of 0.13.0 all over again.
+
+Consequence: engine **0.21.0**, one config key (`turnAbortMinAngle`) and one per-turn key
+(`aborted`). Over the 18 committed session fixtures: counted turns 560 → 569, tacks 2 → 4,
+jibes 558 → 565, course changes 147 → 140, turn `fell_in` 41 → 50, straight-line falls 45 → 44,
+**clean jibes 161 → 161** and no rate numerator moved on any fixture. Eight of the nine new
+turns are falls the page had attributed to nothing at all. **A new watch divergence** (its
+first since 0.13.0): the wrist has no such pass and under-counts turns and falls on a session
+with aborted maneuvers in it, until it is ported — docs/algorithms.md, "Watch divergences",
+says what it should do. Not decided here, and left for Jan: the tester's *second* attempt is
+still not a fall, because it stopped dead for 4 s before a 42 s recording gap and `turnFallStop`
+is 5 s. That is a flight-end question — what a stop that runs into a long gap means — and this
+ADR deliberately does not answer it.
+
 ## ADR-027 · The direct transfer's wire format — our own delta stream in 8 KB pages, not FIT
 **Status: Proposed** (dev channel; docs/channels.md, all four rules unmet).
 

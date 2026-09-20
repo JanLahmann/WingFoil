@@ -344,6 +344,42 @@ rather than whenever re-analysis reaches that row. A row or document carrying **
 those three numbers is not judged at all and reads as a session: an absence is not a verdict,
 the same rule the four session rates keep.
 
+Engine 0.21.0 adds **the aborted turn** — a sweep that was still turning when the rider went
+in (docs/algorithms.md, "The aborted turn"; ADR-028). `turnAbortMinAngle` (**45**) joins
+`config` and `aborted` joins each entry of `turns`. It is the second golden diff since 0.14.0
+that moves a number the rider reads, and it moves them in one direction only: over the 18
+committed session fixtures counted turns go 560 → 569, tacks 2 → 4, jibes 558 → 565, course
+changes 147 → 140, turn `fell_in` 41 → 50 and straight-line falls 45 → 44, while **clean jibes
+stay at 161 and not one rate numerator moves on any fixture** — the pass can only ever add a
+turn that fell in, and JPH/TPH/CPH all count *dry* turns. Seven of the nine are course changes
+the page already drew and could not name, so `rejected` falls by seven; two are sweeps no
+version of the scan had ever seen. **Five** fixtures move at all — the three 1 Hz sources
+and two of the ten ragged native ones; the other sixteen goldens (the discipline pair and the
+smoke fixture included) carry the version stamp, the config key and one `false` per turn and
+nothing else. The presentation goldens follow in their
+outcome markers and their course-change layer (2026-08-07: `fellIn` 11 → 13, `courseChange`
+6 → 4) and in no other layer — `cleanJibes` is unchanged everywhere.
+
+It is checked from four sides:
+
+1. **The rule, on both sides of the fall**, in the lab (`lab/tests/test_turns.py`, "the aborted
+   turn") and the kit (`AbortedTurnTests`) on the same two constructed tracks: a 75° luff-up
+   that ends in a swim is a **tack** that fell in, counted, not successful, not clean; the same
+   75° luff ridden out of stays the uncounted round-up it always was. Both also assert the
+   before-picture with `turnAbortMinAngle` at 0, so the diff the corpus shows is reproduced on
+   a track whose geometry is known to the degree.
+2. **The guard**, in both: a straight-line fall with no heading change in it is not a turn, and
+   neither is 20° of wobble before a swim. That is the half Jan set the corpus as judge for —
+   a straight fall must stay a straight fall.
+3. **Turn by turn across the corpus**, `GoldenTests`: Swift's `aborted` is asserted against the
+   lab's on every turn of every fixture, and an aborted turn is required to carry the four
+   things it means (counted, `fell_in`, not successful, not clean). A sweep one engine read
+   backwards from a fall and the other did not would be two detectors.
+4. **The rates do not move**, `test_jibes_per_hour_counts_only_the_jibes_he_sailed_out_of`:
+   2026-08-29 gained one jibe *and* one swum jibe, and `jibesPerHour` reads 26.7 as it did
+   before — the arithmetic the pass was built to leave alone, asserted on the session where it
+   actually happened.
+
 ### Fixture provenance — the converted recordings, and why
 
 Every fixture in `fixtures/sessions/**` is one of Jan's own recordings kept as it came off

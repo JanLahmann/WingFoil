@@ -2061,6 +2061,17 @@ Seconds are whole and rounded **away from zero**, spelled out in all three langu
 than left to each one's default formatter: `%.0f` prints 4.5 as "4" and `toFixed(0)` prints it
 as "5", and a stop of exactly 4.5 s is an ordinary reading at 1 Hz.
 
+**The aborted turn says nothing extra, on purpose** (engine 0.21.0, docs/algorithms.md, "The
+aborted turn"). A turn the rider fell out of halfway round now appears in the turns list like
+any other tack or jibe that fell in, and it wears the same chips and the same line — `fell in ·
+wrist under`, `fell in · stopped 7 s` — because that is what happened, and the ladder that
+decided is the same ladder. The engine carries a `turn.aborted` flag beside it and **no surface
+draws it yet**: it is there so that a later sheet can tell *he fell in the turn* from *he turned
+and later fell* without re-deriving anything, and adding a word to the page before Jan has asked
+for one would be a second vocabulary for one verdict. The rider-visible change is that the turn
+is *there at all*, with its marker on the map and its row in the table, where before there was a
+grey course change or nothing.
+
 **Where it appears.** The phone's turn page, under the chips. The web session page in two
 places — the map callout's `why` row and the `why` column of the turns table — both from the
 one function. The coach line (`TurnCoach`) is unchanged: it speaks about what to do next, and

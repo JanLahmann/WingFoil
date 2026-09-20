@@ -6,7 +6,7 @@ Single source of truth for detection/metric parameters. Three implementations fo
 re-tuned in lab notebooks against the labeled fixture corpus; changed defaults are updated HERE
 first, with the tuning notebook referenced in the commit.
 
-`ENGINE_VERSION`: **0.20.0** (bump on any change that alters outputs; triggers phone re-analysis)
+`ENGINE_VERSION`: **0.21.0** (bump on any change that alters outputs; triggers phone re-analysis)
 
 ## Disciplines — one engine, three rigs (engine ≥ 0.18.0, EXPERIMENTAL)
 
@@ -405,6 +405,7 @@ could not prove it measured anything.
 | param | default | units | notes |
 |---|---|---|---|
 | `turnMinAngle` | 60 | deg | net unwrapped COG change — the **detection** floor. A course change is a real thing that happened and the page marks it, so this stays where it is |
+| `turnAbortMinAngle` | **45** | deg | the **aborted-turn** floor (engine ≥ 0.21.0), and the only entry condition this pass lowers. A sweep that was still turning when the sailing run ended — the rider went in — is offered to the same scoring and the same outcome ladder with this much net COG change instead of `turnMinAngle`, and is kept only where the ladder says `fell_in`. 45° is **half the classification floor**: he has to have ridden at least half the sweep that would let the engine name a maneuver at all. Below it the corpus stops describing maneuvers — at 30° four more appear, all of them wobbles that ended 66–133° from any axis, which is the mislabel `turnClassifyMinAngle` exists to refuse. 0 switches the pass off. See "The aborted turn" below |
 | `turnClassifyMinAngle` | **90** | deg | the **classification** floor (engine ≥ 0.13.0). Below it a sweep is never named a tack or a jibe — **wind axis or not** — and is filed as the same uncounted bear-away/round-up the no-crossing branch already produces. A tack and a jibe both take the board through the wind and out the other side; a 70° sweep that happens to clip dead downwind is a rider bearing away, and calling it a jibe put a course change into the number he judges his session by. With no usable axis the two course-change labels are indistinguishable, so such a sweep takes the bear-away label — the verdict that matters, *not counted*, is the same either way. At or above the floor the rule is unchanged: tack/jibe by the crossings, or a counted `turn` (unclassified) with no usable axis |
 | `turnAxisBeforeDeg` | **0** | deg | the **first axis requirement** (engine ≥ 0.15.0), and off at its default. A sweep whose `axisBeforeDeg` — the angle between the TWA it started on and the axis it crosses — is below this is not a tack or a jibe: it is filed as the same uncounted `bear_away`/`round_up` the classification floor produces, and its three axis fields go null with the label. It asks the question `turnClassifyMinAngle` cannot: a 100° sweep that begins 10° off dead downwind and ends 90° past it has crossed the axis without ever having been *upwind of it*, which is a rider straightening out of a reach, not a jibe. At 0 nothing is refused |
 | `turnAxisAfterDeg` | **0** | deg | the **second axis requirement** (engine ≥ 0.15.0), and off at its default. A tack or a jibe whose `axisAfterDeg` — the furthest the heading carried past the axis, in the turn's own sense, by the end of the outcome window — is below this cannot be **carried**: `success` is false, and therefore so is `clean`. Jan's wording: *"it might be an additional requirement for a successful jibe to turn 30 deg after the axis. But not require that for a touch-down or failed jibe."* So it touches the score verdict and nothing else — the turn stays a counted jibe, its outcome ladder is untouched, and the JPH/TPH numerators do not move. At 0 nothing is refused |
@@ -525,6 +526,117 @@ one 0.13.0 already named: a longer sweep pulls the slow exit into the minimum
 *carried* over 12 s of carve-and-recovery. A carve that runs past 8 s is instead reported as
 its first 8 s — a 10 s, 150° jibe is counted as a 135° one, which is the verdict that matters
 and well clear of `turnClassifyMinAngle`.
+
+**The success floor, measured against a rider's own count — open, and Jan's to decide.** The
+same tester of 19 September 2026 says about **45 of his 57 jibes felt clean**; the engine gives
+him **25**. The gate is unchanged and nothing below is a proposal: `success` is
+`score ≥ turnSuccessPct` **and** the Doppler minimum never at or below `foilExitSpeed`, and on
+his session the second half is not what is binding — only 2 of 57 touch the foil-exit floor, and
+53 of the 57 flew through. What separates 25 from 45 is the score alone. His scores run
+56.9–79.9 % with no gap anywhere in the middle, twenty-eight of them between 60 and 70:
+
+| `turnSuccessPct` | his clean jibes | the 18 committed fixtures |
+|---|---|---|
+| **70** (today) | 25 of 57 | **161** |
+| 65 | 39 | 234 (+45 %) |
+| 60 | **46** | 266 (+65 %) |
+
+So **60 %** is the number that reaches his count, and it costs what a floor costs: every clean
+count in the corpus rises by about two thirds, one fixture from 3 to 16, another from 0 to 3,
+and CPH with them. That is not a bug being fixed, it is a different definition of *clean* — the
+word means *held at least this much of the speed he came in with*, and 60 % of 14 kn is 8.4 kn,
+which is a hair over the speed the foil stops carrying at. A rider's feeling and a speed ratio
+are two different measurements of one jibe, and where the two disagree the parameter is the only
+honest place to argue. The evidence is here; the number stays at 70 until Jan moves it.
+
+### The aborted turn — a turn that ends in the water (engine ≥ 0.21.0)
+
+Jan, 20 September 2026: **"an attempted turn that ends in the water is a turn that fell in."**
+A tester tried two tacks on 19 September, went in both times, and the session reported **no
+tack and no fall in a turn**. The reason is the entry condition: the scan asks for
+`turnMinAngle` (60°) of net COG change inside `turnMaxDuration`, and a rider who goes in
+halfway round never gets there. The COG is read only above `turnCogSpeedFloor`, so the
+sailing run *ends at the fall* and the maneuver is missing from the session entirely — or,
+where the part he rode clears 60° but not `turnClassifyMinAngle`, it is filed as an uncounted
+bear-away and the swim is charged to the flight-end channel as a straight-line fall.
+
+**The rule.** One more sweep per sailing run is offered to the same machinery: the one that
+was **still turning when the run ended**, read backwards from that last heading — the widest
+net change reaching it inside `turnMaxDuration`. Everything else is the entry condition the
+scan already applies, unchanged and for the same reasons: a `turnPeakRate` spike, the
+`turnMinArc`/`turnMinRadius` carve gate, and `turnContext` (it began at foiling speed). Only
+the angle is lowered, to `turnAbortMinAngle` (**45°**).
+
+Nothing in that scan decides that the rider fell: the candidate is scored by the same builder
+and judged by the same three-channel ladder as every other turn, and only the ones it calls
+`fell_in` are kept. So an aborted turn is, always:
+
+| | |
+|---|---|
+| counted | yes — it is a maneuver the rider attempted (`turnsCounted`, and `tacks`/`jibes`) |
+| outcome | `fell_in`, with the ladder's own `outcomeReason` (`stop` or `submerged`) |
+| `success` | false, and therefore `clean` false. Neither axis gate is asked: a turn that never finished cannot be re-filed as a course change by `turnAxisBeforeDeg`, and `turnAxisAfterDeg` moves a verdict that is already no |
+| `aborted` | **true** — the one new per-turn key, so a surface can say *he fell in the turn* rather than *he turned and later fell* |
+| the rates | it feeds the **denominator** population exactly as a completed turn that fell in does: TPH and JPH count *dry* turns and jibes (`turnsCounted − outcomes.fellIn`), so neither numerator moves. `wetPerHour` reads the flight-end channel and does not move either — it is the same swim, differently attributed |
+
+Three rules keep one swim from being reported twice (`_merge_aborted`): a candidate the ladder
+did not call `fell_in` is dropped; one that overlaps a **counted** turn is dropped, because
+that turn already owns the fall; one that overlaps an uncounted **course change** replaces it —
+the same sweep, read the same way, with one more thing known about it. The flight end itself is
+then owned by the new turn (`ownedByTurn`), so it leaves the straight-line tallies the way every
+turn-owned end does.
+
+**Naming it.** An aborted turn is named by the axis it was *going through*, which is a
+different question from the completed turn's. `turnClassifyMinAngle` does not apply: it reads
+the angle as evidence of intent, and an aborted turn's angle is evidence of *when the rider
+fell*. And a crossing cannot be required, because an aborted turn is very often the sweep that
+never reached the axis — both of the tester's attempts stopped short of head-to-wind — so
+requiring one would leave the label unreachable for exactly the maneuvers this pass exists to
+count. Where the sweep **did** cross, that crossing names it, exactly as today; where it did
+not, the turn takes the axis its own rotation was closing on: the first head-to-wind or
+dead-downwind line ahead of the last heading, in the direction the board was turning. A rider
+luffing up from a broad reach who goes in 45° off the wind was tacking; one bearing away from a
+reach who goes in was jibing. With no usable wind axis there is nothing to be closing on and it
+stays a counted, unnamed `turn`.
+
+**Why 45°, with the corpus as the judge.** It is half the classification floor: the rider has
+to have ridden at least half the sweep that would let the engine name a maneuver at all. Over
+the 18 committed session fixtures:
+
+| `turnAbortMinAngle` | aborted turns | what the extra ones are |
+|---|---|---|
+| 30° | 14 | the four below 45° ended **66–133° from any axis** — wobbles before a crash, the mislabel `turnClassifyMinAngle` exists to refuse |
+| **45°** | **9** | every one a sweep that was carrying speed into a maneuver and stopped dead |
+| 50° | 8 | loses a 48° bear-away that ended with the wrist under |
+| 60° | 7 | loses a 52° luff-up that ended with the wrist under, and nothing false is bought |
+
+**What it did to the corpus** (18 committed session fixtures, regenerated from the goldens in
+this release):
+
+| | 0.20.0 | 0.21.0 |
+|---|---|---|
+| counted turns | 560 | 569 |
+| tacks | 2 | 4 |
+| jibes | 558 | 565 |
+| course changes (`rejected`) | 147 | 140 |
+| turn outcome `fell_in` | 41 | 50 |
+| straight-line falls | 45 | 44 |
+| clean jibes | **161** | **161** |
+| JPH / CPH, every fixture | — | unchanged |
+
+Nine turns the engine had never counted, seven of them course changes it had already drawn on
+the page and could not name. **No clean jibe moves and no rate numerator moves**: the pass can
+only ever add a turn that fell in, which is by definition neither dry nor clean. Only one of
+the nine was a straight-line fall before — the other eight were falls the page attributed to
+nothing at all, which is what the tester saw.
+
+**What it does not catch, on the tester's own recording.** His session gains one tack, which
+fell in (`submerged`); the second attempt is refused twice over, and neither refusal is this
+pass's to overturn. Its sweep turns at 14.6°/s, below `turnPeakRate`, so it is not a candidate;
+and it stopped dead for 4 s before a **42 s recording gap**, which is one second short of
+`turnFallStop`, so the ladder can only call it a `touchdown`. A stop that runs into a long gap
+and resumes below foiling speed is a swim, and the engine cannot say so today — that is a
+flight-end question, not a turn one.
 
 ### Glossary — four words that are not synonyms
 
@@ -825,6 +937,18 @@ inventing turns):
   the only reason this is a silence rather than a divergence: move either on the phone and the
   wrist and the page will disagree about which jibes were clean, exactly as they do for every
   other tuned threshold.
+- **No aborted turn** (engine 0.21.0, and the one divergence this release adds). The watch has
+  no pass for a sweep that ended in the water: its detector only ever opens a candidate that
+  clears `turnMinAngle`, and a fall halfway through a tack therefore still reaches the wrist as
+  nothing at all. **What it should do**, when it is ported: keep the live candidate's sweep when
+  the rotation stops because the *speed* died rather than because the rate fell below
+  `turnContinueRate`, and if its net change clears `turnAbortMinAngle` (45°), let the existing
+  `_resolve` ladder judge it — the watch's submerged-or-stop rung is already the rung that
+  matters here, and its first answer is the fall. Name it by the axis ahead of the last heading
+  in the sweep's own sense (the phone's `classifyAborted`), since the watch's `classifySweep`
+  needs a crossing it will not have; with no axis yet it is a counted `turn`. Until then the
+  wrist under-counts turns and falls on a session with aborted maneuvers in it, and the phone
+  recompute is what the rider sees — the same conservative shape as every other divergence here.
 - **`turnClassifyMinAngle` — same on the watch** (engine 0.13.0, watch 0.9.7): `classifySweep`
   applies the 90° floor ahead of the wind check, so a 60–89° sweep is `rejected` (an uncounted
   course change) on the wrist exactly as on the phone, with or without a wind axis. Not a
@@ -1014,7 +1138,9 @@ gentle; only its stroke tally is now zero.
 ### Turn outcome (primary, rider-facing) — `flew_through` · `touchdown` · `fell_in`
 
 Score%/success stay as the *secondary*, continuous metric: outcome says what happened,
-score says what the turn cost. Every turn gets an outcome, bear-aways included.
+score says what the turn cost. Every turn gets an outcome, bear-aways included — and since
+engine 0.21.0 this ladder is also what *decides whether a sweep is a turn at all* in one case:
+an **aborted turn** is kept only where the ladder below says `fell_in` ("The aborted turn").
 
 0. **How long is the turn on the hook?** The outcome window runs from the turn start until
    the rider is *demonstrably flying again* — Doppler back above `turnRecoverPct` of the
