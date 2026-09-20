@@ -210,6 +210,17 @@ export const WELCOME = {
 export const WHATS_NEW = [
   {
     "version": "0.15.0",
+    "build": 91,
+    "channel": "beta",
+    "date": "2026-09-20",
+    "title": "The last trap",
+    "lines": [
+      "The file reader's library is ours now. A value past its type no longer takes the app down.",
+      "Please sync your intervals.icu once more on this build."
+    ]
+  },
+  {
+    "version": "0.15.0",
     "build": 89,
     "channel": "beta",
     "date": "2026-09-19",
