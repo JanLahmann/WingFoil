@@ -136,11 +136,11 @@ struct SettingsView: View {
                 Label("Sync not working?", systemImage: "wrench.and.screwdriver")
             }
         } header: {
-            Text("intervals.icu")
+            Text(SettingsCopy.section("icu").title)
         } footer: {
-            Text("Downloads the original FIT of every windsurf, wing, kite, surf and SUP "
-                 + "activity in your intervals.icu account. Two years back.\n\n"
-                 + "Activities already in the library are never downloaded again.")
+            // The words are the kit's since 20 September 2026 (`SettingsCopy`), so the
+            // browser app's Settings page prints this footer rather than a second one.
+            Text(SettingsCopy.footer("icu"))
         }
     }
 
@@ -189,16 +189,12 @@ struct SettingsView: View {
             Text("Strava")
         } footer: {
             if store.isStravaConfigured {
-                Text(markdown: "Strava opens, you say yes, and CleanJibe can list your "
-                     + "activities on the Import screen.\n\n"
-                     + "CleanJibe only **reads** your Strava account. It never writes, "
-                     + "renames or posts anything.\n\n"
-                     + "Sessions imported this way are analysed from positions alone. "
-                     + "Their speed records are marked uncertified.\n\n"
-                     + "Strava lets a new app connect a limited number of riders. "
-                     + "Connecting is refused while CleanJibe is full.\n\n"
-                     + "That says nothing about your account. "
-                     + Copy.stravaAskForMore)
+                // `SettingsCopy` authors the paragraphs; the bold on "reads" and the
+                // ask-for-more sentence are this screen's own furniture over them.
+                Text(markdown: SettingsCopy.footer("strava")
+                        .replacingOccurrences(of: "only reads your",
+                                              with: "only **reads** your")
+                     + " " + Copy.stravaAskForMore)
             } else {
                 Text("This build carries no Strava API keys, so the Strava source is not "
                      + "offered. Everything else works as usual.")
@@ -227,12 +223,9 @@ struct SettingsView: View {
                 }
                 .disabled(store.isBusy || store.apiKey.isEmpty)
             } header: {
-                Text("Deleted sessions")
+                Text(SettingsCopy.section("deleted").title)
             } footer: {
-                Text("Sessions you deleted stay deleted. Syncing intervals.icu leaves "
-                     + "them alone, by hand and in the background.\n\n"
-                     + "Restoring forgets that. The next sync brings back every one of "
-                     + "them that is still on intervals.icu.")
+                Text(SettingsCopy.footer("deleted"))
             }
         }
     }
@@ -367,10 +360,9 @@ struct SettingsView: View {
                 get: { store.listMapBackdrop },
                 set: { store.listMapBackdrop = $0 }))
         } header: {
-            Text("Session list")
+            Text(SettingsCopy.section("sessionList").title)
         } footer: {
-            Text("Each row draws its track over a map of the water it was ridden on. "
-                 + "The map style is the one your session maps use.")
+            Text(SettingsCopy.footer("sessionList"))
         }
     }
 
@@ -393,10 +385,9 @@ struct SettingsView: View {
                     }
             }
         } header: {
-            Text("Row shows")
+            Text(SettingsCopy.section("rowShows").title)
         } footer: {
-            Text("Each row carries three numbers, each with its word under it. "
-                 + "Pick the three you read your library by.")
+            Text(SettingsCopy.footer("rowShows"))
         }
     }
 
@@ -544,7 +535,7 @@ struct SettingsView: View {
     private var comingSoonSection: some View { ComingSoonSection() }
 
     private var storageSection: some View {
-        Section("Storage") {
+        Section(SettingsCopy.section("storage").title) {
             LabeledContent("Sessions", value: "\(store.storage.sessionCount)")
             LabeledContent("FIT archive", value: Fmt.bytes(store.storage.archiveBytes))
             LabeledContent("Database", value: Fmt.bytes(store.storage.databaseBytes))
@@ -588,9 +579,9 @@ struct SettingsView: View {
                 Label("Privacy", systemImage: "hand.raised")
             }
         } header: {
-            Text("About")
+            Text(SettingsCopy.section("about").title)
         } footer: {
-            Text("Wind is estimated on this device from your track.")
+            Text(SettingsCopy.footer("about"))
         }
     }
 
@@ -607,27 +598,4 @@ struct SettingsView: View {
         ""
         #endif
     }
-}
-
-/// **One wording per switch, wherever the switch is offered.**
-///
-/// The new-sessions notification is offered twice — as a switch in Settings, and once per
-/// install as an alert the app raises by itself the moment an intervals.icu key has been
-/// proved (`SessionStore.askAboutNewActivitiesIfNeeded`). The alert used to have a sentence
-/// of its own ("When a new Garmin activity syncs…"), which named the wrong account and
-/// described less than the switch does. It is the same feature, so it is the same sentence.
-enum SettingsCopy {
-
-    /// The switch, and the alert's title in the affirmative.
-    static let notifyToggle = "Notify on new sessions from intervals.icu"
-
-    /// What the switch does, in one paragraph. Used verbatim as the one-time offer's
-    /// message, which is what "with the switch's own explanation" means.
-    static let notifyExplanation =
-        "While the phone is idle, CleanJibe asks intervals.icu for new activity.\n\n"
-        + "It looks for windsurf, wing, kite, surf and SUP, from any watch that syncs "
-        + "there.\n\n"
-        + "You hear about the ones that are not in your library yet.\n\n"
-        + "The session is downloaded and analysed in the background, so tapping the "
-        + "notification usually opens a finished analysis."
 }

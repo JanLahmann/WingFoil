@@ -32,19 +32,18 @@ struct LibraryBackupSection: View {
             // the classic way to end up with only one of them ever presenting.
             .sheet(item: $helpTopic) { HelpTopicSheet(id: $0) }
         } header: {
-            Text("Library backup")
+            Text(SettingsCopy.section("backup").title)
         } footer: {
             // Short on purpose. The complete answer — save the file yourself, what is
             // inside it, what restoring does — is the `libraryBackup` help topic, which the
             // row above opens. One thing said once in each place, not twice in both.
-            Text(markdown: "Setting up a new iPhone from this one carries your library "
-                 + "across by itself, and so does an iCloud backup.\n\n"
-                 + "This is for the case neither covers: a phone set up as new, or the "
-                 + "app deleted and installed again.\n\n"
-                 + "The file holds every recording you have imported **and** what nothing "
-                 + "else can bring back.\n\n"
-                 + "That is session names, captions, riders, gear, spot names, and the "
-                 + "sessions you deleted on purpose.")
+            //
+            // The paragraphs are `SettingsCopy`'s since 20 September 2026, so the browser
+            // app's *Your data* section reads the phone's words rather than its own. The
+            // bold on "and" is this screen's furniture over them.
+            Text(markdown: SettingsCopy.footer("backup")
+                    .replacingOccurrences(of: "imported and what",
+                                          with: "imported **and** what"))
         }
         .task { await store.refreshBackupEstimate() }
         .sheet(item: Binding(get: { store.restoreOffer },
