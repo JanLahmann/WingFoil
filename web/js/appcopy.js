@@ -209,6 +209,19 @@ export const WELCOME = {
 /** What's new, release and beta only — the filter /whats-new/ uses. */
 export const WHATS_NEW = [
   {
+    "version": "1.0.1",
+    "build": 93,
+    "channel": "beta",
+    "date": "2026-09-20",
+    "title": "Eleven traps on the wrist",
+    "lines": [
+      "The watch app closes eleven traps of its own, and counts a run that never reached its end.",
+      "The feedback mail prints the watch's count beside the phone's crashes.",
+      "Version 1.0.1 across every channel now. TestFlight ranks by version first.",
+      "Pair with watch app 0.9.15 from the store."
+    ]
+  },
+  {
     "version": "0.15.0",
     "build": 91,
     "channel": "beta",

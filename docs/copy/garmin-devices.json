@@ -1,9 +1,9 @@
 {
-  "version": "0.9.14",
+  "version": "0.9.15",
   "count": 42,
   "minApiLevel": "3.3.3",
   "store": {
-    "version": "0.9.13",
+    "version": "0.9.15",
     "count": 42
   },
   "products": [

@@ -44,12 +44,12 @@ import WingFoilKit
         return url
     }
 
-    private func facts(crashes: [CrashDigest]) -> FeedbackFacts {
+    private func facts(crashes: [CrashDigest], watchRuns: Int? = nil) -> FeedbackFacts {
         FeedbackFacts(
             app: .init(version: "1.0", build: "75", isDev: false, engineVersion: "0.20.0"),
             phone: .init(model: "iPhone18,2", system: "iOS 26.0", locale: "en_DE"),
             watch: .init(garminModel: nil, garminAppVersion: nil, appleWatchPaired: nil,
-                         healthImport: nil),
+                         healthImport: nil, garminCrashRuns: watchRuns),
             library: .init(sessionCount: 1, sources: []),
             crashes: crashes)
     }
@@ -75,6 +75,17 @@ import WingFoilKit
         #expect(diagnostics.kept().isEmpty)
         #expect(!FeedbackReport.body(facts(crashes: diagnostics.kept()))
             .contains("Recent crashes"))
+    }
+
+    /// The watch's half of the same block: its count of runs that never reached `onStop`,
+    /// off the newest summary card (docs/channels.md, "Garmin watch: the crash breadcrumb").
+    /// Three states, and the silent one is the one that must stay silent.
+    @Test func theWatchsLostRunsAreCountedBesideThePhonesCrashes() throws {
+        #expect(FeedbackReport.body(facts(crashes: [], watchRuns: 3))
+            .contains("  Watch app: 3 runs ended without a save"))
+        #expect(FeedbackReport.body(facts(crashes: [], watchRuns: 0))
+            .contains("  Watch app: no crashes reported"))
+        #expect(!FeedbackReport.body(facts(crashes: [])).contains("Watch app"))
     }
 
     /// The file is the whole persistence: a second instance over the same directory is
