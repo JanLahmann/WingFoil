@@ -54,6 +54,10 @@ Release (`de.lahmann.wingfoil`, App Store, no flags, iPhone, no watch app or wid
 (same bundle id, `BETA`) go to the App Store record as builds N and N+1; dev
 (`de.lahmann.wingfoil.dev`, `BETA DEV TUNING`, iPhone + iPad) is a second app and goes to its
 own record (`--app dev`, `CJ_DEV_APP_ID`). The App Store build takes the lowest number.
+**One marketing version across all three channels** (`MARKETING_VERSION` in project.yml, four
+sites): TestFlight ranks builds by version first, so a beta at 0.15.0 (91) was offered a
+"downgrade" to the 1.0.0 (60) release candidate. The release is the lowest build of the
+current version, never a version of its own.
 `ios/tools/testflight_publish.py <build> --group internal|external [--app release|dev] --wait`.
 
 Gating is in the app target only — the kit compiles everything. `#if BETA` (true in dev too),

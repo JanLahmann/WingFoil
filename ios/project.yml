@@ -99,7 +99,7 @@ anchors:
 
   appSettings: &appSettings
     PRODUCT_NAME: WingFoil
-    MARKETING_VERSION: "0.15.0"
+    MARKETING_VERSION: "1.0.1"
     CURRENT_PROJECT_VERSION: "91"
     CODE_SIGN_STYLE: Automatic
     DEVELOPMENT_TEAM: 685X8YLYSB         # Jan-Rainer Lahmann (personal + program team)
@@ -602,7 +602,7 @@ targets:
       base:
         PRODUCT_NAME: WingFoilWidgets
         PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil.widgets
-        MARKETING_VERSION: "0.15.0"
+        MARKETING_VERSION: "1.0.1"
         CURRENT_PROJECT_VERSION: "91"
         TARGETED_DEVICE_FAMILY: "1"          # same families as its host app
         CODE_SIGN_STYLE: Automatic
@@ -717,7 +717,7 @@ targets:
         # `WKCompanionAppBundleIdentifier` below. Not the same thing as this target's own
         # bundle id, which is why it is a setting of its own.
         CJ_BUNDLE_ID: de.lahmann.wingfoil
-        MARKETING_VERSION: "0.15.0"
+        MARKETING_VERSION: "1.0.1"
         CURRENT_PROJECT_VERSION: "91"
         TARGETED_DEVICE_FAMILY: "4"          # Apple Watch
         CODE_SIGN_STYLE: Automatic
@@ -853,7 +853,7 @@ targets:
       base:
         PRODUCT_NAME: WingFoilWatchWidgets
         PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil.watchkitapp.widgets
-        MARKETING_VERSION: "0.15.0"
+        MARKETING_VERSION: "1.0.1"
         CURRENT_PROJECT_VERSION: "91"
         TARGETED_DEVICE_FAMILY: "4"          # Apple Watch
         CODE_SIGN_STYLE: Automatic
