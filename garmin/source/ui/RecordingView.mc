@@ -191,6 +191,30 @@ const PAIR_LC = 1;   // left caption
 const PAIR_RV = 2;   // right value
 const PAIR_RC = 3;   // right caption
 
+// ---- the LARGE page set (0.9.16, see drawBigPage) ----
+//
+// One giant, one word, and on the turns page one tally. Two things make it bigger than the
+// HERO page it looks like rather than merely emptier:
+//
+//   * the GIANT gets the whole stack. HERO spends an XTINY unit line and up to two sub-rows
+//     under its number, so the number's own row sits above the equator and its chord is the
+//     one at that depth. BIG has two rows, so the giant straddles the centre — which is
+//     where the chord is widest — and a value that stepped down a rung on HERO does not
+//     step down here.
+//   * the WORD is FONT_LARGE and not FONT_XTINY. That is the rung up this whole set exists
+//     for: a number nobody can name is not readable however big it is, and a set for a rider
+//     without his glasses must not answer "24.3 what?" in six-pixel letters. It steps down
+//     the ordinary text ladder when the chord is narrower, like every other row on the watch.
+//
+// No state ring and no flight ring: a ring costs 10-16 px of every radius, i.e. ~7 % of the
+// digits on a 240 px glass, and this set's whole trade is radius for digit height. The foil-%
+// page keeps the ARC, because it earns it the ordinary way (pageDrawsFoilArc) and the arc is
+// the same number the page's giant already is — a sweep, read without reading.
+const BIG_WORD_FONT = 0;      // TEXT_FONTS index: FONT_LARGE, four rungs above a caption
+// The tally under the turns page's giant starts at FONT_MEDIUM, the rung the MAIN page's own
+// tally row reserves, and sheds size and then content from there exactly as that one does.
+const BIG_TALLY_FROM = 1;
+
 // ---- the FOIL page's table (see drawFoilPage) ----
 // A titled 3x2: one header, two column headers, three rows of two numbers. Everything on it
 // is a foil number, so the word "foil" is said ONCE, at the top, instead of six times in six
@@ -201,6 +225,16 @@ const PAIR_RC = 3;   // right caption
 // actually print, and the word beside "km" reads as the pair it is — time and distance, the
 // same session asked twice.
 const FOIL_TITLE = "foil";
+// 0.9.16: and the flight COUNT after it, where the title row's chord holds the pair.
+// The count left this page in 0.9.2 with the odometer, because neither is a foil number —
+// but it kept its own post-save screen, and this round retires that screen onto this table
+// (docs/presentation.md, "The after-save pages and the live ones"). A number with a home on
+// exactly one of two screens showing the same session is how the two start disagreeing, so
+// it comes back here and the saved page is this page with the session's own final values.
+// It rides the TITLE and not a fourth row: the title row is a label row, it is the cheapest
+// row on the page, and "foil · 31" reads as the page's name with a count on it rather than
+// as a seventh number in a table of six.
+const FOIL_TITLE_SEP = " · ";
 const FOIL_COL_TIME = "time";
 const FOIL_COL_DIST = "km";
 // The row keys. `total` gives way to `tot` when the long word would cost the values their
@@ -278,6 +312,8 @@ class RecordingView extends WatchUi.View {
             drawMainPage(dc, c, i, foilArc);
         } else if (layout == PageModel.LAYOUT_HERO) {
             drawHeroPage(dc, c, i, foilArc);
+        } else if (layout == PageModel.LAYOUT_BIG) {
+            drawBigPage(dc, c, i, foilArc);
         } else if (layout == PageModel.LAYOUT_FOIL) {
             drawFoilPage(dc, c, foilArc);
         } else if (layout == PageModel.LAYOUT_GRID4) {
@@ -1026,6 +1062,61 @@ class RecordingView extends WatchUi.View {
         return y + hN + hT + hL + hM / 2;
     }
 
+    // ---- BIG: the LARGE set's one layout ----
+    // See the constants above for why this is not simply a HERO page with the rows left out.
+    hidden function drawBigPage(dc as Dc, c as SessionController, page as Number,
+            foilArc as Boolean) as Void {
+        var cx = dc.getWidth() / 2;
+        var cy = dc.getHeight() / 2;
+        var radius = fitRadius(dc, false, foilArc);
+        var id = bigId(page);
+        var tally = id == PageModel.M_TURNS;
+        var hN = inkH(dc, Graphics.FONT_NUMBER_THAI_HOT);
+        var hW = dc.getFontHeight(TEXT_FONTS[BIG_WORD_FONT]);
+        var hK = tally ? dc.getFontHeight(TEXT_FONTS[BIG_TALLY_FROM]) : 0;
+
+        // row 0 — the giant. `fitGiant` and not `fitFont`, so a metric whose value carries a
+        // letter (none of the five does today, but the slot is a catalog id) leaves the
+        // number ladder instead of printing empty boxes.
+        var v = PageModel.value(id, c);
+        var y = bigRowY(cy, hN, hW, hK, 0);
+        dc.setColor(PageModel.color(id, c), Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, y, fitGiant(dc, v, 0, rowBudget(radius, y - cy, hN)), v, CV);
+
+        // row 1 — the word, with its unit in it (PageModel.bigWord)
+        var word = PageModel.bigWord(id);
+        y = bigRowY(cy, hN, hW, hK, 1);
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, y, fitFont(dc, TEXT_FONTS, BIG_WORD_FONT, word,
+            rowBudget(radius, y - cy, inkH(dc, TEXT_FONTS[BIG_WORD_FONT]))), word, CV);
+
+        // row 2 — the turns page alone: the outcome ladder as three coloured counts, the
+        // same row and the same renderer the MAIN page carries. A turn COUNT without its
+        // verdicts is the one number on this set that says nothing on its own.
+        if (tally) {
+            drawTally(dc, cx, bigRowY(cy, hN, hW, hK, 2), cy, radius, c.engine.turns, "",
+                BIG_TALLY_FROM);
+        }
+    }
+
+    // The BIG giant's slot, with live speed as the answer to an emptied one — the same
+    // never-a-blank-page rule mainGiantId keeps.
+    static function bigId(page as Number) as Number {
+        var id = PageModel.slotAt(page, 0);
+        return id == PageModel.M_NONE ? PageModel.M_SPEED : id;
+    }
+
+    // Row centres for BIG: 0 giant · 1 word · 2 the tally, whose band is 0 on the four pages
+    // that do not carry it. `hN` is the giant's INK, like every other giant since 0.9.2.
+    // Shared with the layout test.
+    static function bigRowY(cy as Number, hN as Number, hW as Number, hK as Number,
+            row as Number) as Number {
+        var y = cy - (hN + hW + hK) / 2;
+        if (row == 0) { return y + hN / 2; }
+        if (row == 1) { return y + hN + hW / 2; }
+        return y + hN + hW + hK / 2;
+    }
+
     // ---- FOIL: the session's foil numbers as a titled 3x2 table ----
     //
     // It replaced the Session grid, and what it dropped is as much of the point as what it
@@ -1060,7 +1151,10 @@ class RecordingView extends WatchUi.View {
     //
     // The bezel arc stays, and stays keyed to the TIME share: an arc is a sweep, a sweep can
     // only be one number, and the top-left cell is that number.
-    hidden function drawFoilPage(dc as Dc, c as SessionController, foilArc as Boolean) as Void {
+    // Not `hidden`: the post-save Foil page is this page with the session's final values in
+    // it (SummaryView.drawFoil), the same way the Turns and Story pages call straight into
+    // drawTurnsBody and drawTimelinePage.
+    function drawFoilPage(dc as Dc, c as SessionController, foilArc as Boolean) as Void {
         var d = c.engine.detector;
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
@@ -1077,9 +1171,11 @@ class RecordingView extends WatchUi.View {
         var keys = foilKeys(dc, half, foilWidest(dc, [tt, td, mt, md]));
         var col = foilColumns(cx, half, foilKeyBlock(dc, keys));
 
-        // row 0 — the page's name
+        // row 0 — the page's name, and the flight count where the chord holds it
+        var y0 = foilRowY(cy, hT, hV, 0);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, foilRowY(cy, hT, hV, 0), Graphics.FONT_XTINY, FOIL_TITLE, CV);
+        dc.drawText(cx, y0, Graphics.FONT_XTINY,
+            foilTitle(dc, d.flightCount, radius, y0 - cy), CV);
 
         // row 1 — the two shares, teal, exactly as the pair band drew them: a PHASE tint, not
         // the outcome ladder's green (docs/presentation.md)
@@ -1117,6 +1213,20 @@ class RecordingView extends WatchUi.View {
         dc.setColor(ink, Graphics.COLOR_TRANSPARENT);
         dc.drawText(col[1], y, f, a, CV);
         dc.drawText(col[2], y, f, b, CV);
+    }
+
+    // "foil · 31" where the title row can hold it, "foil" where it cannot. The count is
+    // dropped rather than shrunk: XTINY is already the bottom of the ladder, so LENGTH is
+    // the only thing left to trade, and the page's own name is the half that must survive.
+    // Shared with the layout test.
+    static function foilTitle(dc as Dc, flights as Number, radius as Number,
+            dy as Number) as String {
+        if (flights <= 0) {
+            return FOIL_TITLE;
+        }
+        var long = FOIL_TITLE + FOIL_TITLE_SEP + flights.toString();
+        return dc.getTextWidthInPixels(long, Graphics.FONT_XTINY)
+            <= rowBudget(radius, dy, inkH(dc, Graphics.FONT_XTINY)) ? long : FOIL_TITLE;
     }
 
     // Metres as the kilometres the column header promises. One decimal, like every other

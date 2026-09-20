@@ -193,6 +193,47 @@ class StartView extends WatchUi.View {
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         drawRow(dc, cx, cy, radius, rowY(cy, hTitle, hState, hBody, 3), START_BODY_FONT,
             hintText(dc, radius, rowY(cy, hTitle, hState, hBody, 3) - cy));
+
+        drawPhoneLine(dc, cx, cy, radius, hTitle, hState, hBody);
+    }
+
+    // ---- the direct transfer's progress (0.9.16, dev stream) ----
+    // Pages of an EARLIER session still waiting to cross to the phone: "phone 4/13".
+    // `DirectSend.restore()` brings an unfinished stream back over an app exit, so a rider
+    // who walked away from the beach mid-transfer opens the app the next morning to a start
+    // screen that would otherwise say nothing about the session sitting in the queue — and
+    // the transfer resumes from here whether he reads the line or not. Null in every other
+    // stream and whenever nothing is waiting (the `(:notdev)` stub), so this is normally an
+    // unchanged screen.
+    //
+    // It rides in the AIR under the hint row, the mirror of where the brand mark rides above
+    // the title, and for the same reason: the four-line stack is required to leave a quarter
+    // of the glass empty (asserted), so a fifth ROW would break the rule the page exists
+    // under, and the space below the hint is empty on every glass in the manifest. Dropped
+    // rather than clipped when its corner will not clear the glass, like the mark.
+    hidden function drawPhoneLine(dc as Dc, cx as Number, cy as Number, radius as Number,
+            hTitle as Number, hState as Number, hBody as Number) as Void {
+        var line = DirectSend.statusLine();
+        if (line == null) {
+            return;
+        }
+        var hT = dc.getFontHeight(Graphics.FONT_XTINY);
+        var y = phoneLineY(cy, hTitle, hState, hBody, hT);
+        var w = dc.getTextWidthInPixels(line, Graphics.FONT_XTINY);
+        if (RecordingView.chordHalf(radius, y - cy, RecordingView.inkH(dc,
+                Graphics.FONT_XTINY)) * 2 < w) {
+            return;
+        }
+        dc.setColor(Ink.dim(), Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, y, Graphics.FONT_XTINY, line,
+            Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+    }
+
+    // Ink centre of that line: one stack gap below the hint row, the mirror of markY.
+    // Shared with the layout test.
+    static function phoneLineY(cy as Number, hTitle as Number, hState as Number,
+            hBody as Number, hT as Number) as Number {
+        return rowY(cy, hTitle, hState, hBody, 3) + hBody / 2 + hBody / 3 + hT / 2;
     }
 
     // One centred row, at the largest font from `from` that the chord at its depth holds.

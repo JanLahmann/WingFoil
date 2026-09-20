@@ -1,6 +1,1036 @@
 <settings>
+    <!-- Dev stream only (monkey-dev.jungle): the (:dev) experiments' switches. A release or
+         beta build has neither the property nor the code that reads it. -->
     <setting propertyKey="@Properties.mapAfterSave" title="@Strings.SetMapAfterSave"
              prompt="@Strings.SetMapAfterSaveNote">
         <settingConfig type="boolean"/>
+    </setting>
+
+    <!-- The per-page data-screen EDITOR (dev only since 0.9.16).
+         Seven configurable screens, each a layout plus five metric slots, plus the switch
+         that writes the defaults back. It lived in resources/settings/ until this round and
+         shipped to every rider; it is a tuning instrument, and the page control the other
+         two streams have is `pageSet` in the shared file. docs/channels.md, "The watch",
+         names it as the candidate it is: one jungle line and one resource move take it to
+         beta the day a rider asks for it. PageModel._store is the (:notdev) twin that makes
+         a build without these rows read the default table instead. -->
+    <setting propertyKey="@Properties.resetPages" title="@Strings.SetResetPages"
+             prompt="@Strings.SetResetPagesNote">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.pg1Layout" title="@Strings.SetPg1Layout">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.LayOff</listEntry>
+            <listEntry value="1">@Strings.LayHero</listEntry>
+            <listEntry value="2">@Strings.LayGrid4</listEntry>
+            <listEntry value="3">@Strings.LayCells2</listEntry>
+            <listEntry value="4">@Strings.LayRecords</listEntry>
+            <listEntry value="5">@Strings.LayTurns</listEntry>
+            <listEntry value="6">@Strings.LayClock</listEntry>
+            <listEntry value="7">@Strings.LayMap</listEntry>
+            <listEntry value="8">@Strings.LayTimeline</listEntry>
+            <listEntry value="9">@Strings.LayMain</listEntry>
+            <listEntry value="10">@Strings.LayFoil</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg1s1" title="@Strings.SetPg1s1">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.MetNone</listEntry>
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnScore</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="15">@Strings.MetBattery</listEntry>
+            <listEntry value="16">@Strings.MetPumpStrokes</listEntry>
+            <listEntry value="17">@Strings.MetTakeoffs</listEntry>
+            <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
+            <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="21">@Strings.MetFoilDistPct</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg1s2" title="@Strings.SetPg1s2">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.MetNone</listEntry>
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnScore</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="15">@Strings.MetBattery</listEntry>
+            <listEntry value="16">@Strings.MetPumpStrokes</listEntry>
+            <listEntry value="17">@Strings.MetTakeoffs</listEntry>
+            <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
+            <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="21">@Strings.MetFoilDistPct</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg1s3" title="@Strings.SetPg1s3">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.MetNone</listEntry>
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnScore</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="15">@Strings.MetBattery</listEntry>
+            <listEntry value="16">@Strings.MetPumpStrokes</listEntry>
+            <listEntry value="17">@Strings.MetTakeoffs</listEntry>
+            <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
+            <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="21">@Strings.MetFoilDistPct</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg1s4" title="@Strings.SetPg1s4">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.MetNone</listEntry>
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnScore</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="15">@Strings.MetBattery</listEntry>
+            <listEntry value="16">@Strings.MetPumpStrokes</listEntry>
+            <listEntry value="17">@Strings.MetTakeoffs</listEntry>
+            <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
+            <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="21">@Strings.MetFoilDistPct</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg1s5" title="@Strings.SetPg1s5">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.MetNone</listEntry>
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnScore</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="15">@Strings.MetBattery</listEntry>
+            <listEntry value="16">@Strings.MetPumpStrokes</listEntry>
+            <listEntry value="17">@Strings.MetTakeoffs</listEntry>
+            <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
+            <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="21">@Strings.MetFoilDistPct</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg2Layout" title="@Strings.SetPg2Layout">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.LayOff</listEntry>
+            <listEntry value="1">@Strings.LayHero</listEntry>
+            <listEntry value="2">@Strings.LayGrid4</listEntry>
+            <listEntry value="3">@Strings.LayCells2</listEntry>
+            <listEntry value="4">@Strings.LayRecords</listEntry>
+            <listEntry value="5">@Strings.LayTurns</listEntry>
+            <listEntry value="6">@Strings.LayClock</listEntry>
+            <listEntry value="7">@Strings.LayMap</listEntry>
+            <listEntry value="8">@Strings.LayTimeline</listEntry>
+            <listEntry value="9">@Strings.LayMain</listEntry>
+            <listEntry value="10">@Strings.LayFoil</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg2s1" title="@Strings.SetPg2s1">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.MetNone</listEntry>
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnScore</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="15">@Strings.MetBattery</listEntry>
+            <listEntry value="16">@Strings.MetPumpStrokes</listEntry>
+            <listEntry value="17">@Strings.MetTakeoffs</listEntry>
+            <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
+            <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="21">@Strings.MetFoilDistPct</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg2s2" title="@Strings.SetPg2s2">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.MetNone</listEntry>
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnScore</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="15">@Strings.MetBattery</listEntry>
+            <listEntry value="16">@Strings.MetPumpStrokes</listEntry>
+            <listEntry value="17">@Strings.MetTakeoffs</listEntry>
+            <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
+            <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="21">@Strings.MetFoilDistPct</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg2s3" title="@Strings.SetPg2s3">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.MetNone</listEntry>
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnScore</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="15">@Strings.MetBattery</listEntry>
+            <listEntry value="16">@Strings.MetPumpStrokes</listEntry>
+            <listEntry value="17">@Strings.MetTakeoffs</listEntry>
+            <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
+            <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="21">@Strings.MetFoilDistPct</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg2s4" title="@Strings.SetPg2s4">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.MetNone</listEntry>
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnScore</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="15">@Strings.MetBattery</listEntry>
+            <listEntry value="16">@Strings.MetPumpStrokes</listEntry>
+            <listEntry value="17">@Strings.MetTakeoffs</listEntry>
+            <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
+            <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="21">@Strings.MetFoilDistPct</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg2s5" title="@Strings.SetPg2s5">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.MetNone</listEntry>
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnScore</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="15">@Strings.MetBattery</listEntry>
+            <listEntry value="16">@Strings.MetPumpStrokes</listEntry>
+            <listEntry value="17">@Strings.MetTakeoffs</listEntry>
+            <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
+            <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="21">@Strings.MetFoilDistPct</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg3Layout" title="@Strings.SetPg3Layout">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.LayOff</listEntry>
+            <listEntry value="1">@Strings.LayHero</listEntry>
+            <listEntry value="2">@Strings.LayGrid4</listEntry>
+            <listEntry value="3">@Strings.LayCells2</listEntry>
+            <listEntry value="4">@Strings.LayRecords</listEntry>
+            <listEntry value="5">@Strings.LayTurns</listEntry>
+            <listEntry value="6">@Strings.LayClock</listEntry>
+            <listEntry value="7">@Strings.LayMap</listEntry>
+            <listEntry value="8">@Strings.LayTimeline</listEntry>
+            <listEntry value="9">@Strings.LayMain</listEntry>
+            <listEntry value="10">@Strings.LayFoil</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg3s1" title="@Strings.SetPg3s1">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.MetNone</listEntry>
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnScore</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="15">@Strings.MetBattery</listEntry>
+            <listEntry value="16">@Strings.MetPumpStrokes</listEntry>
+            <listEntry value="17">@Strings.MetTakeoffs</listEntry>
+            <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
+            <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="21">@Strings.MetFoilDistPct</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg3s2" title="@Strings.SetPg3s2">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.MetNone</listEntry>
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnScore</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="15">@Strings.MetBattery</listEntry>
+            <listEntry value="16">@Strings.MetPumpStrokes</listEntry>
+            <listEntry value="17">@Strings.MetTakeoffs</listEntry>
+            <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
+            <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="21">@Strings.MetFoilDistPct</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg3s3" title="@Strings.SetPg3s3">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.MetNone</listEntry>
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnScore</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="15">@Strings.MetBattery</listEntry>
+            <listEntry value="16">@Strings.MetPumpStrokes</listEntry>
+            <listEntry value="17">@Strings.MetTakeoffs</listEntry>
+            <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
+            <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="21">@Strings.MetFoilDistPct</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg3s4" title="@Strings.SetPg3s4">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.MetNone</listEntry>
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnScore</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="15">@Strings.MetBattery</listEntry>
+            <listEntry value="16">@Strings.MetPumpStrokes</listEntry>
+            <listEntry value="17">@Strings.MetTakeoffs</listEntry>
+            <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
+            <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="21">@Strings.MetFoilDistPct</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg3s5" title="@Strings.SetPg3s5">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.MetNone</listEntry>
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnScore</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="15">@Strings.MetBattery</listEntry>
+            <listEntry value="16">@Strings.MetPumpStrokes</listEntry>
+            <listEntry value="17">@Strings.MetTakeoffs</listEntry>
+            <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
+            <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="21">@Strings.MetFoilDistPct</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg4Layout" title="@Strings.SetPg4Layout">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.LayOff</listEntry>
+            <listEntry value="1">@Strings.LayHero</listEntry>
+            <listEntry value="2">@Strings.LayGrid4</listEntry>
+            <listEntry value="3">@Strings.LayCells2</listEntry>
+            <listEntry value="4">@Strings.LayRecords</listEntry>
+            <listEntry value="5">@Strings.LayTurns</listEntry>
+            <listEntry value="6">@Strings.LayClock</listEntry>
+            <listEntry value="7">@Strings.LayMap</listEntry>
+            <listEntry value="8">@Strings.LayTimeline</listEntry>
+            <listEntry value="9">@Strings.LayMain</listEntry>
+            <listEntry value="10">@Strings.LayFoil</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg4s1" title="@Strings.SetPg4s1">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.MetNone</listEntry>
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnScore</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="15">@Strings.MetBattery</listEntry>
+            <listEntry value="16">@Strings.MetPumpStrokes</listEntry>
+            <listEntry value="17">@Strings.MetTakeoffs</listEntry>
+            <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
+            <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="21">@Strings.MetFoilDistPct</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg4s2" title="@Strings.SetPg4s2">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.MetNone</listEntry>
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnScore</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="15">@Strings.MetBattery</listEntry>
+            <listEntry value="16">@Strings.MetPumpStrokes</listEntry>
+            <listEntry value="17">@Strings.MetTakeoffs</listEntry>
+            <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
+            <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="21">@Strings.MetFoilDistPct</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg4s3" title="@Strings.SetPg4s3">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.MetNone</listEntry>
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnScore</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="15">@Strings.MetBattery</listEntry>
+            <listEntry value="16">@Strings.MetPumpStrokes</listEntry>
+            <listEntry value="17">@Strings.MetTakeoffs</listEntry>
+            <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
+            <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="21">@Strings.MetFoilDistPct</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg4s4" title="@Strings.SetPg4s4">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.MetNone</listEntry>
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnScore</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="15">@Strings.MetBattery</listEntry>
+            <listEntry value="16">@Strings.MetPumpStrokes</listEntry>
+            <listEntry value="17">@Strings.MetTakeoffs</listEntry>
+            <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
+            <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="21">@Strings.MetFoilDistPct</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg4s5" title="@Strings.SetPg4s5">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.MetNone</listEntry>
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnScore</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="15">@Strings.MetBattery</listEntry>
+            <listEntry value="16">@Strings.MetPumpStrokes</listEntry>
+            <listEntry value="17">@Strings.MetTakeoffs</listEntry>
+            <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
+            <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="21">@Strings.MetFoilDistPct</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg5Layout" title="@Strings.SetPg5Layout">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.LayOff</listEntry>
+            <listEntry value="1">@Strings.LayHero</listEntry>
+            <listEntry value="2">@Strings.LayGrid4</listEntry>
+            <listEntry value="3">@Strings.LayCells2</listEntry>
+            <listEntry value="4">@Strings.LayRecords</listEntry>
+            <listEntry value="5">@Strings.LayTurns</listEntry>
+            <listEntry value="6">@Strings.LayClock</listEntry>
+            <listEntry value="7">@Strings.LayMap</listEntry>
+            <listEntry value="8">@Strings.LayTimeline</listEntry>
+            <listEntry value="9">@Strings.LayMain</listEntry>
+            <listEntry value="10">@Strings.LayFoil</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg5s1" title="@Strings.SetPg5s1">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.MetNone</listEntry>
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnScore</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="15">@Strings.MetBattery</listEntry>
+            <listEntry value="16">@Strings.MetPumpStrokes</listEntry>
+            <listEntry value="17">@Strings.MetTakeoffs</listEntry>
+            <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
+            <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="21">@Strings.MetFoilDistPct</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg5s2" title="@Strings.SetPg5s2">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.MetNone</listEntry>
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnScore</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="15">@Strings.MetBattery</listEntry>
+            <listEntry value="16">@Strings.MetPumpStrokes</listEntry>
+            <listEntry value="17">@Strings.MetTakeoffs</listEntry>
+            <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
+            <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="21">@Strings.MetFoilDistPct</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg5s3" title="@Strings.SetPg5s3">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.MetNone</listEntry>
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnScore</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="15">@Strings.MetBattery</listEntry>
+            <listEntry value="16">@Strings.MetPumpStrokes</listEntry>
+            <listEntry value="17">@Strings.MetTakeoffs</listEntry>
+            <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
+            <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="21">@Strings.MetFoilDistPct</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg5s4" title="@Strings.SetPg5s4">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.MetNone</listEntry>
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnScore</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="15">@Strings.MetBattery</listEntry>
+            <listEntry value="16">@Strings.MetPumpStrokes</listEntry>
+            <listEntry value="17">@Strings.MetTakeoffs</listEntry>
+            <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
+            <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="21">@Strings.MetFoilDistPct</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg5s5" title="@Strings.SetPg5s5">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.MetNone</listEntry>
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnScore</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="15">@Strings.MetBattery</listEntry>
+            <listEntry value="16">@Strings.MetPumpStrokes</listEntry>
+            <listEntry value="17">@Strings.MetTakeoffs</listEntry>
+            <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
+            <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="21">@Strings.MetFoilDistPct</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg6Layout" title="@Strings.SetPg6Layout">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.LayOff</listEntry>
+            <listEntry value="1">@Strings.LayHero</listEntry>
+            <listEntry value="2">@Strings.LayGrid4</listEntry>
+            <listEntry value="3">@Strings.LayCells2</listEntry>
+            <listEntry value="4">@Strings.LayRecords</listEntry>
+            <listEntry value="5">@Strings.LayTurns</listEntry>
+            <listEntry value="6">@Strings.LayClock</listEntry>
+            <listEntry value="7">@Strings.LayMap</listEntry>
+            <listEntry value="8">@Strings.LayTimeline</listEntry>
+            <listEntry value="9">@Strings.LayMain</listEntry>
+            <listEntry value="10">@Strings.LayFoil</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg6s1" title="@Strings.SetPg6s1">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.MetNone</listEntry>
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnScore</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="15">@Strings.MetBattery</listEntry>
+            <listEntry value="16">@Strings.MetPumpStrokes</listEntry>
+            <listEntry value="17">@Strings.MetTakeoffs</listEntry>
+            <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
+            <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="21">@Strings.MetFoilDistPct</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg6s2" title="@Strings.SetPg6s2">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.MetNone</listEntry>
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnScore</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="15">@Strings.MetBattery</listEntry>
+            <listEntry value="16">@Strings.MetPumpStrokes</listEntry>
+            <listEntry value="17">@Strings.MetTakeoffs</listEntry>
+            <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
+            <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="21">@Strings.MetFoilDistPct</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg6s3" title="@Strings.SetPg6s3">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.MetNone</listEntry>
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnScore</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="15">@Strings.MetBattery</listEntry>
+            <listEntry value="16">@Strings.MetPumpStrokes</listEntry>
+            <listEntry value="17">@Strings.MetTakeoffs</listEntry>
+            <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
+            <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="21">@Strings.MetFoilDistPct</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg6s4" title="@Strings.SetPg6s4">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.MetNone</listEntry>
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnScore</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="15">@Strings.MetBattery</listEntry>
+            <listEntry value="16">@Strings.MetPumpStrokes</listEntry>
+            <listEntry value="17">@Strings.MetTakeoffs</listEntry>
+            <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
+            <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="21">@Strings.MetFoilDistPct</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg6s5" title="@Strings.SetPg6s5">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.MetNone</listEntry>
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnScore</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="15">@Strings.MetBattery</listEntry>
+            <listEntry value="16">@Strings.MetPumpStrokes</listEntry>
+            <listEntry value="17">@Strings.MetTakeoffs</listEntry>
+            <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
+            <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="21">@Strings.MetFoilDistPct</listEntry>
+        </settingConfig>
+    </setting>
+<setting propertyKey="@Properties.pg7Layout" title="@Strings.SetPg7Layout">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.LayOff</listEntry>
+            <listEntry value="1">@Strings.LayHero</listEntry>
+            <listEntry value="2">@Strings.LayGrid4</listEntry>
+            <listEntry value="3">@Strings.LayCells2</listEntry>
+            <listEntry value="4">@Strings.LayRecords</listEntry>
+            <listEntry value="5">@Strings.LayTurns</listEntry>
+            <listEntry value="6">@Strings.LayClock</listEntry>
+            <listEntry value="7">@Strings.LayMap</listEntry>
+            <listEntry value="8">@Strings.LayTimeline</listEntry>
+            <listEntry value="9">@Strings.LayMain</listEntry>
+            <listEntry value="10">@Strings.LayFoil</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg7s1" title="@Strings.SetPg7s1">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.MetNone</listEntry>
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnScore</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="15">@Strings.MetBattery</listEntry>
+            <listEntry value="16">@Strings.MetPumpStrokes</listEntry>
+            <listEntry value="17">@Strings.MetTakeoffs</listEntry>
+            <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
+            <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="21">@Strings.MetFoilDistPct</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg7s2" title="@Strings.SetPg7s2">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.MetNone</listEntry>
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnScore</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="15">@Strings.MetBattery</listEntry>
+            <listEntry value="16">@Strings.MetPumpStrokes</listEntry>
+            <listEntry value="17">@Strings.MetTakeoffs</listEntry>
+            <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
+            <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="21">@Strings.MetFoilDistPct</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg7s3" title="@Strings.SetPg7s3">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.MetNone</listEntry>
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnScore</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="15">@Strings.MetBattery</listEntry>
+            <listEntry value="16">@Strings.MetPumpStrokes</listEntry>
+            <listEntry value="17">@Strings.MetTakeoffs</listEntry>
+            <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
+            <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="21">@Strings.MetFoilDistPct</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg7s4" title="@Strings.SetPg7s4">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.MetNone</listEntry>
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnScore</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="15">@Strings.MetBattery</listEntry>
+            <listEntry value="16">@Strings.MetPumpStrokes</listEntry>
+            <listEntry value="17">@Strings.MetTakeoffs</listEntry>
+            <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
+            <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="21">@Strings.MetFoilDistPct</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.pg7s5" title="@Strings.SetPg7s5">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.MetNone</listEntry>
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnScore</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="15">@Strings.MetBattery</listEntry>
+            <listEntry value="16">@Strings.MetPumpStrokes</listEntry>
+            <listEntry value="17">@Strings.MetTakeoffs</listEntry>
+            <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
+            <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="21">@Strings.MetFoilDistPct</listEntry>
+        </settingConfig>
     </setting>
 </settings>

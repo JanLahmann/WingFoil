@@ -31,10 +31,16 @@ module AlertManager {
         CH_TURN = 4,
         CH_WIND = 5,
         CH_CLEAN = 6,
-        CH_COUNT = 7
+        // 0.9.16: the direct transfer reaching the phone whole. Its own channel for the
+        // reason every channel exists — it lands while the rider is walking up the beach
+        // reading the SAVED screen, i.e. exactly when nothing else is buzzing, and a floor
+        // shared with the turn verdicts would have swallowed it on the one session where
+        // the last jibe and the last page land inside the same five seconds.
+        CH_PHONE = 7,
+        CH_COUNT = 8
     }
 
-    var _lastMs as Array<Number> = [0, 0, 0, 0, 0, 0, 0];
+    var _lastMs as Array<Number> = [0, 0, 0, 0, 0, 0, 0, 0];
     var _lastAnyMs as Number = 0;
 
     // Pure decision half, so the debounce rules are testable without a vibration motor.
@@ -119,6 +125,19 @@ module AlertManager {
             new Attention.VibeProfile(0, 90),
             new Attention.VibeProfile(100, 200)
         ]);
+    }
+
+    // The recording has crossed to the phone in full (DirectSend's empty `cjrNeed`). ONE
+    // short tick and nothing else: it is the end of a wait, not an achievement, and the
+    // rider is ashore with the watch on his wrist and the phone in his pocket. The screen
+    // says the same thing in words at the same moment (DirectSend.statusLine, "phone ok"),
+    // so the buzz only has to make him look.
+    //
+    // Deliberately behind no toggle, like `autoWindLocked`: the transfer itself is the
+    // switch (`phonePush`), and a rider who turned it on wants to know when he can walk away.
+    // The call site is `(:dev)`, so no other stream ever reaches it.
+    function phoneStreamWhole() as Void {
+        _fire(CH_PHONE, [new Attention.VibeProfile(75, 180)]);
     }
 
     // A turn resolved — the ONE entry point SessionController uses, because a turn has one

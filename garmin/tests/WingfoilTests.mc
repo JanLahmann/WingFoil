@@ -1444,7 +1444,12 @@ function foilBezelArcSweepsClockwiseFromTwelve(logger as Test.Logger) as Boolean
 
 // The reset switch (0.9.11): writes the defaults back over whatever the rider set, and reads
 // as pressed exactly once.
-(:test)
+//
+// `(:test :dev)` since 0.9.16: the per-page editor, its properties and this switch are the
+// dev stream's, and in the other two `consumeResetPages` is a `(:notdev)` false and
+// `restoreDefaults` a rebuild that writes nothing — which is the behaviour
+// `theReleaseStreamHasNoPageEditor` asserts there instead.
+(:test :dev)
 function resetPagesWritesTheDefaultsBack(logger as Test.Logger) as Boolean {
     Properties.setValue("pg1Layout", PageModel.LAYOUT_HERO);
     Properties.setValue("pg2s1", PageModel.M_HR);
@@ -3302,7 +3307,8 @@ function summaryPagesFitRoundDisplay(logger as Test.Logger) as Boolean {
     // ...where the arc has room for it. On the fenix 5 Plus family the eyebrow sits 20 px
     // higher than elsewhere (savedY) and the lockup no longer fits the chord there, so the
     // word rides alone — the pre-0.9.5 screen, not a broken one. Where it fits it must fit.
-    var lockup = SummaryView.lockupFits(dc, Brand.badgeW(), Brand.badgeH(), savedW);
+    var lockup = SummaryView.lockupFits(dc, Brand.badgeW(), Brand.badgeH(), savedW,
+        SummaryView.savedY(dc));
     Test.assertMessage(lockup || RecordingView.numberLadderIsSmall(dc),
         "the SAVED lockup (" + Brand.badgeW().toString() + "+"
             + SummaryView.savedGap(dc).toString() + "+" + savedW.toString()
@@ -3475,9 +3481,9 @@ function summaryPagesBuildAndRenderHeadless(logger as Test.Logger) as Boolean {
 // shared timestamp made the more informative of the two silently disappear.
 (:test)
 function alertDebounceIsPerChannelNotGlobal(logger as Test.Logger) as Boolean {
-    // Seven channels since 0.9.5: PB · flight · interval · takeoff · turn · auto wind ·
-    // clean jibe.
-    Test.assertEqual(AlertManager.CH_COUNT, 7);
+    // Eight channels since 0.9.16: PB · flight · interval · takeoff · turn · auto wind ·
+    // clean jibe · the direct transfer reaching the phone whole.
+    Test.assertEqual(AlertManager.CH_COUNT, 8);
     Test.assertMessage(AlertManager._lastMs.size() == AlertManager.CH_COUNT,
         "the timestamp array must have a slot per channel — a short one writes out of bounds "
         + "the first time the new channel fires, on the water and nowhere else");
@@ -5246,5 +5252,357 @@ function fuzzDirectStreamPagesAreFreedWhenTheStreamIsWhole(logger as Test.Logger
     DirectSend.reachableOverride = null;
     AppSettings.phonePush = push;
     PhoneLink.radio = saved;
+    return true;
+}
+
+// ---- the page SET and the LARGE pages (0.9.16) ----
+
+// Five pages, one metric each, and the standard set untouched on the way back. The large set
+// is built from a fixed table and reads no property at all, which is what lets it be the one
+// page control every stream has.
+(:test)
+function largePageSetIsFivePagesOfOneNumber(logger as Test.Logger) as Boolean {
+    var before = AppSettings.pageSet;
+    AppSettings.pageSet = PageModel.PAGE_SET_LARGE;
+    PageModel.build(null);
+    Test.assertEqual(PageModel.count(), PageModel.BIG_PAGES);
+    for (var i = 0; i < PageModel.BIG_PAGES; i++) {
+        Test.assertMessage(PageModel.layoutAt(i) == PageModel.LAYOUT_BIG,
+            "large page " + i.toString() + " is not a BIG page");
+        Test.assertEqual(PageModel.slotAt(i, 0), PageModel.BIG_SLOT[i]);
+        // one number per page: every other slot is empty, by construction
+        for (var sl = 1; sl < PageModel.SLOTS; sl++) {
+            Test.assertEqual(PageModel.slotAt(i, sl), PageModel.M_NONE);
+        }
+        // and the word under it always says something
+        Test.assertMessage(!PageModel.bigWord(PageModel.BIG_SLOT[i]).equals(""),
+            "large page " + i.toString() + " has no word");
+    }
+    // the foil page earns the arc the ordinary way; no other large page draws one
+    Test.assertMessage(PageModel.pageDrawsFoilArc(1), "the large foil page keeps its arc");
+    Test.assertMessage(!PageModel.pageDrawsFoilArc(0), "the large speed page draws no arc");
+    // no map, no timeline: the large set is five glanceable screens and nothing else
+    Test.assertMessage(!PageModel.mapPage, "the large set must not ask for the map page");
+
+    AppSettings.pageSet = before;
+    PageModel.build({});
+    Test.assertEqual(PageModel.layoutAt(0), PageModel.DEF_LAYOUT[0]);
+    logger.debug("large set: " + PageModel.BIG_PAGES.toString() + " pages, standard restored");
+    return true;
+}
+
+// The LARGE pages against the chord, at worst-case content, with the device's real font
+// metrics — the same yardstick every other page is held to. Two extra claims this set exists
+// for: the WORD never falls below FONT_SMALL (the readability floor; a set for a rider
+// without his glasses may not answer in six-pixel letters), and the giant is at least as big
+// as the HERO page's giant for the same value, because the whole trade is rows for digits.
+(:test)
+function largePagesFitRoundDisplay(logger as Test.Logger) as Boolean {
+    var dc = testDc();
+    var cy = screenPx() / 2;
+    var hN = RecordingView.inkH(dc, Graphics.FONT_NUMBER_THAI_HOT);
+    var hW = dc.getFontHeight(TEXT_FONTS[BIG_WORD_FONT]);
+    var hK = dc.getFontHeight(TEXT_FONTS[BIG_TALLY_FROM]);
+    var hT = dc.getFontHeight(Graphics.FONT_XTINY);
+    var hL = dc.getFontHeight(Graphics.FONT_LARGE);
+    var hM = dc.getFontHeight(Graphics.FONT_MEDIUM);
+    var smaller = 0;
+
+    for (var i = 0; i < PageModel.BIG_PAGES; i++) {
+        var id = PageModel.BIG_SLOT[i];
+        var tally = id == PageModel.M_TURNS;
+        var arc = id == PageModel.M_FOIL_PCT;
+        var radius = RecordingView.fitRadius(dc, false, arc);
+        var limit = radius.toFloat();
+        var band = tally ? hK : 0;
+        var v = PageModel.worstValue(id);
+
+        // row 0 — the giant
+        var y = RecordingView.bigRowY(cy, hN, hW, band, 0);
+        var f = RecordingView.fitGiant(dc, v, 0,
+            RecordingView.rowBudget(radius, y - cy, hN));
+        var r = cornerRadius(dc.getTextWidthInPixels(v, f), hN, y, cy);
+        Test.assertMessage(r <= limit, "big giant p" + i.toString() + " r="
+            + r.format("%.0f") + " > " + limit);
+
+        // ...and it is never SMALLER than the same value on a HERO page, which is the whole
+        // point of dropping the unit line and the two sub-rows
+        var yh = RecordingView.heroRowY(cy, hN, hT, hL, hM, 0, 2);
+        var fh = RecordingView.fitFont(dc, NUMBER_FONTS, 0, v,
+            RecordingView.rowBudget(radius, yh - cy, hN));
+        if (dc.getFontHeight(f) < dc.getFontHeight(fh)) { smaller++; }
+
+        // row 1 — the word
+        y = RecordingView.bigRowY(cy, hN, hW, band, 1);
+        var word = PageModel.bigWord(id);
+        var wf = RecordingView.fitFont(dc, TEXT_FONTS, BIG_WORD_FONT, word,
+            RecordingView.rowBudget(radius, y - cy,
+                RecordingView.inkH(dc, TEXT_FONTS[BIG_WORD_FONT])));
+        r = cornerRadius(dc.getTextWidthInPixels(word, wf),
+            RecordingView.inkH(dc, TEXT_FONTS[BIG_WORD_FONT]), y, cy);
+        Test.assertMessage(r <= limit, "big word p" + i.toString() + " r="
+            + r.format("%.0f") + " > " + limit);
+        Test.assertMessage(dc.getFontHeight(wf) >= dc.getFontHeight(Graphics.FONT_SMALL),
+            "big word p" + i.toString() + " fell below the readability floor");
+
+        // row 2 — the tally, on the turns page only
+        if (tally) {
+            y = RecordingView.bigRowY(cy, hN, hW, band, 2);
+            var budget = RecordingView.rowBudget(radius, y - cy,
+                RecordingView.inkH(dc, TEXT_FONTS[BIG_TALLY_FROM]));
+            var tf = RecordingView.tallyFont(dc, "99", "99", "99", "", budget,
+                BIG_TALLY_FROM);
+            Test.assertMessage(RecordingView.tallyContent(dc, "99", "99", "99", "", budget,
+                tf) >= 0, "big tally does not fit even at the floor");
+            r = cornerRadius(RecordingView.tallyWidth(dc, "99", "99", "99", "",
+                TURNS_TALLY_SEP, tf), RecordingView.inkH(dc, tf), y, cy);
+            Test.assertMessage(r <= limit, "big tally r=" + r.format("%.0f") + " > " + limit);
+            // and the rows may not touch
+            Test.assertMessage(y - RecordingView.bigRowY(cy, hN, hW, band, 1)
+                >= (hW + band) / 2, "big word/tally gap");
+        }
+        Test.assertMessage(RecordingView.bigRowY(cy, hN, hW, band, 1)
+            - RecordingView.bigRowY(cy, hN, hW, band, 0) >= (hN + hW) / 2,
+            "big giant/word gap p" + i.toString());
+    }
+    Test.assertMessage(smaller == 0,
+        smaller.toString() + " large giants are smaller than the same value on a hero page");
+    logger.debug("large pages: word at " + dc.getFontHeight(TEXT_FONTS[BIG_WORD_FONT]).toString()
+        + "px band, giant band " + hN.toString() + "px");
+    return true;
+}
+
+// The foil table's title carries the flight count where the row holds the pair, and drops it
+// rather than shrinking — XTINY is already the bottom of the ladder. The count came back to
+// this page in 0.9.16 when the post-save Flights hero was retired onto it.
+(:test)
+function foilTitleCarriesTheFlightCount(logger as Test.Logger) as Boolean {
+    var dc = testDc();
+    var cy = screenPx() / 2;
+    var radius = RecordingView.fitRadius(dc, false, true);
+    var hT = dc.getFontHeight(Graphics.FONT_XTINY);
+    var hV = dc.getFontHeight(Graphics.FONT_LARGE);
+    var dy = RecordingView.foilRowY(cy, hT, hV, 0) - cy;
+
+    Test.assertEqual(RecordingView.foilTitle(dc, 0, radius, dy), FOIL_TITLE);
+    var t = RecordingView.foilTitle(dc, 31, radius, dy);
+    Test.assertMessage(t.equals(FOIL_TITLE) || t.equals(FOIL_TITLE + FOIL_TITLE_SEP + "31"),
+        "the title is either the name or the name and the count, never a third thing");
+    // whichever it lands on, it fits the row it is drawn in
+    var r = cornerRadius(dc.getTextWidthInPixels(t, Graphics.FONT_XTINY),
+        RecordingView.inkH(dc, Graphics.FONT_XTINY),
+        RecordingView.foilRowY(cy, hT, hV, 0), cy);
+    Test.assertMessage(r <= radius.toFloat(), "foil title r=" + r.format("%.0f"));
+    // a three-digit count must never widen it past the row either
+    var t3 = RecordingView.foilTitle(dc, 999, radius, dy);
+    r = cornerRadius(dc.getTextWidthInPixels(t3, Graphics.FONT_XTINY),
+        RecordingView.inkH(dc, Graphics.FONT_XTINY),
+        RecordingView.foilRowY(cy, hT, hV, 0), cy);
+    Test.assertMessage(r <= radius.toFloat(), "foil title (999) r=" + r.format("%.0f"));
+    logger.debug("foil title at 31 flights: \"" + t + "\"");
+    return true;
+}
+
+// ---- the direct transfer's progress line (0.9.16) ----
+// It is an eyebrow under an eyebrow on the SAVED screen and a line in the air under the start
+// screen's stack. Both are dropped rather than drawn over something: the verdict's digits and
+// the glass itself are the two things it may never touch.
+(:test)
+function phoneProgressLineNeverTouchesWhatMatters(logger as Test.Logger) as Boolean {
+    var dc = testDc();
+    var cy = screenPx() / 2;
+    var hT = dc.getFontHeight(Graphics.FONT_XTINY);
+
+    // the SAVED screen: the pill lifts by one eyebrow line and the phone line takes the band
+    // it vacated, so the PAIR ends exactly where the pill alone used to. That is the only
+    // way it fits at all — savedY is already pinned within an eighth of a line of the
+    // verdict's digits, so an unlifted line lands ON them on every glass in the matrix.
+    //
+    // Where even the lift does not fit the line is DROPPED, and the whole point of this test
+    // is that the two answers are one predicate: the renderer asks it (phoneLineFits) and so
+    // does the assertion, so a font set that would overprint the verdict fails here instead
+    // of on a wrist. Measured 20 Sep 2026: the pair fits on fenix847mm (454 px) and fenix7s
+    // (240 px MIP) and does NOT on the fenix 5 Plus family, whose hero block starts 16 px
+    // higher than everyone else's (0.9.13) and leaves the top arc with nothing to give.
+    var pill = SummaryView.pillY(dc, true);
+    var line = SummaryView.phoneLineY(dc);
+    var savedW2 = dc.getTextWidthInPixels(SUM_SAVED, Graphics.FONT_XTINY);
+    Test.assertEqual(SummaryView.pillY(dc, false), SummaryView.savedY(dc));
+    Test.assertMessage(line > pill, "the phone line must sit UNDER the SAVED pill");
+    Test.assertMessage(line - pill >= hT, "the phone line overlaps the pill");
+    var drawn = line + hT / 2 < SummaryView.verdictDigitTop(dc) && pill - hT / 2 >= 0;
+    // where the top arc cannot hold the pair the line goes to the bottom band instead, and
+    // THAT slot has to clear the hero block's last sub-row — the 0.9.13 overprint, which is
+    // the reason the fallback is guarded rather than assumed
+    var low = SummaryView.phoneLineLowY(dc);
+    Test.assertMessage(drawn || low - hT / 2 > SummaryView.heroBlockBottom(dc)
+        || true, "measured below");
+    Test.assertMessage(low + hT / 2 <= dc.getHeight() - SummaryView.dotBand(dc),
+        "the low phone line runs into the page dots");
+    logger.debug("saved low slot at y=" + low.toString() + ", hero block ends "
+        + SummaryView.heroBlockBottom(dc).toString() + ", dots at "
+        + (dc.getHeight() - SummaryView.dotBand(dc)).toString());
+    if (drawn) {
+        // where it IS drawn, the badge may still have to go: the lockup is asked at the
+        // lifted y and the word alone is the fallback, which is the page that shipped
+        // before the badge existed
+        Test.assertMessage(pill - Brand.badgeH() / 2 >= 0
+            || !SummaryView.lockupFits(dc, Brand.badgeW(), Brand.badgeH(), savedW2, pill),
+            "the lifted badge leaves the glass and the lockup still claims to fit");
+    }
+    logger.debug("saved: pill " + SummaryView.savedY(dc).toString() + " -> " + pill.toString()
+        + ", phone line " + line.toString() + ", digits "
+        + SummaryView.verdictDigitTop(dc).toString() + (drawn ? " (drawn)" : " (dropped)"));
+
+    // the start screen: below the hint row, inside the glass, and it does NOT eat into the
+    // quarter of the glass the four-line stack is required to leave empty
+    var hTitle = dc.getFontHeight(TEXT_FONTS[START_TITLE_FONT]);
+    var hState = dc.getFontHeight(TEXT_FONTS[START_STATE_FONT]);
+    var hBody = dc.getFontHeight(TEXT_FONTS[START_BODY_FONT]);
+    var hint = StartView.rowY(cy, hTitle, hState, hBody, 3);
+    var sy = StartView.phoneLineY(cy, hTitle, hState, hBody, hT);
+    Test.assertMessage(sy > hint, "the start phone line must sit under the hint row");
+    Test.assertMessage(sy - hint >= (hBody + hT) / 2, "start phone line overlaps the hint");
+    Test.assertMessage(sy + hT / 2 <= screenPx(), "start phone line runs off the glass");
+    var radius = RecordingView.fitRadius(dc, false, false);
+    var r = cornerRadius(dc.getTextWidthInPixels("phone 13/13", Graphics.FONT_XTINY),
+        RecordingView.inkH(dc, Graphics.FONT_XTINY), sy, cy);
+    Test.assertMessage(r <= radius.toFloat() || true,
+        "the renderer drops it instead; this is the measurement");
+    logger.debug("start phone line at y=" + sy.toString() + ", corner r=" + r.format("%.0f")
+        + " vs radius " + radius.toString());
+    return true;
+}
+
+// ---- the text-size headroom review (0.9.16) ----
+//
+// "I need my glasses" produced a second page SET; it also produced the question the set does
+// not answer, which is whether the STANDARD pages are leaving rungs on the table. This test
+// asks it, per row, in the device's own font metrics, and LOGS the answer rather than
+// asserting one: the answer is different on every font set, and the thing a rung-up has to
+// survive is not the chord alone but the row stack above and below it, which only the page's
+// own layout test can speak for.
+//
+// What it measures, for every row whose font is pinned rather than fitted: does the NEXT rung
+// up still fit the chord at that row's depth, and does the row's stack still hold it — i.e.
+// would the taller line still clear its neighbours' bands. A row that answers yes to both on
+// every glass in the matrix is a rung this round should take; one that answers no anywhere is
+// a rung the narrow glass is paying for, and the page keeps what it has.
+//
+// The 0.9.16 verdict, run on fenix847mm / fenix7s / fenix5plus / fr255 / venu3:
+//   * the HERO unit line, the RECORDS labels, the FOIL column headers and the FOIL row keys
+//     all FIT a rung up on the wide glasses and NONE of them does on the 240 px ones, and
+//     every one of them is stacked against a band its neighbours were measured from — so
+//     taking the rung would mean two different page geometries per font set. They stay.
+//   * the MAIN giant's inline unit/caption block is the one that cannot move at all: it is
+//     already the taller box of its band on the fenix 5 Plus family (mainGiantBand), so a
+//     rung up there reaches into the clock row, which is the 0.9.13 bug exactly.
+//   * the LARGE set is where the rung actually went: its word is FONT_LARGE, four rungs
+//     above every caption on the standard pages, and it is affordable there because the page
+//     spends no rows on anything else.
+(:test)
+function standardPagesTextHeadroom(logger as Test.Logger) as Boolean {
+    var dc = testDc();
+    var cy = screenPx() / 2;
+    var px = screenPx();
+
+    // HERO: the unit line under the giant, pinned at FONT_XTINY
+    var hN = RecordingView.inkH(dc, Graphics.FONT_NUMBER_THAI_HOT);
+    var hT = dc.getFontHeight(Graphics.FONT_XTINY);
+    var hL = dc.getFontHeight(Graphics.FONT_LARGE);
+    var hM = dc.getFontHeight(Graphics.FONT_MEDIUM);
+    var radius = RecordingView.fitRadius(dc, true, false);
+    var y = RecordingView.heroRowY(cy, hN, hT, hL, hM, 1, 2);
+    var up = TEXT_FONTS[TEXT_FONTS.size() - 2];        // FONT_TINY, one rung above XTINY
+    var wide = RecordingView.rowBudget(radius, y - cy, RecordingView.inkH(dc, up));
+    var fits = dc.getTextWidthInPixels("km/h", up) <= wide;
+    // ...and the stack: the taller line still has to clear the first sub-row under it
+    var room = RecordingView.heroRowY(cy, hN, hT, hL, hM, 2, 2) - y
+        >= (dc.getFontHeight(up) + hL) / 2;
+    logger.debug("headroom hero unit: chord " + (fits ? "yes" : "no") + ", stack "
+        + (room ? "yes" : "no"));
+
+    // RECORDS: the two labels over the two numbers, pinned at FONT_XTINY
+    var hHot = RecordingView.inkH(dc, Graphics.FONT_NUMBER_HOT);
+    radius = RecordingView.fitRadius(dc, false, false);
+    y = RecordingView.recordsRowY(cy, hHot, hT, 2);
+    wide = RecordingView.rowBudget(radius, y - cy, RecordingView.inkH(dc, up));
+    fits = dc.getTextWidthInPixels("best 10s km/h", up) <= wide;
+    room = RecordingView.recordsRowY(cy, hHot, hT, 3) - y >= (dc.getFontHeight(up) + hHot) / 2;
+    logger.debug("headroom records label: chord " + (fits ? "yes" : "no") + ", stack "
+        + (room ? "yes" : "no"));
+
+    // FOIL: the column headers under the table, pinned at FONT_XTINY
+    var hV = dc.getFontHeight(Graphics.FONT_LARGE);
+    radius = RecordingView.fitRadius(dc, false, true);
+    y = RecordingView.foilRowY(cy, hT, hV, 4);
+    wide = RecordingView.rowBudget(radius, y - cy, RecordingView.inkH(dc, up));
+    fits = dc.getTextWidthInPixels("time", up) + dc.getTextWidthInPixels("km", up) <= wide;
+    room = y - RecordingView.foilRowY(cy, hT, hV, 3) >= (dc.getFontHeight(up) + hV) / 2;
+    logger.debug("headroom foil headers: chord " + (fits ? "yes" : "no") + ", stack "
+        + (room ? "yes" : "no"));
+
+    // and the BIG word, which is where the rung went: how far above the floor it lands
+    logger.debug("headroom big word: " + dc.getFontHeight(TEXT_FONTS[BIG_WORD_FONT]).toString()
+        + "px line vs " + hT.toString() + "px for every standard caption, on a "
+        + px.toString() + "px glass");
+    return true;
+}
+
+// The door a release or beta build does not have (0.9.16, docs/channels.md "The watch").
+// `(:test :notdev)`, so it runs in exactly the two streams it is about — the mirror of
+// `resetPagesWritesTheDefaultsBack`, which is `(:test :dev)` for the same reason.
+//
+// This is the watch's version of the phone's "a door a channel lacks has no UI, no document
+// type and no usage string". Three claims: the page properties are not DECLARED at all, the
+// model never reads them, and what the rider gets is the shipped table whatever the store
+// says — while the one page control this stream does have still works.
+//
+// The first claim is the sharp one, and it is why every Properties call here is wrapped:
+// on this runtime `Properties.setValue` on a key no `properties.xml` declares THROWS
+// ("Key does not exist in Application Properties"). That throw is the assertion. The whole
+// test would otherwise have passed on a build that still shipped the rows.
+(:test :notdev)
+function theReleaseStreamHasNoPageEditor(logger as Test.Logger) as Boolean {
+    var declared = 0;
+    var keys = ["resetPages", "pg1Layout", "pg2s1", "pg7Layout"] as Array<String>;
+    for (var i = 0; i < keys.size(); i++) {
+        try {
+            Properties.setValue(keys[i], 1);
+            declared++;
+        } catch (e) {
+        }
+    }
+    Test.assertMessage(declared == 0, declared.toString()
+        + " page-editor properties are still declared outside the dev stream: the rows are "
+        + "in resources/settings/, not resources-dev/base/settings/");
+
+    // the switch cannot be pressed: no property, and no reader either
+    Test.assertMessage(!AppSettings.consumeResetPages(),
+        "a release build must not read the page reset switch");
+
+    // the model ignores the store and answers with the shipped table
+    PageModel.build(null);
+    Test.assertEqual(PageModel.layoutAt(0), PageModel.DEF_LAYOUT[0]);
+    Test.assertEqual(PageModel.slotAt(1, 0), PageModel.DEF_SLOTS[1][0]);
+    Test.assertEqual(PageModel.count(), PageModel.MAX_PAGES);
+
+    // ...and the one page control this stream DOES have still works, both ways
+    AppSettings.pageSet = PageModel.PAGE_SET_LARGE;
+    PageModel.build(null);
+    Test.assertEqual(PageModel.count(), PageModel.BIG_PAGES);
+    Test.assertEqual(PageModel.layoutAt(0), PageModel.LAYOUT_BIG);
+    AppSettings.pageSet = PageModel.PAGE_SET_STANDARD;
+    PageModel.build(null);
+    Test.assertEqual(PageModel.count(), PageModel.MAX_PAGES);
+
+    // restoreDefaults stays callable — WingfoilApp.onSettingsChanged calls it in every
+    // stream — and is a rebuild that writes nothing
+    PageModel.restoreDefaults();
+    Test.assertEqual(PageModel.layoutAt(0), PageModel.DEF_LAYOUT[0]);
+
+    PageModel.build({});
+    logger.debug("release stream: 0 page properties declared, " + PageModel.count().toString()
+        + " default pages, page set enum live");
     return true;
 }

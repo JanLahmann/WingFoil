@@ -36,7 +36,9 @@ module SummaryNav {
     enum {
         S_VERDICT = 0,
         S_SPEED = 1,
-        S_FLIGHTS = 2,
+        // S3 was the bespoke "Flights" hero until 0.9.16; it is the live foil table now
+        // (SummaryView.drawFoil), which carries the same three numbers and three more.
+        S_FOIL = 2,
         S_TURNS = 3,
         S_TAKEOFFS = 4,
         S_STORY = 5,
@@ -45,12 +47,12 @@ module SummaryNav {
 
     var _pages as Array<Number> = [S_VERDICT];
 
-    // Which pages this session earned. Verdict/speed/flights/story always; turns only with a
+    // Which pages this session earned. Verdict/speed/foil/story always; turns only with a
     // turn to talk about, takeoffs only when the accelerometer was on and something happened,
     // the track only with a line to draw. A page that would say "0" is not a page.
     function build(c as SessionController) as Void {
         var e = c.engine;
-        var p = [S_VERDICT, S_SPEED, S_FLIGHTS] as Array<Number>;
+        var p = [S_VERDICT, S_SPEED, S_FOIL] as Array<Number>;
         if (e.turns.turnCount > 0) {
             p.add(S_TURNS);
         }
@@ -101,6 +103,12 @@ const SUM_NOT_SAVED = "NOT SAVED";
 // 11 % wider whose scale you cannot.
 const SUM_TRACK_MARGIN = 34;
 
+// Where the direct transfer's status line lands on the verdict page (0.9.16, dev stream).
+// See SummaryView.phoneLineSlot for what picks between them.
+const PHONE_LINE_NONE = 0;
+const PHONE_LINE_TOP = 1;
+const PHONE_LINE_LOW = 2;
+
 class SummaryView extends WatchUi.View {
 
     const CV = Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER;
@@ -122,8 +130,8 @@ class SummaryView extends WatchUi.View {
             drawVerdict(dc, c);
         } else if (page == SummaryNav.S_SPEED) {
             drawSpeed(dc, c);
-        } else if (page == SummaryNav.S_FLIGHTS) {
-            drawFlights(dc, c);
+        } else if (page == SummaryNav.S_FOIL) {
+            drawFoil(dc, c);
         } else if (page == SummaryNav.S_TURNS) {
             drawTurns(dc, c);
         } else if (page == SummaryNav.S_TAKEOFFS) {
@@ -193,7 +201,106 @@ class SummaryView extends WatchUi.View {
             PageModel.fmtTime(e.detector.foilTimeS) + " foil",
             "of " + PageModel.fmtTime(elapsed(c)),
             Ink.phaseFlying(), true);
-        drawSavedPill(dc);
+        // The pill and the phone line are drawn as a PAIR: with a line to show, the pill
+        // moves up one eyebrow line so the two together end where the pill alone used to,
+        // and nothing else on the page moves. Without one, this is the shipped screen.
+        var slot = phoneLineSlot(dc);
+        drawSavedPill(dc, pillY(dc, slot == PHONE_LINE_TOP));
+        if (slot != PHONE_LINE_NONE) {
+            drawPhoneLine(dc, slot == PHONE_LINE_TOP ? phoneLineY(dc) : phoneLineLowY(dc));
+        }
+    }
+
+    // ---- the direct transfer's progress (0.9.16, dev stream) ----
+    // "phone 4/13" while the recording's pages cross to the iPhone, "phone ok" when the
+    // stream is whole, nothing at all in every other stream and on every session that is
+    // not being sent (DirectSend.statusLine is a `(:notdev)` null everywhere else, so this
+    // call compiles in all three and draws in one).
+    //
+    // UNDER the pill and in the pill's own font: it is the same kind of sentence — an
+    // acknowledgement of something the watch is doing on the rider's behalf — and the eyebrow
+    // is where this page keeps those. Its own line rather than a suffix on SAVED, because
+    // the two change on different clocks: SAVED is true the moment he presses it and this
+    // counts for the next twenty seconds.
+    //
+    // It is dropped, never shrunk and never moved, when the line would touch the verdict's
+    // digits: the giant is the page, and on the fenix 5 Plus family (whose hero block starts
+    // 16 px higher than elsewhere, 0.9.13) that is a real collision and not a theoretical
+    // one. A progress line worth overprinting the session's verdict for does not exist.
+    hidden function drawPhoneLine(dc as Dc, y as Number) as Void {
+        var line = DirectSend.statusLine();
+        if (line == null) {
+            return;
+        }
+        dc.setColor(Ink.dim(), Graphics.COLOR_TRANSPARENT);
+        dc.drawText(dc.getWidth() / 2, y, Graphics.FONT_XTINY, line, CV);
+    }
+
+    // Where the phone line goes — and the answer moves the pill, so it has to be one
+    // question asked once. `DirectSend.statusLine` is a `(:notdev)` null outside the dev
+    // stream, so this is NONE there by construction and the page is byte for byte the one
+    // that shipped.
+    //
+    // TOP is the shape Jan asked for: the pill lifts one eyebrow line and the status line
+    // takes the band it vacated, so the pair ends where the pill alone used to. LOW is the
+    // fallback for a font set whose top arc has nothing to give — the fenix 5 Plus family,
+    // whose hero block starts 16 px higher than everyone else's (0.9.13), so savedY is
+    // already pinned against the verdict's digits and there is no line above it. There the
+    // status line goes to the bottom band instead, above the page dots, where that family
+    // has room precisely because its hero block sits high.
+    //
+    // NONE when neither holds it. The bottom band is not free on a wide glass: the pill
+    // itself lived there until 0.9.13 and on a 454 px screen it landed 6 px above the
+    // verdict's second sub-row, which is why that slot is guarded here rather than assumed.
+    static function phoneLineSlot(dc as Dc) as Number {
+        if (DirectSend.statusLine() == null) {
+            return PHONE_LINE_NONE;
+        }
+        var hT = dc.getFontHeight(Graphics.FONT_XTINY);
+        if (phoneLineY(dc) + hT / 2 < verdictDigitTop(dc) && pillY(dc, true) - hT / 2 >= 0) {
+            return PHONE_LINE_TOP;
+        }
+        return phoneLineLowY(dc) - hT / 2 > heroBlockBottom(dc)
+            ? PHONE_LINE_LOW : PHONE_LINE_NONE;
+    }
+
+    // The bottom slot: one eyebrow line above the page-position dots.
+    static function phoneLineLowY(dc as Dc) as Number {
+        return dc.getHeight() - dotBand(dc) - dc.getFontHeight(Graphics.FONT_XTINY);
+    }
+
+    // The lowest ink of the verdict page's hero block — the bottom of its second sub-row.
+    // Everything that wants the bottom band has to clear it; the pill did not, in 0.9.13.
+    static function heroBlockBottom(dc as Dc) as Number {
+        var cy = dc.getHeight() / 2;
+        var hN = RecordingView.inkH(dc, Graphics.FONT_NUMBER_THAI_HOT);
+        var hT = dc.getFontHeight(Graphics.FONT_XTINY);
+        var hL = dc.getFontHeight(Graphics.FONT_LARGE);
+        var hM = dc.getFontHeight(Graphics.FONT_MEDIUM);
+        return RecordingView.heroRowY(cy, hN, hT, hL, hM, 3, 2) + hM / 2;
+    }
+
+    // Ink centre of the pill. `lifted` is the phone line's presence: one XTINY line higher,
+    // so the pair occupies the band the pill alone used to end at.
+    //
+    // The lift is measured against the WORD, not the brand badge — which matters on the
+    // fenix 5 Plus family, where the lifted badge would leave the top of the glass by a few
+    // pixels and the word would not (measured, 20 Sep 2026: pill 33 -> 14 on a 240 px glass
+    // whose badge is 19 px tall). `lockupFits` is asked at the lifted y and answers no
+    // there, so what that family gets is the word alone with the line under it — which is
+    // the page that shipped before the badge existed, not a degraded one. Dropping the whole
+    // line to keep a 26x19 mark on an acknowledgement would be the wrong trade.
+    // Shared with the layout test.
+    static function pillY(dc as Dc, lifted as Boolean) as Number {
+        var y = savedY(dc);
+        return lifted ? y - dc.getFontHeight(Graphics.FONT_XTINY) : y;
+    }
+
+    // Ink centre of the phone line: where the pill sits when it is NOT lifted, i.e. one full
+    // eyebrow line under the lifted pill. Shared with the layout test, which asserts it
+    // clears the verdict giant's cap line on every glass it is drawn on.
+    static function phoneLineY(dc as Dc) as Number {
+        return savedY(dc);
     }
 
     // ---- S2 Speed ----
@@ -206,21 +313,24 @@ class SummaryView extends WatchUi.View {
             Ink.effortWindow(), false);
     }
 
-    // ---- S3 Flights ----
-    // `longestM` is tracked by FlightDetector on every flight and, until this page, was never
-    // shown anywhere.
+    // ---- S3 Foil ----
+    // The live FOIL table, verbatim, with the session's own final values in it — the third
+    // page unified with its live twin, after Turns (S4) and the Story (S6).
     //
-    // The two rows are ordered so that the LONGEST FLIGHT's two numbers sit together: the
-    // giant is its duration and row 1 is its distance, captioned "longest" so the pairing is
-    // stated and not merely implied. With the flight COUNT between them — which is what
-    // shipped in 0.8.1 — the eye read "7:04 · 31 · 2.2 km" as one series and the 2.2 km looked
-    // like the session's distance, which it is not; it is how far he went on one flight.
-    hidden function drawFlights(dc as Dc, c as SessionController) as Void {
-        var d = c.engine.detector;
-        drawHero(dc, PageModel.fmtTime(d.longestS), "longest flight",
-            (d.longestM / 1000.0).format("%.1f") + " km longest",
-            d.flightCount.toString() + " flights",
-            Graphics.COLOR_WHITE, false);
+    // It used to be a bespoke hero: the longest flight's duration as the giant, its distance
+    // under it, the flight count under that. Every one of those numbers is already on the
+    // live foil table — `max` is that flight's two numbers, side by side in the two columns
+    // that name them, and the count rides the title since this round — and the table says
+    // two more besides (the shares and the totals) that the hero had no room for. Two pieces
+    // of code drawing one session's foil numbers is how two screens start disagreeing about
+    // it, which is the argument S4 and S6 were already won on.
+    //
+    // The arc comes with it, keyed to the time share exactly as on the water. What the rider
+    // lands on after a save is therefore the page he has been reading all session, and the
+    // only difference is that the numbers have stopped moving.
+    hidden function drawFoil(dc as Dc, c as SessionController) as Void {
+        _painter.drawFoilPage(dc, c, true);
+        _painter.drawFoilBezel(dc, c);
     }
 
     // ---- S4 Turns ----
@@ -327,9 +437,8 @@ class SummaryView extends WatchUi.View {
     // mark signing an acknowledgement is what a lockup is for. It stays subordinate by
     // construction: the badge is cut to the height of the LINE (asserted), so the pair is one
     // eyebrow's worth of ink on the arc over a giant that owns the middle of the page.
-    hidden function drawSavedPill(dc as Dc) as Void {
+    hidden function drawSavedPill(dc as Dc, y as Number) as Void {
         var cx = dc.getWidth() / 2;
-        var y = savedY(dc);
         var bw = Brand.badgeW();
         // A save that failed says so, in red, without the badge: nothing to sign.
         var ok = getApp().controller.lastSaveOk;
@@ -337,7 +446,7 @@ class SummaryView extends WatchUi.View {
         var textW = dc.getTextWidthInPixels(word, Graphics.FONT_XTINY);
         dc.setColor(ok ? Graphics.COLOR_WHITE : Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
         // No room for the pair: the word alone, where it has always been.
-        if (!ok || !lockupFits(dc, bw, Brand.badgeH(), textW)) {
+        if (!ok || !lockupFits(dc, bw, Brand.badgeH(), textW, y)) {
             dc.drawText(cx, y, Graphics.FONT_XTINY, word, CV);
             return;
         }
@@ -373,9 +482,8 @@ class SummaryView extends WatchUi.View {
     //     eyebrow on a 454 px glass, because the block is centred with a unit line and two
     //     sub-rows under the number and the digits themselves sit well inside their band.
     static function lockupFits(dc as Dc, badgeW as Number, badgeH as Number,
-            textW as Number) as Boolean {
+            textW as Number, y as Number) as Boolean {
         var cy = dc.getHeight() / 2;
-        var y = savedY(dc);
         var half = lockupW(dc, badgeW, textW) / 2;
         if (y - badgeH / 2 < 0) {
             return false;

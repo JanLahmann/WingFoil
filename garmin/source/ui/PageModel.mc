@@ -58,9 +58,14 @@ module PageModel {
         // the two totals, the two bests — under one "min / km" pair of column headers. Bespoke
         // like MAIN/RECORDS/TURNS: no slot is read, because every cell on it is a foil number
         // and a configurable cell could only make it a worse version of the grid it replaced.
-        LAYOUT_FOIL = 10
+        LAYOUT_FOIL = 10,
+        // The LARGE page set's one and only layout (0.9.16): a single giant number, the word
+        // that says what it is a rung UP from every other caption on the watch, and — on the
+        // turns page alone — the outcome tally under it. Slot 1 carries the metric; no other
+        // slot is read. See `bigWord` and RecordingView.drawBigPage.
+        LAYOUT_BIG = 11
     }
-    const LAYOUT_MAX = 10;
+    const LAYOUT_MAX = 11;
 
     // Metric catalog. Values are the GCM list values — append only, never renumber.
     enum {
@@ -123,6 +128,24 @@ module PageModel {
         [M_NONE, M_NONE, M_NONE, M_NONE, M_NONE]
     ];
 
+    // ---- the two page SETS (0.9.16) ----
+    //
+    // "I need my glasses" (Jan and a tester, 20 September 2026). The standard set packs four
+    // to six numbers onto a screen; the LARGE set spends the whole glass on ONE. It is a
+    // Garmin Connect enum — `pageSet`, standard or large — and not a per-page editor,
+    // deliberately: one setting, no new properties per page, and it is the ONLY page control
+    // a release or beta build has, because the per-page editor is `(:dev)` since this round.
+    //
+    // The large set is FIVE pages and they are the five questions a rider asks between two
+    // jibes, one per screen: how fast, how much of it was flown, how the turns are going,
+    // what time it is, and the best run of the day. There is no editor for them and there is
+    // deliberately no map, no timeline and no table — a page you have to read is not a page
+    // this set is for.
+    const PAGE_SET_STANDARD = 0;
+    const PAGE_SET_LARGE = 1;
+    const BIG_PAGES = 5;
+    var BIG_SLOT as Array<Number> = [M_SPEED, M_FOIL_PCT, M_TURNS, M_CLOCK, M_BEST_2S];
+
     // ---- built state ----
     // `_layout`/`_slot` are indexed by CONFIG page (0..5); `_order` lists the configured pages
     // that are actually on, in order, and is what the UI cycles through.
@@ -138,6 +161,14 @@ module PageModel {
     // (the unit tests inject one, so "defaults reproduce the shipped pages" is assertable
     // without a device).
     function build(src as Dictionary?) as Void {
+        // The LARGE set answers before the properties are consulted: it is a whole page set,
+        // not a filter over the configured one, and a rider who switches to it and back must
+        // find his own pages exactly as he left them. `src` is the unit tests' injection seam
+        // and always wins, so the layout suite measures the same pages in every stream.
+        if (src == null && AppSettings.pageSet == PAGE_SET_LARGE) {
+            buildLarge();
+            return;
+        }
         var order = [] as Array<Number>;
         mapPage = false;
         for (var p = 0; p < MAX_PAGES; p++) {
@@ -165,12 +196,35 @@ module PageModel {
         _order = order;
     }
 
+    // The LARGE set, as data. Five LAYOUT_BIG pages carrying BIG_SLOT in slot 1 and nothing
+    // else; the other two configured pages are off. Nothing here reads a property — the set
+    // is fixed on purpose, which is what makes it the one page control every stream has.
+    function buildLarge() as Void {
+        mapPage = false;
+        var order = [] as Array<Number>;
+        for (var p = 0; p < MAX_PAGES; p++) {
+            var row = _slot[p];
+            for (var s = 0; s < SLOTS; s++) {
+                row[s] = M_NONE;
+            }
+            if (p < BIG_PAGES) {
+                _layout[p] = LAYOUT_BIG;
+                row[0] = BIG_SLOT[p];
+                order.add(p);
+            } else {
+                _layout[p] = LAYOUT_OFF;
+            }
+        }
+        _order = order;
+    }
+
     // Write the seven default screens back into the property store and rebuild — the
     // "Reset pages to defaults" switch in Garmin Connect (0.9.11). A stored property beats
     // properties.xml on an installed watch, so the defaults have to be WRITTEN, not merely
     // read: DEF_LAYOUT and DEF_SLOTS are the one table they come from, the same one build()
     // falls back on when a key is missing. Every key is written, off pages included, so the
     // rider gets exactly the fresh-install set and not a mixture.
+    (:dev)
     function restoreDefaults() as Void {
         for (var p = 0; p < MAX_PAGES; p++) {
             var key = "pg" + (p + 1).toString();
@@ -183,6 +237,16 @@ module PageModel {
         build(null);
     }
 
+    // Release and beta have no per-page editor and therefore nothing to reset TO: the
+    // defaults are the only pages those builds can ever show, so the switch's twin is a
+    // rebuild and nothing else. It stays callable so SessionController's settings path is
+    // one piece of code in all three streams.
+    (:notdev)
+    function restoreDefaults() as Void {
+        build(null);
+    }
+
+    (:dev)
     function _put(key as String, v as Number) as Void {
         try {
             Properties.setValue(key, v);
@@ -239,6 +303,21 @@ module PageModel {
             var injected = src.hasKey(key) ? src[key] : null;
             return injected instanceof Lang.Number ? injected as Number : dflt;
         }
+        return _store(key, dflt);
+    }
+
+    // ---- the per-page editor is a DEV experiment (0.9.16, docs/channels.md) ----
+    //
+    // The page properties (`pg<N>Layout`, `pg<N>s<M>`, `resetPages`) live in
+    // resources-dev/base/settings/ since this round, so a release or beta build has neither
+    // the Garmin Connect rows nor the code that reads them: `_store` there is the default
+    // table and nothing else, which is exactly what those builds already showed every rider
+    // who never opened the page list. Page CONTROL in those streams is the one enum the
+    // large set introduced (`pageSet`), which is the setting a rider asking for bigger text
+    // actually wants. Moving the editor up to beta is a jungle line and a resource move, and
+    // docs/channels.md names it as the candidate it is.
+    (:dev)
+    function _store(key as String, dflt as Number) as Number {
         try {
             var v = Properties.getValue(key);
             if (v instanceof Lang.Number) {
@@ -249,6 +328,11 @@ module PageModel {
             }
         } catch (e) {
         }
+        return dflt;
+    }
+
+    (:notdev)
+    function _store(key as String, dflt as Number) as Number {
         return dflt;
     }
 
@@ -279,6 +363,23 @@ module PageModel {
         if (id == M_STREAK) { return "dry run"; }
         if (id == M_FOIL_DIST_PCT) { return "foil dist"; }
         return "";
+    }
+
+    // The LARGE set's word: the one line under the giant, and the only place on the watch
+    // where a caption carries its unit rather than leaving it to a second row. There is
+    // exactly one other thing on the page, so the word can afford the two syllables that make
+    // "24.3" unambiguous — and a set built for a rider who cannot read the small print must
+    // not answer "24.3 what?" in the small print.
+    function bigWord(id as Number) as String {
+        if (id == M_SPEED) { return "speed " + AppSettings.speedLabel(); }
+        if (id == M_BEST_2S) { return "best 2s " + AppSettings.speedLabel(); }
+        if (id == M_BEST_10S) { return "best 10s " + AppSettings.speedLabel(); }
+        if (id == M_FOIL_PCT) { return "on foil"; }
+        if (id == M_TURNS) { return "turns"; }
+        if (id == M_CLOCK) { return "time"; }
+        if (id == M_DISTANCE) { return "km"; }
+        var cap = caption(id);
+        return cap.equals("") ? label(id) : cap;
     }
 
     // ---- the paired top band ----

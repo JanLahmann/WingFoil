@@ -39,80 +39,11 @@
     <!-- Phase 5: BLE summary card to the paired iPhone app after a save. -->
     <property id="phonePush" type="boolean">false</property>
 
-    <!-- Feature 1: data screens. Mirror of PageModel.DEF_LAYOUT / DEF_SLOTS; change both
-         together, and note which side wins: on a real device these defaults beat the code's,
-         so a page changed in only one place ships as the OLD page.
-         0.8.0: page 1 is LAYOUT_MAIN (9), the bespoke main screen.
-         0.8.2: its giant is slot 1 and defaults to M_BEST_10S (11), not live speed — a rider
-         reads the watch when he is NOT moving, and the live number then says nothing about
-         the run he just did. Set it to M_SPEED (1) to get the speedometer back. -->
-    <!-- 0.9.11: a switch that acts as a button — on = write the seven defaults below back
-         into the store and turn this off again (AppSettings.consumeResetPages). -->
-    <property id="resetPages" type="boolean">false</property>
-    <property id="pg1Layout" type="number">9</property>
-    <property id="pg1s1" type="number">11</property>
-    <property id="pg1s2" type="number">0</property>
-    <property id="pg1s3" type="number">0</property>
-    <property id="pg1s4" type="number">0</property>
-    <property id="pg1s5" type="number">0</property>
-    <!-- Page 2, the FOIL page (layout 10, LAYOUT_FOIL). It replaces the Session grid: a titled
-         3x2 table — the two foil shares, the two foil totals, the two bests — under one
-         "min / km" pair of column headers. The session odometer and the flight count left it
-         (neither is a foil number); both remain catalog metrics for any other slot, and the
-         count keeps its own summary screen.
-
-         READ THIS BEFORE CHANGING A DEFAULT HERE. A stored property beats this file: the
-         values below are written into a watch's property store on FIRST INSTALL, and an app
-         UPDATE leaves the ones already there alone. So a watch that already carries 0.8.2 with
-         pg2Layout = 2 keeps the Session grid — with its pair band, which is why the GRID4
-         renderer and PageModel.bandPartner are untouched and that page still looks right. Only
-         a fresh install picks the foil page up automatically; an existing one gets it by
-         setting "Page 2 layout" to "Foil" in Garmin Connect (or by reinstalling).
-
-         The SLOTS below are deliberately left at the old grid's five metrics even though
-         LAYOUT_FOIL reads none of them: switching page 2 back to "Grid" then restores exactly
-         the page that was there, and pg2s1 = 2 keeps the foil-% bezel arc on the page in
-         either layout (PageModel.pageDrawsFoilArc). -->
-    <property id="pg2Layout" type="number">10</property>
-    <property id="pg2s1" type="number">2</property>
-    <property id="pg2s2" type="number">5</property>
-    <property id="pg2s3" type="number">6</property>
-    <property id="pg2s4" type="number">7</property>
-    <property id="pg2s5" type="number">3</property>
-    <property id="pg3Layout" type="number">4</property>
-    <property id="pg3s1" type="number">0</property>
-    <property id="pg3s2" type="number">0</property>
-    <property id="pg3s3" type="number">0</property>
-    <property id="pg3s4" type="number">0</property>
-    <property id="pg3s5" type="number">0</property>
-    <property id="pg4Layout" type="number">5</property>
-    <property id="pg4s1" type="number">0</property>
-    <property id="pg4s2" type="number">0</property>
-    <property id="pg4s3" type="number">0</property>
-    <property id="pg4s4" type="number">0</property>
-    <property id="pg4s5" type="number">0</property>
-    <property id="pg5Layout" type="number">6</property>
-    <property id="pg5s1" type="number">8</property>
-    <property id="pg5s2" type="number">0</property>
-    <property id="pg5s3" type="number">0</property>
-    <property id="pg5s4" type="number">0</property>
-    <property id="pg5s5" type="number">0</property>
-    <property id="pg6Layout" type="number">8</property>
-    <property id="pg6s1" type="number">0</property>
-    <property id="pg6s2" type="number">0</property>
-    <property id="pg6s3" type="number">0</property>
-    <property id="pg6s4" type="number">0</property>
-    <property id="pg6s5" type="number">0</property>
-    <!-- Page 7, the breadcrumb MAP (layout 7). It ships ON: the page has existed since 0.7
-         but was never in the default set, and a rider who has to find "Map" in a layout list
-         in Garmin Connect never learns it is there. It goes last because it is the one page
-         that cannot be drawn into — no PAUSED banner, no state ring — which is also why the
-         pager skips it while paused. On a product without WatchUi.MapTrackView PageModel
-         turns it off, so those watches keep the six screens they had. Slots unused. -->
-    <property id="pg7Layout" type="number">7</property>
-    <property id="pg7s1" type="number">0</property>
-    <property id="pg7s2" type="number">0</property>
-    <property id="pg7s3" type="number">0</property>
-    <property id="pg7s4" type="number">0</property>
-    <property id="pg7s5" type="number">0</property>
+    <!-- 0.9.16: the page SET (AppSettings.pageSet, PageModel.PAGE_SET_*).
+         0 standard — the seven screens the app has always shipped.
+         1 large — five screens, one giant number and its word on each, for a rider who
+         cannot read four numbers on a wet glass at 25 kn. Mirror of PageModel's constants;
+         change both together. It is in EVERY stream: the per-page editor below it moved to
+         resources-dev/base/settings/ in the same round. -->
+    <property id="pageSet" type="number">0</property>
 </properties>

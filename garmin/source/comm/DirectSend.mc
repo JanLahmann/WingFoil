@@ -641,8 +641,10 @@ module DirectSend {
         }
         var list = a[2] as Array;
         if (list.size() == 0) {
-            // The stream is whole on the phone. Free it.
+            // The stream is whole on the phone. Free it, and say so twice: one short buzz
+            // and the status line the SAVED and start screens draw (statusLine).
             LinkProbe.append("cjr whole");
+            AlertManager.phoneStreamWhole();
             _stopTimer();
             _stopPacer();
             _pages = [] as Array<ByteArray>;
@@ -768,8 +770,16 @@ module DirectSend {
         }
     }
 
-    // One line for the SAVED screen and the probe results: "phone 4/13" while sending,
-    // "phone ok" when the stream is whole, null when there is nothing to say.
+    // One line for the SAVED screen, the START screen and the probe results: "phone 4/13"
+    // while pages are crossing, "phone ok" when the stream is whole, null when there is
+    // nothing to say.
+    //
+    // It is drawn in the eyebrow font under the SAVED pill (SummaryView.drawPhoneLine) and,
+    // because `restore()` brings an unfinished stream back across an app exit, on the START
+    // screen too — a rider who walked away mid-transfer and opened the app again the next
+    // morning is looking at the one screen that can tell him yesterday's session is still
+    // in the queue. Null on both when there is nothing waiting, so neither screen grows a
+    // row it does not need.
     (:dev)
     function statusLine() as String? {
         if (_pages.size() == 0) {

@@ -46,6 +46,15 @@ module AppSettings {
     // bottom row of a 2x2 grid.
     var showLabels as Boolean = true;
 
+    // ---- the page SET (0.9.16) ----
+    // standard = the seven screens the app has always shipped; large = five screens with one
+    // giant number each (PageModel.buildLarge). It is ONE enum, in EVERY stream, which is the
+    // whole design: the per-page editor went `(:dev)` in the same round, so this is the page
+    // control a release or beta rider has — and a rider who says "I need my glasses" wants a
+    // switch, not a page list. Out of range reads as standard, the way every other enum here
+    // takes its default rather than a clamp that would invent a set nobody chose.
+    var pageSet as Number = PageModel.PAGE_SET_STANDARD;
+
     // Did a wind axis EVER hold a real bearing this run? Sticky, and deliberately not the
     // same question as `cfg.windDirection >= 0`.
     //
@@ -105,6 +114,10 @@ module AppSettings {
         autoPauseDelayS = _clamped("autoPauseDelayS", 5.0, 2.0, 60.0).toNumber();
         showLabels = _bool("showLabels", true);
         phonePush = _bool("phonePush", false);
+        pageSet = _num("pageSet", PageModel.PAGE_SET_STANDARD.toFloat()).toNumber();
+        if (pageSet != PageModel.PAGE_SET_LARGE) {
+            pageSet = PageModel.PAGE_SET_STANDARD;
+        }
         // NOT `_clamped`, and the two exceptions are the same exception. A wind axis of 400
         // clamped to 359 is a bearing the rider never gave, and it would relabel every tack
         // as a jibe rather than leaving the turns generic; `Config.setWindDirection` reads
@@ -205,6 +218,7 @@ module AppSettings {
     // in Garmin Connect, the watch consumes it in onSettingsChanged — restores the pages and
     // turns the switch back off — and the next settings sync shows it off again. The same
     // write-back pattern as storeWindDirection above. Returns true exactly once per press.
+    (:dev)
     function consumeResetPages() as Boolean {
         if (!_bool("resetPages", false)) {
             return false;
@@ -214,6 +228,14 @@ module AppSettings {
         } catch (e) {
         }
         return true;
+    }
+
+    // No page editor outside the dev stream means no switch to reset it with: the property
+    // lives in resources-dev/base/settings/ since 0.9.16 and a release or beta build carries
+    // neither the Garmin Connect row nor this read. Never pressed, so never true.
+    (:notdev)
+    function consumeResetPages() as Boolean {
+        return false;
     }
 
     // ---- the dev stream's experiments (docs/channels.md, "The watch") ----
