@@ -62,7 +62,7 @@
     <!-- 0.9.16: the page SET. The only page control a release or beta watch has; the
          per-page editor's strings moved to resources-dev/base/strings/ with its settings. -->
     <string id="SetPageSet">Data screens</string>
-    <string id="SetPageSetNote">Standard: seven screens with several numbers on each. Large text: five screens, one big number and its word on each - speed, foil share, turns, time and your best 2 s. Pick large text if you ride without your glasses.</string>
+    <string id="SetPageSetNote">Standard shows seven screens with several numbers each. Large text shows five screens with one big number and its word. Pick large text if the standard screens are hard to read on the water.</string>
     <string id="PageSetStandard">Standard</string>
     <string id="PageSetLarge">Large text</string>
 </strings>
