@@ -528,16 +528,56 @@ and well clear of `turnClassifyMinAngle`.
 
 ### Glossary — four words that are not synonyms
 
-| word | what it is | where it lives |
-|---|---|---|
-| **flew through** | an *outcome*: the ladder found no touchdown and no fall in the tail past the sweep. One of three rungs, and the only one that is not a loss | `turn.outcome == "flew_through"` |
-| **carried** | the *score verdict*: `score ≥ turnSuccessPct` **and** the Doppler minimum stayed above `foilExitSpeed`. It says what the turn cost in speed and says nothing about how it ended | `turn.success` |
-| **clean** | **carried AND flew through AND quiet for `turnCleanQuietS` afterwards**, and only for a **jibe**. The product's headline verdict (engine ≥ 0.12.0; the quiet tail since 0.17.0). A strict subset of both | `turn.clean`, `turns.jibesSuccessful`, `cleanJibesPerHour`; `turn.cleanBlockedBy` says why not |
-| **dry** | outcome is **not** `fell_in` — flew through *or* touched down. "He did not swim out of it" | the JPH and (since 0.13.0) TPH numerators |
+**The rider-facing twin of this table is generated.** `ios/WingFoilKit/.../Presentation/
+MetricGlossary.swift` is the author, `docs/copy/glossary.json` is its artefact
+(`COPY_WRITE=1 swift test --filter CopyContractTests`), and every surface reads from it: the
+app's *What the numbers mean* topic, `/help/#numbers`, the welcome screen, and
+`GlossaryLintTests`, which fails when a rider-facing metric label is not one of its terms.
+This table stays the **engine's** names; the JSON carries the **rider's**, the one-line rule,
+every spelling a surface may print, and where each one shows. A word in one and not the other
+is the drift both exist to stop.
+
+| word | what it is | the rider's word | where it lives |
+|---|---|---|---|
+| **flew through** | an *outcome*: the ladder found no touchdown and no fall in the tail past the sweep. One of three rungs, and the only one that is not a loss | *Flew through* | `turn.outcome == "flew_through"` |
+| **carried** / **success** | the *score verdict*: `score ≥ turnSuccessPct` **and** the Doppler minimum stayed above `foilExitSpeed`. It says what the turn cost in speed and says nothing about how it ended | **Speed kept** (20 Sep 2026) | `turn.success`, `turns.successPct`, FIT `turn_success_pct` |
+| **clean** | **carried AND flew through AND quiet for `turnCleanQuietS` afterwards**, and only for a **jibe**. The product's headline verdict (engine ≥ 0.12.0; the quiet tail since 0.17.0). A strict subset of both | *Clean* | `turn.clean`, `turns.jibesSuccessful`, `cleanJibesPerHour`; `turn.cleanBlockedBy` says why not |
+| **dry** | outcome is **not** `fell_in` — flew through *or* touched down. "He did not swim out of it" | *Dry* | the JPH and (since 0.13.0) TPH numerators |
 
 They nest: clean ⊂ flew through ⊂ dry. `carried` cuts across all three, which is exactly why
 it needs its own word — a jibe can be carried and still swum out of, and before 0.12.0 that
 one was called clean.
+
+**"Speed kept", and why the score verdict needed a rider word at all** (20 September 2026). A
+tester compared three screens about one afternoon and read *Turn success 29 %* in Garmin
+Connect, *93 % flew through* on the website, and 44 % on the phone. All three were right. Two
+of them were called some form of *success*, and neither of those two was the same measurement
+as the other: Garmin Connect prints `turn_success_pct`, the score verdict over every counted
+turn, and the phone printed a *takeoff* success rate. CLAUDE.md has always said `success` and
+`carried` are engine-internal and appear in no rider-facing text; the watch's Connect IQ label
+was the one place the rule was not enforced, because the string lives in `garmin/` and the
+lexicon checker reads it as an ordinary English word. So the score verdict now has a word of
+its own on every rider surface — **Speed kept** — and the three numbers have three names:
+
+| the number | the word | where a rider meets it |
+|---|---|---|
+| `turns.successPct` — held ≥ `turnSuccessPct` of entry speed, never off the foil | **Speed kept** | the watch, FIT `turn_success_pct`, Garmin Connect |
+| the outcome ladder's green rung over the jibes | **Flew through** | the session page, the card, the website |
+| flights started ÷ pumping attempts | **Got up** | the session page's takeoff cards |
+
+The watch's own label change is **requested, not made**: `garmin/resources/strings/strings.xml`
+→ `FitTurnSuccess` must read `Speed kept` instead of `Turn success` (docs/fit-schema.md, field
+34). Field 34's id, type and semantics are untouched — this is a display label.
+
+**Falls: one channel, one number** (20 September 2026). The rider-facing falls count is
+`flightEnds.all.fellIn` — every fell-in flight end, in a turn or in a straight line — on the
+library row (`wetExits`), in the key-metrics block, on the share card and on the session
+page's *Fell in* card, and it is what WPH divides. It is *not* `outcomeSplit.falls`, which
+adds the turn ladder's `turns.outcomes.fellIn` to the flight-end channel's straight-line
+count: two different events, so a split printed under that total need not add up to it. The
+flight-end channel's does, by construction (`all == inTurn + straight`). The turn tally keeps
+its own three counts and says in its caption what they are out of ("of 57 jibes"). See "Wet is
+every fall, not every fallen jibe" below, which is the same rule stated for the rate.
 
 ### What a turn records — the shape, not only the endpoints (engine 0.11.0)
 

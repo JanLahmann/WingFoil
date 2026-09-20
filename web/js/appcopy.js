@@ -700,6 +700,198 @@ export const HELP = {
         },
         {
           "body": [
+            "One word per number, on the watch, on the phone, on the card and on the site. A number that is called two things on two screens is a bug here."
+          ],
+          "channels": [
+            "release",
+            "beta",
+            "dev"
+          ],
+          "id": "numbers",
+          "items": [
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail": "How much of the session was spent flying rather than merely moving. Also on the watch and in Garmin Connect.",
+              "term": "On foil"
+            },
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail": "One takeoff starts a flight. A touchdown or a swim ends it. Both are counted. Also on the watch and in Garmin Connect.",
+              "term": "Flights & touchdowns"
+            },
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail": "Every turn gets one: flew through, touchdown, or fell in. Also on the watch.",
+              "term": "Turn verdicts"
+            },
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail": "How many jibes in a row you stayed out of the water, and the best run of the day. Also on the watch.",
+              "term": "Dry streak"
+            },
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail": "Dry jibes per hour. Falling in more often cannot raise it.",
+              "term": "JPH"
+            },
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail": "Clean jibes per hour. Clean: flew through, held your speed, and 10 quiet seconds after. Also on the watch.",
+              "term": "CPH"
+            },
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail": "Turns per hour, every counted turn and not only the jibes. It stands in for JPH on a session whose wind axis named no jibes.",
+              "term": "TPH"
+            },
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail": "Swims per hour. The number nobody wants, kept honest anyway.",
+              "term": "WPH"
+            },
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail": "Your fastest 2 seconds, 10 seconds, 500 m and nautical mile. The speedsurfing world uses the same windows. Also on the watch and in Garmin Connect.",
+              "term": "Speed records"
+            },
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail": "The mean of your best five separate 10-second runs. They may not overlap, so one lucky reach cannot carry it.",
+              "term": "Best 5×10 s"
+            },
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail": "Your fastest 500 m that ends within 50 m of where it started. It contains a jibe, so it measures the turn as well as the speed.",
+              "term": "Alpha 500"
+            },
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail": "The turn kept the foil, from the sweep until you were flying again. Also on the watch.",
+              "term": "Flew through"
+            },
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail": "A jibe that flew through, held 70 % of its entry speed, and stayed quiet for 10 s. Also on the watch.",
+              "term": "Clean"
+            },
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail": "The share of counted turns that held 70 % of their entry speed and never dropped off the foil. Also on the watch and in Garmin Connect.",
+              "term": "Speed kept"
+            },
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail": "You did not fall in. A touchdown still counts as dry.",
+              "term": "Dry"
+            },
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail": "The foil went in and you kept going. Dry, and not clean. Also on the watch.",
+              "term": "Touchdown"
+            },
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail": "Every time you ended up in the water, in a turn or in a straight line. Also on the watch.",
+              "term": "Fell in"
+            },
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail": "How many times you got up on the foil. One takeoff starts every flight. Also on the watch.",
+              "term": "Takeoffs"
+            },
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail": "Every pumping burst, whether you got up or not. Attempts are takeoffs plus failed attempts. Also on the watch.",
+              "term": "Attempts"
+            }
+          ],
+          "related": [
+            "turnSuccess",
+            "turnOutcomes",
+            "speedRecords",
+            "divergence"
+          ],
+          "summary": "Every word CleanJibe counts with, and where each one shows.",
+          "title": "What the numbers mean"
+        },
+        {
+          "body": [
             "Every release, with the day it shipped. The iPhone app ships as TestFlight builds. The Garmin watch app ships as Connect IQ versions. The two number differently and land on different days."
           ],
           "channels": [
@@ -808,6 +1000,46 @@ export const HELP = {
           ],
           "summary": "Four steps, about five minutes, once.",
           "title": "Get set up with intervals.icu"
+        },
+        {
+          "body": [
+            "While the phone is idle, CleanJibe asks intervals.icu for new activity. It looks for windsurf, wing, kite, surf and SUP, from any watch that syncs there.",
+            "You hear about the ones that are not in your library yet. The session is downloaded and analysed in the background, so tapping the notification usually opens a finished analysis.",
+            "iOS decides when a background app may run. It learns your habits and may hold a check back for hours. It never runs in Low Power Mode.",
+            "It never runs while Background App Refresh is off, under Settings → General → Background App Refresh. Pull down on Sessions to sync now."
+          ],
+          "channels": [
+            "release",
+            "beta",
+            "dev"
+          ],
+          "id": "notifications",
+          "items": [
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail": "The check is a call to your intervals.icu account. Add the API key first, in Settings.",
+              "term": "It needs a key"
+            },
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail": "The switch itself is what asks iOS for permission. CleanJibe makes the offer once, after a key has been proved.",
+              "term": "Off by default"
+            }
+          ],
+          "related": [
+            "icuSetup",
+            "icuTroubleshooting"
+          ],
+          "summary": "Hear about a session while the phone is idle, and what decides whether you do.",
+          "title": "Notifications for new sessions"
         },
         {
           "body": [
@@ -1741,8 +1973,17 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "CleanJibe shows knots. The watch app has its own switch, under Garmin Connect → CleanJibe → Settings. Garmin Connect follows its own setting. Strava shows a windsurf session in knots.",
+              "detail": "Knots by default. Settings → Units switches every speed on the phone to km/h.",
               "term": "Knots or km/h"
+            },
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail": "The watch app has its own switch, under Garmin Connect → CleanJibe → Settings. Garmin Connect follows its own. Strava shows windsurf in knots.",
+              "term": "The other three readers"
             },
             {
               "channels": [
@@ -1816,6 +2057,24 @@ export const HELP = {
               ],
               "detail": "A detected maneuver on a session where the wind axis was too uncertain to name it. Still counted, just unnamed.",
               "term": "Turn"
+            },
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail": "Your track gives the wind axis as a line. When a session cannot say which end the wind blew from, your habit does.",
+              "term": "Most of my turns are"
+            },
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail": "Sessions already in your library change only when you re-run the analysis, from Settings → Storage.",
+              "term": "Changing it later"
             }
           ],
           "related": [
@@ -1895,7 +2154,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "The outcome: you kept the foil through the turn and through the recovery out of it. No touchdown, no swim.",
+              "detail": "The turn kept the foil, from the sweep until you were flying again. No touchdown, no swim.",
               "term": "Flew through"
             },
             {
@@ -1904,7 +2163,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "A jibe that flew through, held at least 70 % of its entry speed, and stayed quiet for 10 seconds. The jibe CPH counts.",
+              "detail": "A jibe that flew through, held 70 % of its entry speed, and stayed quiet for 10 s. The jibe CPH counts.",
               "term": "Clean"
             },
             {
@@ -1913,8 +2172,8 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "A tack has no clean reading to carry, so the Tacks card reports only how its tacks ended.",
-              "term": "Jibes only"
+              "detail": "The share of counted turns that held 70 % of their entry speed and never dropped off the foil. The watch shows it live and writes it into the FIT.",
+              "term": "Speed kept"
             },
             {
               "channels": [
@@ -1924,6 +2183,15 @@ export const HELP = {
               ],
               "detail": "You did not fall in. A touchdown still counts as dry. JPH counts dry jibes per hour, so it never sits below CPH.",
               "term": "Dry"
+            },
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail": "A tack has no clean reading to carry, so the Tacks card reports only how its tacks ended.",
+              "term": "Jibes only"
             },
             {
               "channels": [
@@ -1964,7 +2232,8 @@ export const HELP = {
         {
           "body": [
             "A fall means you stopped for more than 5 seconds, or the barometer caught your wrist going under.",
-            "The split matters. Falls in turns are a maneuver problem. Falls in a straight line are a gust, a ventilation or a tip catching. Each fall is counted once. A fall inside a turn's window belongs to that turn."
+            "The split matters. Falls in a turn are a maneuver problem. Falls in a straight line are a gust, a ventilation or a tip catching. Each fall is counted once. A fall inside a turn's window belongs to that turn.",
+            "The jibe tally is a different question. Its three counts are out of your jibes, so a fall in a straight line is not in them. This number is the session."
           ],
           "channels": [
             "release",
@@ -1978,8 +2247,8 @@ export const HELP = {
             "touchdowns",
             "glideOuts"
           ],
-          "summary": "Every fall, split into the ones in turns and the ones in a straight line.",
-          "title": "Falls"
+          "summary": "Every time you ended up in the water, in a turn or in a straight line.",
+          "title": "Fell in"
         },
         {
           "body": [
@@ -2028,9 +2297,9 @@ export const HELP = {
       "topics": [
         {
           "body": [
-            "Attempts = flights + failed attempts. A pumping burst counts as a failed attempt when no flight starts within 10 seconds of your last stroke. Bursts closer together than that are chained into one attempt.",
-            "Flights alone cannot show this. Getting up 20 times out of 22 looks like getting up 20 out of 40.",
-            "It needs the wrist accelerometer, which only the CleanJibe watch app records. Without it your failures are invisible, so the success rate is shown as unknown rather than a flattering 100 %."
+            "Attempts are takeoffs plus failed attempts. A pumping burst is a failed attempt when no flight starts within 10 seconds of your last stroke. Bursts closer together than that are chained into one attempt.",
+            "Takeoffs alone cannot show this. Getting up 20 times out of 22 looks like getting up 20 out of 40.",
+            "It needs the wrist accelerometer, which only the CleanJibe watch app records. Without it your failures are invisible, so the share is shown as unknown rather than a flattering 100 %."
           ],
           "channels": [
             "release",
@@ -2038,14 +2307,33 @@ export const HELP = {
             "dev"
           ],
           "id": "takeoffAttempts",
-          "items": [],
+          "items": [
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail": "How many times you got up on the foil. One takeoff starts every flight. The watch counts the same event.",
+              "term": "Takeoffs"
+            },
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail": "Every pumping burst, whether you got up or not. Attempts are takeoffs plus failed attempts. Both are printed, side by side.",
+              "term": "Attempts"
+            }
+          ],
           "related": [
             "pumpsToTakeoff",
             "sourceClass",
             "heartRate"
           ],
-          "summary": "How often you pumped, including the times you did not get up.",
-          "title": "Attempts & success rate"
+          "summary": "how often you pumped, including the times you did not get up.",
+          "title": "Attempts & getting up"
         },
         {
           "body": [

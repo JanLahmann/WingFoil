@@ -100,5 +100,45 @@ export const GLOSSARY = [
     "id": "alpha500",
     "term": "Alpha 500",
     "line": "Your fastest 500 m that ends within 50 m of where it started. It contains a jibe, so it measures the turn as well as the speed."
+  },
+  {
+    "id": "flewThrough",
+    "term": "Flew through",
+    "line": "The turn kept the foil, from the sweep until you were flying again."
+  },
+  {
+    "id": "clean",
+    "term": "Clean",
+    "line": "A jibe that flew through, held 70 % of its entry speed, and stayed quiet for 10 s."
+  },
+  {
+    "id": "speedKept",
+    "term": "Speed kept",
+    "line": "The share of counted turns that held 70 % of their entry speed and never dropped off the foil."
+  },
+  {
+    "id": "dry",
+    "term": "Dry",
+    "line": "You did not fall in. A touchdown still counts as dry."
+  },
+  {
+    "id": "touchdown",
+    "term": "Touchdown",
+    "line": "The foil went in and you kept going. Dry, and not clean."
+  },
+  {
+    "id": "fellIn",
+    "term": "Fell in",
+    "line": "Every time you ended up in the water, in a turn or in a straight line."
+  },
+  {
+    "id": "takeoffs",
+    "term": "Takeoffs",
+    "line": "How many times you got up on the foil. One takeoff starts every flight."
+  },
+  {
+    "id": "takeoffAttempts",
+    "term": "Attempts",
+    "line": "Every pumping burst, whether you got up or not. Attempts are takeoffs plus failed attempts."
   }
 ];

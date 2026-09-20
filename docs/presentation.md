@@ -2255,7 +2255,10 @@ CataloguesAsTheCode` on iOS, `verify_presentation.py` §1 for the analyzer).
 | flying, as a share | **`On foil`** | the percentage; the iOS card that showed a percentage under "Foil time" was renamed |
 | the outcomes, as nouns | **`flew through`** · **`touchdown`** · **`fell in`** | `touched down` only inside a sentence; the compact tally keeps `flew · touchdown · fell` |
 | the strict jibe verdict | **`clean`** / **`Clean jibes`** | see the spelling contract above |
-| the score verdict | **never printed** | see "Clean jibe": `success` is internal, and "carried" is retired |
+| the score verdict | **`Speed kept`** | 20 Sep 2026. Printed on the watch, in FIT `turn_success_pct` and in Garmin Connect, and **nowhere on the phone**. `success` and `carried` stay internal |
+| every fall of the session | **`Fell in`** / **`fell in`** | the flight-end channel, straight-line swims included — the row, the block, the card and the session-page card, one number |
+| getting up | **`Takeoffs`** and **`Attempts`**, and **`Got up`** for the share | `Success rate` is retired; `Planing starts` is the windsurf lexicon's spelling of `Takeoffs` |
+| the speed unit | **`kn`** / **`km/h`**, from Settings → Units | one formatter (`Speed`); the engine stays in knots |
 
 **The glossary is held to this table too, since 15 September 2026.** `MetricGlossary` — and
 therefore `docs/copy/glossary.json`, the welcome screen's four highlights and `/learn`'s
@@ -2265,6 +2268,38 @@ obeyed them: the shared source was the one surface still teaching the spelling t
 rules out, on the one screen where a stranger learns the word. The entries now say `On foil`
 and `touchdown`; the participle stays where it belongs, inside a sentence
 (`WelcomeGuide.lede`, both store descriptions, and each entry's own `sentence` field).
+
+### The definitions round — 20 September 2026
+
+Jan: *"the definitions of the numbers are important to clarify, make transparent, and
+consistent across all surfaces."* A tester had read three numbers about one afternoon —
+*Turn success 29 %* in Garmin Connect, *93 % flew through* on the website, 44 % on the
+phone — and three more that did not agree with his memory. What changed:
+
+1. **One glossary, one source.** `MetricGlossary` gained `places` (where a term shows),
+   `labels` (every spelling a surface may print) and `fit` (the developer field behind it).
+   `docs/copy/glossary.json` is its artefact; the app's *What the numbers mean* topic and
+   `/help/#numbers` are both rendered from it, and `GlossaryLintTests` fails on a
+   rider-facing metric label that is in no entry and on no allow-list.
+2. **The score verdict is `Speed kept`** (see the label table above and docs/fit-schema.md's
+   box on field 34). The phone's takeoff *success rate* became **`Got up`**, and the turn
+   outcome stays **`Flew through`**. Three measurements, three words.
+3. **Falls are the session's falls.** The library row offers a `fell in` cell
+   (`RowMetric.falls`, from `wetExits`), the key-metrics block and the share card carry a
+   `fell in` cell with the split in its caption, and the session page's card reads the
+   flight-end channel on both halves so the caption adds up to the value. The turn tally is
+   unchanged and its caption still says what its three counts are out of.
+4. **Takeoffs and attempts are printed side by side** on the session page, each naming the
+   other, because the watch counts attempts and the phone counted flights.
+5. **Settings → Units** is on the phone as well as the browser. Every speed the phone prints
+   goes through `Speed`; `SpeedUnitTests` scans for a second formatter. **Still knots on
+   purpose:** the four Swift Charts axes (speed chart, turn strip, flight-end strip, Trends)
+   plot a knots series, so the axis label moves in the round that converts the domains.
+6. **Settings footers are one line each** (pattern K). Every `Section(footer:)` prints its
+   `SettingsCopy.lead` and a row that opens the section's help topic. The seven-paragraph
+   Notifications footer is `HelpTopicID.notifications`; the Analysis footer's rig paragraphs
+   were already in `HelpTopicID.windsurf`, and its wind paragraphs in `.turnTypes` and
+   `.windAxis`.
 
 **Percentages: one rule.** A share prints **one decimal below 10 %, none at or above it,
 always with a space before the sign** — `47 %`, `4.5 %`. The magnitude switch is for the

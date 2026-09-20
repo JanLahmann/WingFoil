@@ -6,7 +6,7 @@
 
 Source: ``docs/copy/help.json``, written out of ``HelpCatalog`` by the kit's
 ``HelpExportTests`` (``COPY_WRITE=1 swift test --filter HelpExportTests``), plus
-``docs/copy/glossary.json`` for the eleven metric one-liners that open the page.
+``docs/copy/glossary.json`` for the nineteen metric one-liners that open the page.
 
 Jan, 19 September 2026: *"one product, three shells"* — iOS is the reference and the web is
 the port. ``/learn/`` was the counter-example: eleven glossary lines and four questions,
@@ -17,7 +17,7 @@ rendered, from the same catalogue the phone renders, and ``/learn/`` is a redire
 
 WHAT IT RENDERS, into the block between ``<!-- help:begin -->`` and ``<!-- help:end -->``:
 
-1. **What the numbers mean** — the eleven ``glossary.json`` entries as a definition list
+1. **What the numbers mean** — the nineteen ``glossary.json`` entries as a definition list
    marked ``data-copy="glossary"``, which is the pin ``web/tools/verify_copy.py`` holds. It
    was ``/learn/``'s job and it is the one thing on this page that is not a help topic: a
    rider who followed a metric's name here wants the one-liner, not a page.
@@ -76,8 +76,18 @@ def html_text(text: str) -> str:
     return out.replace("→", "&rarr;")
 
 
+#: Topics this page does **not** print as a fold, and why.
+#:
+#: `numbers` is the glossary, and the glossary is section 1 of this page already — the
+#: phone needs a topic because its Help has no section 1, the site does not. Printing both
+#: would put the same nineteen sentences on one page twice (`verify_unique.py`).
+SKIP_TOPICS = {"numbers"}
+
+
 def public(row: dict) -> bool:
     """A topic or an item this site may print at all."""
+    if row.get("id") in SKIP_TOPICS:
+        return False
     return any(channel in WEB_CHANNELS for channel in row["channels"])
 
 
@@ -88,28 +98,78 @@ def pill(row: dict) -> str:
 
 # --------------------------------------------------------------------------- the glossary
 
+#: The rider's word for a `places` value, and the group it reads as. A definition list
+#: that spells eight screens in one sentence is a list, not a sentence, and docs/voice.md
+#: budgets a sentence at twenty words — so the screens he holds are one clause and the two
+#: machine-readable places (the FIT field, the Garmin Connect row) are a second.
+PLACE_WORDS = {
+    "watchPage": "the watch",
+    "phoneRow": "the phone",
+    "phonePage": "the phone",
+    "card": "the share card",
+    "web": "the website",
+}
+
+
+def where_it_shows(entry: dict) -> str:
+    """``where it shows``, from ``places`` and ``fit`` — the 20 September 2026 fields.
+
+    Jan, that day: *"the definitions of the numbers are important to clarify, make
+    transparent, and consistent across all surfaces."* A tester had compared three screens
+    about one afternoon and read three numbers. Naming the screens a word shows on is what
+    lets the next reader do that comparison and come out right.
+
+    ``help`` is dropped: it is this page, and nineteen rows saying so say nothing.
+    """
+    seen, words = set(), []
+    for place in entry.get("places", []):
+        word = PLACE_WORDS.get(place)
+        if word and word not in seen:
+            seen.add(word)
+            words.append(word)
+    out = []
+    if words:
+        joined = words[0] if len(words) == 1 \
+            else ", ".join(words[:-1]) + " and " + words[-1]
+        out.append("Shows on " + joined + ".")
+    if "fitField" in entry.get("places", []) and entry.get("fit"):
+        out.append("In the FIT as " + entry["fit"] + ".")
+    if "connectField" in entry.get("places", []):
+        out.append("Garmin Connect prints it.")
+    return " ".join(out)
+
+
 def render_glossary(entries: list[dict]) -> list[str]:
-    """The eleven one-liners, in the JSON's order — the pin verify_copy.py holds.
+    """The nineteen one-liners, in the JSON's order — the pin verify_copy.py holds.
 
     ``/learn/`` carried a twelfth of its own, *Pump & takeoff effort*, marked
     ``glossary-extra``. It is gone from here on purpose rather than forgotten: the pump
     strokes have a help topic of their own three folds down, which is a page rather than a
     line, and rule 10 of docs/voice.md asks only that the fact keep a home.
+
+    **Where it shows rides in an aside** (20 September 2026). ``verify_copy.py`` compares a
+    pinned element's text with any ``data-copy="aside"`` descendant removed, which is how a
+    row can carry a pill and still *be* the JSON's sentence. The places line is the same
+    kind of thing: the ``line`` is the definition and the aside is the index of screens
+    that print it, so the pin stays exactly the kit's sentence.
     """
     lines = [
         '  <section class="home-section" id="numbers">',
         "    <h2>What the numbers mean</h2>",
         '    <p class="section-lede">',
-        "      Eleven words, one line each. The app prints the same line beside the same",
-        "      number. Tap a word&rsquo;s page below for the whole of it.",
+        "      Nineteen words, one line each, and the screens each one shows on. The app",
+        "      prints the same line beside the same number.",
         "    </p>",
         '    <dl class="terms" data-copy="glossary">',
     ]
     for entry in entries:
+        places = where_it_shows(entry)
+        aside = (f' <span class="muted small" data-copy="aside">{places}</span>'
+                 if places else "")
         lines += [
             '      <div class="term">',
             f"        <dt>{html_text(entry['term'])}</dt>",
-            f"        <dd>{html_text(entry['line'])}</dd>",
+            f"        <dd>{html_text(entry['line'])}{aside}</dd>",
             "      </div>",
         ]
     lines += ["    </dl>", "  </section>", ""]

@@ -106,7 +106,7 @@ of headroom; app 0.9.0 spent it on `wind_dir_auto`(44). Declared in one place:
 | 31 | `alpha500_lite` | uint16 | cm/s | — | watch approximation; phone computes exact |
 | 32 | `tack_count` | uint8 | count | summary | written only when the wind axis was set; saturates at 254 |
 | 33 | `jibe_count` | uint8 | count | summary | as `tack_count` |
-| 34 | `turn_success_pct` | uint8 | % | summary | successful / attempted turns (score ≥ `turnSuccessPct` and never off the foil), over *all* counted turns including the generic ones |
+| 34 | `turn_success_pct` | uint8 | % | summary | turns that **kept their speed** / attempted turns (score ≥ `turnSuccessPct` and never off the foil), over *all* counted turns including the generic ones. **Garmin Connect must label this row `Speed kept`** — see the box below |
 | 38 | `total_pump_strokes` | uint16 | strokes | — | **watch-written**: strokes in qualifying bursts (≥ `pumpMinStrokes`, burst peak ≥ `pumpBurstPeakG`, speed ≥ `pumpMinSpeedKmh` — engine ≥ 0.8.0's rules, live-approximated). Watches on app ≤ 0.9.2 still write every detected peak; the phone recomputes and is authoritative |
 | 39 | `wind_dir_user` | uint16 | deg | — | the axis the **RIDER** set: direction the wind blows **from**, true; 65535 = unset. Set in GCM (`windDirDeg`) or on the watch (BACK → Session → Wind, 16 compass points). The value written is the one in effect at save; the watch classifies only turns detected *after* it was set, so a mid-session change can leave earlier turns generic — the phone re-runs classification over the whole track and is authoritative |
 | 44 | `wind_dir_auto` | uint16 | deg | — | the axis the **WATCH** estimated for itself (device app ≥ 0.9.0, docs/algorithms.md "Watch approximation: auto wind"); 65535 = the estimator never locked or was switched off. Same units and meaning as 39, and deliberately a *separate* field: one is the rider's word and the other an inference from an hour of course headings, and only the first may be shown as fact. Either, both or neither may be present — both means the rider set an axis part-way through a session the watch had already estimated |
@@ -117,6 +117,27 @@ of headroom; app 0.9.0 spent it on `wind_dir_auto`(44). Declared in one place:
 
 Fields 28–31 (`best_5x10s`, `best_500m`, `best_nm`, `alpha500_lite`) are **reserved, not
 written**: the phone computes them exactly and there is no field slot to spare.
+
+> ### ⚠️ Field 34's Garmin Connect label: **`Turn success` → `Speed kept`** (requested 20 Sep 2026)
+>
+> `garmin/resources/strings/strings.xml` → `<string id="FitTurnSuccess">` reads **`Turn
+> success`** today, and that string is what a rider sees on the Garmin Connect activity page
+> under *Connect IQ*. It must read **`Speed kept`**.
+>
+> **Why.** CLAUDE.md: *"success" and "carried" are engine-internal and appear in no
+> rider-facing text*. This label is the one place the rule was never enforced, because the
+> lexicon checker reads `garmin/resources/strings` and cannot tell the engine's word from the
+> ordinary English one. The cost was measured on 19 September 2026: a tester compared *Turn
+> success 29 %* in Garmin Connect with *93 % flew through* on the website and a 44 % on the
+> phone, and had no way to learn those are three different measurements — two of them wearing
+> one word (docs/algorithms.md, "Glossary — four words that are not synonyms").
+>
+> **Scope.** A **display label only**. Field id 34, its type, its units, its semantics and
+> every parser stay exactly as they are; `SCHEMA_VERSION` does not move. The same word is the
+> one the watch's own pages should use where they print this percentage, and it is
+> `docs/copy/glossary.json` → `speedKept` on every other surface already.
+>
+> The change is not made here: `garmin/` is ported separately, and this box is the order.
 
 **`tack_count`/`jibe_count` are written only when a wind axis was in effect — of EITHER
 kind.** Naming a sweep a tack or a jibe needs a wind direction. Until device app 0.9.0 the
@@ -232,7 +253,7 @@ plus the phone's own jibe classification, which is what `cleanJibesPerHour` alre
 | 27 | `best_10s` | uint16 | 2 | cm/s |
 | 32 | `tack_count` | uint8 | 1 | saturates at 254 |
 | 33 | `jibe_count` | uint8 | 1 | |
-| 34 | `turn_success_pct` | uint8 | 1 | |
+| 34 | `turn_success_pct` | uint8 | 1 | same meaning and the same **`Speed kept`** label as the device app's field 34 |
 | 39 | `wind_dir_user` | uint16 | 2 | 65535 = unset |
 | 43 | `app_version` | uint16 | 2 | high byte app minor, low byte `SCHEMA_VERSION` — still **1** here: the class-(d) schema below is unchanged by the device app's v1→v2 packing, and it was already packed. This is exactly why a parser keys off field *presence*, not the version number |
 | 50 | `turn_outcomes` | uint32 | 4 | **packed**: `flew << 16 \| touchdown << 8 \| fell`, each uint8 saturating at 254 |
