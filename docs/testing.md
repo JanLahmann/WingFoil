@@ -1321,6 +1321,87 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    its resolution is already covered. Start one simulator per run and kill it afterwards: two
    `monkeydo` processes against one simulator hang rather than fail.
 
+   **The watch's crash hunt** (0.9.14, `fuzz*` / `crashBreadcrumb*` in
+   `garmin/tests/WingfoilTests.mc`). The phone's hunt exists because a stranger's FIT is a
+   door nobody here has walked through; the watch's exists because **a Connect IQ device has
+   no crash reporting at all**. An unhandled exception drops the rider to the watch face and
+   writes `GARMIN/APPS/LOGS/CIQ_LOG.YML` onto a watch on a beach, and the session goes with
+   it. Three doors are fuzzed, and the bar is the phone hunt's — *finish, or throw something
+   named; never trap*.
+
+   **Four ways to die on this runtime are NOT catchable**, which is why every fix in this
+   round is a guard and never a `catch` (measured on fenix847mm, SDK 9.2, each inside a
+   `try`/`catch` that did not fire):
+
+   | expression | what happens |
+   |---|---|
+   | `1.0 / 0.0` | `Error: Invalid Value`, uncaught — the Float division itself, not `.toNumber()` |
+   | `0.0 / 0.0` | the same |
+   | `5 / 0` | the same |
+   | `a[past the end]` | `Error: Array Out Of Bounds`, uncaught |
+
+   Two that *are* survivable and worth knowing: `null > 0` throws a catchable
+   `UnexpectedTypeException`, and `Float.toNumber()` **saturates** at ±2147483647 rather than
+   trapping. `Properties.setValue` accepts a String, a Float or a null into a property
+   declared `number` and hands it straight back, so a settings type check is not paranoia.
+
+   - **the sensor door** — `fuzzSensorDoorSurvivesEveryDegenerateFix` drives twenty fix
+     shapes five ticks each through `SessionController.onPosition`: no position, no speed, no
+     heading, no altitude, no accuracy, `QUALITY_NOT_AVAILABLE`, an accuracy outside the enum,
+     speed 0 all session, 300 m/s, negative, a Number where a Float belongs, a heading of
+     ±1e9 rad, an altitude of 1e9 m, the poles, the antimeridian, an Info with every member
+     null, and a null fix. `fuzzTheClockRunsBackwardsAndWraps` adds a 30 s gap, a sample that
+     arrives before the one before it, and the `System.getTimer` wrap (~24.8 days of uptime,
+     which a watch that is never rebooted reaches). The drive loops move the clock through
+     `MetricsEngine.clockMsOverride`, a test seam: `tick()` reads dt from `System.getTimer()`,
+     so twenty thousand calls in a loop would all see dt ≈ 0 and exercise nothing.
+   - **the settings door** — `fuzzSettingsClampWhateverTheStoreSays` writes 0, −1, a huge
+     Number, a Float, a String and null into fourteen properties in turn and asserts that
+     every threshold still lands inside docs/algorithms.md and that the rider is never left
+     with a blank watch. `AppSettings.load` clamps to the same min/max
+     `resources/settings/settings.xml` declares; Garmin Connect enforces those on the slider
+     and nothing enforces them on the value that arrives.
+   - **the phone door** — `fuzzPhoneMessagesNeverThrow` puts twenty-six malformed messages
+     through `PhoneLink.applyMessage`: not a dictionary, empty, wind as a Float / a String /
+     −2 / 360 / null / 20 KB, a snapshot with the wrong schema, a 0×0 grid, a 100000×100000
+     one, a 20 KB name, and `cjrAck`/`cjrNeed` in every shape `DirectSend` can be handed. It
+     also plants a half-written map slot in Storage — the shape an older build leaves — and
+     asserts the draw path refuses it rather than dividing by its grid.
+   - **the accelerometer door** — `fuzzAccelBatchesSurviveEveryShape`: null arrays, an empty
+     batch, one sample, a hundred, a ragged trio, **nulls inside the arrays**, saturated
+     magnitudes, and the timer wrap between two batches.
+   - **six hours at 1 Hz** — `fuzzSixHoursAtOneHertzHoldItsMemory` drives 21 600 ticks with
+     `System.getSystemStats()` either side.
+
+   | device | used before → after | growth | 14 direct-stream pages held → freed |
+   |---|---|---|---|
+   | `fenix847mm` | 284 248 → 287 344 B | **+3 096 B** | 275 304 → 383 872 → 275 384 B (+80 B) |
+   | `fenix7s` | 284 136 → 287 232 B | **+3 096 B** | 275 192 → 383 760 → 275 272 B (+80 B) |
+   | `fenix5plus` | 345 952 → 349 048 B | **+3 096 B** | 337 008 → 445 576 → 337 088 B (+80 B) |
+
+   The same number on all three is what a chain with no per-tick allocation looks like — the
+   track buffer, the timeline and the sweep log are fixed arrays, and the breadcrumb's stride
+   doubles rather than the buffer growing. **These are the SIMULATOR's numbers**: it reports
+   an 8 MB heap where a fenix 8 gives the app 786 KB, so what the run proves is the growth and
+   not the device's headroom. The free-memory floor the test asserts (> 100 KB) is a smoke
+   alarm. Six hours takes about a minute per device.
+
+   **The crash breadcrumb** (`CrashBreadcrumb`, `crashBreadcrumbCountsAnUnclosedRun`). Three
+   Storage keys stand in for the crash reporting the platform does not have: `runOpen` is set
+   in `onStart` and cleared in `onStop`, so finding it at the next start means the previous
+   run never closed; `crashCount` counts those; `lastView` is the screen it was on, written
+   by the views' `onShow` and **deduped**, one write per view change and never per frame. The
+   count rides to the phone on the summary card as `cx` — twenty-two keys, 201 B of the
+   1024 B budget, so it fits with room to spare — and the dev build also writes
+   `crashes N (last: view)` onto the link probe's Results page at start. It cannot see *why*,
+   and a battery pulled mid-session counts as a crash; what it buys is a number a tester can
+   read and a page name to look at first.
+
+   Running the hunt: it is part of the suite, so `monkeydo <prg> <device> -t` runs it. All
+   three devices and both streams were green on 20 September 2026 — `monkey-dev.jungle`
+   116/116 on fenix847mm, fenix7s and fenix5plus, `monkey.jungle` 111/111 on fenix5plus (the
+   five `(:test :dev)` cases are excluded there).
+
    **Round-display layout tests.** Six pages plus the summary are measured against the chord
    at each row's own depth, at worst-case content, with the device's real font metrics:
    `mainPageFitsRoundDisplay`, `heroPageFitsRoundDisplay`, `gridAndCellsPagesFitRoundDisplay`,

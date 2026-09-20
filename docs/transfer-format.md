@@ -169,6 +169,16 @@ The card (`PhoneLink.summary`) is sent as before, its own message after save, an
 before, between or after the pages. It is told from a page by its key, and the two paths
 never take each other's messages.
 
+**The card gained a key on 20 September 2026: `cx`, the crash count** (`CrashBreadcrumb`,
+docs/testing.md "The watch's crash hunt"). Connect IQ has no crash reporting, so the number of
+runs that never reached `onStop` on that watch is only ever visible on the watch itself unless
+something carries it off; the card is the only channel there is. Always present, `0` on a watch
+that has never lost a run. Twenty-two keys now, 201 B of the 1024 B budget
+(`phoneLinkPayloadFitsBudget`). **The phone does not read it yet** — the iOS side has to take
+`cx` off the card, keep it with the session's watch summary and put it in the feedback mail's
+diagnostics block beside the phone's own "Recent crashes" (`CrashDiagnosticsTests`), which is
+where a tester's number becomes a report we can act on.
+
 **What the stream itself carries of the session block is the wind axis**: the header's
 `wind_dir` lands in `RawTrack.watchSummary.windDirUserDeg`, where the FIT parser puts
 `SES_WIND_DIR`, so the turn namer and the wind estimator read one channel whichever door a
