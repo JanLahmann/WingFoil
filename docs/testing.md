@@ -1393,7 +1393,11 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    by the views' `onShow` and **deduped**, one write per view change and never per frame. The
    count rides to the phone on the summary card as `cx` — twenty-two keys, 201 B of the
    1024 B budget, so it fits with room to spare — and the dev build also writes
-   `crashes N (last: view)` onto the link probe's Results page at start. It cannot see *why*,
+   `crashes N (last: view)` onto the link probe's Results page at start. **The phone's half**
+   is three suites in the kit: `CompanionTests` (a card with `cx`, without it, and with an
+   unreadable one — only the first carries a number and none of the three is refused),
+   `MigrationTests.v18AddsTheWatchCrashCountAndLeavesOldRowsUnanswered` (the column, and every
+   older row NULL), and `CrashDigestTests` (the mail's three states). It cannot see *why*,
    and a battery pulled mid-session counts as a crash; what it buys is a number a tester can
    read and a page name to look at first.
 

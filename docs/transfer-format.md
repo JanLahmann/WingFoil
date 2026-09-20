@@ -174,10 +174,17 @@ docs/testing.md "The watch's crash hunt"). Connect IQ has no crash reporting, so
 runs that never reached `onStop` on that watch is only ever visible on the watch itself unless
 something carries it off; the card is the only channel there is. Always present, `0` on a watch
 that has never lost a run. Twenty-two keys now, 201 B of the 1024 B budget
-(`phoneLinkPayloadFitsBudget`). **The phone does not read it yet** — the iOS side has to take
-`cx` off the card, keep it with the session's watch summary and put it in the feedback mail's
-diagnostics block beside the phone's own "Recent crashes" (`CrashDiagnosticsTests`), which is
-where a tester's number becomes a report we can act on.
+(`phoneLinkPayloadFitsBudget`). **The phone reads it since 20 September 2026.**
+`CompanionSummary` takes `cx` off the card as the one **optional** key on it — absent,
+unreadable or past 999 all decode to nil, and never to a refused card, because a watch older
+than 0.9.14-dev6 or newer than this app still has a session to land. `SessionIngestor` keeps
+the number on the session the card wrote (`SessionRow.watchCrashes`, GRDB **v18**; a card
+that says nothing leaves the last number standing), and the beta feedback mail prints it
+under the phone's own "Recent crashes": *Watch app: 3 runs ended without a save*, or *Watch
+app: no crashes reported* for a watch that has lost none, and no line at all when no card
+ever carried the key — nil and 0 are different claims and the mail says them differently.
+`CrashDigestTests` holds the three states, `CompanionTests` the three shapes of the key.
+There is no Settings row and no screen: one reader, the mail.
 
 **What the stream itself carries of the session block is the wind axis**: the header's
 `wind_dir` lands in `RawTrack.watchSummary.windDirUserDeg`, where the FIT parser puts
