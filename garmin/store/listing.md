@@ -17,7 +17,7 @@ open beta, English only.
 ## Watch app — `CleanJibe Wingfoil Tracker (Beta)`
 
 * Store page: <https://apps.garmin.com/apps/e77867b5-e972-4eb2-be1b-90077cfac806>
-* Type: device app · Version **0.9.13** on the store, **42** products (uploaded 17 Sep 2026, 21:25, Internal 21; 0.9.12 the same day; 0.9.11 on 15 Sep; web/tools/make_devices.py reads this line, keep its shape) · first submitted 2026-08-12, 0.9.4 released 2026-09-01
+* Type: device app · Version **0.9.15** on the store, **42** products (uploaded 20 Sep 2026, Internal 22; 0.9.13 on 17 Sep, Internal 21; 0.9.12 the same day; 0.9.11 on 15 Sep; web/tools/make_devices.py reads this line, keep its shape) · first submitted 2026-08-12, 0.9.4 released 2026-09-01
 * Permissions: Fit, SensorLogging, Communications, Positioning, FitContributor, Sensor
 * Devices (`garmin/manifest-beta.xml`, identical to the release and dev manifests; the count and
   the family grouping are generated into `docs/copy/garmin-devices.json`): 42 products at 0.9.11 —
@@ -63,9 +63,11 @@ An iPhone app with the full analysis — maps, turn forensics, replay with comme
 
 ### What's New (live text)
 
-**0.9.13 uploaded 17 September 2026, 21:25** (public listing, live at once, Internal 21). **The live field holds two paragraphs since the 0.9.12 upload**: the long per-version history that stood here until 0.9.11 was replaced by a single 0.9.12 paragraph at that upload (this file recorded the old block until 0.9.13; the history lives in "Version history" below). Text as submitted:
+**0.9.15 uploaded 20 September 2026** (public listing, live at once, Internal 22). The live field holds three paragraphs. Text as submitted:
 
 ```
+0.9.15: Eleven traps closed. A map slot from an older build no longer throws every frame, a heading value out of range no longer stalls the watch, settings from Garmin Connect are clamped to their ranges, a null in an accelerometer batch is skipped, a thirty-hour session keeps its track. A run that never reached its end is counted and told to the phone.
+
 0.9.13: fenix 5 Plus, 5S Plus and 5X Plus: the clock no longer sits on the speed, PAUSED is a word again, captions and SAVED clear their numbers. Thanks to Leo for the report.
 
 0.9.12: Discard works again. In 0.9.11 the question "Discard session?" could leave the app stuck until the watch restarted. It is a two-line menu now: Keep or Discard. Everything from 0.9.11 stays: every buzz also paints, the fenix 5 Plus family, "Reset pages to defaults", the Turns page header flew · touch · fell, START records · BACK saves on the start page, NOT SAVED when the file was not written.
@@ -204,6 +206,8 @@ field. Dates are the commit dates; a store release usually follows by a day.
 | 0.9.3 | 2026-08-31 | `16568d5` | Pump strokes counted only inside real pumping bursts, so the totals match the phone. Renamed to CleanJibe. |
 | 0.9.2 | 2026-08-31 | `2b3bc66` | The map page becomes the app's own drawing (works while paused, on every watch); all text full white, bigger numbers. |
 | 0.9.1 | 2026-08-30 | `b891e08` | The fenix 8 crash: the map page is pushed, never switched to. Not separately listed in the store's What's New. |
+| 0.9.15 | 2026-09-20 | — | **Eleven traps closed, and a crash breadcrumb.** The first fuzz of the watch app (docs/testing.md): a heading of a billion radians looped the watchdog to death, a map slot written by an older build threw on every frame, a negative slot index and a 20 KB spot name reached Storage, a null inside an accelerometer batch crashed the pump detector, a thirty-hour session overflowed the track stride, settings from Garmin Connect were never clamped. Every fix is a guard, because a division by zero and an index past the end cannot be caught on this runtime. A run that never reaches its end is counted and the count rides the card to the phone (`cx`). No layout change, so no new family sheet. Uploaded 20 Sep to the public listing (Internal 22). |
+| 0.9.15-dev6 | 2026-09-20 | — | The same, on the private listing, with the direct transfer. Uploaded 20 Sep (Internal 37). |
 | 0.9.14-dev5 | 2026-09-19 | — | **The stream carries the clock.** Schema 2: a 20-byte header with the watch's UTC offset in minutes, because the first direct session (16:52) landed at 15:52 — the phone had only the longitude to guess by, which is the solar offset and an hour out under summer time. Pair with iPhone dev build 87, which reads both schemas. Uploaded 19 Sep to the private listing (Internal 36). |
 | 0.9.14-dev4 | 2026-09-19 | — | **The ack is read in its flat shape.** The field test of dev3: every page reached the phone ("page 1 of 3 again", three times) and every acknowledgement stayed on the phone, because Garmin's phone SDK does not carry a nested array. The phone sends three keys now and a comma-joined need list; the watch reads both shapes. Results page logs an ack it refuses ("cjr ack sid?"). Pair with iPhone dev build 85. Uploaded 19 Sep to the private listing (Internal 35). |
 | 0.9.14-dev3 | 2026-09-19 | — | **The sender keeps trying.** The field test of dev2: page 0 failed while the phone was out of reach, and at save the phone took it but no acknowledgement came back; nothing reopened the retries. Now: a pacer every 20 s while pages wait, the retry budget reopens at save, at app start, on the connected edge and on a settings change; a transmit that answers neither way is dropped after 15 s; a recording without a fix is not sent at all. Results page logs "stuck" too. Uploaded 19 Sep to the private listing (Internal 34). |
