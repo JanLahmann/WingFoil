@@ -108,9 +108,11 @@ enum FeedbackMail {
         #if DEV
         let garminModel = store.companionState.deviceName
         let garminAppVersion = store.lastCardWatchAppVersion.flatMap(watchAppVersion)
+        let garminCrashRuns = watchCrashRuns(store: store)
         #else
         let garminModel: String? = nil
         let garminAppVersion: String? = nil
+        let garminCrashRuns: Int? = nil
         #endif
         // The Apple half is nil outside the beta channels for the same reason as the Garmin
         // half above: the Apple Watch app and the Health import are beta doors
@@ -126,10 +128,27 @@ enum FeedbackMail {
         return FeedbackFacts.Watch(garminModel: garminModel,
                                    garminAppVersion: garminAppVersion,
                                    appleWatchPaired: appleWatch,
-                                   healthImport: healthImport)
+                                   healthImport: healthImport,
+                                   garminCrashRuns: garminCrashRuns)
     }
 
     #if DEV
+    /// The watch app's own crash count off the **newest card that carried one**
+    /// (`SessionRow.watchCrashes`), or nil when none ever has.
+    ///
+    /// Read out of the library rather than out of a defaults key beside
+    /// `lastCardWatchAppVersion`, because the column is where the number already lands and a
+    /// second copy would be a second thing to keep true. Sorted here rather than trusted to
+    /// the query's order: the newest card is the newest *session* a card wrote, and that is
+    /// a fact about the row, not about how it came back.
+    @MainActor
+    private static func watchCrashRuns(store: SessionStore) -> Int? {
+        store.sessions
+            .filter { $0.watchCrashes != nil }
+            .max { $0.startDate < $1.startDate }?
+            .watchCrashes
+    }
+
     /// The watch's build tag, spelled out: the card carries `APP_MINOR * 256 + SCHEMA`
     /// (`garmin/source/fit/FitFields.mc`), and the two halves are what a divergence report
     /// needs — the minor says which watch release, the schema which FIT field set.
