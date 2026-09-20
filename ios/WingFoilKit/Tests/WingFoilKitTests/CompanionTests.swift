@@ -35,6 +35,7 @@ import Testing
             "ks": 31,
             "wd": 225,
             "av": 258,            // APP_MINOR 1 * 256 + FIT schema 2
+            "cx": 2,              // two runs of the watch app never reached onStop
         ]
     }
 
@@ -62,7 +63,43 @@ import Testing
         #expect(card.takeoffSuccesses == 31)
         #expect(card.windDirDeg == 225)
         #expect(card.appVersion == 258)
+        #expect(card.watchCrashes == 2)
         #expect(card.dedupeKey.durationS == 3_600)
+    }
+
+    /// `cx` is the one key on this card that may be missing, and the only one whose absence
+    /// is not an error: a watch older than 0.9.14-dev6 does not send it, and that watch's
+    /// session still has to land. nil, never 0 — "the watch did not say" and "no crashes"
+    /// are different claims and the mail says them differently.
+    @Test func aCardWithoutACrashCountStillLands() throws {
+        var older = Self.payload()
+        older["cx"] = nil
+        let card = try CompanionSummary(payload: older)
+        #expect(card.watchCrashes == nil)
+        #expect(card.flightCount == 24)
+    }
+
+    /// The other half of the same rule, from the other end of time: a watch newer than this
+    /// build, or a confused sender, puts something unreadable in `cx`. The card lands and
+    /// the number is dropped — a session must not be lost over a diagnostic.
+    @Test func anUnreadableCrashCountIsDroppedRatherThanRefused() throws {
+        for value: Any in ["3" as Any, true as Any, 4.5 as Any, [1] as Any] {
+            var odd = Self.payload()
+            odd["cx"] = value
+            let card = try CompanionSummary(payload: odd)
+            #expect(card.watchCrashes == nil)
+            #expect(card.durationS == 3_600)
+        }
+        // The watch stops counting at 999, so anything past it did not come from one.
+        for value in [-1, 1_000] {
+            var absurd = Self.payload()
+            absurd["cx"] = value
+            #expect(try CompanionSummary(payload: absurd).watchCrashes == nil)
+        }
+        // A watch that has never lost a run says so, and 0 is a fact, not an absence.
+        var clean = Self.payload()
+        clean["cx"] = 0
+        #expect(try CompanionSummary(payload: clean).watchCrashes == 0)
     }
 
     /// The link hands the payload over as an unordered ObjC dictionary of NSNumbers, and
@@ -188,7 +225,9 @@ import Testing
         var name: String
         /// A card whose dedupe key matches the fixture FIT, offset by `skewS` seconds to
         /// prove the ±60 s tolerance is the rule doing the matching.
-        func card(skewS: Int = 0) throws -> CompanionSummary {
+        /// `crashes` nil sends **no** `cx` at all, which is what a watch older than
+        /// 0.9.14-dev6 does.
+        func card(skewS: Int = 0, crashes: Int? = 2) throws -> CompanionSummary {
             let track = try FitSessionParser.parse(data: fit)
             let start = try #require(track.startDate)
             let first = try #require(track.samples.first)
@@ -197,6 +236,7 @@ import Testing
                 start: Int(start.timeIntervalSince1970) + skewS,
                 duration: Int((last.t - first.t).rounded()) + skewS)
             payload["fc"] = 24 + abs(skewS)       // so a refresh is observable
+            if let crashes { payload["cx"] = crashes } else { payload["cx"] = nil }
             return try CompanionSummary(payload: payload)
         }
     }
@@ -228,6 +268,7 @@ import Testing
         #expect(row.discipline == "wingfoil")
         #expect(row.foilPct == card.foilPct)
         #expect(row.flightCount == card.flightCount)
+        #expect(row.watchCrashes == 2)
         #expect(row.distanceKm == card.distanceM / 1000)
         // Nothing the card cannot know is invented: nil means "not analysed yet", not 0.
         #expect(row.engineVersion == nil)
@@ -331,6 +372,34 @@ import Testing
         #expect(second.isProvisional)
         #expect(second.flightCount == 44)                 // 24 + skew, the newer numbers
         #expect(try await harness.ingestor.allSessions().count == 1)
+    }
+
+    /// The crash count survives the write: the card's `cx` is on the row the next launch
+    /// reads, because the feedback mail asks the library for it and nothing else keeps it.
+    ///
+    /// The second half is the resend case. The watch's pending slot is newest-wins, and a
+    /// card that carries no count at all — an older watch build, a downgrade — must leave
+    /// the number standing rather than blank it.
+    @Test func theWatchCrashCountReachesTheStoredSummary() async throws {
+        let harness = try makeHarness()
+        defer { try? FileManager.default.removeItem(at: harness.root.deletingLastPathComponent()) }
+
+        guard case .provisional(let row) =
+                try await harness.ingestor.ingest(card: try harness.card(crashes: 5)) else {
+            Issue.record("expected a provisional row")
+            return
+        }
+        let reread = try await harness.ingestor.allSessions().first
+        #expect(row.watchCrashes == 5)
+        #expect(reread?.watchCrashes == 5)
+
+        guard case .refreshed(let silent) = try await harness.ingestor.ingest(
+            card: try harness.card(skewS: 20, crashes: nil)) else {
+            Issue.record("a repeat card must refresh, not duplicate")
+            return
+        }
+        #expect(silent.watchCrashes == 5)
+        #expect(try await harness.ingestor.allSessions().first?.watchCrashes == 5)
     }
 
     /// Two genuinely different sessions on the same day must not collapse into one — the

@@ -90,12 +90,13 @@ import Testing
 
     // MARK: The section in the mail
 
-    private func facts(build: String = "75", crashes: [CrashDigest]) -> FeedbackFacts {
+    private func facts(build: String = "75", crashes: [CrashDigest],
+                       watchRuns: Int? = nil) -> FeedbackFacts {
         FeedbackFacts(
             app: .init(version: "1.0", build: build, isDev: false, engineVersion: "0.20.0"),
             phone: .init(model: "iPhone18,2", system: "iOS 26.0", locale: "en_DE"),
             watch: .init(garminModel: nil, garminAppVersion: nil, appleWatchPaired: nil,
-                         healthImport: nil),
+                         healthImport: nil, garminCrashRuns: watchRuns),
             library: .init(sessionCount: 3, sources: []),
             crashes: crashes)
     }
@@ -150,5 +151,54 @@ import Testing
         #expect(rule < heading)
         #expect(body.contains("  iOS collected these on this phone."))
         #expect(body.contains("WingFoil +0x1b523"))
+    }
+
+    // MARK: The watch's own tally
+
+    /// **The three states of `cx`**, which is the only channel a Garmin crash has
+    /// (docs/transfer-format.md): a watch that has lost runs says how many, a watch that has
+    /// lost none says so out loud, and a watch that never reported says nothing at all.
+    ///
+    /// The zero line is the one that has to be written down rather than dropped. Everywhere
+    /// else in this block an absent line means "nothing unusual"; here an absent line has to
+    /// keep meaning "no card ever said", or a tester's silent watch and a tester's clean
+    /// watch become the same mail.
+    @Test func theWatchSaysHowManyRunsItLostOrThatItLostNone() {
+        #expect(FeedbackReport.crashLines([], watchRuns: 3, build: "75", zone: .gmt)
+                == ["Watch app: 3 runs ended without a save"])
+        #expect(FeedbackReport.crashLines([], watchRuns: 1, build: "75", zone: .gmt)
+                == ["Watch app: 1 run ended without a save"])
+        #expect(FeedbackReport.crashLines([], watchRuns: 0, build: "75", zone: .gmt)
+                == ["Watch app: no crashes reported"])
+        #expect(FeedbackReport.crashLines([], build: "75", zone: .gmt).isEmpty)
+    }
+
+    /// The line is under the phone's own crashes, not among them: a Garmin run that ended
+    /// without a save is not an iOS crash and must not be counted as one.
+    @Test func theWatchTallySitsUnderThePhonesOwnCrashes() throws {
+        let digests = CrashLog.digests(fromPayloadJSON: try payload, receivedAt: arrived)
+        let lines = FeedbackReport.crashLines(digests, watchRuns: 2, build: "75", zone: .gmt)
+        #expect(lines.first == "iOS collected these on this phone.")
+        #expect(lines[1] == "Crashes 1 · Hangs 1 · Disk writes 1")
+        #expect(lines.last == "Watch app: 2 runs ended without a save")
+        #expect(lines.count == 6)
+    }
+
+    /// A phone that has never crashed and a watch that has: the block opens for the watch
+    /// alone, because a dev phone that has not crashed is the common case and the number
+    /// would otherwise be readable nowhere but on the wrist.
+    @Test func aQuietPhoneStillCarriesTheWatchsTally() {
+        let body = FeedbackReport.body(facts(crashes: [], watchRuns: 4))
+        #expect(body.contains("Recent crashes"))
+        #expect(body.contains("  Watch app: 4 runs ended without a save"))
+        // Nothing is claimed about the phone: the note and the counts belong to crashes
+        // this phone actually kept.
+        #expect(!body.contains(FeedbackReport.crashNote))
+
+        let clean = FeedbackReport.body(facts(crashes: [], watchRuns: 0))
+        #expect(clean.contains("  Watch app: no crashes reported"))
+
+        // And a phone that has never heard from a watch says nothing at all.
+        #expect(!FeedbackReport.body(facts(crashes: [])).contains("Watch app"))
     }
 }

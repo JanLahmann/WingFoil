@@ -119,6 +119,19 @@ public struct WatchSummary: Sendable, Equatable {
     public var cfgMinFlightS: Double?
     public var appVersion: Int?
 
+    /// How many runs of the **watch app** never reached `onStop` — a crash or a watchdog
+    /// kill, counted on the wrist over the app's whole life (`CrashBreadcrumb`,
+    /// docs/transfer-format.md). nil for "the watch did not say", which is every source but
+    /// a summary card from watch 0.9.14-dev6 or later.
+    ///
+    /// It is here rather than beside the crash log because it is the **watch's** word about
+    /// itself, like every other field on this type, and it is a number about the app on the
+    /// wrist rather than about the session. No FIT developer field carries it and no
+    /// recording ever will: Connect IQ has no crash reporting, so the BLE card is the only
+    /// channel it has. Nothing analyses it and no rider-facing screen shows it — it reaches
+    /// exactly one reader, the diagnostics block of the beta feedback mail.
+    public var watchCrashes: Int?
+
     /// Low byte of `app_version` — the docs/fit-schema.md `SCHEMA_VERSION` the watch wrote.
     public var schemaVersion: Int? { appVersion.map { $0 & 0xFF } }
     public var isEmpty: Bool { self == WatchSummary() }

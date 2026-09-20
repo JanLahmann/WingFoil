@@ -62,6 +62,19 @@ public struct CompanionSummary: Sendable, Equatable {
     /// a rider reporting odd numbers can be asked which watch build produced them.
     public let appVersion: Int
 
+    /// How many runs of the watch app never reached `onStop` — a crash or a watchdog kill
+    /// (`CrashBreadcrumb`, docs/transfer-format.md). 0…999, counted on the watch over its
+    /// whole life, not for this session.
+    ///
+    /// **The one optional key on this card, and the only one whose absence is not an
+    /// error.** Connect IQ has no crash reporting, so the number exists nowhere but on the
+    /// wrist and the card is the only thing that can carry it off; but a watch older than
+    /// 0.9.14-dev6 does not send it and a watch newer than this build may send something
+    /// this build cannot read. Either way the card still lands — nil means "the watch did
+    /// not say", which is a different claim from "no crashes", and only the first of those
+    /// may be guessed at.
+    public let watchCrashes: Int?
+
     // MARK: - Wire keys
 
     /// Two characters each, matching `PhoneLink.KEY_*` one for one. The version tag is the
@@ -88,6 +101,7 @@ public struct CompanionSummary: Sendable, Equatable {
         static let takeoffSuccesses = "ks"
         static let wind = "wd"
         static let appVersion = "av"
+        static let crashes = "cx"
     }
 
     // MARK: - Decoding
@@ -156,6 +170,11 @@ public struct CompanionSummary: Sendable, Equatable {
         windDirDeg = wind < 0 ? nil : Double(wind)
 
         appVersion = try Self.value(dictionary, Key.appVersion, in: 0...65535)
+
+        // Read last and read softly: see `watchCrashes`. A missing, unreadable or absurd
+        // `cx` costs one line of a diagnostics mail, and refusing the card over it would
+        // cost the rider the session it announces.
+        watchCrashes = Self.optionalValue(dictionary, Key.crashes, in: 0...Self.maxCrashes)
     }
 
     // MARK: - Reconciliation
@@ -180,6 +199,9 @@ public struct CompanionSummary: Sendable, Equatable {
     /// 100 m/s in cm/s ≈ 194 kn. The world sailing speed record is 65.
     static let maxSpeedCmS = 10_000
     static let maxCount = 100_000
+    /// The watch's own ceiling: `CrashBreadcrumb` stops counting at 999, so a bigger number
+    /// did not come from a watch of ours.
+    static let maxCrashes = 999
 
     // MARK: - Untyped access
 
@@ -206,6 +228,21 @@ public struct CompanionSummary: Sendable, Equatable {
         }
         guard range.contains(number) else {
             throw CompanionDecodeError.outOfRange(key: key, value: number)
+        }
+        return number
+    }
+
+    /// Reads a key that may not be there: nil for absent, for a value that is not an
+    /// integer, and for one outside `range`. Never throws.
+    ///
+    /// Deliberately a second function rather than a flag on `value`: every other key on
+    /// this card is required and refusing the card is the right answer for all of them, and
+    /// a shared reader with a "be lenient" parameter would put that decision one argument
+    /// away from any future key.
+    private static func optionalValue(_ dictionary: [String: Any], _ key: String,
+                                      in range: ClosedRange<Int>) -> Int? {
+        guard let number = integer(dictionary[key]), range.contains(number) else {
+            return nil
         }
         return number
     }

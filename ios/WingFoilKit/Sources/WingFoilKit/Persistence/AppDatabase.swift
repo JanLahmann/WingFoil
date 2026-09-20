@@ -117,7 +117,7 @@ public struct AppDatabase: Sendable {
     /// database moves through all of them.
     public static let migrationNames = ["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9",
                                         "v10", "v11", "v12", "v13", "v14", "v15", "v16",
-                                        "v17"]
+                                        "v17", "v18"]
 
     /// The schema version this build writes — the `N` of the last `vN` migration.
     ///
@@ -507,6 +507,26 @@ public struct AppDatabase: Sendable {
                 t.add(column: "engineTurnsPerHour", .double)
             }
             try db.execute(sql: "UPDATE session SET engineVersion = NULL")
+        }
+
+        // v18: the watch app's crash count, off the summary card (`CompanionSummary`'s `cx`,
+        // docs/transfer-format.md).
+        //
+        // Connect IQ has no crash reporting: a run of the watch app that ends in an
+        // unhandled exception drops the rider to the watch face and leaves a log file on a
+        // watch on a beach. `CrashBreadcrumb` counts the runs that never reached `onStop`
+        // and the card carries the count; this column is where it comes to rest, so the
+        // number a tester's watch has been carrying around reaches the one reader who can
+        // act on it — the diagnostics block of the beta feedback mail.
+        //
+        // No sweep and no default. It is the **watch's** word and no engine can re-derive
+        // it, so every row written before this migration stays NULL, which is what "the
+        // watch never said" has to look like. A 0 there would claim a clean history this
+        // app was never told about.
+        migrator.registerMigration("v18") { db in
+            try db.alter(table: "session") { t in
+                t.add(column: "watchCrashes", .integer)
+            }
         }
         return migrator
     }
@@ -910,6 +930,18 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
     /// numerators are not on this row to divide with (docs/algorithms.md "Session rates").
     public var engineJibesPerHour: Double?
     public var engineTurnsPerHour: Double?
+
+    // MARK: schema v18
+    /// How many runs of the **watch app** never reached `onStop`, as the summary card that
+    /// wrote this row reported it (`CompanionSummary.watchCrashes`). nil on every row no
+    /// card ever touched, and on a card from a watch older than 0.9.14-dev6.
+    ///
+    /// A fact about the watch rather than about the afternoon, kept on the session because
+    /// a card is the only thing that ever carries it and the newest session a card wrote is
+    /// the newest the watch has said. Nothing analyses it and no screen shows it: its one
+    /// reader is the feedback mail's crash block (docs/channels.md, "Garmin watch: the crash
+    /// breadcrumb").
+    public var watchCrashes: Int?
 
     // MARK: schema v12
     /// The engine's own **cleaned** session span in seconds (`summary.durationS`) — the

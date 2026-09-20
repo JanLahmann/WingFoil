@@ -172,8 +172,8 @@ import Testing
         }
         #expect(columns.isSuperset(of: ["longestDryStreak", "longestFlewStreak"]))
         #expect(stale == harness.v1Ids.count)
-        #expect(AppDatabase.migrationNames.last == "v17")
-        #expect(AppDatabase.schemaVersion == 17)
+        #expect(AppDatabase.migrationNames.last == "v18")
+        #expect(AppDatabase.schemaVersion == 18)
 
         _ = try await harness.ingestor.reanalyzeStale()
         for session in try await harness.ingestor.allSessions() {
@@ -213,6 +213,30 @@ import Testing
             if let tph = session.turnsPerHour, let jph = session.jibesPerHour {
                 #expect(tph >= jph)
             }
+        }
+    }
+
+    /// v18 adds the watch app's crash count, and its whole point is the **absence**: this
+    /// is the watch's word, nothing can re-derive it, and every row that predates the column
+    /// has to come out NULL. A 0 would claim a clean history nobody ever reported, and the
+    /// mail prints exactly that claim when it sees one.
+    @Test func v18AddsTheWatchCrashCountAndLeavesOldRowsUnanswered() async throws {
+        let harness = try migratedV1Library()
+        defer { try? FileManager.default.removeItem(at: harness.root.deletingLastPathComponent()) }
+
+        let (columns, unanswered) = try await harness.database.writer.read { db in
+            (Set(try db.columns(in: "session").map(\.name)),
+             try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM session "
+                              + "WHERE watchCrashes IS NULL"))
+        }
+        #expect(columns.contains("watchCrashes"))
+        #expect(unanswered == harness.v1Ids.count)
+
+        // And re-analysis does not invent one either: no recording carries the number, so a
+        // row only ever gets it from a card.
+        _ = try await harness.ingestor.reanalyzeStale()
+        for session in try await harness.ingestor.allSessions() {
+            #expect(session.watchCrashes == nil)
         }
     }
 
@@ -384,7 +408,9 @@ import Testing
         let queue = try DatabaseQueue()
         _ = try AppDatabase(queue)
         try queue.write { db in
-            try db.execute(sql: "INSERT INTO grdb_migrations (identifier) VALUES ('v18')")
+            // A number far past the end rather than the next one, so that this test keeps
+            // testing the guard rather than the day the next migration is written.
+            try db.execute(sql: "INSERT INTO grdb_migrations (identifier) VALUES ('v99')")
             // …and the pragma deliberately left where this build wrote it, so the applied
             // list is the only thing that can raise the alarm.
             try db.execute(sql: "PRAGMA user_version = \(AppDatabase.schemaVersion)")

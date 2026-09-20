@@ -114,5 +114,11 @@ extension SessionRow {
         takeoffSuccesses = card.takeoffSuccesses
         windDirDeg = card.windDirDeg
         windSource = card.windDirDeg == nil ? nil : "watch"
+        // The one column on this row that is about the **watch** rather than about the
+        // afternoon, and the one the FIT can never overwrite: no developer field carries a
+        // crash count and none can (docs/transfer-format.md). A card that did not say keeps
+        // whatever a card said before — a resend from an older watch build must not erase
+        // the number the newer one reported.
+        watchCrashes = card.watchCrashes ?? watchCrashes
     }
 }

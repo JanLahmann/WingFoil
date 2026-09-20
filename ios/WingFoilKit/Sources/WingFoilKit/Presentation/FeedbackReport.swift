@@ -128,13 +128,23 @@ public struct FeedbackFacts: Sendable, Equatable {
         /// off" and "No Apple Watch paired" would be answering two questions the app it
         /// came from never asks. A nil fact is left out of the report entirely.
         public let healthImport: Bool?
+        /// How many runs of the Garmin watch app never reached `onStop`, as the newest
+        /// summary card reported it (`SessionRow.watchCrashes`). nil when no card has ever
+        /// carried the number: a watch older than 0.9.14-dev6, or none at all.
+        ///
+        /// **It is printed with the crashes, not with the watch**, because that is where a
+        /// reader is already asking the question. Connect IQ has no crash reporting, so
+        /// until this line existed the count was readable on the wrist and nowhere else.
+        public let garminCrashRuns: Int?
 
         public init(garminModel: String?, garminAppVersion: String?,
-                    appleWatchPaired: Bool?, healthImport: Bool?) {
+                    appleWatchPaired: Bool?, healthImport: Bool?,
+                    garminCrashRuns: Int? = nil) {
             self.garminModel = garminModel
             self.garminAppVersion = garminAppVersion
             self.appleWatchPaired = appleWatchPaired
             self.healthImport = healthImport
+            self.garminCrashRuns = garminCrashRuns
         }
 
         /// The watch component of the subject line: the Garmin, because that is the half a
@@ -420,9 +430,14 @@ public enum FeedbackReport {
         if let session = facts.session {
             out += section("Session", lines: sessionLines(session))
         }
-        if !facts.crashes.isEmpty {
+        // The heading appears for either half: a phone that has crashed, a watch that has
+        // said how often it has. A dev phone that never crashed is the common case for the
+        // watch line, and a block that only opened for the phone would have hidden it.
+        if !facts.crashes.isEmpty || facts.watch.garminCrashRuns != nil {
             out += section(crashHeading,
-                           lines: crashLines(facts.crashes, build: facts.app.build))
+                           lines: crashLines(facts.crashes,
+                                             watchRuns: facts.watch.garminCrashRuns,
+                                             build: facts.app.build))
         }
         out.append("sent from \(Branding.appName)")
         return out.joined(separator: "\n")
@@ -540,7 +555,8 @@ public enum FeedbackReport {
     /// crashes in his own mail is owed the fact that no reporting SDK put it there.
     static let crashNote = "iOS collected these on this phone."
 
-    /// The block: where it came from, how many of each, then the newest few by name.
+    /// The block: where it came from, how many of each, then the newest few by name — and
+    /// the watch's own tally under them, when a card has carried one.
     ///
     /// **Capped at `CrashLog.listCount` lines of crash**, so the block is at most eleven
     /// lines however bad a fortnight the phone has had. The mail is a rider's report with a
@@ -548,19 +564,40 @@ public enum FeedbackReport {
     /// read at all.
     ///
     /// - Parameters:
+    ///   - watchRuns: the Garmin watch app's own count of runs that never reached `onStop`,
+    ///     or nil for "no card has ever said". Last, and one line: the phone's crashes carry
+    ///     a stamp and a frame each, the watch's carry a number and nothing else.
     ///   - build: the build the mail is being written from, so a crash on an older one can
     ///     say so. A tester who has updated since is often reporting something already fixed.
     ///   - zone: the phone's, in every real call. A crash stamp is a machine fact, printed
     ///     in a fixed format for the same reason the engine version is.
-    static func crashLines(_ crashes: [CrashDigest], build: String,
+    static func crashLines(_ crashes: [CrashDigest], watchRuns: Int? = nil, build: String,
                            zone: TimeZone = .current) -> [String] {
-        var lines = [crashNote, crashCounts(crashes)]
-        lines += crashes.prefix(CrashLog.listCount).map {
-            crashLine($0, build: build, zone: zone)
+        var lines: [String] = []
+        if !crashes.isEmpty {
+            lines = [crashNote, crashCounts(crashes)]
+            lines += crashes.prefix(CrashLog.listCount).map {
+                crashLine($0, build: build, zone: zone)
+            }
+            let rest = crashes.count - CrashLog.listCount
+            if rest > 0 { lines.append(String(rest) + " older, not listed") }
         }
-        let rest = crashes.count - CrashLog.listCount
-        if rest > 0 { lines.append(String(rest) + " older, not listed") }
+        if let watchRuns { lines.append(watchCrashLine(watchRuns)) }
         return lines
+    }
+
+    /// "Watch app: 3 runs ended without a save", and "Watch app: no crashes reported" for a
+    /// watch that has lost none.
+    ///
+    /// **A zero is printed here**, against the rule the rest of this block follows, because
+    /// the watch is the one thing in the report that can only answer through a card: a
+    /// missing line already means "no card said", and it would be read as "no crashes" the
+    /// moment both looked the same. What it counts is said in the rider's own terms — a run
+    /// of the watch app that ended without saving a session — rather than as an exception.
+    private static func watchCrashLine(_ runs: Int) -> String {
+        guard runs > 0 else { return "Watch app: no crashes reported" }
+        return "Watch app: " + String(runs) + (runs == 1 ? " run" : " runs")
+            + " ended without a save"
     }
 
     /// "Crashes 2 · Hangs 1" — the same shape the Library block counts its doors in, and a
