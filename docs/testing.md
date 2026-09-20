@@ -1310,6 +1310,19 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    Mac has to be unlocked and its display awake for the run (the script asserts user activity
    per cycle and refuses a locked screen).
 
+   **The rule is a gate, and a locked Mac is not an exemption.** 0.9.16 changed the page
+   layouts (a second page SET, the foil table's title row, the SAVED pill's lift), so it owes
+   the 27 sheets before any upload. They were **not run on 20 September 2026**: the Mac was
+   locked (`CGSSessionScreenIsLocked = Yes`) for the whole session and `capture.sh` refuses
+   that by design — `screencapture` cannot read a window behind the lock screen and returns
+   blank frames rather than failing, which is the one failure mode a screenshot harness must
+   never have. The unit suite carries the geometry in the meantime; it does not carry what a
+   frame looks like. **0.9.16 may not be uploaded to any listing until the 27 sheets exist**
+   and have been read against the overlap list: clock/giant, caption/digits, eyebrow/giant,
+   pair halves, the PAUSED word — and for this round, three new pairs: the large set's word
+   against its giant, the foil table's `foil · 31` against the shares row under it, and the
+   lifted SAVED pill against both the phone line under it and the verdict's digits.
+
    The layout suite reads its canvas from `System.getDeviceSettings().screenWidth`, so the same
    assertions are genuinely different measurements per device, and every finding that has ever
    come out of this suite came from the narrow ones — with one lesson added by Tier A: **the
@@ -1403,15 +1416,39 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
 
    Running the hunt: it is part of the suite, so `monkeydo <prg> <device> -t` runs it. All
    three devices and both streams were green on 20 September 2026 — `monkey-dev.jungle`
-   116/116 on fenix847mm, fenix7s and fenix5plus, `monkey.jungle` 111/111 on fenix5plus (the
-   five `(:test :dev)` cases are excluded there).
+   **121/121** on fenix847mm, fenix7s and fenix5plus, `monkey.jungle` **115/115** on
+   fenix5plus (the six `(:test :dev)` cases are excluded there; `resetPagesWritesTheDefaultsBack`
+   joined them in 0.9.16 when the per-page editor became a dev feature).
 
    **Round-display layout tests.** Six pages plus the summary are measured against the chord
    at each row's own depth, at worst-case content, with the device's real font metrics:
    `mainPageFitsRoundDisplay`, `heroPageFitsRoundDisplay`, `gridAndCellsPagesFitRoundDisplay`,
    `recordsPageFitsRoundDisplay`, `turnsPageFitsRoundDisplay`, `clockPageFitsRoundDisplay`,
    `timelinePageFitsRoundDisplay`, `startPageFitsRoundDisplay`, `lockScreenFitsRoundDisplay`,
-   `summaryPagesFitRoundDisplay` and `pausedBannerStaysInsideTheRings`. They assert against
+   `summaryPagesFitRoundDisplay` and `pausedBannerStaysInsideTheRings` — and since 0.9.16
+   `largePagesFitRoundDisplay` (the LARGE page set: the giant against the chord, the word
+   never below FONT_SMALL, and the giant never *smaller* than the same value on a hero page,
+   which is the claim the whole set exists to make), `largePageSetIsFivePagesOfOneNumber`
+   (five pages, one metric each, no map, and the standard set restored on the way back),
+   `foilTitleCarriesTheFlightCount` and `phoneProgressLineNeverTouchesWhatMatters`.
+
+   Two of those measure a **conditional** layout and say so in their debug line rather than
+   asserting one answer, because the answer is a property of the font set:
+
+   - the direct transfer's status line on the SAVED screen is drawn at the top on
+     `fenix847mm` (pill 70 → 33, line 70, digits 92) and `fenix7s` (39 → 20, 39, 50), and
+     **dropped on the fenix 5 Plus family** — its hero block starts 16 px higher than
+     everyone else's (the 0.9.13 finding), so `savedY` is already pinned against the verdict's
+     digits at y 27 and the bottom band's fallback slot at 194 runs into the hero block at
+     198. The renderer and the assertion ask the one predicate, so a font set that would
+     overprint the verdict fails here rather than on a wrist.
+   - `standardPagesTextHeadroom` is a **diagnostic, not a gate**: for every caption pinned at
+     FONT_XTINY it logs whether the next rung up fits the chord *and* whether the row stack
+     still holds it. Measured 20 Sep 2026: chord yes / stack **no** on fenix847mm and
+     fenix7s for all three rows tested (hero unit line, records labels, foil column headers),
+     chord yes / stack **yes** on fenix5plus. A rung taken on that evidence would be two page
+     geometries per font set, so none was taken on the standard pages and the rung went to
+     the large set instead (docs/presentation.md). They assert against
    `RecordingView.fitRadius(dc, ring, arc)` — the *page's* radius, not the glass, because a
    page that paints the flight ring or the foil-% arc has already spent the outer 10–16 px of
    every radius on it. Two rules they exist to keep:

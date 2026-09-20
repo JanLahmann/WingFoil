@@ -2928,11 +2928,84 @@ exactly as they gate the buzz. The visual half is never debounced — a new even
 one on screen, which is what one screen means — and save or discard clears the strip with
 the session. `EventFlash.mc` is the module, `AlertManager` fires it beside each buzz.
 
-## The watch's pages — and the switch that puts them back
+## The watch's two page sets — standard, and large text
 
-The seven data screens are configured in Garmin Connect (layout and five metric slots per
-page, `pg1Layout` … `pg7s5`), and a stored property beats `properties.xml` on an installed
-watch: the defaults are written once at install, and an update never touches them. So a
+"I need my glasses" (Jan and a tester, 20 September 2026). The standard set packs four to six
+numbers onto a screen, which is the right answer on a dry wrist and the wrong one at 25 kn
+with spray on the glass. Since 0.9.16 there is a second set, and **one Garmin Connect enum
+picks between them** — *Data screens: Standard / Large text* (`pageSet`). One setting, no new
+property per page, and it is in **every stream**, which matters because the per-page editor
+below is not (see docs/channels.md).
+
+The large set is **five screens, one number each**:
+
+| # | the number | the word under it | also on the page |
+|---|---|---|---|
+| 1 | live speed | `speed km/h` (or `kn`) | — |
+| 2 | foil share | `on foil` | the foil-% bezel arc, earned the ordinary way |
+| 3 | turns | `turns` | the outcome ladder as three coloured counts |
+| 4 | time of day | `time` | — |
+| 5 | best 2 s | `best 2s km/h` | — |
+
+Three rules make it bigger rather than merely emptier:
+
+- **the giant gets the whole stack.** A hero page spends a unit line and up to two sub-rows
+  under its number, so the number sits above the equator and takes the chord at *that* depth.
+  A large page has two rows, so the giant straddles the centre, where the chord is widest.
+  The layout suite asserts the large giant is never *smaller* than the same value on a hero
+  page, on any glass.
+- **the word is FONT_LARGE, four rungs above every caption on the standard pages** (71 px of
+  line against 37 on a fenix 8; 37 against 19 on a fenix 7S). A number nobody can name is not
+  readable however big it is, so the word carries its unit too — this is the only place on
+  the watch where a caption does. It steps down the ordinary ladder on a narrow chord and the
+  suite asserts it never falls below FONT_SMALL, the readability floor.
+- **no rings.** A flight ring costs 10–16 px of every radius, about 7 % of the digits on a
+  240 px glass, and this set's whole trade is radius for digit height. Only the foil page
+  keeps its arc, because the arc *is* the number the page already shows.
+
+There is deliberately no map, no timeline and no table in the large set: a page you have to
+read is not a page this set is for. And there is no editor for it — the five pages are a
+fixed table (`PageModel.buildLarge`) that reads no property at all, which is exactly what
+lets it be the one page control every stream has.
+
+**The text-size headroom of the standard pages was reviewed in the same round** and the answer
+was to take no rung there (`standardPagesTextHeadroom` logs the measurement per glass). Every
+pinned caption — the hero unit line, the records labels, the foil column headers and row keys
+— *fits* a rung up in its chord on every glass, and *the stack* holds the taller line only on
+the fenix 5 Plus family, whose number fonts carry no leading. Taking the rung would mean two
+different page geometries per font set. The MAIN giant's inline unit/caption block cannot move
+at all: on that same family it is already the taller box of its band, so a rung up reaches
+into the clock row, which is the 0.9.13 bug exactly. The rung went to the large set instead,
+where the page spends no rows on anything else and can afford it.
+
+## The after-save pages and the live ones
+
+A saved page and a live page showing the same number must be the same piece of code, or the
+two start disagreeing about one session. The post-save review has seven pages; this is where
+each of them stands after 0.9.16.
+
+| after-save page | verdict | why |
+|---|---|---|
+| S1 **Verdict** (foil % + arc, SAVED pill) | **genuinely post-save** | it is the landing page and its subject is the session as a whole. The SAVED pill and the phone line live here and nowhere else |
+| S2 **Speed** (best 2 s giant, 10 s and km under it) | **genuinely post-save** | the live Records page is the same two numbers, but the saved page also carries the session odometer, which has no other home once the Track page is conditional. A unification that drops a number is not a unification |
+| S3 **Foil** | **unified, 0.9.16** | was a bespoke "Flights" hero (longest flight, its distance, the count). Every one of those numbers is on the live foil table already — `max` is that flight's two numbers under the two columns that name them — and the table says four more besides. The **flight count came back to the table's title row** (`foil · 31`) so the unification drops nothing; it is dropped rather than shrunk when the row cannot hold the pair, XTINY being already the bottom of the ladder |
+| S4 **Turns** | **unified** (since 0.9.2) | `drawTurnsBody(dc, c, live=false)` — one flag, and it only changes the streak row, because "the run he is on" stopped meaning anything when he pressed save |
+| S5 **Takeoffs** | **genuinely post-save** | no live twin exists; the watch has no takeoffs page on the water |
+| S6 **Story** | **unified** (since 0.8.1) | the timeline, verbatim. `history` is complete and untouched by the save, and a coffee-in-hand read of the session arc is what it was always for |
+| S7 **Track** | **unified** (since 0.9.2) | `TrackDraw`, the same renderer as the live map page, minus the position marker — the rider is ashore |
+
+What is **not** unified, and deliberately: the SAVED pill does not ride the reused pages. S4,
+S6 and S7 look exactly like their live twins, and adding the eyebrow to them would mean
+finding a free top arc on three pages whose top rows are already a header, a caption and a
+map — which is the 0.9.13 overprint waiting to happen on three pages instead of one. The
+page-position dots along the bottom are what says "this is the review, not the water", and
+they are on every one of the seven.
+
+## The watch's per-page editor — and the switch that puts the pages back
+
+**Dev stream only since 0.9.16** (docs/channels.md, "The watch"). The seven data screens are
+configured in Garmin Connect (layout and five metric slots per page, `pg1Layout` … `pg7s5`),
+and a stored property beats `properties.xml` on an installed watch: the defaults are written once at install, and an update never touches them. So a
 rider who rearranged his pages and wants the shipped set back had two ways, both poor —
 setting every row by hand, or reinstalling. Since 0.9.11 there is a third: **Reset pages to
 defaults**, a switch in the app's settings that behaves like a button. Turned on and saved,
@@ -2942,6 +3015,47 @@ seven defaults back into its property store (`PageModel.restoreDefaults`, from t
 switch off again, so the next sync shows it off. Every page key is written, off pages
 included: the rider gets exactly the fresh-install set — Main, Foil, Records, Turns, Clock,
 Timeline, Map — and never a mixture.
+
+All of that is the dev build's. A release or beta watch has neither the Garmin Connect rows,
+nor the strings behind them, nor the code that reads them: `PageModel._store` is a `(:notdev)`
+twin that answers with the default table, and `AppSettings.consumeResetPages` a `(:notdev)`
+false. Those builds therefore show exactly the seven pages they already showed every rider who
+never opened the list — and their page control is the **page set** enum above, which is the
+setting a rider asking for bigger text was actually looking for. Moving the editor up to beta
+is one jungle line and one resource move; docs/channels.md names it as the candidate it is.
+
+## The direct transfer's progress, on the glass (0.9.16, dev)
+
+The recording crosses to the phone in 8 KB pages over about twenty seconds on the beach, and
+until this round nothing on the watch said so. `DirectSend.statusLine()` is that sentence —
+`phone 4/13` while pages are moving, `phone ok` when the stream is whole, and null when there
+is nothing to say, which is what a release or beta build always gets.
+
+It is drawn in two places, both in the eyebrow font and both in the dim ink, because it is a
+machine's progress and not the rider's session:
+
+- **on the SAVED screen**, under the pill. The pill and the line are a pair: with a line to
+  show the pill lifts by one eyebrow line and the line takes the band it vacated, so the two
+  together end exactly where the pill alone used to and nothing else on the page moves. Where
+  even that does not fit, the line falls to the bottom band above the page dots; where neither
+  holds it, it is dropped. It is never drawn over the verdict's digits — measured per glass
+  (`phoneProgressLineNeverTouchesWhatMatters`): drawn at the top on fenix847mm and fenix7s,
+  dropped on the fenix 5 Plus family, whose hero block starts 16 px higher than everyone
+  else's and leaves neither slot free.
+- **on the start screen**, in the air under the hint row, while pages from an *earlier*
+  session are still waiting. `DirectSend.restore()` brings an unfinished stream back over an
+  app exit, so a rider who walked away from the beach mid-transfer opens the app the next
+  morning to the one screen that can tell him yesterday's session is still in the queue. The
+  four-line stack is required to leave a quarter of the glass empty, so the line rides in the
+  air rather than taking a fifth row — the mirror of where the brand mark rides above the
+  title — and is dropped rather than clipped when its corner will not clear the glass.
+
+And **one short buzz** when the stream is whole, on a channel of its own (`CH_PHONE`). It
+lands while the rider is walking up the beach reading the SAVED screen, which is exactly when
+nothing else is buzzing; a floor shared with the turn verdicts would have swallowed it on the
+one session where the last jibe and the last page arrive inside the same five seconds. Behind
+no toggle, like the auto-wind lock: the transfer itself is the switch, and a rider who turned
+it on wants to know when he can walk away.
 
 ## The watch's words for a stranger (0.9.11)
 
