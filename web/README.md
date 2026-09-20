@@ -957,7 +957,7 @@ Icons live in `web/icons/`, copied from `brand/` (`icon-tile-*` for the normal i
 
 ## Verification
 
-Twelve checks, none of which needs a browser:
+Thirteen checks, none of which needs a browser:
 
 ```bash
 cd /path/to/WingFoil
@@ -967,7 +967,7 @@ python3 web/tools/bundle_lab.py --check
 
 # 0b. every internal link resolves, every document closes its tags, and the site nav AND
 #     the footer block are the same bytes on all nine pages (stdlib only, <1 s).
-#     It also runs 0c, 0d, 0e, 0f and 0h, so running this alone covers all six.
+#     It also runs 0c, 0d, 0e, 0f, 0h and 0j, so running this alone covers all seven.
 python3 web/tools/verify_links.py
 
 # 0c. /start/ and the app's Getting started topic still match their one source,
@@ -989,6 +989,11 @@ python3 web/tools/make_copy_js.py --check
 # 0h. and the sentences nobody owns: no prose sentence of eight words or more is on two of
 #     the six reader-facing pages, and no page is over its word budget (stdlib only, instant)
 python3 web/tools/verify_unique.py
+
+# 0j. every metric label the app's JavaScript prints is a spelling in
+#     docs/copy/glossary.json — the browser's twin of the kit's GlossaryLintTests, so a
+#     number is not called two things on two screens (stdlib only, instant)
+python3 web/tools/verify_glossary.py
 
 # 0g. no release copy names a door the release lacks, on the two pages that speak for the
 #     product rather than for the beta

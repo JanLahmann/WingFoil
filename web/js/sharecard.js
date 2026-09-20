@@ -699,9 +699,10 @@ function gridMetrics(stats, shape) {
     valueSize: dense ? 16 : 21,
     captionSize: dense ? 7 : 8.5,
     // Uniform, so the grid is a grid: the caption line is reserved on every cell even
-    // though only the tally has one. Sized to the tallest content (label + value +
-    // caption + descender) and no more — every point spent here is a point the track,
-    // which is what the picture is about, does not get.
+    // though only two of them have one (the tally, and the falls cell's split since 20
+    // September 2026). Sized to the tallest content (label + value + caption + descender)
+    // and no more — every point spent here is a point the track, which is what the picture
+    // is about, does not get.
     cellH: dense ? 45 : 56,
   };
 }
@@ -723,9 +724,11 @@ function drawGrid(ctx, stats, box, shape, family, mapped = false) {
     ctx.fill();
 
     const inner = cellW - m.padH * 2;
-    // The tally's caption hangs off its label after an em-dash; splitting it here is
-    // layout, not content — the two halves are the block's own words in the block's own
-    // order (js/cardstats.js, CAPTION_SEP).
+    // A cell's caption hangs off its label after an em-dash — the tally's "of 55 jibes"
+    // and the falls cell's "4 in a turn · 21 in a straight line". Splitting it here is
+    // layout, not content: the two halves are the block's own words in the block's own
+    // order (js/cardstats.js, CAPTION_SEP), and iOS holds them in two fields and joins
+    // them with the same separator.
     const [label, caption] = stat.label.split(CAPTION_SEP);
     let y = cy + m.padV + m.labelSize;
     drawFitted(ctx, label, cx + m.padH, y, inner, m.labelSize, 600, family,
@@ -734,8 +737,9 @@ function drawGrid(ctx, stats, box, shape, family, mapped = false) {
     drawValue(ctx, stat, cx + m.padH, y, inner, m.valueSize, family);
     if (caption) {
       // Fitted like the label above it rather than drawn raw: the tally's caption grew a
-      // clean count ("of 50 jibes · 12 clean") and a card is a PNG — a caption that runs
-      // out of its cell is permanent, where a point of type size is only small.
+      // clean count ("of 50 jibes · 12 clean"), the falls cell's names two places, and a
+      // card is a PNG — a caption that runs out of its cell is permanent, where a point of
+      // type size is only small.
       y += m.captionSize + 4;
       drawFitted(ctx, caption, cx + m.padH, y, inner, m.captionSize, 400, family,
                  alpha(BRAND.paper, 0.6));

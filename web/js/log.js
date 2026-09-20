@@ -92,7 +92,11 @@ export function divergences(watch, golden) {
     ["Tacks", watch.tackCount, summary.turns?.tacks],
     ["Jibes", watch.jibeCount, summary.turns?.jibes],
     ["Takeoff attempts", watch.takeoffAttempts, summary.takeoff?.takeoffAttempts],
-    ["Takeoff successes", watch.takeoffSuccesses, summary.takeoff?.takeoffSuccesses],
+    // **"Takeoffs", not "Takeoff successes"** (20 September 2026, `DivergenceCheck`). A
+    // banner row is read beside the watch's own word for the same count, and `success` is
+    // engine vocabulary that reaches no rider text (CLAUDE.md). `advice` below still reads
+    // the prefix, which both takeoff rows keep.
+    ["Takeoffs", watch.takeoffSuccesses, summary.takeoff?.takeoffSuccesses],
   ];
   for (const [label, w, p] of counts) {
     if (typeof w !== "number" || typeof p !== "number") continue;

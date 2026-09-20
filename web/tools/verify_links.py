@@ -39,7 +39,9 @@ WHAT IT CHECKS, per document:
      screen for a frame is not a page a reader navigates from. Their own links are still
      checked, and so is what they point at.
 
-  5. The words. `verify_copy.py --brief` holds every page to `docs/copy/*.json`,
+  5. The words. `verify_glossary.py --brief` holds every metric label the app's JavaScript
+     prints to `docs/copy/glossary.json`, `verify_copy.py --brief` holds every page to
+     `docs/copy/*.json`,
      `make_copy_js.py --check` to the generated `js/copy.js`, and `verify_unique.py --brief`
      to the sentences nobody owns — no prose sentence on two pages, and no page over its
      word budget — the same way `make_start.py` and `make_devices.py` run below: a page that
@@ -377,6 +379,16 @@ import verify_app_shell                                                  # noqa:
 if verify_app_shell.main(["--brief"]) != 0:
     errors.append("the browser app's shell has drifted from the phone or from its page — "
                   "run `python3 web/tools/verify_app_shell.py` for the list")
+
+# And the words under the numbers. docs/copy/glossary.json is the kit's `MetricGlossary`,
+# and every metric label the browser prints has to be one of its spellings — a tester
+# comparing three screens about one afternoon read three names for two measurements, and the
+# words that collided were typed in files that never met (20 September 2026).
+import verify_glossary                                                   # noqa: E402
+
+if verify_glossary.main(["--brief"]) != 0:
+    errors.append("the browser calls a number something docs/copy/glossary.json does not — "
+                  "run `python3 web/tools/verify_glossary.py` for the list")
 
 # And the sentences nobody owns. verify_copy holds the pages to docs/copy; what it cannot
 # see is the site's own prose written twice and then corrected once. verify_unique.py is

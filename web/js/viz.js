@@ -19,6 +19,7 @@
  * so nothing downstream has to know a token from a literal.
  */
 
+import { speed } from "./appsettings.js";
 import { lexicon } from "./lexicon.js";
 import { TOKENS } from "./tokens.js";
 
@@ -114,7 +115,9 @@ export function outcomeText(turn, marginalSpeed = null, discipline = "wingfoil")
           || !Number.isFinite(marginalSpeed)) {
         return "touchdown · pumped out below min foil speed, no sample off the foil";
       }
-      return `touchdown · pumped out below ${nf(marginalSpeed * KMH_TO_KN, 1)} kn, `
+      // The site's one speed formatter, like every other speed a rider reads
+      // (js/appsettings.js; `TurnAnalytics.outcomeText` goes through `Speed`).
+      return `touchdown · pumped out below ${speed(marginalSpeed * KMH_TO_KN, 1)}, `
              + "no sample off the foil";
     default:
       return null;

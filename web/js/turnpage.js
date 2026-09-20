@@ -27,6 +27,7 @@ import {
   pathLabels, pointAtRelative, pointNear, rampColor, rampColorFor, rampPosition, scaleBarM,
   sliceAngles, turnFigure, typeLabel,
 } from "./maneuverfigure.js";
+import { KNOTS, speed, speedNumber, speedUnit } from "./appsettings.js";
 import { lexicon } from "./lexicon.js";
 import { track } from "./track.js";
 import {
@@ -622,7 +623,9 @@ function drawSpeedLegend(root, figure, windUp, w, h) {
     return text;
   };
   label(nf(bottomKn, 1), left, "start");
-  label(`${nf(topKn, 1)} kn`, right, "end");
+  // The ramp is scaled in the knots the engine reports, like the strip under it, so it
+  // says knots whatever the setting is (js/session.js, the import note).
+  label(`${nf(topKn, 1)} ${KNOTS}`, right, "end");
   const entryFraction = (entryKn - bottomKn) / Math.max(topKn - bottomKn, 0.001);
   if (entryFraction < 0.88) {
     const x = left + barWidth * entryFraction;
@@ -666,7 +669,8 @@ function drawCallout(host, figure) {
   if (playheadRt === null) return;
   const point = pointAtRelative(figure, playheadRt, false);
   if (!point) return;
-  const parts = [`${point.rt >= 0 ? "+" : ""}${nf(point.rt, 1)} s`, `${nf(point.kn, 1)} kn`];
+  const parts = [`${point.rt >= 0 ? "+" : ""}${nf(point.rt, 1)} s`,
+                 `${nf(point.kn, 1)} ${KNOTS}`];
   if (point.headingDeg !== null && point.headingDeg !== undefined) {
     parts.push(`${nf(point.headingDeg, 0)}° hdg`);
   }
@@ -877,7 +881,7 @@ function drawSpeedStrip() {
     text.textContent = strokesText(tick.strokes);
   }
 
-  stripAxis(frame, domain, "kn", open.kind === "turn" ? "s from the turn" : "s from the end");
+  stripAxis(frame, domain, KNOTS, open.kind === "turn" ? "s from the turn" : "s from the end");
   stripPlayhead(frame);
 }
 
@@ -1043,9 +1047,10 @@ function turnNumbers(turn, figure) {
   const why = outcomeText(turn, g.config?.turnPumpedMarginalSpeed, g.config?.discipline);
   const axis = axisLine(turn);
   return `<div class="tp-numbers">
-    <p class="tp-speeds"><b>${nf(turn.entryKn, 1)}</b> <span>in</span> →
-      <b>${nf(turn.minKn, 1)}</b> <span>low</span> →
-      <b>${nf(turn.exitKn, 1)}</b> <span>out</span> <span>kn</span></p>
+    <p class="tp-speeds"><b>${speedNumber(turn.entryKn, 1)}</b> <span>in</span> →
+      <b>${speedNumber(turn.minKn, 1)}</b> <span>low</span> →
+      <b>${speedNumber(turn.exitKn, 1)}</b> <span>out</span>
+      <span>${esc(speedUnit())}</span></p>
     <p class="tp-held">held ${scoreText(turn.score)} % of entry speed</p>
     <div class="tp-grid">
       ${cell("Stopped", `${nf(turn.stoppedS, 0)} s`)}
@@ -1069,11 +1074,12 @@ function endNumbers(end, figure) {
   const back = figure.speed.outKn === null
     ? "Never back up to flying speed inside the window."
     : `Back to flying speed ${nf(figure.speed.recoverRt, 0)} s after the end.`;
-  const dash = (v) => (v === null || v === undefined ? "—" : nf(v, 1));
+  const dash = (v) => (v === null || v === undefined ? "—" : speedNumber(v, 1));
   return `<div class="tp-numbers">
-    <p class="tp-speeds"><b>${nf(figure.speed.entryKn, 1)}</b> <span>in</span> →
+    <p class="tp-speeds"><b>${speedNumber(figure.speed.entryKn, 1)}</b> <span>in</span> →
       <b>${dash(figure.speed.lowKn)}</b> <span>low</span> →
-      <b>${dash(figure.speed.outKn)}</b> <span>out</span> <span>kn</span></p>
+      <b>${dash(figure.speed.outKn)}</b> <span>out</span>
+      <span>${esc(speedUnit())}</span></p>
     <p class="tp-held">${esc(back)}</p>
     <div class="tp-grid">
       ${cell("Stopped", `${nf(end.stoppedS, 0)} s`)}
@@ -1172,7 +1178,9 @@ function midPointWord(type) {
   }
 }
 
-const kn = (v) => `${nf(v, 1)} kn`;
+/** The coach sentences' speeds, in the rider's unit — `TurnCoach.kn` goes through
+ *  `Speed` for the same reason (js/appsettings.js). */
+const kn = (v) => speed(v, 1);
 const pctOf = (score) => `${scoreText(score)} %`;
 const secs = (v) => `${nf(v, 0)} s`;
 

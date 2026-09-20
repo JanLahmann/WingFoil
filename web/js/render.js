@@ -14,6 +14,7 @@
  *   marker number is the turn's row number in the Turns table
  */
 
+import { speed, speedNumber, speedUnit } from "./appsettings.js";
 import { hm, keyMetricEntries } from "./cardstats.js";
 import { GLOSSARY, NOT_A_SESSION } from "./copy.js";
 import { EXPERIMENTAL_NOTE, lexicon } from "./lexicon.js";
@@ -213,23 +214,35 @@ function renderSummary(result, isExample = false) {
     // so the page carried `1:57 h` over `1:57:12` of a *different* clock. The "moving"
     // note stays the file's own timer time, which is what that word means here.
     { k: "Duration", v: hm(s.durationS), n: `moving ${hms(meta.timerTimeS)}` },
-    { k: "Distance", v: nf(s.distanceKm, 1), unit: "km", n: `best 500 m ${nf(rec.best500mKn, 1)} kn` },
+    { k: "Distance", v: nf(s.distanceKm, 1), unit: "km",
+      n: `best 500 m ${speed(rec.best500mKn, 1)}` },
     { k: words.onFoil, v: pct(s.foilPct),
       n: `${hms(s.foilTimeS)} ${words.foilTimeLower}` },
     // engine 0.13.0: `longestFlightM` becomes `maxFlightM` — the maximum flight distance,
     // which is this flight's own only by coincidence. The note follows the field.
     { k: "Flights", v: int(s.flightCount),
       n: `longest ${hms(s.longestFlightS)} · max ${int(s.maxFlightM)} m` },
-    { k: "Best 2 s", v: nf(rec.best2sKn, 2), unit: "kn", n: `10 s ${nf(rec.best10sKn, 2)} kn` },
-    { k: "Best 5×10 s", v: nf(rec.best5x10sKn, 2), unit: "kn", n: `1 NM ${nf(rec.bestNmKn, 2)} kn` },
-    { k: "Alpha 500", v: nf(rec.alpha500Kn, 2), unit: "kn", n: `250 m ${nf(rec.best250mKn, 2)} kn` },
+    // The tiles carry their unit in a `<small>` of their own, so the number comes through
+    // `speedNumber` and the word through `speedUnit` — one formatter, whichever half of it
+    // a cell needs (js/appsettings.js; `Speed` in the kit).
+    { k: "Best 2 s", v: speedNumber(rec.best2sKn), unit: speedUnit(),
+      n: `10 s ${speed(rec.best10sKn)}` },
+    { k: "Best 5×10 s", v: speedNumber(rec.best5x10sKn), unit: speedUnit(),
+      n: `1 NM ${speed(rec.bestNmKn)}` },
+    { k: "Alpha 500", v: speedNumber(rec.alpha500Kn), unit: speedUnit(),
+      n: `250 m ${speed(rec.best250mKn)}` },
     { k: "Turns", v: int(s.turns.turnsCounted),
       // The **outcome** share over every counted turn. It used to print `successPct`, the
       // engine's score verdict, which is not one of the rider's two tiers (flew through,
       // and clean) and had no business on a tile under any name.
       n: `${s.turns.jibes} jibes · ${s.turns.tacks} tacks · `
          + `${pct(100 * s.turns.outcomes.flewThrough / (s.turns.turnsCounted || 1))} flew through` },
-    { k: "Outcomes", v: `${s.turns.outcomes.flewThrough}/${s.turns.outcomes.touchdown}/${s.turns.outcomes.fellIn}`,
+    // **"Turn verdicts", the glossary's own word** (20 September 2026). The tile was called
+    // "Outcomes", which is a second name for the thing the block, the card, the watch and
+    // /help/ all call the turn verdicts — and the round that started this one began with a
+    // rider reading three names for one number on three screens.
+    { k: "Turn verdicts",
+      v: `${s.turns.outcomes.flewThrough}/${s.turns.outcomes.touchdown}/${s.turns.outcomes.fellIn}`,
       n: "flew through / touchdown / fell in" },
     windTile,
   ];
@@ -329,12 +342,21 @@ function renderTakeoffs(host, g, meta) {
   const k = g.summary.takeoff;
   const accel = g.capabilities.hasAccel;
   const rows = [
+    // **Takeoffs and attempts, each naming the other** (20 September 2026, the phone's
+    // `SessionTakeoffSection`). The watch counted 15 tries on an afternoon this block
+    // reported 9 takeoffs on, and nothing said both were right.
+    //
+    // **"Got up", not "Successful".** `success` is engine vocabulary and appears in no
+    // rider-facing text (CLAUDE.md) — and on the same afternoon it was this block's word
+    // for a takeoff rate while Garmin Connect used *Turn success* for a turn speed verdict.
+    // One word, two measurements, three screens apart; the turn verdict is **Speed kept**
+    // and this is the rider getting up.
+    ["Takeoffs", `${int(k.takeoffSuccesses)} of ${int(k.takeoffAttempts)} attempts`],
     ["Attempts", int(k.takeoffAttempts)],
-    // A *takeoff* success is a third, unrelated meaning of the word — "the attempt got up"
-    // — and it is the engine's own field name. It stays; the tier vocabulary in
-    // docs/presentation.md is about turns.
-    ["Successful", `${int(k.takeoffSuccesses)} (${pct(k.successPct)})`],
-    ["Failed", int(k.failedAttempts)],
+    ["Got up", k.successPct === null || k.successPct === undefined
+      ? "— failures invisible without accel"
+      : `${pct(k.successPct)} · ${int(k.takeoffSuccesses)} of ${int(k.takeoffAttempts)} attempts`],
+    ["Failed attempts", int(k.failedAttempts)],
     ["Avg time to foil", k.avgTakeoffS === null ? "—" : `${nf(k.avgTakeoffS, 1)} s`],
     ["Median time to foil", k.medianTakeoffS === null ? "—" : `${nf(k.medianTakeoffS, 1)} s`],
   ];
@@ -413,7 +435,10 @@ function renderTurns(table, caption, g, v, meta) {
   // "why" (engine 0.18.0) is the one column that is a *sentence*, and it is the same sentence
   // the phone prints under the turn's chips — the outcome pill beside it says what happened,
   // this says which rung of the ladder decided. Empty on a fly-through, which needs no reason.
-  const head = ["#", "time", "type", "turn", "tack", "entry kn", "min kn", "score",
+  // The two speed columns carry the unit in the head, so the cells are numbers — and the
+  // head is the rider's unit rather than a literal (js/appsettings.js).
+  const head = ["#", "time", "type", "turn", "tack", `entry ${speedUnit()}`,
+                `min ${speedUnit()}`, "score",
                 "clean", "outcome", "why", "stop s", "off foil s", "pump", "wet",
                 "arc m", "R m"];
   table.innerHTML = `<thead><tr>${head
@@ -425,8 +450,8 @@ function renderTurns(table, caption, g, v, meta) {
         <td class="l">${esc(t.type)}${t.counted ? "" : ' <span class="pill">not counted</span>'}</td>
         <td class="l dim">${esc(t.direction)}</td>
         <td class="l dim">${esc(t.side)}</td>
-        <td>${nf(t.entryKn, 2)}</td>
-        <td>${nf(t.minKn, 2)}</td>
+        <td>${speedNumber(t.entryKn)}</td>
+        <td>${speedNumber(t.minKn)}</td>
         <td>${nf(t.score * 100, 0)} %</td>
         <td>${yn(t.clean)}</td>
         <td class="l">${outcomePill(t.outcome)}${t.borderline ? ' <span class="pill">borderline</span>' : ""}</td>
@@ -443,13 +468,24 @@ function renderTurns(table, caption, g, v, meta) {
 
 function renderEnds(table, caption, g, meta) {
   const e = g.summary.flightEnds, sp = g.summary.outcomeSplit;
+  // **The falls line is the flight-end channel's own** (20 September 2026), the same three
+  // numbers the key-metrics block's `fell in` cell prints: `all == inTurn + straight`, one
+  // event per actual swim. It used to lead with `outcomeSplit.turnFalls`, which is the turn
+  // ladder's count, so the line beside this very table could disagree with the table.
+  // `touchdowns` and `glide-outs` stay on the split — they are the split's own question.
+  //
+  // voice: skip — a strip of counts, one value per segment, in the spec register of
+  // docs/voice.md, exactly like the turns caption above it. It is read as a row of numbers
+  // rather than as a sentence. The punctuation still obeys the rules: no dash and no
+  // bracket, the middot separates and the slash pairs the two halves of one count.
   caption.textContent =
-    `${sp.turnFalls} falls in turns / ${sp.straightFalls} straight-line · ` +
+    `${e.all.fellIn} fell in · ${e.inTurn.fellIn} in a turn / ` +
+    `${e.straight.fellIn} in a straight line · ` +
     `${sp.turnTouchdowns} touchdowns in turns / ${sp.straightTouchdowns} straight-line · ` +
     `${sp.glideOuts} glide-outs` + (sp.unknownEnds ? ` · ${sp.unknownEnds} truncated by a gap` : "");
 
-  const head = ["flight", "time", "outcome", "stop s", "off foil s", "min kn", "pump", "wet",
-                "window s", "in turn"];
+  const head = ["flight", "time", "outcome", "stop s", "off foil s", `min ${speedUnit()}`,
+                "pump", "wet", "window s", "in turn"];
   table.innerHTML = `<thead><tr>${head
     .map((h, i) => `<th${i <= 2 || i === 9 ? ' class="l"' : ""}>${esc(h)}</th>`).join("")}</tr></thead>
     <tbody>${g.flightEnds.map((x) => `
@@ -459,7 +495,7 @@ function renderEnds(table, caption, g, meta) {
         <td class="l">${outcomePill(x.outcome)}${x.borderline ? ' <span class="pill">borderline</span>' : ""}</td>
         <td>${nf(x.stoppedS, 1)}</td>
         <td>${nf(x.offFoilS, 1)}</td>
-        <td>${x.minKn === null ? "—" : nf(x.minKn, 2)}</td>
+        <td>${speedNumber(x.minKn)}</td>
         <td class="dim">${yn(x.pumped)}</td>
         <td class="dim">${yn(x.submerged)}</td>
         <td class="dim">${nf(x.windowS, 0)}</td>

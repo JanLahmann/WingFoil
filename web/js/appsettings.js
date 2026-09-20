@@ -14,8 +14,11 @@ const LS_WELCOME = "cleanjibe.welcomeSeen.v1";
 const LS_GEAR = "cleanjibe.gear.v1";
 const LS_DETAIL = "cleanjibe.detail.v1";
 
-/** Knots per km/h. One constant, so no caller multiplies by a number it typed. */
-const KMH_PER_KN = 1.852;
+/** km/h per knot. One constant, so no caller multiplies by a number it typed. Exported
+ *  because the engine reports exactly one number — the session's average — in km/h, and the
+ *  block that prints it beside a column of knots has to convert it somewhere. Twin of
+ *  `SpeedUnit.kmhPerKnot` in the kit. */
+export const KMH_PER_KN = 1.852;
 
 const listeners = new Set();
 
@@ -49,9 +52,21 @@ export function onSettingsChange(fn) {
   listeners.add(fn);
 }
 
+/**
+ * **The two words a speed can end in, and the only place either is spelled.**
+ *
+ * `SpeedUnit.suffix` in the kit, and the same two strings the picker's labels are built
+ * from. A `kn` typed anywhere else is a cell that cannot follow the setting.
+ */
+export const UNIT_SUFFIX = { kn: "kn", kmh: "km/h" };
+
+/** The knots word on its own, for the one surface that is knots whatever the setting says:
+ *  a chart whose y domain was scaled in Python (js/trends.js, `chartUnit`). */
+export const KNOTS = UNIT_SUFFIX.kn;
+
 /** The unit's own word, for the cell beside the number. */
 export function speedUnit() {
-  return units() === "kmh" ? "km/h" : "kn";
+  return UNIT_SUFFIX[units()];
 }
 
 /** A speed the engine reported in knots, in the unit this browser reads. */
@@ -60,11 +75,25 @@ export function speedValue(kn) {
   return units() === "kmh" ? kn * KMH_PER_KN : kn;
 }
 
-/** "13.25 kn" / "24.54 km/h", or "—" where the session has no answer. */
+/** "13.25 kn" / "24.54 km/h", or "—" where the session has no answer.
+ *
+ *  **Every speed a rider reads on this site comes out of here** — the key-metrics block,
+ *  the share card, the tiles, the library rows, the records table, the turn page and the
+ *  watch-vs-phone rows. The kit's `Speed.format` is its twin, and `verify_glossary.py`
+ *  scans for a second formatter: a `kn` typed into a template literal is a cell that keeps
+ *  saying knots to a rider who switched to km/h. */
 export function speed(kn, digits = 2) {
   const value = speedValue(kn);
   if (value === null) return "—";
   return `${value.toFixed(digits)} ${speedUnit()}`;
+}
+
+/** The number alone, in the unit this browser reads, for a cell that carries its unit in a
+ *  column or a `<small>` of its own (the tiles, the records table). `Speed.number` in the
+ *  kit. */
+export function speedNumber(kn, digits = 2) {
+  const value = speedValue(kn);
+  return value === null ? "—" : value.toFixed(digits);
 }
 
 /* --------------------------------------------------------------- how much to say */

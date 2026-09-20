@@ -8,6 +8,7 @@
 import { mountShell, noteEngine, offerWelcome, setSessionCount, showPage }
   from "./appshell.js";
 import { WHATS_NEW } from "./appcopy.js";
+import { onSettingsChange } from "./appsettings.js";
 import { mountIcu } from "./icu.js";
 import { mountLibrary, openStoredSession, refresh as refreshLibrary, saveSession }
   from "./library.js";
@@ -665,6 +666,29 @@ function wireReflow() {
   });
 }
 
+/**
+ * **The unit moved, so every number that carries it has to be redrawn** (20 September
+ * 2026). Settings → Units used to change the library rows and the records table, both of
+ * which are rebuilt on the way back to their tab; since every speed on the session page
+ * goes through the same formatter, the page a reader left open behind the Settings sheet
+ * has to be told as well. Same two guards, and the same whole-report `render` the reflow
+ * uses — the block, the tiles, the tables and the popovers all carry speeds.
+ *
+ * Trends is redrawn from its memoised aggregate: no Python call, nothing recomputed, and
+ * the chart series stays in the knots it was scaled in (js/trends.js, `chartUnit`).
+ */
+function wireUnitRedraw() {
+  onSettingsChange(() => {
+    if (state.last && !el("results").hidden && !el("page-session").hidden) {
+      render(state.last, { highlight: state.highlight, isExample: state.isExample });
+    }
+    if (!el("page-trends").hidden || !el("page-records").hidden) redrawTrends();
+    // And the list, whose third cell is a speed. It is rebuilt from the stored digests,
+    // which is a read and no analysis.
+    refreshLibrary().catch(() => {});
+  });
+}
+
 /* ------------------------------------------------------------------ sections */
 
 /**
@@ -704,6 +728,7 @@ wireSave();
 wireShareCard();
 wireSections();
 wireReflow();
+wireUnitRedraw();
 wireServiceWorker();
 // r3-w1 · the ported screens. Each wires its own markup and owns its own storage; the
 // callbacks below are the one thing they share, which is that the library changed.

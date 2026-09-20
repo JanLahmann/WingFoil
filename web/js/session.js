@@ -30,6 +30,17 @@ import {
   hms, isNarrow, label, lineSwatch, marker, nf, outcomeText, showTip, svg, tipTarget,
   turnStyle,
 } from "./viz.js";
+/* **Every speed a rider reads here goes through one formatter** (20 September 2026). A
+   popover, a callout and a table cell are numbers he compares with the block above them,
+   so they carry Settings → Units like the block does.
+
+   The **speed strip is the exception, and says so**: its y domain and its gridline step are
+   the knots the engine reports, the same divergence the phone states for its four Swift
+   Charts axes (docs/presentation.md, "The definitions round", item 5). The axis, the
+   crosshair and the playhead readout are therefore labelled `KNOTS` — deliberately the
+   knots word, out of the one module that owns both words, rather than a literal that would
+   look identical and mean nothing. */
+import { KNOTS, speed, speedNumber } from "./appsettings.js";
 import { TOKENS } from "./tokens.js";
 // r3-w2:begin — the ground under the track, and the door that opens it full screen
 import {
@@ -345,8 +356,8 @@ function buildModel(result) {
       t: m.t, x: m.x, y: m.y, kn: m.kn, style: turnStyle({ ...m, clean }), n: m.n,
       title: `#${m.n} ${m.kind}${m.counted ? "" : " (not counted)"}`,
       tip: `<b>#${m.n} ${clockAt(meta, m.t)}</b> — ${esc(m.kind)}<br>` +
-           `${OUTCOME_LABEL[m.outcome] || m.outcome} · ${nf(turn.entryKn, 1)} → ` +
-           `${nf(turn.minKn, 1)} kn (${nf(turn.score * 100, 0)} %)`,
+           `${OUTCOME_LABEL[m.outcome] || m.outcome} · ${speedNumber(turn.entryKn, 1)} → ` +
+           `${speed(turn.minKn, 1)} (${nf(turn.score * 100, 0)} %)`,
       rows: [
         ["time", time(m.t)],
         ["type", `${turn.type}${turn.counted ? "" : " · not counted"}`],
@@ -362,8 +373,8 @@ function buildModel(result) {
             ? [["why", outcomeText(turn, (g.config || {}).turnPumpedMarginalSpeed)]] : []),
         // entry → min → exit, all three on the maneuver channel (engine 0.11.0): the
         // bottom of the turn says what it cost, the exit says whether he carried it out.
-        ["speed", `${nf(turn.entryKn, 2)} → ${nf(turn.minKn, 2)} → ` +
-                  `${nf(turn.exitKn, 2)} kn`],
+        ["speed", `${speedNumber(turn.entryKn)} → ${speedNumber(turn.minKn)} → ` +
+                  `${speed(turn.exitKn)}`],
         // The score is a **number** — the share of the entry speed the turn held — and it
         // stays. The boolean beside it was the engine's score verdict, which is not one of
         // the rider's two tiers (docs/presentation.md, "Clean jibe"): the outcome is on
@@ -395,7 +406,7 @@ function buildModel(result) {
                     (end?.borderline ? " (borderline)" : "")],
         ["channel", "straight-line — no turn explains it"],
         ["stopped", `${nf(end?.stoppedS, 1)} s · off foil ${nf(end?.offFoilS, 1)} s`],
-        ["min speed", end?.minKn === null || end?.minKn === undefined ? "—" : `${nf(end.minKn, 2)} kn`],
+        ["min speed", speed(end?.minKn)],
       ],
     });
   }
@@ -408,7 +419,7 @@ function buildModel(result) {
     const p = at(k.startTs);
     const rows = [
       ["time", time(k.startTs)],
-      ["up at", `${nf(k.entryKn, 2)} kn`],
+      ["up at", speed(k.entryKn)],
       ["pumps", k.pumps === null ? "— (no wrist accelerometer)" : `${k.pumps}`],
       ["time to foil", k.truncated ? "— (truncated)" : `${nf(k.timeToFoilS, 1)} s`],
     ];
@@ -424,7 +435,7 @@ function buildModel(result) {
       pairing: flight ? pairTakeoff(flight) : null,
       title: k.free ? "Free takeoff" : "Takeoff",
       tip: `<b>${clockAt(meta, k.startTs)}</b> — ${k.free ? "free takeoff" : "takeoff"}<br>` +
-           `up at ${nf(k.entryKn, 1)} kn` +
+           `up at ${speed(k.entryKn, 1)}` +
            (k.pumps === null ? "" : ` · ${k.pumps} stroke${k.pumps === 1 ? "" : "s"}`) +
            (k.truncated ? "" : ` · ${nf(k.timeToFoilS, 0)} s run`),
       rows,
@@ -1194,10 +1205,10 @@ function drawStrip() {
   if (narrow) {
     // No room for a rotated axis title beside a 34-unit gutter — it would sit at x≈0 and be
     // clipped. Bare units instead; the panel heading already says what the figure is.
-    axisUnit(root, L - 8, T - 4, "kn", "end");
+    axisUnit(root, L - 8, T - 4, KNOTS, "end");
     axisUnit(root, W - R, H - 3, timeUnit, "end");
   } else {
-    axisLabel(root, L - 34, T + plotH / 2, "speed (kn)", true);
+    axisLabel(root, L - 34, T + plotH / 2, `speed (${KNOTS})`, true);
     axisLabel(root, L + plotW / 2, H - 4, `session time (${timeUnit})`, false);
   }
 
@@ -1364,8 +1375,8 @@ function wireStripInput(root, cross, box) {
     cross.cdot.setAttribute("cx", box.X(v.t[i]));
     cross.cdot.setAttribute("cy", box.Y(kn));
     showTip(ev, `<b>${clockAt(state.model.meta, v.t[i])}</b> · ${hms(v.t[i])}<br>` +
-                `Doppler <b>${nf(v.dopplerKn[i], 2)}</b> kn · positional ` +
-                `<b>${nf(v.speedKn[i], 2)}</b> kn`);
+                `Doppler <b>${nf(v.dopplerKn[i], 2)}</b> ${KNOTS} · positional ` +
+                `<b>${nf(v.speedKn[i], 2)}</b> ${KNOTS}`);
   });
   root.addEventListener("pointerleave", () => {
     cross.cross.setAttribute("visibility", "hidden");
@@ -1682,8 +1693,8 @@ function applyPlayhead() {
     readout.innerHTML =
       field(clockAt(model.meta, v.t[i]), "clock") +
       field(hms(v.t[i]), "elapsed") +
-      field(nf(v.dopplerKn[i], 2), "kn Doppler") +
-      field(nf(v.speedKn[i], 2), "kn positional") +
+      field(nf(v.dopplerKn[i], 2), `${KNOTS} Doppler`) +
+      field(nf(v.speedKn[i], 2), `${KNOTS} positional`) +
       `<span class="phase${flying ? " flying" : ""}">${flying ? "flying" : "off foil"}</span>` +
       `<button class="ghost small-btn" id="clear-playhead" type="button">Clear</button>`;
     el("clear-playhead").addEventListener("click", clearPlayhead);

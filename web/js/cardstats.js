@@ -17,6 +17,7 @@
  * Drawing lives in js/sharecard.js. Nothing here knows what a canvas is.
  */
 
+import { KMH_PER_KN, speed } from "./appsettings.js";
 import { int, nf, zonedFormat } from "./viz.js";
 
 /* -------------------------------------------------------------------- branding
@@ -88,8 +89,13 @@ export const PRESET_ORDER = ["complete", "lean"];
  * Held as *keys* rather than as a rebuilt list, so the preset cannot invent an entry:
  * anything `keyMetricEntries` did not produce is simply never there to be kept. Identical
  * to `ShareCardStats.Preset.leanKeys`.
+ *
+ * **`falls` is lean too** (20 September 2026). The tally counts *jibe* outcomes and its
+ * caption says "of 55 jibes", so a card that carried only the tally reported one fall on an
+ * afternoon with three in it — two of them in a straight line. A card is read next to
+ * nothing, so the honest number travels on both presets.
  */
-export const LEAN_KEYS = new Set(["duration", "distance", "max2s", "tally"]);
+export const LEAN_KEYS = new Set(["duration", "distance", "max2s", "tally", "falls"]);
 
 /* ---------------------------------------------------------------- the entries */
 
@@ -142,9 +148,11 @@ export function hm(sec) {
  *
  *   key     stable id — the `KeyMetrics.Metric.key` values, plus `tally`, which is not a
  *           metric because its three counts stay counts (they wear the ladder's inks)
- *   label   exactly the words printed under the number on the page. The tally's carries its
- *           own caption after an em-dash separator (`CAPTION_SEP`); the card splits there
- *           to get two lines, which is layout, not content.
+ *   label   exactly the words printed under the number on the page. A cell with something
+ *           to qualify carries its caption after an em-dash separator (`CAPTION_SEP`) — the
+ *           tally's "of 55 jibes" and the falls cell's split; the card splits there to get
+ *           two lines, which is layout, not content. iOS holds the two halves in two fields
+ *           (`KeyMetrics.Metric.caption`) and joins them with the same separator.
  *   value   the display string, "—" included. The tally's spells its three counts out, so a
  *           renderer that ignores `tally` still prints the truth — just in one colour.
  *   tally   set only on the outcome cell: `{flewThrough, touchdown, fellIn}`
@@ -157,12 +165,17 @@ export function keyMetricEntries(g) {
 
   // Goldens serialize a non-qualifying record as 0.0 where the Swift model uses nil; both
   // mean "no window of that length exists", and neither may print as a speed.
-  const kn2 = (v) => (v >= 0.05 ? `${nf(v, 2)} kn` : "—");
+  //
+  // `speed` is the site's one formatter (js/appsettings.js) and it carries the rider's
+  // unit, so a block and a card made in km/h say km/h. The engine's number is knots either
+  // way: the record windows are defined in them (docs/algorithms.md) and nothing here
+  // converts on the way *in*.
+  const kn2 = (v) => (v >= 0.05 ? speed(v) : "—");
   const best2s = kn2(rec.best2sKn);
-  // Every other speed in either app is knots, so the one summary number the engine reports
-  // in km/h is converted rather than set beside a column of them.
+  // The one summary number the engine reports in km/h, turned back into the knots every
+  // other cell is in before the formatter prints it in the rider's unit.
   const avg = s.avgSpeedKmh === null || s.avgSpeedKmh === undefined
-    ? "—" : `${nf(s.avgSpeedKmh / 1.852, 2)} kn`;
+    ? "—" : speed(s.avgSpeedKmh / KMH_PER_KN);
 
   // Jibes are what the rider asked for and what JPH counts a row below, so the tally has
   // to be about the same turns. A session whose wind axis never resolved has no jibes at
@@ -209,6 +222,34 @@ export function keyMetricEntries(g) {
       label: `flew · touchdown · fell${CAPTION_SEP}${tally.of}`,
       value: `${int(o.flewThrough)} · ${int(o.touchdown)} · ${int(o.fellIn)}`,
       tally: { flewThrough: o.flewThrough, touchdown: o.touchdown, fellIn: o.fellIn },
+      row: 2,
+    });
+  }
+  // **Every fall of the session, and where each one happened** (20 September 2026).
+  //
+  // Read off the flight-end channel — the one that answers "how often did I end up in the
+  // water": one event per actual swim, in a turn or in a straight line (docs/algorithms.md,
+  // "Wet is every fall, not every fallen jibe"). It is the channel WPH already divides, the
+  // number the library row prints and the one the phone's session page now shows, so the
+  // four surfaces say one thing.
+  //
+  // The tally two cells left is the **jibe** ladder and says so in its own caption, which
+  // means its `fell` count leaves out every swim in a straight line. A tester fell three
+  // times on 19 September 2026, read the tally, and concluded the app had not noticed.
+  //
+  // `all == inTurn + straight` by construction, so the caption adds up to the value — which
+  // is why it is not built from `outcomeSplit`, whose falls mix the turn ladder with this
+  // channel and therefore need not. Absent where no flight ended at all: a session the
+  // engine found no flights in has an unknown number of falls, not zero of them. `total`
+  // leaves `unknown` out, exactly as `FlightEndCounts.total` does.
+  const ends = s.flightEnds;
+  if (ends && ends.all
+      && (ends.all.glideOut + ends.all.touchdown + ends.all.fellIn) > 0) {
+    out.push({
+      key: "falls",
+      label: `fell in${CAPTION_SEP}${int(ends.inTurn.fellIn)} in a turn · `
+        + `${int(ends.straight.fellIn)} in a straight line`,
+      value: int(ends.all.fellIn),
       row: 2,
     });
   }

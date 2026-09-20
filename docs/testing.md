@@ -28,7 +28,7 @@ repo, so it would fail through no fault of the checkout. And three of the web ch
 that lab venv plus the fixture corpus rather than the stdlib, so they are run by hand from
 `lab/.venv/bin/python` when the engine moves: `web/tools/verify_web_entry.py`,
 `verify_library.py` and `verify_presentation.py`. `web/README.md` "Verification" lists all
-twelve web checks and says which of them `verify_links.py` already runs for you.
+thirteen web checks and says which of them `verify_links.py` already runs for you.
 
 **The turn drawing has one of its own**, `web/tools/verify_turn_figure.py`, and it is
 stdlib plus `node`. The turn page and the flight-end page draw one maneuver at its own
@@ -566,6 +566,26 @@ the pages did: `/start/` absorbed `/watches/`, `/invite/` absorbed `/whats-new/`
 of forty pages fits inside 900 visible words. That is what
 stops `/start/` walking back to 3500 words one honest paragraph at a time, which is exactly
 how it got there the first time.
+
+**And the words under the numbers.** `python3 web/tools/verify_glossary.py`, added 20
+September 2026 and run by `verify_links.py` as a sub-check of its own, is the browser's twin
+of the kit's `GlossaryLintTests`: **every metric label the app's JavaScript prints is a
+spelling in `docs/copy/glossary.json`**, which is `MetricGlossary` exported. The case was a
+tester who compared three screens about one afternoon and read *Turn success 29 %* in Garmin
+Connect, *93 % flew through* on the site and 44 % on the phone — three measurements, two of
+them sharing a word, spelled in files that never met. It scans five regions rather than five
+whole files, because a JavaScript file is mostly strings and few of them are names: the
+key-metrics block in `js/cardstats.js` (which *is* the share card — one list, two readers),
+the tiles and the takeoff rows in `js/render.js`, `ROW_METRICS` in `js/library.js`,
+`renderTotals` in `js/trends.js`, and the watch-vs-phone rows in `js/log.js`. A cell's
+caption is cut at `CAPTION_SEP` — "of 55 jibes" qualifies the number, it does not name it.
+A label that is a unit, a clock, a plain measure or a maneuver noun goes on an `ALLOWED` map
+with its reason, printed on every full run, the same culture as `verify_unique.py`'s; a
+region that cannot be found fails loudly, so a renamed function cannot quietly stop the
+check. What it deliberately does **not** read is the aggregate labels the digest authors
+(`lab_bundle/library.py`: the records table, the chart titles, the period block) — they are
+the engine's output, mirrored from `lab/`, and each is a superlative over a term that is in
+the glossary.
 
 `verify_links.py` also compares the **footer** block between `<!-- sitefoot:begin -->` and
 `<!-- sitefoot:end -->` byte for byte across all seven reader documents, the way it has always

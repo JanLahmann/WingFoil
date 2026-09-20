@@ -175,19 +175,36 @@ const shortDate = (e) => {
 };
 
 /**
- * **The three numbers a row carries, each under its own word** — `RowMetric` on the phone,
- * and its `defaultTriple`: how much of it he flew, how many jibes, how fast.
+ * **What a row cell can be, each under its own word** — the browser's half of `RowMetric`
+ * in the kit, keyed by the same ids so the two lists can only drift in one direction.
  *
  * The words are the kit's, character for character, because one wording per metric is the
- * rule across iOS and web (docs/presentation.md). The value is a field of the Python
+ * rule across iOS and web (docs/presentation.md, "Label table") and `verify_glossary.py`
+ * holds every one of them to `docs/copy/glossary.json`. The value is a field of the Python
  * digest, printed — nothing here derives a metric, and the speed is only put into the unit
  * this browser reads (js/appsettings.js).
+ *
+ * **`falls` is every fall of the session**, in a turn or in a straight line: `wetExits`,
+ * the flight-end channel WPH divides, and not the turn ladder's fell-in count. The ladder's
+ * is a share of the jibes and only reads right beside its other two rungs, which the row's
+ * foot already draws (docs/algorithms.md, "Wet is every fall, not every fallen jibe").
  */
-const ROW_METRICS = [
-  { label: "foil", value: (e) => pct(e.foilPct) },
-  { label: "jibes", value: (e) => int(e.turns?.jibes) },
-  { label: "best 2 s", value: (e) => speed(e.records?.best2sKn) },
-];
+const ROW_METRICS = {
+  foilShare: { label: "foil", value: (e) => pct(e.foilPct) },
+  jibes: { label: "jibes", value: (e) => int(e.turns?.jibes) },
+  best2s: { label: "best 2 s", value: (e) => speed(e.records?.best2sKn) },
+  falls: { label: "fell in", value: (e) => int(e.wetExits) },
+};
+
+/**
+ * The three this browser prints, and the phone's `RowMetric.defaultTriple`.
+ *
+ * **The deviation, stated**: on the phone which three they are is the rider's (Settings →
+ * Session list → Row shows) and the browser's Settings has no such section, so the browser
+ * prints the default. The catalogue above is the phone's, so the picker is a UI away rather
+ * than a vocabulary away (docs/screens.md, the web column).
+ */
+const ROW_TRIPLE = ["foilShare", "jibes", "best2s"];
 
 /** What a row is *called*. The Python digest's `spot` is derived from the filename, and the
  *  watch that wrote the filename records wingfoil under Garmin's windsurf profile — so the
@@ -230,7 +247,7 @@ function renderRows(entries) {
         <span class="row-when">${esc(shortDate(e))} · ${hms(e.rateDurationS ?? e.durationS)}</span>
         ${e.isSession === false
           ? `<span class="row-note">${esc(NOT_A_SESSION.tag)}</span>` : ""}
-        <span class="row-metrics">${ROW_METRICS.map((m) =>
+        <span class="row-metrics">${ROW_TRIPLE.map((key) => ROW_METRICS[key]).map((m) =>
           `<span class="rm"><b>${m.value(e)}</b><i>${esc(m.label)}</i></span>`).join("")}</span>
         <span class="row-foot">${tally(e.turns?.outcomes)}
           <span class="row-km">${nf(e.distanceKm, 1)} km</span></span>

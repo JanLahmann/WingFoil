@@ -16,7 +16,7 @@ import { ask } from "./rpc.js";
 /* r3-w3: the "All spots" chip. Records, Trends and Periods answer to one chip here, the way
    they answer to one `LibraryFilterBar` on the phone. js/spots.js. */
 import { filterBySpot, renderSpotChip } from "./spots.js";
-import { speedUnit, speedValue } from "./appsettings.js";
+import { KNOTS, speedUnit, speedValue } from "./appsettings.js";
 // r3-w1: the range over the charts. It picks which afternoons the question is asked of and
 // answers nothing itself; Records stay all-time, which is what the sheet's footer promises.
 import { emptyRangeNote, rangeEntries, rangeKey } from "./daterange.js";
@@ -212,7 +212,7 @@ function draw(agg, trendAgg = agg) {
     // certify (`library._trends`), and the points that set it carry it again below — the
     // same word, and the same reason, the records table uses.
     box.innerHTML = `<div class="trend-head"><h4>${esc(chart.label)}</h4>` +
-      (chart.unit ? `<span class="trend-unit">${esc(chart.unit)}</span>` : "") +
+      (chart.unit ? `<span class="trend-unit">${esc(chartUnit(chart))}</span>` : "") +
       (chart.uncertified ? UNCERTIFIED : "") +
       `</div><div class="figure"></div>`;
     charts.appendChild(box);
@@ -225,7 +225,9 @@ function renderTotals(host, t) {
   const rows = [
     ["Sessions", int(t.sessions)],
     ["Distance", `${nf(t.distanceKm, 1)} km`],
-    ["Time on foil", hms(t.foilTimeS)],
+    // "Foil time" and "On foil" are one term's two spellings in the glossary — the clock
+    // and the share — and "Time on foil" was a third name for the first of them.
+    ["Foil time", hms(t.foilTimeS)],
     ["On foil", pct(t.foilPct)],
     ["Flights", int(t.flightCount)],
     ["Turns counted", int(t.turnsCounted)],
@@ -235,7 +237,9 @@ function renderTotals(host, t) {
     // speed). The rider has two tiers and the score verdict is neither of them, so the row
     // prints the one a rider recognises: counted turns that never lost the foil.
     ["Flew through", `${int(t.turnsFlewThrough)} (${pct(t.flewThroughPct)})`],
-    ["Port / starboard entries",
+    // The phone's own card is "Port / starboard" with "entered on each tack" under it; the
+    // entries are what the number is, not a second metric's name.
+    ["Port / starboard",
      `${int(t.turnsBySide.port.entries)} / ${int(t.turnsBySide.starboard.entries)}`],
   ];
   host.innerHTML = rows
@@ -444,6 +448,22 @@ async function showRange(from, to) {
 
 /* ----------------------------------------------------------------------- charts */
 
+/**
+ * The word under a chart's title, and beside a point in its tooltip.
+ *
+ * **The chart series stays in knots, on purpose** — the same divergence the phone states
+ * for its four Swift Charts axes (docs/presentation.md, "The definitions round", item 5).
+ * `library._y_axis` picks the domain and the gridline step from the values it was given,
+ * in Python, and re-picking them in the browser would be a second copy of that rule and a
+ * row of ticks at 3.7 km/h. So the axis is knots and **says** knots, through the one
+ * formatter rather than through a literal: a hard-coded "kn" here and a converted number
+ * anywhere else is how a page comes to print one speed in two units.
+ *
+ * Everything that is not a chart — the records table, the rows, the block, the card — is
+ * already in the reader's unit.
+ */
+const chartUnit = (chart) => (chart.unit === "kn" ? KNOTS : chart.unit);
+
 function drawChart(host, chart, sessions) {
   host.innerHTML = "";
   const W = figureWidth(host);
@@ -525,7 +545,7 @@ function drawChart(host, chart, sessions) {
       const s = sessions[p.i] || {};
       const html = `<b>${esc(sessionLabel(s, s.id))}</b><br>${esc(localDate(s))}<br>` +
                    `${esc(chart.label)} · ${esc(line.label)}: ` +
-                   `<b>${nf(p.v, 2)}</b> ${esc(chart.unit)}` +
+                   `<b>${nf(p.v, 2)}</b> ${esc(chartUnit(chart))}` +
                    (open ? "<br>uncertified — speed from positions" : "");
       dot.addEventListener("pointerenter", (ev) => showTip(ev, html));
       dot.addEventListener("pointermove", (ev) => showTip(ev, html));

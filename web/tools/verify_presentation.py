@@ -559,7 +559,11 @@ CARD_PARITY = TOOLS / "card_parity.mjs"
 
 #: What `lean` is allowed to keep — `ShareCardStats.Preset.leanKeys`, spelled here so the
 #: JavaScript is checked against a second copy of the rule rather than against itself.
-LEAN_KEYS = ["distance", "duration", "max2s", "tally"]
+#: `falls` joined them on 20 September 2026: the tally is the *jibe* ladder and says so in
+#: its caption, so a card carrying only the tally reported one fall on an afternoon with
+#: three in it. A card is read next to nothing, so the session's own number travels on both
+#: presets.
+LEAN_KEYS = ["distance", "duration", "falls", "max2s", "tally"]
 
 #: Keys that must never reach a card. They are real numbers the app shows — in the *tiles*,
 #: below the block — and a card that printed them would be a second, quieter answer to "was
@@ -603,6 +607,14 @@ def expected_card_values(doc: dict) -> dict[str, str]:
     if t["jibes"] > 0 or t["turnsCounted"] > 0:
         out["tally"] = (f"{outcomes['flewThrough']} · {outcomes['touchdown']} · "
                         f"{outcomes['fellIn']}")
+    # Every fall of the session, off the flight-end channel — the one that answers "how
+    # often did I end up in the water", one event per actual swim (docs/algorithms.md, "Wet
+    # is every fall, not every fallen jibe"). Deliberately NOT `outcomeSplit`, whose falls
+    # mix the turn ladder with this channel and so need not add up to it. Absent where no
+    # flight ended with usable evidence, which is `FlightEndCounts.total` — `unknown` out.
+    ends = doc["summary"]["flightEnds"]
+    if ends["all"]["glideOut"] + ends["all"]["touchdown"] + ends["all"]["fellIn"] > 0:
+        out["falls"] = str(ends["all"]["fellIn"])
     if t["turnsCounted"] > 0:
         # Flying leads the pair: the harder run first, and `longestFlewStreak` is always
         # the smaller of the two.
