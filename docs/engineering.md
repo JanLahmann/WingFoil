@@ -261,6 +261,15 @@ remaining nineteen Accepted.
   cross-validation against a second implementation, and `docs/testing.md` now says that
   instead of naming a file that does not exist.
 
+## The security half
+
+The **Secrets** and **Privacy** rows above are one paragraph each because this audit was
+about practices. The threat model they imply — what is worth protecting, where the trust
+boundaries are, who the adversaries actually are for a hobby app with a public repo and no
+server, and every open finding with a severity and an effort — is **`docs/security.md`**,
+written 20 September 2026. Read that one before touching a parser, the keychain, the
+Strava flow or a workflow's `permissions:` block.
+
 ## Still open, in the audit's order
 
 2. Scrub `fixtures/sessions/` with `scrub_fit.py`, regenerate goldens, add `SECURITY.md`.

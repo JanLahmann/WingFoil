@@ -37,10 +37,16 @@ on:
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
+# READ-ONLY BY DEFAULT, and the write is on the one job that deploys.
+#
+# `pages: write` and `id-token: write` at the top of the file gave that token to every job
+# in the run — including `check` and `gate`, which run on a **pull request** and execute
+# code out of the branch being proposed (`uv run … verify_*.py`, `swift test`). A change to
+# a script in a PR would have been a change running with a token that can publish the live
+# site. The two jobs that only say yes or no need `contents: read` and nothing else, which
+# is what they now inherit; `deploy` asks for the rest, and it runs on a push to main.
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: pages
@@ -97,6 +103,11 @@ jobs:
     if: github.event_name != 'pull_request'
     needs: [check, gate]
     runs-on: ubuntu-latest
+    # The only job in the repository that may publish. See the note at the top of the file.
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
