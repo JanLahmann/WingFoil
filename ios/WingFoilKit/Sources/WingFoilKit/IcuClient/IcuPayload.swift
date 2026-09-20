@@ -19,6 +19,9 @@ public enum IcuPayload {
         case zipContainsNoRecording
         case unreadableZip
         case gzipFailed
+        /// A member that inflates past `ZipSizes.maxInflatedBytes` — a bomb, or a file
+        /// nothing on a phone could hold either way.
+        case tooLarge
 
         public var description: String {
             switch self {
@@ -31,6 +34,7 @@ public enum IcuPayload {
             case .zipContainsNoRecording: "the ZIP holds no recording"
             case .unreadableZip: "unreadable ZIP"
             case .gzipFailed: "gzip decompression failed"
+            case .tooLarge: "that file unpacks to more than CleanJibe will hold"
             }
         }
     }
@@ -122,6 +126,11 @@ public enum IcuPayload {
             throw Error.unreadableZip
         }
         for entry in archive where entry.type == .file {
+            // A member that *says* it is bigger than the cap is skipped before a byte of it
+            // is inflated — a zip bomb is a few hundred kilobytes of archive and gigabytes
+            // of member, and the phone dies materialising it rather than failing the import
+            // (`ZipSizes.maxInflatedBytes`).
+            guard !ZipSizes.refusesDeclared(entry.uncompressedSize) else { continue }
             var buffer = Data()
             buffer.reserveCapacity(ZipSizes.reservation(entry.uncompressedSize))
             _ = try? archive.extract(entry, skipCRC32: true) { buffer.append($0) }
@@ -144,6 +153,7 @@ public enum IcuPayload {
             throw Error.unreadableZip
         }
         guard let entry = archive[path] else { return nil }
+        guard !ZipSizes.refusesDeclared(entry.uncompressedSize) else { return nil }
         var buffer = Data()
         buffer.reserveCapacity(ZipSizes.reservation(entry.uncompressedSize))
         _ = try? archive.extract(entry, skipCRC32: true) { buffer.append($0) }
@@ -159,7 +169,8 @@ public enum IcuPayload {
 /// member header, raw-inflate the DEFLATE stream, ignore the CRC/ISIZE trailer.
 public enum Gzip {
 
-    public static func decompress(_ data: Data) throws -> Data {
+    public static func decompress(_ data: Data,
+                                  limit: Int = ZipSizes.maxInflatedBytes) throws -> Data {
         let bytes = [UInt8](data)
         guard bytes.count > 18, bytes[0] == 0x1f, bytes[1] == 0x8b, bytes[2] == 0x08 else {
             throw IcuPayload.Error.gzipFailed
@@ -186,11 +197,18 @@ public enum Gzip {
             offset += 2
         }
         guard offset < bytes.count - 8 else { throw IcuPayload.Error.gzipFailed }
-        return try rawInflate(Data(bytes[offset..<(bytes.count - 8)]))
+        return try rawInflate(Data(bytes[offset..<(bytes.count - 8)]), limit: limit)
     }
 
     /// Raw DEFLATE (RFC 1951) — what `COMPRESSION_ZLIB` means in Apple's Compression API.
-    static func rawInflate(_ input: Data) throws -> Data {
+    ///
+    /// **Capped**, because the whole point of a gzip bomb is that the *input* is small: a
+    /// few hundred kilobytes of stream that inflates to gigabytes, arriving as an
+    /// intervals.icu original or as a member of a ZIP somebody sent. Without the cap the
+    /// loop below appends until iOS kills the app — a crash nothing reports and the rider
+    /// cannot read. It stops as soon as the output passes `limit` and throws `tooLarge`,
+    /// which every caller already handles the way it handles a broken member.
+    static func rawInflate(_ input: Data, limit: Int = ZipSizes.maxInflatedBytes) throws -> Data {
         let streamStorage = UnsafeMutablePointer<compression_stream>.allocate(capacity: 1)
         defer { streamStorage.deallocate() }
         var stream = streamStorage.pointee
@@ -204,6 +222,7 @@ public enum Gzip {
 
         var output = Data()
         var failed = false
+        var overflowed = false
         input.withUnsafeBytes { (raw: UnsafeRawBufferPointer) in
             guard let base = raw.bindMemory(to: UInt8.self).baseAddress else {
                 failed = true
@@ -220,11 +239,13 @@ public enum Gzip {
                 switch status {
                 case COMPRESSION_STATUS_OK, COMPRESSION_STATUS_END:
                     output.append(destination, count: bufferSize - stream.dst_size)
+                    if output.count > limit { overflowed = true }
                 default:
                     failed = true
                 }
-            } while status == COMPRESSION_STATUS_OK && !failed
+            } while status == COMPRESSION_STATUS_OK && !failed && !overflowed
         }
+        if overflowed { throw IcuPayload.Error.tooLarge }
         guard !failed else { throw IcuPayload.Error.gzipFailed }
         return output
     }

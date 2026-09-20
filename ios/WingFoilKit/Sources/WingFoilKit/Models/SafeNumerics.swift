@@ -33,11 +33,33 @@ extension Int {
 /// gigabytes reserves ten gigabytes on a phone before a single byte has been inflated. The
 /// buffer grows on its own as the entry is extracted, so a capped reservation costs one
 /// reallocation on the only files where the cap bites.
-enum ZipSizes {
+public enum ZipSizes {
     /// The largest reservation worth making up front. Bigger entries simply grow.
-    static let maxReservationBytes = 64 * 1024 * 1024
+    public static let maxReservationBytes = 64 * 1024 * 1024
 
-    static func reservation(_ declared: UInt64) -> Int {
+    public static func reservation(_ declared: UInt64) -> Int {
         Int(min(declared, UInt64(maxReservationBytes)))
+    }
+
+    /// **The most any one member may inflate to.**
+    ///
+    /// A reservation cap is an optimisation; this is the actual refusal, and it is a
+    /// different problem. Compression ratios of a thousand to one are ordinary for a file
+    /// built to be one: a few hundred kilobytes of ZIP or gzip that inflates to gigabytes,
+    /// handed over by AirDrop or sitting inside an intervals.icu original, is a phone
+    /// killed by jetsam rather than an import that failed. Nothing reports that crash and
+    /// nothing tells the rider what happened.
+    ///
+    /// Half a gigabyte is far past anything real — a whole Garmin GDPR export is a few
+    /// hundred megabytes and its *members* are single recordings of about a megabyte — and
+    /// far below what the phone will survive materialising. A member over it is treated as
+    /// unreadable, which is what the walk already does with a broken one.
+    public static let maxInflatedBytes = 512 * 1024 * 1024
+
+    /// Does a member's *declared* size already put it past the cap? Cheap, and checked
+    /// before a byte is inflated — though the declaration is the archive's own word, so it
+    /// is the first gate and never the only one.
+    public static func refusesDeclared(_ declared: UInt64) -> Bool {
+        declared > UInt64(maxInflatedBytes)
     }
 }

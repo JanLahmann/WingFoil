@@ -60,9 +60,10 @@ public enum GpxSessionParser {
 
     public static func parse(data: Data) throws -> RawTrack {
         let collector = Collector()
-        let parser = XMLParser(data: data)
-        parser.delegate = collector
-        parser.shouldProcessNamespaces = true      // local names only: GPX 1.0/1.1, any prefix
+        // `SafeXML` is what sets the namespace switch and the two entity switches, and
+        // `Collector` inherits the declaration refusals from `SafeXMLCollector`: a GPX with
+        // a `<!DOCTYPE>` subset in it is refused rather than expanded (see SafeXML.swift).
+        let parser = SafeXML.parser(data: data, delegate: collector)
         guard parser.parse() else { throw ParseError.malformed }
         guard !collector.segments.isEmpty else { throw ParseError.noRecords }
         return build(collector)
@@ -190,7 +191,7 @@ public enum GpxSessionParser {
 
     /// The `XMLParser` delegate. GPX is small and shallow, so a flat state machine over the
     /// four elements that matter beats any general-purpose tree.
-    private final class Collector: NSObject, XMLParserDelegate {
+    private final class Collector: SafeXMLCollector {
         /// Only the **first** `<trk>` is kept: several tracks in one file are several
         /// activities, not several segments of one.
         var trackCount = 0

@@ -451,10 +451,38 @@ public enum WatchSessionContainer {
         var accel: [WatchAccelSample] = []
 
         for stream in head.streams {
+            // THE FOUR NUMBERS OF THE HEADER ARE A STRANGER'S. Everything below reads the
+            // byte array by arithmetic on `offset`, `length`, `count` and `recordBytes`,
+            // and all four arrive as signed JSON integers in a `.cjw` that reached the
+            // phone by AirDrop, a share sheet or a ZIP. Swift does not wrap on overflow and
+            // does not clamp a negative — it *traps*, and a trap is a crash the app cannot
+            // report and the rider cannot get past except by deleting the file. So the
+            // shape of the header is checked here, once, before a single index is formed:
+            //
+            //   * negative is refused outright (`length: -1` turned `available` negative,
+            //     `count` negative, and `0..<count` into "Range requires lowerBound <=
+            //     upperBound");
+            //   * the start is computed by a reporting add rather than `+`
+            //     (`offset: Int.max` overflowed the addition itself);
+            //   * a known encoding must state the width this build actually reads
+            //     (`recordBytes: 1` on a `track.v1` stream passed the `> 0` test and then
+            //     read four bytes past the end of the array on the last record).
+            //
+            // A future writer's *unknown* stream is still skipped rather than refused —
+            // that is the format's additive-growth promise — but it is skipped after these
+            // checks, not before, because a malformed unknown stream is still malformed.
             guard stream.recordBytes > 0 else { throw Error.badHeader("zero-width stream \"\(stream.name)\"") }
-            let start = payloadStart + stream.offset
-            guard start >= payloadStart, start <= bytes.count else {
+            guard stream.offset >= 0, stream.length >= 0, stream.count >= 0 else {
+                throw Error.badHeader("negative extent on stream \"\(stream.name)\"")
+            }
+            let (start, overflowed) = payloadStart.addingReportingOverflow(stream.offset)
+            guard !overflowed, start >= payloadStart, start <= bytes.count else {
                 throw Error.truncated("stream \"\(stream.name)\" starts past end of file")
+            }
+            if let width = recordWidth(of: stream.encoding), stream.recordBytes != width {
+                throw Error.badHeader(
+                    "stream \"\(stream.name)\" states \(stream.recordBytes) B records, "
+                    + "\(stream.encoding) is \(width) B")
             }
             // As many whole records as actually arrived — see the fail-soft note above.
             let available = min(stream.length, bytes.count - start)
@@ -463,13 +491,19 @@ public enum WatchSessionContainer {
             switch stream.encoding {
             case trackEncoding:
                 track.reserveCapacity(count)
-                for i in 0..<count { track.append(decodeTrack(bytes, start + i * stream.recordBytes)) }
+                for i in 0..<count {
+                    if let s = decodeTrack(bytes, start + i * stream.recordBytes) { track.append(s) }
+                }
             case heartEncoding:
                 heart.reserveCapacity(count)
-                for i in 0..<count { heart.append(decodeHeart(bytes, start + i * stream.recordBytes)) }
+                for i in 0..<count {
+                    if let s = decodeHeart(bytes, start + i * stream.recordBytes) { heart.append(s) }
+                }
             case accelEncoding:
                 accel.reserveCapacity(count)
-                for i in 0..<count { accel.append(decodeAccel(bytes, start + i * stream.recordBytes)) }
+                for i in 0..<count {
+                    if let s = decodeAccel(bytes, start + i * stream.recordBytes) { accel.append(s) }
+                }
             default:
                 // A stream tag from a future writer. Skipping is the additive-growth promise
                 // the format makes; throwing would make every new stream a breaking change.
@@ -482,22 +516,51 @@ public enum WatchSessionContainer {
 
     // MARK: Record decoding
 
-    private static func decodeTrack(_ b: [UInt8], _ o: Int) -> WatchTrackSample {
-        WatchTrackSample(t: readDouble(b, o),
-                         lat: readDouble(b, o + 8),
-                         lon: readDouble(b, o + 16),
-                         speedMps: finite(readFloat(b, o + 24)),
-                         horizontalAccuracyM: finite(readFloat(b, o + 28)),
-                         altitudeM: finite(readFloat(b, o + 32)),
-                         gapBefore: readUInt32(b, o + 36) & 1 == 1)
+    /// The record width this build reads for a stream tag, or nil for a tag it does not
+    /// know. A known tag whose header states a different width is a malformed file, not a
+    /// newer format — see the check in `decode`.
+    private static func recordWidth(of encoding: String) -> Int? {
+        switch encoding {
+        case trackEncoding: trackRecordBytes
+        case heartEncoding: heartRecordBytes
+        case accelEncoding: accelRecordBytes
+        default: nil
+        }
     }
 
-    private static func decodeHeart(_ b: [UInt8], _ o: Int) -> WatchHeartSample {
-        WatchHeartSample(t: readDouble(b, o), bpm: Double(readFloat(b, o + 8)))
+    /// nil when the record's *clock or place* is not a number.
+    ///
+    /// The three optional channels already drop a non-finite value (`finite`), and the
+    /// three required ones did not — they are raw `Double` bit patterns off the wire, and
+    /// `0x7ff8…` is a perfectly well-formed NaN. A NaN `t` sorts against nothing, a NaN
+    /// `lat` survives every comparison in the cleaner and comes out the far end as a map
+    /// pin at no place and a distance of NaN. A sample that cannot say when or where is not
+    /// a degraded sample; it is not a sample — the same rule the GPX door applies to a
+    /// `trkpt` with no time.
+    private static func decodeTrack(_ b: [UInt8], _ o: Int) -> WatchTrackSample? {
+        let t = readDouble(b, o)
+        let lat = readDouble(b, o + 8)
+        let lon = readDouble(b, o + 16)
+        guard t.isFinite, lat.isFinite, lon.isFinite else { return nil }
+        return WatchTrackSample(t: t,
+                                lat: lat,
+                                lon: lon,
+                                speedMps: finite(readFloat(b, o + 24)),
+                                horizontalAccuracyM: finite(readFloat(b, o + 28)),
+                                altitudeM: finite(readFloat(b, o + 32)),
+                                gapBefore: readUInt32(b, o + 36) & 1 == 1)
     }
 
-    private static func decodeAccel(_ b: [UInt8], _ o: Int) -> WatchAccelSample {
-        WatchAccelSample(t: Double(readFloat(b, o)), magnitudeG: Double(readFloat(b, o + 4)))
+    private static func decodeHeart(_ b: [UInt8], _ o: Int) -> WatchHeartSample? {
+        let t = readDouble(b, o)
+        guard t.isFinite else { return nil }
+        return WatchHeartSample(t: t, bpm: Double(readFloat(b, o + 8)))
+    }
+
+    private static func decodeAccel(_ b: [UInt8], _ o: Int) -> WatchAccelSample? {
+        let t = Double(readFloat(b, o))
+        guard t.isFinite else { return nil }
+        return WatchAccelSample(t: t, magnitudeG: Double(readFloat(b, o + 4)))
     }
 
     private static func finite(_ v: Float) -> Double? {

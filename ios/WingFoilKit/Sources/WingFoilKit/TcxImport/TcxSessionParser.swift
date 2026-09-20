@@ -56,9 +56,10 @@ public enum TcxSessionParser {
 
     public static func parse(data: Data) throws -> RawTrack {
         let collector = Collector()
-        let parser = XMLParser(data: data)
-        parser.delegate = collector
-        parser.shouldProcessNamespaces = true      // local names only: any prefix, either NS
+        // The same hardened door the GPX parser uses, and for the same reason: a TCX is a
+        // file from a stranger, and a `<!DOCTYPE>` subset in one is refused rather than
+        // expanded (see SafeXML.swift).
+        let parser = SafeXML.parser(data: data, delegate: collector)
         guard parser.parse() else { throw ParseError.malformed }
         guard !collector.segments.isEmpty else { throw ParseError.noRecords }
         return build(collector)
@@ -160,7 +161,7 @@ public enum TcxSessionParser {
     /// The `XMLParser` delegate. TCX is deeper than GPX but just as regular, so the same
     /// flat state machine works — with one extra piece of bookkeeping, because `<Value>`
     /// means "heart rate" only inside `<HeartRateBpm>` and TCX reuses the tag elsewhere.
-    private final class Collector: NSObject, XMLParserDelegate {
+    private final class Collector: SafeXMLCollector {
         /// Only the **first** `<Activity>` is kept: several activities in one file are
         /// several sessions, not several segments of one.
         var activityCount = 0
