@@ -53,7 +53,7 @@
     <string id="FitUnitCms">cm/s</string>
     <string id="FitTacks">Tacks</string>
     <string id="FitJibes">Jibes</string>
-    <string id="FitTurnSuccess">Turn success</string>
+    <string id="FitTurnSuccess">Speed kept</string>
     <string id="FitPumpCadence">Pump cadence</string>
     <string id="FitUnitSpm">spm</string>
     <string id="FitTakeoffAttempts">Takeoff attempts</string>
