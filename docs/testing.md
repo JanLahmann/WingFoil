@@ -1381,6 +1381,9 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    Running them:
 
    ```
+   The compiler is a JVM without an `-Xmx` of its own; run it with
+   `JAVA_TOOL_OPTIONS=-Xmx2g` in the environment (package.sh exports it) or three parallel
+   builds sit at 7 GB each on a 32 GB Mac (21 Sep 2026; a device build peaks at 0.6 GB pinned).
    monkeyc -f garmin/monkey.jungle -d fenix847mm -y garmin/developer_key.der \
        -o /tmp/wft.prg --unit-test
    connectiq &                      # the simulator must be up; monkeydo attaches to it
