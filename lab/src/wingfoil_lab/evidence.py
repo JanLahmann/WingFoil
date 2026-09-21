@@ -13,6 +13,7 @@ verbatim and only renames the leaf verdicts.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 import numpy as np
@@ -33,6 +34,7 @@ class OffFoilEvidence:
     doppler: np.ndarray          # device Doppler (flight state, recovery test)
     speed: np.ndarray            # min(Doppler, positional): the sharp "is it carrying" test
     submerged: np.ndarray        # bool: barometer says the wrist is under water
+    baseline: np.ndarray         # the local altitude baseline `submerged` was read against
     flying: np.ndarray           # bool: in a flight, above exit speed, not submerged
 
     def __len__(self) -> int:
@@ -53,10 +55,11 @@ def off_foil_evidence(clean: CleanTrack, flights: FlightResult,
     t = df["t"].to_numpy(float)
     dop = df["doppler_mps"].to_numpy(float)
     speed = np.minimum(dop, hybrid_speed(df))
-    submerged = submerged_mask(df["alt_m"].to_numpy(float), baro_drop_m)
+    gap = df["gap_before"].to_numpy(bool)
+    submerged, baseline = submerged_trace(df["alt_m"].to_numpy(float), t, gap, baro_drop_m)
     return OffFoilEvidence(
-        t=t, gap=df["gap_before"].to_numpy(bool), doppler=dop, speed=speed,
-        submerged=submerged,
+        t=t, gap=gap, doppler=dop, speed=speed,
+        submerged=submerged, baseline=baseline,
         flying=flying_mask(t, speed, submerged, flights, exit_speed_kmh * KMH_TO_MPS),
     )
 
@@ -81,30 +84,100 @@ def flying_mask(t: np.ndarray, speed: np.ndarray, submerged: np.ndarray,
     return m & (speed > exit_mps) & ~submerged
 
 
-def submerged_reference(alt: np.ndarray) -> float | None:
-    """The altitude the submersion test is measured *against*: the session median of the
-    finite samples, or None when there is no altitude channel at all.
+# ------------------------------------------------------------------- the submersion mask
 
-    Spelled once because two things read it -- the mask below, and `dropM` on a submersion
-    episode, which is how far under this same line the deepest sample of the run got. A
-    second median computed anywhere else is a second definition waiting to drift.
+#: The baseline's time constant, seconds. The watch's live test walks its pressure baseline
+#: by `BARO_EMA` = 0.02 of the residual per 1 Hz sample; spelled as a time constant instead,
+#: the same walk is exact at any sample rate, which a bare coefficient is not (a 4 Hz source
+#: would adapt four times as fast for no physical reason). **A constant, not a parameter:**
+#: it is the altimeter's own slew behaviour, not a judgement about riding, and a rider who
+#: moved it would be tuning his watch's firmware rather than his session.
+BARO_TAU_S = 50.0
+
+#: How long a level has to hold before the baseline accepts it, seconds. A dunk is a spike --
+#: 30 cm of water for a few seconds -- and a re-anchored altimeter is a *level*: a tester's
+#: fenix 5X Plus (20 Sep 2026) stepped its whole reference by up to 190 m between stretches
+#: and then sat there for minutes. Twenty seconds is long enough that no fall can buy it
+#: (the longest corpus episode lasts 9 s) and short enough that the stretch after a re-anchor
+#: is read as riding rather than as a swim. **A constant, not a parameter**, for the same
+#: reason as above: it describes the sensor, not the sport.
+BARO_SETTLE_S = 20.0
+
+#: How still that level has to be, metres. Within +/-5 m of each other for `BARO_SETTLE_S` is
+#: flat next to a `turnBaroDrop` of 25 m and next to the 250 m a wrist under water reads, so
+#: the release cannot be triggered by a dunk that is merely slow to come back. **A constant,
+#: not a parameter**, for the same reason as above.
+BARO_SETTLE_M = 5.0
+
+
+def _settled(alt: np.ndarray, t: np.ndarray, gap: np.ndarray, i: int, x: float) -> bool:
+    """Has the level held within `BARO_SETTLE_M` for `BARO_SETTLE_S` of unbroken samples?
+
+    Walks back from `i` while the window is not yet `BARO_SETTLE_S` long, and refuses on the
+    first gap, the first non-finite sample and the first sample more than `BARO_SETTLE_M`
+    from `x`. False when the track simply does not reach back that far -- a settle has to be
+    *observed*, and the opening seconds of a recording have observed nothing.
     """
-    ok = np.isfinite(alt)
-    if not ok.any():
-        return None
-    return float(np.median(alt[ok]))
+    j = i
+    while j > 0 and t[i] - t[j] < BARO_SETTLE_S:
+        if gap[j] or not np.isfinite(alt[j - 1]) or abs(alt[j - 1] - x) > BARO_SETTLE_M:
+            return False
+        j -= 1
+    return t[i] - t[j] >= BARO_SETTLE_S - 1e-9
 
 
-def submerged_mask(alt: np.ndarray, drop_m: float) -> np.ndarray:
-    """Per sample: the barometer reads `drop_m` below the session median = wrist wet.
+def submerged_trace(alt: np.ndarray, t: np.ndarray, gap: np.ndarray,
+                    drop_m: float) -> tuple[np.ndarray, np.ndarray]:
+    """(mask, baseline): the wrist-under test and the line each sample was judged against.
+
+    Causal and local (engine 0.22.0, docs/algorithms.md "Turn outcome" step 2). A sample is
+    wet when it sits `drop_m` below the baseline **in force at that moment**, not below the
+    session's median: a watch that re-anchors its altitude after a swim otherwise turns every
+    later stretch into a swim of its own.
+
+    The baseline starts at the first finite sample, restarts at every sample a recording gap
+    precedes, and otherwise walks towards a dry sample with time constant `BARO_TAU_S`. While
+    a sample reads wet the baseline **holds** -- a swim must not be able to re-baseline itself
+    dry -- except for the **settle release**: a level that has held for `BARO_SETTLE_S` within
+    `BARO_SETTLE_M` is accepted as the new baseline and the sample is dry. A dunk is a spike;
+    a level is not a dunk.
 
     All-NaN (no altitude channel) yields all-False, so sources without a barometer simply
     lose this evidence instead of failing.
     """
-    ref = submerged_reference(alt)
-    if ref is None:
-        return np.zeros(len(alt), dtype=bool)
-    return np.isfinite(alt) & (alt < ref - drop_m)
+    n = len(alt)
+    mask = np.zeros(n, dtype=bool)
+    baseline = np.full(n, np.nan)
+    base: float | None = None
+    last_t = 0.0
+    for i in range(n):
+        x = float(alt[i])
+        if not np.isfinite(x):
+            baseline[i] = np.nan if base is None else base
+            continue
+        if base is None or gap[i]:
+            base, last_t = x, float(t[i])
+            baseline[i] = base
+            continue
+        dt = float(t[i]) - last_t
+        last_t = float(t[i])
+        if x >= base - drop_m:
+            base += (1.0 - math.exp(-dt / BARO_TAU_S)) * (x - base)
+        elif _settled(alt, t, gap, i, x):
+            base = x                            # the settle release: a level is not a dunk
+        else:
+            mask[i] = True                      # wet: the baseline holds under a spike
+        baseline[i] = base
+    return mask, baseline
+
+
+def submerged_mask(alt: np.ndarray, t: np.ndarray, gap: np.ndarray,
+                   drop_m: float) -> np.ndarray:
+    """Per sample: the barometer reads `drop_m` below the local baseline = wrist wet.
+
+    The mask half of `submerged_trace`, for the callers that do not need the baseline.
+    """
+    return submerged_trace(alt, t, gap, drop_m)[0]
 
 
 # --------------------------------------------------------------- submersion episodes
@@ -129,7 +202,7 @@ class Submersion:
     start_t: float                   # first submerged sample of the run
     end_t: float                     # last submerged sample of the run
     duration_s: float                # gap-aware elapsed time between the two
-    drop_m: float                    # deepest sample below `submerged_reference`
+    drop_m: float                    # deepest sample below the baseline the run started on
     #: The counted turn whose outcome window this run overlaps, else None.
     turn_index: int | None = None
     #: Failing that, the drawn flight end whose window it overlaps, else None -- and a run
@@ -138,16 +211,17 @@ class Submersion:
 
 
 def submersion_runs(t: np.ndarray, gap: np.ndarray, submerged: np.ndarray,
-                    alt: np.ndarray,
+                    alt: np.ndarray, baseline: np.ndarray,
                     merge_s: float = SUBMERSION_MERGE_S) -> list[Submersion]:
     """The mask's contiguous true-runs, per gap-free segment, with near ones merged.
 
     A recording gap always breaks a run: the samples either side of it are not evidence
     about one another, which is the rule every other window in this module obeys.
+
+    `baseline` is `submerged_trace`'s second return, and a run's depth is read against the
+    line **in force at its first wet sample** -- the same line the mask crossed to open the
+    run, so the two cannot drift and `drop_m` is always at least `turnBaroDrop`.
     """
-    ref = submerged_reference(alt)
-    if ref is None:
-        return []
     n = len(t)
     spans: list[tuple[int, int]] = []
     i = 0
@@ -175,7 +249,7 @@ def submersion_runs(t: np.ndarray, gap: np.ndarray, submerged: np.ndarray,
         deepest = float(np.min(window[np.isfinite(window)]))
         out.append(Submersion(start_t=float(t[a]), end_t=float(t[b]),
                               duration_s=elapsed(t, gap, a, b),
-                              drop_m=float(ref - deepest)))
+                              drop_m=float(baseline[a] - deepest)))
     return out
 
 

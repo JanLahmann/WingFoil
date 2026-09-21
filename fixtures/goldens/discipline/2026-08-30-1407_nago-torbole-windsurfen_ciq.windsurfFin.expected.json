@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.21.0",
+  "engineVersion": "0.22.0",
   "config": {
     "discipline": "windsurfFin",
     "foilEntrySpeed": 20.0,
@@ -485,16 +485,7 @@
       "ownedByTurn": 9
     }
   ],
-  "submersions": [
-    {
-      "ts": 496.0,
-      "endTs": 497.0,
-      "durationS": 1.0,
-      "dropM": 27.2,
-      "turnIndex": null,
-      "flightEndIndex": null
-    }
-  ],
+  "submersions": [],
   "records": {
     "best2sKn": 13.472,
     "best10sKn": 12.937,

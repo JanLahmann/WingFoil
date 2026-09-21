@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.21.0",
+  "engineVersion": "0.22.0",
   "config": {
     "foilEntrySpeed": 12.0,
     "entryHold": 2.0,
@@ -1906,14 +1906,14 @@
       "axisAfterDeg": 65.77,
       "arcM": 36.77,
       "radiusM": 14.17,
-      "outcome": "fell_in",
-      "outcomeReason": "submerged",
+      "outcome": "touchdown",
+      "outcomeReason": "off_foil",
       "aborted": false,
       "borderline": false,
       "offFoilS": 1.0,
       "stoppedS": 0.0,
       "pumped": false,
-      "submerged": true,
+      "submerged": false,
       "outcomeWindowS": 5.0
     },
     {
@@ -2250,7 +2250,7 @@
       "outcomeReason": "submerged",
       "aborted": false,
       "borderline": false,
-      "offFoilS": 1.0,
+      "offFoilS": 3.0,
       "stoppedS": 0.0,
       "pumped": false,
       "submerged": true,
@@ -3474,7 +3474,7 @@
       "outcomeReason": "submerged",
       "aborted": true,
       "borderline": false,
-      "offFoilS": 2.0,
+      "offFoilS": 1.0,
       "stoppedS": 0.0,
       "pumped": false,
       "submerged": true,
@@ -4090,40 +4090,6 @@
       "stoppedS": 0.0,
       "pumped": false,
       "submerged": false,
-      "outcomeWindowS": 1.0
-    },
-    {
-      "ts": 7907.0,
-      "endTs": 7911.0,
-      "minTs": 7912.0,
-      "type": "jibe",
-      "counted": true,
-      "entryKn": 12.834,
-      "minKn": 6.1,
-      "exitKn": 6.909,
-      "score": 0.4753,
-      "success": false,
-      "clean": false,
-      "cleanBlockedBy": null,
-      "side": "starboard",
-      "direction": "port",
-      "netDeg": -48.45,
-      "peakRateDegS": -37.15,
-      "twaInDeg": -60.02,
-      "twaOutDeg": -108.47,
-      "axisTs": null,
-      "axisBeforeDeg": null,
-      "axisAfterDeg": null,
-      "arcM": 25.81,
-      "radiusM": 30.52,
-      "outcome": "fell_in",
-      "outcomeReason": "submerged",
-      "aborted": true,
-      "borderline": false,
-      "offFoilS": 6.0,
-      "stoppedS": 4.0,
-      "pumped": false,
-      "submerged": true,
       "outcomeWindowS": 1.0
     },
     {
@@ -4814,7 +4780,7 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": 109
+      "ownedByTurn": null
     },
     {
       "flightIndex": 37,
@@ -4842,7 +4808,7 @@
       "submerged": false,
       "windowS": 12.0,
       "truncated": false,
-      "ownedByTurn": 113
+      "ownedByTurn": 112
     },
     {
       "flightIndex": 39,
@@ -4878,7 +4844,7 @@
       "ts": 2095.0,
       "endTs": 2099.0,
       "durationS": 4.0,
-      "dropM": 127.8,
+      "dropM": 131.69,
       "turnIndex": 18,
       "flightEndIndex": null
     },
@@ -4886,175 +4852,63 @@
       "ts": 2986.0,
       "endTs": 2990.0,
       "durationS": 4.0,
-      "dropM": 125.6,
+      "dropM": 125.34,
       "turnIndex": 29,
       "flightEndIndex": null
     },
     {
-      "ts": 2997.0,
-      "endTs": 3005.0,
-      "durationS": 8.0,
-      "dropM": 58.8,
-      "turnIndex": null,
-      "flightEndIndex": null
-    },
-    {
-      "ts": 3378.0,
+      "ts": 3379.0,
       "endTs": 3385.0,
-      "durationS": 7.0,
-      "dropM": 113.2,
+      "durationS": 6.0,
+      "dropM": 110.45,
       "turnIndex": 34,
-      "flightEndIndex": null
-    },
-    {
-      "ts": 3391.0,
-      "endTs": 3391.0,
-      "durationS": 0.0,
-      "dropM": 187.0,
-      "turnIndex": null,
-      "flightEndIndex": null
-    },
-    {
-      "ts": 3398.0,
-      "endTs": 3435.0,
-      "durationS": 37.0,
-      "dropM": 173.4,
-      "turnIndex": null,
-      "flightEndIndex": null
-    },
-    {
-      "ts": 3865.0,
-      "endTs": 3865.0,
-      "durationS": 0.0,
-      "dropM": 25.8,
-      "turnIndex": 44,
-      "flightEndIndex": null
-    },
-    {
-      "ts": 3876.0,
-      "endTs": 3883.0,
-      "durationS": 7.0,
-      "dropM": 45.0,
-      "turnIndex": null,
       "flightEndIndex": null
     },
     {
       "ts": 4098.0,
       "endTs": 4099.0,
       "durationS": 1.0,
-      "dropM": 59.2,
+      "dropM": 58.96,
       "turnIndex": 49,
       "flightEndIndex": null
     },
     {
-      "ts": 4118.0,
-      "endTs": 4157.0,
-      "durationS": 39.0,
-      "dropM": 257.6,
-      "turnIndex": null,
-      "flightEndIndex": null
-    },
-    {
-      "ts": 4607.0,
+      "ts": 4605.0,
       "endTs": 4608.0,
-      "durationS": 1.0,
-      "dropM": 31.8,
+      "durationS": 3.0,
+      "dropM": 39.96,
       "turnIndex": 54,
       "flightEndIndex": null
     },
     {
-      "ts": 4615.0,
-      "endTs": 4641.0,
-      "durationS": 26.0,
-      "dropM": 60.6,
-      "turnIndex": null,
-      "flightEndIndex": null
-    },
-    {
-      "ts": 5063.0,
-      "endTs": 5081.0,
-      "durationS": 18.0,
-      "dropM": 87.6,
-      "turnIndex": null,
-      "flightEndIndex": null
-    },
-    {
-      "ts": 5209.0,
+      "ts": 5210.0,
       "endTs": 5213.0,
-      "durationS": 4.0,
-      "dropM": 144.4,
+      "durationS": 3.0,
+      "dropM": 137.9,
       "turnIndex": 67,
-      "flightEndIndex": null
-    },
-    {
-      "ts": 5225.0,
-      "endTs": 5276.0,
-      "durationS": 51.0,
-      "dropM": 241.0,
-      "turnIndex": null,
-      "flightEndIndex": null
-    },
-    {
-      "ts": 5399.0,
-      "endTs": 5400.0,
-      "durationS": 1.0,
-      "dropM": 35.0,
-      "turnIndex": null,
-      "flightEndIndex": null
-    },
-    {
-      "ts": 5407.0,
-      "endTs": 5435.0,
-      "durationS": 28.0,
-      "dropM": 53.4,
-      "turnIndex": null,
       "flightEndIndex": null
     },
     {
       "ts": 6080.0,
       "endTs": 6080.0,
       "durationS": 0.0,
-      "dropM": 38.2,
+      "dropM": 42.36,
       "turnIndex": 89,
       "flightEndIndex": null
     },
     {
-      "ts": 6093.0,
-      "endTs": 6137.0,
-      "durationS": 44.0,
-      "dropM": 169.8,
-      "turnIndex": null,
-      "flightEndIndex": null
-    },
-    {
-      "ts": 6236.0,
+      "ts": 6237.0,
       "endTs": 6238.0,
-      "durationS": 2.0,
-      "dropM": 69.4,
+      "durationS": 1.0,
+      "dropM": 55.29,
       "turnIndex": 90,
-      "flightEndIndex": null
-    },
-    {
-      "ts": 6260.0,
-      "endTs": 6287.0,
-      "durationS": 27.0,
-      "dropM": 132.6,
-      "turnIndex": null,
       "flightEndIndex": null
     },
     {
       "ts": 6496.0,
       "endTs": 6501.0,
       "durationS": 5.0,
-      "dropM": 115.0,
-      "turnIndex": null,
-      "flightEndIndex": null
-    },
-    {
-      "ts": 6518.0,
-      "endTs": 6547.0,
-      "durationS": 29.0,
-      "dropM": 220.4,
+      "dropM": 109.72,
       "turnIndex": null,
       "flightEndIndex": null
     },
@@ -5062,15 +4916,7 @@
       "ts": 6893.0,
       "endTs": 6898.0,
       "durationS": 5.0,
-      "dropM": 157.6,
-      "turnIndex": null,
-      "flightEndIndex": null
-    },
-    {
-      "ts": 6918.0,
-      "endTs": 6921.0,
-      "durationS": 3.0,
-      "dropM": 92.6,
+      "dropM": 155.23,
       "turnIndex": null,
       "flightEndIndex": null
     },
@@ -5078,47 +4924,15 @@
       "ts": 7830.0,
       "endTs": 7836.0,
       "durationS": 6.0,
-      "dropM": 150.8,
+      "dropM": 148.72,
       "turnIndex": null,
       "flightEndIndex": 35
     },
     {
-      "ts": 7851.0,
-      "endTs": 7874.0,
-      "durationS": 23.0,
-      "dropM": 154.8,
-      "turnIndex": null,
-      "flightEndIndex": null
-    },
-    {
-      "ts": 7911.0,
-      "endTs": 7912.0,
-      "durationS": 1.0,
-      "dropM": 73.8,
-      "turnIndex": 109,
-      "flightEndIndex": null
-    },
-    {
-      "ts": 7919.0,
-      "endTs": 7958.0,
-      "durationS": 39.0,
-      "dropM": 179.4,
-      "turnIndex": null,
-      "flightEndIndex": null
-    },
-    {
-      "ts": 8042.0,
+      "ts": 8043.0,
       "endTs": 8046.0,
-      "durationS": 4.0,
-      "dropM": 163.0,
-      "turnIndex": null,
-      "flightEndIndex": null
-    },
-    {
-      "ts": 8055.0,
-      "endTs": 8080.0,
-      "durationS": 25.0,
-      "dropM": 176.4,
+      "durationS": 3.0,
+      "dropM": 140.63,
       "turnIndex": null,
       "flightEndIndex": null
     },
@@ -5126,16 +4940,8 @@
       "ts": 8505.0,
       "endTs": 8507.0,
       "durationS": 2.0,
-      "dropM": 67.8,
-      "turnIndex": 114,
-      "flightEndIndex": null
-    },
-    {
-      "ts": 8513.0,
-      "endTs": 8569.0,
-      "durationS": 56.0,
-      "dropM": 165.4,
-      "turnIndex": null,
+      "dropM": 68.48,
+      "turnIndex": 113,
       "flightEndIndex": null
     }
   ],
@@ -6590,21 +6396,6 @@
       },
       {
         "kind": "swim",
-        "index": 44,
-        "ts": 3860.0,
-        "approximate": false,
-        "strokes": null,
-        "baselineBpm": 130.0,
-        "peakBpm": 139.0,
-        "costBpm": 9.0,
-        "peakLagS": 2.0,
-        "baselineCoverage": 1.0,
-        "peakCoverage": 1.0,
-        "recoveryHalfS": 22.0,
-        "recoveryCensored": false
-      },
-      {
-        "kind": "swim",
         "index": 19,
         "ts": 4096.0,
         "approximate": false,
@@ -6800,21 +6591,6 @@
       },
       {
         "kind": "swim",
-        "index": 109,
-        "ts": 7911.0,
-        "approximate": false,
-        "strokes": null,
-        "baselineBpm": 132.0,
-        "peakBpm": 136.0,
-        "costBpm": 4.0,
-        "peakLagS": 2.0,
-        "baselineCoverage": 1.0,
-        "peakCoverage": 1.0,
-        "recoveryHalfS": null,
-        "recoveryCensored": false
-      },
-      {
-        "kind": "swim",
         "index": 38,
         "ts": 8375.0,
         "approximate": false,
@@ -6830,7 +6606,7 @@
       },
       {
         "kind": "swim",
-        "index": 114,
+        "index": 113,
         "ts": 8503.0,
         "approximate": false,
         "strokes": null,
@@ -7007,12 +6783,12 @@
       "medianTakeoffRecoveryS": 12.0,
       "takeoffRecoveryValid": 27,
       "takeoffRecoveryTotal": 27,
-      "medianSwimRecoveryS": 32.0,
-      "swimRecoveryValid": 14,
-      "swimRecoveryTotal": 19,
-      "avgSwimCostBpm": 7.138,
-      "swimCostValid": 29,
-      "swimCostTotal": 29
+      "medianSwimRecoveryS": 42.0,
+      "swimRecoveryValid": 13,
+      "swimRecoveryTotal": 18,
+      "avgSwimCostBpm": 7.185,
+      "swimCostValid": 27,
+      "swimCostTotal": 27
     }
   },
   "summary": {
@@ -7027,8 +6803,8 @@
     "durationS": 8834.0,
     "timerTimeS": 8539.0,
     "avgSpeedKmh": 13.67,
-    "turnsPerHour": 24.5,
-    "jibesPerHour": 24.5,
+    "turnsPerHour": 24.9,
+    "jibesPerHour": 24.9,
     "cleanJibesPerHour": 13.5,
     "wetPerHour": 9.7,
     "windowRates": {
@@ -7290,77 +7066,77 @@
         },
         {
           "ts": 3000.0,
-          "jph": 20.0,
-          "wph": 8.0
-        },
-        {
-          "ts": 3060.0,
-          "jph": 20.0,
-          "wph": 8.0
-        },
-        {
-          "ts": 3120.0,
           "jph": 24.0,
           "wph": 8.0
         },
         {
+          "ts": 3060.0,
+          "jph": 24.0,
+          "wph": 8.0
+        },
+        {
+          "ts": 3120.0,
+          "jph": 28.0,
+          "wph": 8.0
+        },
+        {
           "ts": 3180.0,
-          "jph": 36.0,
+          "jph": 40.0,
           "wph": 4.0
         },
         {
           "ts": 3240.0,
-          "jph": 36.0,
+          "jph": 40.0,
           "wph": 8.0
         },
         {
           "ts": 3300.0,
-          "jph": 32.0,
+          "jph": 36.0,
           "wph": 8.0
         },
         {
           "ts": 3360.0,
-          "jph": 32.0,
+          "jph": 36.0,
           "wph": 8.0
         },
         {
           "ts": 3420.0,
-          "jph": 32.0,
+          "jph": 36.0,
           "wph": 4.0
         },
         {
           "ts": 3480.0,
-          "jph": 32.0,
+          "jph": 36.0,
           "wph": 4.0
         },
         {
           "ts": 3540.0,
-          "jph": 32.0,
+          "jph": 36.0,
           "wph": 4.0
         },
         {
           "ts": 3600.0,
-          "jph": 44.0,
+          "jph": 48.0,
           "wph": 8.0
         },
         {
           "ts": 3660.0,
-          "jph": 40.0,
+          "jph": 44.0,
           "wph": 8.0
         },
         {
           "ts": 3720.0,
-          "jph": 40.0,
+          "jph": 44.0,
           "wph": 8.0
         },
         {
           "ts": 3780.0,
-          "jph": 36.0,
+          "jph": 40.0,
           "wph": 8.0
         },
         {
           "ts": 3840.0,
-          "jph": 36.0,
+          "jph": 40.0,
           "wph": 8.0
         },
         {
@@ -7708,22 +7484,22 @@
     "turns": {
       "tacks": 1,
       "tacksSuccessful": 0,
-      "jibes": 70,
+      "jibes": 69,
       "jibesSuccessful": 32,
       "unclassified": 0,
-      "turnsCounted": 71,
+      "turnsCounted": 70,
       "turnsSuccessful": 39,
-      "successPct": 54.93,
+      "successPct": 55.71,
       "rejected": 44,
       "port": 36,
-      "starboard": 35,
+      "starboard": 34,
       "unknownSide": 0,
       "longestDryStreak": 9,
       "longestFlewStreak": 9,
       "outcomes": {
         "flewThrough": 46,
-        "touchdown": 12,
-        "fellIn": 13,
+        "touchdown": 13,
+        "fellIn": 11,
         "borderline": 3
       },
       "tackOutcomes": {
@@ -7734,8 +7510,8 @@
       },
       "jibeOutcomes": {
         "flewThrough": 46,
-        "touchdown": 12,
-        "fellIn": 12,
+        "touchdown": 13,
+        "fellIn": 10,
         "borderline": 3
       }
     },
@@ -7751,21 +7527,21 @@
         "glideOut": 2,
         "touchdown": 2,
         "fellIn": 8,
-        "unknown": 6,
+        "unknown": 7,
         "borderline": 0
       },
       "inTurn": {
         "glideOut": 1,
         "touchdown": 3,
         "fellIn": 15,
-        "unknown": 4,
+        "unknown": 3,
         "borderline": 1
       }
     },
     "outcomeSplit": {
-      "turnFalls": 13,
+      "turnFalls": 11,
       "straightFalls": 8,
-      "turnTouchdowns": 12,
+      "turnTouchdowns": 13,
       "straightTouchdowns": 2,
       "glideOuts": 2,
       "unknownEnds": 10

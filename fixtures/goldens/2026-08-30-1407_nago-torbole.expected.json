@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.21.0",
+  "engineVersion": "0.22.0",
   "config": {
     "foilEntrySpeed": 12.0,
     "entryHold": 2.0,
@@ -484,16 +484,7 @@
       "ownedByTurn": 9
     }
   ],
-  "submersions": [
-    {
-      "ts": 496.0,
-      "endTs": 497.0,
-      "durationS": 1.0,
-      "dropM": 27.2,
-      "turnIndex": null,
-      "flightEndIndex": null
-    }
-  ],
+  "submersions": [],
   "records": {
     "best2sKn": 13.655,
     "best10sKn": 13.049,

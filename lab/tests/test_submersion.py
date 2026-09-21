@@ -1,17 +1,21 @@
-"""Submersion episodes (engine 0.16.0, docs/algorithms.md "Submersion episodes").
+"""The wrist-under mask and its episodes (docs/algorithms.md "Turn outcome" step 2 and
+"Submersion episodes").
 
-The mask itself is old and tested through the outcome ladder; what is new is reading it as
-*events*. So these cases are about the three decisions that turns a boolean array into a
-list a map can draw: where a run starts and stops, what a gap does to it, and what the
-episode is said to have happened during.
+Two halves. The **mask** (engine 0.22.0, ADR-029) reads a local, causal baseline rather than
+the session median, and the cases below are the four traces that rule was written from: the
+fenix 8 dunk that crawls back, the fenix 5X Plus dunk that re-anchors, the slow drift that is
+not a dunk at all, and the recording gap. The **episodes** turn that boolean array into a
+list a map can draw, and those cases are about where a run starts and stops, what a gap does
+to it, and what the episode is said to have happened during.
 """
 
 from pathlib import Path
 
 import numpy as np
 
-from wingfoil_lab.evidence import (SUBMERSION_MERGE_S, Submersion, attribute_submersions,
-                                   submerged_mask, submerged_reference, submersion_runs)
+from wingfoil_lab.evidence import (BARO_SETTLE_M, BARO_SETTLE_S, SUBMERSION_MERGE_S,
+                                   Submersion, attribute_submersions, submerged_mask,
+                                   submerged_trace, submersion_runs)
 from wingfoil_lab.goldens import analyze
 
 FIXTURES = Path(__file__).resolve().parents[2] / "fixtures"
@@ -25,13 +29,97 @@ def _runs(alt, hz=1.0, gap=None, merge_s=SUBMERSION_MERGE_S):
     alt = np.asarray(alt, float)
     t = np.arange(len(alt), dtype=float) / hz
     gap = np.zeros(len(alt), bool) if gap is None else np.asarray(gap, bool)
-    return submersion_runs(t, gap, submerged_mask(alt, DROP_M), alt, merge_s=merge_s)
+    mask, base = submerged_trace(alt, t, gap, DROP_M)
+    return submersion_runs(t, gap, mask, alt, base, merge_s=merge_s)
 
 
-def test_reference_is_the_median_the_mask_uses():
+def _mask(alt, hz=1.0, gap=None):
+    """The wrist-under mask for a bare altitude series, on a regular clock."""
+    alt = np.asarray(alt, float)
+    t = np.arange(len(alt), dtype=float) / hz
+    gap = np.zeros(len(alt), bool) if gap is None else np.asarray(gap, bool)
+    return submerged_mask(alt, t, gap, DROP_M)
+
+
+def _episodes(mask, alt, hz=1.0, gap=None, merge_s=SUBMERSION_MERGE_S):
+    """Episodes for a mask written by hand, against a baseline of zero.
+
+    Three cases below are about `submersion_runs`' **own** gap rule rather than the mask's,
+    and since engine 0.22.0 the mask can no longer produce the shape they test: a gap
+    restarts the baseline, so the first sample after one is dry by construction. The two are
+    separate decisions and the run rule still has to hold on its own, so it is asserted on a
+    mask handed in directly.
+    """
+    alt = np.asarray(alt, float)
+    t = np.arange(len(alt), dtype=float) / hz
+    gap = np.zeros(len(alt), bool) if gap is None else np.asarray(gap, bool)
+    return submersion_runs(t, gap, np.asarray(mask, bool), alt, np.zeros(len(alt)),
+                           merge_s=merge_s)
+
+
+# ----------------------------------------------------------------------------- the mask
+
+
+def test_a_fenix_8_dunk_flags_all_the_way_back_up():
+    """Jan's watch: ~250 m of apparent drop, then a slew-limited crawl back over minutes.
+
+    The crawl moves far more than `BARO_SETTLE_M` in `BARO_SETTLE_S`, so it is never a
+    level -- the wrist is flagged for the whole time the altimeter is still recovering,
+    which is what it was flagged for before the baseline became local.
+    """
+    dry_before = [0.0] * 120
+    crawl = list(np.linspace(-250.0, 0.0, 251))     # 250 m over 250 s: 20 m per settle window
+    m = _mask(dry_before + crawl + [0.0] * 60)
+    assert not m[:120].any()
+    assert m[120]                                    # the dunk itself
+    assert m[120:120 + 200].all()                    # and every sample still under the line
+    assert not m[-60:].any()
+
+
+def test_a_fenix_5x_plus_dunk_that_re_anchors_flags_the_spike_and_then_stops():
+    """A tester's fenix 5X Plus (20 Sep 2026) dunks and then sits at a *new* level.
+
+    The spike is a fall and reads as one. The level that follows is not a fall, and the
+    settle release says so: `BARO_SETTLE_S` of samples within `BARO_SETTLE_M` are accepted
+    as the new baseline, and the rest of the afternoon is dry. Against a session median the
+    whole of it read as one very long swim.
+    """
+    level = -100.0                       # the new anchor, well under +/-BARO_SETTLE_M of 0
+    assert abs(level) > BARO_SETTLE_M + DROP_M
+    m = _mask([0.0] * 120 + [-65.0, -134.0, -173.0] + [level] * 600)
+    assert not m[:120].any()
+    assert m[120:123].all(), "the dunk is still a dunk"
+    settled = 123 + int(BARO_SETTLE_S)
+    assert m[123:settled].all(), "the level is not accepted before it has held"
+    assert not m[settled:].any(), "and every sample after that is riding, not swimming"
+
+
+def test_a_slow_drift_is_never_a_dunk():
+    """100 m over ten minutes -- weather, not water. The baseline walks with it."""
+    assert not _mask(list(np.linspace(0.0, -100.0, 600))).any()
+
+
+def test_a_recording_gap_restarts_the_baseline():
+    """The samples either side of a gap are not evidence about one another, so the level
+    after one is the level, not a 200 m fall."""
+    alt = [0.0] * 60 + [-200.0] * 30
+    assert _mask(alt)[60:].any(), "with no gap it is a dunk"
+    gap = np.zeros(len(alt), bool)
+    gap[60] = True
+    assert not _mask(alt, gap=gap).any(), "across a gap it is a new baseline"
+
+
+def test_no_altitude_channel_is_all_false():
+    assert not _mask([np.nan] * 40).any()
+
+
+# --------------------------------------------------------------------------- the episodes
+
+
+def test_the_drop_is_measured_against_the_line_the_mask_crossed():
+    """`drop_m` reads against the baseline in force at the run's first wet sample -- the
+    same line the mask crossed to open it, so it can never be less than `DROP_M`."""
     alt = np.array([0.0, 1.0, 2.0, 3.0, -300.0])
-    assert submerged_reference(alt) == 1.0
-    # And every masked sample is at least `DROP_M` under it, so `drop_m` can never be less.
     (run,) = _runs(alt)
     assert run.drop_m >= DROP_M
 
@@ -75,17 +163,21 @@ def test_a_recording_gap_always_breaks_a_run():
     """Even mid-submersion: the samples either side of a gap are not evidence about one
     another, which is the rule every other window in `evidence` obeys."""
     alt = np.array([0.0] * 4 + [-200.0] * 6 + [0.0] * 4)
+    mask = np.zeros(len(alt), bool)
+    mask[4:10] = True
     gap = np.zeros(len(alt), bool)
     gap[7] = True
-    runs = _runs(alt, gap=gap)
+    runs = _episodes(mask, alt, gap=gap)
     assert [(r.start_t, r.end_t) for r in runs] == [(4.0, 6.0), (7.0, 9.0)]
 
 
 def test_a_gap_is_never_merged_across():
     alt = np.array([0.0] * 4 + [-200.0] * 2 + [0.0] + [-200.0] * 2 + [0.0] * 4)
+    mask = np.zeros(len(alt), bool)
+    mask[[4, 5, 7, 8]] = True
     gap = np.zeros(len(alt), bool)
     gap[7] = True
-    assert len(_runs(alt, gap=gap, hz=4.0)) == 2
+    assert len(_episodes(mask, alt, gap=gap, hz=4.0)) == 2
 
 
 def test_a_gap_mid_submersion_splits_the_span_rather_than_timing_across_it():
@@ -95,7 +187,9 @@ def test_a_gap_mid_submersion_splits_the_span_rather_than_timing_across_it():
     gap = np.zeros(11, bool)
     gap[3] = True
     alt = np.array([-200.0] * 5 + [0.0] * 6)
-    runs = submersion_runs(t, gap, submerged_mask(alt, DROP_M), alt)
+    mask = np.zeros(11, bool)
+    mask[:5] = True
+    runs = submersion_runs(t, gap, mask, alt, np.zeros(11))
     assert [(r.start_t, r.end_t, r.duration_s) for r in runs] == [(0.0, 2.0, 2.0),
                                                                   (200.0, 201.0, 1.0)]
 

@@ -444,7 +444,7 @@ def session_submersions(ct: CleanTrack, ev: OffFoilEvidence | None, turns: list[
     if ev is None:
         return []
     subs = submersion_runs(ev.t, ev.gap, ev.submerged,
-                           ct.records["alt_m"].to_numpy(float))
+                           ct.records["alt_m"].to_numpy(float), ev.baseline)
     turn_windows = [(i, t.start_t, t.end_t + t.outcome_window_s)
                     for i, t in enumerate(turns) if t.counted]
     end_windows = [(i, e.t, e.t + e.window_s) for i, e in enumerate(ends)
