@@ -5592,7 +5592,7 @@ function largePagesFitRoundDisplay(logger as Test.Logger) as Boolean {
     var cy = screenPx() / 2;
     var hN = RecordingView.inkH(dc, Graphics.FONT_NUMBER_THAI_HOT);
     var hW = dc.getFontHeight(TEXT_FONTS[BIG_WORD_FONT]);
-    var hK = dc.getFontHeight(TEXT_FONTS[BIG_TALLY_FROM]);
+    var hK = RecordingView.bigLadderBand(dc);
     var hT = dc.getFontHeight(Graphics.FONT_XTINY);
     var hL = dc.getFontHeight(Graphics.FONT_LARGE);
     var hM = dc.getFontHeight(Graphics.FONT_MEDIUM);
@@ -5651,7 +5651,7 @@ function largePagesFitRoundDisplay(logger as Test.Logger) as Boolean {
         if (row) {
             y = RecordingView.bigRowY(cy, hG, band, hW, 1);
             var budget = RecordingView.rowBudget(radius, y - cy,
-                RecordingView.inkH(dc, NUMBER_FONTS[BIG_TALLY_FROM]));
+                RecordingView.bigLadderBand(dc));
             var counts = id == PageModel.M_TACKS ? RecordingView.ladderOf(-1, 99, 99, 99)
                 : RecordingView.ladderOf(99, 99, 99, 99);
             var lf = RecordingView.ladderRowFont(dc, counts, gs, budget, BIG_TALLY_FROM);
@@ -5659,8 +5659,19 @@ function largePagesFitRoundDisplay(logger as Test.Logger) as Boolean {
                 RecordingView.inkH(dc, lf), y, cy);
             Test.assertMessage(r <= limit, "big outcome row p" + i.toString() + " r="
                 + r.format("%.0f") + " > " + limit);
-            Test.assertMessage(dc.getFontHeight(lf) >= dc.getFontHeight(Graphics.FONT_SMALL),
+            Test.assertMessage(dc.getFontHeight(lf) >= dc.getFontHeight(
+                RecordingView.numberLadderIsSmall(dc)
+                    ? Graphics.FONT_NUMBER_MILD : Graphics.FONT_SMALL),
                 "the large set's outcome row fell below the readability floor");
+            // THE ROW'S OWN INK MUST FIT THE BAND IT WAS STACKED WITH. This is the assertion
+            // the 0.9.18 sheets earned: the row was fitted from the NUMBER ladder while its
+            // band was a TEXT font's line, because the constant meant one array and was read
+            // as the other. On a 454 px glass the chord hid it; on a 390 px Instinct 3 AMOLED
+            // the word under the giant was drawn straight through the digits.
+            Test.assertMessage(RecordingView.inkH(dc, lf) <= band,
+                "the large outcome row on p" + i.toString() + " is "
+                    + RecordingView.inkH(dc, lf).toString()
+                    + "px of ink in a " + band.toString() + "px band");
             Test.assertMessage(y - RecordingView.bigRowY(cy, hG, band, hW, 0)
                 >= (hG + band) / 2, "big giant/row gap p" + i.toString());
         }

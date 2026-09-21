@@ -352,9 +352,22 @@ const PAIR_RC = 3;   // right caption
 // It is still two rungs above every caption on the standard pages, which is what the set is
 // for: a number nobody can name is not readable however big it is.
 const BIG_WORD_FONT = 1;      // TEXT_FONTS index: FONT_MEDIUM
-// The outcome row under the turns and kind screens' giants starts at FONT_MEDIUM, the rung
-// the MAIN page's own tally row reserves, and sheds size and then content from there.
-const BIG_TALLY_FROM = 1;
+// The outcome row under the turns and kind screens' giants: a NUMBER_FONTS index, and the
+// band it reserves is that font's INK, so the two agree by construction.
+//
+// They did not, for one round, and the sheets caught it: the row was fitted from
+// `NUMBER_FONTS[1]` (FONT_NUMBER_HOT, which is enormous) while its band was
+// `FONT_MEDIUM`'s line, because the constant had been a TEXT_FONTS index when this row was
+// `drawTally` and became a NUMBER_FONTS index when it became a ladder row. On a 454 px glass
+// the chord stepped the row down far enough to hide it; on a 390 px Instinct 3 AMOLED it did
+// not, and the word under the giant was drawn straight through the digits. A band and a
+// ladder that index two different arrays is a bug waiting for the one font set that does not
+// mask it.
+//
+// FONT_NUMBER_MILD: a rung below the Turns page's own row (this one sits under a giant that
+// owns the page, and a second number as big as that row would be two giants), and still a
+// number rather than a caption.
+const BIG_TALLY_FROM = 3;
 
 // ---- the LARGE giant leaves the bitmap ladder (0.9.18) ----
 //
@@ -1320,7 +1333,7 @@ class RecordingView extends WatchUi.View {
         var f = bigGiantFont(dc, v, radius, rows);
         var hN = bigBand(dc, f);
         var hW = dc.getFontHeight(TEXT_FONTS[BIG_WORD_FONT]);
-        var hK = rows == 3 ? dc.getFontHeight(TEXT_FONTS[BIG_TALLY_FROM]) : 0;
+        var hK = rows == 3 ? bigLadderBand(dc) : 0;
 
         // row 0 — the giant
         var y = bigRowY(cy, hN, hK, hW, 0);
@@ -1342,6 +1355,20 @@ class RecordingView extends WatchUi.View {
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, y, fitFont(dc, TEXT_FONTS, BIG_WORD_FONT, word,
             rowBudget(radius, y - cy, inkH(dc, TEXT_FONTS[BIG_WORD_FONT]))), word, CV);
+    }
+
+    // The band the large set's outcome row reserves: its own font's ink, but never less than
+    // the readability floor a value keeps everywhere else on this watch.
+    //
+    // The floor is what the fenix 5 Plus family needs. Its Chronos number fonts are SHORTER
+    // than its text fonts (`numberLadderIsSmall`): FONT_NUMBER_MILD is 26 px where FONT_SMALL
+    // is 29, so a band taken from the number ladder alone would be below the floor on the one
+    // family this whole page set was widened for. With the floor the row is drawn at whatever
+    // the ladder gives it INSIDE a band that is at least legible, and nothing below it moves.
+    static function bigLadderBand(dc as Dc) as Number {
+        var n = inkH(dc, NUMBER_FONTS[BIG_TALLY_FROM]);
+        var floor = inkH(dc, TEXT_FONTS[TALLY_FLOOR]);
+        return n > floor ? n : floor;
     }
 
     // Does this metric's large screen carry an outcome row? The three turn screens do.
@@ -1409,7 +1436,7 @@ class RecordingView extends WatchUi.View {
             rows as Number) as Graphics.FontType {
         var cy = dc.getHeight() / 2;
         var hW = dc.getFontHeight(TEXT_FONTS[BIG_WORD_FONT]);
-        var hK = rows == 3 ? dc.getFontHeight(TEXT_FONTS[BIG_TALLY_FROM]) : 0;
+        var hK = rows == 3 ? bigLadderBand(dc) : 0;
         var hN = inkH(dc, Graphics.FONT_NUMBER_THAI_HOT);
         var yb = bigRowY(cy, hN, hK, hW, 0);
         var bitmap = fitGiant(dc, v, 0, rowBudget(radius, yb - cy, hN));
@@ -1466,7 +1493,7 @@ class RecordingView extends WatchUi.View {
             worst as String) as Graphics.FontType? {
         var cy = dc.getHeight() / 2;
         var hW = dc.getFontHeight(TEXT_FONTS[BIG_WORD_FONT]);
-        var hK = rows == 3 ? dc.getFontHeight(TEXT_FONTS[BIG_TALLY_FROM]) : 0;
+        var hK = rows == 3 ? bigLadderBand(dc) : 0;
         var hN = inkH(dc, Graphics.FONT_NUMBER_THAI_HOT);
         var yb = bigRowY(cy, hN, hK, hW, 0);
         var bitmap = fitGiant(dc, worst, 0, rowBudget(radius, yb - cy, hN));
