@@ -382,7 +382,7 @@ function tallyRowShedsContentNotSize(logger as Test.Logger) as Boolean {
     var dc = testDc();
     var cy = screenPx() / 2;
     var pageR = RecordingView.fitRadius(dc, false, false);
-    var hC = dc.getFontHeight(Graphics.FONT_NUMBER_MILD);
+    var hC = RecordingView.inkH(dc, MAIN_CLOCK_FONT);
     var hN = RecordingView.mainGiantBand(dc, PageModel.M_BEST_10S);
     var hD = RecordingView.stripBandH(dc);
     var hO = dc.getFontHeight(Graphics.FONT_LARGE);
@@ -413,8 +413,16 @@ function tallyRowShedsContentNotSize(logger as Test.Logger) as Boolean {
             < RecordingView.tallyWidth(dc, "99", "99", "99", "", TURNS_TALLY_SEP, tallyF),
         "dropping the separators must save width");
 
+    // What the row does with its captions is LOGGED and not asserted, and that is a finding
+    // rather than a gap: measured on 21 September 2026, the worst case this row can be handed
+    // (three two-digit counts) has dropped its "flew / touch / fell" captions on a 454 px
+    // fenix 8 since they were added in 0.9.11 — the row's budget there is 380 px and the
+    // captioned form needs more. It is the shed-content rule working as written; it is also
+    // three words a 30-turn session never sees, which is the session the words were for. Jan
+    // has the measurement (the 0.9.18 review's open questions); pinning it either way here
+    // would be this round deciding a question that is his.
     logger.debug("main tally at font height " + dc.getFontHeight(tallyF).toString()
-        + ", content mask " + mask.toString());
+        + ", content mask " + mask.toString() + " of budget " + budget.toString());
     return true;
 }
 
@@ -3100,9 +3108,13 @@ function mainPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     var cy = screenPx() / 2;
     var radius = RecordingView.fitRadius(dc, true, false);
     var limit = radius.toFloat();
-    // 0.9.2: the clock's band is FONT_NUMBER_MILD (the rider asked for a bigger time of day)
-    // and the giant's band is its INK height, which is where the 42 px came from.
-    var hC = dc.getFontHeight(Graphics.FONT_NUMBER_MILD);
+    // 0.9.2 gave the clock FONT_NUMBER_MILD's LINE for a band (the rider asked for a bigger
+    // time of day) and the giant its INK height, which is where the 42 px came from. 0.9.18
+    // gives the clock a rung more of digit and bands it on its OWN ink, which on a fenix 8 is
+    // 114 px against MILD's 113 — a whole font size for one pixel of stack. Banding it on
+    // FONT_NUMBER_MEDIUM's line instead would cost 30, and what those 30 px buy is the tally
+    // row's three captions, which is not a trade a clock wins.
+    var hC = RecordingView.inkH(dc, MAIN_CLOCK_FONT);
     // 0.9.13: the giant's band is its ink OR its two-line suffix block, whichever is taller
     // (mainGiantBand) — the default slot's here, each slot's own in the loop below
     var hN = RecordingView.mainGiantBand(dc, PageModel.M_BEST_10S);
@@ -3127,18 +3139,21 @@ function mainPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     Test.assertMessage((((cy - (y0 - hC / 2)) - ((y4 + hK / 2) - cy)).abs() <= 1),
         "main block off centre: " + (cy - (y0 - hC / 2)).toString() + " vs "
             + ((y4 + hK / 2) - cy).toString());
+    Test.assertMessage(y0 - hC / 2 >= 0 && y4 + hK / 2 <= 2 * cy,
+        "the main stack runs off the glass: " + (y0 - hC / 2).toString() + ".."
+            + (y4 + hK / 2).toString());
 
     // row 0 — the clock, and the PAUSED word that replaces it. Both must fit the same row.
     // The band is FONT_NUMBER_MILD since 0.9.2 and the row is fitted through the NUMBER ladder
     // with a fall-back into the text fonts, so the clock gets the digits and the WORD that
     // replaces it (which is wider, and has no glyphs in a number font) steps down as before.
-    var inkC = RecordingView.inkH(dc, Graphics.FONT_NUMBER_MILD);
+    var inkC = RecordingView.inkH(dc, MAIN_CLOCK_FONT);
     var tops = ["23:59", PAUSED_TEXT];
     for (var i = 0; i < tops.size(); i++) {
         var budget0 = RecordingView.rowBudget(radius, y0 - cy, inkC);
         // 0.9.13: the WORD never walks the number ladder (no letters there — the fenix 5
         // Plus family drew six boxes), and it starts at the text rung whose ink fits hC
-        var f = i == 0 ? RecordingView.fitGiant(dc, tops[i], 3, budget0)
+        var f = i == 0 ? RecordingView.mainClockFont(dc, radius, y0, cy)
             : RecordingView.fitFont(dc, TEXT_FONTS, RecordingView.textFontFrom(dc, hC),
                 tops[i], budget0);
         var r = cornerRadius(dc.getTextWidthInPixels(tops[i], f),
@@ -3152,14 +3167,24 @@ function mainPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
             "main row0 '" + tops[i] + "' is taller than the band it was stacked with");
     }
     // ...and the clock itself must reach the rung the row was widened for
-    var clockF = RecordingView.fitGiant(dc, "23:59", 3,
-        RecordingView.rowBudget(radius, y0 - cy, inkC));
+    var clockF = RecordingView.mainClockFont(dc, radius, y0, cy);
     Test.assertMessage(dc.getFontHeight(clockF) >= dc.getFontHeight(Graphics.FONT_NUMBER_MILD),
         "the clock did not reach FONT_NUMBER_MILD: " + dc.getFontHeight(clockF).toString()
-            + " in a " + RecordingView.rowBudget(radius, y0 - cy, inkC).toString() + "px row");
+            + " in a " + RecordingView.rowBudget(radius, y0 - cy,
+                RecordingView.inkH(dc, clockF)).toString() + "px row");
     Test.assertMessage(RecordingView.numberLadderIsSmall(dc)
         || dc.getFontHeight(clockF) > dc.getFontHeight(Graphics.FONT_LARGE),
         "the clock is no larger than the FONT_LARGE it used to be");
+    // the own-ink fitter may only ever find the same font or a BIGGER one than the flat
+    // fitter the rest of the app uses — that is what makes it safe to introduce here
+    Test.assertMessage(dc.getFontHeight(clockF) >= dc.getFontHeight(
+        RecordingView.fitGiant(dc, "23:59", MAIN_CLOCK_FROM,
+            RecordingView.rowBudget(radius, y0 - cy, inkC))),
+        "the own-ink fitter came out smaller than the flat one");
+    logger.debug("main clock \"23:59\" at font height " + dc.getFontHeight(clockF).toString()
+        + " (MEDIUM " + dc.getFontHeight(Graphics.FONT_NUMBER_MEDIUM).toString()
+        + ", MILD " + dc.getFontHeight(Graphics.FONT_NUMBER_MILD).toString() + "), band "
+        + hC.toString());
 
     // row 1 — the giant, which is now a catalog SLOT (best 10 s by default) with its unit and
     // caption inline beside the digits. Every metric the slot can hold is measured, at its
@@ -4442,7 +4467,7 @@ function wordsNeverWalkTheNumberLadder(logger as Test.Logger) as Boolean {
     var cf = RecordingView.fitGiant(dc, "23:59", 3, screenPx());
     Test.assertMessage(cf == Graphics.FONT_NUMBER_MILD, "the clock left the number ladder");
     // the rung that fits a band never overflows it, and it is the first that does
-    var hC = dc.getFontHeight(Graphics.FONT_NUMBER_MILD);
+    var hC = RecordingView.inkH(dc, MAIN_CLOCK_FONT);
     var from = RecordingView.textFontFrom(dc, hC);
     Test.assertMessage(RecordingView.inkH(dc, TEXT_FONTS[from]) <= hC,
         "textFontFrom picked a rung taller than the band");

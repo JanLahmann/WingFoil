@@ -3000,7 +3000,8 @@ BOTTOM of the page rather than under the giant; the Clock page's "timer" went en
 second number took the band; the Map page's odometer walks the text ladder from FONT_LARGE
 with "km" small beside it, where it had been pinned at FONT_SMALL, the floor; the Story page's
 "turns" moved under the dot row so the dots get the width; the Turns page's three inline
-captions became one legend on a narrow row of its own.
+captions became one legend on a narrow row of its own; and the Main page's clock went up a
+rung on every family whose top arc can hold one (see below — Jan's own cannot).
 
 The one place rule 2 was argued the other way is the foil table's row key, and Jan argued it:
 `tot` gave way to **`total`** even though the short word buys the six values a font rung,
@@ -3038,6 +3039,48 @@ One switch, *Show alerts on screen*, on by default; the per-alert switches gate 
 exactly as they gate the buzz. The visual half is never debounced — a new event replaces the
 one on screen, which is what one screen means — and save or discard clears the strip with
 the session. `EventFlash.mc` is the module, `AlertManager` fires it beside each buzz.
+
+### The Main page's clock — a rung raised, and the one glass that cannot take it
+
+Jan's note was two words: *make the clock time bigger*. What it turned into is the most
+useful thing this round measured, so it is written down rather than quietly half-done.
+
+The clock is the top row of the page a rider spends the session on, and the top row sits in
+the **top arc**, which is where a round glass is narrowest. Its ceiling is
+`FONT_NUMBER_MEDIUM` now, one rung above the `FONT_NUMBER_MILD` it had carried since 0.9.2,
+and it reaches it on **every shipped family but one**: 26 → 36 px of digit on a fenix 5 Plus,
+45 → 53 on an fr255, 55 → 67 on a fenix 7S, 71 → 91 on a venu 2S, 78 → 105 on an Instinct 3
+AMOLED, 82 → 102 on an epix 2 Pro, 89 → 116 on a venu 3. On the **fenix 8 47 mm** it does
+not: the chord for a 114 px box at that depth is 241 px and a `FONT_NUMBER_MEDIUM` "23:59"
+needs about 250. Nine pixels, on Jan's own watch.
+
+Three ways to buy them were tried and all three cost more than the rung is worth, which is
+why the page ships as it is:
+
+- **lift the block** (the Clock page's own trick, `CLOCK_BIAS`). 20 px of lift puts the
+  streak row's corner 217 px out on a 213 px radius — the bottom row leaves the glass before
+  the top row gets its rung. That page has two rows and this one has five.
+- **band the clock on `FONT_NUMBER_MEDIUM`'s line** rather than its ink. It does not help the
+  fit at all, the box the glass clips being the ink either way, and it pushes the four rows
+  under it 30 px deeper for nothing — measured, that is enough to cost the tally row its
+  captions.
+- **fit per time of day.** "11:49" is narrow enough for the bigger rung and "23:59" is not, so
+  the clock would change size during the afternoon. A number that grows and shrinks on its own
+  is worse than a number that is one rung small.
+
+So the rung is decided once, on the **worst case** the row can be handed (`mainClockFont`
+asks `fitByOwnInk` for "23:59"), and the band is `FONT_NUMBER_MEDIUM`'s ink — 114 px against
+`MILD`'s 113 px line, so the stack does not move and no other row pays for the attempt.
+`fitByOwnInk` is new and is the honest half of the fix: it measures each candidate against the
+chord for **that candidate's own box**, where the app's usual fitter measures every candidate
+against the chord for the top one's. Near an arc the box height is most of what decides the
+chord, and a fitter blind to that answers "nothing fits" and hands back a text font.
+
+**Open, and Jan's to decide:** the Main page's tally row drops its *flew / touch / fell*
+captions on a 454 px glass for any session with three two-digit counts, and has done since
+they were added in 0.9.11 — the row's budget there is 380 px and the captioned form needs
+more. It is the shed-content rule working as written. It is also three words that the 30-turn
+session they were written for never sees.
 
 ## The watch's Turns page — one row, four counts, and a mark for the wind
 

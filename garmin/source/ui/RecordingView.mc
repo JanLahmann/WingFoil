@@ -93,12 +93,45 @@ const TURNS_BIAS_MAX_PCT = 20;
 // and it is fitted from that rung of the NUMBER ladder, so a glass that cannot hold MEDIUM
 // steps back down to exactly the clock that shipped.
 //
-// The rung is paid for out of the page's own leading, not out of another row: the giant below
-// it is stacked on its INK and the rows under that on their line heights, so what the taller
-// clock takes is the air the stack was already centred in. The layout suite asserts the five
-// rows still clear the circle on every glass, which is the check that says so.
+// THE RUNG IS PAID FOR OUT OF LEADING, not out of another row, and this is the whole trick:
+// the clock's band is its INK and not its line, the same treatment the MAIN giant's band got
+// in 0.9.2 and the HERO giant's before it. FONT_NUMBER_MEDIUM's line is 143 px on a 454 px
+// glass and its digits are 114 of them; FONT_NUMBER_MILD's LINE — the band the clock reserved
+// until this round — is 113. So a whole rung of digit costs the stack **one pixel**, and the
+// four rows under it do not move.
+//
+// Measured, and it is the reason this is written down: banding the taller clock on its LINE
+// instead cost the stack 30 px, which pushed the MAIN page's tally row deep enough into the
+// arc to drop its "flew / touch / fell" captions — the words the 0.9.11 stranger audit put
+// there. A bigger clock is not worth the three words under it, and on the ink it does not
+// cost them.
+// ---- AND ON A FENIX 8 IT DOES NOT FIT, which is worth writing down ----
+//
+// The clock is row 0, in the TOP ARC, which is where a round glass is narrowest. Measured on
+// a 454 px fenix 8: the chord for a 114 px box at the clock's depth is 241 px and a
+// FONT_NUMBER_MEDIUM "23:59" needs about 250. Nine pixels.
+//
+// Three ways to buy them were tried and all three were rejected:
+//   * LIFT THE BLOCK, the Clock page's own trick. 20 px of lift puts the streak row's corner
+//     217 px out on a 213 px radius — the bottom row falls off the glass before the top row
+//     gets its rung, because this page has five rows and the Clock page has two.
+//   * BAND THE CLOCK ON FONT_NUMBER_MEDIUM'S LINE (143 px against MILD's 113). That does not
+//     help the fit at all — the box the glass clips is the INK either way — and it pushes the
+//     four rows under it 30 px deeper for nothing.
+//   * TAKE THE FIT PER TIME OF DAY. "11:49" is narrow enough for MEDIUM and "23:59" is not,
+//     so the clock would change size during the session. A number that grows and shrinks on
+//     its own is worse than a number that is one rung small.
+//
+// So the ceiling is raised and the floor is where it was: `fitByOwnInk` is asked for the
+// WORST CASE the row can be handed ("23:59"), once, so the answer is stable for the whole
+// session — FONT_NUMBER_MEDIUM on every font set that can hold it and the shipped
+// FONT_NUMBER_MILD on the ones that cannot, which on this page is the fenix 8's own. The
+// band is MEDIUM's ink, 114 px against MILD's 113 line, so the stack does not move either
+// way and no other row pays for the attempt. Jan has the measurement.
 const MAIN_CLOCK_FONT = Graphics.FONT_NUMBER_MEDIUM;
 const MAIN_CLOCK_FROM = 2;     // NUMBER_FONTS index of MAIN_CLOCK_FONT
+// The string the clock's rung is decided on. Not the live time: see above.
+const MAIN_CLOCK_WORST = "23:59";
 
 // Main-page streak row: "dry 7 / 12" — the live no-fall run and the session's best.
 const STREAK_CAPTION = "dry";
@@ -742,6 +775,42 @@ class RecordingView extends WatchUi.View {
         return 2 * chordHalf(radius, dy, h);
     }
 
+    // Largest NUMBER font at or after `from` that renders `text` inside the chord AT ITS OWN
+    // INK HEIGHT, falling into the text ladder when none does.
+    //
+    // `fitGiant` measures every candidate against ONE budget — the chord for the top
+    // candidate's box — which is right for a row whose band is reserved for the top rung and
+    // wrong for a row near an arc, where the box height is most of what decides the chord. On
+    // the MAIN page's clock row the difference is the whole question: a FONT_NUMBER_MEDIUM
+    // "23:59" needs a 114 px box, and the chord for a 114 px box at that depth on a 454 px
+    // glass is narrower than the one for FONT_NUMBER_MILD's 85 px box by enough to matter. A
+    // fitter blind to that answers "nothing fits, take a text font" and hands a rider a
+    // FONT_LARGE time of day — smaller than the clock that shipped.
+    //
+    // Only ever finds a font `fitGiant` would also have accepted or a LARGER one, never a
+    // smaller: each candidate is checked against a chord at least as wide as the one
+    // `fitGiant` would have used for it.
+    static function fitByOwnInk(dc as Dc, text as String, from as Number, radius as Number,
+            y as Number, cy as Number) as Graphics.FontType {
+        if (hasLetters(text)) {
+            return fitFont(dc, TEXT_FONTS, 0, text,
+                rowBudget(radius, y - cy, inkH(dc, TEXT_FONTS[0])));
+        }
+        for (var i = from; i < NUMBER_FONTS.size(); i++) {
+            var f = NUMBER_FONTS[i];
+            if (dc.getTextWidthInPixels(text, f) <= rowBudget(radius, y - cy, inkH(dc, f))) {
+                return f;
+            }
+        }
+        for (var i = 0; i < TEXT_FONTS.size() - 1; i++) {
+            var f = TEXT_FONTS[i];
+            if (dc.getTextWidthInPixels(text, f) <= rowBudget(radius, y - cy, inkH(dc, f))) {
+                return f;
+            }
+        }
+        return TEXT_FONTS[TEXT_FONTS.size() - 1];
+    }
+
     // Largest font in `ladder` at or after `from` that renders `text` within `maxW`.
     // Falls back to the last (smallest) entry rather than returning nothing.
     // A font set where the NUMBER ladder is shorter than the text ladder: the fenix 5 Plus
@@ -925,7 +994,7 @@ class RecordingView extends WatchUi.View {
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
         var radius = fitRadius(dc, true, foilArc);
-        var hC = dc.getFontHeight(MAIN_CLOCK_FONT);
+        var hC = inkH(dc, MAIN_CLOCK_FONT);
         var hN = mainGiantBand(dc, mainGiantId(page));
         var hO = dc.getFontHeight(Graphics.FONT_LARGE);
         var hD = stripBandH(dc);
@@ -952,14 +1021,16 @@ class RecordingView extends WatchUi.View {
             var top = paused ? PAUSED_TEXT : PageModel.clockString();
             dc.setColor(paused ? Graphics.COLOR_YELLOW : Graphics.COLOR_WHITE,
                 Graphics.COLOR_TRANSPARENT);
-            var budget = rowBudget(radius, y - cy, inkH(dc, MAIN_CLOCK_FONT));
             // The word takes the text ladder from the rung that fits the clock's BAND: on
-            // the fenix 5 Plus family FONT_LARGE's ink is taller than the clock font's line,
+            // the fenix 5 Plus family FONT_LARGE's ink is taller than the clock font's band,
             // so PAUSED there steps down a rung and on every other glass it is FONT_LARGE as
-            // before. Shared with the layout test.
+            // before. The CLOCK is fitted against each candidate's own ink (fitByOwnInk),
+            // because this row sits in the top arc where the box height is most of what
+            // decides the chord. Shared with the layout test.
             dc.drawText(cx, y, paused
-                ? fitFont(dc, TEXT_FONTS, textFontFrom(dc, hC), top, budget)
-                : fitGiant(dc, top, MAIN_CLOCK_FROM, budget), top, CV);
+                ? fitFont(dc, TEXT_FONTS, textFontFrom(dc, hC), top,
+                    rowBudget(radius, y - cy, inkH(dc, TEXT_FONTS[textFontFrom(dc, hC)])))
+                : mainClockFont(dc, radius, y, cy), top, CV);
         }
 
         // row 1 — the giant, with its unit and caption inline behind the digits
@@ -980,6 +1051,15 @@ class RecordingView extends WatchUi.View {
 
         // row 4 — the dry run: how many turns since he last went in, and the session's best.
         drawStreakRow(dc, cx, mainRowY(cy, hC, hN, hD, hO, hK, 4), cy, radius, e.turns);
+    }
+
+    // The rung the clock is drawn at: decided once on the WORST CASE the row can be handed,
+    // never on the live time, so a session's clock does not change size at 23:00. Shared with
+    // the layout test. See MAIN_CLOCK_FONT for why this row has a ceiling it often cannot
+    // reach.
+    static function mainClockFont(dc as Dc, radius as Number, y as Number,
+            cy as Number) as Graphics.FontType {
+        return fitByOwnInk(dc, MAIN_CLOCK_WORST, MAIN_CLOCK_FROM, radius, y, cy);
     }
 
     // The MAIN giant: a catalog metric in the page's s1 slot, its value in the number ladder
