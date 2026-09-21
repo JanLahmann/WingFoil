@@ -60,10 +60,12 @@ module PageModel {
         // like MAIN/RECORDS/TURNS: no slot is read, because every cell on it is a foil number
         // and a configurable cell could only make it a worse version of the grid it replaced.
         LAYOUT_FOIL = 10,
-        // The LARGE page set's one and only layout (0.9.16): a single giant number, the word
-        // that says what it is a rung UP from every other caption on the watch, and — on the
-        // turns page alone — the outcome tally under it. Slot 1 carries the metric; no other
-        // slot is read. See `bigWord` and RecordingView.drawBigPage.
+        // The LARGE page set's one and only layout (0.9.16): a single giant number, an
+        // outcome row on the three turn screens, and the word that says what the giant is.
+        // Slot 1 carries the metric; no other slot is read. Since 0.9.18 the word is BELOW
+        // the row and a rung smaller, and the giant leaves the bitmap ladder where the device
+        // has a vector face — numbers larger, words smaller (Jan, 21 September 2026). See
+        // `bigWord` and RecordingView.drawBigPage.
         LAYOUT_BIG = 11,
         // The standard set's eighth page (0.9.17): TACKS & JIBES. Two halves, one per kind —
         // the count as a giant, the word under it, and under that how many of that kind he
@@ -153,21 +155,27 @@ module PageModel {
     // deliberately: one setting, no new properties per page, and it is the ONLY page control
     // a release or beta build has, because the per-page editor is `(:dev)` since this round.
     //
-    // The large set is FIVE pages and they are the five questions a rider asks between two
-    // jibes, one per screen: how fast, how much of it was flown, how the turns are going,
-    // what time it is, and the best run of the day. There is no editor for them and there is
-    // deliberately no map, no timeline and no table — a page you have to read is not a page
-    // this set is for.
+    // The large set is FIVE pages, one question each (see BIG_PAGES for which five and why).
+    // There is no editor for them and there is deliberately no map, no timeline and no table
+    // — a page you have to read is not a page this set is for.
     const PAGE_SET_STANDARD = 0;
     const PAGE_SET_LARGE = 1;
-    // Seven since 0.9.17: JIBES and TACKS join, one screen each, straight after the turns
-    // screen — the same place and the same reason they take in the standard set. Each carries
-    // its kind's count as the giant, the kind as the word, and how many of them he flew
-    // through under it (`flewLine`), which is the large set's word-under-giant shape with one
-    // line of verdict added, exactly as the turns screen already carries its tally.
-    const BIG_PAGES = 7;
+    // FIVE since 0.9.18, and the two that left are the two the standard set already answers
+    // better (Jan's layout review, 21 September 2026: "pages 7 and 4 are good enough").
+    //
+    // `time` left because the standard Clock page IS a giant time of day with nothing on it
+    // but a timer — a large-text screen for the clock was the clock page one rung smaller.
+    // `best 2s` left because the standard Records page carries both records with their names,
+    // and a set that answers "how fast was the best two seconds" without saying what the ten
+    // was is a worse version of the page one screen away.
+    //
+    // What is left is the five questions a rider asks with spray on the glass, one per screen:
+    // how fast right now, how much of it was flown, how the turns are going, and the two kinds
+    // of turn asked apart. Each kind screen carries its kind's whole outcome row under the
+    // giant, exactly as the turns screen carries the session's.
+    const BIG_PAGES = 5;
     var BIG_SLOT as Array<Number> = [
-        M_SPEED, M_FOIL_PCT, M_TURNS, M_JIBES, M_TACKS, M_CLOCK, M_BEST_2S
+        M_SPEED, M_FOIL_PCT, M_TURNS, M_JIBES, M_TACKS
     ];
 
     // ---- built state ----
@@ -397,10 +405,18 @@ module PageModel {
     // "24.3" unambiguous — and a set built for a rider who cannot read the small print must
     // not answer "24.3 what?" in the small print.
     function bigWord(id as Number) as String {
-        if (id == M_SPEED) { return "speed " + AppSettings.speedLabel(); }
+        // "now km/h", not "speed km/h" (Jan, 21 September 2026: "is this current speed or a
+        // record? which metric?"). It is the live speedometer, and the large set sits one
+        // swipe from two RECORD screens in the standard set — so the word has to answer
+        // WHEN as well as what, and "now" is the shortest true answer there is.
+        if (id == M_SPEED) { return "now " + AppSettings.speedLabel(); }
         if (id == M_BEST_2S) { return "best 2s " + AppSettings.speedLabel(); }
         if (id == M_BEST_10S) { return "best 10s " + AppSettings.speedLabel(); }
-        if (id == M_FOIL_PCT) { return "on foil"; }
+        // "time on foil", not "on foil": the number is a share of the MINUTES, and its
+        // distance twin (M_FOIL_DIST_PCT) is the same "%" over a different denominator. A
+        // page that says only "on foil" makes the rider guess which of the two he is reading.
+        if (id == M_FOIL_PCT) { return "time on foil"; }
+        if (id == M_FOIL_DIST_PCT) { return "distance on foil"; }
         if (id == M_TURNS) { return "turns"; }
         if (id == M_CLOCK) { return "time"; }
         if (id == M_DISTANCE) { return "km"; }
@@ -560,24 +576,56 @@ module PageModel {
         return l.equals(unitOf(id)) ? "" : l;
     }
 
-    // ---- the kinds' fly-through line (0.9.17) ----
-    // "flew 9": how many of ONE KIND he kept the foil through. It rides under the kind's own
-    // count on the Tacks & jibes page and under its giant in the large set, in the ladder's
-    // green, because it is the ladder's green count asked of one kind — same numerator rule,
-    // narrower question. Empty for every other metric, and empty at zero: "flew 0" under a
-    // count of 0 is not a fact yet, the same rule the clean-jibe row keeps.
-    const FLEW_PREFIX = "flew ";
+    // ---- the kinds' own outcome row (0.9.17 as one number, the whole ladder since 0.9.18) ----
+    //
+    // 0.9.17 put ONE number under a kind's count — "flew 9" — and Jan's layout review of
+    // 21 September 2026 asked for the rest of it: a kind's page should read like the Turns
+    // page, in the same colour language, so a rider who has learned one row has learned both.
+    // So a kind now carries its own ladder:
+    //
+    //     jibes   ★clean · flew · touch · fell
+    //     tacks           flew · touch · fell
+    //
+    // Tacks have no clean rung and never will: a clean JIBE is what the product is named
+    // after and what `cleanJibeCount` counts (docs/presentation.md "Clean jibe"). A star over
+    // the tack row would be inventing a verdict the engine does not compute.
+    //
+    // These are accessors, not strings: the row is drawn as coloured cells, and a formatted
+    // line would have to throw the colours away to build one.
+
+    function isKind(id as Number) as Boolean {
+        return id == M_JIBES || id == M_TACKS;
+    }
+
+    // The kind's own count — the giant on its page. -1 when the metric is not a kind.
+    function kindCount(id as Number, t as TurnDetector) as Number {
+        if (id == M_JIBES) { return t.jibeCount; }
+        if (id == M_TACKS) { return t.tackCount; }
+        return -1;
+    }
 
     // How many of that kind flew through, or -1 when the metric is not a kind.
-    function flewOfKind(id as Number, t as TurnDetector) as Number {
+    function kindFlew(id as Number, t as TurnDetector) as Number {
         if (id == M_JIBES) { return t.jibeFlewCount; }
         if (id == M_TACKS) { return t.tackFlewCount; }
         return -1;
     }
 
-    function flewLine(id as Number, t as TurnDetector) as String {
-        var n = flewOfKind(id, t);
-        return n <= 0 ? "" : FLEW_PREFIX + n.toString();
+    function kindTouch(id as Number, t as TurnDetector) as Number {
+        if (id == M_JIBES) { return t.jibeTouchCount; }
+        if (id == M_TACKS) { return t.tackTouchCount; }
+        return -1;
+    }
+
+    function kindFell(id as Number, t as TurnDetector) as Number {
+        if (id == M_JIBES) { return t.jibeFellCount; }
+        if (id == M_TACKS) { return t.tackFellCount; }
+        return -1;
+    }
+
+    // The clean-jibe count where the kind has one, -1 where it does not. Only jibes do.
+    function kindClean(id as Number, t as TurnDetector) as Number {
+        return id == M_JIBES ? t.cleanJibeCount : -1;
     }
 
     // "now / best" — the live dry streak beside the session's longest. One string so it fits

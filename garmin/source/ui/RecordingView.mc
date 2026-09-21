@@ -30,7 +30,75 @@ const TALLY_CAPTION_GAP = 3;
 const TALLY_CAP_FLEW = "flew";
 const TALLY_CAP_TOUCH = "touch";
 const TALLY_CAP_FELL = "fell";
-const TURNS_HEADER = "flew · touch · fell";
+
+// ---- the LADDER ROW and its header (0.9.18, Jan's layout review of 21 September 2026) ----
+//
+// FOUR counts on one wide row, clean first: "★34  63 · 21 · 12". Everything the Turns page
+// used to say in six rows it now says in one plus a legend — the clean jibes left their own
+// row, CPH left the watch, and the "% flew" figure left because the counts already say it
+// (a rider who can read "63 · 21 · 12" does not need "65 %" printed beside it, and a page
+// that prints both has to be believed twice).
+//
+// The row is the page's WIDEST line, which is what puts it on the equator: on a round glass
+// the chord is widest at the vertical centre, so the widest line belongs there and the narrow
+// ones — labels, captions, the streaks — go above and below it (docs/presentation.md, "The
+// widest line belongs on the equator").
+//
+// The header above it is the same four words in the same four inks in the same order, at
+// FONT_XTINY. Colour alone was the key until 0.9.11 and the words came back then; this round
+// moves them OFF the counts and into a legend, which is what buys the counts their size:
+// three captions inline cost the row ~90 px on a 454 px glass, and a legend costs it nothing
+// because it is a narrow line on a row that has room to spare.
+const TALLY_CAP_CLEAN = "clean";
+const LADDER_HEAD_SEP = " · ";
+// ...and the legend SHEDS CONTENT rather than size, exactly as the tally row does, because
+// FONT_XTINY is already the bottom of the ladder and a legend nobody can read explains
+// nothing. Measured on a 240 px fenix 5 Plus, where FONT_XTINY is 26 px (every other watch
+// draws 19): the full legend is 224 px against a 214 px chord at its own depth — ten pixels,
+// and three of them are separators.
+//
+// The order is separators, then the mark. A separator between two words that are already in
+// two different colours carries nothing; the mark carries whether the page has an axis at
+// all, which is the difference between a port/starboard row that means something and one
+// that is counting nothing.
+const LADDER_HEAD_SEP_NARROW = " ";
+const LADDER_HEAD_SEPARATORS = 1;
+const LADDER_HEAD_MARK = 2;
+// Between the star's group and the three outcome counts: the same wider gap the tally row
+// has always used to say "two groups, not one phrase". The star's count is a SUBSET of the
+// green one beside it, so the two must not read as a sequence.
+const LADDER_CLEAN_GAP = TURNS_OK_GAP;
+// Gap between the header's four words and the wind mark that follows them. Wider than the
+// word separator for the same reason: the mark is not a fifth rung.
+const LADDER_HEAD_MARK_GAP = 10;
+// The rung a ladder row's counts START at, as a NUMBER_FONTS index — FONT_NUMBER_MEDIUM,
+// the rung the Turns page's giant tally has always reserved. It steps down through MILD into
+// the text ladder and stops at TALLY_FLOOR, like every other count on this watch.
+const LADDER_FROM = 2;
+
+// The Turns page's downward lift (0.9.18). Its five rows are one wide one with a legend over
+// it and three narrow ones under it, and a stack centred on its own TOTAL leaves the wide row
+// ~45 px above the equator on a 454 px glass with an empty top arc above it. The lift is
+// exactly the distance that puts the ladder row's own centre on cy — capped at this share of
+// the radius, because past it the page is buying the widest row a chord it already had by
+// pushing the bottom row into one it has not.
+const TURNS_BIAS_MAX_PCT = 20;
+
+// ---- the MAIN page's clock (0.9.18) ----
+//
+// Jan's layout review, 21 September 2026: "make the clock time bigger". It is the top row of
+// the page a rider spends the session on and the one thing on it he reads without wanting a
+// number — and it had been a FONT_NUMBER_MILD line since 0.9.2, one rung under the band it
+// sits in. It is FONT_NUMBER_MEDIUM now (~88 px of digit on a 454 px glass against MILD's 66)
+// and it is fitted from that rung of the NUMBER ladder, so a glass that cannot hold MEDIUM
+// steps back down to exactly the clock that shipped.
+//
+// The rung is paid for out of the page's own leading, not out of another row: the giant below
+// it is stacked on its INK and the rows under that on their line heights, so what the taller
+// clock takes is the air the stack was already centred in. The layout suite asserts the five
+// rows still clear the circle on every glass, which is the check that says so.
+const MAIN_CLOCK_FONT = Graphics.FONT_NUMBER_MEDIUM;
+const MAIN_CLOCK_FROM = 2;     // NUMBER_FONTS index of MAIN_CLOCK_FONT
 
 // Main-page streak row: "dry 7 / 12" — the live no-fall run and the session's best.
 const STREAK_CAPTION = "dry";
@@ -43,22 +111,19 @@ const STREAK_SEP = " / ";
 const STREAK_ROW_CAPTION = "streak:";
 const STREAK_SEP_TIGHT = "/";
 
-// The Turns page's bottom row: "49% ok  P29/S22". The words are XTINY and the numbers
-// FONT_SMALL, which is what keeps this row inside a bottom-arc chord — the same caption trick
-// the streak row uses. P/S is the ENTRY side, i.e. which tack he was on going in.
+// The Turns page's bottom row: "P29/S22". The words are XTINY and the numbers FONT_SMALL,
+// which is what keeps this row inside a bottom-arc chord — the same caption trick the streak
+// row uses. P/S is the ENTRY side, i.e. which tack he was on going in, and it is the one
+// number on the page a rider can act on tomorrow.
 //
-// Every space in these strings was spent and then taken back: with " % ok", "P " and " / "
-// the row measured 301 px against a 291 px chord on a 416 px glass, so the whole P/S half —
-// the one actionable number on the page — was being dropped on the 43 mm watch. It needs no
-// spaces: the caption letters are XTINY grey and the counts FONT_SMALL white, and that size
-// and colour break separates them far better than a space does.
-// The share is the FLEW-THROUGH share — flewCount of the counted turns — and not the
-// carried-speed score the row used to print. Two reasons, in order: it agrees with the green
-// count in the tally above it BY CONSTRUCTION (same numerator, same denominator), so the page
-// can no longer say "35 flew" in one row and a percentage nobody can derive from it in the
-// next; and a score that mixes speed retention with the outcome is a sit-down number, which is
-// what the phone is for. The stricter metric lives there now.
-const TURNS_FLEW_SUFFIX = "% flew";
+// Every space in these strings was spent and then taken back: with "P " and " / " the row was
+// wide enough to be dropped entirely on the 43 mm watch. It needs no spaces: the caption
+// letters are XTINY and the counts FONT_SMALL, and that size break separates them far better
+// than a space does.
+//
+// It carried a "% flew" share in front of that until 0.9.18. Jan took the figure off the page
+// in his layout review of 21 September 2026: flewCount over turnCount is arithmetic on two
+// numbers the ladder row above already prints, so the page was stating one fact twice.
 const TURNS_PORT = "P";
 const TURNS_STBD = "S";
 const TURNS_SIDE_SEP = "/";
@@ -67,70 +132,57 @@ const TURNS_SIDE_SEP = "/";
 // other count on the watch stops.
 const VERDICT_FROM = 1;
 
-// ---- the Turns page's CLEAN JIBE row (0.9.5, see drawCleanRow) ----
-// "★ 12  4.6 CPH": the star, the session's clean-jibe count, and the rate that count implies.
+// ---- the CLEAN JIBE star (0.9.5; its own row until 0.9.18) ----
+// The star had a row of its own — "★ 12  4.6 CPH" — from 0.9.5 until Jan's layout review of
+// 21 September 2026 took both halves of it. The RATE left the watch: CPH is a sit-down number
+// and the phone computes it on a cleaner clock (docs/algorithms.md, the watch divergences).
+// The COUNT moved up into the ladder row, first of the four, because that is where it belongs
+// — it refines the green count beside it, and a subset printed on a row of its own is a
+// number the rider has to relate to another number himself.
 //
-// It sits directly under the giant tally because it REFINES it. The tally's green says "this
-// many flew through"; the star says how many of those were jibes he also carried the speed
-// through, which is a stricter question and the one the app is named after
-// (docs/presentation.md "Clean jibe"). Putting it anywhere else on the page would leave the
-// two numbers to be related by the rider.
+// The star is still the count's only caption on the row itself; the header above names it
+// "clean" in the same ink. There is no word beside the digits, because there is no room for
+// one on a 240 px glass and the mark is the vocabulary the phone and the web already teach.
 //
-// The star is the row's caption — there is no word, because there is no room for one on a
-// 240 px glass and the mark is the vocabulary the phone and the web already teach. The rate's
-// three letters are XTINY beside a value in the row's own font, the same size-and-colour break
-// the verdict row two rows down uses instead of spaces.
-const TURNS_CPH_SUFFIX = "CPH";
-// The rung this row's VALUES sit at, as a TEXT_FONTS index. FONT_SMALL — the readability floor
-// every count on this watch keeps — and NOT the FONT_MEDIUM the verdict row starts at, for a
-// reason that was measured rather than chosen: this row is the sixth on a page that had five,
-// and the whole stack is centred, so every pixel of band it takes pushes the verdict row
-// another half-pixel deeper into the arc. At FONT_MEDIUM on a 454 px glass that cost the
-// verdict row its port/starboard split by six pixels (304 px of ink into a 298 px budget) —
-// the one number on the page a rider can act on tomorrow, dropped to make room for a bigger
-// font on a row whose content is two short numbers. The floor buys it back with room over.
-//
-// So the row is pinned here and sheds CONTENT rather than size, which is what every other row
-// on this page does once it reaches the floor anyway.
-const CLEAN_FROM = TALLY_FLOOR;
 // Gap between the star and the count it labels. Wider than GLYPH_GAP: the mark is a filled
 // shape, not a letter, and it needs more air than a glyph beside a word does before the count
 // starts reading as part of it.
 const CLEAN_GLYPH_GAP = 7;
 
-// ---- the TACKS & JIBES page (0.9.17, see drawKindsBody) ----
+// ---- the TACKS & JIBES page (0.9.17; re-cut 0.9.18, see drawKindsBody) ----
 //
 // Jan, 21 September 2026, from a tester practising tacks: the Turns page says how the
-// maneuvers went, and nothing on the watch says WHICH maneuvers they were. This page does,
-// in two halves: the kind's count as a giant, the kind's word under it, and under that how
-// many of that kind he flew through, in the ladder's own green.
+// maneuvers went, and nothing on the watch says WHICH maneuvers they were. This page does.
 //
-// STACKED, not side by side. The pair band (drawPairBand) is the other shape available and
-// it was measured and rejected: two halves of one chord give each count about 95 px on a
-// 240 px glass, which steps both giants off the number ladder on exactly the watches this
-// app was widened for — and a count that is not a giant is the Turns page's tally row, which
-// already exists one screen back. Stacked, each giant gets the WHOLE chord at its own depth,
-// and the two halves sit symmetrically about the equator.
+// 0.9.17 drew it as two GIANTS with "flew N" beside each word. Jan's layout review the same
+// evening re-cut it to read like the Turns page instead — one wide LADDER ROW per kind, in
+// the same four inks, with the kind's small word above or below its own row:
 //
-// Aborted turns are on neither half and are not counted on the watch at all: a sweep the
+//        jibes
+//    ★34  39 · 8 · 5
+//     24 · 13 · 4
+//        tacks
+//
+// The two wide rows straddle the equator, where the chord is widest, and the two narrow words
+// take the shallow top and the deep bottom where it is not — which is the same rule the Turns
+// page's legend and streaks follow one screen back. A rider who has learned to read one of
+// these rows has learned to read all four on the watch.
+//
+// TACKS HAVE NO CLEAN RUNG, and never will: `cleanJibeCount` counts clean JIBES, which is the
+// verdict the product is named after (docs/presentation.md "Clean jibe"). A star over the tack
+// row would be inventing a number the engine does not compute.
+//
+// Aborted turns are on neither row and are not counted on the watch at all: a sweep the
 // classifier rejects is a course change (TurnDetector.rejectedCount), and the engine's
 // aborted-turn count has no watch twin (docs/algorithms.md, the watch divergences).
 const KINDS_JIBES = "jibes";
 const KINDS_TACKS = "tacks";
-// The header. The split only exists where a wind axis does — without one every turn is a
-// generic turn and both counts are 0 — so the page says which axis it is counting against,
-// and says so when there is none. Otherwise the page reads as broken on exactly the session
-// where it is merely uninformed.
-const KINDS_WIND = "wind ";
+// The header is GONE when the axis is known (0.9.18): it spent a whole row saying "wind ~NNE"
+// on a page whose four rows are already about the split that axis makes, and the Turns page
+// one screen back now carries the axis as a mark. It survives for the one state it is the
+// only explanation of — no axis at all, where every turn is a generic turn, both rows are
+// zeros and the page is uninformed rather than broken.
 const KINDS_NO_WIND = "wind not set";
-// Gap between a half's word and its "flew N", the same wider gap the tally row puts between
-// its counts and the session verdict: two groups, not one phrase.
-const KINDS_GAP = TURNS_OK_GAP;
-// The sub-row's rung, as a TEXT_FONTS index. FONT_SMALL, the readability floor every count on
-// this watch keeps, for the reason the clean-jibe row is pinned there: the row is a caption
-// row under a giant, and every pixel of band it takes comes out of the giants either side of
-// it. It sheds the "flew N" half rather than its size, exactly as the clean row sheds CPH.
-const KINDS_FROM = TALLY_FLOOR;
 
 // PAUSED banner. A word, not a value, so FONT_TINY is the right rung (docs review: XTINY and
 // TINY are label sizes) — and a narrower banner is what lets it sit high enough on the glass
@@ -217,6 +269,20 @@ var PAIR_FONTS as Array<Graphics.FontType> = [
 ];
 const PAIR_FLOOR = 2;
 
+// The large set's probed giant, one per stack shape — [two-row, three-row]. `null` after the
+// probe means "this device has no face that beats the bitmap ladder", which is the answer on
+// every CIQ 3.x product and on the narrow glasses. Probed once (see VEC_FACES above) and
+// never again for the life of the app; `_vecProbed` is what says the probe has run, because
+// `null` is a real answer and cannot say it itself.
+var _vecGiant as Array<Graphics.FontType?> = [null, null];
+var _vecProbed as Boolean = false;
+
+// The ladder row's four counts, [clean, flew, touch, fell]. A module-level scratch filled in
+// place by `ladderOf`, the same no-allocation contract Glyphs' triangle and star scratches
+// keep: the Tacks & jibes page draws two of these a frame and the fitter measures each of
+// them twice, and a fresh array per call would be the only allocation on the page.
+var _ladder as Array<Number> = [0, 0, 0, 0];
+
 // Slots in the `texts` array pairFits takes the band's four strings in. They ride
 // as one array because Monkey C caps a function at nine arguments on CIQ 3.x and the
 // spelled-out left/right value/caption form made pairFits the app's only ten-argument call.
@@ -244,10 +310,58 @@ const PAIR_RC = 3;   // right caption
 // digits on a 240 px glass, and this set's whole trade is radius for digit height. The foil-%
 // page keeps the ARC, because it earns it the ordinary way (pageDrawsFoilArc) and the arc is
 // the same number the page's giant already is — a sweep, read without reading.
-const BIG_WORD_FONT = 0;      // TEXT_FONTS index: FONT_LARGE, four rungs above a caption
-// The tally under the turns page's giant starts at FONT_MEDIUM, the rung the MAIN page's own
-// tally row reserves, and sheds size and then content from there exactly as that one does.
+//
+// 0.9.18 re-ordered the stack and moved a rung from the word to the number. Jan's layout
+// review: **numbers larger, words smaller** — a label has to be found once, a number is read
+// every glance. So the word is FONT_MEDIUM rather than FONT_LARGE, it sits at the BOTTOM of
+// the page rather than directly under the giant, and what it gives up in band the giant takes
+// (see bigGiantFont, which also leaves the bitmap ladder where the device has a vector face).
+// It is still two rungs above every caption on the standard pages, which is what the set is
+// for: a number nobody can name is not readable however big it is.
+const BIG_WORD_FONT = 1;      // TEXT_FONTS index: FONT_MEDIUM
+// The outcome row under the turns and kind screens' giants starts at FONT_MEDIUM, the rung
+// the MAIN page's own tally row reserves, and sheds size and then content from there.
 const BIG_TALLY_FROM = 1;
+
+// ---- the LARGE giant leaves the bitmap ladder (0.9.18) ----
+//
+// Jan measured it off a sheet: "33.8" in FONT_NUMBER_THAI_HOT fills about 55 % of a 454 px
+// glass, and THAI_HOT is the TOP of the bitmap ladder — the fitter had nowhere left to go, so
+// "as large as the fitter allows" was already true and still too small. The way up is the
+// firmware's VECTOR faces, and the app already has a worked example of using them safely:
+// LockView.codeFont, which fits the invite code the same way.
+//
+// Three rules carried over from there verbatim, because each of them is a bug that was found
+// the hard way:
+//   * the BITMAP ladder is the FLOOR, not the fallback. A vector size is taken only where it
+//     genuinely beats the ladder; on a 240 px fenix the widest vector that fits is shorter
+//     than FONT_NUMBER_THAI_HOT, and taking it would SHRINK the one number the page is.
+//   * a face is only accepted if it can draw every character of the string. On the epix 2 /
+//     MARQ 2 / Descent Mk3 families `BionicBold` is a DIGITS-ONLY cut: ask it for the width
+//     of "%" and it answers 0, which every width test reads as "fits comfortably" — so a
+//     "56%" would be drawn as "56" and a "33.8" as "338".
+//   * `Graphics has :getVectorFont` guards the whole block, so CIQ 3.x devices (the fenix 5
+//     Plus family, the tight one) never enter it and pay nothing but the branch.
+//
+// And one rule that is this page's own: the size is PROBED ONCE PER SHAPE and cached. The
+// giant is redrawn every second and a live speed changes every second, so a per-frame probe
+// would be ~60 getVectorFont calls a second AND a number whose size flickered as its value
+// changed. The probe fits the set's own WORST-CASE string instead, per stack shape — the two
+// shapes are "giant + word" and "giant + outcome row + word" — so all five screens of the set
+// are drawn at one of two sizes and neither of them moves for the rest of the session.
+const VEC_FACES = ["BionicBold", "BionicMedium", "RobotoCondensedBold", "RobotoRegular"];
+// The probe walks DOWN from this share of the glass height, in steps, until the worst case
+// fits. 62 % of a 454 px glass is 281 px of line, comfortably past anything that will fit.
+const VEC_MAX_PCT = 62;
+const VEC_STEP = 6;
+// Every character a large-set value can be made of. Probed one at a time against a candidate
+// face, for the digits-only reason above.
+const VEC_ALPHABET = "0123456789.:%";
+// The widest string each stack shape has to hold: "100%" for the two-row screens (speed and
+// the foil share) and "999" for the three-row ones (turns, jibes, tacks). Taken from
+// PageModel.worstValue, which is where every other worst case on this watch comes from.
+const VEC_WORST_2ROW = "100%";
+const VEC_WORST_3ROW = "999";
 
 // ---- the FOIL page's table (see drawFoilPage) ----
 // A titled 3x2: one header, two column headers, three rows of two numbers. Everything on it
@@ -258,22 +372,23 @@ const BIG_TALLY_FROM = 1;
 // call): the column holds m:ss and h:mm strings, so "min" was naming a unit the cells do not
 // actually print, and the word beside "km" reads as the pair it is — time and distance, the
 // same session asked twice.
+// It carried the flight COUNT from 0.9.16 to 0.9.18 — "foil · 47" — and Jan's layout review
+// of 21 September 2026 took it off: a table of six foil numbers with a seventh number in its
+// own TITLE is a title that has to be read rather than found, and the count is not a foil
+// number (it was on this page until 0.9.2 for exactly that reason, and left with the
+// odometer). The rows explain themselves; the word is the page's name and nothing else.
+//
+// Where the count went: nowhere on the watch, which is the honest answer. It is FIT session
+// field 36 and it is on the phone's own session page. See docs/presentation.md.
 const FOIL_TITLE = "foil";
-// 0.9.16: and the flight COUNT after it, where the title row's chord holds the pair.
-// The count left this page in 0.9.2 with the odometer, because neither is a foil number —
-// but it kept its own post-save screen, and this round retires that screen onto this table
-// (docs/presentation.md, "The after-save pages and the live ones"). A number with a home on
-// exactly one of two screens showing the same session is how the two start disagreeing, so
-// it comes back here and the saved page is this page with the session's own final values.
-// It rides the TITLE and not a fourth row: the title row is a label row, it is the cheapest
-// row on the page, and "foil · 31" reads as the page's name with a count on it rather than
-// as a seventh number in a table of six.
-const FOIL_TITLE_SEP = " · ";
 const FOIL_COL_TIME = "time";
 const FOIL_COL_DIST = "km";
-// The row keys. `total` gives way to `tot` when the long word would cost the values their
-// size: a key is already at the smallest font on the watch, so its LENGTH is the only thing
-// left to trade, and three letters separate the two rows exactly as well as five do.
+// The row keys. `total` is the word — Jan, 21 September 2026: "tot" is an abbreviation the
+// rider has to expand and the row it names is the most-read row on the table. It gives way to
+// `tot` in exactly one case, which is the FLOOR: where the long word would push the widest
+// value the table can be handed below TEXT_FONTS[FOIL_FLOOR], the readability floor every
+// number on this watch keeps. Until this round it also gave way whenever the short word would
+// buy the values a whole font RUNG, which is the trade that made every narrow glass say "tot".
 const FOIL_KEY_TOTAL = "total";
 const FOIL_KEY_TOTAL_TIGHT = "tot";
 const FOIL_KEY_MAX = "max";
@@ -304,8 +419,18 @@ const TL_MARGIN = 6;
 // every other bezel dimension. The waiting line is what the page says before the first fix:
 // a map page that renders empty reads as a crashed map page, which on this app's history is
 // exactly the wrong thing to imply.
-const MAP_MARGIN = 34;
+// It grew from 34 to 52 in 0.9.18. Jan's layout review: "make the distance number larger."
+// The caption was FONT_SMALL, the readability FLOOR, on a page whose only number it is — so
+// the number now walks the text ladder from FONT_LARGE down to that floor, its unit rides
+// beside it at FONT_XTINY (numbers larger, words smaller), and the taller line needs the
+// square to give up 18 px of side to hang it under. A map you can read the scale of beats a
+// map 7 % wider whose scale you cannot — the same trade SUM_TRACK_MARGIN made in 0.9.2.
+const MAP_MARGIN = 52;
 const MAP_WAITING = "waiting for GPS";
+// The unit beside the odometer, and the gap before it. The digits are the value and "km" is
+// a word about it, so they are not the same size and never have been on this watch.
+const MAP_KM = "km";
+const MAP_KM_GAP = GLYPH_GAP;
 
 // The on-water screens. Which screens exist, in what order, is PageModel's business — this
 // class only knows how to paint a layout. Fonts are deliberately large: spray + chop make
@@ -355,7 +480,7 @@ class RecordingView extends WatchUi.View {
         } else if (layout == PageModel.LAYOUT_CELLS2) {
             drawCells2Page(dc, c, i, foilArc);
         } else if (layout == PageModel.LAYOUT_RECORDS) {
-            drawRecordsPage(dc, c);
+            drawRecordsBody(dc, c);
         } else if (layout == PageModel.LAYOUT_TURNS) {
             drawTurnsPage(dc, c);
         } else if (layout == PageModel.LAYOUT_KINDS) {
@@ -800,7 +925,7 @@ class RecordingView extends WatchUi.View {
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
         var radius = fitRadius(dc, true, foilArc);
-        var hC = dc.getFontHeight(Graphics.FONT_NUMBER_MILD);
+        var hC = dc.getFontHeight(MAIN_CLOCK_FONT);
         var hN = mainGiantBand(dc, mainGiantId(page));
         var hO = dc.getFontHeight(Graphics.FONT_LARGE);
         var hD = stripBandH(dc);
@@ -827,14 +952,14 @@ class RecordingView extends WatchUi.View {
             var top = paused ? PAUSED_TEXT : PageModel.clockString();
             dc.setColor(paused ? Graphics.COLOR_YELLOW : Graphics.COLOR_WHITE,
                 Graphics.COLOR_TRANSPARENT);
-            var budget = rowBudget(radius, y - cy, inkH(dc, Graphics.FONT_NUMBER_MILD));
+            var budget = rowBudget(radius, y - cy, inkH(dc, MAIN_CLOCK_FONT));
             // The word takes the text ladder from the rung that fits the clock's BAND: on
-            // the fenix 5 Plus family FONT_LARGE's ink (29 px) is taller than MILD's line
-            // (26), so PAUSED there is FONT_SMALL, and on every other glass it is FONT_LARGE
-            // as before. Shared with the layout test.
+            // the fenix 5 Plus family FONT_LARGE's ink is taller than the clock font's line,
+            // so PAUSED there steps down a rung and on every other glass it is FONT_LARGE as
+            // before. Shared with the layout test.
             dc.drawText(cx, y, paused
                 ? fitFont(dc, TEXT_FONTS, textFontFrom(dc, hC), top, budget)
-                : fitGiant(dc, top, 3, budget), top, CV);
+                : fitGiant(dc, top, MAIN_CLOCK_FROM, budget), top, CV);
         }
 
         // row 1 — the giant, with its unit and caption inline behind the digits
@@ -1106,44 +1231,53 @@ class RecordingView extends WatchUi.View {
         var cy = dc.getHeight() / 2;
         var radius = fitRadius(dc, false, foilArc);
         var id = bigId(page);
-        var tally = id == PageModel.M_TURNS;
-        // 0.9.17: the two KIND screens carry a third row too — "flew 9" — for the same reason
-        // the turns screen carries its tally. A count of jibes without a verdict on them is
-        // the one number on this set that says nothing on its own.
-        var flew = PageModel.flewLine(id, c.engine.turns);
-        var hN = inkH(dc, Graphics.FONT_NUMBER_THAI_HOT);
-        var hW = dc.getFontHeight(TEXT_FONTS[BIG_WORD_FONT]);
-        var hK = tally || !flew.equals("") ? dc.getFontHeight(TEXT_FONTS[BIG_TALLY_FROM]) : 0;
-
-        // row 0 — the giant. `fitGiant` and not `fitFont`, so a metric whose value carries a
-        // letter (none of the five does today, but the slot is a catalog id) leaves the
-        // number ladder instead of printing empty boxes.
+        // The three TURN screens carry a row between the giant and the word: the session's
+        // own ladder on the turns screen, the kind's on the two kind screens. A count of
+        // jibes without a verdict on them is the one number on this set that says nothing on
+        // its own. The other two screens (speed, foil share) are giant + word and nothing.
+        var rows = bigHasRow(id) ? 3 : 2;
         var v = PageModel.value(id, c);
-        var y = bigRowY(cy, hN, hW, hK, 0);
-        dc.setColor(PageModel.color(id, c), Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, y, fitGiant(dc, v, 0, rowBudget(radius, y - cy, hN)), v, CV);
+        var f = bigGiantFont(dc, v, radius, rows);
+        var hN = bigBand(dc, f);
+        var hW = dc.getFontHeight(TEXT_FONTS[BIG_WORD_FONT]);
+        var hK = rows == 3 ? dc.getFontHeight(TEXT_FONTS[BIG_TALLY_FROM]) : 0;
 
-        // row 1 — the word, with its unit in it (PageModel.bigWord)
+        // row 0 — the giant
+        var y = bigRowY(cy, hN, hK, hW, 0);
+        dc.setColor(PageModel.color(id, c), Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, y, f, v, CV);
+
+        // row 1 — the outcome ladder, session-wide or for this kind. Same renderer and same
+        // four inks as the Turns and Tacks & jibes pages: one vocabulary, one function.
+        if (rows == 3) {
+            drawLadderRow(dc, cx, bigRowY(cy, hN, hK, hW, 1), cy, radius,
+                bigLadder(id, c.engine.turns), BIG_TALLY_FROM);
+        }
+
+        // row 2 — the word, with its unit in it (PageModel.bigWord). It is LAST since 0.9.18:
+        // a label is found once and a number is read every glance, so the number takes the
+        // top of the page and the middle of the glass and the word takes the bottom arc.
         var word = PageModel.bigWord(id);
-        y = bigRowY(cy, hN, hW, hK, 1);
+        y = bigRowY(cy, hN, hK, hW, 2);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, y, fitFont(dc, TEXT_FONTS, BIG_WORD_FONT, word,
             rowBudget(radius, y - cy, inkH(dc, TEXT_FONTS[BIG_WORD_FONT]))), word, CV);
+    }
 
-        // row 2 — the turns page alone: the outcome ladder as three coloured counts, the
-        // same row and the same renderer the MAIN page carries. A turn COUNT without its
-        // verdicts is the one number on this set that says nothing on its own.
-        if (tally) {
-            drawTally(dc, cx, bigRowY(cy, hN, hW, hK, 2), cy, radius, c.engine.turns, "",
-                BIG_TALLY_FROM);
-        } else if (!flew.equals("")) {
-            // ...and on a kind screen, the same verdict asked of that kind alone, in the
-            // ladder's green. One line, one colour, the set's own rung.
-            y = bigRowY(cy, hN, hW, hK, 2);
-            dc.setColor(Ink.ladderFlew(), Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, y, fitFont(dc, TEXT_FONTS, BIG_TALLY_FROM, flew,
-                rowBudget(radius, y - cy, inkH(dc, TEXT_FONTS[BIG_TALLY_FROM]))), flew, CV);
+    // Does this metric's large screen carry an outcome row? The three turn screens do.
+    static function bigHasRow(id as Number) as Boolean {
+        return id == PageModel.M_TURNS || PageModel.isKind(id);
+    }
+
+    // The four counts that row draws, as [clean, flew, touch, fell]. A negative clean means
+    // "this ladder has no star" — the session's own does (its clean JIBES), the tack screen
+    // does not. Fills the shared scratch rather than allocating: this is a per-frame call.
+    hidden function bigLadder(id as Number, t as TurnDetector) as Array<Number> {
+        if (PageModel.isKind(id)) {
+            return ladderOf(PageModel.kindClean(id, t), PageModel.kindFlew(id, t),
+                PageModel.kindTouch(id, t), PageModel.kindFell(id, t));
         }
+        return ladderOf(t.cleanJibeCount, t.flewCount, t.touchdownCount, t.fellCount);
     }
 
     // The BIG giant's slot, with live speed as the answer to an emptied one — the same
@@ -1153,15 +1287,146 @@ class RecordingView extends WatchUi.View {
         return id == PageModel.M_NONE ? PageModel.M_SPEED : id;
     }
 
-    // Row centres for BIG: 0 giant · 1 word · 2 the tally, whose band is 0 on the four pages
-    // that do not carry it. `hN` is the giant's INK, like every other giant since 0.9.2.
-    // Shared with the layout test.
-    static function bigRowY(cy as Number, hN as Number, hW as Number, hK as Number,
+    // Row centres for BIG: 0 giant · 1 the outcome row, whose band is 0 on the two screens
+    // that do not carry it · 2 word. `hN` is the giant's BAND — its ink on the bitmap ladder,
+    // its whole line on a vector face (see bigBand). Shared with the layout test.
+    static function bigRowY(cy as Number, hN as Number, hK as Number, hW as Number,
             row as Number) as Number {
-        var y = cy - (hN + hW + hK) / 2;
+        var y = cy - (hN + hK + hW) / 2;
         if (row == 0) { return y + hN / 2; }
-        if (row == 1) { return y + hN + hW / 2; }
-        return y + hN + hW + hK / 2;
+        if (row == 1) { return y + hN + hK / 2; }
+        return y + hN + hK + hW / 2;
+    }
+
+    // The band a giant font reserves. The bitmap ladder is stacked on its INK, as every giant
+    // on this watch has been since 0.9.2; a VECTOR face is stacked on its whole LINE, because
+    // nothing here knows that face's ascent and a row with one job can afford the leading —
+    // the same trade LockView.codeFont makes for the invite code. Shared with the layout test.
+    static function bigBand(dc as Dc, f as Graphics.FontType) as Number {
+        return isLadderFont(f) ? inkH(dc, f) : dc.getFontHeight(f);
+    }
+
+    // Is `f` one of the firmware's bitmap fonts this file knows the metrics of?
+    static function isLadderFont(f as Graphics.FontType) as Boolean {
+        if (isNumberFont(f)) {
+            return true;
+        }
+        for (var i = 0; i < TEXT_FONTS.size(); i++) {
+            if (f == TEXT_FONTS[i]) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // The giant's font: the probed vector face where this device has one that beats the
+    // bitmap ladder AND this value fits it, the ladder otherwise. `rows` is the stack shape,
+    // 2 or 3 — see the VEC_ constants for why the probe is per shape and cached.
+    //
+    // The per-frame cost is one width lookup: the probe has already answered the hard
+    // questions (which face, what size, does it cover the alphabet) once.
+    static function bigGiantFont(dc as Dc, v as String, radius as Number,
+            rows as Number) as Graphics.FontType {
+        var cy = dc.getHeight() / 2;
+        var hW = dc.getFontHeight(TEXT_FONTS[BIG_WORD_FONT]);
+        var hK = rows == 3 ? dc.getFontHeight(TEXT_FONTS[BIG_TALLY_FROM]) : 0;
+        var hN = inkH(dc, Graphics.FONT_NUMBER_THAI_HOT);
+        var yb = bigRowY(cy, hN, hK, hW, 0);
+        var bitmap = fitGiant(dc, v, 0, rowBudget(radius, yb - cy, hN));
+        // A value carrying a LETTER never walks a digit ladder: the number fonts have no
+        // letters and a digits-cut vector face has none either.
+        if (hasLetters(v)) {
+            return bitmap;
+        }
+        var vec = vecGiant(dc, radius, rows);
+        if (vec == null) {
+            return bitmap;
+        }
+        var f = vec as Graphics.FontType;
+        var band = bigBand(dc, f);
+        var y = bigRowY(cy, band, hK, hW, 0);
+        var w = dc.getTextWidthInPixels(v, f);
+        // Two conditions, and the second is the one that matters. The face has to FIT this
+        // value's own chord, and it has to draw it WIDER than the bitmap ladder would — which
+        // is not implied by being taller, because these faces are condensed: a vector cut that
+        // clears THAI_HOT's ink height can still set "99.9" narrower than THAI_HOT does, and
+        // taking it would shrink the number this whole round exists to grow.
+        return w <= rowBudget(radius, y - cy, band)
+            && w >= dc.getTextWidthInPixels(v, bitmap) ? f : bitmap;
+    }
+
+    // The probe. Runs at most once per app run, fills `_vecGiant` for both stack shapes, and
+    // answers null for every device and every shape where the bitmap ladder already wins.
+    static function vecGiant(dc as Dc, radius as Number, rows as Number) as Graphics.FontType? {
+        if (!_vecProbed) {
+            _vecProbed = true;
+            if (Graphics has :getVectorFont) {
+                _vecGiant[0] = probeVecGiant(dc, radius, 2, VEC_WORST_2ROW);
+                _vecGiant[1] = probeVecGiant(dc, radius, 3, VEC_WORST_3ROW);
+            }
+        }
+        return _vecGiant[rows == 3 ? 1 : 0];
+    }
+
+    // Largest vector face that draws `worst` inside the chord its OWN stack puts the giant in,
+    // and that draws it BIGGER than the bitmap ladder would — taller AND wider, both measured
+    // against the font `fitGiant` would actually have chosen for the same string.
+    //
+    // Width is the binding half and the reason this is not LockView's test verbatim. These
+    // faces are condensed: a cut that clears FONT_NUMBER_THAI_HOT's ink height can still set
+    // "100%" narrower than THAI_HOT does, and a number that is taller and thinner is not the
+    // bigger number Jan asked for — it is the same number rotated into a shape that reads
+    // worse in spray.
+    //
+    // Null when nothing qualifies, which is the answer on every CIQ 3.x product (the `has`
+    // guard above never lets them in) and on the narrow glasses, where the widest vector that
+    // fits is smaller than the ladder's top rung. Null is not a failure; it is the floor
+    // holding, and the page is then exactly the page that shipped.
+    static function probeVecGiant(dc as Dc, radius as Number, rows as Number,
+            worst as String) as Graphics.FontType? {
+        var cy = dc.getHeight() / 2;
+        var hW = dc.getFontHeight(TEXT_FONTS[BIG_WORD_FONT]);
+        var hK = rows == 3 ? dc.getFontHeight(TEXT_FONTS[BIG_TALLY_FROM]) : 0;
+        var hN = inkH(dc, Graphics.FONT_NUMBER_THAI_HOT);
+        var yb = bigRowY(cy, hN, hK, hW, 0);
+        var bitmap = fitGiant(dc, worst, 0, rowBudget(radius, yb - cy, hN));
+        var floorH = inkH(dc, bitmap);
+        var floorW = dc.getTextWidthInPixels(worst, bitmap);
+        var size = dc.getHeight() * VEC_MAX_PCT / 100;
+        while (size > floorH) {
+            for (var i = 0; i < VEC_FACES.size(); i++) {
+                var vf = Graphics.getVectorFont({:face => VEC_FACES[i], :size => size});
+                if (vf == null) {
+                    continue;               // this device does not have that face
+                }
+                var h = dc.getFontHeight(vf);
+                if (h <= floorH) {
+                    continue;               // the ladder already beats this face at this size
+                }
+                if (!coversText(dc, vf, VEC_ALPHABET)) {
+                    continue;               // a digits-only cut — see VEC_FACES
+                }
+                var w = dc.getTextWidthInPixels(worst, vf);
+                if (w > floorW && w <= rowBudget(radius, bigRowY(cy, h, hK, hW, 0) - cy, h)) {
+                    return vf;
+                }
+            }
+            size -= VEC_STEP;
+        }
+        return null;
+    }
+
+    // Can `f` draw every character of `text`? A font a device has no glyph for measures that
+    // character at zero width, and zero width sails through every width test there is — so a
+    // "56%" drawn in a digits-only face would come out "56" and pass the fitter on the way.
+    // Asked one character at a time, exactly as LockView.coversAlphabet asks it.
+    static function coversText(dc as Dc, f as Graphics.FontType, text as String) as Boolean {
+        for (var i = 0; i < text.length(); i++) {
+            if (dc.getTextWidthInPixels(text.substring(i, i + 1), f) <= 0) {
+                return false;
+            }
+        }
+        return true;
     }
 
     // ---- FOIL: the session's foil numbers as a titled 3x2 table ----
@@ -1218,11 +1483,9 @@ class RecordingView extends WatchUi.View {
         var keys = foilKeys(dc, half, foilWidest(dc, [tt, td, mt, md]));
         var col = foilColumns(cx, half, foilKeyBlock(dc, keys));
 
-        // row 0 — the page's name, and the flight count where the chord holds it
-        var y0 = foilRowY(cy, hT, hV, 0);
+        // row 0 — the page's name
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, y0, Graphics.FONT_XTINY,
-            foilTitle(dc, d.flightCount, radius, y0 - cy), CV);
+        dc.drawText(cx, foilRowY(cy, hT, hV, 0), Graphics.FONT_XTINY, FOIL_TITLE, CV);
 
         // row 1 — the two shares, teal, exactly as the pair band drew them: a PHASE tint, not
         // the outcome ladder's green (docs/presentation.md)
@@ -1260,20 +1523,6 @@ class RecordingView extends WatchUi.View {
         dc.setColor(ink, Graphics.COLOR_TRANSPARENT);
         dc.drawText(col[1], y, f, a, CV);
         dc.drawText(col[2], y, f, b, CV);
-    }
-
-    // "foil · 31" where the title row can hold it, "foil" where it cannot. The count is
-    // dropped rather than shrunk: XTINY is already the bottom of the ladder, so LENGTH is
-    // the only thing left to trade, and the page's own name is the half that must survive.
-    // Shared with the layout test.
-    static function foilTitle(dc as Dc, flights as Number, radius as Number,
-            dy as Number) as String {
-        if (flights <= 0) {
-            return FOIL_TITLE;
-        }
-        var long = FOIL_TITLE + FOIL_TITLE_SEP + flights.toString();
-        return dc.getTextWidthInPixels(long, Graphics.FONT_XTINY)
-            <= rowBudget(radius, dy, inkH(dc, Graphics.FONT_XTINY)) ? long : FOIL_TITLE;
     }
 
     // Metres as the kilometres the column header promises. One decimal, like every other
@@ -1338,18 +1587,22 @@ class RecordingView extends WatchUi.View {
         return [x0, c1, c1 + w + CELL_GUTTER, w];
     }
 
-    // The key column's width, and with it which pair of words the page uses. What this table
-    // owes the rider is six readable numbers, and a word that costs one of them its size is a
-    // word that has to get shorter. Two tests, in that order:
+    // The key column's width, and with it which pair of words the page uses. ONE test since
+    // 0.9.18, and it is the FLOOR: the long words are used unless they would push the worst
+    // case the page can be handed ("199:59") below TEXT_FONTS[FOIL_FLOOR], the readability
+    // floor every number on this watch keeps.
     //
-    //   1. the FLOOR. The long words may never push the worst case the page can be handed
-    //      ("199:59") below TEXT_FONTS[FOIL_FLOOR]. This is the original rule.
-    //   2. the RUNG (0.9.2). Even above the floor, the long words give way the moment they
-    //      cost the matrix a whole font size against what the short ones would allow. On a
-    //      454 px glass "total" leaves the columns 150 px and "tot" leaves them 163, and a
-    //      "63:24" in FONT_LARGE is 151 — so five letters were buying two extra characters of
-    //      key at the price of every number on the page. `wide` is the widest value the matrix
-    //      is actually about to print, so this adapts to the session rather than to a ceiling.
+    // There was a second test until this round — the RUNG. Above the floor, the long word
+    // gave way the moment the short one would buy the matrix a whole font size: on a 454 px
+    // glass "total" leaves the columns 150 px and "tot" leaves them 163, and a "63:24" in
+    // FONT_LARGE is 151, so five letters cost every number on the page a rung. Jan's layout
+    // review of 21 September 2026 reversed that trade for this one word. "tot" is an
+    // abbreviation a rider has to expand, on the most-read row of the table, and the rung it
+    // was buying is one step of a ladder that has four — a smaller number you can name beats a
+    // bigger one you have to work out. The floor is what keeps "smaller" honest.
+    //
+    // `wide` is kept in the signature: the layout suite measures the widest value the matrix
+    // is actually about to print against the columns the keys leave it.
     //
     // Shared with the layout test.
     static function foilKeyWidth(dc as Dc, half as Number, wide as String) as Number {
@@ -1358,16 +1611,10 @@ class RecordingView extends WatchUi.View {
 
     static function foilKeys(dc as Dc, half as Number, wide as String) as Array<String> {
         var long = [FOIL_KEY_TOTAL, FOIL_KEY_MAX];
-        var tight = [FOIL_KEY_TOTAL_TIGHT, FOIL_KEY_MAX];
         var wLong = foilColWidth(half, foilKeyBlock(dc, long));
         var worst = dc.getTextWidthInPixels(PageModel.worstValue(PageModel.M_FOIL_TIME),
             TEXT_FONTS[FOIL_FLOOR]);
-        if (wLong < worst) {
-            return tight;
-        }
-        var wTight = foilColWidth(half, foilKeyBlock(dc, tight));
-        return dc.getFontHeight(foilFont(dc, [wide], wLong))
-            >= dc.getFontHeight(foilFont(dc, [wide], wTight)) ? long : tight;
+        return wLong < worst ? [FOIL_KEY_TOTAL_TIGHT, FOIL_KEY_MAX] : long;
     }
 
     // The widest of a set of values at the top of the value ladder — i.e. the one that decides
@@ -1755,7 +2002,12 @@ class RecordingView extends WatchUi.View {
     //
     // Records are EFFORT, not verdict: they wear the effort orange rather than plain white,
     // the same ink the PB celebration uses (docs/presentation.md).
-    hidden function drawRecordsPage(dc as Dc, c as SessionController) as Void {
+    //
+    // Not `hidden` since 0.9.18: the post-save Records page IS this page with the session's
+    // own final values (SummaryView.drawRecords), the same way the Foil, Turns, Tacks & jibes
+    // and Story pages already are. Two screens showing one session's two records must not be
+    // two pieces of code.
+    function drawRecordsBody(dc as Dc, c as SessionController) as Void {
         var r = c.engine.records;
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
@@ -1832,43 +2084,38 @@ class RecordingView extends WatchUi.View {
         var radius = fitRadius(dc, false, false);
         var hT = dc.getFontHeight(Graphics.FONT_XTINY);
         var hG = inkH(dc, Graphics.FONT_NUMBER_MEDIUM);
-        var hK = dc.getFontHeight(Graphics.FONT_MEDIUM);
         var hD = stripBandH(dc);
+        var hK = dc.getFontHeight(Graphics.FONT_MEDIUM);
         var hS = dc.getFontHeight(TEXT_FONTS[VERDICT_FROM]);
-        var hC = dc.getFontHeight(TEXT_FONTS[CLEAN_FROM]);
-        var windSet = AppSettings.cfg.windDirection >= 0;
+        var bias = turnsBias(radius, hT, hG, hD, hK, hS);
 
-        // row 0 — the header: the NAMES of the three counts under it, in their order, and the
-        // wind axis after them where the chord has room. It said "tack / jibe" until 0.9.11 —
+        // row 0 — the legend: the NAMES of the four counts under it, in their order and in
+        // their own inks, and the wind MARK after them. It said "tack / jibe" until 0.9.11 —
         // a leftover from a giant that once counted tacks and jibes; over the outcome ladder
-        // it read as 35 tacks and 12 jibes (audit, 15 Sep 2026). `windLabel` marks an axis
-        // the WATCH estimated with a leading "~", so the header never claims the rider named it.
-        var y = turnsRowY(cy, hT, hG, hC, hK, hD, hS, 0);
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, y, Graphics.FONT_XTINY,
-            turnsHeader(dc, windSet ? AppSettings.windLabel() : "", radius, y - cy), CV);
+        // it read as 35 tacks and 12 jibes (audit, 15 Sep 2026) — and it printed the wind
+        // BEARING until 0.9.18, which is not a number anybody reads off this page.
+        drawLadderHeader(dc, cx, turnsRowY(cy, hT, hG, hD, hK, hS, bias, 0), cy, radius, true);
 
-        // row 1 — the giant: flew · touched · swam, in the ladder's own colours, with the
-        // separators drawn as dim dots because the number fonts have no punctuation.
-        drawGiantTally(dc, cx, turnsRowY(cy, hT, hG, hC, hK, hD, hS, 1), cy, radius, t);
+        // row 1 — THE row: clean · flew · touched · fell, in the four inks the legend named,
+        // with the separators drawn as dim dots because the number fonts have no punctuation.
+        // It straddles the equator, which is where the widest line on a round glass belongs.
+        drawLadderRow(dc, cx, turnsRowY(cy, hT, hG, hD, hK, hS, bias, 1), cy, radius,
+            ladderOf(t.cleanJibeCount, t.flewCount, t.touchdownCount, t.fellCount),
+            LADDER_FROM);
 
-        // row 2 — the clean jibes and the rate they imply, in the clean-jibe ink. It reads the
-        // same live and ashore; only the denominator moves under it (SessionController's
-        // elapsedNowS), and it moves by exactly the paused time.
-        drawCleanRow(dc, cx, turnsRowY(cy, hT, hG, hC, hK, hD, hS, 2), cy, radius, t,
-            c.elapsedNowS());
+        // row 2 — the same turns as row 1, one dot each, in the order they happened. It sits
+        // DIRECTLY under the counts it is the texture of, the way it sits directly under the
+        // giant on the MAIN page.
+        var y = turnsRowY(cy, hT, hG, hD, hK, hS, bias, 2);
+        drawOutcomeStrip(dc, cx, y, rowBudget(radius, y - cy, hD), c.engine.history);
 
         // row 3 — both streaks. The dry run says "how long since I last went in", the flew run
         // "how long since I last even touched down"; bestFlewStreak <= bestDryStreak always.
-        drawStreakRow2(dc, cx, turnsRowY(cy, hT, hG, hC, hK, hD, hS, 3), cy, radius, t, live);
+        drawStreakRow2(dc, cx, turnsRowY(cy, hT, hG, hD, hK, hS, bias, 3), cy, radius, t, live);
 
-        // row 4 — the same turns as row 1, one dot each, in the order they happened.
-        y = turnsRowY(cy, hT, hG, hC, hK, hD, hS, 4);
-        drawOutcomeStrip(dc, cx, y, rowBudget(radius, y - cy, hD), c.engine.history);
-
-        // row 5 — the verdict, and the asymmetry underneath it. Which side of the wind he
-        // enters on is the one thing on this page he can act on tomorrow.
-        drawVerdictRow(dc, cx, turnsRowY(cy, hT, hG, hC, hK, hD, hS, 5), cy, radius, t);
+        // row 4 — the asymmetry. Which side of the wind he enters on is the one thing on this
+        // page he can act on tomorrow.
+        drawVerdictRow(dc, cx, turnsRowY(cy, hT, hG, hD, hK, hS, bias, 4), cy, radius, t);
     }
 
     // ---- TACKS & JIBES: the kinds page (0.9.17) ----
@@ -1893,221 +2140,212 @@ class RecordingView extends WatchUi.View {
         var radius = fitRadius(dc, false, false);
         var hT = dc.getFontHeight(Graphics.FONT_XTINY);
         var hG = inkH(dc, Graphics.FONT_NUMBER_MEDIUM);
-        var hC = dc.getFontHeight(TEXT_FONTS[KINDS_FROM]);
+        // The header row exists only where the axis does not (0.9.18): with an axis the four
+        // rows below say everything the page has to say, and a row spent on a bearing nobody
+        // reads here is a row the two ladder rows could have had.
+        var noWind = AppSettings.cfg.windDirection < 0;
 
-        // row 0 - the axis this page counts against, or the reason it cannot count
-        var y = kindsRowY(cy, hT, hG, hC, 0);
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, y, Graphics.FONT_XTINY, kindsHeader(), CV);
-
-        // rows 1-2 the jibes, rows 3-4 the tacks. Jibes on top: it is the maneuver the app is
-        // named after and the one most riders do most of.
-        drawKindHalf(dc, cx, cy, radius, hT, hG, hC, 0, t);
-        drawKindHalf(dc, cx, cy, radius, hT, hG, hC, 1, t);
-    }
-
-    // One half: the count as a giant, then the word and the fly-throughs under it. `half` is
-    // 0 (jibes) or 1 (tacks) and picks its two rows out of the stack.
-    //
-    // NINE arguments exactly, which is the CIQ 3.x ceiling (pairFits' header says why the app
-    // keeps to it): the three band heights ride separately rather than as an array because
-    // the caller already holds them as locals and an array here would be an allocation per
-    // half per frame.
-    hidden function drawKindHalf(dc as Dc, cx as Number, cy as Number, radius as Number,
-            hT as Number, hG as Number, hC as Number, half as Number,
-            t as TurnDetector) as Void {
-        var id = half == 0 ? PageModel.M_JIBES : PageModel.M_TACKS;
-        var count = half == 0 ? t.jibeCount.toString() : t.tackCount.toString();
-        var cap = half == 0 ? KINDS_JIBES : KINDS_TACKS;
-        var flew = PageModel.flewLine(id, t);
-
-        var y = kindsRowY(cy, hT, hG, hC, 1 + 2 * half);
-        var f = kindGiantFont(dc, count, rowBudget(radius, y - cy, hG));
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, y, f, count, CV);
-
-        y = kindsRowY(cy, hT, hG, hC, 2 + 2 * half);
-        var budget = rowBudget(radius, y - cy, inkH(dc, TEXT_FONTS[KINDS_FROM]));
-        if (kindsSubWidth(dc, cap, flew, TEXT_FONTS[TALLY_FLOOR]) > budget) {
-            flew = "";          // the word names the half; the verdict is what it gives up
+        if (noWind) {
+            dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, kindsRowY(cy, hT, hG, noWind, 0), Graphics.FONT_XTINY,
+                KINDS_NO_WIND, CV);
         }
-        var sf = kindsSubFont(dc, cap, flew, budget);
-        var LV = Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER;
-        var x = cx - kindsSubWidth(dc, cap, flew, sf) / 2;
+
+        // rows 1-2 the jibes (word above its row), rows 3-4 the tacks (word below its own).
+        // Jibes on top: it is the maneuver the app is named after and the one most riders do
+        // most of — and it is the kind that HAS a star, so the two starred marks on the page
+        // (this row's and the Turns page's) sit at the same height one swipe apart.
+        var y = kindsRowY(cy, hT, hG, noWind, 1);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x, y, Graphics.FONT_XTINY, cap, LV);
-        if (flew.equals("")) {
-            return;
-        }
-        x += dc.getTextWidthInPixels(cap, Graphics.FONT_XTINY) + KINDS_GAP;
-        // the ladder's green, because this IS the ladder's green count asked of one kind
-        dc.setColor(Ink.ladderFlew(), Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x, y, sf, flew, LV);
+        dc.drawText(cx, y, Graphics.FONT_XTINY, KINDS_JIBES, CV);
+        drawLadderRow(dc, cx, kindsRowY(cy, hT, hG, noWind, 2), cy, radius,
+            ladderOf(t.cleanJibeCount, t.jibeFlewCount, t.jibeTouchCount, t.jibeFellCount),
+            LADDER_FROM);
+        drawLadderRow(dc, cx, kindsRowY(cy, hT, hG, noWind, 3), cy, radius,
+            ladderOf(-1, t.tackFlewCount, t.tackTouchCount, t.tackFellCount), LADDER_FROM);
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, kindsRowY(cy, hT, hG, noWind, 4), Graphics.FONT_XTINY, KINDS_TACKS, CV);
     }
 
-    // The header text: the axis when there is one, and why there is no split when there is
-    // not. `windLabel` marks an axis the WATCH estimated with a leading "~", exactly as the
-    // Turns page's header does, so the page never claims the rider named it.
-    static function kindsHeader() as String {
-        return AppSettings.cfg.windDirection >= 0
-            ? KINDS_WIND + AppSettings.windLabel() : KINDS_NO_WIND;
-    }
-
-    // Row centres: 0 header, 1 jibes giant, 2 jibes word, 3 tacks giant, 4 tacks word. The
-    // whole block is centred, so the two halves straddle the equator and each giant takes the
-    // chord at its own depth. Shared with the layout test.
-    static function kindsRowY(cy as Number, hT as Number, hG as Number, hC as Number,
+    // Row centres: 0 the no-axis line (drawn only when there is no axis, band 0 otherwise),
+    // 1 the word "jibes", 2 the jibes row, 3 the tacks row, 4 the word "tacks". The block is
+    // centred, so the TWO WIDE ROWS straddle the equator with a narrow word above and below
+    // them — which is the shape Jan's principle asks for on a round glass. Shared with the
+    // layout test.
+    static function kindsRowY(cy as Number, hT as Number, hG as Number, noWind as Boolean,
             row as Number) as Number {
-        var y = cy - (hT + 2 * (hG + hC)) / 2;
+        var hH = noWind ? hT : 0;
+        var y = cy - (hH + 2 * hT + 2 * hG) / 2;
         if (row == 0) { return y + hT / 2; }
-        if (row == 1) { return y + hT + hG / 2; }
-        if (row == 2) { return y + hT + hG + hC / 2; }
-        if (row == 3) { return y + hT + hG + hC + hG / 2; }
-        return y + hT + 2 * hG + hC + hC / 2;
+        if (row == 1) { return y + hH + hT / 2; }
+        if (row == 2) { return y + hH + hT + hG / 2; }
+        if (row == 3) { return y + hH + hT + hG + hG / 2; }
+        return y + hH + hT + 2 * hG + hT / 2;
     }
 
-    // A half's giant: NUMBER_MEDIUM, then MILD, then down the text ladder to the FONT_SMALL
-    // floor - the same ladder and the same floor the Turns page's giant tally walks, because
-    // it is the same kind of number on the same kind of row.
-    static function kindGiantFont(dc as Dc, v as String,
-            budget as Number) as Graphics.FontType {
-        for (var i = 2; i < NUMBER_FONTS.size(); i++) {
-            if (dc.getTextWidthInPixels(v, NUMBER_FONTS[i]) <= budget) {
-                return NUMBER_FONTS[i];
-            }
-        }
-        for (var i = 0; i < TALLY_FLOOR; i++) {
-            if (dc.getTextWidthInPixels(v, TEXT_FONTS[i]) <= budget) {
-                return TEXT_FONTS[i];
-            }
-        }
-        return TEXT_FONTS[TALLY_FLOOR];
-    }
-
-    // Width of a half's sub-row: the kind's word at FONT_XTINY, and the fly-throughs in the
-    // row's own font after the group gap. An empty `flew` is the dropped form.
-    static function kindsSubWidth(dc as Dc, cap as String, flew as String,
-            f as Graphics.FontType) as Number {
-        var w = dc.getTextWidthInPixels(cap, Graphics.FONT_XTINY);
-        if (!flew.equals("")) {
-            w += KINDS_GAP + dc.getTextWidthInPixels(flew, f);
-        }
-        return w;
-    }
-
-    // The sub-row's font. Written as a ladder even though KINDS_FROM is already the floor,
-    // for the reason cleanRowFont is: the ladder is the page's rule, and a row given a bigger
-    // band one day should step down it rather than be a special case somebody has to notice.
-    static function kindsSubFont(dc as Dc, cap as String, flew as String,
-            budget as Number) as Graphics.FontType {
-        for (var i = KINDS_FROM; i < TALLY_FLOOR; i++) {
-            if (kindsSubWidth(dc, cap, flew, TEXT_FONTS[i]) <= budget) {
-                return TEXT_FONTS[i];
-            }
-        }
-        return TEXT_FONTS[TALLY_FLOOR];
-    }
-
-    // ---- row 2: the clean jibes ----
-    // "★ 12  4.6 CPH" — the mark, the count, and the rate. Nothing here is a second opinion on
-    // the tally above it: the count is TurnDetector.cleanJibeCount, which is a strict subset of
-    // that row's green, and the rate is that same count over the session's own clock.
+    // ---- THE LADDER ROW (0.9.18) ----
     //
-    // It sheds CONTENT before size, exactly as the tally and the verdict row do: the RATE goes
-    // first, because a count is a fact and a rate is a reading of it, and "★ 12" alone is still
-    // the whole point of the row. Whether the rate is kept is decided at the FLOOR font, so a
-    // row that could hold it at FONT_SMALL is never given a bigger font instead.
+    // "★34  63 · 21 · 12": the clean jibes behind their star, then flew · touched · fell in
+    // the outcome ladder's own three inks, with the separators drawn as dim DOTS because the
+    // number fonts have no punctuation — which is also what lets a separator shrink with the
+    // digits instead of pinning a text font's comma beside them.
     //
-    // Nothing at all before the first counted turn — "★ 0" over an empty session is not a fact
-    // yet, the same rule the verdict row keeps one row further down.
-    hidden function drawCleanRow(dc as Dc, cx as Number, y as Number, cy as Number,
-            radius as Number, t as TurnDetector, elapsedS as Float) as Void {
-        if (t.turnCount <= 0) {
-            return;
-        }
-        var count = t.cleanJibeCount.toString();
-        var cph = PageModel.fmtCph(t.cleanJibeCount, elapsedS);
+    // ONE renderer for four screens: the Turns page, both halves of the Tacks & jibes page,
+    // and the large set's three turn screens. The moment it was two, they would drift — and
+    // this vocabulary is the one a rider learns once and then reads everywhere.
+    //
+    // `counts[0] < 0` is a ladder with NO star: the tack row, whose kind has no clean verdict.
+    // A zero clean count still draws (`★0`) once there are turns, because on a row whose other
+    // three numbers are there the missing one reads as a broken page rather than as a zero —
+    // the opposite of the standalone row it replaced, where "★ 0" alone was the whole content.
+    hidden function drawLadderRow(dc as Dc, cx as Number, y as Number, cy as Number,
+            radius as Number, counts as Array<Number>, from as Number) as Void {
         var s = Glyphs.size(dc);
-        var budget = rowBudget(radius, y - cy, inkH(dc, TEXT_FONTS[CLEAN_FROM]));
-        var rate = cleanRowWidth(dc, s, count, cph, true, TEXT_FONTS[TALLY_FLOOR]) <= budget;
-        var f = cleanRowFont(dc, s, count, cph, rate, budget);
-        var LV = Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER;
-        var x = cx - cleanRowWidth(dc, s, count, cph, rate, f) / 2;
-        var col = Ink.cleanJibe();
-        dc.setColor(col, Graphics.COLOR_TRANSPARENT);
-        Glyphs.drawStar(dc, x + s / 2, y, s);
-        x += s + CLEAN_GLYPH_GAP;
-        dc.drawText(x, y, f, count, LV);
-        if (!rate) {
-            return;
-        }
-        x += dc.getTextWidthInPixels(count, f) + TURNS_OK_GAP;
-        // The rate is WHITE, not the clean ink: the ink belongs to the mark and the count it
-        // labels, and a second number in the same colour would read as a second count.
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x, y, f, cph, LV);
-        x += dc.getTextWidthInPixels(cph, f);
-        dc.drawText(x, y, Graphics.FONT_XTINY, TURNS_CPH_SUFFIX, LV);
-    }
-
-    // Width of the clean row in `f`, with or without the rate half. Static and shared with the
-    // layout test, like every other width on this page.
-    static function cleanRowWidth(dc as Dc, glyph as Number, count as String, cph as String,
-            rate as Boolean, f as Graphics.FontType) as Number {
-        var w = glyph + CLEAN_GLYPH_GAP + dc.getTextWidthInPixels(count, f);
-        if (rate) {
-            w += TURNS_OK_GAP + dc.getTextWidthInPixels(cph, f)
-                + dc.getTextWidthInPixels(TURNS_CPH_SUFFIX, Graphics.FONT_XTINY);
-        }
-        return w;
-    }
-
-    // The row's font. The loop is empty while CLEAN_FROM is the floor — and it is written as a
-    // loop anyway, because the ladder is the page's rule and a row that is one day given a
-    // bigger band should step down it like every other, not be a special case somebody has to
-    // notice.
-    static function cleanRowFont(dc as Dc, glyph as Number, count as String, cph as String,
-            rate as Boolean, budget as Number) as Graphics.FontType {
-        for (var i = CLEAN_FROM; i < TALLY_FLOOR; i++) {
-            if (cleanRowWidth(dc, glyph, count, cph, rate, TEXT_FONTS[i]) <= budget) {
-                return TEXT_FONTS[i];
-            }
-        }
-        return TEXT_FONTS[TALLY_FLOOR];
-    }
-
-    // The giant tally: three counts in a NUMBER font with two dim dots between them. Number
-    // fonts are digit-only — no " · " to be had — so the separator is drawn, which is also
-    // what lets it shrink with the digits instead of pinning a text font's punctuation beside
-    // them. Starts at FONT_NUMBER_MEDIUM and steps down through MILD into the text ladder,
-    // floored at FONT_SMALL like every other count on the watch.
-    hidden function drawGiantTally(dc as Dc, cx as Number, y as Number, cy as Number,
-            radius as Number, t as TurnDetector) as Void {
-        var a = t.flewCount.toString();
-        var b = t.touchdownCount.toString();
-        var s = t.fellCount.toString();
-        var f = giantTallyFont(dc, a, b, s,
-            rowBudget(radius, y - cy, inkH(dc, Graphics.FONT_NUMBER_MEDIUM)));
+        var star = counts[0] >= 0;
+        var f = ladderRowFont(dc, counts, s,
+            rowBudget(radius, y - cy, inkH(dc, NUMBER_FONTS[from])), from);
         var LV = Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER;
         var sep = giantSepW(dc, f);
         var r = giantSepR(dc, f);
-        var x = cx - giantTallyWidth(dc, a, b, s, f) / 2;
+        var x = cx - ladderRowWidth(dc, counts, s, f) / 2;
+        if (star) {
+            var clean = counts[0].toString();
+            dc.setColor(Ink.cleanJibe(), Graphics.COLOR_TRANSPARENT);
+            Glyphs.drawStar(dc, x + s / 2, y, s);
+            x += s + CLEAN_GLYPH_GAP;
+            dc.drawText(x, y, f, clean, LV);
+            x += dc.getTextWidthInPixels(clean, f) + LADDER_CLEAN_GAP;
+        }
         var cols = [Ink.ladderFlew(), Ink.ladderTouchdown(), Ink.ladderFellIn()];
-        var vals = [a, b, s];
-        for (var i = 0; i < 3; i++) {
-            if (i > 0) {
+        for (var i = 1; i < 4; i++) {
+            if (i > 1) {
                 dc.setColor(Ink.dim(), Graphics.COLOR_TRANSPARENT);
                 dc.fillCircle(x + sep / 2, y, r);
                 x += sep;
             }
-            dc.setColor(cols[i], Graphics.COLOR_TRANSPARENT);
-            dc.drawText(x, y, f, vals[i], LV);
-            x += dc.getTextWidthInPixels(vals[i], f);
+            var v = counts[i].toString();
+            dc.setColor(cols[i - 1], Graphics.COLOR_TRANSPARENT);
+            dc.drawText(x, y, f, v, LV);
+            x += dc.getTextWidthInPixels(v, f);
         }
     }
 
-    // Separator slot and dot radius, both derived from the ink height of whatever font the
-    // tally landed in, so the three groups keep their proportions on every variant.
+    // The four counts as one array, filled in the shared scratch. A ladder row is drawn up to
+    // four times a frame on the Tacks & jibes page and a fresh array per call would be four
+    // allocations a second on a page that otherwise makes none.
+    static function ladderOf(clean as Number, flew as Number, touch as Number,
+            fell as Number) as Array<Number> {
+        _ladder[0] = clean;
+        _ladder[1] = flew;
+        _ladder[2] = touch;
+        _ladder[3] = fell;
+        return _ladder;
+    }
+
+    // Width of that row in `f`: the star group where there is one, then three counts and two
+    // separator slots. Shared with the layout test, which measures it at its worst case.
+    static function ladderRowWidth(dc as Dc, counts as Array<Number>, glyph as Number,
+            f as Graphics.FontType) as Number {
+        var w = 2 * giantSepW(dc, f);
+        if (counts[0] >= 0) {
+            w += glyph + CLEAN_GLYPH_GAP
+                + dc.getTextWidthInPixels(counts[0].toString(), f) + LADDER_CLEAN_GAP;
+        }
+        for (var i = 1; i < 4; i++) {
+            w += dc.getTextWidthInPixels(counts[i].toString(), f);
+        }
+        return w;
+    }
+
+    // NUMBER_FONTS from `from`, then down the text ladder to the FONT_SMALL floor. A count is
+    // a value, and a value below FONT_SMALL is not readable at arm's length — so the row would
+    // rather clip than lie about being legible, and in practice never gets there.
+    static function ladderRowFont(dc as Dc, counts as Array<Number>, glyph as Number,
+            budget as Number, from as Number) as Graphics.FontType {
+        for (var i = from; i < NUMBER_FONTS.size(); i++) {
+            if (ladderRowWidth(dc, counts, glyph, NUMBER_FONTS[i]) <= budget) {
+                return NUMBER_FONTS[i];
+            }
+        }
+        for (var i = 0; i < TALLY_FLOOR; i++) {
+            if (ladderRowWidth(dc, counts, glyph, TEXT_FONTS[i]) <= budget) {
+                return TEXT_FONTS[i];
+            }
+        }
+        return TEXT_FONTS[TALLY_FLOOR];
+    }
+
+    // ---- the ladder row's LEGEND, and the wind mark on it ----
+    //
+    // The four words in the four inks, in the row's own order, at FONT_XTINY — and after them,
+    // on the Turns page, the wind MARK (Glyphs.drawWind): filled where the rider set the axis,
+    // hollow where the watch estimated it, hollow and dim where there is none. The page needs
+    // to say only WHETHER it has an axis: without one the port/starboard row below is counting
+    // nothing and the Tacks & jibes page one swipe on is all zeros.
+    //
+    // `mark` off draws the words alone, which is what a page with its own axis story wants.
+    hidden function drawLadderHeader(dc as Dc, cx as Number, y as Number, cy as Number,
+            radius as Number, mark as Boolean) as Void {
+        var s = Glyphs.size(dc);
+        var budget = rowBudget(radius, y - cy, inkH(dc, Graphics.FONT_XTINY));
+        var got = ladderHeaderContent(dc, s, budget, mark);
+        var sep = (got & LADDER_HEAD_SEPARATORS) != 0
+            ? LADDER_HEAD_SEP : LADDER_HEAD_SEP_NARROW;
+        var showMark = (got & LADDER_HEAD_MARK) != 0;
+        var caps = [TALLY_CAP_CLEAN, TALLY_CAP_FLEW, TALLY_CAP_TOUCH, TALLY_CAP_FELL];
+        var cols = [Ink.cleanJibe(), Ink.ladderFlew(), Ink.ladderTouchdown(),
+            Ink.ladderFellIn()];
+        var LV = Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER;
+        var x = cx - ladderHeaderWidth(dc, s, showMark, sep) / 2;
+        for (var i = 0; i < 4; i++) {
+            if (i > 0) {
+                dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+                dc.drawText(x, y, Graphics.FONT_XTINY, sep, LV);
+                x += dc.getTextWidthInPixels(sep, Graphics.FONT_XTINY);
+            }
+            dc.setColor(cols[i], Graphics.COLOR_TRANSPARENT);
+            dc.drawText(x, y, Graphics.FONT_XTINY, caps[i], LV);
+            x += dc.getTextWidthInPixels(caps[i], Graphics.FONT_XTINY);
+        }
+        if (!showMark) {
+            return;
+        }
+        var cfg = AppSettings.cfg;
+        var set = cfg.windDirection >= 0;
+        dc.setColor(set ? Graphics.COLOR_WHITE : Ink.dim(), Graphics.COLOR_TRANSPARENT);
+        Glyphs.drawWind(dc, x + LADDER_HEAD_MARK_GAP + s / 2, y, s, set && !cfg.windIsAuto());
+    }
+
+    // What the legend can afford at `budget`, as a bitmask. Separators go first, then the
+    // mark; the four WORDS never go, because they are the legend. -1 is not a possible
+    // answer here for the same reason the tally row's is rare: four XTINY words with single
+    // spaces are 160 px on the narrowest glass shipped, against a 214 px chord.
+    // Shared with the layout test.
+    static function ladderHeaderContent(dc as Dc, glyph as Number, budget as Number,
+            mark as Boolean) as Number {
+        if (ladderHeaderWidth(dc, glyph, mark, LADDER_HEAD_SEP) <= budget) {
+            return (mark ? LADDER_HEAD_MARK : 0) | LADDER_HEAD_SEPARATORS;
+        }
+        if (ladderHeaderWidth(dc, glyph, mark, LADDER_HEAD_SEP_NARROW) <= budget) {
+            return mark ? LADDER_HEAD_MARK : 0;
+        }
+        return 0;
+    }
+
+    // Width of that legend with a given separator, with or without the mark. Shared with the
+    // layout test, which measures it against the chord at the header's own depth.
+    static function ladderHeaderWidth(dc as Dc, glyph as Number, mark as Boolean,
+            sep as String) as Number {
+        var w = 3 * dc.getTextWidthInPixels(sep, Graphics.FONT_XTINY)
+            + dc.getTextWidthInPixels(TALLY_CAP_CLEAN, Graphics.FONT_XTINY)
+            + dc.getTextWidthInPixels(TALLY_CAP_FLEW, Graphics.FONT_XTINY)
+            + dc.getTextWidthInPixels(TALLY_CAP_TOUCH, Graphics.FONT_XTINY)
+            + dc.getTextWidthInPixels(TALLY_CAP_FELL, Graphics.FONT_XTINY);
+        return mark ? w + LADDER_HEAD_MARK_GAP + glyph : w;
+    }
+
+    // Separator slot and dot radius, both derived from the ink height of whatever font a
+    // ladder row landed in, so the groups keep their proportions on every variant.
     static function giantSepW(dc as Dc, f as Graphics.FontType) as Number {
         return inkH(dc, f) / 3;
     }
@@ -2115,29 +2353,6 @@ class RecordingView extends WatchUi.View {
     static function giantSepR(dc as Dc, f as Graphics.FontType) as Number {
         var r = inkH(dc, f) / 14;
         return r < 2 ? 2 : r;
-    }
-
-    static function giantTallyWidth(dc as Dc, a as String, b as String, s as String,
-            f as Graphics.FontType) as Number {
-        return dc.getTextWidthInPixels(a, f) + dc.getTextWidthInPixels(b, f)
-            + dc.getTextWidthInPixels(s, f) + 2 * giantSepW(dc, f);
-    }
-
-    // NUMBER_MEDIUM, then MILD, then down the text ladder to the FONT_SMALL floor. A count is
-    // a value, and a value below FONT_SMALL is not readable at arm's length.
-    static function giantTallyFont(dc as Dc, a as String, b as String, s as String,
-            budget as Number) as Graphics.FontType {
-        for (var i = 2; i < NUMBER_FONTS.size(); i++) {
-            if (giantTallyWidth(dc, a, b, s, NUMBER_FONTS[i]) <= budget) {
-                return NUMBER_FONTS[i];
-            }
-        }
-        for (var i = 0; i < TALLY_FLOOR; i++) {
-            if (giantTallyWidth(dc, a, b, s, TEXT_FONTS[i]) <= budget) {
-                return TEXT_FONTS[i];
-            }
-        }
-        return TEXT_FONTS[TALLY_FLOOR];
     }
 
     // The Turns page's streak row: "streak: 2/5  7/11". One grey word for the row, then the
@@ -2215,45 +2430,35 @@ class RecordingView extends WatchUi.View {
         return TEXT_FONTS[TALLY_FLOOR];
     }
 
-    // "69 % flew · P 29 / S 22" — the share of counted turns he flew through, and which side of
-    // the wind he entered them on. Values in the row's own font, every word around them XTINY,
-    // exactly as the streak row does it, which is what keeps a nine-glyph row inside a
-    // bottom-arc chord.
+    // "P 29 / S 22" — which side of the wind he entered his turns on. Values in the row's own
+    // font, every word around them XTINY, exactly as the streak row does it, which is what
+    // keeps the row inside a bottom-arc chord.
     //
-    // The share is flewCount / turnCount, the same two numbers the green tally and the total
-    // above it are drawn from, so this row can only ever agree with them.
+    // It carried a "69 % flew" share in front of that until 0.9.18. Jan took it off the page:
+    // the share is flewCount over turnCount and both of those numbers are on the ladder row
+    // two rows up, so the page was stating one fact twice — and a page that says the same
+    // thing twice has to be believed twice. The counts are the fact; the percentage was a
+    // reading of it, and a reading belongs where there is room to explain itself.
     //
-    // The P/S half is DROPPED, not shrunk, when the side counts are absent (no wind axis, so
-    // no side to be on) or when the chord cannot hold it even at the floor. A number that has
-    // to lie about its size to fit is worse than a number that is not there — CONTENT first,
-    // then size, the same order the tally row sheds things in.
-    //
-    // The size half is new in 0.9.2: the values were pinned at FONT_SMALL, the floor, on a row
-    // that had already been given a FONT_MEDIUM band. They now start there and step down, so a
-    // roomy glass gets a rung it was throwing away.
+    // The row is DROPPED, not shrunk, when the side counts are absent (no wind axis, so no
+    // side to be on) or when the chord cannot hold it even at the floor. A number that has to
+    // lie about its size to fit is worse than a number that is not there.
     hidden function drawVerdictRow(dc as Dc, cx as Number, y as Number, cy as Number,
             radius as Number, t as TurnDetector) as Void {
-        if (t.turnCount <= 0) {
-            return;                 // no turns, no verdict: "0% flew" is not a fact yet
+        if (t.turnCount <= 0 || t.portEntryCount + t.starboardEntryCount <= 0) {
+            return;                 // no turns, or no axis to have a side of
         }
-        var pct = (t.flewCount * 100 / t.turnCount).toString();
         var p = t.portEntryCount.toString();
         var s = t.starboardEntryCount.toString();
         var budget = rowBudget(radius, y - cy, inkH(dc, TEXT_FONTS[VERDICT_FROM]));
-        var sides = t.portEntryCount + t.starboardEntryCount > 0
-            && verdictWidth(dc, pct, p, s, true, TEXT_FONTS[TALLY_FLOOR]) <= budget;
-        var LV = Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER;
-        var f = verdictFont(dc, pct, p, s, sides, budget);
-        var x = cx - verdictWidth(dc, pct, p, s, sides, f) / 2;
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x, y, f, pct, LV);
-        x += dc.getTextWidthInPixels(pct, f);
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x, y, Graphics.FONT_XTINY, TURNS_FLEW_SUFFIX, LV);
+        var sides = verdictWidth(dc, p, s, TEXT_FONTS[TALLY_FLOOR]) <= budget;
         if (!sides) {
             return;
         }
-        x += dc.getTextWidthInPixels(TURNS_FLEW_SUFFIX, Graphics.FONT_XTINY) + TURNS_OK_GAP;
+        var LV = Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER;
+        var f = verdictFont(dc, p, s, budget);
+        var x = cx - verdictWidth(dc, p, s, f) / 2;
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, y, Graphics.FONT_XTINY, TURNS_PORT, LV);
         x += dc.getTextWidthInPixels(TURNS_PORT, Graphics.FONT_XTINY);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
@@ -2269,29 +2474,22 @@ class RecordingView extends WatchUi.View {
         dc.drawText(x, y, f, s, LV);
     }
 
-    // The row's font: the largest from TEXT_FONTS[VERDICT_FROM] at which the content it has
-    // decided to keep fits, floored at FONT_SMALL like every other value on the watch.
-    static function verdictFont(dc as Dc, pct as String, p as String, s as String,
-            sides as Boolean, budget as Number) as Graphics.FontType {
+    // The row's font: the largest from TEXT_FONTS[VERDICT_FROM] that fits, floored at
+    // FONT_SMALL like every other value on the watch.
+    static function verdictFont(dc as Dc, p as String, s as String,
+            budget as Number) as Graphics.FontType {
         for (var i = VERDICT_FROM; i < TALLY_FLOOR; i++) {
-            if (verdictWidth(dc, pct, p, s, sides, TEXT_FONTS[i]) <= budget) {
+            if (verdictWidth(dc, p, s, TEXT_FONTS[i]) <= budget) {
                 return TEXT_FONTS[i];
             }
         }
         return TEXT_FONTS[TALLY_FLOOR];
     }
 
-    // Width of that row, with and without its port/starboard half. Shared with the layout
-    // test, which measures it at "100 % flew · P 99 / S 99".
-    static function verdictWidth(dc as Dc, pct as String, p as String, s as String,
-            sides as Boolean, f as Graphics.FontType) as Number {
-        var w = dc.getTextWidthInPixels(pct, f)
-            + dc.getTextWidthInPixels(TURNS_FLEW_SUFFIX, Graphics.FONT_XTINY);
-        if (!sides) {
-            return w;
-        }
-        return w + TURNS_OK_GAP
-            + dc.getTextWidthInPixels(TURNS_PORT, Graphics.FONT_XTINY)
+    // Width of that row. Shared with the layout test, which measures it at "P 99 / S 99".
+    static function verdictWidth(dc as Dc, p as String, s as String,
+            f as Graphics.FontType) as Number {
+        return dc.getTextWidthInPixels(TURNS_PORT, Graphics.FONT_XTINY)
             + dc.getTextWidthInPixels(p, f)
             + dc.getTextWidthInPixels(TURNS_SIDE_SEP, Graphics.FONT_XTINY)
             + dc.getTextWidthInPixels(TURNS_STBD, Graphics.FONT_XTINY)
@@ -2309,25 +2507,40 @@ class RecordingView extends WatchUi.View {
         return Ink.ladderNone();
     }
 
-    // Row centres for the Turns page: 0 header · 1 giant tally · 2 streaks · 3 outcome dots ·
-    // 4 verdict + side split. Stacked from font heights only, so the rows can never overlap on
-    // any variant. Shared with the layout test, which asserts every row clears the circle.
+    // Row centres for the Turns page (0.9.18): 0 legend · 1 the ladder row · 2 outcome dots ·
+    // 3 streaks · 4 the port/starboard split. FIVE rows, down from six — the clean jibes
+    // joined the ladder row and CPH left the watch.
     //
-    // `hG` is the giant tally's INK height (0.9.2, see heroRowY): 39 px of NUMBER_MEDIUM
-    // leading on a 454 px glass that the four rows under it were being pushed down by. The
-    // bottom row's chord gains 32 px of it, which is most of what pays for its bigger font.
-    // Turns-page rows: 0 header · 1 giant tally · 2 CLEAN JIBE row · 3 streaks · 4 outcome
-    // strip · 5 verdict. `hC` joined the stack in 0.9.5 and is the clean-jibe row's band;
-    // every other band is unchanged, and the block stays centred by construction.
-    static function turnsRowY(cy as Number, hT as Number, hG as Number, hC as Number,
-            hK as Number, hD as Number, hS as Number, row as Number) as Number {
-        var y = cy - (hT + hG + hC + hK + hD + hS) / 2;
+    // `hG` is the ladder row's INK height (0.9.2, see heroRowY): 39 px of NUMBER_MEDIUM
+    // leading on a 454 px glass that the rows under it were being pushed down by.
+    //
+    // The stack is centred on its own total AND THEN LIFTED (`turnsBias`), which is the whole
+    // geometric point of the round-glass rule: one narrow legend above the wide row and three
+    // narrow rows below it is not a symmetric stack, so centring the TOTAL leaves the widest
+    // line high and the top arc empty. Shared with the layout test, which asserts every row
+    // still clears the circle with the lift applied.
+    static function turnsRowY(cy as Number, hT as Number, hG as Number, hD as Number,
+            hK as Number, hS as Number, bias as Number, row as Number) as Number {
+        var y = cy - (hT + hG + hD + hK + hS) / 2 + bias;
         if (row == 0) { return y + hT / 2; }
         if (row == 1) { return y + hT + hG / 2; }
-        if (row == 2) { return y + hT + hG + hC / 2; }
-        if (row == 3) { return y + hT + hG + hC + hK / 2; }
-        if (row == 4) { return y + hT + hG + hC + hK + hD / 2; }
-        return y + hT + hG + hC + hK + hD + hS / 2;
+        if (row == 2) { return y + hT + hG + hD / 2; }
+        if (row == 3) { return y + hT + hG + hD + hK / 2; }
+        return y + hT + hG + hD + hK + hS / 2;
+    }
+
+    // The lift: exactly the distance that puts the ladder row's own centre on the equator,
+    // capped at TURNS_BIAS_MAX_PCT of the radius. Past the cap the page would be buying the
+    // widest row a chord it already had by pushing the bottom row into one it has not — the
+    // mirror of the trade GRID_BIAS makes in the other direction. Shared with the layout test.
+    static function turnsBias(radius as Number, hT as Number, hG as Number, hD as Number,
+            hK as Number, hS as Number) as Number {
+        var want = (hT + hG + hD + hK + hS) / 2 - hT - hG / 2;
+        if (want <= 0) {
+            return 0;
+        }
+        var cap = radius * TURNS_BIAS_MAX_PCT / 100;
+        return want > cap ? cap : want;
     }
 
     // Width of the tally row: three counts, two separators, and — when it is being shown —
@@ -2390,34 +2603,6 @@ class RecordingView extends WatchUi.View {
             }
         }
         return TEXT_FONTS[TALLY_FLOOR];
-    }
-
-    // The session-level number a tally row may carry at its end: the share of counted turns he
-    // FLEW THROUGH — the green count over the total, the same arithmetic the Turns page's
-    // bottom row prints. Empty until there is a turn to divide by, because "0% flew" before the
-    // first jibe reads like a verdict on a session that has not happened.
-    //
-    // It used to be the carried-speed score — what the apps now call the CLEAN JIBE count.
-    // That number left the watch in 0.8.2: it mixes speed retention into an outcome and could
-    // disagree with the coloured counts beside it, which is a page arguing with itself. The
-    // strict verdict lives in the phone analysis, where it has a caption to explain itself.
-    static function flewText(turns as Number, flew as Number) as String {
-        if (turns <= 0) {
-            return "";
-        }
-        return (flew * 100 / turns).toString() + TURNS_FLEW_SUFFIX;
-    }
-
-    // The Turns page's header: the ladder's three names, then the axis when there is one and
-    // the row can carry it at FONT_XTINY. Public for the layout test.
-    static function turnsHeader(dc as Dc, axis as String, radius as Number, dy as Number)
-            as String {
-        if (axis.equals("")) {
-            return TURNS_HEADER;
-        }
-        var full = TURNS_HEADER + "  " + axis;
-        var budget = rowBudget(radius, dy, inkH(dc, Graphics.FONT_XTINY));
-        return dc.getTextWidthInPixels(full, Graphics.FONT_XTINY) <= budget ? full : TURNS_HEADER;
     }
 
     // "flew · touch · swim" counts in the ladder's own colours, centred as one block. `from`
@@ -2563,12 +2748,16 @@ class RecordingView extends WatchUi.View {
             dc.setPenWidth(1);
         }
 
-        // band 3: turn outcomes, newest on the right
-        var yDots = timelineRowY(cy, hT, strip, spark, 5);
+        // band 3: turn outcomes, newest on the right — and its caption UNDER it since 0.9.18.
+        // Jan's layout review: the dot row is the page's widest band and the word above it
+        // was pushing it one XTINY line deeper into the arc for nothing. Below the dots the
+        // word sits where the chord has already collapsed, which is where a two-syllable
+        // caption costs nothing, and the dots move up into the width they were giving away.
+        var yDots = timelineRowY(cy, hT, strip, spark, 4);
         halfW = bandHalfWidth(radius, yDots - TL_DOT_R, yDots + TL_DOT_R, cy);
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, timelineRowY(cy, hT, strip, spark, 4), Graphics.FONT_XTINY, "turns", CV);
         drawOutcomeStrip(dc, cx, yDots, 2 * halfW, h);
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, timelineRowY(cy, hT, strip, spark, 5), Graphics.FONT_XTINY, "turns", CV);
     }
 
     // ---- the outcome strip ----
@@ -2617,8 +2806,13 @@ class RecordingView extends WatchUi.View {
     }
 
     // Timeline rows: 0 foil label · 1 strip TOP · 2 speed label · 3 sparkline TOP ·
-    // 4 turns label · 5 dot-row centre. Stacked from font heights + the band heights, so
+    // 4 dot-row centre · 5 turns label. Stacked from font heights + the band heights, so
     // the bands can never collide on any variant.
+    //
+    // Rows 4 and 5 swapped in 0.9.18: the two tall bands keep their caption ABOVE them
+    // (a caption over an envelope says what the envelope is before it is read), and the dot
+    // row takes its caption BELOW, because the dots are the widest thing on the page and the
+    // arc it was being pushed into is the narrowest part of the glass.
     static function timelineRowY(cy as Number, hT as Number, strip as Number,
             spark as Number, row as Number) as Number {
         var total = 3 * hT + strip + spark + 2 * TL_DOT_R;
@@ -2627,8 +2821,8 @@ class RecordingView extends WatchUi.View {
         if (row == 1) { return y + hT; }
         if (row == 2) { return y + hT + strip + hT / 2; }
         if (row == 3) { return y + 2 * hT + strip; }
-        if (row == 4) { return y + 2 * hT + strip + spark + hT / 2; }
-        return y + 3 * hT + strip + spark + TL_DOT_R;
+        if (row == 4) { return y + 2 * hT + strip + spark + TL_DOT_R; }
+        return y + 2 * hT + strip + spark + 2 * TL_DOT_R + hT / 2;
     }
 
     // Half the chord available to a band spanning yTop..yBot — the deeper edge decides.
@@ -2691,20 +2885,46 @@ class RecordingView extends WatchUi.View {
             return;
         }
         // A map with no number on it is a shape. The odometer is the one number the shape
-        // cannot show, and it is a VALUE, so FONT_SMALL is its floor.
-        var km = (e.distM / 1000.0).format("%.1f") + " km";
+        // cannot show, so since 0.9.18 it is drawn at the size a value deserves rather than
+        // at FONT_SMALL, the floor it had been pinned to: the digits walk the text ladder
+        // from FONT_LARGE down to that floor and "km" stays a word at FONT_XTINY beside them.
+        var km = (e.distM / 1000.0).format("%.1f");
+        var y = mapCaptionY(dc, box);
+        var f = mapKmFont(dc, km, rowBudget(radius, y - cy, inkH(dc, TEXT_FONTS[0])));
+        var LV = Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER;
+        var x = cx - mapKmWidth(dc, km, f) / 2;
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, mapCaptionY(dc, box), Graphics.FONT_SMALL, km, CV);
+        dc.drawText(x, y, f, km, LV);
+        dc.drawText(x + dc.getTextWidthInPixels(km, f) + MAP_KM_GAP, y, Graphics.FONT_XTINY,
+            MAP_KM, LV);
     }
 
     // Side of the square the trail is drawn in, and the ink centre of the caption hung off its
-    // bottom edge. Both shared with the layout test.
+    // bottom edge. Both shared with the layout test. The caption's band is FONT_LARGE's line
+    // whatever rung the digits land on, so a long odometer moves nothing.
     static function mapBox(dc as Dc, radius as Number) as Number {
         return TrackDraw.boxSide(radius - scaled(dc, MAP_MARGIN));
     }
 
     static function mapCaptionY(dc as Dc, box as Number) as Number {
-        return dc.getHeight() / 2 + box / 2 + dc.getFontHeight(Graphics.FONT_SMALL) / 2;
+        return dc.getHeight() / 2 + box / 2 + dc.getFontHeight(TEXT_FONTS[0]) / 2;
+    }
+
+    // Width of that caption: the digits in `f`, then the gap and the unit at FONT_XTINY.
+    static function mapKmWidth(dc as Dc, km as String, f as Graphics.FontType) as Number {
+        return dc.getTextWidthInPixels(km, f) + MAP_KM_GAP
+            + dc.getTextWidthInPixels(MAP_KM, Graphics.FONT_XTINY);
+    }
+
+    // FONT_LARGE down to TEXT_FONTS[TALLY_FLOOR] = FONT_SMALL, the readability floor every
+    // value on this watch keeps — which is where this caption used to START.
+    static function mapKmFont(dc as Dc, km as String, budget as Number) as Graphics.FontType {
+        for (var i = 0; i < TALLY_FLOOR; i++) {
+            if (mapKmWidth(dc, km, TEXT_FONTS[i]) <= budget) {
+                return TEXT_FONTS[i];
+            }
+        }
+        return TEXT_FONTS[TALLY_FLOOR];
     }
 
     // ---- CLOCK: giant time of day, then one configurable cell ----
@@ -2721,14 +2941,26 @@ class RecordingView extends WatchUi.View {
     // is width at the TOP, where the giant is, and the empty space it can take it from is at the
     // bottom. Measured at 454 px: the giant's budget goes 364 -> 378 px against the 363 it
     // needs, and the timer's column 306 -> 294 against the 240 a MILD "199:59" needs.
+    // 0.9.18 spent the label row on the numbers. Jan's layout review: "drop the word 'timer';
+    // make both numbers larger (clock largest, timer second)." The word went because on the
+    // DEFAULT page it names a value nothing could mistake — a running m:ss under a time of
+    // day is the session timer and reads as one — and the row it cost was an XTINY line
+    // between two numbers that both wanted it. The second number takes the band the word
+    // vacated, which steps it from a FONT_NUMBER_MILD cell to a FONT_NUMBER_MEDIUM one.
+    //
+    // The word survives for every OTHER slot. This page's cell is configurable (`pg6s1`), and
+    // a bare "148" under a clock could be a heart rate, a pump count or a flight number — so
+    // `clockCellNeedsLabel` keeps the label wherever the value is not self-evidently a clock.
     hidden function drawClockPage(dc as Dc, c as SessionController, page as Number,
             foilArc as Boolean) as Void {
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
         var radius = fitRadius(dc, false, foilArc);
         var hN = inkH(dc, Graphics.FONT_NUMBER_THAI_HOT);
-        var hT = dc.getFontHeight(Graphics.FONT_XTINY);
-        var hV = cellValueBand(dc, true);
+        var id = PageModel.slotAt(page, 0);
+        var labelled = clockCellNeedsLabel(id);
+        var hT = labelled ? dc.getFontHeight(Graphics.FONT_XTINY) : 0;
+        var hV = clockCellBand(dc, labelled);
         var bias = clockBias(dc);
 
         var now = PageModel.clockString();
@@ -2736,20 +2968,53 @@ class RecordingView extends WatchUi.View {
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, y, fitFont(dc, NUMBER_FONTS, 0, now,
             rowBudget(radius, y - cy, hN)), now, CV);
+        if (id == PageModel.M_NONE) {
+            return;
+        }
         // battery deliberately absent from the default cell: non-important on the water (Jan)
         var yl = clockRowY(cy, hN, hT, hV, 1, bias);
-        var yv = yl + (hT + hV) / 2;
-        drawSlotCell(dc, c, cx, yl, yv,
-            rowBudget(radius, yv - cy, inkH(dc, cellValueFont(true))),
-            PageModel.slotAt(page, 0), true);
+        var yv = labelled ? yl + (hT + hV) / 2 : yl;
+        if (labelled) {
+            drawCellLabel(dc, cx, yl, id);
+        }
+        var value = PageModel.value(id, c);
+        dc.setColor(PageModel.color(id, c), Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, yv, fitGiant(dc, value, clockCellFrom(labelled),
+            rowBudget(radius, yv - cy, inkH(dc, clockCellFont(labelled)))), value, CV);
     }
 
-    // Clock rows: 0 = giant time, 1 = cell label centre. `hN` is the giant's INK height (see
-    // heroRowY) and `bias` lifts the whole block DOWNWARD. Shared with the layout test.
+    // Does the cell under the clock still need its word? Only a value that is itself a clock
+    // can go without one — the session timer (the shipped default) and a second time of day.
+    // Shared with the layout test.
+    static function clockCellNeedsLabel(id as Number) as Boolean {
+        return !(id == PageModel.M_TIMER || id == PageModel.M_CLOCK
+            || id == PageModel.M_FLIGHT_TIMER);
+    }
+
+    // The unlabelled cell's value font, and the NUMBER_FONTS rung it is fitted from: one rung
+    // up from the labelled cell's FONT_NUMBER_MILD, paid for by the word that is not there.
+    static function clockCellFont(labelled as Boolean) as Graphics.FontType {
+        return labelled ? Graphics.FONT_NUMBER_MILD : Graphics.FONT_NUMBER_MEDIUM;
+    }
+
+    static function clockCellFrom(labelled as Boolean) as Number {
+        return labelled ? 3 : 2;
+    }
+
+    static function clockCellBand(dc as Dc, labelled as Boolean) as Number {
+        return dc.getFontHeight(clockCellFont(labelled));
+    }
+
+    // Clock rows: 0 = giant time, 1 = the cell — its label's centre where it has one, its
+    // VALUE's centre where it does not. `hN` is the giant's INK height (see heroRowY) and
+    // `bias` lifts the whole block DOWNWARD. Shared with the layout test.
     static function clockRowY(cy as Number, hN as Number, hT as Number, hV as Number,
             row as Number, bias as Number) as Number {
         var y = cy - (hN + hT + hV) / 2 + bias + hN / 2;
-        return row == 0 ? y : y + hN / 2 + hT / 2;
+        if (row == 0) {
+            return y;
+        }
+        return hT > 0 ? y + hN / 2 + hT / 2 : y + hN / 2 + hV / 2;
     }
 
     // The clock page's downward lift, as a fraction of the glass — GRID_BIAS's opposite number,

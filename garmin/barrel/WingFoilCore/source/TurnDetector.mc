@@ -207,6 +207,26 @@ class TurnDetector {
     // sweep log carries geometry only, written before the outcome window resolved.
     var tackFlewCount as Number = 0;
     var jibeFlewCount as Number = 0;
+    // THE OTHER TWO RUNGS, PER KIND (device app 0.9.18). 0.9.17 split only the ladder's TOP
+    // rung by kind, which was enough for a page that said "jibes, flew 38" and not enough for
+    // one that draws the whole ladder per kind — and drawing the whole ladder per kind is what
+    // the Tacks & jibes page does since this round (Jan's layout review, 21 Sep 2026: one wide
+    // row per kind, the same colour language the Turns page uses).
+    //
+    // Counted exactly where `touchdownCount` and `fellCount` are, off the same `lastKind`, for
+    // the reason the flew pair is: kind is fixed when the sweep closes, outcome when the
+    // window resolves, and `_resolve()` is the only place that knows both.
+    //
+    // The invariant, and the divergence that qualifies it (docs/algorithms.md, the watch
+    // divergences): for turns typed AFTER the wind axis is known,
+    //   jibeFlewCount + jibeTouchCount + jibeFellCount == jibeCount
+    //   tackFlewCount + tackTouchCount + tackFellCount == tackCount
+    // and after an auto-wind backfill the kind counts grow while these six do not, so each
+    // kind's three rungs sum to at most its count. A pre-lock jibe is a jibe with no rung.
+    var tackTouchCount as Number = 0;
+    var tackFellCount as Number = 0;
+    var jibeTouchCount as Number = 0;
+    var jibeFellCount as Number = 0;
     // Was the turn that just resolved a clean jibe? Published beside `lastOutcome` so a caller
     // that already reacts to a resolved turn can tell the two apart without a second event
     // nibble; false again on the next turn that is not one.
@@ -698,11 +718,22 @@ class TurnDetector {
         if (_wet || _stopMax > FALL_STOP_S) {
             outcome = OUTCOME_FELL;
             fellCount++;
+            // the same split the flew branch takes, off the same `lastKind` (0.9.18)
+            if (lastKind == KIND_TACK) {
+                tackFellCount++;
+            } else if (lastKind == KIND_JIBE) {
+                jibeFellCount++;
+            }
             dryStreak = 0;          // he swam: both runs end here
             flewStreak = 0;
         } else if (_lostFoil) {
             outcome = OUTCOME_TOUCHDOWN;
             touchdownCount++;
+            if (lastKind == KIND_TACK) {
+                tackTouchCount++;
+            } else if (lastKind == KIND_JIBE) {
+                jibeTouchCount++;
+            }
             if (_stopMax > TOUCHDOWN_MAX_STOP_S) {
                 borderlineCount++;
             }
@@ -813,6 +844,12 @@ class TurnDetector {
     //     Documented in docs/algorithms.md's watch-divergence list rather than fixed with a
     //     third parallel array: it is a handful of turns at the very start of a session, and
     //     it errs the way every other watch divergence errs — conservative.
+    //   * and neither are the six PER-KIND OUTCOME counters (`*FlewCount`, `*TouchCount`,
+    //     `*FellCount`), for the same reason and with the same shape: the backfill adds to
+    //     `tackCount` / `jibeCount` only, so each kind's three rungs sum to AT MOST that
+    //     kind's count, and the difference is exactly the pre-lock turns. On the glass a
+    //     pre-lock jibe is a jibe with no rung — the kind's row under-reads by a handful of
+    //     turns at the very start of an auto-wind session, and never over-reads.
     // So after the backfill `tackCount + jibeCount <= turnCount`, with the difference being
     // the sweeps that turned out to be course changes.
     function backfillWindSplit(entryDeg as Array<Number>, netDeg as Array<Number>,

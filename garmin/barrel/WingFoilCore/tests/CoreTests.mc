@@ -361,6 +361,90 @@ function turnJibeClassifiedWithWind(logger as Test.Logger) as Boolean {
     return true;
 }
 
+// ---- the per-kind LADDER adds up (device app 0.9.18) ----
+//
+// The Tacks & jibes page draws each kind's whole outcome ladder now, so the six per-kind
+// counters owe the page an arithmetic guarantee: for every turn typed while the axis was
+// known, a kind's three rungs sum to exactly that kind's count. A page whose row does not add
+// up to the number above it is a page arguing with itself, and it is the kind of drift a
+// counter incremented in three branches invites.
+//
+// The qualifier is the auto-wind backfill, and it is a documented divergence rather than a
+// bug (docs/algorithms.md, the watch divergences): the backfill adds to `tackCount` and
+// `jibeCount` and to nothing else, so afterwards each kind's rungs sum to AT MOST its count.
+// That half is asserted here too, because "at most" is the invariant every drawn row relies
+// on and "exactly" is only true of the post-lock population.
+(:test)
+function perKindOutcomesAddUpToTheKind(logger as Test.Logger) as Boolean {
+    var cfg = coreDefaults();
+    cfg.setWindDirection(0);            // wind from north: downwind is 180, upwind is 0
+    var d = new TurnDetector(cfg);
+
+    // three jibes, one of each rung: 120 -> 240 sweeps through dead downwind
+    runStraight(d, 5, 120.0, 8.0);
+    runSweep(d, 120.0, 30.0, 4, 8.0);
+    runStraight(d, 6, 240.0, 8.0);                      // flew through
+    runStraight(d, 5, 120.0, 8.0);
+    runSweep(d, 120.0, 30.0, 4, 8.0);
+    runStraight(d, 3, 240.0, 0.5);
+    runStraight(d, 6, 240.0, 8.0);                      // touched down
+    runStraight(d, 5, 120.0, 8.0);
+    runSweep(d, 120.0, 30.0, 4, 8.0);
+    runStraight(d, 14, 240.0, 0.2);                     // fell in
+    runStraight(d, 6, 240.0, 8.0);
+
+    // two tacks: 300 -> 60 sweeps through dead upwind
+    runStraight(d, 5, 300.0, 8.0);
+    runSweep(d, 300.0, 30.0, 4, 8.0);
+    runStraight(d, 6, 60.0, 8.0);                       // flew through
+    runStraight(d, 5, 300.0, 8.0);
+    runSweep(d, 300.0, 30.0, 4, 8.0);
+    runStraight(d, 3, 60.0, 0.5);
+    runStraight(d, 6, 60.0, 8.0);                       // touched down
+
+    Test.assertMessage(d.jibeCount == 3,
+        "three jibes, got " + d.jibeCount.toString());
+    Test.assertMessage(d.tackCount == 2,
+        "two tacks, got " + d.tackCount.toString());
+
+    // THE INVARIANT, per kind
+    var jibes = d.jibeFlewCount + d.jibeTouchCount + d.jibeFellCount;
+    var tacks = d.tackFlewCount + d.tackTouchCount + d.tackFellCount;
+    Test.assertMessage(jibes == d.jibeCount,
+        "the jibes' rungs sum to " + jibes.toString() + ", not " + d.jibeCount.toString()
+            + " (" + d.jibeFlewCount.toString() + "/" + d.jibeTouchCount.toString() + "/"
+            + d.jibeFellCount.toString() + ")");
+    Test.assertMessage(tacks == d.tackCount,
+        "the tacks' rungs sum to " + tacks.toString() + ", not " + d.tackCount.toString()
+            + " (" + d.tackFlewCount.toString() + "/" + d.tackTouchCount.toString() + "/"
+            + d.tackFellCount.toString() + ")");
+    // each rung is the session's own rung asked of one kind, so the two kinds can never
+    // together exceed it
+    Test.assertMessage(d.jibeFlewCount + d.tackFlewCount <= d.flewCount,
+        "the kinds claim more fly-throughs than the session had");
+    Test.assertMessage(d.jibeTouchCount + d.tackTouchCount <= d.touchdownCount,
+        "the kinds claim more touchdowns than the session had");
+    Test.assertMessage(d.jibeFellCount + d.tackFellCount <= d.fellCount,
+        "the kinds claim more falls than the session had");
+
+    // ...and after a BACKFILL the sums may only fall short, never overshoot: the pass adds
+    // kinds to turns whose outcome was resolved before the axis existed, and it deliberately
+    // touches no outcome counter (TurnDetector.backfillWindSplit).
+    var jibesBefore = d.jibeCount;
+    d.backfillWindSplit([120, 300] as Array<Number>, [120, 120] as Array<Number>, 2);
+    Test.assertMessage(d.jibeCount > jibesBefore, "the backfill added no jibe to test with");
+    Test.assertMessage(d.jibeFlewCount + d.jibeTouchCount + d.jibeFellCount <= d.jibeCount,
+        "a backfilled jibe was given a rung it never earned");
+    Test.assertMessage(d.tackFlewCount + d.tackTouchCount + d.tackFellCount <= d.tackCount,
+        "a backfilled tack was given a rung it never earned");
+    logger.debug("per-kind ladder: jibes " + d.jibeFlewCount.toString() + "/"
+        + d.jibeTouchCount.toString() + "/" + d.jibeFellCount.toString() + " of "
+        + d.jibeCount.toString() + ", tacks " + d.tackFlewCount.toString() + "/"
+        + d.tackTouchCount.toString() + "/" + d.tackFellCount.toString() + " of "
+        + d.tackCount.toString());
+    return true;
+}
+
 (:test)
 function turnSubmersionForcesFellIn(logger as Test.Logger) as Boolean {
     var d = new TurnDetector(coreDefaults());
@@ -779,6 +863,24 @@ function cleanJibesAreSuccessfulJibesAndNothingElse(logger as Test.Logger) as Bo
         "jibes flown through must be a subset of the jibes AND of the fly-throughs");
     Test.assertMessage(t.tackFlewCount <= t.tackCount && t.tackFlewCount <= t.flewCount,
         "tacks flown through must be a subset of the tacks AND of the fly-throughs");
+
+    // ---- THE OTHER TWO RUNGS, PER KIND (device app 0.9.18) ----
+    // The Tacks & jibes page draws a kind's WHOLE ladder now, so the split has to hold for
+    // the other two outcomes as well as for the green one. The swim was a jibe and the
+    // touchdown was a jibe, so each lands on exactly one of the jibe counters and on neither
+    // tack counter; the turn with no axis lands on none of the six.
+    Test.assertMessage(w.jibeFellCount == 1 && w.jibeTouchCount == 0,
+        "a jibe he swam out of was not counted as a jibe he fell in");
+    Test.assertMessage(w.tackFellCount == 0 && w.tackTouchCount == 0,
+        "a jibe landed on a tack counter");
+    Test.assertMessage(x.jibeTouchCount == 1 && x.jibeFellCount == 0,
+        "a jibe that touched down was not counted as one");
+    Test.assertMessage(g.jibeTouchCount == 0 && g.jibeFellCount == 0
+        && g.tackTouchCount == 0 && g.tackFellCount == 0,
+        "a turn with no axis landed on a kind's counter");
+    logger.debug("per-kind ladder: jibe " + d.jibeFlewCount.toString() + "/"
+        + w.jibeFellCount.toString() + "/" + x.jibeTouchCount.toString()
+        + ", tack " + t.tackFlewCount.toString());
 
     logger.debug("clean jibes: jibe " + d.cleanJibeCount.toString() + "/"
         + d.jibeCount.toString() + ", tack " + t.cleanJibeCount.toString() + "/"

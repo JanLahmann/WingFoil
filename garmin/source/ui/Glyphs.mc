@@ -23,7 +23,11 @@ module Glyphs {
         G_BOLT = 5,        // speed: a zigzag
         G_TURN = 6,        // a hairpin u-arc with an arrow head
         G_PUMP = 7,        // pumping: a double-headed vertical arrow
-        G_BATTERY = 8      // a cell with its nub
+        G_BATTERY = 8,     // a cell with its nub
+        // The wind AXIS, as a mark rather than a bearing (0.9.18, see drawWind). Diagonal,
+        // deliberately, so it cannot be mistaken for G_PUMP's vertical double arrow at the
+        // 14-18 px these are drawn at.
+        G_WIND = 9
     }
 
     // Turn outcomes, as symbols instead of words (see RecordingView.drawTurnsPage).
@@ -139,6 +143,52 @@ module Glyphs {
         } else if (g == G_BATTERY) {
             dc.drawRectangle(x - h, y - h / 2, s - 2, h);
             dc.fillRectangle(x + h - 2, y - h / 4, 2, h / 2);
+        } else if (g == G_WIND) {
+            drawWind(dc, x, y, s, true);
+        }
+        dc.setPenWidth(1);
+    }
+
+    // ---- the wind AXIS mark (0.9.18) ----
+    //
+    // Jan's layout review, 21 September 2026: the Turns page's header spent a word on the
+    // bearing ("SW") and the rider does not read a bearing off the turns page — what he needs
+    // to know there is only whether the page HAS an axis at all, because without one the
+    // port/starboard split and the whole Tacks & jibes page are counting nothing. So the word
+    // became a mark, and the mark carries the one hedge the word carried: the leading "~"
+    // that told a rider the WATCH worked the axis out rather than him.
+    //
+    // Three states, one glyph:
+    //   filled   the rider set the axis. It is a statement of fact (Config: manual wins).
+    //   hollow   the watch estimated it — the "~" as a shape.
+    //   hollow, dim   there is no axis. The mark is drawn and not omitted, because a missing
+    //                 mark and a mark nobody noticed look the same, and "no wind set" is the
+    //                 one state the rider can do something about.
+    //
+    // The caller sets the colour, and it is deliberately NOT the outcome ladder's: the ladder
+    // is a verdict scale and nothing outside a maneuver outcome may borrow it
+    // (docs/presentation.md, "Colour and glyph vocabulary"). An axis is not a verdict.
+    //
+    // Diagonal, top-left to bottom-right, with the head in the far corner: an arrow reads as
+    // a direction at any size, and the diagonal is what keeps it apart from the vertical
+    // double-headed G_PUMP six rows away on another page. The head reuses the `_tri` scratch,
+    // so nothing here allocates either.
+    function drawWind(dc as Dc, x as Number, y as Number, s as Number,
+            solid as Boolean) as Void {
+        var h = s / 2;
+        dc.setPenWidth(2);
+        dc.drawLine(x - h, y - h, x + h / 2, y + h / 2);
+        _tri[0][0] = x + h;
+        _tri[0][1] = y + h;
+        _tri[1][0] = x - h / 4;
+        _tri[1][1] = y + h;
+        _tri[2][0] = x + h;
+        _tri[2][1] = y - h / 4;
+        if (solid) {
+            dc.fillPolygon(_tri as Array<Graphics.Point2D>);
+        } else {
+            dc.drawLine(_tri[0][0], _tri[0][1], _tri[1][0], _tri[1][1]);
+            dc.drawLine(_tri[0][0], _tri[0][1], _tri[2][0], _tri[2][1]);
         }
         dc.setPenWidth(1);
     }

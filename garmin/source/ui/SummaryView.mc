@@ -36,6 +36,9 @@ module SummaryNav {
     enum {
         S_VERDICT = 0,
         S_SPEED = 1,
+        // S2 was a bespoke speed hero until 0.9.18; it is the live RECORDS page now
+        // (SummaryView.drawRecords). The id keeps its name — it is the page's identity, and
+        // renaming an enum value that is stored nowhere buys nothing.
         // S3 was the bespoke "Flights" hero until 0.9.16; it is the live foil table now
         // (SummaryView.drawFoil), which carries the same three numbers and three more.
         S_FOIL = 2,
@@ -114,6 +117,22 @@ const SUM_NOT_SAVED = "NOT SAVED";
 // 11 % wider whose scale you cannot.
 const SUM_TRACK_MARGIN = 34;
 
+// ---- S6 Takeoffs, in words (0.9.18) ----
+// Every string on that page, and each of them is a number's NAME rather than its unit. See
+// SummaryView.drawTakeoffs for what each number actually is and why the old spelling of it
+// ("39/56", "4.3 to foil", "+19 bpm") could not be read off a sheet.
+const TAKEOFF_WORD = "takeoffs";
+// Spaces INSIDE the word, not around it: the counts either side are drawn in a number font
+// and the word at FONT_XTINY, so the two are not on one baseline run and the gaps have to be
+// part of the small string. The same trick the streak row's " / " uses.
+const TAKEOFF_OF = " of ";
+const TAKEOFF_PUMPS = " pumps each";
+// "last", because it is ONE takeoff's cost and not the session's average — the number the
+// page printed as a bare "+19 bpm" beside an average, which reads as another average.
+const TAKEOFF_COST = "last +";
+const TAKEOFF_BPM = " bpm";
+const TAKEOFF_SEP = " · ";
+
 // Where the direct transfer's status line lands on the verdict page (0.9.16, dev stream).
 // See SummaryView.phoneLineSlot for what picks between them.
 const PHONE_LINE_NONE = 0;
@@ -140,7 +159,7 @@ class SummaryView extends WatchUi.View {
         if (page == SummaryNav.S_VERDICT) {
             drawVerdict(dc, c);
         } else if (page == SummaryNav.S_SPEED) {
-            drawSpeed(dc, c);
+            drawRecords(dc, c);
         } else if (page == SummaryNav.S_FOIL) {
             drawFoil(dc, c);
         } else if (page == SummaryNav.S_TURNS) {
@@ -316,14 +335,21 @@ class SummaryView extends WatchUi.View {
         return savedY(dc);
     }
 
-    // ---- S2 Speed ----
-    hidden function drawSpeed(dc as Dc, c as SessionController) as Void {
-        var r = c.engine.records;
-        drawHero(dc, AppSettings.speedToDisplay(r.best2sMps).format("%.1f"),
-            "best 2s " + AppSettings.speedLabel(),
-            "10s " + AppSettings.speedToDisplay(r.best10sMps).format("%.1f"),
-            (c.engine.distM / 1000.0).format("%.1f") + " km",
-            Ink.effortWindow(), false);
+    // ---- S2 Records ----
+    // The live RECORDS page, verbatim — the sixth page unified with its live twin (0.9.18,
+    // Jan's layout review: "make it identical to the live page").
+    //
+    // It was a bespoke hero until this round: the best 2 s as the giant, "10s 11.5" under it
+    // and the session odometer under that. Two of those three numbers are the live page's own
+    // two, drawn a different size in a different arrangement with a different word for each —
+    // which is exactly how two screens showing one session start disagreeing about it, and
+    // exactly the argument S3, S4, S5, S7 and S8 were already won on.
+    //
+    // The odometer is what the unification drops, and it is the one thing on this page that
+    // had no live twin. It is not lost: the live Map page prints it under the trail and so
+    // does S8. See docs/presentation.md, "The after-save pages and the live ones".
+    hidden function drawRecords(dc as Dc, c as SessionController) as Void {
+        _painter.drawRecordsBody(dc, c);
     }
 
     // ---- S3 Foil ----
@@ -347,14 +373,21 @@ class SummaryView extends WatchUi.View {
     }
 
     // ---- S4 Turns ----
-    // The live Turns page, VERBATIM, with one flag flipped: the streak row shows the session's
-    // bests alone rather than "the run he is on", because the run he is on ended when he
-    // pressed save. Everything else — the tally as the giant in the ladder's colours, the
-    // outcome strip, the verdict with its port/starboard split — is the same question after
-    // the session as during it, and asking it twice in two pieces of code is how two screens
-    // start disagreeing about one session (the same reason S6 reuses the timeline).
+    // The live Turns page, VERBATIM — and since 0.9.18 with no flag at all.
+    //
+    // It had one: `live = false` showed the two streaks as their session BESTS alone, on the
+    // argument that "the run he is on" stopped meaning anything when he pressed save. Jan's
+    // layout review of 21 September 2026 asked for the after-save pages to be identical to the
+    // live ones "wherever possible", and this was the last place a flag made two screens of
+    // one session differ. The run he ended on IS a fact about the session — "I finished on a
+    // run of seven" is the sentence a rider says in the car park — and showing "7/12" ashore
+    // is the same reading of the same two numbers he had on the water one button press earlier.
+    //
+    // `drawTurnsBody` keeps its parameter: the streak row's two forms are a real distinction
+    // and a renderer that can only draw one of them is a renderer that has to be edited to get
+    // the other back. Nothing calls it with `false` today.
     hidden function drawTurns(dc as Dc, c as SessionController) as Void {
-        _painter.drawTurnsBody(dc, c, false);
+        _painter.drawTurnsBody(dc, c, true);
     }
 
     // ---- S5 Tacks & jibes ----
@@ -370,14 +403,129 @@ class SummaryView extends WatchUi.View {
     // ---- S6 Takeoffs ----
     // Only reached when the accelerometer produced something, so the numbers here are always
     // measured ones. "--" where a value genuinely was not measured, never a flattering 0.
+    //
+    // 0.9.18 rewrote every line of it. Jan read the shipped page off a sheet — "39/56",
+    // "4.3 to foil", "+19 bpm" — and could not say what any of the three were, which is the
+    // review checklist's pattern for a number that has been abbreviated past its meaning.
+    // What they actually are:
+    //
+    //   39 of 56      takeoffs out of ATTEMPTS: he pumped 56 times and got up 39 of them
+    //                 (PumpDetector.successes / attempts()). The slash said "per" as often as
+    //                 it said "of"; the word does not.
+    //   4.3 pumps     the average strokes it took, over every takeoff including the free ones
+    //                 (`avgPumpsX10`, FIT session field 37). "to foil" named the destination
+    //                 and not the number.
+    //   last +19 bpm  what the LAST takeoff cost his heart — the rise from the effort's start
+    //                 to its peak (HrCostTracker). It is one takeoff, not an average, and the
+    //                 page said so nowhere: "+19 bpm" beside an average reads as an average.
+    //                 Three words was the budget and "last +19 bpm" is three.
+    //
+    // The giant is the fraction, because it is the one the rider came for; the word above it
+    // says what it counts and the detail line under it carries the other two. The detail line
+    // sheds the HR half first where a chord cannot hold both — it is the narrowest question on
+    // the page and the only one that is about one maneuver rather than the session.
+    // It is NOT `drawHero`. Two reasons, and the first is a bug the file already warns about:
+    // "39 of 56" carries LETTERS and drawHero fits its giant through the NUMBER ladder, whose
+    // fonts have no letters — the page would have drawn two empty boxes between the digits
+    // (RecordingView.fitGiant's header, the fenix 5 Plus PAUSED bug). So the fraction is drawn
+    // as three pieces: the two counts in the number ladder and the word "of" between them at
+    // FONT_XTINY, which is the house idiom for exactly this (the streak row, the P/S row, the
+    // map's odometer) and is also Jan's rule of this round — numbers larger, words smaller.
+    //
+    // The second is the round glass: the fraction is the page's widest line, so it belongs on
+    // the equator with the narrow lines above and below it. drawHero puts its giant at the TOP
+    // of a four-row stack, which is right for a page whose giant is one short number and wrong
+    // for one whose widest line is a three-part group.
     hidden function drawTakeoffs(dc as Dc, c as SessionController) as Void {
         var p = c.engine.pump;
+        var cx = dc.getWidth() / 2;
+        var cy = dc.getHeight() / 2;
+        var radius = RecordingView.fitRadius(dc, false, false);
+        var hT = dc.getFontHeight(Graphics.FONT_XTINY);
+        var hV = RecordingView.inkH(dc, Graphics.FONT_NUMBER_MEDIUM);
+        var hD = dc.getFontHeight(Graphics.FONT_SMALL);
+        var got = p.successes.toString();
+        var tried = p.attempts().toString();
+
+        // row 0 — what the fraction counts
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, takeoffRowY(cy, hT, hV, hD, 0), Graphics.FONT_XTINY, TAKEOFF_WORD, CV);
+
+        // row 1 — "39 of 56", on the equator
+        var y = takeoffRowY(cy, hT, hV, hD, 1);
+        var f = takeoffFont(dc, got, tried, RecordingView.rowBudget(radius, y - cy, hV));
+        var LV = Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER;
+        var x = cx - takeoffWidth(dc, got, tried, f) / 2;
+        dc.setColor(Ink.effortPumping(), Graphics.COLOR_TRANSPARENT);
+        dc.drawText(x, y, f, got, LV);
+        x += dc.getTextWidthInPixels(got, f);
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(x, y, Graphics.FONT_XTINY, TAKEOFF_OF, LV);
+        x += dc.getTextWidthInPixels(TAKEOFF_OF, Graphics.FONT_XTINY);
+        dc.setColor(Ink.effortPumping(), Graphics.COLOR_TRANSPARENT);
+        dc.drawText(x, y, f, tried, LV);
+
+        // row 2 — the two smaller facts, the HR half shed first when the chord is narrow
+        var detail = takeoffDetail(c, true);
+        y = takeoffRowY(cy, hT, hV, hD, 2);
+        var budget = RecordingView.rowBudget(radius, y - cy,
+            RecordingView.inkH(dc, Graphics.FONT_SMALL));
+        if (dc.getTextWidthInPixels(detail, Graphics.FONT_SMALL) > budget) {
+            detail = takeoffDetail(c, false);
+        }
+        if (!detail.equals("")) {
+            drawRow(dc, cx, cy, radius, y, TALLY_FLOOR, detail, Graphics.COLOR_WHITE);
+        }
+    }
+
+    // "4.3 pumps each · last +19 bpm", or the first half alone when `hr` is off, or "" when
+    // neither was measured. Every "--" the old page printed is simply absent here: a takeoff
+    // that was never priced is not a fact about the session, and a row that is not there says
+    // that better than a row of dashes does.
+    static function takeoffDetail(c as SessionController, hr as Boolean) as String {
+        var avg = c.engine.pump.avgPumpsX10();
         var cost = c.engine.hrCost.lastCostBpm;
-        var avg = p.avgPumpsX10();
-        drawHero(dc, p.successes.toString() + "/" + p.attempts().toString(), "takeoffs",
-            (avg > 0 ? (avg / 10.0).format("%.1f") : "--") + " to foil",
-            cost < 0 ? "-- bpm" : "+" + cost.toString() + " bpm",
-            Ink.effortPumping(), false);
+        var s = avg > 0 ? (avg / 10.0).format("%.1f") + TAKEOFF_PUMPS : "";
+        if (!hr || cost < 0) {
+            return s;
+        }
+        var bpm = TAKEOFF_COST + cost.toString() + TAKEOFF_BPM;
+        return s.equals("") ? bpm : s + TAKEOFF_SEP + bpm;
+    }
+
+    // Row centres: 0 the word, 1 the fraction, 2 the detail. Centred on the block, which puts
+    // the fraction on the equator because the rows either side of it are both one text line.
+    // Shared with the layout test.
+    static function takeoffRowY(cy as Number, hT as Number, hV as Number, hD as Number,
+            row as Number) as Number {
+        var y = cy - (hT + hV + hD) / 2;
+        if (row == 0) { return y + hT / 2; }
+        if (row == 1) { return y + hT + hV / 2; }
+        return y + hT + hV + hD / 2;
+    }
+
+    // Width of the fraction group: two counts in `f` around the word at FONT_XTINY.
+    static function takeoffWidth(dc as Dc, got as String, tried as String,
+            f as Graphics.FontType) as Number {
+        return dc.getTextWidthInPixels(got, f) + dc.getTextWidthInPixels(tried, f)
+            + dc.getTextWidthInPixels(TAKEOFF_OF, Graphics.FONT_XTINY);
+    }
+
+    // NUMBER_MEDIUM down through the number ladder, then the text fonts to the FONT_SMALL
+    // floor — the same ladder and the same floor a ladder row walks on the Turns page.
+    static function takeoffFont(dc as Dc, got as String, tried as String,
+            budget as Number) as Graphics.FontType {
+        for (var i = 2; i < NUMBER_FONTS.size(); i++) {
+            if (takeoffWidth(dc, got, tried, NUMBER_FONTS[i]) <= budget) {
+                return NUMBER_FONTS[i];
+            }
+        }
+        for (var i = 0; i < TALLY_FLOOR; i++) {
+            if (takeoffWidth(dc, got, tried, TEXT_FONTS[i]) <= budget) {
+                return TEXT_FONTS[i];
+            }
+        }
+        return TEXT_FONTS[TALLY_FLOOR];
     }
 
     // ---- S7 Story ----
