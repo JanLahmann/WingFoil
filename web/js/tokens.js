@@ -162,6 +162,10 @@ export const TOKENS = {
         "label": "Best 1 NM"
       },
       {
+        "id": "bestHour",
+        "label": "Best hour"
+      },
+      {
         "id": "alpha500",
         "label": "Alpha 500"
       }

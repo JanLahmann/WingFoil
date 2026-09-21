@@ -2642,8 +2642,62 @@ import Testing
             #expect(RecordKind(rawValue: kind.rawValue) != nil)
         }
         #expect(RecordWindowSelection.catalogue.first == .best2s)
-        #expect(!RecordWindowSelection.catalogue.contains(.bestHour),
-                "an hour-long window would light the whole track")
+    }
+
+    /// **All nine, in the order the table prints them** (21 September 2026). `bestHour` was
+    /// the one record named in the table and offered by the picker nowhere, so its row was
+    /// the one row that answered no tap. It sits where the table already put it: after the
+    /// 1 NM, before the alpha.
+    @Test func theCatalogueIsAllNineRecordKindsInTheTableSOrder() {
+        #expect(RecordWindowSelection.catalogue == [
+            .best2s, .best10s, .best5x10s, .best100m, .best250m, .best500m, .bestNm,
+            .bestHour, .alpha500,
+        ])
+        #expect(RecordWindowSelection.catalogue.count == RecordKind.allCases.count,
+                "the picker offers every record the table names")
+        #expect(RecordWindowSelection.catalogue == RecordKind.allCases,
+                "and in the same order, so the two lists cannot drift apart")
+    }
+
+    /// A session that recorded an uninterrupted hour offers it like any other record: the
+    /// row is live, a tap selects it, the glow is the engine's own hour, and a second tap
+    /// goes back to the 2 s default.
+    ///
+    /// The corpus's one such afternoon (engine 0.23.0): 6.746 kn over an hour that starts
+    /// 3 280 s into a 7 135 s session, so the glow really does cover half the track. That
+    /// is what the record is, and it is why the row now answers a tap instead of sitting
+    /// there naming a number it would not show you.
+    @Test func anHourLongWindowIsOfferedAndSelectedLikeTheOtherEight() throws {
+        let url = testFixturesDir.appendingPathComponent(
+            "goldens/2026-08-03-1440_nago-torbole-windsurfen_native.expected.json")
+        let analysis = try JSONDecoder().decode(SessionAnalysis.self,
+                                                from: Data(contentsOf: url))
+        #expect(analysis.records.bestHourKn == 6.746)
+
+        let offered = PresentationRules.achievedRecordWindows(analysis)
+        #expect(offered.contains("bestHour"), "the hour is a record this session can show")
+        #expect(offered == RecordWindowSelection.catalogue.map(\.rawValue),
+                "this afternoon set all nine, and they are offered in catalogue order")
+
+        let available = Set(offered)
+        var selection = RecordWindowSelection.initial(available: available)
+        #expect(selection == "best2s", "every session still opens on the 2 s peak")
+
+        selection = RecordWindowSelection.tapped("bestHour", current: selection,
+                                                 available: available)
+        #expect(selection == "bestHour")
+        let key = try #require(selection)
+        let window = try #require(analysis.records.windows[key])
+        #expect(window.startTs == 3280 && window.durS == 3600,
+                "the glow is the engine's own hour, never one this layer recomputed")
+        #expect(window.startTs + window.durS <= analysis.summary.durationS,
+                "the hour is inside the session it was ridden in")
+        #expect(window.durS / analysis.summary.durationS > 0.5,
+                "and it covers half the track — the honest shape of an hour-long record")
+
+        selection = RecordWindowSelection.tapped("bestHour", current: selection,
+                                                 available: available)
+        #expect(selection == "best2s", "a second tap returns to the default")
     }
 
     // MARK: - The new map layers

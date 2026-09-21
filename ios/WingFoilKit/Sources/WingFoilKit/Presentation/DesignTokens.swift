@@ -158,6 +158,7 @@ public enum DesignTokens {
             DesignTokenEntry(id: "best250m", label: "Best 250 m"),
             DesignTokenEntry(id: "best500m", label: "Best 500 m"),
             DesignTokenEntry(id: "bestNm", label: "Best 1 NM"),
+            DesignTokenEntry(id: "bestHour", label: "Best hour"),
             DesignTokenEntry(id: "alpha500", label: "Alpha 500"),
         ]
         public static let order: [String] = catalogue.map(\.id)

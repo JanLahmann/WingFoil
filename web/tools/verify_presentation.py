@@ -154,18 +154,19 @@ def check_shape() -> None:
                       for key, _w, label, _u in library.RECORD_KINDS}
     check("  the analyzer names every picker record the way the contract does",
           {k: v for k, v in library_labels.items() if k in token_labels}, token_labels)
-    # `bestHour` is the ninth record and is deliberately not in the picker (an hour-long
-    # window lights the whole track), so the contract's catalogue does not carry it. It
-    # still needs a name, and the records table still prints one.
-    check("  and it names the ninth, which the picker leaves out",
-          library_labels.get("bestHour"), "Best hour")
+    # All nine since 21 September 2026: `bestHour` used to be named here and offered
+    # nowhere, which made its row the one row in the table that answered no tap.
+    check("  the picker is all nine record kinds", library_labels, token_labels)
+    check("  and every one of them has a window key to open",
+          [k for k, w, _l, _u in library.RECORD_KINDS if w is None], [])
 
     names = fixtures()
     check("  every analysis golden has a presentation golden", names,
           sorted(p.name[: -len(gen.SUFFIX)] for p in GOLDENS.glob(f"*{gen.SUFFIX}")))
 
+    with_an_hour = []
     for stem in names:
-        _, facts = load(stem)
+        doc, facts = load(stem)
         check(f"  {stem}: marker layers are legend chips",
               set(facts["markers"]) - layer_ids, set())
         check(f"  {stem}: record windows are catalogue entries",
@@ -178,10 +179,24 @@ def check_shape() -> None:
         check(f"  {stem}: the filter grid is complete",
               [(row["type"], row["side"]) for row in facts["filters"]],
               [(t, s) for t in gen.TYPE_FILTERS for s in gen.SIDE_FILTERS])
-        check(f"  {stem}: bestHour is not offered",
-              "bestHour" in facts["recordWindows"], False)
+        # The ninth kind is offered exactly when the engine found an uninterrupted hour to
+        # measure — the same rule the other eight obey, and nothing special about it.
+        records = doc.get("records", {})
+        hour = ((records.get("bestHourKn") or 0) > 0
+                and bool((records.get("windows") or {}).get("bestHour")))
+        check(f"  {stem}: bestHour is offered when the session has one",
+              "bestHour" in facts["recordWindows"], hour)
+        if hour:
+            with_an_hour.append(stem)
         check(f"  {stem}: there is no glided-out layer",
               "glideOut" in facts["markers"], False)
+
+    # Named, so the corpus's one hour is an expectation rather than a coincidence: engine
+    # 0.23.0 gave 2026-08-03 pm seven gap-free runs where it had 355, and an hour fits in
+    # one of them (docs/testing.md, "best hour"). Its window is 3 600 s of a 7 135 s
+    # afternoon — most of the track, which is what the record is.
+    check("  exactly one fixture has a best hour, and it offers it", with_an_hour,
+          ["2026-08-03-1440_nago-torbole-windsurfen_native"])
 
 
 # --------------------------------------------------------- 2. the rules, again

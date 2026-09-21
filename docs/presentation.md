@@ -1386,11 +1386,22 @@ worth, not at the size the ornament was.
 
 ## Record windows
 
-Eight kinds, in canonical order: `best2s, best10s, best5x10s, best100m, best250m, best500m,
-bestNm, alpha500`. **The ninth GP3S record, `bestHour`, is deliberately not among them** —
-a one-hour window lights the whole track, so highlighting it says nothing — which is why
-the picker has eight and the all-time speed table below has nine
-(`RecordWindowSelection.catalogue`; `library.RECORD_KINDS` gives it `window_key = None`).
+Nine kinds, in canonical order: `best2s, best10s, best5x10s, best100m, best250m, best500m,
+bestNm, bestHour, alpha500` — the nine the all-time speed table below shows, in the order
+it shows them (`RecordWindowSelection.catalogue`; `library.RECORD_KINDS` gives every one of
+them a `window_key`).
+
+**`bestHour` joined the other eight on 21 September 2026.** It had been inert for as long as
+the picker existed, on the argument that an hour-long window lights the whole track and so
+says nothing. Say what it does light, then: on the corpus's first best hour
+(`2026-08-03-1440`, 6.746 kn, engine 0.23.0) the glow is 3 600 s of a 7 135 s afternoon —
+half the track. On a session barely longer than an hour it is nearly all of it. That is the
+truth of the record rather than a reason to hide it: the best hour of a two-hour ride *is*
+most of that ride, and the rider is better served by seeing which half than by a row that
+names a number and then refuses to say where it happened. It was also the one row in the
+table that answered no tap, and a table where the ninth row is dead teaches that the other
+eight might be too.
+
 Default highlighted window: `best2s`. The picker: tapping a record
 highlights *that* window on map and chart; tapping the selected one returns to the default;
 selection is transient (never persisted); a record with no achieved window is inert and

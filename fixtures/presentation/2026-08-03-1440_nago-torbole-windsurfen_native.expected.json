@@ -34,6 +34,7 @@
     "best250m",
     "best500m",
     "bestNm",
+    "bestHour",
     "alpha500"
   ],
   "defaultRecordWindow": "best2s",

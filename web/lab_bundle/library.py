@@ -109,10 +109,13 @@ DEDUPE_DURATION_S = 60.0
 
 # The GP3S record kinds, in the order the records table shows them. The second element is
 # the key under `golden.records.windows` that says *where* in the session the record was
-# set, so the UI can open the session with that window highlighted. `bestHour` is given
-# None on purpose: the golden does carry a `bestHour` window, but an hour-long one lights
-# the whole track and so says nothing (docs/presentation.md, "Record windows"). Which is
-# why the picker has eight kinds and the all-time table below has nine.
+# set, so the UI can open the session with that window highlighted.
+#
+# `bestHour` carried None here until 21 September 2026, so its row was the one row in the
+# table that opened nothing. The reasoning was that an hour-long window lights most of the
+# track; the answer is that this is what the record looks like, and a row that cannot be
+# opened teaches a rider that the table is only partly alive (docs/presentation.md,
+# "Record windows"). Nine kinds now, nine windows, one behaviour.
 RECORD_KINDS = [
     ("best2sKn", "best2s", "Best 2 s", "kn"),
     ("best10sKn", "best10s", "Best 10 s", "kn"),
@@ -121,7 +124,7 @@ RECORD_KINDS = [
     ("best250mKn", "best250m", "Best 250 m", "kn"),
     ("best500mKn", "best500m", "Best 500 m", "kn"),
     ("bestNmKn", "bestNm", "Best 1 NM", "kn"),
-    ("bestHourKn", None, "Best hour", "kn"),
+    ("bestHourKn", "bestHour", "Best hour", "kn"),
     ("alpha500Kn", "alpha500", "Alpha 500", "kn"),
 ]
 
