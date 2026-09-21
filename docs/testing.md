@@ -1353,7 +1353,7 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    on a fenix 5X Plus found it, 17 Sep 2026). `RecordingView.inkH` is the firmware's ascent
    for a number font now, floored at the old 3/4; but the rule that a layout is verified
    only by looking at it stands. `garmin/screenshots/` is the harness: `ShotsApp.mc`
-   (throwaway, never committed) cycles the 20 screens on a real session every 3 s, and
+   (throwaway, never committed) cycles the 24 screens on a real session every 3 s, and
    `screenshots/tools/capture.sh <device> <outdir>` starts a fresh simulator, runs it,
    photographs the device window once a second by its window id and tiles the distinct
    frames into `<outdir>.png`. Compile the harness for the device first
@@ -1381,8 +1381,9 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    the phone line under it and the verdict's digits. No overlap on any of the 29; the one gap
    found is the harness's own (its story page feeds no speed samples, so the top-speed
    sparkline is empty on every family), not the app's. Only then went 0.9.16 to the listings.
-   The harness cycles 20 screens now (start, the 7 standard pages, the 5 large-text pages, the
-   7 summary pages), so `capture.sh` photographs 84 frames over a longer awake window.
+   The harness cycles 24 screens since 0.9.17 (start, the 8 standard pages, the 7 large-text
+   pages, the 8 summary pages — the Tacks & jibes page is in all three counts), so
+   `capture.sh` photographs 100 frames over a longer awake window.
 
    The layout suite reads its canvas from `System.getDeviceSettings().screenWidth`, so the same
    assertions are genuinely different measurements per device, and every finding that has ever

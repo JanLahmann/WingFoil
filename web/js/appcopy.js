@@ -290,6 +290,18 @@ export const WELCOME = {
 /** What's new, release and beta only — the filter /whats-new/ uses. */
 export const WHATS_NEW = [
   {
+    "version": "0.9.17",
+    "build": null,
+    "channel": "release",
+    "date": "2026-09-21",
+    "title": "Tacks and jibes, counted apart",
+    "lines": [
+      "A Tacks and jibes page after Turns. Each count, with how many of them flew through.",
+      "It is in the large-text set too, one screen each.",
+      "The page names the wind axis it counts against."
+    ]
+  },
+  {
     "version": "1.0.1",
     "build": 95,
     "channel": "beta",

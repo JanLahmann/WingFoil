@@ -2974,6 +2974,56 @@ exactly as they gate the buzz. The visual half is never debounced — a new even
 one on screen, which is what one screen means — and save or discard clears the strip with
 the session. `EventFlash.mc` is the module, `AlertManager` fires it beside each buzz.
 
+## The watch's Tacks & jibes page
+
+Jan, 21 September 2026, from a tester practising tacks. The Turns page says how the maneuvers
+went — flew through, touched down, fell in, the streaks, the dots. Nothing on the watch said
+**which maneuvers they were**, although the watch has counted tacks and jibes apart since the
+first wind axis. Since 0.9.17 the standard set has an eighth page, straight after Turns, and
+the large set has two more screens.
+
+The page is two halves, jibes on top and tacks below. Each half is that kind's count as a
+giant, the word under it, and beside the word how many of that kind he **flew through**, in
+the outcome ladder's own green:
+
+```
+        wind ~NNE
+           52
+      jibes  flew 38
+           41
+      tacks  flew 29
+```
+
+Four decisions in that shape:
+
+- **stacked, not side by side.** The pair band is the other available shape and was measured
+  and rejected: two halves of one chord leave each count about 95 px on a 240 px glass, which
+  steps both giants off the number ladder on exactly the watches the app was widened for. A
+  count that is not a giant is the Turns page's tally row, which is one screen back. Stacked,
+  each giant gets the whole chord at its own depth and the two halves straddle the equator.
+- **the fly-throughs are the ladder's green**, because they *are* the ladder's green count
+  asked of one kind: same numerator rule, narrower question. The count itself is white — a
+  tally of maneuvers is not a verdict on them.
+- **the header names the axis.** The split exists only where a wind axis does; without one
+  every turn is a generic turn and both counts are 0. The page says *wind NNE*, marks an axis
+  the watch estimated with a leading `~` exactly as the Turns header does, and says *wind not
+  set* when there is none. Otherwise the page reads as broken on the session where it is
+  merely uninformed.
+- **aborted turns are on neither half.** A sweep the classifier rejects is a course change,
+  not a maneuver, and the watch has no twin of the engine's aborted-turn count at all.
+
+The row sheds *content* before size, like every other row on the Turns page: the word names
+the half and stays, the *flew N* half is what a narrow chord gives up. And *flew 0* is never
+drawn at all — the same never-a-flattering-zero rule the clean-jibe row keeps.
+
+The counts come from `TurnDetector.tackCount` / `jibeCount`, which already ride the FIT
+session; the fly-throughs are two new counters (`tackFlewCount`, `jibeFlewCount`) incremented
+where the outcome resolves, because the kind is fixed when the sweep closes and the outcome
+when the window resolves and `_resolve()` is the only place that knows both. They are **not**
+backfilled by the auto-wind lock, exactly as `cleanJibeCount` is not: a pre-lock jibe becomes
+a jibe but not a jibe he flew through. No new FIT field — the split the phone needs is the
+tack and jibe counts, which have been in the file since 0.9.0.
+
 ## The watch's two page sets — standard, and large text
 
 "I need my glasses" (Jan and a tester, 20 September 2026). The standard set packs four to six
@@ -2983,15 +3033,17 @@ picks between them** — *Data screens: Standard / Large text* (`pageSet`). One 
 property per page, and it is in **every stream**, which matters because the per-page editor
 below is not (see docs/channels.md).
 
-The large set is **five screens, one number each**:
+The large set is **seven screens, one number each** (five until 0.9.17):
 
 | # | the number | the word under it | also on the page |
 |---|---|---|---|
 | 1 | live speed | `speed km/h` (or `kn`) | — |
 | 2 | foil share | `on foil` | the foil-% bezel arc, earned the ordinary way |
 | 3 | turns | `turns` | the outcome ladder as three coloured counts |
-| 4 | time of day | `time` | — |
-| 5 | best 2 s | `best 2s km/h` | — |
+| 4 | jibes | `jibes` | `flew 38`, in the ladder's green |
+| 5 | tacks | `tacks` | `flew 29`, in the ladder's green |
+| 6 | time of day | `time` | — |
+| 7 | best 2 s | `best 2s km/h` | — |
 
 Three rules make it bigger rather than merely emptier:
 
@@ -3010,9 +3062,11 @@ Three rules make it bigger rather than merely emptier:
   keeps its arc, because the arc *is* the number the page already shows.
 
 There is deliberately no map, no timeline and no table in the large set: a page you have to
-read is not a page this set is for. And there is no editor for it — the five pages are a
+read is not a page this set is for. And there is no editor for it — the seven pages are a
 fixed table (`PageModel.buildLarge`) that reads no property at all, which is exactly what
-lets it be the one page control every stream has.
+lets it be the one page control every stream has. The two kind screens carry one line under
+their word for the same reason the turns screen carries its tally: a count of jibes without a
+verdict on them says nothing on its own.
 
 **The text-size headroom of the standard pages was reviewed in the same round** and the answer
 was to take no rung there (`standardPagesTextHeadroom` logs the measurement per glass). Every
@@ -3027,8 +3081,8 @@ where the page spends no rows on anything else and can afford it.
 ## The after-save pages and the live ones
 
 A saved page and a live page showing the same number must be the same piece of code, or the
-two start disagreeing about one session. The post-save review has seven pages; this is where
-each of them stands after 0.9.16.
+two start disagreeing about one session. The post-save review has eight pages since 0.9.17;
+this is where each of them stands.
 
 | after-save page | verdict | why |
 |---|---|---|
@@ -3036,37 +3090,39 @@ each of them stands after 0.9.16.
 | S2 **Speed** (best 2 s giant, 10 s and km under it) | **genuinely post-save** | the live Records page is the same two numbers, but the saved page also carries the session odometer, which has no other home once the Track page is conditional. A unification that drops a number is not a unification |
 | S3 **Foil** | **unified, 0.9.16** | was a bespoke "Flights" hero (longest flight, its distance, the count). Every one of those numbers is on the live foil table already — `max` is that flight's two numbers under the two columns that name them — and the table says four more besides. The **flight count came back to the table's title row** (`foil · 31`) so the unification drops nothing; it is dropped rather than shrunk when the row cannot hold the pair, XTINY being already the bottom of the ladder |
 | S4 **Turns** | **unified** (since 0.9.2) | `drawTurnsBody(dc, c, live=false)` — one flag, and it only changes the streak row, because "the run he is on" stopped meaning anything when he pressed save |
-| S5 **Takeoffs** | **genuinely post-save** | no live twin exists; the watch has no takeoffs page on the water |
-| S6 **Story** | **unified** (since 0.8.1) | the timeline, verbatim. `history` is complete and untouched by the save, and a coffee-in-hand read of the session arc is what it was always for |
-| S7 **Track** | **unified** (since 0.9.2) | `TrackDraw`, the same renderer as the live map page, minus the position marker — the rider is ashore |
+| S5 **Tacks & jibes** | **unified, born unified** (0.9.17) | `drawKindsBody`, with no flag at all: two counts and how many of each he flew through are the same four numbers before and after the save. Shown only when the session has a tack or a jibe to name — without a wind axis both counts are 0, and a page that would say 0 is not a page |
+| S6 **Takeoffs** | **genuinely post-save** | no live twin exists; the watch has no takeoffs page on the water |
+| S7 **Story** | **unified** (since 0.8.1) | the timeline, verbatim. `history` is complete and untouched by the save, and a coffee-in-hand read of the session arc is what it was always for |
+| S8 **Track** | **unified** (since 0.9.2) | `TrackDraw`, the same renderer as the live map page, minus the position marker — the rider is ashore |
 
 What is **not** unified, and deliberately: the SAVED pill does not ride the reused pages. S4,
-S6 and S7 look exactly like their live twins, and adding the eyebrow to them would mean
-finding a free top arc on three pages whose top rows are already a header, a caption and a
-map — which is the 0.9.13 overprint waiting to happen on three pages instead of one. The
+S5, S7 and S8 look exactly like their live twins, and adding the eyebrow to them would mean
+finding a free top arc on four pages whose top rows are already a header, a header, a caption
+and a map — which is the 0.9.13 overprint waiting to happen on four pages instead of one. The
 page-position dots along the bottom are what says "this is the review, not the water", and
-they are on every one of the seven.
+they are on every one of the eight.
 
 ## The watch's per-page editor — and the switch that puts the pages back
 
-**Dev stream only since 0.9.16** (docs/channels.md, "The watch"). The seven data screens are
-configured in Garmin Connect (layout and five metric slots per page, `pg1Layout` … `pg7s5`),
+**Dev stream only since 0.9.16** (docs/channels.md, "The watch"). The eight data screens are
+configured in Garmin Connect (layout and five metric slots per page, `pg1Layout` … `pg8s5`),
 and a stored property beats `properties.xml` on an installed watch: the defaults are written once at install, and an update never touches them. So a
 rider who rearranged his pages and wants the shipped set back had two ways, both poor —
 setting every row by hand, or reinstalling. Since 0.9.11 there is a third: **Reset pages to
 defaults**, a switch in the app's settings that behaves like a button. Turned on and saved,
 the watch consumes it in the settings callback (`AppSettings.consumeResetPages`), writes the
-seven defaults back into its property store (`PageModel.restoreDefaults`, from the same
+eight defaults back into its property store (`PageModel.restoreDefaults`, from the same
 `DEF_LAYOUT` / `DEF_SLOTS` table `build()` falls back on), rebuilds the pages and turns the
 switch off again, so the next sync shows it off. Every page key is written, off pages
-included: the rider gets exactly the fresh-install set — Main, Foil, Records, Turns, Clock,
-Timeline, Map — and never a mixture.
+included: the rider gets exactly the fresh-install set — Main, Foil, Records, Turns, Tacks &
+jibes, Clock, Timeline, Map — and never a mixture. A dev watch that already carried the seven
+older pages keeps them and picks up the new eighth key, so its map page arrives twice until
+it takes the switch; a fresh install gets the shipped order straight away.
 
 All of that is the dev build's. A release or beta watch has neither the Garmin Connect rows,
 nor the strings behind them, nor the code that reads them: `PageModel._store` is a `(:notdev)`
 twin that answers with the default table, and `AppSettings.consumeResetPages` a `(:notdev)`
-false. Those builds therefore show exactly the seven pages they already showed every rider who
-never opened the list — and their page control is the **page set** enum above, which is the
+false. Those builds therefore show exactly the eight pages the table holds — and their page control is the **page set** enum above, which is the
 setting a rider asking for bigger text was actually looking for. Moving the editor up to beta
 is one jungle line and one resource move; docs/channels.md names it as the candidate it is.
 
