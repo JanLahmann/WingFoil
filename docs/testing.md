@@ -1134,9 +1134,11 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    styles are where the track's halo and its flipped inks are worth looking at. It reaches all
    four map surfaces at once, so one launch photographs the inline map, `UI_FULLSCREEN_MAP=1`
    the big one and `UI_SCROLL_TO=turnsMap` the Turns tab's. Same rules as the layer override:
-   applied after the stored preference, never written back. `UI_RECORD=<window key>` (`best10s`, `best250m`, `bestNm`, …) preselects a
+   applied after the stored preference, never written back. `UI_RECORD=<window key>` (`best10s`, `best250m`, `bestNm`, `bestHour`, …) preselects a
    non-default GP3S window so the map glow and the chart shading can be photographed on
-   something other than the best 2 s. `UI_OPEN_TURNS=1` selects the **Turns** section (it
+   something other than the best 2 s. All nine kinds since 21 September 2026 — `bestHour`
+   is the one whose glow covers half the track, and `2026-08-03-1440` is the fixture that
+   has one. `UI_OPEN_TURNS=1` selects the **Turns** section (it
    pushed a page until the drill-in was folded inline, app-ui-review.md §2.1) and
    `UI_TURN_FILTER=<jibes|tacks|both>,<port|starboard|both>` engages its two segmented
    filters (e.g. `jibes,starboard`), which `simctl` likewise cannot tap.

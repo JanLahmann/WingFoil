@@ -1,7 +1,9 @@
 {
   "pending": {
     "note": "Lines for the next build, which has no number yet. Every generator reads `entries` only, so nothing here reaches a rider until it is moved into that build's entry — which is where it goes the moment the build is cut. One thought per line, register 1 of docs/voice.md, at most twenty words.",
-    "lines": []
+    "lines": [
+    "Best hour opens its window on the map and chart, like the other eight records."
+  ]
   },
   "entries": [
     {
