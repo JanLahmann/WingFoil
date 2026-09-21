@@ -193,6 +193,9 @@ class SessionController {
         } else if (ev == AutoPause.EV_RESUME) {
             _session.start();
             state = STATE_RECORDING;
+            // A pause is a hole in the pressure stream (MetricsEngine.restartBaseline): the
+            // ambient level on the other side of it is a new fact, not a dunk.
+            engine.restartBaseline();
         }
     }
 
@@ -341,6 +344,7 @@ class SessionController {
         } else if (state == STATE_PAUSED) {
             _session.start();
             state = STATE_RECORDING;
+            engine.restartBaseline();
         }
     }
 
