@@ -120,7 +120,8 @@ const SUM_TRACK_MARGIN = 34;
 // ---- S6 Takeoffs, in words (0.9.18) ----
 // Every string on that page, and each of them is a number's NAME rather than its unit. See
 // SummaryView.drawTakeoffs for what each number actually is and why the old spelling of it
-// ("39/56", "4.3 to foil", "+19 bpm") could not be read off a sheet.
+// ("39/56", "4.3 to foil", "+19 bpm") could not be read off a sheet, and why the two smaller
+// facts ended up on two rows rather than on one with a separator between them.
 const TAKEOFF_WORD = "takeoffs";
 // Spaces INSIDE the word, not around it: the counts either side are drawn in a number font
 // and the word at FONT_XTINY, so the two are not on one baseline run and the gaps have to be
@@ -131,7 +132,6 @@ const TAKEOFF_PUMPS = " pumps each";
 // page printed as a bare "+19 bpm" beside an average, which reads as another average.
 const TAKEOFF_COST = "last +";
 const TAKEOFF_BPM = " bpm";
-const TAKEOFF_SEP = " · ";
 
 // Where the direct transfer's status line lands on the verdict page (0.9.16, dev stream).
 // See SummaryView.phoneLineSlot for what picks between them.
@@ -465,43 +465,61 @@ class SummaryView extends WatchUi.View {
         dc.setColor(Ink.effortPumping(), Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, y, f, tried, LV);
 
-        // row 2 — the two smaller facts, the HR half shed first when the chord is narrow
-        var detail = takeoffDetail(c, true);
-        y = takeoffRowY(cy, hT, hV, hD, 2);
-        var budget = RecordingView.rowBudget(radius, y - cy,
-            RecordingView.inkH(dc, Graphics.FONT_SMALL));
-        if (dc.getTextWidthInPixels(detail, Graphics.FONT_SMALL) > budget) {
-            detail = takeoffDetail(c, false);
+        // rows 2 and 3 — the two smaller facts, ONE PER ROW. They started life on one row
+        // with a " · " between them, which is the shape Jan sketched, and the sheet said no:
+        // "4.3 pumps each · last +19 bpm" is 28 characters and measured 560 px against a
+        // 406 px chord on a 454 px glass, so the bpm half was being shed on every watch
+        // shipped — i.e. never drawn at all. Two narrow rows under the wide one is the same
+        // page with both numbers on it, and it is what the round-glass rule asks for anyway.
+        var pumps = takeoffPumps(c);
+        var hr = takeoffCost(c);
+        if (!pumps.equals("")) {
+            drawRow(dc, cx, cy, radius, takeoffRowY(cy, hT, hV, hD, 2), TALLY_FLOOR, pumps,
+                Graphics.COLOR_WHITE);
         }
-        if (!detail.equals("")) {
-            drawRow(dc, cx, cy, radius, y, TALLY_FLOOR, detail, Graphics.COLOR_WHITE);
+        if (!hr.equals("")) {
+            drawRow(dc, cx, cy, radius, takeoffRowY(cy, hT, hV, hD, 3), TALLY_FLOOR, hr,
+                Graphics.COLOR_WHITE);
         }
     }
 
-    // "4.3 pumps each · last +19 bpm", or the first half alone when `hr` is off, or "" when
-    // neither was measured. Every "--" the old page printed is simply absent here: a takeoff
-    // that was never priced is not a fact about the session, and a row that is not there says
-    // that better than a row of dashes does.
-    static function takeoffDetail(c as SessionController, hr as Boolean) as String {
+    // "4.3 pumps each" and "last +19 bpm", or "" where the number was never measured. Every
+    // "--" the old page printed is simply absent: a takeoff that was never priced is not a
+    // fact about the session, and a row that is not there says that better than a row of
+    // dashes does. Both are shared with the layout test.
+    static function takeoffPumps(c as SessionController) as String {
         var avg = c.engine.pump.avgPumpsX10();
-        var cost = c.engine.hrCost.lastCostBpm;
-        var s = avg > 0 ? (avg / 10.0).format("%.1f") + TAKEOFF_PUMPS : "";
-        if (!hr || cost < 0) {
-            return s;
-        }
-        var bpm = TAKEOFF_COST + cost.toString() + TAKEOFF_BPM;
-        return s.equals("") ? bpm : s + TAKEOFF_SEP + bpm;
+        return avg > 0 ? (avg / 10.0).format("%.1f") + TAKEOFF_PUMPS : "";
     }
 
-    // Row centres: 0 the word, 1 the fraction, 2 the detail. Centred on the block, which puts
-    // the fraction on the equator because the rows either side of it are both one text line.
+    static function takeoffCost(c as SessionController) as String {
+        var cost = c.engine.hrCost.lastCostBpm;
+        return cost < 0 ? "" : TAKEOFF_COST + cost.toString() + TAKEOFF_BPM;
+    }
+
+    // Row centres: 0 the word, 1 the fraction, 2 the pumps, 3 the HR cost — centred on the
+    // block and then LIFTED, the same trade the Turns page makes and for the same reason.
+    // One narrow row above the wide one and two below it is not a symmetric stack: on an
+    // fr255 the fraction lands 22 px above the equator against a 42 px band, i.e. its ink
+    // stops one pixel short of the centre line. The lift is exactly the distance that puts
+    // the band's own centre on cy, and it costs the bottom row nothing it was using.
     // Shared with the layout test.
     static function takeoffRowY(cy as Number, hT as Number, hV as Number, hD as Number,
             row as Number) as Number {
-        var y = cy - (hT + hV + hD) / 2;
+        var y = cy - (hT + hV + 2 * hD) / 2 + takeoffBias(hT, hD);
         if (row == 0) { return y + hT / 2; }
         if (row == 1) { return y + hT + hV / 2; }
-        return y + hT + hV + hD / 2;
+        if (row == 2) { return y + hT + hV + hD / 2; }
+        return y + hT + hV + hD + hD / 2;
+    }
+
+    // The lift: what the two rows below the fraction outweigh the one above it by. It does
+    // not depend on the fraction's own band, which is why it needs no cap — the rows either
+    // side of the wide one are text lines, and the block is a text line taller at the bottom
+    // than at the top by construction.
+    static function takeoffBias(hT as Number, hD as Number) as Number {
+        var want = hD - hT / 2;
+        return want < 0 ? 0 : want;
     }
 
     // Width of the fraction group: two counts in `f` around the word at FONT_XTINY.
@@ -569,28 +587,54 @@ class SummaryView extends WatchUi.View {
         if (!drawn) {
             return;
         }
+        // The SAME caption the live map page draws (0.9.18): the digits on the text ladder
+        // from FONT_LARGE with "km" small beside them, not a FONT_SMALL string with a space
+        // in it. This page and the live one are one trail drawn by one renderer, and a
+        // distance printed two different sizes on them is the unification leaking at its one
+        // remaining seam. A SPOT NAME, when the phone has sent one, still rides in front —
+        // it is the one thing the saved page knows that the live page does not.
+        var km = (e.distM / 1000.0).format("%.1f");
+        var name = slot != null ? MapSnapshot.name(slot) : "";
+        var y = trackCaptionY(dc);
+        var radius = RecordingView.fitRadius(dc, false, false);
+        var f = RecordingView.mapKmFont(dc, km,
+            RecordingView.rowBudget(radius, y - cy, RecordingView.inkH(dc, TEXT_FONTS[0])));
+        var w = RecordingView.mapKmWidth(dc, km, f);
+        var LV = Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER;
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        var caption = (e.distM / 1000.0).format("%.1f") + " km";
-        if (slot != null && !MapSnapshot.name(slot).equals("")) {
-            caption = MapSnapshot.name(slot) + " · " + caption;
+        if (!name.equals("")) {
+            var sep = name + " · ";
+            var wn = dc.getTextWidthInPixels(sep, Graphics.FONT_XTINY);
+            var x = cx - (w + wn) / 2;
+            dc.drawText(x, y, Graphics.FONT_XTINY, sep, LV);
+            RecordingView.drawKm(dc, x + wn, y, km, f);
+            return;
         }
-        dc.drawText(cx, trackCaptionY(dc), Graphics.FONT_SMALL, caption, CV);
+        RecordingView.drawKm(dc, cx - w / 2, y, km, f);
     }
 
-    // Ink centre of the distance caption: hung off the bottom of the track box. FONT_SMALL,
-    // not XTINY — it is a value, and values do not go below the readability floor. Shared with
-    // the layout test, which asserts it clears the page-position dots underneath it.
+    // Ink centre of the distance caption: hung off the bottom of the track box. Its band is
+    // FONT_LARGE's line since 0.9.18, the same as the live map's, so a long odometer moves
+    // nothing. Shared with the layout test, which asserts it clears the page-position dots.
     static function trackCaptionY(dc as Dc) as Number {
         return dc.getHeight() / 2 + trackBox(dc) / 2
-            + dc.getFontHeight(Graphics.FONT_SMALL) / 2;
+            + dc.getFontHeight(TEXT_FONTS[0]) / 2;
     }
 
     // Full side of the square the track is drawn in: the square inscribed in the glass, less
     // this screen's own margin (the page-position dots and the distance caption live in it).
     // The geometry itself is TrackDraw's, shared with the live map page. Shared with the
     // layout test.
+    //
+    // The margin grew by ONE LINE in 0.9.18 and it is measured rather than re-authored: the
+    // caption stepped up from FONT_SMALL to FONT_LARGE's band, so the square gives up exactly
+    // the difference between those two line heights on whatever glass this is — 18 px on a
+    // fenix 8, 8 on a fenix 7S. Without it the taller caption's ink reaches the page-position
+    // dots on the wide glasses, which is the one thing under this box that cannot move.
     static function trackBox(dc as Dc) as Number {
-        return TrackDraw.boxSide(dc.getWidth() / 2 - SUM_TRACK_MARGIN);
+        var m = SUM_TRACK_MARGIN + dc.getFontHeight(TEXT_FONTS[0])
+            - dc.getFontHeight(Graphics.FONT_SMALL);
+        return TrackDraw.boxSide(dc.getWidth() / 2 - m);
     }
 
     static function trackScale(box as Number, w as Float, h as Float) as Float {

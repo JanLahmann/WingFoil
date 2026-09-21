@@ -15,8 +15,13 @@ name, an empty state or a door invented anywhere else is a bug until it is named
 The web is the **port**: the same screens, the same names, the same empty states, minus the
 doors a browser has no hands for, plus the two a browser has and a phone does not (drop a
 file, run without installing). The watch keeps **its own shape**, eight pages under a
-thumb, no history, no browsing, but the same voice and the same vocabulary: a jibe the
-watch calls *flew* is the jibe the phone calls *flew through*. And the website's home page is
+thumb (or **five** with *Data screens: Large text*, the one page control every watch stream
+has), no history, no browsing, but the same voice and the same vocabulary: a jibe the
+watch calls *flew* is the jibe the phone calls *flew through*. Its whole surface is **22
+screens** since 0.9.18 — the start page, the 8 standard data pages, the 5 large-text pages and
+the 8 after-save pages — and six of the eight after-save pages are their live twins drawn by
+the same code (docs/presentation.md, "The after-save pages and the live ones"). And the
+website's home page is
 **one marketing front, not a shell**: it says what CleanJibe is, then sends the reader either
 into the web analyzer or to `/invite/`, which is the one page that holds the Connect IQ store
 link and the TestFlight link (and will hold the App Store one). No store URL lives anywhere
@@ -39,7 +44,7 @@ the same place (pattern M).
 | — | **Start over needs a relaunch** | the wipe finished, the file did not reopen | — | none, the rider relaunches | beta | missing | — |
 | Sessions | **Sessions** | the afternoons, newest first, each with its track, date and three numbers | first run: *What CleanJibe does · Try the example session*, then **How your sessions get in** (intervals.icu, Apple Watch in beta, Strava, Import a file). Configured: **No sessions yet** with *Import…* and *Sync intervals.icu*. Filtered: **No session matches these filters** with *Clear filters* | Menu · Filter (beta) · Import · a row · pull to sync | release | differs: the **Library** tab, second of three, lists what this browser saved. Empty: *Nothing saved yet. Analyze a file and press Save to library.* Its doors are *Download all (.zip)*, and per row *Open · .fit · .json · Delete* | none. No history, and the summary is gone when you leave it |
 | Sessions | **Session page** | one afternoon, under a sticky four-way switcher | *Could not open this session*; provisional: **From your watch** | the name (rename) · Share · flick or `‹ ›` for the neighbour · the four sub-tabs | release | differs: the **Analyze** tab's result is one scrolling document, with chips **Map · Speed · Turns · Takeoffs · Data** on a narrow screen only. No rename | **Summary**, 3 to 8 pages, UP/DOWN |
-| Sessions | · **Ride** | map, legend, speed chart, the shared scrubber, foil facts, the session's record table | *This recording has no GPS positions. Chart and records only.* | Open map full screen · Replay · a `?` per card | release | differs: two panels, **Track** and **Speed**, under one chip. No record table of its own. *Open map full screen* is there; the ground is a **Map / Plain** toggle on OpenStreetMap rather than the phone's four styles. No Replay | Summary **Verdict**, **Speed**, **Flights**, **Track** |
+| Sessions | · **Ride** | map, legend, speed chart, the shared scrubber, foil facts, the session's record table | *This recording has no GPS positions. Chart and records only.* | Open map full screen · Replay · a `?` per card | release | differs: two panels, **Track** and **Speed**, under one chip. No record table of its own. *Open map full screen* is there; the ground is a **Map / Plain** toggle on OpenStreetMap rather than the phone's four styles. No Replay | Summary **Verdict**, **Records**, **Foil**, **Track** — the last three are the live pages verbatim since 0.9.18 |
 | Sessions | · **Turns** | a card per turn, then the filtered tally, map and list | *No jibes* and its line | a card opens the turn page | release | differs: the **Turns** table, one row per turn, no cards | recording **Turns** page and **Tacks & jibes** page; Summary **Turns** and **Tacks & jibes** |
 | Sessions | · **Takeoffs** | takeoff and pumping tiles, the attempt map and list, what pumping cost | *No attempts* and its line | a row opens the attempt | release | same, as the **Takeoffs** panel, with the no-accelerometer line spelled out | Summary **Takeoffs** |
 | Sessions | · **Details** | gear, flight ends, wind, the recording, watch against phone | a missing block is absent, never zero | gear card · a flight end · *Analyse as* (dev) | release | differs: the **Log** chip carries the gear card, **The recording** and **Watch vs phone**. **Flight ends** still sits under the Turns chip, and there is no HR card | — |

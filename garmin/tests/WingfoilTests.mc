@@ -3436,12 +3436,15 @@ function summaryPagesFitRoundDisplay(logger as Test.Logger) as Boolean {
     // pixels on its longer axis, so `box` itself must sit inside the glass.
     var box = SummaryView.trackBox(dc);
     Test.assertMessage(box <= screenPx(), "track box wider than the glass");
-    // The distance caption is a VALUE and moved from FONT_XTINY to FONT_SMALL in 0.8.2 — the
-    // one place in the app where a number was drawn at a label's size. The taller line has to
-    // clear the page-position dots on the bottom arc, which is what the box gave up 34 px of
-    // margin to pay for. Assert both ends of that trade.
+    // The distance caption is a VALUE. It moved from FONT_XTINY to FONT_SMALL in 0.8.2 — the
+    // one place in the app where a number was drawn at a label's size — and in 0.9.18 it
+    // became the LIVE MAP PAGE'S caption verbatim, digits on the text ladder from FONT_LARGE
+    // with "km" small beside them. That is the last seam in a page that is otherwise the live
+    // map already; what it costs is one more line of margin off the square, measured from the
+    // two font heights rather than re-authored. The taller line has to clear the page dots on
+    // the bottom arc, so assert both ends of that trade.
     var capY = SummaryView.trackCaptionY(dc);
-    var capInk = RecordingView.inkH(dc, Graphics.FONT_SMALL);
+    var capInk = RecordingView.inkH(dc, TEXT_FONTS[0]);
     Test.assertMessage(capY - capInk / 2 >= cy + box / 2,
         "the track caption overlaps the track box");
     Test.assertMessage(capY + capInk / 2 < screenPx() - SummaryView.dotBand(dc)
@@ -3449,10 +3452,16 @@ function summaryPagesFitRoundDisplay(logger as Test.Logger) as Boolean {
         "the track caption (" + (capY + capInk / 2).toString() + ") reaches the page dots ("
             + (screenPx() - SummaryView.dotBand(dc) - SummaryView.dotRadius(dc)).toString()
             + ")");
-    var rCap = cornerRadius(dc.getTextWidthInPixels("99.9 km", Graphics.FONT_SMALL), capInk,
-        capY, cy);
-    Test.assertMessage(rCap <= RecordingView.fitRadius(dc, false, false).toFloat(),
+    // it is drawn by the live map's own renderer, at whatever rung that fitter lands on
+    var capR = RecordingView.fitRadius(dc, false, false);
+    var capF = RecordingView.mapKmFont(dc, "99.9",
+        RecordingView.rowBudget(capR, capY - cy, capInk));
+    var rCap = cornerRadius(RecordingView.mapKmWidth(dc, "99.9", capF),
+        RecordingView.inkH(dc, capF), capY, cy);
+    Test.assertMessage(rCap <= capR.toFloat(),
         "track caption corner " + rCap.format("%.0f") + " off the glass");
+    Test.assertMessage(dc.getFontHeight(capF) >= dc.getFontHeight(TEXT_FONTS[TALLY_FLOOR]),
+        "the track caption fell below the readability floor");
     Test.assertMessage(cornerRadius(box, box, cy, cy)
         <= RecordingView.fitRadius(dc, false, false).toFloat() + 1.0,
         "track box corners off the glass");
@@ -4021,14 +4030,18 @@ function mapPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     Test.assertMessage(rBox <= limit + 1.0,
         "map box corners r=" + rBox.format("%.0f") + " > " + limit);
 
-    // the distance caption hangs off the bottom of the box and is a VALUE, so FONT_SMALL is
-    // its floor — it may not overlap the track and it may not run off the glass
+    // the distance caption hangs off the bottom of the box. It is a VALUE and walks the text
+    // ladder from FONT_LARGE down to the FONT_SMALL floor since 0.9.18 (it was pinned AT the
+    // floor before), with "km" small beside it — so its BAND is FONT_LARGE's line whatever
+    // rung the digits land on. It may not overlap the track and may not run off the glass.
     var capY = RecordingView.mapCaptionY(dc, box);
-    var capInk = RecordingView.inkH(dc, Graphics.FONT_SMALL);
+    var capInk = RecordingView.inkH(dc, TEXT_FONTS[0]);
     Test.assertMessage(capY - capInk / 2 >= cy + box / 2 - 1,
         "the map caption overlaps the track box");
-    var rCap = cornerRadius(dc.getTextWidthInPixels("99.9 km", Graphics.FONT_SMALL), capInk,
-        capY, cy);
+    var capF = RecordingView.mapKmFont(dc, "999.9",
+        RecordingView.rowBudget(radius, capY - cy, capInk));
+    var rCap = cornerRadius(RecordingView.mapKmWidth(dc, "999.9", capF),
+        RecordingView.inkH(dc, capF), capY, cy);
     Test.assertMessage(rCap <= limit,
         "map caption corner " + rCap.format("%.0f") + " > " + limit);
 
@@ -4053,9 +4066,18 @@ function mapPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     Test.assertMessage((0.002 * wide).toNumber() < box / 4,
         "a 15:1 track was stretched to fill the box");
     Test.assertMessage(TrackDraw.scale(box, 0.0, 0.0) <= 1.0e8, "degenerate track");
-    // the summary's box is the same geometry with a different margin
+    // the summary's box is the same geometry with a different margin — one line of caption
+    // wider since 0.9.18, when that page took this page's caption verbatim
     Test.assertEqual(SummaryView.trackBox(dc),
-        TrackDraw.boxSide(screenPx() / 2 - SUM_TRACK_MARGIN));
+        TrackDraw.boxSide(screenPx() / 2 - SUM_TRACK_MARGIN
+            - dc.getFontHeight(TEXT_FONTS[0]) + dc.getFontHeight(Graphics.FONT_SMALL)));
+    // ...and the two boxes are within a caption line of each other. They are not required to
+    // be equal — the live page's margin is authored at 454 px and scaled, the saved page's is
+    // measured off the font — but two pages drawing one trail must not be two sizes of trail.
+    Test.assertMessage((SummaryView.trackBox(dc) - box).abs()
+        <= dc.getFontHeight(TEXT_FONTS[0]),
+        "the live and saved track boxes differ by more than a caption line: "
+            + box.toString() + " vs " + SummaryView.trackBox(dc).toString());
 
     logger.debug("map box " + box.toString() + "px, caption at y " + capY.toString()
         + ", marker r" + TrackDraw.markerRadius(dc).toString());
@@ -5752,30 +5774,39 @@ function takeoffPageSaysWhatItCounts(logger as Test.Logger) as Boolean {
         "the takeoffs fraction is not a giant on a real session");
 
     // ...and it is the WIDEST line on the page, which is why it is the one on the equator
-    var detail = "4.3" + TAKEOFF_PUMPS + TAKEOFF_SEP + TAKEOFF_COST + "19" + TAKEOFF_BPM;
     Test.assertMessage(
         SummaryView.takeoffWidth(dc, "39", "56", rf)
             > dc.getTextWidthInPixels(TAKEOFF_WORD, Graphics.FONT_XTINY),
         "the takeoffs word is wider than the number it names");
-    Test.assertMessage(y1 - RecordingView.inkH(dc, rf) / 2 <= cy
-            && y1 + RecordingView.inkH(dc, rf) / 2 >= cy,
-        "the takeoffs fraction does not straddle the equator");
+    // Measured against the row's BAND (`hV`) and not against whatever font the fitter landed
+    // on: the band is what the stack reserved and what the other rows were positioned
+    // against, so it is the row, and a session whose fraction happens to be two digits
+    // shorter has not moved the page.
+    Test.assertMessage(y1 - hV / 2 <= cy && y1 + hV / 2 >= cy,
+        "the takeoffs fraction does not straddle the equator: y=" + y1.toString()
+            + " band=" + hV.toString() + " cy=" + cy.toString());
 
-    // the detail row, at its worst case, with the HR half shed where it will not fit
+    // rows 2 and 3 — the two detail lines, ONE NUMBER EACH since 0.9.18. On one row with a
+    // separator, "4.3 pumps each · last +19 bpm" measured 560 px against a 406 px chord on a
+    // 454 px glass, so the HR half was shed on every watch shipped. Both must fit their own
+    // row at their own worst case, on every glass, or the page is back to dropping a number.
+    var details = ["99.9" + TAKEOFF_PUMPS, TAKEOFF_COST + "199" + TAKEOFF_BPM]
+        as Array<String>;
     var y2 = SummaryView.takeoffRowY(cy, hT, hV, hD, 2);
-    var dBudget = RecordingView.rowBudget(pageR, y2 - cy,
-        RecordingView.inkH(dc, Graphics.FONT_SMALL));
-    var full = "99.9" + TAKEOFF_PUMPS + TAKEOFF_SEP + TAKEOFF_COST + "199" + TAKEOFF_BPM;
-    var half = "99.9" + TAKEOFF_PUMPS;
-    var used = dc.getTextWidthInPixels(full, Graphics.FONT_SMALL) <= dBudget ? full : half;
-    r = cornerRadius(dc.getTextWidthInPixels(used, Graphics.FONT_SMALL),
-        RecordingView.inkH(dc, Graphics.FONT_SMALL), y2, cy);
-    Test.assertMessage(r <= limit, "takeoffs detail corner " + r.format("%.0f"));
-    // the half that survives must always fit: it is the number the page is really about
-    Test.assertMessage(dc.getTextWidthInPixels(half, Graphics.FONT_SMALL) <= dBudget,
-        "not even the pumps half fits the takeoffs detail row: "
-            + dc.getTextWidthInPixels(half, Graphics.FONT_SMALL).toString()
-            + "px of " + dBudget.toString());
+    var y3 = SummaryView.takeoffRowY(cy, hT, hV, hD, 3);
+    var ys = [y2, y3] as Array<Number>;
+    for (var i = 0; i < 2; i++) {
+        var dBudget = RecordingView.rowBudget(pageR, ys[i] - cy,
+            RecordingView.inkH(dc, Graphics.FONT_SMALL));
+        Test.assertMessage(
+            dc.getTextWidthInPixels(details[i], Graphics.FONT_SMALL) <= dBudget,
+            "\"" + details[i] + "\" does not fit its row on a " + screenPx().toString()
+                + "px glass: " + dc.getTextWidthInPixels(details[i],
+                    Graphics.FONT_SMALL).toString() + "px of " + dBudget.toString());
+        r = cornerRadius(dc.getTextWidthInPixels(details[i], Graphics.FONT_SMALL),
+            RecordingView.inkH(dc, Graphics.FONT_SMALL), ys[i], cy);
+        Test.assertMessage(r <= limit, "takeoffs detail corner " + r.format("%.0f"));
+    }
 
     // every word on the page names its number rather than its unit, and "last" is there
     // because the bpm figure is ONE takeoff and not an average
@@ -5786,12 +5817,14 @@ function takeoffPageSaysWhatItCounts(logger as Test.Logger) as Boolean {
         "the pumps figure does not say it is an average: \"" + TAKEOFF_PUMPS + "\"");
     // the rows may not touch, and the block is on the glass
     Test.assertMessage(y1 - y0 >= (hT + hV) / 2, "takeoffs word/fraction gap");
-    Test.assertMessage(y2 - y1 >= (hV + hD) / 2, "takeoffs fraction/detail gap");
-    Test.assertMessage(y0 - hT / 2 >= 0 && y2 + hD / 2 <= screenPx(),
+    Test.assertMessage(y2 - y1 >= (hV + hD) / 2, "takeoffs fraction/pumps gap");
+    Test.assertMessage(y3 - y2 >= hD, "takeoffs pumps/bpm gap");
+    Test.assertMessage(y0 - hT / 2 >= 0 && y3 + hD / 2 <= screenPx(),
         "the takeoffs stack runs off the glass");
     logger.debug("takeoffs: fraction " + SummaryView.takeoffWidth(dc, "39", "56", rf).toString()
-        + "px at font height " + dc.getFontHeight(rf).toString() + ", detail \"" + used
-        + "\" of " + dBudget.toString() + "px");
+        + "px at font height " + dc.getFontHeight(rf).toString() + ", details "
+        + dc.getTextWidthInPixels(details[0], Graphics.FONT_SMALL).toString() + "/"
+        + dc.getTextWidthInPixels(details[1], Graphics.FONT_SMALL).toString() + "px");
     return true;
 }
 

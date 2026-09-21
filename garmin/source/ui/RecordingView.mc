@@ -2891,9 +2891,16 @@ class RecordingView extends WatchUi.View {
         var km = (e.distM / 1000.0).format("%.1f");
         var y = mapCaptionY(dc, box);
         var f = mapKmFont(dc, km, rowBudget(radius, y - cy, inkH(dc, TEXT_FONTS[0])));
-        var LV = Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER;
-        var x = cx - mapKmWidth(dc, km, f) / 2;
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        drawKm(dc, cx - mapKmWidth(dc, km, f) / 2, y, km, f);
+    }
+
+    // The odometer group, drawn from its LEFT edge: the digits in `f`, then "km" at
+    // FONT_XTINY. Public because the post-save Track page draws the identical group — one
+    // trail, one renderer, one distance, the same rule S2 to S8 keep.
+    static function drawKm(dc as Dc, x as Number, y as Number, km as String,
+            f as Graphics.FontType) as Void {
+        var LV = Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER;
         dc.drawText(x, y, f, km, LV);
         dc.drawText(x + dc.getTextWidthInPixels(km, f) + MAP_KM_GAP, y, Graphics.FONT_XTINY,
             MAP_KM, LV);

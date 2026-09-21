@@ -1,9 +1,14 @@
 #!/bin/zsh
 # One harness cycle on one simulator device, photographed frame by frame, deduplicated and
-# tiled into one sheet. The harness (source/ShotsApp.mc, not committed) cycles the 24 screens (start, 8 standard, 7 large, 8 summary)
-# every 3 s; this script starts a fresh simulator, runs the harness, captures the device
-# window by its window id (the window lands wherever macOS last had it, on any display),
-# and tiles the distinct frames six per row.
+# tiled into one sheet. The harness (the ShotsApp source, not committed) cycles the 22 screens
+# (start, 8 standard, 5 large, 8 summary) every 3 s — 66 s a cycle since 0.9.18, when the
+# large set went from seven screens to five; this script starts a fresh simulator, runs the
+# harness, captures the device window by its window id (the window lands wherever macOS last
+# had it, on any display), and tiles the distinct frames six per row.
+#
+# 95 frames at 0.8 s is 76 s of capture against a 66 s cycle: one whole pass with ten seconds
+# of margin for a simulator that came up slowly. The caffeinate window covers the two sleeps
+# before the loop as well as the loop itself.
 #
 #   garmin/screenshots/tools/capture.sh <device> <outdir>
 #
@@ -26,8 +31,8 @@ sleep 15
 rm -rf "$OUT"; mkdir -p "$OUT"
 # a dimmed display makes screencapture fail with "could not create image from window";
 # -u asserts user activity for the length of the cycle
-caffeinate -u -d -i -t 260 &
-for i in $(seq -w 1 100); do
+caffeinate -u -d -i -t 240 &
+for i in $(seq -w 1 95); do
   WID=$("$HERE/winfo" | head -1 | cut -d' ' -f1)
   [ -n "$WID" ] && { screencapture -x -o -l $WID "$OUT/cap-$i.png" || true; }
   sleep 0.8

@@ -2969,6 +2969,45 @@ maneuver inherited the index. The whole block is absent when nothing is tuned: w
 the two runs are the same run, and "nothing changed" on every session would be noise on the one
 page that is about maneuvers.
 
+## The watch's two layout rules — the equator, and the size ladder
+
+Jan read all twenty-four watch screens off a numbered sheet on **21 September 2026** and gave
+a note per page. Two rules came out of it, and every watch page is held to both.
+
+**1. On a round glass the widest line belongs on the vertical centre.** The chord is widest at
+the equator and collapses fast towards either arc, so the widest thing a page has to say goes
+there and the narrow things — labels, captions, legends, streaks — go above and below it. It
+is not a preference: on a 454 px glass the chord at the equator is 450 px and the chord two
+text rows down is 380, so a wide row pushed off centre is a row that has to shrink or shed
+content for no reason at all.
+
+What it changed, page by page: the Turns page's four-count ladder row is lifted onto the
+equator (`RecordingView.turnsBias`, capped at 20 % of the radius so the bottom row never pays
+for it); the Tacks & jibes page is two wide rows straddling the centre with a narrow word on
+the far side of each; the large set's giant straddles it, which it already did; the post-save
+Takeoffs page puts its fraction there. The layout suite asserts the claim rather than trusting
+it — `turnsPageFitsRoundDisplay` and `kindsPageFitsRoundDisplay` each check that the wide row's
+own ink spans `cy`.
+
+**2. Numbers larger, words smaller.** A label has to be found once; a number is read every
+glance. Where a row has a word and a number in it, the number takes the ladder's rung and the
+word takes FONT_XTINY beside it — which was already the house idiom (the streak row, the
+port/starboard row) and is now the rule. Where a word costs a number a rung, the word gets
+shorter, moves to a narrow row of its own, or goes.
+
+What it changed: the large set's word is FONT_MEDIUM rather than FONT_LARGE and sits at the
+BOTTOM of the page rather than under the giant; the Clock page's "timer" went entirely and its
+second number took the band; the Map page's odometer walks the text ladder from FONT_LARGE
+with "km" small beside it, where it had been pinned at FONT_SMALL, the floor; the Story page's
+"turns" moved under the dot row so the dots get the width; the Turns page's three inline
+captions became one legend on a narrow row of its own.
+
+The one place rule 2 was argued the other way is the foil table's row key, and Jan argued it:
+`tot` gave way to **`total`** even though the short word buys the six values a font rung,
+because "tot" is an abbreviation a rider has to expand on the most-read row of the table, and a
+smaller number you can name beats a bigger one you have to work out. Only the readability floor
+may shorten it now (`RecordingView.foilKeys`).
+
 ## The watch's event flash — every buzz also paints
 
 Since Garmin app 0.9.11 (Jan, 15 September 2026: a buzz through a hood is easy to miss and
@@ -3000,6 +3039,69 @@ exactly as they gate the buzz. The visual half is never debounced — a new even
 one on screen, which is what one screen means — and save or discard clears the strip with
 the session. `EventFlash.mc` is the module, `AlertManager` fires it beside each buzz.
 
+## The watch's Turns page — one row, four counts, and a mark for the wind
+
+Jan's layout review, 21 September 2026. The page had **six rows** — a header, the tally as the
+giant, the clean jibes with their rate, both streaks, the outcome dots, and the flew-through
+share with the port/starboard split — and three of them were saying the same thing at three
+resolutions. It has **five** now, and one of them is the page:
+
+```
+  clean · flew · touch · fell  ↘
+       ★34  63 · 21 · 12
+    ● ● ● ● ● ● ● ● ● ● ● ● ●
+       streak: 4/9  7/12
+            P29/S22
+```
+
+- **The ladder row is the page**, and it is lifted onto the equator (`turnsBias`). Four counts
+  in four inks: the clean jibes behind their star first, then flew · touched · fell with the
+  separators drawn as dim **dots**, because the number fonts have no punctuation — which is
+  also what lets a separator shrink with the digits instead of pinning a text font's comma
+  beside them. One renderer draws it here, twice on the Tacks & jibes page, and on the large
+  set's three turn screens.
+- **The clean jibes joined the row they refine.** `★ 12` had a row of its own from 0.9.5, and
+  a subset printed on its own row is a number the rider has to relate to another number
+  himself. First on the row, because it is the strictest rung and the one the product is named
+  after.
+- **CPH left the watch.** A rate is a *reading* of a count; the count is the fact. It also
+  divided by a clock the phone does not have (docs/algorithms.md, the watch divergences), so
+  the wrist and the phone printed two different rates for one afternoon. `cleanPerHour` and
+  its 60 s no-rate floor are kept in `PageModel` and still tested — the number is one page-set
+  decision away from coming back.
+- **The "% flew" share left too.** It is `flewCount` over `turnCount` and both of those are
+  printed one row up, so the page was stating one fact twice — and a page that says the same
+  thing twice has to be believed twice. What is left on the bottom row is the port/starboard
+  entry split, which is the one number on the page a rider can act on tomorrow.
+- **The header became a legend**, on a narrow row of its own: the same four words in the same
+  four inks in the same order. Colour alone was the key until 0.9.11 and the words came back
+  then, inline beside each count; moving them off the counts is what buys the counts their
+  size (three inline captions cost the row ~90 px on a 454 px glass). It sheds **content**
+  and never size — FONT_XTINY is the bottom of the ladder — and the order is separators, then
+  the mark: on a 240 px fenix 5 Plus, where FONT_XTINY is 26 px, the full legend is 224 px
+  against a 214 px chord.
+
+### The wind is a mark, not a bearing
+
+The header printed the axis — *SW*, or *~SW* where the watch had worked it out. Jan: the rider
+does not read a bearing off the Turns page. What he needs to know there is only **whether the
+page has an axis at all**, because without one the port/starboard row below it is counting
+nothing and the Tacks & jibes page one swipe on is two rows of zeros.
+
+So it is a small arrow (`Glyphs.drawWind`), diagonal so it cannot be mistaken for the vertical
+double-headed pump glyph, with **three states in one mark**:
+
+| state | mark | why |
+|---|---|---|
+| the rider set the axis | **filled** | it is a statement of fact — manual always wins (`Config`) |
+| the watch estimated it | **hollow** | the leading `~` the word used to carry, as a shape |
+| there is no axis | **hollow, dim** | drawn and not omitted: a missing mark and a mark nobody noticed look the same, and this is the one state the rider can do something about |
+
+The mark is **white or dim and never the outcome ladder's ink**, which is a verdict scale
+nothing outside a maneuver outcome may borrow (see "Colour and glyph vocabulary" above). An
+axis is not a verdict. The bearing itself is still one long-press away on the start screen and
+in the session menu, where it is a number a rider actually sets.
+
 ## The watch's Tacks & jibes page
 
 Jan, 21 September 2026, from a tester practising tacks. The Turns page says how the maneuvers
@@ -3008,47 +3110,48 @@ went — flew through, touched down, fell in, the streaks, the dots. Nothing on 
 first wind axis. Since 0.9.17 the standard set has an eighth page, straight after Turns, and
 the large set has two more screens.
 
-The page is two halves, jibes on top and tacks below. Each half is that kind's count as a
-giant, the word under it, and beside the word how many of that kind he **flew through**, in
-the outcome ladder's own green:
+0.9.17 drew it as two **giants** with *flew N* beside each word. Jan's layout review the same
+evening re-cut it to read like the Turns page instead: one wide **ladder row** per kind, in the
+same four inks and the same order, with the kind's word on the far side of its own row, so the
+two wide lines straddle the equator:
 
 ```
-        wind ~NNE
-           52
-      jibes  flew 38
-           41
-      tacks  flew 29
+        jibes
+    ★34  39 · 8 · 5
+     24 · 13 · 4
+        tacks
 ```
 
-Four decisions in that shape:
+Five decisions in that shape:
 
-- **stacked, not side by side.** The pair band is the other available shape and was measured
-  and rejected: two halves of one chord leave each count about 95 px on a 240 px glass, which
-  steps both giants off the number ladder on exactly the watches the app was widened for. A
-  count that is not a giant is the Turns page's tally row, which is one screen back. Stacked,
-  each giant gets the whole chord at its own depth and the two halves straddle the equator.
-- **the fly-throughs are the ladder's green**, because they *are* the ladder's green count
-  asked of one kind: same numerator rule, narrower question. The count itself is white — a
-  tally of maneuvers is not a verdict on them.
-- **the header names the axis.** The split exists only where a wind axis does; without one
-  every turn is a generic turn and both counts are 0. The page says *wind NNE*, marks an axis
-  the watch estimated with a leading `~` exactly as the Turns header does, and says *wind not
-  set* when there is none. Otherwise the page reads as broken on the session where it is
-  merely uninformed.
-- **aborted turns are on neither half.** A sweep the classifier rejects is a course change,
+- **it is the Turns page's row, twice.** One renderer (`RecordingView.drawLadderRow`) draws the
+  session's ladder, both kinds' ladders and the large set's three turn screens. A rider who has
+  learned to read one of these rows has learned to read all four on the watch, and the moment
+  it was two pieces of code they would drift.
+- **the two wide rows straddle the centre**, with the narrow words above the first and below
+  the second — the round-glass rule above. 0.9.17's two giants with captions under them put
+  four rows of ink on the page and neither wide thing on the equator.
+- **tacks have no clean rung, and never will.** `cleanJibeCount` counts clean *jibes*, which is
+  the verdict the product is named after. A star over the tack row would be inventing a number
+  the engine does not compute.
+- **the header is gone where the axis is known.** It said *wind ~NNE* and spent a whole row on
+  a bearing nobody reads off this page; the Turns page one swipe back carries the axis as a
+  mark instead. It survives for the one state it is the only explanation of — *wind not set*,
+  where every turn is a generic turn, both rows are zeros, and the page is uninformed rather
+  than broken.
+- **aborted turns are on neither row.** A sweep the classifier rejects is a course change,
   not a maneuver, and the watch has no twin of the engine's aborted-turn count at all.
 
-The row sheds *content* before size, like every other row on the Turns page: the word names
-the half and stays, the *flew N* half is what a narrow chord gives up. And *flew 0* is never
-drawn at all — the same never-a-flattering-zero rule the clean-jibe row keeps.
-
 The counts come from `TurnDetector.tackCount` / `jibeCount`, which already ride the FIT
-session; the fly-throughs are two new counters (`tackFlewCount`, `jibeFlewCount`) incremented
-where the outcome resolves, because the kind is fixed when the sweep closes and the outcome
-when the window resolves and `_resolve()` is the only place that knows both. They are **not**
-backfilled by the auto-wind lock, exactly as `cleanJibeCount` is not: a pre-lock jibe becomes
-a jibe but not a jibe he flew through. No new FIT field — the split the phone needs is the
-tack and jibe counts, which have been in the file since 0.9.0.
+session. The three rungs are **six counters** — `tackFlewCount` / `jibeFlewCount` since 0.9.17,
+`tackTouchCount` / `jibeTouchCount` / `tackFellCount` / `jibeFellCount` since 0.9.18 —
+incremented where the outcome resolves, because the kind is fixed when the sweep closes and the
+outcome when the window resolves and `_resolve()` is the only place that knows both. They are
+**not** backfilled by the auto-wind lock, exactly as `cleanJibeCount` is not, so a kind's three
+rungs sum to that kind's count for every turn typed after the axis holds and to at most it
+afterwards; the invariant and its qualifier are in docs/algorithms.md's watch-divergence list
+and asserted by `perKindOutcomesAddUpToTheKind`. No new FIT field — the split the phone needs
+is the tack and jibe counts, which have been in the file since 0.9.0.
 
 ## The watch's two page sets — standard, and large text
 
@@ -3059,40 +3162,69 @@ picks between them** — *Data screens: Standard / Large text* (`pageSet`). One 
 property per page, and it is in **every stream**, which matters because the per-page editor
 below is not (see docs/channels.md).
 
-The large set is **seven screens, one number each** (five until 0.9.17):
+The large set is **five screens, one number each** (seven between 0.9.17 and 0.9.18):
 
 | # | the number | the word under it | also on the page |
 |---|---|---|---|
-| 1 | live speed | `speed km/h` (or `kn`) | — |
-| 2 | foil share | `on foil` | the foil-% bezel arc, earned the ordinary way |
-| 3 | turns | `turns` | the outcome ladder as three coloured counts |
-| 4 | jibes | `jibes` | `flew 38`, in the ladder's green |
-| 5 | tacks | `tacks` | `flew 29`, in the ladder's green |
-| 6 | time of day | `time` | — |
-| 7 | best 2 s | `best 2s km/h` | — |
+| 1 | live speed | `now km/h` (or `kn`) | — |
+| 2 | foil share | `time on foil` | the foil-% bezel arc, earned the ordinary way |
+| 3 | turns | `turns` | the session's ladder row — ★clean · flew · touch · fell |
+| 4 | jibes | `jibes` | the jibes' ladder row |
+| 5 | tacks | `tacks` | the tacks' ladder row (no star: tacks have no clean rung) |
 
-Three rules make it bigger rather than merely emptier:
+**The five, and the two that left** (Jan, 21 September 2026: "pages 7 and 4 are good enough").
+*Time* went because the standard Clock page **is** a giant time of day with nothing on it but
+a timer — a large-text screen for the clock was the clock page one rung smaller. *Best 2 s*
+went because the standard Records page carries both records with their names, and a set that
+answers "how fast was the best two seconds" without saying what the ten was is a worse version
+of the page one swipe away.
 
-- **the giant gets the whole stack.** A hero page spends a unit line and up to two sub-rows
-  under its number, so the number sits above the equator and takes the chord at *that* depth.
-  A large page has two rows, so the giant straddles the centre, where the chord is widest.
-  The layout suite asserts the large giant is never *smaller* than the same value on a hero
-  page, on any glass.
-- **the word is FONT_LARGE, four rungs above every caption on the standard pages** (71 px of
-  line against 37 on a fenix 8; 37 against 19 on a fenix 7S). A number nobody can name is not
-  readable however big it is, so the word carries its unit too — this is the only place on
-  the watch where a caption does. It steps down the ordinary ladder on a narrow chord and the
-  suite asserts it never falls below FONT_SMALL, the readability floor.
+**Two of the words were rewritten in the same round**, and both for the same reason — a number
+nobody can name is not readable however big it is:
+
+- `speed km/h` → **`now km/h`**. Jan, off the sheet: *"is this current speed or a record? which
+  metric?"* It is the live speedometer, and it sits one swipe from two record screens in the
+  standard set, so the word has to answer *when* as well as *what*. "now" is the shortest true
+  answer there is.
+- `on foil` → **`time on foil`**. The number is a share of the **minutes**, and its distance
+  twin (`M_FOIL_DIST_PCT`) is the same "%" over a different denominator. A page that says only
+  "on foil" makes the rider guess which of the two he is reading.
+
+Four rules make it bigger rather than merely emptier:
+
+- **the giant gets the whole stack**, and since 0.9.18 the **top** of it: the order is giant,
+  outcome row, word, with the word at the bottom of the page. A label is found once and a
+  number is read every glance. The layout suite asserts the large giant is never *narrower*
+  than the same value on a hero page, on any glass.
+- **the giant leaves the bitmap ladder where the device has a vector face** (0.9.18). Jan
+  measured "33.8" at about **55 %** of a fenix 8's width and asked for 70–75 %, and
+  FONT_NUMBER_THAI_HOT is the *top* of the bitmap ladder — "as large as the fitter allows" was
+  already true and still too small. `RecordingView.bigGiantFont` follows `LockView.codeFont`,
+  which has done this for the invite code since 0.9.10, with all three of its hard-won rules:
+  the bitmap ladder is the **floor**, never merely the fallback; a face is accepted only if it
+  can draw **every character** of the value (on the epix 2 / MARQ 2 / Descent Mk3 families
+  `BionicBold` is a digits-only cut and measures a missing "%" at zero width, which every
+  fitter reads as "fits"); and the whole block is behind `Graphics has :getVectorFont`, so the
+  CIQ 3.x families never enter it. Two rules are this page's own: the face must draw the value
+  **wider**, not merely taller, because these cuts are condensed and a taller-thinner number is
+  not a bigger one; and the size is **probed once per stack shape and cached**, because the
+  giant is redrawn every second and a live speed changes every second. Measured after:
+  **66 %** on a fenix 8 47 mm, 71–77 % on the epix 2 Pro, venu 2S / venu 3, fenix 7S and
+  fr255 families, and unchanged where no face qualifies.
+- **the word is FONT_MEDIUM**, two rungs above every caption on the standard pages, down from
+  FONT_LARGE — the rung it gave up is the giant's. It carries its unit, which is the only
+  place on the watch where a caption does. It steps down the ordinary ladder on a narrow chord
+  and the suite asserts it never falls below FONT_SMALL, the readability floor.
 - **no rings.** A flight ring costs 10–16 px of every radius, about 7 % of the digits on a
   240 px glass, and this set's whole trade is radius for digit height. Only the foil page
   keeps its arc, because the arc *is* the number the page already shows.
 
 There is deliberately no map, no timeline and no table in the large set: a page you have to
-read is not a page this set is for. And there is no editor for it — the seven pages are a
+read is not a page this set is for. And there is no editor for it — the five pages are a
 fixed table (`PageModel.buildLarge`) that reads no property at all, which is exactly what
-lets it be the one page control every stream has. The two kind screens carry one line under
-their word for the same reason the turns screen carries its tally: a count of jibes without a
-verdict on them says nothing on its own.
+lets it be the one page control every stream has. The three TURN screens carry an outcome row
+between the giant and the word, because a count of jibes without a verdict on them says
+nothing on its own; the other two are a giant and a word.
 
 **The text-size headroom of the standard pages was reviewed in the same round** and the answer
 was to take no rung there (`standardPagesTextHeadroom` logs the measurement per glass). Every
@@ -3107,26 +3239,48 @@ where the page spends no rows on anything else and can afford it.
 ## The after-save pages and the live ones
 
 A saved page and a live page showing the same number must be the same piece of code, or the
-two start disagreeing about one session. The post-save review has eight pages since 0.9.17;
-this is where each of them stands.
+two start disagreeing about one session. Jan's layout review of 21 September 2026 put it as a
+target rather than a case-by-case judgement — *identical to the live pages wherever possible*
+— and **six of the eight** are now exactly that.
 
 | after-save page | verdict | why |
 |---|---|---|
 | S1 **Verdict** (foil % + arc, SAVED pill) | **genuinely post-save** | it is the landing page and its subject is the session as a whole. The SAVED pill and the phone line live here and nowhere else |
-| S2 **Speed** (best 2 s giant, 10 s and km under it) | **genuinely post-save** | the live Records page is the same two numbers, but the saved page also carries the session odometer, which has no other home once the Track page is conditional. A unification that drops a number is not a unification |
-| S3 **Foil** | **unified, 0.9.16** | was a bespoke "Flights" hero (longest flight, its distance, the count). Every one of those numbers is on the live foil table already — `max` is that flight's two numbers under the two columns that name them — and the table says four more besides. The **flight count came back to the table's title row** (`foil · 31`) so the unification drops nothing; it is dropped rather than shrunk when the row cannot hold the pair, XTINY being already the bottom of the ladder |
-| S4 **Turns** | **unified** (since 0.9.2) | `drawTurnsBody(dc, c, live=false)` — one flag, and it only changes the streak row, because "the run he is on" stopped meaning anything when he pressed save |
-| S5 **Tacks & jibes** | **unified, born unified** (0.9.17) | `drawKindsBody`, with no flag at all: two counts and how many of each he flew through are the same four numbers before and after the save. Shown only when the session has a tack or a jibe to name — without a wind axis both counts are 0, and a page that would say 0 is not a page |
-| S6 **Takeoffs** | **genuinely post-save** | no live twin exists; the watch has no takeoffs page on the water |
+| S2 **Records** | **unified, 0.9.18** | was a bespoke speed hero — best 2 s as the giant, "10s 11.5" under it, the session odometer under that. Two of those three are the live Records page's own two, drawn a different size in a different arrangement with a different word for each, which is how two screens showing one session start disagreeing about it. `drawRecordsBody`. What the unification **drops** is the odometer: it is on the live Map page under the trail and on S8, and a number with a home on exactly one of two screens showing the same session is the problem this table exists to fix — but it is now on two *conditional* pages, and that is the open question this round leaves |
+| S3 **Foil** | **unified, 0.9.16** | was a bespoke "Flights" hero (longest flight, its distance, the count). Every one of those numbers is on the live foil table already — `max` is that flight's two numbers under the two columns that name them — and the table says four more besides. The **flight count** rode the table's title row (`foil · 31`) from 0.9.16 to 0.9.18 and came off in the layout review: a table of six foil numbers with a seventh in its own title is a title that has to be read rather than found, and the count is not a foil number. It is FIT session field 36 and on the phone's session page |
+| S4 **Turns** | **unified, and since 0.9.18 with no flag at all** | it was `drawTurnsBody(dc, c, live=false)`, which showed the two streaks as their session bests alone. The run he ended on **is** a fact about the session — "I finished on a run of seven" is the sentence a rider says in the car park — and it is the same reading of the same two numbers he had one button press earlier. The parameter stays on the renderer: the two forms are a real distinction and a renderer that can only draw one of them has to be edited to get the other back |
+| S5 **Tacks & jibes** | **unified, born unified** (0.9.17) | `drawKindsBody`, with no flag at all: two ladder rows are the same eight numbers before and after the save. Shown only when the session has a tack or a jibe to name — without a wind axis both rows are 0, and a page that would say 0 is not a page |
+| S6 **Takeoffs** | **genuinely post-save** | no live twin exists; the watch has no takeoffs page on the water. Every line of it was rewritten in 0.9.18 — see below |
 | S7 **Story** | **unified** (since 0.8.1) | the timeline, verbatim. `history` is complete and untouched by the save, and a coffee-in-hand read of the session arc is what it was always for |
 | S8 **Track** | **unified** (since 0.9.2) | `TrackDraw`, the same renderer as the live map page, minus the position marker — the rider is ashore |
 
-What is **not** unified, and deliberately: the SAVED pill does not ride the reused pages. S4,
-S5, S7 and S8 look exactly like their live twins, and adding the eyebrow to them would mean
-finding a free top arc on four pages whose top rows are already a header, a header, a caption
-and a map — which is the 0.9.13 overprint waiting to happen on four pages instead of one. The
-page-position dots along the bottom are what says "this is the review, not the water", and
-they are on every one of the eight.
+What is **not** unified, and deliberately: the SAVED pill does not ride the reused pages. S2,
+S3, S4, S5, S7 and S8 look exactly like their live twins, and adding the eyebrow to them would
+mean finding a free top arc on six pages whose top rows are already a legend, a title, a word,
+a caption, two records and a map — which is the 0.9.13 overprint waiting to happen on six pages
+instead of one. The page-position dots along the bottom are what says "this is the review, not
+the water", and they are on every one of the eight.
+
+### S6 Takeoffs — three numbers that had to say what they were
+
+Jan read `39/56`, `4.3 to foil` and `+19 bpm` off the sheet and could not say what any of the
+three were. That is pattern **H** of docs/review-checklist.md — a bare code the rider has to
+decode — applied to numbers rather than to letters. What they actually are, and what they say
+now:
+
+| was | is | what the number is |
+|---|---|---|
+| `39/56` | **`39 of 56`** | takeoffs out of **attempts**: he pumped 56 times and got up 39 of them (`PumpDetector.successes` / `attempts()`). The slash said *per* as often as it said *of* |
+| `4.3 to foil` | **`4.3 pumps each`** | the average strokes a takeoff took, over every takeoff including the free ones (`avgPumpsX10`, FIT session field 37). "to foil" named the destination and not the number |
+| `+19 bpm` | **`last +19 bpm`** | what the **last** takeoff cost his heart — the rise from that effort's start to its peak (`HrCostTracker`). It is one takeoff and not an average, and beside an average a bare "+19 bpm" reads as another average |
+
+The word *takeoffs* is the small line above; the fraction is the wide line on the equator; the
+other two share the narrow line below it, and the HR half is the first thing a narrow chord
+gives up — it is the only number on the page about one maneuver rather than the session. The
+fraction is drawn as **three pieces** — the two counts in the number ladder around "of" at
+FONT_XTINY — because a number font has no letters, which is the bug `fitGiant` exists to stop.
+Every `--` the old page printed is simply absent: a takeoff that was never priced is not a fact
+about the session, and a row that is not there says that better than a row of dashes.
 
 ## The watch's per-page editor — and the switch that puts the pages back
 

@@ -1010,7 +1010,7 @@ inventing turns):
   quiet water, so both resumes re-anchor the baseline — the phone's `gap_before` restart, which
   the watch has no other way to see. A dunk is a spike; a level is not a dunk, and the price is
   the phone's too: water held to within 5 m for 20 s reads dry from its 20th second.
-- **Per-kind fly-throughs are not backfilled at the auto-wind lock** (watch 0.9.17): `tackFlewCount` / `jibeFlewCount`, the numbers under the Tacks & jibes page's giants, count from the moment an axis holds, the same conservative error `cleanJibeCount` makes; the phone's split is over the whole session.
+- **The per-kind outcome counters are not backfilled at the auto-wind lock** (watch 0.9.17 for the fly-throughs, 0.9.18 for the other two rungs). Six counters — `tackFlewCount` / `jibeFlewCount`, and since 0.9.18 `tackTouchCount` / `jibeTouchCount` and `tackFellCount` / `jibeFellCount` — are the ladder asked of one kind, and they are the whole content of the Tacks & jibes page's two rows. Each is incremented in `_resolve`, where the kind and the outcome are both known; `backfillWindSplit` adds to `tackCount` / `jibeCount` and to nothing else, exactly as it leaves `cleanJibeCount` alone and for the same reason (the sweep log carries geometry only, written before the outcome window resolved). So the invariant the page draws on is **`flew + touch + fell == that kind's count` for every turn typed after the axis holds, and `<=` it after a backfill**, the difference being the pre-lock turns. On the glass a pre-lock jibe is a jibe with no rung: the kind's row under-reads by a handful of turns at the very start of an auto-wind session and never over-reads. The phone's split is over the whole session. Asserted by `perKindOutcomesAddUpToTheKind` in the barrel suite.
 - **No pump corroboration** (step 3 of the ladder): the watch cannot promote a fly-through to a
   touchdown on accel evidence, so it reports slightly more fly-throughs than the phone.
 - **The watch does not measure the axis crossing**, and knows neither axis parameter. It has no
@@ -1046,27 +1046,31 @@ inventing turns):
   rider sets the axis stay generic for the rest of the session.
 - **GPS below `Position.QUALITY_USABLE` freezes the detector**, including any open outcome
   window, matching how the other watch detectors treat a gap.
-- **CPH divides by the session clock, not by a cleaned track** (device app ≥ 0.9.5). The watch
-  shows *clean jibes per hour* on the Turns page and on the post-save turns screen —
-  `TurnDetector.cleanJibeCount` over `SessionController.elapsedNowS()`, which is the engine's
-  own timer while recording and the FIT's `total_elapsed_time` (pauses included) once saved.
-  Since engine 0.13.0 the phone's rates divide by `timerTimeS` — the **cleaned track's**
-  non-gap total (T2) — which is the same *kind* of clock the data field uses and much closer
-  to the device app's live one than the elapsed span they used to divide by. The two still
-  differ by whatever the cleaner trims off the ends, by the different gap definitions, and,
-  after save, by the pauses the device app's `total_elapsed_time` puts back in. Neither number
-  is wrong; they answer the same question over slightly different afternoons, and the watch
-  has no cleaned track to offer. The **no-rate floor** is
-  60 s rather than the engine's `durationS <= 0`: the watch is asked the question live, and one
-  clean jibe forty seconds in is not "ninety an hour". Below the floor it prints `--`, never a
-  number and never a flattering zero.
+- **CPH is off the device app's screens** (device app 0.9.18; it was on the Turns page from
+  0.9.5). Jan's layout review of 21 September 2026 took it, and the reason is the divergence
+  this bullet used to describe. The watch divided `TurnDetector.cleanJibeCount` by
+  `SessionController.elapsedNowS()` — the engine's own timer while recording, the FIT's
+  `total_elapsed_time` once saved — while the phone divides by `timerTimeS`, the **cleaned
+  track's** non-gap total (T2). Neither was wrong; they answered the same question over
+  slightly different afternoons, and the wrist had no cleaned track to offer. But a rate is a
+  *reading* of a count rather than a count, it is the kind of number a rider sits down with,
+  and it was spending a whole row on a page whose four counts are the fact. The count itself
+  stays on the wrist, first on the Turns page's ladder row behind its star; the rate lives on
+  the phone, where it has a caption to explain itself and a clock it can name.
+  `PageModel.cleanPerHour` / `fmtCph` and the 60 s no-rate floor are kept and still tested —
+  the number is one page-editor decision away from coming back and the floor is the part of
+  it nobody should have to re-derive.
+- **The DATA FIELD still shows it**, over its own clock — see the bullet below. The field is
+  parked (ADR-020) and its screens did not move.
 - **A clean jibe is `cleanJibeCount`, and the auto-wind backfill does not fill it in.**
   `backfillWindSplit` replays the logged sweeps to recover the tack/jibe split that happened
   before the estimator locked, but the sweep log is written when a sweep *closes* — before its
   outcome window has resolved — and carries geometry only. So a turn backfilled into
-  `jibeCount` is never backfilled into `cleanJibeCount`, and the watch's CPH under-reads for
-  the opening minutes of a session with no manual axis. Conservative, like every other item on
-  this list, and visible only as a rate that climbs once the axis is known.
+  `jibeCount` is never backfilled into `cleanJibeCount`, and the watch's star count under-reads
+  for the opening minutes of a session with no manual axis. Conservative, like every other item
+  on this list, and visible only as a count that catches up once the axis is known. (Until
+  0.9.18 this was visible as a *rate* that climbed; the rate is off the screens now, and what
+  it shows instead is the first number on the Turns page's ladder row.)
 - **The watch holds the star for the quiet tail** (device app 0.9.9, engine 0.17.0). A clean
   candidate — a jibe that flew through and held its speed — is not counted when its outcome
   resolves; `cleanPending` is set and the detector watches the samples until
