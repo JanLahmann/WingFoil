@@ -294,7 +294,7 @@ export const WHATS_NEW = [
     "build": null,
     "channel": "release",
     "date": "2026-09-21",
-    "title": "Tacks and jibes apart, and the dunk read right",
+    "title": "Tacks and jibes apart, dunks read right",
     "lines": [
       "A Tacks and jibes page after Turns. Each count, with how many of them flew through.",
       "It is in the large-text set too, one screen each.",
