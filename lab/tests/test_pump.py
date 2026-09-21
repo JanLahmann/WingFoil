@@ -110,3 +110,42 @@ def test_a_source_without_accel_degrades_to_none():
     assert not track.capabilities.has_accel
     assert track.accel is None
     assert pump_track(track) is None
+
+
+def test_a_broken_clock_is_refused_rather_than_allocated_on():
+    """The grid's length comes out of a file, so nothing here trusts it (engine 0.23.0).
+
+    Three shapes, one answer: `None`, which is what a source with no accelerometer already
+    gets, so every consumer degrades the way it always has. The NaN case is the one that
+    used to raise -- `int(floor(nan))` is not a number of bins, and `goldens.analyze` died
+    on a tester's file for it.
+    """
+    t, mag = _wrist(4.0)
+    assert pump_track_from_arrays(np.full_like(t, np.nan), mag) is None   # all times NaN
+    fifty_days = np.array([0.0, 50 * 86400.0])
+    assert pump_track_from_arrays(fifty_days, np.ones(2)) is None         # past MAX_PUMP_BINS
+
+
+def test_non_finite_samples_are_dropped_and_the_rest_still_reads():
+    """One poisoned sample costs one sample, not the channel."""
+    t, mag = _wrist(30.0)
+    mag = mag + 0.5 * np.sin(2 * np.pi * 1.0 * t)      # a 1 Hz pump, well inside the band
+    t = t.copy()
+    t[100] = np.nan
+    mag = mag.copy()
+    mag[200] = np.inf
+    track = pump_track_from_arrays(t, mag)
+    assert track is not None
+    assert bool(np.isfinite(track.band).all())
+    assert track.longest_burst(0.0, 30.0) >= 4
+
+
+def test_an_unsorted_stream_is_sorted_rather_than_mis_binned():
+    t, mag = _wrist(20.0)
+    mag = mag + 0.5 * np.sin(2 * np.pi * 1.0 * t)
+    order = np.arange(t.size)
+    order[5], order[9] = order[9], order[5]
+    shuffled = pump_track_from_arrays(t[order], mag[order])
+    straight = pump_track_from_arrays(t, mag)
+    assert shuffled is not None and straight is not None
+    assert np.allclose(shuffled.band, straight.band)

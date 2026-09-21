@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.22.0",
+  "engineVersion": "0.23.0",
   "config": {
     "discipline": "windsurfFoil",
     "foilEntrySpeed": 12.0,
@@ -13,6 +13,9 @@
     "maxAccel1Hz": 4.0,
     "gapMinS": 3.0,
     "gapFactor": 2.0,
+    "smartGapS": 10.0,
+    "smartMedianDtS": 1.5,
+    "spikeMaxDtS": 3.0,
     "speedChannelRecords": "doppler",
     "speedChannelManeuvers": "hybrid",
     "alphaProximity": 50.0,
@@ -52,7 +55,6 @@
     "windSmoothDeg": 20.0,
     "windLobeHalfWidth": 25.0,
     "windMinLobeSeparation": 60.0,
-    "windMaxLobeSeparation": 179.0,
     "windMinDistance": 500.0,
     "windMinConfidence": 0.5,
     "windNoGoHalfAngle": 45.0,
@@ -94,6 +96,7 @@
     "hasDevFields": true,
     "hasWatchLaps": true,
     "hasAccel": true,
+    "accelClockReconstructed": false,
     "hasHR": true,
     "sampleRateHz": 1.0
   },

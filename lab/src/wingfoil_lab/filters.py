@@ -2,9 +2,19 @@
 projection, positional speed.
 
 Contract: docs/algorithms.md "speed sample hygiene". The gap rule is dt-aware for
-Garmin Smart Recording: gap iff dt > max(gap_min_s, gap_factor x median dt); gaps are
-hard segment breaks, never interpolated (dt-weighted windows subsume the 1 Hz
-`gapInterpolateMax` linear-interpolation rule).
+Garmin Smart Recording: gap iff dt > max(gap_min_s, gap_factor x median dt, smart_gap_s
+when the track's median dt says Smart Recording); gaps are hard segment breaks, never
+interpolated (dt-weighted windows subsume the 1 Hz `gapInterpolateMax` linear-interpolation
+rule).
+
+**A cadence is not a hole** (engine 0.23.0, ADR-030). Smart Recording writes a sample when
+the track changes, not on a clock: 1-9 s apart, median 2 s. Under the dt rule alone that
+made the threshold 4 s and cut a native afternoon into hundreds of segments -- and a
+segment boundary is a hard break everywhere downstream, so the session lost a fifth of its
+distance and a quarter of its timer time to steady reaches the watch had simply not needed
+to sample. Above `smart_median_dt_s` the threshold is floored at `smart_gap_s` (10 s), the
+same valley `hrMaxSampleGap` already sits in. A 1 Hz track (median 1 s) is untouched, and
+a `gap_before` the *source* declared -- a timer stop, a GPX `<trkseg>` seam -- still cuts.
 """
 
 from __future__ import annotations
@@ -33,8 +43,27 @@ class FilterConfig:
     max_hdop: float = 5.0            # gate applied only when an hdop channel exists
     min_satellites: int = 5          # gate applied only when a satellites channel exists
     max_accel_1hz: float = 4.0       # m/s^2: reject Doppler samples with |dv/dt| above this
-    gap_min_s: float = 3.0           # gap iff dt > max(gap_min_s, gap_factor * median dt)
-    gap_factor: float = 2.0
+    gap_min_s: float = 3.0           # gap iff dt > max(gap_min_s, gap_factor * median dt,
+    gap_factor: float = 2.0          #                smart_gap_s on a Smart Recording track)
+    smart_gap_s: float = 10.0        # the Smart Recording floor; 0 switches the rule off
+    smart_median_dt_s: float = 1.5   # median dt above this ⇒ the recorder skipped samples
+    spike_max_dt_s: float = 3.0      # the spike rule's budget is not stretched past this
+
+
+def gap_threshold_s(median_dt_s: float, cfg: FilterConfig) -> float:
+    """The hard-gap threshold for a track whose median step is `median_dt_s`.
+
+    `max(gap_min_s, gap_factor * median)` is the dt rule that has always been here. The
+    third term is engine 0.23.0 (ADR-030): a recorder that writes 1-9 s apart is reporting
+    a *cadence*, not a hole, and 2 x 2 s is inside its own normal spacing. Above
+    `smart_median_dt_s` the threshold is floored at `smart_gap_s` so that a steady reach --
+    exactly the stretch Smart Recording skips samples through -- is bridged rather than cut.
+    A 1 Hz track never reaches the floor and keeps its 3 s threshold to the digit.
+    """
+    thr = max(cfg.gap_min_s, cfg.gap_factor * median_dt_s) if median_dt_s > 0 else cfg.gap_min_s
+    if median_dt_s > cfg.smart_median_dt_s:
+        thr = max(thr, cfg.smart_gap_s)
+    return thr
 
 
 @dataclass
@@ -90,7 +119,7 @@ def clean(track: RawTrack, config: FilterConfig | None = None) -> CleanTrack:
     v = df["speed_mps"].to_numpy(float)
     dts = np.diff(t)
     med = float(np.median(dts)) if dts.size else 0.0
-    thr = max(cfg.gap_min_s, cfg.gap_factor * med) if med > 0 else cfg.gap_min_s
+    thr = gap_threshold_s(med, cfg)
 
     # A source may *know* about a break the clock cannot show: a GPX `<trkseg>` boundary is
     # the recorder saying it stopped, and two segments can abut in time and still not be one
@@ -100,7 +129,7 @@ def clean(track: RawTrack, config: FilterConfig | None = None) -> CleanTrack:
             if "gap_before" in df.columns else None)
 
     # Doppler acceleration spike rejection, dt-scaled: |dv/dt| > max_accel_1hz -> drop row.
-    keep = _spike_keep(t, v, cfg.max_accel_1hz, thr, hint)
+    keep = _spike_keep(t, v, cfg.max_accel_1hz, thr, hint, cfg.spike_max_dt_s)
     dropped_spike = int((~keep).sum())
     df = df[keep]
     if hint is not None:
@@ -150,7 +179,7 @@ def clean_from_arrays(t, doppler_mps, x=None, y=None, alt_m=None,
 
     dts = np.diff(t)
     med = float(np.median(dts)) if dts.size else 0.0
-    thr = max(cfg.gap_min_s, cfg.gap_factor * med) if med > 0 else cfg.gap_min_s
+    thr = gap_threshold_s(med, cfg)
 
     out = pd.DataFrame({"t": t, "doppler_mps": v, "x": x, "y": y,
                         "lat": np.nan, "lon": np.nan,
@@ -196,12 +225,21 @@ def _empty_frame() -> pd.DataFrame:
 
 
 def _spike_keep(t: np.ndarray, v: np.ndarray, max_accel: float, gap_thr: float,
-                hint: np.ndarray | None = None) -> np.ndarray:
+                hint: np.ndarray | None = None, max_dt: float = 3.0) -> np.ndarray:
     """Forward pass vs last good sample; resets across gaps (self-recovering on spike runs).
 
     `hint` resets it too: across a break the source itself declared there is no "last good
     sample" to accelerate away from, and judging the first sample of a new segment against
     the last of the old one would throw away the very rows that mark the seam.
+
+    **The budget stops growing at `max_dt`** (engine 0.23.0, ADR-030). `max_accel_1hz` is a
+    1 Hz value (Logiqx), and `|dv| <= max_accel x dt` stretches it: over a 7 s Smart
+    Recording step it permits 28 m/s, which is every reacquisition burst a receiver emits
+    after a hole. Until 0.23.0 no step that long was ever judged here -- anything past the
+    4 s threshold was a new segment and accepted unconditionally -- so raising the threshold
+    to 10 s without this cap would hand those samples to the speed records instead. At 1 Hz
+    no step inside a segment reaches three seconds and nothing changes, which is why no
+    committed golden moves for this half of the rule.
     """
     n = len(t)
     keep = np.ones(n, dtype=bool)
@@ -213,7 +251,7 @@ def _spike_keep(t: np.ndarray, v: np.ndarray, max_accel: float, gap_thr: float,
         if d > gap_thr or (hint is not None and hint[i]):   # new segment: accept unconditionally
             tg, vg = t[i], v[i]
             continue
-        if d <= 0 or abs(v[i] - vg) / d > max_accel:
+        if d <= 0 or abs(v[i] - vg) / min(d, max_dt) > max_accel:
             keep[i] = False
         else:
             tg, vg = t[i], v[i]

@@ -42,15 +42,47 @@ def test_nan_rows_dropped_into_gap():
 
 
 def test_gap_threshold_dt_aware():
-    # 0.5 Hz: median dt 2 -> threshold max(3, 4) = 4; dt 4 is NOT a gap, dt 5 is
-    t = [0, 2, 4, 6, 8, 12, 17]
-    ct = clean(_raw(t, [1] * 7))
-    assert ct.gap_threshold_s == pytest.approx(4.0)
-    assert list(ct.records["gap_before"]) == [False] * 6 + [True]
-    # 1 Hz: threshold max(3, 2) = 3
+    """The three terms of the rule (docs/algorithms.md "speed sample hygiene")."""
+    # Smart Recording: median dt 2 -> the 10 s floor applies, so a 5 s and an 8 s step are
+    # cadence, not holes, and only the 17 s one cuts.
+    t = [0, 2, 4, 6, 8, 13, 21, 38]
+    ct = clean(_raw(t, [1] * 8))
+    assert ct.gap_threshold_s == pytest.approx(10.0)
+    assert list(ct.records["gap_before"]) == [False] * 7 + [True]
+    # 1 Hz: median 1 is below smartMedianDtS, so the threshold is max(3, 2) = 3, untouched.
     ct2 = clean(_raw([0, 1, 2, 3, 7], [1] * 5))
     assert ct2.gap_threshold_s == pytest.approx(3.0)
     assert list(ct2.records["gap_before"]) == [False, False, False, False, True]
+
+
+def test_the_smart_recording_floor_only_lifts_the_threshold():
+    """`smartGapS` is a floor under `max(gapMinS, gapFactor x median)`, never a cap."""
+    # A 20 s cadence: 2 x 20 = 40 already exceeds the floor, so the dt rule keeps winning.
+    slow = clean(_raw([0, 20, 40, 60, 80, 141], [1] * 6))
+    assert slow.gap_threshold_s == pytest.approx(40.0)
+    assert list(slow.records["gap_before"]) == [False] * 5 + [True]
+    # Switched off (smartGapS = 0), a median-2 track is cut at 4 s exactly as before 0.23.0.
+    old = clean(_raw([0, 2, 4, 6, 8, 13], [1] * 6), FilterConfig(smart_gap_s=0.0))
+    assert old.gap_threshold_s == pytest.approx(4.0)
+    assert list(old.records["gap_before"]) == [False] * 5 + [True]
+
+
+def test_the_spike_budget_stops_growing_at_three_seconds():
+    """A reacquisition burst across a long Smart Recording step is still a spike.
+
+    `maxAccel1Hz` is a 1 Hz value, so `|dv| <= 4 x dt` would let a 7 s step carry 28 m/s —
+    which is exactly what a receiver emits when it finds the sky again. Capping the budget
+    at `spikeMaxDtS` keeps the rule meaning what it says. At 1 Hz no step inside a segment
+    reaches three seconds, so nothing there moves.
+    """
+    t = [0.0, 2.0, 4.0, 6.0, 8.0, 15.0, 17.0, 19.0, 21.0, 23.0, 25.0]
+    v = [1.0, 1.0, 1.0, 1.0, 1.0, 17.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+    ct = clean(_raw(t, v))
+    assert ct.gap_threshold_s == pytest.approx(10.0)         # the 7 s step is not a gap
+    assert ct.records["doppler_mps"].max() == pytest.approx(1.0)
+    # Uncapped, the same 16 m/s over 7 s reads as 2.3 m/s^2 and sails through.
+    loose = clean(_raw(t, v), FilterConfig(spike_max_dt_s=1e9))
+    assert loose.records["doppler_mps"].max() == pytest.approx(17.0)
 
 
 def test_spike_rejected_dt_scaled():
