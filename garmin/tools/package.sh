@@ -18,6 +18,11 @@ SDK="$HOME/Library/Application Support/Garmin/ConnectIQ/Sdks/$SDK_VERSION/bin"
 # device build peaks at 0.6 GB resident with the heap pinned; 2 GB leaves room for the
 # type checker on the largest jungle. Every script that runs monkeyc sets the same line.
 export JAVA_TOOL_OPTIONS="-Xmx2g"
+# A stopped run must not leave its compiler behind: the JVM ignores a parent's death, so
+# an orphaned Monkeybrains keeps compiling at full tilt (three of them, 21 Sep 2026). Kill
+# every child of this script on exit, however the exit came about.
+trap 'pkill -P $$ 2>/dev/null; exit' INT TERM HUP
+trap 'pkill -P $$ 2>/dev/null' EXIT
 V=$(grep -o 'entry="WingfoilApp" version="[0-9.]*"' manifest.xml | cut -d'"' -f4)
 N=${1:-1}
 for m in manifest-beta.xml manifest-dev.xml; do
