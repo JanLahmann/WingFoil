@@ -1440,6 +1440,18 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    pages, the 8 summary pages — the Tacks & jibes page is in all three counts), so
    `capture.sh` photographs 100 frames over a longer awake window.
 
+   **The short set (Jan, 21 Sep 2026: "we don't need to review all families every time").**
+   A change to a page's *content* — a new page, a row added or reworded, a number moved
+   between rows — owes six sheets, one per glass the row stack has to fit, and they are read
+   against the same overlap list: `fenix5xplus` (240 px MIP, the Chronos number fonts with no
+   leading — the 0.9.13 family), `fr255` (260 px MIP), `venu2s` (360 px AMOLED, the icon54
+   cut), `epix2pro42mm` and `instinct3amoled45mm` (390 px AMOLED, two font families),
+   `fenix847mm` (454 px AMOLED). `SHEET_DEVICES="fenix5xplus fr255 venu2s epix2pro42mm
+   instinct3amoled45mm fenix847mm" sheets.sh <outdir>` runs exactly those. The full 29 are
+   owed only when the *layout engine* moves — the row stack, the fitter, the ink bands, a font
+   choice — or when a family joins the manifest. 0.9.17 (a page added, no engine change) was
+   read on the short set.
+
    The layout suite reads its canvas from `System.getDeviceSettings().screenWidth`, so the same
    assertions are genuinely different measurements per device, and every finding that has ever
    come out of this suite came from the narrow ones — with one lesson added by Tier A: **the
