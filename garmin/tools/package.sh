@@ -13,6 +13,11 @@ cd "$(dirname "$0")/.."
 SDK_VERSION="connectiq-sdk-mac-9.2.0-2026-06-09-92a1605b2"
 SDK="$HOME/Library/Application Support/Garmin/ConnectIQ/Sdks/$SDK_VERSION/bin"
 [ -x "$SDK/monkeyc" ] || { echo "Connect IQ SDK $SDK_VERSION is not installed (SDK Manager)"; exit 1; }
+# The compiler is a JVM with no -Xmx of its own, so it grows to a quarter of the Mac's RAM
+# (7 GB of garbage per process on a 32 GB machine, 21 Sep 2026) before it collects. A
+# device build peaks at 0.6 GB resident with the heap pinned; 2 GB leaves room for the
+# type checker on the largest jungle. Every script that runs monkeyc sets the same line.
+export JAVA_TOOL_OPTIONS="-Xmx2g"
 V=$(grep -o 'entry="WingfoilApp" version="[0-9.]*"' manifest.xml | cut -d'"' -f4)
 N=${1:-1}
 for m in manifest-beta.xml manifest-dev.xml; do
