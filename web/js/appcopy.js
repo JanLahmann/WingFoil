@@ -294,11 +294,28 @@ export const WHATS_NEW = [
     "build": null,
     "channel": "release",
     "date": "2026-09-21",
-    "title": "Tacks and jibes, counted apart",
+    "title": "Tacks and jibes apart, and the dunk read right",
     "lines": [
       "A Tacks and jibes page after Turns. Each count, with how many of them flew through.",
       "It is in the large-text set too, one screen each.",
-      "The page names the wind axis it counts against."
+      "The page names the wind axis it counts against.",
+      "A watch that re-anchors after a swim no longer reads the rest of the session as falls."
+    ]
+  },
+  {
+    "version": "1.0.1",
+    "build": 97,
+    "channel": "beta",
+    "date": "2026-09-21",
+    "title": "Falls read the dunk",
+    "lines": [
+      "Falls are read from the dunk, not from the day's average height.",
+      "A watch that re-anchors its altitude after a swim no longer turns your afternoon into falls.",
+      "Wrist-under marks on the map show the dunks and not the weather.",
+      "Every speed follows the Units setting now: the charts, the records table, the turn stories and the widgets.",
+      "Knots or km/h, once, everywhere.",
+      "Engine 0.22.0 re-derives your library once.",
+      "Please open your sessions from the fenix 5 family and tell us whether the falls now match your day."
     ]
   },
   {
