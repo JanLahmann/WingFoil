@@ -682,6 +682,11 @@ th {
 }
 th:first-child, td:first-child, th.l, td.l { text-align: left; }
 tbody tr:hover td { background: var(--surface-2); }
+/* A row the legend chips are hiding. Spelled out rather than left to the UA sheet: a
+   `<tr hidden>` is a row whose own display value is table-row, and one browser resolving
+   that in the row's favour would leave the table showing turns the map is not. The row
+   stays in the DOM because js/turnpage.js reads its position as the turn's index. */
+tbody tr[hidden] { display: none; }
 td.dim, td .dim { color: var(--ink-3); }
 
 .pill {
