@@ -70,28 +70,40 @@
     <property id="pg4s3" type="number">0</property>
     <property id="pg4s4" type="number">0</property>
     <property id="pg4s5" type="number">0</property>
-    <property id="pg5Layout" type="number">6</property>
-    <property id="pg5s1" type="number">8</property>
+    <!-- Page 5, TACKS & JIBES (layout 12, LAYOUT_KINDS), new in 0.9.17. It pushed the clock,
+         the timeline and the map down one, and the set is eight pages now. READ THE WARNING
+         ABOVE: a dev watch that already carries pg5..pg7 keeps the clock, timeline and map it
+         has and picks up the NEW key pg8Layout, so its map page arrives twice until it takes
+         "Reset pages to defaults" — which writes exactly the eight rows below. A fresh
+         install gets the shipped order straight away. -->
+    <property id="pg5Layout" type="number">12</property>
+    <property id="pg5s1" type="number">0</property>
     <property id="pg5s2" type="number">0</property>
     <property id="pg5s3" type="number">0</property>
     <property id="pg5s4" type="number">0</property>
     <property id="pg5s5" type="number">0</property>
-    <property id="pg6Layout" type="number">8</property>
-    <property id="pg6s1" type="number">0</property>
+    <property id="pg6Layout" type="number">6</property>
+    <property id="pg6s1" type="number">8</property>
     <property id="pg6s2" type="number">0</property>
     <property id="pg6s3" type="number">0</property>
     <property id="pg6s4" type="number">0</property>
     <property id="pg6s5" type="number">0</property>
-    <!-- Page 7, the breadcrumb MAP (layout 7). It ships ON: the page has existed since 0.7
-         but was never in the default set, and a rider who has to find "Map" in a layout list
-         in Garmin Connect never learns it is there. It goes last because it is the one page
-         that cannot be drawn into — no PAUSED banner, no state ring — which is also why the
-         pager skips it while paused. On a product without WatchUi.MapTrackView PageModel
-         turns it off, so those watches keep the six screens they had. Slots unused. -->
-    <property id="pg7Layout" type="number">7</property>
+    <!-- Page 7, the TIMELINE (layout 8). It was page 6 until 0.9.17. Slots unused. -->
+    <property id="pg7Layout" type="number">8</property>
     <property id="pg7s1" type="number">0</property>
     <property id="pg7s2" type="number">0</property>
     <property id="pg7s3" type="number">0</property>
     <property id="pg7s4" type="number">0</property>
     <property id="pg7s5" type="number">0</property>
+    <!-- Page 8, the breadcrumb MAP (layout 7), page 7 until 0.9.17. It ships ON: the page has
+         existed since 0.7 but was never in the default set, and a rider who has to find "Map"
+         in a layout list in Garmin Connect never learns it is there. It goes last because it
+         is the one page that cannot be drawn into — no PAUSED banner, no state ring — which
+         is also why the pager skips it while paused. Slots unused. -->
+    <property id="pg8Layout" type="number">7</property>
+    <property id="pg8s1" type="number">0</property>
+    <property id="pg8s2" type="number">0</property>
+    <property id="pg8s3" type="number">0</property>
+    <property id="pg8s4" type="number">0</property>
+    <property id="pg8s5" type="number">0</property>
 </properties>

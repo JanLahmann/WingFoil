@@ -47,7 +47,7 @@ module AppSettings {
     var showLabels as Boolean = true;
 
     // ---- the page SET (0.9.16) ----
-    // standard = the seven screens the app has always shipped; large = five screens with one
+    // standard = the eight shipped screens; large = seven screens with one
     // giant number each (PageModel.buildLarge). It is ONE enum, in EVERY stream, which is the
     // whole design: the per-page editor went `(:dev)` in the same round, so this is the page
     // control a release or beta rider has — and a rider who says "I need my glasses" wants a

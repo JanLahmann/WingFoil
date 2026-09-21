@@ -1433,7 +1433,7 @@ function foilBezelArcSweepsClockwiseFromTwelve(logger as Test.Logger) as Boolean
         "pg1s3" => PageModel.M_NONE, "pg1s4" => PageModel.M_NONE,
         "pg1s5" => PageModel.M_NONE,
         "pg2Layout" => 0, "pg3Layout" => 0, "pg4Layout" => 0, "pg5Layout" => 0,
-        "pg6Layout" => 0, "pg7Layout" => 0
+        "pg6Layout" => 0, "pg7Layout" => 0, "pg8Layout" => 0
     });
     Test.assertMessage(!PageModel.pageHasMetric(0, PageModel.M_FOIL_PCT), "no slot carries it");
     Test.assertMessage(PageModel.pageDrawsFoilArc(0), "a slotless foil page still draws it");
@@ -1453,7 +1453,7 @@ function foilBezelArcSweepsClockwiseFromTwelve(logger as Test.Logger) as Boolean
 function resetPagesWritesTheDefaultsBack(logger as Test.Logger) as Boolean {
     Properties.setValue("pg1Layout", PageModel.LAYOUT_HERO);
     Properties.setValue("pg2s1", PageModel.M_HR);
-    Properties.setValue("pg7Layout", PageModel.LAYOUT_OFF);
+    Properties.setValue("pg8Layout", PageModel.LAYOUT_OFF);
     Properties.setValue("resetPages", true);
     Test.assertMessage(AppSettings.consumeResetPages(), "a switch left on reads as pressed");
     Test.assertMessage(!AppSettings.consumeResetPages(), "and only once");
@@ -1461,7 +1461,7 @@ function resetPagesWritesTheDefaultsBack(logger as Test.Logger) as Boolean {
     PageModel.restoreDefaults();
     Test.assertEqual(Properties.getValue("pg1Layout"), PageModel.DEF_LAYOUT[0]);
     Test.assertEqual(Properties.getValue("pg2s1"), PageModel.DEF_SLOTS[1][0]);
-    Test.assertEqual(Properties.getValue("pg7Layout"), PageModel.DEF_LAYOUT[6]);
+    Test.assertEqual(Properties.getValue("pg8Layout"), PageModel.DEF_LAYOUT[7]);
     Test.assertEqual(PageModel.layoutAt(0), PageModel.DEF_LAYOUT[0]);
     PageModel.build({});
     return true;
@@ -1669,14 +1669,15 @@ function trackTintBoundsTheNumberOfPolylines(logger as Test.Logger) as Boolean {
 
 // ---- Page model ----
 
-// The out-of-the-box page set must be byte-for-byte the five screens the app shipped with.
+// The out-of-the-box page set must be byte-for-byte the screens the app shipped with.
 (:test)
 function pageModelDefaultsMatchShippedPages(logger as Test.Logger) as Boolean {
     PageModel.build({});
-    // Seven pages since 0.8.2, on every product since 0.9.2: the seventh is the breadcrumb
-    // map, which used to be turned off on anything without WatchUi.MapTrackView and is now
-    // drawn by RecordingView like every other page, so there is nothing left to gate it on.
-    var pages = 7;
+    // EIGHT pages since 0.9.17: Tacks & jibes went in after Turns, and pushed the clock, the
+    // timeline and the map down one. The last of them is the breadcrumb map, which used to be
+    // turned off on anything without WatchUi.MapTrackView and is now drawn by RecordingView
+    // like every other page, so there is nothing left to gate it on.
+    var pages = 8;
     Test.assertMessage(PageModel.count() == pages,
         "expected " + pages.toString() + " default pages, got "
             + PageModel.count().toString());
@@ -1712,12 +1713,23 @@ function pageModelDefaultsMatchShippedPages(logger as Test.Logger) as Boolean {
 
     Test.assertEqual(PageModel.layoutAt(2), PageModel.LAYOUT_RECORDS);
     Test.assertEqual(PageModel.layoutAt(3), PageModel.LAYOUT_TURNS);
-    Test.assertEqual(PageModel.layoutAt(4), PageModel.LAYOUT_CLOCK);
-    Test.assertEqual(PageModel.slotAt(4, 0), PageModel.M_TIMER);
 
-    // TIMELINE ships ON (page 6): it is the page that shows the session as a story, and a
+    // Page 5 is TACKS & JIBES (0.9.17), straight after Turns: the Turns page says how the
+    // maneuvers went, this one says which maneuvers they were. Bespoke like the Turns page
+    // itself, so it reads no slot.
+    Test.assertEqual(PageModel.layoutAt(4), PageModel.LAYOUT_KINDS);
+    for (var s = 0; s < PageModel.SLOTS; s++) {
+        Test.assertEqual(PageModel.slotAt(4, s), PageModel.M_NONE);
+    }
+    Test.assertEqual(PageModel.label(PageModel.M_JIBES), "jibes");
+    Test.assertEqual(PageModel.label(PageModel.M_TACKS), "tacks");
+
+    Test.assertEqual(PageModel.layoutAt(5), PageModel.LAYOUT_CLOCK);
+    Test.assertEqual(PageModel.slotAt(5, 0), PageModel.M_TIMER);
+
+    // TIMELINE ships ON (page 7): it is the page that shows the session as a story, and a
     // tester who has to find it in Garmin Connect never sees it.
-    Test.assertEqual(PageModel.layoutAt(5), PageModel.LAYOUT_TIMELINE);
+    Test.assertEqual(PageModel.layoutAt(6), PageModel.LAYOUT_TIMELINE);
 
     // the cell labels the shipped Session page used, straight from the catalog
     Test.assertEqual(PageModel.label(PageModel.M_FOIL_TIME), "foil");
@@ -1727,17 +1739,17 @@ function pageModelDefaultsMatchShippedPages(logger as Test.Logger) as Boolean {
     Test.assertEqual(PageModel.label(PageModel.M_TIMER), "timer");
     Test.assertEqual(PageModel.suffix(PageModel.M_HR), " bpm");
 
-    // Page 7 is the breadcrumb map, shipped ON at last: it has been in the app since 0.7 and
+    // Page 8 is the breadcrumb map, shipped ON at last: it has been in the app since 0.7 and
     // in nobody's page cycle, because a page you have to go and find in Garmin Connect is a
-    // page that does not exist. It goes last because it is the least glanceable of the seven.
-    Test.assertEqual(PageModel.layoutAt(6), PageModel.LAYOUT_MAP);
+    // page that does not exist. It goes last because it is the least glanceable of them all.
+    Test.assertEqual(PageModel.layoutAt(7), PageModel.LAYOUT_MAP);
     Test.assertMessage(PageModel.mapPage, "the map page ships on, on every product");
 
     // wrapping is total: no index can escape the page set
     Test.assertEqual(PageModel.wrap(-1), pages - 1);
     Test.assertEqual(PageModel.wrap(pages), 0);
     logger.debug("defaults: " + pages.toString()
-        + " pages, main/foil/records/turns/clock/timeline/map");
+        + " pages, main/foil/records/turns/kinds/clock/timeline/map");
     return true;
 }
 
@@ -1754,7 +1766,8 @@ function pageModelCustomConfigMaps(logger as Test.Logger) as Boolean {
         "pg5Layout" => PageModel.LAYOUT_GRID4,
         "pg5s1" => 42,                           // out of range -> none
         "pg5s2" => PageModel.M_BATTERY,
-        "pg6Layout" => PageModel.LAYOUT_OFF, "pg7Layout" => PageModel.LAYOUT_OFF
+        "pg6Layout" => PageModel.LAYOUT_OFF, "pg7Layout" => PageModel.LAYOUT_OFF,
+        "pg8Layout" => PageModel.LAYOUT_OFF
     });
     Test.assertMessage(PageModel.count() == 3,
         "expected 3 pages, got " + PageModel.count().toString());
@@ -1772,15 +1785,16 @@ function pageModelCustomConfigMaps(logger as Test.Logger) as Boolean {
         "pg1Layout" => PageModel.LAYOUT_MAP,
         "pg2Layout" => PageModel.LAYOUT_OFF, "pg3Layout" => PageModel.LAYOUT_OFF,
         "pg4Layout" => PageModel.LAYOUT_OFF, "pg5Layout" => PageModel.LAYOUT_OFF,
-        "pg6Layout" => PageModel.LAYOUT_OFF, "pg7Layout" => PageModel.LAYOUT_OFF
+        "pg6Layout" => PageModel.LAYOUT_OFF, "pg7Layout" => PageModel.LAYOUT_OFF,
+        "pg8Layout" => PageModel.LAYOUT_OFF
     });
     Test.assertEqual(PageModel.layoutAt(0), PageModel.LAYOUT_MAP);
     Test.assertMessage(PageModel.mapPage, "map page flag set");
 
     // every page off must still leave one readable screen
     PageModel.build({
-        "pg1Layout" => 0, "pg2Layout" => 0, "pg3Layout" => 0,
-        "pg4Layout" => 0, "pg5Layout" => 0, "pg6Layout" => 0, "pg7Layout" => 0
+        "pg1Layout" => 0, "pg2Layout" => 0, "pg3Layout" => 0, "pg4Layout" => 0,
+        "pg5Layout" => 0, "pg6Layout" => 0, "pg7Layout" => 0, "pg8Layout" => 0
     });
     Test.assertEqual(PageModel.count(), 1);
     Test.assertEqual(PageModel.layoutAt(0), PageModel.LAYOUT_HERO);
@@ -2372,7 +2386,7 @@ function everyLayoutRendersHeadless(logger as Test.Logger) as Boolean {
     var layouts = [PageModel.LAYOUT_MAIN, PageModel.LAYOUT_HERO, PageModel.LAYOUT_GRID4,
         PageModel.LAYOUT_CELLS2, PageModel.LAYOUT_RECORDS, PageModel.LAYOUT_TURNS,
         PageModel.LAYOUT_CLOCK, PageModel.LAYOUT_TIMELINE, PageModel.LAYOUT_FOIL,
-        PageModel.LAYOUT_MAP];
+        PageModel.LAYOUT_MAP, PageModel.LAYOUT_KINDS];
     var view = new RecordingView();
     for (var i = 0; i < layouts.size(); i++) {
         // every slot filled with a timer: the widest thing the catalog can produce
@@ -2381,8 +2395,8 @@ function everyLayoutRendersHeadless(logger as Test.Logger) as Boolean {
             "pg1s1" => PageModel.M_TIMER, "pg1s2" => PageModel.M_LONGEST,
             "pg1s3" => PageModel.M_HR, "pg1s4" => PageModel.M_FOIL_TIME,
             "pg1s5" => PageModel.M_BEST_10S,
-            "pg2Layout" => 0, "pg3Layout" => 0, "pg4Layout" => 0,
-            "pg5Layout" => 0, "pg6Layout" => 0, "pg7Layout" => 0
+            "pg2Layout" => 0, "pg3Layout" => 0, "pg4Layout" => 0, "pg5Layout" => 0,
+            "pg6Layout" => 0, "pg7Layout" => 0, "pg8Layout" => 0
         });
         PageNav.index = 0;
         Test.assertEqual(PageModel.layoutAt(0), layouts[i]);
@@ -2414,7 +2428,7 @@ function everyLayoutRendersHeadless(logger as Test.Logger) as Boolean {
     PageModel.build({"pg1Layout" => PageModel.LAYOUT_HERO, "pg1s1" => PageModel.M_FOIL_PCT,
         "pg1s2" => PageModel.M_SPEED, "pg1s3" => PageModel.M_HR,
         "pg2Layout" => 0, "pg3Layout" => 0, "pg4Layout" => 0, "pg5Layout" => 0,
-        "pg6Layout" => 0, "pg7Layout" => 0});
+        "pg6Layout" => 0, "pg7Layout" => 0, "pg8Layout" => 0});
     PageNav.index = 0;
     Test.assertMessage(PageModel.pageHasMetric(0, PageModel.M_FOIL_PCT), "hero foil arc");
     view.onUpdate(dc);
@@ -2434,8 +2448,8 @@ function everyLayoutRendersHeadless(logger as Test.Logger) as Boolean {
     c.engine = fresh;
     for (var i = 0; i < layouts.size(); i++) {
         PageModel.build({"pg1Layout" => layouts[i], "pg2Layout" => 0, "pg3Layout" => 0,
-            "pg4Layout" => 0, "pg5Layout" => 0, "pg6Layout" => 0,
-            "pg7Layout" => 0});
+            "pg4Layout" => 0, "pg5Layout" => 0, "pg6Layout" => 0, "pg7Layout" => 0,
+            "pg8Layout" => 0});
         PageNav.index = 0;
         view.onUpdate(dc);
     }
@@ -2443,7 +2457,7 @@ function everyLayoutRendersHeadless(logger as Test.Logger) as Boolean {
     PageModel.build({});
     PageNav.index = 0;
     logger.debug("rendered " + layouts.size().toString()
-        + " layouts populated + empty, plus the 5 default pages and the PAUSED banner");
+        + " layouts populated + empty, plus every default page and the PAUSED banner");
     return true;
 }
 
@@ -3330,7 +3344,7 @@ function summaryPagesFitRoundDisplay(logger as Test.Logger) as Boolean {
         + " at y " + SummaryView.savedY(dc).toString() + " on a "
         + dc.getFontHeight(Graphics.FONT_XTINY).toString() + "px line");
     var dr = SummaryView.dotRadius(dc);
-    var dotN = 7;                                   // every page the summary can produce
+    var dotN = 8;                                   // every page the summary can produce
     var dotW = dotN * (2 * dr + SUM_DOT_GAP) - SUM_DOT_GAP;
     var rDots = cornerRadius(dotW, 2 * dr, screenPx() - SummaryView.dotBand(dc), cy);
     Test.assertMessage(rDots <= RecordingView.fitRadius(dc, false, false).toFloat(),
@@ -3392,6 +3406,7 @@ function summaryPagesBuildAndRenderHeadless(logger as Test.Logger) as Boolean {
     for (var i = 0; i < SummaryNav.count(); i++) {
         SummaryNav.index = i;
         Test.assertMessage(SummaryNav.pageAt(i) != SummaryNav.S_TURNS, "no turns page");
+        Test.assertMessage(SummaryNav.pageAt(i) != SummaryNav.S_KINDS, "no kinds page");
         Test.assertMessage(SummaryNav.pageAt(i) != SummaryNav.S_TAKEOFFS, "no takeoff page");
         Test.assertMessage(SummaryNav.pageAt(i) != SummaryNav.S_TRACK, "no track page");
         view.onUpdate(dc);
@@ -3443,7 +3458,8 @@ function summaryPagesBuildAndRenderHeadless(logger as Test.Logger) as Boolean {
     e.trackN = 8;
 
     SummaryNav.build(c);
-    Test.assertEqual(SummaryNav.count(), 7);
+    // eight since 0.9.17: the session above has tacks and jibes, so the kinds page is earned
+    Test.assertEqual(SummaryNav.count(), 8);
     for (var i = 0; i < SummaryNav.count(); i++) {
         SummaryNav.index = i;
         view.onUpdate(dc);
@@ -3877,7 +3893,8 @@ function pagingIsPlainIndexArithmetic(logger as Test.Logger) as Boolean {
         "pg1Layout" => PageModel.LAYOUT_MAIN,
         "pg2Layout" => PageModel.LAYOUT_MAP,
         "pg3Layout" => PageModel.LAYOUT_CLOCK,
-        "pg4Layout" => 0, "pg5Layout" => 0, "pg6Layout" => 0, "pg7Layout" => 0
+        "pg4Layout" => 0, "pg5Layout" => 0, "pg6Layout" => 0, "pg7Layout" => 0,
+        "pg8Layout" => 0
     });
     Test.assertEqual(PageModel.count(), 3);
     Test.assertEqual(PageModel.layoutAt(1), PageModel.LAYOUT_MAP);
@@ -3892,7 +3909,7 @@ function pagingIsPlainIndexArithmetic(logger as Test.Logger) as Boolean {
         "pg1Layout" => PageModel.LAYOUT_MAP,
         "pg2Layout" => PageModel.LAYOUT_MAP,
         "pg3Layout" => 0, "pg4Layout" => 0, "pg5Layout" => 0, "pg6Layout" => 0,
-        "pg7Layout" => 0
+        "pg7Layout" => 0, "pg8Layout" => 0
     });
     Test.assertEqual(PageModel.count(), 2);
     Test.assertEqual(PageModel.layoutAt(0), PageModel.LAYOUT_MAP);
@@ -4946,7 +4963,7 @@ function fuzzAccelBatchesSurviveEveryShape(logger as Test.Logger) as Boolean {
 // thresholds are asserted to land inside docs/algorithms.md afterwards.
 const FUZZ_PROPS = ["foilEntryKmh", "foilExitKmh", "entryHoldS", "exitHoldS", "minFlightS",
     "sportChoice", "windDirDeg", "windDefaultTurnType", "autoPauseDelayS",
-    "alertIntervalMin", "alertIntervalKm", "pg1Layout", "pg1s1", "pg7Layout"];
+    "alertIntervalMin", "alertIntervalKm", "pg1Layout", "pg1s1", "pg8Layout"];
 
 function fuzzPropValue(shape as Number) as Object? {
     if (shape == 0) { return 0; }
@@ -5255,13 +5272,126 @@ function fuzzDirectStreamPagesAreFreedWhenTheStreamIsWhole(logger as Test.Logger
     return true;
 }
 
+// ---- the TACKS & JIBES page (0.9.17) ----
+//
+// Five rows on a round glass: the wind header, then two halves that each spend a giant on one
+// kind's count and a caption row on the word and the fly-throughs. What this measures is what
+// the page can get wrong: a giant that steps off the number ladder, a caption row that runs
+// out of chord, and — the reason the page is stacked rather than side by side — the two halves
+// or their rows touching. Worst-case content throughout, with the device's real font metrics,
+// so the fenix 5 Plus family's leadingless number fonts are measured as themselves.
+(:test)
+function kindsPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
+    var dc = testDc();
+    var cy = screenPx() / 2;
+    var pageR = RecordingView.fitRadius(dc, false, false);
+    var limit = pageR.toFloat();
+    var hT = dc.getFontHeight(Graphics.FONT_XTINY);
+    var hG = RecordingView.inkH(dc, Graphics.FONT_NUMBER_MEDIUM);
+    var hC = dc.getFontHeight(TEXT_FONTS[KINDS_FROM]);
+
+    // row 0 — the header. Both forms: the axis the watch estimated (the widest, "~NNE" after
+    // the word) and the line that says there is no axis to split on.
+    var y0 = RecordingView.kindsRowY(cy, hT, hG, hC, 0);
+    var heads = [KINDS_WIND + "~NNE", KINDS_NO_WIND] as Array<String>;
+    for (var i = 0; i < heads.size(); i++) {
+        var r = cornerRadius(dc.getTextWidthInPixels(heads[i], Graphics.FONT_XTINY),
+            RecordingView.inkH(dc, Graphics.FONT_XTINY), y0, cy);
+        Test.assertMessage(r <= limit, "kinds header \"" + heads[i] + "\" corner "
+            + r.format("%.0f") + " > " + limit);
+    }
+
+    // the two halves, jibes on top and tacks below, at their worst case (a three-figure
+    // session) and at a real one (52 jibes, 38 of them flown through)
+    var caps = [KINDS_JIBES, KINDS_TACKS] as Array<String>;
+    var worst = ["999", "999"] as Array<String>;
+    var real = ["52", "41"] as Array<String>;
+    var flewWorst = [PageModel.FLEW_PREFIX + "999", PageModel.FLEW_PREFIX + "999"]
+        as Array<String>;
+    var flewReal = [PageModel.FLEW_PREFIX + "38", PageModel.FLEW_PREFIX + "29"]
+        as Array<String>;
+    for (var half = 0; half < 2; half++) {
+        // the giant
+        var yg = RecordingView.kindsRowY(cy, hT, hG, hC, 1 + 2 * half);
+        var gBudget = RecordingView.rowBudget(pageR, yg - cy, hG);
+        var wf = RecordingView.kindGiantFont(dc, worst[half], gBudget);
+        var r = cornerRadius(dc.getTextWidthInPixels(worst[half], wf),
+            RecordingView.inkH(dc, wf), yg, cy);
+        Test.assertMessage(r <= limit, "kinds giant " + caps[half] + " corner "
+            + r.format("%.0f") + " > " + limit);
+        // a count is a value: the ladder may step down, never below the readability floor
+        Test.assertMessage(dc.getFontHeight(wf) >= dc.getFontHeight(
+            RecordingView.numberLadderIsSmall(dc)
+                ? Graphics.FONT_NUMBER_MILD : Graphics.FONT_SMALL),
+            "kinds giant " + caps[half] + " fell below FONT_SMALL");
+        // ...and on the session the page was designed against it is still a NUMBER, which is
+        // the whole claim of the page: the count is the giant, not a row of digits
+        var rf = RecordingView.kindGiantFont(dc, real[half], gBudget);
+        Test.assertMessage(dc.getFontHeight(rf) >= dc.getFontHeight(Graphics.FONT_NUMBER_MILD),
+            "the " + caps[half] + " count is not a giant on a real session");
+
+        // the caption row under it: the word, then the fly-throughs in the ladder's green
+        var yc = RecordingView.kindsRowY(cy, hT, hG, hC, 2 + 2 * half);
+        var cBudget = RecordingView.rowBudget(pageR, yc - cy,
+            RecordingView.inkH(dc, TEXT_FONTS[KINDS_FROM]));
+        var keep = RecordingView.kindsSubWidth(dc, caps[half], flewWorst[half],
+            TEXT_FONTS[TALLY_FLOOR]) <= cBudget;
+        var sf = RecordingView.kindsSubFont(dc, caps[half],
+            keep ? flewWorst[half] : "", cBudget);
+        r = cornerRadius(RecordingView.kindsSubWidth(dc, caps[half],
+            keep ? flewWorst[half] : "", sf), RecordingView.inkH(dc, sf), yc, cy);
+        Test.assertMessage(r <= limit, "kinds caption row " + caps[half] + " corner "
+            + r.format("%.0f") + " > " + limit);
+        Test.assertMessage(dc.getFontHeight(sf) >= dc.getFontHeight(Graphics.FONT_SMALL),
+            "the kinds caption row fell below FONT_SMALL");
+        Test.assertMessage(dc.getFontHeight(sf) <= hC,
+            "the kinds caption row is taller than the band it was stacked with");
+        // the WORD must always fit — it is what names the half, and the fly-throughs are
+        // what the row gives up to keep it
+        Test.assertMessage(
+            RecordingView.kindsSubWidth(dc, caps[half], "", TEXT_FONTS[TALLY_FLOOR])
+                <= cBudget, "not even the word fits the " + caps[half] + " row");
+        Test.assertMessage(
+            RecordingView.kindsSubWidth(dc, caps[half], "", sf)
+                < RecordingView.kindsSubWidth(dc, caps[half], flewReal[half], sf),
+            "dropping the fly-throughs must save width");
+        // ...and on a real session, on every glass, both halves of the row survive
+        Test.assertMessage(
+            RecordingView.kindsSubWidth(dc, caps[half], flewReal[half],
+                TEXT_FONTS[TALLY_FLOOR]) <= cBudget,
+            "\"" + caps[half] + " " + flewReal[half] + "\" does not fit a "
+                + screenPx().toString() + "px glass");
+
+        // the giant and its own caption row may not touch
+        Test.assertMessage(yc - yg >= (RecordingView.inkH(dc, wf)
+            + RecordingView.inkH(dc, sf)) / 2,
+            "the " + caps[half] + " giant and its caption row overlap");
+    }
+
+    // the two HALVES may not touch each other, and the header may not touch the first giant.
+    // This is the pair the stacked layout exists to keep apart: the tacks giant sits directly
+    // under the jibes caption row, and both are drawn at their own ink heights.
+    var yJc = RecordingView.kindsRowY(cy, hT, hG, hC, 2);
+    var yTg = RecordingView.kindsRowY(cy, hT, hG, hC, 3);
+    Test.assertMessage(yTg - yJc >= (hC + hG) / 2, "the two halves overlap");
+    Test.assertMessage(RecordingView.kindsRowY(cy, hT, hG, hC, 1) - y0 >= (hT + hG) / 2,
+        "the header sits on the jibes giant");
+    // the whole block is centred: the two halves are the same height, so the page's ink is
+    // symmetric about the equator and neither giant is pushed into the arc
+    Test.assertEqual(RecordingView.kindsRowY(cy, hT, hG, hC, 3)
+        - RecordingView.kindsRowY(cy, hT, hG, hC, 1), hG + hC);
+    logger.debug("kinds page: giant band " + hG.toString() + "px, caption band "
+        + hC.toString() + "px, header \"" + RecordingView.kindsHeader() + "\"");
+    return true;
+}
+
 // ---- the page SET and the LARGE pages (0.9.16) ----
 
-// Five pages, one metric each, and the standard set untouched on the way back. The large set
-// is built from a fixed table and reads no property at all, which is what lets it be the one
-// page control every stream has.
+// One metric a page, and the standard set untouched on the way back. The large set is built
+// from a fixed table and reads no property at all, which is what lets it be the one page
+// control every stream has. Seven pages since 0.9.17: jibes and tacks joined after turns.
 (:test)
-function largePageSetIsFivePagesOfOneNumber(logger as Test.Logger) as Boolean {
+function largePageSetIsOneNumberAPage(logger as Test.Logger) as Boolean {
     var before = AppSettings.pageSet;
     AppSettings.pageSet = PageModel.PAGE_SET_LARGE;
     PageModel.build(null);
@@ -5278,6 +5408,11 @@ function largePageSetIsFivePagesOfOneNumber(logger as Test.Logger) as Boolean {
         Test.assertMessage(!PageModel.bigWord(PageModel.BIG_SLOT[i]).equals(""),
             "large page " + i.toString() + " has no word");
     }
+    // the two KIND screens (0.9.17) are the turns screen's question asked of one kind each
+    Test.assertEqual(PageModel.BIG_SLOT[3], PageModel.M_JIBES);
+    Test.assertEqual(PageModel.BIG_SLOT[4], PageModel.M_TACKS);
+    Test.assertEqual(PageModel.bigWord(PageModel.M_JIBES), "jibes");
+    Test.assertEqual(PageModel.bigWord(PageModel.M_TACKS), "tacks");
     // the foil page earns the arc the ordinary way; no other large page draws one
     Test.assertMessage(PageModel.pageDrawsFoilArc(1), "the large foil page keeps its arc");
     Test.assertMessage(!PageModel.pageDrawsFoilArc(0), "the large speed page draws no arc");
@@ -5311,10 +5446,13 @@ function largePagesFitRoundDisplay(logger as Test.Logger) as Boolean {
     for (var i = 0; i < PageModel.BIG_PAGES; i++) {
         var id = PageModel.BIG_SLOT[i];
         var tally = id == PageModel.M_TURNS;
+        // 0.9.17: the two KIND screens carry a third row too — "flew 99" in the ladder's
+        // green — so their band is the tally's band and their rows are measured like it.
+        var kind = id == PageModel.M_JIBES || id == PageModel.M_TACKS;
         var arc = id == PageModel.M_FOIL_PCT;
         var radius = RecordingView.fitRadius(dc, false, arc);
         var limit = radius.toFloat();
-        var band = tally ? hK : 0;
+        var band = tally || kind ? hK : 0;
         var v = PageModel.worstValue(id);
 
         // row 0 — the giant
@@ -5360,6 +5498,22 @@ function largePagesFitRoundDisplay(logger as Test.Logger) as Boolean {
             // and the rows may not touch
             Test.assertMessage(y - RecordingView.bigRowY(cy, hN, hW, band, 1)
                 >= (hW + band) / 2, "big word/tally gap");
+        }
+        // row 2 on a kind screen — the fly-throughs of that kind, at its worst case
+        if (kind) {
+            y = RecordingView.bigRowY(cy, hN, hW, band, 2);
+            var kb = RecordingView.rowBudget(radius, y - cy,
+                RecordingView.inkH(dc, TEXT_FONTS[BIG_TALLY_FROM]));
+            var line = PageModel.FLEW_PREFIX + "99";
+            var kf = RecordingView.fitFont(dc, TEXT_FONTS, BIG_TALLY_FROM, line, kb);
+            r = cornerRadius(dc.getTextWidthInPixels(line, kf),
+                RecordingView.inkH(dc, kf), y, cy);
+            Test.assertMessage(r <= limit, "big flew line p" + i.toString() + " r="
+                + r.format("%.0f") + " > " + limit);
+            Test.assertMessage(dc.getFontHeight(kf) >= dc.getFontHeight(Graphics.FONT_SMALL),
+                "the large set's flew line fell below the readability floor");
+            Test.assertMessage(y - RecordingView.bigRowY(cy, hN, hW, band, 1)
+                >= (hW + band) / 2, "big word/flew gap");
         }
         Test.assertMessage(RecordingView.bigRowY(cy, hN, hW, band, 1)
             - RecordingView.bigRowY(cy, hN, hW, band, 0) >= (hN + hW) / 2,
@@ -5565,7 +5719,7 @@ function standardPagesTextHeadroom(logger as Test.Logger) as Boolean {
 (:test :notdev)
 function theReleaseStreamHasNoPageEditor(logger as Test.Logger) as Boolean {
     var declared = 0;
-    var keys = ["resetPages", "pg1Layout", "pg2s1", "pg7Layout"] as Array<String>;
+    var keys = ["resetPages", "pg1Layout", "pg2s1", "pg8Layout"] as Array<String>;
     for (var i = 0; i < keys.size(); i++) {
         try {
             Properties.setValue(keys[i], 1);

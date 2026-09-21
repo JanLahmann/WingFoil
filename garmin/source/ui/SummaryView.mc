@@ -42,7 +42,11 @@ module SummaryNav {
         S_TURNS = 3,
         S_TAKEOFFS = 4,
         S_STORY = 5,
-        S_TRACK = 6
+        S_TRACK = 6,
+        // 0.9.17, appended rather than inserted: these ids are a page's NAME, and the order
+        // is the `_pages` list below. Tacks & jibes shows after Turns there, exactly where it
+        // shows on the water.
+        S_KINDS = 7
     }
 
     var _pages as Array<Number> = [S_VERDICT];
@@ -55,6 +59,13 @@ module SummaryNav {
         var p = [S_VERDICT, S_SPEED, S_FOIL] as Array<Number>;
         if (e.turns.turnCount > 0) {
             p.add(S_TURNS);
+        }
+        // The kinds page needs a KIND to show. Without a wind axis every turn is a generic
+        // turn and both counts are 0, and a page that would say 0 is not a page — the same
+        // rule the takeoffs and track pages are gated by. The live page stays in the cycle
+        // either way, because on the water the axis can still arrive.
+        if (e.turns.tackCount > 0 || e.turns.jibeCount > 0) {
+            p.add(S_KINDS);
         }
         if (e.pump.attempts() > 0 || e.pump.strokes > 0) {
             p.add(S_TAKEOFFS);
@@ -134,6 +145,8 @@ class SummaryView extends WatchUi.View {
             drawFoil(dc, c);
         } else if (page == SummaryNav.S_TURNS) {
             drawTurns(dc, c);
+        } else if (page == SummaryNav.S_KINDS) {
+            drawKinds(dc, c);
         } else if (page == SummaryNav.S_TAKEOFFS) {
             drawTakeoffs(dc, c);
         } else if (page == SummaryNav.S_STORY) {
@@ -344,7 +357,17 @@ class SummaryView extends WatchUi.View {
         _painter.drawTurnsBody(dc, c, false);
     }
 
-    // ---- S5 Takeoffs ----
+    // ---- S5 Tacks & jibes ----
+    // The live Tacks & jibes page, VERBATIM — no flag, because nothing on it means anything
+    // different ashore: two counts and how many of each he flew through are the same four
+    // numbers before and after the save. It is the fifth page unified with its live twin
+    // (docs/presentation.md, "The after-save pages and the live ones") and the first that was
+    // born unified.
+    hidden function drawKinds(dc as Dc, c as SessionController) as Void {
+        _painter.drawKindsBody(dc, c);
+    }
+
+    // ---- S6 Takeoffs ----
     // Only reached when the accelerometer produced something, so the numbers here are always
     // measured ones. "--" where a value genuinely was not measured, never a flattering 0.
     hidden function drawTakeoffs(dc as Dc, c as SessionController) as Void {
@@ -357,7 +380,7 @@ class SummaryView extends WatchUi.View {
             Ink.effortPumping(), false);
     }
 
-    // ---- S6 Story ----
+    // ---- S7 Story ----
     // The timeline, verbatim. `history` is complete and untouched by the save, and this is
     // the page it was always really for: a coffee-in-hand read of the session arc, which is a
     // poor fit while riding and a perfect one here.
@@ -370,7 +393,7 @@ class SummaryView extends WatchUi.View {
     // start disagreeing about the same session.
     hidden var _painter as RecordingView = new RecordingView();
 
-    // ---- S7 Track ----
+    // ---- S8 Track ----
     // The breadcrumb as a SHAPE, tinted by foil state, scaled into the square inscribed in the
     // circle. The renderer moved to TrackDraw in 0.9.2 when the live map page stopped being the
     // firmware's MapTrackView and started being drawn the same way — a live trail and a

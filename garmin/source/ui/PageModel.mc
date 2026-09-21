@@ -11,10 +11,11 @@ import WingFoilCore;
 // (`pg<N>Layout`, `pg<N>s<M>`), so the rider re-orders, re-fills and removes screens from the
 // phone; `build()` re-runs on every onSettingsChanged, which is the whole hot-reload story.
 //
-// The DEFAULTS below are the seven screens 0.8.2 ships with:
-// 1 Main · 2 Foil · 3 Records · 4 Turns · 5 Clock · 6 Timeline · 7 Map. Change them here and
-// in resources/settings/properties.xml together — properties.xml wins on a real device, this
-// table is the fallback and the thing the unit test asserts against.
+// The DEFAULTS below are the eight shipped screens (seven until 0.9.17):
+// 1 Main · 2 Foil · 3 Records · 4 Turns · 5 Tacks & jibes · 6 Clock · 7 Timeline · 8 Map.
+// Change them here and in resources-dev/base/settings/properties.xml together — that file
+// wins on an installed dev watch, this table is the fallback, the only source release and
+// beta have, and the thing the unit test asserts against.
 //
 // Page 1 changed in 0.8.0 from the speed HERO (speed / flight timer / HR) to LAYOUT_MAIN.
 // The flight timer and heart rate did not disappear: they are catalog metrics and go in any
@@ -63,9 +64,15 @@ module PageModel {
         // that says what it is a rung UP from every other caption on the watch, and — on the
         // turns page alone — the outcome tally under it. Slot 1 carries the metric; no other
         // slot is read. See `bigWord` and RecordingView.drawBigPage.
-        LAYOUT_BIG = 11
+        LAYOUT_BIG = 11,
+        // The standard set's eighth page (0.9.17): TACKS & JIBES. Two halves, one per kind —
+        // the count as a giant, the word under it, and under that how many of that kind he
+        // flew through. Bespoke like MAIN/FOIL/RECORDS/TURNS: no slot is read, because both
+        // halves are the same two numbers asked of the other kind and a configurable cell
+        // could only make it a worse version of the page it is.
+        LAYOUT_KINDS = 12
     }
-    const LAYOUT_MAX = 11;
+    const LAYOUT_MAX = 12;
 
     // Metric catalog. Values are the GCM list values — append only, never renumber.
     enum {
@@ -96,23 +103,32 @@ module PageModel {
         // The distance twin of M_FOIL_PCT: what share of the KILOMETRES was flown, against
         // M_FOIL_PCT's share of the MINUTES. The two are one fact seen from two sides and the
         // default Session page shows them side by side (see bandPair below).
-        M_FOIL_DIST_PCT = 21
+        M_FOIL_DIST_PCT = 21,
+        // The two KINDS as catalog metrics (0.9.17). `M_TURNS` counts every counted turn;
+        // these two are the split the Tacks & jibes page is built on, and they are in the
+        // catalog rather than private to it so the LARGE set can carry one per screen and a
+        // dev rider can put either in any cell. A turn the wind axis could not name is in
+        // neither, which is why they are additive to M_TURNS and never replace it.
+        M_JIBES = 22,
+        M_TACKS = 23
     }
-    const M_MAX = 21;
+    const M_MAX = 23;
 
-    // Seven configurable pages since 0.8.2. The seventh exists so the BREADCRUMB MAP can ship
-    // ON by default: the page has been in the app since 0.7 but was never in the shipped set,
+    // Eight configurable pages. The BREADCRUMB MAP is the last of them and ships ON: the page has been in the app since 0.7 but was never in the shipped set,
     // and a rider who has to find "Map" in a Garmin Connect layout list never learns it is
     // there. It goes LAST because it is the least glanceable, not because it is special: since
     // 0.9.2 the trail is drawn by RecordingView like every other page (TrackDraw), so it needs
     // no firmware map support, carries the PAUSED banner, and exists on every product.
-    const MAX_PAGES = 7;
+    // Eight since 0.9.17: TACKS & JIBES goes straight after Turns, because it is the same
+    // question one level down — the Turns page says how the maneuvers went, this one says
+    // which maneuvers they were — and a rider practising tacks reads the two together.
+    const MAX_PAGES = 8;
     const SLOTS = 5;
 
-    // ---- the shipped five pages, as data ----
+    // ---- the shipped pages, as data ----
     var DEF_LAYOUT as Array<Number> = [
-        LAYOUT_MAIN, LAYOUT_FOIL, LAYOUT_RECORDS, LAYOUT_TURNS, LAYOUT_CLOCK, LAYOUT_TIMELINE,
-        LAYOUT_MAP
+        LAYOUT_MAIN, LAYOUT_FOIL, LAYOUT_RECORDS, LAYOUT_TURNS, LAYOUT_KINDS, LAYOUT_CLOCK,
+        LAYOUT_TIMELINE, LAYOUT_MAP
     ];
     // Page 2's slots are LEFT AT THE OLD SESSION GRID even though LAYOUT_FOIL reads none of
     // them. Two reasons: a rider who sets page 2 back to "Grid" in Garmin Connect gets exactly
@@ -121,6 +137,7 @@ module PageModel {
     var DEF_SLOTS as Array<Array<Number> > = [
         [M_BEST_10S, M_NONE, M_NONE, M_NONE, M_NONE],
         [M_FOIL_PCT, M_FOIL_TIME, M_LONGEST, M_DISTANCE, M_FLIGHTS],
+        [M_NONE, M_NONE, M_NONE, M_NONE, M_NONE],
         [M_NONE, M_NONE, M_NONE, M_NONE, M_NONE],
         [M_NONE, M_NONE, M_NONE, M_NONE, M_NONE],
         [M_TIMER, M_NONE, M_NONE, M_NONE, M_NONE],
@@ -143,16 +160,23 @@ module PageModel {
     // this set is for.
     const PAGE_SET_STANDARD = 0;
     const PAGE_SET_LARGE = 1;
-    const BIG_PAGES = 5;
-    var BIG_SLOT as Array<Number> = [M_SPEED, M_FOIL_PCT, M_TURNS, M_CLOCK, M_BEST_2S];
+    // Seven since 0.9.17: JIBES and TACKS join, one screen each, straight after the turns
+    // screen — the same place and the same reason they take in the standard set. Each carries
+    // its kind's count as the giant, the kind as the word, and how many of them he flew
+    // through under it (`flewLine`), which is the large set's word-under-giant shape with one
+    // line of verdict added, exactly as the turns screen already carries its tally.
+    const BIG_PAGES = 7;
+    var BIG_SLOT as Array<Number> = [
+        M_SPEED, M_FOIL_PCT, M_TURNS, M_JIBES, M_TACKS, M_CLOCK, M_BEST_2S
+    ];
 
     // ---- built state ----
     // `_layout`/`_slot` are indexed by CONFIG page (0..5); `_order` lists the configured pages
     // that are actually on, in order, and is what the UI cycles through.
-    var _layout as Array<Number> = [0, 0, 0, 0, 0, 0, 0];
+    var _layout as Array<Number> = [0, 0, 0, 0, 0, 0, 0, 0];
     var _slot as Array<Array<Number> > = [
         [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0]
+        [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0]
     ];
     var _order as Array<Number> = [0];
     var mapPage as Boolean = false;      // any page asks for the breadcrumb map
@@ -362,6 +386,8 @@ module PageModel {
         if (id == M_TAKEOFF_COST) { return "hr cost"; }
         if (id == M_STREAK) { return "dry run"; }
         if (id == M_FOIL_DIST_PCT) { return "foil dist"; }
+        if (id == M_JIBES) { return "jibes"; }
+        if (id == M_TACKS) { return "tacks"; }
         return "";
     }
 
@@ -426,7 +452,10 @@ module PageModel {
         // the takeoff cost is a heartbeat number before it is a pumping one: what the eye is
         // being told is "this is your heart", and the label says which of the two it is
         if (id == M_HR || id == M_TAKEOFF_COST) { return Glyphs.G_HEART; }
-        if (id == M_TURNS || id == M_TURN_SCORE || id == M_STREAK) { return Glyphs.G_TURN; }
+        if (id == M_TURNS || id == M_TURN_SCORE || id == M_STREAK || id == M_JIBES
+            || id == M_TACKS) {
+            return Glyphs.G_TURN;
+        }
         if (id == M_PUMP_STROKES || id == M_TAKEOFFS || id == M_PUMPS_TO_TAKEOFF) {
             return Glyphs.G_PUMP;
         }
@@ -465,6 +494,8 @@ module PageModel {
             return AppSettings.speedToDisplay(e.records.best10sMps).format("%.1f");
         }
         if (id == M_TURNS) { return e.turns.turnCount.toString(); }
+        if (id == M_JIBES) { return e.turns.jibeCount.toString(); }
+        if (id == M_TACKS) { return e.turns.tackCount.toString(); }
         if (id == M_TURN_SCORE) {
             return e.turns.lastOutcome == TurnDetector.OUTCOME_NONE
                 ? "--" : e.turns.lastScorePct.toString() + "%";
@@ -529,6 +560,26 @@ module PageModel {
         return l.equals(unitOf(id)) ? "" : l;
     }
 
+    // ---- the kinds' fly-through line (0.9.17) ----
+    // "flew 9": how many of ONE KIND he kept the foil through. It rides under the kind's own
+    // count on the Tacks & jibes page and under its giant in the large set, in the ladder's
+    // green, because it is the ladder's green count asked of one kind — same numerator rule,
+    // narrower question. Empty for every other metric, and empty at zero: "flew 0" under a
+    // count of 0 is not a fact yet, the same rule the clean-jibe row keeps.
+    const FLEW_PREFIX = "flew ";
+
+    // How many of that kind flew through, or -1 when the metric is not a kind.
+    function flewOfKind(id as Number, t as TurnDetector) as Number {
+        if (id == M_JIBES) { return t.jibeFlewCount; }
+        if (id == M_TACKS) { return t.tackFlewCount; }
+        return -1;
+    }
+
+    function flewLine(id as Number, t as TurnDetector) as String {
+        var n = flewOfKind(id, t);
+        return n <= 0 ? "" : FLEW_PREFIX + n.toString();
+    }
+
     // "now / best" — the live dry streak beside the session's longest. One string so it fits
     // a cell; the main screen draws the two halves separately so it can colour them.
     function streakText(t as TurnDetector) as String {
@@ -561,7 +612,9 @@ module PageModel {
             || id == M_BATTERY) {
             return "100%";
         }
-        if (id == M_FLIGHTS || id == M_TURNS) { return "999"; }
+        if (id == M_FLIGHTS || id == M_TURNS || id == M_JIBES || id == M_TACKS) {
+            return "999";
+        }
         // the cost is a difference inside the 30-220 bpm plausibility band, so three digits is
         // its honest ceiling even though a real takeoff costs 7
         if (id == M_HR || id == M_PUMPS_TO_TAKEOFF || id == M_TAKEOFF_COST) { return "199"; }

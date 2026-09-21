@@ -40,8 +40,8 @@
     <property id="phonePush" type="boolean">false</property>
 
     <!-- 0.9.16: the page SET (AppSettings.pageSet, PageModel.PAGE_SET_*).
-         0 standard — the seven screens the app has always shipped.
-         1 large — five screens, one giant number and its word on each, for a rider who
+         0 standard — the eight shipped screens (seven until 0.9.17).
+         1 large — seven screens, one giant number and its word on each, for a rider who
          cannot read four numbers on a wet glass at 25 kn. Mirror of PageModel's constants;
          change both together. It is in EVERY stream: the per-page editor below it moved to
          resources-dev/base/settings/ in the same round. -->

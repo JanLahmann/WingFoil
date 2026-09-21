@@ -17,6 +17,7 @@
     <string id="LayTimeline">Timeline (session story)</string>
     <string id="LayMain">Main: speed, turns, streak</string>
     <string id="LayFoil">Foil: min and km table</string>
+    <string id="LayKinds">Tacks and jibes</string>
     <string id="MetNone">— none —</string>
     <string id="MetSpeed">Speed</string>
     <string id="MetFoilPct">Foil %</string>
@@ -39,8 +40,10 @@
     <string id="MetTakeoffCost">Takeoff HR cost, last</string>
     <string id="MetStreak">Dry run (now/best)</string>
     <string id="MetFoilDistPct">Foil distance %</string>
+    <string id="MetJibes">Jibe count</string>
+    <string id="MetTacks">Tack count</string>
     <string id="SetResetPages">Reset pages to defaults</string>
-    <string id="SetResetPagesNote">Turn on and save. The watch restores the seven shipped pages: Main, Foil, Records, Turns, Clock, Timeline, Map. Then it switches this off again.</string>
+    <string id="SetResetPagesNote">Turn on and save. The watch restores the eight shipped pages: Main, Foil, Records, Turns, Tacks and jibes, Clock, Timeline, Map. Then it switches this off again.</string>
     <string id="SetPg1Layout">Page 1 layout</string>
     <string id="SetPg1s1">Page 1 slot 1</string>
     <string id="SetPg1s2">Page 1 slot 2</string>
@@ -83,4 +86,10 @@
     <string id="SetPg7s3">Page 7 slot 3</string>
     <string id="SetPg7s4">Page 7 slot 4</string>
     <string id="SetPg7s5">Page 7 slot 5</string>
+    <string id="SetPg8Layout">Page 8 layout</string>
+    <string id="SetPg8s1">Page 8 slot 1</string>
+    <string id="SetPg8s2">Page 8 slot 2</string>
+    <string id="SetPg8s3">Page 8 slot 3</string>
+    <string id="SetPg8s4">Page 8 slot 4</string>
+    <string id="SetPg8s5">Page 8 slot 5</string>
 </strings>
