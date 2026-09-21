@@ -6,7 +6,7 @@ Single source of truth for detection/metric parameters. Three implementations fo
 re-tuned in lab notebooks against the labeled fixture corpus; changed defaults are updated HERE
 first, with the tuning notebook referenced in the commit.
 
-`ENGINE_VERSION`: **0.21.0** (bump on any change that alters outputs; triggers phone re-analysis)
+`ENGINE_VERSION`: **0.22.0** (bump on any change that alters outputs; triggers phone re-analysis)
 
 ## Disciplines — one engine, three rigs (engine ≥ 0.18.0, EXPERIMENTAL)
 
@@ -428,7 +428,7 @@ could not prove it measured anything.
 | `turnRecoverHold` | 2 | s | recovery must hold this long, same both-ends-qualify convention as flight `entryHold` |
 | `turnPumpedOutIsTouchdown` | **on** | switch | the **pump rung's gate** (engine ≥ 0.18.0). With it set, a turn that never left the foil is still a `touchdown` when the accelerometer heard a burst in the window *and* a sample fell below `turnPumpedMarginalSpeed` (step 3 above). Off, the rung is refused whatever that speed says. The two are separate on purpose: this is whether the question is asked, the speed below is what it asks. This is the one parameter the tuning page draws as a **switch** rather than a slider (docs/presentation.md, "Tuning") |
 | `turnPumpedMarginalSpeed` | **8.0** | km/h | the **speed the pump rung corroborates against** (engine ≥ 0.18.0), and the change that retired it. It was hard-wired to `foilEntrySpeed` (12) until 0.17.0 — the speed a flight *starts* at rather than the speed the foil stops carrying at — and it cost Jan's Jibe 50 of 4 Sep its fly-through. The default is the same number `foilExitSpeed` carries, and since `flying` already requires speed above the exit speed the rung is thereby **unreachable at the published defaults**: the band it judges is `(foilExitSpeed, this]`, which is empty at 8.0. Deliberately its own parameter and not a reference to `foilExitSpeed`, so the retirement is a *setting* — raise it and the rule comes back over the band it opens, and at **12.0** it is the 0.17.0 reading exactly. Corpus at the default: 13 of 270 jibe touchdowns become fly-throughs. Moving it moves nothing else — flight segmentation reads `foilExitSpeed` and never this |
-| `turnBaroDrop` | 25 | m | apparent altitude below the session median that means the wrist is under water |
+| `turnBaroDrop` | 25 | m | apparent altitude below the **local baseline** that means the wrist is under water. The value and the meaning of the number are unchanged since it was introduced; what moved in engine 0.22.0 is the line it is measured from — a causal baseline that walks with the altimeter and holds under a spike, rather than the session's median ("Turn outcome" step 2, ADR-029). Its three shape numbers — `BARO_TAU_S` 50 s, `BARO_SETTLE_S` 20 s, `BARO_SETTLE_M` 5 m — are **code constants and not tunables**: they describe the altimeter's slew and its re-anchoring, which is a property of the watch rather than a judgement about riding |
 | `turnOutcomeWindow` | **12** | s | cap on following the recovery (engine ≥ 0.13.0; was 60 s). Equal to `turnOutcomeLookahead` on purpose: a fall the ladder blames on a turn is then always inside the tail that turn is actually *judged* over, and a fall later than that is a straight-line fall the flight-end channel counts. At 60 s a mush-out three quarters of a minute past the exit was charged to the turn |
 | classification | | | tack = COG crosses wind axis through upwind; jibe = through downwind; requires wind axis; bear-away/round-up (no axis crossing) excluded from counts |
 | port/starboard | | | side before the turn, from sign of TWA |
@@ -928,7 +928,16 @@ inventing turns):
   is the max over `entrySpeedWindow` of the *Doppler* history.
 - **Submersion is read in the pressure domain.** `turnBaroDrop` (25 m of apparent altitude) is
   converted once to a ~300 Pa rise in `rawAmbientPressure` against a slow (~50 s) baseline that
-  refuses to adapt while a spike is in progress. Same positive-only semantics.
+  refuses to adapt while a spike is in progress. Same positive-only semantics. **Since engine
+  0.22.0 the two rules are the same shape**: the phone's baseline is the same EMA, spelled as
+  the time constant `BARO_TAU_S` = 50 s so that it is exact at any sample rate rather than at
+  1 Hz only, and it holds under a spike exactly as the watch's does — this divergence used to
+  be a real disagreement about what the wrist was measured against, and is now a difference of
+  domain (pressure vs. metres) and nothing more. **What is still missing on the wrist**: the
+  **settle release**, which frees a watch that re-anchors its altitude after a swim. Until it
+  is ported, a fenix 5X Plus that steps its reference mid-session will keep reading the
+  stretch after the step as one long swim on the wrist while the phone reads it as riding.
+  It is being added to the watch in a separate change.
 - **No pump corroboration** (step 3 of the ladder): the watch cannot promote a fly-through to a
   touchdown on accel evidence, so it reports slightly more fly-throughs than the phone.
 - **The watch does not measure the axis crossing**, and knows neither axis parameter. It has no
@@ -1165,12 +1174,48 @@ an **aborted turn** is kept only where the ladder below says `fell_in` ("The abo
 2. **Wrist under water? (barometer — when the source has an altitude channel)** 30 cm of
    water is ~30 hPa, which a wrist altimeter renders as a ~250 m drop, and its slew limiter
    then crawls back over minutes. Nothing on a lake moves an altimeter by `turnBaroDrop`, so
-   a sample that far below the session's median altitude is *proof* the rider was in the
-   water: it is never flying, and its presence in the window makes the turn `fell_in`
+   a sample that far below the line the altimeter had settled on is *proof* the rider was in
+   the water: it is never flying, and its presence in the window makes the turn `fell_in`
    outright, whatever the stop measured. Positive-only evidence — on 2026-08-07 exactly 3 of
    18 falls dunked the wrist (−236 m, −105 m, −347 m; the deepest reading on any other turn
    is −9 m, so the threshold has two orders of magnitude of margin), and the silence of the
    other 15 means nothing. Sources without a barometer just skip it.
+
+   **The line is local and causal, not the session's median** (engine ≥ 0.22.0, ADR-029).
+   A **baseline** starts at the first finite altitude sample, **restarts** at every sample a
+   recording gap precedes, and otherwise walks towards each dry sample with a time constant
+   of `BARO_TAU_S` = **50 s**. A sample is wet when it sits `turnBaroDrop` below *that* line.
+   While a sample reads wet the baseline **holds** — a swim must not be able to re-baseline
+   itself dry — with one release: when the last `BARO_SETTLE_S` = **20 s** of samples (no gap
+   inside, all finite) are within `BARO_SETTLE_M` = **±5 m** of this one, the level is
+   accepted as the new baseline and the sample is dry. *A dunk is a spike; a level is not a
+   dunk.* The three numbers are **code constants, not tuning parameters** (like
+   `CLEAN_QUIET_OFF_FOIL_S`): they describe the altimeter, not the riding.
+
+   The median modelled one watch. Jan's fenix 8 drops ~250 m on a dunk and crawls back to the
+   *same* level, so one line for the afternoon fitted it. **A tester's fenix 5X Plus, 20 Sep
+   2026, dunks the same way and then re-anchors**: −65/−34/−73 m in three consecutive seconds
+   at 12 km/h, exactly at his falls, and afterwards a *new* reference. That session's baseline
+   sat at −30, −93, −30, +150, +130, +105, +73, +24, −60, −75 and −190 m in successive
+   stretches — 370 m of wander at sea level — and against a fixed median of −33 m every
+   stretch below −58 m read "wrist under": 43 of 85 turns flagged wet and 33 of 70 jibes
+   "fell in" while their flights ran straight on through, seven of them jibes the rider had
+   named as smooth. With the local line, 11 turns flag, 6 jibes fall in, the seven flew
+   through, and three flight ends the median had *missed* — dunks from a +150 m stretch — are
+   read as falls. The watch's own live test already worked this way in the pressure domain
+   ("Watch divergences"), so this also ends a disagreement between the wrist and the phone.
+
+   **On the corpus** the change is confined to the barometer's own evidence. No ciq or
+   windsurf-native fixture moves by a single verdict; `other-apps/2026-08-05-…_foilmotion.fit`
+   moves two turns and nothing else moves at all — the jibe at `ts` 3852 goes `fell_in` →
+   `touchdown` (its window's wet samples were a re-anchor, and the stop is what is left), and
+   the **aborted** turn at `ts` 7907 stops being a turn, because an aborted sweep is kept only
+   where the ladder calls it a fall. A naive index-by-index diff of that fixture's turn list
+   shows four moves; three of them are the list closing up behind the turn that left it.
+   Across all 19 goldens: counted turns 569 → 568, jibes 565 → 564, turn `fell_in` 50 → 48,
+   turn `touchdown` 208 → 209, **clean jibes 161 → 161**, straight-line falls 44 → 44 and no
+   rate numerator moved except the one the freed jibe added. Submersion *episodes* fall
+   95 → 37 over the same corpus, which is the re-anchored stretches leaving the map.
 3. **Did he have to pump it out? (accelerometer — class (a) only, corroborating)** Pump
    strokes per *Pumping (accelerometer)* below. The rider pumps a wing for many reasons, so
    this never decides an outcome alone: a pump burst turns a fly-through into a `touchdown`
@@ -1350,15 +1395,18 @@ and `flightEnds`, one entry per spell under water.
 * **Runs less than `2 s` apart are merged** (`SUBMERSION_MERGE_S`, not a tunable in `config`).
   One dunk and the wave right after it are one event to the rider, and a slew-limited
   altimeter can cross the threshold twice on the way back up. On the present corpus this
-  merges nothing at all — the closest two runs are 3 s apart, and every source but one is
-  1 Hz, where two runs cannot be closer than 2 s — so it is a guard for the 4 Hz sources
-  rather than a correction to today's numbers. At 4 s it would merge exactly one pair.
+  merges nothing at all — the closest two runs are 11 s apart since engine 0.22.0 (3 s
+  before it), and every source but one is 1 Hz, where two runs cannot be closer than 2 s —
+  so it is a guard for the 4 Hz sources rather than a correction to today's numbers.
 * `durationS` is the gap-aware elapsed time from the first submerged sample to the last, the
   same clock every other span in the engine is measured on. A single-sample run is `0`.
-* `dropM` is the deepest sample of the run below **the same reference the mask itself uses** —
-  the session median of the finite altitude samples (`submerged_reference`, spelled once so
-  the two cannot drift). It is therefore always at least `turnBaroDrop`, and on the corpus it
-  runs 27–347 m: the wrist altimeter's rendering of 30 cm of water is a ~250 m "drop".
+* `dropM` is the deepest sample of the run below **the same line the mask itself crossed** —
+  the local baseline in force at the run's *first wet sample* (`submerged_trace` returns the
+  mask and that baseline together, so the two cannot drift). It is therefore always at least
+  `turnBaroDrop`, and on the corpus it runs 26–224 m: the wrist altimeter's rendering of
+  30 cm of water is a ~250 m "drop". Before engine 0.22.0 the line was the session median and
+  the range read 26–343 m; the deepest readings it used to report were the distance from a
+  re-anchored stretch back to the median, not the depth of any dunk.
 * **Attribution, first match wins**, in this order: a *counted* turn whose outcome window
   (`ts` → `endTs + outcomeWindowS`) the run overlaps ⇒ `turnIndex`; failing that a *drawn*
   flight end (no turn owns it, the recording did not stop) whose window (`ts` → `ts +
@@ -1370,11 +1418,14 @@ and `flightEnds`, one entry per spell under water.
   outcome ladder's inputs and are computed exactly as before, from the same mask at the same
   threshold. The episodes are presentation evidence laid over them, and the relationship is
   one-way: every flagged turn or end has at least one episode overlapping its window, while
-  an episode need not belong to any (119 of the corpus's 154 do not).
+  an episode need not belong to any: over the committed goldens 14 of 37 do not, and that
+  ratio is itself a reading of engine 0.22.0 — it was 72 of 97 while the reference was the
+  session median, because a re-anchored stretch belongs to no maneuver at all.
 * **A source with no barometer gets an empty list.** Nothing is invented from GPS altitude:
   the episodes are the mask's runs and the mask is all-false without a finite altitude
-  channel, and flat below `turnBaroDrop` of variation. Of the seventeen fixtures, ten have no
-  episodes at all. The one converted GPX is the interesting case — it carries the FIT's own
+  channel, and flat below `turnBaroDrop` of variation. Of the nineteen fixtures, **fourteen**
+  have no episodes at all since engine 0.22.0 — four more than before, because a channel that
+  merely *steps* is now a new baseline rather than an afternoon under water. The one converted GPX is the interesting case — it carries the FIT's own
   `<ele>`, so it reproduces that session's single episode to the metre, which is the same
   parity every other channel on that pair shows.
 

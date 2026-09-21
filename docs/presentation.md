@@ -2823,16 +2823,19 @@ onto the angle's range and the right-hand ticks labelled with the inverse, so th
 line has real units. Two stacked plots would have cost the one thing the strip is for: seeing
 the rate cross its threshold **at** the moment the line steepens.
 
-**The barometer strip**, third. `submerged` is one line of arithmetic against one threshold —
-a sample counts as underwater when the pressure altitude reads `turnBaroDrop` below the
-session median — and it is the evidence that promotes a touchdown to a fall. Until this strip
-the only thing any screen showed of it was a chip saying yes or no: a dunk that grazed the
-line and one that went forty metres under looked identical, and "is 25 m the right number" had
-no picture to be answered from. Everything is drawn in **metres relative to the session
-reference** (`BaroReference.session`, which forwards to the engine's own
-`Evidence.submergedReference` rather than spelling the median a second time), which puts the
-wrist-under rule at a fixed −`turnBaroDrop` and makes two sessions comparable — on the water
-the absolute altitude is a pressure reading and means nothing. The submerged samples are
+**The barometer strip**, third. `submerged` is one rule against one threshold — a sample
+counts as underwater when the pressure altitude reads `turnBaroDrop` below the **local
+baseline**, the line the altimeter had settled on just before (engine 0.22.0, ADR-029) — and it
+is the evidence that promotes a touchdown to a fall. Until this strip the only thing any screen
+showed of it was a chip saying yes or no: a dunk that grazed the line and one that went forty
+metres under looked identical, and "is 25 m the right number" had no picture to be answered
+from. Everything is drawn in **metres relative to that baseline** (`BaroReference.session`
+builds the engine's own line once per session and `.at(ts)` hands each drawn window the value
+in force at its own start, rather than spelling the rule a second time), which puts the
+wrist-under rule at a fixed −`turnBaroDrop` and makes two maneuvers comparable — on the water
+the absolute altitude is a pressure reading and means nothing, and on a watch that re-anchors
+mid-session a median of the afternoon would put the rule in the wrong place on every picture
+after the step. The submerged samples are
 marked and their **episodes** shaded, read from `analysis.submersions` rather than by
 re-applying the threshold here: one rounding apart from the stored document and the picture
 would quietly disagree with the chip above it. A session with no barometer gets **one line**

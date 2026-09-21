@@ -14,6 +14,57 @@ apart is a history, not a contract. There are four:
 An Accepted entry may carry a clause saying what a later ADR narrowed or what has moved since.
 That is the point of the line: it says which half of an old paragraph is still load-bearing.
 
+## ADR-029 · The wet test reads **the drop, not the level**
+**Status: Accepted.**
+
+A tester rode 20 September 2026 on a fenix 5X Plus and the session came back with **33 of his
+70 jibes "fell in"** — seven of them jibes he had named as smooth, and every one of them with
+its flight running straight on through the swim it was supposed to be. Nothing was broken in
+the outcome ladder. `submerged_mask` compared every altitude sample with **one session-wide
+median** and called it wet `turnBaroDrop` (25 m) below that. This models Jan's fenix 8
+exactly: it drops ~250 m on a dunk and crawls back to the *same* level over minutes, so one
+line fits the afternoon. The 5X Plus dunks the same way — −65/−34/−73 m in three consecutive
+seconds at 12 km/h, precisely at his falls — and then **re-anchors**. That session's reference
+sat at −30, −93, −30, +150, +130, +105, +73, +24, −60, −75 and −190 m in successive stretches,
+370 m of wander at sea level, and against a fixed median of −33 m every stretch below −58 m
+read "wrist under": 43 of 85 turns flagged wet. The afternoon's weather became the rider's
+falls.
+
+Decision: **the mask reads a local, causal baseline instead of the session median.** The
+baseline starts at the first finite sample, restarts at every recording gap, and walks towards
+each dry sample with a 50 s time constant; a sample is wet when it is `turnBaroDrop` below
+*that* line. While a sample reads wet the baseline **holds**, so a swim cannot re-baseline
+itself dry — with one release: a level that has held for **20 s within ±5 m** is accepted as
+the new baseline, and that sample is dry. *A dunk is a spike; a level is not a dunk.* The
+three numbers are **code constants, not tuning parameters** — they describe the altimeter's
+slew and its re-anchoring, which is a property of the watch and not a judgement about riding,
+and a rider who moved them would be tuning his watch's firmware rather than his session.
+`turnBaroDrop` keeps its value and its meaning, one word of it changed: "below the local
+baseline" instead of "below the session median". `submerged_reference` is retired, and an
+episode's `dropM` is now measured against the baseline in force at its own first wet sample —
+the same line the mask crossed to open it, so the two still cannot drift.
+
+Two things this deliberately does **not** do. It does not add a parameter: the tuning page has
+no new slider, because there is no riding question here for a rider to have an opinion about.
+And it does not weaken the positive-only semantics — a wet sample is still *proof*, the
+silence of a dry one still means nothing, and the ladder above it is untouched.
+
+Consequence: engine **0.22.0**, no config key, one retired function, three code constants.
+The tester's session: jibes made 20 → 30, jibe outcomes flew/touched/fell 36/1/33 → 63/1/6,
+tacks 1/4/10 → 3/5/6, wet turns 43 → 11, and three flight ends the median had **missed** —
+dunks taken from a +150 m stretch — are read as falls. On the committed corpus the change is
+almost invisible, which is the check that says it is a correction and not a re-tuning: no ciq
+or windsurf-native fixture moves by one verdict, and only `2026-08-05-…_foilmotion` moves at
+all — one jibe `fell_in` → `touchdown`, and one **aborted** turn that stops being a turn
+because an aborted sweep is kept only where the ladder calls it a fall (ADR-028). Across all
+19 goldens: counted turns 569 → 568, jibes 565 → 564, turn `fell_in` 50 → 48, turn `touchdown`
+208 → 209, **clean jibes 161 → 161**, straight-line falls 44 → 44. Submersion *episodes* fall
+95 → 37 and four more fixtures get an empty list, which is the re-anchored stretches leaving
+the map. **The watch already agreed with this rule and not with the old one** — its live test
+has always read a slow pressure baseline that holds under a spike — so this closes a
+divergence rather than opening one; the settle release is the one half still to be ported, in
+a change of its own (docs/algorithms.md, "Watch divergences").
+
 ## ADR-028 · An attempted turn that ends in the water is **a turn that fell in**
 **Status: Accepted.**
 

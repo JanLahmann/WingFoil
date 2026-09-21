@@ -114,7 +114,7 @@ c through GPX and TCX as well. The app's `sourceClass` column is the source of t
 
 | feature | channel | note |
 |---|---|---|
-| Engine 0.21.0: foil time, flights, touchdowns, falls, wind axis | release | the number is the engine the three channels share; `docs/algorithms.md` is the contract and `tools/check_release.py` holds this row to it |
+| Engine 0.22.0: foil time, flights, touchdowns, falls, wind axis | release | the number is the engine the three channels share; `docs/algorithms.md` is the contract and `tools/check_release.py` holds this row to it |
 | Turn verdicts, clean jibes, JPH · CPH · WPH, dry streaks | release | |
 | GP3S record set, uncertified marking | release | |
 | Pump strokes, takeoff attempts | release | class a and the Apple Watch app (wrist accelerometer); absence shown as absence |

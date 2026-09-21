@@ -380,6 +380,45 @@ It is checked from four sides:
    before — the arithmetic the pass was built to leave alone, asserted on the session where it
    actually happened.
 
+Engine 0.22.0 makes **the wet test read the drop, not the level** (docs/algorithms.md, "Turn
+outcome" step 2; ADR-029). No config key joins the document and no per-turn key does either:
+the only stamp in the diff is `engineVersion`, and everything else that moves is the barometer's
+own evidence. The mask's line stops being the session median and becomes a causal local
+baseline, so the check that says this is a correction rather than a re-tuning is **how little
+moves**: not one ciq fixture and not one windsurf-native fixture changes by a single verdict
+(two carry a one-second `offFoilS`, which is the flying mask losing a wet sample), and
+`other-apps/2026-08-05-…_foilmotion` is the only golden whose turns move at all — the jibe at
+`ts` 3852 goes `fell_in` → `touchdown`, and the **aborted** turn at `ts` 7907 leaves the list,
+because an aborted sweep is kept only where the ladder calls it a fall. A diff that walks the
+two turn lists side by side reports four moves on that fixture; three of them are the list
+closing up behind the turn that left it, which is why the numbers below are counted and not
+zipped. Across the 19 goldens: counted turns 569 → 568, jibes 565 → 564, turn `fell_in`
+50 → 48, turn `touchdown` 208 → 209, **clean jibes 161 → 161**, straight-line falls 44 → 44,
+and the one rate that moves is the foilmotion fixture's JPH/TPH, 24.5 → 24.9, because the freed
+jibe is a dry one. The `submersions` block falls 95 → 37 episodes with four more fixtures going
+empty, and `dropM`'s corpus range narrows 26–343 m → 26–224 m: the deep readings it used to
+report were the distance from a re-anchored stretch back to the median and not the depth of any
+dunk. The presentation goldens follow in `splash` (the episode count) on nine fixtures and, on
+the foilmotion one, in its outcome markers and two turn-filter counts — no other layer moves,
+`cleanJibes` included.
+
+It is checked from three sides:
+
+1. **The rule, on the four traces it was written from**, in the lab
+   (`lab/tests/test_submersion.py`) and the kit (`SubmersionTests`): a fenix-8-style dunk that
+   crawls back over minutes flags the whole way up; a fenix-5X-Plus-style dunk that re-anchors
+   100 m lower flags the spike and the 20 s the level needs to hold, and is dry for the rest of
+   the session; a 100 m drift over ten minutes is never a dunk; a recording gap restarts the
+   baseline; an all-NaN channel is all-false. Both suites assert the same shapes, so a
+   divergence between the two engines is a failing test rather than a bug report.
+2. **The two halves are separate decisions.** A gap now makes the *mask* dry by construction,
+   so `submersion_runs`' own gap rule can no longer be reached from a real altitude series —
+   both suites therefore assert it on a mask written by hand, rather than quietly losing the
+   case.
+3. **Episode by episode across the corpus**, `GoldenTests.checkSubmersions`: Swift's list is
+   asserted against the lab's, `dropM` included, so a baseline that walked differently on the
+   two implementations would show up as a metre of disagreement on some fixture.
+
 ### Fixture provenance — the converted recordings, and why
 
 Every fixture in `fixtures/sessions/**` is one of Jan's own recordings kept as it came off
