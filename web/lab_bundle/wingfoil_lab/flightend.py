@@ -30,11 +30,13 @@ enough for the cadence to resolve them.
                 what happened next. Flagged `truncated` and kept out of every tally.
 
 That fourth state is not bookkeeping pedantry, it is the difference between a usable summary
-and a fictional one. Garmin Smart Recording writes native sessions at a ragged cadence, and
-2026-08-04 pm segments into 429 gap-free runs: 111 of its 130 "flights" end at a segment
-boundary with the rider still doing 4-5 m/s. Classified on the visible evidence they would
-all read `glide_out` and the session would claim 111 straight-line glide-outs that never
-happened. Class-(a) CIQ sessions record at a steady 1 Hz and lose only 2 of 23.
+and a fictional one. Before engine 0.23.0, Garmin Smart Recording's ragged cadence *was* a
+segment boundary: 2026-08-04 pm cut into 429 gap-free runs and 111 of its 130 "flights" ended
+at one with the rider still doing 4-5 m/s. Classified on the visible evidence they would all
+have read `glide_out` and the session would have claimed 111 straight-line glide-outs that
+never happened. Since 0.23.0 a cadence is not a hole (`filters.gap_threshold_s`) and the same
+session has 40 flights, 3 of them unknown -- so this rung is back to the rare honest silence
+it was built for. Class-(a) CIQ sessions record at a steady 1 Hz and lose 2 of 23 either way.
 
 **Ownership.** A flight end that lands inside a detected turn's outcome window is *that
 turn's* event and is already counted there, so it is flagged `owned_by_turn` (the turn's

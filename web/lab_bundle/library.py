@@ -109,8 +109,10 @@ DEDUPE_DURATION_S = 60.0
 
 # The GP3S record kinds, in the order the records table shows them. The second element is
 # the key under `golden.records.windows` that says *where* in the session the record was
-# set, so the UI can open the session with that window highlighted. `bestHour` has no
-# window in the golden (it is a whole-session rollup), hence None.
+# set, so the UI can open the session with that window highlighted. `bestHour` is given
+# None on purpose: the golden does carry a `bestHour` window, but an hour-long one lights
+# the whole track and so says nothing (docs/presentation.md, "Record windows"). Which is
+# why the picker has eight kinds and the all-time table below has nine.
 RECORD_KINDS = [
     ("best2sKn", "best2s", "Best 2 s", "kn"),
     ("best10sKn", "best10s", "Best 10 s", "kn"),

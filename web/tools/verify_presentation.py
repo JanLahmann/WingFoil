@@ -88,6 +88,9 @@ CIQ = "2026-08-07-0754_nago-torbole-windsurfen_ciq"
 # what makes it one that can prove the folding rule below. Engine 0.14.0's lower peak floor
 # claims ends the old one left unexplained, so glide-outs are scarcer across the whole
 # corpus (2 at the most, where 0.13.0 had 3) and five fixtures now tie at the maximum.
+# Engine 0.23.0 stops cutting a Smart Recording cadence into segments, so the natives' ends
+# are judged rather than truncated and the count rises again — this fixture has 3, and
+# 2026-08-04 pm now has the corpus maximum at 5. The rule is the same on any of them.
 GLIDE_OUT = "2026-08-03-0741_nago-torbole-windsurfen_native"
 
 PASSED = 0
@@ -373,7 +376,7 @@ def check_flight_end_folding() -> None:
     the fill carries the channel — solid = a maneuver's outcome, hollow = a straight-line
     flight end no turn explains. A separate "glided out" chip (which the web app used to
     have) says the same thing twice and makes the two platforms count differently, so this
-    asserts the folding on the fixture that has the most straight-line ends to fold.
+    asserts the folding on a fixture with several straight-line ends to fold.
     """
     section("2b. glide-out flight ends fold into flewThrough (hollow, same ladder)")
     doc, facts = load(GLIDE_OUT)
@@ -381,7 +384,7 @@ def check_flight_end_folding() -> None:
     turns = Counter(t["outcome"] for t in doc.get("turns", []) if t["counted"])
 
     # Without ends to fold the rest of this section would pass vacuously.
-    check(f"  {GLIDE_OUT}: has straight-line glide-outs to fold", ends["glide_out"], 2)
+    check(f"  {GLIDE_OUT}: has straight-line glide-outs to fold", ends["glide_out"], 3)
     check(f"  {GLIDE_OUT}: they are counted under flewThrough",
           facts["markers"]["flewThrough"], turns["flew_through"] + ends["glide_out"])
     check(f"  {GLIDE_OUT}: and they are the difference — a turns-only count is short",

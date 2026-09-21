@@ -23,6 +23,16 @@ Class-(a) files also carry the watch's SensorLogging accelerometer stream in
 `timestamp` + `timestamp_ms` + its `sample_time_offset`). It is returned as a separate
 `RawTrack.accel` frame on the *same* time base as the records, because it is two orders of
 magnitude longer than the 1 Hz record frame and belongs to a different clock.
+
+**Not every device gives that stream a clock** (engine 0.23.0, ADR-030). A tester's
+fenix 5 Plus writes one `accelerometer_data` message after each 1 Hz record — and stamps
+every one of them with a handful of constant `timestamp`s days away from the session, with
+`sample_time_offset` flat at zero. Read literally that is a stream fifty days long starting
+before the ride, which produced negative times, NaNs, and a pump grid nobody could
+allocate. `_accel_frame` detects the shape and **times the batches from file order**
+instead: each batch begins at the last `record` seen before it and its samples spread
+evenly over that second. `SourceCapabilities.accel_clock_reconstructed` says so, because a
+clock good to ±1 s against GPS and a clock the device wrote are different facts.
 """
 
 from __future__ import annotations
@@ -87,6 +97,11 @@ class SourceCapabilities:
     has_dev_fields: bool = False     # our schema's record fields present -> source class (a)
     has_watch_laps: bool = False     # more than one lap
     has_accel: bool = False          # SensorLogging accelerometer stream present
+    #: The accel stream carried no usable clock and was timed from file order instead
+    #: (engine 0.23.0). Good to ±1 s against GPS -- each batch starts at the record that
+    #: precedes it -- which is ample for a 0.5-2.5 Hz pump band and not ample for anything
+    #: that wants to align a sample with a wave. False on every stream the device timed.
+    accel_clock_reconstructed: bool = False
     has_hr: bool = False
     sample_rate_hz: float = 0.0
     discipline: str | None = None    # from session dev field, e.g. "wingfoil"
@@ -155,6 +170,9 @@ def parse_fit(path: str | Path) -> RawTrack:
     activity: dict = {}
     accel_frames = 0
     accel_batches: list[tuple] = []
+    #: Epoch seconds of every record kept, in **file order** — the clock a clockless accel
+    #: stream is timed against (`_accel_frame`).
+    record_epochs: list[float] = []
 
     with fitdecode.FitReader(path, check_crc=fitdecode.CrcCheck.WARN) as reader:
         for frame in reader:
@@ -165,6 +183,12 @@ def parse_fit(path: str | Path) -> RawTrack:
                 row = {k: v for k, v in raw.items() if k in _RECORD_KEEP or k in DEV_RECORD_FIELDS}
                 if row:
                     records.append(row)
+                    ts = raw.get("timestamp")
+                    if ts is not None:
+                        try:
+                            record_epochs.append(float(ts.timestamp()))
+                        except (AttributeError, TypeError, ValueError, OSError):
+                            pass
             elif frame.name == "lap":
                 laps.append(_frame_fields(frame))
             elif frame.name == "session":
@@ -174,7 +198,7 @@ def parse_fit(path: str | Path) -> RawTrack:
             elif frame.name in ("accelerometer_data", "three_d_sensor_calibration"):
                 accel_frames += 1
                 if frame.name == "accelerometer_data":
-                    batch = _accel_batch(_frame_fields(frame))
+                    batch = _accel_batch(_frame_fields(frame), len(record_epochs))
                     if batch is not None:
                         accel_batches.append(batch)
 
@@ -216,7 +240,7 @@ def parse_fit(path: str | Path) -> RawTrack:
     app_ver = session.get("app_version")
     caps.schema_version = int(app_ver) & 0xFF if isinstance(app_ver, (int, float)) else None
 
-    accel = _accel_frame(accel_batches, epoch0)
+    accel, caps.accel_clock_reconstructed = _accel_frame(accel_batches, epoch0, record_epochs)
     offset, source = resolve_utc_offset(activity_utc_offset_s(activity), df, caps)
     return RawTrack(path=str(path), records=df, laps=laps, session=session, capabilities=caps,
                     accel=accel, start_utc_offset_s=offset, start_utc_offset_source=source)
@@ -336,8 +360,20 @@ def coarse_utc_offset_s(lon: float) -> int | None:
     return int(round(lon / 15.0)) * 3600
 
 
-def _accel_batch(fields: dict) -> tuple | None:
-    """One `accelerometer_data` message -> (epoch seconds, ax, ay, az) arrays, or None."""
+#: How long one `accelerometer_data` batch is taken to last when the stream carries no
+#: clock of its own. The device writes one batch per 1 Hz record, so a second is what a
+#: batch *is*; the samples inside it spread evenly across it (n samples -> i/n s).
+ACCEL_BATCH_SPAN_S = 1.0
+
+
+def _accel_batch(fields: dict, after_records: int) -> tuple | None:
+    """One `accelerometer_data` message -> (base, offsets_ms, ax, ay, az, after_records).
+
+    `base` is the batch's own epoch second (`timestamp` + `timestamp_ms`) and `offsets_ms`
+    the per-sample offsets as written; both are kept *unapplied* so `_accel_frame` can
+    decide whether to believe them. `after_records` is how many records had been read when
+    this batch arrived — the file-order anchor a clockless stream is timed from.
+    """
     ts = fields.get("timestamp")
     off = fields.get("sample_time_offset")
     axes = [fields.get(f"calibrated_accel_{a}") for a in "xyz"]
@@ -346,27 +382,97 @@ def _accel_batch(fields: dict) -> tuple | None:
     n = min(len(off), *(len(a) for a in axes))
     if n == 0:
         return None
-    base = ts.timestamp() + float(fields.get("timestamp_ms") or 0) / 1000.0
-    t = base + np.asarray(off[:n], dtype=float) / 1000.0
-    return (t,) + tuple(np.asarray(a[:n], dtype=float) for a in axes)
+    try:
+        base = float(ts.timestamp()) + float(fields.get("timestamp_ms") or 0) / 1000.0
+    except (AttributeError, TypeError, ValueError, OSError):
+        return None
+    offsets = np.asarray([x if isinstance(x, (int, float)) else np.nan for x in off[:n]],
+                         dtype=float)
+    return ((base, offsets)
+            + tuple(np.asarray(a[:n], dtype=float) for a in axes)
+            + (int(after_records),))
 
 
-def _accel_frame(batches: list[tuple], epoch0: float | None) -> pd.DataFrame | None:
+def _accel_clock_is_usable(batches: list[tuple], record_epochs: list[float]) -> bool:
+    """Did the device *time* this accelerometer stream, or only stamp it?
+
+    Two independent tests, either of which condemns the clock (engine 0.23.0, ADR-030):
+
+    * **The bases are not on this session's clock.** Fewer than half the batch timestamps
+      fall inside the records' own span. A tester's fenix 5 Plus reuses a handful of stale
+      `timestamp`s days either side of the ride; a watch that timed the stream puts every
+      batch inside the session, and our own recordings do — 2 580 of 2 580 and 16 588 of
+      16 588 on the two corpus fixtures that carry the channel.
+    * **There is no clock inside a batch either.** No batch of two or more samples has any
+      spread in its `sample_time_offset`. Twenty-five samples all at offset 0 are
+      twenty-five samples with one time, which is not a time.
+
+    With no records to compare against the file is believed: there is nothing better.
+    """
+    if not batches:
+        return True
+    if record_epochs:
+        lo, hi = record_epochs[0], record_epochs[-1]
+        inside = sum(1 for b in batches if lo - 1.0 <= b[0] <= hi + 1.0)
+        if inside * 2 < len(batches):
+            return False
+    for b in batches:
+        off = b[1]
+        if off.size >= 2 and np.isfinite(off).any() and np.nanmax(off) > np.nanmin(off):
+            return True
+    return False
+
+
+def _accel_times(batches: list[tuple], record_epochs: list[float],
+                 epoch0: float) -> tuple[np.ndarray, bool]:
+    """Per-sample epoch times for every batch -> (times, the clock was reconstructed)."""
+    if _accel_clock_is_usable(batches, record_epochs):
+        return np.concatenate([b[0] + b[1] / 1000.0 for b in batches]), False
+    # File order. Each batch starts at the record that precedes it and lasts one second,
+    # monotonically — so several batches written after the same record queue up behind it
+    # rather than landing on one instant.
+    out: list[np.ndarray] = []
+    prev_end = -np.inf
+    for b in batches:
+        idx = b[5]
+        anchor = record_epochs[idx - 1] if 0 < idx <= len(record_epochs) else epoch0
+        start = max(float(anchor), prev_end)
+        n = int(b[2].size)
+        out.append(start + np.arange(n, dtype=float) / n * ACCEL_BATCH_SPAN_S)
+        prev_end = start + ACCEL_BATCH_SPAN_S
+    return np.concatenate(out), True
+
+
+def _accel_frame(batches: list[tuple], epoch0: float | None,
+                 record_epochs: list[float] | None = None
+                 ) -> tuple[pd.DataFrame | None, bool]:
     """Concatenate accel batches onto the records' time base, in g, sorted by time.
 
     Garmin writes `calibrated_accel_*` in milli-g even though the FIT profile names the unit
     "g"; a resting magnitude near 1000 rather than 1 gives it away, so the scale is sniffed
     rather than assumed and a device that really emits g still parses correctly.
+
+    Returns `(frame, the clock was reconstructed)`. A sample whose time or whose axes did
+    not survive the file — an invalid sentinel inside an array — is **dropped rather than
+    carried as NaN**: a NaN reaches the pump resampler as a grid length, and
+    `int(floor(nan))` is not a number of bins.
     """
     if not batches or epoch0 is None:
-        return None
-    t = np.concatenate([b[0] for b in batches]) - epoch0
-    ax, ay, az = (np.concatenate([b[i] for b in batches]) for i in (1, 2, 3))
+        return None, False
+    t, reconstructed = _accel_times(batches, record_epochs or [], epoch0)
+    t = t - epoch0
+    ax, ay, az = (np.concatenate([b[i] for b in batches]) for i in (2, 3, 4))
+    finite = np.isfinite(t) & np.isfinite(ax) & np.isfinite(ay) & np.isfinite(az)
+    if not finite.all():
+        t, ax, ay, az = t[finite], ax[finite], ay[finite], az[finite]
+    if t.size == 0:
+        return None, reconstructed
     order = np.argsort(t, kind="stable")
     t, ax, ay, az = t[order], ax[order], ay[order], az[order]
     mag = np.median(np.sqrt(ax * ax + ay * ay + az * az))
     scale = 1e-3 if mag > 20.0 else 1.0
-    return pd.DataFrame({"t": t, "ax": ax * scale, "ay": ay * scale, "az": az * scale})
+    return pd.DataFrame({"t": t, "ax": ax * scale, "ay": ay * scale,
+                         "az": az * scale}), reconstructed
 
 
 def summarize(track: RawTrack) -> dict:

@@ -26,9 +26,16 @@ measurement, so it may only ever break a tie the cone could not: it is consulted
 the cone margin is below ``full_margin``, and it can never touch a decisive cone call. See
 `_turn_type_prior` for the blend.
 
-Known limitation: when the two lobes are exactly opposite (pure beam-reach out-and-back)
-the bisector is degenerate -- the true axis is then perpendicular to the lobes and no
-histogram bisector can recover it. Such sessions are rejected (``dir_deg = None``).
+**An opposed pair of reaches still has a wind** (engine 0.23.0, ADR-030). Until then a
+separation above ``max_lobe_separation_deg`` = 179 deg was refused as "the bisector is
+degenerate" -- and a tester's session of two exactly opposed reaches (132.74 deg / 311.90
+deg, separation 179.16 deg) came back with no wind, so not one of its 78 maneuvers could be
+named a tack or a jibe. The bisector is undefined at exactly 180 deg and nowhere else, and
+even there the answer is not missing: the wind axis is the *perpendicular* of the lobe
+axis, and the no-go cone picks its end as it always does. `_bisector` is therefore the
+half-angle form ``lobe0 + wrap180(lobe1 - lobe0) / 2``, which is defined for every
+separation and returns the perpendicular at exactly 180 deg. The parameter is retired; the
+doubt rides in ``confidence``, where it can be read, rather than in a hard `None`.
 """
 
 from __future__ import annotations
@@ -57,7 +64,6 @@ class WindConfig:
     smooth_deg: float = 20.0              # circular moving-average half-width on the histogram
     lobe_half_width_deg: float = 25.0     # mass window used to refine and weigh a lobe
     min_lobe_separation_deg: float = 60.0 # two modes closer than this are one lobe
-    max_lobe_separation_deg: float = 179.0  # above this the bisector is degenerate
     min_distance_m: float = 500.0         # less foiling distance than this -> no estimate
     min_confidence: float = 0.5           # below this turns stay "turn" (not tack/jibe)
     no_go_half_angle_deg: float = 45.0    # cone around an axis end used for the 180 deg call
@@ -105,8 +111,8 @@ def estimate_wind(clean: CleanTrack, flights: FlightResult,
     """Estimate the wind axis from the foiling part of a track.
 
     Returns a `WindEstimate` with ``dir_deg = None`` and zero confidence whenever the
-    COG distribution is not usefully bimodal (too little foiling, one lobe only, or an
-    exactly opposed pair).
+    COG distribution is not usefully bimodal -- too little foiling, or one lobe only. An
+    *opposed* pair is no longer among them (engine 0.23.0): see `_bisector`.
 
     `turn_config` is the `turns.TurnConfig` the *same* pipeline will detect turns with (its
     annotation is quoted rather than imported: `turns` imports this module, so the
@@ -130,11 +136,7 @@ def estimate_wind(clean: CleanTrack, flights: FlightResult,
     lobe_deg = tuple(_refine_lobe(cog, weight, c, cfg.lobe_half_width_deg) for c in lobes)
     mass = tuple(_lobe_mass(cog, weight, c, cfg.lobe_half_width_deg) / total for c in lobe_deg)
     sep = abs(_wrap180(lobe_deg[1] - lobe_deg[0]))
-    if sep > cfg.max_lobe_separation_deg:
-        return WindEstimate(distance_m=total, lobes_deg=lobe_deg, lobe_mass=mass,
-                            separation_deg=sep, min_confidence=cfg.min_confidence)
-
-    bisector = _circular_mean(np.array(lobe_deg), np.ones(2))
+    bisector = _bisector(lobe_deg[0], lobe_deg[1])
     axis_conf = _axis_confidence(mass, sep, cfg)
     cone_dir, margin = _resolve_180(cog, weight, bisector, cfg)
     prior = _turn_type_prior(clean, flights, cone_dir, margin, cfg, turn_config)
@@ -366,6 +368,23 @@ def _weighted_corr(a: np.ndarray, b: np.ndarray, w: np.ndarray) -> float:
     db = b - (w * b).sum() / tot
     den = math.sqrt(float((w * da * da).sum()) * float((w * db * db).sum()))
     return float((w * da * db).sum() / den) if den > 0 else 0.0
+
+
+def _bisector(lobe_a_deg: float, lobe_b_deg: float) -> float:
+    """The axis line between two reach lobes, defined at every separation (engine 0.23.0).
+
+    Half-angle form: walk half the *signed* way from the first lobe to the second. It agrees
+    with the equal-weight circular mean everywhere that mean is defined, and it keeps
+    answering where the mean does not -- at an exactly opposed pair the two unit vectors
+    cancel and `atan2(0, 0)` returns 0 deg, a bearing read off nothing.
+
+    At exactly 180 deg `_wrap180` folds to -180, so the result is ``lobe_a - 90``: the
+    **perpendicular** of the lobe axis, which is where the wind is when a rider sailed
+    nothing but one beam reach and its reciprocal. Which of the two perpendicular ends is
+    upwind is not this function's question -- the no-go cone answers it, as it does for
+    every other separation.
+    """
+    return float((lobe_a_deg + _wrap180(lobe_b_deg - lobe_a_deg) / 2.0) % 360.0)
 
 
 def _circular_mean(deg: np.ndarray, weight: np.ndarray) -> float:

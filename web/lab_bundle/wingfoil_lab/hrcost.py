@@ -283,12 +283,15 @@ def hr_track(track: RawTrack, config: HrConfig | None = None) -> HrTrack | None:
 def hr_track_from_arrays(t, bpm, config: HrConfig | None = None) -> HrTrack | None:
     """HrTrack from raw (time, bpm) samples -- unit tests and non-FIT sources.
 
-    The continuity rule is `hrMaxSampleGap`, **not** the cleaner's dt-aware speed rule. That
-    rule exists to protect speed integration and calls anything past ~4 s a gap; Garmin Smart
-    Recording writes native sessions at 1-9 s and would lose most of its HR to it, for no
-    reason -- HR is a slow channel and two samples 6 s apart bracket it perfectly well. A hole
-    can only hide a *higher* peak than the one observed, so a windowed cost read across one is
-    biased low, never high.
+    The continuity rule is `hrMaxSampleGap`, **not** the cleaner's dt-aware speed rule. The
+    two are read off different frames -- this one off the raw records, the cleaner's off the
+    cleaned track -- and they are asked different questions: HR is a slow channel and two
+    samples 6 s apart bracket it perfectly well, while speed integration is what a gap
+    protects. Since engine 0.23.0 the two numbers happen to *agree* on a Smart Recording
+    track, because the cleaner's own Smart Recording floor is this valley (`smartGapS` 10 s,
+    docs/algorithms.md "speed sample hygiene"); they remain separate rules, because a 1 Hz
+    track still cuts speed at 3 s and HR at 10. A hole can only hide a *higher* peak than
+    the one observed, so a windowed cost read across one is biased low, never high.
     """
     cfg = config or HrConfig()
     t = np.asarray(t, float)

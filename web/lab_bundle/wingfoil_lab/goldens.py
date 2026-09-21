@@ -750,6 +750,10 @@ def build_golden(a: Analysis) -> dict:
             "hasDevFields": bool(caps.has_dev_fields),
             "hasWatchLaps": bool(caps.has_watch_laps),
             "hasAccel": bool(caps.has_accel),
+            # The accel stream carried no clock of its own and was timed from file order
+            # (engine 0.23.0, docs/algorithms.md "Pumping"). False on every stream the
+            # device timed, which is every fixture in the corpus.
+            "accelClockReconstructed": bool(caps.accel_clock_reconstructed),
             "hasHR": bool(caps.has_hr),
             "sampleRateHz": caps.sample_rate_hz,
         },
@@ -870,8 +874,13 @@ def _config_dict(a: Analysis) -> dict:
         "maxHdop": fcfg.max_hdop,
         "minSatellites": fcfg.min_satellites,
         "maxAccel1Hz": fcfg.max_accel_1hz,
-        "gapMinS": fcfg.gap_min_s,          # gap iff dt > max(gapMinS, gapFactor * median dt)
+        # gap iff dt > max(gapMinS, gapFactor * median dt, smartGapS when the median says
+        # Smart Recording) -- engine 0.23.0, docs/algorithms.md "speed sample hygiene".
+        "gapMinS": fcfg.gap_min_s,
         "gapFactor": fcfg.gap_factor,
+        "smartGapS": fcfg.smart_gap_s,
+        "smartMedianDtS": fcfg.smart_median_dt_s,
+        "spikeMaxDtS": fcfg.spike_max_dt_s,
         "speedChannelRecords": "doppler",
         "speedChannelManeuvers": "hybrid",
         "alphaProximity": gp3s.ALPHA_PROXIMITY_M,
@@ -921,7 +930,6 @@ def _config_dict(a: Analysis) -> dict:
         "windSmoothDeg": w.smooth_deg,
         "windLobeHalfWidth": w.lobe_half_width_deg,
         "windMinLobeSeparation": w.min_lobe_separation_deg,
-        "windMaxLobeSeparation": w.max_lobe_separation_deg,
         "windMinDistance": w.min_distance_m,
         "windMinConfidence": w.min_confidence,
         "windNoGoHalfAngle": w.no_go_half_angle_deg,
