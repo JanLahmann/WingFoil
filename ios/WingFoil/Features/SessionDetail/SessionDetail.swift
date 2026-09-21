@@ -874,9 +874,14 @@ struct SessionDetail: Sendable {
     /// GP3S efforts, using the window provenance the engine already carries.
     ///
     /// Every record in `RecordWindowSelection.catalogue` gets one, not just the 2 s peak:
-    /// the record cards are a picker, and a card whose effort was never built could not be
+    /// the record rows are a picker, and a row whose effort was never built could not be
     /// tapped. A record the session did not produce is simply absent here, which is what
-    /// makes its card inert.
+    /// makes its row inert.
+    ///
+    /// The ninth, `Best hour`, is built the same way and is simply the longest of them: one
+    /// window of 3 600 s, so its segment is an hour of positioned samples where the 2 s
+    /// peak's is two. That is one polyline of a few thousand points on a map that already
+    /// draws the whole track, and it is built once when the session opens.
     private static func buildEfforts(_ analysis: SessionAnalysis,
                                      positioned: [RecordSample]) -> [RecordEffort] {
         var out: [RecordEffort] = []

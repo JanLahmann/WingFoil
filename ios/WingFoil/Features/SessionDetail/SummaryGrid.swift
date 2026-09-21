@@ -108,6 +108,13 @@ struct SessionFoilGrid: View {
 /// chart, tapping the selected one returns to the 2 s default, and a record with no achieved
 /// window is inert and says nothing. The orange selection ring became an orange row.
 ///
+/// **Nine rows since 21 September 2026**, `Best hour` among them: the table is one row
+/// taller and nothing else about it changes. The column widths are the record name's and the
+/// knots', so the ninth name — the shortest of the nine — needs none of the 92 pt the
+/// widest already claims, and the row is inert or live by the same rule as the other eight.
+/// Being a table rather than a grid is what makes this a non-event: nine cards would have
+/// left a gap beside the ninth at two columns and a lone row at one (§1.6).
+///
 /// This is also why there is no separate Records *tab* inside the session (the review's
 /// "deliberately not recommended"): the picker's entire purpose is to highlight a window on
 /// the two figures, and a picker on a tab away from them highlights something you cannot see.
