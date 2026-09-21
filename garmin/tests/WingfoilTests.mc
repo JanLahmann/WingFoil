@@ -3588,6 +3588,59 @@ function summaryPagesBuildAndRenderHeadless(logger as Test.Logger) as Boolean {
     SummaryNav.step(1);
     Test.assertEqual(SummaryNav.index, 0);
 
+    // ---- and the SHOW SWITCHES take the after-save pages with them (0.9.18) ----
+    // The review is the live pages, so it follows the same seven switches. Asserted one at a
+    // time, and on the page IDS rather than on a count, because what can go wrong here is a
+    // switch wired to its neighbour.
+    var shownBefore = [true, true, true, true, true, true, true];
+    for (var i = 0; i < AppSettings.pageShown.size(); i++) {
+        shownBefore[i] = AppSettings.pageShown[i];
+    }
+    var sSw = [PageModel.SHOW_RECORDS, PageModel.SHOW_FOIL, PageModel.SHOW_TURNS,
+        PageModel.SHOW_KINDS, PageModel.SHOW_STORY, PageModel.SHOW_MAP] as Array<Number>;
+    var sPage = [SummaryNav.S_SPEED, SummaryNav.S_FOIL, SummaryNav.S_TURNS,
+        SummaryNav.S_KINDS, SummaryNav.S_STORY, SummaryNav.S_TRACK] as Array<Number>;
+    for (var s = 0; s < sSw.size(); s++) {
+        AppSettings.pageShown[sSw[s]] = false;
+        SummaryNav.build(c);
+        for (var i = 0; i < SummaryNav.count(); i++) {
+            Test.assertMessage(SummaryNav.pageAt(i) != sPage[s],
+                "summary switch " + s.toString() + " off and the page is still there");
+        }
+        // SAVED is never the one that goes, and it is always first
+        Test.assertEqual(SummaryNav.pageAt(0), SummaryNav.S_VERDICT);
+        // ...and every remaining page still paints
+        for (var i = 0; i < SummaryNav.count(); i++) {
+            SummaryNav.index = i;
+            view.onUpdate(dc);
+        }
+        AppSettings.pageShown[sSw[s]] = true;
+    }
+    // S6 TAKEOFFS follows FOIL — it is the one after-save page with no live twin, and what it
+    // counts is how often he got onto the foil
+    AppSettings.pageShown[PageModel.SHOW_FOIL] = false;
+    SummaryNav.build(c);
+    for (var i = 0; i < SummaryNav.count(); i++) {
+        Test.assertMessage(SummaryNav.pageAt(i) != SummaryNav.S_TAKEOFFS,
+            "the takeoffs page does not follow the foil switch");
+    }
+    AppSettings.pageShown[PageModel.SHOW_FOIL] = true;
+    // every switch off: the review is SAVED and nothing else, and it still paints
+    for (var i = 0; i < AppSettings.pageShown.size(); i++) {
+        AppSettings.pageShown[i] = false;
+    }
+    SummaryNav.build(c);
+    Test.assertMessage(SummaryNav.count() == 1,
+        "every switch off leaves " + SummaryNav.count().toString() + " summary pages, not 1");
+    Test.assertEqual(SummaryNav.pageAt(0), SummaryNav.S_VERDICT);
+    SummaryNav.index = 0;
+    view.onUpdate(dc);
+    Test.assertEqual(SummaryNav.wrap(7), 0);        // and an index past the end still clamps
+    for (var i = 0; i < AppSettings.pageShown.size(); i++) {
+        AppSettings.pageShown[i] = shownBefore[i];
+    }
+    SummaryNav.build(c);
+
     // a degenerate track (all points identical) must still paint
     for (var i = 0; i < 8; i++) {
         tLat[i] = 45.87;
@@ -3894,7 +3947,7 @@ function autoWindReplayFixtures(logger as Test.Logger) as Boolean {
             + " deg, engine says " + engine.format("%.2f") + " (" + err.format("%.1f")
             + " deg, band is +-20)");
         // "Never flips after lock" is the assertion that matters most: a flip would relabel
-        // every tack as a jibe, and the one-shot backfill has already been spent by then.
+        // every tack as a jibe, and a rebuild would re-type the whole session against it.
         Test.assertMessage(maxStep <= 90.0, name + ": the axis flipped after locking, largest"
             + " adopted step " + maxStep.format("%.1f") + " deg");
         Test.assertMessage(aw.distanceM > 5000.0,
@@ -5764,11 +5817,225 @@ function aShrunkPageSetNeverStrandsAnIndex(logger as Test.Logger) as Boolean {
         PageModel.slotAt(stale[i], PageModel.SLOTS - 1);
     }
 
+    // ...and the same again with every SHOW SWITCH off (0.9.18), which is the other way the
+    // set can shrink under an index — and the one a rider can do from his phone mid-session.
+    var shown = [true, true, true, true, true, true, true];
+    for (var i = 0; i < AppSettings.pageShown.size(); i++) {
+        shown[i] = AppSettings.pageShown[i];
+        AppSettings.pageShown[i] = false;
+    }
+    AppSettings.pageSet = PageModel.PAGE_SET_STANDARD;
+    PageModel.build(null);
+    Test.assertMessage(PageModel.count() == 1,
+        "all seven switches off leaves " + PageModel.count().toString() + " pages, not 1");
+    Test.assertEqual(PageModel.layoutAt(0), PageModel.LAYOUT_MAIN);
+    for (var i = 0; i < stale.size(); i++) {
+        var k = PageModel.wrap(stale[i]);
+        Test.assertMessage(k == 0,
+            "with one page left, index " + stale[i].toString() + " wrapped to "
+                + k.toString());
+        Test.assertEqual(PageModel.layoutAt(stale[i]), PageModel.LAYOUT_MAIN);
+    }
+    AppSettings.pageSet = PageModel.PAGE_SET_LARGE;
+    PageModel.build(null);
+    Test.assertMessage(PageModel.count() == 1,
+        "all seven switches off leaves " + PageModel.count().toString()
+            + " large pages, not 1");
+    Test.assertEqual(PageModel.slotAt(0, 0), PageModel.M_SPEED);
+    for (var i = 0; i < AppSettings.pageShown.size(); i++) {
+        AppSettings.pageShown[i] = shown[i];
+    }
+
     AppSettings.pageSet = before;
     PageModel.build({});
     logger.debug("page sets: large " + PageModel.BIG_PAGES.toString() + " of "
         + PageModel.BIG_SLOT.size().toString() + " table rows, standard "
         + PageModel.count().toString());
+    return true;
+}
+
+// ---- SHOW OR HIDE each data screen (0.9.18) ----
+//
+// Seven switches in Garmin Connect, in every stream, and the other two page sets follow them
+// because they are the same pages. What this measures is the MAPPING — which switch takes
+// which screen out of which set — one switch at a time, because a bug here is a page that
+// disappears with the wrong neighbour and no test that turns them off together would see it.
+(:test)
+function hidingAPageTakesItsTwinsWithIt(logger as Test.Logger) as Boolean {
+    var beforeSet = AppSettings.pageSet;
+    var before = [true, true, true, true, true, true, true];
+    for (var i = 0; i < AppSettings.pageShown.size(); i++) {
+        before[i] = AppSettings.pageShown[i];
+    }
+
+    // every switch on: the shipped sets, unchanged
+    for (var i = 0; i < AppSettings.pageShown.size(); i++) {
+        AppSettings.pageShown[i] = true;
+    }
+    AppSettings.pageSet = PageModel.PAGE_SET_STANDARD;
+    PageModel.build(null);
+    Test.assertEqual(PageModel.count(), PageModel.MAX_PAGES);
+    AppSettings.pageSet = PageModel.PAGE_SET_LARGE;
+    PageModel.build(null);
+    Test.assertEqual(PageModel.count(), PageModel.BIG_PAGES);
+
+    // one at a time. `std` is what the standard set loses, `big` what the large set loses.
+    var sw = [PageModel.SHOW_FOIL, PageModel.SHOW_RECORDS, PageModel.SHOW_TURNS,
+        PageModel.SHOW_KINDS, PageModel.SHOW_CLOCK, PageModel.SHOW_STORY,
+        PageModel.SHOW_MAP] as Array<Number>;
+    var gone = [PageModel.LAYOUT_FOIL, PageModel.LAYOUT_RECORDS, PageModel.LAYOUT_TURNS,
+        PageModel.LAYOUT_KINDS, PageModel.LAYOUT_CLOCK, PageModel.LAYOUT_TIMELINE,
+        PageModel.LAYOUT_MAP] as Array<Number>;
+    // the large set: foil takes one screen, turns one, and the KINDS switch takes BOTH kind
+    // screens because they are one page in the standard set
+    var bigLost = [1, 0, 1, 2, 0, 0, 0] as Array<Number>;
+    for (var s = 0; s < sw.size(); s++) {
+        AppSettings.pageShown[sw[s]] = false;
+
+        AppSettings.pageSet = PageModel.PAGE_SET_STANDARD;
+        PageModel.build(null);
+        Test.assertMessage(PageModel.count() == PageModel.MAX_PAGES - 1,
+            "switch " + s.toString() + " off left " + PageModel.count().toString()
+                + " standard pages");
+        for (var i = 0; i < PageModel.count(); i++) {
+            Test.assertMessage(PageModel.layoutAt(i) != gone[s],
+                "switch " + s.toString() + " off and the page is still in the cycle");
+        }
+        // MAIN is never the one that goes
+        Test.assertEqual(PageModel.layoutAt(0), PageModel.LAYOUT_MAIN);
+        // ...and the map page's own flag follows it, or the breadcrumb would still be asked
+        // for by a page that is not there
+        if (gone[s] == PageModel.LAYOUT_MAP) {
+            Test.assertMessage(!PageModel.mapPage,
+                "the map page is hidden and the model still asks for the breadcrumb");
+        }
+
+        AppSettings.pageSet = PageModel.PAGE_SET_LARGE;
+        PageModel.build(null);
+        Test.assertMessage(PageModel.count() == PageModel.BIG_PAGES - bigLost[s],
+            "switch " + s.toString() + " off left " + PageModel.count().toString()
+                + " large pages, expected "
+                + (PageModel.BIG_PAGES - bigLost[s]).toString());
+        // the live SPEED screen is in every one of these sets: it has no switch
+        var speed = false;
+        for (var i = 0; i < PageModel.count(); i++) {
+            if (PageModel.slotAt(i, 0) == PageModel.M_SPEED) { speed = true; }
+        }
+        Test.assertMessage(speed, "switch " + s.toString() + " off took the speed screen");
+
+        AppSettings.pageShown[sw[s]] = true;
+    }
+
+    for (var i = 0; i < AppSettings.pageShown.size(); i++) {
+        AppSettings.pageShown[i] = before[i];
+    }
+    AppSettings.pageSet = beforeSet;
+    PageModel.build({});
+    logger.debug("show/hide: 7 switches, standard " + PageModel.MAX_PAGES.toString()
+        + " pages, large " + PageModel.BIG_PAGES.toString());
+    return true;
+}
+
+// A settings edit arrives MID-SESSION — that is the whole point of a phone-editable setting
+// — and it arrives through `WingfoilApp.onSettingsChanged`, which rebuilds the model and then
+// re-wraps the page index. What must not happen is the rider being left on a page that no
+// longer exists: on this runtime an index past the end of `_order` is an uncatchable error,
+// so "he would see a glitch" is not the failure mode. It is the app dropping to the watch
+// face with the recording in it.
+(:test)
+function aSwitchThrownMidSessionNeverStrandsTheRider(logger as Test.Logger) as Boolean {
+    var beforeSet = AppSettings.pageSet;
+    var before = [true, true, true, true, true, true, true];
+    for (var i = 0; i < AppSettings.pageShown.size(); i++) {
+        before[i] = AppSettings.pageShown[i];
+        AppSettings.pageShown[i] = true;
+    }
+    AppSettings.pageSet = PageModel.PAGE_SET_STANDARD;
+    PageModel.build(null);
+    var idxBefore = PageNav.index;
+
+    // He is on the LAST page — the map, page 8 — and turns six screens off from his phone.
+    PageNav.index = PageModel.count() - 1;
+    Test.assertEqual(PageModel.layoutAt(PageNav.index), PageModel.LAYOUT_MAP);
+    for (var i = 0; i < AppSettings.pageShown.size(); i++) {
+        AppSettings.pageShown[i] = i == PageModel.SHOW_FOIL;
+    }
+    // exactly what _applySettings does, in the same order
+    PageModel.build(null);
+    PageNav.index = PageModel.wrap(PageNav.index);
+    Test.assertEqual(PageModel.count(), 2);          // Main and Foil
+    Test.assertMessage(PageNav.index >= 0 && PageNav.index < PageModel.count(),
+        "the rider was left on page " + PageNav.index.toString() + " of "
+            + PageModel.count().toString());
+    PageModel.layoutAt(PageNav.index);               // must not throw
+    PageModel.slotAt(PageNav.index, 0);
+
+    // ...and the same going the other way: switches come back on and the index is still good
+    for (var i = 0; i < AppSettings.pageShown.size(); i++) {
+        AppSettings.pageShown[i] = true;
+    }
+    PageModel.build(null);
+    PageNav.index = PageModel.wrap(PageNav.index);
+    Test.assertEqual(PageModel.count(), PageModel.MAX_PAGES);
+    Test.assertMessage(PageNav.index >= 0 && PageNav.index < PageModel.count(),
+        "the index did not survive the switches coming back");
+
+    // and with every switch off, from any index at all
+    for (var i = 0; i < AppSettings.pageShown.size(); i++) {
+        AppSettings.pageShown[i] = false;
+    }
+    var from = [0, 3, 7, 99, -4] as Array<Number>;
+    for (var i = 0; i < from.size(); i++) {
+        PageNav.index = from[i];
+        PageModel.build(null);
+        PageNav.index = PageModel.wrap(PageNav.index);
+        Test.assertEqual(PageNav.index, 0);
+        Test.assertEqual(PageModel.layoutAt(PageNav.index), PageModel.LAYOUT_MAIN);
+    }
+
+    for (var i = 0; i < AppSettings.pageShown.size(); i++) {
+        AppSettings.pageShown[i] = before[i];
+    }
+    AppSettings.pageSet = beforeSet;
+    PageModel.build({});
+    PageNav.index = idxBefore;
+    logger.debug("mid-session: page index survived six switches off and back on");
+    return true;
+}
+
+// The screenshot harness must IGNORE the switches. A sheet is a check on the layouts and it
+// has to photograph every page the app can draw, whatever this simulator's property store
+// happens to say (docs/testing.md, "Every family, photographed").
+(:test)
+function theSheetHarnessIgnoresTheShowSwitches(logger as Test.Logger) as Boolean {
+    var beforeSet = AppSettings.pageSet;
+    var before = [true, true, true, true, true, true, true];
+    for (var i = 0; i < AppSettings.pageShown.size(); i++) {
+        before[i] = AppSettings.pageShown[i];
+        AppSettings.pageShown[i] = false;
+    }
+    AppSettings.pageSet = PageModel.PAGE_SET_STANDARD;
+
+    PageModel.build(null);
+    Test.assertEqual(PageModel.count(), 1);          // the rider's own watch
+    PageModel.showAll = true;
+    PageModel.build(null);
+    Test.assertMessage(PageModel.count() == PageModel.MAX_PAGES,
+        "the harness saw " + PageModel.count().toString() + " standard pages, not "
+            + PageModel.MAX_PAGES.toString());
+    AppSettings.pageSet = PageModel.PAGE_SET_LARGE;
+    PageModel.build(null);
+    Test.assertMessage(PageModel.count() == PageModel.BIG_PAGES,
+        "the harness saw " + PageModel.count().toString() + " large pages");
+    PageModel.showAll = false;
+
+    for (var i = 0; i < AppSettings.pageShown.size(); i++) {
+        AppSettings.pageShown[i] = before[i];
+    }
+    AppSettings.pageSet = beforeSet;
+    PageModel.build({});
+    Test.assertMessage(!PageModel.showAll, "the harness seam was left on");
+    logger.debug("harness seam: every page photographed with every switch off");
     return true;
 }
 

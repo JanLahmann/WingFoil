@@ -45,9 +45,13 @@ class MetricsEngine {
     // from here, after the detectors, so that a direction adopted this second classifies the
     // turns of the next one and never re-judges the one just resolved.
     var autoWind as AutoWind;
-    // The one-shot backfill is exactly that: it may fire once, at the first lock, and this is
-    // the flag that says so (docs/fit-schema.md, TurnDetector.backfillWindSplit).
-    var autoWindBackfilled as Boolean = false;
+    // The axis the per-kind counters were last rebuilt against, -2 meaning "never". Every
+    // change to the effective axis — the estimator locking, the estimator updating, the rider
+    // setting or clearing a bearing by hand — re-types every logged turn
+    // (`TurnDetector.rebuildWindSplit`). It replaced a one-shot backfill flag in 0.9.18: a
+    // pass that ran once at the first lock could not fix the turns a rider re-named at minute
+    // forty, and it added to two counters where eleven needed rebuilding.
+    var windSplitAxis as Number = -2;
     // App-only: the pump/takeoff detector reads the accelerometer, which a data field may not
     // touch, so it lives here rather than in the WingFoilCore barrel (docs/fit-schema.md
     // class d). SessionController owns the sensor listener and feeds it batches.
@@ -196,6 +200,10 @@ class MetricsEngine {
             history.logTurn(turns.lastOutcome);
         }
         var windEvent = _autoWindTick(dt, cog, turnEvent);
+        // LAST, and after the estimator: whatever moved the axis this tick — the estimator
+        // adopting one, or the rider having typed one into the menu since the last sample —
+        // the per-kind counters are re-typed against it before anything draws them.
+        _syncWindSplit();
         if (trackEnabled) {
             _trackTick(info, detector.state == FlightDetector.STATE_ON);
         }
@@ -207,11 +215,12 @@ class MetricsEngine {
     // effect from the NEXT sample: the sweep that just resolved was named with the wind that
     // was in force while it happened, which is the watch's whole rule about turn labels.
     //
-    // The single exception is the FIRST lock, and it is deliberate: the sweeps the estimator
-    // learned the axis from are the session's own first turns, and leaving them generic would
-    // mean the Turns page starts counting tacks and jibes from zero at minute two of an hour's
-    // riding. `backfillWindSplit` replays the logged sweeps once — counts only, no outcome and
-    // no score is re-judged — and `autoWindBackfilled` makes sure "once" means once.
+    // The exception is every CHANGE OF AXIS, and since 0.9.18 it is not an exception so much
+    // as the rule: the sweeps the estimator learned the axis from are the session's own first
+    // turns, and leaving them generic would mean the Turns page starts counting tacks and
+    // jibes from zero at minute two of an hour's riding. `rebuildWindSplit` re-types every
+    // logged turn against the axis in force — the kind and everything that hangs off it, so
+    // the rows add up; no outcome and no score is re-judged.
     hidden function _autoWindTick(dt as Float, cog as Float?, turnEvent as Number) as Number {
         if (!AppSettings.autoWind) {
             return 0;
@@ -230,19 +239,28 @@ class MetricsEngine {
             return ev;
         }
         AppSettings.applyAutoWind(autoWind.dirDeg);
-        // Both the backfill and the vibe are about the axis the rider is actually being shown.
-        // With a manual bearing in force the estimate changes nothing on screen and nothing in
-        // the classifier — and backfilling against the MANUAL axis would count every logged
-        // sweep a second time, since those turns were already split as they happened.
+        // The VIBE is about the axis the rider is actually being shown: with a manual bearing
+        // in force the estimate changes nothing on screen and nothing in the classifier, so
+        // there is nothing to announce. The REBUILD is not conditional on that — it keys on
+        // the effective axis and that has not moved here, so `syncWindSplit` is a no-op.
         if (!AppSettings.cfg.windIsAuto()) {
             return AutoWind.EV_NONE;
         }
-        if (ev == AutoWind.EV_LOCK && !autoWindBackfilled) {
-            autoWindBackfilled = true;
-            turns.backfillWindSplit(autoWind.sweepEntries(), autoWind.sweepNets(),
-                autoWind.sweepCount);
-        }
         return ev;
+    }
+
+    // Re-type every logged turn if the effective wind axis has changed since the last time.
+    // Called once a tick, ahead of anything that reads a per-kind counter, so the estimator
+    // locking, the estimator revising itself and the rider typing a bearing into the menu all
+    // reach the counters by the same path — and each of them exactly once, because the guard
+    // is the axis itself and not a flag somebody has to remember to clear.
+    hidden function _syncWindSplit() as Void {
+        var axis = AppSettings.cfg.windDirection;
+        if (axis == windSplitAxis) {
+            return;
+        }
+        windSplitAxis = axis;
+        turns.rebuildWindSplit();
     }
 
     // Appends a decimated breadcrumb point. When the buffer fills, every other point is
