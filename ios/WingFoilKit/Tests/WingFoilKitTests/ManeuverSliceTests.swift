@@ -247,19 +247,25 @@ import Testing
 
     // MARK: - Barometer
 
-    /// The reference is the engine's own — the same median the mask is measured against — so
-    /// the threshold rule lands exactly where a sample crosses from dry to submerged.
-    @Test func theBaroReferenceIsTheEnginesOwnSessionMedian() throws {
+    /// The reference is the engine's own — the same **local baseline** the mask is measured
+    /// against (engine 0.22.0) — so the threshold rule lands exactly where a sample crosses
+    /// from dry to submerged.
+    @Test func theBaroReferenceIsTheEnginesOwnLocalBaseline() throws {
         let alt: [Double?] = [10, 10, 10, -30, 10, nil, 10]
-        let reference = try #require(BaroReference.session(alt))
-        #expect(reference == 10)
+        let samples = alt.enumerated().map { index, value in
+            CleanSample(t: Double(index), dt: index == 0 ? 0 : 1, gapBefore: false,
+                        dopplerMps: 10, altM: value)
+        }
+        let reference = BaroReference.session(samples, dropM: 25)
+        #expect(try #require(reference.at(6)) == 10)
         // And it agrees with the mask that produced every stored `submerged` flag.
-        let mask = Evidence.submergedMask(alt, dropM: 25)
+        let mask = Evidence.submergedMask(alt, t: samples.map(\.t),
+                                          gap: samples.map(\.gapBefore), dropM: 25)
         #expect(mask == [false, false, false, true, false, false, false])
     }
 
-    /// Everything is drawn relative to that reference, which puts the wrist-under line at a
-    /// fixed −`dropM` whatever the afternoon's pressure was doing.
+    /// Everything is drawn relative to that baseline, which puts the wrist-under line at a
+    /// fixed −`dropM` whatever the afternoon's pressure, or the watch's reference, was doing.
     @Test func theBaroSeriesIsRelativeAndTheThresholdIsFixed() {
         let points = [10.0, 10, -30, 10].enumerated().map { index, alt in
             TurnSlice.Point(x: 0, y: 0, rt: Double(index), kn: 10, inTurn: true, altM: alt)
@@ -286,7 +292,10 @@ import Testing
         }
         #expect(!SliceBaro.make(points: points, referenceM: nil, dropM: 25).hasBarometer)
         #expect(!SliceBaro.make(points: points, referenceM: 10, dropM: 25).hasBarometer)
-        #expect(BaroReference.session([nil, nil]) == nil)
+        let blind = (0..<2).map {
+            CleanSample(t: Double($0), dt: $0 == 0 ? 0 : 1, gapBefore: false)
+        }
+        #expect(BaroReference.session(blind, dropM: 25).at(1) == nil)
     }
 
     // MARK: - The flight-end slice

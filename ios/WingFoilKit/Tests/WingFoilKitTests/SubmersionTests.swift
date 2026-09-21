@@ -2,13 +2,17 @@ import Foundation
 import Testing
 @testable import WingFoilKit
 
-/// Submersion episodes (engine 0.16.0, docs/algorithms.md "Submersion episodes").
+/// The wrist-under mask and its episodes (docs/algorithms.md "Turn outcome" step 2 and
+/// "Submersion episodes").
 ///
-/// The mask itself is old and covered through the outcome ladder; what is new is reading it
-/// as *events*. So these cases are about the three decisions that turn a boolean array into
-/// a list a map can draw: where a run starts and stops, what a recording gap does to it, and
-/// what the episode is said to have happened during. Cross-implementation agreement with the
-/// lab's own list is asserted in `GoldenTests.checkSubmersions`, on the whole corpus.
+/// Two halves. The **mask** (engine 0.22.0, ADR-029) reads a local, causal baseline rather
+/// than the session median, and the cases below are the four traces that rule was written
+/// from: the fenix 8 dunk that crawls back, the fenix 5X Plus dunk that re-anchors, the slow
+/// drift that is not a dunk at all, and the recording gap. The **episodes** turn that boolean
+/// array into a list a map can draw, and those cases are about where a run starts and stops,
+/// what a recording gap does to it, and what the episode is said to have happened during.
+/// The lab's `tests/test_submersion.py` asserts the same cases on the same traces, and
+/// cross-implementation agreement on the whole corpus is `GoldenTests.checkSubmersions`.
 @Suite struct SubmersionTests {
 
     private let dropM = 25.0
@@ -18,27 +22,97 @@ import Testing
                       mergeS: Double = Evidence.submersionMergeS) -> [Submersion] {
         let t = (0..<alt.count).map { Double($0) / hz }
         let gaps = gap ?? [Bool](repeating: false, count: alt.count)
-        return Evidence.submersionRuns(t: t, gap: gaps,
-                                       submerged: Evidence.submergedMask(alt, dropM: dropM),
-                                       alt: alt, mergeS: mergeS)
+        let trace = Evidence.submergedTrace(alt, t: t, gap: gaps, dropM: dropM)
+        return Evidence.submersionRuns(t: t, gap: gaps, submerged: trace.mask, alt: alt,
+                                       baseline: trace.baseline, mergeS: mergeS)
+    }
+
+    /// The wrist-under mask for a bare altitude series, on a regular clock.
+    private func mask(_ alt: [Double?], hz: Double = 1, gap: [Bool]? = nil) -> [Bool] {
+        let t = (0..<alt.count).map { Double($0) / hz }
+        return Evidence.submergedMask(alt, t: t,
+                                      gap: gap ?? [Bool](repeating: false, count: alt.count),
+                                      dropM: dropM)
+    }
+
+    /// Episodes for a mask written by hand, against a baseline of zero.
+    ///
+    /// Three cases below are about `submersionRuns`' **own** gap rule rather than the mask's,
+    /// and since engine 0.22.0 the mask can no longer produce the shape they test: a gap
+    /// restarts the baseline, so the first sample after one is dry by construction. The two
+    /// are separate decisions and the run rule still has to hold on its own, so it is
+    /// asserted on a mask handed in directly.
+    private func episodes(_ submerged: [Bool], _ alt: [Double?], hz: Double = 1,
+                          gap: [Bool]? = nil,
+                          mergeS: Double = Evidence.submersionMergeS) -> [Submersion] {
+        let t = (0..<alt.count).map { Double($0) / hz }
+        return Evidence.submersionRuns(
+            t: t, gap: gap ?? [Bool](repeating: false, count: alt.count),
+            submerged: submerged, alt: alt,
+            baseline: [Double](repeating: 0, count: alt.count), mergeS: mergeS)
     }
 
     private func wet(_ count: Int) -> [Double?] { [Double?](repeating: -200, count: count) }
     private func dry(_ count: Int) -> [Double?] { [Double?](repeating: 0, count: count) }
 
+    // MARK: - The mask
+
+    /// Jan's watch: ~250 m of apparent drop, then a slew-limited crawl back over minutes.
+    /// The crawl moves far more than `baroSettleM` in `baroSettleS`, so it is never a level —
+    /// the wrist stays flagged for the whole time the altimeter is still recovering, which is
+    /// what it was flagged for before the baseline became local.
+    @Test func aFenix8DunkFlagsAllTheWayBackUp() {
+        let crawl: [Double?] = (0...250).map { -250 + Double($0) }   // 250 m over 250 s
+        let m = mask(dry(120) + crawl + dry(60))
+        #expect(!m[0..<120].contains(true))
+        #expect(m[120])
+        #expect(!m[120..<320].contains(false))
+        #expect(!m[(m.count - 60)...].contains(true))
+    }
+
+    /// A tester's fenix 5X Plus (20 Sep 2026) dunks and then sits at a *new* level. The spike
+    /// is a fall and reads as one; the level that follows is not, and the settle release says
+    /// so. Against a session median the whole of it read as one very long swim.
+    @Test func aFenix5xPlusDunkThatReAnchorsFlagsTheSpikeAndThenStops() {
+        let level: Double? = -100
+        let m = mask(dry(120) + [-65, -134, -173] + [Double?](repeating: level, count: 600))
+        #expect(!m[0..<120].contains(true))
+        #expect(!m[120..<123].contains(false), "the dunk is still a dunk")
+        let settled = 123 + Int(Evidence.baroSettleS)
+        #expect(!m[123..<settled].contains(false), "the level is not accepted before it holds")
+        #expect(!m[settled...].contains(true), "and the rest is riding, not swimming")
+    }
+
+    /// 100 m over ten minutes — weather, not water. The baseline walks with it.
+    @Test func aSlowDriftIsNeverADunk() {
+        #expect(!mask((0..<600).map { -Double($0) / 6 }).contains(true))
+    }
+
+    /// The samples either side of a gap are not evidence about one another, so the level
+    /// after one is the level, not a 200 m fall.
+    @Test func aRecordingGapRestartsTheBaseline() {
+        let alt = dry(60) + wet(30)
+        #expect(mask(alt).contains(true), "with no gap it is a dunk")
+        var gap = [Bool](repeating: false, count: alt.count)
+        gap[60] = true
+        #expect(!mask(alt, gap: gap).contains(true), "across a gap it is a new baseline")
+    }
+
+    @Test func noAltitudeChannelIsAllFalse() {
+        #expect(!mask([nil, nil, nil, nil]).contains(true))
+    }
+
     // MARK: - The reference
 
-    /// `dropM` is measured against the same line the mask is, so it can never be under
-    /// `turnBaroDrop` — the check that says the two are one definition and not two.
+    /// `dropM` is measured against the baseline in force at the run's first wet sample — the
+    /// same line the mask crossed to open it — so it can never be under `turnBaroDrop`.
     @Test func theDropIsMeasuredAgainstTheMasksOwnReference() throws {
-        #expect(Evidence.submergedReference([0, 1, 2, 3, -300]) == 1)
         let run = try #require(runs(dry(10) + [-100, -347, -100] + dry(10)).first)
         #expect(run.dropM == 347)
         #expect(run.dropM >= dropM)
     }
 
     @Test func aSourceWithNoBarometerHasNoEpisodes() {
-        #expect(Evidence.submergedReference([nil, nil, nil]) == nil)
         let none = runs([nil, nil, nil, nil])
         #expect(none.isEmpty)
     }
@@ -78,7 +152,9 @@ import Testing
     @Test func aRecordingGapAlwaysBreaksARun() {
         var gap = [Bool](repeating: false, count: 14)
         gap[7] = true
-        let out = runs(dry(4) + wet(6) + dry(4), gap: gap)
+        var flags = [Bool](repeating: false, count: 14)
+        for i in 4..<10 { flags[i] = true }
+        let out = episodes(flags, dry(4) + wet(6) + dry(4), gap: gap)
         #expect(out.map(\.startT) == [4, 7])
         #expect(out.map(\.endT) == [6, 9])
     }
@@ -86,7 +162,10 @@ import Testing
     @Test func aGapIsNeverMergedAcross() {
         var gap = [Bool](repeating: false, count: 13)
         gap[7] = true
-        #expect(runs(dry(4) + wet(2) + dry(1) + wet(2) + dry(4), hz: 4, gap: gap).count == 2)
+        var flags = [Bool](repeating: false, count: 13)
+        for i in [4, 5, 7, 8] { flags[i] = true }
+        #expect(episodes(flags, dry(4) + wet(2) + dry(1) + wet(2) + dry(4),
+                         hz: 4, gap: gap).count == 2)
     }
 
     // MARK: - Attribution
@@ -139,7 +218,9 @@ import Testing
             "goldens/2026-08-29-1440_nago-torbole-windsurfen_ciq.expected.json")
         let analysis = try JSONDecoder().decode(SessionAnalysis.self,
                                                 from: Data(contentsOf: url))
-        #expect(analysis.submersions.count == 35)
+        // 35 until engine 0.22.0: seventeen of them were stretches where this watch's
+        // altimeter had simply re-anchored, and are read as riding now (ADR-029).
+        #expect(analysis.submersions.count == 18)
 
         for turn in analysis.turns where turn.submerged && turn.counted {
             let w0 = turn.ts, w1 = turn.endTs + turn.outcomeWindowS

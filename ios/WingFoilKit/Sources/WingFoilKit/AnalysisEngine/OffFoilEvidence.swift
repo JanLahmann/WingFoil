@@ -22,6 +22,8 @@ public struct OffFoilEvidence: Sendable {
     public var speed: [Double]
     /// Barometer says the wrist is under water.
     public var submerged: [Bool]
+    /// The local altitude baseline `submerged` was read against, per sample.
+    public var baseline: [Double]
     /// In a flight, above exit speed, not submerged.
     public var flying: [Bool]
 
@@ -42,7 +44,7 @@ public struct Submersion: Sendable, Equatable {
     public var endT: Double
     /// Gap-aware elapsed time between the two.
     public var durationS: Double
-    /// The deepest sample of the run below `Evidence.submergedReference`.
+    /// The deepest sample of the run below the baseline the run started on.
     public var dropM: Double
     /// The counted turn whose outcome window this run overlaps, else nil.
     public var turnIndex: Int?
@@ -78,11 +80,12 @@ public enum Evidence {
         let gap = track.samples.map(\.gapBefore)
         let dop = track.samples.map(\.dopplerMps)
         let speed = track.samples.map { min($0.dopplerMps, $0.hybridMps) }
-        let submerged = submergedMask(track.samples.map(\.altM), dropM: baroDropM)
+        let (submerged, baseline) = submergedTrace(track.samples.map(\.altM), t: t, gap: gap,
+                                                   dropM: baroDropM)
         let flying = flyingMask(t: t, speed: speed, submerged: submerged, flights: flights,
                                 exitMps: exitSpeedKmh * kmhToMps)
         return OffFoilEvidence(t: t, gap: gap, doppler: dop, speed: speed,
-                               submerged: submerged, flying: flying)
+                               submerged: submerged, baseline: baseline, flying: flying)
     }
 
     /// Per sample: inside a flight, above the foil exit speed, and not underwater.
@@ -100,30 +103,101 @@ public enum Evidence {
         return m
     }
 
-    /// The altitude the submersion test is measured *against*: the session median of the
-    /// finite samples, or nil when there is no altitude channel at all.
+    // MARK: - The submersion mask
+
+    /// The baseline's time constant, seconds. The watch's live test walks its pressure
+    /// baseline by `BARO_EMA` = 0.02 of the residual per 1 Hz sample; spelled as a time
+    /// constant instead, the same walk is exact at any sample rate, which a bare coefficient
+    /// is not (a 4 Hz source would adapt four times as fast for no physical reason).
+    /// **A constant, not a parameter:** it is the altimeter's own slew behaviour, not a
+    /// judgement about riding. Mirrors the lab's `BARO_TAU_S`.
+    static let baroTauS = 50.0
+
+    /// How long a level has to hold before the baseline accepts it, seconds. A dunk is a
+    /// spike — 30 cm of water for a few seconds — and a re-anchored altimeter is a *level*:
+    /// a tester's fenix 5X Plus (20 Sep 2026) stepped its whole reference by up to 190 m
+    /// between stretches and then sat there for minutes. Twenty seconds is long enough that
+    /// no fall can buy it (the longest corpus episode lasts 9 s) and short enough that the
+    /// stretch after a re-anchor is read as riding. **A constant, not a parameter.**
+    /// Mirrors the lab's `BARO_SETTLE_S`.
+    static let baroSettleS = 20.0
+
+    /// How still that level has to be, metres. Within ±5 m of each other for `baroSettleS`
+    /// is flat next to a `turnBaroDrop` of 25 m and next to the 250 m a wrist under water
+    /// reads, so the release cannot be triggered by a dunk that is merely slow to come back.
+    /// **A constant, not a parameter.** Mirrors the lab's `BARO_SETTLE_M`.
+    static let baroSettleM = 5.0
+
+    /// Has the level held within `baroSettleM` for `baroSettleS` of unbroken samples?
     ///
-    /// Spelled once because two things read it — the mask below, and `dropM` on a submersion
-    /// episode, which is how far under this same line the deepest sample of the run got.
-    /// Mirrors the lab's `submerged_reference`.
-    static func submergedReference(_ alt: [Double?]) -> Double? {
-        let finite = alt.compactMap { $0.flatMap { $0.isFinite ? $0 : nil } }
-        guard !finite.isEmpty else { return nil }
-        return median(finite)
+    /// Walks back from `i` while the window is not yet `baroSettleS` long, and refuses on the
+    /// first gap, the first non-finite sample and the first sample more than `baroSettleM`
+    /// from `x`. False when the track does not reach back that far — a settle has to be
+    /// *observed*, and the opening seconds of a recording have observed nothing.
+    /// Mirrors the lab's `_settled`.
+    private static func settled(_ alt: [Double?], t: [Double], gap: [Bool], i: Int,
+                                x: Double) -> Bool {
+        var j = i
+        while j > 0, t[i] - t[j] < baroSettleS {
+            guard !gap[j], let previous = alt[j - 1], previous.isFinite,
+                  abs(previous - x) <= baroSettleM else { return false }
+            j -= 1
+        }
+        return t[i] - t[j] >= baroSettleS - 1e-9
     }
 
-    /// Per sample: the barometer reads `dropM` below the session median ⇒ wrist wet.
+    /// (mask, baseline): the wrist-under test and the line each sample was judged against.
+    ///
+    /// Causal and local (engine 0.22.0, docs/algorithms.md "Turn outcome" step 2). A sample
+    /// is wet when it sits `dropM` below the baseline **in force at that moment**, not below
+    /// the session's median: a watch that re-anchors its altitude after a swim otherwise
+    /// turns every later stretch into a swim of its own.
+    ///
+    /// The baseline starts at the first finite sample, restarts at every sample a recording
+    /// gap precedes, and otherwise walks towards a dry sample with time constant `baroTauS`.
+    /// While a sample reads wet the baseline **holds** — a swim must not be able to
+    /// re-baseline itself dry — except for the **settle release**: a level that has held for
+    /// `baroSettleS` within `baroSettleM` is accepted as the new baseline and the sample is
+    /// dry. A dunk is a spike; a level is not a dunk.
+    ///
     /// A source without an altitude channel yields all-false, so it simply loses this
-    /// evidence instead of failing.
-    static func submergedMask(_ alt: [Double?], dropM: Double) -> [Bool] {
-        guard let reference = submergedReference(alt) else {
-            return [Bool](repeating: false, count: alt.count)
+    /// evidence instead of failing. Mirrors the lab's `submerged_trace`.
+    static func submergedTrace(_ alt: [Double?], t: [Double], gap: [Bool],
+                               dropM: Double) -> (mask: [Bool], baseline: [Double]) {
+        var mask = [Bool](repeating: false, count: alt.count)
+        var baseline = [Double](repeating: .nan, count: alt.count)
+        var base: Double?
+        var lastT = 0.0
+        for i in alt.indices {
+            guard let x = alt[i], x.isFinite else {
+                baseline[i] = base ?? .nan
+                continue
+            }
+            guard let current = base, !gap[i] else {
+                base = x
+                lastT = t[i]
+                baseline[i] = x
+                continue
+            }
+            let dt = t[i] - lastT
+            lastT = t[i]
+            if x >= current - dropM {
+                base = current + (1 - exp(-dt / baroTauS)) * (x - current)
+            } else if settled(alt, t: t, gap: gap, i: i, x: x) {
+                base = x                    // the settle release: a level is not a dunk
+            } else {
+                mask[i] = true              // wet: the baseline holds under a spike
+            }
+            baseline[i] = base ?? .nan
         }
-        let threshold = reference - dropM
-        return alt.map { value in
-            guard let v = value, v.isFinite else { return false }
-            return v < threshold
-        }
+        return (mask, baseline)
+    }
+
+    /// Per sample: the barometer reads `dropM` below the local baseline ⇒ wrist wet.
+    /// The mask half of `submergedTrace`, for the callers that do not need the baseline.
+    static func submergedMask(_ alt: [Double?], t: [Double], gap: [Bool],
+                              dropM: Double) -> [Bool] {
+        submergedTrace(alt, t: t, gap: gap, dropM: dropM).mask
     }
 
     /// Two runs closer together than this are one submersion (docs/algorithms.md
@@ -136,9 +210,13 @@ public enum Evidence {
     ///
     /// A recording gap always breaks a run: the samples either side of it are not evidence
     /// about one another, which is the rule every other window in this type obeys.
+    ///
+    /// `baseline` is `submergedTrace`'s second return, and a run's depth is read against the
+    /// line **in force at its first wet sample** — the same line the mask crossed to open
+    /// the run, so the two cannot drift and `dropM` is always at least `turnBaroDrop`.
     static func submersionRuns(t: [Double], gap: [Bool], submerged: [Bool], alt: [Double?],
+                               baseline: [Double],
                                mergeS: Double = submersionMergeS) -> [Submersion] {
-        guard let reference = submergedReference(alt) else { return [] }
         var spans: [(Int, Int)] = []
         var i = 0
         while i < t.count {
@@ -159,10 +237,10 @@ public enum Evidence {
         }
         return spans.map { a, b in
             let deepest = (a...b).compactMap { alt[$0].flatMap { $0.isFinite ? $0 : nil } }
-                .min() ?? reference
+                .min() ?? baseline[a]
             return Submersion(startT: t[a], endT: t[b],
                               durationS: elapsed(t: t, gap: gap, a: a, b: b),
-                              dropM: reference - deepest)
+                              dropM: baseline[a] - deepest)
         }
     }
 

@@ -220,7 +220,7 @@ public enum AnalysisEngine {
     /// 558 → 565, tacks 2 → 4, course changes 147 → 140, turn `fellIn` 41 → 50 and
     /// straight-line falls 45 → 44 — clean jibes stay at 161 and no rate numerator moves.
     /// `config.turnAbortMinAngle` and the per-turn `aborted` flag are the schema change.
-    public static let version = "0.21.0"
+    public static let version = "0.22.0"
 }
 
 /// **Is this recording a session?** — docs/algorithms.md "Not a session" (engine 0.19.0).
@@ -1666,7 +1666,8 @@ public enum SessionSummarizer {
                                    turns: [Turn], ends: [FlightEnd]) -> [Submersion] {
         guard let ev = evidence else { return [] }
         var out = Evidence.submersionRuns(t: ev.t, gap: ev.gap, submerged: ev.submerged,
-                                          alt: clean.samples.map(\.altM))
+                                          alt: clean.samples.map(\.altM),
+                                          baseline: ev.baseline)
         let turnWindows = turns.enumerated().filter { $0.element.counted }.map {
             (index: $0.offset, start: $0.element.startT,
              end: $0.element.endT + $0.element.outcomeWindowS)

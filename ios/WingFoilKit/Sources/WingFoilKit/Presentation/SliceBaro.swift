@@ -3,17 +3,17 @@ import Foundation
 /// **What the barometer saw** — the third strip's series, and the one place in the app where
 /// the "wrist under" verdict is drawn as the measurement it is made of rather than as a chip.
 ///
-/// The submersion mask is one line of arithmetic (`Evidence.submergedMask`): a sample counts
-/// as underwater when the barometric altitude reads `turnBaroDrop` metres below the session
-/// median. On the water the *absolute* altitude is meaningless — it is a pressure reading,
-/// and the session median is whatever the air was doing that afternoon — so the strip draws
-/// everything relative to that median, which puts the threshold at a fixed −`dropM` and makes
-/// two sessions comparable.
+/// The submersion mask is one rule (`Evidence.submergedTrace`): a sample counts as underwater
+/// when the barometric altitude reads `turnBaroDrop` metres below the **local baseline** — the
+/// line the altimeter had settled on just before. On the water the *absolute* altitude is
+/// meaningless — it is a pressure reading, and the baseline is whatever the air, and the
+/// watch, were doing at that moment — so the strip draws everything relative to that line,
+/// which puts the threshold at a fixed −`dropM` and makes two maneuvers comparable.
 public struct SliceBaro: Sendable, Equatable {
 
     public struct Point: Sendable, Equatable {
         public var rt: Double
-        /// Metres relative to the session reference: negative is "the wrist went down".
+        /// Metres relative to the local baseline: negative is "the wrist went down".
         public var m: Double
         /// This sample is inside one of the analysis' submersion episodes.
         public var submerged: Bool
@@ -75,7 +75,7 @@ public struct SliceBaro: Sendable, Equatable {
 
     // MARK: - Building
 
-    /// `referenceM` is the session median (`BaroReference.session`), `dropM` the engine's
+    /// `referenceM` is the local baseline at this event (`BaroReference.at`), `dropM` the engine's
     /// `turnBaroDrop` from this analysis' own config echo, and `submersions` the episode
     /// spans **on the event's own clock** — the caller has them from `analysis.submersions`
     /// and converts, because only the caller knows the event's `t = 0`.
@@ -99,16 +99,49 @@ public struct SliceBaro: Sendable, Equatable {
     }
 }
 
-/// The altitude every submersion is measured **against**.
+/// The altitude a maneuver's submersions are measured **against**.
 ///
-/// One forwarder rather than a second median: the engine already spells this rule
-/// (`Evidence.submergedReference` — the session median of the finite samples), the mask and
-/// each episode's `dropM` are both read from it, and a presentation copy that drifted by a
-/// metre would draw the threshold rule in the wrong place on every strip in the app.
-public enum BaroReference {
+/// Since engine 0.22.0 that is not one number for the afternoon: the wrist-under test reads
+/// a **local baseline** that walks with the altimeter and holds under a spike
+/// (`Evidence.submergedTrace`, docs/algorithms.md "Turn outcome" step 2). So the strip asks
+/// for the line in force at the moment it is drawing rather than for a median of the day —
+/// which is what keeps the −`dropM` rule on the picture where the mask actually crossed it,
+/// on a watch whose reference stepped 190 m between stretches as readily as on one whose
+/// did not.
+///
+/// A forwarder, still: the engine spells the rule once, and a presentation copy that drifted
+/// by a metre would draw the threshold in the wrong place on every strip in the app.
+public struct BaroReference: Sendable, Equatable {
+    /// Sample times of the cleaned track.
+    public var t: [Double]
+    /// The engine's own baseline at each of them; `nan` before the first finite altitude.
+    public var baseline: [Double]
+
+    public init(t: [Double], baseline: [Double]) {
+        self.t = t
+        self.baseline = baseline
+    }
+
+    /// The engine's baseline over a whole cleaned track, built once per session.
+    public static func session(_ samples: [CleanSample], dropM: Double) -> BaroReference {
+        let t = samples.map(\.t)
+        let trace = Evidence.submergedTrace(samples.map(\.altM), t: t,
+                                            gap: samples.map(\.gapBefore), dropM: dropM)
+        return BaroReference(t: t, baseline: trace.baseline)
+    }
+
+    /// The line in force at `ts`: the last sample at or before it that has one.
+    ///
     /// nil where the source has no altitude channel at all, which is what makes the
-    /// barometer strip print its one-line empty state.
-    public static func session(_ altM: [Double?]) -> Double? {
-        Evidence.submergedReference(altM)
+    /// barometer strip print its one-line empty state. A window that opens before the first
+    /// finite altitude borrows the first line there is rather than going blank — the trace
+    /// it is drawn beside starts there too.
+    public func at(_ ts: Double) -> Double? {
+        var best: Double?
+        for i in t.indices {
+            if t[i] > ts { break }
+            if baseline[i].isFinite { best = baseline[i] }
+        }
+        return best ?? baseline.first { $0.isFinite }
     }
 }

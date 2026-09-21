@@ -500,10 +500,13 @@ import Testing
     /// No barometer ⇒ no submersion evidence, and an all-nil altitude channel must not
     /// make every sample look submerged.
     @Test func missingBarometerYieldsNoSubmersionEvidence() {
-        let none = Evidence.submergedMask([nil, nil, nil], dropM: 25)
+        let clock = [0.0, 1, 2, 3]
+        let dry = [Bool](repeating: false, count: 4)
+        let none = Evidence.submergedMask([nil, nil, nil], t: Array(clock.prefix(3)),
+                                          gap: Array(dry.prefix(3)), dropM: 25)
         #expect(none == [false, false, false])
-        // With a channel, only a sample far below the median counts.
-        let some = Evidence.submergedMask([100, 101, 99, -200], dropM: 25)
+        // With a channel, only a sample far below the local baseline counts.
+        let some = Evidence.submergedMask([100, 101, 99, -200], t: clock, gap: dry, dropM: 25)
         #expect(some == [false, false, false, true])
     }
 

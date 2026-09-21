@@ -19,10 +19,18 @@ import Testing
     }
 
     /// 2026-08-30 Torbole: 645 s, two flights (the longest starting at 85 s), ten counted
-    /// jibes — eight flown of which five clean, two swum — a 2 s peak at 292 s, and one
-    /// submersion at 496 s.
+    /// jibes — eight flown of which five clean, two swum — and a 2 s peak at 292 s. It had a
+    /// submersion at 496 s until engine 0.22.0 read that step as a re-anchored altimeter
+    /// rather than a wet wrist (ADR-029), and has none now.
     private func torbole() throws -> SessionAnalysis {
         try golden("2026-08-30-1407_nago-torbole-windsurfen_ciq")
+    }
+
+    /// 2026-08-07 Torbole, the fixture with real wrist dunks in it — three of them since
+    /// engine 0.22.0. It is here for the one rule `torbole` can no longer show: what a
+    /// submersion moment is called.
+    private func dunked() throws -> SessionAnalysis {
+        try golden("2026-08-07-0754_nago-torbole-windsurfen_ciq")
     }
 
     // MARK: - The moments
@@ -30,8 +38,8 @@ import Testing
     @Test func theCutStopsForEveryCountedJibeTheRecordsAndTheLongestTakeoff() throws {
         let plan = ReelPlan.make(try torbole(), span: 0...645)
 
-        // One takeoff (the longest flight's), ten jibes, three records, one wrist-under.
-        #expect(plan.moments.count == 15)
+        // One takeoff (the longest flight's), ten jibes, three records, no wrist-under.
+        #expect(plan.moments.count == 14)
         #expect(plan.moments.map(\.t) == plan.moments.map(\.t).sorted(),
                 "moments must be in time order")
         #expect(Set(plan.moments.map(\.id)).count == plan.moments.count, "ids must be unique")
@@ -52,7 +60,9 @@ import Testing
             })
         #expect(records.map(\.t) == [263, 288, 292])
 
-        #expect(plan.moments.filter { $0.kind == .submersion }.map(\.t) == [496])
+        // The one at 496 s left with engine 0.22.0: the altimeter had re-anchored, the wrist
+        // was dry, and a reel that stopped there would have stopped for the weather.
+        #expect(plan.moments.filter { $0.kind == .submersion }.isEmpty)
     }
 
     /// The callouts borrow every word they print. A reel that spelled a verdict or a record
@@ -69,7 +79,10 @@ import Testing
         #expect(byID["jibe-8"] == "jibe · fell in")
         #expect(byID["record-best2s"] == "best 2 s 13.47 kn")
         #expect(byID["record-alpha500"] == "best alpha 500 11.70 kn")
-        #expect(byID["wet-0"] == "wrist under")
+
+        // The wrist-under callout, on the fixture that still has one to show.
+        let wet = ReelPlan.make(try dunked(), span: 0...9000)
+        #expect(wet.moments.first { $0.kind == .submersion }?.headline == "wrist under")
 
         // Every verdict word is `TurnOutcomeKind.label`'s, and every record's is
         // `RecordKind.windowLabel`'s — no reel-only spelling anywhere.

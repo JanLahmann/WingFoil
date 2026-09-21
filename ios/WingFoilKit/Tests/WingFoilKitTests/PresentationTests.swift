@@ -970,6 +970,11 @@ import Testing
     /// through, which the scan had filed as a course change — so the session reads 57 counted
     /// turns splitting (42 · 8 · **7**), nineteen uncounted, and one more mark on the card. A
     /// turn that ends in the water is a verdict, and it gets a dot like every other one.
+    ///
+    /// Engine 0.22.0 takes the splashes from 35 to **18** and moves no verdict at all: the
+    /// mask reads a local baseline now, and seventeen of the thirty-five were stretches where
+    /// this watch's altimeter had re-anchored rather than times the wrist went under
+    /// (ADR-029). The three verdict counts below are the check that says so.
     @Test func thumbnailEventsAreTheLadderPlusTheSplashes() throws {
         let url = testFixturesDir.appendingPathComponent(
             "goldens/2026-08-29-1440_nago-torbole-windsurfen_ciq.expected.json")
@@ -981,10 +986,10 @@ import Testing
         #expect(counts[.flewThrough] == 42)
         #expect(counts[.touchdown] == 8)
         #expect(counts[.fellIn] == 7)
-        #expect(counts[.splash] == 35)
+        #expect(counts[.splash] == 18)
         // 76 turns in the session, 57 of them counted: the nineteen course changes are not
         // verdicts and are not marked.
-        #expect(events.count == 92)
+        #expect(events.count == 75)
         #expect(events.map(\.t) == events.map(\.t).sorted(), "marks must be in time order")
     }
 

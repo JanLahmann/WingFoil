@@ -232,11 +232,13 @@ struct SessionDetail: Sendable {
     /// the same picture of the same track — so the windows are the union of the counted
     /// turns' and the drawn ends', and the name stopped saying "turn".
     let sliceSamples: [TurnSlice.Sample]
-    /// The altitude every submersion is measured against: the session median of the cleaned
-    /// track's finite barometric samples (`BaroReference.session`, which is the engine's own
-    /// `Evidence.submergedReference`). nil on a source with no barometer, which is what makes
-    /// the barometer strip print its one-line empty state instead of a flat trace at zero.
-    let baroReferenceM: Double?
+    /// The altitude every submersion is measured against: the engine's own **local** baseline
+    /// over the cleaned track (`BaroReference.session`, which forwards to
+    /// `Evidence.submergedTrace`). Since engine 0.22.0 that is a line per sample rather than a
+    /// median of the afternoon, so each drawn window asks it for the value in force at its own
+    /// start. Empty on a source with no barometer, which is what makes the barometer strip
+    /// print its one-line empty state instead of a flat trace at zero.
+    let baroReference: BaroReference
     /// The wind direction the turn detail's wind-up frame rotates by — degrees the wind blows
     /// **from** — or nil when this session has none to offer.
     ///
@@ -316,7 +318,8 @@ struct SessionDetail: Sendable {
         filter.gapFactor = analysis.config.gapFactor
         let clean = TrackCleaner.clean(track, config: filter)
         sliceSamples = Self.buildSliceSamples(analysis, positioned: positioned, clean: clean)
-        baroReferenceM = BaroReference.session(clean.samples.map(\.altM))
+        baroReference = BaroReference.session(clean.samples,
+                                              dropM: analysis.config.turnBaroDrop)
         windDirDeg = track.watchSummary.windDirUserDeg
             ?? analysis.wind.flatMap { $0.usable ? $0.dirDeg : nil }
         efforts = Self.buildEfforts(analysis, positioned: positioned)
@@ -856,12 +859,12 @@ struct SessionDetail: Sendable {
 
     /// The barometer series for one drawn window, on that event's own clock.
     ///
-    /// The reference and the episodes are both the session's — the median every submersion is
-    /// measured against, and the engine's own runs — so the strip's threshold rule and its
-    /// shaded spans are the same facts the "wrist under" chip is, read a second way rather
-    /// than derived a second time (`SliceBaro`).
+    /// The reference and the episodes are both the engine's — the local baseline this event's
+    /// samples were judged against, and the engine's own runs — so the strip's threshold rule
+    /// and its shaded spans are the same facts the "wrist under" chip is, read a second way
+    /// rather than derived a second time (`SliceBaro`).
     func baro(points: [TurnSlice.Point], at zeroTs: Double) -> SliceBaro {
-        SliceBaro.make(points: points, referenceM: baroReferenceM,
+        SliceBaro.make(points: points, referenceM: baroReference.at(zeroTs),
                        dropM: analysis.config.turnBaroDrop,
                        submersions: analysis.submersions.map {
                            ($0.ts - zeroTs)...max($0.endTs - zeroTs, $0.ts - zeroTs)
