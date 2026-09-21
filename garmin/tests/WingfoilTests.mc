@@ -5606,3 +5606,106 @@ function theReleaseStreamHasNoPageEditor(logger as Test.Logger) as Boolean {
         + " default pages, page set enum live");
     return true;
 }
+
+// ---- Submersion: the settle release (0.9.17) ----
+// The watch reads "wrist under water" as a pressure RISE over a slow baseline
+// (MetricsEngine.SUBMERSION_PA / BARO_EMA), and the baseline holds while the rise is open so
+// that a dunk cannot re-baseline itself dry. On a watch whose pressure channel re-anchors
+// after the dunk — a tester's fenix 5X Plus, 20 Sep 2026 — the held baseline never caught up:
+// the rise stayed over the threshold for the rest of the session and every later turn "fell
+// in". The settle release is the answer, and it is the phone's (engine 0.22.0): a dunk is a
+// spike, a level is not a dunk, so BARO_SETTLE_S ticks of a level held to within
+// +/-BARO_SETTLE_PA are accepted as the new ambient.
+//
+// Five traces, all in the pressure domain, all through the one seam the simulator can drive
+// (Activity.Info is not ours to fabricate): the step that never comes back, the spike that
+// does, the slosh that holds neither, a weather drift, and the hole a pause leaves.
+(:test)
+function submersionSettleReleaseReadsLevelsAndSpikes(logger as Test.Logger) as Boolean {
+    var p0 = 100000.0;                      // ~sea level, the anchor every trace starts from
+
+    // 1. THE RE-ANCHOR. +400 Pa (over the ~300 Pa turnBaroDrop converts to) and the level
+    // stays. Submerged from the first sample over the threshold; the window closes ON the
+    // n-th, and that sample and every one after it is dry.
+    var e = new MetricsEngine();
+    var n = e.BARO_SETTLE_S;
+    e.submersionSample(p0);
+    Test.assertMessage(!e.submerged, "the first sample is the baseline, not a dunk");
+    var wet = 0;
+    for (var i = 1; i <= n; i++) {
+        e.submersionSample(p0 + 400.0);
+        if (e.submerged) {
+            wet++;
+            Test.assertMessage(i < n, "sample " + i.toString()
+                + " of a held level is still read as a wrist under water");
+        } else {
+            Test.assertMessage(i == n, "the level was accepted at sample " + i.toString()
+                + ", before its " + n.toString() + " ticks were up");
+        }
+    }
+    Test.assertEqual(wet, n - 1);
+    for (var i = 0; i < 120; i++) {         // two more minutes at the new level: all dry
+        e.submersionSample(p0 + 400.0);
+        Test.assertMessage(!e.submerged, "the accepted level came back as a dunk");
+    }
+    // ...and the detector is not spent: a dunk from the NEW level is still a dunk.
+    e.submersionSample(p0 + 900.0);
+    Test.assertMessage(e.submerged, "a dunk from the re-anchored level must still read wet");
+
+    // 2. THE DUNK. Up for 10 s and back — submerged only while it is up, and the level is
+    // never accepted, so the next dunk from the old baseline is wet on its first sample.
+    e = new MetricsEngine();
+    e.submersionSample(p0);
+    for (var i = 0; i < 10; i++) {
+        e.submersionSample(p0 + 400.0);
+        Test.assertMessage(e.submerged, "a 10 s dunk must read wet for all 10 s");
+    }
+    e.submersionSample(p0);
+    Test.assertMessage(!e.submerged, "the wrist came out of the water");
+    for (var i = 0; i < 30; i++) {
+        e.submersionSample(p0);
+        Test.assertMessage(!e.submerged, "dry is dry");
+    }
+    e.submersionSample(p0 + 400.0);
+    Test.assertMessage(e.submerged, "the baseline never moved, so the next dunk is a dunk");
+
+    // 3. THE SLOSH. Over the threshold for minutes but never at one level: +400 and +700 Pa
+    // alternating is 300 Pa of travel against a 60 Pa window, so the release never fires.
+    // This is the trace that keeps a real swim wet.
+    e = new MetricsEngine();
+    e.submersionSample(p0);
+    for (var i = 0; i < 300; i++) {
+        e.submersionSample(p0 + (i % 2 == 0 ? 400.0 : 700.0));
+        Test.assertMessage(e.submerged, "sloshing water read dry at sample " + i.toString());
+    }
+
+    // 4. THE WEATHER. 300 Pa of drift over 10 minutes — the whole submersion threshold, taken
+    // slowly — is never a dunk: the EMA lags a 0.5 Pa/s ramp by rate/BARO_EMA = 25 Pa.
+    e = new MetricsEngine();
+    e.submersionSample(p0);
+    for (var i = 1; i <= 600; i++) {
+        e.submersionSample(p0 + 0.5 * i);
+        Test.assertMessage(!e.submerged, "weather read as a dunk at sample " + i.toString());
+    }
+
+    // 5. THE PAUSE. A pause is a hole in the stream (SessionController calls restartBaseline
+    // on both resumes): the rider can carry the watch up the beach, and the level on the other
+    // side of the hole is a new fact, not a 400 Pa dunk.
+    e = new MetricsEngine();
+    for (var i = 0; i < 30; i++) {
+        e.submersionSample(p0);
+    }
+    e.restartBaseline();
+    Test.assertMessage(!e.submerged, "restartBaseline leaves the engine dry");
+    for (var i = 0; i < 60; i++) {
+        e.submersionSample(p0 + 400.0);
+        Test.assertMessage(!e.submerged,
+            "the level after a pause re-anchors, it does not dunk");
+    }
+
+    logger.debug("settle release: " + wet.toString()
+        + " wet ticks before a held +400 Pa level is accepted (BARO_SETTLE_S = " + n.toString()
+        + " ticks, +/-" + e.BARO_SETTLE_PA.format("%.0f")
+        + " Pa); dunk, slosh, weather and pause all read the way they should");
+    return true;
+}

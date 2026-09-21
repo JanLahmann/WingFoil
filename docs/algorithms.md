@@ -928,7 +928,17 @@ inventing turns):
   is the max over `entrySpeedWindow` of the *Doppler* history.
 - **Submersion is read in the pressure domain.** `turnBaroDrop` (25 m of apparent altitude) is
   converted once to a ~300 Pa rise in `rawAmbientPressure` against a slow (~50 s) baseline that
-  refuses to adapt while a spike is in progress. Same positive-only semantics.
+  refuses to adapt while a spike is in progress. Same positive-only semantics. The **settle
+  release** is the phone's (engine 0.22.0), spelled in the same domain (watch 0.9.17): when the
+  rise has been over the threshold for `BARO_SETTLE_S` = 20 ticks *and* every sample in those
+  20 sits within `BARO_SETTLE_PA` = ±60 Pa of the current one — the phone's ±5 m at the same
+  ~12 Pa/m this conversion uses — the level is accepted as the new ambient (`baseline = pa`,
+  that sample dry). It is what keeps a watch whose pressure channel *re-anchors* after a dunk
+  (a tester's fenix 5X Plus) from latching `submerged` for the rest of the session. A pause is
+  a hole in the stream rather than quiet water, so both resumes re-anchor the baseline — the
+  phone's `gap_before` restart, which the watch has no other way to see. A dunk is a spike; a
+  level is not a dunk, and the price is the phone's too: water held to within 5 m for 20 s
+  reads dry from its 20th second.
 - **No pump corroboration** (step 3 of the ladder): the watch cannot promote a fly-through to a
   touchdown on accel evidence, so it reports slightly more fly-throughs than the phone.
 - **The watch does not measure the axis crossing**, and knows neither axis parameter. It has no

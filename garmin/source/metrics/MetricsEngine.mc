@@ -14,6 +14,19 @@ class MetricsEngine {
     // the watch actually has, so the threshold is converted once, here.
     const SUBMERSION_PA = 300.0;
     const BARO_EMA = 0.02;              // ~50 s baseline: follows weather, never a dunk
+    // The settle release (0.9.17). A held baseline is the right answer to a dunk and the
+    // wrong one to a watch whose pressure channel RE-ANCHORS after the dunk: on a fenix 5X
+    // Plus (tester, 20 Sep 2026) the level after a fall never came back, so the rise stayed
+    // over SUBMERSION_PA and `submerged` latched true for the rest of the session — every
+    // later turn "fell in". A dunk is a spike; a level is not a dunk. So when the rise has
+    // been over SUBMERSION_PA for BARO_SETTLE_S ticks AND every sample in that window sits
+    // within +/-BARO_SETTLE_PA of this one, the new level is accepted as ambient:
+    // `_baseline = pa`, this sample dry. 20 ticks = the phone's BARO_SETTLE_S (20 s at 1 Hz);
+    // 60 Pa = the phone's 5 m at the same ~12 Pa/m this file converts turnBaroDrop with.
+    // The cost is honest and is the phone's too: a swim that holds one depth to within 5 m
+    // for 20 s reads dry from its 20th second. A wrist in moving water does not.
+    const BARO_SETTLE_S = 20;
+    const BARO_SETTLE_PA = 60.0;
     const RAD2DEG = 57.29578;
 
     // Breadcrumb for the optional map page: lat/lon in degrees, Float (~1 m on a wingfoil
@@ -76,6 +89,14 @@ class MetricsEngine {
     hidden var _tickCount as Number = 0;
     hidden var _baseline as Float = 0.0;
     hidden var _haveBaseline as Boolean = false;
+    // The settle window: the last BARO_SETTLE_S pressure samples, a ring written once per
+    // tick and read for its spread only while a spike is open. Allocated once (20 Floats),
+    // never per tick; `_settleN` is how much of it is real, `_wetRun` the length of the run of
+    // consecutive over-threshold ticks the window has to agree with.
+    hidden var _settleRing as Array<Float>;
+    hidden var _settlePos as Number = 0;
+    hidden var _settleN as Number = 0;
+    hidden var _wetRun as Number = 0;
 
     // Detectors come from the WingFoilCore barrel and read their thresholds from the
     // Config this app fills from GCM properties (AppSettings.load()).
@@ -85,6 +106,10 @@ class MetricsEngine {
         records = new SpeedRecords();
         history = new SessionHistory();
         pump = new PumpDetector(AppSettings.cfg);
+        _settleRing = new [BARO_SETTLE_S] as Array<Float>;
+        for (var i = 0; i < BARO_SETTLE_S; i++) {
+            _settleRing[i] = 0.0;
+        }
         hrCost = new HrCostTracker();
         autoWind = new AutoWind();
     }
@@ -294,7 +319,8 @@ class MetricsEngine {
 
     // Barometric submersion evidence for TurnDetector. The baseline tracks the ambient
     // pressure slowly and deliberately refuses to adapt while a spike is in progress, so a
-    // 30 s swim cannot re-baseline itself into looking dry. Null-safe: devices/sim runs
+    // dunk cannot re-baseline itself into looking dry — until it stops being a spike and
+    // becomes a level, which is the settle release above. Null-safe: devices/sim runs
     // without the channel simply lose this evidence (positive-only, its silence means
     // nothing — docs/algorithms.md "Turn outcome" step 2).
     hidden function _updateSubmersion(actInfo as Activity.Info?) as Void {
@@ -311,18 +337,70 @@ class MetricsEngine {
         if (p == null) {
             return;
         }
-        var pa = (p as Numeric).toFloat();
+        submersionSample((p as Numeric).toFloat());
+    }
+
+    // The rule itself, one pressure sample in and `submerged` out. Split from the reader
+    // above because the simulator hands a test no Activity.Info and the suite has to be able
+    // to drive a trace (docs/testing.md, the watch's unit suite) — the same seam shape as
+    // `clockMsOverride`. Bounded work, no allocation: one ring write and, only while a spike
+    // is open, one pass over BARO_SETTLE_S Floats.
+    function submersionSample(pa as Float) as Void {
+        submerged = false;
         if (!_haveBaseline) {
             _haveBaseline = true;
             _baseline = pa;
-            return;
         }
+        _settleRing[_settlePos] = pa;
+        _settlePos++;
+        if (_settlePos >= BARO_SETTLE_S) {
+            _settlePos = 0;
+        }
+        if (_settleN < BARO_SETTLE_S) {
+            _settleN++;
+        }
+
         var rise = pa - _baseline;
         if (rise > SUBMERSION_PA) {
+            _wetRun++;
+            // The settle release: BARO_SETTLE_S consecutive over-threshold ticks whose whole
+            // window sits within +/-BARO_SETTLE_PA of this sample is a new ambient level, not
+            // a wrist under water. Accept it and read this sample dry.
+            if (_wetRun >= BARO_SETTLE_S && _settleN >= BARO_SETTLE_S && _settleLevel(pa)) {
+                _baseline = pa;
+                _wetRun = 0;
+                return;
+            }
             submerged = true;
             return;
         }
+        _wetRun = 0;
         _baseline += BARO_EMA * rise;
+    }
+
+    // Did the last BARO_SETTLE_S samples all stay within +/-BARO_SETTLE_PA of `pa`? A scan
+    // rather than a maintained min/max: BARO_SETTLE_S is 20, the loop runs only on a tick
+    // that is already over the threshold, and a rolling extremum would cost a second ring.
+    hidden function _settleLevel(pa as Float) as Boolean {
+        for (var i = 0; i < BARO_SETTLE_S; i++) {
+            var d = _settleRing[i] - pa;
+            if (d > BARO_SETTLE_PA || d < -BARO_SETTLE_PA) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // A pause is a hole in the pressure stream, not quiet water: the rider can walk the watch
+    // up the beach, into a car, up a hill, and the level it comes back to has nothing to do
+    // with the one it left. SessionController calls this on every resume (manual and auto) so
+    // the first sample after the hole re-anchors the baseline instead of reading as a dunk.
+    function restartBaseline() as Void {
+        _haveBaseline = false;
+        _settleN = 0;
+        _settlePos = 0;
+        _wetRun = 0;
+        submerged = false;
     }
 
     function tickCount() as Number {
