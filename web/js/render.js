@@ -18,7 +18,7 @@ import { speed, speedNumber, speedUnit } from "./appsettings.js";
 import { hm, keyMetricEntries } from "./cardstats.js";
 import { GLOSSARY, NOT_A_SESSION } from "./copy.js";
 import { EXPERIMENTAL_NOTE, lexicon } from "./lexicon.js";
-import { renderFigures } from "./session.js";
+import { applyTurnFilter, renderFigures } from "./session.js";
 /* r3-w3: the turn page and the flight-end page. One hook, one line below: the page reads
    the document it is handed and wires itself to the two tables. js/turnpage.js. */
 import { setSessionDocument } from "./turnpage.js";
@@ -53,6 +53,10 @@ export function render(result, { highlight = null, isExample = false } = {}) {
   renderTakeoffs(el("takeoff-body"), g, meta);
   renderTurns(el("turns-table"), el("turns-caption"), g, v, meta);
   renderEnds(el("ends-table"), el("ends-caption"), g, meta);
+  // Last, and after the table exists: the legend chips filter the turn rows as well as the
+  // two figures, and this is the one call that applies the state they are already in to a
+  // table that has just been rebuilt (js/session.js, "the turns table rows").
+  applyTurnFilter();
 }
 
 /* --------------------------------------------------------------- key metrics */

@@ -27,8 +27,8 @@
 
 import {
   C, OUTCOME_LABEL, bandSwatch, clockAt, endStyle, esc, figureWidth, glyphSwatch, hideTip,
-  hms, isNarrow, label, lineSwatch, marker, nf, outcomeText, showTip, svg, tipTarget,
-  turnStyle,
+  hms, isNarrow, label, letterSwatch, lineSwatch, marker, nf, outcomeText, showTip, svg,
+  tipTarget, turnStyle,
 } from "./viz.js";
 /* **Every speed a rider reads here goes through one formatter** (20 September 2026). A
    popover, a callout and a table cell are numbers he compares with the block above them,
@@ -87,7 +87,49 @@ const LAYERS = [
   { id: "takeoff",      group: "marker", swatch: () => glyphSwatch("arrow-up", C.takeoff) },
   { id: "splash",       group: "marker",
     swatch: () => glyphSwatch(TOKENS.glyphs.splash.webShape, C.splash) },
+  // The third question: WHICH MANEUVER it was. A tester, 21 September 2026: "it would be
+  // great if you could toggle jibes and tacks on or off". The outcome chips above answer
+  // "how did it end", and a turn's kind is a different dimension of the same mark, so it
+  // is a group of its own rather than five more chips in the ladder's row
+  // (docs/review-checklist.md, pattern L: an extra dimension is a column, never a new
+  // letter). The words are the phone's own — `TurnTypeFilter.label` says Jibes and Tacks
+  // — at the legend's lowercase, like `flew through` beside `Flew through` in the glossary.
+  //
+  // The labels are local rather than in `TOKENS.layers` on purpose: that catalogue is the
+  // iOS `MapLayer` mirror, checked chip for chip against the phone's legend, and the phone
+  // has no kind filter on its map (docs/screens.md, deviation 20). A word added there
+  // would claim a chip the phone does not draw.
+  { id: "jibes",        group: "kind", label: "jibes",   swatch: () => letterSwatch("J") },
+  { id: "tacks",        group: "kind", label: "tacks",   swatch: () => letterSwatch("T") },
+  { id: "aborted",      group: "kind", label: "aborted",
+    swatch: () => letterSwatch("A", { dashed: true }) },
 ];
+
+/** The kind chips, in chip order — the ids `kindsOf` hands out and `tally` counts. */
+const KIND_ORDER = ["jibes", "tacks", "aborted"];
+
+/**
+ * Which kind chips one turn answers to, and the whole of the rule.
+ *
+ * **Counted first**, exactly as `TurnAnalytics.matches` does it on the phone: a bear-away
+ * or a round-up is a course change the engine deliberately rejected, it is out of the
+ * summary and out of the phone's type filter, so it is out of this group too. It keeps its
+ * own chip — `course change` in the row above — and stays switchable beside the maneuvers,
+ * which is the arrangement `MapLayerScope` describes for the phone's Turns map.
+ *
+ * **Aborted is the engine's flag, not a type** (engine 0.21.0, docs/algorithms.md, "The
+ * aborted turn"): a turn the rider was still riding when he went in. It is always a
+ * counted jibe or tack that fell in, so it answers to two chips — its kind and this one —
+ * and either of them hides it. A document written before 0.21.0 carries no flag, so the
+ * chip counts nothing and is drawn as a caption.
+ */
+function kindsOf(turn) {
+  const kinds = [];
+  if (turn.counted && turn.type === "jibe") kinds.push("jibes");
+  if (turn.counted && turn.type === "tack") kinds.push("tacks");
+  if (turn.aborted) kinds.push("aborted");
+  return kinds;
+}
 
 const OUTCOME_LAYER = { flew_through: "flewThrough", touchdown: "touchdown",
                         fell_in: "fellIn", glide_out: "flewThrough" };
@@ -353,6 +395,10 @@ function buildModel(result) {
     const clean = !!turn.clean;
     marks.push({
       layer, layers: clean ? ["cleanJibe"] : [layer],
+      // The kind chips, and the turn this mark IS. `ti` is what lets the row in the Turns
+      // table below be hidden by the same predicate as the dot on the map, so a row and a
+      // dot can never disagree about whether the rider is looking at that turn.
+      kinds: kindsOf(turn), ti: m.i,
       t: m.t, x: m.x, y: m.y, kn: m.kn, style: turnStyle({ ...m, clean }), n: m.n,
       title: `#${m.n} ${m.kind}${m.counted ? "" : " (not counted)"}`,
       tip: `<b>#${m.n} ${clockAt(meta, m.t)}</b> — ${esc(m.kind)}<br>` +
@@ -494,6 +540,10 @@ function buildModel(result) {
                     bursts: ep.bursts }));
 
   return { v, g, meta, marks, pumpSpans, positioned, flights,
+           // Turn index -> its mark, so the Turns table can ask the one filter question
+           // without re-deriving a single rule of it (`turnRowVisible`).
+           turnMarks: new Map(marks.filter((mk) => mk.ti !== undefined)
+                                   .map((mk) => [mk.ti, mk])),
            phase: positioned ? phaseRuns(v, v.flights) : [] };
 }
 
@@ -502,10 +552,14 @@ function buildModel(result) {
 function tally(model, highlight) {
   const counts = {};
   for (const id of MARK_ORDER) counts[id] = 0;
+  for (const id of KIND_ORDER) counts[id] = 0;
   // Counted per *chip*, not per mark: a clean jibe answers to two, so it is one on the
   // ladder's chip and one on the star's — which is what makes both chips live toggles.
+  // The kind chips are counted the same way, which is why an aborted jibe is one on the
+  // `jibes` chip and one on `aborted`.
   for (const mk of model.marks) {
     for (const id of mk.layers || [mk.layer]) counts[id] = (counts[id] || 0) + 1;
+    for (const id of mk.kinds || []) counts[id] = (counts[id] || 0) + 1;
   }
   counts.flying = model.v.flights.length;
   counts.offFoil = model.v.count ? 1 : 0;
@@ -520,9 +574,21 @@ function tally(model, highlight) {
 
 const visible = (id) => !state.hidden.has(id);
 
-/** Whether a mark survives the chips. Every layer it answers to has to be on: a clean jibe
- *  carries two (its outcome and `cleanJibe`), everything else exactly one. */
-const markVisible = (mk) => (mk.layers || [mk.layer]).every(visible);
+/** Whether a mark survives the chips. Every chip it answers to has to be on: a clean jibe
+ *  carries two (its outcome and `cleanJibe`), everything else exactly one — and a turn
+ *  carries its kind chips beside that, so it is drawn only when its kind and its outcome
+ *  are both on. A mark with no kind (a takeoff, a splash, a flight end) is not touched by
+ *  the kind group at all: it is not a maneuver, and it has nothing to say about jibes. */
+const markVisible = (mk) =>
+  (mk.layers || [mk.layer]).every(visible) && (mk.kinds || []).every(visible);
+
+/** The same question for the row in the Turns table, asked of the turn's own mark so that
+ *  the row and the dot are one decision (`buildModel`, `turnMarks`). A turn with no mark
+ *  cannot be filtered on evidence that is not there, so it stays. */
+const turnRowVisible = (i) => {
+  const mk = state.model?.turnMarks?.get(i);
+  return mk ? markVisible(mk) : true;
+};
 
 /* ------------------------------------------------------------------ the entry point */
 
@@ -1770,17 +1836,23 @@ function onZoomButton(ev) {
  * all — it stays as a subdued caption, because the vocabulary is worth reading even when
  * this session has no instance of it (same rule as the iOS legend).
  *
- * **Three groups, one question each**, and the utilities are not one of the questions:
+ * **Four groups, one question each**, and the utilities are not one of the questions:
  *
  *   1. the **route** — how the track itself is drawn;
  *   2. the **events on it** — the clean-jibe star first, then the ladder, then the effort
  *      marks. A visible gap (`.chip-group + .chip-group`) separates it from the route, so
  *      the wrap reads as two sentences rather than eleven unrelated words;
- *   3. the **utilities** — Show all (only while something is hidden) and the zoom bar,
+ *   3. the **kind of maneuver** — jibes, tacks, and the turns he fell out of. It follows
+ *      the events because it is a second question about the very same marks, and the two
+ *      are applied together (`markVisible`): a turn is drawn while its kind and its
+ *      outcome are both on;
+ *   4. the **utilities** — Show all (only while something is hidden) and the zoom bar,
  *      trailing-aligned, because neither of them toggles a layer.
  *
- * The legend note stays last, under all three. iOS's `MapLegendView` groups the identical
- * three, in the same order.
+ * The legend note stays last, under all four. iOS's `MapLegendView` groups the first two
+ * and the utilities in the same order; the kind group is the web's own (docs/screens.md,
+ * deviation 20), and it is the phone's *Turns* filter read as chips rather than as a
+ * segmented control, because this legend already filters by tapping.
  */
 function drawChips() {
   const host = el("map-legend");
@@ -1792,7 +1864,7 @@ function drawChips() {
     // 2 s"), which is what the iOS chip says; the catalogue's "best effort" is the
     // fallback. Every other chip is the catalogue's word, verbatim.
     const text = layer.id === "effort" && state.highlight?.label
-      ? state.highlight.label.toLowerCase() : LABEL[layer.id];
+      ? state.highlight.label.toLowerCase() : (layer.label || LABEL[layer.id]);
     // Two chips are properties of the route rather than tallies of events, and "1" beside
     // them would read as "one off-foil thing" — they carry no number.
     const count = layer.id === "offFoil" || layer.id === "direction"
@@ -1825,10 +1897,13 @@ function drawChips() {
             ? `showing ${camera().k.toFixed(1)}×`
             : "pinch, scroll or double-tap to zoom", zoomed)
         : "");
-  host.innerHTML = group("route") + group("marker")
+  host.innerHTML = group("route") + group("marker") + group("kind")
     + (utilities ? `<span class="chip-group chip-utilities">${utilities}</span>` : "")
     + `<p class="legend-note">Tap a chip to hide or show it on the map <em>and</em> in the
       speed strip. Chevrons point the way you were riding.</p>
+      <p class="legend-note">J, T and A are the kinds of turn. Turn one off to see only the
+      others, here and in the turns list. An aborted turn is one you fell out of halfway
+      round.</p>
       <p class="legend-note">Star = a clean jibe. You flew it through and carried your speed.
       No touchdown and no fall in the seconds after.</p>
       <p class="legend-note">Solid shape = manoeuvre outcome. Hollow square = straight-line
@@ -1848,19 +1923,62 @@ function drawChips() {
       const id = chip.dataset.layer;
       if (state.hidden.has(id)) state.hidden.delete(id); else state.hidden.add(id);
       closePopover();
-      drawMap();
-      drawStrip();
-      drawChips();
-      applyPlayhead();
+      afterChips();
       return;
     }
     if (ev.target.closest("#show-all-layers")) {
       state.hidden.clear();
-      drawMap();
-      drawStrip();
-      drawChips();
-      applyPlayhead();
+      afterChips();
     }
+  };
+}
+
+/** Everything that has to follow a chip: both figures, the legend itself, the playhead and
+ *  the rows in the Turns table. One function, because a chip that moved the map and left
+ *  the table saying something else would be two answers to one question. */
+function afterChips() {
+  drawMap();
+  drawStrip();
+  drawChips();
+  applyPlayhead();
+  applyTurnFilter();
+}
+
+/* -------------------------------------------------------------- the turns table rows
+ *
+ * The chips filter the rows too, since 21 September 2026 (a tester: "it would be great if
+ * you could toggle jibes and tacks on or off"). The table is js/render.js's — this only
+ * hides rows in it, and it hides them with `hidden` rather than by removing them, because
+ * js/turnpage.js reads a row's POSITION among its siblings as the turn's index. Removing
+ * one would renumber every turn below it and open the wrong page.
+ *
+ * **Nothing here touches a count.** The caption above the table is the document's own
+ * tally — jibes, tacks, clean jibes, the ladder — and it stays whole while rows are
+ * hidden, for the same reason the share card is untouched by the chips: a filter is a way
+ * of looking at a session, not a claim about what happened in it.
+ */
+
+/** Hide the rows the chips are hiding, and say so above the table. */
+export function applyTurnFilter() {
+  const table = el("turns-table");
+  const note = el("turns-filter-note");
+  if (!table || !state.model) return;
+  let hiddenRows = 0;
+  table.querySelectorAll("tbody tr").forEach((row, i) => {
+    const show = turnRowVisible(i);
+    row.hidden = !show;
+    if (!show) hiddenRows += 1;
+  });
+  if (!note) return;
+  note.hidden = !hiddenRows;
+  if (!hiddenRows) { note.innerHTML = ""; return; }
+  note.innerHTML = `Chips on Track hide ${hiddenRows} ` +
+    `${hiddenRows === 1 ? "turn" : "turns"}. ` +
+    `<button type="button" class="linkish" id="turns-show-all">Show all</button>`;
+  note.onclick = (ev) => {
+    if (!ev.target.closest("#turns-show-all")) return;
+    state.hidden.clear();
+    afterChips();
   };
 }
 

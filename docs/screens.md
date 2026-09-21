@@ -197,6 +197,15 @@ app, any .fit, Strava, and the Garmin ZIP last.
     mail we have sent and in the phone's own *Coming in a future release* screen. The site
     nav is two links and one door.
 
+20. **The map legend filters by kind of turn; the phone filters by kind on its Turns page.**
+    A tester, 21 September 2026: *"it would be great if you could toggle jibes and tacks on
+    or off."* The web session page has three more chips beside the outcome ones — *jibes*,
+    *tacks* and *aborted* — and they hide a turn on the map, in the speed strip and in the
+    Turns table at once. The phone has the same two words as a segmented control
+    (`TurnTypeFilter`: Both · Jibes · Tacks) on the Turns analysis page, and no kind filter
+    in `MapLegendView`. *Aborted* is the engine's own per-turn flag (engine 0.21.0), and no
+    iOS surface draws it yet.
+
 Everything else that differs is a gap to close, not a deviation.
 
 ## The web after the port, as a target

@@ -378,6 +378,25 @@ export const lineSwatch = (color, width = 2.4, dash = null) =>
     stroke-width="${width}" stroke-linecap="round"${
       dash ? ` stroke-dasharray="${dash}"` : ""}/></svg>`;
 
+/** A legend swatch for a category that is **not** a colour: one letter in a hairline ring,
+ *  at chip size, in the neutral ink.
+ *
+ *  What kind of maneuver a turn was is a second question about the same mark — the mark's
+ *  own colour already answers the first one — so a kind chip must not borrow the outcome
+ *  ladder's palette. Lending it green or red would make "tacks" look like a verdict, which
+ *  is the reason the effort layers stay outside that ramp too (`C.pump` and friends).
+ *  `dashed` is the ring that never closed: the turn the rider fell out of halfway round.
+ *
+ *  `currentColor` rather than a hex, and it is the only swatch here that takes one: every
+ *  other swatch draws a thing that has a colour of its own, on the dark figure and on the
+ *  light chip alike. This one draws a *word*, so it is ink — it takes the chip's own, which
+ *  is the label's, and dims with it when the chip is switched off. */
+export const letterSwatch = (letter, { dashed = false } = {}) =>
+  `<svg viewBox="-8 -8 16 16" fill="none" stroke="currentColor"><circle r="6.6"
+    stroke-width="1.3"${dashed ? ` stroke-dasharray="2.6 2.3"` : ""}/>
+    <text y="3.4" text-anchor="middle" font-size="9.6" font-weight="700" stroke="none"
+      fill="currentColor">${letter}</text></svg>`;
+
 export const bandSwatch = (color, opacity = 0.22) =>
   `<svg viewBox="-8 -8 16 16"><rect x="-7" y="-6" width="14" height="12"
     fill="${color}" opacity="${opacity}"/></svg>`;

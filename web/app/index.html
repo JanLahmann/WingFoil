@@ -554,6 +554,12 @@
       <div class="panel-head">
         <h2>Turns</h2>
         <p class="muted small" id="turns-caption"></p>
+        <!-- Why a row is missing, and the way back. The legend chips on Track filter this
+             table too, and on a narrow screen the legend is behind another chip, so a
+             reader who cannot see what he switched on is told here instead
+             (docs/review-checklist.md, pattern G). Filled by js/session.js, and hidden
+             whenever the chips are hiding nothing. -->
+        <p class="muted small" id="turns-filter-note" hidden></p>
       </div>
       <div class="table-scroll"><table id="turns-table"></table></div>
     </section>

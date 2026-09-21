@@ -2066,9 +2066,12 @@ aborted turn"). A turn the rider fell out of halfway round now appears in the tu
 any other tack or jibe that fell in, and it wears the same chips and the same line — `fell in ·
 wrist under`, `fell in · stopped 7 s` — because that is what happened, and the ladder that
 decided is the same ladder. The engine carries a `turn.aborted` flag beside it and **no surface
-draws it yet**: it is there so that a later sheet can tell *he fell in the turn* from *he turned
-and later fell* without re-deriving anything, and adding a word to the page before Jan has asked
-for one would be a second vocabulary for one verdict. The rider-visible change is that the turn
+says a word about it**: it is there so that a later sheet can tell *he fell in the turn* from *he
+turned and later fell* without re-deriving anything, and adding a word to the page before Jan has
+asked for one would be a second vocabulary for one verdict. The one thing the flag drives is a
+*filter*: the web session legend has an `aborted` chip beside its `jibes` and `tacks` ones
+(docs/screens.md, deviation 20), which hides those turns rather than labelling them, and it
+changes no verdict, no count and no caption. The rider-visible change is that the turn
 is *there at all*, with its marker on the map and its row in the table, where before there was a
 grey course change or nothing.
 
