@@ -42,6 +42,12 @@ public struct SourceCapabilities: Sendable, Equatable {
     public var hasDevFields = false
     public var hasWatchLaps = false
     public var hasAccel = false
+    /// The accel stream carried no usable clock and was timed from file order instead
+    /// (engine 0.23.0, ADR-030). Good to ±1 s against GPS — each batch starts at the
+    /// record that precedes it — which is ample for a 0.5–2.5 Hz pump band and not ample
+    /// for anything that wants to align a sample with a wave. False on every stream the
+    /// device timed, which is every fixture in the corpus.
+    public var accelClockReconstructed = false
     public var hasHR = false
     public var sampleRateHz: Double = 0
     /// FIT session sport (raw name or number as string, e.g. "windsurfing" / "43").

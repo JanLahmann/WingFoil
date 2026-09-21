@@ -107,8 +107,28 @@ public enum PumpAnalyzer {
     }
 
     /// PumpTrack from raw (time, |a| in g) samples — also the unit-test / replay entry point.
-    public static func track(times: [Double], magnitudes: [Double],
+    public static func track(times rawTimes: [Double], magnitudes rawMagnitudes: [Double],
                              config: PumpConfig = PumpConfig()) -> PumpTrack? {
+        // **Nothing here trusts the stream's clock** (engine 0.23.0, ADR-030). A non-finite
+        // time or magnitude is dropped and an unsorted stream is sorted, because both come
+        // out of a file: a device that stamps its accelerometer with a date days off the
+        // session (`FitAccelReader.clockIsUsable`) is a real shape, and so is an invalid
+        // sentinel inside one array.
+        var times: [Double] = [], magnitudes: [Double] = []
+        times.reserveCapacity(rawTimes.count)
+        magnitudes.reserveCapacity(rawTimes.count)
+        for i in rawTimes.indices where i < rawMagnitudes.count
+            && rawTimes[i].isFinite && rawMagnitudes[i].isFinite {
+            times.append(rawTimes[i]); magnitudes.append(rawMagnitudes[i])
+        }
+        if !times.isEmpty, zip(times, times.dropFirst()).contains(where: { $0 > $1 }) {
+            let order = times.indices
+                .sorted { times[$0] != times[$1] ? times[$0] < times[$1] : $0 < $1 }
+            let sortedT = order.map { times[$0] }
+            let sortedM = order.map { magnitudes[$0] }
+            times = sortedT
+            magnitudes = sortedM
+        }
         guard times.count >= 2 else { return nil }
         let t0 = times[0]
         let step = 1.0 / config.resampleHz

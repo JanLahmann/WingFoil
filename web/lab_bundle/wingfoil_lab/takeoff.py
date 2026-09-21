@@ -89,8 +89,10 @@ pump-outs.
 fewer than `takeoffMinPreWindow` seconds of gap-free record precede the flight start, the run
 is not in the data and `pumps_to_takeoff`/`duration_s` are not reported (`truncated`). The
 flight itself is still a success -- it demonstrably happened -- only its *cost* is unknown.
-On 2026-08-04 pm, which Smart Recording splits into 429 gap-free runs, this is the difference
-between a table of real takeoff runs and a table of fictional 1-second ones.
+Before engine 0.23.0 that was the normal state of a Smart Recording native: 2026-08-04 pm cut
+into 429 gap-free runs and only 23 of its 130 runs were judged. A cadence is no longer a hole
+(`filters.gap_threshold_s`), so the same session judges all 40 of its runs and truncation is
+back to what it describes -- a recording that really did start mid-takeoff.
 
 Sources without an accelerometer (native/GPX) degrade instead of failing: the run is the speed
 rise alone, stroke counts are `None`, and the failed attempts are invisible -- so the success

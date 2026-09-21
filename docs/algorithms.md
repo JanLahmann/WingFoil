@@ -6,7 +6,7 @@ Single source of truth for detection/metric parameters. Three implementations fo
 re-tuned in lab notebooks against the labeled fixture corpus; changed defaults are updated HERE
 first, with the tuning notebook referenced in the commit.
 
-`ENGINE_VERSION`: **0.22.0** (bump on any change that alters outputs; triggers phone re-analysis)
+`ENGINE_VERSION`: **0.23.0** (bump on any change that alters outputs; triggers phone re-analysis)
 
 ## Disciplines — one engine, three rigs (engine ≥ 0.18.0, EXPERIMENTAL)
 
@@ -122,13 +122,80 @@ echoed in session fields 40–42.
 |---|---|---|
 | `maxHdop` | 5.0 | GP3S standard (when channel present) |
 | `minSatellites` | 5 | when present |
-| `maxAccel1Hz` | 4.0 m/s² | spike filter (Logiqx 1 Hz value) |
+| `maxAccel1Hz` | 4.0 m/s² | spike filter (Logiqx 1 Hz value), measured against the last good sample |
+| `spikeMaxDtS` | 3 s | the spike rule's budget stops growing here (engine ≥ 0.23.0). `maxAccel1Hz` is a **1 Hz** value, and `\|dv\| ≤ maxAccel1Hz × dt` stretches it: over a 7 s Smart Recording step it permits 28 m/s, which is what a receiver emits when it reacquires after a hole. Until 0.23.0 no step that long was judged here at all — anything past the 4 s threshold started a new segment and was accepted unconditionally — so raising the threshold without this cap would hand those samples to the speed records. At 1 Hz no step inside a segment reaches three seconds, so **no committed golden moves for it** |
+| `gapMinS` · `gapFactor` · `smartGapS` · `smartMedianDtS` | 3 s · 2 · **10 s** · **1.5 s** | the hard-gap rule: **gap iff dt > max(`gapMinS`, `gapFactor` × median dt, and `smartGapS` when the median dt is above `smartMedianDtS`)**. The third term is engine ≥ 0.23.0 — see "A cadence is not a hole" below. `smartGapS` = 0 switches it off |
 | `gapInterpolateMax` | 2 s | linear-interpolate gaps ≤ this; longer ⇒ hard segment break |
 | `speedChannelRecords` | doppler | FIT `speed`/`enhanced_speed` (device Doppler) for all speed records |
 | `speedChannelManeuvers` | hybrid | positional speed (local-meter projection) for turn minima — Doppler is ~3–4 s smoothed |
 | watch gate | `Position.Quality ≥ USABLE` | below ⇒ sample not fed to detectors/records; timers freeze; FIT keeps raw |
 | `odoMaxStep` | 3 × Doppler distance + 10 m/s × dt | watch odometer guard, see below |
 | `maxSpeedMps` | 40.0 m/s (144 km/h) | watch plausibility band; outright sailing record is 33.7 m/s |
+
+### A cadence is not a hole (engine ≥ 0.23.0, ADR-030)
+
+Garmin **Smart Recording** writes a sample when the track changes, not on a clock: 1–9 s
+apart, median 2 s. Under `max(gapMinS, gapFactor × median)` alone the threshold on such a
+track is **4 s**, which sits inside the recorder's own normal spacing — so a native
+afternoon was cut into 124–497 gap-free segments, and a segment boundary is a hard break
+everywhere downstream. The cost was not subtle: **session distance** (the per-segment
+Doppler trapezoid) ran 11–27 % short of the file's own `total_distance` on every corpus
+native, and **timer time** — the denominator of foil % and of all four per-hour rates —
+lost the same fifth of the session to steady reaches the watch had simply not needed to
+sample. Above `smartMedianDtS` the threshold is therefore floored at `smartGapS` = **10 s**,
+the same valley `hrMaxSampleGap` already sits in (below, and for the same distribution). A
+long Smart Recording step *is* a steady reach — which is precisely why the watch skipped
+samples through it — so bridging it is physically sound. **A 1 Hz track never reaches the
+floor** and keeps its 3 s threshold to the digit; a `gap_before` the *source* declared (a
+timer stop, a GPX `<trkseg>` seam) still cuts, because that is evidence the clock does not
+carry.
+
+**What it did to the corpus.** The eleven Smart Recording fixtures (ten `…_native`, plus the
+0.5 Hz `…_wingfoiling` one); FIT session totals in brackets, `0.22.0 → 0.23.0`:
+
+| fixture | segments | distance km (FIT says) | timer s (FIT says) | foil % | flights | counted turns | clean jibes | ends unknown | ends fell in |
+|---|---|---|---|---|---|---|---|---|---|
+| `2026-06-13-1558` | 497 → **13** | 17.51 → **22.41** (22.58) | 4712 → **7549** (7754) | 60.1 → **44.0** | 101 → **54** | 47 → **49** | 3 → **4** | 87 → **5** | 9 → **36** |
+| `2026-07-31-1451` | 177 → **15** | 11.12 → **12.47** (12.57) | 3011 → **3939** (4188) | 60.9 → **50.8** | 40 → **25** | 22 → **23** | 2 → **0** | 30 → **4** | 4 → **16** |
+| `2026-08-01-0804` | 254 → **12** | 13.62 → **16.80** (16.81) | 3381 → **4782** (4953) | 69.2 → **58.2** | 81 → **37** | 46 → **47** | 17 → **14** | 72 → **6** | 2 → **20** |
+| `2026-08-02-0748` | 390 → **17** | 17.91 → **21.56** (21.45) | 5423 → **7549** (7779) | 53.0 → **42.8** | 74 → **42** | 36 → **36** | 9 → **7** | 55 → **7** | 10 → **23** |
+| `2026-08-03-0741` | 288 → **9** | 20.41 → **23.59** (23.36) | 5258 → **6862** (6953) | 64.8 → **55.1** | 93 → **47** | 47 → **49** | 16 → **14** | 64 → **3** | 13 → **29** |
+| `2026-08-03-1440` | 355 → **7** | 12.67 → **17.54** (17.39) | 4020 → **6015** (6094) | 54.3 → **49.2** | 111 → **21** | 16 → **17** | 0 → **0** | 97 → **1** | 6 → **11** |
+| `2026-08-04-0822` | 174 → **5** | 7.97 → **9.79** (9.72) | 2282 → **3286** (3336) | 66.0 → **55.6** | 48 → **22** | 27 → **27** | 4 → **3** | 40 → **1** | 4 → **13** |
+| `2026-08-04-1411` | 429 → **16** | 21.97 → **26.78** (26.67) | 6498 → **8860** (9105) | 62.0 → **54.1** | 130 → **40** | 60 → **62** | 16 → **16** | 111 → **3** | 7 → **22** |
+| `2026-08-05-0827` | 135 → **5** | 6.46 → **8.31** (8.36) | 1708 → **2451** (2524) | 71.1 → **63.0** | 52 → **12** | 22 → **23** | 6 → **4** | 45 → **1** | 4 → **10** |
+| `2026-08-06-1359` | 124 → **5** | 9.33 → **10.66** (10.69) | 2787 → **3456** (3509) | 56.0 → **49.6** | 40 → **17** | 14 → **13** | 2 → **2** | 28 → **1** | 4 → **7** |
+| `2026-08-06-0757` | 226 → **16** | 12.77 → **14.49** (14.54) | 4428 → **5638** (5852) | 49.0 → **41.9** | 55 → **29** | 32 → **32** | 6 → **5** | 39 → **5** | 6 → **14** |
+| **total** | — | 151.8 → **184.4** | 43 508 → **60 387** | — | 825 → **346** | 369 → **378** | 81 → **69** | 668 → **37** | 69 → **201** |
+
+Read it in this order:
+
+* **Distance lands on the file's own answer.** 11–27 % short before, −0.8 % to +1.0 % after.
+  Four Smart Recording sessions from a tester's fenix 5 Plus, outside the corpus, move from
+  21–31 % short to within 0.4 %.
+* **Timer time lands within 0.2–5.9 %** of the FIT's `total_timer_time`. The residual is the
+  file's own timer running through holes the engine still cuts, which is the honest gap.
+* **Foil % *falls*** — 5 to 16 points — and that is the correction, not a regression. It is
+  `foilTimeS ÷ timerTimeS`, and the old denominator was missing a fifth of the session that
+  the rider spent on the water; flights spanning a fake boundary were also cut short.
+* **Flights collapse, 825 → 346**, because a flight never spans a gap: most of those were one
+  reach reported as three.
+* **Turns rise slightly, 369 → 378.** A sweep cut in half by a fake boundary reaches neither
+  `turnMinAngle` nor `turnAbortMinAngle`; bridged, it is a turn. Nine appear across eleven
+  sessions and none disappears except on `2026-08-06-1359`, where two short sweeps merge
+  into one.
+* **`unknown` flight ends nearly vanish, 668 → 37, and `fell_in` ends rise 69 → 201.** These
+  are the same fact: an end at a segment boundary has no evidence after it and is flagged
+  `truncated` and kept out of every tally (`flightend.py`). Judged instead of truncated, most
+  of them turn out to be swims — which they always were.
+* **Clean jibes fall, 81 → 69.** The quiet tail now sees the ten seconds after a sweep
+  instead of running into a boundary, and a fall in that tail blocks the verdict.
+* **No 1 Hz golden moves by a digit** (the three `ciq`, `foilmotion`, both TCX, the GPX, the
+  synthetic): their median dt is 1 s, below `smartMedianDtS`. Their diff is the version stamp
+  and the schema keys alone.
+* **A best hour exists in the corpus for the first time** (`2026-08-03-1440`, 6.746 kn): an
+  hour is a long time to record without a real hole, and before this no native ran one
+  gap-free.
 
 **An implausible speed sample is treated exactly like an unusable fix**
 (`garmin/barrel/WingFoilCore/source/Sanity.mc`): speed forced to 0, no distance, and
@@ -1093,6 +1160,42 @@ the two pump-outs, which score 6 and 7, and the verdict is unchanged at `pumpStr
 0.20–0.30 g. Garmin writes `calibrated_accel_*` in milli-g although the FIT profile names
 the unit "g"; the parser sniffs the scale from the resting magnitude rather than assuming.
 
+### Reading the stream — `accelerometer_data`, and the devices that give it no clock
+
+`parse.py` · `FitImport/FitAccelReader.swift`. One message per ~25 samples: `timestamp` +
+`timestamp_ms` give the batch's base second and `sample_time_offset` (ms) times each sample
+inside it. The frame is returned on the *records'* time base, because it is two orders of
+magnitude longer than the 1 Hz record frame and belongs to a different clock.
+
+**Not every device gives that stream a clock** (engine ≥ 0.23.0, ADR-030). A tester's
+fenix 5 Plus writes one batch after each 1 Hz record and stamps every one of them with a
+handful of constant `timestamp`s *days* either side of the session, with
+`sample_time_offset` flat at zero — 4 312 batches × 25 samples, in file order. Read
+literally that is a stream fifty days long starting before the ride: the lab produced
+`t = −138 457 s` and NaNs and the pump resampler died on `int(floor(nan))`; the kit, whose
+grid is bounded, silently returned no pump channel at all.
+
+**The clock is condemned by either of two tests**, and then rebuilt from file order:
+
+| test | what it catches |
+|---|---|
+| fewer than half the batch bases fall inside the records' own span (±1 s) | a device reusing stale `timestamp`s. Our own recordings pass it outright — 2 580 of 2 580 and 16 588 of 16 588 on the two corpus fixtures that carry the channel |
+| no batch of two or more samples has any spread in its `sample_time_offset` | twenty-five samples at offset 0 are twenty-five samples with one time, which is not a time |
+
+Rebuilt, **a batch starts at the last `record` seen before it and lasts one second**, its
+`n` samples spread evenly across it (sample `i` at `i/n` s). It is monotonic: several
+batches written after the same record queue up behind it rather than landing on one instant.
+The result is good to **±1 s against GPS**, which is ample for a 0.5–2.5 Hz band and not
+ample for aligning a sample with a wave — so the fact is recorded rather than hidden:
+`capabilities.accelClockReconstructed`, in the document and in `SourceCapabilities`, is
+**false on every fixture in the corpus** and true only where the engine had to do this.
+
+**And the pump grid trusts none of it.** Its length comes out of a file, so a non-finite time
+or magnitude is dropped, an unsorted stream is sorted, and a grid longer than four hours of
+25 Hz samples (`MAX_PUMP_BINS` / `PumpAnalyzer.maxBins`) is refused. The answer is `nil` —
+the same state a source with no accelerometer is already in — so every consumer degrades the
+way it always has instead of through a second code path.
+
 ### The session total — `summary.takeoff.totalPumpStrokes` (engine ≥ 0.8.0)
 
 The last two rows exist for **one** metric, and the reason is worth writing down. Every other
@@ -1424,7 +1527,7 @@ and `flightEnds`, one entry per spell under water.
   outcome ladder's inputs and are computed exactly as before, from the same mask at the same
   threshold. The episodes are presentation evidence laid over them, and the relationship is
   one-way: every flagged turn or end has at least one episode overlapping its window, while
-  an episode need not belong to any: over the committed goldens 14 of 37 do not, and that
+  an episode need not belong to any: over the committed goldens 14 of 38 do not, and that
   ratio is itself a reading of engine 0.22.0 — it was 72 of 97 while the reference was the
   session median, because a re-anchored stretch belongs to no maneuver at all.
 * **A source with no barometer gets an empty list.** Nothing is invented from GPS altitude:
@@ -1563,10 +1666,14 @@ Three details are load-bearing:
   consecutive sub-floor samples, so a real 3 s standstill can measure `stopped_s == 0` —
   2026-08-04 pm has flight ends touching 0.5 m/s that a duration test called glide-outs.
   `stopped_s` still decides `fell_in`/`borderline`, where 5 s and 3 s are resolvable.
-- **`unknown` is not pedantry.** 2026-08-04 pm segments into 429 gap-free runs and 111 of its
-  130 "flights" end at a segment boundary with the rider still doing 4–5 m/s. Classified on
-  visible evidence they all read `glide_out`, and the session would claim 111 straight-line
-  glide-outs that never happened. Class-(a) CIQ recording is a steady 1 Hz and loses 2 of 23.
+- **`unknown` is not pedantry.** Before engine 0.23.0, 2026-08-04 pm segmented into 429
+  gap-free runs and 111 of its 130 "flights" ended at a segment boundary with the rider still
+  doing 4–5 m/s. Classified on visible evidence they all read `glide_out`, and the session
+  would have claimed 111 straight-line glide-outs that never happened. Since 0.23.0 a Smart
+  Recording cadence is no longer a boundary ("A cadence is not a hole"), and the same session
+  has 40 flights of which **3** end unknown — so the rung now does what it was built for, a
+  rare honest silence, instead of absorbing an artifact. Class-(a) CIQ recording is a steady
+  1 Hz and is unchanged at 2 of 23.
 
 **Ownership.** A flight end inside a detected turn's outcome window (`start` →
 `end + outcomeWindow`) is *that turn's* event, already counted there: it is flagged
@@ -1839,8 +1946,21 @@ fixture corpus mean speed rises as the course turns *toward* the wind (a foil lo
 apparent wind deep downwind), i.e. the opposite of the displacement-sailing rule it was
 taken from. It is kept as a diagnostic only. The no-go-zone rule matches Garda's diurnal
 pattern (morning Peler from N, afternoon Ora from S) on every corpus session.
-Degenerate case: exactly opposed lobes (pure beam-reach out-and-back) put the true axis
-perpendicular to the lobes where no bisector can find it — rejected, no estimate.
+**An opposed pair of reaches still has a wind** (engine ≥ 0.23.0, ADR-030). Until then a
+separation above `windMaxLobeSeparation` = 179° was refused as a degenerate bisector, and a
+tester's afternoon of two exactly opposed reaches — lobes 132.74° / 311.90°, separation
+**179.16°** — came back with no axis at all, so not one of its 78 maneuvers could be named a
+tack or a jibe. The bisector is undefined *at* 180° and nowhere else, and even there the
+answer is not missing: the wind axis is the **perpendicular** of the lobe axis, and the no-go
+cone picks its end exactly as it does for every other separation. The construction is now the
+half-angle form `lobe0 + wrap180(lobe1 − lobe0) / 2`, which is defined for every separation,
+agrees with the old equal-weight circular mean everywhere that mean was defined (so no corpus
+session moves by a digit), and returns the perpendicular at exactly 180°. **The parameter is
+retired** — it no longer appears in a golden's `config` block. The doubt rides in
+`confidence`, where it can be read, rather than in a hard `null`: that tester session comes
+back at **222.3°, confidence 0.70**, cone margin 0.31, against 222° from the watch's own live
+estimate and 225° from a weather archive, and its turns split 45 tacks / 33 jibes against the
+watch's 44 / 32.
 
 ### Default turn type — the rider's habit as 180° evidence
 
@@ -1902,7 +2022,7 @@ allocated at construction:
 | samples | foiling, ≥ 2 m/s, weighted by per-step distance | identical: `FlightDetector` ON, Doppler ≥ 2 m/s, weight = `speed × dt` |
 | histogram | 36 × 10°, smoothed ±20° | identical, accumulated incrementally |
 | lobes | argmax of the smoothed histogram, then the weighted circular mean of the raw samples within ±25° | argmax, then the mass-weighted circular mean of the **bin centres** within ±2 bins |
-| axis | bisector of the two lobes; rejected below 60° or above 179° separation | identical |
+| axis | bisector of the two lobes (half-angle form, defined at every separation); rejected below 60° only | **divergence since engine 0.23.0**: `AutoWind.mc` still refuses above 179° separation and still builds the bisector from the circular mean. The watch is ported separately (ADR-030); on a session of two opposed reaches it therefore falls back to the manual bearing where the phone now answers |
 | axis confidence | `clip01((mass−0.2)/0.4) × clip01(balance/0.5) × clip01((sep−60)/20)` | identical |
 | 180° call | ±45° no-go cones, `margin = \|mA−mB\|/(mA+mB)`, `eCone = clip01(margin/0.4)` | identical, over bin centres |
 | default-turn-type prior | `e = eCone + 0.5·mTurn` over every detected sweep | identical, over the last 64 logged sweeps |
@@ -2116,9 +2236,11 @@ than a flattering 100 %.
 attempts at 62 % success; 9.0 pumps to takeoff on average (median 7, range 4–21), 8.7 s average
 run (median 8.0), 0 free takeoffs, 395 counted strokes (1341 raw peaks before engine 0.8.0) of
 which 127 in flight across 36 in-flight episodes. The native sessions have no accel and lose
-most runs to Smart Recording: 2026-08-05 am
-9 of 52 runs judged (6.8 s average), 2026-08-04 pm 23 of 130 (7.6 s) — the same truncation that
-costs 111 of its 130 flight *ends*. **Unvalidated:** the failed-attempt count has no ground
+the run of every flight they have, since
+engine 0.23.0: 2026-08-05 am 12 of 12 (11.8 s average), 2026-08-04 pm 40 of 40 (13.1 s). Before
+it, when a Smart Recording cadence was read as a hole, those were 9 of 52 and 23 of 130 (6.8 s
+and 7.6 s) — the same truncation that cost 111 of that session's 130 flight *ends*. The runs
+are longer because a run may now walk back through a cadence step instead of stopping at it. **Unvalidated:** the failed-attempt count has no ground
 truth yet (fixtures/README.md logs takeoff attempts per session — 2026-08-07 is still blank),
 and it is the one number here that moves with `takeoffAttemptWindow`: 15 failures at 8 s, 14 at
 10 s, 10 at 12 s, 9 at 15 s (56 %/62 %/70 %/72 % success). Everything else is flat from 10 s up.
@@ -2140,7 +2262,7 @@ the next change to a definition here bumps it. `tools/hr_report.py` reproduces t
 | `hrCostPeakWindow` | 30 | s | peak searched this far past the anchor. Not the burst length: optical HR trails effort by 10–20 s (measured median peak lag 20.5 s on 2026-08-07), so a window as short as the effort measures the HR he *arrived* with |
 | `hrBaselineWindow` | 10 | s | baseline = **median** (not mean — one spike must not move it) of the usable samples in the window ending at the anchor |
 | `hrMinCoverage` | 0.6 | | a window below this share of usable seconds yields `None`, never a number |
-| `hrMaxSampleGap` | 10 | s | longer between two samples ⇒ an HR hole. Deliberately **not** the cleaner's dt-aware speed rule (~4 s here): that rule protects speed integration, and HR is a slow channel two samples 6 s apart bracket perfectly well. Smart Recording writes 1–9 s cadences (2026-08-05: 985 intervals, 5 of them ≥10 s; 2026-08-04 pm: 3745, 13 of them) so 10 s sits in a real valley of the distribution. Under the speed rule the natives lose 93–94 % of their takeoff costs to "gaps" that are nothing of the sort (3/52 and 9/130 measurable, against 52/52 and 129/130 here) |
+| `hrMaxSampleGap` | 10 | s | longer between two samples ⇒ an HR hole. A separate rule from the cleaner's, read off the raw records rather than the cleaned track: HR is a slow channel two samples 6 s apart bracket perfectly well, while a gap in the speed rule protects distance integration. Smart Recording writes 1–9 s cadences (2026-08-05: 985 intervals, 5 of them ≥10 s; 2026-08-04 pm: 3745, 13 of them) so 10 s sits in a real valley of the distribution. Under the speed rule **as it was before engine 0.23.0** (~4 s on such a track) the natives lost 93–94 % of their takeoff costs to "gaps" that were nothing of the sort — 3/52 and 9/130 measurable, against 52/52 and 129/130 here. Since 0.23.0 the cleaner's own Smart Recording floor is **this same valley**, so the two numbers agree on a native track; they stay two rules, because a 1 Hz track still cuts speed at 3 s and HR at 10 |
 | `hrFlatlineMax` | 60 | s | identical bpm for longer, inside one gap-free stretch ⇒ stuck sensor, whole run dropped. Corpus longest identical runs: 21 s (ciq), 17 s / 27 s (natives), so at 60 s the guard removes **nothing** today — it is there for a future dropout, where an optical sensor holds one value for minutes, and it must not fire on a genuinely steady resting heart |
 | `hrMinBpm` / `hrMaxBpm` | 30 / 220 | bpm | outside this is sensor garbage, not a heart rate |
 | `hrLag` | 10 | s | pumping/cruising **classification** windows are shifted forward by this, and cruising additionally excludes a ±`hrLag` guard band around every burst. Without it the metric mostly compares the HR he brought into each burst |
@@ -2181,11 +2303,15 @@ the off-foil → on-foil transition alone. That fallback is what gives native se
 **Corpus (defaults above).** 2026-08-07 ciq: cost 6.9 bpm avg / 7.0 median over **23/23**
 takeoffs, all burst-anchored; pumping 101.6 vs cruising 96.0 bpm (**+5.6**, coverage 1.00 on
 both sides); 0.76 bpm per stroke; half-recovery 12 s (14/15) after takeoffs, 18 s (4/7) after
-swims. The two native sessions have no strokes and every anchor `approximate`, yet land on the
-same cost: 2026-08-05 am 6.1 bpm avg (52/52), 2026-08-04 pm 7.2 bpm (129/130) — a real
-cross-source check on the fallback anchor, since nothing about it is shared with the class-(a)
-path. Usable HR: 76 % / 98 % / 86 % of the session span (the ciq loss is three genuine
-breaks totalling 22 min).
+swims. The two native sessions have no strokes and every anchor `approximate`, and every
+takeoff they have is measurable: 2026-08-05 am 13.5 bpm avg (**12/12**), 2026-08-04 pm
+10.4 bpm (**40/40**). They read *higher* than the ciq session rather than the same, and since
+engine 0.23.0 that is the honest reading: those sessions used to be cut into 52 and 130
+"flights" by a Smart Recording cadence, so most of what was averaged was a phantom restart
+mid-reach at no cost at all. Twelve and forty real water starts after a real swim cost more
+heartbeats than a class-(a) afternoon of mostly-made jibes, which is what the number now says.
+Usable HR: 76 % / 98 % / 86 % of the session span (the ciq loss is three genuine breaks
+totalling 22 min).
 
 **Fatigue: half the hypothesis held, and the other half is a warning about the metric.**
 2026-08-07 in thirds — 67 % / 69 % / **44 %** success (12 / 16 / 9 attempts), with four of the

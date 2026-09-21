@@ -445,14 +445,21 @@ def check_records(digests: list[dict]) -> None:
           (rows["bestNmKn"]["value"], rows["bestNmKn"]["dateUtc"]), (11.451, "2026-08-05"))
     check("  alpha 500 = 11.994 kn on 2026-08-05 (foilmotion)",
           (rows["alpha500Kn"]["value"], rows["alpha500Kn"]["dateUtc"]), (11.994, "2026-08-05"))
-    check("  best hour is dropped (all zero in this corpus)", "bestHourKn" in rows, False)
-    check("  8 record kinds shown", len(agg["records"]), 8)
+    # The corpus finally has a best hour (engine 0.23.0): 2026-08-03 pm used to be 355
+    # gap-free runs and is now 7, so an uninterrupted hour exists to measure. Every other
+    # native still scores 0 — an hour is a long time to record without a real hole.
+    check("  best hour = 6.746 kn on 2026-08-03 (the only session with an hour in it)",
+          (rows["bestHourKn"]["value"], rows["bestHourKn"]["dateUtc"]), (6.746, "2026-08-03"))
+    check("  9 record kinds shown", len(agg["records"]), 9)
 
     # Every record must carry a window the UI can highlight, and it must be a real slice
-    # of the session it points at.
+    # of the session it points at — except `bestHour`, which is given none on purpose: an
+    # hour-long window lights the whole track (docs/presentation.md, "Record windows").
+    windowless = {label for key, wkey, label, _u in library.RECORD_KINDS if wkey is None}
     for row in agg["records"]:
         src = next(d for d in digests if d["id"] == row["id"])
-        check(f"  {row['label']}: window present", bool(row["windows"]), True)
+        check(f"  {row['label']}: window present",
+              bool(row["windows"]), row["label"] not in windowless)
         for w in row["windows"]:
             in_range = 0 <= w["startTs"] <= (src["durationS"] or 0) and w["durS"] > 0
             check(f"  {row['label']}: window inside the session", in_range, True)

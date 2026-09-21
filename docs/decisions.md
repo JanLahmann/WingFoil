@@ -14,6 +14,71 @@ apart is a history, not a contract. There are four:
 An Accepted entry may carry a clause saying what a later ADR narrowed or what has moved since.
 That is the point of the line: it says which half of an old paragraph is still load-bearing.
 
+## ADR-030 · A cadence is not a hole
+**Status: Accepted.**
+
+A tester's fenix 5 Plus sessions arrived with three separate faults, and all three were the
+engine reading a *device convention* as damage.
+
+**One: Smart Recording.** Garmin writes a sample when the track changes, not on a clock —
+1–9 s apart, median 2 s. `filters.clean` called a step a gap when `dt > max(gapMinS 3,
+gapFactor 2 × median)`, which on such a track is **4 s**: inside the recorder's own normal
+spacing. A native afternoon was therefore cut into 120–650 gap-free segments, and a segment
+boundary is a hard break everywhere downstream. Session distance — the per-segment Doppler
+trapezoid — ran **11–27 % short** of the file's own `total_distance` on every corpus native
+and **21–31 % short** on the tester's four; timer time, the denominator of foil % and of all
+four per-hour rates, lost the same fifth of the session; 668 of 825 flight ends across the
+eleven Smart Recording fixtures were `unknown`, i.e. truncated by a boundary that was not
+there. Decision: **above `smartMedianDtS` (1.5 s) the gap threshold is floored at `smartGapS`
+= 10 s**, the same valley `hrMaxSampleGap` already sits in for the same distribution. A long
+Smart Recording step *is* a steady reach — which is why the watch skipped samples through it
+— so bridging it is physically sound; a 1 Hz track never reaches the floor and does not move
+by a digit; a `gap_before` the *source* declared still cuts. One consequence had to come with
+it: `maxAccel1Hz` is a 1 Hz value, and `|dv| ≤ 4 × dt` over a newly-judged 7 s step permits
+28 m/s, which is exactly what a receiver emits when it reacquires after a hole — so the spike
+rule's budget stops growing at `spikeMaxDtS` = 3 s. That half moves **no committed golden**
+and drops one sample on one tester file, where it keeps a 23 kn "best 2 s" out of the records.
+
+**Two: an opposed pair of reaches.** `wind.py` refused a lobe separation above
+`windMaxLobeSeparation` = 179° as a degenerate bisector. The tester's 1 Hz session has lobes
+132.74° / 311.90°, separation 179.16° — so no wind, and therefore not one of its 78 maneuvers
+named a tack or a jibe, while the watch's own live estimate said 222° and a weather archive
+225°. The bisector is undefined *at* 180° and nowhere else, and even there the wind axis is
+simply the perpendicular of the lobe axis with the no-go cone picking its end. Decision:
+**replace the refusal with the half-angle construction** `lobe0 + wrap180(lobe1 − lobe0) / 2`,
+which is defined at every separation and returns that perpendicular at 180°, and **retire the
+parameter**. The doubt rides in `confidence`, which can be read, instead of in a hard `null`.
+That session now reads 222.3°, confidence 0.70, and splits 45 tacks / 33 jibes against the
+watch's 44 / 32. The construction agrees with the retired circular mean everywhere that mean
+was defined, so no corpus session moves by a digit. **The watch is not ported in this change**
+and keeps its 179° refusal — a divergence, written down in docs/algorithms.md.
+
+**Three: an accelerometer stream with no clock.** The same watch writes one
+`accelerometer_data` batch after each 1 Hz record and stamps every one of 4 312 of them with
+a handful of constant `timestamp`s days either side of the session, with `sample_time_offset`
+flat at zero. Read literally that is a stream fifty days long starting before the ride: the
+lab produced `t = −138 457 s` and NaNs and died in the pump resampler on `int(floor(nan))`;
+the kit, whose grid is bounded, silently returned no pump channel at all. Decision: **detect
+the shape and time the batches from file order** — each starts at the last `record` before it
+and lasts one second, its samples spread evenly across it, monotonic. The stream is condemned
+when fewer than half the batch bases fall inside the records' span, or when no batch has any
+spread in its offsets; our own recordings pass both outright. The result is good to ±1 s
+against GPS, which is ample for a 0.5–2.5 Hz band and not ample for aligning a sample with a
+wave — so it is **recorded rather than hidden**, as `capabilities.accelClockReconstructed`,
+false on every fixture in the corpus. Separately, the pump grid now drops non-finite samples,
+sorts an unsorted stream and refuses a grid past four hours of 25 Hz samples: its length comes
+out of a file, and `nil` is the state a source with no accelerometer is already in.
+
+Consequence: engine **0.23.0**. Three config keys join the document (`smartGapS`,
+`smartMedianDtS`, `spikeMaxDtS`), one leaves it (`windMaxLobeSeparation`), one capability key
+joins (`accelClockReconstructed`). Every Smart Recording golden moves and no 1 Hz golden
+moves by a digit; the per-fixture table is in docs/algorithms.md, "A cadence is not a hole".
+The headline on the eleven Smart Recording fixtures: distance 151.8 → 184.4 km against 184.2
+km of FIT session totals, timer time 43 508 → 60 387 s, flights 825 → 346, counted turns
+369 → 378, `unknown` flight ends 668 → 37, `fell_in` flight ends 69 → 201, clean jibes
+81 → 69. **Foil % falls 5–16 points on those fixtures and that is the correction**: the old
+denominator was missing a fifth of the session the rider spent on the water.
+
 ## ADR-029 · The wet test reads **the drop, not the level**
 **Status: Accepted.**
 

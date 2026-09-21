@@ -261,7 +261,11 @@ import Testing
         // reproduces the engine's rate exactly; what makes the columns worth their
         // migrations is that this is emphatically *not* what dividing by the row's own
         // `durationS` used to give.
-        var orphan = try #require(try await harness.ingestor.allSessions().first)
+        // A row with clean jibes in it: with a zero numerator both divisions are 0 and the
+        // last expectation below would pass for the wrong reason. (Engine 0.23.0 took the
+        // first fixture's clean jibes to zero, which is how that came up.)
+        var orphan = try #require(try await harness.ingestor.allSessions()
+            .first { ($0.jibesSuccessful ?? 0) > 0 })
         let engine = try #require(orphan.cleanJibesPerHour)
         orphan.engineCleanJibesPerHour = nil
         let divided = try #require(orphan.cleanJibesPerHour)

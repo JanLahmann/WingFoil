@@ -11,8 +11,9 @@ from wingfoil_lab.flight import segment_flights
 from wingfoil_lab.parse import parse_fit
 from wingfoil_lab.turns import (JIBE, TACK, classify_sweep, detect_turns, summarize_turns,
                                 turn_sweeps)
-from wingfoil_lab.wind import (_blend, _Prior, _wrap180, WindConfig, circular_histogram,
-                               estimate_wind, turn_type_votes)
+from wingfoil_lab.wind import (_bisector, _blend, _circular_mean, _Prior, _wrap180,
+                               WindConfig, circular_histogram, estimate_wind,
+                               turn_type_votes)
 
 FIXTURES = Path(__file__).resolve().parents[2] / "fixtures"
 TODAY = FIXTURES / "sessions/ciq/2026-08-07-0754_nago-torbole-windsurfen_ciq.fit"
@@ -72,11 +73,41 @@ def test_single_reach_has_no_second_lobe():
     assert est.dir_deg is None and est.confidence == 0.0 and est.source == "none"
 
 
-def test_exactly_opposed_lobes_are_rejected():
-    # pure beam-reach out-and-back: the true axis is perpendicular, no bisector can find it
-    est = _estimate([(90.0, 100), (-90.0, 100), (90.0, 100), (-90.0, 100)])
-    assert est.dir_deg is None
+def test_nearly_opposed_lobes_still_have_a_wind():
+    """179.2 deg of separation is a wind, not a refusal (engine 0.23.0, ADR-030).
+
+    The shape that found it: a tester's afternoon of two reaches 179.16 deg apart came back
+    with no axis at all, so not one of its maneuvers could be named. The bisector is only
+    undefined *at* 180 deg, and the no-go cone picks the end exactly as it always does.
+    """
+    est = _estimate([(89.6, 100), (-89.6, 100), (89.6, 100), (-89.6, 100), (170.0, 40)])
+    assert est.separation_deg == pytest.approx(179.2, abs=0.6)
+    assert est.dir_deg is not None
+    # The axis is the perpendicular of the reach pair, i.e. the wind we sailed in.
+    assert abs(_wrap180(est.dir_deg)) <= 10.0
+    assert est.confidence > 0.0
+
+
+def test_exactly_opposed_lobes_take_the_perpendicular():
+    """At 180 deg the bisector is undefined and the answer is not: it is the perpendicular.
+
+    `_circular_mean` of two opposed unit vectors is `atan2(0, 0)` = 0 deg — a bearing read
+    off nothing, which is why this pair used to be refused. The half-angle form returns
+    `lobe0 - 90`, the line the wind must lie on, and the cone picks its end.
+    """
+    est = _estimate([(90.0, 100), (-90.0, 100), (90.0, 100), (-90.0, 100), (170.0, 40)])
     assert est.separation_deg == pytest.approx(180.0, abs=1.0)
+    assert est.dir_deg is not None
+    assert abs(_wrap180(est.axis_deg - _wrap180(est.lobes_deg[0] - 90.0) % 180.0)) \
+        == pytest.approx(0.0, abs=1.0)
+    assert abs(_wrap180(est.dir_deg)) <= 10.0
+
+
+def test_the_bisector_agrees_with_the_circular_mean_where_both_are_defined():
+    """The retired construction and the new one are the same function off the degeneracy."""
+    for a, b in ((10.0, 100.0), (350.0, 95.0), (200.0, 25.0), (132.74, 311.9)):
+        mean = _circular_mean(np.array([a, b]), np.ones(2))
+        assert _wrap180(_bisector(a, b) - mean) == pytest.approx(0.0, abs=1e-9)
 
 
 def test_too_little_foiling_gives_no_estimate():

@@ -9,12 +9,13 @@ is pure dict work, and encoding FITs to exercise it would only test fitdecode.
 import datetime as dt
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pytest
 
-from wingfoil_lab.parse import (UTC_OFFSET_SOURCES, SourceCapabilities, _unpack_session_v2,
-                                activity_utc_offset_s, coarse_utc_offset_s, parse_fit,
-                                resolve_utc_offset, summarize)
+from wingfoil_lab.parse import (UTC_OFFSET_SOURCES, SourceCapabilities, _accel_clock_is_usable,
+                                _accel_frame, _unpack_session_v2, activity_utc_offset_s,
+                                coarse_utc_offset_s, parse_fit, resolve_utc_offset, summarize)
 
 FIXTURES = Path(__file__).resolve().parents[2] / "fixtures" / "sessions"
 
@@ -233,3 +234,80 @@ def test_every_fixture_carries_its_recorded_offset():
         # …and says so: every FIT in the corpus answers on the top rung, so nothing in the
         # corpus is entitled to the softened wording (engine 0.9.1).
         assert track.start_utc_offset_source == "activity", f"{f.name}: wrong rung"
+
+
+# ------------------------------------------------- the accelerometer stream's own clock
+
+def _batch(base: float, offsets, n_after_records: int, n: int = 25):
+    """One `_accel_batch` tuple: (base epoch, offsets ms, ax, ay, az, records seen)."""
+    off = np.asarray(offsets, float)
+    axes = tuple(np.full(n, v) for v in (0.0, 0.0, -1000.0))
+    return (float(base), off) + axes + (int(n_after_records),)
+
+
+def test_a_timed_accel_stream_is_believed():
+    """Offsets that spread inside the batch and bases inside the session: nothing moves."""
+    epochs = [1000.0 + i for i in range(4)]
+    batches = [_batch(1000.0 + i, np.arange(25) * 40.0, i + 1) for i in range(4)]
+    assert _accel_clock_is_usable(batches, epochs) is True
+    frame, reconstructed = _accel_frame(batches, epochs[0], epochs)
+    assert reconstructed is False
+    assert frame["t"].iloc[0] == pytest.approx(0.0)
+    assert frame["t"].iloc[-1] == pytest.approx(3.0 + 24 * 0.04)
+
+
+def test_flat_offsets_condemn_the_clock_and_file_order_replaces_it():
+    """A tester's fenix 5 Plus writes 25 samples all at offset 0, after each 1 Hz record.
+
+    The batch is then timed from the record that precedes it, its samples spread evenly
+    over that second -- good to +-1 s against GPS, which is ample for a 0.5-2.5 Hz band.
+    """
+    epochs = [1000.0 + i for i in range(4)]
+    batches = [_batch(1000.0 + i, np.zeros(25), i + 1) for i in range(4)]
+    assert _accel_clock_is_usable(batches, epochs) is False
+    frame, reconstructed = _accel_frame(batches, epochs[0], epochs)
+    assert reconstructed is True
+    assert len(frame) == 100
+    assert list(frame["t"][:3]) == pytest.approx([0.0, 0.04, 0.08])
+    assert frame["t"].iloc[-1] == pytest.approx(3.96)
+    assert bool(np.all(np.diff(frame["t"].to_numpy()) > 0))
+
+
+def test_stale_batch_timestamps_condemn_the_clock_even_with_offsets():
+    """The other half of the test: bases days away from the ride (offsets are then moot)."""
+    epochs = [1000.0 + i for i in range(4)]
+    stale = 1000.0 - 5 * 86400.0
+    batches = [_batch(stale, np.arange(25) * 40.0, i + 1) for i in range(4)]
+    assert _accel_clock_is_usable(batches, epochs) is False
+    frame, reconstructed = _accel_frame(batches, epochs[0], epochs)
+    assert reconstructed is True
+    assert frame["t"].iloc[0] == pytest.approx(0.0)
+    assert frame["t"].iloc[-1] < 4.0              # inside the session, not five days out
+
+
+def test_batches_written_after_the_same_record_queue_up():
+    """Monotonic: a batch never starts before the previous one has finished its second."""
+    epochs = [1000.0, 1001.0]
+    batches = [_batch(0.0, np.zeros(10), 1, n=10) for _ in range(3)]
+    frame, reconstructed = _accel_frame(batches, epochs[0], epochs)
+    assert reconstructed is True
+    starts = [frame["t"].iloc[i * 10] for i in range(3)]
+    assert starts == pytest.approx([0.0, 1.0, 2.0])
+
+
+def test_non_finite_accel_samples_are_dropped_not_carried():
+    """An invalid sentinel inside the offset array must not reach the pump resampler."""
+    epochs = [1000.0 + i for i in range(2)]
+    off = np.arange(25) * 40.0
+    off[3] = np.nan
+    batches = [_batch(1000.0, off, 1), _batch(1001.0, np.arange(25) * 40.0, 2)]
+    frame, reconstructed = _accel_frame(batches, epochs[0], epochs)
+    assert reconstructed is False
+    assert len(frame) == 49
+    assert bool(np.isfinite(frame["t"].to_numpy()).all())
+
+
+def test_no_records_leaves_the_file_believed():
+    """With nothing to compare the bases against there is no better answer than the file."""
+    batches = [_batch(1000.0, np.arange(25) * 40.0, 0)]
+    assert _accel_clock_is_usable(batches, []) is True

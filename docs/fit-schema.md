@@ -305,3 +305,13 @@ as a string (16 B and a scarce slot), `longest_flight_m`(25), `best_5x10s`(28)�
 - Watch lap boundaries are hints; the phone's `FlightSegmenter` output is authoritative.
 - intervals.icu shows session-level developer fields as empty — expected; user-facing GC display
   uses the `displayInActivitySummary` flags, our pipeline reads the raw FIT.
+- **`accelerometer_data` is not ours** — it is Garmin's own SensorLogging stream (global
+  message 165), and nothing in this schema writes it. The parser reads it anyway, because it
+  is what the pump channel is built on: `timestamp` + `timestamp_ms` give a batch's base
+  second and `sample_time_offset` (ms) times each of its ~25 samples, with
+  `calibrated_accel_x/y/z` in **milli-g** although the profile names the unit "g" (the scale
+  is sniffed from the resting magnitude, never assumed). Since engine 0.23.0 the parser also
+  checks whether the device *timed* that stream or merely stamped it — a fenix 5 Plus writes
+  constant timestamps days off the session with all-zero offsets — and rebuilds the clock from
+  file order when it did not, flagging `capabilities.accelClockReconstructed`. The rule and
+  its two tests are in docs/algorithms.md, "Reading the stream".

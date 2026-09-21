@@ -29,6 +29,7 @@ its speed-only path -- native and GPX sessions must keep working unchanged.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 import numpy as np
@@ -114,17 +115,44 @@ def pump_track(track: RawTrack, config: PumpConfig | None = None) -> PumpTrack |
                                   config)
 
 
+#: Ceiling on the resample grid: four hours at the default 25 Hz. A guard against a stream
+#: whose clock is broken, never a rule about the session -- no recording on the water comes
+#: near it (docs/algorithms.md, "Recordings the importer refuses"). Twin of
+#: `PumpAnalyzer.maxBins` in the Swift kit.
+MAX_PUMP_BINS = 4 * 3600 * 25
+
+
 def pump_track_from_arrays(t: np.ndarray, mag: np.ndarray,
                            config: PumpConfig | None = None) -> PumpTrack | None:
-    """PumpTrack from raw (time, |a| in g) samples -- unit tests and Monkey C array replay."""
+    """PumpTrack from raw (time, |a| in g) samples -- unit tests and Monkey C array replay.
+
+    **Nothing here trusts the stream's clock** (engine 0.23.0, ADR-030). A non-finite time
+    or magnitude is dropped, an unsorted stream is sorted, and a grid longer than
+    `MAX_PUMP_BINS` is refused rather than allocated: the grid's length comes out of a file,
+    and a device that stamps its accelerometer with a date fifty days off the session
+    (`parse._accel_clock_is_usable`) otherwise asks for a hundred million bins — or, once a
+    NaN is in there, for `int(floor(nan))` bins, which raises. `None` is the answer a source
+    with no accelerometer already gets, so every consumer degrades the way it always has.
+    """
     cfg = config or PumpConfig()
     t = np.asarray(t, float)
     mag = np.asarray(mag, float)
+    finite = np.isfinite(t) & np.isfinite(mag)
+    if not finite.all():
+        t, mag = t[finite], mag[finite]
     if t.size < 2:
         return None
+    if not np.all(np.diff(t) >= 0):
+        order = np.argsort(t, kind="stable")
+        t, mag = t[order], mag[order]
 
     step = 1.0 / cfg.resample_hz
-    n_bins = int(np.floor((t[-1] - t[0]) / step)) + 1
+    span = float(t[-1] - t[0])
+    if not math.isfinite(span) or span < 0:
+        return None
+    n_bins = int(np.floor(span / step)) + 1
+    if n_bins <= 0 or n_bins > MAX_PUMP_BINS:
+        return None
     idx = np.clip(((t - t[0]) / step).astype(int), 0, n_bins - 1)
     count = np.bincount(idx, minlength=n_bins)
     total = np.bincount(idx, weights=mag, minlength=n_bins)

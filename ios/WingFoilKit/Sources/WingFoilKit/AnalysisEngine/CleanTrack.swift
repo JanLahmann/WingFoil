@@ -1,7 +1,8 @@
 import Foundation
 
 /// Sample-hygiene parameters (docs/algorithms.md "Speed sample hygiene"). The gap rule
-/// is dt-aware: gap iff dt > max(`gapMinS`, `gapFactor` × median dt) — hard segment
+/// is dt-aware: gap iff dt > max(`gapMinS`, `gapFactor` × median dt, `smartGapS` on a
+/// Smart Recording track) — hard segment
 /// break, never interpolated across (dt-weighted windows subsume the 1 Hz
 /// `gapInterpolateMax` linear-interpolation rule). Mirrors `lab/…/filters.py`.
 public struct FilterConfig: Sendable, Equatable {
@@ -14,6 +15,21 @@ public struct FilterConfig: Sendable, Equatable {
     public var maxAccelMps2: Double = 4.0
     public var gapMinS: Double = 3.0
     public var gapFactor: Double = 2.0
+    /// **The Smart Recording floor** (engine 0.23.0, ADR-030). A recorder that writes a
+    /// sample every 1–9 s is reporting a *cadence*, not a hole, and `gapFactor × 2 s` = 4 s
+    /// sits inside its own normal spacing — which cut a native afternoon into hundreds of
+    /// segments and lost a fifth of its distance to steady reaches. Above
+    /// `smartMedianDtS` the threshold is floored here, the same valley `hrMaxSampleGap`
+    /// already sits in. 0 switches the rule off. A 1 Hz track never reaches it.
+    public var smartGapS: Double = 10.0
+    /// Median dt above which a track is Smart Recording rather than a clocked 1 Hz stream.
+    public var smartMedianDtS: Double = 1.5
+    /// The spike rule's acceleration budget stops growing here. `maxAccelMps2` is a 1 Hz
+    /// value (Logiqx), and `|dv| ≤ maxAccel × dt` stretches it: over a 7 s Smart Recording
+    /// step it permits 28 m/s, which is every reacquisition burst a receiver emits after a
+    /// hole. Until 0.23.0 no step that long was judged at all — anything past the 4 s
+    /// threshold started a new segment and was accepted unconditionally.
+    public var spikeMaxDtS: Double = 3.0
 
     public init() {}
 }
@@ -74,7 +90,8 @@ public struct CleanTrack: Sendable {
     /// ever spans two segments.
     public var segments: [Range<Int>] = []
     public var medianDtS: Double = 0
-    /// The hard-gap threshold actually used: max(gapMinS, gapFactor × median dt).
+    /// The hard-gap threshold actually used: max(gapMinS, gapFactor × median dt, and
+    /// smartGapS when the median says Smart Recording).
     public var gapThresholdS: Double = 0
     /// Wall-clock span first→last kept sample (s).
     public var spanS: Double = 0

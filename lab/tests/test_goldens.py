@@ -28,7 +28,8 @@ TOP_KEYS = ["engineVersion", "config", "capabilities", "flights", "turns", "flig
             "submersions", "records", "wind", "takeoffs", "pumpEpisodes", "hr", "summary"]
 EPISODE_KEYS = {"startTs", "endTs", "strokes", "outcome", "bursts", "flightIndex",
                 "turnIndex", "lookaheadS"}
-CAP_KEYS = {"hasDoppler", "hasDevFields", "hasWatchLaps", "hasAccel", "hasHR", "sampleRateHz"}
+CAP_KEYS = {"hasDoppler", "hasDevFields", "hasWatchLaps", "hasAccel",
+            "accelClockReconstructed", "hasHR", "sampleRateHz"}
 RECORD_KEYS = {"best2sKn", "best10sKn", "best5x10sKn", "best100mKn", "best250mKn",
                "best500mKn", "bestNmKn", "bestHourKn", "alpha500Kn", "windows"}
 SUMMARY_KEYS = {"isSession", "notASessionReason",
@@ -79,7 +80,7 @@ def smoke_golden():
 def test_schema_shape(smoke_golden):
     g = smoke_golden
     assert list(g.keys()) == TOP_KEYS
-    assert g["engineVersion"] == "0.22.0"
+    assert g["engineVersion"] == "0.23.0"
     assert set(g["capabilities"].keys()) == CAP_KEYS
     assert set(g["records"].keys()) == RECORD_KEYS
     assert set(g["summary"].keys()) == SUMMARY_KEYS
