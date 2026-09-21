@@ -93,6 +93,9 @@ import Testing
             if let v = num(cfg["maxAccel1Hz"]) { filter.maxAccelMps2 = v }
             if let v = num(cfg["gapMinS"]) { filter.gapMinS = v }
             if let v = num(cfg["gapFactor"]) { filter.gapFactor = v }
+            if let v = num(cfg["smartGapS"]) { filter.smartGapS = v }
+            if let v = num(cfg["smartMedianDtS"]) { filter.smartMedianDtS = v }
+            if let v = num(cfg["spikeMaxDtS"]) { filter.spikeMaxDtS = v }
             if let v = num(cfg["alphaProximity"]) { recCfg.alphaProximityM = v }
             if let v = num(cfg["alphaMaxDistance"]) { recCfg.alphaMaxDistanceM = v }
             if let v = num(cfg["uncertifiedShortWindowMax"]) {
@@ -166,6 +169,7 @@ import Testing
         let flags: [(String, Bool)] = [
             ("hasDoppler", caps.hasDoppler), ("hasDevFields", caps.hasDevFields),
             ("hasWatchLaps", caps.hasWatchLaps), ("hasAccel", caps.hasAccel),
+            ("accelClockReconstructed", caps.accelClockReconstructed ?? false),
             ("hasHR", caps.hasHR),
         ]
         for (key, actual) in flags {
@@ -1057,7 +1061,7 @@ import Testing
         raw.capabilities.hasSpeed = true
         raw.capabilities.sampleRateHz = 1
         let analysis = SessionSummarizer.analyze(raw)
-        #expect(analysis.engineVersion == "0.22.0")
+        #expect(analysis.engineVersion == "0.23.0")
         #expect(analysis.flights.count == 1)
 
         let data = try JSONEncoder().encode(analysis)
@@ -1107,7 +1111,8 @@ import Testing
 
         let caps = try #require(obj["capabilities"] as? [String: Any])
         #expect(Set(caps.keys) == ["hasDoppler", "hasDevFields", "hasWatchLaps",
-                                   "hasAccel", "hasHR", "sampleRateHz"])
+                                   "hasAccel", "accelClockReconstructed",
+                                   "hasHR", "sampleRateHz"])
 
         let records = try #require(obj["records"] as? [String: Any])
         #expect(records.keys.contains("best2sKn"))

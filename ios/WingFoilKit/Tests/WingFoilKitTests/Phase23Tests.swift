@@ -533,7 +533,13 @@ import Testing
         let sharedTurns = TurnDetector.detect(clean, flights: flights, wind: wind, pump: pump,
                                               evidence: shared)
         #expect(!sharedTurns.isEmpty, "the fixture must actually produce turns")
-        #expect(sharedTurns == ownTurns)
+        // Compared as printed, not with `==`. A turn whose axis crossing was never found
+        // carries `axisT` = NaN (the golden writes it as null), and NaN is not equal to
+        // itself — so the synthesized `Equatable` reports two bit-identical records as
+        // different. Since engine 0.23.0 this fixture has such a turn, an aborted jibe at
+        // 2349 s, and "bit-identical" is exactly what this test means.
+        #expect(sharedTurns.map(String.init(describing:))
+                == ownTurns.map(String.init(describing:)))
 
         let ownEnds = FlightEndClassifier.classify(clean, flights: flights, turns: ownTurns,
                                                    pump: pump)
@@ -541,7 +547,8 @@ import Testing
                                                       turns: sharedTurns, pump: pump,
                                                       evidence: shared)
         #expect(!sharedEnds.isEmpty)
-        #expect(sharedEnds == ownEnds)
+        #expect(sharedEnds.map(String.init(describing:))
+                == ownEnds.map(String.init(describing:)))
     }
 
     // MARK: - Turn streaks

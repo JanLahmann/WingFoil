@@ -45,7 +45,7 @@ public enum TrackCleaner {
         let dts = (1..<rows.count).map { rows[$0].t - rows[$0 - 1].t }
         let med = median(of: dts)
         track.medianDtS = med
-        track.gapThresholdS = med > 0 ? max(config.gapMinS, config.gapFactor * med) : config.gapMinS
+        track.gapThresholdS = gapThreshold(medianDtS: med, config: config)
 
         // Doppler acceleration spike rejection vs the last good sample; resets across
         // gaps (self-recovering on spike runs). Rejected rows are dropped.
@@ -66,7 +66,10 @@ public enum TrackCleaner {
                 kept.append(rows[i])
                 continue
             }
-            if d <= 0 || abs(rows[i].v - vg) / d > config.maxAccelMps2 {
+            // The budget stops growing at `spikeMaxDtS`: `maxAccelMps2` is a 1 Hz value,
+            // and dividing it by a 7 s Smart Recording step would wave a reacquisition
+            // burst through. At 1 Hz no step inside a segment reaches three seconds.
+            if d <= 0 || abs(rows[i].v - vg) / min(d, config.spikeMaxDtS) > config.maxAccelMps2 {
                 track.droppedSpike += 1
             } else {
                 tg = rows[i].t
@@ -139,6 +142,20 @@ public enum TrackCleaner {
         track.spanS = samples.last!.t - samples.first!.t
         track.timerTimeS = samples.dropFirst().filter { !$0.gapBefore }.map(\.dt).reduce(0, +)
         return track
+    }
+
+    /// The hard-gap threshold for a track whose median step is `medianDtS`.
+    ///
+    /// `max(gapMinS, gapFactor × median)` is the dt rule that has always been here. The
+    /// third term is engine 0.23.0 (ADR-030): above `smartMedianDtS` the threshold is
+    /// floored at `smartGapS`, so a steady reach — exactly the stretch Smart Recording
+    /// skips samples through — is bridged rather than cut. A 1 Hz track never reaches the
+    /// floor and keeps its 3 s threshold to the digit.
+    /// Mirrors `lab/src/wingfoil_lab/filters.py` `gap_threshold_s`.
+    public static func gapThreshold(medianDtS med: Double, config: FilterConfig) -> Double {
+        var thr = med > 0 ? max(config.gapMinS, config.gapFactor * med) : config.gapMinS
+        if med > config.smartMedianDtS { thr = max(thr, config.smartGapS) }
+        return thr
     }
 
     private static func planarSpeed(_ a: CleanSample, _ b: CleanSample) -> Double? {

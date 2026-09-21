@@ -32,8 +32,6 @@ public struct WindConfig: Sendable, Equatable {
     public var lobeHalfWidthDeg: Double = 25.0
     /// Two modes closer than this are one lobe.
     public var minLobeSeparationDeg: Double = 60.0
-    /// Above this the bisector is degenerate (pure beam-reach out-and-back).
-    public var maxLobeSeparationDeg: Double = 179.0
     public var minDistanceM: Double = 500.0
     /// Below this, turns stay "turn" rather than tack/jibe.
     public var minConfidence: Double = 0.5
@@ -69,8 +67,9 @@ public struct WindConfig: Sendable, Equatable {
 /// tie the cone could not — see `turnTypePrior`. Mirrors `lab/src/wingfoil_lab/wind.py`.
 public enum WindEstimator {
 
-    /// Estimate the wind axis, or nil when the COG distribution is not usefully bimodal
-    /// (too little foiling, one lobe only, or an exactly opposed pair).
+    /// Estimate the wind axis, or nil when the COG distribution is not usefully bimodal —
+    /// too little foiling, or one lobe only. An *opposed* pair is no longer among them
+    /// (engine 0.23.0, ADR-030): see `bisector`.
     ///
     /// `turnConfig` is the config the *same* pipeline will detect turns with. It is only
     /// read when the default-turn-type prior actually runs (a weak cone margin and a
@@ -94,9 +93,7 @@ public enum WindEstimator {
         let mass = lobes.map { lobeMass(courses, center: $0,
                                         halfWidth: config.lobeHalfWidthDeg) / total }
         let sep = abs(wrap180(lobes[1] - lobes[0]))
-        guard sep <= config.maxLobeSeparationDeg else { return nil }
-
-        let bisector = circularMean(lobes, [1, 1])
+        let bisector = self.bisector(lobes[0], lobes[1])
         let axisConf = axisConfidence(mass: mass, sepDeg: sep, config: config)
         let (coneDir, margin) = resolve180(courses, bisector: bisector, total: total,
                                            config: config)
@@ -365,6 +362,22 @@ public enum WindEstimator {
         }
         let den = (saa * sbb).squareRoot()
         return den > 0 ? sab / den : 0
+    }
+
+    /// The axis line between two reach lobes, defined at every separation (engine 0.23.0).
+    ///
+    /// Half-angle form: walk half the *signed* way from the first lobe to the second. It
+    /// agrees with the equal-weight circular mean everywhere that mean is defined, and it
+    /// keeps answering where the mean does not — at an exactly opposed pair the two unit
+    /// vectors cancel and `atan2(0, 0)` returns 0°, a bearing read off nothing.
+    ///
+    /// At exactly 180° `wrap180` folds to −180, so the result is `lobeA − 90`: the
+    /// **perpendicular** of the lobe axis, which is where the wind is when a rider sailed
+    /// nothing but one beam reach and its reciprocal. Which of the two perpendicular ends
+    /// is upwind is not this function's question — the no-go cone answers it, as it does
+    /// for every other separation. Mirrors `lab/src/wingfoil_lab/wind.py` `_bisector`.
+    static func bisector(_ lobeADeg: Double, _ lobeBDeg: Double) -> Double {
+        mod360(lobeADeg + wrap180(lobeBDeg - lobeADeg) / 2)
     }
 
     static func circularMean(_ deg: [Double], _ weight: [Double]) -> Double {

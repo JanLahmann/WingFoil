@@ -220,7 +220,7 @@ public enum AnalysisEngine {
     /// 558 → 565, tacks 2 → 4, course changes 147 → 140, turn `fellIn` 41 → 50 and
     /// straight-line falls 45 → 44 — clean jibes stay at 161 and no rate numerator moves.
     /// `config.turnAbortMinAngle` and the per-turn `aborted` flag are the schema change.
-    public static let version = "0.22.0"
+    public static let version = "0.23.0"
 }
 
 /// **Is this recording a session?** — docs/algorithms.md "Not a session" (engine 0.19.0).
@@ -439,6 +439,10 @@ public struct AnalysisCapabilities: Sendable, Codable, Equatable {
     public var hasDevFields: Bool
     public var hasWatchLaps: Bool
     public var hasAccel: Bool
+    /// The accel stream was timed from file order because the device gave it no clock
+    /// (engine 0.23.0, ADR-030). Optional so a stored `analysis.json` from before it still
+    /// decodes; such a row is stale by `engineVersion` and re-derives.
+    public var accelClockReconstructed: Bool?
     public var hasHR: Bool
     public var sampleRateHz: Double
 
@@ -447,6 +451,7 @@ public struct AnalysisCapabilities: Sendable, Codable, Equatable {
         hasDevFields = caps.hasDevFields
         hasWatchLaps = caps.hasWatchLaps
         hasAccel = caps.hasAccel
+        accelClockReconstructed = caps.accelClockReconstructed
         hasHR = caps.hasHR
         sampleRateHz = caps.sampleRateHz
     }

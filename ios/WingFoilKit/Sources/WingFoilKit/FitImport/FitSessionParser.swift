@@ -136,9 +136,14 @@ public enum FitSessionParser {
         // The sanitizer strips `accelerometer_data` before the C decoder (it overflows the
         // decoder's fixed structs), so the SensorLogging stream is read from the *original*
         // bytes — see FitAccelReader. Rebased onto the record clock.
-        track.accel = FitAccelReader.read(data, recordEpoch: start)
+        let accel = FitAccelReader.read(data, recordEpoch: start)
+        track.accel = accel.samples
 
         var caps = SourceCapabilities()
+        // A device that stamps the stream without timing it (engine 0.23.0, ADR-030) —
+        // the batches were placed from file order, ±1 s against GPS, and a consumer that
+        // needs a tighter clock than that can see so.
+        caps.accelClockReconstructed = accel.reconstructed
         caps.hasSpeed = track.samples.contains { $0.speedMps != nil }
         caps.hasPosition = track.samples.contains { $0.lat != nil }
         caps.hasHR = track.samples.contains { $0.heartRate != nil }
