@@ -80,7 +80,17 @@ enum ListMapBackdrop {
         let options = MKMapSnapshotter.Options()
         options.region = region
         options.size = size
-        options.traitCollection = UITraitCollection(displayScale: scale)
+        // **Always the dark ground** (Jan, build 99: "some maps are dark, others light; the
+        // dark was better"). The trait collection used to carry the scale alone, so the
+        // appearance was unspecified and the snapshotter resolved it against whatever the
+        // calling thread's current traits happened to be — dark for one row, light for the
+        // next, and the cache kept whichever came first. On the light map the teal track
+        // is teal on pale blue water and disappears; on the dark one it reads. The tile is
+        // a picture, not chrome, so it does not follow the phone's appearance.
+        options.traitCollection = UITraitCollection { traits in
+            traits.displayScale = scale
+            traits.userInterfaceStyle = .dark
+        }
         options.preferredConfiguration = configuration(style)
         return await withCheckedContinuation { continuation in
             MKMapSnapshotter(options: options).start(with: .global(qos: .utility)) { shot, _ in
@@ -91,10 +101,12 @@ enum ListMapBackdrop {
 
     // MARK: - The disk cache
 
-    /// `Caches/listmaps/<session id>-<style>.png`. Keyed by the style as well as the
-    /// session, so switching to satellite does not show a row the grey picture it had.
+    /// `Caches/listmaps/<session id>-<style>-dark.png`. Keyed by the style as well as the
+    /// session, so switching to satellite does not show a row the grey picture it had. The
+    /// `-dark` suffix retires every picture cached before the appearance was pinned, light
+    /// or dark by accident; the old files are swept once (`sweepUnpinned`).
     static func fileURL(id: String, style: MapStyleChoice) -> URL {
-        directory.appending(path: id + "-" + style.rawValue + ".png")
+        directory.appending(path: id + "-" + style.rawValue + "-dark.png")
     }
 
     static let directory: URL = {
@@ -113,6 +125,16 @@ enum ListMapBackdrop {
     static func write(_ image: UIImage, id: String, style: MapStyleChoice) {
         guard let data = image.pngData() else { return }
         try? data.write(to: fileURL(id: id, style: style), options: .atomic)
+    }
+
+    /// The pictures from before the appearance was pinned: same directory, no `-dark`
+    /// suffix. Nothing reads them any more, so they are only disk.
+    static func sweepUnpinned() {
+        let files = (try? FileManager.default.contentsOfDirectory(
+            at: directory, includingPropertiesForKeys: nil)) ?? []
+        for file in files where !file.lastPathComponent.hasSuffix("-dark.png") {
+            try? FileManager.default.removeItem(at: file)
+        }
     }
 
     /// Everything, forgotten. "Start over" wipes the library these pictures are of.

@@ -53,6 +53,9 @@ final class ThumbnailStore {
         id + "-" + style.rawValue
     }
 
+    /// Once per launch: the pictures cached before the appearance was pinned are deleted.
+    private var sweptUnpinnedBackdrops = false
+
     /// The map behind one row's track, or nil while there is not one yet. Never waits.
     func backdrop(for id: String, style: MapStyleChoice) -> UIImage? {
         backdrops[backdropKey(id, style)]
@@ -73,6 +76,10 @@ final class ThumbnailStore {
     private func buildBackdrop(key: String, id: String, thumbnail: TrackThumbnail,
                                style: MapStyleChoice, scale: CGFloat) async {
         defer { backdropsRunning.remove(key) }
+        if !sweptUnpinnedBackdrops {
+            sweptUnpinnedBackdrops = true
+            Task.detached(priority: .utility) { ListMapBackdrop.sweepUnpinned() }
+        }
         // The disk first: a hit costs a file read and no network at all.
         if let cached = await Task.detached(priority: .utility, operation: {
             ListMapBackdrop.read(id: id, style: style)
