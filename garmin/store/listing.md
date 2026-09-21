@@ -17,7 +17,7 @@ open beta, English only.
 ## Watch app — `CleanJibe Wingfoil Tracker (Beta)`
 
 * Store page: <https://apps.garmin.com/apps/e77867b5-e972-4eb2-be1b-90077cfac806>
-* Type: device app · Version **0.9.16** on the store, **42** products (uploaded 21 Sep 2026, Internal 23; 0.9.15 on 20 Sep, Internal 22; 0.9.13 on 17 Sep, Internal 21; 0.9.12 the same day; 0.9.11 on 15 Sep; web/tools/make_devices.py reads this line, keep its shape) · first submitted 2026-08-12, 0.9.4 released 2026-09-01
+* Type: device app · Version **0.9.17** on the store, **42** products (uploaded 21 Sep 2026, Internal 24; 0.9.16 the same day, Internal 23; 0.9.15 on 20 Sep, Internal 22; 0.9.13 on 17 Sep, Internal 21; 0.9.12 the same day; 0.9.11 on 15 Sep; web/tools/make_devices.py reads this line, keep its shape) · first submitted 2026-08-12, 0.9.4 released 2026-09-01
 * Permissions: Fit, SensorLogging, Communications, Positioning, FitContributor, Sensor
 * Devices (`garmin/manifest-beta.xml`, identical to the release and dev manifests; the count and
   the family grouping are generated into `docs/copy/garmin-devices.json`): 42 products at 0.9.11 —
@@ -63,14 +63,14 @@ An iPhone app with the full analysis — maps, turn forensics, replay with comme
 
 ### What's New (live text)
 
-**0.9.16 uploaded 21 September 2026** (public listing, live at once, Internal 23). The live field holds three paragraphs. Text as submitted:
+**0.9.17 uploaded 21 September 2026** (public listing, pending approval, Internal 24). The live field holds three paragraphs. Text as submitted:
 
 ```
+0.9.17: Tacks and jibes, counted apart. A Tacks and jibes page after Turns: each count, with how many of them flew through. In the large-text set too, one screen each. And the dunk read right: a watch that settles at a new height after a swim no longer reads the rest of the session as falls.
+
 0.9.16: Large text. Settings → Data screens → Large text gives five screens with one big number and its word: speed, foil share, turns, time, best 2 s. The page editor leaves the store build; the standard screens stay as they were. After a save, the flights page is the same foil table you saw while riding. The live verdict is called Speed kept now, the word the phone uses for the same number.
 
 0.9.15: Eleven traps closed. A map slot from an older build no longer throws every frame, a heading value out of range no longer stalls the watch, settings from Garmin Connect are clamped to their ranges, a null in an accelerometer batch is skipped, a thirty-hour session keeps its track. A run that never reached its end is counted and told to the phone.
-
-0.9.13: fenix 5 Plus, 5S Plus and 5X Plus: the clock no longer sits on the speed, PAUSED is a word again, captions and SAVED clear their numbers. Thanks to Leo for the report.
 ```
 
 ---
@@ -206,7 +206,8 @@ field. Dates are the commit dates; a store release usually follows by a day.
 | 0.9.3 | 2026-08-31 | `16568d5` | Pump strokes counted only inside real pumping bursts, so the totals match the phone. Renamed to CleanJibe. |
 | 0.9.2 | 2026-08-31 | `2b3bc66` | The map page becomes the app's own drawing (works while paused, on every watch); all text full white, bigger numbers. |
 | 0.9.1 | 2026-08-30 | `b891e08` | The fenix 8 crash: the map page is pushed, never switched to. Not separately listed in the store's What's New. |
-| 0.9.17 | 2026-09-21 | — | **A Tacks & jibes page.** A page after Turns with each count and how many of that kind flew through, live and after the save, plus two more screens in the large-text set. Jan, from a tester practising tacks. Not uploaded. |
+| 0.9.17 | 2026-09-21 | — | **A Tacks & jibes page.** A page after Turns with each count and how many of that kind flew through, live and after the save, plus two more screens in the large-text set. Jan, from a tester practising tacks. Not uploaded. Uploaded 21 Sep to the public listing (Internal 24), with the settle release for a re-anchoring barometer. |
+| 0.9.17-dev8 | 2026-09-21 | — | The same, on the private listing, with the direct transfer. Pair with iPhone dev build 96. Uploaded 21 Sep (Internal 39). |
 | 0.9.16 | 2026-09-21 | — | **Large text, and the page editor leaves the store build.** A second page set of five pages, one big number and its word each (speed, foil share, turns, time, best 2 s), chosen under Settings → Data screens; the page editor is `(:dev)` only from here; after a save the flights page is the live foil table, not a second layout of the same numbers; a phone line on the summary while the direct transfer's pages cross; the live verdict says Speed kept, the phone's word for the same number. 29 family sheets photographed and read clean on 21 Sep (docs/testing.md), then uploaded the same day to the public listing (Internal 23). |
 | 0.9.16-dev7 | 2026-09-21 | — | The same, on the private listing, with the direct transfer. Pair with iPhone dev build 94. Uploaded 21 Sep (Internal 38). |
 | 0.9.15 | 2026-09-20 | — | **Eleven traps closed, and a crash breadcrumb.** The first fuzz of the watch app (docs/testing.md): a heading of a billion radians looped the watchdog to death, a map slot written by an older build threw on every frame, a negative slot index and a 20 KB spot name reached Storage, a null inside an accelerometer batch crashed the pump detector, a thirty-hour session overflowed the track stride, settings from Garmin Connect were never clamped. Every fix is a guard, because a division by zero and an index past the end cannot be caught on this runtime. A run that never reaches its end is counted and the count rides the card to the phone (`cx`). No layout change, so no new family sheet. Uploaded 20 Sep to the public listing (Internal 22). |
