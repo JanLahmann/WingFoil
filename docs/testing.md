@@ -419,6 +419,50 @@ It is checked from three sides:
    asserted against the lab's, `dropM` included, so a baseline that walked differently on the
    two implementations would show up as a metre of disagreement on some fixture.
 
+Engine 0.23.0 stops reading a **Smart Recording cadence as a hole** (docs/algorithms.md, "A
+cadence is not a hole"; ADR-030), and it is the largest golden diff since the corpus was
+frozen — which is the shape the change predicts rather than a surprise. **The split is the
+check**: every fixture whose median dt is above 1.5 s moves and every 1 Hz fixture does not
+move by a digit. The eleven that move are the ten `…_native` and the 0.5 Hz
+`other-apps/…_wingfoiling`; the eight that do not are the three `ciq`, the `foilmotion`, the
+GPX, the two TCX and the synthetic, whose entire diff is the version stamp and the schema
+keys. Those keys are the other half of the diff and reach **every** golden: `smartGapS`,
+`smartMedianDtS` and `spikeMaxDtS` join `config`, `windMaxLobeSeparation` leaves it (the
+parameter is retired), and `accelClockReconstructed` joins `capabilities` — false on every
+fixture in the corpus, because every one of them was timed by the device that wrote it.
+Across the eleven: distance 151.8 → 184.4 km (the files' own session totals sum to 184.2),
+timer time 43 508 → 60 387 s, flights 825 → 346, counted turns 369 → 378, clean jibes 81 → 69,
+`unknown` flight ends 668 → 37 and `fell_in` flight ends 69 → 201 — the last two being one
+fact, since an end at a fake boundary had no evidence after it and most of them turn out to
+have been swims. `submersions` moves by a single episode, 37 → 38. The corpus gains its first
+**best hour** (`2026-08-03-1440`, 6.746 kn): an hour is a long time to record without a real
+hole, and no native used to run one gap-free.
+
+It is checked from four sides:
+
+1. **The rule, on synthetic cadences**, in the lab (`test_filters.py`) and the kit
+   (`Engine023Tests`): a median-2 track bridges a 5 s and an 8 s step and cuts a 17 s one; a
+   1 Hz track keeps its 3 s threshold; a 20 s cadence keeps the dt rule, because the floor
+   only ever lifts the threshold; and `smartGapS = 0` reproduces the pre-0.23.0 rule exactly,
+   which is how the before column of the table in algorithms.md was measured.
+2. **The spike half separately**, same two files: a 16 m/s step over 7 s is a spike at
+   `spikeMaxDtS` 3 s and is not one with the cap removed. It moves no golden, so the test is
+   the only thing that holds it.
+3. **The whole corpus, both engines**, `test_corpus.py` and `GoldenTests`: the goldens are the
+   regenerated ones, and the Swift kit reproduces them turn by turn as always. A cleaner that
+   segmented differently on one implementation would show up as a different flight list.
+4. **The presentation goldens follow**, regenerated from the analysis goldens: markers,
+   tallies and filter counts move on the eleven and on none of the eight.
+
+Engine 0.23.0 also **retires the opposed-lobe refusal** in the wind estimator and **rebuilds a
+clockless accelerometer stream from file order** (ADR-030). Neither moves a golden — no corpus
+session has lobes past 179° and no corpus recording fails the accel clock's two tests — so
+both are held by unit tests alone, in the lab (`test_wind.py`, `test_parse.py`, `test_pump.py`)
+and in the kit (`Engine023Tests`): synthetic lobes at 179.2° and at exactly 180°, the
+half-angle bisector against the circular mean wherever both are defined, batches with flat
+offsets, batches stamped days off the session, batches queued behind one record, and a pump
+grid handed NaNs and a fifty-day span.
+
 ### Fixture provenance — the converted recordings, and why
 
 Every fixture in `fixtures/sessions/**` is one of Jan's own recordings kept as it came off
