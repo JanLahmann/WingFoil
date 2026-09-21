@@ -1488,17 +1488,31 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    so `capture.sh` photographs **95 frames** at 0.8 s (76 s, one whole pass with ten seconds
    of margin) inside a 240 s `caffeinate` window.
 
-   **Run on 21 September 2026 for 0.9.18** (Jan's layout review), on the short set — the six
-   glasses below — with the two principles of that round added to the overlap list: the widest
-   line on each page is on the equator, and no word is drawn as large as the number beside it.
-   Read clean on all six. What the sheets caught that the unit suite did not, and both were
-   fixed before the round closed: the post-save Takeoffs page's HR line was being shed on
-   **every** glass (28 characters against a 406 px chord on a fenix 8 — one row with a
-   separator was the wrong shape, and it is two rows now), and the post-save Track page was
-   still drawing its distance in FONT_SMALL with a space in it while the live Map page had
-   moved to the bigger form, which is a unification leaking at its one remaining seam. Neither
-   is a geometry the row-stack assertions can see: the first is a string measured against a
-   chord and the second is two pages agreeing about a font. That is what the sheets are for.
+   **Run on 21–22 September 2026 for 0.9.18** (Jan's layout review), on the short set — the
+   six glasses below — with the two principles of that round added to the overlap list: the
+   widest line on each page is on the equator, and no word is drawn as large as the number
+   beside it. Three rounds of sheets, because the first two each found something, and read
+   clean on all six at the third. **What the sheets caught that the unit suite did not:**
+
+   - the post-save **Takeoffs** page's HR line was being shed on **every** glass. Jan's sketch
+     put the two smaller facts on one row with a separator, and "4.3 pumps each · last +19 bpm"
+     is 28 characters — 560 px against a 406 px chord on a fenix 8 — so the half the page never
+     drew was the half nobody could have noticed was missing. Two narrow rows now, and the
+     test asserts each fits its own row at its own worst case.
+   - the post-save **Track** page was still drawing its distance in FONT_SMALL with a space in
+     it while the live Map page had moved to the bigger form — a unification leaking at its one
+     remaining seam. One renderer draws that odometer now.
+   - the large set's **outcome row** was fitted from the NUMBER ladder and banded on a TEXT
+     font, because the constant meant one array and was read as the other. On a 454 px glass
+     the chord stepped the row down far enough to hide it; on a 390 px **Instinct 3 AMOLED**
+     the word under the giant was drawn straight through the digits. This is the one that
+     justifies the whole ritual: the unit suite was green on every glass, and it was green
+     because it was asking the same wrong question the renderer was.
+
+   None of the three is a geometry the row-stack assertions could see. The first is a string
+   measured against a chord, the second is two pages agreeing about a font, and the third is a
+   band and a ladder indexing two different arrays — which is now asserted outright (the row's
+   own ink must fit the band it was stacked with).
 
    **The short set (Jan, 21 Sep 2026: "we don't need to review all families every time").**
    A change to a page's *content* — a new page, a row added or reworded, a number moved
