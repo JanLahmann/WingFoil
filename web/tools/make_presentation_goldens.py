@@ -52,9 +52,10 @@ import library                                                          # noqa: 
 
 SUFFIX = ".expected.json"
 
-# docs/presentation.md "Record windows": eight kinds, canonical order, best2s default.
+# docs/presentation.md "Record windows": nine kinds, canonical order, best2s default.
+# `bestHour` was added on 21 September 2026 — it is a window like the other eight.
 RECORD_ORDER = ["best2s", "best10s", "best5x10s", "best100m", "best250m", "best500m",
-                "bestNm", "alpha500"]
+                "bestNm", "bestHour", "alpha500"]
 RECORD_DEFAULT = "best2s"
 
 TYPE_FILTERS = ["both", "jibes", "tacks"]
@@ -159,7 +160,8 @@ def pumping_spans(doc: dict) -> int:
 
 def record_windows(doc: dict) -> list[str]:
     """The records this session can actually highlight: a value *and* the window
-    provenance the map draws. `bestHour` is deliberately not in the catalogue."""
+    provenance the map draws. All nine kinds, `bestHour` included since 21 September
+    2026 — a session that recorded an uninterrupted hour can show where it was."""
     records = doc.get("records", {})
     windows = records.get("windows", {}) or {}
     out = []

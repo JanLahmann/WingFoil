@@ -17,12 +17,21 @@ public enum RecordWindowSelection {
     /// so it is the one the map answers with until asked otherwise.
     public static let defaultKey = RecordKind.best2s.rawValue
 
-    /// The order the record cards are laid out in, shortest window first, with the two
+    /// The order the record rows are laid out in, shortest window first, with the two
     /// composite records (5 × 10 s and the alpha) beside the plain window they are built
-    /// from. `bestHour` is absent on purpose: an hour-long window is the whole session on a
-    /// normal ride, and highlighting it would light the entire track.
+    /// from.
+    ///
+    /// **`bestHour` joined the other eight on 21 September 2026.** It was left out while it
+    /// was unreachable: an hour-long window covers most of a two-hour afternoon, and the
+    /// argument was that a glow over most of the track says nothing. It says what the record
+    /// is. The hour the engine picked started somewhere, ended somewhere, and the rider was
+    /// riding for the rest of the session without it — that is a fact about the afternoon,
+    /// and hiding it made the ninth row the one row in the table that did not answer a tap.
+    /// The corpus got its first best hour with engine 0.23.0 (`2026-08-03-1440`, 6.746 kn,
+    /// an hour out of 7 135 s) and Smart Recording sessions produce them regularly.
     public static let catalogue: [RecordKind] = [
-        .best2s, .best10s, .best5x10s, .best100m, .best250m, .best500m, .bestNm, .alpha500,
+        .best2s, .best10s, .best5x10s, .best100m, .best250m, .best500m, .bestNm, .bestHour,
+        .alpha500,
     ]
 
     /// The selection a freshly opened session starts with: the default when the session

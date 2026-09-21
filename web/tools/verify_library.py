@@ -452,18 +452,23 @@ def check_records(digests: list[dict]) -> None:
           (rows["bestHourKn"]["value"], rows["bestHourKn"]["dateUtc"]), (6.746, "2026-08-03"))
     check("  9 record kinds shown", len(agg["records"]), 9)
 
-    # Every record must carry a window the UI can highlight, and it must be a real slice
-    # of the session it points at — except `bestHour`, which is given none on purpose: an
-    # hour-long window lights the whole track (docs/presentation.md, "Record windows").
-    windowless = {label for key, wkey, label, _u in library.RECORD_KINDS if wkey is None}
+    # Every record carries a window the UI can highlight, and it is a real slice of the
+    # session it points at. `bestHour` was the exception until 21 September 2026: it was
+    # named in the table and given no window, so its row was the one row that opened
+    # nothing (docs/presentation.md, "Record windows"). All nine now.
+    check("  every kind has a window key",
+          [k for k, wkey, _l, _u in library.RECORD_KINDS if wkey is None], [])
     for row in agg["records"]:
         src = next(d for d in digests if d["id"] == row["id"])
-        check(f"  {row['label']}: window present",
-              bool(row["windows"]), row["label"] not in windowless)
+        check(f"  {row['label']}: window present", bool(row["windows"]), True)
         for w in row["windows"]:
             in_range = 0 <= w["startTs"] <= (src["durationS"] or 0) and w["durS"] > 0
             check(f"  {row['label']}: window inside the session", in_range, True)
     check("  best 5x10 s carries five windows", len(rows["best5x10sKn"]["windows"]), 5)
+    # The hour the row opens: one window, 3 600 s of a 7 135 s afternoon.
+    check("  best hour carries the window its row opens",
+          [(w["startTs"], w["durS"]) for w in rows["bestHourKn"]["windows"]],
+          [(3280.0, 3600.0)])
 
     # Totals are weighted, not averaged over sessions.
     tot = agg["totals"]

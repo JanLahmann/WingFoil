@@ -277,9 +277,22 @@ function renderRecords(table, records) {
           r.certified === false ? UNCERTIFIED : ""}</td>
         <td class="l" data-th="session">${esc(sessionLabel(r, r.fileName, r.id))}</td>
         <td class="l dim" data-th="date">${esc(localDate(r) || "—")}</td>
-        <td class="l stack-actions" data-th=""><button class="ghost small-btn" data-act="record"
-          data-id="${esc(r.id)}">Show the window</button></td>
+        <td class="l stack-actions" data-th="">${windowDoor(r)}</td>
       </tr>`).join("")}</tbody>`;
+}
+
+/** The row's door, and only where it opens something.
+ *
+ *  Every one of the nine kinds carries its window since 21 September 2026 — `bestHour` was
+ *  the last one without, so its row named a number and then offered a button that marked
+ *  nothing. A row saved before that still carries no hour, and a control that does nothing
+ *  is worse than no control (docs/review-checklist.md, pattern G): it gets the dash the
+ *  date column already uses for a fact this row does not hold. Re-importing the session
+ *  writes a digest that has it. */
+function windowDoor(r) {
+  if (!r.windows?.length) return `<span class="dim">—</span>`;
+  return `<button class="ghost small-btn" data-act="record"
+    data-id="${esc(r.id)}">Show the window</button>`;
 }
 
 /** A session record's value in the unit `library.py` gave it. The unit strings are the
