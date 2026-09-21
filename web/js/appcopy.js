@@ -304,6 +304,22 @@ export const WHATS_NEW = [
   },
   {
     "version": "1.0.1",
+    "build": 99,
+    "channel": "beta",
+    "date": "2026-09-21",
+    "title": "The whole distance",
+    "lines": [
+      "Sessions recorded with Garmin's own activity now show the full distance, as Garmin Connect does.",
+      "The watch's Smart Recording saves a point every few seconds. Those pauses were read as holes.",
+      "Foil share, flights and swims change on these sessions too. A fifth of the time had been missing.",
+      "Riding exactly back and forth no longer hides the wind. Tacks and jibes are told apart again.",
+      "Pump strokes from the fenix 5 Plus family are read now.",
+      "Engine 0.23.0 re-derives your library once.",
+      "Please open a session recorded with Garmin's own activity and compare the distance with Garmin Connect."
+    ]
+  },
+  {
+    "version": "1.0.1",
     "build": 97,
     "channel": "beta",
     "date": "2026-09-21",
