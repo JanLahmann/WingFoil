@@ -62,10 +62,17 @@ import Testing
         #expect(block.maxSpeed.value == "13.21 kn")
     }
 
-    /// **No second formatter.** A `kn` literal in a rider-facing string is a screen that
-    /// will keep saying knots after the rider has asked for km/h, which is the exact defect
-    /// this setting exists to remove. The two exemptions below are written down rather than
-    /// silently skipped, and each is a surface the round left in knots on purpose.
+    /// **No second formatter, on any surface.** A unit spelled into a rider-facing string is
+    /// a screen that will keep saying knots after the rider has asked for km/h — the exact
+    /// defect the setting exists to remove, and the one a fenix 5X Plus rider still found on
+    /// 21 September 2026: *"Metric only, no knots in any part of the Phone App."* Four chart
+    /// axes, five narrated sentences, the records margin, the widgets and the watch app were
+    /// all printing knots under a setting that said km/h.
+    ///
+    /// So the scan is the whole iOS tree — the app, the kit, both widget extensions and the
+    /// watch app — and it reads **string literals**, not lines, so a `knots(` call or a
+    /// `bestKn` property is not an offence and a `"%.2f kn"` inside a comment-free line is.
+    /// Everything still allowed to spell a unit is in `exempt` with the reason it is there.
     @Test func noSurfaceSpellsTheUnitItself() throws {
         var offenders: [String] = []
         for dir in Self.scanned {
@@ -74,54 +81,182 @@ import Testing
                                                        includingPropertiesForKeys: nil)?
                 .compactMap { $0 as? URL }
                 .filter { $0.pathExtension == "swift" } ?? []
-            for file in files {
+            for file in files.sorted(by: { $0.path < $1.path }) {
                 let relative = file.path
                     .replacingOccurrences(of: CopyContractTests.repoRoot.path + "/", with: "")
                 if Self.exempt.keys.contains(where: { relative.hasPrefix($0) }) { continue }
                 let text = try String(contentsOf: file, encoding: .utf8)
-                for line in text.split(separator: "\n", omittingEmptySubsequences: false) {
-                    let code = line.trimmingCharacters(in: .whitespaces)
-                    guard !code.hasPrefix("//"), !code.hasPrefix("///") else { continue }
-                    guard code.contains("\" kn\"") || code.contains(" kn\"")
-                            || code.contains("\"kn\"") else { continue }
-                    offenders.append(relative + ": " + code)
+                for literal in Self.literals(in: text) where Self.spellsAUnit(literal) {
+                    offenders.append(relative + ": \"" + literal + "\"")
                 }
             }
         }
         #expect(offenders.isEmpty,
                 """
-                a speed unit is spelled outside `Speed`:
+                a speed unit is spelled outside the one formatter:
                 \(offenders.joined(separator: "\n"))
 
-                Print it with `Speed.format` / `Fmt.kn`, or add the file to \
-                SpeedUnitTests.exempt with the reason it stays in knots.
+                Print it with `Speed.format` / `Speed.suffix` (kit and app), \
+                `WidgetFormat.knots` (widgets) or `WatchFormat.speed` (the watch app) — \
+                or add the file to SpeedUnitTests.exempt with the reason it may say it. \
+                The exemptions today:
+                \(Self.exempt.keys.sorted()
+                    .map { "  · \($0) — \(Self.exempt[$0]!)" }
+                    .joined(separator: "\n"))
                 """)
     }
 
-    /// Where the scan runs.
+    /// Where the scan runs: **everything on iOS a rider can read.**
     static let scanned = [
-        "ios/WingFoilKit/Sources/WingFoilKit/Presentation",
-        "ios/WingFoil/Features",
+        "ios/WingFoilKit/Sources/WingFoilKit",
+        "ios/WingFoil",
+        "ios/WingFoilWidgets",
+        "ios/WingFoilWatch",
+        "ios/WingFoilWatchWidgets",
+        "ios/WatchShared",
     ]
 
-    /// **What is still knots, and why.** Both are surfaces that plot rather than print: the
-    /// value on the axis is the number the chart is drawn from, so converting the label
-    /// without the series would be worse than either. They move in the round that converts
-    /// the chart domains (docs/presentation.md, "Units").
+    /// **Who may spell a unit, and why.** Three kinds, and nothing else:
+    ///
+    /// 1. **The formatters.** `SpeedUnit` is the platform's; the widget extension and the
+    ///    watch app link none of the kit (project.yml says why) so each carries the kit's
+    ///    rule in one documented mirror, named in the failure message above.
+    /// 2. **Prose about the setting.** Help, the settings footer, the what's-new list and
+    ///    the getting-started guide *teach* the two words — a sentence explaining that
+    ///    Settings → Units switches knots to km/h has to be able to say "knots" and "km/h".
+    ///    None of them prints a measured speed.
+    /// 3. **The dev workbench and the tuning sheet**, which read the engine in the engine's
+    ///    own units on purpose (docs/presentation.md, "The dev workbench") — a threshold in
+    ///    km/h is the number in `TuningOverrides`, not a reading off the water.
     static let exempt: [String: String] = [
         "ios/WingFoilKit/Sources/WingFoilKit/Presentation/SpeedUnit.swift":
             "the unit itself lives here",
+        "ios/WingFoilWidgets/WidgetChrome.swift":
+            "the widget's documented mirror of the kit's formatter (ADR-011: no kit link)",
+        "ios/WingFoilWatch/Views/WatchFormat.swift":
+            "the watch app's documented mirror of the kit's formatter (no kit link)",
         "ios/WingFoilKit/Sources/WingFoilKit/Presentation/Dev":
             "the dev workbench reads the engine in the engine's units on purpose",
-        "ios/WingFoil/Features/SessionDetail/SpeedChartView.swift":
-            "a chart axis: the series is plotted in knots",
-        "ios/WingFoil/Features/SessionDetail/TurnDetailStripView.swift":
-            "a chart axis: the series is plotted in knots",
-        "ios/WingFoil/Features/SessionDetail/FlightEndDetailView.swift":
-            "a chart axis: the series is plotted in knots",
-        "ios/WingFoil/Features/Trends/TrendsView.swift":
-            "a chart axis: the series is plotted in knots",
+        "ios/WingFoil/Features/SessionDetail/Dev":
+            "the dev workbench reads the engine in the engine's units on purpose",
+        "ios/WingFoilKit/Sources/WingFoilKit/AnalysisEngine/TuningOverrides.swift":
+            "a tuning parameter's own unit, which is the engine's and not a reading",
+        "ios/WingFoilKit/Sources/WingFoilKit/Help":
+            "help prose teaches the setting, and has to be able to name both units",
+        "ios/WingFoilKit/Sources/WingFoilKit/Presentation/SettingsCopy.swift":
+            "the Units section's own footer, which names what the picker switches between",
     ]
+
+    /// **The lint has teeth**, which a lint that scans a clean tree cannot otherwise show.
+    /// A planted `kn` is found, a comment about knots is not code, and neither a property
+    /// name nor an ordinary English word is an offence.
+    @Test func theScanReadsLiteralsAndNotIdentifiers() {
+        #expect(Self.literals(in: "let s = \"13.47 kn\" // knots live here")
+                == ["13.47 kn"])
+        #expect(Self.spellsAUnit("13.47 kn"))
+        #expect(Self.spellsAUnit("kn"))
+        #expect(Self.spellsAUnit("%.1f knots coming in"))
+        #expect(Self.spellsAUnit("24.94 km/h"))
+        #expect(!Self.spellsAUnit("best2sKn"))
+        #expect(!Self.spellsAUnit("alpha500Kn"))
+        #expect(!Self.spellsAUnit("knee"))
+        #expect(!Self.spellsAUnit("Best 2 s"))
+        // An interpolated call is the formatter doing its job, not a typed-out unit.
+        #expect(!Self.spellsAUnit("\\(label) \\(Fmt.kn(value, digits: 1))"))
+    }
+
+    // MARK: - The scanner
+
+    /// Every double-quoted literal in a Swift source, with comments removed first so a
+    /// quotation inside `//` prose is not read as code.
+    ///
+    /// Deliberately small: it tracks three states (code, string, comment) and nothing else.
+    /// A string containing an escaped quote ends up split in two, which can only produce a
+    /// *smaller* literal to test and never a missed unit.
+    static func literals(in source: String) -> [String] {
+        var out: [String] = []
+        var current = ""
+        var inString = false
+        var inLineComment = false
+        var inBlockComment = false
+        var previous: Character = " "
+        for character in source {
+            if inLineComment {
+                if character == "\n" { inLineComment = false }
+                previous = character
+                continue
+            }
+            if inBlockComment {
+                if previous == "*", character == "/" { inBlockComment = false }
+                previous = character
+                continue
+            }
+            if inString {
+                if character == "\"", previous != "\\" {
+                    inString = false
+                    out.append(current)
+                    current = ""
+                } else {
+                    current.append(character)
+                }
+                previous = character
+                continue
+            }
+            if previous == "/", character == "/" { inLineComment = true; previous = character
+                continue }
+            if previous == "/", character == "*" { inBlockComment = true; previous = character
+                continue }
+            if character == "\"" { inString = true; current = "" }
+            previous = character
+        }
+        return out
+    }
+
+    /// A literal with its interpolations removed — `"\(label) \(Fmt.kn(v))"` becomes
+    /// `" "`. What a call *returns* is the formatter's business and is checked by the tests
+    /// above; only the words the source types out are this scan's business.
+    static func withoutInterpolations(_ literal: String) -> String {
+        var out = ""
+        var depth = 0
+        var previous: Character = " "
+        var index = literal.startIndex
+        while index < literal.endIndex {
+            let character = literal[index]
+            if depth == 0, previous == "\\", character == "(" {
+                out.removeLast()          // the backslash already appended
+                depth = 1
+            } else if depth > 0 {
+                if character == "(" { depth += 1 }
+                if character == ")" { depth -= 1 }
+            } else {
+                out.append(character)
+            }
+            previous = character
+            index = literal.index(after: index)
+        }
+        return out
+    }
+
+    /// Whether a literal names a speed unit: `km/h` anywhere, the word `knot`, or a bare
+    /// `kn` standing on its own (`"kn"`, `"%.2f kn"`, `"13.47 kn"`) rather than inside a
+    /// word like `knee` or an identifier like `alpha500Kn`.
+    static func spellsAUnit(_ literal: String) -> Bool {
+        let lower = withoutInterpolations(literal).lowercased()
+        if lower.contains("km/h") || lower.contains("knot") { return true }
+        let characters = Array(lower)
+        guard characters.count >= 2 else { return false }
+        for index in 0...(characters.count - 2)
+        where characters[index] == "k" && characters[index + 1] == "n" {
+            let before = index > 0 ? characters[index - 1] : " "
+            let after = index + 2 < characters.count ? characters[index + 2] : " "
+            // `alpha500Kn` is a column name, not a caption: a digit in front of the two
+            // letters makes them the tail of an identifier rather than a word of English.
+            if !before.isLetter, !before.isNumber, !after.isLetter, !after.isNumber {
+                return true
+            }
+        }
+        return false
+    }
 
     // MARK: - Helpers
 

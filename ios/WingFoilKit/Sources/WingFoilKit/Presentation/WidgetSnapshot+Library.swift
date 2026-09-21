@@ -66,6 +66,10 @@ extension WidgetSnapshot {
         -> WidgetSnapshot {
         let sorted = sessions.sorted { $0.startDate < $1.startDate }
         var snapshot = WidgetSnapshot(generatedAt: now)
+        // Every speed below stays in knots; this is how the home screen learns which unit
+        // to *print* them in, because a widget process cannot read the app's defaults
+        // (Settings → Units, docs/presentation.md).
+        snapshot.speedUnit = Speed.unit.rawValue
 
         // The last session *ridden*, and only the newest row of all when the library holds
         // no ridden session — a rider whose library is one dry test still gets his row.
