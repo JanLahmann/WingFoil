@@ -64,6 +64,37 @@ public enum WhatsNew {
     public static let entries: [WhatsNewEntry] = [
         WhatsNewEntry(
             version: "1.0.1",
+            build: 95,
+            channel: .beta,
+            date: "2026-09-21",
+            dateText: "21 September 2026",
+            title: "One word per number",
+            lines: [
+                "Every number has one word now. Speed kept, got up and flew through are three different things.",
+                "Fell in counts every fall, in a turn or on a straight line. The card says which.",
+                "Settings has units: knots or km/h, on every speed and on the card.",
+                "A turn that ends in the water counts as a turn that fell in. Engine 0.21.0 re-derives your library once.",
+                "Every Settings footer is one line with a help row.",
+                "A hostile file can no longer take the app down.",
+                "Please open your oldest session after the update and tell us if a number surprises you.",
+            ]),
+        WhatsNewEntry(
+            version: "1.0.1",
+            build: 94,
+            channel: .dev,
+            date: "2026-09-21",
+            dateText: "21 September 2026",
+            title: "Your round on 92",
+            lines: [
+                "Every number has one word now. Speed kept, got up and flew through are three different things.",
+                "Fell in counts every fall, in a turn or on a straight line. The card says which.",
+                "Settings has units: knots or km/h, on every speed and on the card.",
+                "A turn that ends in the water counts as a turn that fell in. Engine 0.21.0 re-derives your library once.",
+                "Every Settings footer is one line with a help row.",
+                "A hostile file can no longer take the app down.",
+            ]),
+        WhatsNewEntry(
+            version: "1.0.1",
             build: 93,
             channel: .beta,
             date: "2026-09-20",
