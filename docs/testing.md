@@ -1712,6 +1712,25 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
      be pinned at, its unit is smaller than its digits, and the wind mark does not borrow the
      outcome ladder's ink.
 
+   **0.9.18's second and third rounds** added four more, for the show/hide switches and the
+   tack/jibe rebuild:
+   - `hidingAPageTakesItsTwinsWithIt` — the seven switches' MAPPING, one switch at a time and
+     asserted on page ids rather than on a count, because what goes wrong here is a switch
+     wired to its neighbour and no test that turns them off together would see it. The
+     Tacks & jibes switch takes BOTH large-text kind screens; the Foil switch takes S·Takeoffs.
+   - `aSwitchThrownMidSessionNeverStrandsTheRider` — a rider standing on the Map page when its
+     switch goes off. An index past the end of the page list is an uncatchable error on this
+     runtime, so this is not a glitch test.
+   - `theSheetHarnessIgnoresTheShowSwitches` — a sheet photographs every page the app can draw
+     whatever the simulator's property store says (`PageModel.showAll`).
+   - `WingFoilCore.autoWindOpposedLobesStillResolve` — one beam reach and its reciprocal, at
+     exactly 180°, in two passes: the axis is computed (the 179° refusal is gone) and with a
+     cone to decide on it comes out on the PERPENDICULAR, never on a lobe.
+
+   ...and `WingFoilCore.perKindOutcomesAddUpToTheKind` tightened from `<=` to `==`, which is
+   the whole point of the rebuild: all eleven per-kind counters are recomputed together from
+   the turn log, so a kind's count and its rungs can no longer come from different populations.
+
    **The data field's own layout suite** (`garmin/field/tests/FieldTests.mc`) is the same idea
    on a canvas nobody chose: a data field is handed whatever rectangle the rider's activity
    layout leaves it, so `layoutRowsNeverClip` walks the *measured* cell rectangles of all

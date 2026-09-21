@@ -3279,6 +3279,57 @@ at all: on that same family it is already the taller box of its band, so a rung 
 into the clock row, which is the 0.9.13 bug exactly. The rung went to the large set instead,
 where the page spends no rows on anything else and can afford it.
 
+## The watch's show/hide switches — seven screens a rider can drop
+
+**0.9.18, every stream.** Jan: a rider who never reads the Story page should be able to stop
+paging through it. Until this round the only way was the per-page editor, which is dev-only,
+so a release rider had the page set the table gave him and nothing else.
+
+Seven booleans in Garmin Connect, right under *Data screens*, all default ON — *Show the Foil
+page*, *Show the Records page*, *Show the Turns page*, *Show the Tacks and jibes page*, *Show
+the Clock page*, *Show the Story page*, *Show the Map page*. One sentence seven times; the
+only thing that changes is the page's name.
+
+**Main has no switch.** A rider who turned the last screen off would have no page to turn one
+back on from. `PageModel.build` already refused to leave the watch blank, and the page it fell
+back to is the page that cannot go.
+
+**The other two sets follow the same seven**, because they are the same pages:
+
+| switch | standard page | large-text screen(s) | after-save page(s) |
+|---|---|---|---|
+| Foil | Foil | *time on foil* | S·Foil **and S·Takeoffs** |
+| Records | Records | — | S·Records |
+| Turns | Turns | L·Turns | S·Turns |
+| Tacks & jibes | Tacks & jibes | L·Jibes **and** L·Tacks | S·Kinds |
+| Clock | Clock | — | — |
+| Story | Story | — | S·Story |
+| Map | Map | — | S·Track |
+
+Three screens have no switch and never will: **Main**, the large set's **live speed** screen
+(the same argument one set down), and the after-save **Saved** page, which is the
+acknowledgement the rider pressed for and what the page-position dots count from. *S·Takeoffs*
+follows **Foil** because it is the one after-save page with no live twin to inherit from, and
+what it counts is how often he got onto the foil.
+
+The after-save review follows the switches at all because it IS the live pages since 0.9.18 —
+six of its eight are their live twins drawn by the same code. A rider who hides the Story page
+and still finds it in the review has found a second page set nobody told him about.
+
+**In the dev stream the per-page editor still decides what each page is**, and the switch then
+decides whether that page is drawn: `build()` reads the editor's layout first and filters on
+the switch afterwards. Two questions, asked in that order.
+
+**A settings edit arrives mid-session** — that is what a phone-editable setting is for — and
+`WingfoilApp._applySettings` rebuilds the model and re-wraps `PageNav.index` behind it. On this
+runtime an index past the end of the page list is an uncatchable error, so a rider standing on
+the Map page when its switch goes off is not a glitch waiting to happen; it is the app dropping
+to the watch face with his recording in it. `aSwitchThrownMidSessionNeverStrandsTheRider`.
+
+**The screenshot harness ignores all seven** (`PageModel.showAll`). A sheet is a check on the
+layouts and it photographs every page the app can draw, whatever the simulator's property
+store says.
+
 ## The after-save pages and the live ones
 
 A saved page and a live page showing the same number must be the same piece of code, or the
