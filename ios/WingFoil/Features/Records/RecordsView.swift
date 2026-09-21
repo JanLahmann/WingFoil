@@ -455,11 +455,13 @@ private struct RecordRowView: View {
     }
 
     /// How much this record beat the previous one by — the third column, or, stacked, the
-    /// head of the second line.
+    /// head of the second line. A margin is a speed, so it is printed in the rider's unit
+    /// like the column it sits beside (Settings → Units): a `+0.42` margin on a km/h table
+    /// would be a knots number hiding in a converted row.
     private var delta: some View {
         Group {
             if let previous = best.previousBest {
-                Text(String(format: "+%.2f", best.valueKn - previous))
+                Text("+" + Fmt.knValue(best.valueKn - previous))
                     .foregroundStyle(DesignTokens.Outcome.flew)
             } else {
                 Text("—").foregroundStyle(.tertiary)

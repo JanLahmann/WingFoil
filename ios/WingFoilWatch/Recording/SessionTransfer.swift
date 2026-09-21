@@ -8,6 +8,12 @@ import WatchConnectivity
 /// exactly as safe and reads the same at the call site.
 private let log = Logger(subsystem: "de.lahmann.wingfoil.watch", category: "transfer")
 
+/// The application-context key the phone sends the rider's speed unit under
+/// (`WatchSessionReceiver.speedUnitKey`). File scope for the same reason `log` is: the
+/// delegate callbacks below are `nonisolated` and cannot read a static member of a
+/// `@MainActor` type.
+private let speedUnitKey = "speedUnit"
+
 /// Hands a finished `.cjw` container to the phone.
 ///
 /// **`transferFile` and nothing else.** WatchConnectivity already solves the hard problem
@@ -96,11 +102,25 @@ extension SessionTransfer: WCSessionDelegate {
         if let error {
             log.error("WCSession activation failed: \(error.localizedDescription)")
         }
+        // The phone's application context is already waiting the moment the session
+        // activates, and it carries the rider's unit (`WatchFormat`). Reading it here as
+        // well as in the callback below is what makes a launch out of range print what he
+        // last chose rather than the default.
+        WatchFormat.apply(session.receivedApplicationContext[speedUnitKey] as? String)
         Task { @MainActor in self.refresh() }
     }
 
     nonisolated func sessionReachabilityDidChange(_ session: WCSession) {
         Task { @MainActor in self.refresh() }
+    }
+
+    /// **Settings that belong to the rider, not to a session** — today that is one key, the
+    /// speed unit (`WatchSessionReceiver.speedUnitKey` on the phone). An application context
+    /// is the right channel for it: the system keeps only the latest value, holds it until
+    /// the watch is reachable, and delivers it whether or not this app is running.
+    nonisolated func session(_ session: WCSession,
+                             didReceiveApplicationContext context: [String: Any]) {
+        WatchFormat.apply(context[speedUnitKey] as? String)
     }
 
     nonisolated func session(_ session: WCSession, didFinish fileTransfer: WCSessionFileTransfer,

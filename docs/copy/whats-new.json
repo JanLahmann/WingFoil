@@ -1,4 +1,11 @@
 {
+  "pending": {
+    "note": "Lines for the next build, which has no number yet. Every generator reads `entries` only, so nothing here reaches a rider until it is moved into that build's entry — which is where it goes the moment the build is cut. One thought per line, register 1 of docs/voice.md, at most twenty words.",
+    "lines": [
+      "Every speed follows the Units setting now: the charts, the records table, the turn stories and the widgets.",
+      "Knots or km/h, once, everywhere."
+    ]
+  },
   "entries": [
     {
       "version": "0.9.17",

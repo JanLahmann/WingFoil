@@ -2306,9 +2306,18 @@ phone — and three more that did not agree with his memory. What changed:
 4. **Takeoffs and attempts are printed side by side** on the session page, each naming the
    other, because the watch counts attempts and the phone counted flights.
 5. **Settings → Units** is on the phone as well as the browser. Every speed the phone prints
-   goes through `Speed`; `SpeedUnitTests` scans for a second formatter. **Still knots on
-   purpose:** the four Swift Charts axes (speed chart, turn strip, flight-end strip, Trends)
-   plot a knots series, so the axis label moves in the round that converts the domains.
+   goes through `Speed`; `SpeedUnitTests` scans for a second formatter. **The rule now covers
+   every surface** (21 September 2026): the four Swift Charts axes convert their *series and
+   their domain*, not only their label, so the ticks are round numbers in the unit on screen;
+   the narrated and accessibility sentences, the records table and its margin column, the turn
+   map's ramp legend, the share card, the home-screen widgets (the unit rides in
+   `WidgetSnapshot.speedUnit`) and the Apple Watch app (the phone sends it as a
+   WatchConnectivity application context) all read the picker. The only places allowed to
+   spell a unit are the three formatters — `Speed`, and its two documented mirrors in the
+   widget extension and the watch app, neither of which links the kit — plus the help prose
+   that teaches the setting and the dev workbench, which reads the engine in the engine's
+   units on purpose. `SpeedUnitTests.noSurfaceSpellsTheUnitItself` scans every Swift string
+   literal on iOS and holds the list.
 6. **Settings footers are one line each** (pattern K). Every `Section(footer:)` prints its
    `SettingsCopy.lead` and a row that opens the section's help topic. The seven-paragraph
    Notifications footer is `HelpTopicID.notifications`; the Analysis footer's rig paragraphs

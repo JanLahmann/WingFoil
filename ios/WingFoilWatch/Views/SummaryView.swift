@@ -25,7 +25,9 @@ struct SummaryView: View {
                 if let summary = recorder.summary {
                     Row(label: "Time", value: WatchFormat.duration(summary.durationS))
                     Row(label: "Distance", value: WatchFormat.distance(summary.distanceM))
-                    Row(label: "Top speed", value: "\(WatchFormat.speed(summary.maxSpeedMps)) kn")
+                    Row(label: "Top speed",
+                        value: WatchFormat.speed(summary.maxSpeedMps) + " "
+                            + WatchFormat.speedUnitWord)
 
                     Divider().overlay(Brand.paper.opacity(0.2))
 

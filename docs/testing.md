@@ -1000,6 +1000,18 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    instead of the ubiquity container, so two simulators can share one library
    ("Two devices, one library", below).
 
+   **A screenshot in km/h** needs no hook of its own. Settings → Units is a tap `simctl`
+   cannot make, but the choice is an ordinary stored default, so passing it as a launch
+   argument puts it in the argument domain and `SessionStore.init` reads it exactly as it
+   reads a tapped one — before anything renders a speed:
+   `xcrun simctl launch <dev> de.lahmann.wingfoil.dev -speedUnit.v1 kmh` (`knots` is the
+   default and the other value). Per launch, and it leaves the simulator as it found it.
+   Worth photographing after any change to a chart, a records table or a narrated sentence:
+   every speed on iOS follows the picker, the four chart axes included
+   (docs/presentation.md, "Units"). On the Trends tab pair it with
+   `UI_SCROLL_TO=best2s`, the page's second anchor: the speed line is the one chart there
+   that the picker moves, and it sits below the fold.
+
    `UI_TEXT_SIZE=xxxl|ax1|ax2|ax3|ax4|ax5` sets the **whole app's Dynamic Type size** for
    that launch (`ScreenshotTextSize`, applied at `RootView`'s root so every sheet raised
    from it inherits it). The rest of the ladder is accepted too — `xs`, `s`, `m`, `l`, `xl`,
@@ -1059,7 +1071,8 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    buttons cannot be tapped by `simctl`; the primary one's destination is the ordinary
    session page, reachable with `UI_LOAD_EXAMPLE=1 UI_OPEN_SESSION=example`.
    On the Trends tab `UI_SCROLL_TO=sideSuccess` parks the screen on the port/starboard
-   turn-success chart. On the session page,
+   turn-success chart, and `UI_SCROLL_TO=best2s` on the speed line — the one chart on that
+   page the Units picker moves, which is why it has an anchor of its own. On the session page,
    `UI_SCROLL_TO=<anchor>` (`chart` for the speed chart, `replay`, `summary`, `turns` for
    the turn cards and the drill-in row, `takeoff`, `takeoffsMap` / `takeoffList` for the
    attempt map and its rows, `hr` for the HR-cost card, `gear`, and `wind` / `recording` /

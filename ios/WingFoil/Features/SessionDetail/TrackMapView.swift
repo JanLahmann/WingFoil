@@ -484,8 +484,9 @@ struct TrackContent: MapContent {
         if let playhead, let lat = playhead.lat, let lon = playhead.lon {
             Annotation("", coordinate: Self.coordinate(lat, lon), anchor: .center) {
                 TrackHalo.around(PlayheadDot(flying: playhead.flying), on: style)
-                    .accessibilityLabel(String(format: "Replay position, %.1f knots",
-                                               playhead.kn))
+                    // The rider's unit, the one the readout beside it prints
+                    // (Settings → Units).
+                    .accessibilityLabel("Replay position, " + Fmt.kn(playhead.kn, digits: 1))
                     // Never the thing under the finger: a tap on the dot is a tap on
                     // whatever the dot is covering.
                     .allowsHitTesting(false)

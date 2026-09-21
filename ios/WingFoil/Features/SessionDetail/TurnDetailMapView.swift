@@ -497,7 +497,9 @@ struct TurnDetailMapView: View {
                      at: CGPoint(x: centre.x, y: centre.y + 7), anchor: .top)
     }
 
-    /// The ramp, with knots on it — bottom right, beside the scale bar.
+    /// The ramp, with speeds on it — bottom right, beside the scale bar. The three numbers
+    /// are in the rider's unit (Settings → Units); the ramp's colours are anchored to the
+    /// entry speed and are the same either way.
     ///
     /// Two numbers make the whole line readable: the entry speed, which is the ramp's anchor
     /// and the number the score is a ratio of, and the top of the bar, which is the fastest
@@ -536,7 +538,7 @@ struct TurnDetailMapView: View {
         func text(_ string: String) -> Text {
             Text(string).font(.system(size: 9).monospacedDigit()).foregroundStyle(label)
         }
-        context.draw(text(String(format: "%.1f", bottomKn)),
+        context.draw(text(Fmt.knValue(bottomKn, digits: 1)),
                      at: CGPoint(x: left, y: y - 2), anchor: .bottomLeading)
         context.draw(text(Fmt.kn(topKn, digits: 1)),
                      at: CGPoint(x: right, y: y - 2), anchor: .bottomTrailing)
@@ -549,7 +551,7 @@ struct TurnDetailMapView: View {
             tick.move(to: CGPoint(x: x, y: y - 1))
             tick.addLine(to: CGPoint(x: x, y: y + barHeight + 1))
             context.stroke(tick, with: .color(Color(.label).opacity(0.45)), lineWidth: 1)
-            context.draw(text(String(format: "%.1f", entryKn)),
+            context.draw(text(Fmt.knValue(entryKn, digits: 1)),
                          at: CGPoint(x: x, y: y - 2), anchor: .bottom)
         }
     }
@@ -564,9 +566,12 @@ struct TurnDetailMapView: View {
         let turn = slice.turn
         var parts = [
             TurnAnalytics.typeLabel(turn.type) + " drawn " + (windUp ? "wind up" : "north up"),
-            String(format: "%.1f knots in, %.1f at the low point after %.0f seconds, "
-                   + "%.1f out", slice.speed.entryKn, slice.speed.minKn,
-                   slice.speed.minRt, slice.speed.exitKn),
+            // The three speeds in the rider's unit (Settings → Units) — the same numbers
+            // the strip below the drawing labels.
+            String(format: "%@ in, %@ at the low point after %.0f seconds, %@ out",
+                   Fmt.kn(slice.speed.entryKn, digits: 1),
+                   Fmt.knValue(slice.speed.minKn, digits: 1),
+                   slice.speed.minRt, Fmt.knValue(slice.speed.exitKn, digits: 1)),
             String(format: "%.0f seconds long, %.0f metre radius", slice.durationS,
                    turn.radiusM),
             TurnOutcomeKind(turn.outcome).label,

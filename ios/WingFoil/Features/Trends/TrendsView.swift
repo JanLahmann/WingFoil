@@ -220,16 +220,24 @@ struct TrendsView: View {
                    tone: Color.accentColor,
                    value: \.turnsPerHour,
                    note: "Every counted turn you stayed dry through, per hour.")
-        // The one speed line on the page, in knots like every other speed in both apps.
+        // The one speed line on the page, in the rider's unit like every other speed in
+        // both apps (Settings → Units). The series itself is converted, not just the
+        // caption: an axis counted in knots under a `km/h` label is the defect the setting
+        // exists to remove.
         // The caption names the sessions whose speed came from positions rather than from a
         // speed channel: the point is drawn, because it is still his afternoon, and it is
         // said to be unverifiable, because that is where a high reading does the most damage
         // (the analyzer draws the same point as an open ring).
-        TrendChart(title: "Best 2 s", unit: "kn", points: points,
+        TrendChart(title: "Best 2 s", unit: Fmt.knUnit, points: points,
                    tone: DesignTokens.Phase.flying,
-                   value: \.best2sKn,
+                   value: { $0.best2sKn.map { Speed.value($0) } },
                    uncertified: { !$0.certified },
                    note: "Your quickest two seconds of the session.")
+            // The second screenshot anchor on this page, and the reason is the unit: this
+            // is the only chart here that moves when a rider picks km/h, and it sits below
+            // the fold where `simctl` cannot reach it (docs/testing.md, "A screenshot in
+            // km/h").
+            .id("best2s")
         TrendChart(title: "Pumps to takeoff", unit: "strokes", points: points,
                    tone: DesignTokens.Effort.window,
                    value: \.avgPumpsToTakeoff,

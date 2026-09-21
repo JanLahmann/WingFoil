@@ -44,7 +44,9 @@ private struct MetricsPage: View {
                     .minimumScaleFactor(0.5)
                     .lineLimit(1)
                     .foregroundStyle(recorder.phase == .paused ? Brand.paper.opacity(0.4) : Brand.paper)
-                Text("kn")
+                // The word the phone is using, which the phone told this watch
+                // (`WatchFormat.unit`, Settings → Units).
+                Text(WatchFormat.speedUnitWord)
                     .font(.system(.body, design: .rounded, weight: .semibold))
                     .foregroundStyle(Brand.green)
             }

@@ -351,7 +351,7 @@ private struct FlightEndDetailPage: View {
             FlightEndAnalytics.outcomeText(end),
         ]
         if let low = slice.speed.lowKn {
-            parts.append(String(format: "down to %.1f knots", low))
+            parts.append("down to " + Fmt.kn(low, digits: 1))
         }
         return parts.joined(separator: ", ")
     }
@@ -413,8 +413,10 @@ private struct FlightEndStripView: View {
 
     private var domain: ClosedRange<Double> { slice.timeDomain }
 
-    private var ceilingKn: Double {
-        max((slice.points.map(\.kn).max() ?? slice.speed.entryKn) * 1.15, 5)
+    /// The top of the y axis, **in the rider's unit** (Settings → Units) — the series is
+    /// converted onto the plot, so the domain travels with it.
+    private var ceiling: Double {
+        Speed.value(max((slice.points.map(\.kn).max() ?? slice.speed.entryKn) * 1.15, 5))
     }
 
     /// Would the `evidence` word land on the `outcome` band's own word? The band runs from the
@@ -451,7 +453,8 @@ private struct FlightEndStripView: View {
             }
 
             ForEach(Array(slice.points.enumerated()), id: \.offset) { _, point in
-                LineMark(x: .value("Seconds", point.rt), y: .value("Speed", point.kn))
+                LineMark(x: .value("Seconds", point.rt),
+                         y: .value("Speed", Speed.value(point.kn)))
                     .interpolationMethod(.monotone)
                     .lineStyle(StrokeStyle(lineWidth: 1.8))
                     .foregroundStyle(Color.accentColor)
@@ -475,7 +478,7 @@ private struct FlightEndStripView: View {
                 RectangleMark(xStart: .value("From", tick.startRt),
                               xEnd: .value("To", max(tick.endRt, tick.startRt + 0.15)),
                               yStart: .value("Floor", 0),
-                              yEnd: .value("Tick", ceilingKn * 0.045))
+                              yEnd: .value("Tick", ceiling * 0.045))
                     .foregroundStyle(DesignTokens.Effort.pumping.opacity(0.75))
                     .annotation(position: .top, alignment: .center, spacing: 0) {
                         StripChrome.label(TurnAnalytics.strokesText(tick.strokes))
@@ -486,9 +489,9 @@ private struct FlightEndStripView: View {
             StripChrome.playhead(playheadRt)
         }
         .chartXScale(domain: domain)
-        .chartYScale(domain: 0...ceilingKn)
+        .chartYScale(domain: 0...ceiling)
         .chartXAxisLabel("s from the end")
-        .chartYAxisLabel("kn")
+        .chartYAxisLabel(Fmt.knUnit)
         .chartOverlay { proxy in
             StripChrome.scrubSurface(proxy, domain: domain, playheadRt: $playheadRt)
         }
@@ -504,19 +507,21 @@ private struct FlightEndStripView: View {
             .lineStyle(StrokeStyle(lineWidth: 1, dash: [2, 3]))
             .foregroundStyle(Color.secondary.opacity(0.5))
             .annotation(position: below ? .bottom : .top, alignment: .center, spacing: 1) {
-                StripChrome.caption("\(label) \(String(format: "%.1f", kn))")
+                StripChrome.caption("\(label) \(Fmt.knValue(kn, digits: 1))")
             }
-        PointMark(x: .value("Seconds", rt), y: .value("Speed", kn))
+        PointMark(x: .value("Seconds", rt), y: .value("Speed", Speed.value(kn)))
             .symbolSize(28)
             .foregroundStyle(Color.accentColor)
     }
 
     private var spoken: String {
-        var text = String(format: "Speed through the flight end: %.1f knots coming in",
-                          slice.speed.entryKn)
-        if let low = slice.speed.lowKn { text += String(format: ", down to %.1f", low) }
+        // Spoken in the rider's unit, the one the strip above is drawn in (Settings → Units).
+        var text = "Speed through the flight end: " + Fmt.kn(slice.speed.entryKn, digits: 1)
+            + " coming in"
+        if let low = slice.speed.lowKn { text += ", down to " + Fmt.knValue(low, digits: 1) }
         if let out = slice.speed.outKn, let rt = slice.speed.recoverRt {
-            text += String(format: ", back to %.1f after %.0f seconds", out, rt)
+            text += String(format: ", back to %@ after %.0f seconds",
+                           Fmt.knValue(out, digits: 1), rt)
         } else {
             text += ", never back to flying speed in the window"
         }

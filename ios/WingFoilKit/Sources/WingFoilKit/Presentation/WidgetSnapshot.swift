@@ -230,11 +230,18 @@ public struct WidgetSnapshot: Codable, Sendable, Equatable {
     /// All-time personal bests: best 2 s, longest flight, best JPH. Rates are additive
     /// (CLAUDE.md) — JPH is here beside the speed, not instead of CPH anywhere else.
     public var bests: [Fact]?
+    /// **The unit the rider reads speeds in** — `SpeedUnit.rawValue`, "knots" or "kmh".
+    ///
+    /// Every speed in this blob stays in knots, exactly as every speed in the engine does;
+    /// this is the *rendering* instruction that travels with them, because a widget process
+    /// cannot read the app's own defaults. nil is a blob written before the setting existed,
+    /// and knots is what it meant (`WidgetFormat.speedUnit`, Settings → Units).
+    public var speedUnit: String?
 
     public init(generatedAt: Date = Date(), lastSession: LastSession? = nil,
                 weeklyFoilMinutes: Double = 0, weeklySessions: Int = 0,
                 weeklyHours: Double = 0, recent: [Day]? = nil, season: Season? = nil,
-                facts: [Fact]? = nil, bests: [Fact]? = nil) {
+                facts: [Fact]? = nil, bests: [Fact]? = nil, speedUnit: String? = nil) {
         self.generatedAt = generatedAt
         self.lastSession = lastSession
         self.weeklyFoilMinutes = weeklyFoilMinutes
@@ -244,6 +251,7 @@ public struct WidgetSnapshot: Codable, Sendable, Equatable {
         self.season = season
         self.facts = facts
         self.bests = bests
+        self.speedUnit = speedUnit
     }
 
     public var isEmpty: Bool { lastSession == nil && weeklySessions == 0 }

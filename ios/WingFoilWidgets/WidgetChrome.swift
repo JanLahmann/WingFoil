@@ -30,11 +30,43 @@ enum WidgetFormat {
         return String(format: abs(value) < 10 ? "%.1f %%" : "%.0f %%", value)
     }
 
-    /// A speed, two decimals. Mirrors `KeyMetrics.knots` (`13.47 kn`); `unit: false` drops
-    /// the unit where the tile's own label already carries it ("BEST 2 S").
+    /// Mirrors `SpeedUnit` in WingFoilKit. The extension links none of the kit, so the two
+    /// words are spelled here and the *choice* travels in the snapshot
+    /// (`WidgetSnapshot.speedUnit`, Settings → Units).
+    enum SpeedUnit: String {
+        case knots
+        case kmh
+
+        var suffix: String {
+            switch self {
+            case .knots: "kn"
+            case .kmh: "km/h"
+            }
+        }
+
+        /// Mirrors `SpeedUnit.kmhPerKnot`.
+        var perKnot: Double { self == .kmh ? 1.852 : 1 }
+    }
+
+    /// What this render is printing speeds in. Set from the entry's snapshot before a view
+    /// draws (`SnapshotSource`); knots for a blob written before the setting existed, which
+    /// is what that blob meant.
+    nonisolated(unsafe) static var speedUnit: SpeedUnit = .knots
+
+    /// A speed, two decimals, **in the rider's unit** — the snapshot carries knots and this
+    /// converts on the way to the glass, exactly as `Speed.format` does in the app. Mirrors
+    /// `KeyMetrics.knots` (`13.47 kn` · `24.94 km/h`).
+    ///
+    /// **Every rider-facing caller passes `unit: true` since 21 September 2026.** The tiles
+    /// used to print a bare `13.47` on the argument that "BEST 2 S" carried the unit — it
+    /// never did, and once the same tile can also read `24.94` a number with no word after
+    /// it is a number nobody can check. The value line already scales itself down to fit
+    /// (`WidgetStat`), so the word costs a point of type and no truncation.
     static func knots(_ value: Double?, unit: Bool = false) -> String {
         guard let value else { return "—" }
-        return String(format: unit ? "%.2f kn" : "%.2f", value)
+        let converted = value * speedUnit.perKnot
+        return unit ? String(format: "%.2f %@", converted, speedUnit.suffix)
+                    : String(format: "%.2f", converted)
     }
 
     /// A per-hour rate, one decimal. Mirrors `KeyMetrics.rate` — the JPH, TPH, CPH and WPH
