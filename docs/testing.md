@@ -1353,7 +1353,7 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    on a fenix 5X Plus found it, 17 Sep 2026). `RecordingView.inkH` is the firmware's ascent
    for a number font now, floored at the old 3/4; but the rule that a layout is verified
    only by looking at it stands. `garmin/screenshots/` is the harness: `ShotsApp.mc`
-   (throwaway, never committed) cycles the 17 screens on a real session every 3 s, and
+   (throwaway, never committed) cycles the 20 screens on a real session every 3 s, and
    `screenshots/tools/capture.sh <device> <outdir>` starts a fresh simulator, runs it,
    photographs the device window once a second by its window id and tiles the distinct
    frames into `<outdir>.png`. Compile the harness for the device first
@@ -1367,17 +1367,22 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    per cycle and refuses a locked screen).
 
    **The rule is a gate, and a locked Mac is not an exemption.** 0.9.16 changed the page
-   layouts (a second page SET, the foil table's title row, the SAVED pill's lift), so it owes
-   the 27 sheets before any upload. They were **not run on 20 September 2026**: the Mac was
+   layouts (a second page SET, the foil table's title row, the SAVED pill's lift), so it owed
+   the sheets before any upload. They were **not run on 20 September 2026**: the Mac was
    locked (`CGSSessionScreenIsLocked = Yes`) for the whole session and `capture.sh` refuses
    that by design — `screencapture` cannot read a window behind the lock screen and returns
    blank frames rather than failing, which is the one failure mode a screenshot harness must
    never have. The unit suite carries the geometry in the meantime; it does not carry what a
-   frame looks like. **0.9.16 may not be uploaded to any listing until the 27 sheets exist**
-   and have been read against the overlap list: clock/giant, caption/digits, eyebrow/giant,
-   pair halves, the PAUSED word — and for this round, three new pairs: the large set's word
-   against its giant, the foil table's `foil · 31` against the shares row under it, and the
-   lifted SAVED pill against both the phone line under it and the verdict's digits.
+   frame looks like. **Run on 21 September 2026** once Jan unlocked the Mac: 29 sheets, one
+   per family the harness manifest lists (the fenix 5 Plus family included), each read against
+   the overlap list — clock/giant, caption/digits, eyebrow/giant, pair halves, the PAUSED
+   word — and the round's three new pairs: the large set's word against its giant, the foil
+   table's `foil · 31` against the shares row under it, and the lifted SAVED pill against both
+   the phone line under it and the verdict's digits. No overlap on any of the 29; the one gap
+   found is the harness's own (its story page feeds no speed samples, so the top-speed
+   sparkline is empty on every family), not the app's. Only then went 0.9.16 to the listings.
+   The harness cycles 20 screens now (start, the 7 standard pages, the 5 large-text pages, the
+   7 summary pages), so `capture.sh` photographs 84 frames over a longer awake window.
 
    The layout suite reads its canvas from `System.getDeviceSettings().screenWidth`, so the same
    assertions are genuinely different measurements per device, and every finding that has ever
