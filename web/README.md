@@ -1268,7 +1268,7 @@ groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 4
      *and* zooms the strip to that flight plus a margin. Nothing of this is on screen until
      something is tapped.
    - Everything above is transient: it belongs to the document on screen and is not saved.
-7. **Tables.** 34 turn rows (30 counted + 4 rejected), 23 flight-end rows. Turn #1 at
+7. **Tables.** 36 turn rows (32 counted + 4 rejected), 23 flight-end rows. Turn #1 at
    08:03:36 local, jibe, fell in.
 8. **Takeoffs.** With the CIQ file: attempts 37, successes 23 (62 %), avg pumps 9.0, total
    strokes 1341. Now drop a native windsurf FIT from `fixtures/sessions/windsurf-native/`:

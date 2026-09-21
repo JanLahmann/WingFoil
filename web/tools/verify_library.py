@@ -373,7 +373,9 @@ def check_digest_fidelity() -> None:
           s["takeoff"]["avgPumpsToTakeoff"])
 
     # Known reference numbers for this session (web/README.md quotes the same ones).
-    check("  known: 30 counted turns", d["turns"]["counted"], 30)
+    # 30 → 32 with engine 0.21.0: two attempted turns that ended in the water are counted
+    # as turns now (ADR-028); both were starboard entries, neither kept its speed.
+    check("  known: 32 counted turns", d["turns"]["counted"], 32)
     check("  known: 23 flights", d["flightCount"], 23)
     check("  known: 12.764 km", d["distanceKm"], 12.764)
     check("  known: spot name", d["spot"], "Nago Torbole Windsurfen")
@@ -395,10 +397,10 @@ def check_digest_fidelity() -> None:
     # Explicit, so a change to the counting rule cannot quietly re-baseline the test.
     check("  known: port 14 entries / 2 clean", (by["port"]["entries"], by["port"]["successes"]),
           (14, 2))
-    check("  known: starboard 16 entries / 2 clean",
-          (by["starboard"]["entries"], by["starboard"]["successes"]), (16, 2))
+    check("  known: starboard 18 entries / 2 clean",
+          (by["starboard"]["entries"], by["starboard"]["successes"]), (18, 2))
     check("  known: port clean 14.29 %", by["port"]["successPct"], 14.29)
-    check("  known: starboard clean 12.5 %", by["starboard"]["successPct"], 12.5)
+    check("  known: starboard clean 11.11 %", by["starboard"]["successPct"], 11.11)
     # The two sides must add up to the engine's own counted total.
     check("  sides sum to turnsCounted",
           by["port"]["entries"] + by["starboard"]["entries"] + by["unknown"]["entries"],
