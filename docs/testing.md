@@ -1454,7 +1454,7 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    on a fenix 5X Plus found it, 17 Sep 2026). `RecordingView.inkH` is the firmware's ascent
    for a number font now, floored at the old 3/4; but the rule that a layout is verified
    only by looking at it stands. `garmin/screenshots/` is the harness: `ShotsApp.mc`
-   (throwaway, never committed) cycles the 24 screens on a real session every 3 s, and
+   (throwaway, never committed) cycles the 22 screens on a real session every 3 s, and
    `screenshots/tools/capture.sh <device> <outdir>` starts a fresh simulator, runs it,
    photographs the device window once a second by its window id and tiles the distinct
    frames into `<outdir>.png`. Compile the harness for the device first
@@ -1482,9 +1482,37 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    the phone line under it and the verdict's digits. No overlap on any of the 29; the one gap
    found is the harness's own (its story page feeds no speed samples, so the top-speed
    sparkline is empty on every family), not the app's. Only then went 0.9.16 to the listings.
-   The harness cycles 24 screens since 0.9.17 (start, the 8 standard pages, the 7 large-text
-   pages, the 8 summary pages — the Tacks & jibes page is in all three counts), so
-   `capture.sh` photographs 100 frames over a longer awake window.
+   The harness cycles **22 screens** since 0.9.18 — start, the 8 standard pages, the **5**
+   large-text pages and the 8 summary pages; it was 24 between 0.9.17 and 0.9.18, when the
+   large set still carried a clock and a best-2s screen. At 3 s a screen that is a 66 s cycle,
+   so `capture.sh` photographs **95 frames** at 0.8 s (76 s, one whole pass with ten seconds
+   of margin) inside a 240 s `caffeinate` window.
+
+   **Run on 21–22 September 2026 for 0.9.18** (Jan's layout review), on the short set — the
+   six glasses below — with the two principles of that round added to the overlap list: the
+   widest line on each page is on the equator, and no word is drawn as large as the number
+   beside it. Three rounds of sheets, because the first two each found something, and read
+   clean on all six at the third. **What the sheets caught that the unit suite did not:**
+
+   - the post-save **Takeoffs** page's HR line was being shed on **every** glass. Jan's sketch
+     put the two smaller facts on one row with a separator, and "4.3 pumps each · last +19 bpm"
+     is 28 characters — 560 px against a 406 px chord on a fenix 8 — so the half the page never
+     drew was the half nobody could have noticed was missing. Two narrow rows now, and the
+     test asserts each fits its own row at its own worst case.
+   - the post-save **Track** page was still drawing its distance in FONT_SMALL with a space in
+     it while the live Map page had moved to the bigger form — a unification leaking at its one
+     remaining seam. One renderer draws that odometer now.
+   - the large set's **outcome row** was fitted from the NUMBER ladder and banded on a TEXT
+     font, because the constant meant one array and was read as the other. On a 454 px glass
+     the chord stepped the row down far enough to hide it; on a 390 px **Instinct 3 AMOLED**
+     the word under the giant was drawn straight through the digits. This is the one that
+     justifies the whole ritual: the unit suite was green on every glass, and it was green
+     because it was asking the same wrong question the renderer was.
+
+   None of the three is a geometry the row-stack assertions could see. The first is a string
+   measured against a chord, the second is two pages agreeing about a font, and the third is a
+   band and a ladder indexing two different arrays — which is now asserted outright (the row's
+   own ink must fit the band it was stacked with).
 
    **The short set (Jan, 21 Sep 2026: "we don't need to review all families every time").**
    A change to a page's *content* — a new page, a row added or reworded, a number moved
@@ -1496,7 +1524,10 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    instinct3amoled45mm fenix847mm" sheets.sh <outdir>` runs exactly those. The full 29 are
    owed only when the *layout engine* moves — the row stack, the fitter, the ink bands, a font
    choice — or when a family joins the manifest. 0.9.17 (a page added, no engine change) was
-   read on the short set.
+   read on the short set, and so was 0.9.18: it moved a great deal of page CONTENT and the one
+   thing it added to the fitter — the large giant's vector-font probe — has the bitmap ladder
+   as its floor by construction and is asserted to never come out narrower, so no family can
+   be worse off than the sheet before it.
 
    The layout suite reads its canvas from `System.getDeviceSettings().screenWidth`, so the same
    assertions are genuinely different measurements per device, and every finding that has ever
@@ -1656,7 +1687,49 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    tomorrow, and it would have been invisible in a screenshot of a session with a wind axis
    nobody looked twice at. Pinning the new row at the `FONT_SMALL` floor (`CLEAN_FROM`) buys
    it back with room over: the split is on again at 454 px and 390 px, and the 240 px fenix 7s
-   drops it exactly as it did in 0.9.4, for the same reason.
+   drops it exactly as it did in 0.9.4, for the same reason. *(That row and its rate are gone
+   since 0.9.18 — the clean count joined the ladder row it refines and CPH left the watch — and
+   the split now fits at the floor font on **every** glass, which the test asserts outright
+   rather than only on the AMOLED ones.)*
+
+   **0.9.18: 127 dev / 122 release / 122 beta, on eight glasses** (`fenix847mm`, `fenix5xplus`,
+   `fr255`, `venu2s`, `venu3`, `epix2pro42mm`, `instinct3amoled45mm`, `fenix7s`), for Jan's
+   layout review. Four tests are new and each of them guards something the round could get
+   wrong in a way no sheet would show:
+   - `WingFoilCore.perKindOutcomesAddUpToTheKind` — the six per-kind counters' arithmetic:
+     per kind, `flew + touch + fell` is that kind's count for every turn typed after the axis
+     holds, and at most it after an auto-wind backfill, which adds kinds and no outcomes. A
+     row that does not add up to the number above it is a page arguing with itself.
+   - `aShrunkPageSetNeverStrandsAnIndex` — the large set went from seven screens to five and a
+     page index does not go with it (`PageNav.index` outlives any rebuild). An out-of-bounds
+     read is **not catchable on this runtime**, so "we would see it throw" is not a thing that
+     happens here: it asserts `BIG_SLOT` is at least `BIG_PAGES` long, and that every accessor
+     a frame calls wraps a stale index rather than clamping and hoping.
+   - `takeoffPageSaysWhatItCounts` — the rewritten S6, including the claim that each of its two
+     detail lines fits its own row at its own worst case, which is exactly what the one-row
+     version failed.
+   - `mapOdometerAndWindMarkAreBigEnoughToRead` — the map caption is above the floor it used to
+     be pinned at, its unit is smaller than its digits, and the wind mark does not borrow the
+     outcome ladder's ink.
+
+   **0.9.18's second and third rounds** added four more, for the show/hide switches and the
+   tack/jibe rebuild:
+   - `hidingAPageTakesItsTwinsWithIt` — the seven switches' MAPPING, one switch at a time and
+     asserted on page ids rather than on a count, because what goes wrong here is a switch
+     wired to its neighbour and no test that turns them off together would see it. The
+     Tacks & jibes switch takes BOTH large-text kind screens; the Foil switch takes S·Takeoffs.
+   - `aSwitchThrownMidSessionNeverStrandsTheRider` — a rider standing on the Map page when its
+     switch goes off. An index past the end of the page list is an uncatchable error on this
+     runtime, so this is not a glitch test.
+   - `theSheetHarnessIgnoresTheShowSwitches` — a sheet photographs every page the app can draw
+     whatever the simulator's property store says (`PageModel.showAll`).
+   - `WingFoilCore.autoWindOpposedLobesStillResolve` — one beam reach and its reciprocal, at
+     exactly 180°, in two passes: the axis is computed (the 179° refusal is gone) and with a
+     cone to decide on it comes out on the PERPENDICULAR, never on a lobe.
+
+   ...and `WingFoilCore.perKindOutcomesAddUpToTheKind` tightened from `<=` to `==`, which is
+   the whole point of the rebuild: all eleven per-kind counters are recomputed together from
+   the turn log, so a kind's count and its rungs can no longer come from different populations.
 
    **The data field's own layout suite** (`garmin/field/tests/FieldTests.mc`) is the same idea
    on a canvas nobody chose: a data field is handed whatever rectangle the rider's activity

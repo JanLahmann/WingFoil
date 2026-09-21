@@ -55,14 +55,14 @@ enum {
 // And one addition the engine has no need for: the lock is CONFIRMED. Two consecutive
 // qualifying evaluations must agree within CONFIRM_DEG before the first direction is adopted.
 // The engine can afford to answer once from complete evidence; the watch's first answer costs
-// a vibe, the whole session's tack/jibe split (the one-shot backfill in
-// `TurnDetector.backfillWindSplit`) and every turn named from then on — so it does not commit
+// a vibe, the whole session's tack/jibe split (`TurnDetector.rebuildWindSplit`, which
+// re-types every logged turn) and every turn named from then on — so it does not commit
 // on one minute of it. Cost: one extra EVAL_PERIOD_S before the first lock.
 class AutoWind {
     // Events, returned by `tick` (class-static, like TurnDetector's).
     enum {
         EV_NONE = 0,
-        EV_LOCK = 1,        // first adoption this session: vibe + the one-shot backfill
+        EV_LOCK = 1,        // first adoption this session: the vibe
         EV_UPDATE = 2       // the axis moved >= HYSTERESIS_DEG (or flipped)
     }
 
@@ -83,7 +83,15 @@ class AutoWind {
 
     // ---- axis gates (engine `_dominant_lobes` / `_axis_confidence`) ----
     const MIN_LOBE_SEP_DEG = 60.0;      // closer than this and the two modes are one lobe
-    const MAX_LOBE_SEP_DEG = 179.0;     // exactly opposed lobes: the bisector is degenerate
+    // There is no MAXIMUM separation any more (engine 0.23.0, watch 0.9.18). It was 179 deg,
+    // and it refused an exactly opposed pair because the bisector was computed as the two
+    // lobes' circular MEAN: at 180 deg apart the two unit vectors cancel, `atan2(0, 0)`
+    // returns 0 deg, and the axis would have been a bearing read off nothing. The half-angle
+    // form `_bisect` uses now is defined at every separation and answers the PERPENDICULAR
+    // there, which is where the wind is when a rider sailed one beam reach and its reciprocal
+    // — and the no-go cone picks which end of that perpendicular is upwind exactly as it does
+    // at every other separation. The doubt rides in `confidence`, where it can be read, rather
+    // than in a refusal.
     const SEP_FULL_DEG = 20.0;          // separation factor saturates min_sep + 20
     const MASS_FLOOR = 0.2;             // mass factor: 0.2 -> 0, 0.6 -> 1
     const MASS_SPAN = 0.4;
@@ -100,7 +108,7 @@ class AutoWind {
     const CONFIRM_DEG = 20.0;           // watch-only: two evaluations must agree to lock
     const HYSTERESIS_DEG = 15.0;        // adopted direction moves only this far or further
 
-    // The sweep log the default-turn-type prior votes on, and the one-shot backfill replays.
+    // The sweep log the default-turn-type prior votes on.
     // Capped exactly like SessionHistory's turn log and with the same rule: the OLDEST entry
     // falls off, because a full log means a long session and the recent turns are the ones the
     // current axis has to explain.
@@ -164,7 +172,7 @@ class AutoWind {
         return evaluate();
     }
 
-    // A confirmed sweep, logged for the prior and the one-shot backfill. `entryU` and `netDeg`
+    // A confirmed sweep, logged for the default-turn-type prior. `entryU` and `netDeg`
     // are TurnDetector's `lastEntryU` / `lastNetDeg`: the unwrapped entry bearing and the
     // signed rotation, which is what a sweep is as evidence about the wind.
     function logSweep(entryU as Float, netDeg as Float) as Void {
@@ -180,8 +188,10 @@ class AutoWind {
         sweepCount++;
     }
 
-    // The sweep log, for `TurnDetector.backfillWindSplit`. Handed out rather than copied:
-    // the backfill reads it once and the arrays are fixed for the life of the session.
+    // The sweep log. Handed out rather than copied: the reader takes it once and the arrays
+    // are fixed for the life of the session. The TURN log that re-types a session lives in
+    // TurnDetector and is a different thing — this one carries geometry only, written when a
+    // sweep closes, which is before its outcome is known.
     function sweepEntries() as Array<Number> { return _sweepIn; }
     function sweepNets() as Array<Number> { return _sweepNet; }
 
@@ -211,10 +221,6 @@ class AutoWind {
         var mass1 = _lobeMass(second) / distanceM;
         var sep = wrapDeg180(lobe1 - lobe0).abs();
         lastSepDeg = sep;
-        if (sep > MAX_LOBE_SEP_DEG) {
-            return _unconfirmed();      // pure beam-reach out-and-back: no bisector can help
-        }
-
         var bisector = _bisect(lobe0, lobe1);
         var axisConf = _axisConfidence(mass0, mass1, sep);
         lastAxisConf = axisConf;
@@ -327,12 +333,26 @@ class AutoWind {
         return m;
     }
 
-    // The axis line: the circular mean of the two lobes, i.e. their bisector.
+    // The axis line between two reach lobes, defined at EVERY separation — the engine's
+    // `wind._bisector` (0.23.0), transcribed.
+    //
+    // Half-angle form: walk half the SIGNED way from the first lobe to the second. It agrees
+    // with the equal-weight circular mean everywhere that mean is defined, and it keeps
+    // answering where the mean does not: at an exactly opposed pair the two unit vectors
+    // cancel and `atan2(0, 0)` hands back 0 deg, a bearing read off nothing. That degenerate
+    // case is why the watch refused above 179 deg until 0.9.18; with this form there is
+    // nothing to refuse.
+    //
+    // At exactly 180 deg `wrapDeg180` folds to -180, so the answer is `a - 90`: the
+    // PERPENDICULAR of the lobe axis, which is where the wind is when a rider sailed nothing
+    // but one beam reach and its reciprocal. Which of the two perpendicular ends is upwind is
+    // not this function's question — the no-go cone answers it, as it does for every other
+    // separation.
+    //
+    // No trigonometry either, which is the incidental win: two adds and a divide against four
+    // transcendental calls, on a function every evaluation runs.
     hidden function _bisect(a as Float, b as Float) as Float {
-        var ra = a * 0.017453292;
-        var rb = b * 0.017453292;
-        return _norm360(Math.atan2(Math.sin(ra) + Math.sin(rb),
-            Math.cos(ra) + Math.cos(rb)) * 57.29578);
+        return _norm360(a + wrapDeg180(b - a) / 2.0);
     }
 
     // Product of three [0,1] factors, the engine's `_axis_confidence` verbatim:

@@ -60,10 +60,12 @@ module PageModel {
         // like MAIN/RECORDS/TURNS: no slot is read, because every cell on it is a foil number
         // and a configurable cell could only make it a worse version of the grid it replaced.
         LAYOUT_FOIL = 10,
-        // The LARGE page set's one and only layout (0.9.16): a single giant number, the word
-        // that says what it is a rung UP from every other caption on the watch, and — on the
-        // turns page alone — the outcome tally under it. Slot 1 carries the metric; no other
-        // slot is read. See `bigWord` and RecordingView.drawBigPage.
+        // The LARGE page set's one and only layout (0.9.16): a single giant number, an
+        // outcome row on the three turn screens, and the word that says what the giant is.
+        // Slot 1 carries the metric; no other slot is read. Since 0.9.18 the word is BELOW
+        // the row and a rung smaller, and the giant leaves the bitmap ladder where the device
+        // has a vector face — numbers larger, words smaller (Jan, 21 September 2026). See
+        // `bigWord` and RecordingView.drawBigPage.
         LAYOUT_BIG = 11,
         // The standard set's eighth page (0.9.17): TACKS & JIBES. Two halves, one per kind —
         // the count as a giant, the word under it, and under that how many of that kind he
@@ -125,6 +127,70 @@ module PageModel {
     const MAX_PAGES = 8;
     const SLOTS = 5;
 
+    // ---- which screens exist at all (0.9.18) ----
+    //
+    // Seven switches in Garmin Connect, one per hideable page, in every stream
+    // (AppSettings.pageShown). These are INDICES into that array and nothing else — they are
+    // not layout ids and not metric ids, because the thing a switch governs is a PAGE and the
+    // same page appears under three different ids in the three sets:
+    //
+    //   switch            standard page       large-text screen(s)        after-save page
+    //   SHOW_FOIL         Foil                "time on foil"              S·Foil, S·Takeoffs
+    //   SHOW_RECORDS      Records             —                           S·Records
+    //   SHOW_TURNS        Turns               L·Turns                     S·Turns
+    //   SHOW_KINDS        Tacks & jibes       L·Jibes AND L·Tacks         S·Kinds
+    //   SHOW_CLOCK        Clock               —                           —
+    //   SHOW_STORY        Story               —                           S·Story
+    //   SHOW_MAP          Map                 —                           S·Track
+    //
+    // Three things have no switch and never will: MAIN (a watch with no data screen has no
+    // way back), the large set's live SPEED screen (the same argument one set down), and the
+    // after-save SAVED page (it is the acknowledgement the rider pressed for).
+    //
+    // S·Takeoffs follows FOIL because that is what it counts — how often he got onto the foil
+    // and what it cost him — and it is the one after-save page with no live twin to inherit a
+    // switch from.
+    const SHOW_FOIL = 0;
+    const SHOW_RECORDS = 1;
+    const SHOW_TURNS = 2;
+    const SHOW_KINDS = 3;
+    const SHOW_CLOCK = 4;
+    const SHOW_STORY = 5;
+    const SHOW_MAP = 6;
+    const SHOW_NONE = -1;       // this page has no switch: it is always on
+
+    // The screenshot harness's seam, and the only caller that sets it (ShotsApp.mc, which is
+    // never committed). A sheet has to photograph every page the app can draw, including the
+    // ones this watch's rider has switched off — the sheet is a check on the LAYOUTS, not on
+    // one rider's settings. Nothing in the shipped app writes it.
+    var showAll as Boolean = false;
+
+    // Which switch governs a standard LAYOUT, or SHOW_NONE where none does.
+    function switchForLayout(layout as Number) as Number {
+        if (layout == LAYOUT_FOIL) { return SHOW_FOIL; }
+        if (layout == LAYOUT_RECORDS) { return SHOW_RECORDS; }
+        if (layout == LAYOUT_TURNS) { return SHOW_TURNS; }
+        if (layout == LAYOUT_KINDS) { return SHOW_KINDS; }
+        if (layout == LAYOUT_CLOCK) { return SHOW_CLOCK; }
+        if (layout == LAYOUT_TIMELINE) { return SHOW_STORY; }
+        if (layout == LAYOUT_MAP) { return SHOW_MAP; }
+        return SHOW_NONE;       // MAIN, HERO, GRID4, CELLS2, BIG: no switch
+    }
+
+    // Which switch governs a LARGE-set screen, by the metric in its slot. The kind screens
+    // share one switch because they are one page in the standard set.
+    function switchForBigSlot(id as Number) as Number {
+        if (id == M_FOIL_PCT) { return SHOW_FOIL; }
+        if (id == M_TURNS) { return SHOW_TURNS; }
+        if (id == M_JIBES || id == M_TACKS) { return SHOW_KINDS; }
+        return SHOW_NONE;       // live speed: the set's own Main
+    }
+
+    // Is a page with switch `s` on? The harness's `showAll` is the one bypass.
+    function shown(s as Number) as Boolean {
+        return showAll || AppSettings.shows(s);
+    }
+
     // ---- the shipped pages, as data ----
     var DEF_LAYOUT as Array<Number> = [
         LAYOUT_MAIN, LAYOUT_FOIL, LAYOUT_RECORDS, LAYOUT_TURNS, LAYOUT_KINDS, LAYOUT_CLOCK,
@@ -153,21 +219,27 @@ module PageModel {
     // deliberately: one setting, no new properties per page, and it is the ONLY page control
     // a release or beta build has, because the per-page editor is `(:dev)` since this round.
     //
-    // The large set is FIVE pages and they are the five questions a rider asks between two
-    // jibes, one per screen: how fast, how much of it was flown, how the turns are going,
-    // what time it is, and the best run of the day. There is no editor for them and there is
-    // deliberately no map, no timeline and no table — a page you have to read is not a page
-    // this set is for.
+    // The large set is FIVE pages, one question each (see BIG_PAGES for which five and why).
+    // There is no editor for them and there is deliberately no map, no timeline and no table
+    // — a page you have to read is not a page this set is for.
     const PAGE_SET_STANDARD = 0;
     const PAGE_SET_LARGE = 1;
-    // Seven since 0.9.17: JIBES and TACKS join, one screen each, straight after the turns
-    // screen — the same place and the same reason they take in the standard set. Each carries
-    // its kind's count as the giant, the kind as the word, and how many of them he flew
-    // through under it (`flewLine`), which is the large set's word-under-giant shape with one
-    // line of verdict added, exactly as the turns screen already carries its tally.
-    const BIG_PAGES = 7;
+    // FIVE since 0.9.18, and the two that left are the two the standard set already answers
+    // better (Jan's layout review, 21 September 2026: "pages 7 and 4 are good enough").
+    //
+    // `time` left because the standard Clock page IS a giant time of day with nothing on it
+    // but a timer — a large-text screen for the clock was the clock page one rung smaller.
+    // `best 2s` left because the standard Records page carries both records with their names,
+    // and a set that answers "how fast was the best two seconds" without saying what the ten
+    // was is a worse version of the page one screen away.
+    //
+    // What is left is the five questions a rider asks with spray on the glass, one per screen:
+    // how fast right now, how much of it was flown, how the turns are going, and the two kinds
+    // of turn asked apart. Each kind screen carries its kind's whole outcome row under the
+    // giant, exactly as the turns screen carries the session's.
+    const BIG_PAGES = 5;
     var BIG_SLOT as Array<Number> = [
-        M_SPEED, M_FOIL_PCT, M_TURNS, M_JIBES, M_TACKS, M_CLOCK, M_BEST_2S
+        M_SPEED, M_FOIL_PCT, M_TURNS, M_JIBES, M_TACKS
     ];
 
     // ---- built state ----
@@ -204,20 +276,47 @@ module PageModel {
             for (var s = 0; s < SLOTS; s++) {
                 row[s] = _clamp(_read(src, key + "s" + (s + 1).toString(), defRow[s]), 0, M_MAX);
             }
-            if (lay != LAYOUT_OFF) {
+            // A page is on the cycle when its LAYOUT is on and its SWITCH is on. The two are
+            // different questions and they are asked in this order on purpose: the layout is
+            // the dev stream's per-page editor (`pg<N>Layout`, LAYOUT_OFF) and the switch is
+            // the one every stream has. So in dev the editor still decides what each page IS
+            // and the switch then decides whether that page is drawn — which is the rule the
+            // coordinator asked for, and it falls out of filtering after the build rather
+            // than inside it.
+            if (lay != LAYOUT_OFF && shown(switchForLayout(lay))) {
                 order.add(p);
                 if (lay == LAYOUT_MAP) {
                     mapPage = true;
                 }
             }
         }
-        // never leave the rider with a blank watch
+        // never leave the rider with a blank watch — and since 0.9.18 this is the floor the
+        // seven switches rest on rather than a corner nobody reaches. Turn all seven off and
+        // the standard set is MAIN and nothing else; turn off the eight LAYOUTS as well (dev
+        // only) and it is this hero, which is the page the editor has always fallen back to.
         if (order.size() == 0) {
-            _layout[0] = LAYOUT_HERO;
-            _slot[0] = [M_SPEED, M_FLIGHT_TIMER, M_HR, M_NONE, M_NONE];
-            order.add(0);
+            var p0 = _mainPage();
+            if (p0 >= 0) {
+                order.add(p0);
+            } else {
+                _layout[0] = LAYOUT_HERO;
+                _slot[0] = [M_SPEED, M_FLIGHT_TIMER, M_HR, M_NONE, M_NONE];
+                order.add(0);
+            }
         }
         _order = order;
+    }
+
+    // The first configured page that has no switch — MAIN on a default watch, and on a dev
+    // watch whichever page the editor left un-switchable. It is what the cycle falls back to
+    // when every switch is off, so the rider always has somewhere to stand.
+    function _mainPage() as Number {
+        for (var p = 0; p < MAX_PAGES; p++) {
+            if (_layout[p] != LAYOUT_OFF && switchForLayout(_layout[p]) == SHOW_NONE) {
+                return p;
+            }
+        }
+        return -1;
     }
 
     // The LARGE set, as data. Five LAYOUT_BIG pages carrying BIG_SLOT in slot 1 and nothing
@@ -234,10 +333,21 @@ module PageModel {
             if (p < BIG_PAGES) {
                 _layout[p] = LAYOUT_BIG;
                 row[0] = BIG_SLOT[p];
-                order.add(p);
+                // ...and the screen follows its STANDARD twin's switch (0.9.18). The large
+                // set is the same pages one number at a time, so a rider who has hidden the
+                // Tacks & jibes page has hidden both kind screens here too, and the set does
+                // not need seven switches of its own to say so.
+                if (shown(switchForBigSlot(BIG_SLOT[p]))) {
+                    order.add(p);
+                }
             } else {
                 _layout[p] = LAYOUT_OFF;
             }
+        }
+        // the live SPEED screen has no switch, so this set can never empty — but the floor is
+        // asserted rather than argued (`aShrunkPageSetNeverStrandsAnIndex`)
+        if (order.size() == 0) {
+            order.add(0);
         }
         _order = order;
     }
@@ -397,10 +507,18 @@ module PageModel {
     // "24.3" unambiguous — and a set built for a rider who cannot read the small print must
     // not answer "24.3 what?" in the small print.
     function bigWord(id as Number) as String {
-        if (id == M_SPEED) { return "speed " + AppSettings.speedLabel(); }
+        // "now km/h", not "speed km/h" (Jan, 21 September 2026: "is this current speed or a
+        // record? which metric?"). It is the live speedometer, and the large set sits one
+        // swipe from two RECORD screens in the standard set — so the word has to answer
+        // WHEN as well as what, and "now" is the shortest true answer there is.
+        if (id == M_SPEED) { return "now " + AppSettings.speedLabel(); }
         if (id == M_BEST_2S) { return "best 2s " + AppSettings.speedLabel(); }
         if (id == M_BEST_10S) { return "best 10s " + AppSettings.speedLabel(); }
-        if (id == M_FOIL_PCT) { return "on foil"; }
+        // "time on foil", not "on foil": the number is a share of the MINUTES, and its
+        // distance twin (M_FOIL_DIST_PCT) is the same "%" over a different denominator. A
+        // page that says only "on foil" makes the rider guess which of the two he is reading.
+        if (id == M_FOIL_PCT) { return "time on foil"; }
+        if (id == M_FOIL_DIST_PCT) { return "distance on foil"; }
         if (id == M_TURNS) { return "turns"; }
         if (id == M_CLOCK) { return "time"; }
         if (id == M_DISTANCE) { return "km"; }
@@ -560,24 +678,56 @@ module PageModel {
         return l.equals(unitOf(id)) ? "" : l;
     }
 
-    // ---- the kinds' fly-through line (0.9.17) ----
-    // "flew 9": how many of ONE KIND he kept the foil through. It rides under the kind's own
-    // count on the Tacks & jibes page and under its giant in the large set, in the ladder's
-    // green, because it is the ladder's green count asked of one kind — same numerator rule,
-    // narrower question. Empty for every other metric, and empty at zero: "flew 0" under a
-    // count of 0 is not a fact yet, the same rule the clean-jibe row keeps.
-    const FLEW_PREFIX = "flew ";
+    // ---- the kinds' own outcome row (0.9.17 as one number, the whole ladder since 0.9.18) ----
+    //
+    // 0.9.17 put ONE number under a kind's count — "flew 9" — and Jan's layout review of
+    // 21 September 2026 asked for the rest of it: a kind's page should read like the Turns
+    // page, in the same colour language, so a rider who has learned one row has learned both.
+    // So a kind now carries its own ladder:
+    //
+    //     jibes   ★clean · flew · touch · fell
+    //     tacks           flew · touch · fell
+    //
+    // Tacks have no clean rung and never will: a clean JIBE is what the product is named
+    // after and what `cleanJibeCount` counts (docs/presentation.md "Clean jibe"). A star over
+    // the tack row would be inventing a verdict the engine does not compute.
+    //
+    // These are accessors, not strings: the row is drawn as coloured cells, and a formatted
+    // line would have to throw the colours away to build one.
+
+    function isKind(id as Number) as Boolean {
+        return id == M_JIBES || id == M_TACKS;
+    }
+
+    // The kind's own count — the giant on its page. -1 when the metric is not a kind.
+    function kindCount(id as Number, t as TurnDetector) as Number {
+        if (id == M_JIBES) { return t.jibeCount; }
+        if (id == M_TACKS) { return t.tackCount; }
+        return -1;
+    }
 
     // How many of that kind flew through, or -1 when the metric is not a kind.
-    function flewOfKind(id as Number, t as TurnDetector) as Number {
+    function kindFlew(id as Number, t as TurnDetector) as Number {
         if (id == M_JIBES) { return t.jibeFlewCount; }
         if (id == M_TACKS) { return t.tackFlewCount; }
         return -1;
     }
 
-    function flewLine(id as Number, t as TurnDetector) as String {
-        var n = flewOfKind(id, t);
-        return n <= 0 ? "" : FLEW_PREFIX + n.toString();
+    function kindTouch(id as Number, t as TurnDetector) as Number {
+        if (id == M_JIBES) { return t.jibeTouchCount; }
+        if (id == M_TACKS) { return t.tackTouchCount; }
+        return -1;
+    }
+
+    function kindFell(id as Number, t as TurnDetector) as Number {
+        if (id == M_JIBES) { return t.jibeFellCount; }
+        if (id == M_TACKS) { return t.tackFellCount; }
+        return -1;
+    }
+
+    // The clean-jibe count where the kind has one, -1 where it does not. Only jibes do.
+    function kindClean(id as Number, t as TurnDetector) as Number {
+        return id == M_JIBES ? t.cleanJibeCount : -1;
     }
 
     // "now / best" — the live dry streak beside the session's longest. One string so it fits

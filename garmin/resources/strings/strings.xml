@@ -65,4 +65,12 @@
     <string id="SetPageSetNote">Standard shows eight screens with several numbers each. Large text shows seven screens with one big number and its word. Pick large text if the standard screens are hard to read on the water.</string>
     <string id="PageSetStandard">Standard</string>
     <string id="PageSetLarge">Large text</string>
+    <string id="SetShowFoil">Show the Foil page</string>
+    <string id="SetShowRecords">Show the Records page</string>
+    <string id="SetShowTurns">Show the Turns page</string>
+    <string id="SetShowKinds">Show the Tacks and jibes page</string>
+    <string id="SetShowClock">Show the Clock page</string>
+    <string id="SetShowStory">Show the Story page</string>
+    <string id="SetShowMap">Show the Map page</string>
+    <string id="SetShowPagesNote">Turn off a screen you never read. The Main screen always stays. The large text screens and the pages after a save follow these switches.</string>
 </strings>

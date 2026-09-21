@@ -181,10 +181,10 @@ function SessionPackEncoding(entryCms as Number, exitCms as Number,
     return entryCms * 65536 + minFlightS * 2048 + exitCms;
 }
 
-// The Turns page, rebuilt in 0.8.2: header · the TALLY as the giant · both streaks · the
-// outcome strip · the verdict with its port/starboard entry split. Five rows on a round glass,
-// two of which (the strip and the verdict) live deep in the bottom arc where the chord has
-// collapsed to about two thirds of the diameter — which is exactly why they are measured here.
+// The Turns page, re-cut in 0.9.18: the four-word LEGEND · the LADDER ROW (clean · flew ·
+// touch · fell) · the outcome dots · both streaks · the port/starboard entry split. Five rows
+// on a round glass, and the wide one is lifted onto the equator (`turnsBias`) with the three
+// narrow ones below it deep in the bottom arc — which is exactly why they are measured here.
 (:test)
 function turnsPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     var dc = testDc();
@@ -193,108 +193,119 @@ function turnsPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     var pageR = RecordingView.fitRadius(dc, false, false);
 
     var hT = dc.getFontHeight(Graphics.FONT_XTINY);
-    // the giant's band is its INK height since 0.9.2 — the leading around a pinned font is
-    // knowable dead space, and the four rows under it were being pushed down by all of it
+    // the ladder row's band is its INK height since 0.9.2 — the leading around a pinned font
+    // is knowable dead space, and the rows under it were being pushed down by all of it
     var hG = RecordingView.inkH(dc, Graphics.FONT_NUMBER_MEDIUM);
-    var hK = dc.getFontHeight(Graphics.FONT_MEDIUM);
     var hD = RecordingView.stripBandH(dc);
+    var hK = dc.getFontHeight(Graphics.FONT_MEDIUM);
     var hS = dc.getFontHeight(TEXT_FONTS[VERDICT_FROM]);
-    // 0.9.5: the clean-jibe row's band, between the giant and the streaks.
-    var hC = dc.getFontHeight(TEXT_FONTS[CLEAN_FROM]);
+    var bias = RecordingView.turnsBias(pageR, hT, hG, hD, hK, hS);
+    var gs = Glyphs.size(dc);
 
-    // row 0: header, widest with a wind axis set
-    // The widest form the header can take: 0.9.0 marks an axis the watch estimated with a
-    // leading "~", so the worst case gained a character.
-    var header = RecordingView.turnsHeader(dc, "~NNE", radius.toNumber(),
-        RecordingView.turnsRowY(cy, hT, hG, hC, hK, hD, hS, 0) - cy);
-    var r = cornerRadius(dc.getTextWidthInPixels(header, Graphics.FONT_XTINY), hT,
-        RecordingView.turnsRowY(cy, hT, hG, hC, hK, hD, hS, 0), cy);
-    Test.assertMessage(r <= radius, "header corner " + r.format("%.0f") + " > " + radius);
+    // row 0: the legend — four words in four inks, plus the wind mark. It sheds CONTENT and
+    // never size (FONT_XTINY is already the bottom of the ladder), so what is measured is
+    // whichever form the renderer would actually choose at this depth.
+    var y0 = RecordingView.turnsRowY(cy, hT, hG, hD, hK, hS, bias, 0);
+    var hBudget = RecordingView.rowBudget(pageR, y0 - cy,
+        RecordingView.inkH(dc, Graphics.FONT_XTINY));
+    var got = RecordingView.ladderHeaderContent(dc, gs, hBudget, true);
+    var sep = (got & LADDER_HEAD_SEPARATORS) != 0
+        ? LADDER_HEAD_SEP : LADDER_HEAD_SEP_NARROW;
+    var withMark = (got & LADDER_HEAD_MARK) != 0;
+    var r = cornerRadius(RecordingView.ladderHeaderWidth(dc, gs, withMark, sep), hT, y0, cy);
+    Test.assertMessage(r <= radius, "legend corner " + r.format("%.0f") + " > " + radius);
+    // the FOUR WORDS are the legend and never go: they are what explains four colours
+    Test.assertMessage(
+        RecordingView.ladderHeaderWidth(dc, gs, false, LADDER_HEAD_SEP_NARROW) <= hBudget,
+        "not even the four bare words fit the legend row: "
+            + RecordingView.ladderHeaderWidth(dc, gs, false,
+                LADDER_HEAD_SEP_NARROW).toString() + "px of " + hBudget.toString());
+    // shedding has to be cheaper than not shedding, in that order
+    Test.assertMessage(
+        RecordingView.ladderHeaderWidth(dc, gs, true, LADDER_HEAD_SEP_NARROW)
+            < RecordingView.ladderHeaderWidth(dc, gs, true, LADDER_HEAD_SEP),
+        "narrow separators must save width");
+    Test.assertMessage(
+        RecordingView.ladderHeaderWidth(dc, gs, false, sep)
+            < RecordingView.ladderHeaderWidth(dc, gs, true, sep),
+        "the wind mark costs the legend nothing, so it is not being drawn");
+    // the AMOLED glasses have room for all of it, mark and middots both
+    if (screenPx() >= 416) {
+        Test.assertEqual(got, LADDER_HEAD_MARK | LADDER_HEAD_SEPARATORS);
+    }
+    logger.debug("legend: " + RecordingView.ladderHeaderWidth(dc, gs, withMark, sep).toString()
+        + "px of " + hBudget.toString() + ", mark " + (withMark ? "on" : "dropped")
+        + ", separators " + ((got & LADDER_HEAD_SEPARATORS) != 0 ? "on" : "narrow"));
 
-    // row 1: the GIANT is the tally itself — flew · touched · swam, three counts in the three
-    // ladder colours. Measured at its worst case (three two-digit counts) and at the shipped
-    // session's own (35/8/8), because the first says it never clips and the second says the
-    // page a rider actually sees is not permanently stepped down.
-    var y1 = RecordingView.turnsRowY(cy, hT, hG, hC, hK, hD, hS, 1);
+    // row 1: the LADDER ROW — ★clean · flew · touched · fell, four counts in four inks.
+    // Measured at its worst case (four two-digit counts) and at the shipped session's own,
+    // because the first says it never clips and the second says the page a rider actually
+    // sees is not permanently stepped down.
+    var y1 = RecordingView.turnsRowY(cy, hT, hG, hD, hK, hS, bias, 1);
     var gBudget = RecordingView.rowBudget(pageR, y1 - cy,
         RecordingView.inkH(dc, Graphics.FONT_NUMBER_MEDIUM));
-    var worstF = RecordingView.giantTallyFont(dc, "99", "99", "99", gBudget);
-    r = cornerRadius(RecordingView.giantTallyWidth(dc, "99", "99", "99", worstF),
+    var worst = RecordingView.ladderOf(99, 99, 99, 99);
+    var worstF = RecordingView.ladderRowFont(dc, worst, gs, gBudget, LADDER_FROM);
+    r = cornerRadius(RecordingView.ladderRowWidth(dc, worst, gs, worstF),
         RecordingView.inkH(dc, worstF), y1, cy);
     Test.assertMessage(r <= pageR,
-        "giant tally corner " + r.format("%.0f") + " > " + pageR.toString());
+        "ladder row corner " + r.format("%.0f") + " > " + pageR.toString());
     // a count is a value: the ladder may step down, never below the readability floor
     Test.assertMessage(dc.getFontHeight(worstF) >= dc.getFontHeight(
         RecordingView.numberLadderIsSmall(dc) ? Graphics.FONT_NUMBER_MILD : Graphics.FONT_SMALL),
-        "giant tally fell below FONT_SMALL");
+        "ladder row fell below FONT_SMALL");
     // and it must still be a NUMBER font for the session the app was designed against
-    var realF = RecordingView.giantTallyFont(dc, "35", "8", "8", gBudget);
+    var real = RecordingView.ladderOf(12, 35, 8, 8);
+    var realF = RecordingView.ladderRowFont(dc, real, gs, gBudget, LADDER_FROM);
     Test.assertMessage(dc.getFontHeight(realF) >= dc.getFontHeight(Graphics.FONT_NUMBER_MILD),
-        "the giant tally is not a giant on a real session");
-    r = cornerRadius(RecordingView.giantTallyWidth(dc, "35", "8", "8", realF),
+        "the ladder row is not a giant on a real session");
+    r = cornerRadius(RecordingView.ladderRowWidth(dc, real, gs, realF),
         RecordingView.inkH(dc, realF), y1, cy);
     Test.assertMessage(r <= pageR,
-        "giant tally (real) corner " + r.format("%.0f") + " > " + pageR.toString());
+        "ladder row (real) corner " + r.format("%.0f") + " > " + pageR.toString());
     // the separator is a drawn dot, not punctuation — the number fonts have none — so its
     // slot has to scale with whatever font the row landed in
     Test.assertMessage(RecordingView.giantSepW(dc, realF) > RecordingView.giantSepR(dc, realF),
         "the separator dot does not fit its own slot");
+    // a starless ladder (the tack row) is strictly narrower than a starred one
     Test.assertMessage(
-        RecordingView.giantTallyWidth(dc, "9", "9", "9", realF)
-            < RecordingView.giantTallyWidth(dc, "99", "99", "99", realF),
-        "one-digit counts are not narrower than two-digit ones");
-    logger.debug("turns giant: worst " + dc.getFontHeight(worstF).toString() + "px, real "
+        RecordingView.ladderRowWidth(dc, RecordingView.ladderOf(-1, 35, 8, 8), gs, realF)
+            < RecordingView.ladderRowWidth(dc, RecordingView.ladderOf(12, 35, 8, 8), gs,
+                realF),
+        "the star group costs the row nothing");
+    logger.debug("ladder row: worst " + dc.getFontHeight(worstF).toString() + "px, real "
         + dc.getFontHeight(realF).toString() + "px (NUMBER_MEDIUM is " + hG.toString() + ")");
 
-    // row 2: the CLEAN JIBE row — "★ 99  99.9 CPH". Worst case is a three-figure session's
-    // two-digit count beside a two-digit rate; the rate half is DROPPED rather than shrunk,
-    // and, like the verdict row's side split, that decision is made at the FLOOR font.
-    var y2 = RecordingView.turnsRowY(cy, hT, hG, hC, hK, hD, hS, 2);
-    var gs = Glyphs.size(dc);
-    var cBudget = RecordingView.rowBudget(pageR, y2 - cy,
-        RecordingView.inkH(dc, TEXT_FONTS[CLEAN_FROM]));
-    var cRate = RecordingView.cleanRowWidth(dc, gs, "99", "99.9", true,
-        TEXT_FONTS[TALLY_FLOOR]) <= cBudget;
-    var cf = RecordingView.cleanRowFont(dc, gs, "99", "99.9", cRate, cBudget);
-    r = cornerRadius(RecordingView.cleanRowWidth(dc, gs, "99", "99.9", cRate, cf),
-        RecordingView.inkH(dc, cf), y2, cy);
-    Test.assertMessage(r <= pageR,
-        "clean row corner " + r.format("%.0f") + " > " + pageR.toString());
-    // a count is a value: this row keeps the same floor every other count on the watch keeps
-    Test.assertMessage(dc.getFontHeight(cf) >= dc.getFontHeight(Graphics.FONT_SMALL),
-        "the clean-jibe row fell below FONT_SMALL");
-    Test.assertMessage(dc.getFontHeight(cf) <= hC,
-        "the clean-jibe row is taller than the band it was stacked with");
-    // the MARK AND THE COUNT must always fit — they are the row's reason to exist, and the
-    // rate is what it gives up to keep them
-    Test.assertMessage(
-        RecordingView.cleanRowWidth(dc, gs, "99", "99.9", false, TEXT_FONTS[TALLY_FLOOR])
-            <= cBudget, "not even the star and the count fit the clean-jibe row");
-    Test.assertMessage(
-        RecordingView.cleanRowWidth(dc, gs, "12", "4.6", false, cf)
-            < RecordingView.cleanRowWidth(dc, gs, "12", "4.6", true, cf),
-        "dropping the rate must save width");
-    // ...and on every glass wide enough to be an AMOLED product the RATE has to survive: CPH
-    // is the number 0.9.5 exists to put on the wrist, and the shipped session's own form
-    // ("★ 12  4.6 CPH") is far short of the worst case measured above.
-    if (screenPx() >= 416) {
-        Test.assertMessage(
-            RecordingView.cleanRowWidth(dc, gs, "12", "4.6", true, TEXT_FONTS[TALLY_FLOOR])
-                <= cBudget,
-            "CPH does not fit a " + screenPx().toString() + "px glass: "
-                + RecordingView.cleanRowWidth(dc, gs, "12", "4.6", true,
-                    TEXT_FONTS[TALLY_FLOOR]).toString()
-                + "px of " + cBudget.toString());
-    }
-    logger.debug("clean row: "
-        + RecordingView.cleanRowWidth(dc, gs, "12", "4.6", cRate, cf).toString() + "px of "
-        + cBudget.toString() + " at font height " + dc.getFontHeight(cf).toString()
-        + ", rate " + (cRate ? "on" : "dropped"));
+    // ...and THE WIDEST LINE IS ON THE EQUATOR. That is the round-glass rule of this round
+    // (docs/presentation.md), and it is a geometric claim the stack either keeps or does not:
+    // the ladder row's ink has to straddle cy. The lift is capped, so on a glass where the cap
+    // binds the row is merely closer to the equator than the other four rows are — which is
+    // the other half of the claim and is what is asserted here.
+    Test.assertMessage(y1 - RecordingView.inkH(dc, realF) / 2 <= cy
+            && y1 + RecordingView.inkH(dc, realF) / 2 >= cy,
+        "the ladder row does not straddle the equator: y=" + y1.toString()
+            + " ink=" + RecordingView.inkH(dc, realF).toString() + " cy=" + cy.toString());
 
-    // row 3: BOTH streaks — "streak: 99/99  99/99". ONE grey caption for the row now, the two
-    // runs told apart by the ladder's own inks rather than by two words. Worst case is four
-    // two-digit numbers, and it is strictly narrower than the two-caption row it replaced.
-    var y3 = RecordingView.turnsRowY(cy, hT, hG, hC, hK, hD, hS, 3);
+    // row 2: the outcome strip. It is a texture, not a census — it shows the most recent dots
+    // that fit — so what is asserted is that the band it reserves clears the glass and that a
+    // long session really does drop the oldest rather than overflow. It sits directly under
+    // the counts it is the texture of since 0.9.18, which is also its widest available depth.
+    var y2 = RecordingView.turnsRowY(cy, hT, hG, hD, hK, hS, bias, 2);
+    var stripW = RecordingView.rowBudget(pageR, y2 - cy, hD);
+    var shown = RecordingView.dotsShown(64, stripW);
+    Test.assertMessage(shown >= 8,
+        "the strip row holds only " + shown.toString() + " dots");
+    Test.assertMessage(shown <= 64, "the strip claims more dots than the log holds");
+    var pitch = 2 * TL_DOT_R + TL_DOT_GAP;
+    r = cornerRadius(shown * pitch - TL_DOT_GAP, 2 * TL_DOT_R, y2, cy);
+    Test.assertMessage(r <= pageR,
+        "strip corner " + r.format("%.0f") + " > " + pageR.toString());
+    Test.assertEqual(RecordingView.dotsShown(3, stripW), 3);   // short sessions show them all
+
+    // row 3: BOTH streaks — "streak: 99/99  99/99". ONE caption for the row, the two runs told
+    // apart by the ladder's own inks rather than by two words. Worst case is four two-digit
+    // numbers.
+    var y3 = RecordingView.turnsRowY(cy, hT, hG, hD, hK, hS, bias, 3);
     var kBudget = RecordingView.rowBudget(pageR, y3 - cy,
         RecordingView.inkH(dc, Graphics.FONT_MEDIUM));
     var kf = RecordingView.streakRow2Font(dc, "99", "99", "99", "99", kBudget, true);
@@ -304,96 +315,61 @@ function turnsPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
         "streak row corner " + r.format("%.0f") + " > " + pageR.toString());
     Test.assertMessage(dc.getFontHeight(kf) >= dc.getFontHeight(Graphics.FONT_SMALL),
         "streak row fell below FONT_SMALL");
-    // the post-save form drops "the run he is on" and must be narrower for it
+    // the bests-only form is still a form the renderer can draw, and must be narrower
     Test.assertMessage(
         RecordingView.streakRow2Width(dc, "99", "99", "99", "99", kf, false)
             < RecordingView.streakRow2Width(dc, "99", "99", "99", "99", kf, true),
         "dropping the live run must save width");
 
-    // row 4: the outcome strip. It is a texture, not a census — it shows the most recent dots
-    // that fit — so what is asserted is that the band it reserves clears the glass and that a
-    // long session really does drop the oldest rather than overflow.
-    var y4 = RecordingView.turnsRowY(cy, hT, hG, hC, hK, hD, hS, 4);
-    var stripW = RecordingView.rowBudget(pageR, y4 - cy, hD);
-    var shown = RecordingView.dotsShown(64, stripW);
-    Test.assertMessage(shown >= 8,
-        "the strip row holds only " + shown.toString() + " dots");
-    Test.assertMessage(shown <= 64, "the strip claims more dots than the log holds");
-    var pitch = 2 * TL_DOT_R + TL_DOT_GAP;
-    r = cornerRadius(shown * pitch - TL_DOT_GAP, 2 * TL_DOT_R, y4, cy);
-    Test.assertMessage(r <= pageR,
-        "strip corner " + r.format("%.0f") + " > " + pageR.toString());
-    Test.assertEqual(RecordingView.dotsShown(3, stripW), 3);   // short sessions show them all
-
-    // row 5: the verdict and the port/starboard entry split, at its widest — "100% flew" with
-    // two two-digit side counts. The word grew by two glyphs in 0.8.2 (the row now prints the
-    // flew-through share, which agrees with the tally above it by construction), so the 416 px
-    // assertion below is exactly the one that had to be re-measured. The P/S half is DROPPED
-    // rather than shrunk when it does not fit, so the assertion is on whichever form the
-    // renderer would actually choose.
-    // The row's values step down from TEXT_FONTS[VERDICT_FROM] (0.9.2 — they used to be pinned
-    // at the FONT_SMALL floor on a row that had already been given a FONT_MEDIUM band), and
-    // whether the P/S half is kept is decided at the FLOOR: content first, then size.
-    var y5 = RecordingView.turnsRowY(cy, hT, hG, hC, hK, hD, hS, 5);
+    // row 4: the port/starboard entry split, at its widest — two two-digit side counts. The
+    // "% flew" share that used to ride in front of it left the page in 0.9.18 (the ladder row
+    // above already prints both of its inputs), so this row is now the short one it was
+    // always trying to be. It is DROPPED, not shrunk, when it cannot fit at the floor.
+    var y4 = RecordingView.turnsRowY(cy, hT, hG, hD, hK, hS, bias, 4);
     var floorF = TEXT_FONTS[TALLY_FLOOR];
-    var vBudget = RecordingView.rowBudget(pageR, y5 - cy,
+    var vBudget = RecordingView.rowBudget(pageR, y4 - cy,
         RecordingView.inkH(dc, TEXT_FONTS[VERDICT_FROM]));
-    var sides = RecordingView.verdictWidth(dc, "100", "99", "99", true, floorF) <= vBudget;
-    var vf = RecordingView.verdictFont(dc, "100", "99", "99", sides, vBudget);
-    r = cornerRadius(RecordingView.verdictWidth(dc, "100", "99", "99", sides, vf),
-        RecordingView.inkH(dc, vf), y5, cy);
+    var vf = RecordingView.verdictFont(dc, "99", "99", vBudget);
+    r = cornerRadius(RecordingView.verdictWidth(dc, "99", "99", vf),
+        RecordingView.inkH(dc, vf), y4, cy);
     Test.assertMessage(r <= pageR,
-        "verdict corner " + r.format("%.0f") + " > " + pageR.toString());
+        "side-split corner " + r.format("%.0f") + " > " + pageR.toString());
     Test.assertMessage(dc.getFontHeight(vf) >= dc.getFontHeight(floorF),
-        "the verdict row fell below the readability floor");
+        "the side-split row fell below the readability floor");
     Test.assertMessage(dc.getFontHeight(vf) <= hS,
-        "the verdict row is taller than the band it was stacked with");
-    // the verdict alone must ALWAYS fit: it is the row's reason to exist
-    Test.assertMessage(RecordingView.verdictWidth(dc, "100", "99", "99", false, floorF)
-        <= vBudget, "not even '100% flew' fits the verdict row");
-    // ...and on the two AMOLED variants the SIDE SPLIT must survive too. It is the only
-    // number on the page the rider can act on tomorrow, and it was being dropped on the 43 mm
-    // glass by three spaces (" % ok", "P ", " / ") that carried no information.
-    if (screenPx() >= 416) {
-        Test.assertMessage(
-            RecordingView.verdictWidth(dc, "49", "29", "22", true, floorF) <= vBudget,
-            "the port/starboard split does not fit a "
-                + screenPx().toString() + "px glass: "
-                + RecordingView.verdictWidth(dc, "49", "29", "22", true, floorF).toString()
-                + "px of " + vBudget.toString());
-    }
-    Test.assertMessage(RecordingView.verdictWidth(dc, "49", "29", "22", false, floorF)
-        < RecordingView.verdictWidth(dc, "49", "29", "22", true, floorF),
-        "dropping the side split must save width");
+        "the side-split row is taller than the band it was stacked with");
+    // it is the one number on the page a rider can act on tomorrow, so on EVERY glass — not
+    // just the AMOLED ones, which is the assertion the 0.9.18 slimming bought — it has to fit
+    // at the floor font.
+    Test.assertMessage(RecordingView.verdictWidth(dc, "99", "99", floorF) <= vBudget,
+        "the port/starboard split does not fit a " + screenPx().toString() + "px glass: "
+            + RecordingView.verdictWidth(dc, "99", "99", floorF).toString()
+            + "px of " + vBudget.toString());
     // a wider font is a wider row: the ladder has to be monotonic or stepping down is not a fix
     Test.assertMessage(
-        RecordingView.verdictWidth(dc, "49", "29", "22", true, floorF)
-            <= RecordingView.verdictWidth(dc, "49", "29", "22", true,
-                TEXT_FONTS[VERDICT_FROM]),
-        "the verdict row does not get narrower as its font does");
-    logger.debug("verdict row: "
-        + RecordingView.verdictWidth(dc, "49", "29", "22", true, vf).toString() + "px of "
+        RecordingView.verdictWidth(dc, "29", "22", floorF)
+            <= RecordingView.verdictWidth(dc, "29", "22", TEXT_FONTS[VERDICT_FROM]),
+        "the side-split row does not get narrower as its font does");
+    logger.debug("side split: "
+        + RecordingView.verdictWidth(dc, "29", "22", vf).toString() + "px of "
         + vBudget.toString() + " at font height " + dc.getFontHeight(vf).toString()
-        + " (floor " + dc.getFontHeight(floorF).toString() + "), sides "
-        + (sides ? "on" : "dropped"));
+        + " (floor " + dc.getFontHeight(floorF).toString() + ")");
 
-    // the rows must not collide, and the block must be centred
-    var y0 = RecordingView.turnsRowY(cy, hT, hG, hC, hK, hD, hS, 0);
-    Test.assertMessage(y1 - y0 >= (hT + hG) / 2, "header/giant gap");
-    Test.assertMessage(y2 - y1 >= (hG + hC) / 2, "giant/clean gap");
-    Test.assertMessage(y3 - y2 >= (hC + hK) / 2, "clean/streak gap");
-    Test.assertMessage(y4 - y3 >= (hK + hD) / 2, "streak/strip gap");
-    Test.assertMessage(y5 - y4 >= (hD + hS) / 2, "strip/verdict gap");
-    Test.assertMessage((((cy - (y0 - hT / 2)) - ((y5 + hS / 2) - cy)).abs() <= 1),
-        "turns block off centre: " + (cy - (y0 - hT / 2)).toString() + " vs "
-            + ((y5 + hS / 2) - cy).toString());
-    // the whole six-row stack has to be on the glass, top and bottom — the row it gained in
-    // 0.9.5 is paid for out of the page's air, and on the narrowest product there is not much
-    Test.assertMessage(y0 - hT / 2 >= 0 && y5 + hS / 2 <= screenPx(),
+    // the rows must not collide, and the whole stack has to be on the glass top and bottom —
+    // the lift is bought from the empty top arc and must not be spent past the bottom one
+    Test.assertMessage(y1 - y0 >= (hT + hG) / 2, "legend/ladder gap");
+    Test.assertMessage(y2 - y1 >= (hG + hD) / 2, "ladder/strip gap");
+    Test.assertMessage(y3 - y2 >= (hD + hK) / 2, "strip/streak gap");
+    Test.assertMessage(y4 - y3 >= (hK + hS) / 2, "streak/side-split gap");
+    Test.assertMessage(y0 - hT / 2 >= 0 && y4 + hS / 2 <= screenPx(),
         "the turns stack runs off the glass: " + (y0 - hT / 2).toString() + ".."
-            + (y5 + hS / 2).toString() + " of " + screenPx().toString());
+            + (y4 + hS / 2).toString() + " of " + screenPx().toString());
+    // the lift never exceeds its own cap, and never lifts a stack that is already centred
+    Test.assertMessage(bias >= 0 && bias <= pageR * TURNS_BIAS_MAX_PCT / 100,
+        "turns lift " + bias.toString() + " outside its cap");
     logger.debug("turns page rows y=" + y0.toString() + "," + y1.toString() + ","
-        + y2.toString() + "," + y3.toString() + "," + y4.toString() + "," + y5.toString());
+        + y2.toString() + "," + y3.toString() + "," + y4.toString()
+        + " lift=" + bias.toString());
     return true;
 }
 
@@ -406,7 +382,7 @@ function tallyRowShedsContentNotSize(logger as Test.Logger) as Boolean {
     var dc = testDc();
     var cy = screenPx() / 2;
     var pageR = RecordingView.fitRadius(dc, false, false);
-    var hC = dc.getFontHeight(Graphics.FONT_NUMBER_MILD);
+    var hC = RecordingView.inkH(dc, MAIN_CLOCK_FONT);
     var hN = RecordingView.mainGiantBand(dc, PageModel.M_BEST_10S);
     var hD = RecordingView.stripBandH(dc);
     var hO = dc.getFontHeight(Graphics.FONT_LARGE);
@@ -437,16 +413,16 @@ function tallyRowShedsContentNotSize(logger as Test.Logger) as Boolean {
             < RecordingView.tallyWidth(dc, "99", "99", "99", "", TURNS_TALLY_SEP, tallyF),
         "dropping the separators must save width");
 
-    // The share is the FLEW-THROUGH share — the green count over the counted turns, so it is
-    // derivable from the tally beside it — and it stays empty until there is a turn to divide
-    // by. (The carried-speed success score left the watch in 0.8.2; it lives in the phone
-    // analysis, where a number that mixes speed retention into an outcome belongs.)
-    Test.assertEqual(RecordingView.flewText(0, 0), "");
-    Test.assertEqual(RecordingView.flewText(2, 1), "50% flew");
-    Test.assertEqual(RecordingView.flewText(3, 3), "100% flew");
-    Test.assertEqual(RecordingView.flewText(51, 35), "68% flew");
+    // What the row does with its captions is LOGGED and not asserted, and that is a finding
+    // rather than a gap: measured on 21 September 2026, the worst case this row can be handed
+    // (three two-digit counts) has dropped its "flew / touch / fell" captions on a 454 px
+    // fenix 8 since they were added in 0.9.11 — the row's budget there is 380 px and the
+    // captioned form needs more. It is the shed-content rule working as written; it is also
+    // three words a 30-turn session never sees, which is the session the words were for. Jan
+    // has the measurement (the 0.9.18 review's open questions); pinning it either way here
+    // would be this round deciding a question that is his.
     logger.debug("main tally at font height " + dc.getFontHeight(tallyF).toString()
-        + ", content mask " + mask.toString());
+        + ", content mask " + mask.toString() + " of budget " + budget.toString());
     return true;
 }
 
@@ -998,20 +974,67 @@ function clockPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     var limit = radius.toFloat();
     var inkN = RecordingView.inkH(dc, Graphics.FONT_NUMBER_THAI_HOT);
     var hN = inkN;                                  // the giant's band IS its ink now
-    var hT = dc.getFontHeight(Graphics.FONT_XTINY);
-    var hV = RecordingView.cellValueBand(dc, true);
-    var inkV = RecordingView.inkH(dc, RecordingView.cellValueFont(true));
     var bias = RecordingView.clockBias(dc);
 
-    var y = RecordingView.clockRowY(cy, hN, hT, hV, 0, bias);
-    var f = RecordingView.fitFont(dc, NUMBER_FONTS, 0, "23:59",
-        RecordingView.rowBudget(radius, y - cy, inkN));
-    var r = cornerRadius(dc.getTextWidthInPixels("23:59", f), RecordingView.inkH(dc, f), y, cy);
-    Test.assertMessage(r <= limit, "clock giant r=" + r.format("%.0f") + " > " + limit);
-    // the lift exists so the clock keeps THAI_HOT despite the taller cell under it
-    Test.assertEqual(f, Graphics.FONT_NUMBER_THAI_HOT);
+    // ---- the DEFAULT page: two numbers, no word (0.9.18) ----
+    // Jan's layout review: "drop the word 'timer'; make both numbers larger (clock largest,
+    // timer second)." The word went because a running m:ss under a time of day IS the session
+    // timer, and the XTINY row it cost sat between two numbers that both wanted it.
+    Test.assertMessage(!RecordingView.clockCellNeedsLabel(PageModel.M_TIMER),
+        "the shipped clock page still spends a row on the word \"timer\"");
+    Test.assertMessage(RecordingView.clockCellNeedsLabel(PageModel.M_HR),
+        "a heart rate under a clock is being drawn with no word at all");
+    var hTd = 0;                                    // no label row on the default page
+    var hVd = RecordingView.clockCellBand(dc, false);
+    var yd = RecordingView.clockRowY(cy, hN, hTd, hVd, 0, bias);
+    var fd = RecordingView.fitFont(dc, NUMBER_FONTS, 0, "23:59",
+        RecordingView.rowBudget(radius, yd - cy, inkN));
+    var rd = cornerRadius(dc.getTextWidthInPixels("23:59", fd),
+        RecordingView.inkH(dc, fd), yd, cy);
+    Test.assertMessage(rd <= limit, "clock giant r=" + rd.format("%.0f") + " > " + limit);
+    Test.assertEqual(fd, Graphics.FONT_NUMBER_THAI_HOT);
     Test.assertMessage(bias > 0, "the clock block is not lifted at all");
+    // the timer takes the band the word vacated: one rung up from the labelled cell's MILD
+    var yvd = RecordingView.clockRowY(cy, hN, hTd, hVd, 1, bias);
+    var dBudget = RecordingView.rowBudget(radius, yvd - cy,
+        RecordingView.inkH(dc, RecordingView.clockCellFont(false)));
+    var tf = RecordingView.fitGiant(dc, PageModel.worstValue(PageModel.M_TIMER),
+        RecordingView.clockCellFrom(false), dBudget);
+    Test.assertMessage(dc.getFontHeight(tf) >= dc.getFontHeight(Graphics.FONT_NUMBER_MILD),
+        "the clock page's timer fell below the rung it had WITH the word: "
+            + dc.getFontHeight(tf).toString() + " in a " + dBudget.toString() + "px row");
+    // ...and the real claim, which is a comparison and not a rung: dropping the word may
+    // never make the number smaller, and on a session of ordinary length it makes it bigger.
+    // The worst case this page can be handed is a six-glyph "199:59" — a three-hour session
+    // — and that one is wider than FONT_NUMBER_MEDIUM's column on every glass, so pinning
+    // the assertion to a rung would be pinning it to a session nobody has.
+    var hVl = RecordingView.clockCellBand(dc, true);
+    var yvl = RecordingView.clockRowY(cy, hN, dc.getFontHeight(Graphics.FONT_XTINY), hVl,
+        1, bias) + (dc.getFontHeight(Graphics.FONT_XTINY) + hVl) / 2;
+    var lBudget = RecordingView.rowBudget(radius, yvl - cy,
+        RecordingView.inkH(dc, RecordingView.clockCellFont(true)));
+    var tfl = RecordingView.fitGiant(dc, PageModel.worstValue(PageModel.M_TIMER),
+        RecordingView.clockCellFrom(true), lBudget);
+    Test.assertMessage(dc.getFontHeight(tf) >= dc.getFontHeight(tfl),
+        "dropping the word made the timer SMALLER: " + dc.getFontHeight(tf).toString()
+            + " against " + dc.getFontHeight(tfl).toString());
+    var tfr = RecordingView.fitGiant(dc, "63:24", RecordingView.clockCellFrom(false), dBudget);
+    var tflr = RecordingView.fitGiant(dc, "63:24", RecordingView.clockCellFrom(true), lBudget);
+    Test.assertMessage(dc.getFontHeight(tfr) >= dc.getFontHeight(tflr),
+        "dropping the word made a real session's timer smaller");
+    var rt = cornerRadius(dc.getTextWidthInPixels(PageModel.worstValue(PageModel.M_TIMER), tf),
+        RecordingView.inkH(dc, tf), yvd, cy);
+    Test.assertMessage(rt <= limit, "clock timer r=" + rt.format("%.0f") + " > " + limit);
+    // ...and the two numbers may not touch, which is the whole risk of taking a row out
+    Test.assertMessage(yvd - RecordingView.inkH(dc, tf) / 2 >= yd + inkN / 2 - 1,
+        "the clock's timer overlaps its digits: " + yvd.toString() + " vs "
+            + (yd + inkN / 2).toString());
 
+    // ---- a LABELLED cell: every other metric a rider can put there ----
+    var hT = dc.getFontHeight(Graphics.FONT_XTINY);
+    var hV = RecordingView.clockCellBand(dc, true);
+    var inkV = RecordingView.inkH(dc, RecordingView.clockCellFont(true));
+    var y = RecordingView.clockRowY(cy, hN, hT, hV, 0, bias);
     var yl = RecordingView.clockRowY(cy, hN, hT, hV, 1, bias);
     // the cell's label must clear the giant's INK, which is what the band was cut down to
     Test.assertMessage(yl - hT / 2 >= y + inkN / 2 - 1,
@@ -1021,27 +1044,85 @@ function clockPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     var big = 0;
     for (var m = 1; m <= PageModel.M_MAX; m++) {
         var v = PageModel.worstValue(m);
-        var vf = RecordingView.cellValueFit(dc, v, budget, true);
+        var vf = RecordingView.fitGiant(dc, v, RecordingView.clockCellFrom(true), budget);
         Test.assertMessage(dc.getFontHeight(vf) >= dc.getFontHeight(
             RecordingView.numberLadderIsSmall(dc) ? Graphics.FONT_NUMBER_MILD : Graphics.FONT_LARGE),
             "clock cell m" + m.toString() + " is smaller than the FONT_LARGE it replaced");
         Test.assertMessage(RecordingView.inkH(dc, vf) <= hV,
             "clock cell m" + m.toString() + " is taller than its band");
-        r = cornerRadius(dc.getTextWidthInPixels(v, vf), RecordingView.inkH(dc, vf), yv, cy);
+        var r = cornerRadius(dc.getTextWidthInPixels(v, vf),
+            RecordingView.inkH(dc, vf), yv, cy);
         Test.assertMessage(r <= limit,
             "clock cell m" + m.toString() + " r=" + r.format("%.0f") + " > " + limit);
         if (dc.getFontHeight(vf) >= dc.getFontHeight(Graphics.FONT_NUMBER_MILD)) { big++; }
     }
-    // the default cell is the session TIMER, and it is the one this page was widened for
-    var tf = RecordingView.cellValueFit(dc, PageModel.worstValue(PageModel.M_TIMER), budget,
-        true);
-    Test.assertMessage(dc.getFontHeight(tf) >= dc.getFontHeight(Graphics.FONT_NUMBER_MILD),
-        "the clock page's timer did not reach FONT_NUMBER_MILD: "
-            + dc.getFontHeight(tf).toString() + " in a " + budget.toString() + "px row");
-    logger.debug("clock giant font height " + dc.getFontHeight(f).toString()
+    logger.debug("clock giant font height " + dc.getFontHeight(fd).toString()
         + " (THAI_HOT is " + dc.getFontHeight(Graphics.FONT_NUMBER_THAI_HOT).toString()
-        + ", lift " + bias.toString() + "), cell budget " + budget.toString() + "px, "
-        + big.toString() + " of " + PageModel.M_MAX.toString() + " metrics at MILD");
+        + ", lift " + bias.toString() + "), timer without the word "
+        + dc.getFontHeight(tf).toString() + "/" + dc.getFontHeight(tfr).toString()
+        + "px (worst/real) against " + dc.getFontHeight(tfl).toString() + "/"
+        + dc.getFontHeight(tflr).toString() + " with it, labelled cells "
+        + big.toString() + " of "
+        + PageModel.M_MAX.toString() + " at MILD");
+    return true;
+}
+
+// ---- the MAP page's odometer, and the WIND MARK (0.9.18) ----
+//
+// Two of Jan's smaller notes, both of the same shape — numbers larger, words smaller. The map
+// caption was FONT_SMALL, the readability FLOOR, on a page whose only number it is; it walks
+// the text ladder from FONT_LARGE now with "km" beside it at FONT_XTINY, and the track square
+// gave up 18 px of side to hang the taller line under. The wind BEARING left the Turns header
+// and came back as a mark with three states.
+(:test)
+function mapOdometerAndWindMarkAreBigEnoughToRead(logger as Test.Logger) as Boolean {
+    var dc = testDc();
+    var cy = screenPx() / 2;
+    var radius = RecordingView.fitRadius(dc, false, false);
+    var limit = radius.toFloat();
+    var box = RecordingView.mapBox(dc, radius);
+    var y = RecordingView.mapCaptionY(dc, box);
+
+    // the caption clears the trail square it is hung under, and the glass under that
+    Test.assertMessage(y - RecordingView.inkH(dc, TEXT_FONTS[0]) / 2 >= cy + box / 2 - 1,
+        "the map caption overlaps the track square");
+    var budget = RecordingView.rowBudget(radius, y - cy, RecordingView.inkH(dc, TEXT_FONTS[0]));
+    var worst = "999.9";
+    var f = RecordingView.mapKmFont(dc, worst, budget);
+    var r = cornerRadius(RecordingView.mapKmWidth(dc, worst, f),
+        RecordingView.inkH(dc, f), y, cy);
+    Test.assertMessage(r <= limit, "map caption corner " + r.format("%.0f") + " > " + limit);
+    // never below the floor it used to be PINNED at, and on a real odometer above it
+    Test.assertMessage(dc.getFontHeight(f) >= dc.getFontHeight(TEXT_FONTS[TALLY_FLOOR]),
+        "the map caption fell below the readability floor");
+    var rf = RecordingView.mapKmFont(dc, "38.4", budget);
+    Test.assertMessage(dc.getFontHeight(rf) > dc.getFontHeight(TEXT_FONTS[TALLY_FLOOR]),
+        "a real odometer is still drawn at the floor font: "
+            + dc.getFontHeight(rf).toString() + "px in " + budget.toString() + "px");
+    // the unit is a WORD and stays smaller than the digits it follows
+    Test.assertMessage(dc.getFontHeight(Graphics.FONT_XTINY) < dc.getFontHeight(rf),
+        "the map's \"km\" is as big as its number");
+    // the square is still worth drawing a track in after giving up its margin
+    Test.assertMessage(box >= screenPx() * 45 / 100,
+        "the map square shrank to " + box.toString() + "px of a "
+            + screenPx().toString() + "px glass");
+
+    // the wind mark: it is drawn inside the s x s box every glyph honours, so the legend's
+    // width model is the whole of it, and it costs the legend exactly one glyph and a gap
+    var gs = Glyphs.size(dc);
+    Test.assertEqual(RecordingView.ladderHeaderWidth(dc, gs, true, LADDER_HEAD_SEP)
+        - RecordingView.ladderHeaderWidth(dc, gs, false, LADDER_HEAD_SEP),
+        gs + LADDER_HEAD_MARK_GAP);
+    // and it is not the outcome ladder's ink: the ladder is a verdict scale and an axis is
+    // not a verdict (docs/presentation.md, "Colour and glyph vocabulary")
+    Test.assertMessage(Graphics.COLOR_WHITE != Ink.ladderFlew()
+        && Ink.dim() != Ink.ladderFlew() && Ink.dim() != Ink.ladderTouchdown()
+        && Ink.dim() != Ink.ladderFellIn(),
+        "the wind mark borrows the outcome ladder");
+    logger.debug("map: box " + box.toString() + "px, caption at "
+        + dc.getFontHeight(rf).toString() + "px (floor "
+        + dc.getFontHeight(TEXT_FONTS[TALLY_FLOOR]).toString() + "), budget "
+        + budget.toString() + "px; wind mark " + gs.toString() + "px");
     return true;
 }
 
@@ -1062,9 +1143,15 @@ function timelinePageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     var spark = RecordingView.sparkH(dc);
     var yStripTop = RecordingView.timelineRowY(cy, hT, strip, spark, 1);
     var ySparkTop = RecordingView.timelineRowY(cy, hT, strip, spark, 3);
-    var yDots = RecordingView.timelineRowY(cy, hT, strip, spark, 5);
+    // 0.9.18: the dot row took row 4 and its caption row 5. The two TALL bands keep their
+    // caption above them (a caption over an envelope says what the envelope is before it is
+    // read); the DOTS are the widest thing on the page, so theirs went underneath and the
+    // dots moved up into the width the caption above them was costing.
+    var yDots = RecordingView.timelineRowY(cy, hT, strip, spark, 4);
+    var yDotCap = RecordingView.timelineRowY(cy, hT, strip, spark, 5);
     Test.assertMessage(ySparkTop >= yStripTop + strip + hT, "strip/spark overlap");
-    Test.assertMessage(yDots - TL_DOT_R >= ySparkTop + spark + hT, "spark/dots overlap");
+    Test.assertMessage(yDots - TL_DOT_R >= ySparkTop + spark, "spark/dots overlap");
+    Test.assertMessage(yDotCap - hT / 2 >= yDots + TL_DOT_R, "dots/caption overlap");
 
     var hwStrip = RecordingView.bandHalfWidth(radius, yStripTop, yStripTop + strip, cy);
     var hwSpark = RecordingView.bandHalfWidth(radius, ySparkTop, ySparkTop + spark, cy);
@@ -1113,7 +1200,7 @@ function timelinePageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     // shallower depths than the bands they name, but the widest of them is measured here so a
     // future rewording cannot quietly run off the glass.
     var caps = ["on foil %", "top speed km/h", "turns"];
-    var capRows = [0, 2, 4];
+    var capRows = [0, 2, 5];
     for (var i = 0; i < caps.size(); i++) {
         var yc = RecordingView.timelineRowY(cy, hT, strip, spark, capRows[i]);
         r = cornerRadius(dc.getTextWidthInPixels(caps[i], Graphics.FONT_XTINY),
@@ -3021,9 +3108,13 @@ function mainPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     var cy = screenPx() / 2;
     var radius = RecordingView.fitRadius(dc, true, false);
     var limit = radius.toFloat();
-    // 0.9.2: the clock's band is FONT_NUMBER_MILD (the rider asked for a bigger time of day)
-    // and the giant's band is its INK height, which is where the 42 px came from.
-    var hC = dc.getFontHeight(Graphics.FONT_NUMBER_MILD);
+    // 0.9.2 gave the clock FONT_NUMBER_MILD's LINE for a band (the rider asked for a bigger
+    // time of day) and the giant its INK height, which is where the 42 px came from. 0.9.18
+    // gives the clock a rung more of digit and bands it on its OWN ink, which on a fenix 8 is
+    // 114 px against MILD's 113 — a whole font size for one pixel of stack. Banding it on
+    // FONT_NUMBER_MEDIUM's line instead would cost 30, and what those 30 px buy is the tally
+    // row's three captions, which is not a trade a clock wins.
+    var hC = RecordingView.inkH(dc, MAIN_CLOCK_FONT);
     // 0.9.13: the giant's band is its ink OR its two-line suffix block, whichever is taller
     // (mainGiantBand) — the default slot's here, each slot's own in the loop below
     var hN = RecordingView.mainGiantBand(dc, PageModel.M_BEST_10S);
@@ -3048,18 +3139,21 @@ function mainPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     Test.assertMessage((((cy - (y0 - hC / 2)) - ((y4 + hK / 2) - cy)).abs() <= 1),
         "main block off centre: " + (cy - (y0 - hC / 2)).toString() + " vs "
             + ((y4 + hK / 2) - cy).toString());
+    Test.assertMessage(y0 - hC / 2 >= 0 && y4 + hK / 2 <= 2 * cy,
+        "the main stack runs off the glass: " + (y0 - hC / 2).toString() + ".."
+            + (y4 + hK / 2).toString());
 
     // row 0 — the clock, and the PAUSED word that replaces it. Both must fit the same row.
     // The band is FONT_NUMBER_MILD since 0.9.2 and the row is fitted through the NUMBER ladder
     // with a fall-back into the text fonts, so the clock gets the digits and the WORD that
     // replaces it (which is wider, and has no glyphs in a number font) steps down as before.
-    var inkC = RecordingView.inkH(dc, Graphics.FONT_NUMBER_MILD);
+    var inkC = RecordingView.inkH(dc, MAIN_CLOCK_FONT);
     var tops = ["23:59", PAUSED_TEXT];
     for (var i = 0; i < tops.size(); i++) {
         var budget0 = RecordingView.rowBudget(radius, y0 - cy, inkC);
         // 0.9.13: the WORD never walks the number ladder (no letters there — the fenix 5
         // Plus family drew six boxes), and it starts at the text rung whose ink fits hC
-        var f = i == 0 ? RecordingView.fitGiant(dc, tops[i], 3, budget0)
+        var f = i == 0 ? RecordingView.mainClockFont(dc, radius, y0, cy)
             : RecordingView.fitFont(dc, TEXT_FONTS, RecordingView.textFontFrom(dc, hC),
                 tops[i], budget0);
         var r = cornerRadius(dc.getTextWidthInPixels(tops[i], f),
@@ -3073,14 +3167,24 @@ function mainPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
             "main row0 '" + tops[i] + "' is taller than the band it was stacked with");
     }
     // ...and the clock itself must reach the rung the row was widened for
-    var clockF = RecordingView.fitGiant(dc, "23:59", 3,
-        RecordingView.rowBudget(radius, y0 - cy, inkC));
+    var clockF = RecordingView.mainClockFont(dc, radius, y0, cy);
     Test.assertMessage(dc.getFontHeight(clockF) >= dc.getFontHeight(Graphics.FONT_NUMBER_MILD),
         "the clock did not reach FONT_NUMBER_MILD: " + dc.getFontHeight(clockF).toString()
-            + " in a " + RecordingView.rowBudget(radius, y0 - cy, inkC).toString() + "px row");
+            + " in a " + RecordingView.rowBudget(radius, y0 - cy,
+                RecordingView.inkH(dc, clockF)).toString() + "px row");
     Test.assertMessage(RecordingView.numberLadderIsSmall(dc)
         || dc.getFontHeight(clockF) > dc.getFontHeight(Graphics.FONT_LARGE),
         "the clock is no larger than the FONT_LARGE it used to be");
+    // the own-ink fitter may only ever find the same font or a BIGGER one than the flat
+    // fitter the rest of the app uses — that is what makes it safe to introduce here
+    Test.assertMessage(dc.getFontHeight(clockF) >= dc.getFontHeight(
+        RecordingView.fitGiant(dc, "23:59", MAIN_CLOCK_FROM,
+            RecordingView.rowBudget(radius, y0 - cy, inkC))),
+        "the own-ink fitter came out smaller than the flat one");
+    logger.debug("main clock \"23:59\" at font height " + dc.getFontHeight(clockF).toString()
+        + " (MEDIUM " + dc.getFontHeight(Graphics.FONT_NUMBER_MEDIUM).toString()
+        + ", MILD " + dc.getFontHeight(Graphics.FONT_NUMBER_MILD).toString() + "), band "
+        + hC.toString());
 
     // row 1 — the giant, which is now a catalog SLOT (best 10 s by default) with its unit and
     // caption inline beside the digits. Every metric the slot can hold is measured, at its
@@ -3245,17 +3349,19 @@ function summaryPagesFitRoundDisplay(logger as Test.Logger) as Boolean {
 
     // Every HERO-shaped page's worst-case content, through the same fitters SummaryView draws
     // with. The arc flag matters: the Verdict page paints the foil arc, so it gets a tighter
-    // radius. S4 (turns) is not in this list any more — it is the live Turns page verbatim
-    // and is measured by turnsPageFitsRoundDisplay, which is the point of reusing it.
+    // radius.
     //
-    // S3's two rows swapped in 0.8.2: the LONGEST FLIGHT's duration and distance now sit
-    // together, with the flight count below them. With the count between them the eye read
-    // "7:04 · 31 · 2.2 km" as one series and the distance looked like the session's.
-    var giants = ["100%", "99.9", "199:59", "99/99"];
-    var arcs = [true, false, false, false];
-    var units = ["on foil", "best 2s km/h", "longest flight", "takeoffs"];
-    var rows1 = ["199:59 foil", "10s 99.9", "99.9 km longest", "99.9 to foil"];
-    var rows2 = ["of 199:59", "99.9 km", "999 flights", "+199 bpm"];
+    // The list keeps shrinking, and that is the point. S3 (foil), S4 (turns), S5 (tacks &
+    // jibes), S7 (story) and S8 (track) are their live pages verbatim and are measured by
+    // those pages' own tests; 0.9.18 took S2 with them (it is `drawRecordsBody` now, measured
+    // by recordsPageFitsRoundDisplay) and gave S6 a shape of its own
+    // (takeoffPageSaysWhatItCounts). What is left here is S1, the one page that is genuinely
+    // post-save and has no live twin to be measured against.
+    var giants = ["100%"];
+    var arcs = [true];
+    var units = ["on foil"];
+    var rows1 = ["199:59 foil"];
+    var rows2 = ["of 199:59"];
     for (var i = 0; i < giants.size(); i++) {
         var radius = RecordingView.fitRadius(dc, false, arcs[i]);
         var limit = radius.toFloat();
@@ -3355,12 +3461,15 @@ function summaryPagesFitRoundDisplay(logger as Test.Logger) as Boolean {
     // pixels on its longer axis, so `box` itself must sit inside the glass.
     var box = SummaryView.trackBox(dc);
     Test.assertMessage(box <= screenPx(), "track box wider than the glass");
-    // The distance caption is a VALUE and moved from FONT_XTINY to FONT_SMALL in 0.8.2 — the
-    // one place in the app where a number was drawn at a label's size. The taller line has to
-    // clear the page-position dots on the bottom arc, which is what the box gave up 34 px of
-    // margin to pay for. Assert both ends of that trade.
+    // The distance caption is a VALUE. It moved from FONT_XTINY to FONT_SMALL in 0.8.2 — the
+    // one place in the app where a number was drawn at a label's size — and in 0.9.18 it
+    // became the LIVE MAP PAGE'S caption verbatim, digits on the text ladder from FONT_LARGE
+    // with "km" small beside them. That is the last seam in a page that is otherwise the live
+    // map already; what it costs is one more line of margin off the square, measured from the
+    // two font heights rather than re-authored. The taller line has to clear the page dots on
+    // the bottom arc, so assert both ends of that trade.
     var capY = SummaryView.trackCaptionY(dc);
-    var capInk = RecordingView.inkH(dc, Graphics.FONT_SMALL);
+    var capInk = RecordingView.inkH(dc, TEXT_FONTS[0]);
     Test.assertMessage(capY - capInk / 2 >= cy + box / 2,
         "the track caption overlaps the track box");
     Test.assertMessage(capY + capInk / 2 < screenPx() - SummaryView.dotBand(dc)
@@ -3368,10 +3477,16 @@ function summaryPagesFitRoundDisplay(logger as Test.Logger) as Boolean {
         "the track caption (" + (capY + capInk / 2).toString() + ") reaches the page dots ("
             + (screenPx() - SummaryView.dotBand(dc) - SummaryView.dotRadius(dc)).toString()
             + ")");
-    var rCap = cornerRadius(dc.getTextWidthInPixels("99.9 km", Graphics.FONT_SMALL), capInk,
-        capY, cy);
-    Test.assertMessage(rCap <= RecordingView.fitRadius(dc, false, false).toFloat(),
+    // it is drawn by the live map's own renderer, at whatever rung that fitter lands on
+    var capR = RecordingView.fitRadius(dc, false, false);
+    var capF = RecordingView.mapKmFont(dc, "99.9",
+        RecordingView.rowBudget(capR, capY - cy, capInk));
+    var rCap = cornerRadius(RecordingView.mapKmWidth(dc, "99.9", capF),
+        RecordingView.inkH(dc, capF), capY, cy);
+    Test.assertMessage(rCap <= capR.toFloat(),
         "track caption corner " + rCap.format("%.0f") + " off the glass");
+    Test.assertMessage(dc.getFontHeight(capF) >= dc.getFontHeight(TEXT_FONTS[TALLY_FLOOR]),
+        "the track caption fell below the readability floor");
     Test.assertMessage(cornerRadius(box, box, cy, cy)
         <= RecordingView.fitRadius(dc, false, false).toFloat() + 1.0,
         "track box corners off the glass");
@@ -3472,6 +3587,59 @@ function summaryPagesBuildAndRenderHeadless(logger as Test.Logger) as Boolean {
     Test.assertEqual(SummaryNav.index, SummaryNav.count() - 1);
     SummaryNav.step(1);
     Test.assertEqual(SummaryNav.index, 0);
+
+    // ---- and the SHOW SWITCHES take the after-save pages with them (0.9.18) ----
+    // The review is the live pages, so it follows the same seven switches. Asserted one at a
+    // time, and on the page IDS rather than on a count, because what can go wrong here is a
+    // switch wired to its neighbour.
+    var shownBefore = [true, true, true, true, true, true, true];
+    for (var i = 0; i < AppSettings.pageShown.size(); i++) {
+        shownBefore[i] = AppSettings.pageShown[i];
+    }
+    var sSw = [PageModel.SHOW_RECORDS, PageModel.SHOW_FOIL, PageModel.SHOW_TURNS,
+        PageModel.SHOW_KINDS, PageModel.SHOW_STORY, PageModel.SHOW_MAP] as Array<Number>;
+    var sPage = [SummaryNav.S_SPEED, SummaryNav.S_FOIL, SummaryNav.S_TURNS,
+        SummaryNav.S_KINDS, SummaryNav.S_STORY, SummaryNav.S_TRACK] as Array<Number>;
+    for (var s = 0; s < sSw.size(); s++) {
+        AppSettings.pageShown[sSw[s]] = false;
+        SummaryNav.build(c);
+        for (var i = 0; i < SummaryNav.count(); i++) {
+            Test.assertMessage(SummaryNav.pageAt(i) != sPage[s],
+                "summary switch " + s.toString() + " off and the page is still there");
+        }
+        // SAVED is never the one that goes, and it is always first
+        Test.assertEqual(SummaryNav.pageAt(0), SummaryNav.S_VERDICT);
+        // ...and every remaining page still paints
+        for (var i = 0; i < SummaryNav.count(); i++) {
+            SummaryNav.index = i;
+            view.onUpdate(dc);
+        }
+        AppSettings.pageShown[sSw[s]] = true;
+    }
+    // S6 TAKEOFFS follows FOIL — it is the one after-save page with no live twin, and what it
+    // counts is how often he got onto the foil
+    AppSettings.pageShown[PageModel.SHOW_FOIL] = false;
+    SummaryNav.build(c);
+    for (var i = 0; i < SummaryNav.count(); i++) {
+        Test.assertMessage(SummaryNav.pageAt(i) != SummaryNav.S_TAKEOFFS,
+            "the takeoffs page does not follow the foil switch");
+    }
+    AppSettings.pageShown[PageModel.SHOW_FOIL] = true;
+    // every switch off: the review is SAVED and nothing else, and it still paints
+    for (var i = 0; i < AppSettings.pageShown.size(); i++) {
+        AppSettings.pageShown[i] = false;
+    }
+    SummaryNav.build(c);
+    Test.assertMessage(SummaryNav.count() == 1,
+        "every switch off leaves " + SummaryNav.count().toString() + " summary pages, not 1");
+    Test.assertEqual(SummaryNav.pageAt(0), SummaryNav.S_VERDICT);
+    SummaryNav.index = 0;
+    view.onUpdate(dc);
+    Test.assertEqual(SummaryNav.wrap(7), 0);        // and an index past the end still clamps
+    for (var i = 0; i < AppSettings.pageShown.size(); i++) {
+        AppSettings.pageShown[i] = shownBefore[i];
+    }
+    SummaryNav.build(c);
 
     // a degenerate track (all points identical) must still paint
     for (var i = 0; i < 8; i++) {
@@ -3779,7 +3947,7 @@ function autoWindReplayFixtures(logger as Test.Logger) as Boolean {
             + " deg, engine says " + engine.format("%.2f") + " (" + err.format("%.1f")
             + " deg, band is +-20)");
         // "Never flips after lock" is the assertion that matters most: a flip would relabel
-        // every tack as a jibe, and the one-shot backfill has already been spent by then.
+        // every tack as a jibe, and a rebuild would re-type the whole session against it.
         Test.assertMessage(maxStep <= 90.0, name + ": the axis flipped after locking, largest"
             + " adopted step " + maxStep.format("%.1f") + " deg");
         Test.assertMessage(aw.distanceM > 5000.0,
@@ -3940,14 +4108,18 @@ function mapPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     Test.assertMessage(rBox <= limit + 1.0,
         "map box corners r=" + rBox.format("%.0f") + " > " + limit);
 
-    // the distance caption hangs off the bottom of the box and is a VALUE, so FONT_SMALL is
-    // its floor — it may not overlap the track and it may not run off the glass
+    // the distance caption hangs off the bottom of the box. It is a VALUE and walks the text
+    // ladder from FONT_LARGE down to the FONT_SMALL floor since 0.9.18 (it was pinned AT the
+    // floor before), with "km" small beside it — so its BAND is FONT_LARGE's line whatever
+    // rung the digits land on. It may not overlap the track and may not run off the glass.
     var capY = RecordingView.mapCaptionY(dc, box);
-    var capInk = RecordingView.inkH(dc, Graphics.FONT_SMALL);
+    var capInk = RecordingView.inkH(dc, TEXT_FONTS[0]);
     Test.assertMessage(capY - capInk / 2 >= cy + box / 2 - 1,
         "the map caption overlaps the track box");
-    var rCap = cornerRadius(dc.getTextWidthInPixels("99.9 km", Graphics.FONT_SMALL), capInk,
-        capY, cy);
+    var capF = RecordingView.mapKmFont(dc, "999.9",
+        RecordingView.rowBudget(radius, capY - cy, capInk));
+    var rCap = cornerRadius(RecordingView.mapKmWidth(dc, "999.9", capF),
+        RecordingView.inkH(dc, capF), capY, cy);
     Test.assertMessage(rCap <= limit,
         "map caption corner " + rCap.format("%.0f") + " > " + limit);
 
@@ -3972,9 +4144,18 @@ function mapPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     Test.assertMessage((0.002 * wide).toNumber() < box / 4,
         "a 15:1 track was stretched to fill the box");
     Test.assertMessage(TrackDraw.scale(box, 0.0, 0.0) <= 1.0e8, "degenerate track");
-    // the summary's box is the same geometry with a different margin
+    // the summary's box is the same geometry with a different margin — one line of caption
+    // wider since 0.9.18, when that page took this page's caption verbatim
     Test.assertEqual(SummaryView.trackBox(dc),
-        TrackDraw.boxSide(screenPx() / 2 - SUM_TRACK_MARGIN));
+        TrackDraw.boxSide(screenPx() / 2 - SUM_TRACK_MARGIN
+            - dc.getFontHeight(TEXT_FONTS[0]) + dc.getFontHeight(Graphics.FONT_SMALL)));
+    // ...and the two boxes are within a caption line of each other. They are not required to
+    // be equal — the live page's margin is authored at 454 px and scaled, the saved page's is
+    // measured off the font — but two pages drawing one trail must not be two sizes of trail.
+    Test.assertMessage((SummaryView.trackBox(dc) - box).abs()
+        <= dc.getFontHeight(TEXT_FONTS[0]),
+        "the live and saved track boxes differ by more than a caption line: "
+            + box.toString() + " vs " + SummaryView.trackBox(dc).toString());
 
     logger.debug("map box " + box.toString() + "px, caption at y " + capY.toString()
         + ", marker r" + TrackDraw.markerRadius(dc).toString());
@@ -4230,8 +4411,8 @@ function brandSplashLockupFitsRoundDisplay(logger as Test.Logger) as Boolean {
     return true;
 }
 
-// 0.9.11: the words a stranger needs. The Turns header names the three counts under it and
-// never the two maneuvers it used to; the tally's captions are the first thing dropped, so a
+// 0.9.11: the words a stranger needs. The Turns legend names the counts under it and never
+// the two maneuvers it used to; the tally's captions are the first thing dropped, so a
 // wide tally is still bare digits and never clips; the start page and the paused banner name
 // BACK wherever the glass has room, and fall back to the old words where it has not.
 (:test)
@@ -4240,16 +4421,25 @@ function strangersWordsFitOrFallBack(logger as Logger) as Boolean {
     var cx = dc.getWidth() / 2;
     var radius = (screenPx() / 2.0 - BEZEL).toNumber();
     var hT = dc.getFontHeight(Graphics.FONT_XTINY);
-    // the header never says tack or jibe again, with or without an axis
-    var h = RecordingView.turnsHeader(dc, "~NNE", radius, -radius / 2);
-    Test.assertMessage(h.find("tack") == null && h.find("jibe") == null, "header: " + h);
-    Test.assertEqual(RecordingView.turnsHeader(dc, "", radius, 0), TURNS_HEADER);
-    // a header with the axis is only returned where it fits at XTINY
-    if (h.length() > TURNS_HEADER.length()) {
-        Test.assertMessage(dc.getTextWidthInPixels(h, Graphics.FONT_XTINY)
-            <= RecordingView.rowBudget(radius, -radius / 2, RecordingView.inkH(dc, Graphics.FONT_XTINY)),
-            "the axis was kept on a header that does not fit");
+    // the legend names the four rungs and nothing else — no maneuver, and since 0.9.18 no
+    // bearing either: the axis is a MARK on that row, not a word (Glyphs.drawWind)
+    var caps = [TALLY_CAP_CLEAN, TALLY_CAP_FLEW, TALLY_CAP_TOUCH, TALLY_CAP_FELL];
+    for (var i = 0; i < caps.size(); i++) {
+        var w = caps[i];
+        Test.assertMessage(w.find("tack") == null && w.find("jibe") == null, "legend: " + w);
+        Test.assertMessage(w.length() > 0, "a legend word is empty");
     }
+    // the legend fits at XTINY wherever it is drawn: the FORM may shed a separator or the
+    // mark, the four words may not
+    var gs = Glyphs.size(dc);
+    var hb = RecordingView.rowBudget(radius, -radius / 2,
+        RecordingView.inkH(dc, Graphics.FONT_XTINY));
+    var got = RecordingView.ladderHeaderContent(dc, gs, hb, true);
+    var sep = (got & LADDER_HEAD_SEPARATORS) != 0
+        ? LADDER_HEAD_SEP : LADDER_HEAD_SEP_NARROW;
+    Test.assertMessage(
+        RecordingView.ladderHeaderWidth(dc, gs, (got & LADDER_HEAD_MARK) != 0, sep) <= hb,
+        "the legend form the renderer chose does not fit the header row");
     // captions: whenever the mask carries them, the row with them fits the budget; and the
     // worst-case tally at a tight budget drops them before it drops anything else
     var f = TEXT_FONTS[0];
@@ -4268,7 +4458,8 @@ function strangersWordsFitOrFallBack(logger as Logger) as Boolean {
     var w = dc.getTextWidthInPixels(banner, font);
     Test.assertMessage(RecordingView.pausedBannerY(dc, w, radius) <= cx - radius / 3,
         "the banner sits below the top third: " + banner);
-    logger.debug("header " + h + " | hint " + hint + " | banner " + banner + " | caps "
+    logger.debug("legend " + RecordingView.ladderHeaderWidth(dc, gs, true,
+        LADDER_HEAD_SEP).toString() + "px | hint " + hint + " | banner " + banner + " | caps "
         + ((RecordingView.tallyContent(dc, "8", "2", "1", "", RecordingView.rowBudget(radius, -radius / 4,
             RecordingView.inkH(dc, f)), f) & TALLY_CAPTIONS) != 0).toString());
     return true;
@@ -4329,7 +4520,7 @@ function wordsNeverWalkTheNumberLadder(logger as Test.Logger) as Boolean {
     var cf = RecordingView.fitGiant(dc, "23:59", 3, screenPx());
     Test.assertMessage(cf == Graphics.FONT_NUMBER_MILD, "the clock left the number ladder");
     // the rung that fits a band never overflows it, and it is the first that does
-    var hC = dc.getFontHeight(Graphics.FONT_NUMBER_MILD);
+    var hC = RecordingView.inkH(dc, MAIN_CLOCK_FONT);
     var from = RecordingView.textFontFrom(dc, hC);
     Test.assertMessage(RecordingView.inkH(dc, TEXT_FONTS[from]) <= hC,
         "textFontFrom picked a rung taller than the band");
@@ -5272,14 +5463,15 @@ function fuzzDirectStreamPagesAreFreedWhenTheStreamIsWhole(logger as Test.Logger
     return true;
 }
 
-// ---- the TACKS & JIBES page (0.9.17) ----
+// ---- the TACKS & JIBES page (0.9.17; re-cut 0.9.18) ----
 //
-// Five rows on a round glass: the wind header, then two halves that each spend a giant on one
-// kind's count and a caption row on the word and the fly-throughs. What this measures is what
-// the page can get wrong: a giant that steps off the number ladder, a caption row that runs
-// out of chord, and — the reason the page is stacked rather than side by side — the two halves
-// or their rows touching. Worst-case content throughout, with the device's real font metrics,
-// so the fenix 5 Plus family's leadingless number fonts are measured as themselves.
+// Four rows on a round glass with an axis, five without: the kind's word, its LADDER ROW, the
+// other kind's ladder row, the other kind's word — and, where there is no axis, the line that
+// says so. What this measures is what the page can get wrong: a ladder row that steps off the
+// number ladder, a row that runs out of chord, the two rows touching, and the claim the whole
+// re-cut is built on — that the two WIDE rows straddle the equator with the narrow words above
+// and below them. Worst-case content throughout, with the device's real font metrics, so the
+// fenix 5 Plus family's leadingless number fonts are measured as themselves.
 (:test)
 function kindsPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     var dc = testDc();
@@ -5288,100 +5480,89 @@ function kindsPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     var limit = pageR.toFloat();
     var hT = dc.getFontHeight(Graphics.FONT_XTINY);
     var hG = RecordingView.inkH(dc, Graphics.FONT_NUMBER_MEDIUM);
-    var hC = dc.getFontHeight(TEXT_FONTS[KINDS_FROM]);
+    var gs = Glyphs.size(dc);
 
-    // row 0 — the header. Both forms: the axis the watch estimated (the widest, "~NNE" after
-    // the word) and the line that says there is no axis to split on.
-    var y0 = RecordingView.kindsRowY(cy, hT, hG, hC, 0);
-    var heads = [KINDS_WIND + "~NNE", KINDS_NO_WIND] as Array<String>;
-    for (var i = 0; i < heads.size(); i++) {
-        var r = cornerRadius(dc.getTextWidthInPixels(heads[i], Graphics.FONT_XTINY),
-            RecordingView.inkH(dc, Graphics.FONT_XTINY), y0, cy);
-        Test.assertMessage(r <= limit, "kinds header \"" + heads[i] + "\" corner "
-            + r.format("%.0f") + " > " + limit);
+    // both shapes of the page: with an axis (no header row at all since 0.9.18) and without
+    // (the header is then the only thing that explains two rows of zeros)
+    var shapes = [false, true] as Array<Boolean>;
+    for (var sh = 0; sh < shapes.size(); sh++) {
+        var noWind = shapes[sh];
+        var y0 = RecordingView.kindsRowY(cy, hT, hG, noWind, 0);
+        if (noWind) {
+            var rh = cornerRadius(dc.getTextWidthInPixels(KINDS_NO_WIND, Graphics.FONT_XTINY),
+                RecordingView.inkH(dc, Graphics.FONT_XTINY), y0, cy);
+            Test.assertMessage(rh <= limit, "kinds no-axis line corner "
+                + rh.format("%.0f") + " > " + limit);
+        }
+
+        // rows 1 and 4 — the two words, above the jibes row and below the tacks row
+        var caps = [KINDS_JIBES, KINDS_TACKS] as Array<String>;
+        var wordRows = [1, 4] as Array<Number>;
+        for (var w = 0; w < 2; w++) {
+            var yw = RecordingView.kindsRowY(cy, hT, hG, noWind, wordRows[w]);
+            var rw = cornerRadius(dc.getTextWidthInPixels(caps[w], Graphics.FONT_XTINY),
+                RecordingView.inkH(dc, Graphics.FONT_XTINY), yw, cy);
+            Test.assertMessage(rw <= limit, "kinds word \"" + caps[w] + "\" corner "
+                + rw.format("%.0f") + " > " + limit);
+        }
+
+        // rows 2 and 3 — the two LADDER ROWS. The jibes row carries a star and the tacks row
+        // does not: `cleanJibeCount` counts clean JIBES and a tack has no clean verdict.
+        //
+        // `ladderOf` fills ONE shared scratch, so every worst case is rebuilt immediately
+        // before it is measured — holding two of them at once would be holding one array
+        // twice, which is the trap a no-allocation scratch always sets for its callers.
+        for (var i = 0; i < 2; i++) {
+            var yr = RecordingView.kindsRowY(cy, hT, hG, noWind, 2 + i);
+            var budget = RecordingView.rowBudget(pageR, yr - cy, hG);
+            var worst = i == 0 ? RecordingView.ladderOf(99, 99, 99, 99)
+                : RecordingView.ladderOf(-1, 99, 99, 99);
+            var wf = RecordingView.ladderRowFont(dc, worst, gs, budget, LADDER_FROM);
+            var r = cornerRadius(RecordingView.ladderRowWidth(dc, worst, gs, wf),
+                RecordingView.inkH(dc, wf), yr, cy);
+            Test.assertMessage(r <= limit, "kinds ladder row " + caps[i] + " corner "
+                + r.format("%.0f") + " > " + limit);
+            // a count is a value: the ladder may step down, never below the readability floor
+            Test.assertMessage(dc.getFontHeight(wf) >= dc.getFontHeight(
+                RecordingView.numberLadderIsSmall(dc)
+                    ? Graphics.FONT_NUMBER_MILD : Graphics.FONT_SMALL),
+                "kinds ladder row " + caps[i] + " fell below FONT_SMALL");
+            // ...and on the session the page was designed against it is still a NUMBER font,
+            // which is the whole claim of the re-cut: these rows are the giants now
+            var rr = i == 0 ? RecordingView.ladderOf(34, 39, 8, 5)
+                : RecordingView.ladderOf(-1, 24, 13, 4);
+            var rf = RecordingView.ladderRowFont(dc, rr, gs, budget, LADDER_FROM);
+            Test.assertMessage(
+                dc.getFontHeight(rf) >= dc.getFontHeight(Graphics.FONT_NUMBER_MILD),
+                "the " + caps[i] + " row is not a giant on a real session");
+        }
+
+        // the four rows may not touch, in either shape
+        var y1 = RecordingView.kindsRowY(cy, hT, hG, noWind, 1);
+        var y2 = RecordingView.kindsRowY(cy, hT, hG, noWind, 2);
+        var y3 = RecordingView.kindsRowY(cy, hT, hG, noWind, 3);
+        var y4 = RecordingView.kindsRowY(cy, hT, hG, noWind, 4);
+        Test.assertMessage(y2 - y1 >= (hT + hG) / 2, "the jibes word sits on its row");
+        Test.assertMessage(y3 - y2 >= hG, "the two ladder rows overlap");
+        Test.assertMessage(y4 - y3 >= (hG + hT) / 2, "the tacks word sits on its row");
+        if (noWind) {
+            Test.assertMessage(y1 - y0 >= hT, "the no-axis line sits on the jibes word");
+        }
+        // the block is on the glass, top and bottom
+        Test.assertMessage(y1 - hT / 2 >= 0 && y4 + hT / 2 <= screenPx(),
+            "the kinds stack runs off the glass: " + (y1 - hT / 2).toString() + ".."
+                + (y4 + hT / 2).toString() + " of " + screenPx().toString());
+
+        // THE CLAIM: the two wide rows straddle the equator. Rows 2 and 3 share one band, so
+        // with the block centred the boundary between them lands on cy — which is what "the
+        // widest lines belong where the glass is widest" means on this page. The no-axis
+        // shape carries one extra narrow row at the top, so it sits that much lower.
+        Test.assertMessage(((y2 + hG / 2) - cy).abs() <= 1 + (noWind ? hT : 0),
+            "the kinds rows do not straddle the equator: " + y2.toString() + "/"
+                + y3.toString() + " band " + hG.toString() + " cy " + cy.toString());
     }
-
-    // the two halves, jibes on top and tacks below, at their worst case (a three-figure
-    // session) and at a real one (52 jibes, 38 of them flown through)
-    var caps = [KINDS_JIBES, KINDS_TACKS] as Array<String>;
-    var worst = ["999", "999"] as Array<String>;
-    var real = ["52", "41"] as Array<String>;
-    var flewWorst = [PageModel.FLEW_PREFIX + "999", PageModel.FLEW_PREFIX + "999"]
-        as Array<String>;
-    var flewReal = [PageModel.FLEW_PREFIX + "38", PageModel.FLEW_PREFIX + "29"]
-        as Array<String>;
-    for (var half = 0; half < 2; half++) {
-        // the giant
-        var yg = RecordingView.kindsRowY(cy, hT, hG, hC, 1 + 2 * half);
-        var gBudget = RecordingView.rowBudget(pageR, yg - cy, hG);
-        var wf = RecordingView.kindGiantFont(dc, worst[half], gBudget);
-        var r = cornerRadius(dc.getTextWidthInPixels(worst[half], wf),
-            RecordingView.inkH(dc, wf), yg, cy);
-        Test.assertMessage(r <= limit, "kinds giant " + caps[half] + " corner "
-            + r.format("%.0f") + " > " + limit);
-        // a count is a value: the ladder may step down, never below the readability floor
-        Test.assertMessage(dc.getFontHeight(wf) >= dc.getFontHeight(
-            RecordingView.numberLadderIsSmall(dc)
-                ? Graphics.FONT_NUMBER_MILD : Graphics.FONT_SMALL),
-            "kinds giant " + caps[half] + " fell below FONT_SMALL");
-        // ...and on the session the page was designed against it is still a NUMBER, which is
-        // the whole claim of the page: the count is the giant, not a row of digits
-        var rf = RecordingView.kindGiantFont(dc, real[half], gBudget);
-        Test.assertMessage(dc.getFontHeight(rf) >= dc.getFontHeight(Graphics.FONT_NUMBER_MILD),
-            "the " + caps[half] + " count is not a giant on a real session");
-
-        // the caption row under it: the word, then the fly-throughs in the ladder's green
-        var yc = RecordingView.kindsRowY(cy, hT, hG, hC, 2 + 2 * half);
-        var cBudget = RecordingView.rowBudget(pageR, yc - cy,
-            RecordingView.inkH(dc, TEXT_FONTS[KINDS_FROM]));
-        var keep = RecordingView.kindsSubWidth(dc, caps[half], flewWorst[half],
-            TEXT_FONTS[TALLY_FLOOR]) <= cBudget;
-        var sf = RecordingView.kindsSubFont(dc, caps[half],
-            keep ? flewWorst[half] : "", cBudget);
-        r = cornerRadius(RecordingView.kindsSubWidth(dc, caps[half],
-            keep ? flewWorst[half] : "", sf), RecordingView.inkH(dc, sf), yc, cy);
-        Test.assertMessage(r <= limit, "kinds caption row " + caps[half] + " corner "
-            + r.format("%.0f") + " > " + limit);
-        Test.assertMessage(dc.getFontHeight(sf) >= dc.getFontHeight(Graphics.FONT_SMALL),
-            "the kinds caption row fell below FONT_SMALL");
-        Test.assertMessage(dc.getFontHeight(sf) <= hC,
-            "the kinds caption row is taller than the band it was stacked with");
-        // the WORD must always fit — it is what names the half, and the fly-throughs are
-        // what the row gives up to keep it
-        Test.assertMessage(
-            RecordingView.kindsSubWidth(dc, caps[half], "", TEXT_FONTS[TALLY_FLOOR])
-                <= cBudget, "not even the word fits the " + caps[half] + " row");
-        Test.assertMessage(
-            RecordingView.kindsSubWidth(dc, caps[half], "", sf)
-                < RecordingView.kindsSubWidth(dc, caps[half], flewReal[half], sf),
-            "dropping the fly-throughs must save width");
-        // ...and on a real session, on every glass, both halves of the row survive
-        Test.assertMessage(
-            RecordingView.kindsSubWidth(dc, caps[half], flewReal[half],
-                TEXT_FONTS[TALLY_FLOOR]) <= cBudget,
-            "\"" + caps[half] + " " + flewReal[half] + "\" does not fit a "
-                + screenPx().toString() + "px glass");
-
-        // the giant and its own caption row may not touch
-        Test.assertMessage(yc - yg >= (RecordingView.inkH(dc, wf)
-            + RecordingView.inkH(dc, sf)) / 2,
-            "the " + caps[half] + " giant and its caption row overlap");
-    }
-
-    // the two HALVES may not touch each other, and the header may not touch the first giant.
-    // This is the pair the stacked layout exists to keep apart: the tacks giant sits directly
-    // under the jibes caption row, and both are drawn at their own ink heights.
-    var yJc = RecordingView.kindsRowY(cy, hT, hG, hC, 2);
-    var yTg = RecordingView.kindsRowY(cy, hT, hG, hC, 3);
-    Test.assertMessage(yTg - yJc >= (hC + hG) / 2, "the two halves overlap");
-    Test.assertMessage(RecordingView.kindsRowY(cy, hT, hG, hC, 1) - y0 >= (hT + hG) / 2,
-        "the header sits on the jibes giant");
-    // the whole block is centred: the two halves are the same height, so the page's ink is
-    // symmetric about the equator and neither giant is pushed into the arc
-    Test.assertEqual(RecordingView.kindsRowY(cy, hT, hG, hC, 3)
-        - RecordingView.kindsRowY(cy, hT, hG, hC, 1), hG + hC);
-    logger.debug("kinds page: giant band " + hG.toString() + "px, caption band "
-        + hC.toString() + "px, header \"" + RecordingView.kindsHeader() + "\"");
+    logger.debug("kinds page: row band " + hG.toString() + "px, word band "
+        + hT.toString() + "px");
     return true;
 }
 
@@ -5389,7 +5570,8 @@ function kindsPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
 
 // One metric a page, and the standard set untouched on the way back. The large set is built
 // from a fixed table and reads no property at all, which is what lets it be the one page
-// control every stream has. Seven pages since 0.9.17: jibes and tacks joined after turns.
+// control every stream has. FIVE pages since 0.9.18: the clock and the best-2s screens left,
+// because the standard Clock and Records pages answer both questions better one swipe away.
 (:test)
 function largePageSetIsOneNumberAPage(logger as Test.Logger) as Boolean {
     var before = AppSettings.pageSet;
@@ -5409,10 +5591,34 @@ function largePageSetIsOneNumberAPage(logger as Test.Logger) as Boolean {
             "large page " + i.toString() + " has no word");
     }
     // the two KIND screens (0.9.17) are the turns screen's question asked of one kind each
+    Test.assertEqual(PageModel.BIG_PAGES, 5);
     Test.assertEqual(PageModel.BIG_SLOT[3], PageModel.M_JIBES);
     Test.assertEqual(PageModel.BIG_SLOT[4], PageModel.M_TACKS);
     Test.assertEqual(PageModel.bigWord(PageModel.M_JIBES), "jibes");
     Test.assertEqual(PageModel.bigWord(PageModel.M_TACKS), "tacks");
+    // 0.9.18: the two screens Jan retired are gone from the set, and the two words he
+    // rewrote say what their number IS — "now" because the giant is the live speedometer and
+    // one swipe from two record screens, "time on foil" because the share is a share of the
+    // MINUTES and its distance twin is the same "%" over a different denominator.
+    for (var i = 0; i < PageModel.BIG_PAGES; i++) {
+        Test.assertMessage(PageModel.BIG_SLOT[i] != PageModel.M_CLOCK,
+            "the clock screen is still in the large set");
+        Test.assertMessage(PageModel.BIG_SLOT[i] != PageModel.M_BEST_2S,
+            "the best-2s screen is still in the large set");
+    }
+    Test.assertMessage(PageModel.bigWord(PageModel.M_SPEED).find("now") == 0,
+        "the speed screen does not say when: " + PageModel.bigWord(PageModel.M_SPEED));
+    Test.assertMessage(PageModel.bigWord(PageModel.M_FOIL_PCT).find("time") != null,
+        "the foil screen does not say it is time: "
+            + PageModel.bigWord(PageModel.M_FOIL_PCT));
+    // the three TURN screens carry an outcome row; the other two are giant and word alone
+    Test.assertMessage(RecordingView.bigHasRow(PageModel.M_TURNS)
+        && RecordingView.bigHasRow(PageModel.M_JIBES)
+        && RecordingView.bigHasRow(PageModel.M_TACKS),
+        "a turn screen lost its outcome row");
+    Test.assertMessage(!RecordingView.bigHasRow(PageModel.M_SPEED)
+        && !RecordingView.bigHasRow(PageModel.M_FOIL_PCT),
+        "a two-row screen grew an outcome row");
     // the foil page earns the arc the ordinary way; no other large page draws one
     Test.assertMessage(PageModel.pageDrawsFoilArc(1), "the large foil page keeps its arc");
     Test.assertMessage(!PageModel.pageDrawsFoilArc(0), "the large speed page draws no arc");
@@ -5427,51 +5633,104 @@ function largePageSetIsOneNumberAPage(logger as Test.Logger) as Boolean {
 }
 
 // The LARGE pages against the chord, at worst-case content, with the device's real font
-// metrics — the same yardstick every other page is held to. Two extra claims this set exists
-// for: the WORD never falls below FONT_SMALL (the readability floor; a set for a rider
-// without his glasses may not answer in six-pixel letters), and the giant is at least as big
-// as the HERO page's giant for the same value, because the whole trade is rows for digits.
+// metrics — the same yardstick every other page is held to. Three claims this set exists for:
+// the WORD never falls below FONT_SMALL (the readability floor; a set for a rider without his
+// glasses may not answer in six-pixel letters), the giant is at least as big as the HERO
+// page's giant for the same value, and — since 0.9.18 — it is never SMALLER than the bitmap
+// ladder would have made it, which is the floor rule the vector probe inherits from
+// LockView.codeFont.
 (:test)
 function largePagesFitRoundDisplay(logger as Test.Logger) as Boolean {
     var dc = testDc();
     var cy = screenPx() / 2;
     var hN = RecordingView.inkH(dc, Graphics.FONT_NUMBER_THAI_HOT);
     var hW = dc.getFontHeight(TEXT_FONTS[BIG_WORD_FONT]);
-    var hK = dc.getFontHeight(TEXT_FONTS[BIG_TALLY_FROM]);
+    var hK = RecordingView.bigLadderBand(dc);
     var hT = dc.getFontHeight(Graphics.FONT_XTINY);
     var hL = dc.getFontHeight(Graphics.FONT_LARGE);
     var hM = dc.getFontHeight(Graphics.FONT_MEDIUM);
+    var gs = Glyphs.size(dc);
     var smaller = 0;
+    var vector = 0;
+    var widest = 0;
 
     for (var i = 0; i < PageModel.BIG_PAGES; i++) {
         var id = PageModel.BIG_SLOT[i];
-        var tally = id == PageModel.M_TURNS;
-        // 0.9.17: the two KIND screens carry a third row too — "flew 99" in the ladder's
-        // green — so their band is the tally's band and their rows are measured like it.
-        var kind = id == PageModel.M_JIBES || id == PageModel.M_TACKS;
+        var row = RecordingView.bigHasRow(id);
         var arc = id == PageModel.M_FOIL_PCT;
         var radius = RecordingView.fitRadius(dc, false, arc);
         var limit = radius.toFloat();
-        var band = tally || kind ? hK : 0;
+        var band = row ? hK : 0;
         var v = PageModel.worstValue(id);
 
-        // row 0 — the giant
-        var y = RecordingView.bigRowY(cy, hN, hW, band, 0);
-        var f = RecordingView.fitGiant(dc, v, 0,
-            RecordingView.rowBudget(radius, y - cy, hN));
-        var r = cornerRadius(dc.getTextWidthInPixels(v, f), hN, y, cy);
+        // row 0 — the giant, drawn in whatever font the renderer itself would pick
+        var f = RecordingView.bigGiantFont(dc, v, radius, row ? 3 : 2);
+        var hG = RecordingView.bigBand(dc, f);
+        var y = RecordingView.bigRowY(cy, hG, band, hW, 0);
+        var r = cornerRadius(dc.getTextWidthInPixels(v, f), hG, y, cy);
         Test.assertMessage(r <= limit, "big giant p" + i.toString() + " r="
             + r.format("%.0f") + " > " + limit);
+        if (!RecordingView.isLadderFont(f)) {
+            vector++;
+            // a vector face is only taken where it can draw the WHOLE value — a digits-only
+            // cut measures its missing characters at zero and sails through every fitter
+            Test.assertMessage(RecordingView.coversText(dc, f, v),
+                "a vector giant was taken for a face that cannot draw " + v);
+        }
+        var w = dc.getTextWidthInPixels(v, f);
+        if (w > widest) { widest = w; }
 
         // ...and it is never SMALLER than the same value on a HERO page, which is the whole
-        // point of dropping the unit line and the two sub-rows
+        // point of dropping the unit line and the two sub-rows — nor smaller than the bitmap
+        // ladder alone would have made it, which is what makes the vector probe safe.
+        //
+        // Both comparisons are on the value's drawn WIDTH and not on its font height, which
+        // is the yardstick they used until 0.9.18. A vector face reports a line height that
+        // is not comparable with a bitmap font's: FONT_NUMBER_THAI_HOT's line is 210 px on a
+        // fenix 8 and its digits are 153 of them, so a vector cut can set "100%" visibly
+        // wider while reporting a smaller line. Width is what a rider reads and what Jan
+        // measured off the sheet, so width is what is asserted.
         var yh = RecordingView.heroRowY(cy, hN, hT, hL, hM, 0, 2);
         var fh = RecordingView.fitFont(dc, NUMBER_FONTS, 0, v,
             RecordingView.rowBudget(radius, yh - cy, hN));
-        if (dc.getFontHeight(f) < dc.getFontHeight(fh)) { smaller++; }
+        if (dc.getTextWidthInPixels(v, f) < dc.getTextWidthInPixels(v, fh)) { smaller++; }
+        var yb = RecordingView.bigRowY(cy, hN, band, hW, 0);
+        var fb = RecordingView.fitGiant(dc, v, 0,
+            RecordingView.rowBudget(radius, yb - cy, hN));
+        Test.assertMessage(dc.getTextWidthInPixels(v, f) >= dc.getTextWidthInPixels(v, fb),
+            "the giant on p" + i.toString() + " is narrower than the bitmap ladder alone");
 
-        // row 1 — the word
-        y = RecordingView.bigRowY(cy, hN, hW, band, 1);
+        // row 1 — the outcome row, on the three turn screens
+        if (row) {
+            y = RecordingView.bigRowY(cy, hG, band, hW, 1);
+            var budget = RecordingView.rowBudget(radius, y - cy,
+                RecordingView.bigLadderBand(dc));
+            var counts = id == PageModel.M_TACKS ? RecordingView.ladderOf(-1, 99, 99, 99)
+                : RecordingView.ladderOf(99, 99, 99, 99);
+            var lf = RecordingView.ladderRowFont(dc, counts, gs, budget, BIG_TALLY_FROM);
+            r = cornerRadius(RecordingView.ladderRowWidth(dc, counts, gs, lf),
+                RecordingView.inkH(dc, lf), y, cy);
+            Test.assertMessage(r <= limit, "big outcome row p" + i.toString() + " r="
+                + r.format("%.0f") + " > " + limit);
+            Test.assertMessage(dc.getFontHeight(lf) >= dc.getFontHeight(
+                RecordingView.numberLadderIsSmall(dc)
+                    ? Graphics.FONT_NUMBER_MILD : Graphics.FONT_SMALL),
+                "the large set's outcome row fell below the readability floor");
+            // THE ROW'S OWN INK MUST FIT THE BAND IT WAS STACKED WITH. This is the assertion
+            // the 0.9.18 sheets earned: the row was fitted from the NUMBER ladder while its
+            // band was a TEXT font's line, because the constant meant one array and was read
+            // as the other. On a 454 px glass the chord hid it; on a 390 px Instinct 3 AMOLED
+            // the word under the giant was drawn straight through the digits.
+            Test.assertMessage(RecordingView.inkH(dc, lf) <= band,
+                "the large outcome row on p" + i.toString() + " is "
+                    + RecordingView.inkH(dc, lf).toString()
+                    + "px of ink in a " + band.toString() + "px band");
+            Test.assertMessage(y - RecordingView.bigRowY(cy, hG, band, hW, 0)
+                >= (hG + band) / 2, "big giant/row gap p" + i.toString());
+        }
+
+        // row 2 — the word, at the BOTTOM of the page since 0.9.18
+        y = RecordingView.bigRowY(cy, hG, band, hW, 2);
         var word = PageModel.bigWord(id);
         var wf = RecordingView.fitFont(dc, TEXT_FONTS, BIG_WORD_FONT, word,
             RecordingView.rowBudget(radius, y - cy,
@@ -5482,78 +5741,443 @@ function largePagesFitRoundDisplay(logger as Test.Logger) as Boolean {
             + r.format("%.0f") + " > " + limit);
         Test.assertMessage(dc.getFontHeight(wf) >= dc.getFontHeight(Graphics.FONT_SMALL),
             "big word p" + i.toString() + " fell below the readability floor");
-
-        // row 2 — the tally, on the turns page only
-        if (tally) {
-            y = RecordingView.bigRowY(cy, hN, hW, band, 2);
-            var budget = RecordingView.rowBudget(radius, y - cy,
-                RecordingView.inkH(dc, TEXT_FONTS[BIG_TALLY_FROM]));
-            var tf = RecordingView.tallyFont(dc, "99", "99", "99", "", budget,
-                BIG_TALLY_FROM);
-            Test.assertMessage(RecordingView.tallyContent(dc, "99", "99", "99", "", budget,
-                tf) >= 0, "big tally does not fit even at the floor");
-            r = cornerRadius(RecordingView.tallyWidth(dc, "99", "99", "99", "",
-                TURNS_TALLY_SEP, tf), RecordingView.inkH(dc, tf), y, cy);
-            Test.assertMessage(r <= limit, "big tally r=" + r.format("%.0f") + " > " + limit);
-            // and the rows may not touch
-            Test.assertMessage(y - RecordingView.bigRowY(cy, hN, hW, band, 1)
-                >= (hW + band) / 2, "big word/tally gap");
-        }
-        // row 2 on a kind screen — the fly-throughs of that kind, at its worst case
-        if (kind) {
-            y = RecordingView.bigRowY(cy, hN, hW, band, 2);
-            var kb = RecordingView.rowBudget(radius, y - cy,
-                RecordingView.inkH(dc, TEXT_FONTS[BIG_TALLY_FROM]));
-            var line = PageModel.FLEW_PREFIX + "99";
-            var kf = RecordingView.fitFont(dc, TEXT_FONTS, BIG_TALLY_FROM, line, kb);
-            r = cornerRadius(dc.getTextWidthInPixels(line, kf),
-                RecordingView.inkH(dc, kf), y, cy);
-            Test.assertMessage(r <= limit, "big flew line p" + i.toString() + " r="
-                + r.format("%.0f") + " > " + limit);
-            Test.assertMessage(dc.getFontHeight(kf) >= dc.getFontHeight(Graphics.FONT_SMALL),
-                "the large set's flew line fell below the readability floor");
-            Test.assertMessage(y - RecordingView.bigRowY(cy, hN, hW, band, 1)
-                >= (hW + band) / 2, "big word/flew gap");
-        }
-        Test.assertMessage(RecordingView.bigRowY(cy, hN, hW, band, 1)
-            - RecordingView.bigRowY(cy, hN, hW, band, 0) >= (hN + hW) / 2,
-            "big giant/word gap p" + i.toString());
+        Test.assertMessage(y - RecordingView.bigRowY(cy, hG, band, hW, 1)
+            >= (band + hW) / 2, "big row/word gap p" + i.toString());
+        // the whole stack is on the glass
+        Test.assertMessage(RecordingView.bigRowY(cy, hG, band, hW, 0) - hG / 2 >= 0
+            && y + hW / 2 <= screenPx(),
+            "the large stack runs off the glass on p" + i.toString());
     }
     Test.assertMessage(smaller == 0,
         smaller.toString() + " large giants are smaller than the same value on a hero page");
-    logger.debug("large pages: word at " + dc.getFontHeight(TEXT_FONTS[BIG_WORD_FONT]).toString()
-        + "px band, giant band " + hN.toString() + "px");
+    // What the round was FOR, logged rather than asserted: the assertion that matters is the
+    // floor above (never narrower than the bitmap ladder), because how wide a vector face can
+    // go is a property of the device's font set and not of this code.
+    logger.debug("large pages: word band " + hW.toString() + "px, widest giant "
+        + widest.toString() + "px = " + (widest * 100 / screenPx()).toString()
+        + "% of the glass, " + vector.toString() + " of "
+        + PageModel.BIG_PAGES.toString() + " on a vector face");
     return true;
 }
 
-// The foil table's title carries the flight count where the row holds the pair, and drops it
-// rather than shrinking — XTINY is already the bottom of the ladder. The count came back to
-// this page in 0.9.16 when the post-save Flights hero was retired onto it.
+// ---- the page set SHRANK, and nothing may fall off the end of it (0.9.18) ----
+//
+// The large set went from seven screens to five, and a page index does not go with it: it
+// lives in PageNav for the life of the recording UI and outlives any rebuild — a rider on the
+// seventh large page who opens Garmin Connect and comes back, or one whose settings callback
+// re-runs `build`, is holding an index past the end of the new set. On this runtime an
+// out-of-bounds read is NOT catchable (docs/testing.md, "Four ways to die on this runtime"),
+// so "it would throw and we would see it" is not a thing that happens here: the watch drops
+// the rider to the watch face mid-session and the recording goes with it.
+//
+// Two places the shrink could have opened that door, and both are asserted rather than
+// reasoned about: the table `buildLarge` reads (BIG_SLOT must be at least BIG_PAGES long) and
+// every accessor a renderer calls with an index (they wrap, they do not clamp-and-hope).
 (:test)
-function foilTitleCarriesTheFlightCount(logger as Test.Logger) as Boolean {
+function aShrunkPageSetNeverStrandsAnIndex(logger as Test.Logger) as Boolean {
+    var before = AppSettings.pageSet;
+    // the table the build reads: one row per page, or buildLarge walks off the end of it
+    Test.assertMessage(PageModel.BIG_SLOT.size() >= PageModel.BIG_PAGES,
+        "BIG_SLOT holds " + PageModel.BIG_SLOT.size().toString() + " rows for "
+            + PageModel.BIG_PAGES.toString() + " pages");
+    Test.assertMessage(PageModel.BIG_PAGES <= PageModel.MAX_PAGES,
+        "the large set claims more pages than the model has slots for");
+
+    AppSettings.pageSet = PageModel.PAGE_SET_LARGE;
+    PageModel.build(null);
+    var n = PageModel.count();
+    Test.assertEqual(n, PageModel.BIG_PAGES);
+
+    // indices from before the shrink, from far past it, and from the wrong side of zero.
+    // Every one of them has to land on a real page rather than on an index error.
+    var stale = [PageModel.BIG_PAGES, PageModel.BIG_PAGES + 1, 6, 7, 99, -1, -8] as Array<Number>;
+    for (var i = 0; i < stale.size(); i++) {
+        var k = PageModel.wrap(stale[i]);
+        Test.assertMessage(k >= 0 && k < n,
+            "index " + stale[i].toString() + " wrapped to " + k.toString()
+                + ", outside 0.." + (n - 1).toString());
+        // and the three accessors a frame actually calls, at that index
+        Test.assertEqual(PageModel.layoutAt(stale[i]), PageModel.LAYOUT_BIG);
+        var id = PageModel.slotAt(stale[i], 0);
+        Test.assertMessage(id >= 0 && id <= PageModel.M_MAX,
+            "slot at stale index " + stale[i].toString() + " is " + id.toString());
+        Test.assertMessage(RecordingView.bigId(stale[i]) != PageModel.M_NONE,
+            "a stale index produced a page with no giant");
+        PageModel.pageDrawsFoilArc(stale[i]);   // must not throw
+    }
+
+    // the same for the STANDARD set, which the rider can switch back to at any index
+    AppSettings.pageSet = PageModel.PAGE_SET_STANDARD;
+    PageModel.build(null);
+    for (var i = 0; i < stale.size(); i++) {
+        var k = PageModel.wrap(stale[i]);
+        Test.assertMessage(k >= 0 && k < PageModel.count(),
+            "standard index " + stale[i].toString() + " wrapped to " + k.toString());
+        PageModel.layoutAt(stale[i]);
+        PageModel.slotAt(stale[i], PageModel.SLOTS - 1);
+    }
+
+    // ...and the same again with every SHOW SWITCH off (0.9.18), which is the other way the
+    // set can shrink under an index — and the one a rider can do from his phone mid-session.
+    var shown = [true, true, true, true, true, true, true];
+    for (var i = 0; i < AppSettings.pageShown.size(); i++) {
+        shown[i] = AppSettings.pageShown[i];
+        AppSettings.pageShown[i] = false;
+    }
+    AppSettings.pageSet = PageModel.PAGE_SET_STANDARD;
+    PageModel.build(null);
+    Test.assertMessage(PageModel.count() == 1,
+        "all seven switches off leaves " + PageModel.count().toString() + " pages, not 1");
+    Test.assertEqual(PageModel.layoutAt(0), PageModel.LAYOUT_MAIN);
+    for (var i = 0; i < stale.size(); i++) {
+        var k = PageModel.wrap(stale[i]);
+        Test.assertMessage(k == 0,
+            "with one page left, index " + stale[i].toString() + " wrapped to "
+                + k.toString());
+        Test.assertEqual(PageModel.layoutAt(stale[i]), PageModel.LAYOUT_MAIN);
+    }
+    AppSettings.pageSet = PageModel.PAGE_SET_LARGE;
+    PageModel.build(null);
+    Test.assertMessage(PageModel.count() == 1,
+        "all seven switches off leaves " + PageModel.count().toString()
+            + " large pages, not 1");
+    Test.assertEqual(PageModel.slotAt(0, 0), PageModel.M_SPEED);
+    for (var i = 0; i < AppSettings.pageShown.size(); i++) {
+        AppSettings.pageShown[i] = shown[i];
+    }
+
+    AppSettings.pageSet = before;
+    PageModel.build({});
+    logger.debug("page sets: large " + PageModel.BIG_PAGES.toString() + " of "
+        + PageModel.BIG_SLOT.size().toString() + " table rows, standard "
+        + PageModel.count().toString());
+    return true;
+}
+
+// ---- SHOW OR HIDE each data screen (0.9.18) ----
+//
+// Seven switches in Garmin Connect, in every stream, and the other two page sets follow them
+// because they are the same pages. What this measures is the MAPPING — which switch takes
+// which screen out of which set — one switch at a time, because a bug here is a page that
+// disappears with the wrong neighbour and no test that turns them off together would see it.
+(:test)
+function hidingAPageTakesItsTwinsWithIt(logger as Test.Logger) as Boolean {
+    var beforeSet = AppSettings.pageSet;
+    var before = [true, true, true, true, true, true, true];
+    for (var i = 0; i < AppSettings.pageShown.size(); i++) {
+        before[i] = AppSettings.pageShown[i];
+    }
+
+    // every switch on: the shipped sets, unchanged
+    for (var i = 0; i < AppSettings.pageShown.size(); i++) {
+        AppSettings.pageShown[i] = true;
+    }
+    AppSettings.pageSet = PageModel.PAGE_SET_STANDARD;
+    PageModel.build(null);
+    Test.assertEqual(PageModel.count(), PageModel.MAX_PAGES);
+    AppSettings.pageSet = PageModel.PAGE_SET_LARGE;
+    PageModel.build(null);
+    Test.assertEqual(PageModel.count(), PageModel.BIG_PAGES);
+
+    // one at a time. `std` is what the standard set loses, `big` what the large set loses.
+    var sw = [PageModel.SHOW_FOIL, PageModel.SHOW_RECORDS, PageModel.SHOW_TURNS,
+        PageModel.SHOW_KINDS, PageModel.SHOW_CLOCK, PageModel.SHOW_STORY,
+        PageModel.SHOW_MAP] as Array<Number>;
+    var gone = [PageModel.LAYOUT_FOIL, PageModel.LAYOUT_RECORDS, PageModel.LAYOUT_TURNS,
+        PageModel.LAYOUT_KINDS, PageModel.LAYOUT_CLOCK, PageModel.LAYOUT_TIMELINE,
+        PageModel.LAYOUT_MAP] as Array<Number>;
+    // the large set: foil takes one screen, turns one, and the KINDS switch takes BOTH kind
+    // screens because they are one page in the standard set
+    var bigLost = [1, 0, 1, 2, 0, 0, 0] as Array<Number>;
+    for (var s = 0; s < sw.size(); s++) {
+        AppSettings.pageShown[sw[s]] = false;
+
+        AppSettings.pageSet = PageModel.PAGE_SET_STANDARD;
+        PageModel.build(null);
+        Test.assertMessage(PageModel.count() == PageModel.MAX_PAGES - 1,
+            "switch " + s.toString() + " off left " + PageModel.count().toString()
+                + " standard pages");
+        for (var i = 0; i < PageModel.count(); i++) {
+            Test.assertMessage(PageModel.layoutAt(i) != gone[s],
+                "switch " + s.toString() + " off and the page is still in the cycle");
+        }
+        // MAIN is never the one that goes
+        Test.assertEqual(PageModel.layoutAt(0), PageModel.LAYOUT_MAIN);
+        // ...and the map page's own flag follows it, or the breadcrumb would still be asked
+        // for by a page that is not there
+        if (gone[s] == PageModel.LAYOUT_MAP) {
+            Test.assertMessage(!PageModel.mapPage,
+                "the map page is hidden and the model still asks for the breadcrumb");
+        }
+
+        AppSettings.pageSet = PageModel.PAGE_SET_LARGE;
+        PageModel.build(null);
+        Test.assertMessage(PageModel.count() == PageModel.BIG_PAGES - bigLost[s],
+            "switch " + s.toString() + " off left " + PageModel.count().toString()
+                + " large pages, expected "
+                + (PageModel.BIG_PAGES - bigLost[s]).toString());
+        // the live SPEED screen is in every one of these sets: it has no switch
+        var speed = false;
+        for (var i = 0; i < PageModel.count(); i++) {
+            if (PageModel.slotAt(i, 0) == PageModel.M_SPEED) { speed = true; }
+        }
+        Test.assertMessage(speed, "switch " + s.toString() + " off took the speed screen");
+
+        AppSettings.pageShown[sw[s]] = true;
+    }
+
+    for (var i = 0; i < AppSettings.pageShown.size(); i++) {
+        AppSettings.pageShown[i] = before[i];
+    }
+    AppSettings.pageSet = beforeSet;
+    PageModel.build({});
+    logger.debug("show/hide: 7 switches, standard " + PageModel.MAX_PAGES.toString()
+        + " pages, large " + PageModel.BIG_PAGES.toString());
+    return true;
+}
+
+// A settings edit arrives MID-SESSION — that is the whole point of a phone-editable setting
+// — and it arrives through `WingfoilApp.onSettingsChanged`, which rebuilds the model and then
+// re-wraps the page index. What must not happen is the rider being left on a page that no
+// longer exists: on this runtime an index past the end of `_order` is an uncatchable error,
+// so "he would see a glitch" is not the failure mode. It is the app dropping to the watch
+// face with the recording in it.
+(:test)
+function aSwitchThrownMidSessionNeverStrandsTheRider(logger as Test.Logger) as Boolean {
+    var beforeSet = AppSettings.pageSet;
+    var before = [true, true, true, true, true, true, true];
+    for (var i = 0; i < AppSettings.pageShown.size(); i++) {
+        before[i] = AppSettings.pageShown[i];
+        AppSettings.pageShown[i] = true;
+    }
+    AppSettings.pageSet = PageModel.PAGE_SET_STANDARD;
+    PageModel.build(null);
+    var idxBefore = PageNav.index;
+
+    // He is on the LAST page — the map, page 8 — and turns six screens off from his phone.
+    PageNav.index = PageModel.count() - 1;
+    Test.assertEqual(PageModel.layoutAt(PageNav.index), PageModel.LAYOUT_MAP);
+    for (var i = 0; i < AppSettings.pageShown.size(); i++) {
+        AppSettings.pageShown[i] = i == PageModel.SHOW_FOIL;
+    }
+    // exactly what _applySettings does, in the same order
+    PageModel.build(null);
+    PageNav.index = PageModel.wrap(PageNav.index);
+    Test.assertEqual(PageModel.count(), 2);          // Main and Foil
+    Test.assertMessage(PageNav.index >= 0 && PageNav.index < PageModel.count(),
+        "the rider was left on page " + PageNav.index.toString() + " of "
+            + PageModel.count().toString());
+    PageModel.layoutAt(PageNav.index);               // must not throw
+    PageModel.slotAt(PageNav.index, 0);
+
+    // ...and the same going the other way: switches come back on and the index is still good
+    for (var i = 0; i < AppSettings.pageShown.size(); i++) {
+        AppSettings.pageShown[i] = true;
+    }
+    PageModel.build(null);
+    PageNav.index = PageModel.wrap(PageNav.index);
+    Test.assertEqual(PageModel.count(), PageModel.MAX_PAGES);
+    Test.assertMessage(PageNav.index >= 0 && PageNav.index < PageModel.count(),
+        "the index did not survive the switches coming back");
+
+    // and with every switch off, from any index at all
+    for (var i = 0; i < AppSettings.pageShown.size(); i++) {
+        AppSettings.pageShown[i] = false;
+    }
+    var from = [0, 3, 7, 99, -4] as Array<Number>;
+    for (var i = 0; i < from.size(); i++) {
+        PageNav.index = from[i];
+        PageModel.build(null);
+        PageNav.index = PageModel.wrap(PageNav.index);
+        Test.assertEqual(PageNav.index, 0);
+        Test.assertEqual(PageModel.layoutAt(PageNav.index), PageModel.LAYOUT_MAIN);
+    }
+
+    for (var i = 0; i < AppSettings.pageShown.size(); i++) {
+        AppSettings.pageShown[i] = before[i];
+    }
+    AppSettings.pageSet = beforeSet;
+    PageModel.build({});
+    PageNav.index = idxBefore;
+    logger.debug("mid-session: page index survived six switches off and back on");
+    return true;
+}
+
+// The screenshot harness must IGNORE the switches. A sheet is a check on the layouts and it
+// has to photograph every page the app can draw, whatever this simulator's property store
+// happens to say (docs/testing.md, "Every family, photographed").
+(:test)
+function theSheetHarnessIgnoresTheShowSwitches(logger as Test.Logger) as Boolean {
+    var beforeSet = AppSettings.pageSet;
+    var before = [true, true, true, true, true, true, true];
+    for (var i = 0; i < AppSettings.pageShown.size(); i++) {
+        before[i] = AppSettings.pageShown[i];
+        AppSettings.pageShown[i] = false;
+    }
+    AppSettings.pageSet = PageModel.PAGE_SET_STANDARD;
+
+    PageModel.build(null);
+    Test.assertEqual(PageModel.count(), 1);          // the rider's own watch
+    PageModel.showAll = true;
+    PageModel.build(null);
+    Test.assertMessage(PageModel.count() == PageModel.MAX_PAGES,
+        "the harness saw " + PageModel.count().toString() + " standard pages, not "
+            + PageModel.MAX_PAGES.toString());
+    AppSettings.pageSet = PageModel.PAGE_SET_LARGE;
+    PageModel.build(null);
+    Test.assertMessage(PageModel.count() == PageModel.BIG_PAGES,
+        "the harness saw " + PageModel.count().toString() + " large pages");
+    PageModel.showAll = false;
+
+    for (var i = 0; i < AppSettings.pageShown.size(); i++) {
+        AppSettings.pageShown[i] = before[i];
+    }
+    AppSettings.pageSet = beforeSet;
+    PageModel.build({});
+    Test.assertMessage(!PageModel.showAll, "the harness seam was left on");
+    logger.debug("harness seam: every page photographed with every switch off");
+    return true;
+}
+
+// ---- S6 Takeoffs says what it counts (0.9.18) ----
+//
+// Jan read "39/56", "4.3 to foil" and "+19 bpm" off a sheet and could not say what any of
+// them were. The page now names each number and the fraction is drawn as three pieces — two
+// counts in the number ladder around the word "of" at FONT_XTINY — because it carries LETTERS
+// and the number fonts have none, which is the bug `fitGiant` was written to stop.
+(:test)
+function takeoffPageSaysWhatItCounts(logger as Test.Logger) as Boolean {
+    var dc = testDc();
+    var cy = screenPx() / 2;
+    var pageR = RecordingView.fitRadius(dc, false, false);
+    var limit = pageR.toFloat();
+    var hT = dc.getFontHeight(Graphics.FONT_XTINY);
+    var hV = RecordingView.inkH(dc, Graphics.FONT_NUMBER_MEDIUM);
+    var hD = dc.getFontHeight(Graphics.FONT_SMALL);
+
+    // the word above the fraction
+    var y0 = SummaryView.takeoffRowY(cy, hT, hV, hD, 0);
+    var r = cornerRadius(dc.getTextWidthInPixels(TAKEOFF_WORD, Graphics.FONT_XTINY),
+        RecordingView.inkH(dc, Graphics.FONT_XTINY), y0, cy);
+    Test.assertMessage(r <= limit, "takeoffs word corner " + r.format("%.0f"));
+
+    // the fraction, at its worst case (three digits each side) and at the shipped session's
+    var y1 = SummaryView.takeoffRowY(cy, hT, hV, hD, 1);
+    var budget = RecordingView.rowBudget(pageR, y1 - cy, hV);
+    var wf = SummaryView.takeoffFont(dc, "999", "999", budget);
+    r = cornerRadius(SummaryView.takeoffWidth(dc, "999", "999", wf),
+        RecordingView.inkH(dc, wf), y1, cy);
+    Test.assertMessage(r <= limit, "takeoffs fraction corner " + r.format("%.0f"));
+    Test.assertMessage(dc.getFontHeight(wf) >= dc.getFontHeight(
+        RecordingView.numberLadderIsSmall(dc)
+            ? Graphics.FONT_NUMBER_MILD : Graphics.FONT_SMALL),
+        "the takeoffs fraction fell below the readability floor");
+    var rf = SummaryView.takeoffFont(dc, "39", "56", budget);
+    Test.assertMessage(dc.getFontHeight(rf) >= dc.getFontHeight(Graphics.FONT_NUMBER_MILD),
+        "the takeoffs fraction is not a giant on a real session");
+
+    // ...and it is the WIDEST line on the page, which is why it is the one on the equator
+    Test.assertMessage(
+        SummaryView.takeoffWidth(dc, "39", "56", rf)
+            > dc.getTextWidthInPixels(TAKEOFF_WORD, Graphics.FONT_XTINY),
+        "the takeoffs word is wider than the number it names");
+    // Measured against the row's BAND (`hV`) and not against whatever font the fitter landed
+    // on: the band is what the stack reserved and what the other rows were positioned
+    // against, so it is the row, and a session whose fraction happens to be two digits
+    // shorter has not moved the page.
+    Test.assertMessage(y1 - hV / 2 <= cy && y1 + hV / 2 >= cy,
+        "the takeoffs fraction does not straddle the equator: y=" + y1.toString()
+            + " band=" + hV.toString() + " cy=" + cy.toString());
+
+    // rows 2 and 3 — the two detail lines, ONE NUMBER EACH since 0.9.18. On one row with a
+    // separator, "4.3 pumps each · last +19 bpm" measured 560 px against a 406 px chord on a
+    // 454 px glass, so the HR half was shed on every watch shipped. Both must fit their own
+    // row at their own worst case, on every glass, or the page is back to dropping a number.
+    var details = ["99.9" + TAKEOFF_PUMPS, TAKEOFF_COST + "199" + TAKEOFF_BPM]
+        as Array<String>;
+    var y2 = SummaryView.takeoffRowY(cy, hT, hV, hD, 2);
+    var y3 = SummaryView.takeoffRowY(cy, hT, hV, hD, 3);
+    var ys = [y2, y3] as Array<Number>;
+    for (var i = 0; i < 2; i++) {
+        var dBudget = RecordingView.rowBudget(pageR, ys[i] - cy,
+            RecordingView.inkH(dc, Graphics.FONT_SMALL));
+        Test.assertMessage(
+            dc.getTextWidthInPixels(details[i], Graphics.FONT_SMALL) <= dBudget,
+            "\"" + details[i] + "\" does not fit its row on a " + screenPx().toString()
+                + "px glass: " + dc.getTextWidthInPixels(details[i],
+                    Graphics.FONT_SMALL).toString() + "px of " + dBudget.toString());
+        r = cornerRadius(dc.getTextWidthInPixels(details[i], Graphics.FONT_SMALL),
+            RecordingView.inkH(dc, Graphics.FONT_SMALL), ys[i], cy);
+        Test.assertMessage(r <= limit, "takeoffs detail corner " + r.format("%.0f"));
+    }
+
+    // every word on the page names its number rather than its unit, and "last" is there
+    // because the bpm figure is ONE takeoff and not an average
+    Test.assertMessage(TAKEOFF_OF.find("of") != null, "the fraction lost its word");
+    Test.assertMessage(TAKEOFF_COST.find("last") != null,
+        "the HR figure does not say it is the last takeoff's: \"" + TAKEOFF_COST + "\"");
+    Test.assertMessage(TAKEOFF_PUMPS.find("each") != null,
+        "the pumps figure does not say it is an average: \"" + TAKEOFF_PUMPS + "\"");
+    // the rows may not touch, and the block is on the glass
+    Test.assertMessage(y1 - y0 >= (hT + hV) / 2, "takeoffs word/fraction gap");
+    Test.assertMessage(y2 - y1 >= (hV + hD) / 2, "takeoffs fraction/pumps gap");
+    Test.assertMessage(y3 - y2 >= hD, "takeoffs pumps/bpm gap");
+    Test.assertMessage(y0 - hT / 2 >= 0 && y3 + hD / 2 <= screenPx(),
+        "the takeoffs stack runs off the glass");
+    logger.debug("takeoffs: fraction " + SummaryView.takeoffWidth(dc, "39", "56", rf).toString()
+        + "px at font height " + dc.getFontHeight(rf).toString() + ", details "
+        + dc.getTextWidthInPixels(details[0], Graphics.FONT_SMALL).toString() + "/"
+        + dc.getTextWidthInPixels(details[1], Graphics.FONT_SMALL).toString() + "px");
+    return true;
+}
+
+// The foil table's title is the page's NAME and nothing else (0.9.18: the flight count it
+// carried from 0.9.16 came off — a table of six foil numbers with a seventh in its own title
+// is a title that has to be read), and its row key is the WORD "total" unless the floor says
+// otherwise. Both are Jan's, from the layout review of 21 September 2026.
+(:test)
+function foilTableSaysTheWholeWord(logger as Test.Logger) as Boolean {
     var dc = testDc();
     var cy = screenPx() / 2;
     var radius = RecordingView.fitRadius(dc, false, true);
     var hT = dc.getFontHeight(Graphics.FONT_XTINY);
     var hV = dc.getFontHeight(Graphics.FONT_LARGE);
-    var dy = RecordingView.foilRowY(cy, hT, hV, 0) - cy;
 
-    Test.assertEqual(RecordingView.foilTitle(dc, 0, radius, dy), FOIL_TITLE);
-    var t = RecordingView.foilTitle(dc, 31, radius, dy);
-    Test.assertMessage(t.equals(FOIL_TITLE) || t.equals(FOIL_TITLE + FOIL_TITLE_SEP + "31"),
-        "the title is either the name or the name and the count, never a third thing");
-    // whichever it lands on, it fits the row it is drawn in
-    var r = cornerRadius(dc.getTextWidthInPixels(t, Graphics.FONT_XTINY),
+    // the title: one word, and it fits the row it is drawn in
+    var r = cornerRadius(dc.getTextWidthInPixels(FOIL_TITLE, Graphics.FONT_XTINY),
         RecordingView.inkH(dc, Graphics.FONT_XTINY),
         RecordingView.foilRowY(cy, hT, hV, 0), cy);
     Test.assertMessage(r <= radius.toFloat(), "foil title r=" + r.format("%.0f"));
-    // a three-digit count must never widen it past the row either
-    var t3 = RecordingView.foilTitle(dc, 999, radius, dy);
-    r = cornerRadius(dc.getTextWidthInPixels(t3, Graphics.FONT_XTINY),
-        RecordingView.inkH(dc, Graphics.FONT_XTINY),
-        RecordingView.foilRowY(cy, hT, hV, 0), cy);
-    Test.assertMessage(r <= radius.toFloat(), "foil title (999) r=" + r.format("%.0f"));
-    logger.debug("foil title at 31 flights: \"" + t + "\"");
+    Test.assertMessage(FOIL_TITLE.find("·") == null && FOIL_TITLE.length() <= 8,
+        "the foil title grew something: \"" + FOIL_TITLE + "\"");
+
+    // the keys: "total", not "tot", wherever the floor allows it — and the floor is the ONLY
+    // thing that may take the word away now (the font-rung trade went with 0.9.18).
+    var half = RecordingView.foilTableHalf(dc, radius, cy, hT, hV);
+    var keys = RecordingView.foilKeys(dc, half, "63:24");
+    Test.assertMessage(keys[1].equals(FOIL_KEY_MAX), "the max key moved");
+    Test.assertMessage(keys[0].equals(FOIL_KEY_TOTAL) || keys[0].equals(FOIL_KEY_TOTAL_TIGHT),
+        "the total key is neither word: \"" + keys[0] + "\"");
+    if (keys[0].equals(FOIL_KEY_TOTAL_TIGHT)) {
+        // it may only be the short word because the long one broke the FLOOR
+        var wLong = RecordingView.foilColWidth(half,
+            RecordingView.foilKeyBlock(dc, [FOIL_KEY_TOTAL, FOIL_KEY_MAX]));
+        Test.assertMessage(wLong < dc.getTextWidthInPixels(
+            PageModel.worstValue(PageModel.M_FOIL_TIME), TEXT_FONTS[FOIL_FLOOR]),
+            "\"tot\" was chosen with room for \"total\": the rung trade is back");
+    }
+    // whichever word it is, the key column fits inside the block it is part of
+    var keyW = RecordingView.foilKeyBlock(dc, keys);
+    Test.assertMessage(keyW < half, "the key column is wider than half the table: "
+        + keyW.toString() + " of " + half.toString());
+    // and the six values still clear the readability floor with those keys in front of them
+    var colW = RecordingView.foilColWidth(half, keyW);
+    var vf = RecordingView.foilFont(dc, ["199:59"] as Array<String>, colW);
+    Test.assertMessage(dc.getFontHeight(vf) >= dc.getFontHeight(TEXT_FONTS[FOIL_FLOOR]),
+        "the foil values fell below the floor with \"" + keys[0] + "\" in the key column");
+    logger.debug("foil table: key \"" + keys[0] + "\" (" + keyW.toString()
+        + "px), columns " + colW.toString() + "px, values at "
+        + dc.getFontHeight(vf).toString() + "px");
     return true;
 }
 

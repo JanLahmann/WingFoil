@@ -1010,7 +1010,13 @@ inventing turns):
   quiet water, so both resumes re-anchor the baseline — the phone's `gap_before` restart, which
   the watch has no other way to see. A dunk is a spike; a level is not a dunk, and the price is
   the phone's too: water held to within 5 m for 20 s reads dry from its 20th second.
-- **Per-kind fly-throughs are not backfilled at the auto-wind lock** (watch 0.9.17): `tackFlewCount` / `jibeFlewCount`, the numbers under the Tacks & jibes page's giants, count from the moment an axis holds, the same conservative error `cleanJibeCount` makes; the phone's split is over the whole session.
+- **Every turn is RE-TYPED when the axis changes** (watch 0.9.18), which is where two divergences used to be. `TurnDetector` keeps a **turn log** — one four-byte record per counted turn: the entry bearing, the signed net rotation, the outcome, and a *clean-eligible* bit (the score cleared the bar, the foil held, and the quiet tail ran out) — written in `_resolve`, which is the first moment the geometry and the verdict both exist. Whenever the effective wind axis moves, `rebuildWindSplit` throws all eleven per-kind counters away and recomputes them from that log: `tackCount` / `jibeCount`, the six outcome rungs, `cleanJibeCount`, and the port / starboard entry split. The trigger is the axis itself (`MetricsEngine._syncWindSplit`), so the estimator locking, the estimator revising itself and the rider typing a bearing into the menu all reach the counters by one path and each of them exactly once.
+
+  What that buys: **`flew + touch + fell == that kind's count` exactly, at all times, with an axis set** — the rows on the Tacks & jibes page add up. And a jibe the rider rode before the estimator spoke gets its star: the clean-eligible bit is a fact about the riding, the KIND is a fact about the wind, and only the second one is being re-decided. Until 0.9.18 a one-shot pass ran at the first lock and added to `tackCount` / `jibeCount` alone, so a pre-lock jibe was a jibe with no rung and never a clean one; the invariant was a `<=` that closed only for the turns typed after the lock, and the CPH the watch then printed under-read for the opening minutes.
+
+  What it still does **not** touch, and deliberately: `turnCount`, the session-wide outcome tally, the streaks and the scores. Those were real observations made at the time and are not re-judged on hindsight evidence, so `tackCount + jibeCount <= turnCount` still holds with the difference being the sweeps that are course changes under this axis.
+
+  **The cap.** The log holds **512 turns, 2 KB**, allocated once. A turn every thirty seconds for four hours is 480, so a session does not reach it. Past it the oldest record is dropped, and before it goes it is typed against the axis in force at that moment and folded into a frozen base every later rebuild starts from — so the invariant survives the cap. What a rebuild cannot do for a dropped record is re-type it against an axis the rider changes *later*, and a turn 512 maneuvers ago was ridden hours after the estimator locked. Asserted by `perKindOutcomesAddUpToTheKind` and `rebuildSplitsTheTurnsTheAxisWasLearnedFrom` in the barrel suite.
 - **No pump corroboration** (step 3 of the ladder): the watch cannot promote a fly-through to a
   touchdown on accel evidence, so it reports slightly more fly-throughs than the phone.
 - **The watch does not measure the axis crossing**, and knows neither axis parameter. It has no
@@ -1042,31 +1048,39 @@ inventing turns):
   divergence check's "Foil time" comparison (> 5 %) is a comparison across them.
 - **Bear-aways are dropped, not carried.** They increment a `rejected` counter and are not
   given an outcome, so the watch has no equivalent of the lab's bear-away outcome window.
-- **Wind is manual only** and classification is not retroactive: turns detected before the
-  rider sets the axis stay generic for the rest of the session.
+- **Classification IS retroactive since 0.9.18**, on the watch as on the phone: a turn is
+  named by the axis in force, and when that axis changes every logged turn is named again
+  (the turn-log bullet above). Until then a turn detected before the rider set the axis
+  stayed generic for the rest of the session and only the auto-wind lock's one-shot pass was
+  allowed to look back. The watch's wind is still the rider's bearing or the watch's own
+  estimate, never a third source.
 - **GPS below `Position.QUALITY_USABLE` freezes the detector**, including any open outcome
   window, matching how the other watch detectors treat a gap.
-- **CPH divides by the session clock, not by a cleaned track** (device app ≥ 0.9.5). The watch
-  shows *clean jibes per hour* on the Turns page and on the post-save turns screen —
-  `TurnDetector.cleanJibeCount` over `SessionController.elapsedNowS()`, which is the engine's
-  own timer while recording and the FIT's `total_elapsed_time` (pauses included) once saved.
-  Since engine 0.13.0 the phone's rates divide by `timerTimeS` — the **cleaned track's**
-  non-gap total (T2) — which is the same *kind* of clock the data field uses and much closer
-  to the device app's live one than the elapsed span they used to divide by. The two still
-  differ by whatever the cleaner trims off the ends, by the different gap definitions, and,
-  after save, by the pauses the device app's `total_elapsed_time` puts back in. Neither number
-  is wrong; they answer the same question over slightly different afternoons, and the watch
-  has no cleaned track to offer. The **no-rate floor** is
-  60 s rather than the engine's `durationS <= 0`: the watch is asked the question live, and one
-  clean jibe forty seconds in is not "ninety an hour". Below the floor it prints `--`, never a
-  number and never a flattering zero.
-- **A clean jibe is `cleanJibeCount`, and the auto-wind backfill does not fill it in.**
-  `backfillWindSplit` replays the logged sweeps to recover the tack/jibe split that happened
-  before the estimator locked, but the sweep log is written when a sweep *closes* — before its
-  outcome window has resolved — and carries geometry only. So a turn backfilled into
-  `jibeCount` is never backfilled into `cleanJibeCount`, and the watch's CPH under-reads for
-  the opening minutes of a session with no manual axis. Conservative, like every other item on
-  this list, and visible only as a rate that climbs once the axis is known.
+- **CPH is off the device app's screens** (device app 0.9.18; it was on the Turns page from
+  0.9.5). Jan's layout review of 21 September 2026 took it, and the reason is the divergence
+  this bullet used to describe. The watch divided `TurnDetector.cleanJibeCount` by
+  `SessionController.elapsedNowS()` — the engine's own timer while recording, the FIT's
+  `total_elapsed_time` once saved — while the phone divides by `timerTimeS`, the **cleaned
+  track's** non-gap total (T2). Neither was wrong; they answered the same question over
+  slightly different afternoons, and the wrist had no cleaned track to offer. But a rate is a
+  *reading* of a count rather than a count, it is the kind of number a rider sits down with,
+  and it was spending a whole row on a page whose four counts are the fact. The count itself
+  stays on the wrist, first on the Turns page's ladder row behind its star; the rate lives on
+  the phone, where it has a caption to explain itself and a clock it can name.
+  `PageModel.cleanPerHour` / `fmtCph` and the 60 s no-rate floor are kept and still tested —
+  the number is one page-editor decision away from coming back and the floor is the part of
+  it nobody should have to re-derive.
+- **The DATA FIELD still shows it**, over its own clock — see the bullet below. The field is
+  parked (ADR-020) and its screens did not move.
+- **A clean jibe is `cleanJibeCount`, and since 0.9.18 the axis can still award one.** This was
+  a divergence: the one-shot backfill recovered the tack/jibe split from a sweep log written
+  when a sweep *closed* — before its outcome window resolved — so it carried geometry only, a
+  turn backfilled into `jibeCount` was never backfilled into `cleanJibeCount`, and the watch's
+  star count under-read for the opening minutes of a session with no manual axis. The turn log
+  above records clean-ELIGIBILITY instead, which is decided when the turn resolves and does not
+  depend on the kind, and `rebuildWindSplit` applies the kind afterwards. A successful
+  fly-through that was a generic turn at the time becomes a clean jibe the moment an axis says
+  it was a jibe.
 - **The watch holds the star for the quiet tail** (device app 0.9.9, engine 0.17.0). A clean
   candidate — a jibe that flew through and held its speed — is not counted when its outcome
   resolves; `cleanPending` is set and the detector watches the samples until
@@ -1962,6 +1976,15 @@ back at **222.3°, confidence 0.70**, cone margin 0.31, against 222° from the w
 estimate and 225° from a weather archive, and its turns split 45 tacks / 33 jibes against the
 watch's 44 / 32.
 
+**The watch took the same change in 0.9.18** (`AutoWind._bisect`), so there is no divergence
+row for it any more: the half-angle form, the refusal retired, and the perpendicular at
+exactly 180°. It is cheaper on the wrist as well as more complete — two adds and a divide
+against the four transcendental calls the circular mean needed, on a function every
+evaluation runs. `WingFoilCore.autoWindOpposedLobesStillResolve` holds it, in two passes: with
+nothing but the one reach the axis is computed and the DIRECTION stays unresolved (both no-go
+cones are empty, and the doubt shows up as a confidence of 0), and with a little downwind
+running in the mix the same lobes resolve to the perpendicular.
+
 ### Default turn type — the rider's habit as 180° evidence
 
 Flipping the wind 180° swaps every jibe and tack, so a rider's declared habit is evidence
@@ -2022,7 +2045,7 @@ allocated at construction:
 | samples | foiling, ≥ 2 m/s, weighted by per-step distance | identical: `FlightDetector` ON, Doppler ≥ 2 m/s, weight = `speed × dt` |
 | histogram | 36 × 10°, smoothed ±20° | identical, accumulated incrementally |
 | lobes | argmax of the smoothed histogram, then the weighted circular mean of the raw samples within ±25° | argmax, then the mass-weighted circular mean of the **bin centres** within ±2 bins |
-| axis | bisector of the two lobes (half-angle form, defined at every separation); rejected below 60° only | **divergence since engine 0.23.0**: `AutoWind.mc` still refuses above 179° separation and still builds the bisector from the circular mean. The watch is ported separately (ADR-030); on a session of two opposed reaches it therefore falls back to the manual bearing where the phone now answers |
+| axis | bisector of the two lobes (half-angle form, defined at every separation); rejected below 60° only | identical since watch 0.9.18: `AutoWind._bisect` is `a + wrap180(b − a) / 2`, the perpendicular at exactly 180°, and the 179° refusal is gone with the circular mean that needed it |
 | axis confidence | `clip01((mass−0.2)/0.4) × clip01(balance/0.5) × clip01((sep−60)/20)` | identical |
 | 180° call | ±45° no-go cones, `margin = \|mA−mB\|/(mA+mB)`, `eCone = clip01(margin/0.4)` | identical, over bin centres |
 | default-turn-type prior | `e = eCone + 0.5·mTurn` over every detected sweep | identical, over the last 64 logged sweeps |

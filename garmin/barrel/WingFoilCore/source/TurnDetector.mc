@@ -34,7 +34,7 @@ function wrapDeg180(deg as Float) as Float {
 // needs a real sweep. Below this net angle a sweep is filed as a course change — uncounted,
 // with or without a wind axis — never a tack, a jibe or a generic turn. Corpus effect: 5 of
 // 773 jibes reclassify; the course-change markers stay. Module-level because `classifySweep`
-// is shared with the auto-wind backfill and lives outside the class.
+// is shared with the auto-wind prior and the turn-log rebuild, and lives outside the class.
 const CLASSIFY_MIN_ANGLE_DEG = 90.0;
 
 function classifySweep(uIn as Float, uOut as Float, windDeg as Number) as Number {
@@ -199,14 +199,34 @@ class TurnDetector {
     // reason `cleanJibeCount` is one: the KIND is fixed when the sweep closes and the OUTCOME
     // when the window resolves, and `_resolve()` is the only place that knows both.
     //
-    // NOT backfilled by `backfillWindSplit` either, and the invariant survives it: the
-    // backfill only ever ADDS to `tackCount` / `jibeCount`, so `jibeFlewCount <= jibeCount`
-    // and `tackFlewCount <= tackCount` hold before and after. What it means on the glass is
-    // that a pre-lock jibe counts as a jibe but not as a jibe he flew through. It errs the
-    // way the un-backfilled `cleanJibeCount` above it errs, and for the same reason: the
-    // sweep log carries geometry only, written before the outcome window resolved.
+    // REBUILT WHENEVER THE AXIS CHANGES (0.9.18). These are counted live as turns resolve and
+    // then thrown away and recomputed from the turn log by `rebuildWindSplit`, so a turn the
+    // rider rode before the estimator spoke is named the same as one he rode after. Until
+    // 0.9.18 a one-shot backfill added to `tackCount` / `jibeCount` alone and left these
+    // behind, and a pre-lock jibe was a jibe with no rung.
     var tackFlewCount as Number = 0;
     var jibeFlewCount as Number = 0;
+    // THE OTHER TWO RUNGS, PER KIND (device app 0.9.18). 0.9.17 split only the ladder's TOP
+    // rung by kind, which was enough for a page that said "jibes, flew 38" and not enough for
+    // one that draws the whole ladder per kind — and drawing the whole ladder per kind is what
+    // the Tacks & jibes page does since this round (Jan's layout review, 21 Sep 2026: one wide
+    // row per kind, the same colour language the Turns page uses).
+    //
+    // Counted exactly where `touchdownCount` and `fellCount` are, off the same `lastKind`, for
+    // the reason the flew pair is: kind is fixed when the sweep closes, outcome when the
+    // window resolves, and `_resolve()` is the only place that knows both.
+    //
+    // THE INVARIANT, and since 0.9.18 it is an equality rather than a bound. With a wind axis
+    // set,
+    //   jibeFlewCount + jibeTouchCount + jibeFellCount == jibeCount
+    //   tackFlewCount + tackTouchCount + tackFellCount == tackCount
+    // at all times — because all eight numbers are rebuilt together from the turn log every
+    // time the axis changes (`rebuildWindSplit`). 0.9.17 could only promise it for turns typed
+    // after the lock; the rows on the Tacks & jibes page add up now.
+    var tackTouchCount as Number = 0;
+    var tackFellCount as Number = 0;
+    var jibeTouchCount as Number = 0;
+    var jibeFellCount as Number = 0;
     // Was the turn that just resolved a clean jibe? Published beside `lastOutcome` so a caller
     // that already reacts to a resolved turn can tell the two apart without a second event
     // nibble; false again on the next turn that is not one.
@@ -302,6 +322,62 @@ class TurnDetector {
     hidden var _quietOffRun as Float = 0.0;
     hidden var _quietWasOff as Boolean = false;
 
+    // ---- THE TURN LOG (device app 0.9.18) ----
+    //
+    // One record per counted turn: enough geometry to re-type it against a wind axis, plus
+    // the verdict it earned. It is what makes `rebuildWindSplit` exact — every per-kind
+    // counter is thrown away and recomputed from these records whenever the axis changes, so
+    // a kind's three rungs sum to that kind's count at all times with a wind set, and a turn
+    // the rider rode before the estimator spoke is typed the same as one he rode after.
+    //
+    // It replaces the one-shot `backfillWindSplit` and the sweep log that fed it. That pass
+    // ran ONCE, at the first auto lock, and it only ever ADDED to `tackCount` / `jibeCount`:
+    // the outcome rungs and the clean count were left behind, because the sweep log is
+    // written when a sweep CLOSES and at that moment the outcome window has not resolved.
+    // This log is written when the outcome resolves, which is the moment both halves exist.
+    //
+    // A BYTE ARRAY, four bytes a turn, because this is the one structure on the watch whose
+    // size is a session's length rather than a constant:
+    //
+    //   b0   entry bearing, low 8 bits            (0..359 needs nine)
+    //   b1   bit 0    entry bearing, bit 8
+    //        bits 1-2 outcome (OUTCOME_FLEW / TOUCHDOWN / FELL)
+    //        bit 3    CLEAN-ELIGIBLE: the score cleared the bar, the foil held across the
+    //                 scored window, and the quiet tail ran out without a loss
+    //   b2-3 net rotation, signed, +32768 and big-endian. It may exceed +-180 and the sign
+    //        is the sweep's direction, which is what types it
+    //
+    // Clean-eligible rather than "clean" is the whole reason the rebuild can fix the count:
+    // whether a turn is a CLEAN JIBE depends on the kind, and the kind is what is being
+    // re-decided. A successful fly-through that was a generic turn at the time becomes a
+    // clean jibe the moment an axis says it was a jibe — which is exactly the under-read
+    // docs/algorithms.md used to carry as a divergence.
+    //
+    // THE CAP is TURN_LOG_MAX turns, 2 KB. A turn every thirty seconds for four hours is 480,
+    // so a real session does not reach it. Beyond it the OLDEST record is dropped, and before
+    // it goes it is typed against the axis in force at that moment and folded into a frozen
+    // base (`_baseTack` and the rest) that every rebuild starts from. That keeps the invariant
+    // exact even past the cap: what a rebuild cannot do for a dropped turn is re-type it
+    // against an axis the rider changes LATER, and a turn 512 maneuvers ago was ridden hours
+    // after the estimator locked, so there is nothing left to correct.
+    const TURN_LOG_MAX = 512;
+    const TURN_LOG_STRIDE = 4;
+    hidden var _log as ByteArray;
+    hidden var _logN as Number = 0;       // records held, oldest first
+    // The frozen contribution of records the cap has dropped. Eleven counters, the same
+    // eleven `rebuildWindSplit` recomputes; all zero on a session that never fills the log.
+    hidden var _baseTack as Number = 0;
+    hidden var _baseJibe as Number = 0;
+    hidden var _baseTackFlew as Number = 0;
+    hidden var _baseTackTouch as Number = 0;
+    hidden var _baseTackFell as Number = 0;
+    hidden var _baseJibeFlew as Number = 0;
+    hidden var _baseJibeTouch as Number = 0;
+    hidden var _baseJibeFell as Number = 0;
+    hidden var _baseClean as Number = 0;
+    hidden var _basePort as Number = 0;
+    hidden var _baseStbd as Number = 0;
+
     // Unowned flight ends — the straight-line half of the streak rule. Same evidence as
     // `_track` collects for a turn, kept separately because the two windows can overlap in
     // time and must never share a stop spell.
@@ -329,6 +405,10 @@ class TurnDetector {
             _dArr[i] = 0.0;
             _vArr[i] = 0.0;
         }
+        // 2 KB, allocated once. A ByteArray and not an Array<Number>: this is the only
+        // structure here whose size is a session's length, and four Numbers a turn would be
+        // four times the bytes and a boxed read on every rebuild.
+        _log = new [TURN_LOG_MAX * TURN_LOG_STRIDE]b;
     }
 
     // One 1 Hz sample. cogDeg null (or GPS unusable) = no geometry this tick; the outcome
@@ -389,11 +469,28 @@ class TurnDetector {
         }
         if (_clockS >= _cleanPendingUntil) {
             cleanPending = false;
-            lastCleanJibe = true;
-            cleanJibeCount++;
+            // The tail ran out clean: the turn is clean-ELIGIBLE whatever it was named, and a
+            // clean JIBE only if the axis in force calls it one. The two halves are separate
+            // since 0.9.18 so that a later axis can still award the star (rebuildWindSplit).
+            _markCleanEligible();
+            if (lastKind == KIND_JIBE) {
+                lastCleanJibe = true;
+                cleanJibeCount++;
+            }
             return true;
         }
         return false;
+    }
+
+    // Set the clean-eligible bit on the newest log record. The quiet tail always ends before
+    // the next turn resolves — it is CLEAN_QUIET_S from the sweep end and a second sweep
+    // cannot even open until the outcome window closes — so "newest" is this turn's.
+    hidden function _markCleanEligible() as Void {
+        if (_logN <= 0) {
+            return;
+        }
+        var at = (_logN - 1) * TURN_LOG_STRIDE + 1;
+        _log[at] = _log[at] | 0x08;
     }
 
     // GPS gap / pause: heading continuity and the detection window are both broken.
@@ -698,11 +795,22 @@ class TurnDetector {
         if (_wet || _stopMax > FALL_STOP_S) {
             outcome = OUTCOME_FELL;
             fellCount++;
+            // the same split the flew branch takes, off the same `lastKind` (0.9.18)
+            if (lastKind == KIND_TACK) {
+                tackFellCount++;
+            } else if (lastKind == KIND_JIBE) {
+                jibeFellCount++;
+            }
             dryStreak = 0;          // he swam: both runs end here
             flewStreak = 0;
         } else if (_lostFoil) {
             outcome = OUTCOME_TOUCHDOWN;
             touchdownCount++;
+            if (lastKind == KIND_TACK) {
+                tackTouchCount++;
+            } else if (lastKind == KIND_JIBE) {
+                jibeTouchCount++;
+            }
             if (_stopMax > TOUCHDOWN_MAX_STOP_S) {
                 borderlineCount++;
             }
@@ -747,15 +855,22 @@ class TurnDetector {
         // success is the score pair (turns.py._build_turn), independent of the outcome:
         // score >= turnSuccessPct AND the foil still carried across the scored window.
         lastCleanJibe = false;
+        // The turn goes into the log HERE, before the quiet tail has answered, because this
+        // is where its geometry and its outcome are both known. `_logTurn` writes the
+        // clean-eligible bit as false and `_quietTick` sets it when the tail runs out — the
+        // record is the newest one until the next turn resolves, and the watch does not
+        // detect during an outcome window, so "the newest record" is unambiguous.
+        _logTurn(lastEntryU, lastNetDeg, outcome, false);
         if (pct >= SUCCESS_PCT && _minSpeed > _cfg.foilExitMps) {
             successCount++;
-            // ...and a successful turn that was named a JIBE *and flew through* is a clean
-            // jibe (engine 0.12.0, Jan 5 Sep 2026: a jibe he fell out of is not clean,
-            // whatever the sweep scored). `lastKind` is still this turn's: the watch does not
-            // re-detect during an outcome window, so nothing can have overwritten it between
-            // the sweep closing and here. A touchdown in the recovery tail is enough to lose
-            // the star — same rule as `Turn.clean` on the phone.
-            if (lastKind == KIND_JIBE && outcome == OUTCOME_FLEW) {
+            // ...and a successful turn that also FLEW THROUGH is clean-eligible (engine
+            // 0.12.0, Jan 5 Sep 2026: a jibe he fell out of is not clean, whatever the sweep
+            // scored). The KIND is deliberately not part of that test any more: eligibility
+            // is a fact about the riding and the kind is a fact about the wind, and since
+            // 0.9.18 the wind can arrive later and re-type the turn. `cleanJibeCount` still
+            // only ever counts JIBES — `rebuildWindSplit` applies the kind — and the buzz
+            // below still fires for jibes alone.
+            if (outcome == OUTCOME_FLEW) {
                 // ...pending the quiet tail (0.9.9): the star is granted at
                 // end + CLEAN_QUIET_S unless the foil is lost before then. A window that
                 // already ran that long without a loss has answered the question.
@@ -765,8 +880,11 @@ class TurnDetector {
                 _quietWasOff = false;
                 if (_clockS >= _cleanPendingUntil) {
                     cleanPending = false;
-                    lastCleanJibe = true;
-                    cleanJibeCount++;
+                    _markCleanEligible();
+                    if (lastKind == KIND_JIBE) {
+                        lastCleanJibe = true;
+                        cleanJibeCount++;
+                    }
                 }
             }
         }
@@ -788,48 +906,147 @@ class TurnDetector {
         return classifySweep(uIn, uOut, _cfg.windDirection);
     }
 
-    // The ONE-SHOT BACKFILL (docs/algorithms.md "Watch approximation: auto wind").
-    //
-    // The watch never re-runs classification: a turn is named with the wind in effect when it
-    // happened, and a manual axis set at minute forty leaves the first forty minutes generic.
-    // Auto wind is the single deliberate exception, and only at its FIRST lock: the estimator
-    // needs ~500 m of flying before it can speak, and without this pass the session's tack /
-    // jibe / port / starboard counts would start from zero at that moment even though the
-    // rider's first reaches are exactly the evidence the axis was estimated FROM. It runs once
-    // per session (SessionController holds the flag) over the sweep log AutoWind kept.
-    //
-    // Deliberately narrow — it only ADDS the splits the counters were missing:
-    //   * `turnCount`, the outcome tallies, the streaks and the scores are untouched. Those
-    //     were real observations made at the time and are not re-judged.
-    //   * a logged sweep that comes out KIND_REJECT under the new axis (a bear-away) stays
-    //     counted as the generic turn it was. Retracting it would move turnCount, successPct
-    //     and every streak that spanned it, i.e. re-judge outcomes on hindsight evidence.
-    //   * `cleanJibeCount` is NOT backfilled. The sweep log carries geometry only (entry
-    //     bearing and net rotation, all AutoWind needs to re-name an axis), and it is written
-    //     when the sweep CLOSES — before the outcome window has resolved, so at that moment
-    //     nothing in it knows whether the turn was carried. Backfilling the split therefore
-    //     turns pre-lock turns into jibes without turning any of them into clean jibes, and
-    //     the watch's CPH under-reads for the first few minutes of an auto-wind session.
-    //     Documented in docs/algorithms.md's watch-divergence list rather than fixed with a
-    //     third parallel array: it is a handful of turns at the very start of a session, and
-    //     it errs the way every other watch divergence errs — conservative.
-    // So after the backfill `tackCount + jibeCount <= turnCount`, with the difference being
-    // the sweeps that turned out to be course changes.
-    function backfillWindSplit(entryDeg as Array<Number>, netDeg as Array<Number>,
-            n as Number) as Void {
-        var wind = _cfg.windDirection;
-        if (wind < 0) {
-            return;
+    // ---- the turn log: write, read, and the rebuild it exists for (0.9.18) ----
+
+    // Append one resolved turn. Called from `_resolve`, where the geometry and the verdict
+    // are both known for the first time. `clean` is CLEAN-ELIGIBLE and not "this was a clean
+    // jibe": see the log's header for why the kind is deliberately not baked in.
+    hidden function _logTurn(entryU as Float, netDeg as Float, outcome as Number,
+            clean as Boolean) as Void {
+        if (_logN >= TURN_LOG_MAX) {
+            _dropOldest();
         }
-        for (var i = 0; i < n; i++) {
-            var uIn = entryDeg[i].toFloat();
-            var kind = classifySweep(uIn, uIn + netDeg[i].toFloat(), wind);
+        // The entry bearing arrives UNWRAPPED — it is the detector's running heading and may
+        // be any multiple of 360 away from a compass bearing — and what the log stores is the
+        // compass one. `classifySweep` reads the pair as (in, in + net), so folding the entry
+        // and keeping the net signed loses nothing it uses.
+        var entry = wrapDeg180(entryU).toNumber();
+        if (entry < 0) { entry += 360; }
+        if (entry < 0) { entry = 0; } else if (entry > 359) { entry = 359; }
+        var net = netDeg.toNumber();
+        if (net < -32768) { net = -32768; } else if (net > 32767) { net = 32767; }
+        var enc = net + 32768;
+        var at = _logN * TURN_LOG_STRIDE;
+        _log[at] = entry & 0xFF;
+        _log[at + 1] = ((entry >> 8) & 0x01) | ((outcome & 0x03) << 1) | (clean ? 0x08 : 0);
+        _log[at + 2] = (enc >> 8) & 0xFF;
+        _log[at + 3] = enc & 0xFF;
+        _logN++;
+    }
+
+    // The cap. Type the oldest record against the axis in force NOW, fold it into the frozen
+    // base, and shuffle the rest down. A memmove of at most 2 KB, once every 512 turns.
+    hidden function _dropOldest() as Void {
+        _foldIntoBase(0, _cfg.windDirection);
+        for (var i = TURN_LOG_STRIDE; i < TURN_LOG_MAX * TURN_LOG_STRIDE; i++) {
+            _log[i - TURN_LOG_STRIDE] = _log[i];
+        }
+        _logN = TURN_LOG_MAX - 1;
+    }
+
+    // Record `i`'s entry bearing, as the float `classifySweep` wants.
+    function logEntryDeg(i as Number) as Float {
+        var at = i * TURN_LOG_STRIDE;
+        return (_log[at] | ((_log[at + 1] & 0x01) << 8)).toFloat();
+    }
+
+    // Record `i`'s signed net rotation.
+    function logNetDeg(i as Number) as Float {
+        var at = i * TURN_LOG_STRIDE;
+        return ((_log[at + 2] << 8 | _log[at + 3]) - 32768).toFloat();
+    }
+
+    function logOutcome(i as Number) as Number {
+        return (_log[i * TURN_LOG_STRIDE + 1] >> 1) & 0x03;
+    }
+
+    function logCleanEligible(i as Number) as Boolean {
+        return (_log[i * TURN_LOG_STRIDE + 1] & 0x08) != 0;
+    }
+
+    // How many turns the log actually holds, and whether the cap has ever bitten. Both are
+    // read by the layout suite and by nothing in the app.
+    function logCount() as Number { return _logN; }
+    function logDropped() as Boolean { return _baseTack + _baseJibe > 0; }
+
+    // Add record `i`'s contribution to the frozen base, typed against `wind`.
+    hidden function _foldIntoBase(i as Number, wind as Number) as Void {
+        var uIn = logEntryDeg(i);
+        var kind = classifySweep(uIn, uIn + logNetDeg(i), wind);
+        var o = logOutcome(i);
+        if (kind == KIND_TACK) {
+            _baseTack++;
+            if (o == OUTCOME_FLEW) { _baseTackFlew++; }
+            else if (o == OUTCOME_TOUCHDOWN) { _baseTackTouch++; }
+            else if (o == OUTCOME_FELL) { _baseTackFell++; }
+        } else if (kind == KIND_JIBE) {
+            _baseJibe++;
+            if (o == OUTCOME_FLEW) { _baseJibeFlew++; }
+            else if (o == OUTCOME_TOUCHDOWN) { _baseJibeTouch++; }
+            else if (o == OUTCOME_FELL) { _baseJibeFell++; }
+            if (logCleanEligible(i) && o == OUTCOME_FLEW) { _baseClean++; }
+        }
+        if (kind == KIND_TACK || kind == KIND_JIBE) {
+            var twa = _wrap180(uIn - wind.toFloat());
+            if (twa > 0.0) { _basePort++; } else if (twa < 0.0) { _baseStbd++; }
+        }
+    }
+
+    // ---- REBUILD (0.9.18, replacing `backfillWindSplit`) ----
+    //
+    // Throw every per-kind counter away and recompute it from the log against the axis in
+    // force now. Called whenever that axis CHANGES — the auto-wind lock, an update to it, or
+    // the rider setting or clearing a bearing by hand — so the Tacks & jibes page says the
+    // same thing about a session however late the wind arrived.
+    //
+    // What it does NOT touch, and the list is the same one `backfillWindSplit` kept: the
+    // `turnCount`, the session-wide outcome tally, the streaks, the scores. Those were real
+    // observations made at the time and they are not re-judged; only the NAME of each turn
+    // and everything that hangs off the name is recomputed. So `tackCount + jibeCount <=
+    // turnCount` still holds, with the difference being the sweeps that are course changes
+    // under this axis.
+    //
+    // The invariant it buys, and the reason it exists: with a wind axis set,
+    //   jibeFlewCount + jibeTouchCount + jibeFellCount == jibeCount
+    //   tackFlewCount + tackTouchCount + tackFellCount == tackCount
+    // exactly — not "for turns typed after the lock", which is what 0.9.17 could promise.
+    //
+    // Cost: one pass over at most 512 records, on an event that happens a handful of times a
+    // session. No allocation.
+    function rebuildWindSplit() as Void {
+        var wind = _cfg.windDirection;
+        tackCount = _baseTack;
+        jibeCount = _baseJibe;
+        tackFlewCount = _baseTackFlew;
+        tackTouchCount = _baseTackTouch;
+        tackFellCount = _baseTackFell;
+        jibeFlewCount = _baseJibeFlew;
+        jibeTouchCount = _baseJibeTouch;
+        jibeFellCount = _baseJibeFell;
+        cleanJibeCount = _baseClean;
+        portEntryCount = _basePort;
+        starboardEntryCount = _baseStbd;
+        for (var i = 0; i < _logN; i++) {
+            var uIn = logEntryDeg(i);
+            var kind = classifySweep(uIn, uIn + logNetDeg(i), wind);
+            if (kind != KIND_TACK && kind != KIND_JIBE) {
+                continue;       // a course change under this axis: it stays a generic turn
+            }
+            var o = logOutcome(i);
             if (kind == KIND_TACK) {
                 tackCount++;
-            } else if (kind == KIND_JIBE) {
-                jibeCount++;
+                if (o == OUTCOME_FLEW) { tackFlewCount++; }
+                else if (o == OUTCOME_TOUCHDOWN) { tackTouchCount++; }
+                else if (o == OUTCOME_FELL) { tackFellCount++; }
             } else {
-                continue;           // a bear-away under this axis: it stays a generic turn
+                jibeCount++;
+                if (o == OUTCOME_FLEW) { jibeFlewCount++; }
+                else if (o == OUTCOME_TOUCHDOWN) { jibeTouchCount++; }
+                else if (o == OUTCOME_FELL) { jibeFellCount++; }
+                // A clean jibe is a clean-eligible FLY-THROUGH that this axis calls a jibe.
+                // The eligibility was decided when the turn resolved; the kind is decided
+                // here, which is the half that can change.
+                if (logCleanEligible(i) && o == OUTCOME_FLEW) { cleanJibeCount++; }
             }
             countEntrySide(uIn);
         }

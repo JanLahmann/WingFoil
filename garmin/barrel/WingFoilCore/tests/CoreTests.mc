@@ -361,6 +361,102 @@ function turnJibeClassifiedWithWind(logger as Test.Logger) as Boolean {
     return true;
 }
 
+// ---- the per-kind LADDER adds up (device app 0.9.18) ----
+//
+// The Tacks & jibes page draws each kind's whole outcome ladder now, so the six per-kind
+// counters owe the page an arithmetic guarantee: for every turn typed while the axis was
+// known, a kind's three rungs sum to exactly that kind's count. A page whose row does not add
+// up to the number above it is a page arguing with itself, and it is the kind of drift a
+// counter incremented in three branches invites.
+//
+// It holds THROUGH an axis change too, which is 0.9.18's doing: `rebuildWindSplit` throws
+// all eleven per-kind counters away and recomputes them together from the turn log, so a
+// kind's count and its rungs can never come from different populations. Until then a
+// one-shot backfill added to `tackCount` and `jibeCount` alone and the invariant was a `<=`
+// that only closed for the turns typed after the lock.
+(:test)
+function perKindOutcomesAddUpToTheKind(logger as Test.Logger) as Boolean {
+    var cfg = coreDefaults();
+    cfg.setWindDirection(0);            // wind from north: downwind is 180, upwind is 0
+    var d = new TurnDetector(cfg);
+
+    // three jibes, one of each rung: 120 -> 240 sweeps through dead downwind
+    runStraight(d, 5, 120.0, 8.0);
+    runSweep(d, 120.0, 30.0, 4, 8.0);
+    runStraight(d, 6, 240.0, 8.0);                      // flew through
+    runStraight(d, 5, 120.0, 8.0);
+    runSweep(d, 120.0, 30.0, 4, 8.0);
+    runStraight(d, 3, 240.0, 0.5);
+    runStraight(d, 6, 240.0, 8.0);                      // touched down
+    runStraight(d, 5, 120.0, 8.0);
+    runSweep(d, 120.0, 30.0, 4, 8.0);
+    runStraight(d, 14, 240.0, 0.2);                     // fell in
+    runStraight(d, 6, 240.0, 8.0);
+
+    // two tacks: 300 -> 60 sweeps through dead upwind
+    runStraight(d, 5, 300.0, 8.0);
+    runSweep(d, 300.0, 30.0, 4, 8.0);
+    runStraight(d, 6, 60.0, 8.0);                       // flew through
+    runStraight(d, 5, 300.0, 8.0);
+    runSweep(d, 300.0, 30.0, 4, 8.0);
+    runStraight(d, 3, 60.0, 0.5);
+    runStraight(d, 6, 60.0, 8.0);                       // touched down
+
+    Test.assertMessage(d.jibeCount == 3,
+        "three jibes, got " + d.jibeCount.toString());
+    Test.assertMessage(d.tackCount == 2,
+        "two tacks, got " + d.tackCount.toString());
+
+    // THE INVARIANT, per kind
+    var jibes = d.jibeFlewCount + d.jibeTouchCount + d.jibeFellCount;
+    var tacks = d.tackFlewCount + d.tackTouchCount + d.tackFellCount;
+    Test.assertMessage(jibes == d.jibeCount,
+        "the jibes' rungs sum to " + jibes.toString() + ", not " + d.jibeCount.toString()
+            + " (" + d.jibeFlewCount.toString() + "/" + d.jibeTouchCount.toString() + "/"
+            + d.jibeFellCount.toString() + ")");
+    Test.assertMessage(tacks == d.tackCount,
+        "the tacks' rungs sum to " + tacks.toString() + ", not " + d.tackCount.toString()
+            + " (" + d.tackFlewCount.toString() + "/" + d.tackTouchCount.toString() + "/"
+            + d.tackFellCount.toString() + ")");
+    // each rung is the session's own rung asked of one kind, so the two kinds can never
+    // together exceed it
+    Test.assertMessage(d.jibeFlewCount + d.tackFlewCount <= d.flewCount,
+        "the kinds claim more fly-throughs than the session had");
+    Test.assertMessage(d.jibeTouchCount + d.tackTouchCount <= d.touchdownCount,
+        "the kinds claim more touchdowns than the session had");
+    Test.assertMessage(d.jibeFellCount + d.tackFellCount <= d.fellCount,
+        "the kinds claim more falls than the session had");
+
+    // ...and a REBUILD keeps it an equality (0.9.18). The pass throws all eleven per-kind
+    // counters away and recomputes them together from the turn log, so there is no way for a
+    // kind's count and its rungs to come from different populations — which is exactly what
+    // the 0.9.17 one-shot backfill did, and why this used to be a `<=`.
+    d.rebuildWindSplit();
+    Test.assertMessage(
+        d.jibeFlewCount + d.jibeTouchCount + d.jibeFellCount == d.jibeCount,
+        "the jibes' rungs do not add up after a rebuild: "
+            + d.jibeFlewCount.toString() + "/" + d.jibeTouchCount.toString() + "/"
+            + d.jibeFellCount.toString() + " of " + d.jibeCount.toString());
+    Test.assertMessage(
+        d.tackFlewCount + d.tackTouchCount + d.tackFellCount == d.tackCount,
+        "the tacks' rungs do not add up after a rebuild: "
+            + d.tackFlewCount.toString() + "/" + d.tackTouchCount.toString() + "/"
+            + d.tackFellCount.toString() + " of " + d.tackCount.toString());
+    // ...and an axis the rider moves keeps it an equality too
+    cfg.setWindDirection(90);
+    d.rebuildWindSplit();
+    Test.assertMessage(
+        d.jibeFlewCount + d.jibeTouchCount + d.jibeFellCount == d.jibeCount
+            && d.tackFlewCount + d.tackTouchCount + d.tackFellCount == d.tackCount,
+        "the rungs stopped adding up when the axis moved");
+    logger.debug("per-kind ladder: jibes " + d.jibeFlewCount.toString() + "/"
+        + d.jibeTouchCount.toString() + "/" + d.jibeFellCount.toString() + " of "
+        + d.jibeCount.toString() + ", tacks " + d.tackFlewCount.toString() + "/"
+        + d.tackTouchCount.toString() + "/" + d.tackFellCount.toString() + " of "
+        + d.tackCount.toString());
+    return true;
+}
+
 (:test)
 function turnSubmersionForcesFellIn(logger as Test.Logger) as Boolean {
     var d = new TurnDetector(coreDefaults());
@@ -729,7 +825,7 @@ function cleanJibesAreSuccessfulJibesAndNothingElse(logger as Test.Logger) as Bo
     // (4) NO WIND AXIS, the same carried 180: a generic turn, successful, and not a clean jibe,
     // because nothing named it a jibe. This is the shape of the watch's auto-wind session
     // before the estimator locks — CPH under-reads there, deliberately and conservatively
-    // (TurnDetector.backfillWindSplit).
+    // (TurnDetector.rebuildWindSplit).
     var g = new TurnDetector(coreDefaults());
     runStraight(g, 5, 120.0, 8.0);
     runSweep(g, 120.0, 30.0, 4, 8.0);
@@ -779,6 +875,24 @@ function cleanJibesAreSuccessfulJibesAndNothingElse(logger as Test.Logger) as Bo
         "jibes flown through must be a subset of the jibes AND of the fly-throughs");
     Test.assertMessage(t.tackFlewCount <= t.tackCount && t.tackFlewCount <= t.flewCount,
         "tacks flown through must be a subset of the tacks AND of the fly-throughs");
+
+    // ---- THE OTHER TWO RUNGS, PER KIND (device app 0.9.18) ----
+    // The Tacks & jibes page draws a kind's WHOLE ladder now, so the split has to hold for
+    // the other two outcomes as well as for the green one. The swim was a jibe and the
+    // touchdown was a jibe, so each lands on exactly one of the jibe counters and on neither
+    // tack counter; the turn with no axis lands on none of the six.
+    Test.assertMessage(w.jibeFellCount == 1 && w.jibeTouchCount == 0,
+        "a jibe he swam out of was not counted as a jibe he fell in");
+    Test.assertMessage(w.tackFellCount == 0 && w.tackTouchCount == 0,
+        "a jibe landed on a tack counter");
+    Test.assertMessage(x.jibeTouchCount == 1 && x.jibeFellCount == 0,
+        "a jibe that touched down was not counted as one");
+    Test.assertMessage(g.jibeTouchCount == 0 && g.jibeFellCount == 0
+        && g.tackTouchCount == 0 && g.tackFellCount == 0,
+        "a turn with no axis landed on a kind's counter");
+    logger.debug("per-kind ladder: jibe " + d.jibeFlewCount.toString() + "/"
+        + w.jibeFellCount.toString() + "/" + x.jibeTouchCount.toString()
+        + ", tack " + t.tackFlewCount.toString());
 
     logger.debug("clean jibes: jibe " + d.cleanJibeCount.toString() + "/"
         + d.jibeCount.toString() + ", tack " + t.cleanJibeCount.toString() + "/"
@@ -916,6 +1030,65 @@ function autoWindTwoLobesResolveTheAxis(logger as Test.Logger) as Boolean {
     return true;
 }
 
+// ---- OPPOSED LOBES (engine 0.23.0, watch 0.9.18) ----
+//
+// One beam reach and its reciprocal. The watch refused this outright until 0.9.18 — above a
+// 179 deg separation it returned `_unconfirmed()` — because the bisector was the two lobes'
+// circular MEAN and at 180 deg the unit vectors cancel: `atan2(0, 0)` is 0 deg, a bearing
+// read off nothing. The half-angle form is defined everywhere and answers the PERPENDICULAR
+// of the lobe axis, which is where the wind is when a rider sailed only that one reach.
+//
+// The fixture is at exactly 180 deg, and that is the whole refusal band rather than a corner
+// of it: the old gate was `sep > 179.0`, so everything it turned away was within a degree of
+// opposed. A 179.2 deg separation cannot be built through this door anyway — the histogram
+// has 10 deg bins and a lobe refines to a mass-weighted mean inside +-2 of them, so a fixture
+// lands on a bin centre (180 apart, exactly) or several degrees off it and nothing between.
+// The degenerate case is the one worth having: it is where the old arithmetic did not merely
+// refuse but could not have answered.
+//
+// TWO PASSES, because the two halves of the answer fail differently. The AXIS is geometry and
+// it is available now at every separation; WHICH END of it is upwind is the no-go cone's
+// question, and on a session with no upwind or downwind work at all there is genuinely
+// nothing to answer it with. That is the engine's point: the doubt rides in `confidence`,
+// where a reader can see it, and not in a refusal that throws the axis away with it.
+(:test)
+function autoWindOpposedLobesStillResolve(logger as Test.Logger) as Boolean {
+    // PASS 1 — nothing but the one reach and its reciprocal, ON the bin centres and with no
+    // tails, so both lobes refine to exactly 90 and 270. Both cones are empty, so the
+    // DIRECTION stays unresolved; what must not happen is the separation gate firing.
+    var bare = new AutoWind();
+    autoWindRun(bare, [90.0, 270.0] as Array<Float>, 200, 10.0);
+    Test.assertMessage(bare.lastSepDeg > 179.0,
+        "the fixture did not produce opposed lobes — and above 179 is exactly what the "
+            + "retired gate refused: sep " + bare.lastSepDeg.format("%.1f"));
+    Test.assertMessage(bare.lastAxisConf > 0.0,
+        "the axis was refused on its separation, conf " + bare.lastAxisConf.format("%.2f"));
+
+    // PASS 2 — the same two reaches with a little DOWNWIND running in the mix. The two lobes
+    // are unchanged (180 deg is 90 deg from both, outside the +-2 bin refinement window), but
+    // the 180 cone holds mass now and the 0 cone holds none, so the end is decided and the
+    // axis has to come out on the PERPENDICULAR of the reach.
+    var aw = new AutoWind();
+    var cogs = [90.0, 90.0, 90.0, 270.0, 270.0, 270.0, 180.0] as Array<Float>;
+    var ev = autoWindRun(aw, cogs, 350, 10.0);
+    Test.assertMessage(aw.lastSepDeg > 179.0,
+        "pass 2 lost the opposed lobes: sep " + aw.lastSepDeg.format("%.1f"));
+    Test.assertMessage(aw.dirDeg >= 0,
+        "no axis with a cone to decide on, conf " + aw.confidence.format("%.2f")
+            + " (ev " + ev.toString() + ")");
+    Test.assertMessage(autoWindOffBy(aw, 0.0) <= 20.0,
+        "the axis is not the perpendicular: " + aw.dirDeg.toString() + " deg");
+    // ...and never a LOBE, which is what `atan2(0, 0)` would have handed back dressed as an
+    // answer if the old circular mean had been asked this question
+    Test.assertMessage(autoWindOffBy(aw, 90.0) > 20.0 && autoWindOffBy(aw, 270.0) > 20.0,
+        "the axis landed ON a lobe: " + aw.dirDeg.toString() + " deg");
+    logger.debug("opposed lobes: sep " + aw.lastSepDeg.format("%.1f") + " -> wind from "
+        + aw.dirDeg.toString() + " deg, conf " + aw.confidence.format("%.2f")
+        + "; with no cone at all, axis conf " + bare.lastAxisConf.format("%.2f")
+        + " and direction " + bare.dirDeg.toString());
+    return true;
+}
+
 // Nothing is accumulated off the foil or below the COG speed floor — the engine's two
 // `foiling_courses` filters, live. Without them a rider drifting sideways on a swim would
 // vote in the histogram with whatever the GPS calls his heading.
@@ -1005,7 +1178,7 @@ function autoWindBalancedLeavesACoinFlipUnresolved(logger as Test.Logger) as Boo
 
 // A lock is CONFIRMED: two consecutive qualifying evaluations, 60 s apart, agreeing within
 // CONFIRM_DEG. It costs a minute and it is what keeps one freak evaluation from spending the
-// one-shot backfill and the vibe on the wrong axis.
+// split rebuilt against the wrong axis and the vibe on it.
 (:test)
 function autoWindLockNeedsTwoAgreeingEvaluations(logger as Test.Logger) as Boolean {
     var aw = new AutoWind();
@@ -1083,52 +1256,83 @@ function autoWindSweepLogCapsAndDropsOldest(logger as Test.Logger) as Boolean {
     return true;
 }
 
-// ---- the one-shot backfill (TurnDetector.backfillWindSplit) ----
+// ---- the REBUILD (TurnDetector.rebuildWindSplit) ----
 //
-// The watch never re-runs classification, with exactly one exception: the first time AutoWind
-// adopts an axis, the sweeps it learned that axis FROM are re-named, so the session's counts
-// do not start from zero at minute two. It adds splits and moves nothing else.
+// The watch never re-judges an outcome, but since 0.9.18 it always re-NAMES: every time the
+// effective wind axis changes, every logged turn is typed against it again and all eleven
+// per-kind counters are rebuilt. A rider who sets the wind at minute forty gets the whole
+// session split, not the last twenty minutes of it, and the estimator's own first turns are
+// named by the axis they taught.
 (:test)
-function backfillSplitsTheTurnsTheAxisWasLearnedFrom(logger as Test.Logger) as Boolean {
+function rebuildSplitsTheTurnsTheAxisWasLearnedFrom(logger as Test.Logger) as Boolean {
     var cfg = coreDefaults();
     var d = new TurnDetector(cfg);
-    var aw = new AutoWind();
 
-    // Three 120 -> 240 deg sweeps with no wind axis: counted, but generic. The sweep is
-    // CONFIRMED a second or two after the rotation stops (that is what the trailing straight
-    // run is for), so the log entry is taken after it, exactly where MetricsEngine takes it.
+    // Three 120 -> 240 deg sweeps with no wind axis: counted, but generic.
     for (var i = 0; i < 3; i++) {
-        var before = d.turnCount;
         runStraight(d, 5, 120.0, 8.0);
         runSweep(d, 120.0, 30.0, 4, 8.0);
         runStraight(d, 6, 240.0, 8.0);
-        if (d.turnCount > before) {
-            aw.logSweep(d.lastEntryU, d.lastNetDeg);
-        }
     }
+    // ...and one more straight run, long enough for the LAST turn's quiet tail to run out.
+    // The star is granted CLEAN_QUIET_S after the sweep end (0.9.9) and the six seconds each
+    // iteration ends with is not that, so without this the third turn would still be pending
+    // when the rebuild ran — which is a real behaviour and not what this test is about.
+    runStraight(d, 12, 240.0, 8.0);
     Test.assertMessage(d.turnCount == 3, "three turns, got " + d.turnCount.toString());
     Test.assertMessage(d.tackCount == 0 && d.jibeCount == 0, "no axis: nothing is split");
     Test.assertMessage(d.portEntryCount == 0 && d.starboardEntryCount == 0,
         "no axis: there is no side to be on");
-    Test.assertMessage(aw.sweepCount == 3, "three sweeps logged, got "
-        + aw.sweepCount.toString());
+    Test.assertMessage(d.logCount() == 3,
+        "three turns logged, got " + d.logCount().toString());
 
-    // The estimator adopts north, and the backfill replays the log once.
+    // The estimator adopts north; the rebuild re-types every logged turn.
     cfg.setAutoWind(0);
     var turnsBefore = d.turnCount;
     var flewBefore = d.flewCount;
-    d.backfillWindSplit(aw.sweepEntries(), aw.sweepNets(), aw.sweepCount);
+    d.rebuildWindSplit();
     Test.assertMessage(d.jibeCount == 3,
         "120 -> 240 through dead downwind is a jibe, got " + d.jibeCount.toString());
     Test.assertMessage(d.tackCount == 0, "none of them is a tack");
     Test.assertMessage(d.turnCount == turnsBefore,
-        "the backfill must not re-count turns: " + d.turnCount.toString());
+        "the rebuild must not re-count turns: " + d.turnCount.toString());
     Test.assertMessage(d.flewCount == flewBefore,
-        "the backfill must not re-judge outcomes");
+        "the rebuild must not re-judge outcomes");
     Test.assertMessage(d.portEntryCount + d.starboardEntryCount == 3,
-        "each backfilled maneuver gets its entry side");
-    logger.debug("backfill: 3 generic turns became " + d.jibeCount.toString()
-        + " jibes, turnCount held at " + d.turnCount.toString());
+        "each re-typed maneuver gets its entry side");
+    // ...and the rungs came with the count, which is what 0.9.17's one-shot backfill could
+    // not do: it added to jibeCount alone and left these three behind.
+    Test.assertMessage(
+        d.jibeFlewCount + d.jibeTouchCount + d.jibeFellCount == d.jibeCount,
+        "the jibes' rungs do not add up after a rebuild: "
+            + d.jibeFlewCount.toString() + "/" + d.jibeTouchCount.toString() + "/"
+            + d.jibeFellCount.toString() + " of " + d.jibeCount.toString());
+    // a clean-eligible fly-through that this axis calls a jibe IS a clean jibe, and the star
+    // arrives with the axis rather than being lost for ever
+    Test.assertMessage(d.cleanJibeCount == 3,
+        "the rebuild did not award the stars: " + d.cleanJibeCount.toString());
+
+    // IDEMPOTENT: rebuilding against the same axis twice changes nothing. The counters are
+    // thrown away and recomputed, never added to, which is the whole difference from a
+    // backfill — and the guard MetricsEngine keeps is the axis, so a repeat is cheap, not
+    // wrong.
+    d.rebuildWindSplit();
+    Test.assertMessage(d.jibeCount == 3 && d.cleanJibeCount == 3
+        && d.portEntryCount + d.starboardEntryCount == 3,
+        "a second rebuild against the same axis double-counted");
+
+    // ...and an axis the rider CHANGES re-types them again rather than adding. From due east
+    // the same 120 -> 240 sweep crosses neither axis end: they are course changes now.
+    cfg.setWindDirection(90);
+    d.rebuildWindSplit();
+    Test.assertMessage(d.jibeCount == 0 && d.tackCount == 0,
+        "a changed axis must re-type, not accumulate: " + d.jibeCount.toString()
+            + " jibes, " + d.tackCount.toString() + " tacks");
+    Test.assertMessage(d.cleanJibeCount == 0, "no jibes, no stars");
+    Test.assertMessage(d.turnCount == turnsBefore, "and still three counted turns");
+
+    logger.debug("rebuild: 3 generic turns became " + d.logCount().toString()
+        + " logged records, turnCount held at " + d.turnCount.toString());
     return true;
 }
 
@@ -1136,25 +1340,23 @@ function backfillSplitsTheTurnsTheAxisWasLearnedFrom(logger as Test.Logger) as B
 // counted as. Retracting it would move turnCount, the success percentage and every streak
 // that spanned it — i.e. re-judge, on hindsight evidence, observations made at the time.
 (:test)
-function backfillLeavesBearAwaysAsTheGenericTurnsTheyWere(logger as Test.Logger) as Boolean {
+function rebuildLeavesBearAwaysAsTheGenericTurnsTheyWere(logger as Test.Logger) as Boolean {
     var cfg = coreDefaults();
     var d = new TurnDetector(cfg);
-    var aw = new AutoWind();
 
     // 60 -> 150 deg: with wind from north this crosses neither axis end.
     runStraight(d, 5, 60.0, 8.0);
     runSweep(d, 60.0, 30.0, 3, 8.0);
     runStraight(d, 6, 150.0, 8.0);
     Test.assertMessage(d.turnCount == 1, "with no axis it is a counted generic turn");
-    aw.logSweep(d.lastEntryU, d.lastNetDeg);
 
     cfg.setAutoWind(0);
-    d.backfillWindSplit(aw.sweepEntries(), aw.sweepNets(), aw.sweepCount);
+    d.rebuildWindSplit();
     Test.assertMessage(d.tackCount == 0 && d.jibeCount == 0, "a bear-away is neither");
     Test.assertMessage(d.turnCount == 1,
-        "the backfill retracted a counted turn: " + d.turnCount.toString());
+        "the rebuild retracted a counted turn: " + d.turnCount.toString());
     Test.assertMessage(d.rejectedCount == 0, "and it did not retro-reject it either");
-    logger.debug("backfill: bear-away stayed a generic turn, turnCount "
+    logger.debug("rebuild: bear-away stayed a generic turn, turnCount "
         + d.turnCount.toString());
     return true;
 }
