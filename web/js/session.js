@@ -1909,8 +1909,8 @@ function drawChips() {
       <p class="legend-note">Solid shape = manoeuvre outcome. Hollow square = straight-line
       flight end, on the same colour ladder. Arrow = takeoff. Red u-turn = a failed
       attempt.</p>
-      <p class="legend-note">A starred jibe needs both its chips. Hide its outcome and the
-      star goes with it.</p>
+      <p class="legend-note">A star answers to the clean jibe chip alone. Hide flew through and
+      the stars stay.</p>
       <p class="legend-note">Tap either figure to move the playhead. Tap a mark or a flown
       stretch of track to see which flight it belongs to. Zoomed in, a drag on the map pans
       it.</p>`;
