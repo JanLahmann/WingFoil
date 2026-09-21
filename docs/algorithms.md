@@ -943,6 +943,7 @@ inventing turns):
   quiet water, so both resumes re-anchor the baseline — the phone's `gap_before` restart, which
   the watch has no other way to see. A dunk is a spike; a level is not a dunk, and the price is
   the phone's too: water held to within 5 m for 20 s reads dry from its 20th second.
+- **Per-kind fly-throughs are not backfilled at the auto-wind lock** (watch 0.9.17): `tackFlewCount` / `jibeFlewCount`, the numbers under the Tacks & jibes page's giants, count from the moment an axis holds, the same conservative error `cleanJibeCount` makes; the phone's split is over the whole session.
 - **No pump corroboration** (step 3 of the ladder): the watch cannot promote a fly-through to a
   touchdown on accel evidence, so it reports slightly more fly-throughs than the phone.
 - **The watch does not measure the axis crossing**, and knows neither axis parameter. It has no
