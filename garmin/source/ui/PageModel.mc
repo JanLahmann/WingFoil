@@ -127,6 +127,70 @@ module PageModel {
     const MAX_PAGES = 8;
     const SLOTS = 5;
 
+    // ---- which screens exist at all (0.9.18) ----
+    //
+    // Seven switches in Garmin Connect, one per hideable page, in every stream
+    // (AppSettings.pageShown). These are INDICES into that array and nothing else — they are
+    // not layout ids and not metric ids, because the thing a switch governs is a PAGE and the
+    // same page appears under three different ids in the three sets:
+    //
+    //   switch            standard page       large-text screen(s)        after-save page
+    //   SHOW_FOIL         Foil                "time on foil"              S·Foil, S·Takeoffs
+    //   SHOW_RECORDS      Records             —                           S·Records
+    //   SHOW_TURNS        Turns               L·Turns                     S·Turns
+    //   SHOW_KINDS        Tacks & jibes       L·Jibes AND L·Tacks         S·Kinds
+    //   SHOW_CLOCK        Clock               —                           —
+    //   SHOW_STORY        Story               —                           S·Story
+    //   SHOW_MAP          Map                 —                           S·Track
+    //
+    // Three things have no switch and never will: MAIN (a watch with no data screen has no
+    // way back), the large set's live SPEED screen (the same argument one set down), and the
+    // after-save SAVED page (it is the acknowledgement the rider pressed for).
+    //
+    // S·Takeoffs follows FOIL because that is what it counts — how often he got onto the foil
+    // and what it cost him — and it is the one after-save page with no live twin to inherit a
+    // switch from.
+    const SHOW_FOIL = 0;
+    const SHOW_RECORDS = 1;
+    const SHOW_TURNS = 2;
+    const SHOW_KINDS = 3;
+    const SHOW_CLOCK = 4;
+    const SHOW_STORY = 5;
+    const SHOW_MAP = 6;
+    const SHOW_NONE = -1;       // this page has no switch: it is always on
+
+    // The screenshot harness's seam, and the only caller that sets it (ShotsApp.mc, which is
+    // never committed). A sheet has to photograph every page the app can draw, including the
+    // ones this watch's rider has switched off — the sheet is a check on the LAYOUTS, not on
+    // one rider's settings. Nothing in the shipped app writes it.
+    var showAll as Boolean = false;
+
+    // Which switch governs a standard LAYOUT, or SHOW_NONE where none does.
+    function switchForLayout(layout as Number) as Number {
+        if (layout == LAYOUT_FOIL) { return SHOW_FOIL; }
+        if (layout == LAYOUT_RECORDS) { return SHOW_RECORDS; }
+        if (layout == LAYOUT_TURNS) { return SHOW_TURNS; }
+        if (layout == LAYOUT_KINDS) { return SHOW_KINDS; }
+        if (layout == LAYOUT_CLOCK) { return SHOW_CLOCK; }
+        if (layout == LAYOUT_TIMELINE) { return SHOW_STORY; }
+        if (layout == LAYOUT_MAP) { return SHOW_MAP; }
+        return SHOW_NONE;       // MAIN, HERO, GRID4, CELLS2, BIG: no switch
+    }
+
+    // Which switch governs a LARGE-set screen, by the metric in its slot. The kind screens
+    // share one switch because they are one page in the standard set.
+    function switchForBigSlot(id as Number) as Number {
+        if (id == M_FOIL_PCT) { return SHOW_FOIL; }
+        if (id == M_TURNS) { return SHOW_TURNS; }
+        if (id == M_JIBES || id == M_TACKS) { return SHOW_KINDS; }
+        return SHOW_NONE;       // live speed: the set's own Main
+    }
+
+    // Is a page with switch `s` on? The harness's `showAll` is the one bypass.
+    function shown(s as Number) as Boolean {
+        return showAll || AppSettings.shows(s);
+    }
+
     // ---- the shipped pages, as data ----
     var DEF_LAYOUT as Array<Number> = [
         LAYOUT_MAIN, LAYOUT_FOIL, LAYOUT_RECORDS, LAYOUT_TURNS, LAYOUT_KINDS, LAYOUT_CLOCK,
@@ -212,20 +276,47 @@ module PageModel {
             for (var s = 0; s < SLOTS; s++) {
                 row[s] = _clamp(_read(src, key + "s" + (s + 1).toString(), defRow[s]), 0, M_MAX);
             }
-            if (lay != LAYOUT_OFF) {
+            // A page is on the cycle when its LAYOUT is on and its SWITCH is on. The two are
+            // different questions and they are asked in this order on purpose: the layout is
+            // the dev stream's per-page editor (`pg<N>Layout`, LAYOUT_OFF) and the switch is
+            // the one every stream has. So in dev the editor still decides what each page IS
+            // and the switch then decides whether that page is drawn — which is the rule the
+            // coordinator asked for, and it falls out of filtering after the build rather
+            // than inside it.
+            if (lay != LAYOUT_OFF && shown(switchForLayout(lay))) {
                 order.add(p);
                 if (lay == LAYOUT_MAP) {
                     mapPage = true;
                 }
             }
         }
-        // never leave the rider with a blank watch
+        // never leave the rider with a blank watch — and since 0.9.18 this is the floor the
+        // seven switches rest on rather than a corner nobody reaches. Turn all seven off and
+        // the standard set is MAIN and nothing else; turn off the eight LAYOUTS as well (dev
+        // only) and it is this hero, which is the page the editor has always fallen back to.
         if (order.size() == 0) {
-            _layout[0] = LAYOUT_HERO;
-            _slot[0] = [M_SPEED, M_FLIGHT_TIMER, M_HR, M_NONE, M_NONE];
-            order.add(0);
+            var p0 = _mainPage();
+            if (p0 >= 0) {
+                order.add(p0);
+            } else {
+                _layout[0] = LAYOUT_HERO;
+                _slot[0] = [M_SPEED, M_FLIGHT_TIMER, M_HR, M_NONE, M_NONE];
+                order.add(0);
+            }
         }
         _order = order;
+    }
+
+    // The first configured page that has no switch — MAIN on a default watch, and on a dev
+    // watch whichever page the editor left un-switchable. It is what the cycle falls back to
+    // when every switch is off, so the rider always has somewhere to stand.
+    function _mainPage() as Number {
+        for (var p = 0; p < MAX_PAGES; p++) {
+            if (_layout[p] != LAYOUT_OFF && switchForLayout(_layout[p]) == SHOW_NONE) {
+                return p;
+            }
+        }
+        return -1;
     }
 
     // The LARGE set, as data. Five LAYOUT_BIG pages carrying BIG_SLOT in slot 1 and nothing
@@ -242,10 +333,21 @@ module PageModel {
             if (p < BIG_PAGES) {
                 _layout[p] = LAYOUT_BIG;
                 row[0] = BIG_SLOT[p];
-                order.add(p);
+                // ...and the screen follows its STANDARD twin's switch (0.9.18). The large
+                // set is the same pages one number at a time, so a rider who has hidden the
+                // Tacks & jibes page has hidden both kind screens here too, and the set does
+                // not need seven switches of its own to say so.
+                if (shown(switchForBigSlot(BIG_SLOT[p]))) {
+                    order.add(p);
+                }
             } else {
                 _layout[p] = LAYOUT_OFF;
             }
+        }
+        // the live SPEED screen has no switch, so this set can never empty — but the floor is
+        // asserted rather than argued (`aShrunkPageSetNeverStrandsAnIndex`)
+        if (order.size() == 0) {
+            order.add(0);
         }
         _order = order;
     }

@@ -93,4 +93,32 @@
             <listEntry value="1">@Strings.PageSetLarge</listEntry>
         </settingConfig>
     </setting>
+    <!-- 0.9.18: which data screens exist at all. Seven switches, right under the page set
+         because they are the other half of the same question, and in EVERY stream — the
+         per-page editor is dev-only and this is what a release rider has to drop a screen he
+         never reads. The Main screen has no switch: a rider who turned the last one off
+         would have no page to turn them back on from.
+         One sentence, seven times: the only thing that changes is the page's name. -->
+    <setting propertyKey="@Properties.showFoil" title="@Strings.SetShowFoil"
+             prompt="@Strings.SetShowPagesNote">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.showRecords" title="@Strings.SetShowRecords">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.showTurns" title="@Strings.SetShowTurns">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.showKinds" title="@Strings.SetShowKinds">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.showClock" title="@Strings.SetShowClock">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.showStory" title="@Strings.SetShowStory">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.showMap" title="@Strings.SetShowMap">
+        <settingConfig type="boolean"/>
+    </setting>
 </settings>

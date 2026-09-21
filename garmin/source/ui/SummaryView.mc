@@ -57,24 +57,43 @@ module SummaryNav {
     // Which pages this session earned. Verdict/speed/foil/story always; turns only with a
     // turn to talk about, takeoffs only when the accelerometer was on and something happened,
     // the track only with a line to draw. A page that would say "0" is not a page.
+    // Since 0.9.18 a page also has to be SWITCHED ON. The after-save review is the live pages
+    // (six of the eight are their live twins drawn by the same code), so it follows the same
+    // seven switches rather than carrying a second set nobody would think to look for: hide
+    // the Story page and it is gone from the water AND from the review.
+    //
+    // S1 SAVED has no switch — it is the acknowledgement the rider pressed for, and it is
+    // what the page-position dots count from. S6 Takeoffs follows FOIL: it is the only
+    // after-save page with no live twin to inherit from, and what it counts is how often he
+    // got onto the foil.
     function build(c as SessionController) as Void {
         var e = c.engine;
-        var p = [S_VERDICT, S_SPEED, S_FOIL] as Array<Number>;
-        if (e.turns.turnCount > 0) {
+        var p = [S_VERDICT] as Array<Number>;
+        if (PageModel.shown(PageModel.SHOW_RECORDS)) {
+            p.add(S_SPEED);
+        }
+        if (PageModel.shown(PageModel.SHOW_FOIL)) {
+            p.add(S_FOIL);
+        }
+        if (e.turns.turnCount > 0 && PageModel.shown(PageModel.SHOW_TURNS)) {
             p.add(S_TURNS);
         }
         // The kinds page needs a KIND to show. Without a wind axis every turn is a generic
         // turn and both counts are 0, and a page that would say 0 is not a page — the same
         // rule the takeoffs and track pages are gated by. The live page stays in the cycle
         // either way, because on the water the axis can still arrive.
-        if (e.turns.tackCount > 0 || e.turns.jibeCount > 0) {
+        if ((e.turns.tackCount > 0 || e.turns.jibeCount > 0)
+                && PageModel.shown(PageModel.SHOW_KINDS)) {
             p.add(S_KINDS);
         }
-        if (e.pump.attempts() > 0 || e.pump.strokes > 0) {
+        if ((e.pump.attempts() > 0 || e.pump.strokes > 0)
+                && PageModel.shown(PageModel.SHOW_FOIL)) {
             p.add(S_TAKEOFFS);
         }
-        p.add(S_STORY);
-        if (e.trackN >= 2) {
+        if (PageModel.shown(PageModel.SHOW_STORY)) {
+            p.add(S_STORY);
+        }
+        if (e.trackN >= 2 && PageModel.shown(PageModel.SHOW_MAP)) {
             p.add(S_TRACK);
         }
         _pages = p;

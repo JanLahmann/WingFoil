@@ -55,6 +55,28 @@ module AppSettings {
     // takes its default rather than a clamp that would invent a set nobody chose.
     var pageSet as Number = PageModel.PAGE_SET_STANDARD;
 
+    // ---- which data screens exist at all (0.9.18) ----
+    //
+    // Seven switches for the eight standard pages, in EVERY stream. Jan: a rider who never
+    // reads the Story page should be able to stop paging through it, and until this round the
+    // only way was the per-page editor, which is dev-only.
+    //
+    // MAIN HAS NO SWITCH. A rider who turned the last screen off would have no page to turn
+    // one back on from, and `PageModel.build` already refuses to leave the watch blank — so
+    // the page that can never go is the one the refusal would have fallen back to anyway.
+    //
+    // Indexed by `PageModel.SHOW_*` so the model can ask one question with one index rather
+    // than seven named fields; `pageShown` is the only reader. Defaults TRUE, and the
+    // properties.xml defaults are true too — on an installed watch the property store wins,
+    // so a `false` there would hide the page whatever this file says.
+    var pageShown as Array<Boolean> = [true, true, true, true, true, true, true];
+
+    // Is the page behind `PageModel.SHOW_*` index `i` switched on? Out of range answers YES:
+    // a page nobody gave a switch (MAIN) is not a page anybody can hide.
+    function shows(i as Number) as Boolean {
+        return i < 0 || i >= pageShown.size() ? true : pageShown[i];
+    }
+
     // Did a wind axis EVER hold a real bearing this run? Sticky, and deliberately not the
     // same question as `cfg.windDirection >= 0`.
     //
@@ -118,6 +140,15 @@ module AppSettings {
         if (pageSet != PageModel.PAGE_SET_LARGE) {
             pageSet = PageModel.PAGE_SET_STANDARD;
         }
+        // Every one of these defaults TRUE, here and in properties.xml. A page a rider never
+        // touched is a page he still has.
+        pageShown[PageModel.SHOW_FOIL] = _bool("showFoil", true);
+        pageShown[PageModel.SHOW_RECORDS] = _bool("showRecords", true);
+        pageShown[PageModel.SHOW_TURNS] = _bool("showTurns", true);
+        pageShown[PageModel.SHOW_KINDS] = _bool("showKinds", true);
+        pageShown[PageModel.SHOW_CLOCK] = _bool("showClock", true);
+        pageShown[PageModel.SHOW_STORY] = _bool("showStory", true);
+        pageShown[PageModel.SHOW_MAP] = _bool("showMap", true);
         // NOT `_clamped`, and the two exceptions are the same exception. A wind axis of 400
         // clamped to 359 is a bearing the rider never gave, and it would relabel every tack
         // as a jibe rather than leaving the turns generic; `Config.setWindDirection` reads

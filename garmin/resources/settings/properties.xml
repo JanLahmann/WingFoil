@@ -46,4 +46,24 @@
          change both together. It is in EVERY stream: the per-page editor below it moved to
          resources-dev/base/settings/ in the same round. -->
     <property id="pageSet" type="number">0</property>
+
+    <!-- 0.9.18: SHOW OR HIDE each data screen, in every stream (AppSettings.pageShown,
+         PageModel.build). Seven switches for the eight standard pages — MAIN has none,
+         because a watch with no data screen is not a watch app and the rider would have no
+         way back. Every default is TRUE and that matters more here than anywhere else in
+         this file: a PROPERTY DEFAULT BEATS A CODE DEFAULT on an installed watch, so a
+         `false` here would hide the page on every watch that ever syncs, whatever the code
+         says (docs/testing.md, the CIQ traps).
+
+         The other two page sets follow the same switches rather than carrying their own,
+         because they are the same pages: the large-text set's foil, turns, jibes and tacks
+         screens are the twins of Foil, Turns and Tacks & jibes, and the after-save review IS
+         the live pages since 0.9.18. See PageModel.pageShown / SummaryNav.build. -->
+    <property id="showFoil" type="boolean">true</property>
+    <property id="showRecords" type="boolean">true</property>
+    <property id="showTurns" type="boolean">true</property>
+    <property id="showKinds" type="boolean">true</property>
+    <property id="showClock" type="boolean">true</property>
+    <property id="showStory" type="boolean">true</property>
+    <property id="showMap" type="boolean">true</property>
 </properties>
