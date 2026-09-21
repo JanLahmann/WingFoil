@@ -34,6 +34,13 @@ enum SnapshotSource {
 
     static func entry(at date: Date = Date()) -> SnapshotEntry {
         if let snapshot = WidgetSnapshotStore.read() {
+            // **The rider's unit arrives with the numbers** (Settings → Units). The blob is
+            // knots from end to end, as the engine is; this is the only place the extension
+            // learns which word to print after them, because it cannot read the app's own
+            // defaults. Applied here rather than in each view so the two widget families
+            // and the fact copy cannot disagree.
+            WidgetFormat.speedUnit = snapshot.speedUnit
+                .flatMap(WidgetFormat.SpeedUnit.init(rawValue:)) ?? .knots
             return SnapshotEntry(date: date, snapshot: snapshot, unreachable: false)
         }
         return SnapshotEntry(date: date, snapshot: nil,
@@ -162,13 +169,15 @@ struct LastSessionView: View {
                     if family == .systemSmall {
                         WidgetStat(label: "FOIL", value: WidgetFormat.pct(session.foilPct),
                                    big: true)
-                        WidgetStat(label: "BEST 2 S", value: WidgetFormat.knots(session.best2sKn))
+                        WidgetStat(label: "BEST 2 S",
+                                   value: WidgetFormat.knots(session.best2sKn, unit: true))
                     } else {
                         HStack(spacing: 10) {
                             WidgetStat(label: "FOIL", value: WidgetFormat.pct(session.foilPct),
                                        big: true)
                             WidgetStat(label: "BEST 2 S",
-                                       value: WidgetFormat.knots(session.best2sKn), big: true)
+                                       value: WidgetFormat.knots(session.best2sKn, unit: true),
+                                       big: true)
                             WidgetStat(label: "FLIGHTS",
                                        value: session.flightCount.map(String.init) ?? "—",
                                        big: true)

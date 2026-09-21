@@ -31,9 +31,12 @@ struct TurnDetailStripView: View {
 
     private var domain: ClosedRange<Double> { slice.timeDomain }
 
-    private var ceilingKn: Double {
+    /// The top of the y axis, **in the rider's unit** (Settings → Units): the series is
+    /// converted on its way onto the plot, so the domain has to travel with it or the trace
+    /// leaves the frame the moment a rider picks km/h.
+    private var ceiling: Double {
         let highest = slice.points.map(\.kn).max() ?? slice.speed.entryKn
-        return max(highest * 1.15, 5)
+        return Speed.value(max(highest * 1.15, 5))
     }
 
     var body: some View {
@@ -60,7 +63,7 @@ struct TurnDetailStripView: View {
             if let ghost, ghost.hasGeometry {
                 ForEach(Array(ghost.points.enumerated()), id: \.offset) { _, point in
                     LineMark(x: .value("Seconds", point.rt),
-                             y: .value("Speed", point.kn),
+                             y: .value("Speed", Speed.value(point.kn)),
                              series: .value("Turn", "ghost"))
                         .interpolationMethod(.monotone)
                         .lineStyle(StrokeStyle(lineWidth: 1.2, dash: [4, 3]))
@@ -69,7 +72,7 @@ struct TurnDetailStripView: View {
             }
             ForEach(Array(slice.points.enumerated()), id: \.offset) { _, point in
                 LineMark(x: .value("Seconds", point.rt),
-                         y: .value("Speed", point.kn),
+                         y: .value("Speed", Speed.value(point.kn)),
                          series: .value("Turn", "this"))
                     .interpolationMethod(.monotone)
                     .lineStyle(StrokeStyle(lineWidth: 1.8))
@@ -113,9 +116,9 @@ struct TurnDetailStripView: View {
             StripChrome.playhead(playheadRt)
         }
         .chartXScale(domain: domain)
-        .chartYScale(domain: 0...ceilingKn)
+        .chartYScale(domain: 0...ceiling)
         .chartXAxisLabel("s from the turn")
-        .chartYAxisLabel("kn")
+        .chartYAxisLabel(Fmt.knUnit)
         .chartOverlay { proxy in
             StripChrome.scrubSurface(proxy, domain: domain, playheadRt: $playheadRt)
         }
@@ -143,7 +146,7 @@ struct TurnDetailStripView: View {
 
     @ChartContentBuilder
     private func pumpMark(_ tick: PumpTick) -> some ChartContent {
-        let floor = ceilingKn * 0.045
+        let floor = ceiling * 0.045
         RectangleMark(xStart: .value("From", tick.startRt),
                       xEnd: .value("To", max(tick.endRt, tick.startRt + 0.15)),
                       yStart: .value("Floor", 0),
@@ -255,21 +258,24 @@ struct TurnDetailStripView: View {
             .lineStyle(StrokeStyle(lineWidth: 1, dash: [2, 3]))
             .foregroundStyle(Color.secondary.opacity(0.5))
             .annotation(position: below ? .bottom : .top, alignment: .center, spacing: 1) {
-                Text("\(label) \(String(format: "%.1f", kn))")
+                Text("\(label) \(Fmt.knValue(kn, digits: 1))")
                     .font(.caption2.monospacedDigit())
                     .foregroundStyle(.secondary)
             }
-        PointMark(x: .value("Seconds", rt), y: .value("Speed", kn))
+        PointMark(x: .value("Seconds", rt), y: .value("Speed", Speed.value(kn)))
             .symbolSize(28)
             .foregroundStyle(Color.accentColor)
     }
 
     private var accessibilityText: String {
-        var text = String(format: "Speed through the turn. %.1f knots coming in. "
-                          + "Down to %.1f after %.0f seconds. %.1f knots at the exit, "
-                          + "%.0f seconds in.",
-                          slice.speed.entryKn, slice.speed.minKn, slice.speed.minRt,
-                          slice.speed.exitKn, slice.speed.exitRt)
+        // Spoken in the rider's unit, the same one the plot is drawn in: VoiceOver reads
+        // the chart a sighted rider is looking at (Settings → Units).
+        var text = "Speed through the turn. " + Fmt.kn(slice.speed.entryKn, digits: 1)
+            + " coming in. "
+            + String(format: "Down to %@ after %.0f seconds. %@ at the exit, "
+                     + "%.0f seconds in.",
+                     Fmt.knValue(slice.speed.minKn, digits: 1), slice.speed.minRt,
+                     Fmt.kn(slice.speed.exitKn, digits: 1), slice.speed.exitRt)
         if let axisRt = slice.axisRt {
             text += String(format: " Through the wind axis %.0f seconds in.", axisRt)
         }

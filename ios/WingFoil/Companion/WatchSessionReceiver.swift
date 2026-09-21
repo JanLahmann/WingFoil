@@ -71,6 +71,30 @@ final class WatchSessionReceiver: NSObject {
         session.delegate = self
         session.activate()
     }
+
+    /// **Tells the wrist which unit to print speeds in** (Settings → Units).
+    ///
+    /// `updateApplicationContext` rather than a message: it is one small dictionary whose
+    /// *latest* value is the only one that matters, the system holds it until the watch is
+    /// next reachable, and it is delivered even if the watch app is not running. A rider who
+    /// switches to km/h on the beach and starts a session an hour later gets km/h on his
+    /// wrist without either app having been open in between.
+    ///
+    /// Best effort by design: no watch, no watch app, or a session that has not activated
+    /// yet all mean the watch keeps the unit it last stored, which is the right fallback.
+    func pushSpeedUnit(_ unit: SpeedUnit) {
+        guard WCSession.isSupported() else { return }
+        let session = WCSession.default
+        guard session.activationState == .activated else { return }
+        do {
+            try session.updateApplicationContext([Self.speedUnitKey: unit.rawValue])
+        } catch {
+            log.error("could not send the speed unit to the watch: \(error.localizedDescription)")
+        }
+    }
+
+    /// The one key both sides spell. The watch reads it in `SessionTransfer`.
+    static let speedUnitKey = "speedUnit"
 }
 
 extension WatchSessionReceiver: WCSessionDelegate {
@@ -84,7 +108,13 @@ extension WatchSessionReceiver: WCSessionDelegate {
         }
         log.info("WCSession active (paired watch app installed: \(session.isWatchAppInstalled))")
         // A file may already have been delivered while the app was not running.
-        Task { @MainActor in self.onArrival?() }
+        Task { @MainActor in
+            self.onArrival?()
+            // The link is only usable once it is active, so the rider's unit goes out here
+            // as well as when the picker moves — a watch paired after the choice was made
+            // still learns it.
+            self.pushSpeedUnit(Speed.unit)
+        }
     }
 
     /// Reactivation after a watch switch. Without both of these the session is dead once the

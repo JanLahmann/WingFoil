@@ -214,6 +214,12 @@ final class SessionStore {
             guard speedUnit != oldValue else { return }
             SpeedUnitStore.save(speedUnit, to: .standard)
             Speed.unit = speedUnit
+            // The two surfaces that are not this process and therefore cannot observe the
+            // store: the home-screen widgets read a published snapshot, and the watch app
+            // reads what the phone last told it. Both are speeds a rider sees, so both
+            // follow the picker (docs/presentation.md, "Units").
+            Task { await publishWidgetSnapshot() }
+            WatchSessionReceiver.shared.pushSpeedUnit(speedUnit)
         }
     }
 

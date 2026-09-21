@@ -2,7 +2,8 @@ import Charts
 import SwiftUI
 import WingFoilKit
 
-/// Speed over time in knots: detected flights shaded, the selected GP3S window marked
+/// Speed over time in the rider's unit (Settings → Units): detected flights shaded, the
+/// selected GP3S window marked
 /// (record provenance), and every maneuver / straight-line flight end dotted at the
 /// speed it happened, coloured by outcome.
 ///
@@ -189,7 +190,7 @@ struct SpeedChartView: View {
                 }
             }
             ForEach(visibleSpeed) { point in
-                LineMark(x: .value("Time", point.t), y: .value("Speed", point.kn))
+                LineMark(x: .value("Time", point.t), y: .value("Speed", Speed.value(point.kn)))
                     .interpolationMethod(.monotone)
                     .lineStyle(StrokeStyle(lineWidth: 1.4))
                     .foregroundStyle(Color.accentColor)
@@ -236,7 +237,7 @@ struct SpeedChartView: View {
                     .zIndex(11)
             }
         }
-        .chartYAxisLabel("kn")
+        .chartYAxisLabel(Fmt.knUnit)
         .chartXScale(domain: window.visible)
         // Round times, not equal fifths of the domain: `.automatic` labelled this axis
         // `0:00 · 33:20 · 66:40 · 100:00` (app-ui-review.md §1.5). `TimeAxisTicks` is the
@@ -251,7 +252,11 @@ struct SpeedChartView: View {
                 }
             }
         }
-        .chartYScale(domain: 0...(max(detail.maxSpeedKn * 1.1, 5)))
+        // The domain is converted, not only the label: an axis captioned km/h over ticks
+        // counted in knots is the lie the Units setting exists to remove. Swift Charts
+        // picks its own round ticks inside whatever domain it is given, so converting the
+        // ceiling is all it takes for `0 · 10 · 20 kn` to become `0 · 20 · 40 km/h`.
+        .chartYScale(domain: 0...Speed.value(max(detail.maxSpeedKn * 1.1, 5)))
         .chartOverlay { proxy in gestureSurface(proxy) }
         .figureHeight(regular: 190, compact: 150, wide: 260)
     }
@@ -342,7 +347,8 @@ struct SpeedChartView: View {
     }
 
     /// The plotted speed nearest the event, so a marker sits on the trace rather than
-    /// floating above it.
+    /// floating above it. In the rider's unit, because it is a y value on a converted axis
+    /// and not a number anyone reads.
     private func markerSpeed(at t: Double) -> Double {
         guard !detail.speed.isEmpty else { return 0 }
         var best = detail.speed[0]
@@ -355,7 +361,7 @@ struct SpeedChartView: View {
             }
             if point.t > t { break }
         }
-        return best.kn
+        return Speed.value(best.kn)
     }
 
     private func swatch(color: Color, label: String) -> some View {
