@@ -85,7 +85,7 @@
     <!-- 0.9.16: the page SET. One enum, in every stream — the per-page editor below moved
          to the dev stream in the same round, so on a release or beta watch this row is the
          page control, and it is the one a rider who needs his glasses is actually looking
-         for. Large = five screens, one giant number each (PageModel.buildLarge). -->
+         for. Large = seven screens, one giant number each (PageModel.buildLarge). -->
     <setting propertyKey="@Properties.pageSet" title="@Strings.SetPageSet"
              prompt="@Strings.SetPageSetNote">
         <settingConfig type="list">

@@ -761,6 +761,25 @@ function cleanJibesAreSuccessfulJibesAndNothingElse(logger as Test.Logger) as Bo
     Test.assertMessage(d.cleanJibeCount <= d.jibeCount && d.cleanJibeCount <= d.successCount,
         "clean jibes must be a subset of the jibes AND of the successful turns");
 
+    // THE SAME FIVE TURNS, split by kind (device app 0.9.17, the Tacks & jibes page). The
+    // per-kind fly-throughs are the ladder's green asked of one kind, so every case above
+    // answers twice: the carried jibe is a jibe he flew through, the carried tack a tack he
+    // flew through, and the swim, the touchdown and the unnamed turn are on neither counter.
+    Test.assertMessage(d.jibeFlewCount == 1 && d.tackFlewCount == 0,
+        "the carried jibe was not counted as a jibe he flew through");
+    Test.assertMessage(t.tackFlewCount == 1 && t.jibeFlewCount == 0,
+        "the carried tack was not counted as a tack he flew through");
+    Test.assertMessage(w.jibeFlewCount == 0, "a jibe he swam out of did not fly through");
+    Test.assertMessage(x.jibeFlewCount == 0, "a jibe that touched down did not fly through");
+    Test.assertMessage(g.jibeFlewCount == 0 && g.tackFlewCount == 0,
+        "there was no axis to put the turn on either counter");
+    // ...and the invariant the page draws on: a kind's fly-throughs are a subset of that
+    // kind, and of the session's fly-throughs
+    Test.assertMessage(d.jibeFlewCount <= d.jibeCount && d.jibeFlewCount <= d.flewCount,
+        "jibes flown through must be a subset of the jibes AND of the fly-throughs");
+    Test.assertMessage(t.tackFlewCount <= t.tackCount && t.tackFlewCount <= t.flewCount,
+        "tacks flown through must be a subset of the tacks AND of the fly-throughs");
+
     logger.debug("clean jibes: jibe " + d.cleanJibeCount.toString() + "/"
         + d.jibeCount.toString() + ", tack " + t.cleanJibeCount.toString() + "/"
         + t.tackCount.toString() + ", swim " + w.cleanJibeCount.toString() + "/"

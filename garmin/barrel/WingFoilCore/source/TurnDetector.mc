@@ -192,6 +192,21 @@ class TurnDetector {
     // kind when the sweep closes, success when the outcome window resolves — and the only place
     // both are known is `_resolve()`.
     var cleanJibeCount as Number = 0;
+    // FLEW-THROUGH, PER KIND (device app 0.9.17, the Tacks & jibes page). `flewCount` counts
+    // every counted turn he kept the foil through; these two split that number the way
+    // `tackCount` / `jibeCount` split `turnCount`, so the page can say "12 jibes, flew 9"
+    // without the rider doing the arithmetic. Two counters and not a derivation, for the same
+    // reason `cleanJibeCount` is one: the KIND is fixed when the sweep closes and the OUTCOME
+    // when the window resolves, and `_resolve()` is the only place that knows both.
+    //
+    // NOT backfilled by `backfillWindSplit` either, and the invariant survives it: the
+    // backfill only ever ADDS to `tackCount` / `jibeCount`, so `jibeFlewCount <= jibeCount`
+    // and `tackFlewCount <= tackCount` hold before and after. What it means on the glass is
+    // that a pre-lock jibe counts as a jibe but not as a jibe he flew through. It errs the
+    // way the un-backfilled `cleanJibeCount` above it errs, and for the same reason: the
+    // sweep log carries geometry only, written before the outcome window resolved.
+    var tackFlewCount as Number = 0;
+    var jibeFlewCount as Number = 0;
     // Was the turn that just resolved a clean jibe? Published beside `lastOutcome` so a caller
     // that already reacts to a resolved turn can tell the two apart without a second event
     // nibble; false again on the next turn that is not one.
@@ -695,6 +710,14 @@ class TurnDetector {
             flewStreak = 0;
         } else {
             flewCount++;
+            // the same verdict, split by what the sweep was named: no allocation, no second
+            // pass, and `lastKind` is still this turn's (the watch does not detect during an
+            // outcome window)
+            if (lastKind == KIND_TACK) {
+                tackFlewCount++;
+            } else if (lastKind == KIND_JIBE) {
+                jibeFlewCount++;
+            }
             dryStreak++;
             flewStreak++;
         }

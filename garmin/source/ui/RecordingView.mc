@@ -98,6 +98,40 @@ const CLEAN_FROM = TALLY_FLOOR;
 // starts reading as part of it.
 const CLEAN_GLYPH_GAP = 7;
 
+// ---- the TACKS & JIBES page (0.9.17, see drawKindsBody) ----
+//
+// Jan, 21 September 2026, from a tester practising tacks: the Turns page says how the
+// maneuvers went, and nothing on the watch says WHICH maneuvers they were. This page does,
+// in two halves: the kind's count as a giant, the kind's word under it, and under that how
+// many of that kind he flew through, in the ladder's own green.
+//
+// STACKED, not side by side. The pair band (drawPairBand) is the other shape available and
+// it was measured and rejected: two halves of one chord give each count about 95 px on a
+// 240 px glass, which steps both giants off the number ladder on exactly the watches this
+// app was widened for — and a count that is not a giant is the Turns page's tally row, which
+// already exists one screen back. Stacked, each giant gets the WHOLE chord at its own depth,
+// and the two halves sit symmetrically about the equator.
+//
+// Aborted turns are on neither half and are not counted on the watch at all: a sweep the
+// classifier rejects is a course change (TurnDetector.rejectedCount), and the engine's
+// aborted-turn count has no watch twin (docs/algorithms.md, the watch divergences).
+const KINDS_JIBES = "jibes";
+const KINDS_TACKS = "tacks";
+// The header. The split only exists where a wind axis does — without one every turn is a
+// generic turn and both counts are 0 — so the page says which axis it is counting against,
+// and says so when there is none. Otherwise the page reads as broken on exactly the session
+// where it is merely uninformed.
+const KINDS_WIND = "wind ";
+const KINDS_NO_WIND = "wind not set";
+// Gap between a half's word and its "flew N", the same wider gap the tally row puts between
+// its counts and the session verdict: two groups, not one phrase.
+const KINDS_GAP = TURNS_OK_GAP;
+// The sub-row's rung, as a TEXT_FONTS index. FONT_SMALL, the readability floor every count on
+// this watch keeps, for the reason the clean-jibe row is pinned there: the row is a caption
+// row under a giant, and every pixel of band it takes comes out of the giants either side of
+// it. It sheds the "flew N" half rather than its size, exactly as the clean row sheds CPH.
+const KINDS_FROM = TALLY_FLOOR;
+
 // PAUSED banner. A word, not a value, so FONT_TINY is the right rung (docs review: XTINY and
 // TINY are label sizes) — and a narrower banner is what lets it sit high enough on the glass
 // to clear the rings entirely instead of punching a hole in them.
@@ -324,6 +358,8 @@ class RecordingView extends WatchUi.View {
             drawRecordsPage(dc, c);
         } else if (layout == PageModel.LAYOUT_TURNS) {
             drawTurnsPage(dc, c);
+        } else if (layout == PageModel.LAYOUT_KINDS) {
+            drawKindsPage(dc, c);
         } else if (layout == PageModel.LAYOUT_TIMELINE) {
             drawTimelinePage(dc, c);
         } else if (layout == PageModel.LAYOUT_CLOCK) {
@@ -1071,9 +1107,13 @@ class RecordingView extends WatchUi.View {
         var radius = fitRadius(dc, false, foilArc);
         var id = bigId(page);
         var tally = id == PageModel.M_TURNS;
+        // 0.9.17: the two KIND screens carry a third row too — "flew 9" — for the same reason
+        // the turns screen carries its tally. A count of jibes without a verdict on them is
+        // the one number on this set that says nothing on its own.
+        var flew = PageModel.flewLine(id, c.engine.turns);
         var hN = inkH(dc, Graphics.FONT_NUMBER_THAI_HOT);
         var hW = dc.getFontHeight(TEXT_FONTS[BIG_WORD_FONT]);
-        var hK = tally ? dc.getFontHeight(TEXT_FONTS[BIG_TALLY_FROM]) : 0;
+        var hK = tally || !flew.equals("") ? dc.getFontHeight(TEXT_FONTS[BIG_TALLY_FROM]) : 0;
 
         // row 0 — the giant. `fitGiant` and not `fitFont`, so a metric whose value carries a
         // letter (none of the five does today, but the slot is a catalog id) leaves the
@@ -1096,6 +1136,13 @@ class RecordingView extends WatchUi.View {
         if (tally) {
             drawTally(dc, cx, bigRowY(cy, hN, hW, hK, 2), cy, radius, c.engine.turns, "",
                 BIG_TALLY_FROM);
+        } else if (!flew.equals("")) {
+            // ...and on a kind screen, the same verdict asked of that kind alone, in the
+            // ladder's green. One line, one colour, the set's own rung.
+            y = bigRowY(cy, hN, hW, hK, 2);
+            dc.setColor(Ink.ladderFlew(), Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, y, fitFont(dc, TEXT_FONTS, BIG_TALLY_FROM, flew,
+                rowBudget(radius, y - cy, inkH(dc, TEXT_FONTS[BIG_TALLY_FROM]))), flew, CV);
         }
     }
 
@@ -1822,6 +1869,143 @@ class RecordingView extends WatchUi.View {
         // row 5 — the verdict, and the asymmetry underneath it. Which side of the wind he
         // enters on is the one thing on this page he can act on tomorrow.
         drawVerdictRow(dc, cx, turnsRowY(cy, hT, hG, hC, hK, hD, hS, 5), cy, radius, t);
+    }
+
+    // ---- TACKS & JIBES: the kinds page (0.9.17) ----
+    //
+    // Jan, 21 September 2026, from a tester practising tacks: the Turns page says how the
+    // maneuvers went, and nothing on the watch says WHICH maneuvers they were. This page does,
+    // in two halves: the kind's count as a giant, the kind's word under it, and under that how
+    // many of that kind he flew through, in the ladder's own green.
+    //
+    // Five rows: the wind header, then the two halves. `drawKindsBody` is public and takes no
+    // `live` flag: the after-save page IS this page (SummaryView.drawKinds) and nothing on it
+    // means anything different ashore, which is the unified rule of 0.9.16 in its simplest
+    // form — one piece of code, one set of numbers, two screens.
+    hidden function drawKindsPage(dc as Dc, c as SessionController) as Void {
+        drawKindsBody(dc, c);
+    }
+
+    function drawKindsBody(dc as Dc, c as SessionController) as Void {
+        var t = c.engine.turns;
+        var cx = dc.getWidth() / 2;
+        var cy = dc.getHeight() / 2;
+        var radius = fitRadius(dc, false, false);
+        var hT = dc.getFontHeight(Graphics.FONT_XTINY);
+        var hG = inkH(dc, Graphics.FONT_NUMBER_MEDIUM);
+        var hC = dc.getFontHeight(TEXT_FONTS[KINDS_FROM]);
+
+        // row 0 - the axis this page counts against, or the reason it cannot count
+        var y = kindsRowY(cy, hT, hG, hC, 0);
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, y, Graphics.FONT_XTINY, kindsHeader(), CV);
+
+        // rows 1-2 the jibes, rows 3-4 the tacks. Jibes on top: it is the maneuver the app is
+        // named after and the one most riders do most of.
+        drawKindHalf(dc, cx, cy, radius, hT, hG, hC, 0, t);
+        drawKindHalf(dc, cx, cy, radius, hT, hG, hC, 1, t);
+    }
+
+    // One half: the count as a giant, then the word and the fly-throughs under it. `half` is
+    // 0 (jibes) or 1 (tacks) and picks its two rows out of the stack.
+    //
+    // NINE arguments exactly, which is the CIQ 3.x ceiling (pairFits' header says why the app
+    // keeps to it): the three band heights ride separately rather than as an array because
+    // the caller already holds them as locals and an array here would be an allocation per
+    // half per frame.
+    hidden function drawKindHalf(dc as Dc, cx as Number, cy as Number, radius as Number,
+            hT as Number, hG as Number, hC as Number, half as Number,
+            t as TurnDetector) as Void {
+        var id = half == 0 ? PageModel.M_JIBES : PageModel.M_TACKS;
+        var count = half == 0 ? t.jibeCount.toString() : t.tackCount.toString();
+        var cap = half == 0 ? KINDS_JIBES : KINDS_TACKS;
+        var flew = PageModel.flewLine(id, t);
+
+        var y = kindsRowY(cy, hT, hG, hC, 1 + 2 * half);
+        var f = kindGiantFont(dc, count, rowBudget(radius, y - cy, hG));
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, y, f, count, CV);
+
+        y = kindsRowY(cy, hT, hG, hC, 2 + 2 * half);
+        var budget = rowBudget(radius, y - cy, inkH(dc, TEXT_FONTS[KINDS_FROM]));
+        if (kindsSubWidth(dc, cap, flew, TEXT_FONTS[TALLY_FLOOR]) > budget) {
+            flew = "";          // the word names the half; the verdict is what it gives up
+        }
+        var sf = kindsSubFont(dc, cap, flew, budget);
+        var LV = Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER;
+        var x = cx - kindsSubWidth(dc, cap, flew, sf) / 2;
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(x, y, Graphics.FONT_XTINY, cap, LV);
+        if (flew.equals("")) {
+            return;
+        }
+        x += dc.getTextWidthInPixels(cap, Graphics.FONT_XTINY) + KINDS_GAP;
+        // the ladder's green, because this IS the ladder's green count asked of one kind
+        dc.setColor(Ink.ladderFlew(), Graphics.COLOR_TRANSPARENT);
+        dc.drawText(x, y, sf, flew, LV);
+    }
+
+    // The header text: the axis when there is one, and why there is no split when there is
+    // not. `windLabel` marks an axis the WATCH estimated with a leading "~", exactly as the
+    // Turns page's header does, so the page never claims the rider named it.
+    static function kindsHeader() as String {
+        return AppSettings.cfg.windDirection >= 0
+            ? KINDS_WIND + AppSettings.windLabel() : KINDS_NO_WIND;
+    }
+
+    // Row centres: 0 header, 1 jibes giant, 2 jibes word, 3 tacks giant, 4 tacks word. The
+    // whole block is centred, so the two halves straddle the equator and each giant takes the
+    // chord at its own depth. Shared with the layout test.
+    static function kindsRowY(cy as Number, hT as Number, hG as Number, hC as Number,
+            row as Number) as Number {
+        var y = cy - (hT + 2 * (hG + hC)) / 2;
+        if (row == 0) { return y + hT / 2; }
+        if (row == 1) { return y + hT + hG / 2; }
+        if (row == 2) { return y + hT + hG + hC / 2; }
+        if (row == 3) { return y + hT + hG + hC + hG / 2; }
+        return y + hT + 2 * hG + hC + hC / 2;
+    }
+
+    // A half's giant: NUMBER_MEDIUM, then MILD, then down the text ladder to the FONT_SMALL
+    // floor - the same ladder and the same floor the Turns page's giant tally walks, because
+    // it is the same kind of number on the same kind of row.
+    static function kindGiantFont(dc as Dc, v as String,
+            budget as Number) as Graphics.FontType {
+        for (var i = 2; i < NUMBER_FONTS.size(); i++) {
+            if (dc.getTextWidthInPixels(v, NUMBER_FONTS[i]) <= budget) {
+                return NUMBER_FONTS[i];
+            }
+        }
+        for (var i = 0; i < TALLY_FLOOR; i++) {
+            if (dc.getTextWidthInPixels(v, TEXT_FONTS[i]) <= budget) {
+                return TEXT_FONTS[i];
+            }
+        }
+        return TEXT_FONTS[TALLY_FLOOR];
+    }
+
+    // Width of a half's sub-row: the kind's word at FONT_XTINY, and the fly-throughs in the
+    // row's own font after the group gap. An empty `flew` is the dropped form.
+    static function kindsSubWidth(dc as Dc, cap as String, flew as String,
+            f as Graphics.FontType) as Number {
+        var w = dc.getTextWidthInPixels(cap, Graphics.FONT_XTINY);
+        if (!flew.equals("")) {
+            w += KINDS_GAP + dc.getTextWidthInPixels(flew, f);
+        }
+        return w;
+    }
+
+    // The sub-row's font. Written as a ladder even though KINDS_FROM is already the floor,
+    // for the reason cleanRowFont is: the ladder is the page's rule, and a row given a bigger
+    // band one day should step down it rather than be a special case somebody has to notice.
+    static function kindsSubFont(dc as Dc, cap as String, flew as String,
+            budget as Number) as Graphics.FontType {
+        for (var i = KINDS_FROM; i < TALLY_FLOOR; i++) {
+            if (kindsSubWidth(dc, cap, flew, TEXT_FONTS[i]) <= budget) {
+                return TEXT_FONTS[i];
+            }
+        }
+        return TEXT_FONTS[TALLY_FLOOR];
     }
 
     // ---- row 2: the clean jibes ----

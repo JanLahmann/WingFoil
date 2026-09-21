@@ -63,6 +63,18 @@ public enum WhatsNew {
     /// Every entry, newest first.
     public static let entries: [WhatsNewEntry] = [
         WhatsNewEntry(
+            version: "0.9.17",
+            build: nil,
+            channel: .release,
+            date: "2026-09-21",
+            dateText: "21 September 2026",
+            title: "Tacks and jibes, counted apart",
+            lines: [
+                "A Tacks and jibes page after Turns. Each count, with how many of them flew through.",
+                "It is in the large-text set too, one screen each.",
+                "The page names the wind axis it counts against.",
+            ]),
+        WhatsNewEntry(
             version: "1.0.1",
             build: 96,
             channel: .dev,

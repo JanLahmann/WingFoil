@@ -1,6 +1,6 @@
 #!/bin/zsh
 # One harness cycle on one simulator device, photographed frame by frame, deduplicated and
-# tiled into one sheet. The harness (source/ShotsApp.mc, not committed) cycles the 20 screens (start, 7 standard, 5 large, 7 summary)
+# tiled into one sheet. The harness (source/ShotsApp.mc, not committed) cycles the 24 screens (start, 8 standard, 7 large, 8 summary)
 # every 3 s; this script starts a fresh simulator, runs the harness, captures the device
 # window by its window id (the window lands wherever macOS last had it, on any display),
 # and tiles the distinct frames six per row.
@@ -26,8 +26,8 @@ sleep 15
 rm -rf "$OUT"; mkdir -p "$OUT"
 # a dimmed display makes screencapture fail with "could not create image from window";
 # -u asserts user activity for the length of the cycle
-caffeinate -u -d -i -t 220 &
-for i in $(seq -w 1 84); do
+caffeinate -u -d -i -t 260 &
+for i in $(seq -w 1 100); do
   WID=$("$HERE/winfo" | head -1 | cut -d' ' -f1)
   [ -n "$WID" ] && { screencapture -x -o -l $WID "$OUT/cap-$i.png" || true; }
   sleep 0.8
