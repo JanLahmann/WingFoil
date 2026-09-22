@@ -9,7 +9,8 @@
  *
  * Protocol (main -> worker):
  *   {type:'init'}
- *   {type:'analyze',   id, name, buffer}
+ *   {type:'analyze',   id, name, buffer, policy}
+ *   {type:'presentation', id, json, policy}         stored analysis -> its document
  *   {type:'digest',    id, json, name}              analysis JSON -> library digest
  *   {type:'dedupe',    id, digestJson, indexJson}   is this session already stored?
  *   {type:'aggregate', id, digestsJson, speedRecords}  records + trends + periods
@@ -80,7 +81,11 @@ async function fetchJson(url) {
   return res.json();
 }
 
-async function analyze(id, name, buffer) {
+/** `policy` is Settings → Speed records, the one rider choice the presentation document
+ *  takes (ADR-033). It travels with the analysis because the document is built in the same
+ *  Python call: one pass over the golden rather than a second round trip, and the result
+ *  the UI gets back already carries every fact its renderers need. */
+async function analyze(id, name, buffer, policy) {
   if (!booting) booting = boot();
   await booting;
 
@@ -90,7 +95,7 @@ async function analyze(id, name, buffer) {
   try {
     // web_entry does parse + analyze in one Python call; the two UI steps bracket it.
     status("analyze", "active", `${(bytes.length / 1024).toFixed(0)} KB`);
-    json = entry.analyze_json(bytes, name);
+    json = entry.analyze_json(bytes, name, policy || "preferVerified");
   } finally {
     status("parse", "done", "");
   }
@@ -135,7 +140,16 @@ self.onmessage = async (ev) => {
         await ready();
         break;
       case "analyze":
-        await analyze(msg.id, msg.name, msg.buffer);
+        await analyze(msg.id, msg.name, msg.buffer, msg.policy);
+        break;
+      // The one door for a session stored before the document existed. A session analysed
+      // since carries its own inside the analysis JSON and never comes through here, which
+      // is what keeps "re-opening a stored session needs no Pyodide" true.
+      case "presentation":
+        await ready();
+        self.postMessage({ type: "json", id: msg.id, kind: "presentation",
+                           json: entry.presentation_json(msg.json,
+                                                         msg.policy || "preferVerified") });
         break;
       case "digest":
         await ready();

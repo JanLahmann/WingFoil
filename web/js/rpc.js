@@ -107,9 +107,13 @@ function send(payload, transfer = []) {
   return promise;
 }
 
-/** Run the engine over FIT bytes. Resolves with `{json, digestJson}`. */
-export function analyze(buffer, name) {
-  return send({ type: "analyze", name, buffer }, [buffer]);
+/** Run the engine over FIT bytes. Resolves with `{json, digestJson}`.
+ *
+ *  `policy` is Settings → Speed records, and it is here rather than inside the worker
+ *  because the worker has no `localStorage`: the presentation document is built in the
+ *  same Python call and takes it as its one rider input (ADR-033). */
+export function analyze(buffer, name, policy = null) {
+  return send({ type: "analyze", name, buffer, policy }, [buffer]);
 }
 
 /** A Python call that answers with JSON — `digest`, `dedupe`, `aggregate`. */
