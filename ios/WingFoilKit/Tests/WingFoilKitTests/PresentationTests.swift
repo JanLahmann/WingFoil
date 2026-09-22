@@ -3503,6 +3503,52 @@ import Testing
         }
     }
 
+    /// **The legend chip's number is the document's `turns.legend[].count`** — one rule,
+    /// both platforms (ADR-033 round 3, `docs/presentation/document.md`, "the legend's
+    /// counts").
+    ///
+    /// The count is the **analysis count**: every mark of that category the afternoon held,
+    /// whether or not the recording could place it on a track. The alternative — counting
+    /// what is drawn — would make the same afternoon count differently depending on the
+    /// file it arrived in, which is a number with two meanings (pattern L). The browser
+    /// reads `turns.legend` directly; the phone derives the same numbers from its markers,
+    /// and this is what holds the two derivations to one answer, over every fixture.
+    ///
+    /// The four line layers are out of it by construction: a line carries `count: null`.
+    @Test func theLegendChipCountsAreTheDocumentsAnalysisCounts() throws {
+        let dir = testFixturesDir.appendingPathComponent("goldens")
+        let files = ((try? FileManager.default.contentsOfDirectory(
+            at: dir, includingPropertiesForKeys: nil)) ?? [])
+            .filter { $0.lastPathComponent.hasSuffix(".expected.json") }
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
+        try #require(!files.isEmpty, "fixtures/goldens is empty")
+
+        for url in files {
+            let stem = url.lastPathComponent.replacingOccurrences(of: ".expected.json",
+                                                                  with: "")
+            let analysis = try JSONDecoder().decode(SessionAnalysis.self,
+                                                    from: Data(contentsOf: url))
+            let document = PresentationDocument.build(analysis)
+            let legend = try #require(document["turns"]?["legend"], "\(stem): no legend")
+            let fromDocument = MapLayerTally(legend: legend)
+            let fromMarkers = PresentationFacts(analysis).layerTally
+
+            for layer in [MapLayer.flewThrough, .touchdown, .fellIn, .courseChange,
+                          .cleanJibe, .takeoff, .splash, .pumping] {
+                #expect(fromDocument.count(layer) == fromMarkers.count(layer),
+                        "\(stem): the \(layer.rawValue) chip's count")
+                #expect(fromDocument.isToggleable(layer) == fromMarkers.isToggleable(layer),
+                        "\(stem): the \(layer.rawValue) chip's liveness")
+            }
+            // A line layer has nothing to be a tally of, so the document gives it none and
+            // a surface answers "is there a line to hide?" for itself.
+            for layer in [MapLayer.flying, .offFoil, .effort, .direction] {
+                #expect(fromDocument.count(layer) == 0,
+                        "\(stem): \(layer.rawValue) must carry no count")
+            }
+        }
+    }
+
     /// The star layer: which turns get one, and what it may never be confused with.
     ///
     /// A clean jibe is a *counted* jibe the engine's own `success` flag passed — not a

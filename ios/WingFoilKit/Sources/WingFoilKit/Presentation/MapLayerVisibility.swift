@@ -199,6 +199,33 @@ public struct MapLayerTally: Sendable, Equatable {
 
     /// Whether the chip for `layer` is a live toggle in this session.
     public func isToggleable(_ layer: MapLayer) -> Bool { count(layer) > 0 }
+
+    /// **The legend's counts, read off the presentation document** (ADR-033, round 3).
+    ///
+    /// One rule for both platforms, and this is it: a chip's number is the **analysis
+    /// count** — how many marks of that category the afternoon held — and not how many of
+    /// them this figure managed to plot. A mark the recording could not place (a
+    /// Doppler-only source has no track at all) is drawn nowhere and still counted, because
+    /// what the chip names is the session, not the drawing of it. Counting what is drawn
+    /// would make one afternoon count differently depending on the file it arrived in
+    /// (`docs/review-checklist.md`, pattern L: one number, one meaning).
+    ///
+    /// The four **line** layers carry `count: null` in the document — a line has nothing to
+    /// be a tally of — and are left out here, so a surface supplies its own answer to "is
+    /// there a line to hide?".
+    ///
+    /// A clean jibe is counted on `flewThrough` **and** on `cleanJibe`: the star is a mark
+    /// on both censuses, while it answers to the star's chip alone for *hiding*
+    /// (`EventMarker.layers`). The chip's number is a census; the chip's tap is a filter.
+    public init(legend: PresentationValue) {
+        var counts: [MapLayer: Int] = [:]
+        for chip in legend.arrayValue ?? [] {
+            guard let id = chip["layerId"]?.stringValue, let layer = MapLayer(rawValue: id),
+                  case .int(let count)? = chip["count"] else { continue }
+            counts[layer] = count
+        }
+        self.counts = counts
+    }
 }
 
 /// The one stored copy of the rider's choice: per user, not per session, so the map looks
