@@ -6,8 +6,12 @@ plain-Python statement of the same bytes, the one the two ends are tested agains
 no dependency beyond the stdlib on purpose, so `python3 lab/tools/cjr_ref.py` prints the
 worked example the format document quotes, and `--check` re-derives it.
 
-Only stream 0 (`rec.v1`, one record per GPS fix) is defined here. Stream 1, the wrist
-magnitudes, is dev3's and gets its own encoding name when it exists.
+Two streams are defined here. Stream 0 is `rec.v1`, one record per GPS fix. Stream 1 is
+`wrist.v1` (0.9.18-dev1), 25 Hz wrist magnitudes inside the windows the watch flagged —
+8-bit deltas in centi-g where they hold, a two-byte escape where they do not.
+
+`pack_words` / `unpack_words` are the fenix 5 Plus family's page encoding: four payload
+bytes per 32-bit Number, because Connect IQ below 6.0.0 cannot transmit a `ByteArray`.
 """
 from __future__ import annotations
 
@@ -18,6 +22,7 @@ from dataclasses import dataclass
 MAGIC = b"CJR1"
 SCHEMA = 2                # 2: the 20-byte header carries the watch's clock offset
 STREAM_RECORD = 0
+STREAM_WRIST = 1          # `wrist.v1`, 0.9.18-dev1
 HEADER_BYTES = 20
 HEADER_BYTES_V1 = 16      # schema 1 streams, read but no longer written
 UTC_OFFSET_NONE = 0x7FFF
@@ -195,6 +200,169 @@ def decode(data: bytes) -> tuple[Header, list[Sample]]:
     return header, out
 
 
+# ================================================================ stream 1 — `wrist.v1`
+#
+# 25 Hz wrist magnitudes, in centi-g, gravity included: a resting wrist reads about 100.
+# Samples inside a window are exactly WRIST_STEP_MS apart, so no sample carries a time of
+# its own; the window header carries the time of its first.
+#
+# Only the windows the watch flagged are on the wire (ADR-031). Everything between two
+# windows is a sensor gap, which is a state the pump grid already models — empty bins held
+# at the mean, `valid` false, no strokes picked there — so a windowed stream needs no new
+# concept downstream and no new source letter.
+
+WRIST_HZ = 25
+WRIST_STEP_MS = 40           # 1000 / WRIST_HZ, exact
+WINDOW_TAG = 0xFF
+ESCAPE_TAG = 0xFE
+WINDOW_HEADER_BYTES = 9
+DELTA_BIAS = 126             # byte v (0x00..0xFD) means the delta v - DELTA_BIAS
+DELTA_MIN = -126             # 0x00
+DELTA_MAX = 127              # 0xFD
+MAG_MAX = 65535              # centi-g; 655 g is three times what a wrist sensor saturates at
+WINDOW_MAX_SAMPLES = 250     # 10 s; a longer flagged stretch becomes consecutive windows
+
+
+@dataclass
+class Window:
+    """One flagged stretch of wrist motion. `t0_ms` is epoch milliseconds of `mags[0]`;
+    sample `i` is at `t0_ms + i * WRIST_STEP_MS`."""
+
+    t0_ms: int
+    mags: list[int]          # centi-g, one per 25 Hz sample
+
+
+def _clamp_mag(v: int) -> int:
+    return 0 if v < 0 else (MAG_MAX if v > MAG_MAX else v)
+
+
+def encode_window(w: Window) -> bytes:
+    """One window as its header plus `n` magnitude codes. The first code is always an
+    escape, so a window decodes without anything in front of it."""
+    n = len(w.mags)
+    if n < 1 or n > WINDOW_MAX_SAMPLES:
+        raise ValueError(f"window of {n} samples")
+    out = bytearray(struct.pack("<BIHH", WINDOW_TAG, w.t0_ms // 1000,
+                                w.t0_ms % 1000, n))
+    previous: int | None = None
+    for raw in w.mags:
+        m = _clamp_mag(raw)
+        if previous is None:
+            out += struct.pack("<BH", ESCAPE_TAG, m)
+        else:
+            d = m - previous
+            if DELTA_MIN <= d <= DELTA_MAX:
+                out.append(d + DELTA_BIAS)
+            else:
+                out += struct.pack("<BH", ESCAPE_TAG, m)
+        previous = m
+    return bytes(out)
+
+
+def decode_wrist(data: bytes) -> tuple[Header, list[Window]]:
+    """The concatenation of stream 1's pages, in order."""
+    header = Header.unpack(data[:HEADER_BYTES])
+    i = header_size(data)
+    out: list[Window] = []
+    while i < len(data):
+        if data[i] != WINDOW_TAG:
+            raise ValueError(f"wrist stream: expected a window at byte {i}")
+        if i + WINDOW_HEADER_BYTES > len(data):
+            raise ValueError("wrist stream: truncated window header")
+        _, secs, ms, n = struct.unpack("<BIHH", data[i:i + WINDOW_HEADER_BYTES])
+        i += WINDOW_HEADER_BYTES
+        mags: list[int] = []
+        previous: int | None = None
+        for _ in range(n):
+            if i >= len(data):
+                raise ValueError("wrist stream: truncated window payload")
+            b = data[i]
+            if b == ESCAPE_TAG:
+                if i + 3 > len(data):
+                    raise ValueError("wrist stream: truncated escape")
+                m = struct.unpack("<H", data[i + 1:i + 3])[0]
+                i += 3
+            elif b == WINDOW_TAG:
+                raise ValueError("wrist stream: window ended early")
+            else:
+                if previous is None:
+                    raise ValueError("wrist stream: delta before any escape")
+                m = previous + b - DELTA_BIAS
+                i += 1
+            mags.append(m)
+            previous = m
+        out.append(Window(secs * 1000 + ms, mags))
+    return header, out
+
+
+class WristEncoder:
+    """Windows in, closed pages out. A window never straddles a page, so every page opens
+    with a window header and decodes on its own — the rule §1 states for stream 0.
+
+    Page 0 is the 20-byte stream header ALONE. Stream 1's pages are dropped under budget
+    pressure on the watch and their indices are only assigned at save, so the header cannot
+    ride on a page that might not survive."""
+
+    def __init__(self, header: Header):
+        if header.stream != STREAM_WRIST:
+            raise ValueError("wrist encoder wants stream 1")
+        self._pages: list[bytes] = [header.pack()]
+        self._buf = bytearray()
+
+    def push(self, w: Window) -> None:
+        rec = encode_window(w)
+        if len(rec) > PAGE_BYTES:
+            raise ValueError("a window larger than a page")
+        if len(self._buf) + len(rec) > PAGE_BYTES:
+            self._pages.append(bytes(self._buf))
+            self._buf = bytearray()
+        self._buf += rec
+
+    def close(self) -> list[bytes]:
+        if self._buf:
+            self._pages.append(bytes(self._buf))
+            self._buf = bytearray()
+        return self._pages
+
+
+# ======================================================== the fenix 5 Plus packed page
+#
+# `Communications.transmit` takes a `ByteArray` only from Connect IQ 6.0.0, and 30 of the
+# 42 products we ship are older (fenix 5 Plus 3.3.3, fenix 7 5.2.0). Those send the page as
+# an `Array<Number>`. One byte per Number costs five wire bytes each
+# (`PhoneLink.estimateBytes`); four bytes per Number costs the same five for four, so an
+# 8 000 B page fits where it did not.
+#
+# The packing is signalled by the page MESSAGE (`f` bit 0, `bl` the true byte count), never
+# by the stream header's `flags`: the header is inside the packed payload, so a phone that
+# had to read it first could not unpack it.
+
+PACK_FLAG = 1                # message key `f`, bit 0
+
+
+def pack_words(payload: bytes) -> list[int]:
+    """Four payload bytes per 32-bit Number, little-endian within the word. The last word
+    is zero-filled; `bl` on the message carries the true length. Words are returned the way
+    Monkey C holds them — signed 32-bit, so a word with its top bit set is negative."""
+    out: list[int] = []
+    for i in range(0, len(payload), 4):
+        chunk = payload[i:i + 4] + b"\0" * (4 - len(payload[i:i + 4]))
+        word = int.from_bytes(chunk, "little", signed=False)
+        out.append(word - (1 << 32) if word >= (1 << 31) else word)
+    return out
+
+
+def unpack_words(words: list[int], byte_len: int) -> bytes:
+    """The inverse. `byte_len` must be within one word of the array's own length, or the
+    page is claiming a size its words cannot hold and is refused rather than padded."""
+    if byte_len < 0 or byte_len > 4 * len(words) or byte_len <= 4 * (len(words) - 1):
+        raise ValueError(f"{len(words)} words cannot hold {byte_len} bytes")
+    out = bytearray()
+    for word in words:
+        out += (word & 0xFFFFFFFF).to_bytes(4, "little")
+    return bytes(out[:byte_len])
+
+
 # ------------------------------------------------------------------ the worked example
 EXAMPLE_HEADER = Header(stream=STREAM_RECORD, app_version=9 * 256 + 2,
                         start_epoch_s=1756556820, wind_dir=200, discipline=0,
@@ -212,6 +380,19 @@ EXAMPLE_HEX = (
 )
 
 
+WRIST_EXAMPLE_HEADER = Header(stream=STREAM_WRIST, app_version=9 * 256 + 2,
+                              start_epoch_s=1756556820, wind_dir=200, discipline=0,
+                              utc_offset_min=120)
+# One window of five 25 Hz samples opening 1.4 s into the session: a resting wrist, two
+# small steps, a landing spike the 8-bit delta cannot say, and a step back down.
+WRIST_EXAMPLE_WINDOW = Window(t0_ms=1756556821_400, mags=[100, 103, 99, 400, 398])
+WRIST_EXAMPLE_HEX = (
+    "434a5231" "02" "01" "0209" "14eeb268" "c800" "00" "00" "7800" "0000"   # header, page 0
+    "ff" "15eeb268" "9001" "0500"                                           # window header
+    "fe" "6400" "81" "7a" "fe" "9001" "7c"                                  # 100 +3 −4 400 −2
+)
+
+
 def example_bytes() -> bytes:
     enc = Encoder(EXAMPLE_HEADER)
     for s in EXAMPLE_SAMPLES:
@@ -221,20 +402,47 @@ def example_bytes() -> bytes:
     return pages[0]
 
 
-def main(argv: list[str]) -> int:
+def wrist_example_bytes() -> bytes:
+    enc = WristEncoder(WRIST_EXAMPLE_HEADER)
+    enc.push(WRIST_EXAMPLE_WINDOW)
+    return b"".join(enc.close())
+
+
+def _check() -> bool:
     b = example_bytes()
+    ok = b.hex() == EXAMPLE_HEX
+    h, back = decode(b)
+    ok = ok and h == EXAMPLE_HEADER and len(back) == 3
+    ok = ok and all(abs(a.lat - e.lat) < 6e-7 and abs(a.lon - e.lon) < 6e-7
+                    and a.t == e.t and a.speed_cms == e.speed_cms and a.alt_m == e.alt_m
+                    and a.hr == e.hr and a.tick == e.tick
+                    for a, e in zip(back, EXAMPLE_SAMPLES))
+
+    w = wrist_example_bytes()
+    ok = ok and w.hex() == WRIST_EXAMPLE_HEX
+    wh, windows = decode_wrist(w)
+    ok = ok and wh.stream == STREAM_WRIST and len(windows) == 1
+    ok = ok and windows[0] == WRIST_EXAMPLE_WINDOW
+
+    # The packed page is the same bytes, four to a Number, and says its own length.
+    for page in (b, w):
+        words = pack_words(page)
+        ok = ok and len(words) == (len(page) + 3) // 4
+        ok = ok and unpack_words(words, len(page)) == page
+    return ok
+
+
+def main(argv: list[str]) -> int:
     if "--check" in argv:
-        ok = b.hex() == EXAMPLE_HEX
-        h, back = decode(b)
-        ok = ok and h == EXAMPLE_HEADER and len(back) == 3
-        ok = ok and all(abs(a.lat - e.lat) < 6e-7 and abs(a.lon - e.lon) < 6e-7
-                        and a.t == e.t and a.speed_cms == e.speed_cms and a.alt_m == e.alt_m
-                        and a.hr == e.hr and a.tick == e.tick
-                        for a, e in zip(back, EXAMPLE_SAMPLES))
+        ok = _check()
         print("cjr reference: PASS" if ok else "cjr reference: FAIL")
         return 0 if ok else 1
+    b = example_bytes()
     print(b.hex())
     print(len(b), "bytes")
+    w = wrist_example_bytes()
+    print(w.hex())
+    print(len(w), "bytes, wrist.v1")
     return 0
 
 
