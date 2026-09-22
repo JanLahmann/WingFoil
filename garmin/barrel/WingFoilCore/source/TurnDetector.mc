@@ -103,6 +103,12 @@ function sweepCrossing(lo as Float, hi as Float, offset as Float, mid as Float) 
 // STOP_FLOOR_MPS, barometric submersion. Verdict: submerged or stop > FALL_STOP_S => fell in;
 // else any loss => touchdown; else flew through.
 //
+// WHEN the verdict lands is its own rule (Jan, 22 September 2026). A fall is monotonic — once
+// the stop spell passes FALL_STOP_S nothing later can make it anything else — so the window
+// ends on that tick instead of running out the tail, and the buzz and the Turns page arrive
+// while the rider is still in the water. The phone, reading the same FIT afterwards, reaches
+// the same verdict off the same fact; only the wrist has a moment to be late for.
+//
 // The score%/success pair is a *separate*, narrower measurement (turns.py `_build_turn`):
 // the speed minimum over the sweep plus MIN_SPEED_LAG_S only. success = score >= SUCCESS_PCT
 // AND that minimum stayed above foilExit. A turn can therefore be successful and still be
@@ -709,6 +715,21 @@ class TurnDetector {
         } else {
             _recoverHeld = 0.0;
         }
+        // THE VERDICT LANDS AT THE STOP (Jan, 22 September 2026). The 30 s tail is there so a
+        // slow mush-out is still the turn's fall; it is NOT a delay the rider should feel. Once
+        // the stop spell has passed FALL_STOP_S the answer is already `fell in` and no further
+        // evidence can move it — `_resolve` reads the same `_stopMax` on its top rung, and
+        // `_stopMax` only ever grows. So the fall is called here, on that tick, and the buzz
+        // and the Turns page land while the rider is still in the water rather than half a
+        // minute later. A fall never un-falls, which is what makes ending the window early the
+        // same verdict and not a guess at one.
+        //
+        // The score is untouched: it closes at `_endT + MIN_SPEED_LAG_S` (2 s), and a stop
+        // spell cannot exceed 5 s before `_endT + 6 s` — the sweep itself is above
+        // COG_SPEED_FLOOR throughout, so `_stopMax` is 0 when the window opens.
+        if (_stopMax > FALL_STOP_S) {
+            return _resolve();
+        }
         // The cap is the NOT-RECOVERED one (0.9.19). Recovery is tested first and on every
         // tick, so a rider who gets going again closes the window exactly where 0.9.18 closed
         // it; only a rider who never does is followed the further 18 s, which is the whole of
@@ -795,9 +816,15 @@ class TurnDetector {
         } else {
             _endStopRun = 0.0;
         }
-        // Closed by recovery (he is flying again) or by the window running out. Either way the
-        // evidence is called with what there is, exactly as the turn window does.
-        if (flying || _clockS - _endStartS >= FLIGHT_END_WINDOW_S) {
+        // Closed by recovery (he is flying again), by the evidence already proving a swim, or
+        // by the window running out. Either way the evidence is called with what there is,
+        // exactly as the turn window does — including the early close: `_closeFlightEnd`'s top
+        // rung is this same `_endStopMax > FALL_STOP_S`, and it only ever grows, so calling it
+        // on the tick the stop gets there is the same answer sooner. The streak on the main
+        // screen therefore breaks while the rider is in the water, in step with the wrist's
+        // verdict on a turn's fall.
+        if (flying || _endStopMax > FALL_STOP_S
+                || _clockS - _endStartS >= FLIGHT_END_WINDOW_S) {
             _closeFlightEnd();
         }
     }

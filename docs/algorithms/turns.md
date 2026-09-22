@@ -593,6 +593,26 @@ the wrong lesson about the two implementations.
   window. What the longer `FLIGHT_END_WINDOW_S` buys is the *unowned* case — a rider who
   ventilates on a straight reach and coasts to a stop at 20 s is a swim on the wrist now, where
   a 12 s window saw a glide-out and broke no streak.
+
+  **And the verdict lands at the stop, not at the end of the tail** (Jan, 22 September 2026;
+  watch 0.9.19). The 30 s cap is how long the watch is willing to *wait* for evidence, and it
+  was being spent even when the evidence was already in: a rider who went down 6 s after a jibe
+  sat there while the wrist said nothing, and buzzed about it 24 s later. A fall is monotonic —
+  `_resolve`'s top rung is `_stopMax > FALL_STOP_S` and `_stopMax` only grows — so once the
+  stop spell passes `FALL_STOP_S` no further sample can make the answer anything else, and
+  `_outcomeTick` resolves on that tick. `_flightEndTick` closes its own window on the same
+  fact, so the streak on the main screen breaks at the same moment for a swim no turn owns.
+  Same verdict, same window, earlier: nothing about *what* the watch decides moved, only *when*
+  the rider is told. At 1 Hz with the both-ends convention that is the seventh stopped sample —
+  a 14 s mush-out that stops is a fall at 21 s past the sweep rather than at 30.
+
+  **The phone has no such moment to get right.** `flightend.py` and `turns.py` read a finished
+  track, so the tail is a slice and the verdict is a value; asking when it "lands" there is
+  asking when a `for` loop reaches an index. The two implementations therefore agree on the
+  *fact* — the same stop, over the same window, against the same `FALL_STOP_S` — and the wrist
+  alone has a latency to be judged on. That is why this is not a divergence: a replay of the
+  same FIT gives the same ladder before and after this change, which is what
+  `turnLadderMatchesTheGoldenOnASyntheticReplay` holds.
 - **Submersion is read in the pressure domain.** `turnBaroDrop` (25 m of apparent altitude) is
   converted once to a ~300 Pa rise in `rawAmbientPressure` against a slow (~50 s) baseline that
   refuses to adapt while a spike is in progress. Same positive-only semantics. **Since engine

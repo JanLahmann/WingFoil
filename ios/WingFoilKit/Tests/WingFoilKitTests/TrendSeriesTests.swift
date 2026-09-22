@@ -100,14 +100,14 @@ import Testing
     }
 
     /// The one speed series, and the one chart whose points say whether the recording could
-    /// certify them. Knots on both platforms, and the class-(c) afternoon is drawn — it is
-    /// still his — and drawn marked.
+    /// certify them. Knots on both platforms, and every point says what its recording was —
+    /// `certified` is a fact about the file, not about the setting, so the class-(c)
+    /// afternoon carries `false` whether or not its value is drawn.
     @Test func theBest2sSeriesIsKnotsAndKnowsWhatItCannotCertify() async throws {
         let fixture = try PeriodTests.loadFixture()
         let chart = try #require(fixture.trends.charts.first { $0.key == "best2s" })
         #expect(chart.unit == "kn")
         #expect(chart.label == "Best 2 s")
-        #expect(chart.uncertified)
 
         let points = try await PeriodTests.library(fixture).trend()
         let byId = Dictionary(uniqueKeysWithValues: points.map { ($0.sessionId, $0) })
@@ -117,5 +117,51 @@ import Testing
         }
         #expect(byId["c2"]?.certified == false)
         #expect(byId["a1"]?.certified == true)
+    }
+
+    /// **Settings → Speed records reaches this line too** (22 September 2026). The library
+    /// holds nine verified afternoons and one class-(c) one, so under the default
+    /// `preferVerified` the unverified point has nothing to fill: it keeps its column and
+    /// loses its value, exactly as `library._points(certify=True)` leaves it — which is why
+    /// the fixture's own chart no longer carries the uncertified badge.
+    @Test func theBest2sSeriesFollowsTheSpeedRecordPolicy() async throws {
+        let fixture = try PeriodTests.loadFixture()
+        let chart = try #require(fixture.trends.charts.first { $0.key == "best2s" })
+        #expect(!chart.uncertified)
+        let store = try await PeriodTests.library(fixture)
+
+        let preferred = try await store.trend()
+        let dropped = try #require(preferred.first { $0.sessionId == "c2" })
+        #expect(dropped.best2sKn == nil)
+        #expect(dropped.certified == false)                 // the mark is about the file
+        #expect(preferred.count == fixture.sessions.count)  // the column stayed
+        #expect(preferred.first { $0.sessionId == "a1" }?.best2sKn != nil)
+
+        // The rider who wants every record drawn gets the point back, value and mark.
+        let all = try await store.trend(policy: .includeUnverified)
+        let kept = try #require(all.first { $0.sessionId == "c2" })
+        #expect(kept.best2sKn == 11.5)
+        #expect(kept.certified == false)
+
+        // Only verified answers like prefer verified here, and would differ only on a
+        // library with no verified best 2 s at all.
+        let strict = try await store.trend(policy: .onlyVerified)
+        #expect(strict.first { $0.sessionId == "c2" }?.best2sKn == nil)
+        #expect(strict.first { $0.sessionId == "a1" }?.best2sKn != nil)
+    }
+
+    /// The other side of `preferVerified`: a library whose **only** best 2 s is unverified
+    /// still draws it, marked, because there is no verified effort for it to lose to.
+    @Test func anUnverifiedOnlyLibraryStillDrawsItsBest2s() async throws {
+        let fixture = try PeriodTests.loadFixture()
+        let store = try await PeriodTests.library(fixture)
+        try await store.database.writer.write { db in
+            try db.execute(sql: "UPDATE session SET best2sKn = NULL WHERE id <> 'c2'")
+        }
+        let points = try await store.trend()
+        #expect(points.first { $0.sessionId == "c2" }?.best2sKn == 11.5)
+        // And under Only verified that same library has no speed line at all.
+        let strict = try await store.trend(policy: .onlyVerified)
+        #expect(strict.allSatisfy { $0.best2sKn == nil })
     }
 }
