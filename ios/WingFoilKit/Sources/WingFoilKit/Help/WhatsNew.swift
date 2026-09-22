@@ -121,6 +121,19 @@ public enum WhatsNew {
                 "Best hour opens its window on the map and chart, like the other eight records.",
             ]),
         WhatsNewEntry(
+            version: "0.9.19",
+            build: nil,
+            channel: .release,
+            date: "2026-09-22",
+            dateText: "22 September 2026",
+            title: "The wrist reads the fall like the phone",
+            lines: [
+                "A jibe you never got going again after is a fall on the wrist too.",
+                "The buzz comes as soon as the stop is long enough to be a fall.",
+                "The tack and jibe rows equal the phone's on the same session.",
+                "Every word the watch prints comes from the one copy source the phone and the site read.",
+            ]),
+        WhatsNewEntry(
             version: "0.9.18",
             build: nil,
             channel: .release,
