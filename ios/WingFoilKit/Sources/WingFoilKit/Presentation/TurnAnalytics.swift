@@ -10,7 +10,7 @@ import Foundation
 /// first. The label and the field it filters are therefore defined together, here, where a
 /// test can hold them to each other.
 ///
-/// Definitions: docs/algorithms.md "Turn detection" / "Turn outcome".
+/// Definitions: docs/algorithms/turns.md "Turn detection" / "Turn outcome".
 
 // MARK: - Filters
 
@@ -157,7 +157,7 @@ public enum TurnOutcomeKind: String, Sendable, Equatable, CaseIterable {
     ///
     /// A clean jibe is drawn as a star and answers to `cleanJibe` *alone*: hide "flew
     /// through" and the plain flew-through dots go while the stars stay, hide "clean jibe"
-    /// and the stars go while the dots stay (docs/presentation.md, "Clean jibe"). Nothing is
+    /// and the stars go while the dots stay (docs/presentation/clean-jibe.md, "Clean jibe"). Nothing is
     /// ever drawn twice, and nothing answers to two chips.
     public func layer(clean: Bool) -> MapLayer { clean ? .cleanJibe : layer }
 }

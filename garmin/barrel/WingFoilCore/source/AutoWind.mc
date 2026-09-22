@@ -12,7 +12,7 @@ enum {
 }
 
 // LIVE WIND-AXIS ESTIMATION ON THE WATCH — the approximation of
-// lab/src/wingfoil_lab/wind.py (docs/algorithms.md "Wind axis estimation" and "Watch
+// lab/src/wingfoil_lab/wind.py (docs/algorithms/wind.md "Wind axis estimation" and "Watch
 // approximation: auto wind").
 //
 // The engine sees a whole session at once, holds every foiling sample, and answers once. The
@@ -393,7 +393,7 @@ class AutoWind {
         return _norm360(ma < mb ? bisector : bisector + 180.0);
     }
 
-    // The default-turn-type prior (docs/algorithms.md "Default turn type"), the engine's
+    // The default-turn-type prior (docs/algorithms/wind.md "Default turn type"), the engine's
     // `_blend` verbatim on the watch's own sweep log.
     //
     // Flipping the wind 180 deg swaps every jibe and tack, so the rider's declared habit is

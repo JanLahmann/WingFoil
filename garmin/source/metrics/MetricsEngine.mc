@@ -40,7 +40,7 @@ class MetricsEngine {
     var turns as TurnDetector;
     var records as SpeedRecords;
     var history as SessionHistory;
-    // The live wind-axis estimator (docs/algorithms.md "Watch approximation: auto wind"). It
+    // The live wind-axis estimator (docs/algorithms/wind.md "Watch approximation: auto wind"). It
     // is in the barrel because it is pure computation over COG and speed, but it is DRIVEN
     // from here, after the detectors, so that a direction adopted this second classifies the
     // turns of the next one and never re-judges the one just resolved.
@@ -340,7 +340,7 @@ class MetricsEngine {
     // dunk cannot re-baseline itself into looking dry — until it stops being a spike and
     // becomes a level, which is the settle release above. Null-safe: devices/sim runs
     // without the channel simply lose this evidence (positive-only, its silence means
-    // nothing — docs/algorithms.md "Turn outcome" step 2).
+    // nothing — docs/algorithms/pumping.md "Turn outcome" step 2).
     hidden function _updateSubmersion(actInfo as Activity.Info?) as Void {
         submerged = false;
         if (actInfo == null) {

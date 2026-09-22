@@ -1,6 +1,6 @@
 /**
  * **One lexicon per discipline** — the web's copy of `DisciplineLexicon.swift`
- * (docs/presentation.md, "Discipline lexicon"; docs/algorithms.md, "Disciplines").
+ * (docs/presentation/labels.md, "Discipline lexicon"; docs/algorithms/disciplines.md, "Disciplines").
  *
  * A windsurfer on a fin does not fly and has no foil to lose. Every word here is a word the
  * engine has no opinion about — the numbers, the verdicts and the layer names are identical,

@@ -30,7 +30,7 @@
 
   /* The app's own blue: chrome, links, buttons and the Doppler trace. Not a presentation
      token — the phase tints below are, and a track tinted with the brand colour reads as
-     chrome rather than as a category (docs/presentation.md "Phase tints"). */
+     chrome rather than as a category (docs/presentation/layers-map-colour-type.md "Phase tints"). */
   --series-1:  #3987e5;
   --series-1-tint: #7fb0e8;
   /* Phase tints, from design/tokens.json: teal on foil, secondary grey off it — what the

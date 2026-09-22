@@ -28,7 +28,7 @@ extension WidgetSnapshot {
     /// Jan's home screen on 14 September 2026 while the afternoon before it sat one row
     /// down.
     /// Since engine 0.19.0 this is the **strict** end of a rule the engine now owns
-    /// (`SessionVerdict`, docs/algorithms.md "Not a session"), and the two are deliberately
+    /// (`SessionVerdict`, docs/algorithms/not-a-session.md "Not a session"), and the two are deliberately
     /// not the same test. *Not a session* is "no foil time **and** it went nowhere" — the
     /// beach recording; *ridden* is "there is foil time on it", which a skunked afternoon
     /// fails while remaining a session anybody would count. Ridden therefore implies a
@@ -82,7 +82,7 @@ extension WidgetSnapshot {
                 best2sKn: latest.best2sKn,
                 flightCount: latest.flightCount,
                 // The engine's cleaned span (`rateSeconds`), the same clock the session
-                // page and the library row print (docs/presentation.md, "One clock").
+                // page and the library row print (docs/presentation/one-clock.md, "One clock").
                 durationS: latest.rateSeconds,
                 flewThrough: latest.turnsFlewThrough ?? 0,
                 touchdown: latest.turnsTouchdown ?? 0,

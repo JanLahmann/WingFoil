@@ -209,7 +209,7 @@ import Testing
             #expect(session.turnsPerHour == summary.turnsPerHour)
             // The three are three different numbers about one afternoon, which is why all
             // three are drawn: TPH counts every dry turn, JPH the dry jibes among them, CPH
-            // only the jibes he rode (docs/algorithms.md, "Session rates").
+            // only the jibes he rode (docs/algorithms/rates.md, "Session rates").
             if let tph = session.turnsPerHour, let jph = session.jibesPerHour {
                 #expect(tph >= jph)
             }

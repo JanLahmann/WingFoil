@@ -2,7 +2,7 @@
 import SwiftUI
 import WingFoilKit
 
-/// **The three surfaces of the beta's update reminder** (docs/presentation.md, "The beta's
+/// **The three surfaces of the beta's update reminder** (docs/presentation/status-feedback-start-widgets-ipad.md, "The beta's
 /// update reminder"). One line, one screen, one row, and nothing else anywhere in the app.
 ///
 /// All three read `UpdateReminder.shared` directly rather than taking it from the

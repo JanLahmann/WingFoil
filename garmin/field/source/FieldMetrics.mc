@@ -304,7 +304,7 @@ module FieldMetrics {
     // in (garmin/source/DesignTokens.mc, reached through the jungle's sourcePath). Deliberately
     // NOT the outcome ladder's green: "flew through" and "flew through and carried it" are
     // different questions, and one green for both is the distinction the metric exists to make
-    // being thrown away (docs/presentation.md "Clean jibe").
+    // being thrown away (docs/presentation/clean-jibe.md "Clean jibe").
     //
     // This is Ink.cleanJibe() written out rather than called, because Ink.mc is the app's whole
     // colour vocabulary and the field wants one token out of it. The MIP twin still gets picked

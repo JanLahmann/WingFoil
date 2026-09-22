@@ -1,7 +1,7 @@
 import Foundation
 
 /// The rider's declared turn habit — evidence for the 180° call only
-/// (docs/algorithms.md "Default turn type"). Mirrors the `default_turn_type` vocabulary
+/// (docs/algorithms/wind.md "Default turn type"). Mirrors the `default_turn_type` vocabulary
 /// in `lab/src/wingfoil_lab/wind.py`.
 public enum DefaultTurnType: String, Sendable, Codable, CaseIterable {
     /// Wingfoilers overwhelmingly jibe — the default.
@@ -20,7 +20,7 @@ public enum DefaultTurnType: String, Sendable, Codable, CaseIterable {
     }
 }
 
-/// Wind-axis estimation parameters (docs/algorithms.md "Wind axis estimation").
+/// Wind-axis estimation parameters (docs/algorithms/wind.md "Wind axis estimation").
 /// Mirrors `lab/src/wingfoil_lab/wind.py` `WindConfig`.
 public struct WindConfig: Sendable, Equatable {
     /// Below this COG ≠ heading (COAPS caveat).

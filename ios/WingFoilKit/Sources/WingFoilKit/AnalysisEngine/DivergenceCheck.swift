@@ -13,7 +13,7 @@ public struct Divergence: Sendable, Equatable, Identifiable {
     public var delta: String
 }
 
-/// Watch-vs-phone divergence check (docs/algorithms.md "Divergence check", source class (a)
+/// Watch-vs-phone divergence check (docs/algorithms/divergence.md "Divergence check", source class (a)
 /// only). The phone recompute is authoritative by design (docs/plan.md §3: "the watch
 /// captures maximum-fidelity data plus robust live approximations; the phone re-derives
 /// everything and is authoritative"), so a divergence is a standing *tuning* signal, not a

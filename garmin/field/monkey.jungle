@@ -14,7 +14,7 @@ project.manifest = manifest.xml
 #
 # ../source/ui/Glyphs.mc and ../source/DesignTokens.mc join them in 0.9.6, by the SAME rule and
 # for the same reason: the clean jibe's star and its ink are a presentation contract
-# (docs/presentation.md "Clean jibe"), and a field that redrew either would be a second answer
+# (docs/presentation/clean-jibe.md "Clean jibe"), and a field that redrew either would be a second answer
 # to a question the app has already answered. Both files are self-contained — Glyphs.mc draws
 # with Dc primitives and imports nothing but Graphics/Lang, DesignTokens.mc is the GENERATED
 # literal table and imports Lang — so they compile in here exactly as they compile there. What

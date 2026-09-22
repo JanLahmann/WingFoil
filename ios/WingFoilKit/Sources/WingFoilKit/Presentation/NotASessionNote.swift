@@ -1,7 +1,7 @@
 import Foundation
 
 /// **What the rider is told about a recording that is not a session** — the quiet tag on the
-/// library row and the one line on the session page (docs/presentation.md, "Not a session").
+/// library row and the one line on the session page (docs/presentation/not-a-session-spots.md, "Not a session").
 ///
 /// The engine decides (`SessionVerdict`); this decides the words, once, so the row and the
 /// page cannot drift apart. Three rules the wording keeps:

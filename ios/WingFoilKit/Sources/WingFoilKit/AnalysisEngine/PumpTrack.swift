@@ -1,6 +1,6 @@
 import Foundation
 
-/// Pump-stroke detection parameters (docs/algorithms.md "Pumping (accelerometer)").
+/// Pump-stroke detection parameters (docs/algorithms/pumping.md "Pumping (accelerometer)").
 public struct PumpConfig: Sendable, Equatable {
     public var bandLoHz: Double = 0.5
     public var bandHiHz: Double = 2.5

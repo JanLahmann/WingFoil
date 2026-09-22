@@ -27,7 +27,7 @@ REPO = Path(__file__).resolve().parents[2]
 #: content, so a mislabelled file is still read for what it is.
 TRACK_SUFFIXES = {".fit", ".gpx", ".tcx"}
 
-#: The one recording the **windsurf presets** are frozen on (docs/algorithms.md
+#: The one recording the **windsurf presets** are frozen on (docs/algorithms/disciplines.md
 #: "Disciplines"). It is a wingfoil session ridden under Garmin's windsurf profile — which
 #: is exactly the point: a preset is a *re-reading* of a recording, so the cross-check
 #: between the lab and the Swift kit only needs a recording both can open. The wingfoil

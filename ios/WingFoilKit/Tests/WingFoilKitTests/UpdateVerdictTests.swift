@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import WingFoilKit
 
-/// **The beta's update reminder** (docs/presentation.md, "The beta's update reminder";
+/// **The beta's update reminder** (docs/presentation/status-feedback-start-widgets-ipad.md, "The beta's update reminder";
 /// docs/channels.md, beta furniture). The app fetches the file and draws the screens; this
 /// suite holds the one thing that decides whether a rider sees anything at all.
 @Suite struct UpdateVerdictTests {

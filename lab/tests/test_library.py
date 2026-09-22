@@ -55,7 +55,7 @@ def entry(ident: str, day: str, epoch: float, **overrides) -> dict:
     # The other two engine rates (schema 11), on the same footing as CPH: stated by the
     # engine, and consistent with the counts this entry carries. Their numerators are the
     # *dry* ones, so a fellIn tally reduces them — which is what makes them a different
-    # number from `jibes / hour` and worth their own line (docs/algorithms.md "Session rates").
+    # number from `jibes / hour` and worth their own line (docs/algorithms/rates.md "Session rates").
     fell = (e["turns"].get("outcomes") or {}).get("fellIn") or 0
     if "jibesPerHour" not in overrides:
         jibes, duration = e["turns"].get("jibes"), e["durationS"]
@@ -503,7 +503,7 @@ def test_on_foil_share_is_weighted_by_time_on_the_water():
     big = at("big", "2026-08-01", "Garda", foilTimeS=3600.0, foilPct=50.0)
     small = at("small", "2026-08-02", "Garda", foilTimeS=90.0, foilPct=10.0)
     # 3690 s of foil over 7200 + 900 s on the water. No decimal: the one percent rule
-    # spends its decimal below 10 % and drops it above (docs/presentation.md, "Label table").
+    # spends its decimal below 10 % and drops it above (docs/presentation/labels.md, "Label table").
     assert block_of([big, small])["foilPct"] == "46 %"
 
 

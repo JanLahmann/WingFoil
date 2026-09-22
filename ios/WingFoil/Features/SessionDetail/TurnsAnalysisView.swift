@@ -57,7 +57,7 @@ struct TurnsAnalysisView: View {
             filters
             tallyStrip
             #if TUNING
-            // The dev build's session diff (docs/presentation.md, "Dev workbench"): what the
+            // The dev build's session diff (docs/presentation/channels-tuning.md, "Dev workbench"): what the
             // tuned thresholds did to *this* session against the published defaults. Absent
             // when nothing is tuned, and compiled out of the public build entirely.
             DevTuningDiffView(detail: detail, opened: $opened)
@@ -376,7 +376,7 @@ enum TurnOutcomeStyle {
     ///
     /// The star replaces the dot rather than sitting beside it, in the clean ink and never
     /// the ladder's green — the same three rules the session map's marks follow
-    /// (docs/presentation.md, "Clean jibe"). It had been the one map in the app that drew a
+    /// (docs/presentation/clean-jibe.md, "Clean jibe"). It had been the one map in the app that drew a
     /// clean jibe as a plain dot, which made the star look like a property of the session
     /// map rather than of the jibe.
     @ViewBuilder

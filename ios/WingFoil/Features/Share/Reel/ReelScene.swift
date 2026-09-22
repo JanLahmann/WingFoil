@@ -61,7 +61,7 @@ struct ReelScene: @unchecked Sendable {
     let plan: ReelPlan
     /// The closing card, rendered once — `ReplayOutroCardView`, which is the clip's end card
     /// and carries the share card's own footer: the mark, the wordmark, the call to action
-    /// and the QR, in that order (docs/presentation.md, "The share card carries the same
+    /// and the QR, in that order (docs/presentation/session-time-video.md, "The share card carries the same
     /// block").
     let endCard: CGImage
     let ink: ReelInk
@@ -235,7 +235,7 @@ struct ReelInk: @unchecked Sendable {
             UIColor(color).resolvedColor(with: traits).cgColor
         }
         // Through `lineStyle`, so a rider who has hidden a phase on his map gets the same
-        // neutral line here that his map draws (docs/presentation.md, "Layers").
+        // neutral line here that his map draws (docs/presentation/layers-map-colour-type.md, "Layers").
         flying = cg(TrackContent.color(visibility.lineStyle(flying: true), on: style))
         offFoil = cg(TrackContent.color(visibility.lineStyle(flying: false), on: style))
         neutral = cg(TrackContent.color(.neutral, on: style))

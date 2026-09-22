@@ -217,7 +217,7 @@ final class SessionStore {
             // The two surfaces that are not this process and therefore cannot observe the
             // store: the home-screen widgets read a published snapshot, and the watch app
             // reads what the phone last told it. Both are speeds a rider sees, so both
-            // follow the picker (docs/presentation.md, "Units").
+            // follow the picker (docs/presentation/labels.md, "Units").
             Task { await publishWidgetSnapshot() }
             WatchSessionReceiver.shared.pushSpeedUnit(speedUnit)
         }
@@ -687,7 +687,7 @@ final class SessionStore {
         }
     }
 
-    /// **Analyse this session as another discipline** (docs/algorithms.md "Disciplines").
+    /// **Analyse this session as another discipline** (docs/algorithms/disciplines.md "Disciplines").
     ///
     /// One session, re-derived on the spot. It takes the same shape as a rename — write, then
     /// `load()` — with one addition: which parts of a track were *flying* can move with the
@@ -1092,10 +1092,10 @@ final class SessionStore {
     // **Wingfoil is not a sport anywhere but here.** Garmin, Strava, intervals.icu and Apple
     // Health have no code for it, so the corpus is full of wingfoil afternoons recorded under
     // Garmin's *windsurf* profile (ADR-004) — which is exactly why the sport code is not
-    // allowed to decide anything (docs/algorithms.md, "Disciplines"). What decides is the
+    // allowed to decide anything (docs/algorithms/disciplines.md, "Disciplines"). What decides is the
     // recording's own `discipline` field where it has one, and the rider's declared default
     // where it does not; the second of those is a guess, and this section is the app owning up
-    // to it. See docs/presentation.md, "Confirming the discipline on import".
+    // to it. See docs/presentation/labels.md, "Confirming the discipline on import".
 
     static let windsurfEnabledKey = "windsurfEnabled.v1"
 
@@ -1648,7 +1648,7 @@ final class SessionStore {
 
     static let defaultTurnTypeKey = "defaultTurnType"
 
-    /// The rider's declared turn habit (docs/algorithms.md "Default turn type"), the one
+    /// The rider's declared turn habit (docs/algorithms/wind.md "Default turn type"), the one
     /// engine parameter the app exposes. It is evidence for the wind's 180° ambiguity only,
     /// and only where the no-go cone cannot settle it — so on most sessions changing it
     /// changes nothing, which is the intended behaviour, not a broken setting.

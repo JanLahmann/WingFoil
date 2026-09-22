@@ -74,7 +74,7 @@ public struct Period: Sendable, Equatable, Identifiable {
     /// between them. The ground is therefore offered exactly when the period is one place —
     /// every session inside a single `PeriodRules.tripRadiusM` cluster, and every one of them
     /// placed by a fix rather than by the spot it was filed under. Otherwise the switch is not
-    /// offered at all, rather than offered and inert (docs/presentation.md, "The period card").
+    /// offered at all, rather than offered and inert (docs/presentation/trends-periods.md, "The period card").
     ///
     /// The analyzer decides the same thing in `library._map_ground`, and the two are pinned
     /// against the shared fixture like every other field here.
@@ -363,7 +363,7 @@ extension LibraryStore {
     /// summed `timerSeconds` (T2, the session minus its pauses) — the denominator the engine
     /// gives the session's own rates since 0.13.0, which is what makes a month holding one
     /// afternoon report that afternoon's CPH instead of a deflated second opinion about it
-    /// (docs/presentation.md, "One clock"; docs/algorithms.md, "Session rates").
+    /// (docs/presentation/one-clock.md, "One clock"; docs/algorithms/rates.md, "Session rates").
     static func facts(_ rows: [SessionRow]) -> PeriodBlock.Facts {
         func sum<T: Numeric>(_ pick: (SessionRow) -> T?) -> T? {
             let values = rows.compactMap(pick)

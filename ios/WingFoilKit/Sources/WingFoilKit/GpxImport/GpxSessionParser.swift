@@ -138,7 +138,7 @@ public enum GpxSessionParser {
         // ranks with a FIT's `activity` message rather than with a guess. Most GPX files
         // state nothing, and then the rung is decided further down the ladder
         // (`SessionIngestor.resolveUtcOffset`) — usually as `.longitude`, which is exactly
-        // why engine 0.9.1 records it (docs/presentation.md "Session time").
+        // why engine 0.9.1 records it (docs/presentation/session-time-video.md "Session time").
         track.startUtcOffsetSource = track.startUtcOffsetS == nil ? nil : .activity
         return track
     }

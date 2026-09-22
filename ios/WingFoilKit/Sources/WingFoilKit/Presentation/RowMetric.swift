@@ -42,7 +42,7 @@ public enum RowMetric: String, Codable, Sendable, CaseIterable, Identifiable {
     /// a tester fell three times, and every count he could find was about turns). The turn
     /// ladder's fell-in count is deliberately *not* offerable here: it is a share of the
     /// jibes and only reads right beside the other two rungs, which a row cell has no room
-    /// for (docs/algorithms.md, "Wet is every fall, not every fallen jibe").
+    /// for (docs/algorithms/rates.md, "Wet is every fall, not every fallen jibe").
     case falls
 
     public var id: String { rawValue }

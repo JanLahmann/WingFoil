@@ -166,7 +166,7 @@ public enum MetricGlossary {
 
     public static let entries: [MetricGlossaryEntry] = [
         // **"On foil", not "Foil %"** (15 Sep 2026). The label table
-        // (docs/presentation.md, "Label table") decided `On foil` for the share and
+        // (docs/presentation/labels.md, "Label table") decided `On foil` for the share and
         // `Foil time` for the duration, and the session card, the trends row, the web tile
         // and the share card all print it. "Foil %" survived here alone — that is, in the
         // shared source, and therefore on the welcome screen, which is the one place a
@@ -198,7 +198,7 @@ public enum MetricGlossary {
             fit: "flight_count"),
 
         // A list of **nouns**, so the middle one is a noun: `touchdown`, not "touched
-        // down" (docs/presentation.md, "Label table"). The participle is right inside a
+        // down" (docs/presentation/labels.md, "Label table"). The participle is right inside a
         // sentence — `WelcomeGuide.lede` and both store descriptions use it there, and so
         // does this row's own `sentence` — and wrong in a row of three labels.
         MetricGlossaryEntry(
@@ -296,7 +296,7 @@ public enum MetricGlossary {
 
         // The two windows the eight-line glossary named nowhere. Both are printed on the
         // phone's key-metrics block, on the web's tiles and on the share card; neither is
-        // computed on the watch (docs/algorithms.md, "Speed records"), so neither is
+        // computed on the watch (docs/algorithms/records.md, "Speed records"), so neither is
         // demanded of it.
         MetricGlossaryEntry(
             id: "best5x10s",
@@ -398,7 +398,7 @@ public enum MetricGlossary {
         // **Every fall, not every fallen jibe.** The row, the card and the session page
         // print this number, and two of them printed the turn ladder's falls until
         // 20 September 2026, which leaves out every swim in a straight line. A tester fell
-        // three times and read a 0 (docs/algorithms.md, "Wet is every fall, not every
+        // three times and read a 0 (docs/algorithms/rates.md, "Wet is every fall, not every
         // fallen jibe").
         MetricGlossaryEntry(
             id: "fellIn",

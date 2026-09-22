@@ -27,7 +27,7 @@ struct TrackMapView: View {
     /// What the map is drawn on. Passed in for the same reason `visibility` is.
     let mapStyle: MapStyleChoice
     /// The flight the chart is framing, when a flying segment has been tapped. Owned by the
-    /// page so the map and the chart are the same tap (docs/presentation.md, "Pairing").
+    /// page so the map and the chart are the same tap (docs/presentation/scrub-pairing.md, "Pairing").
     @Binding var flightFocus: SessionDetail.FlightFocus?
     /// The replay's commentary track (`ReplayCommentary`), or empty when the rider has the
     /// commentary switched off. Passed in rather than derived here for the same reason

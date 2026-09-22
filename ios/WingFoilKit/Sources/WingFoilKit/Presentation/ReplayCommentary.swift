@@ -22,7 +22,7 @@ public struct ReplayMilestone: Sendable, Equatable, Identifiable {
         /// the counts worth saying out loud.
         case jibe(Int)
         /// The nth **clean** jibe — the strict verdict, the one the rider is chasing
-        /// (docs/presentation.md, "Clean jibe"). Rarer than the dry count and worth more,
+        /// (docs/presentation/clean-jibe.md, "Clean jibe"). Rarer than the dry count and worth more,
         /// so it outranks it when the same jibe is both.
         case cleanJibe(Int)
         /// A new session-best run of dry maneuvers, at the maneuver that set it.
@@ -177,7 +177,7 @@ public enum ReplayCommentary {
         // wants and "5 dry jibes" is the one he settles for.
         //
         // Still not the outcome ladder's green: clean is a *subset* of flew-through, not the
-        // same reading of it, and the star keeps its own ink (docs/presentation.md, "Clean
+        // same reading of it, and the star keeps its own ink (docs/presentation/clean-jibe.md, "Clean
         // jibe") because not every jibe that flew through carried its speed.
         let cleanJibes = jibes.filter { $0.element.clean }
         for (ordinal, entry) in cleanJibes.enumerated() {

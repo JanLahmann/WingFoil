@@ -12,7 +12,7 @@ import Foundation
 /// `LibraryQueries.certified` = `sourceClass != "c"`, and `sourceClass` is `"b"` here because
 /// `hasSpeed` is true and `hasDevFields` is false. Both halves are meant:
 ///
-/// * **`hasSpeed` is true, and it is not the GPX situation.** docs/presentation.md's rule is
+/// * **`hasSpeed` is true, and it is not the GPX situation.** docs/presentation/session-time-video.md's rule is
 ///   about *provenance*: "a speed record is only trustworthy when it came off the receiver's
 ///   Doppler channel". `CLLocation.speed` is exactly that — the GNSS chip's own Doppler
 ///   solution, reported per fix, not differentiated from the positions afterwards. A GPX is

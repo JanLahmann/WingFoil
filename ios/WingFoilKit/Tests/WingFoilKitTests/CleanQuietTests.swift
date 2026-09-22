@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import WingFoilKit
 
-/// **The clean jibe's quiet tail** (engine 0.17.0, docs/algorithms.md "The quiet tail").
+/// **The clean jibe's quiet tail** (engine 0.17.0, docs/algorithms/turns.md "The quiet tail").
 ///
 /// Jan, 7 Sep 2026: *"an additional requirement for a clean jibe: no touch down or fall
 /// within 10 s afterwards. This only applies to clean jibe, not to carried through."*

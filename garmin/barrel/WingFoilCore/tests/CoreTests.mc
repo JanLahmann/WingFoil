@@ -212,7 +212,7 @@ function flightDetectorExitHoldIsBothEndsQualifying(logger as Test.Logger) as Bo
     return true;
 }
 
-// ---- TurnDetector (docs/algorithms.md "Turn detection & classification") ----
+// ---- TurnDetector (docs/algorithms/turns.md "Turn detection & classification") ----
 // Synthetic 1 Hz arrays, no clock calls: every helper below drives the detector one
 // second at a time with an explicit COG/speed, exactly as MetricsEngine would.
 
@@ -582,7 +582,7 @@ function implausibleSpeedIsNotARecord(logger as Test.Logger) as Boolean {
 }
 
 
-// ---- Turn streaks (docs/algorithms.md "Turn streaks") ----
+// ---- Turn streaks (docs/algorithms/pumping.md "Turn streaks") ----
 // A tally says how the session went; a streak says how it FELT. These assert the exact two
 // rules from the contract — dry survives a touchdown and dies on a fall, flew dies on
 // anything that is not a clean fly-through — plus the one that is easy to get wrong: a
@@ -705,7 +705,7 @@ function rejectedSweepsAreInvisibleToStreaks(logger as Test.Logger) as Boolean {
     return true;
 }
 
-// ---- The quiet tail (device app 0.9.9, engine 0.17.0, docs/algorithms.md "The quiet tail") ----
+// ---- The quiet tail (device app 0.9.9, engine 0.17.0, docs/algorithms/turns.md "The quiet tail") ----
 // A clean candidate is held for CLEAN_QUIET_S past the sweep end. The phone's rule: no off-foil
 // spell of 1 s, no flight end, no wrist under in that tail, or the jibe is not clean; the
 // outcome itself is untouched. Three corners: lost the foil inside the tail, dunked the wrist
@@ -766,7 +766,7 @@ function quietTailWithdrawsTheStarButNotTheOutcome(logger as Test.Logger) as Boo
     return true;
 }
 
-// ---- Clean jibes (device app 0.9.5, docs/presentation.md "Clean jibe") ----
+// ---- Clean jibes (device app 0.9.5, docs/presentation/clean-jibe.md "Clean jibe") ----
 // `cleanJibeCount` is the count the watch's CPH divides by an hour, and it is the INTERSECTION
 // of two facts decided at two different moments: the sweep was classified a JIBE when it
 // closed, and it was SUCCESSFUL when its outcome window resolved. Every way of getting that
@@ -979,7 +979,7 @@ function aFallBetweenTwoFlewTurnsResetsBothStreaks(logger as Test.Logger) as Boo
     return true;
 }
 
-// ---- AutoWind (docs/algorithms.md "Watch approximation: auto wind") ----
+// ---- AutoWind (docs/algorithms/wind.md "Watch approximation: auto wind") ----
 //
 // Synthetic histograms, driven one second at a time exactly as MetricsEngine would. The
 // against-real-data half of the acceptance — the two `ciq` fixtures replayed through this

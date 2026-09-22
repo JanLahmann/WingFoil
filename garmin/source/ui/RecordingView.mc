@@ -202,7 +202,7 @@ const CLEAN_GLYPH_GAP = 7;
 // these rows has learned to read all four on the watch.
 //
 // TACKS HAVE NO CLEAN RUNG, and never will: `cleanJibeCount` counts clean JIBES, which is the
-// verdict the product is named after (docs/presentation.md "Clean jibe"). A star over the tack
+// verdict the product is named after (docs/presentation/clean-jibe.md "Clean jibe"). A star over the tack
 // row would be inventing a number the engine does not compute.
 //
 // Aborted turns are on neither row and are not counted on the watch at all: a sweep the
@@ -1168,7 +1168,7 @@ class RecordingView extends WatchUi.View {
         return y + hC + hN + hD + hO + hK / 2;
     }
 
-    // "dry 7 / 12" — the live no-fall run beside the session's longest (docs/algorithms.md
+    // "dry 7 / 12" — the live no-fall run beside the session's longest (docs/algorithms/pumping.md
     // "Turn streaks"). Neutral ink on purpose: a run of not-falling is not a verdict on any
     // one turn, so it must not borrow the outcome ladder's green.
     hidden function drawStreakRow(dc as Dc, cx as Number, y as Number, cy as Number,

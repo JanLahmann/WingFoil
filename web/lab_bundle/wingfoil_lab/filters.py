@@ -1,7 +1,7 @@
 """Track hygiene: gate/NaN/spike dropping, dt-aware gap segmentation, local-meter
 projection, positional speed.
 
-Contract: docs/algorithms.md "speed sample hygiene". The gap rule is dt-aware for
+Contract: docs/algorithms/hygiene.md "speed sample hygiene". The gap rule is dt-aware for
 Garmin Smart Recording: gap iff dt > max(gap_min_s, gap_factor x median dt, smart_gap_s
 when the track's median dt says Smart Recording); gaps are hard segment breaks, never
 interpolated (dt-weighted windows subsume the 1 Hz `gapInterpolateMax` linear-interpolation
@@ -38,7 +38,7 @@ _COLUMNS = ["t", "x", "y", "lat", "lon", "alt_m", "doppler_mps", "pos_mps", "dt"
 
 @dataclass
 class FilterConfig:
-    """docs/algorithms.md 'speed sample hygiene' defaults (dt-aware gap rule)."""
+    """docs/algorithms/hygiene.md 'speed sample hygiene' defaults (dt-aware gap rule)."""
 
     max_hdop: float = 5.0            # gate applied only when an hdop channel exists
     min_satellites: int = 5          # gate applied only when a satellites channel exists
@@ -139,7 +139,7 @@ def clean(track: RawTrack, config: FilterConfig | None = None) -> CleanTrack:
                         "doppler_mps": df["speed_mps"].to_numpy(float)})
     # Barometric altitude is carried through unfiltered: on the water its *absolute* value
     # is meaningless, but a dunked wrist reads hundreds of metres low (`turnBaroDrop`, step 2
-    # of docs/algorithms.md "Turn outcome"), and that transient must survive to the turns.
+    # of docs/algorithms/pumping.md "Turn outcome"), and that transient must survive to the turns.
     alt = next((df[c] for c in ("enhanced_altitude", "altitude") if c in df.columns), None)
     out["alt_m"] = np.nan if alt is None else alt.to_numpy(float)
     if has_pos:

@@ -102,7 +102,7 @@ import Testing
     }
 
     /// The divergence banner names a metric per row, and a rider reads those names beside
-    /// the watch's own (docs/presentation.md, "The divergence banner").
+    /// the watch's own (docs/presentation/sections-tables.md, "The divergence banner").
     @Test func everyDivergenceMetricNameIsAGlossaryTerm() {
         for name in Self.divergenceNames {
             #expect(Self.isKnown(name),

@@ -207,7 +207,7 @@ export function keyMetricEntries(g) {
     { key: "avgSpeed", label: "avg speed", value: avg, row: 0 },
     // The session's fastest measured window, alone on its line and in the block's largest
     // type: it is the number a rider quotes, and the label names the window rather than
-    // letting "max" imply a peak sample (docs/presentation.md, "Record windows").
+    // letting "max" imply a peak sample (docs/presentation/records.md, "Record windows").
     { key: "max2s", label: "max 2 s", value: best2s, row: 1, hero: true },
     // The two composites beside it (6 Sep 2026 — "the second row is a bit empty"), "—"
     // where the session produced none. `blockOnly`: the card never carries them — one
@@ -253,7 +253,7 @@ export function keyMetricEntries(g) {
   // **Every fall of the session, and where each one happened** (20 September 2026).
   //
   // Read off the flight-end channel — the one that answers "how often did I end up in the
-  // water": one event per actual swim, in a turn or in a straight line (docs/algorithms.md,
+  // water": one event per actual swim, in a turn or in a straight line (docs/algorithms/rates.md,
   // "Wet is every fall, not every fallen jibe"). It is the channel WPH already divides, the
   // number the library row prints and the one the phone's session page now shows, so the
   // four surfaces say one thing.

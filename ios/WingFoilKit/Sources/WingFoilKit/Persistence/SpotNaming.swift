@@ -12,7 +12,7 @@ import CoreLocation
 /// of a handful of spots.
 ///
 /// **This is the app's one outbound use of a coordinate**, and the privacy page and the App
-/// Store description both name it (docs/presentation.md, "What leaves the phone"). What goes
+/// Store description both name it (docs/presentation/privacy-first-screen.md, "What leaves the phone"). What goes
 /// is a *rounded* spot centroid — `roundedForLookup`, three decimal places, about 110 m —
 /// and nothing else: no session, no track, no identifier, no account, one request per spot
 /// and only for a spot that has no name yet. Rounding is applied to the coordinate that is

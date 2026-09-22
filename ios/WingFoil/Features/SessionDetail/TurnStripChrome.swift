@@ -85,7 +85,7 @@ enum StripChrome {
     }
 
     /// **The one playhead**, on every strip at once — the same rule the map and the session
-    /// chart follow (docs/presentation.md, "Scrub and zoom"). Drawn last, above everything,
+    /// chart follow (docs/presentation/scrub-pairing.md, "Scrub and zoom"). Drawn last, above everything,
     /// because it is the only mark that answers to the reader's finger rather than to the data.
     @ChartContentBuilder
     static func playhead(_ rt: Double?) -> some ChartContent {

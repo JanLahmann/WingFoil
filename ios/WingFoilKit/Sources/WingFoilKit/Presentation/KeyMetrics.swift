@@ -18,7 +18,7 @@ import Foundation
 ///    as computed-and-never-shown on either platform. The jibe tally's caption carries the
 ///    **clean jibe** count as well as the total, so the one number a rider quotes about his
 ///    turns is in the block rather than three screens down.
-/// 4. `rates` — the per-hour rates (`docs/algorithms.md` "Session rates"); JPH counts
+/// 4. `rates` — the per-hour rates (`docs/algorithms/rates.md` "Session rates"); JPH counts
 ///    **dry** jibes since 0.7.0 and CPH the **clean** ones since 0.10.0, and both labels
 ///    say which set they count.
 ///
@@ -53,7 +53,7 @@ public struct KeyMetrics: Sendable, Equatable {
 
     /// The outcome tally, drawn on the ladder's own inks (green · orange · red) by the
     /// view. The counts stay numbers rather than a joined string precisely because the
-    /// colour is the point — `docs/presentation.md`, "the outcome ladder is a verdict
+    /// colour is the point — `docs/presentation/layers-map-colour-type.md`, "the outcome ladder is a verdict
     /// scale and nothing else may borrow it".
     ///
     /// Two of them since 22 September 2026: the jibe ladder, and the **tack** ladder
@@ -121,7 +121,7 @@ public struct KeyMetrics: Sendable, Equatable {
     /// The tally three cells up is the *jibe* ladder and says so in its own caption ("of
     /// 57 jibes"), so its `fell in` count leaves out every swim that happened in a
     /// straight line. A tester fell three times on 19 September 2026, read the tally, and
-    /// concluded the app had not noticed (docs/algorithms.md, "Wet is every fall, not
+    /// concluded the app had not noticed (docs/algorithms/rates.md, "Wet is every fall, not
     /// every fallen jibe"). This is the session's own number, from the flight-end channel
     /// WPH already divides — one event per actual swim, and the two halves of the caption
     /// add up to it exactly because they come from the same channel.
@@ -156,7 +156,7 @@ public struct KeyMetrics: Sendable, Equatable {
                        value: knots(knFromKmh(summary.avgSpeedKmh))),
             ],
             // Labelled with the window it actually is. The record set's own contract
-            // (docs/presentation.md, "Record windows") is that a chip names the window it
+            // (docs/presentation/records.md, "Record windows") is that a chip names the window it
             // is highlighting; "max speed" over a 2 s peak would be the same overclaim.
             maxSpeed: Metric(key: "max2s", label: "max 2 s", value: knots(records.best2sKn)),
             speedExtras: [
@@ -178,7 +178,7 @@ public struct KeyMetrics: Sendable, Equatable {
     ///
     /// Read off the flight-end channel, which is the one that answers "how often did I get
     /// in the water": one event per actual swim, in a turn or in a straight line
-    /// (docs/algorithms.md, "Wet is every fall, not every fallen jibe"). `all` is exactly
+    /// (docs/algorithms/rates.md, "Wet is every fall, not every fallen jibe"). `all` is exactly
     /// `inTurn + straight`, so the caption adds up to the value by construction — which is
     /// why it is not built out of `outcomeSplit`, whose falls mix the turn ladder with the
     /// flight-end channel and therefore need not.
@@ -259,7 +259,7 @@ public struct KeyMetrics: Sendable, Equatable {
     /// lenient-then-strict, the same direction the tally reads when its caption qualifies
     /// the three counts with the clean number. Neither is derivable from the other and
     /// neither is a correction of the other; a block that printed only one of them would be
-    /// answering half the question (docs/presentation.md, "Clean jibe").
+    /// answering half the question (docs/presentation/clean-jibe.md, "Clean jibe").
     ///
     /// JPH degrades to TPH rather than to 0.0: a session whose wind axis never resolved
     /// has turns and no jibes, and "0.0 jibes per hour" would be a verdict on a rider who
@@ -342,7 +342,7 @@ public struct KeyMetrics: Sendable, Equatable {
     /// target prints session durations too — the library row, the Distance card's caption,
     /// the "Longest session" record. They read `Fmt.duration` (`1 h 24 m`) and the block
     /// read this, so the same afternoon came out in two spellings a tap apart
-    /// (docs/presentation.md, "One clock"). `Fmt.duration` stays for a *clip* or a
+    /// (docs/presentation/one-clock.md, "One clock"). `Fmt.duration` stays for a *clip* or a
     /// *flight* clock, which is minutes and seconds by design.
     public static func duration(_ seconds: Double) -> String {
         let total = max(0, Int(seconds.rounded()))

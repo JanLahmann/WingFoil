@@ -34,7 +34,7 @@ import Testing
         }
     }
 
-    /// The **discipline presets** (docs/algorithms.md "Disciplines"), cross-checked against
+    /// The **discipline presets** (docs/algorithms/disciplines.md "Disciplines"), cross-checked against
     /// the lab on one recording per preset.
     ///
     /// They live in `fixtures/goldens/discipline/` rather than beside the corpus, and that is
@@ -112,7 +112,7 @@ import Testing
             if let v = num(cfg["windTurnPriorWeight"]) { windCfg.turnPriorWeight = v }
             // The rider's declared habit is a parameter like any other: run the golden with
             // the one it was written under, or the 180° prior would be asked a different
-            // question than the lab asked (docs/algorithms.md "Default turn type").
+            // question than the lab asked (docs/algorithms/wind.md "Default turn type").
             if let v = cfg["windDefaultTurnType"] as? String,
                let type = DefaultTurnType(rawValue: v) { windCfg.defaultTurnType = type }
             if let v = num(cfg["pumpStrokeAmp"]) { pumpCfg.strokeAmpG = v }
@@ -781,7 +781,7 @@ import Testing
                     "\(stem) summary.distanceKm")
         }
 
-        // Session rates (docs/algorithms.md "Session rates"). The two clocks are pinned
+        // Session rates (docs/algorithms/rates.md "Session rates"). The two clocks are pinned
         // tightly (± 0.1 s); the rates are per-hour numbers over the *timer* clock (engine
         // 0.13.0) and follow the ± 0.05 style of every other derived quantity.
         if let v = num(expSummary["durationS"]) {
@@ -961,7 +961,7 @@ import Testing
     }
 
     /// nil must match nil; both present must agree within `tolerance`.
-    /// The rolling-window block (docs/algorithms.md "Session rates"): both peaks with the
+    /// The rolling-window block (docs/algorithms/rates.md "Session rates"): both peaks with the
     /// window each one names, and every point of the series, in order.
     ///
     /// Rates to ± 0.05 like the session rates; the window starts are timestamps and get the
@@ -1162,7 +1162,7 @@ import Testing
         #expect(decoded == expected)
     }
 
-    /// The rate block's arithmetic and its one guard (docs/algorithms.md "Session rates"),
+    /// The rate block's arithmetic and its one guard (docs/algorithms/rates.md "Session rates"),
     /// mirroring `lab/tests/test_goldens.py`. Two hours of *timer* time, 40 km, 60 dry
     /// turns of which 44 dry jibes and 9 swims: 30 turns/h, 22 jibes/h, 4.5 swims/h,
     /// 20 km/h — and an elapsed span that is longer, and no longer a denominator.

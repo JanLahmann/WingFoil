@@ -12,7 +12,7 @@ import WingFoilKit
 ///
 /// It is also the sheet's scrub handle: a finger on the strip drives the dot on the drawing
 /// above it, which is the same one-playhead rule the map and the chart follow on the session
-/// page (docs/presentation.md, "Scrub and zoom").
+/// page (docs/presentation/scrub-pairing.md, "Scrub and zoom").
 struct TurnDetailStripView: View {
     let slice: TurnSlice
     let ghost: TurnSlice?

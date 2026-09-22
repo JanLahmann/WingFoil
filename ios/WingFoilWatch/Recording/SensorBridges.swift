@@ -120,7 +120,7 @@ final class LocationBridge: NSObject, CLLocationManagerDelegate, @unchecked Send
 /// signal the Garmin app records (`AccelSample`), and it is what `PumpAnalyzer` expects: the
 /// pump detector band-passes 0.5–2.5 Hz, which removes the gravity component as a matter of
 /// arithmetic, and it is orientation-free by construction because a wingfoiler's wrist
-/// rotates constantly (docs/algorithms.md "Pumping").
+/// rotates constantly (docs/algorithms/pumping.md "Pumping").
 ///
 /// **50 Hz.** `PumpConfig.resampleHz` is 25, so this is exactly 2× the grid the analysis runs
 /// on: fast enough that the box-average has two samples a bin, slow enough that a two-hour

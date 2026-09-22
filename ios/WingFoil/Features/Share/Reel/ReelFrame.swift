@@ -148,7 +148,7 @@ enum ReelFrame {
         context.setLineJoin(.round)
 
         // The halo is one pass under the whole track, never per stroke, so no join is
-        // overdrawn and a busy corner does not smear (docs/presentation.md, "Map style").
+        // overdrawn and a busy corner does not smear (docs/presentation/layers-map-colour-type.md, "Map style").
         if scene.needsHalo {
             context.setStrokeColor(scene.ink.halo)
             for run in runs {

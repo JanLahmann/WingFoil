@@ -26,7 +26,7 @@ struct SpeedChartView: View {
     /// make the pair unreadable.
     let visibility: MapLayerVisibility
     /// The flight a tap on the map asked about, if any. The chart frames it — one tap, two
-    /// figures (docs/presentation.md, "Pairing").
+    /// figures (docs/presentation/scrub-pairing.md, "Pairing").
     let flightFocus: SessionDetail.FlightFocus?
 
     /// The visible time window. Transient by design — zoom is how you are looking at the

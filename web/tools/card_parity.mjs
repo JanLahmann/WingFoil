@@ -111,7 +111,7 @@ const stacks = outlines.cases.map((c) => {
  * jibes and who swam out of every one of them. Its `jibesPerHour` is 0.0 beside a positive
  * TPH, which is what the old `jibesPerHour > 0` gate read as "no jibes were named" — so the
  * block dropped JPH *and* CPH and printed the TPH fallback, over a session that is nothing
- * but jibes. The contract says the opposite (docs/presentation.md, "Row 4": "Where jibes
+ * but jibes. The contract says the opposite (docs/presentation/key-metrics.md, "Row 4": "Where jibes
  * were named, a `0.0` CPH is a measured verdict and is printed as one"), so the case is
  * written down here rather than waited for. `verify_presentation.py` §5a says which keys
  * each one must produce.
@@ -168,7 +168,7 @@ for (const path of process.argv.slice(2)) {
     leanKeys: [...LEAN_KEYS].sort(),
     // The "wrist under" callout, in the words the web puts on screen — the same
     // two-implementations-of-one-sentence check the pairing lines get, for the layer
-    // Jan asked for on 7 Sep 2026 (docs/presentation.md, "Wrist under").
+    // Jan asked for on 7 Sep 2026 (docs/presentation/layers-map-colour-type.md, "Wrist under").
     wristUnder: (g.submersions || []).map((sub) => ({
       ts: sub.ts,
       title: submersionTitle(sub),

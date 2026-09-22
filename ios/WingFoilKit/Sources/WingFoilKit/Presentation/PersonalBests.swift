@@ -99,7 +99,7 @@ public enum PersonalBestDetector {
 ///
 /// **Why the clean jibe gets a PB at all.** Every record the app celebrated until engine
 /// 0.10.0 was a speed — nine windows of one fact. But the number a wingfoiler actually
-/// chases is the jibe he rides all the way through (docs/presentation.md, "Clean jibe"), and
+/// chases is the jibe he rides all the way through (docs/presentation/clean-jibe.md, "Clean jibe"), and
 /// a rider who went from two clean jibes in an afternoon to eleven had the best session of
 /// his season with nothing in the app to say so. These two say it.
 ///
@@ -176,7 +176,7 @@ extension PersonalBestDetector {
 
     /// A session must last at least this long to hold the **CPH** record.
     ///
-    /// The rule the rolling window already obeys (`docs/algorithms.md`, "Never a flattering
+    /// The rule the rolling window already obeys (`docs/algorithms/rates.md`, "Never a flattering
     /// peak"): one clean jibe in a four-minute evening sail is fifteen an hour, and a
     /// personal best a rider can set by going home early is not one. A rate window is the
     /// shortest span this engine is willing to call an hour's worth of anything. The *count*
@@ -209,7 +209,7 @@ extension PersonalBestDetector {
             // of an hour. The rate itself divides by `timerSeconds` (T2), which is what
             // `summary.cleanJibesPerHour` divides by since engine 0.13.0 — so the
             // celebration's CPH and the records table's can never name two different numbers
-            // for one session (docs/presentation.md, "One clock").
+            // for one session (docs/presentation/one-clock.md, "One clock").
             guard session.rateSeconds >= cphMinDurationS else { continue }
             consider(.cleanJibesPerHour, Double(clean) / (session.timerSeconds / 3600),
                      session.id, into: &best)

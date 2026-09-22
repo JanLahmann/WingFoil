@@ -1,6 +1,6 @@
 """Wind-axis estimation from the course-over-ground distribution.
 
-Contract: docs/algorithms.md "Wind axis estimation". Foiling samples only (COG is not
+Contract: docs/algorithms/wind.md "Wind axis estimation". Foiling samples only (COG is not
 heading below ~2 m/s) -> distance-weighted circular COG histogram -> the two dominant
 reach lobes -> the wind axis is their bisector. The axis is a *line*, so the bisector
 leaves a 180 deg ambiguity, resolved by the **no-go zone**: a sailor can hold any
@@ -48,7 +48,7 @@ import numpy as np
 from .filters import CleanTrack, unwrapped_cog_deg
 from .flight import FlightResult
 
-# `default_turn_type` vocabulary (docs/algorithms.md "Default turn type").
+# `default_turn_type` vocabulary (docs/algorithms/wind.md "Default turn type").
 JIBES = "jibes"
 TACKS = "tacks"
 BALANCED = "balanced"          # prior off: the cone decides alone, as it always did
@@ -57,7 +57,7 @@ DEFAULT_TURN_TYPES = (JIBES, TACKS, BALANCED)
 
 @dataclass
 class WindConfig:
-    """docs/algorithms.md "Wind axis estimation" defaults."""
+    """docs/algorithms/wind.md "Wind axis estimation" defaults."""
 
     min_speed_mps: float = 2.0            # below this COG != heading (COAPS caveat)
     bin_deg: float = 10.0                 # circular histogram bin width

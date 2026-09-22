@@ -1,7 +1,7 @@
 import Toybox.Lang;
 
 // What the takeoff you just did cost in heartbeats.
-// Watch twin of lab/src/wingfoil_lab/hrcost.py (docs/algorithms.md "HR cost"), and the same
+// Watch twin of lab/src/wingfoil_lab/hrcost.py (docs/algorithms/hr-cost.md "HR cost"), and the same
 // kind of cheap live approximation every other watch metric is: the phone joins the whole
 // heart_rate channel to the takeoff runs after the fact, this follows one window at a time,
 // forward, at 1 Hz, and keeps exactly one number.

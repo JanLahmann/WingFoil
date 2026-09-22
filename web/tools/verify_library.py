@@ -244,7 +244,7 @@ def check_attribution() -> None:
           library.digest({"golden": {}, "meta": {}}, "x.fit")["schema"], 11)
 
     # Schema 10 (engine 0.19.0): the fourth exclusion — a recording that is not a session
-    # (docs/algorithms.md "Not a session"). The stored answer when the row carries one, the
+    # (docs/algorithms/not-a-session.md "Not a session"). The stored answer when the row carries one, the
     # same rule re-derived when it does not, and **no verdict at all** for a row that carries
     # none of the three numbers: an absence is not a verdict.
     junk = counted_entry("junk", 12.0, foilTimeS=0.0, rateDurationS=24.0, distanceKm=0.0)
@@ -455,7 +455,7 @@ def check_records(digests: list[dict]) -> None:
     # Every record carries a window the UI can highlight, and it is a real slice of the
     # session it points at. `bestHour` was the exception until 21 September 2026: it was
     # named in the table and given no window, so its row was the one row that opened
-    # nothing (docs/presentation.md, "Record windows"). All nine now.
+    # nothing (docs/presentation/records.md, "Record windows"). All nine now.
     check("  every kind has a window key",
           [k for k, wkey, _l, _u in library.RECORD_KINDS if wkey is None], [])
     for row in agg["records"]:
@@ -556,7 +556,7 @@ def check_session_records(digests: list[dict]) -> None:
     # …and it is **not** the division the library used to do for itself, which is why the
     # switch was worth making rather than a rename. The engine divides by its own *cleaned*
     # session span — the denominator every per-hour rate in this project shares
-    # (docs/algorithms.md "Session rates") — and the digest's `durationS` is the FIT's
+    # (docs/algorithms/rates.md "Session rates") — and the digest's `durationS` is the FIT's
     # `total_elapsed_time`. On the Rheinstetten afternoon those are 7742 s and 10338 s, and
     # the library's own arithmetic reported a CPH a third too low on the page next door.
     naive = [round(d["turns"]["jibesSuccessful"] * 3600.0 / d["durationS"], 1)
@@ -630,7 +630,7 @@ def check_trends(digests: list[dict]) -> None:
     port = split["lines"][0]
     # Schema 8: the split is by **outcome**, not by the engine's score verdict. The rider's
     # question is "which tack do I swim out of", and the score reading is not one of his two
-    # tiers (docs/presentation.md, "Clean jibe").
+    # tiers (docs/presentation/clean-jibe.md, "Clean jibe").
     check("  port series == the hand-countable flew-through split",
           [p["v"] for p in port["points"]],
           [d["turns"]["bySide"]["port"]["flewThroughPct"] for d in ordered])
@@ -705,7 +705,7 @@ def check_trends(digests: list[dict]) -> None:
           sum(w["count"] for w in weeks), len(digests))
     # The **engine's** cleaned span, the same clock the period block's hours divide by —
     # not the FIT's `total_elapsed_time`, which is a different number on this corpus and was
-    # what a week bar's tooltip used to sum (docs/presentation.md, "One clock").
+    # what a week bar's tooltip used to sum (docs/presentation/one-clock.md, "One clock").
     check("  hours sum to the library's own rate clock",
           round(sum(w["hours"] for w in weeks), 3),
           round(sum(library._rate_duration_s(d) for d in digests) / 3600.0, 3))

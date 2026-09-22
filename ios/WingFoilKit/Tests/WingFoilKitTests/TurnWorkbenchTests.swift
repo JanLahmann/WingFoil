@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import WingFoilKit
 
-/// **The dev workbench's pure half** (docs/presentation.md, "Dev workbench").
+/// **The dev workbench's pure half** (docs/presentation/channels-tuning.md, "Dev workbench").
 ///
 /// Three things have to hold or the page is worse than nothing. The trace must re-derive what
 /// the engine decided — on a real fixture turn, against the record, with no disagreement, so a

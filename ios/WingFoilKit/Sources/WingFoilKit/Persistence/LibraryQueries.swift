@@ -114,7 +114,7 @@ public struct TrendPoint: Sendable, Identifiable, Equatable {
     /// **Rates are additive.** JPH says he got away with the jibes, TPH says how busy the
     /// afternoon was, CPH says he rode them — three questions, three lines on the Trends
     /// page, in that order. The engine's own fields (schema v17); nil, never 0, on a row the
-    /// v17 sweep has not reached (docs/algorithms.md "Session rates").
+    /// v17 sweep has not reached (docs/algorithms/rates.md "Session rates").
     public var jibesPerHour: Double?
     public var turnsPerHour: Double?
     public var avgPumpsToTakeoff: Double?
@@ -140,7 +140,7 @@ public struct TrendPoint: Sendable, Identifiable, Equatable {
         sessionId = row.id
         date = row.startDate
         // The engine's own cleaned span — the clock every trend hour and every displayed
-        // session duration divides by (docs/presentation.md, "One clock").
+        // session duration divides by (docs/presentation/one-clock.md, "One clock").
         durationS = row.rateSeconds
         foilPct = row.foilPct
         longestFlightS = row.longestFlightS
@@ -227,7 +227,7 @@ public struct LibraryStore: Sendable {
     /// is what keeps it one.
     ///
     /// A recording that is **not a session** (`isSession = 0`, engine 0.19.0,
-    /// docs/algorithms.md "Not a session") is the fourth, and the newest: the thirty seconds
+    /// docs/algorithms/not-a-session.md "Not a session") is the fourth, and the newest: the thirty seconds
     /// a rider records on the beach and stops again. Thirteen of them turned up in Jan's
     /// library on 13–14 September 2026 — 0:00–0:24 min, 0.0 km, no foil time — and every one
     /// of them counted in the totals and pulled the Trends "on foil" line to zero on its way
@@ -374,7 +374,7 @@ public struct LibraryStore: Sendable {
     /// not JPH (schema v11 added one rate, not four). The numerator is the engine's own
     /// rule read back off the `turn` table — counted jibes he did **not** swim out of,
     /// `SessionSummarizer.dryJibeTimes` — and the denominator is `timerSeconds`, the one
-    /// clock a rate may divide by since engine 0.13.0 (docs/algorithms.md, "Session
+    /// clock a rate may divide by since engine 0.13.0 (docs/algorithms/rates.md, "Session
     /// rates"). So the number here is the number on the session page, not a second
     /// arithmetic that happens to be close.
     ///
@@ -646,7 +646,7 @@ public struct LibraryStore: Sendable {
     /// from "we did", and it has to, or a rename could not survive the next pass — so
     /// asking on `autoNamed` alone re-geocoded every spot in the library at every launch:
     /// a network round trip, and one coordinate leaving the phone, for an answer already on
-    /// the screen (docs/presentation.md, "What leaves the phone").
+    /// the screen (docs/presentation/privacy-first-screen.md, "What leaves the phone").
     @discardableResult
     public func nameAutoSpots(
         using locality: @Sendable (Double, Double) async -> String?) async throws -> Int {

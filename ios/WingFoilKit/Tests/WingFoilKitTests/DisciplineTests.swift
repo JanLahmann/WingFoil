@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import WingFoilKit
 
-/// Discipline presets (docs/algorithms.md "Disciplines") — the Swift half of the contract
+/// Discipline presets (docs/algorithms/disciplines.md "Disciplines") — the Swift half of the contract
 /// `lab/tests/test_discipline.py` holds on the Python side. The *numbers* are cross-checked
 /// against the lab by `GoldenTests.disciplineGoldensMatchWhenPresent`; this file holds the
 /// rules that have no golden: that wingfoil is untouched, that the two speeds reach all four

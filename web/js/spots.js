@@ -11,7 +11,7 @@
  * `library._spot_clusters` in the lab bundle is the same algorithm in Python. The Python one
  * is reachable from this tab only at **3 km**, which is a different question on purpose —
  * it clusters *trips*, so Torbole and Malcesine come out as one week at Garda
- * (docs/presentation.md, "A trip clusters on coordinates"). A spot is a launch and wants the
+ * (docs/presentation/trends-periods.md, "A trip clusters on coordinates"). A spot is a launch and wants the
  * beach. So the rule is ported here rather than called through Pyodide, and it is ported
  * from the Swift:
  *

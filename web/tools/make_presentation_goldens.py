@@ -52,7 +52,7 @@ import library                                                          # noqa: 
 
 SUFFIX = ".expected.json"
 
-# docs/presentation.md "Record windows": nine kinds, canonical order, best2s default.
+# docs/presentation/records.md "Record windows": nine kinds, canonical order, best2s default.
 # `bestHour` was added on 21 September 2026 — it is a window like the other eight.
 RECORD_ORDER = ["best2s", "best10s", "best5x10s", "best100m", "best250m", "best500m",
                 "bestNm", "bestHour", "alpha500"]
@@ -100,7 +100,7 @@ def marker_counts(doc: dict) -> dict[str, int]:
 
 def clean_jibe_count(doc: dict) -> int:
     """The star layer: the engine's own per-turn `clean` verdict — counted, named a jibe,
-    it carried its speed *and* it flew through (engine 0.12.0; docs/presentation.md,
+    it carried its speed *and* it flew through (engine 0.12.0; docs/presentation/clean-jibe.md,
     "Clean jibe"). Read, not re-derived: the rule lives in the engine now, which is what
     stopped a jibe from being starred here and listed as a swim in the turns table.
 
@@ -209,7 +209,7 @@ def facts(stem: str, doc: dict) -> dict:
         "generator": "web/tools/make_presentation_goldens.py",
         "note": NOTE,
         # The engine's own count, and the two blocks that must add up to it: one takeoff
-        # starts every flight, one end stops it (docs/presentation.md "Enforcement" 3).
+        # starts every flight, one end stops it (docs/presentation/enforcement.md "Enforcement" 3).
         "flightCount": doc.get("summary", {}).get("flightCount"),
         "markers": marker_counts(doc),
         "cleanJibes": clean_jibe_count(doc),
@@ -348,7 +348,7 @@ PERIOD_NOTE = (
     "edit. `sessions` is the input, so both platforms build the same library from it; "
     "everything else is what web/lab_bundle/library.py makes of it, and is what the iOS "
     "PeriodTests and web/tools/verify_presentation.py 6 assert against. Python is the "
-    "reference implementation (docs/presentation.md, \"Periods\").")
+    "reference implementation (docs/presentation/trends-periods.md, \"Periods\").")
 
 
 def period_digest(s: dict) -> dict:
@@ -389,7 +389,7 @@ def period_facts() -> dict:
     digests = [period_digest(s) for s in PERIOD_SESSIONS]
     out = library.periods(digests)
     # The per-session trend series over the *same* ten afternoons. Python is the reference
-    # implementation for these too (docs/presentation.md, "Trend charts"): the charts, their
+    # implementation for these too (docs/presentation/trends-periods.md, "Trend charts"): the charts, their
     # order, their units and every point are what `library._charts` makes of the digests
     # above, and `PeriodTests.trendSeriesMatchTheAnalyzer` asserts the phone's own numbers
     # for the same library, chart by chart and session by session.
@@ -481,7 +481,7 @@ STACK_NOTE = (
     "is in layout points; `placed` is where the period card's stacked artwork puts every "
     "vertex. Asserted by the iOS TrackStackTests and re-derived by "
     "web/tools/verify_presentation.py 5e, which also holds web/js/sharecard.js to it "
-    "(docs/presentation.md, \"The period card\").")
+    "(docs/presentation/trends-periods.md, \"The period card\").")
 
 
 def stack_placement(tracks: list, box: dict) -> dict:

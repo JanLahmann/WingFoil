@@ -314,7 +314,7 @@ def render(cases: list[dict]) -> str:
         "//",
         "// Recorded 1 Hz (cog, speed, foil-state) streams from the two `ciq` fixtures, for the",
         "// auto-wind acceptance test in WingfoilTests.mc (docs/testing.md layer 3, and",
-        "// docs/algorithms.md \"Watch approximation: auto wind\"). Every function here is",
+        "// docs/algorithms/wind.md \"Watch approximation: auto wind\"). Every function here is",
         "// (:debug)-annotated, so none of these kilobytes reach a RELEASE build. It cannot be",
         "// (:test): the unit-test runner treats every annotated function as a test case, and",
         "// these take arguments and return data.",

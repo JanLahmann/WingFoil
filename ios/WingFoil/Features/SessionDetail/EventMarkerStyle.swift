@@ -2,13 +2,13 @@ import SwiftUI
 import WingFoilKit
 
 /// One palette for the outcome markers so the map, the chart and the legend can never
-/// drift apart. Colour carries the verdict (docs/algorithms.md "Turn outcome" /
+/// drift apart. Colour carries the verdict (docs/algorithms/pumping.md "Turn outcome" /
 /// "Flight-end outcome"), fill carries the *channel*: solid = a maneuver's outcome,
 /// hollow = a straight-line flight end that no turn explains.
 ///
 /// The *values* are not written here any more: they come from `DesignTokens`, generated
 /// from `design/tokens.json`, so the same edit reaches the web app's CSS in the same
-/// commit (docs/presentation.md "Enforcement"). This file still owns the *meanings* —
+/// commit (docs/presentation/enforcement.md "Enforcement"). This file still owns the *meanings* —
 /// which tone belongs to which verdict, and which glyph to which takeoff kind.
 enum EventMarkerStyle {
 
@@ -36,7 +36,7 @@ enum EventMarkerStyle {
     /// The **clean jibe**'s own ink — a green that is deliberately not the ladder's.
     ///
     /// "Flew through" is how the turn ended; clean is what it cost, and the two disagree on
-    /// purpose (docs/presentation.md, "Clean jibe"). A star drawn in `Outcome.flew` would
+    /// purpose (docs/presentation/clean-jibe.md, "Clean jibe"). A star drawn in `Outcome.flew` would
     /// quietly claim they are the same reading of the same jibe.
     static let cleanJibe = DesignTokens.Clean.jibe
 

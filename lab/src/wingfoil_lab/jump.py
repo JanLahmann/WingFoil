@@ -76,7 +76,7 @@ G = 9.80665  # m/s^2
 
 @dataclass
 class JumpConfig:
-    """docs/algorithms.md "Jumps (theoretical, uncalibrated)" defaults.
+    """docs/algorithms/jumps.md "Jumps (theoretical, uncalibrated)" defaults.
 
     Chosen from the synthetic grid + the shape of the real corpus, NOT from labeled jumps —
     there are none. They are starting points to be re-tuned the day a jump is recorded.

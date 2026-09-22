@@ -1,6 +1,6 @@
 """Takeoff analysis: how every flight *started*, and every attempt that never became one.
 
-Contract: docs/algorithms.md "Takeoff analysis". This is the flight-START analogue of
+Contract: docs/algorithms/takeoff.md "Takeoff analysis". This is the flight-START analogue of
 `flightend.py` and the product's differentiator metric (docs/plan.md: pumps-to-takeoff,
 takeoff success rate, pumping effort). Flight segmentation says a flight began; this module
 says what it cost to get there -- how many strokes, over how long, from what speed -- and,
@@ -121,7 +121,7 @@ EPISODE_OUTCOMES = (SUCCESS, FAILED, RECOVERY, IN_FLIGHT, UNKNOWN)
 
 @dataclass
 class TakeoffConfig:
-    """docs/algorithms.md "Takeoff analysis" defaults."""
+    """docs/algorithms/takeoff.md "Takeoff analysis" defaults."""
 
     max_run_s: float = 30.0            # takeoffMaxRun: cap on the pre-flight window
     rise_slack_mps: float = 0.3        # takeoffRiseSlack: wobble allowed in the speed rise

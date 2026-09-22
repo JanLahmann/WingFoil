@@ -18,7 +18,7 @@ public enum MapLayer: String, CaseIterable, Codable, Sendable, Identifiable {
     /// A span, not a moment, which is why it is a line category.
     case pumping
     /// **The clean jibes**, as filled stars over the outcome dots they replace: a counted
-    /// jibe flown all the way through carrying its speed (docs/presentation.md, "Clean
+    /// jibe flown all the way through carrying its speed (docs/presentation/clean-jibe.md, "Clean
     /// jibe"). Its own chip because it is its own question — "where did it go right" — and
     /// it cuts across the ladder rather than sitting on it, which is why a starred jibe
     /// also still answers to its outcome chip. Hidden, the star goes back to being the dot
@@ -78,7 +78,7 @@ public enum MapLayer: String, CaseIterable, Codable, Sendable, Identifiable {
         }
     }
 
-    /// The same chip **in this session's discipline** (docs/presentation.md, "Discipline
+    /// The same chip **in this session's discipline** (docs/presentation/labels.md, "Discipline
     /// lexicon"). Three chips have a word to swap — the two track tints and the flight-start
     /// marker — and every other one, the whole outcome ladder included, is the same word on
     /// either rig. `.wingfoil` returns `label` unchanged, character for character.

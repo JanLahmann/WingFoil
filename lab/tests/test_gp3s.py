@@ -128,7 +128,7 @@ def test_invariants_on_random_track():
 
 
 # ------------------------------------------- the plausibility gate (engine 0.20.0)
-# docs/algorithms.md "The plausibility gate": on an uncertified track a window shorter
+# docs/algorithms/records.md "The plausibility gate": on an uncertified track a window shorter
 # than 10 s is believed only up to K x the best 10 s, and falls back to the fastest 2 s
 # that passes. Certified Doppler records never see it. The Swift twin asserts the same
 # three numbers on the same track (`AnalysisEngineTests.plausibilityGate*`).

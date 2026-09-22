@@ -94,7 +94,7 @@ struct ReplayCommentaryBubble: View {
         case .firstTakeoff: DesignTokens.Glyph.takeoffPumped
         case .jibe: "arrow.triangle.turn.up.right.circle"
         // The same star the map draws over a clean jibe — one mark, one meaning, wherever
-        // the strict verdict appears (docs/presentation.md, "Clean jibe").
+        // the strict verdict appears (docs/presentation/clean-jibe.md, "Clean jibe").
         case .cleanJibe: DesignTokens.Glyph.cleanJibe
         case .streak: "flame"
         case .splash: DesignTokens.Glyph.splash

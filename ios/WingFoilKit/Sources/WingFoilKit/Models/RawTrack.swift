@@ -115,7 +115,7 @@ public struct WatchSummary: Sendable, Equatable {
     /// Session field 39: the wind axis the RIDER entered (watch menu, GCM, or the phone push).
     public var windDirUserDeg: Double?
     /// Session field 44 (device app ≥ 0.9.0): the axis the watch estimated for itself, from
-    /// the course-over-ground distribution of the session so far (docs/algorithms.md
+    /// the course-over-ground distribution of the session so far (docs/algorithms/wind.md
     /// "Watch approximation: auto wind"). Kept apart from `windDirUserDeg` because the two are
     /// different claims — one is the rider's word, the other the watch's inference — and only
     /// one of them may be shown as fact. Either, both or neither may be present.
@@ -148,7 +148,7 @@ public struct WatchSummary: Sendable, Equatable {
 /// One wrist-accelerometer sample from the CIQ SensorLogging stream (~100 Hz, batched
 /// 25 to an `accelerometer_data` message). `t` is on the *record* time base, so pump
 /// analysis and the speed channels share one clock. Only the magnitude is kept: the
-/// detector is orientation-free by construction (docs/algorithms.md "Pumping"), the
+/// detector is orientation-free by construction (docs/algorithms/pumping.md "Pumping"), the
 /// wrist rotates constantly, and 400 k samples of three axes would be dead weight.
 public struct AccelSample: Sendable, Equatable {
     public var t: Double

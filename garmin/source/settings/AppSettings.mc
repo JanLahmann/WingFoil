@@ -94,7 +94,7 @@ module AppSettings {
     // the difference between a session of generic "turns" and a session of tacks and jibes for
     // every rider who forgets the menu), and the rider's declared turn habit, which is the
     // 180-degree tiebreaker on a weak no-go cone. Both mirror the engine
-    // (docs/algorithms.md "Default turn type"); `windDefaultTurnType` is the same vocabulary
+    // (docs/algorithms/wind.md "Default turn type"); `windDefaultTurnType` is the same vocabulary
     // in the same order as `WingFoilCore.TURN_TYPE_*`.
     var autoWind as Boolean = true;
     var windDefaultTurnType as Number = WingFoilCore.TURN_TYPE_JIBES;

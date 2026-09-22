@@ -169,13 +169,13 @@ struct TrendsView: View {
     @ViewBuilder
     private var charts: some View {
         // Every tone here is a token, and each one is the vocabulary its metric belongs to
-        // (docs/presentation.md "Colour and glyph vocabulary"): foil time and longest
+        // (docs/presentation/layers-map-colour-type.md "Colour and glyph vocabulary"): foil time and longest
         // flight are both *flight* facts and therefore the phase teal — longest flight
         // wore the takeoff blue until app-ui-review.md §5.4 — jibes-flown-through is a
         // verdict and may have the ladder's green, and the port share is a side, so it
         // takes the side ink rather than the unowned magenta of §5.3.
         // "On foil" is the *share*; "Foil time" is a duration and belongs to the number of
-        // seconds (docs/presentation.md, "Label table"). The web chart has always been
+        // seconds (docs/presentation/labels.md, "Label table"). The web chart has always been
         // titled this; the two now plot one metric under one name.
         TrendChart(title: "On foil", unit: "%", points: points,
                    tone: DesignTokens.Phase.flying,
@@ -210,7 +210,7 @@ struct TrendsView: View {
         // **Rates are additive**: CPH keeps the front screen, and the two beside it answer
         // the other two questions a rider asks about an afternoon — did I get away with the
         // jibes (JPH), and how busy was it (TPH). Three lines in the order he reads them,
-        // the same three the analyzer draws (docs/algorithms.md, "Session rates"). Both
+        // the same three the analyzer draws (docs/algorithms/rates.md, "Session rates"). Both
         // numerators are dry: a swim is not a maneuver made.
         TrendChart(title: "JPH", unit: "jibes / h", points: points,
                    tone: Color.accentColor,

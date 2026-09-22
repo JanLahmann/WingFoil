@@ -1,6 +1,6 @@
 import Foundation
 
-/// GP3S record-set parameters (docs/algorithms.md "Speed records").
+/// GP3S record-set parameters (docs/algorithms/records.md "Speed records").
 public struct RecordsConfig: Sendable, Equatable {
     public var alphaProximityM: Double = 50
     public var alphaMaxDistanceM: Double = 500
@@ -8,7 +8,7 @@ public struct RecordsConfig: Sendable, Equatable {
     /// alphas — which also excludes degenerate straight-line windows.
     public var alphaPruneMinPathM: Double = 250
     public var alphaPruneMinCogSpreadDeg: Double = 90
-    /// **K, the plausibility gate** (engine 0.20.0, docs/algorithms.md "The plausibility
+    /// **K, the plausibility gate** (engine 0.20.0, docs/algorithms/records.md "The plausibility
     /// gate"): on an *uncertified* track a window shorter than `shortWindowS` is accepted
     /// only up to this multiple of the best 10 s. 1.2, from the certified corpus
     /// (p95 of best2s/best10s 1.114, max 1.159) with margin. Certified records never see it.

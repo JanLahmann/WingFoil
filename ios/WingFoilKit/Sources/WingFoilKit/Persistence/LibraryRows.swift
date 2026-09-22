@@ -106,7 +106,7 @@ public enum RecordKind: String, CaseIterable, Sendable, Codable {
 
     /// **One spelling per record, everywhere a record is named** — the records tables on
     /// both platforms, the divergence banner, the map's window picker
-    /// (docs/presentation.md, "Label table"). `library.RECORD_KINDS` carries the identical
+    /// (docs/presentation/labels.md, "Label table"). `library.RECORD_KINDS` carries the identical
     /// strings.
     ///
     /// The one sanctioned divergence is the key-metrics block's `max 2 s` (and the `5×10 s`
@@ -180,7 +180,7 @@ public enum SessionRecordKind: String, CaseIterable, Sendable, Codable {
     ///
     /// The celebration has applied this since engine 0.10.0 and the table did not, so a
     /// four-minute evening could hold the row while the confetti named a different
-    /// afternoon, both labelled "Best CPH" (docs/presentation.md, "All-time records").
+    /// afternoon, both labelled "Best CPH" (docs/presentation/records.md, "All-time records").
     /// One clean jibe in four minutes is fifteen an hour, and a personal best a rider can
     /// set by going home early is not one. The *count* takes no such floor.
     public static let cphMinDurationS = PersonalBestDetector.cphMinDurationS
@@ -248,7 +248,7 @@ public enum SessionRecordKind: String, CaseIterable, Sendable, Codable {
         case .longestFlewStreak: row.longestFlewStreak.map(Double.init)
         // The engine's cleaned span (v12's `rateDurationS`), not the raw sample span: the
         // web's record reads the same clock, and the two used to differ by 43 minutes on
-        // the corpus's Rheinstetten afternoon (docs/presentation.md, "One clock").
+        // the corpus's Rheinstetten afternoon (docs/presentation/one-clock.md, "One clock").
         case .longestSession: row.rateSeconds
         case .mostDistance: row.distanceKm
         }

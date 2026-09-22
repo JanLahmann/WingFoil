@@ -93,7 +93,7 @@ public struct TimelineWindow: Sendable, Equatable {
 
     /// Frame one span — a tapped flight — with a margin on each side, so the thing asked
     /// about is on screen *with* its approach and its landing rather than welded to the
-    /// frame edge (docs/presentation.md, "Pairing").
+    /// frame edge (docs/presentation/scrub-pairing.md, "Pairing").
     ///
     /// The margin is a fraction of the span, so a 15-second hop and a four-minute reach both
     /// arrive looking deliberate; `minSpan` still governs, which is what stops a two-second

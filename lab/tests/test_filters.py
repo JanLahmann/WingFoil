@@ -42,7 +42,7 @@ def test_nan_rows_dropped_into_gap():
 
 
 def test_gap_threshold_dt_aware():
-    """The three terms of the rule (docs/algorithms.md "speed sample hygiene")."""
+    """The three terms of the rule (docs/algorithms/hygiene.md "speed sample hygiene")."""
     # Smart Recording: median dt 2 -> the 10 s floor applies, so a 5 s and an 8 s step are
     # cadence, not holes, and only the 17 s one cuts.
     t = [0, 2, 4, 6, 8, 13, 21, 38]

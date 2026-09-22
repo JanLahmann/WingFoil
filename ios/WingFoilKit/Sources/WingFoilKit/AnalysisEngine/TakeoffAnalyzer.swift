@@ -1,6 +1,6 @@
 import Foundation
 
-/// Takeoff-analysis parameters (docs/algorithms.md "Takeoff analysis").
+/// Takeoff-analysis parameters (docs/algorithms/takeoff.md "Takeoff analysis").
 public struct TakeoffConfig: Sendable, Equatable {
     /// takeoffMaxRun: cap on the pre-flight window searched back from ON_FOIL.
     public var maxRunS: Double = 30.0
@@ -274,7 +274,7 @@ public enum TakeoffAnalyzer {
     }
 
     /// Counted strokes in [startT, endT] — `inFlightStrokes` (engine 0.8.1,
-    /// docs/algorithms.md "In-flight strokes").
+    /// docs/algorithms/pumping.md "In-flight strokes").
     ///
     /// A burst of at least `pumpMinStrokes` whose tallest band-passed peak reaches
     /// `pumpBurstPeakG`: the same two burst-level tests the session total applies, so the
@@ -292,7 +292,7 @@ public enum TakeoffAnalyzer {
             .reduce(0) { $0 + $1.count }
     }
 
-    /// The session total: every stroke that earns it (engine 0.8.0, docs/algorithms.md
+    /// The session total: every stroke that earns it (engine 0.8.0, docs/algorithms/pumping.md
     /// "The session total").
     ///
     /// Until 0.8.0 this was the raw output of the peak picker — the one pump metric that

@@ -36,7 +36,7 @@ import {
 
    The **speed strip is the exception, and says so**: its y domain and its gridline step are
    the knots the engine reports, the same divergence the phone states for its four Swift
-   Charts axes (docs/presentation.md, "The definitions round", item 5). The axis, the
+   Charts axes (docs/presentation/labels.md, "The definitions round", item 5). The axis, the
    crosshair and the playhead readout are therefore labelled `KNOTS` — deliberately the
    knots word, out of the one module that owns both words, rather than a literal that would
    look identical and mean nothing. */
@@ -117,7 +117,7 @@ const KIND_ORDER = ["jibes", "tacks", "aborted"];
  * own chip — `course change` in the row above — and stays switchable beside the maneuvers,
  * which is the arrangement `MapLayerScope` describes for the phone's Turns map.
  *
- * **Aborted is the engine's flag, not a type** (engine 0.21.0, docs/algorithms.md, "The
+ * **Aborted is the engine's flag, not a type** (engine 0.21.0, docs/algorithms/turns.md, "The
  * aborted turn"): a turn the rider was still riding when he went in. It is always a
  * counted jibe or tack that fell in, so it answers to two chips — its kind and this one —
  * and either of them hides it. A document written before 0.21.0 carries no flag, so the
@@ -136,7 +136,7 @@ const OUTCOME_LAYER = { flew_through: "flewThrough", touchdown: "touchdown",
 
 /* --------------------------------------------------------------------- pairing
  *
- * docs/presentation.md, "Pairing": a takeoff, the flight it started and the end that
+ * docs/presentation/scrub-pairing.md, "Pairing": a takeoff, the flight it started and the end that
  * stopped it are three marks on one event, and the link between them is drawn *only* on a
  * tap. Every fact below is read verbatim from the analysis document — the flight's own
  * startTs/endTs/distM, its end's outcome, its takeoff's strokes; the only arithmetic is
@@ -423,7 +423,7 @@ function buildModel(result) {
                   `${speed(turn.exitKn)}`],
         // The score is a **number** — the share of the entry speed the turn held — and it
         // stays. The boolean beside it was the engine's score verdict, which is not one of
-        // the rider's two tiers (docs/presentation.md, "Clean jibe"): the outcome is on
+        // the rider's two tiers (docs/presentation/clean-jibe.md, "Clean jibe"): the outcome is on
         // the row above and "clean" is said only when the engine's own flag says it.
         ["score", `held ${nf(turn.score * 100, 0)} % of entry speed`
                   + (clean ? " · clean" : "")],
@@ -715,7 +715,7 @@ function drawMap() {
   // reading against a flat dark box. A casing in the surface's own colour, the trick the
   // effort glow below already uses, keeps every ink exactly where the contract put it.
   // ONE pass under the whole track, before any colour, so no join is overdrawn — the same
-  // rule as the iOS `TrackHalo` (docs/presentation.md, "Map style").
+  // rule as the iOS `TrackHalo` (docs/presentation/layers-map-colour-type.md, "Map style").
   if (ground) {
     for (const run of model.phase) {
       const on = visible(run.flying ? "flying" : "offFoil");
@@ -735,7 +735,7 @@ function drawMap() {
                       "data-phase": run.flying ? "flying" : "offFoil" }, root);
   }
   // A flying run is also the handle on its flight: tapping it says which flight this was
-  // and frames it in the chart (docs/presentation.md, "Pairing"). The hit line is a wide
+  // and frames it in the chart (docs/presentation/scrub-pairing.md, "Pairing"). The hit line is a wide
   // transparent twin, because a 2-unit stroke is not a tap target — and it is drawn under
   // everything that follows, so a marker on top of it still wins the tap.
   for (const run of model.phase) {
@@ -820,7 +820,7 @@ function drawMap() {
 
 /**
  * The track as runs of one phase each, **cut at the engine's exact flight boundaries**
- * (docs/presentation.md, "Phase tints").
+ * (docs/presentation/layers-map-colour-type.md, "Phase tints").
  *
  * Asking the question per sample — "is this fix inside a flight?" — is wrong on a coarse
  * source, and wrong in the direction that flatters the rider. The 2026-08-06
@@ -2032,7 +2032,7 @@ function annotate(node, mk, where) {
  * A tap on a flying stretch of track: its flight's facts, and the strip framed on it.
  *
  * The zoom is the flight plus a margin either side — the same window the pinch moves, so
- * the reset chip the strip already carries is the way out of it (docs/presentation.md,
+ * the reset chip the strip already carries is the way out of it (docs/presentation/scrub-pairing.md,
  * "Pairing"). The playhead goes to the start of the run that was tapped, which is where the
  * reader's finger already is.
  */
@@ -2072,7 +2072,7 @@ function openPopover(ev, facts) {
     `<button type="button" class="pop-close" aria-label="Close">×</button></div>` +
     // The pairing line: which flight this mark belongs to, and what became of it. Present
     // only on a flight boundary, and only ever because something was tapped
-    // (docs/presentation.md, "Pairing").
+    // (docs/presentation/scrub-pairing.md, "Pairing").
     (facts.pairing ? `<p class="pop-pair">${esc(facts.pairing)}</p>` : "") +
     `<div class="pop-rows">${facts.rows.map(([k, val]) =>
       `<div><span>${esc(k)}</span><span>${esc(val)}</span></div>`).join("")}</div>`;

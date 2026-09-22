@@ -1,6 +1,6 @@
 """Turn detection, scoring and wind-axis classification.
 
-Contract: docs/algorithms.md "Turn detection & classification". Per gap-free segment the
+Contract: docs/algorithms/turns.md "Turn detection & classification". Per gap-free segment the
 unwrapped COG is scanned for a net change of at least `turnMinAngle` inside at most
 `turnMaxDuration` seconds containing a `turnPeakRate` spike; candidates are then
 non-maximum-suppressed, trimmed to the actually-turning part, and kept only when they
@@ -128,7 +128,7 @@ counting those is the only honest way to ask what the rung was doing.)
 
 The evidence itself is not thrown away: `pumped` still says the rider worked for it and the
 page still prints "pumped out - N strokes". The watch keeps the old rule, at the old speed,
-unconditionally (docs/algorithms.md, "Watch divergences").
+unconditionally (docs/algorithms/pumping.md, "Watch divergences").
 
 The score%/success pair is kept as the secondary, continuous metric: outcome says *what
 happened*, score says *how much speed the turn cost*.
@@ -233,7 +233,7 @@ OUTCOME_REASONS = (REASON_STOP, REASON_OFF_FOIL, REASON_SUBMERGED, REASON_PUMPED
 
 @dataclass
 class TurnConfig:
-    """docs/algorithms.md "Turn detection & classification" defaults."""
+    """docs/algorithms/turns.md "Turn detection & classification" defaults."""
 
     min_angle_deg: float = 60.0           # turnMinAngle: net unwrapped COG change
     #: turnClassifyMinAngle (engine 0.13.0): below this a sweep is never a tack or a jibe.
@@ -301,7 +301,7 @@ class TurnConfig:
     pumped_marginal_speed_kmh: float = 8.0
 
     # --- 360 spins: EXPERIMENTAL, and dark unless the flag below is set (see
-    # `detect_three_sixties` and docs/algorithms.md "360 spins"). Nothing about the
+    # `detect_three_sixties` and docs/algorithms/turns.md "360 spins"). Nothing about the
     # serialized document changes while `detect_three_sixty` is False.
     detect_three_sixty: bool = False      # detectThreeSixty: unvalidated, off by default
     three_sixty_min_deg: float = 300.0    # threeSixtyMinDeg: net rotation of the sweep
@@ -484,7 +484,7 @@ class OutcomeCounts:
 
         The same "dry" rule `jibesPerHour` applies to the jibe lane, read here over
         whichever family this tally covers -- and over `outcomes` it is the
-        `turnsPerHour` numerator (engine 0.13.0; docs/algorithms.md "Session rates").
+        `turnsPerHour` numerator (engine 0.13.0; docs/algorithms/rates.md "Session rates").
         """
         return self.flew_through + self.touchdown
 

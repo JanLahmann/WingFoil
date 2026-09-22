@@ -1,6 +1,6 @@
 import Foundation
 
-/// Flight-detection parameters (docs/algorithms.md "Flight (foil) detection").
+/// Flight-detection parameters (docs/algorithms/flight.md "Flight (foil) detection").
 public struct FlightConfig: Sendable, Equatable {
     public var foilEntrySpeedKmh: Double = 12.0
     public var entryHoldS: Double = 2.0

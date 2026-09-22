@@ -148,7 +148,7 @@ def check_shape() -> None:
     # `PresentationTests.designTokensCarryTheSameCataloguesAsTheCode`, and this is the
     # analyzer's half. The same record used to answer to five spellings — `2 s`,
     # `Best 2 s`, `max 2 s`, `Best 2s` — depending on which screen you were on
-    # (docs/presentation.md, "Label table").
+    # (docs/presentation/labels.md, "Label table").
     token_labels = {entry["id"]: entry["label"] for entry in tokens["recordWindows"]["order"]}
     library_labels = {key.removesuffix("Kn"): label
                       for key, _w, label, _u in library.RECORD_KINDS}
@@ -241,7 +241,7 @@ def check_rules() -> None:
                     and t.get("cleanBlockedBy") is None)
         check(f"  {stem}: clean jibes are the star layer", facts["cleanJibes"], clean)
         # And a reason is never recorded beside a star, nor on a turn the score or the
-        # outcome had already refused (docs/algorithms.md "The quiet tail").
+        # outcome had already refused (docs/algorithms/turns.md "The quiet tail").
         blocked = [t for t in doc.get("turns", []) if t.get("cleanBlockedBy") is not None]
         check(f"  {stem}: a blocked jibe is a jibe that otherwise qualified",
               [t for t in blocked
@@ -337,7 +337,7 @@ def check_rules() -> None:
 def check_flight_invariants() -> None:
     """One takeoff starts every flight; one end stops it.
 
-    docs/presentation.md, "Enforcement" 3. The pairing lines a popover draws
+    docs/presentation/enforcement.md, "Enforcement" 3. The pairing lines a popover draws
     ("starts flight 12 · 1:23 · ended: touchdown") are only meaningful if the three blocks
     are the same list of flights seen from three sides, so the arithmetic is pinned per
     fixture rather than trusted: a takeoff with no flight to name, or a flight with two
@@ -387,7 +387,7 @@ def check_flight_invariants() -> None:
 def check_flight_end_folding() -> None:
     """A `glide_out` flight end is a *flew through* mark drawn hollow, not a layer of its own.
 
-    docs/presentation.md, "Colour and glyph vocabulary": the ladder carries the verdict and
+    docs/presentation/layers-map-colour-type.md, "Colour and glyph vocabulary": the ladder carries the verdict and
     the fill carries the channel — solid = a maneuver's outcome, hollow = a straight-line
     flight end no turn explains. A separate "glided out" chip (which the web app used to
     have) says the same thing twice and makes the two platforms count differently, so this
@@ -445,7 +445,7 @@ def check_consistency() -> None:
         # accelerometer. Without one the engine reports neither, every takeoff carries
         # `free: false`, and both apps draw the filled arrow — identically, which is what
         # this asserts. That is now written down rather than merely observed:
-        # docs/presentation.md, "Takeoff glyphs" — "On sources without an accelerometer
+        # docs/presentation/layers-map-colour-type.md, "Takeoff glyphs" — "On sources without an accelerometer
         # stream every takeoff renders as the filled (pumped) arrow; free takeoffs cannot
         # be distinguished without stroke counts."
         if doc.get("capabilities", {}).get("hasAccel"):
@@ -527,7 +527,7 @@ def check_session_clock(result: dict) -> None:
     check_clock_note()
 
 
-#: The exact sentences the header may print, per source (docs/presentation.md "Session
+#: The exact sentences the header may print, per source (docs/presentation/session-time-video.md "Session
 #: time"). Written here rather than imported so the JavaScript is checked against a second
 #: copy of the contract instead of against itself — the same rule §5 follows for the card.
 EXACT_NOTE = " \u00b7 times as recorded on the water"
@@ -632,7 +632,7 @@ def expected_card_values(doc: dict) -> dict[str, str]:
         tk = t["tackOutcomes"]
         out["tacks"] = f"{tk['flewThrough']} · {tk['touchdown']} · {tk['fellIn']}"
     # Every fall of the session, off the flight-end channel — the one that answers "how
-    # often did I end up in the water", one event per actual swim (docs/algorithms.md, "Wet
+    # often did I end up in the water", one event per actual swim (docs/algorithms/rates.md, "Wet
     # is every fall, not every fallen jibe"). Deliberately NOT `outcomeSplit`, whose falls
     # mix the turn ladder with this channel and so need not add up to it. Absent where no
     # flight ended with usable evidence, which is `FlightEndCounts.total` — `unknown` out.
@@ -646,7 +646,7 @@ def expected_card_values(doc: dict) -> dict[str, str]:
     if s.get("wetPerHour") is not None:
         # The gate is `turns.jibes`, the count, not `jibesPerHour`, the rate: a session
         # that named jibes and swam out of every one has a 0.0 rate and a measured 0.0 CPH
-        # that has to be printed (docs/presentation.md, "Row 4"). §5a asserts that branch
+        # that has to be printed (docs/presentation/key-metrics.md, "Row 4"). §5a asserts that branch
         # against a synthetic case, because no corpus fixture happens to be one.
         if t["jibes"] > 0 or not s["turnsPerHour"] > 0:
             out["jph"] = f"{s['jibesPerHour']:.1f}"
@@ -751,7 +751,7 @@ TURN_WORD = {"jibe": "jibe", "tack": "tack", "bear_away": "bear-away", "round_up
 def expected_wrist_under(sub: dict, doc: dict) -> dict:
     """The callout the web must print for one submersion episode, re-derived here in Python.
 
-    A third spelling of docs/presentation.md "Wrist under", against the JavaScript that draws
+    A third spelling of docs/presentation/layers-map-colour-type.md "Wrist under", against the JavaScript that draws
     it and the Swift that draws the same sentence on the phone. The two apps wording one fact
     differently is how a rider learns to trust one of them.
     """
@@ -796,7 +796,7 @@ def check_wrist_under(cards: list[dict]) -> None:
 #: `allWetJibes` is the one the old gate got wrong: fifteen jibes, every one swum. It is a
 #: session made of jibes, so JPH and CPH are both *measured* and both `0.0` — not an
 #: absence, and never the TPH fallback, which exists only for a session whose wind axis
-#: named no jibes at all (docs/presentation.md, "Row 4").
+#: named no jibes at all (docs/presentation/key-metrics.md, "Row 4").
 RATE_CASES = {
     "allWetJibes": {"jph": "0.0", "cph": "0.0", "wph": "15.0"},
     "noJibesNamed": {"tph": "15.0", "wph": "2.0"},
@@ -1287,7 +1287,7 @@ def _secs(value: float) -> str:
 def expected_outcome_text(turn: dict, marginal_speed: float | None) -> str | None:
     """The line the page must print under one turn's outcome, re-derived here in Python.
 
-    A third spelling of docs/presentation.md "Why it ended that way", against the JavaScript
+    A third spelling of docs/presentation/turn-detail.md "Why it ended that way", against the JavaScript
     that draws it (`outcomeText` in web/js/viz.js) and the Swift that draws the same sentence
     on the phone (`TurnAnalytics.outcomeText`). Jan asked for "a short comment for the user why
     a jibe is a touchdown or a fall"; a comment that says one thing on the phone and another on

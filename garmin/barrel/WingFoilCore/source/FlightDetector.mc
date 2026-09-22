@@ -2,7 +2,7 @@ import Toybox.Lang;
 
 module WingFoilCore {
 
-// Foil-flight hysteresis state machine (docs/algorithms.md "Flight detection").
+// Foil-flight hysteresis state machine (docs/algorithms/flight.md "Flight detection").
 // Speed >= entry sustained entryHold s => ON_FOIL (backdated to first qualifying sample);
 // speed <= exit sustained exitHold s => OFF_FOIL (backdated); flights < minFlight discarded.
 //

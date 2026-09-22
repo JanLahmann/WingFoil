@@ -18,7 +18,7 @@ import WingFoilCore;
 // enableSensorEvents, getInfo, ...) is documented "Will cause an app crash if called from a
 // data field app" — hence no accelerometer, no pump metrics. See docs/fit-schema.md.
 class FieldEngine {
-    // Same submersion model as MetricsEngine (docs/algorithms.md "Turn outcome"): ~300 Pa
+    // Same submersion model as MetricsEngine (docs/algorithms/pumping.md "Turn outcome"): ~300 Pa
     // above a slow baseline is a wrist under water, and the baseline refuses to adapt while
     // a spike is in progress so a long swim cannot re-baseline itself dry.
     const SUBMERSION_PA = 300.0;

@@ -316,7 +316,7 @@ public struct AppDatabase: Sendable {
         // pair of session records that cannot be recovered from what is already stored: a
         // streak is a claim about **the rider**, not about the turn channel, so the engine
         // merges counted turns with the flight ends no turn owns before counting one
-        // (docs/algorithms.md "Turn streaks"). Recomputing that from the `turn` table would
+        // (docs/algorithms/pumping.md "Turn streaks"). Recomputing that from the `turn` table would
         // silently drop every swim in a straight line, which is exactly the event a rider
         // remembers as having ended the run.
         //
@@ -338,7 +338,7 @@ public struct AppDatabase: Sendable {
         // `SessionRow.cleanJibesPerHour` divided the clean count by the row's own duration,
         // with a TODO on it, because engine 0.10.0 had not landed. It has: the rate is
         // `summary.cleanJibesPerHour`, published beside JPH and WPH and sharing their
-        // denominator (docs/algorithms.md "Session rates"). A metric with an engine field
+        // denominator (docs/algorithms/rates.md "Session rates"). A metric with an engine field
         // must have exactly one owner, so the field is denormalized here like every other
         // number the aggregate screens read, and the division survives only as the fallback
         // for a row this sweep could not refill.
@@ -408,7 +408,7 @@ public struct AppDatabase: Sendable {
             try db.execute(sql: "UPDATE session SET engineVersion = NULL")
         }
 
-        // v14: **which discipline the rider says this session is** (docs/algorithms.md
+        // v14: **which discipline the rider says this session is** (docs/algorithms/disciplines.md
         // "Disciplines", GitHub issue #6).
         //
         // A column of its own rather than an edit to `discipline`, which is the *recording's*
@@ -423,7 +423,7 @@ public struct AppDatabase: Sendable {
             }
         }
 
-        // v15: **was this session's preset a guess?** (docs/presentation.md, "Confirming the
+        // v15: **was this session's preset a guess?** (docs/presentation/labels.md, "Confirming the
         // discipline on import").
         //
         // Wingfoil does not exist in Garmin, Strava, intervals.icu or Apple Health, so every
@@ -443,7 +443,7 @@ public struct AppDatabase: Sendable {
             }
         }
 
-        // v16: **is this recording a session at all?** (docs/algorithms.md "Not a session",
+        // v16: **is this recording a session at all?** (docs/algorithms/not-a-session.md "Not a session",
         // engine 0.19.0, `SessionVerdict`).
         //
         // A column rather than a predicate over three others, because the question is asked
@@ -483,7 +483,7 @@ public struct AppDatabase: Sendable {
             try SpotClusterer.pruneEmptySpots(db: db)
         }
 
-        // v17: the other two engine rates — JPH and TPH (docs/algorithms.md "Session rates").
+        // v17: the other two engine rates — JPH and TPH (docs/algorithms/rates.md "Session rates").
         //
         // **Rates are additive.** v11 denormalized `cleanJibesPerHour` because the Trends
         // chart, the Records table and the period block all read it; the same three surfaces
@@ -905,7 +905,7 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
     ///
     /// Copied from the engine and never recomputed here: a streak merges counted turns with
     /// the flight ends no turn owns, so a swim in a straight line ends a run exactly as a
-    /// botched jibe does (docs/algorithms.md "Turn streaks"). The `turn` table alone cannot
+    /// botched jibe does (docs/algorithms/pumping.md "Turn streaks"). The `turn` table alone cannot
     /// say that, which is why these are columns rather than a query.
     public var longestDryStreak: Int?
     public var longestFlewStreak: Int?
@@ -927,7 +927,7 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
     /// **Read `jibesPerHour` / `turnsPerHour`, never these.** Spelled apart from the accessors
     /// for the same reason `engineCleanJibesPerHour` is: a call site must not reach the raw
     /// column by accident. Unlike CPH there is no division behind the accessor — the dry
-    /// numerators are not on this row to divide with (docs/algorithms.md "Session rates").
+    /// numerators are not on this row to divide with (docs/algorithms/rates.md "Session rates").
     public var engineJibesPerHour: Double?
     public var engineTurnsPerHour: Double?
 
@@ -960,7 +960,7 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
     /// existed.
     ///
     /// A duration, not a divisor: read `timerSeconds` for anything per-hour
-    /// (docs/presentation.md, "One clock").
+    /// (docs/presentation/one-clock.md, "One clock").
     public var rateSeconds: Double { rateDurationS ?? durationS }
 
     // MARK: schema v13
@@ -972,7 +972,7 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
     /// **The seconds a rate over this session divides by**, and the only thing that may
     /// divide one.
     ///
-    /// Timer time since engine 0.13.0 (docs/algorithms.md, "Session rates"): the four
+    /// Timer time since engine 0.13.0 (docs/algorithms/rates.md, "Session rates"): the four
     /// per-hour rates answer "per hour *on the water*", and an hour the recorder sat paused
     /// on the beach is not one. Summing this is what makes a period's CPH agree with the
     /// CPH on the page of every session in it.
@@ -991,7 +991,7 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
     /// `analysisDiscipline`, which puts the two in their order of authority.
     public var disciplineOverride: String?
 
-    /// **The preset this session is analysed under** (docs/algorithms.md "Disciplines").
+    /// **The preset this session is analysed under** (docs/algorithms/disciplines.md "Disciplines").
     ///
     /// The rider's override first, the recording's `discipline` tag second, wingfoil third.
     /// `sport` is not consulted at any rung and must not be: ADR-004 records FIT sport 43
@@ -1015,7 +1015,7 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
     public var disciplineGuessed = false
 
     // MARK: schema v16
-    /// **Is this recording a session at all?** (docs/algorithms.md "Not a session",
+    /// **Is this recording a session at all?** (docs/algorithms/not-a-session.md "Not a session",
     /// `SessionVerdict`.) The engine's own verdict, copied by `apply(_:)`; true on every row
     /// a rider ever rode, and on every skunked afternoon.
     ///
@@ -1067,7 +1067,7 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
     /// (engine 0.9.1).
     ///
     /// A surface showing a time in this zone may not call it the time on the water; it says
-    /// the times are estimated from the track's position instead (docs/presentation.md
+    /// the times are estimated from the track's position instead (docs/presentation/session-time-video.md
     /// "Session time"). False for an unrecorded source, which is the pre-0.9.1 behaviour and
     /// the honest reading of "we no longer know": inventing a caveat is as wrong as
     /// inventing a certainty.
@@ -1088,7 +1088,7 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
     ///
     /// It is the outcome, deliberately, and not `turnSuccessPct`: the engine's score
     /// verdict is an internal quantity, and the rider's two tiers are *flew through* and
-    /// *clean* (docs/presentation.md, "Clean jibe").
+    /// *clean* (docs/presentation/clean-jibe.md, "Clean jibe").
     public var flewThroughPct: Double? {
         guard let counted = turnsCounted, counted > 0, let flew = turnsFlewThrough
         else { return nil }
@@ -1196,7 +1196,7 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
         longestDryStreak = t.longestDryStreak
         longestFlewStreak = t.longestFlewStreak
         // Copied, never recomputed: the engine owns every per-hour rate and the denominator
-        // they share (docs/algorithms.md "Session rates").
+        // they share (docs/algorithms/rates.md "Session rates").
         engineCleanJibesPerHour = s.cleanJibesPerHour
         engineJibesPerHour = s.jibesPerHour
         engineTurnsPerHour = s.turnsPerHour

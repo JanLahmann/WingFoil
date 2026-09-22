@@ -1,4 +1,4 @@
-"""Reproduce every number in docs/algorithms.md "Jumps (theoretical, uncalibrated)".
+"""Reproduce every number in docs/algorithms/jumps.md "Jumps (theoretical, uncalibrated)".
 
     uv run python tools/jump_report.py            # noise model + grids + corpus sweep
     uv run python tools/jump_report.py --reps 200 # tighter error bars, slower

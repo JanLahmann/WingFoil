@@ -1114,7 +1114,7 @@ function mapOdometerAndWindMarkAreBigEnoughToRead(logger as Test.Logger) as Bool
         - RecordingView.ladderHeaderWidth(dc, gs, false, LADDER_HEAD_SEP),
         gs + LADDER_HEAD_MARK_GAP);
     // and it is not the outcome ladder's ink: the ladder is a verdict scale and an axis is
-    // not a verdict (docs/presentation.md, "Colour and glyph vocabulary")
+    // not a verdict (docs/presentation/layers-map-colour-type.md, "Colour and glyph vocabulary")
     Test.assertMessage(Graphics.COLOR_WHITE != Ink.ladderFlew()
         && Ink.dim() != Ink.ladderFlew() && Ink.dim() != Ink.ladderTouchdown()
         && Ink.dim() != Ink.ladderFellIn(),
@@ -2031,7 +2031,7 @@ function turnOutcomeLogCapsAndDropsOldest(logger as Test.Logger) as Boolean {
 // ---- Pump / takeoff detection ----
 // The headless twin of lab/tests/test_pump.py: the same synthetic wrist traces, driven
 // through the real PumpDetector at the real 25 Hz grid. Every expected count below was first
-// produced by the lab implementation on the identical signal (docs/algorithms.md "Watch
+// produced by the lab implementation on the identical signal (docs/algorithms/watch-pump.md "Watch
 // approximation"), so a divergence here means the port drifted, not that the numbers moved.
 
 // One second of synthetic wrist motion per call, pushed as the ~25-sample batch a
@@ -2109,7 +2109,7 @@ function pumpBurstBecomesATakeoffAttemptAndSucceeds(logger as Test.Logger) as Bo
     Test.assertMessage(r.det.peaks >= 10 && r.det.peaks <= 14,
         "10 s at 1.2 Hz gave " + r.det.peaks.toString() + " peaks, lab says 12");
     // A moving board and a takeoff-sized burst: every one of those peaks earns its place
-    // in the session total too (docs/algorithms.md "The session total").
+    // in the session total too (docs/algorithms/pumping.md "The session total").
     Test.assertEqual(r.det.strokes, r.det.peaks);
     Test.assertMessage(r.det.minGapMs >= r.det.REFRACTORY_MS,
         "strokes " + r.det.minGapMs.toString() + " ms apart beat the refractory");
@@ -2139,7 +2139,7 @@ function pumpBurstBecomesATakeoffAttemptAndSucceeds(logger as Test.Logger) as Bo
     return true;
 }
 
-// The session total (engine 0.8.0, docs/algorithms.md "The session total"). Real lake chop
+// The session total (engine 0.8.0, docs/algorithms/pumping.md "The session total"). Real lake chop
 // is at pumping cadence and clears pumpStrokeAmp, so the peak train alone is not a count of
 // anything — the watch's FIT session field 38 counts only the strokes of a burst that was
 // long enough, tall enough, and moving. The lab's is the authoritative number; this is the
@@ -2303,7 +2303,7 @@ function failedAttemptExpiresAndFitPackingIsSane(logger as Test.Logger) as Boole
 }
 
 // ---- Takeoff HR cost ----
-// The watch slice of lab/src/wingfoil_lab/hrcost.py (docs/algorithms.md "HR cost"). The
+// The watch slice of lab/src/wingfoil_lab/hrcost.py (docs/algorithms/hr-cost.md "HR cost"). The
 // tracker is driven here at the 1 Hz it sees on the water, with the heart rates an optical
 // sensor under a wetsuit sleeve actually produces — including the ones it does not produce.
 

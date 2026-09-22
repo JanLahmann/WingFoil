@@ -180,7 +180,7 @@ are the ones the phone would miss.
 **Sensor gaps, and nothing new.** `PumpAnalyzer` / `pump.py` bin the whole session at 25 Hz,
 hold empty bins at the session mean so the FIR does not ring on them, mark them `valid =
 false` and pick no stroke there. That is exactly what a `SensorLogging` hole already is
-(docs/algorithms.md, "Reading the stream"). So a windowed stream needs no new capability, no
+(docs/algorithms/pumping.md, "Reading the stream"). So a windowed stream needs no new capability, no
 new channel and no new source letter (pattern L): `SourceCapabilities.hasAccel` goes true,
 `accelClockReconstructed` stays **false** because these are real per-sample times off the
 watch's own grid, and the uncovered stretches behave the way an accelerometer hole has always

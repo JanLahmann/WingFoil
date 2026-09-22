@@ -75,7 +75,7 @@ struct SessionDetailView: View {
     /// scrubber, the chart and the map — that shared binding *is* the map/chart link.
     @State private var playhead: Double?
     /// The flight a tap on the map asked about — the map sets it, the chart frames it.
-    /// Transient like every other zoom (docs/presentation.md, "Pairing").
+    /// Transient like every other zoom (docs/presentation/scrub-pairing.md, "Pairing").
     @State private var flightFocus: SessionDetail.FlightFocus?
     /// The speed chart's visible window. Owned here rather than by the chart so a trip to
     /// another tab does not reset it — see `SpeedChartView.zoom`.
@@ -195,7 +195,7 @@ struct SessionDetailView: View {
                     // **Why this page's numbers are in nothing else.** One line, directly
                     // under the block it is about, so a rider who wonders where his session
                     // went in the totals reads the answer beside the evidence for it
-                    // (docs/presentation.md, "Not a session").
+                    // (docs/presentation/not-a-session-spots.md, "Not a session").
                     if !detail.analysis.summary.isSession {
                         Text(NotASessionNote.line(
                             reason: detail.analysis.summary.notASessionReason,
@@ -521,7 +521,7 @@ struct SessionDetailView: View {
     private var switcher: some View {
         Picker("Section", selection: $tab) {
             // The tab's word in this session's discipline: a windsurfer does not take
-            // off, he gets planing (docs/presentation.md, "Discipline lexicon"). Every
+            // off, he gets planing (docs/presentation/labels.md, "Discipline lexicon"). Every
             // other segment is the same word on either rig.
             ForEach(SessionSection.allCases) { Text($0.label(discipline)).tag($0) }
         }

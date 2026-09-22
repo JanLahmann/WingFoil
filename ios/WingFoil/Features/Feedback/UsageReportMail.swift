@@ -5,7 +5,7 @@ import UIKit
 import WingFoilKit
 
 /// **The beta's usage report** — the ordinary feedback mail with one more block at the foot
-/// of it (docs/channels.md, "Beta section"; docs/presentation.md, "The beta's usage report").
+/// of it (docs/channels.md, "Beta section"; docs/presentation/status-feedback-start-widgets-ipad.md, "The beta's usage report").
 ///
 /// Two things reach it: the card the library puts at the top of the list every fifth
 /// session or fortnight (`UsageAskCard`), and the permanent row in Settings → Beta. Both

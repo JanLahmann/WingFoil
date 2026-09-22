@@ -37,7 +37,7 @@ struct TakeoffsAnalysisView: View {
     /// The words, and the switch behind half this page: an *attempt* is a pumping burst and
     /// what came of it, so with no pump channel every attempt is a success and the outcome
     /// filter, the pumping runs and the stroke column have nothing to say
-    /// (docs/algorithms.md "Disciplines").
+    /// (docs/algorithms/disciplines.md "Disciplines").
     private var words: DisciplineLexicon { detail.row.analysisDiscipline.lexicon }
 
     /// The attempts that survived the outcome chips, in time order (`takeoffMarks` already
@@ -245,14 +245,14 @@ struct TakeoffsAnalysisView: View {
 
 /// One attempt: when, how many strokes, how long it took to fly, and whether it did.
 ///
-/// A missing number is **absent, never 0** (docs/presentation.md, "Formatter rules"): a
+/// A missing number is **absent, never 0** (docs/presentation/labels.md, "Formatter rules"): a
 /// source with no accelerometer counted no strokes, and a failed attempt never reached the
 /// foil — printing zeroes there would turn two absences into two claims.
 private struct AttemptRowView: View {
     let mark: SessionDetail.TakeoffMark
     let focused: Bool
     /// Whether this session has a pump channel at all. Where it has not, the stroke cell is
-    /// absent rather than a dash (docs/algorithms.md "Disciplines").
+    /// absent rather than a dash (docs/algorithms/disciplines.md "Disciplines").
     var pumping = true
 
     var body: some View {

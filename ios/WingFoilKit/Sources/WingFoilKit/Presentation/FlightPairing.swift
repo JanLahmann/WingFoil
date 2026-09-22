@@ -1,7 +1,7 @@
 import Foundation
 
 /// The one line a tapped mark gains: which flight it belongs to, and what became of it
-/// (docs/presentation.md, "Pairing").
+/// (docs/presentation/scrub-pairing.md, "Pairing").
 ///
 /// A takeoff, the flight it started and the end that stopped it are three marks on one
 /// event, and the map draws all three. Linking them *always* — a leader line, a shared

@@ -1,6 +1,6 @@
 import Foundation
 
-/// HR-cost parameters (docs/algorithms.md "HR cost (phone)").
+/// HR-cost parameters (docs/algorithms/hr-cost.md "HR cost (phone)").
 public struct HrConfig: Sendable, Equatable {
     /// hrCostPeakWindow: the peak is searched this far past the anchor. Deliberately much
     /// longer than a pump burst — optical HR trails effort by 10–20 s, so a window as short

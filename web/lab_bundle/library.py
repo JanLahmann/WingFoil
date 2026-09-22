@@ -50,7 +50,7 @@ from datetime import datetime, timedelta, timezone
 # saved last month must not report "0 clean jibes" as its all-time best.
 # v6 (engine 0.10.0) carries `cleanJibesPerHour` itself, instead of leaving `_cph` to divide
 # the count by the hour. The arithmetic is identical; what changes is *who owns it* — CPH is
-# an engine rate now (docs/algorithms.md "Session rates"), published beside JPH and WPH, and
+# an engine rate now (docs/algorithms/rates.md "Session rates"), published beside JPH and WPH, and
 # a metric with an engine field must not be re-derived by a reader. Null on every row written
 # before it, where `_cph` still does the division — see there.
 # v7 carries the three facts a *period* needs and a session never did: `rateDurationS` (the
@@ -76,7 +76,7 @@ from datetime import datetime, timedelta, timezone
 # before it, where `_timer_s` falls back to `rateDurationS` — elapsed, the closest stored
 # clock, and the number those rows were already divided by.
 # v10 (15 Sep 2026, engine 0.19.0) carries the engine's own answer to "is this a session at
-# all" — `isSession` and `notASessionReason` (docs/algorithms.md "Not a session"). A recording
+# all" — `isSession` and `notASessionReason` (docs/algorithms/not-a-session.md "Not a session"). A recording
 # with no foil time in it that is either under 120 s or under 200 m is the one a rider starts
 # on the beach and stops again, and until now it counted in every total, dragged the "on foil"
 # trend to zero and added itself to the library's session count. Absent on a row written
@@ -85,7 +85,7 @@ from datetime import datetime, timedelta, timezone
 # module that *is* recomputed for an old row, because the alternative is a stored library
 # whose oldest junk never leaves the totals.
 # v11 (19 Sep 2026) carries the other two engine rates — `jibesPerHour` and `turnsPerHour`
-# (docs/algorithms.md "Session rates"). **Rates are additive**: CPH says he rode the jibe, JPH
+# (docs/algorithms/rates.md "Session rates"). **Rates are additive**: CPH says he rode the jibe, JPH
 # says he got away with it, TPH says how busy the afternoon was, and a trends page that draws
 # only the strictest of the three answers one of the three questions a rider asks. Copied from
 # the engine, never recomputed, for the same reason `cleanJibesPerHour` is: both numerators are
@@ -95,7 +95,7 @@ from datetime import datetime, timedelta, timezone
 # charts simply have no point for that session — a gap in a line is "not measured".
 SCHEMA = 11
 
-# "Not a session" — the two floors (docs/algorithms.md "Not a session"). Only ever consulted
+# "Not a session" — the two floors (docs/algorithms/not-a-session.md "Not a session"). Only ever consulted
 # for a recording with no foil time at all, which is why they can be set generously.
 NOT_A_SESSION_MAX_DURATION_S = 120.0
 NOT_A_SESSION_MAX_DISTANCE_M = 200.0
@@ -114,7 +114,7 @@ DEDUPE_DURATION_S = 60.0
 # `bestHour` carried None here until 21 September 2026, so its row was the one row in the
 # table that opened nothing. The reasoning was that an hour-long window lights most of the
 # track; the answer is that this is what the record looks like, and a row that cannot be
-# opened teaches a rider that the table is only partly alive (docs/presentation.md,
+# opened teaches a rider that the table is only partly alive (docs/presentation/records.md,
 # "Record windows"). Nine kinds now, nine windows, one behaviour.
 RECORD_KINDS = [
     ("best2sKn", "best2s", "Best 2 s", "kn"),
@@ -346,7 +346,7 @@ def _geo(doc) -> dict | None:
 
 
 def session_verdict(foil_time_s, duration_s, distance_m) -> tuple:
-    """`(is_session, reason)` — docs/algorithms.md "Not a session", engine 0.19.0.
+    """`(is_session, reason)` — docs/algorithms/not-a-session.md "Not a session", engine 0.19.0.
 
     The Python twin of `wingfoil_lab.goldens.session_verdict` and of the kit's
     `SessionVerdict.of`. A recording is **not** a session when it holds no foil time at all
@@ -472,7 +472,7 @@ def digest(doc, file_name: str | None = None) -> dict:
         "jibesPerHour": _num(summ.get("jibesPerHour")),
         "turnsPerHour": _num(summ.get("turnsPerHour")),
         # The engine's *cleaned* session span (schema 7) — the denominator all four session
-        # rates share (docs/algorithms.md "Session rates"). Deliberately beside `durationS`
+        # rates share (docs/algorithms/rates.md "Session rates"). Deliberately beside `durationS`
         # rather than instead of it: `durationS` is the FIT's `total_elapsed_time` and it is
         # what the stored id is built from, so it may not move. A period's hours and its CPH
         # divide by *this*, or a month holding one session would report a rate that
@@ -480,7 +480,7 @@ def digest(doc, file_name: str | None = None) -> dict:
         "rateDurationS": _num(summ.get("durationS")),
         # Timer time (T2, schema 9): the sum of the non-gap steps, the session minus its
         # pauses — **the denominator every rate divides by** since engine 0.13.0
-        # (docs/algorithms.md "Session rates"). Stored beside `rateDurationS` rather than
+        # (docs/algorithms/rates.md "Session rates"). Stored beside `rateDurationS` rather than
         # instead of it, because the two answer different questions: T1 is what a duration
         # is *shown* as, T2 is what a per-hour number is *divided* by, and a period that
         # blurs them reports a CPH the sessions in it disagree with.
@@ -513,7 +513,7 @@ def digest(doc, file_name: str | None = None) -> dict:
             # above is over *every* counted turn; this is the jibes alone, which is what
             # "clean jibes" means everywhere else in both apps.
             "jibesSuccessful": _count(turns.get("jibesSuccessful")),
-            # How the session *felt*, not how the turn channel scored (docs/algorithms.md
+            # How the session *felt*, not how the turn channel scored (docs/algorithms/pumping.md
             # "Turn streaks"): a swim in a straight line ends a run exactly as a botched
             # jibe does, so these are engine numbers and are never recomputed here.
             "longestDryStreak": _count(turns.get("longestDryStreak")),
@@ -600,7 +600,7 @@ def counts_towards_records(entry) -> bool:
       * a session someone else rode (`rider: "<name>"`) — a FIT a friend sent, scrubbed
         and identity-free by design, so attribution is the receiver's to state;
       * a recording that is **not a session** (`isSession: false`, engine 0.19.0,
-        docs/algorithms.md "Not a session") — the thirty seconds a rider records on the
+        docs/algorithms/not-a-session.md "Not a session") — the thirty seconds a rider records on the
         beach and stops again. Never deleted, never hidden: it keeps its row and its page,
         and it is kept out of every number that describes riding.
 
@@ -686,7 +686,7 @@ def _rate_duration_s(d: dict):
 
     Everything a rider *reads* as a session's length goes through here: the period block's
     hours, the week bar's tooltip, the "Longest session" record and the CPH floor
-    (docs/presentation.md, "One clock").
+    (docs/presentation/one-clock.md, "One clock").
     """
     engine = _num(d.get("rateDurationS"))
     return engine if engine is not None else _num(d.get("durationS"))
@@ -697,7 +697,7 @@ def _timer_s(d: dict):
 
     `timerTimeS` (schema 9) is the engine's timer time (T2) — the session minus its pauses —
     and since engine 0.13.0 it is the denominator of every per-hour rate the engine
-    publishes (docs/algorithms.md, "Session rates"). Summing it is what lets a period's CPH
+    publishes (docs/algorithms/rates.md, "Session rates"). Summing it is what lets a period's CPH
     agree with the CPH on the page of every session in it.
 
     The fallback for a row written before schema 9 is `_rate_duration_s`: elapsed, the
@@ -707,7 +707,7 @@ def _timer_s(d: dict):
     of its own month.
 
     The rule, in one line: **every displayed duration is `_rate_duration_s`, every rate
-    denominator is this** (docs/presentation.md, "One clock").
+    denominator is this** (docs/presentation/one-clock.md, "One clock").
     """
     timer = _num(d.get("timerTimeS"))
     return timer if timer is not None else _rate_duration_s(d)
@@ -820,7 +820,7 @@ SESSION_RECORD_KINDS = [
      lambda d: _streak(d, "longestFlewStreak"), "Maneuvers in a row that never touched down."),
     # The engine's cleaned span, not the FIT's `total_elapsed_time`: iOS reads the same
     # number now, and the same rider used to get two different "Longest session" records
-    # depending on which app he opened (docs/presentation.md, "One clock").
+    # depending on which app he opened (docs/presentation/one-clock.md, "One clock").
     ("longestSession", "Longest session", "s", 0, _rate_duration_s, None),
     ("mostDistance", "Most distance", "km", 2,
      lambda d: _num(d.get("distanceKm")), None),
@@ -956,7 +956,7 @@ def _trends(ds: list) -> dict:
     `sidePort` / `sideStarboard` are the same idea for the one chart whose lines mean a
     *side*: they map onto the `side.*` design tokens instead of the app's own blues, which
     is what stops a chart about entry tacks being drawn in a vocabulary that means
-    something else (docs/presentation.md "Entry tack", app-ui-review.md §5.2).
+    something else (docs/presentation/layers-map-colour-type.md "Entry tack", app-ui-review.md §5.2).
     """
     charts = _charts(ds)
     for c in charts:
@@ -1007,7 +1007,7 @@ def _weeks(ds: list) -> list:
         # the water" sums (`_rate_duration_s`) — a bar's height is a duration, not a rate,
         # so it is this one and not the timer. The bar's tooltip used to sum the FIT's
         # `total_elapsed_time`, so a week and the month containing it reported different
-        # hours for the same afternoons (docs/presentation.md, "One clock").
+        # hours for the same afternoons (docs/presentation/one-clock.md, "One clock").
         b["hours"] += (_rate_duration_s(d) or 0.0) / 3600.0
     if not buckets:
         return []
@@ -1050,7 +1050,7 @@ def _charts(ds: list) -> list:
         # screen, but it is one of three and the other two answer questions of their own:
         # JPH is "did I get away with them", TPH is "how busy was the afternoon". They sit
         # beside CPH rather than replacing it, in the order a rider reads them
-        # (docs/algorithms.md "Session rates"), and iOS draws the same three under the same
+        # (docs/algorithms/rates.md "Session rates"), and iOS draws the same three under the same
         # three names.
         {"key": "jph", "label": "JPH", "unit": "jibes / h",
          "lines": [{"key": "jph", "label": "JPH", "role": "primary",
@@ -1153,7 +1153,7 @@ def _totals(ds: list) -> dict:
 # ==================================================================== periods
 #
 # A month, a season, a trip or a range the rider typed — four ways of naming a *set of
-# afternoons*, all answered by one aggregate block (docs/presentation.md "Periods").
+# afternoons*, all answered by one aggregate block (docs/presentation/trends-periods.md "Periods").
 #
 # Everything below is arithmetic and calendar work, which is why it is here rather than in
 # js/trends.js: the analyzer's rule is that the browser never computes a number, and a trip
@@ -1327,7 +1327,7 @@ def _f_km(v):
 def _f_pct(v):
     """The one percent rule: a decimal below 10 %, none at or above, always a space before
     the sign. `Fmt.pct` on iOS and `pct` in web/js/viz.js are its twins
-    (docs/presentation.md, "Label table")."""
+    (docs/presentation/labels.md, "Label table")."""
     return f"{v:.1f} %" if abs(v) < 10 else f"{v:.0f} %"
 
 
@@ -1351,7 +1351,7 @@ def _f_clock(v):
 
 
 #: **The aggregate block**, in the one order both platforms show it in
-#: (docs/presentation.md "Periods"). `(key, label, formatter)`; the value itself is
+#: (docs/presentation/trends-periods.md "Periods"). `(key, label, formatter)`; the value itself is
 #: computed in `_period_facts`, once, from summed numerators over summed denominators.
 #:
 #: An entry whose fact the period cannot supply is **omitted**, not printed as a dash or a
@@ -1413,7 +1413,7 @@ def _period_facts(ds: list, spots: int) -> dict:
     divide by summed **timer** time (`_timer_s`, T2) — the same denominator the engine gives
     the session's own rates since 0.13.0, which is what makes a month holding one afternoon
     report that afternoon's CPH instead of a deflated second opinion about it
-    (docs/presentation.md, "One clock"; docs/algorithms.md, "Session rates").
+    (docs/presentation/one-clock.md, "One clock"; docs/algorithms/rates.md, "Session rates").
     """
     seconds = _sum(ds, _rate_duration_s) or 0.0
     hours = seconds / 3600.0 if seconds > 0 else None
@@ -1544,7 +1544,7 @@ def _map_ground(rows: list, spots: int) -> bool:
     afternoons were one trip — and every one of them placed by a fix. A trip is one place by
     construction; a month, a season or a typed range is one when the rider only rode one beach
     in it. Otherwise the switch is not offered at all, which is the honest shape of a control
-    that has no answer (docs/presentation.md, "The period card").
+    that has no answer (docs/presentation/trends-periods.md, "The period card").
     """
     return bool(rows) and spots == 1 and all(_anchored(r) for r in rows)
 

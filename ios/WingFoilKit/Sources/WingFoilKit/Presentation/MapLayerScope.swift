@@ -74,7 +74,7 @@ public enum MapLayerScope: String, CaseIterable, Sendable, Identifiable, Codable
     }
 
     /// The same list **for this session's discipline**: on a windsurf preset the pump
-    /// channel was never run (docs/algorithms.md "Disciplines"), so the chip that would
+    /// channel was never run (docs/algorithms/disciplines.md "Disciplines"), so the chip that would
     /// offer to hide something that does not exist is not drawn at all. Absent, not an empty
     /// category — a chip that can only ever say "nothing here" is a chip that teaches the
     /// reader the map is broken.

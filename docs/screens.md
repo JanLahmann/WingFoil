@@ -20,7 +20,7 @@ has), no history, no browsing, but the same voice and the same vocabulary: a jib
 watch calls *flew* is the jibe the phone calls *flew through*. Its whole surface is **22
 screens** since 0.9.18 — the start page, the 8 standard data pages, the 5 large-text pages and
 the 8 after-save pages — and six of the eight after-save pages are their live twins drawn by
-the same code (docs/presentation.md, "The after-save pages and the live ones"). And the
+the same code (docs/presentation/watch.md, "The after-save pages and the live ones"). And the
 website's home page is
 **one marketing front, not a shell**: it says what CleanJibe is, then sends the reader either
 into the web analyzer or to `/invite/`, which is the one page that holds the Connect IQ store

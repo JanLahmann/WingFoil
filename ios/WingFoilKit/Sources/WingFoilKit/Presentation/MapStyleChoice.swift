@@ -73,7 +73,7 @@ public enum MapStyleChoice: String, CaseIterable, Codable, Sendable, Identifiabl
     /// a splash-cyan diamond are legible over a flat vector map and are not legible over a
     /// photograph of choppy water in afternoon sun. The shared track path gives every stroke
     /// and every mark a dark outer halo when this is true — see the map surfaces and
-    /// docs/presentation.md, "Map style".
+    /// docs/presentation/layers-map-colour-type.md, "Map style".
     public var isImagery: Bool { recipe.base != .standard }
 
     /// Exactly what this choice asks MapKit for.

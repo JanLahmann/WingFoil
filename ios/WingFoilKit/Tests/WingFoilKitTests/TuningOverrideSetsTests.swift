@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import WingFoilKit
 
-/// **One tuning set per discipline** (docs/presentation.md "Tuning", Jan 13 Sep 2026: *"for
+/// **One tuning set per discipline** (docs/presentation/channels-tuning.md "Tuning", Jan 13 Sep 2026: *"for
 /// the windsurf analysis, we need to be able to set other parameters (min planing speed, etc)
 /// than for wingfoil"*).
 ///

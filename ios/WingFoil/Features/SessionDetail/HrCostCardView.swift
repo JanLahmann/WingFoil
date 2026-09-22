@@ -15,12 +15,12 @@ import WingFoilKit
 ///   denominator, because optical HR under a wetsuit drops out constantly and an average
 ///   over a third of the attempts is a different claim from an average over all of them.
 ///
-/// Definitions: docs/algorithms.md "HR cost (phone)".
+/// Definitions: docs/algorithms/hr-cost.md "HR cost (phone)".
 struct HrCostCardView: View {
     let detail: SessionDetail
 
     /// nil on a windsurf preset — the whole card prices *pumping*, and there was none to
-    /// price (docs/algorithms.md "Disciplines"). Absent rather than a card of dashes: a
+    /// price (docs/algorithms/disciplines.md "Disciplines"). Absent rather than a card of dashes: a
     /// heart-rate cost of "—" per stroke reads as a measurement that failed.
     private var card: HrCostCard? {
         detail.row.analysisDiscipline.pumping ? HrCostCard.make(detail.analysis.hr) : nil

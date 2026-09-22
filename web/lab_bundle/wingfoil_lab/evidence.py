@@ -7,7 +7,7 @@ stop measure and the recovery search live here and both callers read one ladder.
 maneuver-specific parts stay with the caller: which window is judged, which entry speed the
 recovery is measured against, and what the verdict is called.
 
-The contract is docs/algorithms.md "Turn outcome"; `flightend.py` reuses steps 0-4 of it
+The contract is docs/algorithms/pumping.md "Turn outcome"; `flightend.py` reuses steps 0-4 of it
 verbatim and only renames the leaf verdicts.
 """
 
@@ -130,7 +130,7 @@ def submerged_trace(alt: np.ndarray, t: np.ndarray, gap: np.ndarray,
                     drop_m: float) -> tuple[np.ndarray, np.ndarray]:
     """(mask, baseline): the wrist-under test and the line each sample was judged against.
 
-    Causal and local (engine 0.22.0, docs/algorithms.md "Turn outcome" step 2). A sample is
+    Causal and local (engine 0.22.0, docs/algorithms/pumping.md "Turn outcome" step 2). A sample is
     wet when it sits `drop_m` below the baseline **in force at that moment**, not below the
     session's median: a watch that re-anchors its altitude after a swim otherwise turns every
     later stretch into a swim of its own.
@@ -183,7 +183,7 @@ def submerged_mask(alt: np.ndarray, t: np.ndarray, gap: np.ndarray,
 # --------------------------------------------------------------- submersion episodes
 
 
-#: Two runs closer together than this are one submersion (docs/algorithms.md "Submersion
+#: Two runs closer together than this are one submersion (docs/algorithms/pumping.md "Submersion
 #: episodes"). A dunk and the wave that follows it are one event to the rider, and the
 #: altimeter's slew limiter crosses the threshold twice on the way back up.
 SUBMERSION_MERGE_S = 2.0

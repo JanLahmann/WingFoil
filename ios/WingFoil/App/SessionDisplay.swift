@@ -41,7 +41,7 @@ enum SessionDisplay {
     /// **Discipline badge: what this session is being read as**, on every row.
     ///
     /// Three rungs, and they are the same three the engine resolves the preset on
-    /// (docs/algorithms.md, "Disciplines"): the rider's own answer first, the recording's
+    /// (docs/algorithms/disciplines.md, "Disciplines"): the rider's own answer first, the recording's
     /// `discipline` developer field second, and — where neither has spoken — the preset the
     /// import settled on from his declared default.
     ///
@@ -70,7 +70,7 @@ enum SessionDisplay {
     /// The `?` after the badge: **nobody has said this is what it is.** True for a session
     /// whose preset came from the rider's default because the recording said nothing — which
     /// is every source but the CleanJibe watch app. It goes the moment he answers, either way
-    /// round (docs/presentation.md, "Confirming the discipline on import").
+    /// round (docs/presentation/labels.md, "Confirming the discipline on import").
     static func badgeIsGuess(_ row: SessionRow) -> Bool { row.disciplineGuessed }
 
     /// The sport on the Recording card — the kit's rule (`SessionNaming.sportLabel`), which
@@ -297,7 +297,7 @@ enum Fmt {
     /// The word after the number, once, for a chart axis or a column head.
     static var knUnit: String { Speed.suffix }
 
-    /// **A share, under the one percent rule** (docs/presentation.md, "Label table").
+    /// **A share, under the one percent rule** (docs/presentation/labels.md, "Label table").
     ///
     /// One decimal below 10 %, none at or above it, and always a space before the sign —
     /// `PeriodBlock.percent`, `library._f_pct` and `pct` in web/js/viz.js are the same

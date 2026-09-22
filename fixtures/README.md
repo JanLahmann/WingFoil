@@ -26,7 +26,7 @@ deliberate exceptions, all of them the same afternoon:
 |---|---|
 | `sessions/ciq/2026-08-30-1407_nago-torbole-windsurfen_ciq.fit` | 10 m 45 s early-afternoon Ora, **scrubbed** with `lab/tools/scrub_fit.py` (serials zeroed; `user_profile`, paired-accessory and Garmin-private lifetime blobs dropped; GPS, HR, accelerometer and all 14 developer fields kept, analysis provably identical). This is the file the iOS app and the web app ship as **the bundled example** — `ios/WingFoilKit/…/Resources/ExampleSession.fit` and `web/example/ExampleSession.fit` are byte-identical copies of it. See docs/testing.md, "The bundled example session". |
 | `sessions/tcx/2026-08-30-1407_nago-torbole-speed.tcx` | **Converted**, not recorded: the CIQ row above through `lab/tools/fit_to_tcx.py --speed` — trackpoints, `<Time>`, `<Position>`, `<AltitudeMeters>`, `<HeartRateBpm>` **and the FIT's own Doppler channel written into `Extensions/TPX/Speed`**. A stated speed is what makes a TCX input class **(b)**, so this fixture's speed records certify and reproduce the FIT's to three decimals. |
-| `sessions/tcx/2026-08-30-1407_nago-torbole-nospeed.tcx` | The same conversion **without** `TPX/Speed`. No stated speed makes a TCX class **(c)**: the speed is differentiated from positions by the shared arithmetic `gpx.py` uses, and the golden reproduces the GPX one's numbers to the digit. The pair differs by exactly one element, which is the whole experiment — see docs/algorithms.md, "TCX import". |
+| `sessions/tcx/2026-08-30-1407_nago-torbole-nospeed.tcx` | The same conversion **without** `TPX/Speed`. No stated speed makes a TCX class **(c)**: the speed is differentiated from positions by the shared arithmetic `gpx.py` uses, and the golden reproduces the GPX one's numbers to the digit. The pair differs by exactly one element, which is the whole experiment — see docs/algorithms/imports.md, "TCX import". |
 | `sessions/gpx/2026-08-30-1407_nago-torbole.gpx` | **Converted**, not recorded: the row above, run through `lab/tools/fit_to_gpx.py` (track points, `<ele>`, `<time>`, heart rate in Garmin's `TrackPointExtension`; no speed channel, no accelerometer, no developer fields, no laps, no session summary — because no GPX carries them). A real GPX from another afternoon would test the parser and prove nothing about the *degradation*, having no FIT to be compared against; this one shares its positions and its clock with the fixture above, so every difference between the two goldens is the source class and nothing else. See docs/testing.md, "Fixture provenance". |
 
 ## Ground-truth table
@@ -43,7 +43,7 @@ where unsure.
 † **Not observed — derived.** Nobody counted these on the water; ~26 is what the 2026-08-30
 accelerometer trace supports once chop is excluded by hand (the three real bouts of pumping
 in the session), and it is the number that exposed the engine's 286 as an artifact
-(docs/algorithms.md "The session total"). It is the tuning target for `pumpBurstPeakG`, which
+(docs/algorithms/pumping.md "The session total"). It is the tuning target for `pumpBurstPeakG`, which
 is why that parameter is still marked PROVISIONAL — **a counted-on-the-water number for any
 session would replace it.** The on-water protocol (docs/testing.md) now asks for one:
 a rough count of how many times you pumped the wing, per takeoff or for the session.

@@ -25,7 +25,7 @@
          bearing above always wins; an estimate is shown with a leading "~". -->
     <property id="autoWind" type="boolean">true</property>
     <!-- the rider's declared turn habit, the 180-degree tiebreaker on a weak no-go cone
-         (docs/algorithms.md "Default turn type"). 0 jibes · 1 tacks · 2 balanced (prior off);
+         (docs/algorithms/wind.md "Default turn type"). 0 jibes · 1 tacks · 2 balanced (prior off);
          mirror of WingFoilCore.TURN_TYPE_* and of the engine's windDefaultTurnType. -->
     <property id="windDefaultTurnType" type="number">0</property>
     <!-- Feature 3: auto-pause + interval alerts -->

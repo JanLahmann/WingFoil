@@ -34,7 +34,7 @@ module Glyphs {
     //
     // O_STAR is NOT a fourth rung of the ladder. The other three are the outcome — how the
     // turn ENDED — and they are mutually exclusive. A clean jibe is a stricter, separate
-    // question (docs/presentation.md "Clean jibe"): a counted jibe whose carried-speed score
+    // question (docs/presentation/clean-jibe.md "Clean jibe"): a counted jibe whose carried-speed score
     // cleared the bar AND that never dropped off the foil across the scored window. Every
     // clean jibe is also a fly-through, so the star REPLACES the check where a row is known
     // to be one, and it is drawn in the clean-jibe ink, never the ladder's green.
@@ -167,7 +167,7 @@ module Glyphs {
     //
     // The caller sets the colour, and it is deliberately NOT the outcome ladder's: the ladder
     // is a verdict scale and nothing outside a maneuver outcome may borrow it
-    // (docs/presentation.md, "Colour and glyph vocabulary"). An axis is not a verdict.
+    // (docs/presentation/layers-map-colour-type.md, "Colour and glyph vocabulary"). An axis is not a verdict.
     //
     // Diagonal, top-left to bottom-right, with the head in the far corner: an arrow reads as
     // a direction at any size, and the diagonal is what keeps it apart from the vertical

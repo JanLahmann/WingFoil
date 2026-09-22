@@ -54,7 +54,7 @@ public enum PresentationRules {
     }
 
     /// The **clean jibes**: the engine's own per-turn `clean` verdict — counted, named a
-    /// jibe, it carried its speed *and* it flew through (docs/presentation.md, "Clean
+    /// jibe, it carried its speed *and* it flew through (docs/presentation/clean-jibe.md, "Clean
     /// jibe"). The map draws each of these as a star instead of its outcome dot, and the
     /// same list is what the `cleanJibe` chip counts.
     ///
@@ -192,10 +192,10 @@ public struct PresentationFacts: Sendable, Equatable {
     }
 
     /// The engine's own flight count — the number both blocks below have to add up to
-    /// (docs/presentation.md "Enforcement" 3).
+    /// (docs/presentation/enforcement.md "Enforcement" 3).
     public let flightCount: Int
     public let markers: MarkerCounts
-    /// **Clean jibes** — the star layer (docs/presentation.md, "Clean jibe"). Deliberately
+    /// **Clean jibes** — the star layer (docs/presentation/clean-jibe.md, "Clean jibe"). Deliberately
     /// *not* one of `markers`: those partition the turns and the drawn flight ends one mark
     /// each, and a clean jibe is already counted there under whatever outcome it ended on.
     /// This is the second, stricter reading laid over the same set, and adding it to the

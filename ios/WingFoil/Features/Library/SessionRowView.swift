@@ -92,7 +92,7 @@ struct SessionRowView: View {
                 }
 
                 // The engine's cleaned span in the block's own spelling — the same number and
-                // the same string the session page opens with (docs/presentation.md, "One
+                // the same string the session page opens with (docs/presentation/one-clock.md, "One
                 // clock"). It was `Fmt.duration(row.durationS)`: a different clock in a
                 // different format, one tap away from the page that disagreed with it.
                 Text(Fmt.date(row.startDate, zone: row.displayZone) + " · "
@@ -107,7 +107,7 @@ struct SessionRowView: View {
                 }
 
                 // A recording that is not a session says so, quietly, and stays in the list
-                // (docs/presentation.md, "Not a session"). Nothing is deleted and nothing is
+                // (docs/presentation/not-a-session-spots.md, "Not a session"). Nothing is deleted and nothing is
                 // hidden — it is simply out of the totals, and this is where the rider finds
                 // out why the row he can see is not in the number he is reading. A
                 // provisional row already carries its own blue note above, and one row does

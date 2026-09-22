@@ -167,7 +167,7 @@ def test_real_session_wind_axis_smoke():
 
 
 # --- default turn type: the rider's habit as 180 deg evidence ------------------------
-# docs/algorithms.md "Default turn type". The blend is exercised twice over: as pure
+# docs/algorithms/wind.md "Default turn type". The blend is exercised twice over: as pure
 # arithmetic (`_blend`, `turn_type_votes`) and end to end on a constructed track.
 
 

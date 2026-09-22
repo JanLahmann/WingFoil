@@ -1,10 +1,10 @@
-"""GP3S speed-record set on the Doppler channel (docs/algorithms.md "Speed records").
+"""GP3S speed-record set on the Doppler channel (docs/algorithms/records.md "Speed records").
 
 Everything is time/distance-window based and dt-aware: windows are found by
 interpolating cumulative distance vs time (trapezoid-integrated Doppler), never by
 sample counts. Windows never span gaps (per-segment). No minimum-speed floor anywhere.
 
-One rule reads the source class (docs/algorithms.md "The plausibility gate"): on an
+One rule reads the source class (docs/algorithms/records.md "The plausibility gate"): on an
 **uncertified** track — `capabilities.has_speed` false, speed differentiated from
 positions — a window shorter than `SHORT_WINDOW_S` is accepted only if it stays within
 `UNCERTIFIED_SHORT_WINDOW_MAX` of the best 10 s. Certified Doppler records are never

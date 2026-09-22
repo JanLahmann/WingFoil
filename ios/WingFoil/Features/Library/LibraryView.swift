@@ -22,7 +22,7 @@ struct LibraryView: View {
     /// `UI_SHEET` screenshot hook — writes this one property.
     @State private var sheet: LibrarySheet?
     @State private var path: [String] = []
-    /// **The two controls at the top of the list** (docs/presentation.md, "Session list").
+    /// **The two controls at the top of the list** (docs/presentation/gear-list-session-page.md, "Session list").
     /// The filter is per-visit — a narrowing is a question, not a setting — while the
     /// grouping is remembered, because "I read my library by month" is a fact about the
     /// rider. Empty string means he has never said, which is what lets the default rule
@@ -109,7 +109,7 @@ struct LibraryView: View {
                             if group.id == groups.last?.id {
                                 // Ridden sessions only: a recording the engine says was
                                 // never a session stays in the list but not in the count
-                                // (docs/presentation.md, "Not a session").
+                                // (docs/presentation/not-a-session-spots.md, "Not a session").
                                 Text(countLine(showing: visible.count,
                                                of: LibraryListing.riddenCount(store.sessions)))
                             }
@@ -163,7 +163,7 @@ struct LibraryView: View {
                 }
             }
             // `stagesFallbackHook` moved here from Settings → Send feedback when that row
-            // went back to being only a menu row (docs/presentation.md, "Settings"):
+            // went back to being only a menu row (docs/presentation/copy-menu-settings.md, "Settings"):
             // `UI_FEEDBACK=fallback` now answers on the Sessions screen, which is where the
             // menu's Support & ideas composer lives. One door answers the hook, as before.
             .feedbackMail(on: $supportRequest, stagesFallbackHook: true)
@@ -264,7 +264,7 @@ struct LibraryView: View {
                 }
                 #endif
                 // `UI_GROUP_BY=none|month|year|spot` and `UI_FILTER_SOURCE=<raw>` stage the
-                // two controls at the top of the list (docs/presentation.md, "Session
+                // two controls at the top of the list (docs/presentation/gear-list-session-page.md, "Session
                 // list"): a segmented control and a menu are both taps `simctl` cannot make.
                 // The group-by hook writes the stored preference, exactly as a tap would —
                 // there is nothing to leak, the list is drawn from it either way.
@@ -734,7 +734,7 @@ struct LibraryView: View {
             : store.sessions.first { ($0.originalFilename ?? "").contains(wanted) }
         guard let match else { return }
         // `UI_DISCIPLINE=windsurfFin` re-analyses that session under a preset before the page
-        // opens (docs/algorithms.md "Disciplines"). `simctl` cannot tap a segmented control,
+        // opens (docs/algorithms/disciplines.md "Disciplines"). `simctl` cannot tap a segmented control,
         // and the preset has to be in force *before* the detail loads or the shot is of the
         // wingfoil reading with a windsurf chip on it.
         if let raw = ProcessInfo.processInfo.environment["UI_DISCIPLINE"],

@@ -154,7 +154,7 @@ def _meta(a, disc=None) -> dict:
     if wind_user is not None and wind_user >= 65535:     # FIT uint16 "unset" sentinel
         wind_user = None
     # Session field 44, device app >= 0.9.0: the axis the WATCH estimated for itself
-    # (docs/algorithms.md "Watch approximation: auto wind"). Kept apart from the rider's own
+    # (docs/algorithms/wind.md "Watch approximation: auto wind"). Kept apart from the rider's own
     # bearing above because one is a statement and the other an inference — the tile marks the
     # estimate with a "~", exactly as the watch does.
     wind_auto = _num(s.get("wind_dir_auto"))
@@ -189,7 +189,7 @@ def _meta(a, disc=None) -> dict:
         "sport": caps.sport,
         "subSport": caps.sub_sport,
         "discipline": caps.discipline,
-        # Which **preset** the engine was run under (docs/algorithms.md "Disciplines") —
+        # Which **preset** the engine was run under (docs/algorithms/disciplines.md "Disciplines") —
         # a different fact from the tag above, which is what the watch wrote down. The page
         # reads this one for its lexicon and for the experimental chip.
         "analysedAs": (disc or discipline.Discipline.WINGFOIL).value,
