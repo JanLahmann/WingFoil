@@ -1018,7 +1018,7 @@ export function cardContent(result, preset, text = {}) {
     title: cleanTitle(text.title) || cardTitle(result.file?.name),
     dateLine: cardDateLine(result.meta),
     note: cleanNote(text.note) || null,
-    stats: cardStats(result.golden, preset),
+    stats: cardStats(result.presentation, preset),
     disclaimer: cardDisclaimer(result.meta),
     track: buildTrack(result),
     // The key back to the globe, for the optional map background and for nothing else. Null

@@ -13,6 +13,7 @@
  * restore: sessions you already have keep their own analysis.
  */
 
+import { speedRecords } from "./appsettings.js";
 import { analyze, ask } from "./rpc.js";
 import { listEntries, putSession } from "./store.js";
 
@@ -32,7 +33,7 @@ export async function ingest(bytes, name, { rider = null, example = false } = {}
   let digest;
   let analysisJson;
   try {
-    const msg = await analyze(source, name);
+    const msg = await analyze(source, name, speedRecords());
     analysisJson = msg.json;
     digest = JSON.parse(msg.digestJson);
   } catch (err) {

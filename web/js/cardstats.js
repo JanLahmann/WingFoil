@@ -6,19 +6,19 @@
  * correction — so every "—", every rounding and every label has to be decided *before* a
  * pixel is drawn, in a function a test can call.
  *
- * **The stats ARE the key-metrics block.** They are not a second vocabulary. `keyMetricEntries`
- * is the one list, and `keyMetrics` in js/render.js now draws its HTML from it rather than
- * building the strings a second time — so the block a rider reads at the top of the page and
- * the card they post are literally the same array, in the same order, with the same words.
- * A preset can only ever *drop* entries (`LEAN_KEYS`); nothing on a card is computed here
- * that is not in the block. `web/tools/verify_presentation.py` §5 pins that, per fixture, by
- * parsing the rendered block back out of the HTML and comparing it to `cardStats`.
+ * **The stats ARE the key-metrics block**, and since round 3 of ADR-033 that is true by
+ * construction rather than by agreement: both read the presentation document, where
+ * `card.tiles` *are* the `block` cells minus the two composites, each carrying the presets
+ * it belongs to. A preset can only ever *drop* a tile; there is nothing here to reword,
+ * reorder or invent one with, and nothing on a card is computed that is not in the block.
+ * `fixtures/presentation/*.expected.json` pins the values themselves, once, for both
+ * platforms.
  *
  * Drawing lives in js/sharecard.js. Nothing here knows what a canvas is.
  */
 
-import { KMH_PER_KN, speed } from "./appsettings.js";
-import { int, nf, zonedFormat } from "./viz.js";
+import { cellCaption, cellLabel, cellValue, hm } from "./presentation.js";
+import { zonedFormat } from "./viz.js";
 
 /* -------------------------------------------------------------------- branding
  *
@@ -83,242 +83,86 @@ export const PRESETS = {
 
 export const PRESET_ORDER = ["complete", "lean"];
 
-/**
- * What `lean` keeps — the four a rider quotes walking off the water.
- *
- * Held as *keys* rather than as a rebuilt list, so the preset cannot invent an entry:
- * anything `keyMetricEntries` did not produce is simply never there to be kept. Identical
- * to `ShareCardStats.Preset.leanKeys`.
+/* What `lean` keeps — the five a rider quotes walking off the water — is not a list here
+ * any more. Each tile of `card.tiles` carries the presets it belongs to
+ * (`LEAN_CARD_KEYS` in lab/src/wingfoil_lab/presentation.py, `ShareCardStats.Preset
+ * .leanKeys` in the kit), so a preset cannot invent an entry and the browser cannot hold a
+ * second opinion about which five they are.
  *
  * **`falls` is lean too** (20 September 2026). The tally counts *jibe* outcomes and its
  * caption says "of 55 jibes", so a card that carried only the tally reported one fall on an
  * afternoon with three in it — two of them in a straight line. A card is read next to
- * nothing, so the honest number travels on both presets.
- */
-export const LEAN_KEYS = new Set(["duration", "distance", "max2s", "tally", "falls"]);
+ * nothing, so the honest number travels on both presets. */
 
 /* ---------------------------------------------------------------- the entries */
 
-/**
- * How long the session was: `1:57 h` past an hour, `10:45 min` under one.
- *
- * **Why the short form exists.** The block used to be `h:mm` at every length, so a ten
- * minute forty-five second session printed **`0:11`** — the two most interesting digits
- * rounded away, and a leading zero where the number should be. That is survivable on a
- * page the rider can scroll past; it is not survivable on the share card, which is a PNG
- * in somebody else's chat thread with no re-render and nothing beside it to check against.
- * A short session is exactly the kind a rider shares ("first flight!"), and `0:11` is the
- * one string that makes it look like nothing happened.
- *
- * **Why the unit rides inside the value.** Every other cell in this block carries its own
- * unit in the big type — `2.6 km`, `13.47 kn` — so a duration doing the same is the
- * block's own habit, not a special case. It also settles the ambiguity the bare digits
- * create: `10:45` under the word "duration" reads as ten and three quarter *hours* just as
- * easily as it reads as ten and three quarter minutes, and at cell size, on a card, with
- * no second number to calibrate against, there is nothing to resolve it. `10:45 min`
- * cannot be misread, and needs no caption to say so — which matters, because the caption
- * slot on the card is a layout affordance the tally already owns.
- *
- * Both forms keep `m:ss`/`h:mm` colon arithmetic rather than "10 m 45 s": the colon is
- * what a clock looks like, it stays narrow at 75 px type, and it is the same shape the
- * flight table and the replay caption already print (`FlightPairing.clock`).
- *
- * Rounded to the nearest minute above the hour and to the nearest second below it — never
- * truncated, in both cases for the same reason: `0:00` over a recording that exists reads
- * as a failure to measure. Twin of `KeyMetrics.duration`.
- */
-export function hm(sec) {
-  if (sec === null || sec === undefined) return "—";
-  const total = Math.max(0, Math.round(sec));
-  if (total >= 3600) {
-    const m = Math.round(total / 60);
-    return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")} h`;
-  }
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")} min`;
-}
+/** Re-exported: `hm` moved to js/presentation.js with the rest of the document's
+ *  formatting, and the tiles in js/render.js still print a session duration with it. */
+export { hm };
 
 /**
  * The KEY METRICS block as data — the single list both the page and the card read.
  *
- * Every rule the two platforms have to agree on lives here, and its Swift twin
- * (`KeyMetrics.swift`) is pinned by `PresentationTests.keyMetrics*`. A difference between
- * the two is a bug.
+ * **It is the document's `block`, drawn** (ADR-033, round 3). Every gate that used to live
+ * here — the jibe tally's fallback to the counted-turn ladder, the tack cell's two
+ * conditions, the falls cell's absence where no flight ended, the rate row's `turns.jibes`
+ * test and its JPH→TPH degradation — is in `build_presentation` now, once, beside the kit's
+ * twin of it. What is left is formatting and the words: the three decisions this file is
+ * entitled to make and the document is not (docs/presentation/document.md, "What stays with
+ * the renderer"). `KeyMetrics.make(block:)` is the Swift half of exactly this function.
  *
  * Each entry:
  *
- *   key     stable id — the `KeyMetrics.Metric.key` values, plus `tally`, which is not a
- *           metric because its three counts stay counts (they wear the ladder's inks)
+ *   key     the document cell's own `key` — stable, and the same key names the same fact
+ *           in the block, on the card and in a preset's key set
  *   label   exactly the words printed under the number on the page. A cell with something
  *           to qualify carries its caption after an em-dash separator (`CAPTION_SEP`) — the
  *           two tallies' "of 55 jibes" and "of 14 tacks", and the falls cell's split; the
- *           card splits there to get
- *           two lines, which is layout, not content. iOS holds the two halves in two fields
- *           (`KeyMetrics.Metric.caption`) and joins them with the same separator.
+ *           card splits there to get two lines, which is layout, not content. iOS holds the
+ *           two halves in two fields (`KeyMetrics.Metric.caption`) and joins them with the
+ *           same separator.
  *   value   the display string, "—" included. The tally's spells its three counts out, so a
  *           renderer that ignores `tally` still prints the truth — just in one colour.
- *   tally   set on an outcome cell — the jibe ladder, and the tack ladder beside it on a
- *           session with tacks in it: `{flewThrough, touchdown, fellIn}`
- *   row     which line of the block the entry sits on (the page draws four rows; the card
- *           ignores this and flows a grid)
+ *   tally   the document cell's own three counts, where it has them: they stay numbers
+ *           because the ladder's inks are the point
+ *   row     which line of the block the entry sits on — the document row's position, so a
+ *           row the document left out takes its line with it (row 4 on a recording with no
+ *           hour to divide by)
  *   hero    the one entry the block gives its largest type to
+ *   blockOnly  the two composites the card drops; `card.tiles` is what says so
  */
-export function keyMetricEntries(g) {
-  const s = g.summary, t = s.turns, rec = g.records;
-
-  // Goldens serialize a non-qualifying record as 0.0 where the Swift model uses nil; both
-  // mean "no window of that length exists", and neither may print as a speed.
-  //
-  // `speed` is the site's one formatter (js/appsettings.js) and it carries the rider's
-  // unit, so a block and a card made in km/h say km/h. The engine's number is knots either
-  // way: the record windows are defined in them (docs/algorithms.md) and nothing here
-  // converts on the way *in*.
-  const kn2 = (v) => (v >= 0.05 ? speed(v) : "—");
-  const best2s = kn2(rec.best2sKn);
-  // The one summary number the engine reports in km/h, turned back into the knots every
-  // other cell is in before the formatter prints it in the rider's unit.
-  const avg = s.avgSpeedKmh === null || s.avgSpeedKmh === undefined
-    ? "—" : speed(s.avgSpeedKmh / KMH_PER_KN);
-
-  // Jibes are what the rider asked for and what JPH counts a row below, so the tally has
-  // to be about the same turns. A session whose wind axis never resolved has no jibes at
-  // all, and an empty ladder over an afternoon of turns would read as "nothing happened" —
-  // so it falls back to every counted turn, the same way the rate row falls back to TPH.
-  // The caption says which, so the three numbers can never be read as the other set.
-  // The caption also carries the CLEAN count — the jibes he flew all the way through
-  // carrying his speed (the engine's per-turn `clean` flag: `turnSuccessPct` met, *and*
-  // `flew_through`, engine 0.12.0; *and* a quiet `turnCleanQuietS` after it, 0.17.0). It
-  // is the stricter verdict laid over the same set of
-  // turns the three counts describe — a strict *subset* of the ladder's green — and it
-  // rides in the caption rather than in a cell of its own because row 3 has no fifth cell
-  // to give it that the streaks pair would not lose.
-  //
-  // **The fallback carries no clean clause.** It used to print `turnsSuccessful` there —
-  // the engine's score verdict over every counted turn — under the word for a stricter,
-  // jibe-only one. A session whose wind axis named no jibes has no clean jibes to report.
-  const tally = t.jibes > 0
-    ? { o: t.jibeOutcomes, of: `of ${t.jibes} jibes · ${int(t.jibesSuccessful)} clean` }
-    : (t.turnsCounted > 0
-        ? { o: t.outcomes, of: `of ${t.turnsCounted} turns` }
-        : null);
-
-  const out = [
-    { key: "duration", label: "duration", value: hm(s.durationS), row: 0 },
-    { key: "distance", label: "distance", value: `${nf(s.distanceKm, 1)} km`, row: 0 },
-    { key: "avgSpeed", label: "avg speed", value: avg, row: 0 },
-    // The session's fastest measured window, alone on its line and in the block's largest
-    // type: it is the number a rider quotes, and the label names the window rather than
-    // letting "max" imply a peak sample (docs/presentation/records.md, "Record windows").
-    { key: "max2s", label: "max 2 s", value: best2s, row: 1, hero: true },
-    // The two composites beside it (6 Sep 2026 — "the second row is a bit empty"), "—"
-    // where the session produced none. `blockOnly`: the card never carries them — one
-    // speed on a card, the one a rider quotes; the Records page owns the set — and
-    // `cardStats` drops them, which is the one exception to "a preset can only drop".
-    { key: "best5x10s", label: "5×10 s", value: kn2(rec.best5x10sKn), row: 1, blockOnly: true },
-    { key: "alpha500", label: "alpha 500", value: kn2(rec.alpha500Kn), row: 1, blockOnly: true },
-  ];
-
-  if (tally) {
-    const o = tally.o;
-    out.push({
-      key: "tally",
-      label: `flew · touchdown · fell${CAPTION_SEP}${tally.of}`,
-      value: `${int(o.flewThrough)} · ${int(o.touchdown)} · ${int(o.fellIn)}`,
-      tally: { flewThrough: o.flewThrough, touchdown: o.touchdown, fellIn: o.fellIn },
-      row: 2,
-    });
-  }
-  // **The tacks, on the same ladder** (22 September 2026). The engine has typed both kinds
-  // of turn since 0.3.0 and this block only ever drew the jibes, so a rider who tacks read
-  // an afternoon with a quarter of its maneuvers missing from the one place that sums it up.
-  //
-  // Same three counts, same inks, its own caption — and no CLEAN clause, because clean is a
-  // jibe word in this product and a tack has no clean reading to carry (`tacksSuccessful`
-  // is the engine's score verdict; `turns.py` says outright it must never be called clean).
-  //
-  // Two gates. `tacks > 0` is the obvious half; `jibes > 0` is the other, because a session
-  // whose wind axis named no jibes has fallen back to the ladder over EVERY counted turn
-  // above — and on such a session the tacks are those turns, so a second cell would print
-  // one set of numbers twice under two captions (docs/review-checklist.md, pattern F).
-  if (t.tacks > 0 && t.jibes > 0) {
-    const o = t.tackOutcomes;
-    out.push({
-      key: "tacks",
-      label: `flew · touchdown · fell${CAPTION_SEP}of ${int(t.tacks)} `
-        + `${t.tacks === 1 ? "tack" : "tacks"}`,
-      value: `${int(o.flewThrough)} · ${int(o.touchdown)} · ${int(o.fellIn)}`,
-      tally: { flewThrough: o.flewThrough, touchdown: o.touchdown, fellIn: o.fellIn },
-      row: 2,
-    });
-  }
-  // **Every fall of the session, and where each one happened** (20 September 2026).
-  //
-  // Read off the flight-end channel — the one that answers "how often did I end up in the
-  // water": one event per actual swim, in a turn or in a straight line (docs/algorithms/rates.md,
-  // "Wet is every fall, not every fallen jibe"). It is the channel WPH already divides, the
-  // number the library row prints and the one the phone's session page now shows, so the
-  // four surfaces say one thing.
-  //
-  // The tally two cells left is the **jibe** ladder and says so in its own caption, which
-  // means its `fell` count leaves out every swim in a straight line. A tester fell three
-  // times on 19 September 2026, read the tally, and concluded the app had not noticed.
-  //
-  // `all == inTurn + straight` by construction, so the caption adds up to the value — which
-  // is why it is not built from `outcomeSplit`, whose falls mix the turn ladder with this
-  // channel and therefore need not. Absent where no flight ended at all: a session the
-  // engine found no flights in has an unknown number of falls, not zero of them. `total`
-  // leaves `unknown` out, exactly as `FlightEndCounts.total` does.
-  const ends = s.flightEnds;
-  if (ends && ends.all
-      && (ends.all.glideOut + ends.all.touchdown + ends.all.fellIn) > 0) {
-    out.push({
-      key: "falls",
-      label: `fell in${CAPTION_SEP}${int(ends.inTurn.fellIn)} in a turn · `
-        + `${int(ends.straight.fellIn)} in a straight line`,
-      value: int(ends.all.fellIn),
-      row: 2,
-    });
-  }
-  if (t.turnsCounted > 0) {
-    // Flying leads: it is the harder of the two runs and the one the rider is chasing,
-    // and `longestFlewStreak <= longestDryStreak` always, so the pair reads
-    // strict-then-lenient in both halves.
-    out.push({ key: "streaks", label: "best streaks",
-               value: `${int(t.longestFlewStreak)} flew · ${int(t.longestDryStreak)} dry`,
-               row: 2 });
-  }
-
-  // `durationS <= 0` makes the engine report every rate as null: there is no hour to
-  // divide by, which is an absence and never a flattering 0.0. The row disappears.
-  if (s.wetPerHour !== null && s.wetPerHour !== undefined) {
-    // The gate is the *count* of named jibes, not the rate (7 Sep 2026). A rate cannot
-    // tell "the wind axis named no jibes" from "it named fifteen and he swam out of every
-    // one": both read `jibesPerHour === 0` beside a positive TPH, and the second is
-    // exactly the session whose `0.0` CPH is a measured verdict the block must print.
-    // `t.jibes` is what the tally three rows up already gates on. The `turnsPerHour`
-    // half is unchanged: a session with a duration and genuinely no turns keeps its
-    // measured zeroes.
-    const namedJibes = t.jibes > 0 || !(s.turnsPerHour > 0);
-    out.push(namedJibes
-      ? { key: "jph", label: "JPH · dry jibes per hour", value: nf(s.jibesPerHour, 1), row: 3 }
-      : { key: "tph", label: "TPH · turns per hour", value: nf(s.turnsPerHour, 1), row: 3 });
-    // CPH rides beside JPH, never instead of it (engine 0.10.0). The two answer the two
-    // questions a rider asks in this order — "did I come out of it still sailing" and "did
-    // I ride it" — and the pair reads lenient-then-strict, the same direction the tally
-    // reads when its caption qualifies the three counts with the clean number.
-    //
-    // It rides with JPH rather than with the TPH fallback, because it is a *jibe* rate: on
-    // a session whose wind axis named no jibes at all, "0.0 clean jibes per hour" would be
-    // the precise lie the TPH fallback exists to avoid. Where jibes were named, a 0.0 is a
-    // measured verdict and is printed as one.
-    if (namedJibes) {
-      out.push({ key: "cph", label: "CPH · clean jibes per hour",
-                 value: nf(s.cleanJibesPerHour, 1), row: 3 });
-    }
-    out.push({ key: "wph", label: "WPH · swims per hour", value: nf(s.wetPerHour, 1), row: 3 });
-  }
-
+export function keyMetricEntries(doc) {
+  const rows = doc?.block?.rows || [];
+  const out = [];
+  rows.forEach((row, index) => {
+    for (const cell of row.cells || []) out.push(entry(cell, index));
+  });
   return out;
 }
+
+/** One document cell as the block draws it. `hero` and `blockOnly` are layout: which cell
+ *  gets the largest type, and which two never reach a card. */
+function entry(cell, row) {
+  const caption = cellCaption(cell);
+  return {
+    key: cell.key,
+    label: cellLabel(cell) + (caption ? CAPTION_SEP + caption : ""),
+    value: cellValue(cell),
+    ...(cell.tally ? { tally: cell.tally } : {}),
+    row,
+    // The session's fastest measured window, alone on its line and in the block's largest
+    // type: it is the number a rider quotes (docs/presentation/records.md, "Record windows").
+    ...(cell.key === "max2s" ? { hero: true } : {}),
+    // The two composites beside it (6 Sep 2026 — "the second row is a bit empty"). The
+    // card never carries them — one speed on a card, the one a rider quotes; the Records
+    // page owns the set — and the document says so by leaving them out of `card.tiles`.
+    ...(BLOCK_ONLY.has(cell.key) ? { blockOnly: true } : {}),
+  };
+}
+
+/** The two cells `card.tiles` drops. Held here rather than re-derived from the tiles so
+ *  the block can be drawn from `block` alone. */
+const BLOCK_ONLY = new Set(["best5x10s", "alpha500"]);
 
 /** The em-dash the tally's label uses to hang its caption off the words. The card splits
  *  the label here to get the two lines iOS lays out as `label` + `caption`; nothing else
@@ -334,10 +178,13 @@ export const CAPTION_SEP = " — ";
  * next to the loud one. (iOS gives its clip *outro* a ninth longest-flight cell; the
  * exported card there does not get it either, and neither does this one.)
  */
-export function cardStats(g, preset = "complete") {
-  // The block minus its block-only cells (row 2's composites): one speed on a card.
-  const entries = keyMetricEntries(g).filter((e) => !e.blockOnly);
-  return preset === "lean" ? entries.filter((e) => LEAN_KEYS.has(e.key)) : entries;
+export function cardStats(doc, preset = "complete") {
+  // **The document's own tiles**, which *are* the block's cells minus the two composites,
+  // each carrying the presets it belongs to. A preset can only ever drop a tile: there is
+  // nothing here to reword, reorder or invent one with.
+  return (doc?.card?.tiles || [])
+    .filter((tile) => (tile.presets || []).includes(preset))
+    .map((tile) => entry(tile, 0));
 }
 
 /* ------------------------------------------------------------ the period card

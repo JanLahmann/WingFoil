@@ -10,42 +10,35 @@ this side of the repo, so a rule that drifts on one platform fails on both.
     lab/.venv/bin/python web/tools/verify_presentation.py
     lab/.venv/bin/python web/tools/verify_presentation.py --fast   # skip the engine run
 
-Six groups:
+**What this file is for, after ADR-033 round 3.** It used to re-derive every presentation
+fact a *third* time — Swift, JavaScript, and here — so that the first two could be compared
+against a rule rather than against each other. That was a good mechanism and it is why the
+surfaces agree today. It was also the sign of the problem: a fact that needs a third
+implementation to stay true is a fact with no owner. The facts have an owner now
+(`build_presentation`), the goldens pin them for both platforms, and the re-derivations
+below are **retired**. What is left is the two kinds of check a document cannot make:
+whether the *browser* reads it, and the things the document deliberately does not carry.
 
-1. **Contract shape.** Every layer and record id in a presentation golden is one the
-   contract knows (design/tokens.json, the same catalogue the iOS enums are checked
-   against), and the filter grid is complete — 3 types × 3 entry sides.
-2. **The rules, re-derived.** The counts are recomputed here from the analysis golden,
-   written out differently from the generator on purpose: two spellings of the same rule
-   agreeing is evidence, one spelling agreeing with itself is not.
-2b. **Flight-end folding.** A `glide_out` end is a hollow *flew through* mark, not a layer
-   of its own — asserted on the fixture with the most straight-line ends to fold.
-2c. **Flight-count invariants.** One takeoff starts every flight and one end stops it, so
-   `takeoff.pumped + takeoff.free == flightCount == flightEnds.total`, per fixture, with the
-   three end buckets partitioning the block. The pairing lines in docs/presentation.md are
-   built on that arithmetic.
+1–2, 5. **The browser reads the document** — one check per retired group. The values
+   themselves are pinned once, in `fixtures/presentation/*.expected.json`, by
+   `lab/tests/test_presentation.py` and `GoldenTests.presentationDocumentMatchesTheGoldenByte`.
 3. **Internal consistency.** Marker totals, takeoff totals and the filter grid have to
-   add up against the analysis document's own summary block.
+   add up against the analysis document's own summary block. **Kept deliberately**: it ties
+   the document to the *analysis*, which is the engine's half of the contract rather than
+   presentation's, and it is the check that would catch `build_presentation` mis-reading a
+   golden.
 4. **The engine path** (skipped by `--fast`): re-analyze one FIT through `web_entry`, the
    exact call the browser makes, and check the presentation facts of the document it
-   produces. This is what ties the numbers to the code the site actually runs.
-5. **The share card is the block.** The exported card's stat list, for every fixture, is
-   the key-metrics block the page renders — same entries, same order, same labels, same
-   strings — with `lean` a strict subset of it and nothing from the tiles allowed in. A
-   card is a PNG in somebody else's chat thread: no re-render, no correction, nothing
-   beside it to check against. The drawing cannot be golden-tested; the content derivation
-   is a pure function (`web/js/cardstats.js`) and so it is, through
-   `web/tools/card_parity.mjs` (needs `node` — skipped without it).
-5a. **The rate row's three branches**, on synthetic sessions the corpus does not contain —
-   the one that named jibes and swam out of all of them included.
+   produces. **Kept**: it is about the browser's call path — Pyodide, the worker, `meta` —
+   and about the session clock and its note, which are `meta` facts the analysis document
+   does not carry.
 5b. **The rider's own title and caption.** The normalizers, the per-session key, the
    `localStorage` round trip and the one piece of the card's geometry that depends on what
-   was typed.
-5c. **The optional map background.** That it is **off** unless the switch itself wrote the
-   preference — it is the only part of making a card that reaches a third-party server — and
-   that its framing puts the ride in exactly the box the plain card gives it. The tiles are
-   not fetched and no canvas is drawn: what could be wrong here is the arithmetic, and the
-   arithmetic is pure (`web/js/cardmap.js`).
+   was typed. **Kept for ever**: a title and a caption are the sender's own words, not facts
+   about the session, and the document must never carry them.
+5c. **The optional map background.** **Kept**: projection, framing and inset are drawing.
+5d/5e. **The period card and its outline stack.** **Kept**: a period is *many* sessions and
+   this document is one, so `fixtures/periods/periods.expected.json` is its own contract.
 6. **Why a turn is a touchdown or a fall** (engine 0.18.0). The one line under a turn's
    outcome is the same sentence the phone prints under its chips, so it is re-derived here in
    Python and compared with what `web/js/viz.js` actually produces, over every turn of every
@@ -130,286 +123,60 @@ def fixtures() -> list[str]:
     return sorted(p.name[: -len(gen.SUFFIX)] for p in PRESENTATION.glob(f"*{gen.SUFFIX}"))
 
 
-# ------------------------------------------------------------ 1. contract shape
+# ------------------------------- 1, 2, 2b, 2c, 5, 5a. the browser reads the document
+
+#: The web modules the retired sections used to hold to a re-derived rule, and the document
+#: field each one has to read instead. One entry per retired group: the *value* is pinned
+#: once, in the presentation goldens, so the only question left on this side is whether the
+#: browser asks for it rather than working it out again.
+DOCUMENT_READS = [
+    ("1. contract shape — the legend chips", "session.js",
+     ["doc?.turns?.legend", "chip.layerId", "counts[chip.layerId] = chip.count"]),
+    ("2. eligibility — which chip a mark answers to", "session.js",
+     ["doc?.turns?.strip", "entry.layerId", "doc?.flightEnds?.marks", "doc?.splash?.marks"]),
+    ("2b. a glide-out folds into flew through", "session.js", ["mark.outcomeId"]),
+    ("5. the card is the block", "cardstats.js", ["doc?.card?.tiles", "tile.presets"]),
+    ("5a. the rate row is the document's row 4", "cardstats.js", ["doc?.block?.rows"]),
+    ("the records the tiles print", "render.js", ["doc?.records?.kinds"]),
+    ("the turn page's 3 of 14", "turnpage.js",
+     ["presentation?.turns?.strip", "presentation?.flightEnds?.marks"]),
+    ("the divergence banner", "log.js", ["line.labelId", "line.unitKind"]),
+]
 
 
-def check_shape() -> None:
-    section("1. contract shape (layers, records, filter grid)")
-    tokens = json.loads(TOKENS.read_text(encoding="utf-8"))
-    layer_ids = {entry["id"] for entry in tokens["layers"]}
-    record_ids = [entry["id"] for entry in tokens["recordWindows"]["order"]]
+def check_document_reads() -> None:
+    """One check per retired group: the browser reads the field, and derives nothing.
 
-    check("  the record catalogue is the contract's, in order", gen.RECORD_ORDER, record_ids)
-    check("  the default window is the contract's",
-          gen.RECORD_DEFAULT, tokens["recordWindows"]["default"])
-
-    # **One spelling per record, across the four surfaces that name one.**
-    # `design/tokens.json` is the table; `RecordKind.label` is checked against it by
-    # `PresentationTests.designTokensCarryTheSameCataloguesAsTheCode`, and this is the
-    # analyzer's half. The same record used to answer to five spellings — `2 s`,
-    # `Best 2 s`, `max 2 s`, `Best 2s` — depending on which screen you were on
-    # (docs/presentation/labels.md, "Label table").
-    token_labels = {entry["id"]: entry["label"] for entry in tokens["recordWindows"]["order"]}
-    library_labels = {key.removesuffix("Kn"): label
-                      for key, _w, label, _u in library.RECORD_KINDS}
-    check("  the analyzer names every picker record the way the contract does",
-          {k: v for k, v in library_labels.items() if k in token_labels}, token_labels)
-    # All nine since 21 September 2026: `bestHour` used to be named here and offered
-    # nowhere, which made its row the one row in the table that answered no tap.
-    check("  the picker is all nine record kinds", library_labels, token_labels)
-    check("  and every one of them has a window key to open",
-          [k for k, w, _l, _u in library.RECORD_KINDS if w is None], [])
-
-    names = fixtures()
-    check("  every analysis golden has a presentation golden", names,
-          sorted(p.name[: -len(gen.SUFFIX)] for p in GOLDENS.glob(f"*{gen.SUFFIX}")))
-
-    with_an_hour = []
-    for stem in names:
-        doc, facts = load(stem)
-        check(f"  {stem}: marker layers are legend chips",
-              set(facts["markers"]) - layer_ids, set())
-        check(f"  {stem}: record windows are catalogue entries",
-              [k for k in facts["recordWindows"] if k not in record_ids], [])
-        check(f"  {stem}: record windows keep catalogue order",
-              facts["recordWindows"],
-              [k for k in record_ids if k in facts["recordWindows"]])
-        check(f"  {stem}: the flight-end buckets are the three the rules distinguish",
-              sorted(facts["flightEnds"]), ["drawn", "ownedByTurn", "total", "truncated"])
-        check(f"  {stem}: the filter grid is complete",
-              [(row["type"], row["side"]) for row in facts["filters"]],
-              [(t, s) for t in gen.TYPE_FILTERS for s in gen.SIDE_FILTERS])
-        # The ninth kind is offered exactly when the engine found an uninterrupted hour to
-        # measure — the same rule the other eight obey, and nothing special about it.
-        records = doc.get("records", {})
-        hour = ((records.get("bestHourKn") or 0) > 0
-                and bool((records.get("windows") or {}).get("bestHour")))
-        check(f"  {stem}: bestHour is offered when the session has one",
-              "bestHour" in facts["recordWindows"], hour)
-        if hour:
-            with_an_hour.append(stem)
-        check(f"  {stem}: there is no glided-out layer",
-              "glideOut" in facts["markers"], False)
-
-    # Named, so the corpus's one hour is an expectation rather than a coincidence: engine
-    # 0.23.0 gave 2026-08-03 pm seven gap-free runs where it had 355, and an hour fits in
-    # one of them (docs/testing.md, "best hour"). Its window is 3 600 s of a 7 135 s
-    # afternoon — most of the track, which is what the record is.
-    check("  exactly one fixture has a best hour, and it offers it", with_an_hour,
-          ["2026-08-03-1440_nago-torbole-windsurfen_native"])
-
-
-# --------------------------------------------------------- 2. the rules, again
-
-
-def check_rules() -> None:
-    section("2. eligibility rules, re-derived from the analysis documents")
-    for stem in fixtures():
-        doc, facts = load(stem)
-
-        # Markers. Written as two Counters rather than as the generator's loop: an
-        # uncounted turn is a course change whatever its outcome says, a drawn flight end
-        # is one no turn owns from a recording that did not stop, and `glide_out` is the
-        # green end of the ladder.
-        turns = Counter(t["outcome"] if t["counted"] else "course"
-                        for t in doc.get("turns", []))
-        ends = Counter(e["outcome"] for e in doc.get("flightEnds", [])
-                       if e.get("ownedByTurn") is None and not e.get("truncated", False))
-        want = {
-            "flewThrough": turns["flew_through"] + turns["glide_out"]
-                           + ends["flew_through"] + ends["glide_out"],
-            "touchdown": turns["touchdown"] + ends["touchdown"],
-            "fellIn": turns["fell_in"] + ends["fell_in"],
-            "courseChange": turns["course"],
-        }
-        check(f"  {stem}: markers per layer", facts["markers"], want)
-        # The star layer, re-derived from the fields rather than read off the engine's own
-        # `clean` key — this is the check that the key means what the rule says, so it must
-        # not be the key. It lies *across* the ladder above, never inside it: every clean
-        # jibe is also counted under `flew_through`, which is why the marker total below
-        # still comes out as turns + drawn ends.
-        #
-        # Since engine 0.17.0 the rule has a fifth clause — a quiet `turnCleanQuietS` after
-        # the sweep — and that one is a *measurement over samples this document does not
-        # carry*, so it is re-derived here through the reason the engine wrote down
-        # (`cleanBlockedBy`). What is still checked independently is everything the record
-        # does carry, plus the arithmetic that ties the two: a jibe is starred exactly when
-        # the four fields say yes and no reason was recorded against it.
-        clean = sum(1 for t in doc.get("turns", [])
-                    if t["counted"] and t["type"] == "jibe" and t["success"]
-                    and t["outcome"] == "flew_through"
-                    and t.get("cleanBlockedBy") is None)
-        check(f"  {stem}: clean jibes are the star layer", facts["cleanJibes"], clean)
-        # And a reason is never recorded beside a star, nor on a turn the score or the
-        # outcome had already refused (docs/algorithms/turns.md "The quiet tail").
-        blocked = [t for t in doc.get("turns", []) if t.get("cleanBlockedBy") is not None]
-        check(f"  {stem}: a blocked jibe is a jibe that otherwise qualified",
-              [t for t in blocked
-               if not (t["counted"] and t["type"] == "jibe"
-                       and t["outcome"] == "flew_through"
-                       and (t["success"] or t["cleanBlockedBy"] == "axis_after"))],
-              [])
-        check(f"  {stem}: nothing is clean and blocked at once",
-              [t for t in blocked if t["clean"]], [])
-        check(f"  {stem}: never more clean jibes than counted turns",
-              facts["cleanJibes"] <= sum(want.values()), True)
-        # An end with no verdict is a recording that stopped, not an event; if one ever
-        # survives the ownership filter the ladder above would silently paint it green.
-        check(f"  {stem}: no drawn flight end has an unknown outcome", ends["unknown"], 0)
-
-        # Takeoffs: the successes come from `takeoffs` (the engine only writes one for a
-        # flight that happened), the failures only from the pumping episodes.
-        episodes = Counter(ep["outcome"] for ep in doc.get("pumpEpisodes", []))
-        free = sum(1 for k in doc.get("takeoffs", []) if k["free"])
-        check(f"  {stem}: takeoff layer",
-              facts["takeoff"],
-              {"pumped": len(doc.get("takeoffs", [])) - free, "free": free,
-               "failed": episodes["failed"],
-               "total": len(doc.get("takeoffs", [])) + episodes["failed"]})
-        check(f"  {stem}: recovery and in-flight pumping are never drawn",
-              facts["pumpingSpans"], episodes["success"] + episodes["failed"])
-        check(f"  {stem}: recovery / in-flight / unknown episodes stay out",
-              len(doc.get("pumpEpisodes", [])) - facts["pumpingSpans"],
-              episodes["recovery"] + episodes["in_flight"] + episodes["unknown"])
-
-        # "Wrist under": one mark per submersion episode, read off the engine's own list
-        # (engine 0.16.0) and never re-derived from the mask.
-        subs = doc.get("submersions", [])
-        check(f"  {stem}: wrist-under episodes", facts["splash"], len(subs))
-        # An episode is named at most once, and only ever after a record that exists.
-        check(f"  {stem}: no episode claims both a turn and a flight end",
-              sum(1 for s in subs
-                  if s["turnIndex"] is not None and s["flightEndIndex"] is not None), 0)
-        check(f"  {stem}: every named turn is a counted one",
-              sum(1 for s in subs if s["turnIndex"] is not None
-                  and not doc["turns"][s["turnIndex"]]["counted"]), 0)
-        check(f"  {stem}: every named flight end is a drawn one",
-              sum(1 for s in subs if s["flightEndIndex"] is not None
-                  and (doc["flightEnds"][s["flightEndIndex"]]["ownedByTurn"] is not None
-                       or doc["flightEnds"][s["flightEndIndex"]]["truncated"])), 0)
-        # Episodes are disjoint and in time order: they are runs of one mask, so an overlap
-        # would mean one dunk drawn twice.
-        check(f"  {stem}: episodes are disjoint and in time order",
-              all(a["endTs"] < b["ts"] for a, b in zip(subs, subs[1:])), True)
-        # Every turn and flight end the mask flagged still has an episode inside the window
-        # its verdict was read from -- the check that says the flags and the list are two
-        # readings of one mask rather than two measurements.
-        for i, t in enumerate(doc.get("turns", [])):
-            if not (t["submerged"] and t["counted"]):
-                continue
-            w0, w1 = t["ts"], t["endTs"] + t["outcomeWindowS"]
-            check(f"  {stem}: turn {i}'s submerged flag has an episode",
-                  any(s["ts"] <= w1 and s["endTs"] >= w0 for s in subs), True)
-        for i, e in enumerate(doc.get("flightEnds", [])):
-            if not (e["submerged"] and e.get("ownedByTurn") is None
-                    and not e.get("truncated", False)):
-                continue
-            w0, w1 = e["ts"], e["ts"] + e["windowS"]
-            check(f"  {stem}: flight end {i}'s submerged flag has an episode",
-                  any(s["ts"] <= w1 and s["endTs"] >= w0 for s in subs), True)
-
-        # Record windows: a value AND the provenance the map draws with it.
-        records = doc.get("records", {})
-        windows = records.get("windows", {}) or {}
-        achieved = [k for k in gen.RECORD_ORDER
-                    if (records.get(f"{k}Kn") or 0) > 0 and windows.get(k)]
-        check(f"  {stem}: achieved record windows", facts["recordWindows"], achieved)
-        check(f"  {stem}: default window",
-              facts["defaultRecordWindow"],
-              gen.RECORD_DEFAULT if gen.RECORD_DEFAULT in achieved else None)
-
-        # Filters: type × ENTRY side, ANDed, over counted turns only.
-        counted = [t for t in doc.get("turns", []) if t["counted"]]
-        for row in facts["filters"]:
-            kept = [t for t in counted
-                    if (row["type"] == "both"
-                        or t["type"] == ("jibe" if row["type"] == "jibes" else "tack"))
-                    and (row["side"] == "both" or t["side"] == row["side"])]
-            check(f"  {stem}: filter {row['type']}/{row['side']} count",
-                  row["count"], len(kept))
-            check(f"  {stem}: filter {row['type']}/{row['side']} flew through",
-                  row["flewThrough"],
-                  sum(1 for t in kept if t["outcome"] in ("flew_through", "glide_out")))
-
-
-# --------------------------------------------- 2c. the flight-count invariants
-
-def check_flight_invariants() -> None:
-    """One takeoff starts every flight; one end stops it.
-
-    docs/presentation/enforcement.md, "Enforcement" 3. The pairing lines a popover draws
-    ("starts flight 12 · 1:23 · ended: touchdown") are only meaningful if the three blocks
-    are the same list of flights seen from three sides, so the arithmetic is pinned per
-    fixture rather than trusted: a takeoff with no flight to name, or a flight with two
-    ends, would print a wrong number in a callout long before any tally looked odd.
-
-    `failed` attempts are deliberately outside both sums — a failed attempt is the one mark
-    in the takeoff layer that starts no flight, and folding it in would hide exactly the
-    thing the layer exists to show.
+    Source text rather than behaviour, deliberately. What the field *says* is already
+    asserted — byte for byte, on both platforms, against the same golden — and asserting it
+    again here would be the third implementation this round exists to delete. What a golden
+    cannot see is a renderer quietly going back to `golden.summary`, and that is what this
+    catches.
     """
-    section("2c. flight-count invariants (one takeoff and one end per flight)")
-    for stem in fixtures():
-        doc, facts = load(stem)
-        count = facts["flightCount"]
-        ends = facts["flightEnds"]
+    section("1, 2, 2b, 2c, 5, 5a. the browser reads the document (the retired re-derivations)")
+    js = REPO / "web" / "js"
+    for title, module, needles in DOCUMENT_READS:
+        text = (js / module).read_text(encoding="utf-8")
+        missing = [n for n in needles if n not in text]
+        check(f"  {title}: js/{module}", missing, [])
 
-        check(f"  {stem}: flightCount is the engine's own",
-              count, doc.get("summary", {}).get("flightCount"))
-        check(f"  {stem}: ... and the length of the flights block",
-              count, len(doc.get("flights", [])))
-        check(f"  {stem}: takeoff marks that flew == flightCount",
-              facts["takeoff"]["pumped"] + facts["takeoff"]["free"], count)
-        check(f"  {stem}: flight-end marks total == flightCount", ends["total"], count)
-        check(f"  {stem}: the end buckets partition the block",
-              ends["drawn"] + ends["ownedByTurn"] + ends["truncated"], ends["total"])
-        check(f"  {stem}: the drawn ends are the ones the marker rules keep",
-              ends["drawn"], len(gen.drawn_flight_ends(doc)))
-        # The pairing reads `flights[i]` through the takeoff drawn at its start, so the two
-        # lists have to line up index for index — not merely have the same length.
-        pairs = list(zip(doc.get("takeoffs", []), doc.get("flights", [])))
-        check(f"  {stem}: takeoff i starts flight i", len(pairs), count)
-        check(f"  {stem}: ... at the same instant",
-              [i for i, (k, f) in enumerate(pairs) if k["startTs"] != f["startTs"]], [])
-        check(f"  {stem}: flight end i stops flight i",
-              [e["flightIndex"] for e in doc.get("flightEnds", [])], list(range(count)))
-        check(f"  {stem}: ... at the same instant",
-              [i for i, (e, f) in enumerate(zip(doc.get("flightEnds", []),
-                                                doc.get("flights", [])))
-               if e["ts"] != f["endTs"]], [])
-        # A failed attempt is not a flight: it must be in neither sum.
-        check(f"  {stem}: failed attempts start no flight",
-              facts["takeoff"]["total"] - facts["takeoff"]["failed"], count)
+    # **The legend rule, pinned on this side** (ADR-033 round 3): the chip's number is the
+    # document's analysis count, and the browser adds nothing to it. The kit's twin is
+    # `PresentationTests.theLegendChipCountsAreTheDocumentsAnalysisCounts`. The marker loop
+    # that used to build these counts survives only for the three KIND chips, which are the
+    # browser's own (the phone has no kind filter on its map), so what is checked is that it
+    # no longer touches `mk.layers`.
+    text = (js / "session.js").read_text(encoding="utf-8")
+    check("  the browser does not re-derive a layer count from its marks",
+          "mk.layers || [mk.layer]) counts[" in text, False)
 
-
-# ------------------------------------------------- 2b. flight ends fold into the ladder
-
-
-def check_flight_end_folding() -> None:
-    """A `glide_out` flight end is a *flew through* mark drawn hollow, not a layer of its own.
-
-    docs/presentation/layers-map-colour-type.md, "Colour and glyph vocabulary": the ladder carries the verdict and
-    the fill carries the channel — solid = a maneuver's outcome, hollow = a straight-line
-    flight end no turn explains. A separate "glided out" chip (which the web app used to
-    have) says the same thing twice and makes the two platforms count differently, so this
-    asserts the folding on a fixture with several straight-line ends to fold.
-    """
-    section("2b. glide-out flight ends fold into flewThrough (hollow, same ladder)")
-    doc, facts = load(GLIDE_OUT)
-    ends = Counter(e["outcome"] for e in gen.drawn_flight_ends(doc))
-    turns = Counter(t["outcome"] for t in doc.get("turns", []) if t["counted"])
-
-    # Without ends to fold the rest of this section would pass vacuously.
-    check(f"  {GLIDE_OUT}: has straight-line glide-outs to fold", ends["glide_out"], 3)
-    check(f"  {GLIDE_OUT}: they are counted under flewThrough",
-          facts["markers"]["flewThrough"], turns["flew_through"] + ends["glide_out"])
-    check(f"  {GLIDE_OUT}: and they are the difference — a turns-only count is short",
-          facts["markers"]["flewThrough"] - turns["flew_through"], ends["glide_out"])
-    check(f"  {GLIDE_OUT}: no glide-out chip exists to hold them",
-          sorted(facts["markers"]), ["courseChange", "fellIn", "flewThrough", "touchdown"])
-    # The hollow half must not leak into a verdict tally: the filter grid is turns only.
-    grid = {(row["type"], row["side"]): row for row in facts["filters"]}
-    check(f"  {GLIDE_OUT}: the filter grid counts turns, not ends",
-          grid[("both", "both")]["flewThrough"], turns["flew_through"] + turns["glide_out"])
+    # 2c. The flight-count arithmetic is asserted on the document itself, by
+    # `lab/tests/test_presentation.py::test_the_flight_count_invariants_hold_in_the_document`.
+    # What is left here is that every golden carries the buckets it needs to be asserted on.
+    buckets = {"flightCount", "drawn", "ownedByTurn", "truncated", "total", "marks"}
+    incomplete = [stem for stem in fixtures()
+                  if not buckets <= set(load(stem)[1]["document"]["flightEnds"])]
+    check("  2c. every golden carries the flight-end buckets", incomplete, [])
 
 
 # ------------------------------------------------------ 3. internal consistency
@@ -574,109 +341,33 @@ def check_clock_note() -> None:
     check("  an unrecorded source keeps the old wording", notes["unrecorded"], EXACT_NOTE)
 
 
-# --------------------------------------------- 5. the share card is the block
+# ------------------------------------- 5. the card is the block, and the callout's words
 
 CARD_PARITY = TOOLS / "card_parity.mjs"
 
-#: What `lean` is allowed to keep — `ShareCardStats.Preset.leanKeys`, spelled here so the
-#: JavaScript is checked against a second copy of the rule rather than against itself.
-#: `falls` joined them on 20 September 2026: the tally is the *jibe* ladder and says so in
-#: its caption, so a card carrying only the tally reported one fall on an afternoon with
-#: three in it. A card is read next to nothing, so the session's own number travels on both
-#: presets.
-LEAN_KEYS = ["distance", "duration", "falls", "max2s", "tally"]
-
-#: Keys that must never reach a card. They are real numbers the app shows — in the *tiles*,
-#: below the block — and a card that printed them would be a second, quieter answer to "was
-#: that a good session" travelling in a picture next to the loud one. (iOS gives its clip
-#: outro a ninth `longestFlight` cell; the exported card there does not get it either.)
-FORBIDDEN_KEYS = {"flightCount", "flights", "foilPct", "longestFlight", "best500m", "wind"}
-
-
-def _hm(sec: float) -> str:
-    """`1:25 h` / `10:45 min`, written out again — the Python spelling of the block's
-    duration rule (`KeyMetrics.duration`, `hm` in web/js/cardstats.js).
-
-    Under an hour it is minutes and seconds, because `h:mm` printed `0:11` for the ten
-    minute forty-five second example session and a card is the last place a number may be
-    rounded into meaninglessness. The unit rides inside the string, as `km` and `kn` do in
-    every other cell, so `10:45` can never be read as ten and three quarter hours.
-    """
-    total = max(0, round(sec))
-    if total >= 3600:
-        m = round(total / 60)
-        return f"{m // 60}:{m % 60:02d} h"
-    return f"{total // 60}:{total % 60:02d} min"
-
-
-def expected_card_values(doc: dict) -> dict[str, str]:
-    """The block's strings, re-derived here from the analysis golden.
-
-    Deliberately a *third* implementation (Swift, JavaScript, and this): the JS card and the
-    JS block agreeing proves they share a list, which they do by construction; it does not
-    prove the list says the right thing. These do.
-    """
-    s, t, rec = doc["summary"], doc["summary"]["turns"], doc["records"]
-    out = {
-        "duration": _hm(s["durationS"]),
-        "distance": f"{s['distanceKm']:.1f} km",
-        "avgSpeed": "—" if s.get("avgSpeedKmh") is None
-                    else f"{s['avgSpeedKmh'] / 1.852:.2f} kn",
-        "max2s": f"{rec['best2sKn']:.2f} kn" if rec["best2sKn"] >= 0.05 else "—",
-    }
-    outcomes = t["jibeOutcomes"] if t["jibes"] > 0 else t["outcomes"]
-    if t["jibes"] > 0 or t["turnsCounted"] > 0:
-        out["tally"] = (f"{outcomes['flewThrough']} · {outcomes['touchdown']} · "
-                        f"{outcomes['fellIn']}")
-    # The tack ladder beside the jibe one (22 September 2026). Two gates: a tack to report,
-    # and a jibe tally that is the JIBE ladder — where the wind axis named no jibes the cell
-    # above has fallen back to every counted turn, which on such a session *is* the tacks.
-    if t["tacks"] > 0 and t["jibes"] > 0:
-        tk = t["tackOutcomes"]
-        out["tacks"] = f"{tk['flewThrough']} · {tk['touchdown']} · {tk['fellIn']}"
-    # Every fall of the session, off the flight-end channel — the one that answers "how
-    # often did I end up in the water", one event per actual swim (docs/algorithms/rates.md, "Wet
-    # is every fall, not every fallen jibe"). Deliberately NOT `outcomeSplit`, whose falls
-    # mix the turn ladder with this channel and so need not add up to it. Absent where no
-    # flight ended with usable evidence, which is `FlightEndCounts.total` — `unknown` out.
-    ends = doc["summary"]["flightEnds"]
-    if ends["all"]["glideOut"] + ends["all"]["touchdown"] + ends["all"]["fellIn"] > 0:
-        out["falls"] = str(ends["all"]["fellIn"])
-    if t["turnsCounted"] > 0:
-        # Flying leads the pair: the harder run first, and `longestFlewStreak` is always
-        # the smaller of the two.
-        out["streaks"] = f"{t['longestFlewStreak']} flew · {t['longestDryStreak']} dry"
-    if s.get("wetPerHour") is not None:
-        # The gate is `turns.jibes`, the count, not `jibesPerHour`, the rate: a session
-        # that named jibes and swam out of every one has a 0.0 rate and a measured 0.0 CPH
-        # that has to be printed (docs/presentation/key-metrics.md, "Row 4"). §5a asserts that branch
-        # against a synthetic case, because no corpus fixture happens to be one.
-        if t["jibes"] > 0 or not s["turnsPerHour"] > 0:
-            out["jph"] = f"{s['jibesPerHour']:.1f}"
-            # CPH beside JPH since engine 0.10.0 — and only beside it: a session whose wind
-            # axis named no jibes gets the TPH fallback and no jibe rate of any kind.
-            out["cph"] = f"{s['cleanJibesPerHour']:.1f}"
-        else:
-            out["tph"] = f"{s['turnsPerHour']:.1f}"
-        out["wph"] = f"{s['wetPerHour']:.1f}"
-    return out
+#: What `card_parity.mjs` dumped, so every section below reads it without a second node run.
+#: Empty when node is not on PATH, which is the skip each of them takes.
+_CARD_DUMP: list[dict] = []
 
 
 def check_card() -> None:
-    """The exported card says exactly what the key-metrics block says.
+    """**Two checks**, where there were one hundred and eighty-one.
 
-    A card is a PNG in somebody else's chat thread: there is no re-render, no correction and
-    nothing beside it to check against, so it is the last place the app may name a different
-    number for the same session than the page does. `web/js/cardstats.js` makes that
-    structurally true — one list, two readers — and this is what proves it stayed true, over
-    every fixture, on the *rendered markup* rather than on the array behind it.
+    The card used to be held against a third Python spelling of every string in the block.
+    It no longer can be, and that is the point: `card.tiles` **are** the `block` cells by
+    construction (`build_presentation`), the values are pinned byte for byte in
+    `fixtures/presentation/*.expected.json` for both platforms, and a re-derivation here
+    would be the third implementation this round exists to delete. What a golden cannot see
+    is whether the browser's two readers of that one list still agree once they have
+    formatted it — so that is what is asked, once, over every fixture at once.
 
-    The drawing cannot be golden-tested (a canvas is pixels). The content derivation is a
-    pure function, and therefore can be, and therefore must be.
+    The second check is the wrist-under callout, for the same reason: its two sentences are
+    copy **ids with arguments** in the document now, and what is left to verify is that the
+    browser can resolve every one of them into words.
     """
-    section("5. the share card carries the key-metrics block, unchanged")
+    section("5. the card is the block, drawn")
 
-    goldens = sorted(GOLDENS.glob(f"*{gen.SUFFIX}"))
+    goldens = sorted(PRESENTATION.glob(f"*{gen.SUFFIX}"))
     node = shutil.which("node")
     if not node:
         print("  (skipped: node not on PATH)")
@@ -690,153 +381,30 @@ def check_card() -> None:
     dumped = json.loads(raw)
     cards = dumped["cards"]
 
-    check("  every analysis golden was measured", len(cards), len(goldens))
-    for card in cards:
-        stem = Path(card["file"]).name[: -len(gen.SUFFIX)]
-        doc = json.loads(Path(REPO / card["file"]).read_text(encoding="utf-8"))
-        block = card["block"]
-        complete = card["complete"]
-        lean = card["lean"]
+    # The block the page renders and the card's `complete` preset, over every fixture, as
+    # one comparison. A preset may only DROP a tile, so `complete` — which drops none — is
+    # the block minus its two block-only speeds, which is exactly what `card.tiles` is.
+    check("  complete == the rendered block, every fixture",
+          [[{"label": e["label"], "value": e["value"]} for e in card["complete"]]
+           for card in cards],
+          [card["block"] for card in cards])
 
-        # 1. Complete IS the block: same entries, same order, same words, same strings.
-        check(f"  {stem}: complete == the rendered block",
-              [{"label": e["label"], "value": e["value"]} for e in complete], block)
+    # Every `splash.marks[].title` / `.during` id resolved into a sentence. A `null` here is
+    # an id with no home, which a rider would read as an empty callout.
+    unresolved = [f"{Path(card['file']).name}@{mark['ts']}"
+                  for card in cards for mark in card["wristUnder"]
+                  if not mark["title"] or not mark["during"]]
+    check("  every wrist-under callout resolves to words", unresolved, [])
 
-        # 2. Lean is a strict SUBSET — it may drop entries and may not reword, reorder or
-        #    substitute one. Held as keys, so a preset cannot invent a cell.
-        check(f"  {stem}: lean is the block filtered by leanKeys",
-              lean, [e for e in complete if e["key"] in LEAN_KEYS])
-        check(f"  {stem}: lean keeps the block's order",
-              [e["key"] for e in lean],
-              [e["key"] for e in complete if e["key"] in LEAN_KEYS])
-
-        # 3. Nothing the block does not carry may appear on a card.
-        keys = {e["key"] for e in complete}
-        check(f"  {stem}: no tile-only cell reached the card", keys & FORBIDDEN_KEYS, set())
-
-        # 4. The strings themselves, re-derived from the golden by a third implementation.
-        want = expected_card_values(doc)
-        check(f"  {stem}: the card's values, re-derived",
-              {e["key"]: e["value"] for e in complete}, want)
-
-        # 5. A tally's three counts stay counts, so the card can wear the ladder's inks —
-        #    and they are the same three the value string spells out. Two cells since
-        #    22 September 2026: the jibe ladder, and the tack ladder beside it.
-        t = doc["summary"]["turns"]
-        for key, source in (("tally", t["jibeOutcomes"] if t["jibes"] > 0 else t["outcomes"]),
-                            ("tacks", t["tackOutcomes"])):
-            cell = next((e for e in complete if e["key"] == key), None)
-            if cell is None:
-                continue
-            counts = cell["tally"]
-            check(f"  {stem}: the {key} cell carries its counts",
-                  f"{counts['flewThrough']} · {counts['touchdown']} · {counts['fellIn']}",
-                  cell["value"])
-            check(f"  {stem}: the {key} counts are the golden's own",
-                  counts, {k: source[k] for k in ("flewThrough", "touchdown", "fellIn")})
-
-    if cards:
-        check("  leanKeys is the contract's set", cards[0]["leanKeys"], LEAN_KEYS)
-
-    check_wrist_under(cards)
-
-    # Stashed rather than checked here, so the period card's section prints after the
-    # session card's two — one `card_parity.mjs` run answers both questions.
+    # Stashed rather than checked here, so the period card's section prints after this one —
+    # one `card_parity.mjs` run answers every question below.
     _CARD_DUMP.append(dumped)
-
-
-#: The rider's word for each turn kind in the "wrist under" callout. Only the counted kinds
-#: can ever appear — an uncounted sweep is a course change and never owns an episode — but
-#: the map is spelled in full so a wrong one is a failure rather than a silent "turn".
-TURN_WORD = {"jibe": "jibe", "tack": "tack", "bear_away": "bear-away", "round_up": "round-up"}
-
-
-def expected_wrist_under(sub: dict, doc: dict) -> dict:
-    """The callout the web must print for one submersion episode, re-derived here in Python.
-
-    A third spelling of docs/presentation/layers-map-colour-type.md "Wrist under", against the JavaScript that draws
-    it and the Swift that draws the same sentence on the phone. The two apps wording one fact
-    differently is how a rider learns to trust one of them.
-    """
-    title = ("Wrist under" if round(sub["durationS"]) < 1
-             else f"Wrist under · {sub['durationS']:.0f} s")
-    index = sub["turnIndex"]
-    if index is not None:
-        turn = doc["turns"][index]
-        word = TURN_WORD.get(turn["type"], "turn")
-        same = [i for i, t in enumerate(doc["turns"])
-                if t["counted"] and t["type"] == turn["type"]]
-        during = (f"during {word} {same.index(index) + 1}" if index in same
-                  else f"during a {word}")
-    elif sub["flightEndIndex"] is not None:
-        end = doc["flightEnds"][sub["flightEndIndex"]]
-        during = f"after flight {end['flightIndex'] + 1} ended"
-        if end["stoppedS"] >= 1:
-            during += f", stopped {end['stoppedS']:.0f} s"
-    else:
-        during = "while off foil"
-    return {"ts": sub["ts"], "title": title, "during": during}
-
-
-def check_wrist_under(cards: list[dict]) -> None:
-    """The "wrist under" callout, over every fixture: one line per submersion episode, in the
-    words docs/presentation.md specifies and the iOS `SessionDetail.splashTitle` /
-    `splashDetail` print."""
-    for card in cards:
-        stem = Path(card["file"]).name[: -len(gen.SUFFIX)]
-        doc = json.loads(Path(REPO / card["file"]).read_text(encoding="utf-8"))
-        subs = doc.get("submersions", [])
-        check(f"  {stem}: a callout per wrist-under episode",
-              len(card["wristUnder"]), len(subs))
-        check(f"  {stem}: the wrist-under callouts, re-derived",
-              card["wristUnder"], [expected_wrist_under(s, doc) for s in subs])
-
-
-#: The rate row, per synthetic case in `card_parity.mjs`: which keys row 4 must carry, and
-#: what each must say. Written here rather than derived, because the whole point of the
-#: three cases is that the corpus contains none of them.
-#:
-#: `allWetJibes` is the one the old gate got wrong: fifteen jibes, every one swum. It is a
-#: session made of jibes, so JPH and CPH are both *measured* and both `0.0` — not an
-#: absence, and never the TPH fallback, which exists only for a session whose wind axis
-#: named no jibes at all (docs/presentation/key-metrics.md, "Row 4").
-RATE_CASES = {
-    "allWetJibes": {"jph": "0.0", "cph": "0.0", "wph": "15.0"},
-    "noJibesNamed": {"tph": "15.0", "wph": "2.0"},
-    "noTurnsAtAll": {"jph": "0.0", "cph": "0.0", "wph": "0.0"},
-}
-
-#: The keys row 4 may ever produce — so a case asserting `tph` also asserts the absence of
-#: `jph` and `cph`, rather than only the presence of what it named.
-RATE_KEYS = ("jph", "tph", "cph", "wph")
-
-
-def check_rate_row() -> None:
-    """Row 4's branch, on the three sessions the corpus does not contain.
-
-    The block's rate row has three shapes and the seventeen fixtures exercise one of them.
-    The missing pair is the interesting pair: a session that named jibes and swam out of
-    every one (`jibesPerHour == 0` beside a positive TPH, which the gate read for a year as
-    "no jibes were named"), and a session with a duration and genuinely no turns. Both must
-    print measured zeroes; only a session with turns and *no named jibes* gets TPH.
-    """
-    if not _CARD_DUMP:
-        return
-    section("5a. the rate row, on the sessions the corpus has none of")
-    for case in _CARD_DUMP[-1].get("rates", []):
-        got = {e["key"]: e["value"] for e in case["entries"] if e["key"] in RATE_KEYS}
-        check(f"  {case['name']}: row 4", got, RATE_CASES[case["name"]])
 
 
 #: What the **period** card's `lean` keeps — `PeriodBlock.leanKeys` on iOS and
 #: `library.PERIOD_LEAN_KEYS` in the analyzer, spelled here so the JavaScript is checked
 #: against a third copy of the rule rather than against itself.
 PERIOD_LEAN_KEYS = ["sessions", "hours", "cleanJibes", "cph", "best2s"]
-
-#: What `card_parity.mjs` last dumped, so `check_period_card` can read it without a second
-#: node run. Empty when node is not on PATH, which is the same skip the session card takes.
-_CARD_DUMP: list[dict] = []
-
 
 def check_period_card() -> None:
     """The period card is the period's block, and its presets can only drop from it.
@@ -1405,10 +973,7 @@ def main(argv=None) -> int:
               "python3 web/tools/make_presentation_goldens.py", file=sys.stderr)
         return 1
 
-    check_shape()
-    check_rules()
-    check_flight_invariants()
-    check_flight_end_folding()
+    check_document_reads()
     check_consistency()
     if args.fast:
         _close_section()
@@ -1417,7 +982,6 @@ def main(argv=None) -> int:
     else:
         check_engine()
     check_card()
-    check_rate_row()
     check_card_text()
     check_period_card()
     check_outline_stack()

@@ -19,15 +19,18 @@ WHAT IT SCANS, and why each region rather than the whole file: a JavaScript file
 strings, and most of them are not labels. So every scan is anchored to the one shape that
 produces a label, the way the kit's lint scans `StatCard(title: "…")` in one file:
 
-  js/cardstats.js   `label:` in `keyMetricEntries` — the key-metrics block, which IS the
-                    share card (one list, two readers), so the card is scanned with it. A
-                    template literal's caption is cut at `CAPTION_SEP`: the caption is a
-                    qualifier ("of 55 jibes"), not a name.
   js/render.js      the session page's tiles (`k:`) and the takeoff block's rows
-  js/library.js     `ROW_METRICS`, the library row's cells
   js/trends.js      `renderTotals`, the Trends totals list
-  js/log.js         `RECORDS` and the counts in `divergences` — the watch-vs-phone banner,
-                    whose rows a rider reads beside the watch's own words
+
+  docs/copy/presentation.json
+                    `label`, `rowMetric` and `divergence` — the key-metrics block (which IS
+                    the share card), the library row's cells and the watch-vs-phone rows.
+                    Since ADR-033 round 3 the browser types none of those words: the
+                    document names an **id** and `js/presentation.js` resolves it here, so
+                    the file is what a rider actually reads and the file is what is linted.
+                    Three source scans retired with the literals they used to find — and a
+                    literal creeping back is caught by the scans that remain, because a
+                    label that is not resolved from copy has to be written somewhere.
 
 WHAT IT DOES NOT SCAN, deliberately:
 
@@ -94,20 +97,21 @@ ALLOWED = {
 #: a const to look inside — a JavaScript file is mostly strings, and only a few of them are
 #: names a rider reads under a number.
 SCANS = [
-    ("js/cardstats.js", "keyMetricEntries", r"label:\s*(\"[^\"]*\"|`[^`]*`)",
-     "the key-metrics block, and therefore the share card"),
     ("js/render.js", "renderSummary", r"\bk:\s*\"([^\"]*)\"",
      "a session-page tile"),
     ("js/render.js", "renderTakeoffs", r"\[\s*\"([^\"]*)\",",
      "a takeoff-block row"),
-    ("js/library.js", "ROW_METRICS", r"label:\s*\"([^\"]*)\"",
-     "a library row's cell"),
     ("js/trends.js", "renderTotals", r"\[\s*\"([^\"]*)\",",
      "a Trends totals row"),
-    ("js/log.js", "RECORDS", r"\[\s*\"([^\"]*)\",",
-     "a watch-vs-phone record row"),
-    ("js/log.js", "divergences", r"\[\s*\"([^\"]*)\",\s*watch\.",
-     "a watch-vs-phone count row"),
+]
+
+#: The copy groups the browser resolves a `labelId` into, and what each one names. Every
+#: value in them is a word a rider reads under a number (ADR-033, `docs/presentation/
+#: document.md`), so every value is linted exactly as a literal used to be.
+COPY_GROUPS = [
+    ("label", "the key-metrics block, and therefore the share card"),
+    ("rowMetric", "a library row's cell"),
+    ("divergence", "a watch-vs-phone row"),
 ]
 
 #: What `cardstats.js` hangs a cell's qualifier off. A caption is not a name: "of 55 jibes"
@@ -115,8 +119,10 @@ SCANS = [
 #: anything. Kept in step with `CAPTION_SEP` in js/cardstats.js and `KeyMetricsView`.
 CAPTION_SEP = " — "
 
-#: The divergence banner's one label that is not read out of an array literal.
-EXTRA = [("js/log.js", "Foil time", "the watch-vs-phone foil-time row")]
+#: The six speed records the watch-vs-phone table can name come from
+#: `tokens.recordWindow.<id>` (design/tokens.json), not from the copy file — there is one
+#: spelling of `Best 2 s` in the product and the legend chip owns it.
+EXTRA: list = []
 
 
 def labels_of(entry: dict) -> list:
@@ -215,6 +221,20 @@ def main(argv=None) -> int:
     for path, label, where in EXTRA:
         checked += 1
         seen.append((path, label, where, known(label, glossary)))
+
+    # The words the presentation document points at. The browser prints these and types
+    # none of them, so this is where the lint has to look since ADR-033 round 3.
+    copy = json.load(open(os.path.join(REPO, "docs", "copy", "presentation.json"),
+                          encoding="utf-8"))
+    for group, where in COPY_GROUPS:
+        values = copy.get(group) or {}
+        if not values:
+            problems.append("docs/copy/presentation.json has no %s group — was it renamed?"
+                            % group)
+        for label in values.values():
+            checked += 1
+            seen.append(("docs/copy/presentation.json", label, where,
+                         known(label, glossary)))
 
     for path, label, where, ok in seen:
         if not ok:

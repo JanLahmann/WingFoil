@@ -31,6 +31,8 @@ from wingfoil_lab.filters import hybrid_speed
 from wingfoil_lab.flightend import UNKNOWN
 from wingfoil_lab.goldens import analyze, build_golden
 from wingfoil_lab.parse import MPS_TO_KN
+from wingfoil_lab.presentation import (DEFAULT_SPEED_RECORD_POLICY, SPEED_RECORD_POLICIES,
+                                       build_presentation)
 from wingfoil_lab.turns import JIBE, TACK
 
 SCHEMA = 1
@@ -84,13 +86,19 @@ def _sniff(raw: bytes) -> str | None:
     return ".gpx" if b"<gpx" in window else None
 
 
-def analyze_bytes(data, name: str = "session.fit") -> dict:
+def analyze_bytes(data, name: str = "session.fit",
+                  policy: str = DEFAULT_SPEED_RECORD_POLICY) -> dict:
     """Recording bytes -> the full result document (plain Python dict).
 
     FIT, GPX (engine 0.9.0), TCX, or a zip holding exactly one of them. Which it is comes
     off the bytes, not the name: a browser hands us whatever the rider dragged in, and all
     three formats have unmistakable signatures — `.FIT` at byte 8, a `<gpx` root element, a
     `<TrainingCenterDatabase>` one.
+
+    `policy` is Settings → Speed records, the one rider choice `build_presentation` takes
+    (ADR-033). It is **not** the speed unit: the document carries raw knots and a
+    `unitKind`, which is what lets one document serve a rider reading knots and a rider
+    reading km/h.
     """
     raw = _as_bytes(data)
     inner = None
@@ -118,13 +126,22 @@ def analyze_bytes(data, name: str = "session.fit") -> dict:
         disc = discipline.resolve(a.track.capabilities.discipline)
         if disc is not discipline.Discipline.WINGFOIL:
             a = analyze(path, discipline=disc)
+        golden = build_golden(a)
+        meta = _meta(a, disc)
         return {
             "schema": SCHEMA,
             "engineVersion": ENGINE_VERSION,
             "file": {"name": inner or name, "bytes": len(raw),
                      "container": "zip" if inner else suffix.lstrip(".")},
-            "meta": _meta(a, disc),
-            "golden": build_golden(a),
+            "meta": meta,
+            "golden": golden,
+            # **Every rider-facing fact of this session, once** (ADR-033, round 3). The
+            # browser's renderers read this and derive nothing: the block, the card, the
+            # marks, the callouts, the strip and the banner are all formatting over it.
+            # It travels *inside* the analysis document rather than beside it so a session
+            # re-opened from the library redraws with no Pyodide and no network, which is
+            # the promise `openStoredSession` makes.
+            "presentation": presentation(golden, meta, policy),
             "view": _view(a),
         }
     finally:
@@ -133,9 +150,115 @@ def analyze_bytes(data, name: str = "session.fit") -> dict:
         os.rmdir(tmpdir)
 
 
-def analyze_json(data, name: str = "session.fit") -> str:
+def analyze_json(data, name: str = "session.fit",
+                 policy: str = DEFAULT_SPEED_RECORD_POLICY) -> str:
     """Same as `analyze_bytes`, serialized — the shape the worker posts to the UI."""
-    return json.dumps(analyze_bytes(data, name), allow_nan=False)
+    return json.dumps(analyze_bytes(data, name, policy), allow_nan=False)
+
+
+# -------------------------------------------------------------- the presentation document
+
+
+#: `DivergenceCheck.foilTimePctThreshold` / `.recordKnThreshold` / `.countThreshold`
+#: (ios/WingFoilKit/.../DivergenceCheck.swift, docs/algorithms/divergence.md). The browser
+#: had its own spelling of these three numbers in `web/js/log.js`; the check belongs beside
+#: the document it feeds, because the banner and the Log tab's table are two renderers of
+#: one line.
+DIVERGENCE_FOIL_TIME_PCT = 5.0
+DIVERGENCE_RECORD_KN = 0.3
+DIVERGENCE_COUNT = 1
+
+#: The six speed records the two devices both claim, in the kit's order. Their names come
+#: from `tokens.recordWindow.<id>`, so there is one spelling of `Best 2 s` in the product.
+DIVERGENCE_RECORDS = ["best2s", "best10s", "best5x10s", "best500m", "bestNm", "alpha500"]
+
+#: The five counts, in the kit's order. `takeoffs` rather than `takeoffSuccesses`: `success`
+#: is engine vocabulary and reaches no rider text (CLAUDE.md).
+DIVERGENCE_COUNTS = [
+    ("flights", "flightCount", ("flightCount",)),
+    ("tacks", "tackCount", ("turns", "tacks")),
+    ("jibes", "jibeCount", ("turns", "jibes")),
+    ("takeoffAttempts", "takeoffAttempts", ("takeoff", "takeoffAttempts")),
+    ("takeoffs", "takeoffSuccesses", ("takeoff", "takeoffSuccesses")),
+]
+
+
+def _dig(tree, path):
+    for key in path:
+        if not isinstance(tree, dict):
+            return None
+        tree = tree.get(key)
+    return tree
+
+
+def divergence_lines(golden: dict, watch: dict | None) -> list[dict]:
+    """Every watch-vs-phone disagreement worth a line, as the document spells one.
+
+    The Python twin of `DivergenceCheck.compare` and of `Divergence.documentLine`: ids and
+    **raw** values, never a sentence and never a formatted number (ADR-033, rules 1 and 2).
+    Empty for every recording without the watch's own session fields — which is a different
+    answer from "the two agree", and the caller tells them apart by whether `watch` was
+    there at all.
+    """
+    if not watch:
+        return []
+    summary = golden.get("summary", {})
+    records = golden.get("records", {})
+    out = []
+
+    watch_foil = watch.get("foilTimeS")
+    phone_foil = summary.get("foilTimeS")
+    if watch_foil and phone_foil is not None:
+        if abs(phone_foil - watch_foil) / watch_foil * 100 > DIVERGENCE_FOIL_TIME_PCT:
+            out.append({"metricId": "foilTime",
+                        "labelId": "presentation.divergence.foilTime",
+                        "watch": round(watch_foil, 1), "phone": round(phone_foil, 1),
+                        "unitKind": "durationS"})
+
+    for kind in DIVERGENCE_RECORDS:
+        w, p = watch.get(kind + "Kn"), records.get(kind + "Kn")
+        if not w or not p or w <= 0 or p <= 0:
+            continue
+        if abs(p - w) <= DIVERGENCE_RECORD_KN:
+            continue
+        out.append({"metricId": kind, "labelId": "tokens.recordWindow." + kind,
+                    "watch": round(w, 3), "phone": round(p, 3), "unitKind": "speedKn"})
+
+    for metric, watch_key, path in DIVERGENCE_COUNTS:
+        w, p = watch.get(watch_key), _dig(summary, path)
+        if w is None or p is None or abs(p - w) <= DIVERGENCE_COUNT:
+            continue
+        out.append({"metricId": metric, "labelId": "presentation.divergence." + metric,
+                    "watch": int(w), "phone": int(p), "unitKind": "count"})
+    return out
+
+
+def presentation(golden: dict, meta: dict | None = None,
+                 policy: str = DEFAULT_SPEED_RECORD_POLICY) -> dict:
+    """The presentation document for one analysis, with the banner's lines in it.
+
+    `build_presentation` is the lab's and is authoritative; the only thing added here is
+    the `divergence` argument, which an analysis cannot know because the watch's own
+    summary is not part of it.
+    """
+    if policy not in SPEED_RECORD_POLICIES:
+        policy = DEFAULT_SPEED_RECORD_POLICY
+    watch = (meta or {}).get("watch")
+    return build_presentation(golden, policy=policy,
+                              divergence=divergence_lines(golden, watch))
+
+
+def presentation_json(result_json: str,
+                      policy: str = DEFAULT_SPEED_RECORD_POLICY) -> str:
+    """A stored analysis document -> its presentation document, serialized.
+
+    The one door for a session saved before this round: its JSON carries no `presentation`
+    key, and the renderers need one. A session analysed since carries its own and never
+    comes through here.
+    """
+    result = json.loads(result_json)
+    return json.dumps(presentation(result.get("golden", {}), result.get("meta"), policy),
+                      allow_nan=False)
 
 
 # --------------------------------------------------------------------------- meta

@@ -80,8 +80,14 @@ def render() -> str:
 
     not_a_session = verdicts["notASession"]
     picked = {key: phrases[key] for key in ("promise", "callToAction", "captionOffer")}
-    # Three keys, in the JSON's own order, and anything else on an entry is left behind.
-    terms = [{key: entry[key] for key in ("id", "term", "line")}
+    # Five keys, in the JSON's own order, and anything else on an entry is left behind.
+    # `short` and `expansion` joined the three on 22 September 2026: the presentation
+    # document names a glossary word by id and the *cell* picks which of its lengths to
+    # print (`PresentationCopy.GlossaryForm`) — the rate row wants `JPH · dry jibes per
+    # hour`, the streaks pair wants `flew`. Both are still named rather than "whatever the
+    # entry happens to carry": the watch's cell budget and the store's sentence stay out of
+    # a browser bundle.
+    terms = [{key: entry[key] for key in ("id", "term", "short", "expansion", "line")}
              for entry in glossary["entries"]]
 
     return HEADER + (
@@ -105,7 +111,10 @@ def render() -> str:
         " * analyzer's `?` beside the key-metrics block opens.\n"
         " *\n"
         " * `id` is a slug that outlives a rewording, so it is what a caller keys on.\n"
-        " * Entries carry other fields in the JSON; only these three are copied here.\n"
+        " * `short` is the same word at the watch's width and `expansion` is what follows\n"
+        " * it after a middot where a rate is printed in full — the two lengths a\n"
+        " * presentation-document cell picks between (js/presentation.js). Entries carry\n"
+        " * other fields in the JSON; only these five are copied here.\n"
         " */\n"
         "export const GLOSSARY = %s;\n" % (js(not_a_session), js(picked), js(terms)))
 

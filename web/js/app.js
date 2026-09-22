@@ -8,7 +8,7 @@
 import { mountShell, noteEngine, offerWelcome, setSessionCount, showPage }
   from "./appshell.js";
 import { WHATS_NEW } from "./appcopy.js";
-import { onSettingsChange } from "./appsettings.js";
+import { onSettingsChange, speedRecords } from "./appsettings.js";
 import { mountIcu } from "./icu.js";
 import { mountLibrary, openStoredSession, refresh as refreshLibrary, saveSession }
   from "./library.js";
@@ -301,7 +301,7 @@ export async function analyzeFile(file, { isExample = false, source = "drop" } =
   // get there); this copy is what "Save to library" writes back out.
   const keep = buffer.slice(0);
   try {
-    const msg = await runAnalysis(buffer, name);
+    const msg = await runAnalysis(buffer, name, speedRecords());
     state.busy = false;
     showResult(JSON.parse(msg.json),
                { digest: JSON.parse(msg.digestJson), bytes: keep, isExample });

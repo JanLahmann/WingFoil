@@ -41,6 +41,7 @@ import {
    knots word, out of the one module that owns both words, rather than a literal that would
    look identical and mean nothing. */
 import { KNOTS, speed, speedNumber } from "./appsettings.js";
+import { captionText } from "./presentation.js";
 import { TOKENS } from "./tokens.js";
 // r3-w2:begin — the ground under the track, and the door that opens it full screen
 import {
@@ -123,16 +124,13 @@ const KIND_ORDER = ["jibes", "tacks", "aborted"];
  * and either of them hides it. A document written before 0.21.0 carries no flag, so the
  * chip counts nothing and is drawn as a caption.
  */
-function kindsOf(turn) {
+function kindsOf(entry) {
   const kinds = [];
-  if (turn.counted && turn.type === "jibe") kinds.push("jibes");
-  if (turn.counted && turn.type === "tack") kinds.push("tacks");
-  if (turn.aborted) kinds.push("aborted");
+  if (entry.counted && entry.typeId === "jibe") kinds.push("jibes");
+  if (entry.counted && entry.typeId === "tack") kinds.push("tacks");
+  if (entry.aborted) kinds.push("aborted");
   return kinds;
 }
-
-const OUTCOME_LAYER = { flew_through: "flewThrough", touchdown: "touchdown",
-                        fell_in: "fellIn", glide_out: "flewThrough" };
 
 /* --------------------------------------------------------------------- pairing
  *
@@ -182,48 +180,23 @@ const pairFailed = (strokes) => `no flight · ${plural(strokes, "stroke")}`;
 /* ------------------------------------------------------------------ wrist under
  *
  * One submersion episode, in the words the iOS callout uses (`SessionDetail.splashTitle` /
- * `splashDetail`), word for word — the same argument the pairing lines above make: two apps
- * wording the same fact differently is how a rider learns to trust one of them.
+ * `splashDetail`), word for word — because they are now literally the same words. The
+ * document carries `splash.marks[].title` and `.during` as copy **ids with arguments**
+ * (ADR-033, round 3), and both platforms resolve them out of docs/copy/presentation.json.
+ * This was the sharpest case in the whole round: the sentence was spelled three times —
+ * Swift, JavaScript, and a Python verifier whose only job was to stop the first two
+ * drifting.
  */
 
-/** "Wrist under · 4 s". The length is dropped rather than printed as "0 s" when the run is a
- *  single sample: at 1 Hz that is an instant the recorder caught once, and a zero would read
- *  as a measurement. */
-export const submersionTitle = (sub) =>
-  (Math.round(sub.durationS) >= 1 ? `Wrist under · ${nf(sub.durationS, 0)} s`
-                                  : "Wrist under");
-
-/** "jibe 7" — the rider's ordinal among the session's counted turns *of the same kind*, the
- *  numbering the turn sheet's title uses. His seventh jibe, not the seventh sweep found. */
-const TURN_WORD = { jibe: "jibe", tack: "tack", bear_away: "bear-away", round_up: "round-up" };
-
-function turnOrdinal(index, g) {
-  const turn = g.turns[index];
-  if (!turn || !turn.counted) return null;
-  const same = g.turns
-    .map((t, i) => ({ t, i }))
-    .filter(({ t }) => t.counted && t.type === turn.type);
-  const at = same.findIndex(({ i }) => i === index);
-  return at < 0 ? null : at + 1;
-}
+/** "Wrist under · 4 s" / "Wrist under". The length is dropped rather than printed as "0 s"
+ *  when the run is a single sample — the document decides that, by which id it names. */
+const splashTitle = (mark) => captionText(mark?.title) ?? "";
 
 /** What the episode happened *during*, in the engine's own attribution order: the turn whose
  *  outcome window owns it, else the flight end's, else neither — which is a real answer and
- *  says so. */
-export function submersionDuring(sub, g) {
-  if (sub.turnIndex !== null && sub.turnIndex !== undefined && g.turns[sub.turnIndex]) {
-    const kind = TURN_WORD[g.turns[sub.turnIndex].type] || "turn";
-    const n = turnOrdinal(sub.turnIndex, g);
-    return n === null ? `during a ${kind}` : `during ${kind} ${n}`;
-  }
-  const end = (sub.flightEndIndex === null || sub.flightEndIndex === undefined)
-    ? null : g.flightEnds[sub.flightEndIndex];
-  if (end) {
-    return `after flight ${end.flightIndex + 1} ended` +
-           (end.stoppedS >= 1 ? `, stopped ${nf(end.stoppedS, 0)} s` : "");
-  }
-  return "while off foil";
-}
+ *  says so. The ordinal in it is `turns.strip[].ordinal`, computed once so the callout and
+ *  the turn page's "3 of 14" cannot count differently. */
+const splashDuring = (mark) => captionText(mark?.during) ?? "";
 
 const pairEnd = (f) =>
   `ends flight ${f.index + 1} · started ${hms(f.startTs)}`
@@ -369,6 +342,12 @@ const highlightWindows = (h) => (h && Array.isArray(h.windows) ? h.windows : [])
  */
 function buildModel(result) {
   const v = result.view, g = result.golden, meta = result.meta;
+  // **The presentation document** (ADR-033, round 3): which chip a mark answers to, which
+  // straight-line ends get a hollow mark, the wrist-under callout's two sentences and the
+  // legend's counts are all read off it. The geometry stays `view`'s — where a mark sits
+  // on a projected track is drawing, and the document carries no pixels.
+  const doc = result.presentation;
+  const strip = doc?.turns?.strip || [];
   const flights = flightFacts(g);
   const marks = [];
   const positioned = v.count && v.hasPositions !== false && v.x.length === v.count;
@@ -381,24 +360,23 @@ function buildModel(result) {
   // --- turn outcomes (solid shapes) --------------------------------------------
   for (const m of v.turnMarkers) {
     const turn = g.turns[m.i];
-    const layer = m.counted && m.maneuver ? (OUTCOME_LAYER[m.outcome] || "courseChange")
-                                          : "courseChange";
-    // A CLEAN jibe is drawn as a star. Since engine 0.12.0 the rule is not re-derived
-    // here: the engine stores the verdict per turn (`counted && jibe && success &&
-    // flew_through`), which is what stopped a jibe from being starred on the map and
-    // listed as a swim in the table below it.
+    const entry = strip[m.i] || {};
+    // **Which chip this mark answers to is the document's** — `turns.strip[].layerId`,
+    // `cleanJibe` where the turn is clean and its outcome layer otherwise, and
+    // `courseChange` for an uncounted sweep whatever its outcome field says.
     //
-    // A star answers to ONE chip, `cleanJibe`, and a plain dot to its outcome's — the chips
-    // are independent (Jan, 5 Sep 2026), the same rule as the iOS `EventMarker.layers`.
-    // Since engine 0.12.0 every clean jibe flew through, so the star is simply its own
-    // category of mark: hide "flew through" and the dots go while the stars stay.
+    // A star answers to ONE chip and a plain dot to its outcome's — the chips are
+    // independent (Jan, 5 Sep 2026), the same rule as the iOS `EventMarker.layers`. Since
+    // engine 0.12.0 every clean jibe flew through, so the star is simply its own category
+    // of mark: hide "flew through" and the dots go while the stars stay.
     const clean = !!turn.clean;
+    const layer = clean ? "flewThrough" : (entry.layerId || "courseChange");
     marks.push({
-      layer, layers: clean ? ["cleanJibe"] : [layer],
+      layer, layers: [entry.layerId || "courseChange"],
       // The kind chips, and the turn this mark IS. `ti` is what lets the row in the Turns
       // table below be hidden by the same predicate as the dot on the map, so a row and a
       // dot can never disagree about whether the rider is looking at that turn.
-      kinds: kindsOf(turn), ti: m.i,
+      kinds: kindsOf(entry), ti: m.i,
       t: m.t, x: m.x, y: m.y, kn: m.kn, style: turnStyle({ ...m, clean }), n: m.n,
       title: `#${m.n} ${m.kind}${m.counted ? "" : " (not counted)"}`,
       tip: `<b>#${m.n} ${clockAt(meta, m.t)}</b> — ${esc(m.kind)}<br>` +
@@ -436,11 +414,18 @@ function buildModel(result) {
   // --- straight-line flight ends (hollow squares) -------------------------------
   // Same ladder as the turns, hollow instead of solid: the fill is the channel, so these
   // answer to the outcome chips rather than to one of their own.
-  for (const e of v.endMarkers.filter((x) => x.drawOnMap)) {
-    const end = g.flightEnds[e.i];
-    const flight = flights[e.flightIndex];
+  // **Which ends are drawn is the document's** — `flightEnds.marks`, one entry per end no
+  // turn owns from a recording that did not simply stop mid-flight, each carrying the rung
+  // of the ladder it folds into (a `glide_out` is a `flewThrough`). The browser used to
+  // re-derive that from `drawOnMap`; the geometry is still `view`'s, keyed by index.
+  const endGeometry = new Map(v.endMarkers.map((e) => [e.i, e]));
+  for (const mark of doc?.flightEnds?.marks || []) {
+    const e = endGeometry.get(mark.index);
+    if (!e) continue;
+    const end = g.flightEnds[mark.index];
+    const flight = flights[mark.flightIndex];
     marks.push({
-      layer: OUTCOME_LAYER[e.outcome] || "flewThrough", t: e.t, x: e.x, y: e.y,
+      layer: mark.outcomeId, t: e.t, x: e.x, y: e.y,
       kn: e.kn ?? traceKn(v, e.t), style: endStyle(e), n: null,
       pairing: flight ? pairEnd(flight) : null,
       title: `Flight ${e.flightIndex + 1} ends · straight line`,
@@ -514,17 +499,17 @@ function buildModel(result) {
   // *flag* on a turn or a flight end instead — one mark per maneuver that owned a dunk, at
   // the maneuver's own start, which is how an afternoon with 35 of them showed four.
   // Still evidence and not a census: the barometer has to see the step.
-  for (const sub of g.submersions || []) {
-    const p = at(sub.ts);
+  for (const mark of doc?.splash?.marks || []) {
+    const p = at(mark.ts);
+    const title = splashTitle(mark), during = splashDuring(mark);
     marks.push({
-      layer: "splash", t: sub.ts, x: p.x, y: p.y, kn: traceKn(v, sub.ts),
+      layer: "splash", t: mark.ts, x: p.x, y: p.y, kn: traceKn(v, mark.ts),
       style: { shape: TOKENS.glyphs.splash.webShape, color: C.splash }, n: null,
-      title: submersionTitle(sub),
-      tip: `<b>${clockAt(meta, sub.ts)}</b> — ${submersionTitle(sub).toLowerCase()}<br>` +
-           esc(submersionDuring(sub, g)),
-      rows: [["time", time(sub.ts)], ["evidence", "barometer saw the wrist go under"],
-             ["under for", `${nf(sub.durationS, 0)} s`],
-             ["during", submersionDuring(sub, g)]],
+      title,
+      tip: `<b>${clockAt(meta, mark.ts)}</b> — ${title.toLowerCase()}<br>${esc(during)}`,
+      rows: [["time", time(mark.ts)], ["evidence", "barometer saw the wrist go under"],
+             ["under for", `${nf(mark.durationS, 0)} s`],
+             ["during", during]],
     });
   }
 
@@ -539,7 +524,7 @@ function buildModel(result) {
     .map((ep) => ({ t0: ep.startTs, t1: ep.endTs, strokes: ep.strokes, outcome: ep.outcome,
                     bursts: ep.bursts }));
 
-  return { v, g, meta, marks, pumpSpans, positioned, flights,
+  return { v, g, doc, meta, marks, pumpSpans, positioned, flights,
            // Turn index -> its mark, so the Turns table can ask the one filter question
            // without re-deriving a single rule of it (`turnRowVisible`).
            turnMarks: new Map(marks.filter((mk) => mk.ti !== undefined)
@@ -547,23 +532,39 @@ function buildModel(result) {
            phase: positioned ? phaseRuns(v, v.flights) : [] };
 }
 
-/** How many marks/spans a layer has in this document — the input to "is this chip a
- *  control or just a caption?" (iOS: `layerTally`). */
+/**
+ * How many marks/spans a layer has in this session — the number beside a chip, and the
+ * input to "is this chip a control or just a caption?".
+ *
+ * **The rule, settled for both platforms** (ADR-033, round 3,
+ * docs/presentation/document.md, "the legend's counts"): the count is the **analysis
+ * count**, `turns.legend[].count`, which is what the iPhone's `layerTally` has always shown
+ * and what every presentation golden already pins. A mark the recording could not place —
+ * a Doppler-only source has no track at all — is drawn nowhere and still counted, because
+ * what the chip names is what the afternoon held, not what this figure managed to plot.
+ * The alternative, counting what is drawn, would make one afternoon count differently
+ * depending on the file it arrived in (docs/review-checklist.md, pattern L: one number, one
+ * meaning).
+ *
+ * The four **line** layers carry `count: null` in the document — a line has nothing to be a
+ * tally of — so the browser supplies its own: a chip is live when there is a line to hide.
+ * The three **kind** chips are the browser's own too (the phone has no kind filter on its
+ * map, docs/screens.md deviation 20), counted off the strip.
+ */
 function tally(model, highlight) {
   const counts = {};
   for (const id of MARK_ORDER) counts[id] = 0;
   for (const id of KIND_ORDER) counts[id] = 0;
-  // Counted per *chip*, not per mark: a clean jibe answers to two, so it is one on the
-  // ladder's chip and one on the star's — which is what makes both chips live toggles.
-  // The kind chips are counted the same way, which is why an aborted jibe is one on the
-  // `jibes` chip and one on `aborted`.
+  for (const chip of model.doc?.turns?.legend || []) {
+    if (chip.count !== null && chip.count !== undefined) counts[chip.layerId] = chip.count;
+  }
+  // An aborted jibe is one on the `jibes` chip and one on `aborted`: a turn answers to its
+  // kind and to the flag, and either of them hides it.
   for (const mk of model.marks) {
-    for (const id of mk.layers || [mk.layer]) counts[id] = (counts[id] || 0) + 1;
     for (const id of mk.kinds || []) counts[id] = (counts[id] || 0) + 1;
   }
   counts.flying = model.v.flights.length;
   counts.offFoil = model.v.count ? 1 : 0;
-  counts.pumping = model.pumpSpans.length;
   counts.effort = highlightWindows(highlight).length;
   // Counted as "is there a track to point along", not as chevrons drawn: how many arrows
   // fit is a question about the camera, and the chip has to be live or inert before

@@ -8,116 +8,84 @@
  *
  * GEAR is `js/gear.js`'s to draw; this file only says which session it is for.
  *
- * WATCH VS PHONE is the kit's `DivergenceCheck`, in the browser. Its thresholds are the
- * kit's to the digit (foil time over 5 %, any speed record over 0.3 kn, a count off by more
- * than one) and its advice is the kit's sentence for sentence. The watch's own numbers
- * reach the page as `meta.watch`, which `lab_bundle/web_entry.py` reads out of the session's
- * developer fields; a recording that carries none has nothing to compare and the block is
- * ABSENT, never a table of zeroes (docs/presentation.md, missing is absent).
+ * WATCH VS PHONE is the kit's `DivergenceCheck`, **read off the presentation document**
+ * (ADR-033, round 3). The check itself runs once, in `lab_bundle/web_entry.py`, against the
+ * watch's own session fields; the thresholds and the metric set are the kit's to the digit
+ * and live there. What is left here is the kit's `DivergenceText`: a line is `{metricId,
+ * labelId, watch, phone, unitKind}` — ids and **raw** values — and this turns it into a
+ * name, two numbers in the rider's unit and the signed difference. A recording that carries
+ * no watch summary has nothing to compare and the block is ABSENT, never a table of zeroes
+ * (docs/presentation.md, missing is absent).
  *
- * Nothing here derives a metric. Both sides of every row are printed as they arrived: the
- * watch's from the FIT, the phone's from the analysis document.
+ * Nothing here derives a metric, and since round 3 nothing here derives a threshold either.
  */
 
 import { speed, speedUnit, speedValue } from "./appsettings.js";
 import { renderSessionGear } from "./gear.js";
+import { text } from "./presentation.js";
 import { esc } from "./render.js";
 
 const el = (id) => document.getElementById(id);
 
-/* --------------------------------------------------------- the divergence thresholds */
-
-/** `DivergenceCheck.foilTimePctThreshold` (ios/WingFoilKit/.../DivergenceCheck.swift). */
-const FOIL_TIME_PCT = 5.0;
-/** `DivergenceCheck.recordKnThreshold` — in KNOTS, whatever unit the table prints. */
-const RECORD_KN = 0.3;
-/** `DivergenceCheck.countThreshold`. */
-const COUNT = 1;
-
-/** The six speed records the two devices both claim, in the kit's order and its words. */
-const RECORDS = [
-  ["Best 2 s", "best2sKn", "best2sKn"],
-  ["Best 10 s", "best10sKn", "best10sKn"],
-  ["Best 5×10 s", "best5x10sKn", "best5x10sKn"],
-  ["Best 500 m", "best500mKn", "best500mKn"],
-  ["Best 1 NM", "bestNmKn", "bestNmKn"],
-  ["Alpha 500", "alpha500Kn", "alpha500Kn"],
-];
-
-/** `mm:ss`, the kit's `DivergenceCheck.seconds`. */
-function clock(seconds) {
-  const total = Math.round(seconds);
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
-}
+/* ------------------------------------------------------------------ the banner's words */
 
 const signed = (value, digits = 0) =>
   `${value >= 0 ? "+" : "-"}${Math.abs(value).toFixed(digits)}`;
 
-/**
- * Every disagreement worth a row, as the kit finds them.
+/** One side of a row, in the unit the rider reads — `DivergenceText.value`.
  *
- * `watch` is `meta.watch`; `golden` is the analysis document's own golden. An empty list
- * means the two agree, which is a different answer from having nothing to compare — the
- * caller tells them apart by whether `watch` was there at all.
- */
-export function divergences(watch, golden) {
-  if (!watch || !golden) return [];
-  const out = [];
-  const summary = golden.summary || {};
-  const records = golden.records || {};
-
-  if (typeof watch.foilTimeS === "number" && watch.foilTimeS > 0
-      && typeof summary.foilTimeS === "number") {
-    const drift = (summary.foilTimeS - watch.foilTimeS) / watch.foilTimeS * 100;
-    if (Math.abs(drift) > FOIL_TIME_PCT) {
-      out.push({ metric: "Foil time", watch: clock(watch.foilTimeS),
-                 phone: clock(summary.foilTimeS), delta: `${signed(drift)} %` });
-    }
+ *  Foil time is `m:ss`, which is the banner's own spelling and deliberately not the block's
+ *  `10:45 min`: this is a *duration measured by two devices*, which is what the table is
+ *  comparing, rather than the session clock. */
+function value(raw, unitKind) {
+  if (unitKind === "durationS") {
+    const total = Math.round(raw);
+    return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
   }
-
-  for (const [label, watchKey, phoneKey] of RECORDS) {
-    const w = watch[watchKey];
-    const p = records[phoneKey];
-    if (typeof w !== "number" || typeof p !== "number" || w <= 0 || p <= 0) continue;
-    if (Math.abs(p - w) <= RECORD_KN) continue;
-    // The threshold is in knots; the row is in the unit this browser reads. Converting the
-    // gap rather than the threshold keeps the rule the kit's and the print the reader's.
-    const gap = speedValue(p) - speedValue(w);
-    out.push({ metric: label, watch: speed(w), phone: speed(p),
-               delta: `${signed(gap, 2)} ${speedUnit()}` });
-  }
-
-  const counts = [
-    ["Flights", watch.flightCount, summary.flightCount],
-    ["Tacks", watch.tackCount, summary.turns?.tacks],
-    ["Jibes", watch.jibeCount, summary.turns?.jibes],
-    ["Takeoff attempts", watch.takeoffAttempts, summary.takeoff?.takeoffAttempts],
-    // **"Takeoffs", not "Takeoff successes"** (20 September 2026, `DivergenceCheck`). A
-    // banner row is read beside the watch's own word for the same count, and `success` is
-    // engine vocabulary that reaches no rider text (CLAUDE.md). `advice` below still reads
-    // the prefix, which both takeoff rows keep.
-    ["Takeoffs", watch.takeoffSuccesses, summary.takeoff?.takeoffSuccesses],
-  ];
-  for (const [label, w, p] of counts) {
-    if (typeof w !== "number" || typeof p !== "number") continue;
-    if (Math.abs(p - w) <= COUNT) continue;
-    out.push({ metric: label, watch: String(w), phone: String(p), delta: signed(p - w) });
-  }
-  return out;
+  if (unitKind === "speedKn") return speed(raw);
+  return String(Math.round(raw));
 }
+
+/**
+ * The signed difference, **in the unit the difference is interesting in** —
+ * `DivergenceText.delta`, and the one judgement the document deliberately leaves here.
+ *
+ * A percentage for foil time (five minutes on an hour is not five minutes on four), the
+ * rider's speed unit for a record, a plain signed integer for a count.
+ */
+function delta(line) {
+  const change = line.phone - line.watch;
+  if (line.unitKind === "durationS") {
+    return line.watch > 0 ? `${signed(change / line.watch * 100)} %` : "—";
+  }
+  if (line.unitKind === "speedKn") {
+    return `${signed(speedValue(line.phone) - speedValue(line.watch), 2)} ${speedUnit()}`;
+  }
+  return signed(Math.round(change));
+}
+
+/** One document line as the table prints it. */
+const row = (line) => ({
+  metric: text(line.labelId) ?? line.metricId,
+  watch: value(line.watch, line.unitKind),
+  phone: value(line.phone, line.unitKind),
+  delta: delta(line),
+});
 
 /**
  * The advice under the table, the kit's `DivergenceDetailCard.advice`.
  *
  * The takeoff-only case earns the calmer ending: the watch counts attempts live on a wrist
  * and the phone reads the whole session back afterwards, so those two are expected to
- * differ in a way a speed is not.
+ * differ in a way a speed is not. It reads the **metric ids**, not the printed names, which
+ * is `DivergenceText.isTakeoffOnly` and is why a renamed column cannot change the sentence.
  */
-function advice(rows) {
+function advice(lines) {
   const base = "Trust the phone's numbers. It reads the whole session back afterwards. "
     + "The watch has to work these out live on your wrist, as you ride. "
     + "Nothing is wrong with your session.";
-  const takeoffOnly = rows.length > 0 && rows.every((r) => r.metric.startsWith("Takeoff"));
+  const takeoffOnly = lines.length > 0 && lines.every(
+    (l) => l.metricId === "takeoffs" || l.metricId === "takeoffAttempts");
   return takeoffOnly
     ? base + " Takeoff and pump counting is where the two differ most. "
       + "Keep the watch app up to date to narrow the gap."

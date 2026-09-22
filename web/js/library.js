@@ -11,12 +11,13 @@
  */
 
 import { ask, askBytes } from "./rpc.js";
-import { speed } from "./appsettings.js";
+import { speed, speedRecords } from "./appsettings.js";
 // r3-w1: a delete leaves a tombstone, with the recording that made it. Settings → Deleted
 // sessions is the way back (ios/WingFoil/Features/Import/ReAddDeletedSheet.swift).
 import { keepTombstone } from "./deleted.js";
 import { sportCorrected } from "./cardstats.js";
 import { NOT_A_SESSION } from "./copy.js";
+import { text } from "./presentation.js";
 import { esc, hms, int, nf, pct, sessionDate, zonedFormat } from "./render.js";
 import { askRider } from "./rider.js";
 import {
@@ -178,22 +179,30 @@ const shortDate = (e) => {
  * **What a row cell can be, each under its own word** — the browser's half of `RowMetric`
  * in the kit, keyed by the same ids so the two lists can only drift in one direction.
  *
- * The words are the kit's, character for character, because one wording per metric is the
- * rule across iOS and web (docs/presentation/labels.md, "Label table") and `verify_glossary.py`
- * holds every one of them to `docs/copy/glossary.json`. The value is a field of the Python
- * digest, printed — nothing here derives a metric, and the speed is only put into the unit
- * this browser reads (js/appsettings.js).
+ * **The words come from `presentation.rowMetric.<id>`**, which is where the phone's
+ * `RowMetric.labelId` points too (ADR-033) — one wording per metric across iOS and web
+ * (docs/presentation/labels.md, "Label table"). They used to be four literals retyped here
+ * and held to the kit by `verify_glossary.py`; the copy file is the one home now.
+ *
+ * **The numbers stay on the digest**, and that is round 2's decision restated rather than
+ * an omission: a library row reads the session *index*, which holds no analysis and
+ * therefore no presentation document. The row also draws whichever three of eleven metrics
+ * the rider chose, while `row.slots` carries the default three. Nothing here derives a
+ * metric — the value is a field of the Python digest, printed, and the speed is only put
+ * into the unit this browser reads (js/appsettings.js).
  *
  * **`falls` is every fall of the session**, in a turn or in a straight line: `wetExits`,
  * the flight-end channel WPH divides, and not the turn ladder's fell-in count. The ladder's
  * is a share of the jibes and only reads right beside its other two rungs, which the row's
  * foot already draws (docs/algorithms/rates.md, "Wet is every fall, not every fallen jibe").
  */
+const rowLabel = (id) => text(`presentation.rowMetric.${id}`) ?? id;
+
 const ROW_METRICS = {
-  foilShare: { label: "foil", value: (e) => pct(e.foilPct) },
-  jibes: { label: "jibes", value: (e) => int(e.turns?.jibes) },
-  best2s: { label: "best 2 s", value: (e) => speed(e.records?.best2sKn) },
-  falls: { label: "fell in", value: (e) => int(e.wetExits) },
+  foilShare: { label: rowLabel("foilShare"), value: (e) => pct(e.foilPct) },
+  jibes: { label: rowLabel("jibes"), value: (e) => int(e.turns?.jibes) },
+  best2s: { label: rowLabel("best2s"), value: (e) => speed(e.records?.best2sKn) },
+  falls: { label: rowLabel("falls"), value: (e) => int(e.wetExits) },
 };
 
 /**
@@ -350,10 +359,27 @@ async function onRowClick(ev) {
   }
 }
 
-/** The stored analysis document for one session. Parsing it is all it takes to redraw the
- *  whole report — no FIT decode, no Pyodide, works with the CDN unreachable. */
+/**
+ * The stored analysis document for one session. Parsing it is all it takes to redraw the
+ * whole report — no FIT decode, no Pyodide, works with the CDN unreachable.
+ *
+ * That promise is why the **presentation document travels inside the stored JSON** (ADR-033,
+ * round 3) rather than beside it: every renderer on the session page reads it, and a page
+ * that had to wait for Python to draw a block a rider already saved would be a page that
+ * cannot be opened on a beach.
+ *
+ * A session saved before round 3 carries none, so one is built — the single case that does
+ * need the runtime, and the one this falls back to rather than drawing a report with holes
+ * in it. Re-saving the session writes a document beside it for good.
+ */
 export async function openStoredSession(id) {
-  return JSON.parse(await getAnalysisJson(id));
+  const result = JSON.parse(await getAnalysisJson(id));
+  if (!result.presentation) {
+    result.presentation = await ask("presentation",
+                                    { json: JSON.stringify(result),
+                                      policy: speedRecords() });
+  }
+  return result;
 }
 
 const stem = (name) => String(name).replace(/\.(fit|zip)$/i, "");
