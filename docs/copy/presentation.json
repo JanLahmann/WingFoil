@@ -5,18 +5,18 @@
     "`docs/presentation/document.md` is the schema. The document carries no rider sentence:",
     "every label and every caption in it is an ID plus the arguments the sentence",
     "interpolates, and this file is where the ids that are not already somewhere else are",
-    "resolved. The three other namespaces a `labelId` may use:",
+    "resolved. The four other namespaces a `labelId` may use:",
     "",
     "  glossary.<id>              docs/copy/glossary.json — the nineteen words",
     "  tokens.recordWindow.<id>   design/tokens.json recordWindows.order[].label",
     "  tokens.layer.<id>          design/tokens.json layers[].label",
     "  verdicts.notASession.*     docs/copy/verdicts.json",
     "",
-    "HAND-AUTHORED, like the Strava sentence and the lexicon (docs/copy/README.md, \"The",
-    "contract\"). A regeneration of the kit-owned files leaves it alone. The strings are the",
-    "ones the iOS kit and web/js already print, character for character; round 3 of \"one",
-    "presentation document\" is when the renderers start reading them from here instead of",
-    "from their own literals (ADR-033).",
+    "KIT-OWNED since round 2 of ADR-033: the author is `PresentationCopy` in the kit, which",
+    "is what prints these, and this file is the artefact. Regenerate it with",
+    "COPY_WRITE=1 swift test --filter CopyContractTests. It was hand-authored here in round",
+    "1, which was the right file and the wrong author — the copy contract's rule is that the",
+    "kit authors anything the app says (docs/copy/README.md, \"The contract\").",
     "",
     "`label` is the word under the number. `caption` is the small line under a cell, and",
     "carries `{placeholders}` naming the document's own caption arguments. A caption with",
@@ -25,9 +25,34 @@
     "`turnKind` is the rider's word for a kind of sweep, which the wrist-under callout",
     "interpolates; `rowMetric` is the library row's own short spelling of a metric, which",
     "is deliberately shorter than the glossary term because it sits under a value in",
-    "caption type beside two others."
+    "caption type beside two others.",
+    "",
+    "`divergence` names the six watch-vs-phone metrics that have no other home — the other",
+    "six the check reports are speed records and are named by tokens.recordWindow.<id>.",
+    "`banner` is the one sentence the renderer BUILDS rather than names, like turnKind."
   ],
-  "schema": 1,
+  "banner": {
+    "divergence": "Watch and phone disagree on {metrics}",
+    "divergenceMore": "{first} and {rest} more",
+    "divergencePair": "{first} and {second}"
+  },
+  "caption": {
+    "fallsSplit": "{inTurn} in a turn · {straight} in a straight line",
+    "ofJibes": "of {jibes} jibes · {clean} clean",
+    "ofTacks": {
+      "one": "of 1 tack",
+      "other": "of {tacks} tacks"
+    },
+    "ofTurns": "of {turns} turns"
+  },
+  "divergence": {
+    "flights": "Flights",
+    "foilTime": "Foil time",
+    "jibes": "Jibes",
+    "tacks": "Tacks",
+    "takeoffAttempts": "Takeoff attempts",
+    "takeoffs": "Takeoffs"
+  },
   "label": {
     "alpha500": "alpha 500",
     "avgSpeed": "avg speed",
@@ -51,21 +76,13 @@
     "jibes": "jibes",
     "turns": "turns"
   },
+  "schema": 1,
   "turnKind": {
     "bearAway": "bear-away",
     "jibe": "jibe",
     "roundUp": "round-up",
     "tack": "tack",
     "turn": "turn"
-  },
-  "caption": {
-    "fallsSplit": "{inTurn} in a turn · {straight} in a straight line",
-    "ofJibes": "of {jibes} jibes · {clean} clean",
-    "ofTacks": {
-      "one": "of 1 tack",
-      "other": "of {tacks} tacks"
-    },
-    "ofTurns": "of {turns} turns"
   },
   "wristUnder": {
     "afterFlight": "after flight {flight} ended",
