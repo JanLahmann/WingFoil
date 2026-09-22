@@ -617,6 +617,28 @@ function drawFitted(ctx, text, x, y, maxWidth, size, weight, family, color) {
   return s;
 }
 
+/**
+ * `text` as one line, or two, whichever it takes to fit `maxWidth` at `size` without
+ * `fitSize`'s shrink (22 September 2026, twin of the two-line caption budget in
+ * `ShareCardView`). The falls cell's split ("15 in a turn · 10 in a straight line") is the
+ * block's longest caption, and at the dense four-column layout `fitSize`'s floorless shrink
+ * had nowhere left to go but illegible. Splits at the space nearest the middle — which for
+ * `fallsSplit` lands close to the "·" — rather than mid-word. Every shorter caption already
+ * fits on one line at `size` and this returns it unsplit.
+ */
+function wrapCaption(ctx, text, maxWidth, size, weight, family) {
+  ctx.font = `${weight} ${size}px ${family}`;
+  if (ctx.measureText(text).width <= maxWidth) return [text];
+  const mid = text.length / 2;
+  let breakAt = -1, closest = Infinity;
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] !== " ") continue;
+    const d = Math.abs(i - mid);
+    if (d < closest) { closest = d; breakAt = i; }
+  }
+  return breakAt < 0 ? [text] : [text.slice(0, breakAt), text.slice(breakAt + 1)];
+}
+
 /* ------------------------------------------------------------------ the pieces */
 
 function drawBackground(ctx, w, h) {
@@ -698,12 +720,19 @@ function gridMetrics(stats, shape) {
     labelSize: dense ? 7.5 : 9,
     valueSize: dense ? 16 : 21,
     captionSize: dense ? 7 : 8.5,
+    /** The second caption line's baseline gap — tighter than the `+ 4` above the first
+     *  line, the way a wrapped line always sits closer to the one above it than to the
+     *  value it is a caption of. */
+    captionLineGap: 2,
     // Uniform, so the grid is a grid: the caption line is reserved on every cell even
     // though only two of them have one (the tally, and the falls cell's split since 20
     // September 2026). Sized to the tallest content (label + value + caption + descender)
     // and no more — every point spent here is a point the track, which is what the picture
-    // is about, does not get.
-    cellH: dense ? 45 : 56,
+    // is about, does not get. The dense count carries a second caption line's worth (22
+    // September 2026): the falls cell's split no longer fits one line at four columns, and
+    // the reservation is uniform across every dense cell for the same reason the first
+    // line's is, whether or not that cell's own caption needs it.
+    cellH: dense ? 54 : 56,
   };
 }
 
@@ -715,6 +744,7 @@ function gridHeight(stats, shape) {
 
 function drawGrid(ctx, stats, box, shape, family, mapped = false) {
   const m = gridMetrics(stats, shape);
+  const dense = isDense(stats);
   const cellW = (box.w - m.gap * (m.cols - 1)) / m.cols;
   stats.forEach((stat, i) => {
     const cx = box.x + (i % m.cols) * (cellW + m.gap);
@@ -741,8 +771,17 @@ function drawGrid(ctx, stats, box, shape, family, mapped = false) {
       // card is a PNG — a caption that runs out of its cell is permanent, where a point of
       // type size is only small.
       y += m.captionSize + 4;
-      drawFitted(ctx, caption, cx + m.padH, y, inner, m.captionSize, 400, family,
-                 alpha(BRAND.paper, 0.6));
+      // Two lines at the dense (four-column) layout, the falls cell's own reason
+      // (22 September 2026) — see `wrapCaption` and `gridMetrics.cellH`. Every shorter
+      // caption comes back as one line and draws exactly as it always did.
+      const lines = dense
+        ? wrapCaption(ctx, caption, inner, m.captionSize, 400, family)
+        : [caption];
+      lines.forEach((line, i) => {
+        if (i > 0) y += m.captionSize + m.captionLineGap;
+        drawFitted(ctx, line, cx + m.padH, y, inner, m.captionSize, 400, family,
+                   alpha(BRAND.paper, 0.6));
+      });
     }
   });
 }

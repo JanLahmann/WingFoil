@@ -460,10 +460,20 @@ struct ShareCardView: View {
                         .minimumScaleFactor(0.8)
                     value(of: stat)
                     if let caption = stat.caption {
+                        // Two lines, not one (22 September 2026): the falls tile's caption
+                        // ("15 in a turn · 10 in a straight line") is the longest in the
+                        // block, and at the dense four-column layout it no longer fits
+                        // `.lineLimit(1)` even at the scale floor — it truncated. The card
+                        // adds nothing and rewords nothing (see the type's own doc above),
+                        // so the fix is room to wrap rather than a shorter word; every
+                        // other caption is short enough that this is a no-op for it. A
+                        // `LazyVGrid` sizes a row to its tallest cell, so a two-line falls
+                        // caption grows the row it is in and every cell beside it grows
+                        // with it — the row stays level, it is simply taller.
                         Text(caption)
                             .font(.system(size: isDense ? 7 : 9))
                             .foregroundStyle(Brand.paper.opacity(0.6))
-                            .lineLimit(1)
+                            .lineLimit(2)
                             .minimumScaleFactor(0.7)
                     }
                 }

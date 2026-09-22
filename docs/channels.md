@@ -146,7 +146,7 @@ c through GPX and TCX as well. The app's `sourceClass` column is the source of t
 | Replay clips with the rider's own music | release | |
 | Session video export (the film) | beta | |
 | Send a session to a friend, sessions someone else rode | release | the scrubbed original FIT through the share sheet |
-| Send a session to the developer | beta | Share → *Send this session to the developer*, 21 Sep 2026. A comment field, a consent sentence, and the ordinary feedback-mail path carrying the **archived original** unscrubbed plus this session's headline numbers and any watch-vs-phone rows. `#if BETA` in the app, so the release build has no row, no sheet and no attachment path; the help topic is bound to `.beta` and never reaches the release index. Before release: **rule 1** on ten mails from two riders, and a decision about what the unscrubbed file may carry that the scrubbed one may not (docs/analytics.md) |
+| Send a session to the developer | beta | Share → *Send this session to the developer*, 21 Sep 2026. A comment field, a consent sentence, and the ordinary feedback-mail path carrying the **archived original, scrubbed** (22 Sep 2026, `FitShareFilter`, same rule the friend's share uses) plus this session's headline numbers and any watch-vs-phone rows. `#if BETA` in the app, so the release build has no row, no sheet and no attachment path; the help topic is bound to `.beta` and never reaches the release index. The "decide before release" item is decided — scrub (docs/analytics.md). Before release: **rule 1** on ten mails from two riders |
 
 ### Watches
 

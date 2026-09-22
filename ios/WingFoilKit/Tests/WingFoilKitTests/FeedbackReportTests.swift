@@ -275,7 +275,7 @@ import Testing
     /// the mails about one session, and the build is under the rule with the rest.
     @Test func theAnalysisSubjectNamesTheSession() {
         #expect(SessionAnalysisMail.subject(date: "30 August 2026")
-                == "CleanJibe session 30 August 2026 \u{2014} for analysis")
+                == "CleanJibe session 30 August 2026 \u{00B7} for analysis")
     }
 
     /// The rider's half first, then what he is agreeing to, then the rule. Asserted by
@@ -307,15 +307,17 @@ import Testing
         #expect(lines[3] == SessionAnalysisMail.consent)
     }
 
-    /// The consent sentence says three things and no more: what is in the file, what it is
-    /// for, and what will not happen to it. It is the sentence the sheet shows above the
-    /// button, so the screen and the mail cannot say different things.
+    /// The consent sentence says four things and no more: what is in the file, what was
+    /// taken out of it, what it is for, and what will not happen to it. It is the sentence
+    /// the sheet shows above the button, so the screen and the mail cannot say different
+    /// things.
     @Test func theConsentSentenceSaysWhatIsInTheFile() {
         let consent = SessionAnalysisMail.consent
         #expect(consent.contains("track"))
         #expect(consent.contains("heart rate"))
+        #expect(consent.contains("stripped of your watch's serial number and profile"))
         #expect(consent.contains("never published"))
-        #expect(consent.split(separator: ".").count == 3)
+        #expect(consent.split(separator: ".").count == 4)
     }
 
     /// The same fact sheet the feedback mail prints, plus this session's headline numbers

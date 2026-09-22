@@ -223,8 +223,17 @@ public enum PresentationDocument {
             // The engine reports km/h for this one number and every other speed in both
             // apps is a knot, so it is converted rather than printed beside a column of
             // knots. The *unit on screen* is still the renderer's.
+            //
+            // `avgSpeedKmh` itself carries only 2 decimal places — right for a km/h column,
+            // but a digit short before the knot conversion even starts. `distanceKm` and
+            // `timerTimeS` are the same division's two halves, each already at the
+            // document's own convention precision, so re-deriving from them is the raw
+            // value at full precision rather than a knot rounded twice. Twin of the lab's
+            // `_block`.
             cell("avgSpeed", "presentation.label.avgSpeed",
-                 value: number(summary.avgSpeedKmh.map { $0 / 1.852 }, "speedKn"),
+                 value: number(summary.avgSpeedKmh != nil && summary.timerTimeS > 0
+                     ? (summary.distanceKm / (summary.timerTimeS / 3600.0)) / 1.852
+                     : nil, "speedKn"),
                  unitKind: "speedKn"),
         ])]))
 
