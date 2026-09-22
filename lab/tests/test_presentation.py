@@ -313,8 +313,19 @@ def test_the_branches_no_corpus_fixture_is():
 
 def test_the_copy_file_carries_no_id_the_document_cannot_reach(documents):
     """The other direction: a label that is written down and never pointed at is copy
-    nobody maintains. `turnKind` is exempt — it is interpolated *into* a caption by the
-    renderer rather than named by a `labelId`."""
+    nobody maintains.
+
+    Three groups are exempt, and each for a reason a document cannot show:
+
+    * `turnKind` is interpolated *into* a caption by the renderer rather than named by a
+      `labelId`;
+    * `divergence` names the watch-vs-phone metrics, and a divergence line exists only when
+      a **watch summary** was paired — an analysis golden never has one, so the document
+      built here is the empty, honest answer (`docs/presentation/document.md`,
+      "`divergence`"). The kit's `CopyContractTests.everyIdTheDocumentCanEmitHasAHome` is
+      what covers them, against the resolver the phone actually calls;
+    * `banner` is the one sentence a renderer *builds* rather than names, like `turnKind`.
+    """
     used: list[str] = []
     for doc in list(documents.values()) + branch_documents():
         walk_ids(doc, used)
@@ -327,7 +338,7 @@ def test_the_copy_file_carries_no_id_the_document_cannot_reach(documents):
     orphans = sorted(f"presentation.{group}.{key}"
                      for group, entries in presentation.items()
                      if isinstance(entries, dict) and not group.startswith("_")
-                     and group != "turnKind"
+                     and group not in ("turnKind", "divergence", "banner")
                      for key in entries
                      if f"presentation.{group}.{key}" not in reachable)
     assert not orphans, f"unreachable copy: {orphans}"

@@ -42,13 +42,24 @@ because it decides which records may stand at all. `docs/presentation/document.m
 schema, the list of what a renderer may still decide, and a table answering every section of
 the verifier: carried and where, or renderer-only and why.
 
-**Three rounds, and only the first is done.** Round 1 defines the document, produces it on
-both platforms and pins it — **no renderer switched and no verifier was retired**. Round 2
-grows the two things the analysis alone cannot say: the session clock and its
-trust note (`meta.utcOffsetSource`), and the outcome sentence behind
-`outcomeReasonId` / `cleanBlockedById`, plus raw values for the divergence banner, which
-holds pre-formatted strings today. Round 3 switches the renderers and retires the verifier
-sections the table marks as carried.
+**Three rounds, two of them done.** Round 1 defines the document, produces it on both
+platforms and pins it — **no renderer switched and no verifier was retired**.
+
+**Round 2 switches the iPhone's session surfaces onto it** and gives the divergence banner
+raw values, which is what lets the document carry the banner at all. The key-metrics block
+and the share card, the records table and the map's effort windows, the map's marks and the
+wrist-under callouts all read the document now; `docs/copy/presentation.json` became
+kit-owned in the same round, because the kit is what prints those words. Two surfaces stayed
+off it on purpose — the library row and the widgets read the session index, which holds no
+analysis; their words are shared, their numbers are not. The session page builds its
+document when it opens (6.9 ms on the corpus's longest afternoon) rather than storing one:
+a blob beside the row would need a migration, a staleness rule and a second answer to which
+engine wrote it.
+
+The two things the analysis alone cannot say are **not** done and move to round 3 with the
+web: the session clock and its trust note (`meta.utcOffsetSource`), and the outcome sentence
+behind `outcomeReasonId` / `cleanBlockedById`. Round 3 ports the web renderers and retires
+the verifier sections the table marks as carried.
 
 A renderer keeps everything that is a decision rather than a fact: formatting, layout,
 Dynamic Type, ordering within a row that depends on width, interaction, the card's picture,

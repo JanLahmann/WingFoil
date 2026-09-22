@@ -120,8 +120,7 @@ struct ShareComposerView: View {
     }
 
     private var metrics: KeyMetrics? {
-        detail.map { KeyMetrics.make(summary: $0.analysis.summary,
-                                     records: $0.analysis.records) }
+        detail?.keyMetrics
     }
 
     /// Detail geometry when the session is open, the cached list thumbnail otherwise.

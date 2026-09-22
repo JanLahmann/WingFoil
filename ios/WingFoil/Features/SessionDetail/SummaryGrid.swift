@@ -122,7 +122,14 @@ struct SessionRecordsTable: View {
     let detail: SessionDetail
     @Binding var selectedEffort: String?
 
-    private var records: GP3SRecords { detail.analysis.records }
+    /// **The nine kinds, as the presentation document names them** — in catalogue order,
+    /// all nine always present, so the table has its shape before it has its numbers
+    /// (ADR-033, `docs/presentation/document.md`, "`records`"). Nothing about a record is
+    /// re-derived here: the value, the provenance and the word are the document's, and the
+    /// selection, the inks and the columns are this file's.
+    private var kinds: [PresentationValue] {
+        detail.document["records"]?["kinds"]?.arrayValue ?? []
+    }
 
     /// Window keys this session actually produced — the set that decides which rows are
     /// live. A record with no window (alpha never achieved, no 1 NM run) is inert.
@@ -142,8 +149,7 @@ struct SessionRecordsTable: View {
             VStack(spacing: 0) {
                 headerRow
                 Divider()
-                ForEach(Array(RecordWindowSelection.catalogue.enumerated()), id: \.offset) {
-                    index, kind in
+                ForEach(Array(kinds.enumerated()), id: \.offset) { index, kind in
                     if index > 0 { Divider() }
                     row(kind)
                 }
@@ -172,9 +178,10 @@ struct SessionRecordsTable: View {
         .padding(.vertical, 6)
     }
 
-    private func row(_ kind: RecordKind) -> some View {
-        let key = kind.rawValue
-        let value = kind.value(in: records)
+    private func row(_ kind: PresentationValue) -> some View {
+        let key = kind["key"]?.stringValue ?? ""
+        let label = PresentationCopy.text(kind["labelId"]?.stringValue ?? "") ?? key
+        let value: Double? = if case .number(let kn)? = kind["value"] { kn } else { nil }
         let isSelected = selectedEffort == key
         let isLive = locatable.contains(key)
         return Button {
@@ -182,14 +189,15 @@ struct SessionRecordsTable: View {
                                                           available: locatable)
         } label: {
             HStack(spacing: 10) {
-                Text(SessionDetail.effortLabel(kind))
+                Text(label)
                     .font(.subheadline)
                     .scaledColumn(92, relativeTo: .subheadline)
                 Text(Fmt.kn(value))
                     .font(.subheadline.weight(.semibold).monospacedDigit())
                     .foregroundStyle(value == nil ? .secondary : .primary)
                     .scaledColumn(62, alignment: .trailing, relativeTo: .subheadline)
-                Text(value == nil ? "no qualifying run" : caption(for: records.windows[key]))
+                Text(value == nil ? "no qualifying run"
+                                  : caption(for: kind["windows"]?.arrayValue?.first))
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                     .lineLimit(1)
@@ -214,14 +222,18 @@ struct SessionRecordsTable: View {
         }
         .buttonStyle(.plain)
         .disabled(!isLive)
-        .accessibilityLabel("\(SessionDetail.effortLabel(kind)) record")
+        .accessibilityLabel("\(label) record")
         .accessibilityValue(value == nil ? "no qualifying run" : Fmt.kn(value))
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 
-    private func caption(for window: RecordWindow?) -> String {
-        guard let window else { return " " }
-        return "at " + Fmt.clock(window.startTs) + " · " + Fmt.duration(window.durS)
+    /// **Where the record was set.** The provenance is the document's `{startTs, durS}`;
+    /// the clock and the span are this table's two formatters. 5×10 s names its top run,
+    /// which is the list's own first — the other four glow on the map together.
+    private func caption(for window: PresentationValue?) -> String {
+        guard case .number(let start)? = window?["startTs"],
+              case .number(let duration)? = window?["durS"] else { return " " }
+        return "at " + Fmt.clock(start) + " · " + Fmt.duration(duration)
     }
 }
 

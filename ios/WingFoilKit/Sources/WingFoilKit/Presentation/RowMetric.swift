@@ -47,22 +47,22 @@ public enum RowMetric: String, Codable, Sendable, CaseIterable, Identifiable {
 
     public var id: String { rawValue }
 
+    /// The id the presentation document names this metric by
+    /// (`docs/presentation/document.md`, "`row`"). Every slot in `row.slots` and every entry
+    /// in `row.offered` resolves through it, so the word on the row, the word in the
+    /// Settings picker and the word the web prints are one string.
+    public var labelId: String { "presentation.rowMetric." + rawValue }
+
     /// What the number is called, on the row and in the picker. Short on purpose: it sits
-    /// under a value in caption type, beside two others, on a phone.
+    /// under a value in caption type, beside two others, on a phone — which is why it is
+    /// deliberately shorter than the glossary term for the same metric ("fell in", not
+    /// "Fell in"; "foil", not "On foil").
+    ///
+    /// **The words live in `PresentationCopy`**, not in a switch here: this list and the
+    /// document's `row` section were two spellings of one set of labels, and `docs/copy`
+    /// carried a third that nothing held them to (ADR-033, round 2).
     public var label: String {
-        switch self {
-        case .foilShare: "foil"
-        case .flights: "flights"
-        case .jibes: "jibes"
-        case .cleanJibes: "clean"
-        case .turns: "turns"
-        case .best2s: "best 2 s"
-        case .best10s: "best 10 s"
-        case .distance: "distance"
-        case .duration: "time"
-        case .dryStreak: "dry streak"
-        case .falls: MetricGlossary.entry("fellIn").term.lowercased()
-        }
+        PresentationCopy.text(labelId) ?? rawValue
     }
 
     /// The SF Symbol beside it. Never alone: the word under it is what makes it readable,

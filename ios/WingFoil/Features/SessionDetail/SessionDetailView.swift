@@ -189,8 +189,7 @@ struct SessionDetailView: View {
                 } else if let detail {
                     // Permanent, above the switcher, on every tab: the four rows that
                     // answer "was that a good session" (docs/app-ui-review.md §1.1 / §4).
-                    KeyMetricsView(metrics: KeyMetrics.make(summary: detail.analysis.summary,
-                                                            records: detail.analysis.records))
+                    KeyMetricsView(metrics: detail.keyMetrics)
                         .id("key")
                     // **Why this page's numbers are in nothing else.** One line, directly
                     // under the block it is about, so a rider who wonders where his session
@@ -870,7 +869,7 @@ private struct DivergenceBanner: View {
         Button(action: open) {
             HStack(spacing: 8) {
                 Image(systemName: "exclamationmark.triangle.fill")
-                Text("Watch and phone disagree on " + list)
+                Text(DivergenceText.banner(divergences))
                     .font(.footnote.weight(.medium))
                     .multilineTextAlignment(.leading)
                 Spacer()
@@ -910,10 +909,4 @@ private struct DivergenceBanner: View {
         .offset(x: 6, y: 4)
     }
 
-    private var list: String {
-        let names = divergences.map(\.metric)
-        if names.count <= 2 { return names.joined(separator: " and ").lowercased() }
-        return names.prefix(2).joined(separator: ", ").lowercased()
-            + " and " + String(names.count - 2) + " more"
-    }
 }

@@ -246,8 +246,7 @@ struct ReplayCinemaView: View {
     /// that is for there to be one place the numbers come from.
     private var outroStats: ShareCardStats {
         ShareCardStats.outro(row: detail.row, title: SessionDisplay.title(detail.row),
-                             metrics: KeyMetrics.make(summary: detail.analysis.summary,
-                                                      records: detail.analysis.records),
+                             metrics: detail.keyMetrics,
                              longestFlightS: detail.analysis.summary.longestFlightS,
                              timeZone: detail.row.displayZone)
     }

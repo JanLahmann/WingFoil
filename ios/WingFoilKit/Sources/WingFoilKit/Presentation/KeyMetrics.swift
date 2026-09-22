@@ -74,14 +74,21 @@ public struct KeyMetrics: Sendable, Equatable {
         /// counts say how each turn ended, the clean count says how many of the ones that
         /// flew the rider actually rode. Clean can therefore never exceed `flewThrough`.
         public let caption: String
+        /// **What the three inks are called** — "flew · touchdown · fell", the cell's own
+        /// `labelId` resolved. It rides on the tally rather than being typed by each of the
+        /// two surfaces that draw one: the block's view and the share card both printed
+        /// that literal, which is one label with two homes.
+        public let label: String
 
         public var total: Int { flewThrough + touchdown + fellIn }
 
-        public init(flewThrough: Int, touchdown: Int, fellIn: Int, caption: String) {
+        public init(flewThrough: Int, touchdown: Int, fellIn: Int, caption: String,
+                    label: String = PresentationCopy.label["outcomeLadder"] ?? "") {
             self.flewThrough = flewThrough
             self.touchdown = touchdown
             self.fellIn = fellIn
             self.caption = caption
+            self.label = label
         }
     }
 
@@ -145,162 +152,134 @@ public struct KeyMetrics: Sendable, Equatable {
 
     // MARK: - Building
 
+    /// **The block, rendered out of the presentation document** (ADR-033, round 2).
+    ///
+    /// Every gate that used to live here — the jibe tally's fallback to the counted-turn
+    /// ladder, the tack cell's two conditions, the falls cell's absence where no flight
+    /// ended, the rate row's `turns.jibes` test and its JPH→TPH degradation — is in
+    /// `PresentationDocument.blockSection` now, once, beside the lab's twin of it. What is
+    /// left here is formatting and the words: three decisions this file is entitled to make
+    /// and the document is not (`docs/presentation/document.md`, "What stays with the
+    /// renderer").
+    ///
+    /// The convenience overload is kept because a caller with an analysis in hand should not
+    /// have to build a document to draw a block, and because it is what makes this a
+    /// refactor: the same summary and the same records still produce the same strings.
     public static func make(summary: SessionSummary, records: GP3SRecords) -> KeyMetrics {
-        let t = summary.turns
+        make(block: PresentationDocument.blockSection(summary, records))
+    }
+
+    /// The `block` section of a presentation document as the strings the phone draws.
+    ///
+    /// A row the document left out is a row with nothing in it — which is how row 4
+    /// disappears on a recording with no hour to divide by — so every lookup here is by
+    /// **key** rather than by position, and an absent cell is an absent `Metric`.
+    public static func make(block: PresentationValue) -> KeyMetrics {
+        var cells: [String: PresentationValue] = [:]
+        var order: [String] = []
+        for row in block["rows"]?.arrayValue ?? [] {
+            for cell in row["cells"]?.arrayValue ?? [] {
+                guard let key = cell["key"]?.stringValue else { continue }
+                cells[key] = cell
+                order.append(key)
+            }
+        }
+        func metric(_ key: String) -> Metric? { cells[key].map(Self.metric) }
+
         return KeyMetrics(
-            basics: [
-                Metric(key: "duration", label: "duration",
-                       value: duration(summary.durationS)),
-                Metric(key: "distance", label: "distance", value: km(summary.distanceKm)),
-                Metric(key: "avgSpeed", label: "avg speed",
-                       value: knots(knFromKmh(summary.avgSpeedKmh))),
-            ],
+            basics: ["duration", "distance", "avgSpeed"].compactMap(metric),
             // Labelled with the window it actually is. The record set's own contract
-            // (docs/presentation/records.md, "Record windows") is that a chip names the window it
-            // is highlighting; "max speed" over a 2 s peak would be the same overclaim.
-            maxSpeed: Metric(key: "max2s", label: "max 2 s", value: knots(records.best2sKn)),
-            speedExtras: [
-                Metric(key: "best5x10s", label: "5×10 s", value: knots(records.best5x10sKn)),
-                Metric(key: "alpha500", label: "alpha 500", value: knots(records.alpha500Kn)),
-            ],
-            tally: tally(t),
-            tacks: tackTally(t),
-            streaks: t.turnsCounted > 0
-                ? Metric(key: "streaks", label: "best streaks",
-                         value: String(t.longestFlewStreak) + " flew · "
-                             + String(t.longestDryStreak) + " dry")
-                : nil,
-            falls: falls(summary),
-            rates: rates(summary))
+            // (docs/presentation/records.md, "Record windows") is that a chip names the
+            // window it is highlighting; "max speed" over a 2 s peak would be the same
+            // overclaim.
+            maxSpeed: metric("max2s") ?? Metric(key: "max2s", label: "", value: "—"),
+            speedExtras: ["best5x10s", "alpha500"].compactMap(metric),
+            tally: cells["tally"].map(Self.tally),
+            tacks: cells["tacks"].map(Self.tally),
+            streaks: metric("streaks"),
+            falls: metric("falls"),
+            // In the document's order, so a rate added to the row lands here with no edit.
+            rates: order.filter { ["jph", "cph", "tph", "wph"].contains($0) }
+                .compactMap(metric))
     }
 
-    /// **Every fall of the session, and where each one happened** (20 September 2026).
+    // MARK: - One cell
+
+    /// One document cell as a number, a word and the line under it.
     ///
-    /// Read off the flight-end channel, which is the one that answers "how often did I get
-    /// in the water": one event per actual swim, in a turn or in a straight line
-    /// (docs/algorithms/rates.md, "Wet is every fall, not every fallen jibe"). `all` is exactly
-    /// `inTurn + straight`, so the caption adds up to the value by construction — which is
-    /// why it is not built out of `outcomeSplit`, whose falls mix the turn ladder with the
-    /// flight-end channel and therefore need not.
-    ///
-    /// nil where no flight ended at all: a session the engine found no flights in has an
-    /// unknown number of falls, not zero of them.
-    static func falls(_ s: SessionSummary) -> Metric? {
-        let ends = s.flightEnds
-        guard ends.all.total > 0 else { return nil }
-        let entry = MetricGlossary.entry("fellIn")
-        return Metric(key: "falls", label: entry.term.lowercased(),
-                      value: String(ends.all.fellIn),
-                      caption: String(ends.inTurn.fellIn) + " in a turn · "
-                          + String(ends.straight.fellIn) + " in a straight line")
+    /// The three things a renderer decides are all here. **The unit** — `Speed` reads
+    /// Settings → Units, which is exactly why the document carries a raw knot and a
+    /// `unitKind` instead of a string. **The form of the word** — the rate row wants the
+    /// glossary's `labelled` ("JPH · dry jibes per hour"), the falls cell its `term`
+    /// lowercased, because a capital under a number reads as a title. **The pair**, where a
+    /// cell carries two different metrics rather than one: "1 flew · 4 dry" is the only one
+    /// today and each half takes the glossary's watch-width `short`.
+    static func metric(_ cell: PresentationValue) -> Metric {
+        let key = cell["key"]?.stringValue ?? ""
+        let labelID = cell["labelId"]?.stringValue ?? ""
+        let caption = (cell["captions"]?.arrayValue ?? []).first
+            .flatMap(PresentationCopy.captionText)
+        return Metric(key: key,
+                      label: PresentationCopy.text(labelID, glossary: glossaryForm(key)) ?? "",
+                      value: value(cell),
+                      caption: caption)
     }
 
-    /// The jibe ladder when the session named jibes, the whole counted-turn ladder when it
-    /// could not.
-    ///
-    /// Jibes are what the rider asked for and what JPH counts one row below, so the two
-    /// have to be about the same turns. But a session with no usable wind axis has no
-    /// jibes at all (`unclassified`), and an empty tally on a screen full of turns would
-    /// read as "nothing happened" — so it falls back to every counted turn, exactly the
-    /// way the rate row falls back from JPH to TPH. The caption says which, so the three
-    /// numbers can never be mistaken for the other set.
-    ///
-    /// The caption also carries the **clean** count — the jibes he flew all the way
-    /// through carrying his speed (`turnSuccessPct`). It rides in the caption rather than
-    /// in a cell of its own because it is about the same set of turns the three counts are
-    /// about, and because a fifth cell on row 3 is a cell the streaks pair would lose.
-    static func tally(_ t: TurnSummary) -> Tally? {
-        if t.jibes > 0 {
-            let o = t.jibeOutcomes
-            return Tally(flewThrough: o.flewThrough, touchdown: o.touchdown,
-                         fellIn: o.fellIn,
-                         caption: "of " + String(t.jibes) + " jibes · "
-                             + String(t.jibesSuccessful) + " clean")
+    /// Which spelling of a glossary word this cell's label wants. Only two cells name one:
+    /// the rates, which want the expansion under them, and the falls cell, which does not.
+    static func glossaryForm(_ key: String) -> PresentationCopy.GlossaryForm {
+        ["jph", "cph", "tph", "wph"].contains(key) ? .labelled : .lowercased
+    }
+
+    /// A cell's value, formatted. A cell with `counts` is the pair, joined; otherwise it is
+    /// one scalar in the unit its `unitKind` names, and `null` is the em dash — an absent
+    /// answer, never a zero (`docs/presentation/labels.md`, "Formatter rules").
+    static func value(_ cell: PresentationValue) -> String {
+        if let counts = cell["counts"]?.arrayValue, !counts.isEmpty {
+            return counts.map { part in
+                let label = part["labelId"]?.stringValue ?? ""
+                return PresentationCopy.plain(part["value"] ?? .null) + " "
+                    + (PresentationCopy.text(label, glossary: .short) ?? "")
+            }.joined(separator: " · ")
         }
-        guard t.turnsCounted > 0 else { return nil }
-        // **No clean clause on the fallback.** It used to read
-        // "of N turns · \(turnsSuccessful) clean", which prints the engine's score verdict
-        // over every counted turn under the word for a stricter, jibe-only one. A session
-        // whose wind axis named no jibes has no clean jibes to report, and the score
-        // verdict is not a tier the rider has (7 Sep 2026).
-        let o = t.outcomes
-        return Tally(flewThrough: o.flewThrough, touchdown: o.touchdown, fellIn: o.fellIn,
-                     caption: "of \(t.turnsCounted) turns")
+        return format(cell["value"] ?? .null,
+                      unitKind: cell["unitKind"]?.stringValue ?? "none")
     }
 
-    /// **The tack ladder**, beside the jibe one, on the sessions that have tacks in them.
-    ///
-    /// Same three counts, same inks, same shape — what differs is the set of turns and the
-    /// caption that names it ("of 14 tacks"). There is no clean clause: `tacksSuccessful`
-    /// is the engine's *score* verdict, and `turns.py` says outright that it must never be
-    /// called clean, because clean is a jibe word in this product.
-    ///
-    /// Two gates, not one. `tacks > 0` is the obvious half. `jibes > 0` is the other: when
-    /// the wind axis named no jibes the tally above has fallen back to **every counted
-    /// turn**, and on such a session the tacks are those turns — the two cells would print
-    /// one set of numbers twice under two captions. The fallback already reports them.
-    static func tackTally(_ t: TurnSummary) -> Tally? {
-        guard t.tacks > 0, t.jibes > 0 else { return nil }
-        let o = t.tackOutcomes
-        return Tally(flewThrough: o.flewThrough, touchdown: o.touchdown, fellIn: o.fellIn,
-                     caption: "of " + String(t.tacks) + (t.tacks == 1 ? " tack" : " tacks"))
-    }
-
-    /// JPH · CPH · WPH, one decimal.
-    ///
-    /// JPH is **dry** jibes per hour (engine 0.7.0), and the label says so: the number
-    /// counts the jibes he came out of still sailing, so it cannot be raised by falling
-    /// more often, and a caption reading "jibes per hour" over it would name a different
-    /// number than the one printed.
-    ///
-    /// CPH is **clean** jibes per hour (engine 0.10.0) and sits beside JPH, never instead
-    /// of it. The two answer the two questions a rider asks in exactly this order — "did I
-    /// come out of it still sailing" and "did I ride it" — and the pair reads
-    /// lenient-then-strict, the same direction the tally reads when its caption qualifies
-    /// the three counts with the clean number. Neither is derivable from the other and
-    /// neither is a correction of the other; a block that printed only one of them would be
-    /// answering half the question (docs/presentation/clean-jibe.md, "Clean jibe").
-    ///
-    /// JPH degrades to TPH rather than to 0.0: a session whose wind axis never resolved
-    /// has turns and no jibes, and "0.0 jibes per hour" would be a verdict on a rider who
-    /// jibed all afternoon. **CPH travels with JPH, not with the fallback** — it is a jibe
-    /// rate, and on a session that named no jibes at all "0.0 clean jibes per hour" would be
-    /// the precise lie the TPH fallback exists to avoid. Where jibes *were* named, a 0.0 CPH
-    /// is a measured verdict and is printed as one. WPH needs no fallback of any kind — a
-    /// fell-in flight end is a fall whatever the wind was doing.
-    ///
-    /// **The gate is `turns.jibes`, not `jibesPerHour`** (7 Sep 2026). It was the rate, and
-    /// a rate cannot tell "the wind axis named no jibes" from "it named fifteen and he swam
-    /// out of every one" — both are `jibesPerHour == 0` beside a positive TPH, and the
-    /// second is precisely the session the contract says must print `0.0` JPH *and* `0.0`
-    /// CPH. `turns.jibes` is the count the tally one row up already gates on, so the two
-    /// rows can never disagree about whether this session had jibes in it. The
-    /// `turnsPerHour <= 0` half of the test is unchanged: a session with a duration and
-    /// genuinely no turns keeps JPH and CPH at their measured zeroes.
-    static func rates(_ s: SessionSummary) -> [Metric] {
-        guard let wet = s.wetPerHour else { return [] }
-        var out: [Metric] = []
-        if s.turns.jibes > 0 || (s.turnsPerHour ?? 0) <= 0 {
-            out.append(rateMetric("jph", s.jibesPerHour ?? 0))
-            out.append(rateMetric("cph", s.cleanJibesPerHour ?? 0))
-        } else if let turns = s.turnsPerHour {
-            out.append(rateMetric("tph", turns))
+    /// The document's raw value in the unit the rider reads. The one place a `unitKind`
+    /// becomes a string on this surface.
+    static func format(_ value: PresentationValue, unitKind: String) -> String {
+        var scalar: Double?
+        switch value {
+        case .int(let v): scalar = Double(v)
+        case .number(let v): scalar = v
+        default: scalar = nil
         }
-        out.append(rateMetric("wph", wet))
-        return out
+        switch unitKind {
+        case "durationS": return duration(scalar ?? 0)
+        case "distanceKm": return scalar.map(km) ?? "—"
+        case "speedKn": return knots(scalar)
+        case "rate": return scalar.map(rate) ?? "—"
+        case "percent": return scalar.map { String(format: "%.1f %%", $0) } ?? "—"
+        default: return scalar.map { String(Int($0)) } ?? "—"
+        }
     }
 
-    /// One rate cell, **labelled from the glossary rather than from a literal.**
-    ///
-    /// `"CPH · clean jibes per hour"` used to be typed here and typed again in
-    /// `web/js/cardstats.js`, out of two halves that existed nowhere as data — so the
-    /// welcome screen could teach one expansion while the session page printed another,
-    /// and TPH could be printed by both surfaces and defined by neither. The key is the
-    /// glossary's own id, which is what the two halves now come from
-    /// (`MetricGlossaryEntry.labelled`).
-    static func rateMetric(_ id: String, _ value: Double) -> Metric {
-        let entry = MetricGlossary.entry(id)
-        return Metric(key: entry.id, label: entry.labelled, value: rate(value))
+    /// An outcome-ladder cell as the three counts, its label and the caption that says what
+    /// they are out of. The ladder's own `tally` field is why the counts stay numbers: the
+    /// colour is the point (`docs/presentation/layers-map-colour-type.md`).
+    static func tally(_ cell: PresentationValue) -> Tally {
+        let counts = cell["tally"]
+        func count(_ key: String) -> Int {
+            if case .int(let v)? = counts?[key] { return v }
+            return 0
+        }
+        return Tally(flewThrough: count("flewThrough"),
+                     touchdown: count("touchdown"),
+                     fellIn: count("fellIn"),
+                     caption: (cell["captions"]?.arrayValue ?? []).first
+                        .flatMap(PresentationCopy.captionText) ?? "",
+                     label: PresentationCopy.text(cell["labelId"]?.stringValue ?? "") ?? "")
     }
 
     // MARK: - Formatting

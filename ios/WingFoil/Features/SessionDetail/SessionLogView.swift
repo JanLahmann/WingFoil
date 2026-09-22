@@ -59,7 +59,7 @@ private struct FlightEndsCard: View {
 
     @State private var opened: FlightEndDetailRequest?
 
-    private var indices: [Int] { FlightEndAnalytics.drawnIndices(detail.analysis) }
+    private var indices: [Int] { detail.drawnFlightEndIndices }
 
     var body: some View {
         if !indices.isEmpty {
@@ -368,9 +368,7 @@ private struct DivergenceDetailCard: View {
     /// True when the only things that disagree are the takeoff counts — the expected
     /// disagreement, since the watch counts attempts live on a wrist and the phone reads the
     /// whole session back afterwards. It earns a calmer sentence than a speed does.
-    private var takeoffOnly: Bool {
-        !divergences.isEmpty && divergences.allSatisfy { $0.metric.hasPrefix("Takeoff") }
-    }
+    private var takeoffOnly: Bool { DivergenceText.isTakeoffOnly(divergences) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -384,10 +382,14 @@ private struct DivergenceDetailCard: View {
                 Divider()
                 ForEach(divergences) { d in
                     HStack(spacing: 10) {
-                        Text(d.metric).frame(maxWidth: .infinity, alignment: .leading)
-                        Text(d.watch).scaledColumn(66, alignment: .trailing, relativeTo: .caption)
-                        Text(d.phone).scaledColumn(66, alignment: .trailing, relativeTo: .caption)
-                        Text(d.delta).scaledColumn(60, alignment: .trailing, relativeTo: .caption)
+                        Text(DivergenceText.metric(d))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        Text(DivergenceText.watch(d))
+                            .scaledColumn(66, alignment: .trailing, relativeTo: .caption)
+                        Text(DivergenceText.phone(d))
+                            .scaledColumn(66, alignment: .trailing, relativeTo: .caption)
+                        Text(DivergenceText.delta(d))
+                            .scaledColumn(60, alignment: .trailing, relativeTo: .caption)
                             .foregroundStyle(.orange)
                     }
                     .font(.caption.monospacedDigit())

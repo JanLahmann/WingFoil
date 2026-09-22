@@ -132,7 +132,7 @@ struct KeyMetricsView: View {
         VStack(alignment: .leading, spacing: 2) {
             OutcomeTally(flewThrough: tally.flewThrough, touchdown: tally.touchdown,
                          fellIn: tally.fellIn, font: .title2)
-            Text("flew · touchdown · fell" + Self.captionSep + tally.caption)
+            Text(tally.label + Self.captionSep + tally.caption)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

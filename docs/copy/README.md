@@ -204,8 +204,14 @@ directly above it rather than quoting a third figure.
 **The words the presentation document points at** (ADR-033,
 `docs/presentation/document.md`). The document carries no rider sentence: every label and
 caption in it is an *id* plus the arguments the sentence interpolates, and this is where the
-ids that no other artefact already owns are resolved. Four groups, all **hand-authored**
-here, like the Strava sentence and the lexicon:
+ids that no other artefact already owns are resolved.
+
+**Kit-owned since round 2 of ADR-033**, and the author is `PresentationCopy`. It was
+hand-authored here in round 1, which was the right file and the wrong author: the rule above
+is that the kit authors anything the app says, and every string in this file is printed by a
+renderer in the kit. Hand-authored copy that the kit prints is copy the kit cannot be held
+to — the exact shape of the drift this folder exists to stop. `COPY_WRITE=1 swift test
+--filter CopyContractTests` regenerates it.
 
 | group | holds |
 |---|---|
@@ -214,12 +220,16 @@ here, like the Strava sentence and the lexicon:
 | `turnKind` | the rider's word for a kind of sweep, interpolated *into* a caption rather than named by a `labelId` |
 | `caption` | the small line under a cell. A caption with a `one` key has a singular form, used when its first argument is 1 |
 | `wristUnder` | the "wrist under" callout, title and `during` clause |
+| `divergence` | the six watch-vs-phone metrics with no other home. The other six the check reports are speed records and are named by `tokens.recordWindow.<id>`, so `Best 2 s` has one spelling |
+| `banner` | the divergence banner's one sentence, which the renderer **builds** rather than names — like `turnKind` |
 
 The other three namespaces a `labelId` may use are `glossary.<id>` (below),
 `verdicts.notASession.*` (below) and `tokens.recordWindow.<id>` / `tokens.layer.<id>` in
 `design/tokens.json`, which is copy for the record and layer names. The lab's
 `test_every_label_and_caption_is_an_id_that_exists_in_copy` fails on an id with no home, and
-its twin fails on a line here that no document can reach.
+its twin fails on a line here that no document can reach — `turnKind`, `divergence` and
+`banner` excepted, none of which an analysis golden can reach; the kit's
+`everyIdTheDocumentCanEmitHasAHome` covers those against the resolver the phone calls.
 
 ### `help.json`
 

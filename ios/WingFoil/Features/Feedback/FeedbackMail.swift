@@ -206,10 +206,15 @@ enum FeedbackMail {
             // The rows where the watch's own arithmetic and this engine's disagree
             // (`DivergenceCheck`). Empty on every session with no summary card behind it,
             // which is nearly all of them.
-            divergences: (detail?.divergences ?? []).map {
-                $0.metric + ": watch " + $0.watch + ", phone " + $0.phone
-                    + ", delta " + $0.delta
-            })
+            divergences: (detail?.divergences ?? []).map(divergenceLine))
+    }
+
+    /// One divergence row, in the words the rider read on the Log tab — `DivergenceText`,
+    /// so the mail quotes the table rather than spelling the same four numbers a second way.
+    private static func divergenceLine(_ line: Divergence) -> String {
+        DivergenceText.metric(line) + ": watch " + DivergenceText.watch(line)
+            + ", phone " + DivergenceText.phone(line)
+            + ", delta " + DivergenceText.delta(line)
     }
 
     /// "18 flew through · 4 touchdown · 2 fell in", or nil when no turn was counted at

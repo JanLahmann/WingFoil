@@ -39,7 +39,7 @@ struct FlightEndDetailSheet: View {
         _selection = State(initialValue: start)
     }
 
-    private var indices: [Int] { FlightEndAnalytics.drawnIndices(detail.analysis) }
+    private var indices: [Int] { detail.drawnFlightEndIndices }
 
     private var position: Int? { indices.firstIndex(of: selection).map { $0 + 1 } }
 

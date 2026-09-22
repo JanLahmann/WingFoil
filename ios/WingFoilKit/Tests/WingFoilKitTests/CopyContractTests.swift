@@ -386,6 +386,110 @@ import Testing
                   "icu-setup.json", "privacyNote")
     }
 
+    // MARK: - presentation.json
+
+    /// **The words the presentation document points at, authored by the kit that prints
+    /// them** (ADR-033, round 2).
+    ///
+    /// They were hand-authored in `docs/copy/presentation.json` in round 1 — the right file
+    /// and the wrong author. The copy contract's rule is that the kit authors anything the
+    /// app says (`docs/copy/README.md`, "The contract"), and every one of these strings is
+    /// printed by a renderer in this package: a hand-authored label the kit prints is a
+    /// label the kit cannot be held to, which is the exact shape of the drift this folder
+    /// exists to stop. `PresentationCopy` is the author now and this is the artefact.
+    ///
+    /// `caption` is the one group with structure: a line with a singular form is an object
+    /// (`{"one", "other"}`), a line without one is a plain string, which is how the file
+    /// reads today and what the lab's `copy_ids()` walks.
+    @Test func thePresentationCopyMatchesItsJSON() throws {
+        let groups: [String: [String: Any]] = [
+            "label": PresentationCopy.label,
+            "rowMetric": PresentationCopy.rowMetric,
+            "turnKind": PresentationCopy.turnKind,
+            "caption": PresentationCopy.caption.mapValues { line -> Any in
+                line.one.map { ["one": $0, "other": line.other] as Any } ?? line.other
+            },
+            "wristUnder": PresentationCopy.wristUnder,
+            "divergence": PresentationCopy.divergence,
+            "banner": PresentationCopy.banner,
+        ]
+        if Self.isWriting {
+            try Self.write("presentation.json", groups.mapValues { $0 as Any })
+            return
+        }
+
+        let json = try Self.load("presentation.json")
+        for (group, kit) in groups.sorted(by: { $0.key < $1.key }) {
+            let listed = try #require(json[group] as? [String: Any],
+                                      """
+                                      docs/copy/presentation.json · \(group) is missing. \
+                                      Write it with COPY_WRITE=1 swift test --filter \
+                                      CopyContractTests
+                                      """)
+            #expect(Set(listed.keys) == Set(kit.keys),
+                    """
+                    docs/copy/presentation.json · \(group) has \
+                    \(Set(listed.keys).symmetricDifference(Set(kit.keys)).sorted()) \
+                    on one side only.
+                    """)
+            for (key, value) in kit {
+                if let text = value as? String {
+                    Self.same(text, listed[key], "presentation.json", "\(group).\(key)")
+                } else if let forms = value as? [String: String] {
+                    let file = listed[key] as? [String: String]
+                    for (form, text) in forms {
+                        Self.same(text, file?[form], "presentation.json",
+                                  "\(group).\(key).\(form)")
+                    }
+                }
+            }
+        }
+    }
+
+    /// **Every id the document can emit has a home.**
+    ///
+    /// The lab asserts the same thing against `docs/copy/*.json` from the outside
+    /// (`test_every_label_and_caption_is_an_id_that_exists_in_copy`); this asserts it
+    /// against the resolver the phone actually calls, which is the half that decides
+    /// whether a rider reads a word or an empty space. Both halves have to hold: a file the
+    /// lab can read and a Swift switch that forgets a namespace is a label missing on one
+    /// platform only.
+    @Test func everyIdTheDocumentCanEmitHasAHome() throws {
+        var ids: Set<String> = ["verdicts.notASession.tag",
+                                "verdicts.notASession.lines.0",
+                                "verdicts.notASession.lines.1"]
+        for group in ["label", "caption", "wristUnder", "divergence"] {
+            let keys: [String]
+            switch group {
+            case "label": keys = Array(PresentationCopy.label.keys)
+            case "caption": keys = Array(PresentationCopy.caption.keys)
+            case "wristUnder": keys = Array(PresentationCopy.wristUnder.keys)
+            default: keys = Array(PresentationCopy.divergence.keys)
+            }
+            ids.formUnion(keys.map { "presentation.\(group).\($0)" })
+        }
+        ids.formUnion(RowMetric.allCases.map { "presentation.rowMetric.\($0.rawValue)" })
+        ids.formUnion(PresentationCopy.turnKind.keys.map { "presentation.turnKind.\($0)" })
+        ids.formUnion(RecordKind.allCases.map { "tokens.recordWindow.\($0.rawValue)" })
+        ids.formUnion(MapLayer.allCases.map { "tokens.layer.\($0.rawValue)" })
+        // The five the block and the row name by glossary id.
+        ids.formUnion(["fellIn", "flewThrough", "dry", "jph", "cph", "tph", "wph"]
+            .map { "glossary.\($0)" })
+
+        for id in ids.sorted() {
+            let text = PresentationCopy.text(id, args: ["durationS": "0", "distanceKm": "0"])
+            #expect(text?.isEmpty == false,
+                    """
+                    the document can emit "\(id)" and PresentationCopy resolves it to \
+                    nothing — a rider would read an empty label there.
+                    """)
+        }
+        // And the other direction, on the namespaces: an id in no namespace resolves to
+        // nothing rather than to a plausible-looking empty string.
+        #expect(PresentationCopy.text("presentation.label.notAThing") == nil)
+        #expect(PresentationCopy.text("nowhere.at.all") == nil)
+    }
+
     // MARK: - phrases.json
 
     @Test func theSharedPhrasesMatchTheirJSON() throws {

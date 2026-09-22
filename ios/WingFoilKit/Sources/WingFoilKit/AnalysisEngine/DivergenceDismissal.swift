@@ -27,12 +27,17 @@ public enum DivergenceDismissal {
 
     /// Session identity plus *what the banner says*, hashed to a short stable key.
     ///
-    /// The metric names and both formatted values go in, sorted so that the order the checks
+    /// The metric ids and both **raw** values go in, sorted so that the order the checks
     /// happen to run in cannot change the key. The delta does not: it is derived from the
     /// two values already in the fingerprint.
+    ///
+    /// Raw since round 2 of ADR-033, and that is a fix rather than a refactor: the values
+    /// used to be the *formatted* ones, so a rider who dismissed a banner in knots and then
+    /// switched Settings → Units to km/h was shown it again — the same disagreement, a
+    /// different fingerprint. What the rider dismissed is the disagreement, not its spelling.
     public static func fingerprint(sessionID: String, divergences: [Divergence]) -> String {
         let body = divergences
-            .map { "\($0.metric)|\($0.watch)|\($0.phone)" }
+            .map { "\($0.metricId)|\($0.watchValue)|\($0.phoneValue)" }
             .sorted()
             .joined(separator: ";")
         return "\(sessionID):\(fnv1a(body))"

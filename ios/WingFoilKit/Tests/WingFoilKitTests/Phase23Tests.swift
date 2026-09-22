@@ -701,17 +701,83 @@ import Testing
         diverging.best2sMps = 19.0 / Units.mpsToKn     // −1.0 kn
         diverging.flightCount = 14                     // +4
         let found = DivergenceCheck.compare(watch: diverging, phone: analysis)
-        #expect(Set(found.map(\.metric)) == ["Foil time", "Best 2 s", "Flights"])
+        #expect(Set(found.map(\.metricId)) == ["foilTime", "best2s", "flights"])
 
         // Nothing to compare on a source without our session dev fields.
         #expect(DivergenceCheck.compare(watch: WatchSummary(), phone: analysis).isEmpty)
     }
 
+    /// **The banner and the table print exactly what they printed before the numbers went
+    /// raw** (ADR-033, round 2).
+    ///
+    /// `Divergence` carried four formatted strings; it carries ids and raw values now, and
+    /// `DivergenceText` writes the four columns and the one sentence. These are the strings
+    /// the surfaces showed, asserted verbatim, which is what makes the change a refactor
+    /// rather than a rewording.
+    @Test func theDivergenceLinesRenderTheSentencesTheyAlwaysDid() {
+        let foil = Divergence(metricId: "foilTime",
+                              labelId: "presentation.divergence.foilTime",
+                              watchValue: 1200, phoneValue: 960, unitKind: "durationS")
+        let record = Divergence(metricId: "best2s", labelId: "tokens.recordWindow.best2s",
+                                watchValue: 13.05, phoneValue: 13.47, unitKind: "speedKn")
+        let flights = Divergence(metricId: "flights",
+                                 labelId: "presentation.divergence.flights",
+                                 watchValue: 10, phoneValue: 14, unitKind: "count")
+
+        #expect(DivergenceText.metric(foil) == "Foil time")
+        #expect(DivergenceText.watch(foil) == "20:00")
+        #expect(DivergenceText.phone(foil) == "16:00")
+        #expect(DivergenceText.delta(foil) == "-20 %")
+
+        // The record names itself out of `RecordKind`, so the table and the map's window
+        // picker cannot spell one record two ways.
+        #expect(DivergenceText.metric(record) == "Best 2 s")
+        #expect(DivergenceText.delta(record) == "+0.42 kn")
+
+        #expect(DivergenceText.metric(flights) == "Flights")
+        #expect(DivergenceText.watch(flights) == "10")
+        #expect(DivergenceText.delta(flights) == "+4")
+
+        // One, two, and the "and N more" tail — the three shapes the banner has.
+        #expect(DivergenceText.banner([foil]) == "Watch and phone disagree on foil time")
+        #expect(DivergenceText.banner([foil, flights])
+                == "Watch and phone disagree on foil time and flights")
+        #expect(DivergenceText.banner([foil, flights, record])
+                == "Watch and phone disagree on foil time, flights and 1 more")
+
+        #expect(!DivergenceText.isTakeoffOnly([foil]))
+        #expect(DivergenceText.isTakeoffOnly([
+            Divergence(metricId: "takeoffs", labelId: "presentation.divergence.takeoffs",
+                       watchValue: 9, phoneValue: 15, unitKind: "count"),
+        ]))
+    }
+
+    /// The line as the document spells it: ids, raw values, a `unitKind` — and a count that
+    /// is an integer rather than a `4.0` two renderers could disagree about.
+    @Test func theDivergenceLineIsADocumentLineToo() {
+        let flights = Divergence(metricId: "flights",
+                                 labelId: "presentation.divergence.flights",
+                                 watchValue: 10, phoneValue: 14, unitKind: "count")
+        #expect(flights.documentLine.json() == """
+        {
+          "labelId": "presentation.divergence.flights",
+          "metricId": "flights",
+          "phone": 14,
+          "unitKind": "count",
+          "watch": 10
+        }
+        """)
+    }
+
     /// Dismissing the banner hides *that* divergence, not the session: a re-analysis that
     /// says something different is a new statement and shows again.
     @Test func dismissingABannerHidesOnlyTheDivergenceThatWasRead() {
-        let one = [Divergence(metric: "Foil time", watch: "20:00", phone: "16:00", delta: "-20 %")]
-        let other = [Divergence(metric: "Flights", watch: "10", phone: "14", delta: "+4")]
+        let one = [Divergence(metricId: "foilTime",
+                              labelId: "presentation.divergence.foilTime",
+                              watchValue: 1200, phoneValue: 960, unitKind: "durationS")]
+        let other = [Divergence(metricId: "flights",
+                                labelId: "presentation.divergence.flights",
+                                watchValue: 10, phoneValue: 14, unitKind: "count")]
 
         #expect(!DivergenceDismissal.isDismissed(sessionID: "s1", divergences: one,
                                                  dismissed: []))
@@ -780,21 +846,21 @@ import Testing
         #expect(noWind.jibeCount == nil)
         #expect(!noWind.isEmpty)                       // the rest of the summary still stands
         let quiet = DivergenceCheck.compare(watch: noWind, phone: analysis)
-        #expect(!quiet.contains { $0.metric == "Tacks" || $0.metric == "Jibes" })
+        #expect(!quiet.contains { $0.metricId == "tacks" || $0.metricId == "jibes" })
 
         // Same zeros *with* a wind axis: the watch really did count none, so it compares.
         let withWind = FitSessionParser.watchSummary(session(tacks: 0, jibes: 0, windDeg: 200))
         #expect(withWind.tackCount == 0)
         #expect(withWind.jibeCount == 0)
         let loud = DivergenceCheck.compare(watch: withWind, phone: analysis)
-        #expect(Set(loud.map(\.metric)).isSuperset(of: ["Tacks", "Jibes"]))
+        #expect(Set(loud.map(\.metricId)).isSuperset(of: ["tacks", "jibes"]))
 
         // And the demotion is narrow: one non-zero count means the axis was set after all.
         let oneSided = FitSessionParser.watchSummary(session(tacks: 3, jibes: 0, windDeg: nil))
         #expect(oneSided.tackCount == 3)
         #expect(oneSided.jibeCount == 0)
         #expect(DivergenceCheck.compare(watch: oneSided, phone: analysis)
-                    .contains { $0.metric == "Jibes" })
+                    .contains { $0.metricId == "jibes" })
 
         // Device app ≥ 0.9.0 (docs/fit-schema.md session 44): the watch can estimate the axis
         // itself. That is an axis too, so an *estimated* session's 0/0 is a real observation
@@ -806,8 +872,8 @@ import Testing
         #expect(auto.windDirAutoDeg == 200)
         #expect(auto.tackCount == 0)
         #expect(auto.jibeCount == 0)
-        #expect(Set(DivergenceCheck.compare(watch: auto, phone: analysis).map(\.metric))
-                    .isSuperset(of: ["Tacks", "Jibes"]))
+        #expect(Set(DivergenceCheck.compare(watch: auto, phone: analysis).map(\.metricId))
+                    .isSuperset(of: ["tacks", "jibes"]))
 
         // Both fields present: the rider set an axis part-way through a session the watch had
         // already estimated. Neither displaces the other.

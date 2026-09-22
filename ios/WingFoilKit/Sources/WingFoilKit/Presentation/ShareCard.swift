@@ -60,7 +60,7 @@ public struct ShareCardStats: Sendable, Equatable {
         /// The label is deliberately the same words on both: it names the three inks, and
         /// what the three inks are counting is what the caption says.
         public init(_ tally: KeyMetrics.Tally, key: String = Key.tally) {
-            self.init(key: key, label: "flew · touchdown · fell",
+            self.init(key: key, label: tally.label,
                       value: String(tally.flewThrough) + " · " + String(tally.touchdown)
                           + " · " + String(tally.fellIn),
                       caption: tally.caption, tally: tally)
