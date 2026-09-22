@@ -6,9 +6,9 @@ Five surfaces draw one session: the iPhone, the web analyzer, the share card, th
 home-screen widgets and the watch's summary card. Each of them computed the same block, the
 same tally, the same record set and the same callout sentence for itself, in four languages,
 and the only thing holding them together was `web/tools/verify_presentation.py`, which
-re-derives each fact a *third* time so that the other two can be compared against a rule
-rather than against each other. That verifier is a good mechanism and it is why the surfaces
-agree today. It is also the sign of the problem: a fact that needs a third implementation to
+re-derived each fact a *third* time so that the other two could be compared against a rule
+rather than against each other. That verifier was a good mechanism and it is why the surfaces
+agree today. It was also the sign of the problem: a fact that needs a third implementation to
 stay true is a fact with no owner.
 
 **The engine emits the presentation facts once.** `build_presentation(golden)` in the lab
@@ -21,8 +21,18 @@ and switched nothing. **Round 2 — done — moved the iPhone's session surfaces
 key-metrics block and the share card, the records table and the map's effort windows, the
 map's marks and the wrist-under callouts, and the divergence banner, whose numbers the
 document could not carry until `Divergence` stopped holding sentences. The ids it points at
-became kit-owned in the same round. **No verifier has been retired** — `verify_presentation.py`
-still re-derives all 1 653 assertions, and round 3 is the web and the retirement.
+became kit-owned in the same round.
+
+**Round 3 — done — moved the browser onto it, and retired the re-derivations.** The
+document is built once per analysis, inside `web_entry.analyze_bytes`, with the page's
+record policy and the watch-vs-phone lines the analysis cannot know; it travels *inside* the
+stored analysis JSON, so a session re-opened from the library redraws with no Pyodide and no
+network. The block, the card, the record tiles, the map's marks, the wrist-under callouts,
+the flight-end list, the divergence banner, the turn strip, the turn page's "3 of 14" and
+the legend chips all read it, and `web/js/presentation.js` is the resolver — the JavaScript
+twin of `PresentationCopy`. `verify_presentation.py` went from **1 675 assertions to 474**:
+every section the table below calls *carried* is one check that the browser reads the field,
+because the value itself is already pinned, once, for both platforms.
 
 Two surfaces are deliberately **not** on it, and the reason is the same for both: the
 library row and the home-screen widgets read the **session index**, which holds no analysis
@@ -169,9 +179,34 @@ substitute.
 #### `turns` — the legend and the strip
 
 `legend` is the twelve layers of `design/tokens.json` in its order, each with its `labelId`,
-its `colourRole` and the `count` that decides whether its chip is a live toggle. A *line*
-layer (`flying`, `offFoil`, `effort`, `direction`) has `count: null` — it has nothing to be
-live about.
+its `colourRole` and the `count` the chip prints. A *line* layer (`flying`, `offFoil`,
+`effort`, `direction`) has `count: null` — it has nothing to be a tally of, so a surface
+answers "is there a line to hide?" for itself.
+
+**The legend's counts — the rule, settled in round 3.** The count is the **analysis
+count**: every mark of that category the afternoon held. A mark the recording could not
+place is drawn nowhere and is still counted, because what the chip names is the session and
+not the drawing of it — a Doppler-only recording has no track at all, and its afternoon did
+not therefore contain fewer falls. Counting what is *drawn* was the alternative and is
+rejected for exactly that reason: it would make one afternoon count differently depending on
+the file it arrived in, which is one number with two meanings
+(`docs/review-checklist.md`, pattern L).
+
+Two consequences worth stating, because they read like contradictions and are not:
+
+- **A clean jibe is counted twice, on `flewThrough` and on `cleanJibe`.** The star is a mark
+  on both censuses. It still answers to the star's chip *alone* for hiding — the chips are
+  independent (Jan, 5 Sep 2026), so hiding `flew through` leaves the stars — because the
+  chip's **number is a census and the chip's tap is a filter**. The legend says so in its
+  own note, on both platforms.
+- The count is not "how many marks this figure drew", so it does not change when the rider
+  zooms, pans or switches a chip off.
+
+The iPhone has counted this way since the legend existed (`MapLayerTally`); the browser
+counted the drawn marks and therefore left the clean jibes out of its flew-through chip.
+The browser reads `turns.legend[].count` now. Pinned on both sides:
+`PresentationTests.theLegendChipCountsAreTheDocumentsAnalysisCounts` and
+`verify_presentation.py`'s "the browser does not re-derive a layer count from its marks".
 
 `strip` is one entry per detected sweep, in time order, counted and uncounted together: the
 Turns tab's list, the maneuver map and the turn page all read it. Beyond the engine's own
@@ -271,27 +306,28 @@ the document must never try to make it:
 
 ### Coverage — every `verify_presentation.py` section, answered
 
-Round 3 retires what this table says is carried. **Nothing has been deleted yet** — rounds
-1 and 2 moved the facts and the renderers; the verifier still re-derives every one of them,
-which is what made round 2 safe to make.
+Round 3 retired what this table calls **carried**: each of those sections is now one check
+that the browser *reads* the field, in `check_document_reads`, because the value is pinned
+once by `lab/tests/test_presentation.py` and `GoldenTests.presentationDocumentMatchesTheGoldenByte`.
+**1 675 assertions → 474**, and not one fact lost an owner — they gained one.
 
 | verifier section | the document's answer |
 |---|---|
-| **1.** contract shape (layers, records, filter grid) | carried — `turns.legend[].layerId`, `records.kinds[].key` in catalogue order, `filters[].typeId`/`sideId`. The *labels* stay in `design/tokens.json`, which the document points at rather than copies |
-| **2.** eligibility rules, re-derived | carried — `markers`, `turns.strip[].layerId`, `flightEnds.marks`, `splash.marks`, `filters`. The rules run once, in `build_presentation` |
-| **2b.** glide-out ends fold into `flewThrough` | carried — `flightEnds.marks[].outcomeId`, which is `flewThrough` for a `glide_out`; the mark's `hollow` flag is what makes it the hollow one |
-| **2c.** flight-count invariants | carried — `flightEnds.flightCount` beside `markers.takeoff` and the three buckets; the lab test asserts the arithmetic on the document itself |
+| **1.** contract shape (layers, records, filter grid) | **retired** — carried by `turns.legend[].layerId`, `records.kinds[].key` in catalogue order, `filters[].typeId`/`sideId`. The *labels* stay in `design/tokens.json`, which the document points at rather than copies |
+| **2.** eligibility rules, re-derived | **retired** — carried by `markers`, `turns.strip[].layerId`, `flightEnds.marks`, `splash.marks`, `filters`. The rules run once, in `build_presentation` |
+| **2b.** glide-out ends fold into `flewThrough` | **retired** — carried by `flightEnds.marks[].outcomeId`, which is `flewThrough` for a `glide_out`; the mark's `hollow` flag is what makes it the hollow one |
+| **2c.** flight-count invariants | **retired** — carried by `flightEnds.flightCount` beside `markers.takeoff` and the three buckets; the lab test asserts the arithmetic on the document itself |
 | **3.** counts agree with the summary | **renderer-only, and deliberately.** It ties the document to the *analysis* document's own `summary`, which is the engine's half of the contract, not presentation's. It is the check that would catch `build_presentation` mis-reading the golden, so it outlives round 3 |
 | **4.** the same facts out of `web_entry` | **renderer-only.** It is about the browser's call path — Pyodide, the worker, `meta` — and the session clock and its note, which are `meta.utcOffsetSource` facts the analysis document does not carry. The document is built from an analysis and says nothing about how one was obtained |
-| **4 (session clock, clock note)** | **not carried, round 2.** `meta.utcOffsetS` / `utcOffsetSource` and the note's four cases belong in the document as a `clock` section with an id per rung; they are outside this round because the analysis golden has no `meta` |
-| **5.** the card is the block | carried — `card.tiles` *are* `block` cells by construction, and `card.leanKeys` / `forbiddenKeys` are the preset contract. The verifier's third spelling of every value string becomes a renderer test |
-| **5 (wrist under)** | carried — `splash.marks[].title` / `.during`, as ids with arguments |
-| **5a.** the rate row on the three missing sessions | carried — `block.rows[id=rates]`. The three synthetic cases move to the lab's `test_the_branches_no_corpus_fixture_is` and to `card_parity.mjs`'s renderer test |
+| **4 (session clock, clock note)** | **not carried, and still not.** `meta.utcOffsetS` / `utcOffsetSource` and the note's four cases belong in the document as a `clock` section with an id per rung; they were outside rounds 2 and 3 because the analysis golden has no `meta`, and the section stays |
+| **5.** the card is the block | **retired** — carried by `card.tiles` *are* `block` cells by construction, and `card.leanKeys` / `forbiddenKeys` are the preset contract. The verifier's third spelling of every value string is gone; what is left is one comparison of the rendered block against the card's `complete`, over every fixture at once |
+| **5 (wrist under)** | **retired** — carried by `splash.marks[].title` / `.during`, as ids with arguments |
+| **5a.** the rate row on the three missing sessions | **retired** — carried by `block.rows[id=rates]`. The three synthetic cases live in the lab's `test_the_branches_no_corpus_fixture_is` |
 | **5b.** the rider's title and caption | **renderer-only, for ever.** A title and a caption are the sender's own words, not facts about the session; the document must not carry them. `statsUnchanged` — that the caption did not become a cell — is exactly what `card.tiles` makes structurally impossible |
 | **5c.** the card's optional map background | **renderer-only.** Projection, framing and inset are drawing |
 | **5d.** the period card | **not carried.** A period is *many* sessions; this document is one. `fixtures/periods/periods.expected.json` is its own contract and stays |
 | **5e.** the period outlines share one scale | **renderer-only**, and about a period besides |
-| **6.** why a turn is a touchdown or a fall | **half carried.** `turns.strip[].outcomeReasonId` and `.cleanBlockedById` are in the document; the *sentence* they open (`TurnAnalytics.outcomeText`, with its margin speed and its lexicon swap) is not, and moves to `docs/copy` in round 3 |
+| **6.** why a turn is a touchdown or a fall | **half carried.** `turns.strip[].outcomeReasonId` and `.cleanBlockedById` are in the document; the *sentence* they open (`TurnAnalytics.outcomeText`, with its margin speed and its lexicon swap) is not. It did **not** move in round 3 — it interpolates a threshold out of the session's own `config`, which is a fourth namespace the document has no rule for — so the section stays and the sentence is the next round's question |
 
 ### Where it lives
 

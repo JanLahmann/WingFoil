@@ -42,7 +42,7 @@ because it decides which records may stand at all. `docs/presentation/document.m
 schema, the list of what a renderer may still decide, and a table answering every section of
 the verifier: carried and where, or renderer-only and why.
 
-**Three rounds, two of them done.** Round 1 defines the document, produces it on both
+**Three rounds, all done.** Round 1 defines the document, produces it on both
 platforms and pins it — **no renderer switched and no verifier was retired**.
 
 **Round 2 switches the iPhone's session surfaces onto it** and gives the divergence banner
@@ -56,10 +56,34 @@ document when it opens (6.9 ms on the corpus's longest afternoon) rather than st
 a blob beside the row would need a migration, a staleness rule and a second answer to which
 engine wrote it.
 
-The two things the analysis alone cannot say are **not** done and move to round 3 with the
-web: the session clock and its trust note (`meta.utcOffsetSource`), and the outcome sentence
-behind `outcomeReasonId` / `cleanBlockedById`. Round 3 ports the web renderers and retires
-the verifier sections the table marks as carried.
+**Round 3 switches the browser onto it and retires the re-derivations.** The document is
+built once per analysis, inside `web_entry.analyze_bytes`, with the page's speed-record
+policy and the watch-vs-phone lines an analysis cannot know — and it travels **inside** the
+stored analysis JSON rather than beside it, which is the one place round 3 departs from
+round 2's arrangement. The reason is the browser's own promise: a session re-opened from the
+library redraws with no FIT decode, no Pyodide and no network, and a block the page had to
+wait for Python to compute would break it. A session saved before this round carries none
+and has one built on open; re-saving it writes one for good. Everything on the session page
+reads it — the block, the card, the record tiles, the map's marks, the wrist-under callouts,
+the flight-end list, the divergence banner, the turn strip, the turn page's "3 of 14" — and
+`web/js/presentation.js` resolves the ids, as the JavaScript twin of `PresentationCopy`.
+`verify_presentation.py` goes from **1 675 assertions to 474**: each retired section becomes
+one check that the browser reads the field, because the value is already pinned, once, for
+both platforms.
+
+**The legend chips, which round 2 left open, are settled in round 3**: a chip's number is
+`turns.legend[].count`, the **analysis count** — every mark of that category the afternoon
+held, whether or not the recording could place it on a track. The drawn count was the
+alternative and is rejected because it makes one afternoon count differently depending on
+the file it arrived in. The iPhone has counted this way since the legend existed; the
+browser counted the drawn marks and so left its clean jibes out of the flew-through chip,
+and now agrees.
+
+Two things the analysis alone cannot say are still **not** carried, and both keep their
+verifier section: the session clock and its trust note (`meta.utcOffsetSource`, which the
+analysis golden has no `meta` for), and the outcome sentence behind `outcomeReasonId` /
+`cleanBlockedById` — it interpolates a threshold out of the session's own `config`, which is
+a namespace the document's four id rules have no answer for yet.
 
 A renderer keeps everything that is a decision rather than a fact: formatting, layout,
 Dynamic Type, ordering within a row that depends on width, interaction, the card's picture,
