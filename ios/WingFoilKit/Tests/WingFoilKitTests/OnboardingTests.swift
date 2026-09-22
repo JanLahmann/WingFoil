@@ -87,7 +87,7 @@ import Testing
         let privacy = HelpCatalog.topic(.icuPrivacy)
         #expect(privacy.body.contains(IcuSetupGuide.privacyNote))
 
-        // The setup section is reachable from the index and holds exactly these twelve, in
+        // The setup section is reachable from the index and holds exactly these sixteen, in
         // this order — the example session sits second, right after the path it is an
         // alternative to; the two Apple doors sit third and fourth because for a rider with
         // no Garmin they are not a footnote about data quality but the whole way in
@@ -95,7 +95,9 @@ import Testing
         // (ADR-023), with "Recording with a phone only" beside the share-sheet topic
         // because it is the same reader one step further down — no Garmin, no Apple Watch,
         // and now no watch at all — and the watch table under them answering "will mine
-        // work" once instead of a third of an answer in each; the two intervals.icu
+        // work" once instead of a third of an answer in each; the update that never
+        // arrives sits straight under that table, because it is the same rider asking the
+        // next question about the same watch; the two intervals.icu
         // troubleshooting topics stay together; and the backup topic sits under them
         // because it is the one a rider reads before he leaves a phone rather than when he
         // arrives on one — with "Sending feedback" last of all, which is the section's way
@@ -104,8 +106,8 @@ import Testing
         #expect(HelpCatalog.topics(in: .setup).map(\.id)
                 == [.icuSetup, .notifications, .exampleSession, .appleWatchApp, .appleWorkoutApp,
                     .stravaImport, .shareFromWatchApp, .phoneOnly, .browserApp, .whichWatch,
-                    .icuTroubleshooting, .icuPrivacy, .privacy, .libraryBackup,
-                    .sendingFeedback])
+                    .watchUpdateStuck, .icuTroubleshooting, .icuPrivacy, .privacy,
+                    .libraryBackup, .sendingFeedback])
     }
 
     /// **The page about sending feedback offers to send it** (Jan, dev 65), and says the

@@ -914,6 +914,31 @@
         },
         {
           "body" : [
+            "Garmin's Connect IQ store sometimes queues an update without installing it, most often on the fenix 5 Plus family.",
+            "Restart the watch, then sync in Garmin Connect.",
+            "If it still shows the old version, install it through Garmin Express over the cable.",
+            "CleanJibe updates often, so you meet this here more than with other apps."
+          ],
+          "channels" : [
+            "release",
+            "beta",
+            "dev"
+          ],
+          "id" : "watchUpdateStuck",
+          "items" : [
+
+          ],
+          "related" : [
+            "whichWatch",
+            "shareFromWatchApp",
+            "icuTroubleshooting",
+            "engineVersion"
+          ],
+          "summary" : "The store queued it without installing it. Restart the watch, then sync.",
+          "title" : "The watch update does not arrive"
+        },
+        {
+          "body" : [
             "Every failure CleanJibe can see is reported as a cause, because the fix differs. A rejected key is your key. An empty list is usually Garmin not connected yet. A network error is neither."
           ],
           "channels" : [
