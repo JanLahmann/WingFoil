@@ -324,11 +324,12 @@ struct SessionDetail: Sendable {
 
         let positioned = track.samples.filter { $0.lat != nil && $0.lon != nil }
         segments = Self.buildSegments(positioned, flights: flights)
-        markers = Self.buildMarkers(analysis, positioned: positioned, pairings: pairings)
+        markers = Self.buildMarkers(document, analysis, positioned: positioned,
+                                    pairings: pairings)
         pumpSpans = Self.buildPumpSpans(analysis, positioned: positioned)
         takeoffMarks = Self.buildTakeoffMarks(analysis, positioned: positioned,
                                               pairings: pairings)
-        splashMarks = Self.buildSplashMarks(analysis, positioned: positioned)
+        splashMarks = Self.buildSplashMarks(document, positioned: positioned)
         turnPins = Self.buildTurnPins(analysis, positioned: positioned)
         // The turn sheet draws the maneuver channel the verdicts were scored on, so the
         // track is cleaned here exactly as the engine cleaned it (same gates, same gap rule
@@ -569,7 +570,13 @@ struct SessionDetail: Sendable {
     /// flight), so both are drawn — but a flight end flagged `ownedByTurn` is already
     /// counted at its turn and would double-mark the same swim, so it is dropped. `unknown`
     /// ends are dropped too: the recording stopped, nothing happened there.
-    private static func buildMarkers(_ analysis: SessionAnalysis,
+    /// **Which marks exist, and what each one is, is the document's** (ADR-033, round 2):
+    /// `turns.strip` is one entry per detected sweep with the ink its outcome earns and the
+    /// clean star that lies across the ladder, and `flightEnds.marks` is exactly the drawn
+    /// ends — the hollow rings no turn explains. This adds the position, the callout's
+    /// sentence and the pairing line, which are the three things a renderer owns here.
+    private static func buildMarkers(_ document: PresentationValue,
+                                     _ analysis: SessionAnalysis,
                                      positioned: [RecordSample],
                                      pairings: [FlightPairing.Flight]) -> [EventMarker] {
         guard !positioned.isEmpty else { return [] }
@@ -592,72 +599,91 @@ struct SessionDetail: Sendable {
             nextID += 1
         }
 
-        for (index, turn) in analysis.turns.enumerated() {
-            let tone: EventMarker.Tone = turn.counted ? outcomeTone(turn.outcome) : .course
+        for entry in document["turns"]?["strip"]?.arrayValue ?? [] {
+            guard case .int(let index)? = entry["index"],
+                  analysis.turns.indices.contains(index) else { continue }
+            let turn = analysis.turns[index]
+            let counted = entry["counted"] == .bool(true)
             var detail = Fmt.knValue(turn.entryKn, digits: 1) + " → "
                 + Fmt.kn(turn.minKn, digits: 1)
             if turn.stoppedS > 0 { detail += String(format: " · stopped %.0f s", turn.stoppedS) }
             if turn.submerged { detail += " · wrist under" }
             if turn.pumped { detail += " · pumped out" }
-            // A clean jibe is the engine's own per-turn `clean` verdict (engine 0.12.0) —
-            // the same flag the tally's caption counts, never re-derived here.
-            add(t: turn.ts, tone: tone, filled: true,
-                title: turnTitle(turn), detail: detail,
-                isCleanJibe: turn.clean,
+            // A clean jibe is the engine's own per-turn `clean` verdict (engine 0.12.0),
+            // carried on the strip entry — the same flag the tally's caption counts and the
+            // same one the star answers to, never re-derived here.
+            add(t: turn.ts, tone: tone(entry["colourRole"]?.stringValue), filled: true,
+                title: turnTitle(entry), detail: detail,
+                isCleanJibe: entry["clean"] == .bool(true),
                 // Only a *counted* turn carries one. A bear-away has no verdict, no score and
                 // no entry tack, so there is nothing for a detail sheet to analyse — the
                 // callout still names it, and the "Details" affordance is simply absent.
-                turnIndex: turn.counted ? index : nil)
+                turnIndex: counted ? index : nil)
         }
-        // By index, so the callout can name the record the flight-end page opens on — the
-        // list is `PresentationRules.drawnFlightEnds` read positionally.
-        for index in FlightEndAnalytics.drawnIndices(analysis) {
+        // The document's drawn ends, by the index they sit at in `analysis.flightEnds`, so
+        // the callout can name the record the flight-end page opens on.
+        for mark in document["flightEnds"]?["marks"]?.arrayValue ?? [] {
+            guard case .int(let index)? = mark["index"],
+                  analysis.flightEnds.indices.contains(index) else { continue }
             let end = analysis.flightEnds[index]
             var detail = "straight-line"
             if end.stoppedS > 0 { detail += String(format: " · stopped %.0f s", end.stoppedS) }
             if end.submerged { detail += " · wrist under" }
-            add(t: end.ts, tone: outcomeTone(end.outcome), filled: false,
-                title: endTitle(end.outcome), detail: detail, flightIndex: end.flightIndex,
-                flightEndIndex: index)
+            add(t: end.ts, tone: tone(mark["colourRole"]?.stringValue), filled: false,
+                title: endTitle(mark["outcomeId"]?.stringValue),
+                detail: detail, flightIndex: end.flightIndex, flightEndIndex: index)
         }
         return out.sorted { $0.t < $1.t }
     }
 
-    /// Through the shared rule (`PresentationRules`), not a second copy of the ladder:
-    /// the chip a mark answers to and the colour it is drawn in must be the same decision.
-    private static func outcomeTone(_ outcome: String) -> EventMarker.Tone {
-        switch PresentationRules.layer(forOutcome: outcome) {
-        case .fellIn: return .fell
-        case .touchdown: return .touchdown
+    /// The document's colour **role** as this surface's ink. One decision, taken in
+    /// `PresentationDocument`, resolved here — the chip a mark answers to and the colour it
+    /// is drawn in can no longer be two readings of the ladder.
+    private static func tone(_ colourRole: String?) -> EventMarker.Tone {
+        switch colourRole {
+        case "outcome.fellIn": return .fell
+        case "outcome.touchdown": return .touchdown
+        case "outcome.courseChange": return .course
         default: return .flew            // flew_through | glide_out
         }
     }
 
-    private static func turnTitle(_ turn: TurnRecord) -> String {
-        let kind: String
-        switch turn.type {
-        case "jibe": kind = "Jibe"
-        case "tack": kind = "Tack"
-        case "bear_away": kind = "Bear-away"
-        case "round_up": kind = "Round-up"
-        default: kind = "Turn"
-        }
-        guard turn.counted else { return kind }
-        let outcome: String
-        switch turn.outcome {
-        case "fell_in": outcome = "fell in"
-        case "touchdown": outcome = turn.borderline ? "touchdown (borderline)" : "touchdown"
-        default: outcome = "flew through"
+    /// "Jibe · fell in" — the sweep's kind and, where it has a verdict, the ladder's word
+    /// for it. Both come out of `docs/copy`: the kind from `presentation.turnKind`, the
+    /// verdict from the layer's own label, which is what the legend chip says too.
+    ///
+    /// An uncounted sweep is named and nothing more. A bear-away has no verdict to report,
+    /// and a callout that invented one would be stating a fact the engine never reached.
+    private static func turnTitle(_ entry: PresentationValue) -> String {
+        let kind = capitalised(PresentationCopy.text("presentation.turnKind."
+                                                     + (entry["typeId"]?.stringValue ?? ""))
+                               ?? "turn")
+        guard entry["counted"] == .bool(true) else { return kind }
+        var outcome = PresentationCopy.text("tokens.layer."
+                                            + (entry["outcomeId"]?.stringValue ?? "")) ?? ""
+        // The borderline flag qualifies the word rather than changing it: the turn *is* a
+        // touchdown, and how close it came is the parenthesis.
+        if entry["outcomeId"]?.stringValue == MapLayer.touchdown.rawValue,
+           entry["borderline"] == .bool(true) {
+            outcome += " (borderline)"
         }
         return "\(kind) · \(outcome)"
     }
 
-    private static func endTitle(_ outcome: String) -> String {
-        switch outcome {
-        case "fell_in": return "Fell in"
-        case "touchdown": return "Touchdown"
+    /// "Fell in" / "Touchdown" / "Glided out" — the hollow ring's own heading. A glide-out
+    /// folds into the `flewThrough` layer (docs/presentation/document.md, §2b), and this is
+    /// the one place that layer is read as the straight-line word for it.
+    private static func endTitle(_ outcomeID: String?) -> String {
+        switch outcomeID {
+        case MapLayer.fellIn.rawValue: return "Fell in"
+        case MapLayer.touchdown.rawValue: return "Touchdown"
         default: return "Glided out"
         }
+    }
+
+    private static func capitalised(_ word: String) -> String {
+        guard let first = word.first else { return word }
+        return first.uppercased() + word.dropFirst()
     }
 
     /// The pumping attempts, as spans of track.
@@ -764,58 +790,26 @@ struct SessionDetail: Sendable {
     /// maneuver that happened to own a dunk, placed at the maneuver's own start. Jan asked
     /// "do we see all of them?" on 7 Sep 2026, and the answer on his 29 Aug session was 4
     /// marks against 35 submersions — none of them where the wrist actually went in.
-    private static func buildSplashMarks(_ analysis: SessionAnalysis,
+    /// **The callout is the document's, word for word** (ADR-033). `splash.marks` carries
+    /// each episode's `title` and `during` as a copy id plus its arguments — "Wrist under ·
+    /// 4 s", "during jibe 7", "after flight 12 ended, stopped 3 s" — so the sentence is
+    /// written once and the ordinal is counted once. It was spelled here in Swift, again in
+    /// `web/js`, and a third time in the verifier that existed to stop the first two
+    /// drifting (`docs/presentation/document.md`, "`splash`"). All this adds is the position.
+    private static func buildSplashMarks(_ document: PresentationValue,
                                          positioned: [RecordSample]) -> [SplashMark] {
         var out: [SplashMark] = []
-        for sub in PresentationRules.submersions(analysis) {
-            guard let sample = nearest(positioned, t: sub.ts),
+        for mark in document["splash"]?["marks"]?.arrayValue ?? [] {
+            guard case .number(let ts)? = mark["ts"],
+                  let sample = nearest(positioned, t: ts),
                   let lat = sample.lat, let lon = sample.lon else { continue }
-            out.append(SplashMark(id: out.count, t: sub.ts, lat: lat, lon: lon,
-                                  title: splashTitle(sub),
-                                  detail: splashDetail(sub, analysis: analysis)))
+            out.append(SplashMark(id: out.count, t: ts, lat: lat, lon: lon,
+                                  title: mark["title"].flatMap(PresentationCopy.captionText)
+                                      ?? "",
+                                  detail: mark["during"].flatMap(PresentationCopy.captionText)
+                                      ?? ""))
         }
         return out
-    }
-
-    /// "Wrist under · 4 s". The length is dropped rather than printed as "0 s" when the run
-    /// is a single sample: at 1 Hz that is an instant the recorder caught once, and a zero
-    /// would read as a measurement.
-    static func splashTitle(_ sub: SubmersionRecord) -> String {
-        guard sub.durationS.rounded() >= 1 else { return "Wrist under" }
-        return String(format: "Wrist under · %.0f s", sub.durationS)
-    }
-
-    /// What the episode happened *during*, in the engine's own attribution order: the turn
-    /// whose outcome window owns it, else the flight end's, else neither — which is not a
-    /// missing answer but a real one, and says so.
-    static func splashDetail(_ sub: SubmersionRecord, analysis: SessionAnalysis) -> String {
-        if let index = sub.turnIndex, analysis.turns.indices.contains(index) {
-            let turn = analysis.turns[index]
-            let kind = TurnAnalytics.typeLabel(turn.type).lowercased()
-            guard let ordinal = turnOrdinal(index, in: analysis) else {
-                return "during a \(kind)"
-            }
-            return "during \(kind) \(ordinal)"
-        }
-        if let index = sub.flightEndIndex, analysis.flightEnds.indices.contains(index) {
-            let end = analysis.flightEnds[index]
-            var line = "after flight " + String(end.flightIndex + 1) + " ended"
-            if end.stoppedS >= 1 { line += String(format: ", stopped %.0f s", end.stoppedS) }
-            return line
-        }
-        return "while off foil"
-    }
-
-    /// "jibe 7" — the rider's ordinal among the session's counted turns *of the same kind*,
-    /// which is the numbering the turn sheet's title uses. His seventh jibe, not the seventh
-    /// thing the detector saw.
-    private static func turnOrdinal(_ index: Int, in analysis: SessionAnalysis) -> Int? {
-        let turn = analysis.turns[index]
-        guard turn.counted else { return nil }
-        return analysis.turns.enumerated()
-            .filter { $0.element.counted && $0.element.type == turn.type }
-            .firstIndex { $0.offset == index }
-            .map { $0 + 1 }
     }
 
     /// Positions for the counted turns, so the turns page can mark exactly the ones its

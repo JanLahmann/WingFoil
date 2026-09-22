@@ -110,29 +110,44 @@ import Testing
         }
     }
 
-    /// Every name `DivergenceCheck.compare` can put in a row. Listed rather than provoked:
-    /// building a watch summary that trips all eleven thresholds is a fixture, not a lint,
-    /// and `theBannerNamesNothingElse` below holds the list to the source.
-    static let divergenceNames = [
-        "Foil time", "Best 2 s", "Best 10 s", "Best 5×10 s", "Best 500 m", "Best 1 NM",
-        "Alpha 500", "Flights", "Tacks", "Jibes", "Takeoff attempts", "Takeoffs",
-    ]
+    /// Every name `DivergenceCheck.compare` can put in a row — **resolved, not listed**.
+    ///
+    /// It was a hand-kept list of twelve strings beside a check that typed the same twelve,
+    /// with a lint underneath holding the two to each other. Since round 2 of ADR-033 the
+    /// check emits ids and the names are copy, so the list is the ids resolved: six speed
+    /// records that name themselves out of `RecordKind`, and the six with no other home.
+    static let divergenceRecordKinds: [RecordKind] = [.best2s, .best10s, .best5x10s,
+                                                      .best500m, .bestNm, .alpha500]
 
-    /// …and the list above is the source's, not a copy that can drift: every `"…"` the
-    /// banner uses as a metric name is in it.
+    static var divergenceNames: [String] {
+        ["foilTime", "flights", "tacks", "jibes", "takeoffAttempts", "takeoffs"]
+            .compactMap { PresentationCopy.text("presentation.divergence." + $0) }
+            + divergenceRecordKinds.compactMap {
+                PresentationCopy.text("tokens.recordWindow." + $0.rawValue)
+            }
+    }
+
+    /// …and the check itself names nothing. Every metric word it used to type is an id
+    /// now, so a rider-facing name cannot be added to the engine without going through
+    /// `docs/copy` — which is what the list above was a proxy for.
     @Test func theBannerNamesNothingElse() throws {
         let file = CopyContractTests.repoRoot
             .appendingPathComponent("ios/WingFoilKit/Sources/WingFoilKit/AnalysisEngine")
             .appendingPathComponent("DivergenceCheck.swift")
         let text = try String(contentsOf: file, encoding: .utf8)
-        let found = Self.quoted(text, after: #"\(\s*""#)
-        for name in found {
-            #expect(Self.divergenceNames.contains(name),
+        for literal in Self.quoted(text, after: #"\(\s*""#) {
+            // An id is one lowerCamelCase word or a dotted path; a rider-facing name has a
+            // space in it or opens with a capital ("Foil time", "Best 2 s"). Neither shape
+            // may be in this file any more.
+            #expect(!literal.contains(" ") && literal.first?.isUppercase != true,
                     """
-                    DivergenceCheck names "\(name)" and GlossaryLintTests.divergenceNames \
-                    does not list it. Add it there, and to the glossary or the allow-list.
+                    DivergenceCheck names "\(literal)" itself. Every word the banner shows \
+                    is a copy id since ADR-033 round 2 — add it to PresentationCopy and \
+                    name the id here.
                     """)
         }
+        // Twelve rows, twelve names, and every one of them a word this product owns.
+        #expect(Self.divergenceNames.count == 12)
     }
 
     // MARK: - The scanned surfaces

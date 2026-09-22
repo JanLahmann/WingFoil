@@ -217,6 +217,113 @@ import Testing
         #expect(sawFive, "no fixture carried a multi-window 5×10 s record")
     }
 
+    // MARK: - (d) the strip, the marks and the callouts
+
+    /// **The map's marks are the document's strip and its drawn ends.**
+    ///
+    /// `buildMarkers` asked `PresentationRules` for a tone and `FlightEndAnalytics` for the
+    /// drawn set; it reads `turns.strip[].colourRole` and `flightEnds.marks` now. The
+    /// counts that come out of those two lists are the ones every fixture has pinned since
+    /// the corpus existed, so this is the assertion that the renderer's input and the
+    /// verifier's expectation are one thing.
+    @Test func theMarksOnTheMapAreTheDocumentsOwn() throws {
+        for (stem, document) in try Self.everyDocument() {
+            let expected = try Self.expectations(stem)
+            let markers = try #require(expected["markers"] as? [String: Int])
+
+            // The two channels the map draws, together — a solid dot per sweep and a hollow
+            // ring per drawn flight end — because that is what `buildMarkers` produces and
+            // what `markers` has always counted (docs/algorithms/pumping.md, ownership).
+            var byTone: [String: Int] = [:]
+            for entry in (document["turns"]?["strip"]?.arrayValue ?? [])
+                + (document["flightEnds"]?["marks"]?.arrayValue ?? []) {
+                byTone[entry["colourRole"]?.stringValue ?? "", default: 0] += 1
+            }
+            #expect(byTone["outcome.flew"] ?? 0 == markers["flewThrough"], "\(stem): flew-through marks")
+            #expect(byTone["outcome.touchdown"] ?? 0 == markers["touchdown"], "\(stem): touchdown marks")
+            #expect(byTone["outcome.fellIn"] ?? 0 == markers["fellIn"], "\(stem): fell-in marks")
+            #expect(byTone["outcome.courseChange"] ?? 0 == markers["courseChange"], "\(stem): course-change marks")
+
+            // The star lies *across* the ladder: a clean jibe answers to the clean chip and
+            // to its outcome chip, which is why it is a flag on the entry and not a rung.
+            let clean = (document["turns"]?["strip"]?.arrayValue ?? [])
+                .filter { $0["clean"] == .bool(true) }
+            #expect(clean.count == expected["cleanJibes"] as? Int, "\(stem): clean jibes")
+            #expect(clean.allSatisfy { $0["layerId"]?.stringValue == MapLayer.cleanJibe.rawValue },
+                    "\(stem): a clean jibe is not answering to the clean chip")
+
+            // The hollow rings: exactly the drawn ends, no fewer and none twice.
+            let ends = try #require(expected["flightEnds"] as? [String: Int])
+            let drawn = document["flightEnds"]?["marks"]?.arrayValue ?? []
+            #expect(drawn.count == ends["drawn"], "\(stem): the hollow rings are miscounted")
+            let indices = drawn.compactMap { mark -> Int? in
+                if case .int(let i)? = mark["index"] { return i }
+                return nil
+            }
+            #expect(Set(indices).count == drawn.count, "\(stem): a flight end drawn twice")
+        }
+    }
+
+    /// **"Wrist under · 4 s", "during jibe 7", "after flight 12 ended, stopped 3 s".**
+    ///
+    /// The sharpest case of the whole round: the same sentence was spelled in Swift, in
+    /// `web/js` and a third time in the verifier that existed to stop the first two
+    /// drifting. It is one copy id with arguments now, and this renders every episode of
+    /// every fixture through the resolver the phone calls — a callout that came out empty,
+    /// or with a `{placeholder}` still in it, is a sentence with no home.
+    @Test func everyWristUnderCalloutRendersFromTheDocument() throws {
+        var episodes = 0
+        for (stem, document) in try Self.everyDocument() {
+            let splash = try #require(document["splash"])
+            let expected = try Self.expectations(stem)
+            #expect(splash["episodes"] == .int(expected["splash"] as? Int ?? -1),
+                    "\(stem): submersion episodes")
+
+            for mark in splash["marks"]?.arrayValue ?? [] {
+                episodes += 1
+                let title = try #require(mark["title"].flatMap(PresentationCopy.captionText),
+                                         "\(stem): a wrist-under title has no home")
+                let during = try #require(mark["during"].flatMap(PresentationCopy.captionText),
+                                          "\(stem): a wrist-under clause has no home")
+                #expect(title.hasPrefix("Wrist under"), "\(stem): \(title)")
+                #expect(!title.contains("{") && !during.contains("{"),
+                        "\(stem): an argument was never interpolated — \(title) / \(during)")
+                #expect(!during.isEmpty)
+            }
+        }
+        #expect(episodes > 0, "no fixture carried a submersion episode")
+    }
+
+    /// The three shapes the `during` clause has, built here because the corpus does not
+    /// produce all three — the same three the lab pins in
+    /// `test_the_branches_no_corpus_fixture_is`, rendered rather than named.
+    @Test func theThreeWristUnderClausesReadAsEnglish() {
+        func during(_ id: String, _ args: [String: PresentationValue]) -> String? {
+            PresentationCopy.captionText(id, args: args)
+        }
+        #expect(during("presentation.wristUnder.duringTurn",
+                       ["turnId": .string("jibe"), "ordinal": .int(7)]) == "during jibe 7")
+        #expect(during("presentation.wristUnder.duringAnyTurn",
+                       ["turnId": .string("bearAway")]) == "during a bear-away")
+        #expect(during("presentation.wristUnder.afterFlightStopped",
+                       ["flight": .int(12), "stoppedS": .number(3)])
+                == "after flight 12 ended, stopped 3 s")
+        #expect(during("presentation.wristUnder.afterFlight", ["flight": .int(12)])
+                == "after flight 12 ended")
+        #expect(during("presentation.wristUnder.offFoil", [:]) == "while off foil")
+        #expect(during("presentation.wristUnder.titleFor", ["durationS": .number(4)])
+                == "Wrist under · 4 s")
+    }
+
+    /// The fixture's own expectations — the counts `web/tools/verify_presentation.py` has
+    /// compared both platforms against since before the document existed.
+    static func expectations(_ stem: String) throws -> [String: Any] {
+        let url = testFixturesDir
+            .appendingPathComponent("presentation/\(stem).expected.json")
+        let parsed = try JSONSerialization.jsonObject(with: Data(contentsOf: url))
+        return try #require(parsed as? [String: Any], "\(stem): not a JSON object")
+    }
+
     // MARK: - What it costs
 
     /// **Why the document is built on open and not stored** (ADR-033, round 2, step 4).
