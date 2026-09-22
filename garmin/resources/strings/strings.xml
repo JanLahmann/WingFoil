@@ -53,11 +53,16 @@
     <string id="FitUnitCms">cm/s</string>
     <string id="FitTacks">Tacks</string>
     <string id="FitJibes">Jibes</string>
+    <!-- The Garmin Connect row for session field 34. No WATCH page prints this share any
+         more (0.9.19 — the pages print the phone's outcome ladder), but the field is still
+         written and Connect still needs a word for it: `Speed kept` is what that number is.
+         docs/fit-schema.md, the box on field 34. -->
     <string id="FitTurnSuccess">Speed kept</string>
     <string id="FitPumpCadence">Pump cadence</string>
     <string id="FitUnitSpm">spm</string>
-    <string id="FitTakeoffAttempts">Takeoff attempts</string>
-    <string id="FitTakeoffSuccesses">Takeoffs</string>
+    <!-- Fields 35 and 36 folded into the packed `takeoff_pack` (55), so their two labels —
+         FitTakeoffAttempts / FitTakeoffSuccesses — had no FIT contribution left to name and
+         went with them (0.9.19). A packed field carries one label, not three. -->
     <string id="FitPumpStrokes">Pump strokes</string>
     <!-- 0.9.16: the page SET. The only page control a release or beta watch has; the
          per-page editor's strings moved to resources-dev/base/strings/ with its settings. -->

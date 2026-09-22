@@ -17,7 +17,7 @@ CataloguesAsTheCode` on iOS, `verify_presentation.py` §1 for the analyzer).
 | flying, as a share | **`On foil`** | the percentage; the iOS card that showed a percentage under "Foil time" was renamed |
 | the outcomes, as nouns | **`flew through`** · **`touchdown`** · **`fell in`** | `touched down` only inside a sentence; the compact tally keeps `flew · touchdown · fell` |
 | the strict jibe verdict | **`clean`** / **`Clean jibes`** | see the spelling contract above |
-| the score verdict | **`Speed kept`** | 20 Sep 2026. Printed on the watch, in FIT `turn_success_pct` and in Garmin Connect, and **nowhere on the phone**. `success` and `carried` stay internal |
+| the score verdict | **`Speed kept`** | 20 Sep 2026. The name of FIT `turn_success_pct` and of its Garmin Connect row, and of nothing else: **no screen prints it** — not the phone, and since watch 0.9.19 not the wrist either, whose pages carry the phone's four (★clean · flew · touched · fell). The field is still written; the label is what that number is called in a file. `success` and `carried` stay internal |
 | every fall of the session | **`Fell in`** / **`fell in`** | the flight-end channel, straight-line swims included — the row, the block, the card and the session-page card, one number |
 | getting up | **`Takeoffs`** and **`Attempts`**, and **`Got up`** for the share | `Success rate` is retired; `Planing starts` is the windsurf lexicon's spelling of `Takeoffs` |
 | the speed unit | **`kn`** / **`km/h`**, from Settings → Units | one formatter (`Speed`); the engine stays in knots |

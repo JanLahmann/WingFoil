@@ -75,12 +75,16 @@ none changed verdict, and setting `turnOutcomeLookaheadNotRecovered` equal to
 `turnOutcomeLookahead` reproduces 0.23.0's goldens byte for byte — which is how the before
 column of the table in algorithms.md was measured.
 
-**Not ported to the watch**, and the divergence is written down (algorithms.md, "Watch
-approximation"). `LOOKAHEAD_S` there is an unconditional 12 s, so the live verdict on a
-mush-out is `touchdown` where the phone says `fell_in`. The watch has no second ladder to
-disagree with — nothing on the wrist books a straight-line fall — the live detector would have
-to hold a maneuver open for half a minute of samples, and the phone re-derives the session from
-the FIT anyway. The data field stays parked (ADR-020).
+**Ported to the watch in device app 0.9.19** (it was not, in the release this ADR was written
+for). `LOOKAHEAD_NOT_RECOVERED_S = 30.0` is the cap `TurnDetector._outcomeTick` compares
+against and `FLIGHT_END_WINDOW_S` is defined as equal to it, so the wrist judges a maneuver
+over the same tail the phone does and the live verdict on a mush-out is `fell_in` too. It cost
+one compare and no new state: recovery is tested first and on every tick, so "he has not
+recovered" is exactly "the window is still open". Booking it once needed no second mechanism —
+the straight-line flight-end channel only opens while the turn state machine is idle, so a turn
+that is still judging owns the loss for the whole of its window. On the 2026-08-07 golden five
+of the 32 counted turns flipped and the wrist's ladder became the phone's, 11 / 8 / 13
+(algorithms/turns.md, "Watch approximation"). The data field stays parked (ADR-020).
 
 ## ADR-031 · The wrist stream is **windowed 25 Hz**, not decimated and not summarised
 **Status: Proposed** (dev channel; docs/channels.md, all four rules unmet).
