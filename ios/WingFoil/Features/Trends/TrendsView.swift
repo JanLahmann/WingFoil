@@ -129,13 +129,13 @@ struct TrendsView: View {
     }
 
     private var reloadKey: String {
-        "\(range.rawValue)|\(filter.spotId ?? "-")|\(filter.gearId ?? "-")|\(store.libraryGeneration)"
+        "\(range.rawValue)|\(filter.spotId ?? "-")|\(filter.gearId ?? "-")|\(store.libraryGeneration)|\(store.speedRecordPolicy.rawValue)"
     }
 
     private func reload() async {
         var scoped = filter
         scoped.since = range.since()
-        points = (try? await store.library.trend(scoped)) ?? []
+        points = (try? await store.library.trend(scoped, policy: store.speedRecordPolicy)) ?? []
         weeks = (try? await store.library.weeks(scoped)) ?? []
     }
 
