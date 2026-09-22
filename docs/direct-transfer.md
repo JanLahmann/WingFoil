@@ -219,15 +219,34 @@ on the watch; assembler, inbox and the ordinary import on the phone (dev build).
 lands as class B, positions and Doppler speed, in about 20 s on the beach. The probe loses its
 16 KB item and its burst becomes a chain, so the dev listing stops crashing.
 
-**dev3 — the whole recording, later.** Jan's call: *"Send it later, not first. The later
-transfer can then include the whole data."* So the position stream crosses first and the
-session is on the phone as class B; the wrist stream follows as a second sender over the
-same pages while the rider packs up, whole rather than windowed — 25 Hz magnitudes, 8-bit
-deltas where they hold, about 180 KB for two hours, under a minute at the measured rate —
-and the phone re-derives the session to class A when the last page lands. Nothing waits on
-it; the rider sees the class rise. Same dev3: the fenix 5 Plus encoder, four payload bytes
-packed per 32-bit Number on both sides, ~6 KB of payload per 8 KB page, and a probe run on a
-5 Plus (Leo, Alfred) because the timing is Fenix 8 only so far.
+**dev3 — the wrist stream, later. Built, 0.9.18-dev1.** Jan's call: *"Send it later, not
+first. The later transfer can then include the whole data."* So the recording crosses first
+and the session is on the phone; the wrist stream follows as stream 1 over the same pages
+while the rider packs up, and the phone re-derives the session when the last page lands.
+Nothing waits on it.
+
+Two things in that paragraph were wrong when it was written, and are worth writing down
+rather than quietly fixing:
+
+* **"Whole rather than windowed" is not affordable.** 180 KB for two hours has to be held in
+  RAM for the whole session, and the two binding watches have 507.7 kB and 1275.4 kB in total
+  with the app already taking 119 and 155. So the stream is **windowed**, to a hard byte
+  budget, and ADR-031 has the arithmetic and the two forms that were rejected.
+* **"Class B rising to class A" was never the shape.** `sourceClass` is `a` on developer
+  fields, `b` on speed, `c` otherwise — `hasAccel` is not one of its inputs, so a direct
+  session has been class (a) since dev2. What rises is the **analysis**: pumps to takeoff,
+  the failed-attempt count, the pump rung of the touchdown ladder and the pump-versus-cruise
+  HR split all read nil without a `PumpTrack` and read numbers with one.
+
+Same 0.9.18-dev1: the **fenix 5 Plus encoder**, four payload bytes packed per 32-bit Number
+on both sides (docs/transfer-format.md §3), so an 8 KB page costs 10 KB of wire rather than
+40. And **progress on the watch while the pages go**: `phone 4/13`, then `wrist 2/8`, then
+`phone ok` and one short buzz, under the SAVED pill and on the START screen — a device app
+has no notification API, so the page is the notification.
+
+**The 5 Plus probe run is Jan's and the testers' (Leo, Alfred), and is the one thing
+0.9.18-dev1 cannot do for itself**: every millisecond in §5 came off a fenix 8, and the
+packed encoder has never touched the fleet it was written for. The recipe is at the end of §5.
 
 ## 5 · The first experiment
 
@@ -272,3 +291,46 @@ the 16 KB item goes, the burst becomes a chain.
 If 2 700 B lands in under 5 s, (a) is a transfer measured in seconds and worth building. If
 backgrounded delivery never happens, (a) still works — the rider has the watch app open while
 he rides — and (b) becomes a 1–2 minute wait he watches.
+
+### The fenix 5 Plus run — what to press, and what to read off (0.9.18-dev1)
+
+**Why it is owed.** Every number above came off Jan's fenix 8, which sends a `ByteArray`.
+Thirty of the forty-two products we ship cannot, and 0.9.18-dev1 gives those a **packed**
+page — four payload bytes per 32-bit Number, so an 8 KB page costs about 10 KB of wire
+instead of 40 (docs/transfer-format.md §3). Nothing in that sentence has been measured on a
+watch. Until it is, the pre-6.0.0 fleet is a design and not a feature.
+
+**Install** the private dev listing's 0.9.18-dev1 on a fenix 5 Plus (or 5X Plus), **reboot
+the watch once** after the install, and open the CleanJibe **dev** app on the iPhone and
+leave it on Settings → Garmin watch. Then, on the watch: **Wind from → Link probe**.
+
+| press | what it measures |
+|---|---|
+| **8 KB** | the packed page, one at a time. Results shows `8K#1 sent pack4` then `8K#1 ok <ms>` |
+| **8 KB plain** | the SAME 8 KB one byte to a Number — the shape dev2 sent. `sent plain1`, then `ok <ms>` or nothing at all |
+| **8 KB x3** | three packed pages back to back, the next from `onComplete`. Three `ok` lines, or the app leaving the screen |
+| **1 KB**, **4 KB** | the latency floor on this family, against the fenix 8's ~1 200 ms |
+
+**Read off Results** (the log is the last sixteen lines and survives a restart):
+
+1. **`pack4` against `plain1` at 8 KB.** The packed line should land in roughly a quarter of
+   the plain one's milliseconds, because it is a quarter of the wire. If `plain1` does not
+   land at all — an `ERR`, or the app leaving the screen — that is the finding: the
+   pre-6.0.0 fleet needed the packed encoder to exist, not merely to be faster.
+2. **Whether 8 KB is the page here too.** The 8 KB ceiling was measured on a fenix 8 with
+   786 KB of heap; the 5 Plus has 1275 KB and a seven-year-older radio stack. An `ERR` or a
+   crash at 8 KB means this family wants a smaller page, and the number to try next is 4 KB.
+3. **Three in a row.** If `8 KB x3` crashes, the one-in-flight rule is not enough on this
+   family and the sender needs a pause between pages.
+
+**Then ride with it**, and read the transfer's own lines on the same page: `cjr s0 pack4`
+once per stream, then `cjr s0 3/13 1820ms` per page landed, `cjr s0 whole`, `cjr s1 pack4`,
+`cjr s1 2/8 …`, `cjr s1 whole`. Those milliseconds are the real answer — the probe's are a
+laboratory and these are a beach. On the watch's own screens the same thing in the rider's
+words: `phone 4/13` under the SAVED pill, then `wrist 2/8`, then `phone ok` and one buzz.
+
+What the phone should show while that happens: Settings → Garmin watch, the page line
+(`page 4 of 13`, then `wrist page 2 of 8`), the last direct transfer's receipt, and the
+session in the list with "Garmin watch, direct". When the wrist stream lands, the session's
+summary gains the pump numbers it did not have — failed attempts, pumps to takeoff — without
+changing its class, which was already (a).

@@ -1210,6 +1210,29 @@ or magnitude is dropped, an unsorted stream is sorted, and a grid longer than fo
 the same state a source with no accelerometer is already in — so every consumer degrades the
 way it always has instead of through a second code path.
 
+### The second source of the same channel — the direct transfer's stream 1 (dev)
+
+A Garmin session that arrives over the Connect IQ link rather than as a FIT carries the same
+magnitudes in a second stream, `wrist.v1` (docs/transfer-format.md §2b, ADR-031). Three
+things about it, and none of them is a new rule:
+
+* **It is already the 25 Hz grid.** The watch feeds it from `PumpDetector._pushGrid`, the one
+  point every grid sample of its own band-pass passes — same decimation, same milli-g sniff.
+  So `PumpAnalyzer` bins a stream that was already binned, and `resampleHz` stays 25 because
+  the source is 25.
+* **It carries real per-sample times**, off that grid and anchored to each 1 Hz fix. Nothing
+  is reconstructed from file order, so `accelClockReconstructed` is **false** — the state
+  every corpus fixture is in.
+* **It covers only the stretches the watch flagged**, because two hours at 25 Hz fits the
+  memory of no watch in the manifest. Every second between two windows is **an empty bin**:
+  held at the mean so the FIR does not ring, `valid` false, no stroke picked there — which is
+  exactly what a `SensorLogging` hole already is. No consumer is told anything new, and a
+  windowed stream and a gappy FIT degrade through the same single path.
+
+What it does **not** reach is *Jumps* below: that estimator wants 100 Hz and collapses at 25
+(`s = 0.7`: 0–6 % detection), and 25 Hz is all the watch's own listener has. A wrist stream
+over this link will never feed a jump height; ADR-031 says what would.
+
 ### The session total — `summary.takeoff.totalPumpStrokes` (engine ≥ 0.8.0)
 
 The last two rows exist for **one** metric, and the reason is worth writing down. Every other

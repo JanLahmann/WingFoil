@@ -1620,11 +1620,18 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    and a battery pulled mid-session counts as a crash; what it buys is a number a tester can
    read and a page name to look at first.
 
-   Running the hunt: it is part of the suite, so `monkeydo <prg> <device> -t` runs it. All
-   three devices and both streams were green on 20 September 2026 — `monkey-dev.jungle`
-   **121/121** on fenix847mm, fenix7s and fenix5plus, `monkey.jungle` **115/115** on
-   fenix5plus (the six `(:test :dev)` cases are excluded there; `resetPagesWritesTheDefaultsBack`
-   joined them in 0.9.16 when the per-page editor became a dev feature).
+   Running the hunt: it is part of the suite, so `monkeydo <prg> <device> -t` runs it —
+   `-t` with no argument runs everything. Latest, 0.9.18-dev1: `monkey-dev.jungle`
+   **136/136** and `monkey.jungle` **126/126**, both on fenix847mm, fenix5xplus and fr255,
+   0 failed. The ten-test gap is the `(:test :dev)` cases the beta and the release exclude
+   (`excludeAnnotations = dev`), less the one `(:test :notdev)` mirror. The five newest are
+   the wrist stream's and the packed page's — `directWristStreamMatchesTheReference`,
+   `directWristWindowOpensWithASecondOfLookBack`, `directWristHoldsItsBudget`,
+   `directWristRidesAfterTheRecordStream`, `directPagesPackFourBytesPerNumber`.
+
+   **One simulator per run**, started and killed around each `monkeydo`: two against one
+   simulator hang rather than fail. And `JAVA_TOOL_OPTIONS=-Xmx2g` in the environment for
+   every `monkeyc`, with `pgrep -fl Monkeybrains` empty at the end of the round.
 
    **Round-display layout tests.** Six pages plus the summary are measured against the chord
    at each row's own depth, at worst-case content, with the device's real font metrics:
@@ -1692,7 +1699,11 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    the split now fits at the floor font on **every** glass, which the test asserts outright
    rather than only on the AMOLED ones.)*
 
-   **0.9.18: 127 dev / 122 release / 122 beta, on eight glasses** (`fenix847mm`, `fenix5xplus`,
+   **0.9.18: 131 dev / 126 release / 126 beta, on nine glasses** (`fenix847mm`, `fenix843mm`,
+   `fenix5xplus`, `fr255`, `venu2s`, `venu3`, `epix2pro42mm`, `instinct3amoled45mm`,
+   `fenix7s`) — and **136 / 126** from 0.9.18-dev1, whose five new cases are all
+   `(:test :dev)`. The layout round's own numbers were: 127 dev / 122 release / 122 beta, on
+   eight glasses (`fenix847mm`, `fenix5xplus`,
    `fr255`, `venu2s`, `venu3`, `epix2pro42mm`, `instinct3amoled45mm`, `fenix7s`), for Jan's
    layout review. Four tests are new and each of them guards something the round could get
    wrong in a way no sheet would show:
@@ -1833,6 +1844,39 @@ to be made in four places on purpose.
 `fixtures/direct/example.cjr` **is** those 64 bytes, committed, so a decoder in any language
 can be pointed at a file instead of at a hex string. It is not a recording and is not derived
 from one; `fixtures/direct/README.md` says how to regenerate it.
+
+**The same arrangement for stream 1** (`wrist.v1`, 0.9.18-dev1, §2b): **38 bytes**, one
+window of five 25 Hz samples, pinned by `cjr_ref.py --check`, by the watch's
+`directWristStreamMatchesTheReference`, by the kit's `DirectWristTests` and by
+`fixtures/direct/example-wrist.cjr`. Four places again, and on purpose again.
+
+`lab/tests/test_cjr_ref.py` is the reference's own suite — 21 tests. It imports `cjr_ref.py`
+**by path** (it lives under `tools/`, not in the package, and has no dependency beyond the
+stdlib) and covers: the two worked examples against their hex; a 2 000-record session with a
+pause, an altitude that disappears and returns, and a position jump, round-tripped with every
+field exact and the positions inside a micro-degree; 200 wrist windows over several pages,
+each page opening with a window header; the escape at every boundary; every cut length of a
+torn wrist stream raising rather than guessing; and the packed page round-tripping at every
+remainder, including the word whose high bit makes a Monkey C Number negative.
+
+What `DirectWristTests` covers beyond the pin: windows becoming `AccelSample`s on the
+records' own clock, 40 ms apart and time-sorted; `hasAccel` turning on while `sourceClass`
+stays `a`; **the seconds between two windows behaving as an ordinary sensor gap** — `valid`
+false, no stroke picked — which is the property the whole windowed design rests on; the
+sidecar landing beside the archived original so `SessionArchive.rawTrack` and every later
+re-analysis see it; a sidecar refused where it has nothing to attach to; and 200 rounds of
+random bytes after a valid header never trapping the decoder.
+
+`directWristHoldsItsBudget` on the watch is the memory guarantee: two hours of covered riding
+fed at 25 Hz, then the assertion that what is held is **under the budget** and that every
+page still opens with a window header. On all three devices it settles at 9 pages, 58 725 B
+of 60 000, thinned to one window in four. The budget is picked off
+`System.getSystemStats().totalMemory`, which is the app's own limit on a watch and the
+**simulator's 8 MB** in the simulator — so every simulated device takes the 60 000 B budget
+and only a real fr255 takes 24 000. The ceiling is what the suite proves and it holds at
+either value; on a device the wrist encoder's whole footprint is the budget plus one 8 000 B
+page buffer plus a 768 B window scratch — about **69 kB** on a big-heap watch and **33 kB**
+on the fr255, against 388 kB free there.
 
 What `DirectStreamTests` covers beyond the pin: rounding half away from zero at both scales
 and in both signs, and the truncating delta base; a 7 300-record synthetic session with a

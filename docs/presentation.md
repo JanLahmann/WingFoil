@@ -3404,8 +3404,15 @@ is one jungle line and one resource move; docs/channels.md names it as the candi
 
 The recording crosses to the phone in 8 KB pages over about twenty seconds on the beach, and
 until this round nothing on the watch said so. `DirectSend.statusLine()` is that sentence —
-`phone 4/13` while pages are moving, `phone ok` when the stream is whole, and null when there
+`phone 4/13` while pages are moving, `phone ok` when everything is across, and null when there
 is nothing to say, which is what a release or beta build always gets.
+
+**Since 0.9.18-dev1 there is a second wait, and it says so in its own word**: the wrist
+stream follows the recording (docs/transfer-format.md §2b), so the line reads `phone 4/13`,
+then `wrist 2/8`, then `phone ok`. Two words rather than one counter over both, because they
+are two waits and the second one starts after the rider has already been told the first is
+done — a counter that jumped from 13/13 back to 2/8 would read as a transfer going backwards.
+"wrist" is the word the app uses for the accelerometer on every other surface.
 
 It is drawn in two places, both in the eyebrow font and both in the dim ink, because it is a
 machine's progress and not the rider's session:
@@ -3426,7 +3433,9 @@ machine's progress and not the rider's session:
   air rather than taking a fifth row — the mirror of where the brand mark rides above the
   title — and is dropped rather than clipped when its corner will not clear the glass.
 
-And **one short buzz** when the stream is whole, on a channel of its own (`CH_PHONE`). It
+And **one short buzz** when the **last** stream is whole, on a channel of its own
+(`CH_PHONE`) — the recording's own completion is silent where a wrist stream follows it,
+because one tick means "you can walk away" and that is not yet true. It
 lands while the rider is walking up the beach reading the SAVED screen, which is exactly when
 nothing else is buzzing; a floor shared with the turn verdicts would have swallowed it on the
 one session where the last jibe and the last page arrive inside the same five seconds. Behind
