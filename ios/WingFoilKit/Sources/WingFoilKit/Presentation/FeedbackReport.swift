@@ -742,10 +742,16 @@ public enum SessionAnalysisMail {
     /// The label the comment gets in the mail, so an empty field still reads as a field.
     public static let commentLabel = "What looks wrong:"
 
-    /// **What the rider is agreeing to, in the mail and above the button.** Three
-    /// sentences: what is in the file, what it is for, and what will not happen to it.
+    /// **What the rider is agreeing to, in the mail and above the button.** Four short
+    /// sentences rather than one long one (`docs/voice.md` rule 2, the 20-word ceiling):
+    /// what is in the file, what was taken out of it, what it is for, and what will not
+    /// happen to it. The file itself is scrubbed the same way a friend's copy is
+    /// (`FitShareFilter`, `SessionStore.analysisAttachment(for:)`) — 22 September 2026,
+    /// after the consent sentence said "your times" and meant it, while the attachment
+    /// still carried the watch's own serial number.
     public static let consent =
         "The file holds your track, your heart rate and your times. "
+        + "It is stripped of your watch's serial number and profile. "
         + "It is used only to improve the detection. It is never published."
 
     /// What is riding along, and why it is that file.

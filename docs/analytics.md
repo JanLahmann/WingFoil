@@ -250,13 +250,16 @@ whole mail of and press Send for. There is no CleanJibe endpoint to receive one;
 
 What rides with it is said on the screen before the decision is taken, in the rider's own
 words (`SessionAnalysisMail.consent`): *"The file holds your track, your heart rate and your
-times. It is used only to improve the detection. It is never published."* That is the
-**archived original, unscrubbed** — unlike the copy the share sheet sends to a friend,
-which `FitShareFilter` strips of the watch serial, the rider profile and the paired-accessory
-name. The difference is deliberate and is the reason the consent sentence names the three
-things the file holds: the developer fields and the laps a scrub removes are the half most
-likely to explain a wrong number, and a rider who is asking for a number to be chased is
-told exactly what he is handing over.
+times. It is stripped of your watch's serial number and profile. It is used only to
+improve the detection. It is never published."* That is the **archived original, scrubbed**
+(22 Sep 2026) — the same rule `FitShareFilter` applies to the copy the share sheet sends to
+a friend, which strips the watch serial, the rider profile and the paired-accessory name.
+Nothing a wrong number could turn on is in that list: developer fields, every lap, the
+session summary and the accelerometer stream all survive (`dropAccel: false`, unlike the
+friend's share default), so the reader chasing the number loses nothing he could use and the
+rider loses a watch serial he had no reason to hand over. This reverses the original
+"decide before release" item in docs/channels.md's beta row — the decision is scrub, the
+same way a friend's copy already was.
 
 Under it, behind the rule every prefilled mail carries, is the same block (c) prints —
 build, channel, engine, phone, library, this session's source class and its headline numbers

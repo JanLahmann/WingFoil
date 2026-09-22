@@ -800,17 +800,23 @@ final class SessionStore {
     /// **The file that rides with the analysis mail** (Share → Send this session to the
     /// developer, `SendToDeveloperSheet`).
     ///
-    /// **The archived original, unscrubbed, and that is the point.** The share sheet's FIT
-    /// tab runs `FitShareFilter` because a copy going to a friend has no business carrying
-    /// a watch serial. This copy is going to the one reader who is being asked to reproduce
-    /// the analysis, and a scrub drops developer fields, laps and the rider profile — the
-    /// half of the file most likely to hold the reason a number came out wrong. So it goes
-    /// whole, the rider is told exactly what is in it before he sends it
-    /// (`SessionAnalysisMail.consent`), and he sees every byte of the mail first.
+    /// **Scrubbed, the same way a friend's copy is, wherever there is a FIT to scrub**
+    /// (22 September 2026). `FitShareFilter` only drops what is personal — the watch's
+    /// serial number, the rider profile, a paired accessory's name — and keeps everything
+    /// the analysis actually reasons about: developer fields, every lap, the session summary
+    /// and (`dropAccel: false`, unlike the friend's default) the accelerometer stream a
+    /// pumping question might turn on. A reader being asked to reproduce a number has no
+    /// more use for a watch's serial than a friend does, and the rider is told exactly what
+    /// stayed and what did not before he sends it (`SessionAnalysisMail.consent`), with
+    /// every byte of the mail in front of him first.
     ///
-    /// A session that arrived as positions rather than as a recording — Strava, Apple
-    /// Health — archives the track CleanJibe built from them, which is a GPX. It goes, and
-    /// the mail says which of the two it is (`isRecording`).
+    /// A `.watch` or `.direct` recording — the CleanJibe watch app's own container, or the
+    /// Connect IQ direct-transfer stream — is not FIT-shaped and has no scrub of its own to
+    /// run, so it archives exactly what it always did; neither carries the watch serial a
+    /// plain FIT export does. A session that arrived as positions rather than as a recording
+    /// — Strava, Apple Health — archives the track CleanJibe built from them, which is a
+    /// GPX, the same way. The mail says which of these is a recording at all
+    /// (`isRecording`).
     struct AnalysisAttachment {
         let data: Data
         let filename: String
@@ -824,12 +830,28 @@ final class SessionStore {
         }
     }
 
-    /// Nil when nothing is archived for the row, which is a state a mail has to be able to
-    /// state rather than hide: the sheet then says so and the report still goes.
+    /// Nil when nothing is archived for the row, or when a FIT is not one `FitShareFilter`
+    /// can walk safely — fail closed, the same rule `shareableFIT` follows: a file we
+    /// cannot promise is scrubbed does not go, and the sheet says so rather than hide it.
     func analysisAttachment(for row: SessionRow) -> AnalysisAttachment? {
         let archive = ingestor.archive
         guard let data = try? archive.originalData(for: row.id) else { return nil }
         let format = TrackParser.format(data) ?? .fit
+        let isRecording = format != .gpx && format != .tcx
+        // `FitShareFilter` walks a plain FIT stream — the same test `shareableFIT` makes
+        // before it will scrub one. A `.watch` or `.direct` recording is a CleanJibe
+        // container, not a FIT file, and has no scrub of its own to run; it archives
+        // exactly what it always did. Accelerometer kept (`dropAccel: false`), unlike the
+        // friend's default: see the note above.
+        let sendable: Data
+        if format == .fit {
+            guard let scrubbed = FitShareFilter.filter(data, dropAccel: false) else {
+                return nil
+            }
+            sendable = scrubbed
+        } else {
+            sendable = data
+        }
         // The session's own zone, like the shared FIT's name: a file named after the
         // afternoon it records must not change its name because the rider flew home.
         let name = FitShareFilter.filename(date: row.startDate,
@@ -837,13 +859,13 @@ final class SessionStore {
                                            pathExtension: format.fileExtension,
                                            timeZone: row.displayZone)
         return AnalysisAttachment(
-            data: data, filename: name,
+            data: sendable, filename: name,
             // `application/octet-stream` for everything that is not text: no registered
             // type exists for `.fit` or `.cjw`, and a guessed one is how a mail client
             // decides to render a recording as a preview instead of attaching it.
             mimeType: format == .gpx || format == .tcx
                 ? "application/xml" : "application/octet-stream",
-            isRecording: format != .gpx && format != .tcx)
+            isRecording: isRecording)
     }
 
     // MARK: - Sharing the recording
