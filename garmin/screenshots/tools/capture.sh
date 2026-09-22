@@ -20,7 +20,9 @@ GARMIN=$(cd "$HERE/../.." && pwd)
 SDK="$HOME/Library/Application Support/Garmin/ConnectIQ/Sdks/$(ls "$HOME/Library/Application Support/Garmin/ConnectIQ/Sdks" | sort | tail -1)/bin"
 DEV=$1; OUT=$2; PRG="$GARMIN/bin/shots-$DEV.prg"
 [ -f "$PRG" ] || { echo "no $PRG — compile the harness first"; exit 1; }
-if ioreg -n Root -d1 2>/dev/null | grep -A1 CGSSessionScreenIsLocked | grep -q '<true/>'; then
+# ioreg prints the session either as a plist (`<true/>` on the next line) or as one
+# `key=Yes` dictionary, depending on the macOS build; both spellings mean locked.
+if ioreg -n Root -d1 2>/dev/null | grep -A1 CGSSessionScreenIsLocked | grep -Eq '<true/>|ScreenIsLocked"?=Yes'; then
   echo "the screen is locked: screencapture cannot read a window (unlock the Mac first)"; exit 2
 fi
 [ -x "$HERE/winfo" ] || swiftc -O -o "$HERE/winfo" "$HERE/winfo.swift"
