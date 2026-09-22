@@ -39,8 +39,9 @@ public struct FeedbackFacts: Sendable, Equatable {
         public var isDev: Bool { channel == .dev }
         public let engineVersion: String
         /// How many analysis thresholds this phone has moved off their published defaults
-        /// (`TuningOverrides.changedCount`). Zero on every public build, and on a dev build
-        /// that has not been touched; the line is left out when it is zero rather than
+        /// (`TuningOverrides.changedCount`). Zero on the release and the beta, which never
+        /// apply a stored override, and on a dev build that has not been touched. The line
+        /// is left out when it is zero rather than
         /// printing a reassuring "0", because an absent line is read as "nothing unusual"
         /// and a present one as "look here".
         public let tunedThresholds: Int
