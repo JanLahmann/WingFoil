@@ -45,25 +45,11 @@ class WingfoilApp extends Application.AppBase {
             PageModel.restoreDefaults();
         }
         _applySettings();     // thresholds hot-reload; detectors read them each tick
-        // The unlock key arrives through exactly this callback: the tester types it in
-        // Garmin Connect while staring at the lock screen, so re-validating here is what
-        // makes the app open without a restart. No-op in every build but the invite one.
-        if (LockGate.enabled() && !LockGate.isUnlocked() && LockGate.refresh()) {
-            unlockedNow();
-            return;
-        }
         // A GCM settings edit is proof a phone was talking to this watch a second ago, which
         // makes it the cheapest reliable "the link is up" signal a watch-app gets.
         PhoneLink.send();
         DirectSend.reopen();
         WatchUi.requestUpdate();
-    }
-
-    // Leave the lock screen for the real start screen, once. Safe to call when already
-    // unlocked or when the gate was never on — it only ever runs after refresh() said yes.
-    function unlockedNow() as Void {
-        controller.startGps();
-        WatchUi.switchToView(new StartView(), new StartDelegate(), WatchUi.SLIDE_IMMEDIATE);
     }
 
     // Single entry point for everything GCM can change: detector thresholds, alert toggles,
@@ -82,12 +68,6 @@ class WingfoilApp extends Application.AppBase {
     }
 
     function getInitialView() as [Views] or [Views, InputDelegates] {
-        // Invite build only (docs/decisions.md ADR-012): a public store listing that stays
-        // locked until an individual key is entered. Zero pepper = public/beta build = this
-        // is a single array scan and nothing else. GPS deliberately stays off while locked.
-        if (LockGate.enabled() && !LockGate.refresh()) {
-            return [new LockView(), new LockDelegate()];
-        }
         controller.startGps();
         // The GPS is already warming while the splash is up, so the second and a half it
         // holds costs the rider nothing on the way to a fix (BrandSplashView, 0.9.10).
