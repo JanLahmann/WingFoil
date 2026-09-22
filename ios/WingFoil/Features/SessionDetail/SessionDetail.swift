@@ -202,6 +202,25 @@ struct SessionDetail: Sendable {
 
     let row: SessionRow
     let analysis: SessionAnalysis
+    /// **Every rider-facing fact of this session, once** (ADR-033,
+    /// `docs/presentation/document.md`). The key-metrics block, the card's tiles, the
+    /// records and their windows, the legend's counts, the turn strip, the markers, the
+    /// flight ends and the wrist-under callouts are all read off this — so a fact changes
+    /// in `PresentationDocument` and in the lab's twin of it, and nowhere else.
+    ///
+    /// **Built here, on open, and not stored.** The session index already denormalizes the
+    /// dozen numbers the library list needs; this is the other ~40 KB, and it is one walk
+    /// over the turns, the flight ends and the submersions the analysis has *just* been
+    /// decoded from — **6.9 ms** on the corpus's longest afternoon (114 turns), measured in
+    /// a debug build by `DocumentRendererTests.buildingTheDocumentIsCheapEnoughToDoOnOpen`,
+    /// beside the FIT parse, the `TrackCleaner` pass and the three geometry builds this same
+    /// initializer already runs. A stored blob would need a migration, a staleness rule and
+    /// a second answer to "which engine wrote this", and would buy back those milliseconds.
+    ///
+    /// It carries no speed unit and no formatted number, which is what lets it be built
+    /// once while the rider switches Settings → Units underneath it: the renderers format
+    /// on every draw and this never has to be rebuilt.
+    let document: PresentationValue
     let segments: [TrackSegment]
     let speed: [SpeedPoint]
     /// Scrubbable timeline, ascending in `t`.
@@ -294,7 +313,11 @@ struct SessionDetail: Sendable {
         durationS = (track.samples.last?.t ?? 0) - (track.samples.first?.t ?? 0)
         hasHeartRate = track.capabilities.hasHR
         windDirUserDeg = track.watchSummary.windDirUserDeg
-        divergences = DivergenceCheck.compare(watch: track.watchSummary, phone: analysis)
+        let divergences = DivergenceCheck.compare(watch: track.watchSummary, phone: analysis)
+        self.divergences = divergences
+        // The banner's lines ride in the document with everything else, which is what makes
+        // the watch-vs-phone note a fact of the session rather than a view's private state.
+        document = PresentationDocument.build(analysis, divergence: divergences)
 
         let pairings = FlightPairing.flights(analysis)
         self.pairings = pairings
@@ -379,6 +402,13 @@ struct SessionDetail: Sendable {
         var span: ClosedRange<Double>
         var tick: Int
     }
+
+    /// **The key-metrics block**, read off the document and formatted in the rider's unit.
+    ///
+    /// Computed on access rather than stored: the document is unit-free and these strings
+    /// are not, so a rider who changes Settings → Units while a session is open gets the
+    /// new unit on the next draw without the page being rebuilt.
+    var keyMetrics: KeyMetrics { KeyMetrics.make(block: document["block"] ?? .null) }
 
     /// The nearest tappable *mark* to a coordinate, or nil when the tap was not on one.
     /// Markers win over the track: a tap that lands on a takeoff arrow means the arrow.

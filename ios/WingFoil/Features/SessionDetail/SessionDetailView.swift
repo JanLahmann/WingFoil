@@ -189,8 +189,7 @@ struct SessionDetailView: View {
                 } else if let detail {
                     // Permanent, above the switcher, on every tab: the four rows that
                     // answer "was that a good session" (docs/app-ui-review.md §1.1 / §4).
-                    KeyMetricsView(metrics: KeyMetrics.make(summary: detail.analysis.summary,
-                                                            records: detail.analysis.records))
+                    KeyMetricsView(metrics: detail.keyMetrics)
                         .id("key")
                     // **Why this page's numbers are in nothing else.** One line, directly
                     // under the block it is about, so a rider who wonders where his session

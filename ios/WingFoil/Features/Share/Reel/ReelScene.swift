@@ -141,8 +141,7 @@ struct ReelScene: @unchecked Sendable {
         }
         marks.sort { $0.t < $1.t }
 
-        let metrics = KeyMetrics.make(summary: detail.analysis.summary,
-                                      records: detail.analysis.records)
+        let metrics = detail.keyMetrics
         let stats = ShareCardStats.outro(row: detail.row, title: title, metrics: metrics,
                                          longestFlightS: detail.analysis.summary.longestFlightS,
                                          timeZone: detail.row.displayZone)
