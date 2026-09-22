@@ -93,12 +93,6 @@ module Words {
     var MENU_KEEP as String = "";
     var MENU_WIND_FROM as String = "";
     var MENU_UNSET as String = "";
-    var LOCK_TITLE as String = "";
-    var LOCK_KIND as String = "";
-    var LOCK_KEY_BAD as String = "";
-    var LOCK_SEND_CODE as String = "";
-    var LOCK_HINT_1 as String = "";
-    var LOCK_HINT_2 as String = "";
     var FLASH_FLEW as String = "";
     var FLASH_TOUCH as String = "";
     var FLASH_FELL as String = "";
@@ -205,12 +199,6 @@ module Words {
         MENU_KEEP = WatchUi.loadResource(Rez.Strings.MenuKeep) as String;
         MENU_WIND_FROM = WatchUi.loadResource(Rez.Strings.MenuWindFrom) as String;
         MENU_UNSET = WatchUi.loadResource(Rez.Strings.MenuUnset) as String;
-        LOCK_TITLE = WatchUi.loadResource(Rez.Strings.LockTitle) as String;
-        LOCK_KIND = WatchUi.loadResource(Rez.Strings.LockKind) as String;
-        LOCK_KEY_BAD = WatchUi.loadResource(Rez.Strings.LockKeyBad) as String;
-        LOCK_SEND_CODE = WatchUi.loadResource(Rez.Strings.LockSendCode) as String;
-        LOCK_HINT_1 = WatchUi.loadResource(Rez.Strings.LockHint1) as String;
-        LOCK_HINT_2 = WatchUi.loadResource(Rez.Strings.LockHint2) as String;
         FLASH_FLEW = WatchUi.loadResource(Rez.Strings.FlashFlew) as String;
         FLASH_TOUCH = WatchUi.loadResource(Rez.Strings.FlashTouch) as String;
         FLASH_FELL = WatchUi.loadResource(Rez.Strings.FlashFell) as String;

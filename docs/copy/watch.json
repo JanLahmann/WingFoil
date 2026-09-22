@@ -187,13 +187,6 @@
     { "id": "MenuWindFrom", "text": "Wind from", "var": "MENU_WIND_FROM", "where": "the wind picker · its title" },
     { "id": "MenuUnset", "text": "Unset", "var": "MENU_UNSET", "where": "the wind picker · the row that clears the bearing" },
 
-    { "id": "LockTitle", "text": "WingFoil", "var": "LOCK_TITLE", "where": "the invite lock · its title", "note": "The invite lock has been unreachable since 0.9.11 (every stream compiles the zero pepper, ADR-012), which is why it still says the repository's name rather than the product's. Listed as a finding of 22 September 2026 rather than changed: nothing draws it, so nothing would be proved by the change." },
-    { "id": "LockKind", "text": "INVITE BETA", "var": "LOCK_KIND", "where": "the invite lock · under the title" },
-    { "id": "LockKeyBad", "text": "key not valid", "var": "LOCK_KEY_BAD", "where": "the invite lock · the status row" },
-    { "id": "LockSendCode", "text": "send this code", "var": "LOCK_SEND_CODE", "where": "the invite lock · the status row, with a code to read out" },
-    { "id": "LockHint1", "text": "key goes in Garmin", "var": "LOCK_HINT_1", "where": "the invite lock · the hint, first line" },
-    { "id": "LockHint2", "text": "Connect app settings", "var": "LOCK_HINT_2", "where": "the invite lock · the hint, second line" },
-
     { "id": "FlashFlew", "text": "FLEW", "term": "flewThrough", "var": "FLASH_FLEW", "where": "the event flash · a turn that kept the foil" },
     { "id": "FlashTouch", "text": "TOUCH", "term": "touchdown", "var": "FLASH_TOUCH", "where": "the event flash · a turn that touched down" },
     { "id": "FlashFell", "text": "FELL", "term": "fellIn", "var": "FLASH_FELL", "where": "the event flash · a turn that ended in the water" },

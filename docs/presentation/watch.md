@@ -282,8 +282,9 @@ Four rules make it bigger rather than merely emptier:
 - **the giant leaves the bitmap ladder where the device has a vector face** (0.9.18). Jan
   measured "33.8" at about **55 %** of a fenix 8's width and asked for 70–75 %, and
   FONT_NUMBER_THAI_HOT is the *top* of the bitmap ladder — "as large as the fitter allows" was
-  already true and still too small. `RecordingView.bigGiantFont` follows `LockView.codeFont`,
-  which has done this for the invite code since 0.9.10, with all three of its hard-won rules:
+  already true and still too small. `RecordingView.bigGiantFont` follows the same fitting
+  rules the invite lock's request-code display used since 0.9.10 (the screen itself removed
+  0.9.19, ADR-012), with all three of its hard-won rules:
   the bitmap ladder is the **floor**, never merely the fallback; a face is accepted only if it
   can draw **every character** of the value (on the epix 2 / MARQ 2 / Descent Mk3 families
   `BionicBold` is a digits-only cut and measures a missing "%" at zero width, which every

@@ -164,17 +164,6 @@
     <string id="MenuKeep">Keep</string>
     <string id="MenuWindFrom">Wind from</string>
     <string id="MenuUnset">Unset</string>
-
-    <!-- The invite lock has been unreachable since 0.9.11 (every stream compiles the zero
-        pepper, ADR-012), which is why it still says the repository's name rather than the
-        product's. Listed as a finding of 22 September 2026 rather than changed: nothing draws
-        it, so nothing would be proved by the change. -->
-    <string id="LockTitle">WingFoil</string>
-    <string id="LockKind">INVITE BETA</string>
-    <string id="LockKeyBad">key not valid</string>
-    <string id="LockSendCode">send this code</string>
-    <string id="LockHint1">key goes in Garmin</string>
-    <string id="LockHint2">Connect app settings</string>
     <string id="FlashFlew">FLEW</string>
     <string id="FlashTouch">TOUCH</string>
     <string id="FlashFell">FELL</string>
