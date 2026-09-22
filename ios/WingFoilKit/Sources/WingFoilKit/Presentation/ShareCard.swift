@@ -244,19 +244,29 @@ public struct ShareCardStats: Sendable, Equatable {
     /// holds a *draft* the row has not been given yet — so the preview follows the keystrokes
     /// and the row follows the commit. A caller with no caption to offer gets a card with no
     /// caption on it, which is every card that existed before this parameter did.
+    /// `policy` is Settings → Speed records, and the card obeys it like every other
+    /// surface that can carry an all-time claim (`SpeedRecordRule`). A card is one session,
+    /// so there is nothing for `preferVerified` to prefer and it behaves like
+    /// `includeUnverified`: the record cell stands, with the disclaimer under it. Under
+    /// `onlyVerified` the max-2 s cell comes off a class-(c) card entirely, and the
+    /// disclaimer goes with it, because there is no longer a speed claim to qualify.
     public static func make(row: SessionRow, title: String, metrics: KeyMetrics? = nil,
                             preset: Preset = .complete,
                             note: String? = nil,
+                            policy: SpeedRecordPolicy = .preferVerified,
                             timeZone: TimeZone) -> ShareCardStats {
-        ShareCardStats(
+        let verified = row.sourceClass != "c"
+        let recordStands = SpeedRecordRule.stands(verified: verified, policy: policy)
+        let all = metrics.map { stats(from: $0, preset: preset) }
+            ?? preset.filter(rowOnlyStats(row))
+        return ShareCardStats(
             title: title,
             dateLine: dateLine(row.startDate, timeZone: timeZone),
             note: note,
-            stats: metrics.map { stats(from: $0, preset: preset) }
-                ?? preset.filter(rowOnlyStats(row)),
+            stats: recordStands ? all : all.filter { $0.key != Key.maxSpeed },
             preset: preset,
-            disclaimer: row.sourceClass == "c"
-                ? "Speeds from a degraded source — uncertified" : nil)
+            disclaimer: verified || !recordStands
+                ? nil : "Speeds from a degraded source — uncertified")
     }
 
     /// The **closing card of a clip**: the complete block, plus the longest flight.

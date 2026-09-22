@@ -223,6 +223,35 @@ final class SessionStore {
         }
     }
 
+    /// **Whether a record from a track with no measured speed counts** (Settings → Speed
+    /// records, 22 September 2026). Stored by `SpeedRecordPolicyStore` and handed to the
+    /// one rule every all-time surface reads (`SpeedRecordRule`).
+    ///
+    /// Writing it here is what redraws the app: the Records screen keys its query on this
+    /// value (`RecordsView.reloadKey`), so the table is re-read from the same `record_effort`
+    /// rows under the new rule. Nothing is re-imported and no stored digest moves — the
+    /// decision is taken at query time, which is the only place it can be taken without
+    /// going stale.
+    var speedRecordPolicy: SpeedRecordPolicy = SpeedRecordPolicyStore.load(from: .standard) {
+        didSet {
+            guard speedRecordPolicy != oldValue else { return }
+            SpeedRecordPolicyStore.save(speedRecordPolicy, to: .standard)
+            Task {
+                // **Re-take the personal-best snapshot, silently.** The stored snapshot is
+                // what the *next* import is compared against, and it was taken under the
+                // old policy. Switching to "Include unverified" would otherwise make a
+                // record that has stood for months look like a personal best the next time
+                // a session lands, and fire the confetti at the one moment it means
+                // nothing. `celebrate: false` is exactly this case: the numbers moved
+                // because the rider moved a picker, not because he went faster.
+                await refreshPersonalBests(celebrate: false)
+                // The widget process cannot read the setting, so the phone resolves it and
+                // republishes the snapshot — the same reason the unit is published there.
+                await publishWidgetSnapshot()
+            }
+        }
+    }
+
     private static var storedRowMetrics: [RowMetric] {
         RowMetric.triple(stored: UserDefaults.standard.string(forKey: rowMetricsKey))
     }
@@ -464,7 +493,11 @@ final class SessionStore {
     /// kept current as sessions are deleted or re-analyzed too, and a *drop* in a record is
     /// obviously not a personal best.
     private func refreshPersonalBests(celebrate: Bool) async {
-        guard let records = try? await library.records() else { return }
+        // The rider's Speed records setting, applied at the query and again at the
+        // comparison — one rule, asked twice about the same rows, which is what makes the
+        // burst and the table agree about what a record is.
+        guard let records = try? await library.records(policy: speedRecordPolicy)
+        else { return }
         let previous = storedPersonalBests
         // Both axes off the same load: the speed records out of the library's own query,
         // the clean-jibe pair out of the rows `load()` has just refreshed — filtered the
@@ -474,7 +507,9 @@ final class SessionStore {
             sessions.filter { !$0.isExample && !$0.isProvisional && $0.isSession
                               && $0.rider == nil })
         if celebrate, let previous {
-            let found = PersonalBestDetector.improvements(previous: previous, current: records)
+            let found = PersonalBestDetector.improvements(previous: previous,
+                                                          current: records,
+                                                          policy: speedRecordPolicy)
             if !found.isEmpty { celebration = found }
             let clean = PersonalBestDetector.cleanJibeImprovements(previous: previous,
                                                                    current: cleanJibes)
@@ -509,9 +544,12 @@ final class SessionStore {
         // only — and the widget must print the session page's number, not one of its own.
         let jibesPerHour = (try? await library.jibeRates()) ?? [:]
         let archive = ingestor.archive
+        // Settings → Speed records, resolved here: a widget process cannot read the app's
+        // defaults, so the phone answers the question and publishes the answer.
+        let policy = speedRecordPolicy
         await Task.detached(priority: .utility) {
             let snapshot = WidgetSnapshot.make(
-                sessions: rows, jibesPerHour: jibesPerHour,
+                sessions: rows, jibesPerHour: jibesPerHour, policy: policy,
                 titleForRow: { SessionDisplay.title($0) },
                 trackForRow: { Self.widgetTrack(for: $0, archive: archive) })
             WidgetSnapshotStore.write(snapshot)
@@ -755,6 +793,57 @@ final class SessionStore {
             await load()                       // lazy re-analysis rewrote the summary row
         }
         return detail
+    }
+
+    // MARK: - Sending a session to the developer
+
+    /// **The file that rides with the analysis mail** (Share → Send this session to the
+    /// developer, `SendToDeveloperSheet`).
+    ///
+    /// **The archived original, unscrubbed, and that is the point.** The share sheet's FIT
+    /// tab runs `FitShareFilter` because a copy going to a friend has no business carrying
+    /// a watch serial. This copy is going to the one reader who is being asked to reproduce
+    /// the analysis, and a scrub drops developer fields, laps and the rider profile — the
+    /// half of the file most likely to hold the reason a number came out wrong. So it goes
+    /// whole, the rider is told exactly what is in it before he sends it
+    /// (`SessionAnalysisMail.consent`), and he sees every byte of the mail first.
+    ///
+    /// A session that arrived as positions rather than as a recording — Strava, Apple
+    /// Health — archives the track CleanJibe built from them, which is a GPX. It goes, and
+    /// the mail says which of the two it is (`isRecording`).
+    struct AnalysisAttachment {
+        let data: Data
+        let filename: String
+        let mimeType: String
+        /// True for a recording off a watch, false for a track built from positions.
+        let isRecording: Bool
+
+        var described: SessionAnalysisMail.Attachment {
+            isRecording ? .originalRecording(filename: filename)
+                        : .derivedTrack(filename: filename)
+        }
+    }
+
+    /// Nil when nothing is archived for the row, which is a state a mail has to be able to
+    /// state rather than hide: the sheet then says so and the report still goes.
+    func analysisAttachment(for row: SessionRow) -> AnalysisAttachment? {
+        let archive = ingestor.archive
+        guard let data = try? archive.originalData(for: row.id) else { return nil }
+        let format = TrackParser.format(data) ?? .fit
+        // The session's own zone, like the shared FIT's name: a file named after the
+        // afternoon it records must not change its name because the rider flew home.
+        let name = FitShareFilter.filename(date: row.startDate,
+                                           title: SessionDisplay.title(row),
+                                           pathExtension: format.fileExtension,
+                                           timeZone: row.displayZone)
+        return AnalysisAttachment(
+            data: data, filename: name,
+            // `application/octet-stream` for everything that is not text: no registered
+            // type exists for `.fit` or `.cjw`, and a guessed one is how a mail client
+            // decides to render a recording as a preview instead of attaching it.
+            mimeType: format == .gpx || format == .tcx
+                ? "application/xml" : "application/octet-stream",
+            isRecording: format != .gpx && format != .tcx)
     }
 
     // MARK: - Sharing the recording

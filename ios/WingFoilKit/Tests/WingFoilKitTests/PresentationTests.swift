@@ -70,7 +70,10 @@ import Testing
     /// that could quietly break is the search: a rider types "alpha" or "500 m", and those
     /// words are now item terms rather than titles. They are indexed, and this says so.
     @Test func theSpeedRecordsTopicIsTheWholeSetAndIsStillSearchable() {
-        #expect(HelpCatalog.topics(in: .records).map(\.id) == [.speedRecords])
+        // Two pages since 22 September 2026: the set, and the setting that decides which
+        // of them may stand (Settings → Speed records).
+        #expect(HelpCatalog.topics(in: .records).map(\.id)
+                == [.speedRecords, .verifiedRecords])
 
         let topic = HelpCatalog.topic(.speedRecords)
         #expect(topic.title == "Speed records")
@@ -127,6 +130,12 @@ import Testing
         #expect(!beta.contains(.windsurf))
         #expect(!Set(release.map(\.id)).contains(.appleWorkoutApp))
         #expect(beta.contains(.appleWorkoutApp))
+        // Share → Send this session to the developer is a beta door, so its page is one
+        // too: the App Store build has no row to reach it from (22 September 2026).
+        #expect(!Set(release.map(\.id)).contains(.sendSessionToDeveloper))
+        #expect(beta.contains(.sendSessionToDeveloper))
+        // Settings → Speed records is in every channel, and so is its page.
+        #expect(Set(release.map(\.id)).contains(.verifiedRecords))
         // …and the catalogue itself stays total: every id still resolves in every channel.
         for id in HelpTopicID.allCases { #expect(HelpCatalog.topic(id).id == id) }
     }
@@ -237,11 +246,14 @@ import Testing
 
     // MARK: - Sharing
 
-    /// The four doors a rider would otherwise never find, and the promise each of them
-    /// makes about what leaves the phone.
+    /// The five doors a rider would otherwise never find, and the promise each of them
+    /// makes about what leaves the phone. The fifth is the beta's own
+    /// (`sendSessionToDeveloper`), which is why it is bound to `.beta` and the release
+    /// index never lists it.
     @Test func theSharingSectionIsWrittenAndSaysWhereThingsGo() {
         #expect(HelpCatalog.topics(in: .sharing).map(\.id)
-                == [.shareCard, .replayClip, .shareFit, .riderAttribution])
+                == [.shareCard, .replayClip, .shareFit, .sendSessionToDeveloper,
+                    .riderAttribution])
 
         // The card and the clip are both rendered locally, and both say so — that is the
         // half of each topic a rider is actually deciding on.
@@ -1172,12 +1184,34 @@ import Testing
     }
 
     /// A class-(c) source can read high; confetti is exactly the wrong response to a bad
-    /// speed sample.
-    @Test func uncertifiedRecordsNeverCelebrate() {
+    /// speed sample. Under "Only verified" that is the whole rule, and it is what the app
+    /// did for every rider before the setting existed.
+    @Test func uncertifiedRecordsNeverCelebrateUnderOnlyVerified() {
         let previous = PersonalBestSnapshot(bestByKind: ["best2s": 20.0])
         let found = PersonalBestDetector.improvements(
-            previous: previous, current: [best(.best2s, 99.0, sourceClass: "c")])
+            previous: previous, current: [best(.best2s, 99.0, sourceClass: "c")],
+            policy: .onlyVerified)
         #expect(found.isEmpty)
+    }
+
+    /// Under the default the row `LibraryStore.records` handed over has already been
+    /// through the same rule: an unverified record is here only because the library holds
+    /// no verified one of that kind, and it celebrates marked rather than silently.
+    @Test func uncertifiedRecordCelebratesWhenItIsTheOnlyOne() {
+        let previous = PersonalBestSnapshot(bestByKind: ["best2s": 20.0])
+        let found = PersonalBestDetector.improvements(
+            previous: previous, current: [best(.best2s, 24.0, sourceClass: "c")])
+        #expect(found.count == 1)
+        #expect(found.first?.previousKn == 20.0)
+    }
+
+    /// "Include unverified" is the third answer, and it is the one that never asks.
+    @Test func includeUnverifiedCelebratesEveryKind() {
+        let previous = PersonalBestSnapshot(bestByKind: ["best2s": 20.0])
+        let found = PersonalBestDetector.improvements(
+            previous: previous, current: [best(.best2s, 24.0, sourceClass: "c")],
+            policy: .includeUnverified)
+        #expect(found.count == 1)
     }
 
     @Test func personalBestSnapshotTakesTheMaximumPerKind() {

@@ -213,10 +213,16 @@ import Testing
         #expect(!best.isEmpty)
         #expect(best.allSatisfy { $0.sourceClass == "c" })
         #expect(best.allSatisfy { !$0.certified })
-        // A class-(c) effort is never celebrated as a personal best, even against a
-        // snapshot it beats outright — a degraded source can read high, and confetti is
-        // exactly the wrong answer to a bad speed sample.
+        // Under "Only verified" a class-(c) effort is never celebrated as a personal best,
+        // even against a snapshot it beats outright — a degraded source can read high, and
+        // confetti is exactly the wrong answer to a bad speed sample.
         let previous = PersonalBestSnapshot(bestByKind: ["best2s": 1.0, "best10s": 1.0])
-        #expect(PersonalBestDetector.improvements(previous: previous, current: best).isEmpty)
+        #expect(PersonalBestDetector.improvements(previous: previous, current: best,
+                                                  policy: .onlyVerified).isEmpty)
+        // And the same library under "Only verified" has no all-time table at all: every
+        // effort in it came off positions.
+        let verifiedOnly = try await LibraryStore(database: ingestor.database)
+            .records(policy: .onlyVerified)
+        #expect(verifiedOnly.isEmpty)
     }
 }

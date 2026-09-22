@@ -16,7 +16,7 @@ import { ask } from "./rpc.js";
 /* r3-w3: the "All spots" chip. Records, Trends and Periods answer to one chip here, the way
    they answer to one `LibraryFilterBar` on the phone. js/spots.js. */
 import { filterBySpot, renderSpotChip } from "./spots.js";
-import { KNOTS, speedUnit, speedValue } from "./appsettings.js";
+import { KNOTS, speedRecords, speedUnit, speedValue } from "./appsettings.js";
 // r3-w1: the range over the charts. It picks which afternoons the question is asked of and
 // answers nothing itself; Records stay all-time, which is what the sheet's footer promises.
 import { emptyRangeNote, rangeEntries, rangeKey } from "./daterange.js";
@@ -99,17 +99,24 @@ export async function showTrends(saved) {
   }
   // r3-w1: the chosen range is part of what is memoised. The same library over two ranges
   // is two answers, so Python is asked again for the second.
-  const signature = `${entries.map((e) => e.id).join("|")}|${rangeKey()}`;
+  // Settings → Speed records is part of the signature, because it is part of the
+  // question: the rule is applied in Python over the stored digests (`library.eligible`),
+  // so the same library under two settings is two answers and the second has to be asked
+  // for. Nothing is re-saved and no digest moves.
+  const policy = speedRecords();
+  const signature = `${entries.map((e) => e.id).join("|")}|${rangeKey()}|${policy}`;
   if (cache.signature !== signature) {
     for (const host of hosts()) {
       host.innerHTML = `<p class="note">Aggregating ${entries.length} sessions in Python…</p>`;
     }
     try {
-      const data = await ask("aggregate", { digestsJson: JSON.stringify(entries) });
+      const data = await ask("aggregate", { digestsJson: JSON.stringify(entries),
+                                           speedRecords: policy });
       const narrowed = rangeEntries(entries);                              // r3-w1
       const ranged = narrowed.length === entries.length                    // r3-w1
         ? data
-        : await ask("aggregate", { digestsJson: JSON.stringify(narrowed) });
+        : await ask("aggregate", { digestsJson: JSON.stringify(narrowed),
+                                   speedRecords: policy });
       cache = { signature, data, ranged };
     } catch (err) {
       for (const host of hosts()) {
@@ -176,6 +183,14 @@ function draw(agg, trendAgg = agg) {
   // r3-w1: the record tables are filled here, before the range can cut the page short.
   // They are all-time on both surfaces, so a range that holds nothing must not empty them.
   renderRecords(el("records-table"), agg.records);
+  // **An empty table needs a sentence, and which sentence depends on why it is empty.**
+  // A library with sessions in it and no speed record left has had them taken out by
+  // Settings → Speed records, and a table that just went blank without saying so is the
+  // classic way a setting traps its reader (docs/review-checklist.md, pattern G).
+  if (!agg.records.length) {
+    el("records-table").insertAdjacentHTML("afterend", `<p class="note">${
+      esc(noRecordsNote(agg.speedRecordPolicy))}</p>`);
+  }
   renderSessionRecords(el("session-records-table"), agg.sessionRecords || []);
 
   // r3-w1: a range that holds nothing is the phone's own second empty screen. The library
@@ -257,6 +272,15 @@ function renderTotals(host, t) {
 const UNCERTIFIED = ' <span class="badge" title="This session carried no speed channel — a '
   + 'GPX, or another degraded source. Its speed was differentiated from positions, which is '
   + 'noisier and can read high, so this record cannot be certified.">uncertified</span>';
+
+/** Why the speed table is empty, in the reader's own terms. */
+function noRecordsNote(policy) {
+  if (policy === "onlyVerified") {
+    return "No verified speed record yet. Every session here worked its speed out from "
+      + "positions. Settings has the other two answers.";
+  }
+  return "No qualifying speed window yet.";
+}
 
 function renderRecords(table, records) {
   if (!records.length) {

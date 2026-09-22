@@ -105,6 +105,20 @@
     {
       "channel" : "release",
       "footer" : [
+        "Verified means your watch measured the speed with Doppler.",
+        "Unverified means CleanJibe worked it out from positions. That reads high.",
+        "Prefer verified fills a row with an unverified record only when no verified one exists."
+      ],
+      "help" : "verifiedRecords",
+      "id" : "speedRecords",
+      "lead" : "Choose whether records from tracks without measured speed count.",
+      "phone" : true,
+      "title" : "Speed records",
+      "web" : true
+    },
+    {
+      "channel" : "release",
+      "footer" : [
 
       ],
       "help" : "engineVersion",

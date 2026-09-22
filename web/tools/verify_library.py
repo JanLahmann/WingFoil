@@ -296,6 +296,78 @@ def check_attribution() -> None:
           rung(None), None)
 
 
+# ------------------------------------------------- 1d. verified / unverified records
+
+
+def check_speed_record_policy() -> None:
+    """**Settings -> Speed records, all three modes, over a mixed library.**
+
+    The twin of the kit's `SpeedRecordRuleTests`. Two sessions: a verified one (class b)
+    that holds the best 2 s, and an unverified one (class c) that reads higher on best 2 s
+    and is the only holder of best 500 m. That pair is the whole point of
+    ``preferVerified`` — it has to answer differently *per kind*, keeping the verified 2 s
+    and letting the unverified 500 m fill a row nothing else reaches.
+
+    The best-2 s trend series is checked beside the table, because it is the same rule
+    asked about the same kind and the two must not drift.
+    """
+    section("1d. speed records: only / prefer / include unverified")
+    verified = counted_entry("verified", 20.0, sourceClass="b",
+                             records={"best2sKn": 20.0}, recordWindows={"best2sKn": []})
+    unverified = counted_entry("unverified", 31.0, sourceClass="c",
+                               startEpoch=1_785_920_400.0,
+                               records={"best2sKn": 31.0, "best500mKn": 9.0},
+                               recordWindows={"best2sKn": []})
+    library_ = [verified, unverified]
+
+    want = {
+        # Only the class-b session may hold anything at all. Best 500 m disappears: its
+        # only holder is unverified, which is a kind with no eligible effort.
+        "onlyVerified": {"best2sKn": (20.0, True)},
+        # Per kind. The verified 2 s wins its row; the unverified 500 m fills a row no
+        # verified effort has reached, and it stays marked.
+        "preferVerified": {"best2sKn": (20.0, True), "best500mKn": (9.0, False)},
+        # Everything stands, marked. The unverified 31 kn now takes the 2 s row.
+        "includeUnverified": {"best2sKn": (31.0, False), "best500mKn": (9.0, False)},
+    }
+    # The best-2 s series, per mode: the value each session plots, or None where the rule
+    # took the point out. A dropped point keeps its column, the way every other
+    # "this session cannot report that" gap on the page does.
+    want_series = {
+        "onlyVerified": [20.0, None],
+        "preferVerified": [20.0, None],
+        "includeUnverified": [20.0, 31.0],
+    }
+
+    for policy in library.SPEED_RECORD_POLICIES:
+        agg = library.aggregate(library_, policy)
+        check(f"  {policy}: the policy is echoed", agg["speedRecordPolicy"], policy)
+        got = {r["key"]: (r["value"], r["certified"]) for r in agg["records"]}
+        check(f"  {policy}: the records table", got, want[policy])
+        chart = next(c for c in agg["trends"]["charts"] if c["key"] == "best2s")
+        series = [p["v"] for p in chart["lines"][0]["points"]]
+        check(f"  {policy}: the best 2 s series", series, want_series[policy])
+
+    # The default is `preferVerified`, and an unreadable stored value reads as it too —
+    # the same fallback `SpeedRecordPolicyStore` makes, for the same reason.
+    for bad in (None, "", "yes", "certified"):
+        check(f"  an unknown stored value ({bad!r}) reads as the default",
+              library.aggregate(library_, bad)["speedRecordPolicy"], "preferVerified")
+    check("  no argument at all reads as the default",
+          library.aggregate(library_)["speedRecordPolicy"], "preferVerified")
+
+    # A library with nothing verified in it still has a table under two of the three
+    # modes, and none under the third. That is the state the browser has to explain
+    # rather than go blank in (js/trends.js, `noRecordsNote`).
+    only_c = [unverified]
+    check("  an all-unverified library, onlyVerified: no speed record",
+          library.aggregate(only_c, "onlyVerified")["records"], [])
+    check("  an all-unverified library, preferVerified: every record stands",
+          sorted(r["key"] for r in
+                 library.aggregate(only_c, "preferVerified")["records"]),
+          ["best2sKn", "best500mKn"])
+
+
 # --------------------------------------------------------------- 2-4. the FIT corpus
 
 
@@ -862,6 +934,7 @@ def main(argv=None) -> int:
     check_dedupe()
     check_spot_names()
     check_attribution()
+    check_speed_record_policy()
     check_export()
     check_period_fixture()
     if not args.fast:

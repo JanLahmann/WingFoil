@@ -228,9 +228,18 @@ struct TrendsView: View {
         // speed channel: the point is drawn, because it is still his afternoon, and it is
         // said to be unverifiable, because that is where a high reading does the most damage
         // (the analyzer draws the same point as an open ring).
+        // Settings → Speed records decides which of those points may be plotted at all
+        // (`SpeedRecordRule`, the same call the Records table makes per record kind — and
+        // best 2 s is one kind, so this is one call over the whole series). A point the
+        // rule drops out reads as "this session cannot report this", which is the honest
+        // sentence: the recording did not measure a speed.
+        let speedPoints = plottableSpeedIDs
         TrendChart(title: "Best 2 s", unit: Fmt.knUnit, points: points,
                    tone: DesignTokens.Phase.flying,
-                   value: { $0.best2sKn.map { Speed.value($0) } },
+                   value: { point in
+                       guard speedPoints.contains(point.sessionId) else { return nil }
+                       return point.best2sKn.map { Speed.value($0) }
+                   },
                    uncertified: { !$0.certified },
                    note: "Your quickest two seconds of the session.")
             // The second screenshot anchor on this page, and the reason is the unit: this
@@ -249,6 +258,21 @@ struct TrendsView: View {
                    note: "50 % is symmetric. The gap is the side you avoid.")
         sideSuccessChart
         weeklyChart
+    }
+
+    /// **Which sessions may hold a point on the one speed series** — the rider's Speed
+    /// records setting, asked once for the one record kind this chart draws.
+    ///
+    /// Ids rather than filtered points, because `TrendChart` is handed the whole run: the
+    /// caption under every chart counts "N of M sessions cannot report this", and a series
+    /// silently shortened would make that sentence about the wrong M.
+    private var plottableSpeedIDs: Set<String> {
+        let candidates = points.filter { $0.best2sKn != nil }
+        let eligible = SpeedRecordRule.eligible(candidates,
+                                                policy: store.speedRecordPolicy) {
+            $0.certified
+        }
+        return Set(eligible.map(\.sessionId))
     }
 
     /// The flew-through share split by the tack he *entered* on — the "am I one-sided?"

@@ -1,7 +1,10 @@
 {
   "pending": {
     "note": "Lines for the next build, which has no number yet. Every generator reads `entries` only, so nothing here reaches a rider until it is moved into that build's entry — which is where it goes the moment the build is cut. One thought per line, register 1 of docs/voice.md, at most twenty words.",
-    "lines": []
+    "lines": [
+      "Speed records: choose whether records from tracks without measured speed count.",
+      "Send a session to the developer from its Share page, with your notes."
+    ]
   },
   "entries": [
     {

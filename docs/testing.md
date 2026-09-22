@@ -1052,12 +1052,22 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    instead of the ubiquity container, so two simulators can share one library
    ("Two devices, one library", below).
 
+   `UI_SHARE=fit` opens the share sheet on the recording tab, and **`UI_SHARE=developer`**
+   raises *Send this session to the developer* over it (`SendToDeveloperSheet`, beta
+   channels only, like the row that opens it): both are taps `simctl` cannot make. Pair
+   either with `UI_OPEN_SESSION=<name> UI_SHEET=share`.
+
    **A screenshot in km/h** needs no hook of its own. Settings → Units is a tap `simctl`
    cannot make, but the choice is an ordinary stored default, so passing it as a launch
    argument puts it in the argument domain and `SessionStore.init` reads it exactly as it
    reads a tapped one — before anything renders a speed:
    `xcrun simctl launch <dev> de.lahmann.wingfoil.dev -speedUnit.v1 kmh` (`knots` is the
    default and the other value). Per launch, and it leaves the simulator as it found it.
+   **Settings → Speed records** is the same trick with the same reasoning: a wheel is a tap
+   `simctl` cannot make, and the choice is an ordinary stored default, so
+   `xcrun simctl launch <dev> de.lahmann.wingfoil.dev -speedRecords.v1 onlyVerified`
+   photographs the records table under that mode (`preferVerified` is the default,
+   `includeUnverified` the third).
    Worth photographing after any change to a chart, a records table or a narrated sentence:
    every speed on iOS follows the picker, the four chart axes included
    (docs/presentation.md, "Units"). On the Trends tab pair it with

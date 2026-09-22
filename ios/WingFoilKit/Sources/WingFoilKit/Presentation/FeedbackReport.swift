@@ -250,8 +250,31 @@ public struct FeedbackFacts: Sendable, Equatable {
         /// ("0.19.0+t3.a41f"). Nil on a row analysed before the column existed.
         public let engineStamp: String?
 
+        // MARK: The headline numbers — only the analysis mail prints them
+        //
+        // A mail that carries the recording is asking somebody to re-run this session, and
+        // the first thing that reader does is check whether his run says what the rider's
+        // screen said. These four are that comparison: they are what the session page's
+        // own block shows, in the same strings, so a disagreement is visible before the FIT
+        // is opened at all. The ordinary feedback mail leaves them out — it is a sentence
+        // about the app, not a session to reproduce — which is why every one is optional
+        // and an absent one prints nothing.
+
+        /// "12.4 km", as the key-metrics block spells it.
+        public let distance: String?
+        /// "18 flew through · 4 touchdown · 2 fell in", the jibe ladder as one line.
+        public let tally: String?
+        /// Where the wind axis came from: the engine's own word for it.
+        public let windSource: String?
+        /// The watch-vs-phone rows, one line each, where a summary card disagreed with the
+        /// analysis (`DivergenceCheck`). Empty on every session that has no card to
+        /// disagree with, which is nearly all of them.
+        public let divergences: [String]
+
         public init(id: String, date: String, spot: String?, discipline: String?,
-                    duration: String, sourceClass: String, engineStamp: String?) {
+                    duration: String, sourceClass: String, engineStamp: String?,
+                    distance: String? = nil, tally: String? = nil,
+                    windSource: String? = nil, divergences: [String] = []) {
             self.id = id
             self.date = date
             self.spot = spot
@@ -259,6 +282,10 @@ public struct FeedbackFacts: Sendable, Equatable {
             self.duration = duration
             self.sourceClass = sourceClass
             self.engineStamp = engineStamp
+            self.distance = distance
+            self.tally = tally
+            self.windSource = windSource
+            self.divergences = divergences
         }
     }
 
@@ -447,6 +474,19 @@ public enum FeedbackReport {
         out.append(Separator.rule)
         out.append(Separator.note)
         out.append("")
+        out += blocks(facts)
+        out.append("sent from \(Branding.appName)")
+        return out.joined(separator: "\n")
+    }
+
+    /// **Everything the phone knows, as headed blocks** — the half of the mail under the
+    /// rule, shared by the two doors that write one.
+    ///
+    /// `SessionAnalysisMail` prints exactly these and then adds what only it carries: the
+    /// attachment, and the watch-vs-phone rows. Two mails, one fact sheet, so a reader
+    /// answering either is reading the same lines in the same order.
+    static func blocks(_ facts: FeedbackFacts) -> [String] {
+        var out: [String] = []
         out += section("App", lines: appLines(facts.app))
         out += section("Phone", lines: phoneLines(facts.phone))
         out += section("Watch", lines: watchLines(facts.watch))
@@ -463,8 +503,7 @@ public enum FeedbackReport {
                                              watchRuns: facts.watch.garminCrashRuns,
                                              build: facts.app.build))
         }
-        out.append("sent from \(Branding.appName)")
-        return out.joined(separator: "\n")
+        return out
     }
 
     /// The last resort, and the fallback when Mail is not set up: the same subject and the
@@ -511,7 +550,7 @@ public enum FeedbackReport {
 
     /// A heading, its facts indented two spaces, and a blank line after. Empty sections
     /// cannot happen — every one of the four always has at least one line.
-    private static func section(_ title: String, lines: [String]) -> [String] {
+    static func section(_ title: String, lines: [String]) -> [String] {
         [title] + lines.map { "  " + $0 } + [""]
     }
 
@@ -668,7 +707,129 @@ public enum FeedbackReport {
         if let stamp = session.engineStamp {
             lines.append("Analysed by engine " + stamp)
         }
+        // The headline numbers, where the caller gathered them. Only the analysis mail
+        // does; the ordinary feedback mail prints the three lines above and stops.
+        if let distance = session.distance { lines.append("Distance " + distance) }
+        if let tally = session.tally { lines.append("Jibes " + tally) }
+        if let wind = session.windSource { lines.append("Wind " + wind) }
         lines.append("Session id \(session.id)")
         return lines
+    }
+}
+
+// MARK: - Sending one session to the developer
+
+/// **The mail that carries a recording** (Jan, 21 September 2026).
+///
+/// A rider who thinks a number is wrong can say so through the ordinary feedback door, and
+/// then the answer is three mails: which session, can I have the file, what did your screen
+/// say. This is those three asked once. It is the session's Share page, a comment field,
+/// and the recording itself attached.
+///
+/// **It is the rider's mail and nobody else's.** Like every other door in this file it
+/// builds text and hands it to `MFMailComposeViewController`; the rider reads the whole of
+/// it, edits or deletes any line, and iOS sends it from his own account or not at all.
+/// There is no CleanJibe server for it to go to.
+///
+/// Beta only in the app (`#if BETA`, docs/channels.md). The wording lives here, where the
+/// test suite reads it, for the reason the rest of `FeedbackReport` does.
+public enum SessionAnalysisMail {
+
+    /// What the comment field asks, as its placeholder. Two prompts, because "what looks
+    /// wrong" without "where" is the mail that costs a second mail.
+    public static let prompt = "What looks wrong? Which turns or times?"
+
+    /// The label the comment gets in the mail, so an empty field still reads as a field.
+    public static let commentLabel = "What looks wrong:"
+
+    /// **What the rider is agreeing to, in the mail and above the button.** Three
+    /// sentences: what is in the file, what it is for, and what will not happen to it.
+    public static let consent =
+        "The file holds your track, your heart rate and your times. "
+        + "It is used only to improve the detection. It is never published."
+
+    /// What is riding along, and why it is that file.
+    public enum Attachment: Sendable, Equatable {
+        /// The archived original recording, untouched.
+        case originalRecording(filename: String)
+        /// A track written out of the analysis, for a session that arrived without a file
+        /// of its own — a Strava or an Apple Health import.
+        case derivedTrack(filename: String)
+        /// Nothing could be attached. Said rather than left out: a reader who expected a
+        /// recording needs to know why there is none before he asks for it.
+        case none
+
+        var lines: [String] {
+            switch self {
+            case .originalRecording(let filename):
+                [filename, "The original recording, as it was imported."]
+            case .derivedTrack(let filename):
+                [filename,
+                 "This session arrived without a recording of its own. "
+                 + "The track is the file CleanJibe built from the positions it was given."]
+            case .none:
+                ["No recording could be read for this session."]
+            }
+        }
+    }
+
+    /// "CleanJibe session 30 August 2026 — for analysis".
+    ///
+    /// The date rather than the build, because a mailbox sorted by subject then groups the
+    /// mails about one afternoon, and the build is under the rule where every other machine
+    /// fact is. The dash is the one in the task's own spelling and is pinned by
+    /// `docs/copy/voice-exemptions.json`.
+    public static func subject(date: String) -> String {
+        Branding.appName + " session " + date + " \u{2014} for analysis"
+    }
+
+    /// The prefilled body: the rider's note, what he is agreeing to, then everything the
+    /// phone knows behind the same rule the feedback mail uses.
+    ///
+    /// The rider's half is first, for the reason `FeedbackReport.body` puts it first: a
+    /// mail that opens with twenty lines of diagnostics makes the reporter scroll past his
+    /// own report to write it.
+    public static func body(_ facts: FeedbackFacts, comment: String,
+                            attachment: Attachment) -> String {
+        var out: [String] = []
+        out.append(commentLabel)
+        out.append(comment.trimmingCharacters(in: .whitespacesAndNewlines))
+        out.append("")
+        out.append(consent)
+        out.append("")
+        out.append(FeedbackReport.Separator.rule)
+        out.append(FeedbackReport.Separator.note)
+        out.append("")
+        out += FeedbackReport.blocks(facts)
+        out += FeedbackReport.section("Attached", lines: attachment.lines)
+        if let session = facts.session, !session.divergences.isEmpty {
+            out += FeedbackReport.section(divergenceHeading, lines: session.divergences)
+        }
+        out.append("sent from " + Branding.appName)
+        return out.joined(separator: "\n")
+    }
+
+    /// The heading over the watch-vs-phone rows. Named for what it is rather than for the
+    /// check that produced it, like "Recent crashes" above it.
+    static let divergenceHeading = "Watch and phone disagree"
+
+    /// The fallback route, for a phone with no mail account: the same subject and body
+    /// handed to whatever the system opens for `mailto:`.
+    ///
+    /// No URL scheme can carry an attachment, so this route sends the text alone and the
+    /// caller says so. The escaping is `FeedbackReport.mailtoURL`'s, for the reason written
+    /// there: `urlQueryAllowed` contains `&`, `=`, `+` and `?`, and a rider typing
+    /// "3 jibes & 2 tacks" would have his mail cut short at the ampersand.
+    public static func mailtoURL(subject: String, body: String) -> URL? {
+        let allowed = CharacterSet.urlQueryAllowed
+            .subtracting(CharacterSet(charactersIn: "&=+?"))
+        guard let subject = subject.addingPercentEncoding(withAllowedCharacters: allowed),
+              let body = body.addingPercentEncoding(withAllowedCharacters: allowed)
+        else { return nil }
+        var components = URLComponents()
+        components.scheme = "mailto"
+        components.path = FeedbackReport.recipient
+        components.percentEncodedQuery = "subject=\(subject)&body=\(body)"
+        return components.url
     }
 }

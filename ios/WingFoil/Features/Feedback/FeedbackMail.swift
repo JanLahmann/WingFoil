@@ -38,11 +38,17 @@ enum FeedbackMail {
     }
 
     /// Everything the phone knows about itself, plus the session when there is one.
+    ///
+    /// `detail` is the loaded analysis, and only the "send this session to the developer"
+    /// door hands one in. It adds this session's headline numbers and the watch-vs-phone
+    /// rows to the Session block — the comparison a reader makes first when he is asked to
+    /// re-run a recording (`SessionAnalysisMail`).
     @MainActor
-    static func facts(store: SessionStore, session row: SessionRow? = nil) -> FeedbackFacts {
+    static func facts(store: SessionStore, session row: SessionRow? = nil,
+                      detail: SessionDetail? = nil) -> FeedbackFacts {
         FeedbackFacts(app: appFacts(store: store), phone: phoneFacts(),
                       watch: watchFacts(store: store), library: libraryFacts(store: store),
-                      session: row.map { sessionFacts($0, store: store) },
+                      session: row.map { sessionFacts($0, store: store, detail: detail) },
                       // Every channel, the App Store one included: a crash is the one
                       // failure a rider cannot describe, and this is the only route it has
                       // (docs/engineering.md, "Monitoring").
@@ -178,9 +184,10 @@ enum FeedbackMail {
     }
 
     @MainActor
-    private static func sessionFacts(_ row: SessionRow,
-                                     store: SessionStore) -> FeedbackFacts.Session {
-        FeedbackFacts.Session(
+    private static func sessionFacts(_ row: SessionRow, store: SessionStore,
+                                     detail: SessionDetail? = nil) -> FeedbackFacts.Session {
+        let summary = detail?.analysis.summary
+        return FeedbackFacts.Session(
             id: row.id,
             // The session's own zone, like every other date in the app: a report that
             // renamed the afternoon into the reader's timezone would name a different one.
@@ -189,7 +196,38 @@ enum FeedbackMail {
             discipline: SessionDisplay.badge(row),
             duration: Fmt.duration(row.durationS),
             sourceClass: row.sourceClass,
-            engineStamp: row.engineVersion)
+            engineStamp: row.engineVersion,
+            // The headline numbers, and only where an analysis was handed in. Nil, never a
+            // zero: a mail that reported "0.0 km" for a session whose analysis had not
+            // finished loading would send a reader looking for a bug in the distance.
+            distance: summary.map { Fmt.km($0.distanceKm) },
+            tally: summary.flatMap(tallyLine),
+            windSource: detail?.analysis.wind.map(windLine),
+            // The rows where the watch's own arithmetic and this engine's disagree
+            // (`DivergenceCheck`). Empty on every session with no summary card behind it,
+            // which is nearly all of them.
+            divergences: (detail?.divergences ?? []).map {
+                $0.metric + ": watch " + $0.watch + ", phone " + $0.phone
+                    + ", delta " + $0.delta
+            })
+    }
+
+    /// "18 flew through · 4 touchdown · 2 fell in", or nil when no turn was counted at
+    /// all. The rider's three words, in the rider's order (CLAUDE.md, "Rider vocabulary").
+    private static func tallyLine(_ summary: SessionSummary) -> String? {
+        let turns = summary.turns
+        guard turns.turnsCounted > 0 else { return nil }
+        return String(turns.outcomes.flewThrough) + " flew through · "
+            + String(turns.outcomes.touchdown) + " touchdown · "
+            + String(turns.outcomes.fellIn) + " fell in"
+    }
+
+    /// Where the wind axis came from, and whether the engine could use it. The one fact
+    /// behind every turn verdict in the mail above it, so a reader chasing a wrong jibe
+    /// count knows whether to start with the axis.
+    private static func windLine(_ wind: WindEstimate) -> String {
+        wind.source + " · axis " + String(Int(wind.axisDeg.rounded())) + "°"
+            + (wind.usable ? "" : " · not usable")
     }
 }
 
@@ -445,8 +483,7 @@ private struct FeedbackFallbackSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    Text("No mail account is set up on this phone, so CleanJibe cannot "
-                         + "open a mail for you. " + Copy.copyTheReportInstead)
+                    Text(Copy.noMailAccount + " " + Copy.copyTheReportInstead)
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)

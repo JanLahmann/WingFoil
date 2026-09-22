@@ -17,8 +17,9 @@ import { CANCELLED, analyze as runAnalysis, cancel as cancelWorker, on, warmUp }
 import { mountSections, resetSections } from "./sections.js";
 import { mountShareCard, openPeriodCard, openShareCard } from "./sharecard.js";
 import { listEntries } from "./store.js";
+import { CONSENT, send as sendToDeveloper } from "./senddev.js";
 import { track } from "./track.js";
-import { esc } from "./viz.js";
+import { esc, hms, int, nf } from "./viz.js";
 import { invalidateTrends, mountTrends, redrawTrends, showTrends } from "./trends.js";
 // r3-w1: the four screens the port was missing — the Log tab's gear card and its
 // watch-against-phone block, the quiver's editor, Deleted sessions, Restore from a backup,
@@ -472,6 +473,69 @@ function wireDownload() {
   });
 }
 
+/* ------------------------------------------------------- sending one to the developer */
+
+/**
+ * The fold in the export panel, wired once.
+ *
+ * Everything it needs is already on this page: the document on screen, the digest Python
+ * made of it, and the bytes that were dropped. The route the browser actually has is
+ * js/senddev.js's question, not this file's, and the status line says which one ran so a
+ * rider never wonders whether anything happened.
+ */
+function wireSendToDeveloper() {
+  el("send-dev-consent").textContent = CONSENT;
+  el("send-dev-go").addEventListener("click", async () => {
+    if (!state.last) return;
+    const button = el("send-dev-go");
+    const status = el("send-dev-status");
+    button.disabled = true;
+    status.textContent = "Preparing the recording…";
+    try {
+      const where = await sendToDeveloper({
+        id: state.sessionId,
+        bytes: state.lastBytes,
+        filename: state.last.file?.name || "session.fit",
+        comment: el("send-dev-note").value,
+        facts: developerFacts(),
+      });
+      status.textContent = {
+        shared: "Handed to your share sheet. Nothing was sent from here.",
+        mail: "The recording was downloaded and a mail opened. Attach the file to it.",
+        cancelled: "Cancelled. Nothing left this browser.",
+      }[where] || "";
+    } catch (err) {
+      status.textContent = `Could not prepare the recording: ${err.message}`;
+    } finally {
+      button.disabled = false;
+    }
+  });
+}
+
+/** What the mail says about the session, in the strings this page prints. */
+function developerFacts() {
+  const d = state.lastDigest || {};
+  const summary = state.last?.golden?.summary || {};
+  const turns = summary.turns || {};
+  const outcomes = turns.outcomes || {};
+  const wind = state.last?.golden?.wind;
+  return {
+    site: location.origin,
+    engine: state.last?.engineVersion || "",
+    date: d.dateLocal || d.dateUtc || "",
+    source: state.last?.meta?.sourceClass || d.sourceClass || "",
+    duration: hms(d.rateDurationS ?? d.durationS ?? 0),
+    distance: d.distanceKm == null ? "" : `${nf(d.distanceKm, 2)} km`,
+    tally: turns.turnsCounted
+      ? `${int(outcomes.flewThrough)} flew through · ${int(outcomes.touchdown)} touchdown `
+        + `· ${int(outcomes.fellIn)} fell in`
+      : "",
+    wind: wind ? `${wind.source} · axis ${Math.round(wind.axisDeg)}°`
+                 + (wind.usable ? "" : " · not usable") : "",
+    file: state.last?.file?.name || "",
+  };
+}
+
 /* --------------------------------------------------------------------- share card */
 
 function wireShareCard() {
@@ -682,7 +746,15 @@ function wireUnitRedraw() {
     if (state.last && !el("results").hidden && !el("page-session").hidden) {
       render(state.last, { highlight: state.highlight, isExample: state.isExample });
     }
-    if (!el("page-trends").hidden || !el("page-records").hidden) redrawTrends();
+    // Trends and Records go back through `showTrends` rather than through `redrawTrends`,
+    // because one of the settings in here is not a formatting choice: Settings → Speed
+    // records changes *which* records the aggregate holds, and the answer is computed in
+    // Python (`library.eligible`). `showTrends` memoises on a signature that carries the
+    // setting, so a unit change still costs no Python call and a records change costs
+    // exactly one.
+    if (!el("page-trends").hidden || !el("page-records").hidden) {
+      listEntries().then(showTrends).catch(() => redrawTrends());
+    }
     // And the list, whose third cell is a speed. It is rebuilt from the stored digests,
     // which is a read and no analysis.
     refreshLibrary().catch(() => {});
@@ -724,6 +796,7 @@ wireExample();
 renderGlossary();
 wireCancel();
 wireDownload();
+wireSendToDeveloper();
 wireSave();
 wireShareCard();
 wireSections();

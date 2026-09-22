@@ -240,6 +240,32 @@ type.
 App Store Connect's crash counts (b) are the aggregate view of the same failures, so (b) and
 (c) answer *how often* and *what exactly* without either one becoming a reporter.
 
+### (d) One session, sent by the rider, from the Share page — beta
+
+Share → **Send this session to the developer** (21 September 2026, docs/channels.md, beta).
+It is **rider-initiated and per session**: nothing runs in the background, nothing is
+sampled, and no session leaves a phone that a rider did not open, write a note on, read the
+whole mail of and press Send for. There is no CleanJibe endpoint to receive one; the mail is
+`MFMailComposeViewController`'s and it sends from the rider's own account.
+
+What rides with it is said on the screen before the decision is taken, in the rider's own
+words (`SessionAnalysisMail.consent`): *"The file holds your track, your heart rate and your
+times. It is used only to improve the detection. It is never published."* That is the
+**archived original, unscrubbed** — unlike the copy the share sheet sends to a friend,
+which `FitShareFilter` strips of the watch serial, the rider profile and the paired-accessory
+name. The difference is deliberate and is the reason the consent sentence names the three
+things the file holds: the developer fields and the laps a scrub removes are the half most
+likely to explain a wrong number, and a rider who is asking for a number to be chased is
+told exactly what he is handing over.
+
+Under it, behind the rule every prefilled mail carries, is the same block (c) prints —
+build, channel, engine, phone, library, this session's source class and its headline numbers
+— and the same permission: *delete any line you would rather not send.* The browser's
+version of the door does the same thing with `navigator.share` or a download plus a
+`mailto:`, and uploads nothing either.
+
+The privacy page names it under what leaves the device.
+
 ### What is not recommended
 
 A self-hosted umami, a Sentry, a TelemetryDeck or any opt-in SDK inside the iPhone app. Each

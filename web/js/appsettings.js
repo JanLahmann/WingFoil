@@ -13,6 +13,7 @@ const LS_UNITS = "cleanjibe.units";
 const LS_WELCOME = "cleanjibe.welcomeSeen.v1";
 const LS_GEAR = "cleanjibe.gear.v1";
 const LS_DETAIL = "cleanjibe.detail.v1";
+const LS_SPEED_RECORDS = "cleanjibe.speedRecords.v1";
 
 /** km/h per knot. One constant, so no caller multiplies by a number it typed. Exported
  *  because the engine reports exactly one number — the session's average — in km/h, and the
@@ -96,6 +97,35 @@ export function speedNumber(kn, digits = 2) {
   return value === null ? "—" : value.toFixed(digits);
 }
 
+/* ------------------------------------------------------------- unverified records */
+
+/**
+ * **Whether a record from a track that never measured a speed may stand.**
+ *
+ * The browser's half of Settings → Speed records (Jan, 22 September 2026). The three
+ * values are spelled exactly as the kit spells them (`SpeedRecordPolicy`), because the
+ * phone and this browser have to mean the same thing by them and a second vocabulary is
+ * the drift the shared copy exists to stop.
+ *
+ * The *rule* is not here. It is one function in Python (`library.eligible`), applied at
+ * aggregate time over the stored digests, which is what lets a reader change his mind and
+ * see the other answer without re-saving anything. This module only remembers the choice.
+ */
+export const SPEED_RECORD_POLICIES = ["onlyVerified", "preferVerified",
+                                      "includeUnverified"];
+
+/** `"preferVerified"` until the reader says otherwise, the kit's default. */
+export function speedRecords() {
+  const stored = read(LS_SPEED_RECORDS, "");
+  return SPEED_RECORD_POLICIES.includes(stored) ? stored : "preferVerified";
+}
+
+export function setSpeedRecords(value) {
+  write(LS_SPEED_RECORDS,
+        SPEED_RECORD_POLICIES.includes(value) ? value : "preferVerified");
+  for (const fn of listeners) fn();
+}
+
 /* --------------------------------------------------------------- how much to say */
 
 /**
@@ -169,7 +199,7 @@ export function forgetSettings() {
   // here rather than imported: a start-over that forgot to forget the key would leave the
   // one piece of the reader's account behind, and a cross-import for two strings is worse
   // than two strings. Keep them in step with js/icu.js.
-  for (const key of [LS_UNITS, LS_WELCOME, LS_GEAR, LS_DETAIL,
+  for (const key of [LS_UNITS, LS_WELCOME, LS_GEAR, LS_DETAIL, LS_SPEED_RECORDS,
                      "wingfoil.icu.key", "wingfoil.icu.athlete",
                      "cleanjibe.install.dismissed"]) {
     try {

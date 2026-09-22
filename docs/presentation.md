@@ -1141,12 +1141,93 @@ knows the word GPX:
 |---|---|
 | session badge | `limited data` (web `render.js`), `SessionDisplay.sourceClassNote` (iOS) — the title/subtitle names both absences: estimated speed, no pump data |
 | records table | an `uncertified` chip beside the **value** (web `trends.js`, iOS `RecordsView`) — beside the claim, not beside the session |
-| personal bests | a class-(c) effort never fires the celebration (`PersonalBestDetector.improvements`). The clean-jibe records are exempt: a jibe count is not a speed and a bad fix cannot inflate it |
+| personal bests | the celebration reads the same rule the table does (`PersonalBestDetector.improvements(previous:current:policy:)`). The clean-jibe records are exempt: a jibe count is not a speed and a bad fix cannot inflate it |
 | share card | `disclaimer` — "Speeds from a degraded source — uncertified" (`ShareCardStats`, `cardDisclaimer`) — the card leaves the device, so it cannot be read as a speed claim |
 
 The same source class also has no accelerometer, so the pump and takeoff-effort figures are
 absent rather than zero, by the never-a-flattering-zero rule the goldens already follow
 (docs/testing.md).
+
+### Whether an uncertified record counts at all — Settings → Speed records
+
+Jan, 22 September 2026. Marking a record is one answer to "this speed came from positions";
+it is not the only reasonable one. A rider whose library is all Garmin FITs wants the one
+Strava import kept out of his all-time table; a rider whose library is all Strava wants a
+table at all. So the mark stays, and **whether the record enters the aggregate is a
+setting**, right under Units on both shells, with three choices and one wording:
+
+| choice | what stands |
+|---|---|
+| **Only verified** | an unverified record never enters the all-time table, the personal bests, the trends' best-2 s series, a card, the celebration or the watch snapshot. Its own session's page still shows it, marked |
+| **Prefer verified** — the default | per record kind, a verified record wins whenever one exists; an unverified record fills a row no verified record of that kind has reached, and it carries the mark |
+| **Include unverified** | every record stands, marked. What the app did before the setting |
+
+**One rule, one function** (docs/review-checklist.md, pattern L). `SpeedRecordRule.eligible`
+in the kit takes the candidates of **one record kind** and returns the subset the policy lets
+stand, and every surface that can show an all-time record calls it: `LibraryStore.records`
+(before the maximum is taken, which is what makes "a verified record wins" true),
+`PersonalBestDetector.improvements`, the Trends best-2 s series, `ShareCardStats.make` and
+`WidgetSnapshot.make`. `library.eligible` in `web/lab_bundle/library.py` is the browser's
+twin, read by `_records` and by the best-2 s series in `_points`, and the three values are
+spelled the same on both platforms — `onlyVerified`, `preferVerified`, `includeUnverified`.
+
+**It is applied when the aggregate is read, never written into it.** The `record_effort`
+table on the phone and the stored digests in the browser keep every record they ever held;
+the setting decides what is read back out of them. Moving the picker therefore re-runs the
+query (`RecordsView.reloadKey` carries it on iOS, the aggregate's memo signature carries it
+in the browser) and re-imports nothing, and a library saved under one setting is not a
+library that has to be saved again under another. A stored digest that had the decision
+baked into it would go stale the moment the rider changed his mind.
+
+The phone draws it as a wheel with the chosen mode's line under it, because three two-word
+labels cannot say *when* an unverified record counts and that is the whole difference
+between them; the browser draws the same three as a segmented group with the same line
+(`SpeedRecordPolicy.summary`, `SPEED_RECORD_SUMMARY` in `web/js/appshell.js`). Under **Only
+verified** a table that empties says why rather than going blank (pattern G).
+
+### Send this session to the developer — the Share page's third thing (beta)
+
+Jan, 21 September 2026. The Card and FIT file segments answer one request, *send this to
+someone*; this answers another, *this number is wrong*, and the only way to chase that is on
+the recording that produced it. It is a full-width row **under** the switcher rather than a
+third segment: a third segment would make a rider choose between sharing and reporting before
+he has decided he wants either, and the row carries the same afternoon whichever segment is
+showing.
+
+The sheet is a comment field with two prompts as its placeholder — *"What looks wrong? Which
+turns or times?"* — a paperclip line naming what is going with it, and the consent sentence
+in register 1: *"The file holds your track, your heart rate and your times. It is used only
+to improve the detection. It is never published."* Then the ordinary feedback-mail path
+(`MFMailComposeViewController`, `FeedbackMailPresenter`'s own fallback ladder), with:
+
+* the **archived original, unscrubbed**. The share sheet's FIT tab runs `FitShareFilter`
+  because a copy going to a friend has no business carrying a watch serial; this copy is
+  going to the one reader who is being asked to reproduce the analysis, and a scrub drops the
+  developer fields, the laps and the rider profile — the half most likely to hold the reason
+  a number came out wrong. A session that arrived as positions rather than as a recording
+  (Strava, Apple Health) sends the track CleanJibe built from them, and the mail says which
+  of the two it is;
+* the rider's comment, above the rule, where his half of every prefilled mail goes;
+* the diagnostics block the feedback mail already builds (`FeedbackReport.blocks`: the
+  channel and build, the engine, the phone, the watch, the library, the session's source
+  class), plus this session's headline numbers — duration, distance, the jibe tally, the wind
+  source — and the watch-vs-phone rows where a summary card disagrees (`DivergenceCheck`).
+
+Subject: *CleanJibe session <date> — for analysis*, so a mailbox sorted by subject groups the
+mails about one afternoon. **Nothing is sent by the app**: the rider sees the whole mail,
+edits or deletes any line, and iOS sends it from his own account or not at all.
+
+BETA (docs/channels.md): `#if BETA` on the row, the sheet and the attachment path, and the
+help topic is bound to `.beta` so it never reaches the release Help index.
+
+**The browser does the same thing with the platform it has.** The fold sits in the Details
+tab's export panel, under *Download analysis JSON*, which is where a reader who doubts a
+number already is. `navigator.canShare({files})` decides the route, because file sharing is
+per browser *and* per file type: Safari on iOS and macOS and Chrome on Android and Windows
+hand the recording to the system share sheet with the note as its text; Firefox and Chrome on
+Linux have no file sharing, so the recording downloads and a `mailto:` opens with the same
+body, which then says to attach it — no mail URL scheme can carry an attachment. The status
+line always names which of the three happened, including *cancelled*.
 
 ### A clip can carry the rider's own music, and only his own
 
@@ -4432,6 +4513,14 @@ alert's title is the switch's own label and its message is the switch's own expl
 for word (`SettingsCopy`), because it is the same feature; "Notify me" runs the same code
 path the switch does, which is what puts the iOS permission sheet under the finger that asked
 for it. `NewActivityPrompt.shouldAsk(… keyIsProven:)` holds the rule.
+
+**Speed records sits under Units**, because it is the other question about how a speed reads
+(22 September 2026). What it does is written out above, under "Whether an uncertified record
+counts at all"; what the section itself carries is a picker of three, the chosen mode's own
+line under it, and the footer's three register-1 sentences — what verified means, what
+unverified means, and what "prefer" does — with the `?` opening *Verified and unverified
+speed records*. The browser draws the same section in the same place from
+`docs/copy/settings.json`.
 
 **"Coming in a future release"** — the channel list (docs/channels.md), read the way a rider
 asks it. It was *Curious about what is coming* until 14 September 2026 (an App Store app that
