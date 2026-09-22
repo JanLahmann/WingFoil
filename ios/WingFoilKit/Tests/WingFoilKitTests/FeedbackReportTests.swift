@@ -275,7 +275,7 @@ import Testing
     /// the mails about one session, and the build is under the rule with the rest.
     @Test func theAnalysisSubjectNamesTheSession() {
         #expect(SessionAnalysisMail.subject(date: "30 August 2026")
-                == "CleanJibe session 30 August 2026 \u{2014} for analysis")
+                == "CleanJibe session 30 August 2026 \u{00B7} for analysis")
     }
 
     /// The rider's half first, then what he is agreeing to, then the rule. Asserted by

@@ -773,14 +773,14 @@ public enum SessionAnalysisMail {
         }
     }
 
-    /// "CleanJibe session 30 August 2026 — for analysis".
+    /// "CleanJibe session 30 August 2026 · for analysis".
     ///
     /// The date rather than the build, because a mailbox sorted by subject then groups the
     /// mails about one afternoon, and the build is under the rule where every other machine
-    /// fact is. The dash is the one in the task's own spelling and is pinned by
-    /// `docs/copy/voice-exemptions.json`.
+    /// fact is. "·" rather than a dash, like every other subject the app writes
+    /// (`FeedbackReport.subject`) — pinned by `docs/copy/voice-exemptions.json`.
     public static func subject(date: String) -> String {
-        Branding.appName + " session " + date + " \u{2014} for analysis"
+        Branding.appName + " session " + date + " \u{00B7} for analysis"
     }
 
     /// The prefilled body: the rider's note, what he is agreeing to, then everything the
