@@ -370,6 +370,78 @@ function turnRecoveryClosesTheTailBeforeALaterStop(logger as Test.Logger) as Boo
     return true;
 }
 
+// ---- THE VERDICT LANDS AT THE STOP (Jan, 22 September 2026) ----
+//
+// The 30 s tail buys a slow mush-out its fall; it must not make the rider wait for it. A fall
+// is monotonic — once the stop spell passes FALL_STOP_S nothing later can make it anything
+// else — so the window ends on that tick and the buzz arrives while he is still in the water.
+// Before this the wrist sat silent for the rest of the tail and then buzzed about something
+// that had happened half a minute earlier.
+//
+// The arithmetic the test pins: he stops 14 s past the sweep, the first stopped sample buys no
+// spell (the both-ends convention needs two), so the spell passes 5 s on the SEVENTH stopped
+// sample — 21 s past the sweep, 9 s before the tail would have run out.
+(:test)
+function turnFallIsCalledTheTickTheStopIsLongEnough(logger as Test.Logger) as Boolean {
+    var d = new TurnDetector(coreDefaults());
+    runStraight(d, 5, 90.0, 8.0);
+    runSweep(d, 90.0, 30.0, 6, 8.0);
+    var ev = runTail(d, 1, 270.0, 1.5, false, false);
+    Test.assertMessage(ev == TurnDetector.EVENT_TURN,
+        "the sweep confirms the turn, event " + ev.toString());
+    // 13 s more of mush: off the foil, still making way, nowhere near recovery. Nothing is
+    // decided while he is still moving — the tail is doing its job.
+    ev = runTail(d, 13, 270.0, 1.5, false, false);
+    Test.assertMessage(ev == TurnDetector.EVENT_NONE,
+        "nothing is decided while he is still making way, event " + ev.toString());
+    // ...and now he stops, one tick at a time, so the ANSWER'S MOMENT is what is asserted and
+    // not merely the answer.
+    var fellAt = -1;
+    for (var i = 1; i <= 16; i++) {
+        var e = d.tick(1.0, 270.0, 0.2, 0.2, false, false);
+        if (e == TurnDetector.EVENT_FELL && fellAt < 0) {
+            fellAt = i;
+        }
+    }
+    Test.assertMessage(fellAt == 7,
+        "the fall must land on the stopped sample that carries the spell past FALL_STOP_S "
+        + "(the 7th), got " + fellAt.toString());
+    Test.assertMessage(d.fellCount == 1 && d.touchdownCount == 0 && d.flewCount == 0,
+        "one fall, booked once: " + d.fellCount.toString() + " / "
+        + d.touchdownCount.toString() + " / " + d.flewCount.toString());
+    Test.assertMessage(d.turnCount == 1, "one turn, got " + d.turnCount.toString());
+    Test.assertMessage(d.dryStreak == 0, "he swam, so the dry run is over");
+    // Sixteen stopped samples is past the 30 s cap this window used to wait for, and the fall
+    // was still booked exactly once: ending the window early is the same verdict, not a second.
+    logger.debug("fell at stopped sample " + fellAt.toString() + ", tail cap was 30 s");
+    return true;
+}
+
+// The straight-line half of the same rule: a swim no turn is judging breaks the run on the
+// tick its stop is long enough, rather than at the end of FLIGHT_END_WINDOW_S. One physical
+// question, one set of numbers, one moment (docs/algorithms/turns.md "Speed kept").
+(:test)
+function aStraightLineSwimBreaksTheRunWhenItIsLongEnough(logger as Test.Logger) as Boolean {
+    var d = new TurnDetector(coreDefaults());
+    streakFlyThrough(d, 0.0);
+    Test.assertEqual(d.dryStreak, 1);
+
+    // He ventilates and stops. Sample by sample again: the run must survive the short spell
+    // and end on the one that carries it past FALL_STOP_S.
+    var brokeAt = -1;
+    for (var i = 1; i <= 12; i++) {
+        d.tick(1.0, 0.0, 0.2, 0.2, false, false);
+        if (d.dryStreak == 0 && brokeAt < 0) {
+            brokeAt = i;
+        }
+    }
+    Test.assertMessage(brokeAt == 7,
+        "the dry run must end on the 7th stopped sample, got " + brokeAt.toString());
+    Test.assertMessage(d.turnCount == 1, "a straight-line swim must not become a turn");
+    Test.assertEqual(d.bestDryStreak, 1);
+    return true;
+}
+
 (:test)
 function turnSuccessIsScoreOnlyNotOutcome(logger as Test.Logger) as Boolean {
     // lab/src/wingfoil_lab/turns.py `_build_turn`: success = score >= turnSuccessPct AND the
