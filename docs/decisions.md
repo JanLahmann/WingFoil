@@ -14,6 +14,34 @@ apart is a history, not a contract. There are four:
 An Accepted entry may carry a clause saying what a later ADR narrowed or what has moved since.
 That is the point of the line: it says which half of an old paragraph is still load-bearing.
 
+## ADR-034 · The watch's words come from docs/copy, like every other surface
+**Status: Accepted** (Jan, 22 September 2026; watch 0.9.19, no version bump, no page changed.)
+
+The watch was the last rider surface outside the copy contract. Its settings rows and its FIT
+field names were typed in `garmin/resources/strings/strings.xml`, its page words were `"…"`
+literals inside the Monkey C that draws them, and neither file is one anybody opens when a
+wording is decided on the phone. The cost is on the record twice: Garmin Connect said
+*Turn success* for a month after the glossary had decided `Speed kept`, and it said `Foil %`
+for a week after the label table had decided `On foil` — the one place that spelling survived.
+
+**Decision.** `docs/copy/watch.json` is the inventory: every string the watch prints, with the
+place a rider reads it, and — for a word that names a number — the glossary id it spells.
+`garmin/tools/make_strings.py` writes the two `strings.xml` files and
+`garmin/source/ui/Words.mc` from it; `tools/check_release.py` fails while any of the three is
+stale. `web/tools/verify_glossary.py` reads the file and holds every page word and every
+Connect field name to its own term's spellings, and `docs/copy/check_voice.py` reads it in
+place of the generated XML, because a sentence is judged where it can be edited.
+
+**Consequence.** A word the glass cannot take is a `why` in that file rather than a silent
+difference: fifteen of them on the day it was written, each saying what the 240 px row
+refused. Two Connect rows had no chord to fit and were aligned in the same round (`On foil`,
+`Best 2 s`, docs/fit-schema.md). The pages moved not one word. A page reaches a word through
+`Words.load()` at construction — one `WatchUi.loadResource` each, never inside `onUpdate` —
+and the words live in a **module**, not the file-scope globals they used to be, because Monkey
+C caps the `globals` module at 253 members and CIQ 3.x enforces it: 105 words took the app to
+286 and every fenix 5 Plus build failed. The resident cost is 12–16 KB, measured on the two
+narrowest glasses (docs/testing.md).
+
 ## ADR-033 · One presentation document — the engine emits every rider-facing fact once
 **Status: Accepted** (Jan, 22 September 2026; `presentationVersion` 1, no engine bump).
 

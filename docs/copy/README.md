@@ -1,10 +1,11 @@
 # One copy, many surfaces
 
-Ten JSON files. Each holds rider-facing wording that more than one surface says, so that it
-is written **once** and the places that say it are held to it from **both sides**. Nine are
-small. The tenth, `help.json`, is the whole of the app's help catalogue, exported so that
+Eleven JSON files. Each holds rider-facing wording that more than one surface says, so that
+it is written **once** and the places that say it are held to it from **both sides**. Nine
+are small. `help.json` is the whole of the app's help catalogue, exported so that
 cleanjibe.org/help can render the reference work the phone renders rather than writing its
-own.
+own. `watch.json` is the eleventh and the newest: every word the wrist prints, which until
+22 September 2026 was the one rider surface this folder could not reach.
 
 The problem this folder exists for has a date and a time. Everything decided after
 14 September 2026 12:30 landed in `docs/`, in the kit and in the app, and never reached the
@@ -297,6 +298,49 @@ wrapped in `data-copy="whats-new"` and stripped the way a generated `garmin-coun
 so only the release notes are excused and the rest of the beta page is still held to the
 rule.
 
+### `watch.json`
+
+**Every string the watch prints, and where it prints it** (ADR-034). Hand-authored here,
+like `lexicon` and the glossary's `short`, because nothing in the kit authors a word the
+watch says. `garmin/tools/make_strings.py` is the generator:
+
+```sh
+python3 garmin/tools/make_strings.py            # write the three generated files
+python3 garmin/tools/make_strings.py --check    # exit 1 while one of them is stale
+```
+
+It writes `garmin/resources/strings/strings.xml` (every `stream: base` entry),
+`garmin/resources-dev/base/strings/strings.xml` (every `stream: dev` one) and
+`garmin/source/ui/Words.mc`, the module the pages draw the words through —
+one `WatchUi.loadResource` each, at page construction, never inside `onUpdate`.
+`tools/check_release.py` runs `--check`, so a stale file fails the first thing `make all`
+does rather than the last.
+
+| field | what it is |
+|---|---|
+| `id` | the Rez string id, unique across both streams |
+| `text` | the word itself |
+| `where` | where a rider reads it — the reason the inventory is worth having |
+| `term` | **the glossary id this word spells.** Its presence hands the string to the lint |
+| `why` | required where `term` is set and `text` is not one of that term's spellings |
+| `var` | the Monkey C name the pages draw it through, or a list where one word has several |
+| `pad` | `leading` / `trailing` / `both` — a space the generator adds, because XML is no place to keep a significant one |
+| `note` | an XML comment written above the entry |
+| `stream` | `base` (every stream) or `dev` (the dev listing only) |
+
+The **surface is derived**, not declared: a string with a `var` is a page word, an id
+beginning `FitUnit` is a unit, an id beginning `Fit` is a Garmin Connect field name, an id
+beginning `AppName` is the launcher, and everything else is a Garmin Connect settings row.
+`web/tools/verify_glossary.py` reads the first two of those — a page word and a Connect
+field name are the two places a number gets a name, and they are the two that collided on
+20 September 2026 — and holds each to **its own term's** spellings (`labels`, `term`,
+`short`), not to the glossary at large. A word that IS a glossary spelling and names no term
+fails too: a label the lint cannot see is a label that drifts.
+
+`check_voice.py` reads this file rather than the generated XML, for the reason it excludes
+`appcopy.js`: a sentence is judged where it can be edited. `where` and `why` are notes to the
+next author — a doc comment in a field — and are not read.
+
 ## The process rule
 
 A kit change that moves a fact **fails the kit tests** until `docs/copy` catches up. That is
@@ -314,7 +358,7 @@ is edited in a separate pass from the app, and the app's pass is the one that ke
 So the check has to run **where the kit's tests run** — otherwise the next 14 September
 19:37 produces the next fourteen bugs.
 
-## The watch is inside the contract too (15 Sep 2026)
+## The watch is inside the contract too (15 Sep 2026; finished 22 Sep 2026)
 
 `check_release_copy.py` scans the watch as it scans the kit: every `"…"` literal in
 `garmin/source/ui` and `garmin/source/alerts` and every line of `garmin/resources/strings`
@@ -323,5 +367,19 @@ for the Strava rule and the lexicon, and the listing's title line against
 `phrases.json → ciqListingTitle`. Exemptions live in the target's `allow` map as everywhere
 else and are printed on every run. The watch's *labels* are held by `glossary.json → short`
 (seven characters or fewer for every entry whose `surfaces` name the watch, asserted by
-`CopyContractTests`); wiring `PageModel`'s captions to those shorts is the next step.
+`CopyContractTests`).
+
+**Wiring the pages to those words was the step this paragraph called "next", and it is done**
+(ADR-034, 22 September 2026). It needed a file of its own rather than a `short` per term,
+because one glossary word is printed at five widths on the watch — `foil`, `foil %`,
+`foil dist`, `time on foil`, `On foil` are all `foilShare` — and a single `short` cannot hold
+five. `watch.json` holds all of them, each naming its term, and the lint is what keeps them
+spellings of that term rather than five opinions. Fifteen carry a `why` saying what the
+240 px row refused; two Garmin Connect rows had no row to fit and were aligned on the day
+they were found (`On foil`, `Best 2 s`).
+
+The three scans above still run, and they are the guard now rather than the reading: a `"…"`
+literal in `garmin/source/ui` is a word that escaped the file, and `check_voice.py`'s two
+Monkey C targets report **zero sentences** — which is what "every word the watch prints comes
+from docs/copy" looks like from the outside.
 

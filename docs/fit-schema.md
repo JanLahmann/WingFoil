@@ -145,6 +145,28 @@ written**: the phone computes them exactly and there is no field slot to spare.
 > **Scope.** A **display label only**. Field id 34, its type, its units, its semantics and
 > every parser stay exactly as they are; `SCHEMA_VERSION` does not move.
 > `docs/copy/glossary.json` → `speedKept` carries the same spelling on every other surface.
+>
+> **Where the label lives now** (22 Sep 2026): `docs/copy/watch.json`, entry `FitTurnSuccess`,
+> which names the glossary term `speedKept`. `garmin/resources/strings/strings.xml` is
+> generated from it, so the rule above is a lint rather than a paragraph —
+> `web/tools/verify_glossary.py` fails on a Connect field name that is not one of its term's
+> own spellings.
+
+### The other two Connect labels that were not their term's spelling (22 Sep 2026)
+
+Field 34 was the one everybody had looked at. When every watch string went into
+`docs/copy/watch.json` and the glossary lint was pointed at the Connect field names, two more
+came out of the same drawer. Both are **display labels only** — no field id, type, unit,
+semantic or parser moved, and `SCHEMA_VERSION` does not move:
+
+| field | was | is | why |
+|---|---|---|---|
+| 22 `foil_pct` | `Foil %` | **`On foil`** | the label table retired `Foil %` on 15 September 2026 and every other surface followed. `MetricGlossary.swift` says in its own comment that the old spelling *"survived here alone"*; here was this row. |
+| 26 `best_2s` | `Best 2s speed` | **`Best 2 s`** | it said the window twice and spelled it a third way. `design/tokens.json` has one spelling of that window, the legend chip owns it, and the unit column already says `cm/s`. |
+
+A Connect row has no chord to fit, which is why these two were aligned in the round that
+found them and the twelve **page** divergences were not: those are 240 px wide and each one
+carries its reason in `docs/copy/watch.json`.
 
 **`tack_count`/`jibe_count` are written only when a wind axis was in effect — of EITHER
 kind.** Naming a sweep a tack or a jibe needs a wind direction. Until device app 0.9.0 the

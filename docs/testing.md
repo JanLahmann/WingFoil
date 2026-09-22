@@ -12,6 +12,7 @@ make lab-test       # cd lab && uv run pytest -q
 make kit-test       # cd ios/WingFoilKit && swift test
 make ios-build      # xcodegen, then the three channels with signing off
 make web-verify     # bundle_lab --check, verify_links, check_release_copy, check_voice
+make release-check  # the version sites, the channels, and the watch's generated words
 make web-bundle     # regenerate web/lab_bundle after an engine change
 make garmin-package # garmin/tools/package.sh, the three .iq files
 ```
@@ -639,11 +640,12 @@ and the Pages deploy).
 
 ## The copy contract — `docs/copy/`
 
-Two commands, and both have to be green before a wording change is finished:
+Three commands, and all three have to be green before a wording change is finished:
 
 ```sh
 cd ios/WingFoilKit && swift test --filter CopyContractTests   # the kit against docs/copy
 python3 docs/copy/check_release_copy.py                        # the release copy's three rules
+python3 garmin/tools/make_strings.py --check                   # the watch against docs/copy
 ```
 
 The first asserts every kit constant that more than one surface says equals its JSON in
@@ -741,11 +743,22 @@ the glossary.
 `<!-- sitefoot:end -->` byte for byte across all seven reader documents, the way it has always
 compared the site nav: one link set, every page, no `aria-current`.
 
+**The watch's words** (ADR-034, 22 Sep 2026): `python3 garmin/tools/make_strings.py --check`
+fails while `garmin/resources/strings/strings.xml`,
+`garmin/resources-dev/base/strings/strings.xml` or `garmin/source/ui/Words.mc` has drifted
+from `docs/copy/watch.json`, which is the inventory of every string the watch prints.
+`tools/check_release.py` runs it, so it is the first thing `make all` checks rather than the
+last, and `web/tools/verify_glossary.py` holds every page word and every Garmin Connect field
+name in that file to the glossary term its entry names. A word the glass could not take
+carries a `why` there and is printed on every full run of the lint, like an allow-list entry.
+Run the generator without `--check` after editing the JSON; nothing else writes those three
+files.
+
 **The voice** (docs/voice.md, 15 Sep 2026): `python3 docs/copy/check_voice.py` measures every
 rider sentence on every surface — the kit's Help and Presentation literals, the app's Features,
-the watch's pages, alerts and strings.xml, the seven prose pages of the site, and (advisory,
-while a version is in review) the two store descriptions — against the rules a machine can
-hold: no dash, semicolon or parenthesis inside a rider sentence, no sentence over 20 words,
+the watch's pages, its alerts and `docs/copy/watch.json`, the seven prose pages of the site,
+and (advisory, while a version is in review) the two store descriptions — against the rules a
+machine can hold: no dash, semicolon or parenthesis inside a rider sentence, no sentence over 20 words,
 mean under 14, none of the banned shapes. `--report` prints the numbers without failing.
 Exemptions live in `docs/copy/voice-exemptions.json` as `{path, text, why}` and are printed
 on every run.
@@ -1783,6 +1796,35 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    since 0.9.18 — the clean count joined the ladder row it refines and CPH left the watch — and
    the split now fits at the floor font on **every** glass, which the test asserts outright
    rather than only on the AMOLED ones.)*
+
+   **0.9.19: 141 dev / 131 release, on `fenix847mm` and `fenix5xplus`**, and 141 dev on
+   `fr255`. No test is new in the round that moved the watch's words into `docs/copy`
+   (ADR-034) and none changed its assertion: every word is the same word at the same width,
+   reached through `Words.<NAME>` instead of a file-scope const. Thirteen test functions
+   gained one line, `Words.load()`, because a unit test builds no page and the words are
+   loaded at page construction.
+
+   **The globals ceiling, found the hard way.** Monkey C caps the `globals` module at **253
+   members** and CIQ 3.x enforces it at compile time: 105 words declared at file scope took
+   the app to 286 and every `fenix5xplus` build failed with
+   `Found 286 members in module 'globals', exceeding the limit of 253` — while `fenix847mm`
+   compiled and ran clean. The words live in `module Words` for that reason, which costs the
+   globals table one name. **A round that adds file-scope names is not proved by the newest
+   glass**; the narrow MIP devices are the compiler check as well as the layout one.
+
+   **What the words cost, measured** (`fuzzSixHoursAtOneHertzHoldItsMemory`'s own `usedMemory`
+   readings, dev build, simulator):
+
+   | device | used before, 0.9.18 → 0.9.19 | resident cost | 6 h growth |
+   |---|---|---|---|
+   | `fenix5xplus` | 419 760 → 435 520 B | **+15 760 B** | 3 096 → 5 224 B |
+   | `fr255` | 345 304 → 357 464 B | **+12 160 B** | 3 096 → 5 224 B |
+
+   The resident cost is the resource table plus one `String` per word held for the life of
+   the app; they were code constants before, so part of it is paid twice and part of it is
+   new. The growth number moved by the same 2 128 B on **both** devices, which is the
+   signature of one allocation inside the measured window rather than a per-tick leak — the
+   failure line is 64 KB and it is there to catch the second thing, not the first.
 
    **0.9.18: 131 dev / 126 release / 126 beta, on nine glasses** (`fenix847mm`, `fenix843mm`,
    `fenix5xplus`, `fr255`, `venu2s`, `venu3`, `epix2pro42mm`, `instinct3amoled45mm`,
