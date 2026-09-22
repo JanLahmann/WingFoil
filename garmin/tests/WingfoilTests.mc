@@ -796,6 +796,7 @@ function gridPairBandFitsRoundDisplay(logger as Test.Logger) as Boolean {
 // the page — which it always is, since the page draws it by being the foil page.
 (:test)
 function foilPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
+    Words.load();
     var dc = testDc();
     var cx = screenPx() / 2;
     var cy = screenPx() / 2;
@@ -869,12 +870,12 @@ function foilPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
         "the worst-case share overflows its column");
 
     // ---- every box, at its own depth and its own column, inside the glass ----
-    var r = cornerRadius(dc.getTextWidthInPixels(FOIL_TITLE, Graphics.FONT_XTINY), inkT,
+    var r = cornerRadius(dc.getTextWidthInPixels(Words.FOIL_TITLE, Graphics.FONT_XTINY), inkT,
         y[0], cy);
     Test.assertMessage(r <= limit, "foil title r=" + r.format("%.0f") + " > " + limit);
     // the column headers, on the BOTTOM row now, where the chord is at its narrowest on this
     // page — which is exactly why a two-word label row is what belongs there
-    var hdr = [FOIL_COL_TIME, FOIL_COL_DIST];
+    var hdr = [Words.FOIL_COL_TIME, Words.FOIL_COL_DIST];
     for (var i = 0; i < 2; i++) {
         r = cornerRadiusAt(cx, col[1 + i], dc.getTextWidthInPixels(hdr[i],
             Graphics.FONT_XTINY), inkT, y[4], cy);
@@ -942,7 +943,7 @@ function foilPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     Test.assertMessage(dc.getFontHeight(realP) >= dc.getFontHeight(realV),
         "the foil shares read smaller than the values under them");
     // the header says "time", not a unit the cells never print
-    Test.assertEqual(FOIL_COL_TIME, "time");
+    Test.assertEqual(Words.FOIL_COL_TIME, "time");
     // the km column is ON-FOIL distance, so it is formatted from metres like any other
     Test.assertEqual(RecordingView.foilKm(14091.0), "14.1");
     Test.assertEqual(RecordingView.foilKm(2249.0), "2.2");
@@ -1240,6 +1241,7 @@ function assertStartRow(dc as Graphics.Dc, text as String, y as Number, cy as Nu
 // longest string on the page and the one this test exists to measure.
 (:test)
 function startPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
+    Words.load();
     var dc = testDc();
     var cy = screenPx() / 2;
     var radius = RecordingView.fitRadius(dc, false, false);
@@ -1272,12 +1274,12 @@ function startPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
         "the start block fills more than three quarters of the glass");
 
     // every row inside the glass, at the font the page will actually pick
-    assertStartRow(dc, START_TITLE, yTitle, cy, radius, START_TITLE_FONT, inkTitle);
+    assertStartRow(dc, Words.START_TITLE, yTitle, cy, radius, START_TITLE_FONT, inkTitle);
     // 0.9.2: the GPS state is the screen's answer and gets the title's rung, not the body's
     assertStartRow(dc, "GPS ready", yState, cy, radius, START_STATE_FONT, inkState);
     Test.assertMessage(dc.getFontHeight(stateFont) >= dc.getFontHeight(titleFont),
         "the app's name is still bigger than the answer to the screen's only question");
-    assertStartRow(dc, START_HINT, yHint, cy, radius, START_BODY_FONT, inkBody);
+    assertStartRow(dc, Words.START_HINT, yHint, cy, radius, START_BODY_FONT, inkBody);
 
     // The wind row in both its forms. The reminder is the longest string the page can hold,
     // so unlike the others it is allowed to STEP DOWN a rung rather than being required to
@@ -1285,7 +1287,7 @@ function startPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     // The third form is 0.9.0's: an axis the WATCH estimated carries a leading "~", one
     // character wider than the rider's own, which is exactly the sort of thing that overflows
     // the narrowest glass a release later.
-    var winds = [START_WIND_UNSET, "wind 337° NNW", "wind ~337° NNW"];
+    var winds = [Words.START_WIND_UNSET, "wind 337° NNW", "wind ~337° NNW"];
     for (var i = 0; i < winds.size(); i++) {
         var f = RecordingView.fitFont(dc, TEXT_FONTS, START_BODY_FONT, winds[i],
             RecordingView.rowBudget(radius, yWind - cy, inkBody));
@@ -1315,7 +1317,7 @@ function startPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     var before = AppSettings.cfg.windManual;
     var wasSet = AppSettings.windEverSet;
     AppSettings.storeWindDirection(-1);
-    Test.assertEqual(StartView.windText(), START_WIND_UNSET);
+    Test.assertEqual(StartView.windText(), Words.START_WIND_UNSET);
     AppSettings.storeWindDirection(22);
     Test.assertEqual(StartView.windText(), "wind 22° NNE");
     AppSettings.storeWindDirection(before);
@@ -3104,6 +3106,7 @@ function recordsPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
 // measured against the RING-aware radius, not the glass.
 (:test)
 function mainPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
+    Words.load();
     var dc = testDc();
     var cy = screenPx() / 2;
     var radius = RecordingView.fitRadius(dc, true, false);
@@ -3148,7 +3151,7 @@ function mainPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     // with a fall-back into the text fonts, so the clock gets the digits and the WORD that
     // replaces it (which is wider, and has no glyphs in a number font) steps down as before.
     var inkC = RecordingView.inkH(dc, MAIN_CLOCK_FONT);
-    var tops = ["23:59", PAUSED_TEXT];
+    var tops = ["23:59", Words.PAUSED_TEXT];
     for (var i = 0; i < tops.size(); i++) {
         var budget0 = RecordingView.rowBudget(radius, y0 - cy, inkC);
         // 0.9.13: the WORD never walks the number ladder (no letters there — the fenix 5
@@ -3284,10 +3287,11 @@ function mainPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
 // own corners still clear the radius the page's text is fitted to — i.e. inside every ring.
 (:test)
 function pausedBannerStaysInsideTheRings(logger as Test.Logger) as Boolean {
+    Words.load();
     var dc = testDc();
     var cy = screenPx() / 2;
     var font = TEXT_FONTS[PAUSED_FONT_IDX];
-    var w = dc.getTextWidthInPixels(PAUSED_TEXT, font);
+    var w = dc.getTextWidthInPixels(Words.PAUSED_TEXT, font);
     var h = dc.getFontHeight(font);
 
     // every ring combination a page can draw
@@ -3323,6 +3327,7 @@ function pausedBannerStaysInsideTheRings(logger as Test.Logger) as Boolean {
 // be smaller than the line, on every page, plus the round-glass fit of every row.
 (:test)
 function summaryPagesFitRoundDisplay(logger as Test.Logger) as Boolean {
+    Words.load();
     var dc = testDc();
     var cy = screenPx() / 2;
     var hN = RecordingView.inkH(dc, Graphics.FONT_NUMBER_THAI_HOT);   // the giant's band
@@ -3403,7 +3408,7 @@ function summaryPagesFitRoundDisplay(logger as Test.Logger) as Boolean {
 
     // the SAVED pill sits on the TOP arc (the verdict page's eyebrow); the dots hang off
     // the bottom. The pill's old bottom slot overprinted the verdict's second sub-row.
-    var savedW = dc.getTextWidthInPixels(SUM_SAVED, Graphics.FONT_XTINY);
+    var savedW = dc.getTextWidthInPixels(Words.SUM_SAVED, Graphics.FONT_XTINY);
     var rSaved = cornerRadius(savedW, RecordingView.inkH(dc, Graphics.FONT_XTINY),
         SummaryView.savedY(dc), cy);
     Test.assertMessage(rSaved <= RecordingView.fitRadius(dc, false, true).toFloat(),
@@ -4095,6 +4100,7 @@ function pagingIsPlainIndexArithmetic(logger as Test.Logger) as Boolean {
 // the page a rider is looking at while wet.
 (:test)
 function mapPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
+    Words.load();
     var dc = testDc();
     var cy = screenPx() / 2;
     var radius = RecordingView.fitRadius(dc, false, false);
@@ -4124,12 +4130,12 @@ function mapPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
         "map caption corner " + rCap.format("%.0f") + " > " + limit);
 
     // before the first fix the page says so, in a line that has to fit the middle of the glass
-    var wf = RecordingView.fitFont(dc, TEXT_FONTS, 0, MAP_WAITING,
+    var wf = RecordingView.fitFont(dc, TEXT_FONTS, 0, Words.MAP_WAITING,
         RecordingView.rowBudget(radius, 0, RecordingView.inkH(dc, TEXT_FONTS[0])));
-    var rWait = cornerRadius(dc.getTextWidthInPixels(MAP_WAITING, wf),
+    var rWait = cornerRadius(dc.getTextWidthInPixels(Words.MAP_WAITING, wf),
         RecordingView.inkH(dc, wf), cy, cy);
     Test.assertMessage(rWait <= limit,
-        "'" + MAP_WAITING + "' corner " + rWait.format("%.0f") + " > " + limit);
+        "'" + Words.MAP_WAITING + "' corner " + rWait.format("%.0f") + " > " + limit);
     Test.assertMessage(dc.getFontHeight(wf) >= dc.getFontHeight(Graphics.FONT_SMALL),
         "the waiting line fell below FONT_SMALL");
 
@@ -4375,6 +4381,7 @@ function phoneMapPushIsToldApartFromWind(logger as Test.Logger) as Boolean {
 // or the bottom. Measured with the device's own fonts and the directory's own cut.
 (:test)
 function brandSplashLockupFitsRoundDisplay(logger as Test.Logger) as Boolean {
+    Words.load();
     var dc = testDc();
     var cx = dc.getWidth() / 2;
     var cy = dc.getHeight() / 2;
@@ -4389,14 +4396,14 @@ function brandSplashLockupFitsRoundDisplay(logger as Test.Logger) as Boolean {
     Test.assertMessage(yHero - heroH / 2 >= 0, "the hero runs off the top of the glass");
     Test.assertMessage(yWord + wordH / 2 <= dc.getHeight(), "the wordmark runs off the bottom");
     Test.assertMessage(yDom + domH / 2 <= dc.getHeight(), "the domain line runs off the bottom");
-    Test.assertMessage(cornerRadius(dc.getTextWidthInPixels(BrandSplash.DOMAIN,
+    Test.assertMessage(cornerRadius(dc.getTextWidthInPixels(Words.SPLASH_DOMAIN,
         BrandSplash.DOMAIN_FONT), domH, yDom, cy) <= radius.toFloat(),
         "the domain line's corners sit outside the radius");
     Test.assertMessage(yDom - yWord >= (wordH + domH) / 2, "wordmark and domain line overlap");
     Test.assertMessage(cornerRadius(heroW, heroH, yHero, cy) <= radius.toFloat(),
         "the hero's corners sit outside the page radius on a " + screenPx().toString()
         + "px glass");
-    Test.assertMessage(cornerRadius(dc.getTextWidthInPixels(START_TITLE, Graphics.FONT_LARGE),
+    Test.assertMessage(cornerRadius(dc.getTextWidthInPixels(Words.START_TITLE, Graphics.FONT_LARGE),
         wordH, yWord, cy) <= radius.toFloat(), "the wordmark's corners sit outside the radius");
     Test.assertMessage(yWord - yHero >= (heroH + wordH) / 2, "hero and wordmark overlap");
     Brand.releaseHero();
@@ -4417,13 +4424,14 @@ function brandSplashLockupFitsRoundDisplay(logger as Test.Logger) as Boolean {
 // BACK wherever the glass has room, and fall back to the old words where it has not.
 (:test)
 function strangersWordsFitOrFallBack(logger as Logger) as Boolean {
+    Words.load();
     var dc = testBitmap(screenPx(), screenPx()).getDc();
     var cx = dc.getWidth() / 2;
     var radius = (screenPx() / 2.0 - BEZEL).toNumber();
     var hT = dc.getFontHeight(Graphics.FONT_XTINY);
     // the legend names the four rungs and nothing else — no maneuver, and since 0.9.18 no
     // bearing either: the axis is a MARK on that row, not a word (Glyphs.drawWind)
-    var caps = [TALLY_CAP_CLEAN, TALLY_CAP_FLEW, TALLY_CAP_TOUCH, TALLY_CAP_FELL];
+    var caps = [Words.TALLY_CAP_CLEAN, Words.TALLY_CAP_FLEW, Words.TALLY_CAP_TOUCH, Words.TALLY_CAP_FELL];
     for (var i = 0; i < caps.size(); i++) {
         var w = caps[i];
         Test.assertMessage(w.find("tack") == null && w.find("jibe") == null, "legend: " + w);
@@ -4452,7 +4460,7 @@ function strangersWordsFitOrFallBack(logger as Logger) as Boolean {
     Test.assertMessage((m & TALLY_OK) != 0, "the verdict went before the captions");
     // the start hint and the paused banner: whichever form comes back fits where it goes
     var hint = StartView.hintText(dc, radius, radius / 3);
-    Test.assertMessage(hint.equals(START_HINT) || hint.equals(START_HINT_LONG), hint);
+    Test.assertMessage(hint.equals(Words.START_HINT) || hint.equals(Words.START_HINT_LONG), hint);
     var font = TEXT_FONTS[PAUSED_FONT_IDX];
     var banner = RecordingView.pausedText(dc, font, radius);
     var w = dc.getTextWidthInPixels(banner, font);
@@ -4504,13 +4512,14 @@ function inkNeverUnderTheAscent(logger as Test.Logger) as Boolean {
 
 (:test)
 function wordsNeverWalkTheNumberLadder(logger as Test.Logger) as Boolean {
+    Words.load();
     var dc = testDc();
-    Test.assertMessage(RecordingView.hasLetters(PAUSED_TEXT), "PAUSED has no letters?");
+    Test.assertMessage(RecordingView.hasLetters(Words.PAUSED_TEXT), "PAUSED has no letters?");
     Test.assertMessage(!RecordingView.hasLetters("23:59") && !RecordingView.hasLetters("99.9")
         && !RecordingView.hasLetters("31/69") && !RecordingView.hasLetters("100%")
         && !RecordingView.hasLetters("+19"), "a number reads as a word");
     // a word through fitGiant lands in the TEXT ladder however wide the budget is
-    var f = RecordingView.fitGiant(dc, PAUSED_TEXT, 3, screenPx());
+    var f = RecordingView.fitGiant(dc, Words.PAUSED_TEXT, 3, screenPx());
     var inText = false;
     for (var i = 0; i < TEXT_FONTS.size(); i++) {
         if (f == TEXT_FONTS[i]) { inText = true; }
@@ -5711,6 +5720,7 @@ function fuzzDirectStreamPagesAreFreedWhenTheStreamIsWhole(logger as Test.Logger
 // fenix 5 Plus family's leadingless number fonts are measured as themselves.
 (:test)
 function kindsPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
+    Words.load();
     var dc = testDc();
     var cy = screenPx() / 2;
     var pageR = RecordingView.fitRadius(dc, false, false);
@@ -5726,14 +5736,14 @@ function kindsPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
         var noWind = shapes[sh];
         var y0 = RecordingView.kindsRowY(cy, hT, hG, noWind, 0);
         if (noWind) {
-            var rh = cornerRadius(dc.getTextWidthInPixels(KINDS_NO_WIND, Graphics.FONT_XTINY),
+            var rh = cornerRadius(dc.getTextWidthInPixels(Words.KINDS_NO_WIND, Graphics.FONT_XTINY),
                 RecordingView.inkH(dc, Graphics.FONT_XTINY), y0, cy);
             Test.assertMessage(rh <= limit, "kinds no-axis line corner "
                 + rh.format("%.0f") + " > " + limit);
         }
 
         // rows 1 and 4 — the two words, above the jibes row and below the tacks row
-        var caps = [KINDS_JIBES, KINDS_TACKS] as Array<String>;
+        var caps = [Words.KINDS_JIBES, Words.KINDS_TACKS] as Array<String>;
         var wordRows = [1, 4] as Array<Number>;
         for (var w = 0; w < 2; w++) {
             var yw = RecordingView.kindsRowY(cy, hT, hG, noWind, wordRows[w]);
@@ -6284,6 +6294,7 @@ function theSheetHarnessIgnoresTheShowSwitches(logger as Test.Logger) as Boolean
 // and the number fonts have none, which is the bug `fitGiant` was written to stop.
 (:test)
 function takeoffPageSaysWhatItCounts(logger as Test.Logger) as Boolean {
+    Words.load();
     var dc = testDc();
     var cy = screenPx() / 2;
     var pageR = RecordingView.fitRadius(dc, false, false);
@@ -6294,7 +6305,7 @@ function takeoffPageSaysWhatItCounts(logger as Test.Logger) as Boolean {
 
     // the word above the fraction
     var y0 = SummaryView.takeoffRowY(cy, hT, hV, hD, 0);
-    var r = cornerRadius(dc.getTextWidthInPixels(TAKEOFF_WORD, Graphics.FONT_XTINY),
+    var r = cornerRadius(dc.getTextWidthInPixels(Words.TAKEOFF_WORD, Graphics.FONT_XTINY),
         RecordingView.inkH(dc, Graphics.FONT_XTINY), y0, cy);
     Test.assertMessage(r <= limit, "takeoffs word corner " + r.format("%.0f"));
 
@@ -6316,7 +6327,7 @@ function takeoffPageSaysWhatItCounts(logger as Test.Logger) as Boolean {
     // ...and it is the WIDEST line on the page, which is why it is the one on the equator
     Test.assertMessage(
         SummaryView.takeoffWidth(dc, "39", "56", rf)
-            > dc.getTextWidthInPixels(TAKEOFF_WORD, Graphics.FONT_XTINY),
+            > dc.getTextWidthInPixels(Words.TAKEOFF_WORD, Graphics.FONT_XTINY),
         "the takeoffs word is wider than the number it names");
     // Measured against the row's BAND (`hV`) and not against whatever font the fitter landed
     // on: the band is what the stack reserved and what the other rows were positioned
@@ -6330,7 +6341,7 @@ function takeoffPageSaysWhatItCounts(logger as Test.Logger) as Boolean {
     // separator, "4.3 pumps each · last +19 bpm" measured 560 px against a 406 px chord on a
     // 454 px glass, so the HR half was shed on every watch shipped. Both must fit their own
     // row at their own worst case, on every glass, or the page is back to dropping a number.
-    var details = ["99.9" + TAKEOFF_PUMPS, TAKEOFF_COST + "199" + TAKEOFF_BPM]
+    var details = ["99.9" + Words.TAKEOFF_PUMPS, Words.TAKEOFF_COST + "199" + Words.TAKEOFF_BPM]
         as Array<String>;
     var y2 = SummaryView.takeoffRowY(cy, hT, hV, hD, 2);
     var y3 = SummaryView.takeoffRowY(cy, hT, hV, hD, 3);
@@ -6350,11 +6361,11 @@ function takeoffPageSaysWhatItCounts(logger as Test.Logger) as Boolean {
 
     // every word on the page names its number rather than its unit, and "last" is there
     // because the bpm figure is ONE takeoff and not an average
-    Test.assertMessage(TAKEOFF_OF.find("of") != null, "the fraction lost its word");
-    Test.assertMessage(TAKEOFF_COST.find("last") != null,
-        "the HR figure does not say it is the last takeoff's: \"" + TAKEOFF_COST + "\"");
-    Test.assertMessage(TAKEOFF_PUMPS.find("each") != null,
-        "the pumps figure does not say it is an average: \"" + TAKEOFF_PUMPS + "\"");
+    Test.assertMessage(Words.TAKEOFF_OF.find("of") != null, "the fraction lost its word");
+    Test.assertMessage(Words.TAKEOFF_COST.find("last") != null,
+        "the HR figure does not say it is the last takeoff's: \"" + Words.TAKEOFF_COST + "\"");
+    Test.assertMessage(Words.TAKEOFF_PUMPS.find("each") != null,
+        "the pumps figure does not say it is an average: \"" + Words.TAKEOFF_PUMPS + "\"");
     // the rows may not touch, and the block is on the glass
     Test.assertMessage(y1 - y0 >= (hT + hV) / 2, "takeoffs word/fraction gap");
     Test.assertMessage(y2 - y1 >= (hV + hD) / 2, "takeoffs fraction/pumps gap");
@@ -6374,6 +6385,7 @@ function takeoffPageSaysWhatItCounts(logger as Test.Logger) as Boolean {
 // otherwise. Both are Jan's, from the layout review of 21 September 2026.
 (:test)
 function foilTableSaysTheWholeWord(logger as Test.Logger) as Boolean {
+    Words.load();
     var dc = testDc();
     var cy = screenPx() / 2;
     var radius = RecordingView.fitRadius(dc, false, true);
@@ -6381,24 +6393,24 @@ function foilTableSaysTheWholeWord(logger as Test.Logger) as Boolean {
     var hV = dc.getFontHeight(Graphics.FONT_LARGE);
 
     // the title: one word, and it fits the row it is drawn in
-    var r = cornerRadius(dc.getTextWidthInPixels(FOIL_TITLE, Graphics.FONT_XTINY),
+    var r = cornerRadius(dc.getTextWidthInPixels(Words.FOIL_TITLE, Graphics.FONT_XTINY),
         RecordingView.inkH(dc, Graphics.FONT_XTINY),
         RecordingView.foilRowY(cy, hT, hV, 0), cy);
     Test.assertMessage(r <= radius.toFloat(), "foil title r=" + r.format("%.0f"));
-    Test.assertMessage(FOIL_TITLE.find("·") == null && FOIL_TITLE.length() <= 8,
-        "the foil title grew something: \"" + FOIL_TITLE + "\"");
+    Test.assertMessage(Words.FOIL_TITLE.find("·") == null && Words.FOIL_TITLE.length() <= 8,
+        "the foil title grew something: \"" + Words.FOIL_TITLE + "\"");
 
     // the keys: "total", not "tot", wherever the floor allows it — and the floor is the ONLY
     // thing that may take the word away now (the font-rung trade went with 0.9.18).
     var half = RecordingView.foilTableHalf(dc, radius, cy, hT, hV);
     var keys = RecordingView.foilKeys(dc, half, "63:24");
-    Test.assertMessage(keys[1].equals(FOIL_KEY_MAX), "the max key moved");
-    Test.assertMessage(keys[0].equals(FOIL_KEY_TOTAL) || keys[0].equals(FOIL_KEY_TOTAL_TIGHT),
+    Test.assertMessage(keys[1].equals(Words.FOIL_KEY_MAX), "the max key moved");
+    Test.assertMessage(keys[0].equals(Words.FOIL_KEY_TOTAL) || keys[0].equals(Words.FOIL_KEY_TOTAL_TIGHT),
         "the total key is neither word: \"" + keys[0] + "\"");
-    if (keys[0].equals(FOIL_KEY_TOTAL_TIGHT)) {
+    if (keys[0].equals(Words.FOIL_KEY_TOTAL_TIGHT)) {
         // it may only be the short word because the long one broke the FLOOR
         var wLong = RecordingView.foilColWidth(half,
-            RecordingView.foilKeyBlock(dc, [FOIL_KEY_TOTAL, FOIL_KEY_MAX]));
+            RecordingView.foilKeyBlock(dc, [Words.FOIL_KEY_TOTAL, Words.FOIL_KEY_MAX]));
         Test.assertMessage(wLong < dc.getTextWidthInPixels(
             PageModel.worstValue(PageModel.M_FOIL_TIME), TEXT_FONTS[FOIL_FLOOR]),
             "\"tot\" was chosen with room for \"total\": the rung trade is back");
@@ -6424,6 +6436,7 @@ function foilTableSaysTheWholeWord(logger as Test.Logger) as Boolean {
 // the glass itself are the two things it may never touch.
 (:test)
 function phoneProgressLineNeverTouchesWhatMatters(logger as Test.Logger) as Boolean {
+    Words.load();
     var dc = testDc();
     var cy = screenPx() / 2;
     var hT = dc.getFontHeight(Graphics.FONT_XTINY);
@@ -6441,7 +6454,7 @@ function phoneProgressLineNeverTouchesWhatMatters(logger as Test.Logger) as Bool
     // higher than everyone else's (0.9.13) and leaves the top arc with nothing to give.
     var pill = SummaryView.pillY(dc, true);
     var line = SummaryView.phoneLineY(dc);
-    var savedW2 = dc.getTextWidthInPixels(SUM_SAVED, Graphics.FONT_XTINY);
+    var savedW2 = dc.getTextWidthInPixels(Words.SUM_SAVED, Graphics.FONT_XTINY);
     Test.assertEqual(SummaryView.pillY(dc, false), SummaryView.savedY(dc));
     Test.assertMessage(line > pill, "the phone line must sit UNDER the SAVED pill");
     Test.assertMessage(line - pill >= hT, "the phone line overlaps the pill");

@@ -1,9 +1,18 @@
+<!-- GENERATED from docs/copy/watch.json by garmin/tools/make_strings.py.
+     EDIT THE JSON, then run the generator; `make web-verify` fails while this is stale.
+
+     Every word the watch prints is in that file with the place a rider reads it and, for a
+     word that names a number, the glossary term it spells. docs/copy/README.md, "The watch
+     is inside the contract too". -->
 <strings>
+
+    <!-- The launcher name, one per stream. docs/channels.md, "Telling the channels apart". -->
     <string id="AppName">CleanJibe</string>
     <string id="AppNameBeta">CleanJibe Beta</string>
     <string id="AppNameDev">CleanJibe Dev</string>
 
-    <!-- settings titles -->
+    <!-- The settings rows, in the order Garmin Connect draws them
+        (resources/settings/settings.xml). -->
     <string id="SetFoilEntry">Foil entry speed (km/h)</string>
     <string id="SetFoilExit">Foil exit speed (km/h)</string>
     <string id="SetEntryHold">Entry hold (s)</string>
@@ -31,7 +40,6 @@
     <string id="TurnHabitTacks">Tacks</string>
     <string id="TurnHabitBalanced">About the same</string>
     <string id="SetPhonePush">Send summary to phone app</string>
-
     <string id="SetAutoPause">Auto-pause when stopped</string>
     <string id="SetAutoPauseDelay">Auto-pause delay (s)</string>
     <string id="SetVisualAlerts">Show alerts on screen</string>
@@ -39,33 +47,44 @@
     <string id="SetAlertIntervalMin">Interval alert (min, 0 = off)</string>
     <string id="SetAlertIntervalKm">Interval alert (km, 0 = off)</string>
 
-    <!-- FIT developer-field labels (Garmin Connect rendering) -->
+    <!-- FIT developer-field labels (Garmin Connect rendering). docs/fit-schema.md. -->
     <string id="FitFoilStateChart">Foil state</string>
     <string id="FitFoilStateLabel">Foil state</string>
     <string id="FitUnitNone"> </string>
     <string id="FitFoilTime">Foil time</string>
     <string id="FitUnitSeconds">s</string>
-    <string id="FitFoilPct">Foil %</string>
+
+    <!-- ALIGNED 22 Sep 2026: this row said `Foil %`, which is the spelling the label table
+        retired on 15 September. It is the one place it survived (MetricGlossary.swift says so
+        in its own comment). A Connect row has no chord to fit, so there was nothing to trade. -->
+    <string id="FitFoilPct">On foil</string>
     <string id="FitUnitPct">%</string>
     <string id="FitFlights">Flights</string>
     <string id="FitLongestFlight">Longest flight</string>
-    <string id="FitBest2s">Best 2s speed</string>
+
+    <!-- ALIGNED 22 Sep 2026: `Best 2s speed` said the window twice and spelled it a third way.
+        `Best 2 s` is design/tokens.json's one spelling of that window, and the unit column
+        already says cm/s. -->
+    <string id="FitBest2s">Best 2 s</string>
     <string id="FitUnitCms">cm/s</string>
     <string id="FitTacks">Tacks</string>
     <string id="FitJibes">Jibes</string>
-    <!-- The Garmin Connect row for session field 34. No WATCH page prints this share any
-         more (0.9.19 — the pages print the phone's outcome ladder), but the field is still
-         written and Connect still needs a word for it: `Speed kept` is what that number is.
-         docs/fit-schema.md, the box on field 34. -->
+
+    <!-- The Garmin Connect row for session field 34. No WATCH page prints this share any more
+        (0.9.19 — the pages print the phone's outcome ladder), but the field is still written
+        and Connect still needs a word for it: `Speed kept` is what that number is.
+        docs/fit-schema.md, the box on field 34. -->
     <string id="FitTurnSuccess">Speed kept</string>
     <string id="FitPumpCadence">Pump cadence</string>
     <string id="FitUnitSpm">spm</string>
+
     <!-- Fields 35 and 36 folded into the packed `takeoff_pack` (55), so their two labels —
-         FitTakeoffAttempts / FitTakeoffSuccesses — had no FIT contribution left to name and
-         went with them (0.9.19). A packed field carries one label, not three. -->
+        FitTakeoffAttempts / FitTakeoffSuccesses — had no FIT contribution left to name and went
+        with them (0.9.19). A packed field carries one label, not three. -->
     <string id="FitPumpStrokes">Pump strokes</string>
-    <!-- 0.9.16: the page SET. The only page control a release or beta watch has; the
-         per-page editor's strings moved to resources-dev/base/strings/ with its settings. -->
+
+    <!-- 0.9.16: the page SET. The only page control a release or beta watch has; the per-page
+        editor's strings moved to resources-dev/base/strings/ with its settings. -->
     <string id="SetPageSet">Data screens</string>
     <string id="SetPageSetNote">Standard shows eight screens with several numbers each. Large text shows seven screens with one big number and its word. Pick large text if the standard screens are hard to read on the water.</string>
     <string id="PageSetStandard">Standard</string>
@@ -78,4 +97,100 @@
     <string id="SetShowStory">Show the Story page</string>
     <string id="SetShowMap">Show the Map page</string>
     <string id="SetShowPagesNote">Turn off a screen you never read. The Main screen always stays. The large text screens and the pages after a save follow these switches.</string>
+
+    <!-- THE PAGES (0.9.19). Every word below is drawn by garmin/source/ui and
+        garmin/source/lock, loaded once at page construction through the generated Words.mc. -->
+    <string id="SplashDomain">cleanjibe.org</string>
+    <string id="StartTitle">CleanJibe</string>
+    <string id="StartHint">START to record</string>
+    <string id="StartHintLong">START records · BACK saves</string>
+    <string id="StartWindUnset">set wind - hold MENU</string>
+    <string id="StartWindPrefix">wind</string>
+    <string id="StartGpsGood">GPS good</string>
+    <string id="StartGpsReady">GPS ready</string>
+    <string id="StartGpsWeak">GPS weak</string>
+    <string id="StartGpsNone">GPS ...</string>
+    <string id="CapFlew">flew</string>
+    <string id="CapTouch">touch</string>
+    <string id="CapFell">fell</string>
+    <string id="CapClean">clean</string>
+    <string id="CapDry">dry</string>
+    <string id="CapStreakRow">streak:</string>
+    <string id="KindsNoWind">wind not set</string>
+    <string id="Paused">PAUSED</string>
+    <string id="PausedLong">PAUSED · BACK saves</string>
+    <string id="TurnsPort">P</string>
+    <string id="TurnsStbd">S</string>
+    <string id="Foil">foil</string>
+    <string id="Time">time</string>
+    <string id="Km">km</string>
+    <string id="FoilKeyTotal">total</string>
+    <string id="FoilKeyTotalTight">tot</string>
+    <string id="FoilKeyMax">max</string>
+    <string id="MapWaiting">waiting for GPS</string>
+    <string id="NewPb">NEW PB</string>
+    <string id="StoryOnFoil">on foil %</string>
+    <string id="StoryTopSpeed">top speed</string>
+    <string id="Turns">turns</string>
+    <string id="Best2s">best 2s</string>
+    <string id="Best10s">best 10s</string>
+    <string id="Jibes">jibes</string>
+    <string id="Tacks">tacks</string>
+    <string id="SumSaved">SAVED</string>
+    <string id="SumNotSaved">NOT SAVED</string>
+    <string id="SumHeroOnFoil">on foil</string>
+    <string id="SumHeroFoil">foil</string>
+    <string id="SumHeroOf">of</string>
+    <string id="Takeoffs">takeoffs</string>
+    <string id="TakeoffOf">of</string>
+    <string id="TakeoffPumps">pumps each</string>
+    <string id="TakeoffCost">last +</string>
+    <string id="TakeoffBpm">bpm</string>
+    <string id="MenuSession">Session</string>
+    <string id="MenuResume">Resume</string>
+    <string id="MenuWind">Wind</string>
+    <string id="MenuSave">Save</string>
+    <string id="MenuDiscard">Discard</string>
+    <string id="MenuDiscardAsk">Discard session?</string>
+    <string id="MenuKeep">Keep</string>
+    <string id="MenuWindFrom">Wind from</string>
+    <string id="MenuUnset">Unset</string>
+
+    <!-- The invite lock has been unreachable since 0.9.11 (every stream compiles the zero
+        pepper, ADR-012), which is why it still says the repository's name rather than the
+        product's. Listed as a finding of 22 September 2026 rather than changed: nothing draws
+        it, so nothing would be proved by the change. -->
+    <string id="LockTitle">WingFoil</string>
+    <string id="LockKind">INVITE BETA</string>
+    <string id="LockKeyBad">key not valid</string>
+    <string id="LockSendCode">send this code</string>
+    <string id="LockHint1">key goes in Garmin</string>
+    <string id="LockHint2">Connect app settings</string>
+    <string id="FlashFlew">FLEW</string>
+    <string id="FlashTouch">TOUCH</string>
+    <string id="FlashFell">FELL</string>
+    <string id="FlashClean">CLEAN</string>
+    <string id="FlashCleanJibe">CLEAN JIBE</string>
+    <string id="FlashDry">DRY</string>
+    <string id="FlashLongest">LONGEST</string>
+    <string id="FlashJibe">JIBE</string>
+    <string id="FlashTack">TACK</string>
+    <string id="FlashTurn">TURN</string>
+    <string id="LblFoilPct">foil %</string>
+    <string id="LblFlights">flights</string>
+    <string id="LblFlight">flight</string>
+    <string id="LblLongest">longest</string>
+    <string id="LblTimer">timer</string>
+    <string id="Bpm">bpm</string>
+    <string id="LblScore">score</string>
+    <string id="LblBatt">batt</string>
+    <string id="LblPumps">pumps</string>
+    <string id="LblToFoil">to foil</string>
+    <string id="LblHrCost">hr cost</string>
+    <string id="LblDryRun">dry run</string>
+    <string id="LblFoilDist">foil dist</string>
+    <string id="CapNow">now</string>
+    <string id="CapTimeOnFoil">time on foil</string>
+    <string id="CapDistOnFoil">distance on foil</string>
+    <string id="TightDist">dist</string>
 </strings>

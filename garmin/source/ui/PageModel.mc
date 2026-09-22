@@ -474,30 +474,35 @@ module PageModel {
 
     // Short cell label. Doubles as the unit line under a HERO page's giant number, which is
     // why speed answers "km/h"/"kn" rather than "speed".
+    //
+    // EVERY WORD HERE IS docs/copy/watch.json's (0.9.19), reached through the globals the
+    // generated Words.mc fills at page construction. The file carries, for each of them, the
+    // glossary term it spells and — where the cell could not take the phone's spelling — one
+    // line saying what the glass refused.
     function label(id as Number) as String {
         if (id == M_SPEED) { return AppSettings.speedLabel(); }
-        if (id == M_FOIL_PCT) { return "foil %"; }
-        if (id == M_FLIGHTS) { return "flights"; }
-        if (id == M_FLIGHT_TIMER) { return "flight"; }
-        if (id == M_FOIL_TIME) { return "foil"; }
-        if (id == M_LONGEST) { return "longest"; }
-        if (id == M_DISTANCE) { return "km"; }
-        if (id == M_TIMER) { return "timer"; }
-        if (id == M_HR) { return "bpm"; }
-        if (id == M_BEST_2S) { return "best 2s"; }
-        if (id == M_BEST_10S) { return "best 10s"; }
-        if (id == M_TURNS) { return "turns"; }
-        if (id == M_TURN_SCORE) { return "score"; }
-        if (id == M_CLOCK) { return "time"; }
-        if (id == M_BATTERY) { return "batt"; }
-        if (id == M_PUMP_STROKES) { return "pumps"; }
-        if (id == M_TAKEOFFS) { return "takeoffs"; }
-        if (id == M_PUMPS_TO_TAKEOFF) { return "to foil"; }
-        if (id == M_TAKEOFF_COST) { return "hr cost"; }
-        if (id == M_STREAK) { return "dry run"; }
-        if (id == M_FOIL_DIST_PCT) { return "foil dist"; }
-        if (id == M_JIBES) { return "jibes"; }
-        if (id == M_TACKS) { return "tacks"; }
+        if (id == M_FOIL_PCT) { return Words.LBL_FOIL_PCT; }
+        if (id == M_FLIGHTS) { return Words.LBL_FLIGHTS; }
+        if (id == M_FLIGHT_TIMER) { return Words.LBL_FLIGHT; }
+        if (id == M_FOIL_TIME) { return Words.LBL_FOIL; }
+        if (id == M_LONGEST) { return Words.LBL_LONGEST; }
+        if (id == M_DISTANCE) { return Words.LBL_KM; }
+        if (id == M_TIMER) { return Words.LBL_TIMER; }
+        if (id == M_HR) { return Words.LBL_BPM; }
+        if (id == M_BEST_2S) { return Words.LBL_BEST_2S; }
+        if (id == M_BEST_10S) { return Words.LBL_BEST_10S; }
+        if (id == M_TURNS) { return Words.LBL_TURNS; }
+        if (id == M_TURN_SCORE) { return Words.LBL_SCORE; }
+        if (id == M_CLOCK) { return Words.LBL_TIME; }
+        if (id == M_BATTERY) { return Words.LBL_BATT; }
+        if (id == M_PUMP_STROKES) { return Words.LBL_PUMPS; }
+        if (id == M_TAKEOFFS) { return Words.LBL_TAKEOFFS; }
+        if (id == M_PUMPS_TO_TAKEOFF) { return Words.LBL_TO_FOIL; }
+        if (id == M_TAKEOFF_COST) { return Words.LBL_HR_COST; }
+        if (id == M_STREAK) { return Words.LBL_DRY_RUN; }
+        if (id == M_FOIL_DIST_PCT) { return Words.LBL_FOIL_DIST; }
+        if (id == M_JIBES) { return Words.LBL_JIBES; }
+        if (id == M_TACKS) { return Words.LBL_TACKS; }
         return "";
     }
 
@@ -511,17 +516,17 @@ module PageModel {
         // record? which metric?"). It is the live speedometer, and the large set sits one
         // swipe from two RECORD screens in the standard set — so the word has to answer
         // WHEN as well as what, and "now" is the shortest true answer there is.
-        if (id == M_SPEED) { return "now " + AppSettings.speedLabel(); }
-        if (id == M_BEST_2S) { return "best 2s " + AppSettings.speedLabel(); }
-        if (id == M_BEST_10S) { return "best 10s " + AppSettings.speedLabel(); }
+        if (id == M_SPEED) { return Words.CAP_NOW + AppSettings.speedLabel(); }
+        if (id == M_BEST_2S) { return Words.LBL_BEST_2S + " " + AppSettings.speedLabel(); }
+        if (id == M_BEST_10S) { return Words.LBL_BEST_10S + " " + AppSettings.speedLabel(); }
         // "time on foil", not "on foil": the number is a share of the MINUTES, and its
         // distance twin (M_FOIL_DIST_PCT) is the same "%" over a different denominator. A
         // page that says only "on foil" makes the rider guess which of the two he is reading.
-        if (id == M_FOIL_PCT) { return "time on foil"; }
-        if (id == M_FOIL_DIST_PCT) { return "distance on foil"; }
-        if (id == M_TURNS) { return "turns"; }
-        if (id == M_CLOCK) { return "time"; }
-        if (id == M_DISTANCE) { return "km"; }
+        if (id == M_FOIL_PCT) { return Words.CAP_TIME_ON_FOIL; }
+        if (id == M_FOIL_DIST_PCT) { return Words.CAP_DIST_ON_FOIL; }
+        if (id == M_TURNS) { return Words.CAP_TURNS; }
+        if (id == M_CLOCK) { return Words.CAP_TIME; }
+        if (id == M_DISTANCE) { return Words.CAP_KM; }
         var cap = caption(id);
         return cap.equals("") ? label(id) : cap;
     }
@@ -548,8 +553,8 @@ module PageModel {
     // "dist" is that distinction with nothing else in the way. Both halves are foil shares —
     // the word "foil" would be printed twice and separate nothing.
     function bandCaption(id as Number) as String {
-        if (id == M_FOIL_PCT) { return "time"; }
-        if (id == M_FOIL_DIST_PCT) { return "dist"; }
+        if (id == M_FOIL_PCT) { return Words.TIGHT_TIME; }
+        if (id == M_FOIL_DIST_PCT) { return Words.TIGHT_DIST; }
         return caption(id);
     }
 
@@ -652,7 +657,7 @@ module PageModel {
     // Appended in HERO sub-rows only (they carry no label of their own). Cells put the unit
     // in the label instead, which is what keeps a 2x2 grid inside the round glass.
     function suffix(id as Number) as String {
-        return id == M_HR || id == M_TAKEOFF_COST ? " bpm" : "";
+        return id == M_HR || id == M_TAKEOFF_COST ? Words.UNIT_BPM_PAD : "";
     }
 
     // ---- the MAIN giant's inline suffix ----
@@ -666,8 +671,8 @@ module PageModel {
         if (id == M_SPEED || id == M_BEST_2S || id == M_BEST_10S) {
             return AppSettings.speedLabel();
         }
-        if (id == M_DISTANCE) { return "km"; }
-        if (id == M_HR || id == M_TAKEOFF_COST) { return "bpm"; }
+        if (id == M_DISTANCE) { return Words.UNIT_KM; }
+        if (id == M_HR || id == M_TAKEOFF_COST) { return Words.UNIT_BPM; }
         return "";
     }
 

@@ -51,11 +51,11 @@ class RecordingDelegate extends WatchUi.BehaviorDelegate {
 
     function onBack() as Boolean {
         CrashBreadcrumb.view(CrashBreadcrumb.V_MENU);
-        var menu = new WatchUi.Menu2({:title => "Session"});
-        menu.addItem(new WatchUi.MenuItem("Resume", null, :resume, null));
-        menu.addItem(new WatchUi.MenuItem("Wind", AppSettings.windLabel(), :wind, null));
-        menu.addItem(new WatchUi.MenuItem("Save", null, :save, null));
-        menu.addItem(new WatchUi.MenuItem("Discard", null, :discard, null));
+        var menu = new WatchUi.Menu2({:title => Words.MENU_SESSION});
+        menu.addItem(new WatchUi.MenuItem(Words.MENU_RESUME, null, :resume, null));
+        menu.addItem(new WatchUi.MenuItem(Words.MENU_WIND, AppSettings.windLabel(), :wind, null));
+        menu.addItem(new WatchUi.MenuItem(Words.MENU_SAVE, null, :save, null));
+        menu.addItem(new WatchUi.MenuItem(Words.MENU_DISCARD, null, :discard, null));
         WatchUi.pushView(menu, new StopMenuDelegate(), WatchUi.SLIDE_UP);
         return true;
     }
@@ -103,9 +103,9 @@ class StopMenuDelegate extends WatchUi.Menu2InputDelegate {
             // page and left a recording view over a session that no longer existed. A
             // second Menu2 has no such hidden pop — it is the shape the wind menu already
             // uses (WindMenuDelegate(2)), and that one works on every glass we ship.
-            var ask = new WatchUi.Menu2({:title => "Discard session?"});
-            ask.addItem(new WatchUi.MenuItem("Keep", null, :keep, null));
-            ask.addItem(new WatchUi.MenuItem("Discard", null, :discard, null));
+            var ask = new WatchUi.Menu2({:title => Words.MENU_DISCARD_ASK});
+            ask.addItem(new WatchUi.MenuItem(Words.MENU_KEEP, null, :keep, null));
+            ask.addItem(new WatchUi.MenuItem(Words.MENU_DISCARD, null, :discard, null));
             WatchUi.pushView(ask, new DiscardMenuDelegate(), WatchUi.SLIDE_UP);
         } else if (id == :wind) {
             // two pops on the way out: the wind menu, then this session menu, so a wind pick
@@ -127,8 +127,8 @@ class StopMenuDelegate extends WatchUi.Menu2InputDelegate {
 // classification they were given — the watch never re-runs the pass.
 module WindMenu {
     function build() as WatchUi.Menu2 {
-        var menu = new WatchUi.Menu2({:title => "Wind from"});
-        menu.addItem(new WatchUi.MenuItem("Unset", null, -1, null));
+        var menu = new WatchUi.Menu2({:title => Words.MENU_WIND_FROM});
+        menu.addItem(new WatchUi.MenuItem(Words.MENU_UNSET, null, -1, null));
         for (var i = 0; i < 16; i++) {
             var deg = i * 45 / 2;   // 22.5 deg steps, integer arithmetic
             menu.addItem(new WatchUi.MenuItem(AppSettings.COMPASS[i],
