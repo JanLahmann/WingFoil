@@ -287,6 +287,25 @@ def check_binary(binary: Path | None) -> None:
         ok("strings", f"{binary.name} carries none of the {len(BINARY_NEEDLES)} beta/dev door strings")
 
 
+def check_watch_words() -> None:
+    """The watch's words are the ones docs/copy/watch.json holds (ADR-034).
+
+    `garmin/tools/make_strings.py` writes the two `strings.xml` files and the `Words` module
+    the pages draw through. A stale one is the wrist saying something no other surface says —
+    which is the failure the whole of docs/copy exists to stop, on the one surface it could
+    not reach until 22 September 2026. The generator is stdlib-only and instant, so it runs
+    here, where a disagreement is found before anything is built from it.
+    """
+    generator = ROOT / "garmin" / "tools" / "make_strings.py"
+    done = subprocess.run([sys.executable, str(generator), "--check"],
+                          capture_output=True, text=True)
+    if done.returncode != 0:
+        fail("watch words", (done.stderr or done.stdout).strip()
+             or "a generated watch string file is stale")
+        return
+    ok("watch words", done.stdout.strip().splitlines()[-1])
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--binary", type=Path, default=None,
@@ -298,6 +317,8 @@ def main(argv: list[str] | None = None) -> int:
     check_ios_versions()
     check_garmin_versions()
     check_engine_version()
+    print("generated copy")
+    check_watch_words()
     print("channels (docs/testing.md, \"Three channels\")")
     check_flags()
     check_plist()

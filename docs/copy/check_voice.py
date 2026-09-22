@@ -84,7 +84,7 @@ PARAGRAPH_STRICT = True
 class Target:
     label: str
     path: str                 # file, or directory for a literal scan
-    kind: str                 # "swift" | "mc" | "xml" | "html" | "js" | "md"
+    kind: str                 # "swift" | "mc" | "xml" | "html" | "js" | "md" | "json"
     blocks: list[str] | None = None
     strip: tuple[str, ...] = ()
     advisory: bool = False
@@ -121,9 +121,17 @@ TARGETS: list[Target] = [
            paragraph_max=FOOTER_MAX),
     Target("app · Import", "ios/WingFoil/Features/Import", "swift",
            paragraph_max=FOOTER_MAX),
-    Target("watch · pages", "garmin/source/ui", "mc"),
+    # The two Monkey C targets are the guard rather than the reading now (0.9.19): every
+    # word the watch prints moved into docs/copy/watch.json, and these two scans are what
+    # fails on the day a literal creeps back into the drawing code.
+    Target("watch · pages", "garmin/source/ui", "mc", exclude=("Words.mc",)),
     Target("watch · alerts", "garmin/source/alerts", "mc"),
-    Target("watch · settings strings", "garmin/resources/strings/strings.xml", "xml"),
+    # **Every word the watch prints**, judged where an author edits it. The two generated
+    # strings.xml files were the target until 22 September 2026 and are not any more, for
+    # the reason `appcopy.js` is excluded one target down: a sentence is read where it can
+    # be changed. The `where` and `why` fields are notes to the next author, like a doc
+    # comment, and are not read.
+    Target("watch · words", "docs/copy/watch.json", "json"),
     # The pages keep the sentence rules AND the paragraph rule. What a paragraph is on a
     # page is `_Blocks` below: the block element an author typed into — a `<p>`, a `<li>`,
     # a `<dd>`, a `<figcaption>`, a `<summary>`, a table cell — cut again at every `<br>`.
@@ -670,6 +678,17 @@ def collect(target: Target) -> list[tuple[str, str]]:
             for s in sentences_of(para):
                 if words(s) >= 4:
                     out.append((target.path, s))
+    elif target.kind == "json":
+        # docs/copy/watch.json: the `text` of every string, and nothing else on the entry.
+        # `where` and `why` are notes to the next author — a doc comment in a field — and
+        # doc comments are not read on any other target either.
+        doc = json.loads(base.read_text(encoding="utf-8"))
+        for entry in doc["strings"]:
+            where = "%s · %s" % (target.path, entry["id"])
+            note_paragraph(target.label, where, entry["text"], target.paragraph_max)
+            for s in sentences_of(entry["text"]):
+                if words(s) >= 4 and not SKIP_LITERAL.search(s):
+                    out.append((where, s))
     elif target.kind == "md":
         raw = base.read_text(encoding="utf-8")
         for heading in target.blocks or []:
