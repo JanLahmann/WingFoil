@@ -345,7 +345,7 @@ struct SessionDetail: Sendable {
                                               dropM: analysis.config.turnBaroDrop)
         windDirDeg = track.watchSummary.windDirUserDeg
             ?? analysis.wind.flatMap { $0.usable ? $0.dirDeg : nil }
-        efforts = Self.buildEfforts(analysis, positioned: positioned)
+        efforts = Self.buildEfforts(document, positioned: positioned)
 
         var bounds: Bounds?
         for segment in segments {
@@ -912,44 +912,49 @@ struct SessionDetail: Sendable {
     /// window of 3 600 s, so its segment is an hour of positioned samples where the 2 s
     /// peak's is two. That is one polyline of a few thousand points on a map that already
     /// draws the whole track, and it is built once when the session opens.
-    private static func buildEfforts(_ analysis: SessionAnalysis,
+    /// **Off the document's `records.kinds`** (ADR-033, round 2). Which kinds the session
+    /// achieved, which windows each one is, and the name every surface calls it by are the
+    /// document's — this adds the geometry, which is the one thing a renderer owns here.
+    ///
+    /// `achieved` is the document's own gate (`value > 0` **and** a window to point at), so
+    /// the record rows are live or inert by the same rule the web's table uses, decided
+    /// once. A record with neither is inert and says nothing.
+    private static func buildEfforts(_ document: PresentationValue,
                                      positioned: [RecordSample]) -> [RecordEffort] {
         var out: [RecordEffort] = []
         var bandId = 0
-        for kind in RecordWindowSelection.catalogue {
-            guard let kn = kind.value(in: analysis.records), kn > 0 else { continue }
-            // 5×10 s is the one record made of several windows; the subscript yields only
-            // its top run, so the list is read directly and every run is drawn.
-            let windows: [RecordWindow]
-            if kind == .best5x10s, let five = analysis.records.windows.best5x10s, !five.isEmpty {
-                windows = five.sorted { $0.startTs < $1.startTs }
-            } else if let window = analysis.records.windows[kind.rawValue] {
-                windows = [window]
-            } else {
-                continue
-            }
+        for kind in document["records"]?["kinds"]?.arrayValue ?? [] {
+            guard case .bool(true)? = kind["achieved"],
+                  let key = kind["key"]?.stringValue,
+                  case .number(let kn)? = kind["value"] else { continue }
+            // 5×10 s is the one record made of several windows — the record *is* the five,
+            // and one segment misnames it. In time order, so the map's glow reads left to
+            // right; the table's caption names the top run, which is the list's own first.
+            var spans = (kind["windows"]?.arrayValue ?? []).compactMap(Self.span)
+            if key == RecordKind.best5x10s.rawValue { spans.sort { $0.start < $1.start } }
+            guard !spans.isEmpty else { continue }
+
             var bands: [Band] = []
             var segments: [[Point]] = []
-            for window in windows {
-                let start = window.startTs
-                let end = window.startTs + window.durS
-                bands.append(Band(id: bandId, start: start, end: end))
+            for span in spans {
+                bands.append(Band(id: bandId, start: span.start, end: span.end))
                 bandId += 1
-                segments.append(points(positioned, from: start, to: end))
+                segments.append(points(positioned, from: span.start, to: span.end))
             }
-            out.append(RecordEffort(id: kind.rawValue, label: effortLabel(kind), kn: kn,
-                                    bands: bands, segments: segments))
+            out.append(RecordEffort(id: key,
+                                    label: PresentationCopy.text(
+                                        kind["labelId"]?.stringValue ?? "") ?? key,
+                                    kn: kn, bands: bands, segments: segments))
         }
         return out
     }
 
-    /// "Best 10 s" — the record's own name, and nothing else.
-    ///
-    /// It used to prefix "Best " onto a bare `RecordKind.label` ("10 s") for every kind but
-    /// the two composites, which is what left the app calling one record `2 s` in the
-    /// session table and `Best 2 s` in the chip. The prefix now lives in the label itself,
-    /// once, for every surface that names a record (docs/presentation/labels.md, "Label table").
-    static func effortLabel(_ kind: RecordKind) -> String { kind.label }
+    /// One `{startTs, durS}` window as the span the map and the chart cut on.
+    private static func span(_ window: PresentationValue) -> (start: Double, end: Double)? {
+        guard case .number(let start)? = window["startTs"],
+              case .number(let duration)? = window["durS"] else { return nil }
+        return (start, start + duration)
+    }
 
     /// The positioned track between two session-clock times.
     private static func points(_ positioned: [RecordSample], from start: Double,

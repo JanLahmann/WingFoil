@@ -153,6 +153,70 @@ import Testing
         #expect(knots.tally?.caption == kmh.tally?.caption)
     }
 
+    // MARK: - (c) the records table and its windows
+
+    /// **The table's nine rows, and which of them are live.**
+    ///
+    /// `SessionRecordsTable` drew `RecordWindowSelection.catalogue` and asked
+    /// `kind.value(in:)` and `records.windows[key]` per row; it walks `records.kinds` now.
+    /// The three things that decide what a rider sees are asserted against the fixture's
+    /// own `recordWindows` list, which is what the web verifier has always compared to:
+    /// the catalogue order, the locatable set, and the default the session opens on.
+    @Test func theRecordsTableIsTheDocumentsNineKinds() throws {
+        for (stem, document) in try Self.everyDocument() {
+            let records = try #require(document["records"])
+            let kinds = try #require(records["kinds"]?.arrayValue)
+            #expect(kinds.compactMap { $0["key"]?.stringValue }
+                    == RecordKind.allCases.map(\.rawValue),
+                    "\(stem): the table's rows are not the catalogue, in its order")
+
+            // Every row names itself out of `tokens.recordWindow.<id>`, which is
+            // `RecordKind.label` — one spelling per record, everywhere one is named.
+            for kind in kinds {
+                let label = PresentationCopy.text(kind["labelId"]?.stringValue ?? "")
+                #expect(label == RecordKind(rawValue: kind["key"]?.stringValue ?? "")?.label,
+                        "\(stem): a record row is not calling the record by its name")
+            }
+
+            // A row is live exactly when the document says the session achieved it: a
+            // value **and** a window. A record with neither is inert and says nothing.
+            let achieved = Set((records["achieved"]?.arrayValue ?? []).compactMap(\.stringValue))
+            let live = Set(kinds.compactMap { kind -> String? in
+                guard case .bool(true)? = kind["achieved"] else { return nil }
+                return kind["key"]?.stringValue
+            })
+            #expect(live == achieved, "\(stem): achieved and the live rows disagree")
+            #expect(RecordWindowSelection.initial(available: achieved)
+                    == records["default"]?.stringValue,
+                    "\(stem): the table would open on a different record than the document")
+        }
+    }
+
+    /// **5×10 s is its five runs.** The one record made of several windows, which the
+    /// `GP3SRecords` subscript only ever yielded the top of — the map glows on all five,
+    /// and the table's caption names the first, which is the same run it always named.
+    @Test func theCompositeRecordKeepsAllOfItsWindows() throws {
+        var sawFive = false
+        for (stem, document) in try Self.everyDocument() {
+            let analysis = try Self.analysis(stem)
+            for kind in document["records"]?["kinds"]?.arrayValue ?? []
+            where kind["key"]?.stringValue == "best5x10s" {
+                let windows = kind["windows"]?.arrayValue ?? []
+                let engine = analysis.records.windows.best5x10s ?? []
+                #expect(windows.count == engine.count, "\(stem): 5×10 s lost a run")
+                if windows.count > 1 { sawFive = true }
+                // The caption's run is `best5x10s?.first`, unsorted — the same one the
+                // table printed before it read the document.
+                if let first = windows.first, let top = engine.first {
+                    #expect(first["startTs"] == PresentationDocument.number(top.startTs,
+                                                                           "seconds"),
+                            "\(stem): the caption would name a different run")
+                }
+            }
+        }
+        #expect(sawFive, "no fixture carried a multi-window 5×10 s record")
+    }
+
     // MARK: - What it costs
 
     /// **Why the document is built on open and not stored** (ADR-033, round 2, step 4).
