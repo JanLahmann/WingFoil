@@ -97,8 +97,9 @@ function sweepCrossing(lo as Float, hi as Float, offset as Float, mid as Float) 
 // classification sees the whole sweep rather than its first 60 deg. The sweep end confirms the
 // turn (EVENT_TURN) and opens the recovery-gated outcome window: it stays open until the rider
 // is demonstrably flying again (RECOVER_PCT of entry speed, floored at foilEntry, held
-// RECOVER_HOLD_S), capped at LOOKAHEAD_S past the sweep. Evidence collected across the whole
-// window: lost-the-foil (speed <= foilExit or submerged), longest stop spell below
+// RECOVER_HOLD_S), capped at LOOKAHEAD_NOT_RECOVERED_S past the sweep (0.9.19: the phone's
+// 30 s tail for a rider who never gets going again — see the constant). Evidence is collected
+// across the whole window: lost-the-foil (speed <= foilExit or submerged), stop spell below
 // STOP_FLOOR_MPS, barometric submersion. Verdict: submerged or stop > FALL_STOP_S => fell in;
 // else any loss => touchdown; else flew through.
 //
@@ -153,7 +154,23 @@ class TurnDetector {
     const STOP_FLOOR_MPS = 1.0;
     const TOUCHDOWN_MAX_STOP_S = 3.0;
     const FALL_STOP_S = 5.0;
+    // `turnOutcomeLookahead`. Since 0.9.19 NOTHING READS IT: the window is capped by the
+    // not-recovered value below, and the phone's other two uses of the 12 s number —
+    // `axisAfterDeg` and the not-recovered flag itself — are one the watch does not publish
+    // and one it does not need (on the wrist "he has not recovered" is just "the window is
+    // still open"). Kept because it is the phone's parameter and because setting the cap
+    // below equal to it is the documented way to switch the whole rule off.
     const LOOKAHEAD_S = 12.0;
+    // A FALL THE TURN CAUSED IS THE TURN'S FALL (engine 0.24.0, ADR-032; watch 0.9.19).
+    // `LOOKAHEAD_S` is sized for a foil that STALLS: bleed off from foiling speed and you are
+    // at a standstill inside 12 s. A learner who mushes slowly out of a jibe is still making
+    // way at 12 s and coasts to a stop a little after it — on the corpus the median is exactly
+    // 12 s, at the cap — so the turn read `touchdown` and the stop it ended in was booked all
+    // over again by the flight-end channel. While the rider has NOT RECOVERED the window
+    // follows him this far instead. Recovery still closes it wherever it happens, so this only
+    // ever lengthens a window that had nothing to close it; set it equal to `LOOKAHEAD_S` and
+    // the detector is 0.9.18's exactly.
+    const LOOKAHEAD_NOT_RECOVERED_S = 30.0;
     const RECOVER_PCT = 0.70;
     const RECOVER_HOLD_S = 2.0;
     const SUCCESS_PCT = 70;
@@ -168,8 +185,11 @@ class TurnDetector {
 
     // How long an unowned flight end is judged for, before its evidence is called. The turn
     // window's own cap, reused deliberately: one physical question ("did he stop, and for how
-    // long") deserves one set of numbers however the loss started.
-    const FLIGHT_END_WINDOW_S = LOOKAHEAD_S;
+    // long") deserves one set of numbers however the loss started. Since 0.9.19 that is the
+    // NOT-RECOVERED cap, because the phone's `flightend.py` reads the very same
+    // `evidence.outcome_tail` the turns do — a rider who ventilates on a straight reach and
+    // coasts to a stop at 20 s is a swim on both sides now, not a glide-out on the wrist.
+    const FLIGHT_END_WINDOW_S = LOOKAHEAD_NOT_RECOVERED_S;
 
     // 8 s sweep cap + 3 s entry window + margin, at 1 Hz
     const HIST = 14;
@@ -689,7 +709,12 @@ class TurnDetector {
         } else {
             _recoverHeld = 0.0;
         }
-        if (_recoverHeld < RECOVER_HOLD_S && _clockS < _endT + LOOKAHEAD_S) {
+        // The cap is the NOT-RECOVERED one (0.9.19). Recovery is tested first and on every
+        // tick, so a rider who gets going again closes the window exactly where 0.9.18 closed
+        // it; only a rider who never does is followed the further 18 s, which is the whole of
+        // ADR-032. One compare, no state: "he has not recovered" is precisely "this branch is
+        // still being taken".
+        if (_recoverHeld < RECOVER_HOLD_S && _clockS < _endT + LOOKAHEAD_NOT_RECOVERED_S) {
             return EVENT_NONE;
         }
         return _resolve();
@@ -702,9 +727,9 @@ class TurnDetector {
     //                 exactly the [start_t, end_t + minSpeedLag] window turns.py._build_turn
     //                 scores. It, and nothing else, decides success.
     //   _lostFoil / _wet / _stopMax -- OUTCOME evidence, collected across the whole
-    //                 recovery-gated window (up to end + LOOKAHEAD_S). A touchdown five
-    //                 seconds after a cleanly-carried jibe is that jibe's outcome, but it is
-    //                 not part of the speed it was scored on.
+    //                 recovery-gated window (up to end + LOOKAHEAD_NOT_RECOVERED_S). A
+    //                 touchdown five seconds after a cleanly-carried jibe is that jibe's
+    //                 outcome, but it is not part of the speed it was scored on.
     hidden function _track(dt as Float, speedMps as Float, submerged as Boolean) as Void {
         if (submerged) {
             _wet = true;

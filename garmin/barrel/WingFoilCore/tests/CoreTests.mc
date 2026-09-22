@@ -280,11 +280,93 @@ function turnCollapseIsFellIn(logger as Test.Logger) as Boolean {
     var d = new TurnDetector(coreDefaults());
     runStraight(d, 5, 90.0, 8.0);
     runSweep(d, 90.0, 30.0, 6, 8.0);
-    // never gets going again: the window runs to the 12 s lookahead cap
-    var ev = runStraight(d, 14, 270.0, 0.2);
+    // never gets going again: the window runs to the NOT-RECOVERED cap (0.9.19; it was the
+    // 12 s lookahead until then, and the stop was already long enough by either clock)
+    var ev = runStraight(d, 32, 270.0, 0.2);
     Test.assertMessage(d.turnCount == 1, "one turn");
     Test.assertMessage(ev == TurnDetector.EVENT_FELL, "fell in, event " + ev.toString());
     Test.assertMessage(d.fellCount == 1 && d.touchdownCount == 0, "outcome tally");
+    return true;
+}
+
+// n seconds of tail at `speed`, with the flight state and the wrist said explicitly: the
+// helper the outcome-window tests need and `runStraight` (always flying, never wet) is not.
+function runTail(d as TurnDetector, n as Number, cog as Float, speed as Float,
+        flying as Boolean, submerged as Boolean) as Number {
+    var ev = TurnDetector.EVENT_NONE;
+    for (var i = 0; i < n; i++) {
+        var e = d.tick(1.0, cog, speed, speed, flying, submerged);
+        if (e != TurnDetector.EVENT_NONE) {
+            ev = e;
+        }
+    }
+    return ev;
+}
+
+// ---- A FALL THE TURN CAUSED IS THE TURN'S FALL (ADR-032, watch 0.9.19) ----
+//
+// The learner's mush-out: he comes out of the jibe making way but never flying, and coasts
+// to a stop well past the 12 s lookahead. Until 0.9.19 the window closed at 12 s with the
+// foil merely lost, so the wrist said `touchdown` and the stop that ended it was seen by
+// nobody at all -- the phone, re-reading the same FIT, said `fell in`. Now the window
+// follows a rider who has not recovered to LOOKAHEAD_NOT_RECOVERED_S and the fall is the
+// turn's.
+(:test)
+function turnMushOutPastTheLookaheadIsTheTurnsFall(logger as Test.Logger) as Boolean {
+    var d = new TurnDetector(coreDefaults());
+    runStraight(d, 5, 90.0, 8.0);
+    runSweep(d, 90.0, 30.0, 6, 8.0);
+    // The first tail sample ends the sweep and confirms the turn; the outcome is still open.
+    var ev = runTail(d, 1, 270.0, 1.5, false, false);
+    Test.assertMessage(ev == TurnDetector.EVENT_TURN,
+        "the sweep confirms the turn, event " + ev.toString());
+    // 20 s of mush: below foilExit (so the foil is lost) but above the stop floor, and
+    // nowhere near RECOVER_PCT of the entry speed, so nothing closes the window.
+    ev = runTail(d, 19, 270.0, 1.5, false, false);
+    Test.assertMessage(ev == TurnDetector.EVENT_NONE,
+        "the window is still open 20 s past the sweep, event " + ev.toString());
+    // ...and THIS is what books the fall once rather than twice: while the turn is judging,
+    // the straight-line flight-end channel cannot open a window of its own for the same loss.
+    Test.assertMessage(d.state == TurnDetector.ST_OUTCOME,
+        "the turn still owns the loss at 20 s, state " + d.state.toString());
+    // Only then does he stop, and the window is still open to see it.
+    ev = runTail(d, 12, 270.0, 0.2, false, false);
+    Test.assertMessage(ev == TurnDetector.EVENT_FELL,
+        "the mush-out is the turn's fall, event " + ev.toString());
+    Test.assertMessage(d.turnCount == 1, "one turn, got " + d.turnCount.toString());
+    Test.assertMessage(d.fellCount == 1 && d.touchdownCount == 0 && d.flewCount == 0,
+        "one fall, booked once: " + d.fellCount.toString() + " / "
+        + d.touchdownCount.toString() + " / " + d.flewCount.toString());
+    Test.assertMessage(d.dryStreak == 0, "he swam, so the dry run is over");
+    return true;
+}
+
+// The other half of the same rule: RECOVERY still closes the tail wherever it happens, so a
+// stop long after it belongs to the straight-line channel and not to the turn. Without this
+// the 30 s cap would charge a maneuver with a fall it had nothing to do with.
+(:test)
+function turnRecoveryClosesTheTailBeforeALaterStop(logger as Test.Logger) as Boolean {
+    var d = new TurnDetector(coreDefaults());
+    runStraight(d, 5, 90.0, 8.0);
+    runSweep(d, 90.0, 30.0, 6, 8.0);
+    // 6 s off the foil -- the turn is a touchdown whatever happens next
+    runTail(d, 6, 270.0, 1.5, false, false);
+    // flying again at 8 s: 70 % of 8 m/s held for RECOVER_HOLD_S closes the window
+    var ev = runStraight(d, 4, 270.0, 8.0);
+    Test.assertMessage(ev == TurnDetector.EVENT_TOUCHDOWN,
+        "recovery closes the tail on a touchdown, event " + ev.toString());
+    Test.assertMessage(d.touchdownCount == 1 && d.fellCount == 0, "outcome tally");
+    Test.assertMessage(d.dryStreak == 1, "a touchdown does not end the dry run");
+
+    // ...and 25 s past the sweep he ventilates on a straight reach and stops. That is a swim,
+    // and it breaks the run -- but it is NOT the turn's fall: the ladder is untouched.
+    runStraight(d, 5, 270.0, 8.0);
+    runTail(d, 12, 270.0, 0.2, false, false);
+    runStraight(d, 3, 270.0, 8.0);      // up again: the flight-end window closes and is called
+    Test.assertMessage(d.touchdownCount == 1 && d.fellCount == 0,
+        "the later stop is not the turn's: " + d.touchdownCount.toString() + " / "
+        + d.fellCount.toString());
+    Test.assertMessage(d.dryStreak == 0, "the straight-line swim still ends the dry run");
     return true;
 }
 
@@ -476,6 +558,120 @@ function turnSubmersionForcesFellIn(logger as Test.Logger) as Boolean {
     return true;
 }
 
+// ---- THE LADDER AGAINST A GOLDEN (watch 0.9.19) ----
+//
+// One taxonomy: what the wrist says about a turn has to be what the phone says about it. The
+// three unit tests above each pin one rung; this one pins the SHAPE OF A SESSION, against the
+// phone's own answer for a real afternoon.
+//
+// The table is the counted turns of `fixtures/goldens/2026-08-07-0754_nago-torbole-
+// windsurfen_ciq.expected.json` (engine 0.24.0, read 22 Sep 2026), and it carries the phone's
+// EVIDENCE, never its verdict: per turn the entry speed, how long the outcome window ran, how
+// long the foil was lost, how long the longest stop inside it was, and whether the wrist went
+// under. A 1 Hz track is built from those five numbers and replayed through the detector; the
+// verdict is the watch's own, and the three counts it comes out with must be the golden's.
+//
+// WHAT IT IS AND IS NOT. It is a synthetic track shaped like a golden, not the golden's own
+// samples: every turn is handed a sweep the detector can see (180 deg at 30 deg/s), so this
+// exercises the OUTCOME LADDER and the windows, not the geometry gates, the non-maximum
+// suppression the watch does not have, or the aborted-turn pass it does not have either
+// (docs/algorithms/turns.md, "Watch approximation"). The two aborted turns in this golden are
+// therefore given ordinary sweeps.
+//
+// WHY IT FAILED BEFORE 0.9.19: five of these turns — the mush-outs whose stop begins after
+// the 12 s lookahead — came out `touchdown` on the wrist and `fell_in` on the phone, so the
+// watch's ladder read 11 / 13 / 8 against the golden's 11 / 8 / 13. It is the commonest
+// single disagreement on the corpus and it is what ADR-032 was written for.
+const GOLDEN_FLEW = 11;
+const GOLDEN_TOUCH = 8;
+const GOLDEN_FELL = 13;
+
+// [entryKn, outcomeWindowS, offFoilS, stoppedS, submerged] per counted turn.
+function goldenTurnEvidence() as Array<Array<Number> > {
+    return [
+        [1114, 11, 8, 1, 0], [957, 30, 30, 28, 0],
+        [883, 19, 24, 6, 0], [972, 4, 3, 0, 1],
+        [992, 17, 13, 0, 0], [876, 26, 23, 1, 0],
+        [1053, 16, 2, 0, 0], [914, 9, 2, 0, 0],
+        [1077, 2, 0, 0, 0], [1012, 30, 31, 28, 0],
+        [989, 30, 28, 21, 0], [1024, 1, 0, 0, 0],
+        [1070, 17, 24, 11, 0], [959, 2, 0, 0, 0],
+        [839, 30, 28, 27, 0], [1074, 7, 0, 0, 0],
+        [1155, 30, 28, 26, 0], [1065, 30, 24, 22, 0],
+        [1017, 3, 0, 0, 0], [1005, 30, 25, 18, 0],
+        [996, 8, 0, 0, 1], [994, 6, 0, 0, 0],
+        [1051, 30, 23, 20, 0], [972, 8, 0, 0, 0],
+        [1080, 6, 0, 0, 0], [959, 2, 0, 0, 0],
+        [1054, 30, 29, 1, 0], [970, 3, 3, 0, 1],
+        [1073, 16, 3, 0, 0], [941, 5, 0, 0, 0],
+        [1069, 0, 0, 0, 0], [1013, 30, 29, 1, 0],
+    ] as Array<Array<Number> >;
+}
+
+// One turn of that track: an approach, a 180 deg sweep, and a tail written from the row.
+// `cruise` is the mush — above `foilExit`, so the foil is not lost by it, and below
+// RECOVER_PCT of the entry speed, so it does not close the window either. The stop is placed
+// where the phone found it (window - stopped), which is the whole point: a stop that begins
+// past the 12 s lookahead is only seen at all because the window now follows him.
+function replayGoldenTurn(d as TurnDetector, cfg as Config, cog as Float,
+        row as Array<Number>) as Void {
+    var v = row[0] / 100.0 / 1.9438445;
+    var winS = row[1];
+    var offFoil = row[2];
+    var stopped = row[3];
+    var wet = row[4] == 1;
+    var cruise = (cfg.foilExitMps + 0.7 * v) / 2.0;
+    var stopAt = winS - stopped;
+    var out = cog + 180.0;
+    if (out >= 360.0) {
+        out -= 360.0;
+    }
+
+    runStraight(d, 5, cog, v);
+    runSweep(d, cog, 30.0, 6, v);
+    for (var s = 1; s <= winS; s++) {
+        var speed = cruise;
+        if (stopped > 0 && s >= stopAt) {
+            speed = 0.2;
+        } else if (s <= offFoil) {
+            speed = 1.5;
+        }
+        d.tick(1.0, out, speed, speed, speed > cfg.foilExitMps, wet && s == 1);
+    }
+    // Back on the foil: the recovery the phone's window closed on, and the approach the next
+    // maneuver is ridden out of. A turn whose window ran the full cap has already resolved.
+    runStraight(d, 6, out, v);
+}
+
+(:test)
+function turnLadderMatchesTheGoldenOnASyntheticReplay(logger as Test.Logger) as Boolean {
+    var cfg = coreDefaults();
+    var d = new TurnDetector(cfg);
+    var rows = goldenTurnEvidence();
+    var cog = 0.0;
+    for (var i = 0; i < rows.size(); i++) {
+        replayGoldenTurn(d, cfg, cog, rows[i]);
+        cog += 180.0;
+        if (cog >= 360.0) {
+            cog -= 360.0;
+        }
+    }
+    logger.debug("2026-08-07 ciq — watch " + d.flewCount.toString() + " / "
+        + d.touchdownCount.toString() + " / " + d.fellCount.toString()
+        + " flew/touch/fell over " + d.turnCount.toString() + " turns; golden "
+        + GOLDEN_FLEW.toString() + " / " + GOLDEN_TOUCH.toString() + " / "
+        + GOLDEN_FELL.toString() + " over " + rows.size().toString());
+    Test.assertMessage(d.turnCount == rows.size(),
+        "every turn counted once: " + d.turnCount.toString() + " of " + rows.size().toString());
+    Test.assertMessage(d.flewCount == GOLDEN_FLEW && d.touchdownCount == GOLDEN_TOUCH
+        && d.fellCount == GOLDEN_FELL,
+        "the wrist's ladder is not the golden's: " + d.flewCount.toString() + " / "
+        + d.touchdownCount.toString() + " / " + d.fellCount.toString() + " against "
+        + GOLDEN_FLEW.toString() + " / " + GOLDEN_TOUCH.toString() + " / "
+        + GOLDEN_FELL.toString());
+    return true;
+}
+
 (:test)
 function turnOffFoilNotCounted(logger as Test.Logger) as Boolean {
     var d = new TurnDetector(coreDefaults());
@@ -603,19 +799,17 @@ function streakTouchdown(d as TurnDetector, cog as Float) as Void {
     runStraight(d, 6, cog + 180.0, 8.0);
 }
 
-// A jibe he swam out of: never gets going again inside the lookahead cap.
+// A jibe he swam out of: never gets going again, so the window runs to the not-recovered cap.
 function streakFellIn(d as TurnDetector, cog as Float) as Void {
     runStraight(d, 5, cog, 8.0);
     runSweep(d, cog, 30.0, 6, 8.0);
-    runStraight(d, 14, cog + 180.0, 0.2);
+    runStraight(d, 32, cog + 180.0, 0.2);
 }
 
 // n seconds OFF the foil at `speed`, holding `cog`. The flight-end half of the streak rule
 // needs the flying flag to actually fall, which runStraight never lets it do.
 function runOffFoil(d as TurnDetector, n as Number, cog as Float, speed as Float) as Void {
-    for (var i = 0; i < n; i++) {
-        d.tick(1.0, cog, speed, speed, false, false);
-    }
+    runTail(d, n, cog, speed, false, false);
 }
 
 (:test)
@@ -816,7 +1010,7 @@ function cleanJibesAreSuccessfulJibesAndNothingElse(logger as Test.Logger) as Bo
     var w = new TurnDetector(cfg);
     runStraight(w, 5, 120.0, 8.0);
     runSweep(w, 120.0, 30.0, 4, 8.0);
-    runStraight(w, 14, 240.0, 0.2);
+    runStraight(w, 32, 240.0, 0.2);
     Test.assertMessage(w.jibeCount == 1, "the swim was still a jibe");
     Test.assertMessage(w.cleanJibeCount == 0, "a jibe he swam out of is not clean");
     Test.assertMessage(!w.lastCleanJibe,
@@ -920,7 +1114,10 @@ function straightLineFallsBreakTheStreaks(logger as Test.Logger) as Boolean {
     // moves — and both runs are over anyway.
     var turnsBefore = d.turnCount;
     var flewBefore = d.flewCount;
-    runOffFoil(d, 14, 0.0, 0.2);
+    // 32 s, because the flight-end window is the turn window's cap and that is the
+    // NOT-RECOVERED one since 0.9.19: a rider who never gets up again is judged when it
+    // runs out, not before.
+    runOffFoil(d, 32, 0.0, 0.2);
     Test.assertMessage(d.turnCount == turnsBefore,
         "a straight-line fall must not become a turn");
     Test.assertMessage(d.flewCount == flewBefore, "no outcome may be tallied for it");
@@ -964,7 +1161,7 @@ function aFallBetweenTwoFlewTurnsResetsBothStreaks(logger as Test.Logger) as Boo
     streakFlyThrough(d, 0.0);
     Test.assertEqual(d.dryStreak, 1);
 
-    runOffFoil(d, 14, 0.0, 0.2);                 // he goes in, no maneuver involved
+    runOffFoil(d, 32, 0.0, 0.2);                 // he goes in, no maneuver involved
     Test.assertEqual(d.dryStreak, 0);
     Test.assertEqual(d.flewStreak, 0);
 

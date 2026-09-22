@@ -274,13 +274,21 @@ its own on every rider surface — **Speed kept** — and the three numbers have
 
 | the number | the word | where a rider meets it |
 |---|---|---|
-| `turns.successPct` — held ≥ `turnSuccessPct` of entry speed, never off the foil | **Speed kept** | the watch, FIT `turn_success_pct`, Garmin Connect |
+| `turns.successPct` — held ≥ `turnSuccessPct` of entry speed, never off the foil | **Speed kept** | FIT `turn_success_pct` and its Garmin Connect row, and **no screen at all** since watch 0.9.19 |
 | the outcome ladder's green rung over the jibes | **Flew through** | the session page, the card, the website |
 | flights started ÷ pumping attempts | **Got up** | the session page's takeoff cards |
 
-The watch's own label change is **requested, not made**: `garmin/resources/strings/strings.xml`
-→ `FitTurnSuccess` must read `Speed kept` instead of `Turn success` (docs/fit-schema.md, field
-34). Field 34's id, type and semantics are untouched — this is a display label.
+The watch's label change is **made**: `garmin/resources/strings/strings.xml` →
+`FitTurnSuccess` reads `Speed kept` (docs/fit-schema.md, field 34). Field 34's id, type and
+semantics are untouched — this is a display label.
+
+**And since watch 0.9.19 it is only ever a label.** One taxonomy: what the wrist says about a
+turn is what the phone says about it, so every watch page that had a reading of the score on
+it lost it — the *% flew* share left the Turns page with Jan's layout review (0.9.18) and CPH
+left with it, and what the Turns page, the after-save Turns page, the Tacks & jibes page, the
+Main page and the large-text set print now is the **outcome ladder and the clean star**,
+★clean · flew · touched · fell, in one renderer. The field is still written unchanged, because
+the phone's divergence check compares it; the *wording* is what stopped being a wrist verdict.
 
 **Falls: one channel, one number** (20 September 2026). The rider-facing falls count is
 `flightEnds.all.fellIn` — every fell-in flight end, in a turn or in a straight line — on the
@@ -502,12 +510,26 @@ detector to report nothing, which is not the same as tuning it to report spins. 
 that decides this is `threeSixtyMinKmh`, the fixture that would decide it is a session with a
 deliberately ridden 360 in it, and until one exists the flag stays down.
 
-### Watch approximation (garmin/source/detectors/TurnDetector.mc)
+### Watch approximation (garmin/barrel/WingFoilCore/source/TurnDetector.mc)
 
 The watch runs the same parameters in one forward pass with bounded work per 1 Hz tick and no
 allocation, so it necessarily differs from the lab pass. The phone recompute is authoritative;
 these are the known divergences, all of them conservative (the watch under-counts rather than
-inventing turns):
+inventing turns).
+
+**The list is sorted by WHY, since watch 0.9.19**, because the sort is the useful part. A
+divergence that exists because a live detector cannot see the future is permanent and worth
+designing around; one that exists because nobody has ported the rule yet is a task, and it was
+sitting in the same list wearing the same word. So: what a 1 Hz forward pass *cannot know*,
+then what the watch *already shares* with the phone (listed so nobody re-adds a divergence
+that is gone), then what is **not ported yet, with the reason**. Nothing may sit outside the
+three — a rule the watch could simply share is either in the second group or in the third with
+a reason beside it.
+
+#### What a live detector cannot know
+
+These do not go away with more code. One forward pass has no future samples, no second look at
+the track, and a fixed ring of memory.
 
 - **No non-maximum suppression.** The first sweep that clears the gates opens a candidate and
   the detector then *follows* the rotation while it keeps turning (`turnContinueRate`, capped
@@ -517,27 +539,60 @@ inventing turns):
   step below `turnContinueRate`, which trims both edges greedily. A genuine turn containing a
   ≤5 °/s lull is split at the lull rather than spanning it.
 - **No re-detection during the outcome window.** A second turn started before the first one's
-  outcome resolves is not detected at all.
+  outcome resolves is not detected at all, and since 0.9.19 that window can run 30 s rather
+  than 12 (below). The price is smaller than it looks: what holds a window open that long is a
+  rider who has *not recovered*, and a rider who is not flying is not making a maneuver either
+  — recovery closes the window the moment he is, which is also the moment he could start one.
 - **Doppler only.** There is no positional speed channel live, so the sharp `min(Doppler,
   positional)` test degrades to the firmware's ~3–4 s smoothed Doppler: short touchdowns the
   positional channel would expose can read as fly-throughs on the watch.
-- **The outcome window is the judging window.** The watch measures the stop inside the
-  recovery-gated window only, capped at `turnOutcomeLookahead`. Since engine 0.13.0 the phone
-  does the same — `turnOutcomeWindow` is 12 s, equal to the lookahead — so this is **no longer
-  a divergence in the cap**, only in what is reported: `stopped_s` is not published by the
-  watch.
-- **The 12 s cap is unconditional on the watch** (a divergence again since engine 0.24.0).
-  `LOOKAHEAD_S = 12.0` in `garmin/barrel/WingFoilCore/source/TurnDetector.mc` is the whole
-  tail, and `FLIGHT_END_WINDOW_S` is defined as equal to it; there is no
-  `turnOutcomeLookaheadNotRecovered` and no not-recovered branch. So the **live** verdict for a
-  rider who mushes out of a jibe and coasts to a stop past 12 s is `touchdown` where the phone,
-  re-reading the same FIT, says `fell_in` — the shape ADR-032 was written for, and by the
-  corpus the commonest single disagreement between the two. **Not ported**: the watch carries
-  no second ladder to reconcile it with (nothing on the wrist books a straight-line fall
-  twice), the live detector would have to hold a maneuver open for half a minute of samples,
-  and the phone re-derives every session anyway. The data field is parked (ADR-020).
-- **Recovery is searched from the sweep end**, not from the speed minimum, and the entry speed
-  is the max over `entrySpeedWindow` of the *Doppler* history.
+- **A pause freezes the window; it does not close it.** The phone's tail ends at a recording
+  gap and calls what it saw. The watch is not called at all while the session is paused (auto
+  or manual) or while the fix is below `Position.QUALITY_USABLE`, so an open outcome window
+  *resumes* on the far side of the hole. Auto-pause is off by default and its delay is 5 s, so
+  a rider who has it on and stops in the water can pause inside the longer window; the evidence
+  already collected is kept and the verdict is reached when he moves again. Closing the window
+  at the gap instead is in the third group below.
+- **Foil % is the same ratio over a different clock.** The phone divides `foilTimeS` by
+  `timerTimeS` (T2, the cleaned track's non-gap total); the watch's screens and FIT field 22
+  divide by `Activity.Info.timerTime`, its own native moving clock. Both exclude pauses, so
+  the two agree to within what the cleaner trims — but they are not the same clock, and the
+  divergence check's "Foil time" comparison (> 5 %) is a comparison across them. There is no
+  cleaned track on the wrist to divide by, and there cannot be one: cleaning is a second pass.
+- **`stopped_s` is not published.** The watch measures the longest stop — it is the rung that
+  decides a fall — and has nowhere to put it: the session message is at the 16-field limit
+  (docs/fit-schema.md). The number exists live and dies with the session.
+
+#### What the watch already shares
+
+Listed because each of these was a divergence once, and a list that only ever grows teaches
+the wrong lesson about the two implementations.
+
+- **The outcome window is the judging window, on both sides.** The watch measures the stop
+  inside the recovery-gated window only. Since engine 0.13.0 the phone does the same —
+  `turnOutcomeWindow` equals `turnOutcomeLookahead` — so the cap is not a divergence.
+- **A fall the turn caused is the turn's fall** (engine 0.24.0 / ADR-032, **ported in watch
+  0.9.19**). `LOOKAHEAD_NOT_RECOVERED_S = 30.0` in
+  `garmin/barrel/WingFoilCore/source/TurnDetector.mc` is the cap `_outcomeTick` compares
+  against, and `FLIGHT_END_WINDOW_S` is defined as equal to it, exactly as the phone's
+  `flightend.py` reads the same `evidence.outcome_tail` the turns do. Recovery is tested first
+  and on every tick, so a rider who gets going again closes the window where 0.9.18 closed it;
+  only a rider who never does is followed the further 18 s. It is one compare and no new state
+  — on the watch, "he has not recovered" is precisely "the window is still open".
+
+  Until 0.9.19 the live verdict for a rider who mushed out of a jibe and coasted to a stop past
+  12 s was `touchdown` where the phone, re-reading the same FIT, said `fell_in`: by the corpus
+  the commonest single disagreement between the two. On the golden for 2026-08-07 five of the
+  32 counted turns flipped, and the wrist's ladder went from 11 / 13 / 8 to the phone's
+  11 / 8 / 13 (flew / touched / fell). `turnLadderMatchesTheGoldenOnASyntheticReplay` in the
+  barrel suite replays that golden's own per-turn evidence and holds the three counts.
+
+  **The fall is booked once**, which was the other half of ADR-032 and needs no second
+  mechanism on the wrist: the straight-line flight-end channel only opens while
+  `state == ST_IDLE`, so a turn that is still judging owns the loss for the whole of its
+  window. What the longer `FLIGHT_END_WINDOW_S` buys is the *unowned* case — a rider who
+  ventilates on a straight reach and coasts to a stop at 20 s is a swim on the wrist now, where
+  a 12 s window saw a glide-out and broke no streak.
 - **Submersion is read in the pressure domain.** `turnBaroDrop` (25 m of apparent altitude) is
   converted once to a ~300 Pa rise in `rawAmbientPressure` against a slow (~50 s) baseline that
   refuses to adapt while a spike is in progress. Same positive-only semantics. **Since engine
@@ -562,61 +617,16 @@ inventing turns):
   What it still does **not** touch, and deliberately: `turnCount`, the session-wide outcome tally, the streaks and the scores. Those were real observations made at the time and are not re-judged on hindsight evidence, so `tackCount + jibeCount <= turnCount` still holds with the difference being the sweeps that are course changes under this axis.
 
   **The cap.** The log holds **512 turns, 2 KB**, allocated once. A turn every thirty seconds for four hours is 480, so a session does not reach it. Past it the oldest record is dropped, and before it goes it is typed against the axis in force at that moment and folded into a frozen base every later rebuild starts from — so the invariant survives the cap. What a rebuild cannot do for a dropped record is re-type it against an axis the rider changes *later*, and a turn 512 maneuvers ago was ridden hours after the estimator locked. Asserted by `perKindOutcomesAddUpToTheKind` and `rebuildSplitsTheTurnsTheAxisWasLearnedFrom` in the barrel suite.
-- **No pump corroboration** (step 3 of the ladder): the watch cannot promote a fly-through to a
-  touchdown on accel evidence, so it reports slightly more fly-throughs than the phone.
-- **The watch does not measure the axis crossing**, and knows neither axis parameter. It has no
-  `axisTs`/`axisBeforeDeg`/`axisAfterDeg` to publish and applies neither `turnAxisBeforeDeg` nor
-  `turnAxisAfterDeg`, so its clean count is unchanged by them. Both are 0 by default, which is
-  the only reason this is a silence rather than a divergence: move either on the phone and the
-  wrist and the page will disagree about which jibes were clean, exactly as they do for every
-  other tuned threshold.
-- **No aborted turn** (engine 0.21.0, and the one divergence this release adds). The watch has
-  no pass for a sweep that ended in the water: its detector only ever opens a candidate that
-  clears `turnMinAngle`, and a fall halfway through a tack therefore still reaches the wrist as
-  nothing at all. **What it should do**, when it is ported: keep the live candidate's sweep when
-  the rotation stops because the *speed* died rather than because the rate fell below
-  `turnContinueRate`, and if its net change clears `turnAbortMinAngle` (45°), let the existing
-  `_resolve` ladder judge it — the watch's submerged-or-stop rung is already the rung that
-  matters here, and its first answer is the fall. Name it by the axis ahead of the last heading
-  in the sweep's own sense (the phone's `classifyAborted`), since the watch's `classifySweep`
-  needs a crossing it will not have; with no axis yet it is a counted `turn`. Until then the
-  wrist under-counts turns and falls on a session with aborted maneuvers in it, and the phone
-  recompute is what the rider sees — the same conservative shape as every other divergence here.
 - **`turnClassifyMinAngle` — same on the watch** (engine 0.13.0, watch 0.9.7): `classifySweep`
   applies the 90° floor ahead of the wind check, so a 60–89° sweep is `rejected` (an uncounted
   course change) on the wrist exactly as on the phone, with or without a wind axis. Not a
   divergence; listed so nobody re-adds one.
-- **Foil % is the same ratio over a different clock.** The phone divides `foilTimeS` by
-  `timerTimeS` (T2, the cleaned track's non-gap total); the watch's screens and FIT field 22
-  divide by `Activity.Info.timerTime`, its own native moving clock. Both exclude pauses, so
-  the two agree to within what the cleaner trims — but they are not the same clock, and the
-  divergence check's "Foil time" comparison (> 5 %) is a comparison across them.
-- **Bear-aways are dropped, not carried.** They increment a `rejected` counter and are not
-  given an outcome, so the watch has no equivalent of the lab's bear-away outcome window.
 - **Classification IS retroactive since 0.9.18**, on the watch as on the phone: a turn is
   named by the axis in force, and when that axis changes every logged turn is named again
   (the turn-log bullet above). Until then a turn detected before the rider set the axis
   stayed generic for the rest of the session and only the auto-wind lock's one-shot pass was
   allowed to look back. The watch's wind is still the rider's bearing or the watch's own
   estimate, never a third source.
-- **GPS below `Position.QUALITY_USABLE` freezes the detector**, including any open outcome
-  window, matching how the other watch detectors treat a gap.
-- **CPH is off the device app's screens** (device app 0.9.18; it was on the Turns page from
-  0.9.5). Jan's layout review of 21 September 2026 took it, and the reason is the divergence
-  this bullet used to describe. The watch divided `TurnDetector.cleanJibeCount` by
-  `SessionController.elapsedNowS()` — the engine's own timer while recording, the FIT's
-  `total_elapsed_time` once saved — while the phone divides by `timerTimeS`, the **cleaned
-  track's** non-gap total (T2). Neither was wrong; they answered the same question over
-  slightly different afternoons, and the wrist had no cleaned track to offer. But a rate is a
-  *reading* of a count rather than a count, it is the kind of number a rider sits down with,
-  and it was spending a whole row on a page whose four counts are the fact. The count itself
-  stays on the wrist, first on the Turns page's ladder row behind its star; the rate lives on
-  the phone, where it has a caption to explain itself and a clock it can name.
-  `PageModel.cleanPerHour` / `fmtCph` and the 60 s no-rate floor are kept and still tested —
-  the number is one page-editor decision away from coming back and the floor is the part of
-  it nobody should have to re-derive.
-- **The DATA FIELD still shows it**, over its own clock — see the bullet below. The field is
-  parked (ADR-020) and its screens did not move.
 - **A clean jibe is `cleanJibeCount`, and since 0.9.18 the axis can still award one.** This was
   a divergence: the one-shot backfill recovered the tack/jibe split from a sweep log written
   when a sweep *closed* — before its outcome window resolved — so it carried geometry only, a
@@ -641,21 +651,85 @@ inventing turns):
   the history log) is still final at resolve. What the watch cannot see is a *flight end*
   the phone classifies inside the tail; the 1 s off-foil spell covers the same loss one way
   or another, so the two agree on the corpus fixtures.
-- **The watch never had the pump rung** (engine 0.18.0, corrected 9 Sep 2026). An earlier
-  version of this list claimed the watch "keeps the old rule at the old speed"; it does not
-  and never did — `TurnDetector._resolve` has three rungs, submerged-or-stop → fell in, any
-  loss of the foil → touchdown, else flew through, and the accelerometer feeds none of them.
-  So at the 0.18.0 defaults, where the phone's rung is unreachable, the two agree; only a
-  dev build with `turnPumpedMarginalSpeed` raised above `foilExitSpeed` diverges from the
-  wrist, and in the phone's direction.
-- **No pump corroboration reaches the clean flag either.** Success is the score pair only
-  (`score >= turnSuccessPct` and the minimum stayed above `foilExitSpeed`), read off the
-  firmware's smoothed Doppler, so the watch calls slightly *more* jibes clean than the phone
-  does — the same Doppler-only caveat two bullets up, inherited by the stricter metric. The
-  0.12.0 rule itself is **not** a divergence: the watch applies the same
+- **The 0.12.0 clean rule is the same rule.** The watch applies the same
   `outcome == flew_through` test when the turn's outcome resolves, so `cleanJibeCount` counts
   the same four things the phone's `clean` flag did in 0.12.0, over the watch's own evidence.
-  The **fifth** thing, the quiet tail, is a divergence, and it has the bullet above.
+  Success is the score pair only (`score >= turnSuccessPct` and the minimum stayed above
+  `foilExitSpeed`), read off the firmware's smoothed Doppler, so the watch calls slightly
+  *more* jibes clean than the phone does — the Doppler-only limit in the first group,
+  inherited by the stricter metric, and not a second rule.
+
+#### Not ported yet, and why
+
+Each of these is a rule the watch **could** share. None is a thing a live detector cannot know,
+so each carries a reason and a note on what it would cost, and the phone recompute is what the
+rider sees until then.
+
+- **A gap ends the tail on the phone; it freezes the window on the watch.** `outcome_tail`
+  closes at a recording gap and reports *not* not-recovered — the samples the far side of a
+  hole are not evidence that the rider failed to recover, they are no evidence at all. The
+  watch resumes instead (the first group's pause bullet). **Not ported** because `onGap` would
+  have to *resolve* an open window rather than merely restart the ring, which means a verdict,
+  an event, a buzz and a FIT marker fired from the one path that today only forgets things; it
+  is a round of its own, and the longer not-recovered window is what makes it worth doing.
+  `TurnDetector.onGap` already settles the clean tail exactly this way, so the shape exists.
+- **Recovery is searched from the sweep end**, not from the speed minimum (`after_t = min_t` on
+  the phone), and the entry speed is the max over `entrySpeedWindow` of the *Doppler* history.
+  **Not ported**: it costs one more float (the clock of `_minSpeed`) and it only matters for a
+  turn entered so slowly that the entry speed itself already clears `turnRecoverPct` — the
+  window then closes on its first sample. Small, cheap, and nobody has seen it on a fixture.
+- **No pump corroboration** (step 3 of the ladder, engine 0.18.0; corrected 9 Sep 2026 — an
+  earlier version of this list claimed the watch "keeps the old rule at the old speed", and it
+  does not and never did). `TurnDetector._resolve` has three rungs — submerged-or-stop → fell
+  in, any loss of the foil → touchdown, else flew through — and the accelerometer feeds none of
+  them, so the watch cannot promote a fly-through to a touchdown on accel evidence. **Not
+  ported, and it costs nothing today**: at the 0.18.0 defaults `turnPumpedMarginalSpeed` is 8.0
+  and the rung is unreachable on the phone too (see the parameter table). A dev build that
+  raises it is the only thing the two disagree about, and in the phone's direction.
+- **The watch does not measure the axis crossing**, and knows neither axis parameter. It has no
+  `axisTs`/`axisBeforeDeg`/`axisAfterDeg` to publish and applies neither `turnAxisBeforeDeg` nor
+  `turnAxisAfterDeg`, so its clean count is unchanged by them. Both are 0 by default, which is
+  the only reason this is a silence rather than a divergence: move either on the phone and the
+  wrist and the page will disagree about which jibes were clean, exactly as they do for every
+  other tuned threshold. **Not ported** for that reason — a gate nobody has opened.
+- **No aborted turn** (engine 0.21.0). The watch has no pass for a sweep that ended in the
+  water: its detector only ever opens a candidate that clears `turnMinAngle`, and a fall
+  halfway through a tack therefore still reaches the wrist as nothing at all. **What it should
+  do**, when it is ported: keep the live candidate's sweep when the rotation stops because the
+  *speed* died rather than because the rate fell below `turnContinueRate`, and if its net change
+  clears `turnAbortMinAngle` (45°), let the existing `_resolve` ladder judge it — the watch's
+  submerged-or-stop rung is already the rung that matters here, and its first answer is the
+  fall. Name it by the axis ahead of the last heading in the sweep's own sense (the phone's
+  `classifyAborted`), since the watch's `classifySweep` needs a crossing it will not have; with
+  no axis yet it is a counted `turn`. Until then the wrist under-counts turns and falls on a
+  session with aborted maneuvers in it. Two of the 32 counted turns on the 2026-08-07 golden
+  are aborted, which is the size of it.
+- **Bear-aways are dropped, not carried.** They increment a `rejected` counter and are not
+  given an outcome, so the watch has no equivalent of the lab's bear-away outcome window.
+  **Not ported** because nothing on the wrist reads that outcome: a rejected sweep counts
+  towards no tally and breaks no streak, and a fall after one still arrives as an unowned
+  flight end.
+
+#### Not about the detector
+
+The rate that left the wrist, and the parked data field (ADR-020).
+
+- **CPH is off the device app's screens** (device app 0.9.18; it was on the Turns page from
+  0.9.5). Jan's layout review of 21 September 2026 took it, and the reason is the divergence
+  this bullet used to describe. The watch divided `TurnDetector.cleanJibeCount` by
+  `SessionController.elapsedNowS()` — the engine's own timer while recording, the FIT's
+  `total_elapsed_time` once saved — while the phone divides by `timerTimeS`, the **cleaned
+  track's** non-gap total (T2). Neither was wrong; they answered the same question over
+  slightly different afternoons, and the wrist had no cleaned track to offer. But a rate is a
+  *reading* of a count rather than a count, it is the kind of number a rider sits down with,
+  and it was spending a whole row on a page whose four counts are the fact. The count itself
+  stays on the wrist, first on the Turns page's ladder row behind its star; the rate lives on
+  the phone, where it has a caption to explain itself and a clock it can name.
+  `PageModel.cleanPerHour` / `fmtCph` and the 60 s no-rate floor are kept and still tested —
+  the number is one page-editor decision away from coming back and the floor is the part of
+  it nobody should have to re-derive.
+- **The DATA FIELD still shows it**, over its own clock — see the bullet below. The field is
+  parked (ADR-020) and its screens did not move.
 - **The DATA FIELD's CPH divides by the native activity's TIMER TIME** (field ≥ 0.9.6). Same
   numerator (`TurnDetector.cleanJibeCount` out of the shared barrel), same 60 s floor, same
   `--` below it, same one decimal — a third denominator. `garmin/field/` does not own the

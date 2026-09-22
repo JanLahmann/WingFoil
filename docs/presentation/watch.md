@@ -71,6 +71,15 @@ exactly as they gate the buzz. The visual half is never debounced — a new even
 one on screen, which is what one screen means — and save or discard clears the strip with
 the session. `EventFlash.mc` is the module, `AlertManager` fires it beside each buzz.
 
+**A verdict arrives when the verdict is known, not when the turn ends** (0.9.19). The outcome
+window closes at recovery, so a jibe the rider powers out of flashes two or three seconds
+later, as it always did. A jibe he does *not* get going again after is followed for up to 30 s
+before the ladder is called (docs/algorithms/turns.md, "A fall the turn caused is the turn's
+fall"), so *FELL* can land half a minute after the maneuver — by which time he is in the water
+and reading nothing anyway. The alternative was to flash a verdict the phone would later
+contradict, which is the one thing a wrist verdict must never do; the clean star has been
+paid for the same way since 0.9.9, and this is the same trade on the other end of the ladder.
+
 ### The Main page's clock — a rung raised, and the one glass that cannot take it
 
 Jan's note was two words: *make the clock time bigger*. What it turned into is the most
