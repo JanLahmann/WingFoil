@@ -1,8 +1,8 @@
 # One copy, many surfaces
 
-Nine JSON files. Each holds rider-facing wording that more than one surface says, so that it
-is written **once** and the places that say it are held to it from **both sides**. Eight are
-small. The ninth, `help.json`, is the whole of the app's help catalogue, exported so that
+Ten JSON files. Each holds rider-facing wording that more than one surface says, so that it
+is written **once** and the places that say it are held to it from **both sides**. Nine are
+small. The tenth, `help.json`, is the whole of the app's help catalogue, exported so that
 cleanjibe.org/help can render the reference work the phone renders rather than writing its
 own.
 
@@ -198,6 +198,28 @@ went-nowhere case and carries two placeholders:
 
 Both are the library row's own displayed numbers, so the line reads against the key metrics
 directly above it rather than quoting a third figure.
+
+### `presentation.json`
+
+**The words the presentation document points at** (ADR-033,
+`docs/presentation/document.md`). The document carries no rider sentence: every label and
+caption in it is an *id* plus the arguments the sentence interpolates, and this is where the
+ids that no other artefact already owns are resolved. Four groups, all **hand-authored**
+here, like the Strava sentence and the lexicon:
+
+| group | holds |
+|---|---|
+| `label` | the key-metrics block's own labels — `duration`, `max 2 s`, `flew · touchdown · fell` |
+| `rowMetric` | the library row's short spelling of each metric, deliberately shorter than the glossary term because it sits under a value in caption type beside two others |
+| `turnKind` | the rider's word for a kind of sweep, interpolated *into* a caption rather than named by a `labelId` |
+| `caption` | the small line under a cell. A caption with a `one` key has a singular form, used when its first argument is 1 |
+| `wristUnder` | the "wrist under" callout, title and `during` clause |
+
+The other three namespaces a `labelId` may use are `glossary.<id>` (below),
+`verdicts.notASession.*` (below) and `tokens.recordWindow.<id>` / `tokens.layer.<id>` in
+`design/tokens.json`, which is copy for the record and layer names. The lab's
+`test_every_label_and_caption_is_an_id_that_exists_in_copy` fails on an id with no home, and
+its twin fails on a line here that no document can reach.
 
 ### `help.json`
 

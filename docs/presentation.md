@@ -40,6 +40,9 @@ version it is stamped for.
 
 ## Topics
 
+- [`presentation/document.md`](presentation/document.md) — **the presentation document**:
+  every rider-facing fact of one session, emitted once by the engine as ids, raw values and
+  colour roles, so that iPhone, web, card, widgets and watch become renderers (ADR-033).
 - [`presentation/clean-jibe.md`](presentation/clean-jibe.md) — clean jibe: the name of the
   strict verdict, and how it is spelled.
 - [`presentation/layers-map-colour-type.md`](presentation/layers-map-colour-type.md) — Layers,
