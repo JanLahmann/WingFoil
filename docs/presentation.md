@@ -1989,6 +1989,18 @@ unchanged: it is drawn when it lands inside whatever span the window is currentl
 the `outcome` band's word. Either way the footnote carries the number, in one sentence: *"A
 clean jibe also needs N s after the sweep with no touchdown, fall or wrist under."*
 
+**The `outcome` band draws the 12 s cap, which since engine 0.24.0 is not always the whole
+tail.** `turnOutcomeLookaheadNotRecovered` follows a rider who never got going again for up to
+30 s (docs/algorithms.md, "Turn outcome" step 0), so on such a turn the verdict was read from
+more seconds than the band covers. The band is left where it is on purpose: the drawn window
+is 8 s of run-out by default and a 30 s band would be clipped on every turn that has one,
+while the lighter recovery band inside it already shows where the tail actually closed. The
+turn's own `outcomeWindowS` is the field that says how long it really was, and the dev
+workbench's trace prints it with the reason (*"Still not flying again. The cap for that ran
+out"*). **Known deviation, not a decision to keep**: the honest version draws each turn's own
+`outcomeWindowS`, on the web and on the phone together, and is worth doing when the run-out
+default is next revisited.
+
 The strip carries one more rule, dashed and captioned `axis`, at `axisTs − ts` — the same
 crossing the drawing ticks. It has **no dot**: the other three rules each mark a speed the
 score is made of, and a fourth point on the trace would claim the crossing was a fourth
@@ -2711,13 +2723,14 @@ question of every report that comes back from TestFlight.
 
 ## Tuning — the thresholds on sliders, in the dev build, on one phone
 
-**What it is.** Settings → Tuning puts 27 of the docs/algorithms.md parameters on controls so
+**What it is.** Settings → Tuning puts 28 of the docs/algorithms.md parameters on controls so
 a threshold can be tried against a real library in a minute instead of an afternoon: turn
 detection and scoring (`turnMinAngle`, `turnClassifyMinAngle`, `turnAxisBeforeDeg`,
 `turnAxisAfterDeg`, `turnCleanQuietS`, `turnMaxDuration`,
 `turnPeakRate`, `turnContinueRate`, `turnMinArc`, `turnMinRadius`, `entrySpeedWindow`,
 `minSpeedLag`, `turnSuccessPct`), the stop ladder (`turnStopSpeedFloor`,
-`turnTouchdownMaxStop`, `turnFallStop`, `turnOutcomeLookahead`, `turnRecoverPct`,
+`turnTouchdownMaxStop`, `turnFallStop`, `turnOutcomeLookahead`,
+`turnOutcomeLookaheadNotRecovered`, `turnRecoverPct`,
 `turnRecoverHold`, `turnOutcomeWindow`, `turnPumpedOutIsTouchdown`,
 `turnPumpedMarginalSpeed`) and flight hysteresis
 (`foilEntrySpeed`, `foilExitSpeed`, `entryHold`, `exitHold`, `minFlightDuration`). `nil` means
@@ -2736,6 +2749,14 @@ shifting between touchdown and fall; foil time and flight counts). **One tail, n
 `turnOutcomeWindow` has equalled `turnOutcomeLookahead` since 0.13.0 and the lookahead
 slider moves both, so the window has no row of its own (`TuningParameterSpec.hidden`) — an
 explicit override stored by an earlier dev build is still applied and still wins.
+
+**The tail has a second length, and it gets its own row** (engine 0.24.0, ADR-032).
+`turnOutcomeLookaheadNotRecovered` follows the row above it, reading *"…and how long if you
+never got going again"* — default 30 s, *"the same tail, followed this far while you are still
+not flying again; set it to the lookahead to switch the rule off"*. The two caps are what the
+rule is made of, so they are two controls rather than one: tying them together would leave
+nothing to compare, and putting the rule on the lookahead's slider would hide the very number
+the rule turns on.
 
 **One row is a switch** (`TuningParameterSpec.kind`, engine 0.18.0). `turnPumpedOutIsTouchdown`
 is a rule that is either applied or not, and a slider from 0 to 1 would be a lie about the
@@ -2834,7 +2855,7 @@ strips are all cut to them. The pads were one constant, `TurnSlice.defaultPadS =
 a good default and a bad only-option: eight seconds cannot hold the clean jibe's **quiet
 tail**, which closes ten seconds after the sweep, so the strip's `quiet` rule was drawn "only
 when it fits" and in practice never fitted; and it cannot show what a fall actually did, where
-the interesting part is the minute of swimming `turnOutcomeWindow` is measured over. The two
+the interesting part is the half-minute of swimming `turnOutcomeWindow` is measured over. The two
 ranges differ because the two ends do different work: the lead-in only has to hold
 `entrySpeedWindow` plus an approach, and every second added to it pushes the sweep to the
 right of the frame, while the run-out has to reach the quiet tail and the recovery. A note
