@@ -302,6 +302,21 @@ export const WELCOME = {
 export const WHATS_NEW = [
   {
     "version": "1.0.1",
+    "build": 103,
+    "channel": "beta",
+    "date": "2026-09-22",
+    "title": "A fall is the turn's fall",
+    "lines": [
+      "A jibe you never got going again after is a fall, not a touchdown.",
+      "Falls and jibes per hour move on re-analysis: falls the two counts had lost between them are counted once now.",
+      "Settings → Speed records: choose whether records from tracks without measured speed count. Default: verified first.",
+      "Send a session to the developer from its Share page, with your notes.",
+      "Engine 0.24.0 re-derives your library once.",
+      "Please compare a session's falls with your own memory of the afternoon."
+    ]
+  },
+  {
+    "version": "1.0.1",
     "build": 101,
     "channel": "beta",
     "date": "2026-09-22",
@@ -313,6 +328,20 @@ export const WHATS_NEW = [
       "Help: what to do when a watch update does not arrive.",
       "Best hour opens its window on the map and chart, like the other eight records.",
       "Please open a session you tacked on and check the new cell against your afternoon."
+    ]
+  },
+  {
+    "version": "0.9.18",
+    "build": null,
+    "channel": "release",
+    "date": "2026-09-22",
+    "title": "Pages read on the round glass",
+    "lines": [
+      "Every page read against the round glass: the widest line in the middle, numbers larger, words smaller.",
+      "Turns is one row: clean, flew through, touchdown, fell in. Tacks and jibes get a row each.",
+      "Seven switches in the Connect IQ settings hide the pages you never read.",
+      "The pages after a save are the live pages.",
+      "Every turn is counted again when the wind axis locks, so the tack and jibe rows always add up."
     ]
   },
   {

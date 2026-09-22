@@ -1,12 +1,38 @@
 {
   "pending": {
     "note": "Lines for the next build, which has no number yet. Every generator reads `entries` only, so nothing here reaches a rider until it is moved into that build's entry — which is where it goes the moment the build is cut. One thought per line, register 1 of docs/voice.md, at most twenty words.",
-    "lines": [
-      "Speed records: choose whether records from tracks without measured speed count.",
-      "Send a session to the developer from its Share page, with your notes."
-    ]
+    "lines": []
   },
   "entries": [
+    {
+      "version": "1.0.1",
+      "build": 103,
+      "channel": "beta",
+      "date": "2026-09-22",
+      "title": "A fall is the turn's fall",
+      "lines": [
+        "A jibe you never got going again after is a fall, not a touchdown.",
+        "Falls and jibes per hour move on re-analysis: falls the two counts had lost between them are counted once now.",
+        "Settings → Speed records: choose whether records from tracks without measured speed count. Default: verified first.",
+        "Send a session to the developer from its Share page, with your notes.",
+        "Engine 0.24.0 re-derives your library once.",
+        "Please compare a session's falls with your own memory of the afternoon."
+      ]
+    },
+    {
+      "version": "1.0.1",
+      "build": 102,
+      "channel": "dev",
+      "date": "2026-09-22",
+      "title": "A fall is the turn's fall",
+      "lines": [
+        "A jibe you never got going again after is a fall, not a touchdown.",
+        "Falls and jibes per hour move on re-analysis: falls the two counts had lost between them are counted once now.",
+        "Settings → Speed records: choose whether records from tracks without measured speed count. Default: verified first.",
+        "Send a session to the developer from its Share page, with your notes.",
+        "Engine 0.24.0 re-derives your library once."
+      ]
+    },
     {
       "version": "1.0.1",
       "build": 101,
