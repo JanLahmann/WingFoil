@@ -217,9 +217,15 @@ def _block(doc, summary, turns, records):
     """
     rows = []
 
+    # `avgSpeedKmh` itself is stored to 2 decimal places (docs/presentation/key-metrics.md
+    # "Average speed is converted to knots") — a precision that suits a km/h column but
+    # throws away a digit before the km/h-to-knot conversion even starts. `distanceKm` and
+    # `timerTimeS` are the same division's two halves, each already at the document's own
+    # convention precision, so re-deriving from them is the raw value at full precision
+    # rather than a knot rounded twice.
     avg_kn = None
-    if summary.get("avgSpeedKmh") is not None:
-        avg_kn = summary["avgSpeedKmh"] / 1.852
+    if summary.get("avgSpeedKmh") is not None and summary.get("timerTimeS"):
+        avg_kn = (summary["distanceKm"] / (summary["timerTimeS"] / 3600.0)) / 1.852
     rows.append({"id": "basics", "cells": [
         _cell("duration", "presentation.label.duration",
               value=summary.get("durationS"), unit_kind="durationS"),

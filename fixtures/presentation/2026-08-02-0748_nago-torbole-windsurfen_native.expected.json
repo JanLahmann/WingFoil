@@ -120,7 +120,7 @@
               "key": "avgSpeed",
               "labelId": "presentation.label.avgSpeed",
               "unitKind": "speedKn",
-              "value": 5.551
+              "value": 5.553
             }
           ],
           "id": "basics"
@@ -315,7 +315,7 @@
             "complete"
           ],
           "unitKind": "speedKn",
-          "value": 5.551
+          "value": 5.553
         },
         {
           "captions": [],
