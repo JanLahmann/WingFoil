@@ -14,9 +14,14 @@ import Toybox.WatchUi;
 // 8 or 16 KB, or three 8 KB pages back to back, and writes the wall-clock time of each
 // onComplete into a small log the next menu item shows.
 //
-// Two encodings, because Communications.transmit takes a ByteArray only from API 6.0.0
-// (fenix 8) and 30 of the 42 products we ship are older: those send the same bytes as an
-// Array of Numbers, 1.25× on the wire. The log names which one was used.
+// Three encodings, because Communications.transmit takes a ByteArray only from API 6.0.0
+// (fenix 8) and 30 of the 42 products we ship are older. Those send the same bytes as an
+// Array of Numbers, and there the choice is one byte per Number — which `estimateBytes`
+// prices at five wire bytes each, so an 8 KB page costs 40 KB and no 5 Plus was ever going
+// to carry one — or FOUR bytes per Number, the same five wire bytes for four payload bytes
+// and a page that costs 10 KB (0.9.18-dev1, docs/transfer-format.md §3). The log names
+// which one was used and how many milliseconds it took, which is the whole of what a
+// 5 Plus probe run is there to read.
 //
 // Nothing here is rider-facing, nothing is in the beta or release jungles (they exclude the
 // `dev` annotation), and the shipped code touches it through two one-line hooks in the wind
@@ -59,6 +64,11 @@ module LinkProbe {
         menu.addItem(new WatchUi.MenuItem("4 KB", null, 4096, null));
         menu.addItem(new WatchUi.MenuItem("8 KB", null, 8192, null));
         menu.addItem(new WatchUi.MenuItem("8 KB x3", "back to back", :burst, null));
+        // Only where it means anything: an API-6 watch sends a ByteArray and has no second
+        // mode to compare against.
+        if (System.getDeviceSettings().monkeyVersion[0] < 6) {
+            menu.addItem(new WatchUi.MenuItem("8 KB plain", "1 byte / Number", :plain8k, null));
+        }
         menu.addItem(new WatchUi.MenuItem("Results", null, :results, null));
         menu.addItem(new WatchUi.MenuItem("Clear log", null, :clear, null));
         return menu;
@@ -66,9 +76,14 @@ module LinkProbe {
 
     (:dev)
     var _seq as Number = 0;
+    // The one-byte-per-Number payload, for the comparison run only. The transfer itself
+    // always packs four.
+    (:dev)
+    var _plain as Boolean = false;
 
-    // ByteArray on API 6+, an Array of Numbers below it. A page of n bytes, content i & 0xFF,
-    // so a corrupted delivery would be visible on the phone.
+    // ByteArray on API 6+, an Array of Numbers below it — four bytes per Number unless
+    // `_plain` asks for the old shape. A page of n bytes, content i & 0xFF, so a corrupted
+    // delivery would be visible on the phone.
     (:dev)
     function payload(n as Number) as Object {
         var mv = System.getDeviceSettings().monkeyVersion;
@@ -79,16 +94,32 @@ module LinkProbe {
             }
             return ba;
         }
-        var arr = new [n];
-        for (var i = 0; i < n; i++) {
-            arr[i] = i & 0xFF;
+        if (_plain) {
+            var arr = new [n];
+            for (var i = 0; i < n; i++) {
+                arr[i] = i & 0xFF;
+            }
+            return arr;
         }
-        return arr;
+        var words = (n + 3) / 4;
+        var packedArr = new [words];
+        for (var w = 0; w < words; w++) {
+            var o = w * 4;
+            var v = o < n ? (o & 0xFF) : 0;
+            if (o + 1 < n) { v = v | (((o + 1) & 0xFF) << 8); }
+            if (o + 2 < n) { v = v | (((o + 2) & 0xFF) << 16); }
+            if (o + 3 < n) { v = v | (((o + 3) & 0xFF) << 24); }
+            packedArr[w] = v;
+        }
+        return packedArr;
     }
 
     (:dev)
     function encodingName() as String {
-        return System.getDeviceSettings().monkeyVersion[0] >= 6 ? "bytes" : "array";
+        if (System.getDeviceSettings().monkeyVersion[0] >= 6) {
+            return "bytes";
+        }
+        return _plain ? "plain1" : "pack4";
     }
 
     (:dev) var _chainLeft as Number = 0;
@@ -204,9 +235,18 @@ class ProbeMenuDelegate extends WatchUi.Menu2InputDelegate {
     function onSelect(item as WatchUi.MenuItem) as Void {
         var id = item.getId();
         if (id instanceof Lang.Number) {
+            LinkProbe._plain = false;
             LinkProbe.send(id as Number, 1);
             WatchUi.pushView(new ProbeView(), new ProbeViewDelegate(), WatchUi.SLIDE_UP);
+        } else if (id == :plain8k) {
+            // The comparison the 5 Plus run exists to make: the same 8 KB, one byte to a
+            // Number, against the packed page above it. Read the two `ms` off Results.
+            LinkProbe._plain = true;
+            LinkProbe.send(8192, 1);
+            LinkProbe._plain = false;
+            WatchUi.pushView(new ProbeView(), new ProbeViewDelegate(), WatchUi.SLIDE_UP);
         } else if (id == :burst) {
+            LinkProbe._plain = false;
             // A chain, not a burst: the second page goes when the first completes. Three
             // in flight crashed the app on the fenix 8 (19 September 2026), and 16 KB did
             // too, so that item is gone — 8 KB is the page (docs/direct-transfer.md §5).

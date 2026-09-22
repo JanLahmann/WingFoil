@@ -340,6 +340,79 @@ import Testing
         #expect(page.isLast)
     }
 
+    // MARK: - The fenix 5 Plus packed page (0.9.18-dev1)
+
+    /// **Four payload bytes per 32-bit Number**, little-endian within the word, with `f` and
+    /// `bl` on the message saying so. One byte per Number is what 0.9.14-dev2 sent, and
+    /// `PhoneLink.estimateBytes` prices a Number at five wire bytes — so an 8 000 B page cost
+    /// 40 KB and no pre-6.0.0 watch was ever going to carry one.
+    @Test func aPackedPageUnpacksFourBytesPerNumber() throws {
+        // 0x04030201, 0x08070605, then one word holding a single byte.
+        let words: [Any] = [0x04030201, 0x08070605, 0x09]
+        let payload: [String: Any] = ["cjr": 1, "sid": 1_756_556_820, "st": 1, "p": 0,
+                                      "n": 2, "f": DirectPage.packedFlag, "bl": 9,
+                                      "b": words]
+        let page = try DirectPage(payload: payload)
+        #expect(page.stream == 1)
+        #expect(page.bytes == Data([1, 2, 3, 4, 5, 6, 7, 8, 9]))
+    }
+
+    /// A Monkey C Number is signed, so a word whose top byte is ≥ 0x80 arrives negative.
+    /// The bit pattern is what matters and both signs give the same one.
+    @Test func aPackedWordSurvivesItsSignBit() throws {
+        let page = try DirectPage(payload: ["cjr": 1, "sid": 1_756_556_820, "st": 1, "p": 0,
+                                            "n": 1, "f": 1, "bl": 4,
+                                            "b": [Int(Int32.min)]])
+        #expect(page.bytes == Data([0x00, 0x00, 0x00, 0x80]))
+    }
+
+    @Test func aPackedPageThatLiesAboutItsLengthIsRefused() throws {
+        func message(_ length: Any?) -> [String: Any] {
+            var out: [String: Any] = ["cjr": 1, "sid": 1_756_556_820, "st": 1, "p": 0,
+                                      "n": 1, "f": 1, "b": [0x04030201, 0x08070605]]
+            if let length { out["bl"] = length }
+            return out
+        }
+        // Eight bytes in two words: five through eight are the only honest claims.
+        for length in [5, 6, 7, 8] {
+            #expect(try DirectPage(payload: message(length)).bytes.count == length)
+        }
+        for length in [0, 4, 9, -1] {
+            #expect(throws: CompanionDecodeError.notAnInteger(key: "b")) {
+                try DirectPage(payload: message(length))
+            }
+        }
+        // And a page that says it is packed without saying how long it is cannot be
+        // unpacked at all: guessing would invent up to three trailing zeros.
+        #expect(throws: CompanionDecodeError.missingKey("bl")) {
+            try DirectPage(payload: message(nil))
+        }
+    }
+
+    /// A whole page, packed and unpacked, is the page.
+    @Test func aPackedPageRoundTripsAtEveryRemainder() throws {
+        let (header, records) = Self.syntheticSession()
+        var encoder = DirectStreamEncoder(header: header)
+        for record in records { encoder.push(record) }
+        for page in encoder.close() {
+            for trim in 0..<4 {
+                let bytes = page.prefix(page.count - trim)
+                var words: [Any] = []
+                for offset in stride(from: 0, to: bytes.count, by: 4) {
+                    var word: UInt32 = 0
+                    for i in 0..<4 where offset + i < bytes.count {
+                        word |= UInt32(bytes[bytes.startIndex + offset + i]) << (8 * i)
+                    }
+                    words.append(Int(Int32(bitPattern: word)))
+                }
+                let message: [String: Any] = ["cjr": 1, "sid": 1_756_556_820, "st": 0,
+                                              "p": 0, "n": 1, "f": 1, "bl": bytes.count,
+                                              "b": words]
+                #expect(try DirectPage(payload: message).bytes == Data(bytes))
+            }
+        }
+    }
+
     @Test func aBadPageMessageIsRefusedWhole() {
         #expect(throws: CompanionDecodeError.notADictionary) { try DirectPage(payload: "cjr") }
         #expect(throws: CompanionDecodeError.unsupportedSchemaVersion(2)) {
@@ -349,7 +422,8 @@ import Testing
         #expect(throws: CompanionDecodeError.missingKey("b")) {
             try DirectPage(payload: ["cjr": 1, "sid": 1_756_556_820, "st": 0, "p": 0, "n": 1])
         }
-        // A Number outside 0…255 is a packing this build cannot unpack (dev3), not a byte.
+        // A Number outside 0…255 with no `f` on the message is a packing this build was not
+        // told about, not a byte — the page is refused rather than truncated into nonsense.
         #expect(throws: CompanionDecodeError.notAnInteger(key: "b")) {
             try DirectPage(payload: ["cjr": 1, "sid": 1_756_556_820, "st": 0, "p": 0,
                                      "n": 1, "b": [70_000]])
@@ -388,7 +462,7 @@ import Testing
         #expect(caps.hasPosition)
         #expect(caps.hasHR)                      // it appears at record 400
         #expect(caps.hasDevFields)               // the four record fields of docs/fit-schema.md
-        #expect(!caps.hasAccel)                  // the wrist stream is dev3's
+        #expect(!caps.hasAccel)                  // the wrist stream is not here yet
         #expect(!caps.hasWatchLaps)
         #expect(caps.sampleRateHz == 1)
         #expect(caps.discipline == "wingfoil")

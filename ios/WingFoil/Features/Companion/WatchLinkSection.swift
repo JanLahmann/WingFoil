@@ -136,9 +136,14 @@ struct WatchLinkSection: View {
     /// way. Three facts on one line, in the order they answer "did it work": which session,
     /// how much of it, how long it took. `.current` deliberately for the date — this row is
     /// about a transfer to this phone, and the clock is the reader's.
+    ///
+    /// **Which of the two streams** where it was the wrist one: it arrives minutes after the
+    /// session it belongs to and takes this row over when it does, and a row that silently
+    /// swapped "13 pages" for "8 pages" would read as a transfer that went backwards.
     static func directSummary(_ receipt: DirectTransferReceipt) -> String {
         var parts = [Fmt.date(receipt.sessionStart, zone: .current),
-                     "\(receipt.pages) page\(receipt.pages == 1 ? "" : "s")",
+                     "\(receipt.pages) \(receipt.isWrist ? "wrist " : "")"
+                        + "page\(receipt.pages == 1 ? "" : "s")",
                      "\(Int(receipt.seconds.rounded())) s"]
         if receipt.cutShort { parts.append("cut short") }
         return parts.joined(separator: " · ")

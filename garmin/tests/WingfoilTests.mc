@@ -4773,6 +4773,243 @@ function directSendWaitsForThePhone(logger as Test.Logger) as Boolean {
     return true;
 }
 
+// ---------------------------------------------------- stream 1, the wrist magnitudes
+// docs/transfer-format.md §2b, ADR-031. Twenty-five hertz inside the windows the watch
+// flagged, 8-bit deltas in centi-g where they hold, a two-byte escape where they do not.
+
+// Feeds `n` grid samples at the 25 Hz step, all at `magG`, with the flag up.
+(:dev)
+function wristRun(mag as Float, fromMs as Number, n as Number) as Number {
+    DirectSend.wristFlag(true);
+    var t = fromMs;
+    for (var i = 0; i < n; i++) {
+        DirectSend.wrist(mag, t);
+        t += DirectSend.WRIST_STEP_MS;
+    }
+    return t;
+}
+
+// The worked example of docs/transfer-format.md §2b, byte for byte — the same 38 bytes
+// `lab/tools/cjr_ref.py --check` derives and the kit's `DirectWristTests` pin.
+(:test :dev)
+function directWristStreamMatchesTheReference(logger as Test.Logger) as Boolean {
+    AppSettings.phonePush = true;
+    AppSettings.pumpDetection = true;
+    DirectSend.discard();
+    DirectSend.reachableOverride = false;
+    DirectSend.utcOffsetOverride = 120;
+    DirectSend.begin(1756556820, 200);
+    DirectSend.recordFix(45.871d, 10.863d, 1756556820, 0, 66, 98, DirectSend.devPack(0, 0, 0, 0));
+    // The fix above anchored the wrist clock to a timer this test cannot see; it says what
+    // the mapping is instead, and then the window opens 1.4 s into the session.
+    DirectSend.wristAnchor(1756556820, 1000);
+    DirectSend.wristFlag(true);
+    DirectSend.wrist(1.00, 2400);
+    DirectSend.wrist(1.03, 2440);
+    DirectSend.wrist(0.99, 2480);
+    DirectSend.wrist(4.00, 2520);     // a landing spike no 8-bit delta can say
+    DirectSend.wrist(3.98, 2560);
+    DirectSend.finish();
+
+    Test.assertEqualMessage(DirectSend.wristPageCount(), 2, "the header page and one more");
+    var head = DirectSend.wristPage(0);
+    Test.assertEqualMessage(head.size(), DirectSend.HEADER_BYTES, "page 0 is the header alone");
+    var hex = hexOf(head) + hexOf(DirectSend.wristPage(1));
+    var want = "434a5231" + "02" + "01" + "0209" + "14eeb268" + "c800" + "00" + "00"
+        + "7800" + "0000"
+        + "ff" + "15eeb268" + "9001" + "0500"
+        + "fe" + "6400" + "81" + "7a" + "fe" + "9001" + "7c";
+    logger.debug(hex);
+    Test.assertEqualMessage(hex, want, "the bytes are the reference's");
+
+    DirectSend.utcOffsetOverride = null;
+    DirectSend.discard();
+    return true;
+}
+
+// The look-back: a window opens one second BEFORE the flag, because the phone's 51-tap
+// band-pass needs a second to warm on or the first strokes of every window are attenuated.
+(:test :dev)
+function directWristWindowOpensWithASecondOfLookBack(logger as Test.Logger) as Boolean {
+    AppSettings.phonePush = true;
+    AppSettings.pumpDetection = true;
+    DirectSend.discard();
+    DirectSend.reachableOverride = false;
+    DirectSend.begin(1756556820, 200);
+    DirectSend.recordFix(45.871d, 10.863d, 1756556820, 0, 66, 98, DirectSend.devPack(0, 0, 0, 0));
+    DirectSend.wristAnchor(1756556820, 0);
+    // Forty flying seconds' worth of samples with the flag DOWN: only the last
+    // WRIST_LEAD of them may survive, and none of the rest.
+    DirectSend.wristFlag(false);
+    var t = 0;
+    for (var i = 0; i < 100; i++) {
+        DirectSend.wrist(1.00, t);
+        t += DirectSend.WRIST_STEP_MS;
+    }
+    Test.assertEqualMessage(DirectSend.wristPageCount(), 1, "nothing but the header yet");
+    t = wristRun(1.20, t, 10);
+    DirectSend.finish();
+    Test.assertEqual(DirectSend.wristPageCount(), 2);
+    var page = DirectSend.wristPage(1);
+    // window header, then WRIST_LEAD look-back samples plus the ten flagged ones
+    var n = page[7] + page[8] * 256;
+    Test.assertEqualMessage(n, DirectSend.WRIST_LEAD + 10,
+        "look-back plus the flagged run, not " + n);
+    Test.assertEqual(page[0], DirectSend.WINDOW_TAG);
+    DirectSend.discard();
+    logger.debug(n + " samples in the window");
+    return true;
+}
+
+// The budget is a ceiling the stream can never cross. When it bites, half of what is held
+// goes and half of what arrives goes with it, so a long session is thinner rather than
+// shorter — and every page still opens with a window header.
+(:test :dev)
+function directWristHoldsItsBudget(logger as Test.Logger) as Boolean {
+    AppSettings.phonePush = true;
+    AppSettings.pumpDetection = true;
+    DirectSend.discard();
+    DirectSend.reachableOverride = false;
+    DirectSend.begin(1756556820, 200);
+    DirectSend.recordFix(45.871d, 10.863d, 1756556820, 0, 66, 98, DirectSend.devPack(0, 0, 0, 0));
+    DirectSend.wristAnchor(1756556820, 0);
+    var budget = DirectSend.wristBudget();
+    Test.assertMessage(budget == DirectSend.WRIST_BUDGET_BIG
+        || budget == DirectSend.WRIST_BUDGET_SMALL, "one of the two budgets");
+    // Two hours of covered riding at 25 Hz — five times the biggest budget.
+    var t = 0;
+    var mag = 1.0;
+    for (var w = 0; w < 720; w++) {
+        t = wristRun(mag, t, DirectSend.WINDOW_MAX_SAMPLES);
+        t += 400;                                  // a gap: the next window is a new one
+        mag = mag == 1.0 ? 1.5 : 1.0;
+    }
+    DirectSend.finish();
+    var bytes = 0;
+    for (var i = 1; i < DirectSend.wristPageCount(); i++) {
+        var p = DirectSend.wristPage(i);
+        bytes += p.size();
+        Test.assertMessage(p.size() <= DirectSend.PAGE_BYTES, "a page is never over 8 000");
+        Test.assertEqualMessage(p[0], DirectSend.WINDOW_TAG, "every page opens with a window");
+    }
+    Test.assertMessage(bytes <= budget, bytes + " B held, budget " + budget);
+    Test.assertMessage(DirectSend.wristThin() > 1, "the budget bit and the stream thinned");
+    var st = System.getSystemStats();
+    logger.debug(DirectSend.wristPageCount() + " pages, " + bytes + " B of " + budget
+        + ", thin 1 in " + DirectSend.wristThin()
+        + " | used " + st.usedMemory + " free " + st.freeMemory + " of " + st.totalMemory);
+    DirectSend.discard();
+    return true;
+}
+
+// The wrist stream rides AFTER the record stream, over the same pages — Jan's call, 19
+// September 2026: "Send it later, not first." The buzz and "phone ok" wait for the last
+// stream, because one short tick means the rider can walk away.
+(:test :dev)
+function directWristRidesAfterTheRecordStream(logger as Test.Logger) as Boolean {
+    var saved = PhoneLink.radio;
+    var fake = new DirectFakeRadio();
+    PhoneLink.radio = fake;
+    AppSettings.phonePush = true;
+    AppSettings.pumpDetection = true;
+    DirectSend.discard();
+    DirectSend.reachableOverride = true;
+    DirectSend.begin(1756556820, 200);
+    var t = 1756556820;
+    for (var i = 0; i < 700; i++) {
+        DirectSend.recordFix(45.871d, 10.863d, t, 500, 66, 100, DirectSend.devPack(2, 0, 0, i % 255));
+        t += 1;
+    }
+    DirectSend.wristAnchor(1756556820, 0);
+    wristRun(1.1, 0, DirectSend.WINDOW_MAX_SAMPLES);
+    DirectSend.finish();
+
+    var n = DirectSend.pageCount();
+    Test.assertMessage(n >= 1, "record pages");
+    Test.assertMessage(DirectSend.wristPageCount() >= 2, "a header page and a window page");
+    Test.assertEqualMessage(DirectSend.statusLine(), "phone " + 0 + "/" + n,
+        "the record stream is what is crossing");
+    for (var p = 0; p < n; p++) {
+        DirectSend.applyMessage({"cjrAck" => p, "cjrSid" => 1756556820, "cjrSt" => 0});
+    }
+    // The record stream is whole: nothing has been said about the wrist stream yet.
+    var sentBefore = fake.sent.size();
+    Test.assertMessage(DirectSend.applyMessage(
+        {"cjrNeed" => "", "cjrSid" => 1756556820, "cjrSt" => 0}), "record stream whole");
+    Test.assertEqual(DirectSend.pageCount(), 0);
+    Test.assertMessage(fake.sent.size() > sentBefore, "the wrist stream left at once");
+    var msg = fake.lastPayload as Dictionary;
+    Test.assertEqualMessage(msg[DirectSend.KEY_STREAM], 1, "st = 1");
+    Test.assertEqual(msg[DirectSend.KEY_PAGE], 0);
+    var wn = DirectSend.wristPageCount();
+    Test.assertEqualMessage(DirectSend.statusLine(), "wrist 0/" + wn, "the wrist line");
+
+    for (var p = 0; p < wn; p++) {
+        DirectSend.applyMessage({"cjrAck" => p, "cjrSid" => 1756556820, "cjrSt" => 1});
+    }
+    var lastMsg = fake.lastPayload as Dictionary;
+    Test.assertEqualMessage(lastMsg[DirectSend.KEY_END], 1, "the last wrist page says so");
+    Test.assertEqual(lastMsg[DirectSend.KEY_COUNT], wn);
+    Test.assertMessage(DirectSend.applyMessage(
+        {"cjrNeed" => "", "cjrSid" => 1756556820, "cjrSt" => 1}), "wrist stream whole");
+    Test.assertEqual(DirectSend.wristPageCount(), 0);
+    Test.assertEqualMessage(DirectSend.statusLine(), "phone ok", "and only now");
+    logger.debug(n + " record pages, " + wn + " wrist pages");
+
+    DirectSend.reachableOverride = null;
+    PhoneLink.radio = saved;
+    DirectSend.discard();
+    return true;
+}
+
+// The fenix 5 Plus family's page: four payload bytes per 32-bit Number, little-endian
+// within the word, with `f` and `bl` on the message saying so. The stream header's own
+// `flags` byte cannot carry this — it is INSIDE the payload that has to be unpacked first.
+(:test :dev)
+function directPagesPackFourBytesPerNumber(logger as Test.Logger) as Boolean {
+    var saved = PhoneLink.radio;
+    var fake = new DirectFakeRadio();
+    PhoneLink.radio = fake;
+    AppSettings.phonePush = true;
+    DirectSend.discard();
+    DirectSend.reachableOverride = true;
+    DirectSend.packedOverride = true;
+    DirectSend.begin(1756556820, 200);
+    for (var i = 0; i < 700; i++) {
+        DirectSend.recordFix(45.871d + i * 0.00001d, 10.863d, 1756556820 + i, 500, 66, 100,
+            DirectSend.devPack(2, 0, 0, i % 255));
+    }
+    DirectSend.finish();
+    var msg = fake.lastPayload as Dictionary;
+    var page = DirectSend.page(0);
+    Test.assertEqualMessage(msg[DirectSend.KEY_FLAGS], DirectSend.FLAG_PACKED, "f says packed");
+    Test.assertEqualMessage(msg[DirectSend.KEY_LEN], page.size(), "bl is the true length");
+    var words = msg[DirectSend.KEY_BYTES] as Array;
+    Test.assertEqualMessage(words.size(), (page.size() + 3) / 4, "four bytes to a Number");
+    // Unpacked, word by word, it is the page — every byte of it.
+    for (var i = 0; i < page.size(); i++) {
+        var w = words[i / 4] as Number;
+        var b = (w >> (8 * (i % 4))) & 0xFF;
+        Test.assertEqualMessage(b, page[i], "byte " + i);
+    }
+    // And the same watch on API 6 sends the ByteArray with neither key.
+    DirectSend.packedOverride = false;
+    DirectSend.discard();
+    DirectSend.begin(1756556820, 200);
+    DirectSend.recordFix(45.871d, 10.863d, 1756556820, 500, 66, 100, DirectSend.devPack(2, 0, 0, 0));
+    DirectSend.finish();
+    var plain = fake.lastPayload as Dictionary;
+    Test.assertMessage(plain[DirectSend.KEY_FLAGS] == null, "no f on a ByteArray page");
+    Test.assertMessage(plain[DirectSend.KEY_BYTES] instanceof Lang.ByteArray, "a ByteArray");
+    logger.debug(page.size() + " B in " + words.size() + " Numbers");
+
+    DirectSend.packedOverride = null;
+    DirectSend.reachableOverride = null;
+    PhoneLink.radio = saved;
+    DirectSend.discard();
+    return true;
+}
+
 // ============================================================================
 // THE WATCH'S CRASH HUNT (docs/testing.md, "The watch's crash hunt")
 //

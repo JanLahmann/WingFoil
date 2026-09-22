@@ -156,6 +156,15 @@ class SessionController {
             // (docs/transfer-format.md). A stub outside the dev build.
             DirectSend.record(info, engine.speedMps, engine.hr, engine.detector.state,
                 engine.pump.cadence, marker, engine.tickCount() % 255);
+            // And the wrist stream's flag (ADR-031): the three states the phone's pump
+            // chain has anything to find in — off the foil, where a takeoff is being
+            // pumped; inside a turn window, where the pump rung of the touchdown ladder
+            // asks; and within ten seconds of a stroke the watch's own detector picked,
+            // which is what `cadence > 0` means. Everything else is left off the wire.
+            // A stub outside the dev build, like the record above it.
+            DirectSend.wristFlag(engine.detector.state != FlightDetector.STATE_ON
+                || engine.turns.state != TurnDetector.ST_IDLE
+                || engine.pump.cadence > 0);
             _intervalAlerts();
         } else {
             // pre-session and paused: keep quality/speed live so the start screen shows

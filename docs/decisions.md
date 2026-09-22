@@ -14,6 +14,73 @@ apart is a history, not a contract. There are four:
 An Accepted entry may carry a clause saying what a later ADR narrowed or what has moved since.
 That is the point of the line: it says which half of an old paragraph is still load-bearing.
 
+## ADR-031 · The wrist stream is **windowed 25 Hz**, not decimated and not summarised
+**Status: Proposed** (dev channel; docs/channels.md, all four rules unmet).
+
+ADR-027 built the direct transfer and left the wrist magnitudes for later, because the
+recording alone is 97 KB and the accelerometer is two orders more. Jan's call of 19 September
+2026 was *"send it later, not first"* — so the question is not whether the wrist stream
+rides, it is **what of it rides**, and the constraint is memory rather than radio time.
+
+**The arithmetic.** Two hours at 25 Hz is 180 000 samples; a byte each after delta coding is
+**about 180 KB**, held in RAM for the whole session because a Connect IQ app cannot read back
+what it recorded (ADR-027) and `Application.Storage` is ~100 KB for the whole app. The two
+binding watches are the **fr255** (507.7 kB total, ~119 kB of it already the app) and the
+**fenix 5 Plus family** (1275.4 kB, ~155 kB), and the record stream is already holding up to
+97 KB of its own until the phone says it is whole. 180 KB fits nowhere.
+
+Three bounded forms were weighed.
+
+| | form | 2 h | what it serves |
+|---|---|---|---|
+| **a** | decimated magnitude, 5 Hz | 36 KB | **nothing.** `pumpResampleHz` is 25 and the band ends at **2.5 Hz**, which is exactly 5 Hz's Nyquist. The lab's own 51-tap band-pass cannot run on it, so this is not the pump channel at a lower rate — it is a different algorithm, and three implementations of one engine would become four |
+| **b** | per-second features (mean, max, min) | 21 KB | **no reader.** Nothing in `pump.py`, `takeoff.py` or the kit consumes a per-second envelope. A channel whose only reader is its own test is a number on a wire (pattern L) |
+| **c** | **25 Hz inside flagged windows** | budgeted | the lab's chain, **unchanged**. It is the only form that is the same channel the FIT carries, so `PumpAnalyzer` reads it with no new code |
+
+Decision: **(c), with a hard byte budget and no envelope beside it.** The watch flags a window
+when the rider is off the foil, a turn window is open, or its own detector picked a stroke in
+the last ten seconds — the three states the phone's pump chain has anything to find in — and
+writes those stretches at 25 Hz in centi-g, 8-bit deltas where they hold (docs/transfer-format.md
+§2b). Cost is about **26 B per covered second**. The budget is **60 000 B**, or 24 000 B under
+a 700 KB heap: 38 minutes of covered riding, eight pages, roughly **16 s on the link**. When it
+fills, half of what is held is dropped and half of what arrives is skipped, so a long session
+is **thinner rather than shorter** — coverage in stripes across the whole afternoon rather than
+its first twenty minutes.
+
+Three things make it honest.
+
+* **An uncovered second is a sensor gap, which is a state the engine already has.** The pump
+  grid holds empty bins at the mean, marks them `valid = false` and picks no stroke there —
+  exactly what a `SensorLogging` hole already is (ADR-030, docs/algorithms.md). So no new
+  capability, no new channel and no new letter.
+* **Every window carries a second of lead-in and a second of tail** beyond the flagged span.
+  That is the 51-tap band-pass's group delay; without it the strokes at a window's edge are
+  the ones the phone would miss, and the padding costs 10 %.
+* **The class does not move and was never going to.** `sourceClass` is `a` on developer
+  fields, `b` on speed, `c` otherwise — `hasAccel` is not one of its inputs, so a direct
+  session was already class (a). What the wrist stream buys is the **analysis**: the phone
+  runs the lab's chain over real magnitudes instead of reading the watch's live approximation
+  off the `pump_cadence` column (ADR-005), and `pumpsToTakeoff`, the failed-attempt count, the
+  pump rung of the touchdown ladder and the pump-versus-cruise HR split stop reading nil.
+
+**What it does not serve, stated rather than hoped for.** *Jumps.* docs/algorithms.md is
+explicit that the height estimator needs **100 Hz** — at 25 Hz it costs 3–6 % of bias at low
+support and collapses above it (s = 0.7: 0–6 % detection). The watch's own listener runs the
+25 Hz pump grid and the FIT's 100 Hz stream is `SensorLogging`'s, which the app cannot read
+back, so **no wrist stream over this link will ever feed jump heights**. A 100 Hz ring frozen
+around flagged jump candidates is the shape that could, and it is a separate decision. *The
+wet test* is not a consumer either, and a note in this file's own backlog said it was: it
+reads the **barometer** (ADR-029), and the accelerometer feeds none of the outcome ladder's
+three rungs on the watch.
+
+**The residual risk, named.** The windows are chosen by the watch, so pumping the watch's live
+detector failed to see *while flying and outside a turn* never reaches the phone, and the
+phone cannot know it is missing. The cheap fix is (b) after all — a two-byte per-second
+peak-to-peak envelope, 14 KB for two hours, as **coverage evidence** rather than as a pump
+channel: a second whose peak-to-peak is under `pumpStrokeAmp` cannot contain a stroke. It is
+not built, because a channel is added when something reads it. If a field session shows the
+windows missing strokes, that is the thing to add and this paragraph is the design.
+
 ## ADR-030 · A cadence is not a hole
 **Status: Accepted.**
 

@@ -101,11 +101,45 @@ public struct SessionArchive: Sendable {
         return data
     }
 
+    // MARK: - The wrist sidecar
+
+    /// **Where a direct transfer's second stream lives.** `storeOriginal` keeps exactly one
+    /// `original.<ext>` per session, so the wrist stream cannot be an original of its own;
+    /// and it is not a recording either — it is a channel of the recording beside it, which
+    /// arrives minutes later over the same radio (docs/transfer-format.md §6). So it is a
+    /// sidecar, named for the stream rather than for a format, and `rawTrack` attaches it
+    /// whenever the original it sits beside is a `.cjr`.
+    ///
+    /// The consequence that matters: `SessionIngestor.reanalyze` re-parses through
+    /// `rawTrack`, so the session's pump and takeoff analysis picks the wrist stream up the
+    /// moment it lands, with no second ingest path and no new source letter.
+    public func wristURL(for id: String) -> URL {
+        directory(for: id).appendingPathComponent("wrist.cjr")
+    }
+
+    public func storeWrist(_ data: Data, id: String) throws {
+        let dir = directory(for: id)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try data.write(to: wristURL(for: id), options: .atomic)
+    }
+
+    public func wristData(for id: String) -> Data? {
+        try? Data(contentsOf: wristURL(for: id))
+    }
+
     /// Re-parses the archived recording — FIT or GPX, decided by its bytes. Samples
     /// (lat/lon/speed) are deliberately not stored in the DB: the map and the chart
     /// re-parse on demand (plan §3.3).
+    ///
+    /// A direct stream with a wrist sidecar beside it is parsed with it, in one call, so
+    /// every reader of `rawTrack` — the analysis, the map, the workbench — sees the same
+    /// track whether the second stream has landed yet or not.
     public func rawTrack(for id: String) throws -> RawTrack {
-        try TrackParser.parse(data: try originalData(for: id))
+        let data = try originalData(for: id)
+        if DirectStream.isStream(data), let wrist = wristData(for: id) {
+            return try DirectStreamParser.parse(data: data, wrist: wrist)
+        }
+        return try TrackParser.parse(data: data)
     }
 
     public func writeAnalysis(_ analysis: SessionAnalysis, id: String) throws {

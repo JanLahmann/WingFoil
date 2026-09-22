@@ -7,3 +7,8 @@
   watch's `WingfoilTests`, and the document itself — so a decoder in any language can be
   pointed at a file instead of at a hex string. Regenerate it with
   `python3 lab/tools/cjr_ref.py` if the format ever moves.
+- `example-wrist.cjr` — the 38 bytes of §2b.4, the same thing for **stream 1** (`wrist.v1`,
+  0.9.18-dev1): the 20-byte header as page 0 on its own, then one window of five 25 Hz
+  samples — a resting wrist, two small steps, a landing spike the 8-bit delta cannot say, and
+  a step back down. Also not a recording. The second line
+  `python3 lab/tools/cjr_ref.py` prints.

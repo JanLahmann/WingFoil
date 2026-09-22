@@ -300,6 +300,12 @@ class PumpDetector {
     // ---- the per-sample chain (O(1), no allocation) ----
 
     hidden function _pushGrid(magG as Float, tMs as Number) as Void {
+        // The one place every 25 Hz grid magnitude passes, so it is the one place the wrist
+        // stream can be fed from (docs/transfer-format.md §2b): the phone is handed exactly
+        // the numbers this detector filtered, decimated the same way, sniffed for milli-g
+        // the same way, and not a second reading of the sensor. `DirectSend.wrist` is a
+        // `(:notdev)` no-op in the beta and the release, so this costs them one empty call.
+        DirectSend.wrist(magG, tMs);
         if (!_haveLevel) {
             _haveLevel = true;
             _level = magG;
