@@ -7,11 +7,12 @@ import Testing
 /// were standard, and which session the complaint is about.
 @Suite struct FeedbackReportTests {
 
-    private func facts(dev: Bool = false, tuned: Int = 0,
+    private func facts(dev: Bool = false, channel: HelpChannel? = nil, tuned: Int = 0,
                        watch: FeedbackFacts.Watch? = nil,
                        session: FeedbackFacts.Session? = nil) -> FeedbackFacts {
         FeedbackFacts(
-            app: .init(version: "1.0", build: "17", isDev: dev,
+            app: .init(version: "1.0", build: "17",
+                       channel: channel ?? (dev ? .dev : .release),
                        engineVersion: "0.20.0", tunedThresholds: tuned),
             phone: .init(model: "iPhone18,2", system: "iOS 26.0", locale: "en_DE"),
             watch: watch ?? .init(garminModel: "fenix 8", garminAppVersion: "2.2",
@@ -114,12 +115,34 @@ import Testing
         #expect(lines[7] == "30 August 2026")
     }
 
-    @Test func theAppSectionNamesTheVariantAndTheEngine() {
+    /// **One word per channel** (22 September 2026). The line read "public build" on the
+    /// App Store app and on the public beta alike, so a reader answering a report could not
+    /// tell a tester's phone from a buyer's — and nearly every report comes from the beta
+    /// (docs/review-checklist.md, pattern L).
+    @Test func theAppSectionNamesTheChannelAndTheEngine() {
         let body = FeedbackReport.body(facts())
-        #expect(body.contains("  CleanJibe 1.0 (17) · public build"))
+        #expect(body.contains("  CleanJibe 1.0 (17) · release build"))
         #expect(body.contains("  Analysis engine 0.20.0"))
-        #expect(FeedbackReport.body(facts(dev: true))
+        #expect(!body.contains("public build"))
+        #expect(FeedbackReport.body(facts(channel: .beta))
+            .contains("  CleanJibe 1.0 (17) · beta build"))
+        #expect(FeedbackReport.body(facts(channel: .dev))
             .contains("  CleanJibe 1.0 (17) · dev build, TUNING on"))
+    }
+
+    /// Three channels, three words, and only the dev one is the `TUNING` variant — the
+    /// subject's "dev" suffix and the body's line have to agree about that.
+    @Test func everyChannelHasItsOwnWordAndOnlyDevIsTuning() {
+        let words: [HelpChannel: String] = [.release: "release build", .beta: "beta build",
+                                            .dev: "dev build, TUNING on"]
+        for channel in HelpChannel.allCases {
+            let these = facts(channel: channel)
+            #expect(FeedbackReport.body(these).contains("  CleanJibe 1.0 (17) · "
+                                                        + words[channel]!))
+            #expect(these.app.isDev == (channel == .dev))
+            #expect(FeedbackReport.subject(these).contains("build 17 dev")
+                    == (channel == .dev))
+        }
     }
 
     /// Absent when nothing is tuned, present the moment something is: an absent line reads

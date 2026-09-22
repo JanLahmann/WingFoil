@@ -4551,7 +4551,7 @@ diagnostics makes the reporter scroll past them to write his report. Prefilled, 
 
 | section | what it carries |
 |---|---|
-| App | marketing version and build, dev (TUNING) or public, `AnalysisEngine.version`, and the count of tuned thresholds — that last line only when there are some, and only on the dev build, which is the only one that applies them |
+| App | marketing version and build, **the channel in one word** — `release build`, `beta build` or `dev build, TUNING on` — `AnalysisEngine.version`, and the count of tuned thresholds. That last line only when there are some, and only on the dev build, which is the only one that applies them. The channel line said *public build* on the App Store app and on the public beta alike until 22 September 2026, so a reader answering a report could not tell a tester's phone from a buyer's, and nearly every report comes from the beta (pattern L: one taxonomy per concept). It is `AppChannel.channel`, the one `#if` the app keeps for the purpose, handed to the kit as `FeedbackFacts.App.channel` |
 | Phone | the model identifier (`iPhone18,2`) with its marketing name in front of it where the table knows one, the iOS version, the locale |
 | Watch | the paired Garmin's name from the companion link, the CleanJibe watch app's version decoded from the last BLE card's build tag (`APP_MINOR * 256 + FIT schema`), whether an Apple Watch is paired (`WCSession`, omitted when it cannot be asked), Health auto-import on or off |
 | Library | how many sessions, and the count per door they came in by — a session merged from two sources is counted under both, which is the answer a duplicate report needs |

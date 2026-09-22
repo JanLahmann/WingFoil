@@ -51,8 +51,8 @@
   },
   {
     "path": "ios/WingFoilKit/Sources/WingFoilKit/Presentation",
-    "text": "· dev build, TUNING on · public build",
-    "why": "FeedbackReport's first line: the app name, its marketing version and its build number in brackets, the way every crash report and every App Store Connect row spells it. FeedbackReportTests pins the line character for character so a diagnostic mail can be read the same way twice. It is a stamp, not a sentence."
+    "text": "… … (…) · …",
+    "why": "FeedbackReport's first line: the app name, its marketing version, its build number in brackets and the channel that wrote the mail — the way every crash report and every App Store Connect row spells it. FeedbackReportTests pins the line character for character so a diagnostic mail can be read the same way twice. It is a stamp, not a sentence."
   },
   {
     "path": "web/index.html",
