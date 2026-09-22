@@ -130,6 +130,8 @@ public enum TurnWorkbench {
         take(echo.entrySpeedWindow, "entrySpeedWindow", into: \.entrySpeedWindowS)
         take(echo.minSpeedLag, "minSpeedLag", into: \.minSpeedLagS)
         take(echo.turnRecoverHold, "turnRecoverHold", into: \.recoverHoldS)
+        take(echo.turnOutcomeLookaheadNotRecovered, "turnOutcomeLookaheadNotRecovered",
+             into: \.outcomeLookaheadNotRecoveredS)
         return (turn, assumed)
     }
 

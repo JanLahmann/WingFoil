@@ -16,6 +16,11 @@ public struct FlightEndConfig: Sendable, Equatable {
     public var recoverPct: Double = 70.0
     public var recoverHoldS: Double = 2.0
     public var outcomeLookaheadS: Double = 12.0
+    /// turnOutcomeLookaheadNotRecovered (engine 0.24.0, ADR-032): the same not-recovered
+    /// tail the turns use, read through the same `Evidence.outcomeTail`, so one rule decides
+    /// how long a rider who never gets going again is followed for whichever channel is
+    /// watching him.
+    public var outcomeLookaheadNotRecoveredS: Double = 30.0
     public var outcomeWindowS: Double = 60.0
 
     public init() {}
@@ -179,10 +184,11 @@ public enum FlightEndClassifier {
         if lo + 1 >= ev.count || ev.gap[lo + 1] {
             return FlightEnd(flightIndex: index, t: endT, outcome: .unknown, truncated: true)
         }
-        let hi = Evidence.recoveryEnd(t: t, gap: ev.gap, doppler: ev.doppler, lo: lo,
-                                      capT: endT + config.outcomeLookaheadS, afterT: endT,
-                                      thrMps: recoverThreshold(ev, endT: endT, config: config),
-                                      holdS: config.recoverHoldS)
+        let (hi, _) = Evidence.outcomeTail(
+            t: t, gap: ev.gap, doppler: ev.doppler, lo: lo, fromT: endT, afterT: endT,
+            thrMps: recoverThreshold(ev, endT: endT, config: config),
+            holdS: config.recoverHoldS, lookaheadS: config.outcomeLookaheadS,
+            notRecoveredS: config.outcomeLookaheadNotRecoveredS)
         var end = FlightEnd(flightIndex: index, t: endT, outcome: .glideOut,
                             windowS: max(t[hi] - endT, 0))
         // [first sample at or after endT, last sample at or before t[hi]] — the evidence

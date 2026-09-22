@@ -1057,8 +1057,8 @@ import Testing
         let counts = Dictionary(grouping: events, by: \.kind).mapValues(\.count)
 
         #expect(counts[.flewThrough] == 42)
-        #expect(counts[.touchdown] == 8)
-        #expect(counts[.fellIn] == 7)
+        #expect(counts[.touchdown] == 4)
+        #expect(counts[.fellIn] == 11)
         #expect(counts[.splash] == 18)
         // 76 turns in the session, 57 of them counted: the nineteen course changes are not
         // verdicts and are not marked.
