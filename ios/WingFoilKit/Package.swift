@@ -8,9 +8,17 @@ let package = Package(
         .library(name: "WingFoilKit", targets: ["WingFoilKit"])
     ],
     dependencies: [
-        // Vendored (ios/vendor/FitFileParser/VENDORED.md): the upstream generated map traps
-        // on a value that does not fit its narrower type; ours truncates.
-        .package(path: "../vendor/FitFileParser"),
+        // **Pinned to a commit, not to a tag** (22 September 2026). The generated map used
+        // to narrow a `FIT_UINT32` into the field's own type with the *trapping*
+        // initializer, so a structurally valid FIT carrying a wider value killed the
+        // process inside `FitFile.init` before a line of ours ran — found by the mutation
+        // fuzz (docs/testing.md). We carried a vendored copy of 1.5.2 with that one word
+        // changed; the fix is upstream now (roznet/FitFileParser#15, merged 21 September
+        // 2026) and the copy is gone. The newest release, 1.5.2, predates it by three
+        // years, so there is no tag to ask for: the merge commit is the pin, and it moves
+        // to `.exact("…")` the day upstream cuts a release.
+        .package(url: "https://github.com/roznet/FitFileParser",
+                 revision: "6f50aa12b3fcb226c601b1160374f4c5f7930835"),
         .package(url: "https://github.com/groue/GRDB.swift", from: "7.0.0"),
         .package(url: "https://github.com/weichsel/ZIPFoundation", from: "0.9.19"),
     ],
