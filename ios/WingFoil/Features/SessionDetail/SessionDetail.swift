@@ -404,6 +404,20 @@ struct SessionDetail: Sendable {
         var tick: Int
     }
 
+    /// **The drawn flight ends**, by their index in `analysis.flightEnds` — the hollow
+    /// rings no turn explains, which are also the rows of the Log tab's flight-end list and
+    /// the pages its detail sheet swipes between.
+    ///
+    /// The document's `flightEnds.marks`, in the analysis's own order. It was
+    /// `FlightEndAnalytics.drawnIndices` read three times on one page — the map's marks, the
+    /// list and the sheet — each of them re-deciding which ends are drawn.
+    var drawnFlightEndIndices: [Int] {
+        (document["flightEnds"]?["marks"]?.arrayValue ?? []).compactMap { mark in
+            if case .int(let index)? = mark["index"] { return index }
+            return nil
+        }
+    }
+
     /// **The key-metrics block**, read off the document and formatted in the rider's unit.
     ///
     /// Computed on access rather than stored: the document is unit-free and these strings

@@ -59,7 +59,7 @@ private struct FlightEndsCard: View {
 
     @State private var opened: FlightEndDetailRequest?
 
-    private var indices: [Int] { FlightEndAnalytics.drawnIndices(detail.analysis) }
+    private var indices: [Int] { detail.drawnFlightEndIndices }
 
     var body: some View {
         if !indices.isEmpty {

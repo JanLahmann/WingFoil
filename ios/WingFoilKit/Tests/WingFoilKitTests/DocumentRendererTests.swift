@@ -261,6 +261,11 @@ import Testing
                 return nil
             }
             #expect(Set(indices).count == drawn.count, "\(stem): a flight end drawn twice")
+            // …and the same indices, in the same order, that `FlightEndAnalytics` handed
+            // the Log tab's list and its detail sheet before they read the document. Three
+            // readers of one rule became one list.
+            #expect(indices == FlightEndAnalytics.drawnIndices(try Self.analysis(stem)),
+                    "\(stem): the flight-end list is not the drawn ends, in order")
         }
     }
 
