@@ -347,12 +347,46 @@ public struct LibraryStore: Sendable {
 
     // MARK: - Trends
 
-    public func trend(_ filter: LibraryFilter = LibraryFilter()) async throws -> [TrendPoint] {
+    /// The per-session series the Trends charts draw, oldest first.
+    ///
+    /// **The best-2 s line is a speed claim, so the rider's policy decides it here too**
+    /// (Settings → Speed records, 22 September 2026). It is the one series on the page an
+    /// unverified recording can inflate, and the analyzer already answers it that way
+    /// (`library._points(certify=True)`); a phone that drew the point anyway would be the
+    /// second answer pattern L exists to prevent.
+    public func trend(_ filter: LibraryFilter = LibraryFilter(),
+                      policy: SpeedRecordPolicy = .preferVerified) async throws -> [TrendPoint] {
         try await database.writer.read { db in
             let splits = try Self.turnSideSplits(filter, db: db)
-            return try Self.sessions(filter, db: db).map {
+            let points = try Self.sessions(filter, db: db).map {
                 TrendPoint($0, turnSides: splits[$0.id] ?? TurnSideSplit())
             }
+            return Self.best2sUnderPolicy(points, policy: policy)
+        }
+    }
+
+    /// `SpeedRecordRule.eligible` over the best-2 s series, applied the way the analyzer
+    /// applies it in `library._points`.
+    ///
+    /// One call for the one record kind this line draws, over the sessions that actually
+    /// hold a best 2 s — a session with no speed at all is not a candidate to be preferred
+    /// over. **A point the rule drops keeps its column and loses its value**: the chart is
+    /// categorical, so removing the session would renumber every point after it, and a gap
+    /// already means "this afternoon cannot report that" everywhere else on the page.
+    ///
+    /// `certified` is untouched on every point, dropped or kept. It says what the recording
+    /// was, not whether the policy let it stand, and the head's badge is read off the points
+    /// that still carry a value.
+    static func best2sUnderPolicy(_ points: [TrendPoint],
+                                  policy: SpeedRecordPolicy) -> [TrendPoint] {
+        let candidates = points.filter { $0.best2sKn != nil }
+        let kept = Set(SpeedRecordRule.eligible(candidates, policy: policy, verified: \.certified)
+                           .map(\.sessionId))
+        return points.map { point in
+            guard point.best2sKn != nil, !kept.contains(point.sessionId) else { return point }
+            var dropped = point
+            dropped.best2sKn = nil
+            return dropped
         }
     }
 
