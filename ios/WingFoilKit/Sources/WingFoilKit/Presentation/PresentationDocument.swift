@@ -633,12 +633,16 @@ public enum PresentationDocument {
 
     /// The watch-vs-phone banner. The watch summary is not part of the analysis, so a
     /// document built from one alone carries the empty, honest answer rather than nothing.
+    ///
+    /// **The numbers are in it since round 2** (ADR-033). `Divergence` held pre-formatted
+    /// strings in round 1, which is a rule-2 violation the document could not carry at all;
+    /// each line is `{metricId, labelId, watch, phone, unitKind}` now and `DivergenceText`
+    /// is the renderer. A golden's document still spells `{"available": false, "lines": []}`
+    /// — an analysis alone never pairs a watch summary — so no golden moved for this.
     static func divergenceSection(_ lines: [Divergence]) -> PresentationValue {
         .object([
             "available": .bool(!lines.isEmpty),
-            "lines": .array(lines.map {
-                .object(["metricId": .string($0.metric)])
-            }),
+            "lines": .array(lines.map(\.documentLine)),
         ])
     }
 

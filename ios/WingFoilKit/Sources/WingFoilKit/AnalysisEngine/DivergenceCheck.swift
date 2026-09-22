@@ -1,16 +1,55 @@
 import Foundation
 
-/// One watch-vs-phone disagreement, ready to render in the banner.
+/// One watch-vs-phone disagreement — **as facts, not as sentences**.
+///
+/// It held four pre-formatted strings until round 2 of ADR-033, which is what kept the
+/// divergence lines out of the presentation document: a formatted number in the document
+/// breaks rule 2, and the banner's own sentence broke rule 1. Both halves are ids and raw
+/// values now, and `DivergenceText` is the renderer — which is also what makes the
+/// dismissal fingerprint independent of the unit the rider happens to be reading in.
+///
+/// `unitKind` is the document's, and there are only three here: `durationS` (foil time),
+/// `speedKn` (the six records) and `count` (the five tallies).
 public struct Divergence: Sendable, Equatable, Identifiable {
-    public var id: String { metric }
-    /// Rider-facing metric name, e.g. "Foil time" or "Best 2 s".
-    public var metric: String
-    /// What the watch wrote into the session dev fields.
-    public var watch: String
+    public var id: String { metricId }
+    /// The metric's stable id — `foilTime`, `best2s`, `takeoffAttempts`.
+    public var metricId: String
+    /// Where its name is written: `presentation.divergence.<id>` for the six with no other
+    /// home, `tokens.recordWindow.<id>` for the six that are speed records, so there is one
+    /// spelling of `Best 2 s` in the product.
+    public var labelId: String
+    /// What the watch wrote into the session dev fields, in the metric's own unit.
+    public var watchValue: Double
     /// What the phone recomputed from the same FIT.
-    public var phone: String
-    /// Signed difference, formatted with its unit.
-    public var delta: String
+    public var phoneValue: Double
+    /// `durationS` · `speedKn` · `count`.
+    public var unitKind: String
+
+    public init(metricId: String, labelId: String, watchValue: Double, phoneValue: Double,
+                unitKind: String) {
+        self.metricId = metricId
+        self.labelId = labelId
+        self.watchValue = watchValue
+        self.phoneValue = phoneValue
+        self.unitKind = unitKind
+    }
+
+    /// The line as the presentation document spells it (`docs/presentation/document.md`,
+    /// "`divergence`"). The banner's numbers live here since round 2; round 1 left them
+    /// out because they were strings.
+    public var documentLine: PresentationValue {
+        func value(_ raw: Double) -> PresentationValue {
+            // A count is a whole number in the document, the way every other count is:
+            // `4`, never `4.0` (`docs/presentation/document.md`, "Determinism").
+            unitKind == "count" ? .int(Int(raw.rounded()))
+                                : PresentationDocument.number(raw, unitKind)
+        }
+        return .object(["metricId": .string(metricId),
+                        "labelId": .string(labelId),
+                        "watch": value(watchValue),
+                        "phone": value(phoneValue),
+                        "unitKind": .string(unitKind)])
+    }
 }
 
 /// Watch-vs-phone divergence check (docs/algorithms/divergence.md "Divergence check", source class (a)
@@ -36,55 +75,45 @@ public enum DivergenceCheck {
             let p = phone.summary.foilTimeS
             let pct = abs(p - w) / w * 100
             if pct > foilTimePctThreshold {
-                out.append(Divergence(metric: "Foil time",
-                                      watch: seconds(w), phone: seconds(p),
-                                      delta: String(format: "%+.0f %%", (p - w) / w * 100)))
+                out.append(Divergence(metricId: "foilTime",
+                                      labelId: "presentation.divergence.foilTime",
+                                      watchValue: w, phoneValue: p, unitKind: "durationS"))
             }
         }
 
-        let records: [(String, Double?, Double?)] = [
-            ("Best 2 s", watch.best2sMps, phone.records.best2sKn),
-            ("Best 10 s", watch.best10sMps, phone.records.best10sKn),
-            ("Best 5×10 s", watch.best5x10sMps, phone.records.best5x10sKn),
-            ("Best 500 m", watch.best500mMps, phone.records.best500mKn),
-            ("Best 1 NM", watch.bestNmMps, phone.records.bestNmKn),
-            ("Alpha 500", watch.alpha500LiteMps, phone.records.alpha500Kn),
+        // The six records name themselves out of `RecordKind`, which is the product's one
+        // spelling of a record (`tokens.recordWindow.<id>`).
+        let records: [(RecordKind, Double?, Double?)] = [
+            (.best2s, watch.best2sMps, phone.records.best2sKn),
+            (.best10s, watch.best10sMps, phone.records.best10sKn),
+            (.best5x10s, watch.best5x10sMps, phone.records.best5x10sKn),
+            (.best500m, watch.best500mMps, phone.records.best500mKn),
+            (.bestNm, watch.bestNmMps, phone.records.bestNmKn),
+            (.alpha500, watch.alpha500LiteMps, phone.records.alpha500Kn),
         ]
-        for (name, watchMps, phoneKn) in records {
+        for (kind, watchMps, phoneKn) in records {
             guard let watchMps, let phoneKn, watchMps > 0, phoneKn > 0 else { continue }
             let watchKn = watchMps * Units.mpsToKn
             guard abs(phoneKn - watchKn) > recordKnThreshold else { continue }
-            out.append(Divergence(metric: name,
-                                  watch: knots(watchKn), phone: knots(phoneKn),
-                                  delta: signed(phoneKn - watchKn)))
+            out.append(Divergence(metricId: kind.rawValue,
+                                  labelId: "tokens.recordWindow." + kind.rawValue,
+                                  watchValue: watchKn, phoneValue: phoneKn,
+                                  unitKind: "speedKn"))
         }
 
         let counts: [(String, Int?, Int)] = [
-            ("Flights", watch.flightCount, phone.summary.flightCount),
-            ("Tacks", watch.tackCount, phone.summary.turns.tacks),
-            ("Jibes", watch.jibeCount, phone.summary.turns.jibes),
-            ("Takeoff attempts", watch.takeoffAttempts, phone.summary.takeoff.takeoffAttempts),
-            ("Takeoffs", watch.takeoffSuccesses, phone.summary.takeoff.takeoffSuccesses),
+            ("flights", watch.flightCount, phone.summary.flightCount),
+            ("tacks", watch.tackCount, phone.summary.turns.tacks),
+            ("jibes", watch.jibeCount, phone.summary.turns.jibes),
+            ("takeoffAttempts", watch.takeoffAttempts, phone.summary.takeoff.takeoffAttempts),
+            ("takeoffs", watch.takeoffSuccesses, phone.summary.takeoff.takeoffSuccesses),
         ]
-        for (name, watchCount, phoneCount) in counts {
+        for (id, watchCount, phoneCount) in counts {
             guard let watchCount, abs(phoneCount - watchCount) > countThreshold else { continue }
-            out.append(Divergence(metric: name, watch: "\(watchCount)", phone: "\(phoneCount)",
-                                  delta: String(format: "%+d", phoneCount - watchCount)))
+            out.append(Divergence(metricId: id, labelId: "presentation.divergence." + id,
+                                  watchValue: Double(watchCount),
+                                  phoneValue: Double(phoneCount), unitKind: "count"))
         }
         return out
-    }
-
-    /// A signed difference in the rider's unit, "+0.42 kn" or "-0.31 km/h".
-    private static func signed(_ deltaKn: Double) -> String {
-        String(format: "%+.2f %@", Speed.value(deltaKn), Speed.suffix)
-    }
-
-    /// The banner's speeds go through the platform's one speed formatter, so a rider
-    /// reading km/h is not shown two numbers in a unit he switched off (`Speed`).
-    private static func knots(_ v: Double) -> String { Speed.format(v) }
-
-    private static func seconds(_ v: Double) -> String {
-        let total = Int(v.rounded())
-        return String(format: "%d:%02d", total / 60, total % 60)
     }
 }

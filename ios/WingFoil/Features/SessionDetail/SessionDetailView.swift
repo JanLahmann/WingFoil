@@ -870,7 +870,7 @@ private struct DivergenceBanner: View {
         Button(action: open) {
             HStack(spacing: 8) {
                 Image(systemName: "exclamationmark.triangle.fill")
-                Text("Watch and phone disagree on " + list)
+                Text(DivergenceText.banner(divergences))
                     .font(.footnote.weight(.medium))
                     .multilineTextAlignment(.leading)
                 Spacer()
@@ -910,10 +910,4 @@ private struct DivergenceBanner: View {
         .offset(x: 6, y: 4)
     }
 
-    private var list: String {
-        let names = divergences.map(\.metric)
-        if names.count <= 2 { return names.joined(separator: " and ").lowercased() }
-        return names.prefix(2).joined(separator: ", ").lowercased()
-            + " and " + String(names.count - 2) + " more"
-    }
 }
