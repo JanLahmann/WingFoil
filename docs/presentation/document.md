@@ -16,8 +16,20 @@ stay true is a fact with no owner.
 for byte, for every fixture in the corpus. A surface becomes a *renderer*: it formats, lays
 out and decides nothing else.
 
-ADR-033 holds the decision and the three rounds. **Round 1 — this file — defines and
-produces the document. No renderer reads it yet and no verifier has been retired.**
+ADR-033 holds the decision and the three rounds. Round 1 defined and produced the document
+and switched nothing. **Round 2 — done — moved the iPhone's session surfaces onto it**: the
+key-metrics block and the share card, the records table and the map's effort windows, the
+map's marks and the wrist-under callouts, and the divergence banner, whose numbers the
+document could not carry until `Divergence` stopped holding sentences. The ids it points at
+became kit-owned in the same round. **No verifier has been retired** — `verify_presentation.py`
+still re-derives all 1 653 assertions, and round 3 is the web and the retirement.
+
+Two surfaces are deliberately **not** on it, and the reason is the same for both: the
+library row and the home-screen widgets read the **session index**, which holds no analysis
+and therefore no document. The row also draws whichever three of eleven metrics the rider
+chose, while `row.slots` carries the default three. Their *words* come from the same copy
+the document names (`RowMetric.labelId`); their numbers stay on the index until there is a
+reason to store a document beside a row, and there is not one yet.
 
 ### The three rules
 
@@ -259,7 +271,9 @@ the document must never try to make it:
 
 ### Coverage — every `verify_presentation.py` section, answered
 
-Round 3 retires what this table says is carried. **Nothing is deleted in round 1.**
+Round 3 retires what this table says is carried. **Nothing has been deleted yet** — rounds
+1 and 2 moved the facts and the renderers; the verifier still re-derives every one of them,
+which is what made round 2 safe to make.
 
 | verifier section | the document's answer |
 |---|---|
@@ -277,7 +291,7 @@ Round 3 retires what this table says is carried. **Nothing is deleted in round 1
 | **5c.** the card's optional map background | **renderer-only.** Projection, framing and inset are drawing |
 | **5d.** the period card | **not carried.** A period is *many* sessions; this document is one. `fixtures/periods/periods.expected.json` is its own contract and stays |
 | **5e.** the period outlines share one scale | **renderer-only**, and about a period besides |
-| **6.** why a turn is a touchdown or a fall | **half carried.** `turns.strip[].outcomeReasonId` and `.cleanBlockedById` are in the document; the *sentence* they open (`TurnAnalytics.outcomeText`, with its margin speed and its lexicon swap) is not, and moves to `docs/copy` in round 2 |
+| **6.** why a turn is a touchdown or a fall | **half carried.** `turns.strip[].outcomeReasonId` and `.cleanBlockedById` are in the document; the *sentence* they open (`TurnAnalytics.outcomeText`, with its margin speed and its lexicon swap) is not, and moves to `docs/copy` in round 3 |
 
 ### Where it lives
 
@@ -288,5 +302,8 @@ Round 3 retires what this table says is carried. **Nothing is deleted in round 1
 | kit | `ios/WingFoilKit/Sources/WingFoilKit/Presentation/PresentationDocument.swift` |
 | web | the same lab module, through `web/lab_bundle` |
 | goldens | `fixtures/presentation/*.expected.json`, key `document`, written by `web/tools/make_presentation_goldens.py` |
-| the ids | `docs/copy/presentation.json`, `docs/copy/glossary.json`, `docs/copy/verdicts.json`, `design/tokens.json` |
+| the ids | `docs/copy/presentation.json` (authored by `PresentationCopy`), `docs/copy/glossary.json`, `docs/copy/verdicts.json`, `design/tokens.json` |
+| the resolver | `PresentationCopy.text(_:args:glossary:)` — all five namespaces, the plural rule and the `<name>Id` argument a caption interpolates |
+| the iPhone's renderers | `block` + `card` → `KeyMetrics.make(block:)` → `ShareCardStats`; `records` → `SessionRecordsTable` and `SessionDetail.buildEfforts`; `turns.strip` + `flightEnds.marks` → `SessionDetail.buildMarkers`; `splash.marks` → `buildSplashMarks`; `divergence` → `DivergenceText` |
+| built once per open | `SessionDetail.document`, off the main actor, never stored (6.9 ms on the longest fixture) |
 | pinned by | `lab/tests/test_presentation.py` (determinism, coverage, ids) and `GoldenTests.presentationDocumentMatchesTheGoldenByte` (the Swift twin, byte for byte) |
