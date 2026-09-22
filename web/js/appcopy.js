@@ -302,6 +302,19 @@ export const WELCOME = {
 export const WHATS_NEW = [
   {
     "version": "1.0.1",
+    "build": 105,
+    "channel": "beta",
+    "date": "2026-09-22",
+    "title": "Four small things",
+    "lines": [
+      "The card's falls tile says all of it, on every card size.",
+      "A session sent to the developer is stripped of your watch's serial number and profile.",
+      "Average speed on the web reads what it always did.",
+      "The analysis mail's subject uses the app's own dot."
+    ]
+  },
+  {
+    "version": "1.0.1",
     "build": 103,
     "channel": "beta",
     "date": "2026-09-22",
