@@ -625,6 +625,12 @@ def expected_card_values(doc: dict) -> dict[str, str]:
     if t["jibes"] > 0 or t["turnsCounted"] > 0:
         out["tally"] = (f"{outcomes['flewThrough']} · {outcomes['touchdown']} · "
                         f"{outcomes['fellIn']}")
+    # The tack ladder beside the jibe one (22 September 2026). Two gates: a tack to report,
+    # and a jibe tally that is the JIBE ladder — where the wind axis named no jibes the cell
+    # above has fallen back to every counted turn, which on such a session *is* the tacks.
+    if t["tacks"] > 0 and t["jibes"] > 0:
+        tk = t["tackOutcomes"]
+        out["tacks"] = f"{tk['flewThrough']} · {tk['touchdown']} · {tk['fellIn']}"
     # Every fall of the session, off the flight-end channel — the one that answers "how
     # often did I end up in the water", one event per actual swim (docs/algorithms.md, "Wet
     # is every fall, not every fallen jibe"). Deliberately NOT `outcomeSplit`, whose falls
@@ -710,17 +716,20 @@ def check_card() -> None:
         check(f"  {stem}: the card's values, re-derived",
               {e["key"]: e["value"] for e in complete}, want)
 
-        # 5. The tally's three counts stay counts, so the card can wear the ladder's inks —
-        #    and they are the same three the value string spells out.
-        tally = next((e for e in complete if e["key"] == "tally"), None)
-        if tally is not None:
-            counts = tally["tally"]
-            check(f"  {stem}: the tally cell carries its counts",
+        # 5. A tally's three counts stay counts, so the card can wear the ladder's inks —
+        #    and they are the same three the value string spells out. Two cells since
+        #    22 September 2026: the jibe ladder, and the tack ladder beside it.
+        t = doc["summary"]["turns"]
+        for key, source in (("tally", t["jibeOutcomes"] if t["jibes"] > 0 else t["outcomes"]),
+                            ("tacks", t["tackOutcomes"])):
+            cell = next((e for e in complete if e["key"] == key), None)
+            if cell is None:
+                continue
+            counts = cell["tally"]
+            check(f"  {stem}: the {key} cell carries its counts",
                   f"{counts['flewThrough']} · {counts['touchdown']} · {counts['fellIn']}",
-                  tally["value"])
-            t = doc["summary"]["turns"]
-            source = t["jibeOutcomes"] if t["jibes"] > 0 else t["outcomes"]
-            check(f"  {stem}: the tally counts are the golden's own",
+                  cell["value"])
+            check(f"  {stem}: the {key} counts are the golden's own",
                   counts, {k: source[k] for k in ("flewThrough", "touchdown", "fellIn")})
 
     if cards:

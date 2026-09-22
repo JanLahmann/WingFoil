@@ -150,12 +150,14 @@ export function hm(sec) {
  *           metric because its three counts stay counts (they wear the ladder's inks)
  *   label   exactly the words printed under the number on the page. A cell with something
  *           to qualify carries its caption after an em-dash separator (`CAPTION_SEP`) — the
- *           tally's "of 55 jibes" and the falls cell's split; the card splits there to get
+ *           two tallies' "of 55 jibes" and "of 14 tacks", and the falls cell's split; the
+ *           card splits there to get
  *           two lines, which is layout, not content. iOS holds the two halves in two fields
  *           (`KeyMetrics.Metric.caption`) and joins them with the same separator.
  *   value   the display string, "—" included. The tally's spells its three counts out, so a
  *           renderer that ignores `tally` still prints the truth — just in one colour.
- *   tally   set only on the outcome cell: `{flewThrough, touchdown, fellIn}`
+ *   tally   set on an outcome cell — the jibe ladder, and the tack ladder beside it on a
+ *           session with tacks in it: `{flewThrough, touchdown, fellIn}`
  *   row     which line of the block the entry sits on (the page draws four rows; the card
  *           ignores this and flows a grid)
  *   hero    the one entry the block gives its largest type to
@@ -220,6 +222,29 @@ export function keyMetricEntries(g) {
     out.push({
       key: "tally",
       label: `flew · touchdown · fell${CAPTION_SEP}${tally.of}`,
+      value: `${int(o.flewThrough)} · ${int(o.touchdown)} · ${int(o.fellIn)}`,
+      tally: { flewThrough: o.flewThrough, touchdown: o.touchdown, fellIn: o.fellIn },
+      row: 2,
+    });
+  }
+  // **The tacks, on the same ladder** (22 September 2026). The engine has typed both kinds
+  // of turn since 0.3.0 and this block only ever drew the jibes, so a rider who tacks read
+  // an afternoon with a quarter of its maneuvers missing from the one place that sums it up.
+  //
+  // Same three counts, same inks, its own caption — and no CLEAN clause, because clean is a
+  // jibe word in this product and a tack has no clean reading to carry (`tacksSuccessful`
+  // is the engine's score verdict; `turns.py` says outright it must never be called clean).
+  //
+  // Two gates. `tacks > 0` is the obvious half; `jibes > 0` is the other, because a session
+  // whose wind axis named no jibes has fallen back to the ladder over EVERY counted turn
+  // above — and on such a session the tacks are those turns, so a second cell would print
+  // one set of numbers twice under two captions (docs/review-checklist.md, pattern F).
+  if (t.tacks > 0 && t.jibes > 0) {
+    const o = t.tackOutcomes;
+    out.push({
+      key: "tacks",
+      label: `flew · touchdown · fell${CAPTION_SEP}of ${int(t.tacks)} `
+        + `${t.tacks === 1 ? "tack" : "tacks"}`,
       value: `${int(o.flewThrough)} · ${int(o.touchdown)} · ${int(o.fellIn)}`,
       tally: { flewThrough: o.flewThrough, touchdown: o.touchdown, fellIn: o.fellIn },
       row: 2,

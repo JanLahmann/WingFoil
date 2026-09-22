@@ -68,8 +68,10 @@ export function render(result, { highlight = null, isExample = false } = {}) {
  *
  *   1  duration (h:mm) · distance · average speed
  *   2  the best 2 s record, labelled with the window it is
- *   3  the outcome ladder's three counts on the ladder's own inks, plus the two turn
- *      streaks the engine has computed since 0.4.0 and neither app ever drew
+ *   3  the outcome ladder's three counts on the ladder's own inks — the jibes, and since
+ *      22 September 2026 the tacks beside them where the session had any — then every fall
+ *      of the afternoon and the two turn streaks the engine has computed since 0.4.0 and
+ *      neither app ever drew
  *   4  JPH + CPH (or TPH alone) and WPH — the per-hour rates: JPH over *dry* jibes since
  *      0.7.0, CPH over the *clean* ones since 0.10.0
  *
@@ -83,8 +85,8 @@ export function render(result, { highlight = null, isExample = false } = {}) {
  */
 export function keyMetrics(g) {
   const cell = (e) => {
-    // The tally is the one cell that is not a string: its three counts are drawn on the
-    // verdict ladder's own inks. `e.value` spells the same three numbers, so a renderer
+    // A tally is the one kind of cell that is not a string: its three counts are drawn on
+    // the verdict ladder's own inks. `e.value` spells the same three numbers, so a renderer
     // that ignores `e.tally` still prints the truth — it just prints it in one colour.
     const v = e.tally
       ? `<span class="tally"><span class="flew">${int(e.tally.flewThrough)}</span>` +

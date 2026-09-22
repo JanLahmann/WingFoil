@@ -724,6 +724,79 @@ import Testing
         #expect(block.rates[2].value == "12.8")
     }
 
+    /// **The tacks, on the same ladder** (22 September 2026). The engine has typed both
+    /// kinds of turn since 0.3.0 and the block only ever drew the jibes, so a rider who
+    /// tacks read an afternoon with a quarter of its maneuvers missing from the one place
+    /// that sums it up.
+    ///
+    /// Same three counts, same shape, its own caption — and **no clean clause**: clean is a
+    /// jibe word in this product and a tack has no clean reading to carry.
+    @Test func keyMetricsCarryTheTackLadderBesideTheJibeOne() {
+        var summary = torboleSummary()
+        summary.turns.tacks = 14
+        summary.turns.tacksSuccessful = 9
+        summary.turns.tackOutcomes = outcomes(3, 5, 6)
+        var records = GP3SRecords()
+        records.best2sKn = 13.209
+        let block = KeyMetrics.make(summary: summary, records: records)
+
+        #expect(block.tacks?.flewThrough == 3)
+        #expect(block.tacks?.touchdown == 5)
+        #expect(block.tacks?.fellIn == 6)
+        #expect(block.tacks?.caption == "of 14 tacks")
+        // The score verdict never reaches the caption, under that word or any other.
+        #expect(block.tacks?.caption.contains("clean") == false)
+        // …and the jibe tally beside it is untouched.
+        #expect(block.tally?.caption == "of 50 jibes · 12 clean")
+
+        // On the card it is a cell of its own, straight after the jibes, wearing the
+        // ladder's counts so the renderer can ink them.
+        let stats = ShareCardStats.make(row: sampleRow(), title: "Torbole", metrics: block,
+                                        preset: .complete, timeZone: fixtureZone)
+        #expect(stats.stats.map(\.key)
+                == ["duration", "distance", "avgSpeed", "max2s", "tally", "tacks",
+                    "streaks", "jph", "cph", "wph"])
+        let cell = stats.stats.first { $0.key == "tacks" }
+        #expect(cell?.value == "3 · 5 · 6")
+        #expect(cell?.caption == "of 14 tacks")
+        #expect(cell?.label == "flew · touchdown · fell")
+        #expect(cell?.tally == block.tacks)
+        // Lean is still the four a rider quotes plus the falls: a tack tally is not one.
+        let lean = ShareCardStats.make(row: sampleRow(), title: "x", metrics: block,
+                                       preset: .lean, timeZone: fixtureZone)
+        #expect(!lean.stats.contains { $0.key == "tacks" })
+    }
+
+    /// One tack is "of 1 tack". Four of the corpus's afternoons have exactly one in them,
+    /// so the plural is not a hypothetical.
+    @Test func theTackCaptionCountsInTheRidersOwnGrammar() {
+        var summary = torboleSummary()
+        summary.turns.tacks = 1
+        summary.turns.tackOutcomes = outcomes(0, 0, 1)
+        let block = KeyMetrics.make(summary: summary, records: GP3SRecords())
+        #expect(block.tacks?.caption == "of 1 tack")
+    }
+
+    /// **No tack, no cell** — and no cell either when the tally above it has fallen back to
+    /// every counted turn, because on such a session the tacks *are* those turns and the
+    /// block would print one set of numbers twice under two captions.
+    @Test func theTackCellIsAbsentWithoutTacksAndUnderTheTurnFallback() {
+        var records = GP3SRecords()
+        records.best2sKn = 13.209
+        #expect(KeyMetrics.make(summary: torboleSummary(), records: records).tacks == nil)
+
+        var noJibes = torboleSummary()
+        noJibes.turns.jibes = 0
+        noJibes.turns.tacks = 14
+        noJibes.turns.tackOutcomes = outcomes(3, 5, 6)
+        let block = KeyMetrics.make(summary: noJibes, records: records)
+        #expect(block.tally?.caption == "of 51 turns")
+        #expect(block.tacks == nil)
+        let stats = ShareCardStats.make(row: sampleRow(), title: "x", metrics: block,
+                                        preset: .complete, timeZone: fixtureZone)
+        #expect(!stats.stats.contains { $0.key == "tacks" })
+    }
+
     /// No duration ⇒ the engine reports every rate as null, and the row disappears rather
     /// than printing "0.0 JPH" over a rider who was never given an hour to divide by.
     @Test func keyMetricsHideTheRateRowWithoutADuration() {
