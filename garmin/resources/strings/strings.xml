@@ -132,8 +132,17 @@
     <string id="StoryOnFoil">on foil %</string>
     <string id="StoryTopSpeed">top speed</string>
     <string id="Turns">turns</string>
-    <string id="Best2s">best 2s</string>
-    <string id="Best10s">best 10s</string>
+
+    <!-- ALIGNED 22 Sep 2026: the form only (space before the unit, lowercase kept — Jan
+        rejected `Best 2 s`). `recordsPageFitsRoundDisplay` and
+        `pageModelDefaultsMatchShippedPages` pass against the real content on fenix847mm and
+        fenix5xplus, both streams; the short set's other four families are still owed before
+        this ships (Mac locked this round). -->
+    <string id="Best2s">best 2 s</string>
+
+    <!-- ALIGNED 22 Sep 2026: the same row as `best 2 s` above, spelled alike — same tests, same
+        open sheet debt. -->
+    <string id="Best10s">best 10 s</string>
     <string id="Jibes">jibes</string>
     <string id="Tacks">tacks</string>
     <string id="SumSaved">SAVED</string>
@@ -176,7 +185,13 @@
     <string id="FlashJibe">JIBE</string>
     <string id="FlashTack">TACK</string>
     <string id="FlashTurn">TURN</string>
-    <string id="LblFoilPct">foil %</string>
+
+    <!-- ALIGNED 22 Sep 2026: was `foil %`. `gridAndCellsPagesFitRoundDisplay` passes it beside
+        `foil`, the foil-time cell's label on the same page — the two read apart (`foil` / `on
+        foil`), so the collision the old `why` warned of did not measure, and the glossary
+        spelling replaces it. Verified on fenix847mm and fenix5xplus; the short set's other four
+        families are still owed (Mac locked this round). -->
+    <string id="LblFoilPct">on foil</string>
     <string id="LblFlights">flights</string>
     <string id="LblFlight">flight</string>
     <string id="LblLongest">longest</string>

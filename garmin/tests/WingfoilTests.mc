@@ -1783,7 +1783,7 @@ function pageModelDefaultsMatchShippedPages(logger as Test.Logger) as Boolean {
     // the giant's inline suffix: a unit AND a caption, because "24.3" alone is not a fact.
     // A metric whose label already IS its unit prints it once, not twice.
     Test.assertEqual(PageModel.unitOf(PageModel.M_BEST_10S), AppSettings.speedLabel());
-    Test.assertEqual(PageModel.caption(PageModel.M_BEST_10S), "best 10s");
+    Test.assertEqual(PageModel.caption(PageModel.M_BEST_10S), "best 10 s");
     Test.assertEqual(PageModel.caption(PageModel.M_SPEED), "");
     Test.assertEqual(PageModel.caption(PageModel.M_DISTANCE), "");
     Test.assertEqual(PageModel.unitOf(PageModel.M_FLIGHTS), "");
@@ -3070,7 +3070,7 @@ function recordsPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     // carries the unit, because the upper row sits nearer the top of the circle where the
     // chord is narrowest — which is the thing the deleted `cy + 12` bias was trying to fix
     // with a magic number instead of with the string.
-    var labels = ["best 2s", "best 10s km/h"];
+    var labels = ["best 2 s", "best 10 s km/h"];
     for (var row = 0; row <= 2; row += 2) {
         var y = RecordingView.recordsRowY(cy, hHot, hT, row);
         var lbl = labels[row / 2];
@@ -3234,7 +3234,7 @@ function mainPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     var defF = RecordingView.fitGiant(dc, "99.9", 2,
         RecordingView.rowBudget(radius, y1 - cy,
             RecordingView.inkH(dc, Graphics.FONT_NUMBER_MEDIUM))
-        - RecordingView.giantSuffixWidth(dc, "km/h", "best 10s"));
+        - RecordingView.giantSuffixWidth(dc, "km/h", "best 10 s"));
     Test.assertMessage(dc.getFontHeight(defF) >= dc.getFontHeight(Graphics.FONT_NUMBER_MILD),
         "the default main giant fell out of the number ladder");
 
