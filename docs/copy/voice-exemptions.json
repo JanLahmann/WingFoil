@@ -1,28 +1,38 @@
 [
   {
-    "path": "garmin/resources/strings/strings.xml",
+    "path": "docs/copy/watch.json",
     "text": "(km/h)",
     "why": "a unit or a range in a Garmin Connect setting title; the bracket is the convention every other Connect IQ app uses there"
   },
   {
-    "path": "garmin/resources/strings/strings.xml",
+    "path": "docs/copy/watch.json",
     "text": "(s)",
     "why": "a unit or a range in a Garmin Connect setting title; the bracket is the convention every other Connect IQ app uses there"
   },
   {
-    "path": "garmin/resources/strings/strings.xml",
+    "path": "docs/copy/watch.json",
     "text": "(min, 0 = off)",
     "why": "a unit or a range in a Garmin Connect setting title; the bracket is the convention every other Connect IQ app uses there"
   },
   {
-    "path": "garmin/resources/strings/strings.xml",
+    "path": "docs/copy/watch.json",
     "text": "(km, 0 = off)",
     "why": "a unit or a range in a Garmin Connect setting title; the bracket is the convention every other Connect IQ app uses there"
   },
   {
-    "path": "garmin/resources/strings/strings.xml",
+    "path": "docs/copy/watch.json",
     "text": "(deg from, -1 = unset)",
     "why": "a unit or a range in a Garmin Connect setting title; the bracket is the convention every other Connect IQ app uses there"
+  },
+  {
+    "path": "docs/copy/watch.json",
+    "text": "(experimental)",
+    "why": "the dev stream's map switch. A title that did not say the switch is an experiment would be the wrong kind of quiet, and a Garmin Connect settings row has no second line to say it on."
+  },
+  {
+    "path": "docs/copy/watch.json",
+    "text": "the map view has crashed the app during recording",
+    "why": "the dev map prompt is OFF THE VOICE and known: 52 words, a dash and a 33-word sentence. It was written before the second voice pass and was never judged, because the dev stream's strings were not a target until 22 September 2026. Listed as a finding of that day rather than rewritten in a round about the mechanism: the wording is Jan's to decide and the switch is his alone (docs/channels.md, the dev stream)."
   },
   {
     "path": "ios/WingFoilKit/Sources/WingFoilKit/Help",

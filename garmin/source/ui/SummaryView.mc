@@ -123,8 +123,7 @@ module SummaryNav {
 // Page-position dots on the bottom arc, and the track renderer's geometry: both are shared
 // with the layout test, so they live at file scope beside the constants they use.
 const SUM_DOT_GAP = 4;
-const SUM_SAVED = "SAVED";
-const SUM_NOT_SAVED = "NOT SAVED";
+// Words.SUM_SAVED / Words.SUM_NOT_SAVED are docs/copy/watch.json's, via the generated Words.mc.
 // The track page draws into the square inscribed in the circle, inset by this margin.
 //
 // It grew from 10 to 34 when the distance caption stopped being FONT_XTINY. That caption is a
@@ -141,16 +140,17 @@ const SUM_TRACK_MARGIN = 34;
 // SummaryView.drawTakeoffs for what each number actually is and why the old spelling of it
 // ("39/56", "4.3 to foil", "+19 bpm") could not be read off a sheet, and why the two smaller
 // facts ended up on two rows rather than on one with a separator between them.
-const TAKEOFF_WORD = "takeoffs";
-// Spaces INSIDE the word, not around it: the counts either side are drawn in a number font
-// and the word at FONT_XTINY, so the two are not on one baseline run and the gaps have to be
-// part of the small string. The same trick the streak row's " / " uses.
-const TAKEOFF_OF = " of ";
-const TAKEOFF_PUMPS = " pumps each";
+// Words.TAKEOFF_WORD, Words.TAKEOFF_OF, Words.TAKEOFF_PUMPS, Words.TAKEOFF_COST and Words.TAKEOFF_BPM are
+// docs/copy/watch.json's, via the generated Words.mc.
+//
+// Their spaces are INSIDE the word, not around it: the counts either side are drawn in a
+// number font and the word at FONT_XTINY, so the two are not on one baseline run and the gaps
+// have to be part of the small string. The same trick the streak row's " / " uses; the JSON
+// carries it as `pad` and the generator adds it, because XML is no place to keep a
+// significant space.
+//
 // "last", because it is ONE takeoff's cost and not the session's average — the number the
 // page printed as a bare "+19 bpm" beside an average, which reads as another average.
-const TAKEOFF_COST = "last +";
-const TAKEOFF_BPM = " bpm";
 
 // Where the direct transfer's status line lands on the verdict page (0.9.16, dev stream).
 // See SummaryView.phoneLineSlot for what picks between them.
@@ -163,6 +163,7 @@ class SummaryView extends WatchUi.View {
     const CV = Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER;
 
     function initialize() {
+        Words.load();
         View.initialize();
     }
 
@@ -248,9 +249,9 @@ class SummaryView extends WatchUi.View {
         // is ~250 px once the arc has taken its 11, which is about fourteen characters at
         // FONT_SMALL — and a row that has to shrink past FONT_SMALL to fit is the old
         // summary's mistake in a new place. Flight count lives on the Flights page.
-        drawHero(dc, e.foilPct().format("%.0f") + "%", "on foil",
-            PageModel.fmtTime(e.detector.foilTimeS) + " foil",
-            "of " + PageModel.fmtTime(elapsed(c)),
+        drawHero(dc, e.foilPct().format("%.0f") + "%", Words.SUM_HERO_ON_FOIL,
+            PageModel.fmtTime(e.detector.foilTimeS) + Words.SUM_HERO_FOIL,
+            Words.SUM_HERO_OF + PageModel.fmtTime(elapsed(c)),
             Ink.phaseFlying(), true);
         // The pill and the phone line are drawn as a PAIR: with a line to show, the pill
         // moves up one eyebrow line so the two together end where the pill alone used to,
@@ -468,7 +469,7 @@ class SummaryView extends WatchUi.View {
 
         // row 0 — what the fraction counts
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, takeoffRowY(cy, hT, hV, hD, 0), Graphics.FONT_XTINY, TAKEOFF_WORD, CV);
+        dc.drawText(cx, takeoffRowY(cy, hT, hV, hD, 0), Graphics.FONT_XTINY, Words.TAKEOFF_WORD, CV);
 
         // row 1 — "39 of 56", on the equator
         var y = takeoffRowY(cy, hT, hV, hD, 1);
@@ -479,8 +480,8 @@ class SummaryView extends WatchUi.View {
         dc.drawText(x, y, f, got, LV);
         x += dc.getTextWidthInPixels(got, f);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x, y, Graphics.FONT_XTINY, TAKEOFF_OF, LV);
-        x += dc.getTextWidthInPixels(TAKEOFF_OF, Graphics.FONT_XTINY);
+        dc.drawText(x, y, Graphics.FONT_XTINY, Words.TAKEOFF_OF, LV);
+        x += dc.getTextWidthInPixels(Words.TAKEOFF_OF, Graphics.FONT_XTINY);
         dc.setColor(Ink.effortPumping(), Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, y, f, tried, LV);
 
@@ -508,12 +509,12 @@ class SummaryView extends WatchUi.View {
     // dashes does. Both are shared with the layout test.
     static function takeoffPumps(c as SessionController) as String {
         var avg = c.engine.pump.avgPumpsX10();
-        return avg > 0 ? (avg / 10.0).format("%.1f") + TAKEOFF_PUMPS : "";
+        return avg > 0 ? (avg / 10.0).format("%.1f") + Words.TAKEOFF_PUMPS : "";
     }
 
     static function takeoffCost(c as SessionController) as String {
         var cost = c.engine.hrCost.lastCostBpm;
-        return cost < 0 ? "" : TAKEOFF_COST + cost.toString() + TAKEOFF_BPM;
+        return cost < 0 ? "" : Words.TAKEOFF_COST + cost.toString() + Words.TAKEOFF_BPM;
     }
 
     // Row centres: 0 the word, 1 the fraction, 2 the pumps, 3 the HR cost — centred on the
@@ -545,7 +546,7 @@ class SummaryView extends WatchUi.View {
     static function takeoffWidth(dc as Dc, got as String, tried as String,
             f as Graphics.FontType) as Number {
         return dc.getTextWidthInPixels(got, f) + dc.getTextWidthInPixels(tried, f)
-            + dc.getTextWidthInPixels(TAKEOFF_OF, Graphics.FONT_XTINY);
+            + dc.getTextWidthInPixels(Words.TAKEOFF_OF, Graphics.FONT_XTINY);
     }
 
     // NUMBER_MEDIUM down through the number ladder, then the text fonts to the FONT_SMALL
@@ -676,7 +677,7 @@ class SummaryView extends WatchUi.View {
         var bw = Brand.badgeW();
         // A save that failed says so, in red, without the badge: nothing to sign.
         var ok = getApp().controller.lastSaveOk;
-        var word = ok ? SUM_SAVED : SUM_NOT_SAVED;
+        var word = ok ? Words.SUM_SAVED : Words.SUM_NOT_SAVED;
         var textW = dc.getTextWidthInPixels(word, Graphics.FONT_XTINY);
         dc.setColor(ok ? Graphics.COLOR_WHITE : Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
         // No room for the pair: the word alone, where it has always been.
@@ -686,7 +687,7 @@ class SummaryView extends WatchUi.View {
         }
         var left = cx - lockupW(dc, bw, textW) / 2;
         Brand.drawBadge(dc, left + bw / 2, y);
-        dc.drawText(left + bw + savedGap(dc), y, Graphics.FONT_XTINY, SUM_SAVED,
+        dc.drawText(left + bw + savedGap(dc), y, Graphics.FONT_XTINY, Words.SUM_SAVED,
             Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
     }
 

@@ -27,9 +27,8 @@ const TALLY_SEPARATORS = 2;
 // the first thing dropped when a session gets wide, so a 30-turn tally still reads as digits.
 const TALLY_CAPTIONS = 4;
 const TALLY_CAPTION_GAP = 3;
-const TALLY_CAP_FLEW = "flew";
-const TALLY_CAP_TOUCH = "touch";
-const TALLY_CAP_FELL = "fell";
+// Words.TALLY_CAP_FLEW / _TOUCH / _FELL are docs/copy/watch.json's, declared in the generated
+// Words.mc and filled at page construction. They keep the names they had as consts here.
 
 // ---- the LADDER ROW and its header (0.9.18, Jan's layout review of 21 September 2026) ----
 //
@@ -49,7 +48,6 @@ const TALLY_CAP_FELL = "fell";
 // moves them OFF the counts and into a legend, which is what buys the counts their size:
 // three captions inline cost the row ~90 px on a 454 px glass, and a legend costs it nothing
 // because it is a narrow line on a row that has room to spare.
-const TALLY_CAP_CLEAN = "clean";
 const LADDER_HEAD_SEP = " · ";
 // ...and the legend SHEDS CONTENT rather than size, exactly as the tally row does, because
 // FONT_XTINY is already the bottom of the ladder and a legend nobody can read explains
@@ -134,14 +132,13 @@ const MAIN_CLOCK_FROM = 2;     // NUMBER_FONTS index of MAIN_CLOCK_FONT
 const MAIN_CLOCK_WORST = "23:59";
 
 // Main-page streak row: "dry 7 / 12" — the live no-fall run and the session's best.
-const STREAK_CAPTION = "dry";
+// Words.STREAK_CAPTION is docs/copy/watch.json's, via the generated Words.mc.
 const STREAK_SEP = " / ";
 
 // The Turns page carries BOTH runs, and says so in colour rather than in words:
 // "streak: 2/5  7/11", one grey caption for the row and each run in its own ladder ink. The
 // two words it used to spend ("fly", "dry") are gone — see drawStreakRow2 for why the colours
 // say it better than the words did.
-const STREAK_ROW_CAPTION = "streak:";
 const STREAK_SEP_TIGHT = "/";
 
 // The Turns page's bottom row: "P29/S22". The words are XTINY and the numbers FONT_SMALL,
@@ -157,8 +154,6 @@ const STREAK_SEP_TIGHT = "/";
 // It carried a "% flew" share in front of that until 0.9.18. Jan took the figure off the page
 // in his layout review of 21 September 2026: flewCount over turnCount is arithmetic on two
 // numbers the ladder row above already prints, so the page was stating one fact twice.
-const TURNS_PORT = "P";
-const TURNS_STBD = "S";
 const TURNS_SIDE_SEP = "/";
 // The rung that row's VALUES start at, as a TEXT_FONTS index — FONT_MEDIUM, which is also the
 // band the row reserves. It steps down from there to TALLY_FLOOR (FONT_SMALL), where every
@@ -208,24 +203,20 @@ const CLEAN_GLYPH_GAP = 7;
 // Aborted turns are on neither row and are not counted on the watch at all: a sweep the
 // classifier rejects is a course change (TurnDetector.rejectedCount), and the engine's
 // aborted-turn count has no watch twin (docs/algorithms.md, the watch divergences).
-const KINDS_JIBES = "jibes";
-const KINDS_TACKS = "tacks";
 // The header is GONE when the axis is known (0.9.18): it spent a whole row saying "wind ~NNE"
 // on a page whose four rows are already about the split that axis makes, and the Turns page
 // one screen back now carries the axis as a mark. It survives for the one state it is the
 // only explanation of — no axis at all, where every turn is a generic turn, both rows are
 // zeros and the page is uninformed rather than broken.
-const KINDS_NO_WIND = "wind not set";
 
 // PAUSED banner. A word, not a value, so FONT_TINY is the right rung (docs review: XTINY and
 // TINY are label sizes) — and a narrower banner is what lets it sit high enough on the glass
 // to clear the rings entirely instead of punching a hole in them.
-const PAUSED_TEXT = "PAUSED";
+
 // The banner's long form, used where the chord at the banner's depth has room for it: the
 // rider who pressed START expecting to finish is looking at exactly this word, and it is the
 // one moment the key he actually needs can be named (audit, 15 Sep 2026). MAIN's own top row
 // keeps the short word — that row is the clock's width.
-const PAUSED_TEXT_LONG = "PAUSED · BACK saves";
 const PAUSED_FONT_IDX = 3;
 
 // Cell geometry. The column offset is NOT a constant: the round display narrows fast below
@@ -426,18 +417,12 @@ const VEC_WORST_3ROW = "999";
 //
 // Where the count went: nowhere on the watch, which is the honest answer. It is FIT session
 // field 36 and it is on the phone's own session page. See docs/presentation.md.
-const FOIL_TITLE = "foil";
-const FOIL_COL_TIME = "time";
-const FOIL_COL_DIST = "km";
 // The row keys. `total` is the word — Jan, 21 September 2026: "tot" is an abbreviation the
 // rider has to expand and the row it names is the most-read row on the table. It gives way to
 // `tot` in exactly one case, which is the FLOOR: where the long word would push the widest
 // value the table can be handed below TEXT_FONTS[FOIL_FLOOR], the readability floor every
 // number on this watch keeps. Until this round it also gave way whenever the short word would
 // buy the values a whole font RUNG, which is the trade that made every narrow glass say "tot".
-const FOIL_KEY_TOTAL = "total";
-const FOIL_KEY_TOTAL_TIGHT = "tot";
-const FOIL_KEY_MAX = "max";
 const FOIL_KEY_GAP = 6;
 // Values never go below TEXT_FONTS[FOIL_FLOOR] = FONT_SMALL, the readability floor every
 // other number on this watch keeps.
@@ -472,10 +457,8 @@ const TL_MARGIN = 6;
 // square to give up 18 px of side to hang it under. A map you can read the scale of beats a
 // map 7 % wider whose scale you cannot — the same trade SUM_TRACK_MARGIN made in 0.9.2.
 const MAP_MARGIN = 52;
-const MAP_WAITING = "waiting for GPS";
 // The unit beside the odometer, and the gap before it. The digits are the value and "km" is
 // a word about it, so they are not the same size and never have been on this watch.
-const MAP_KM = "km";
 const MAP_KM_GAP = GLYPH_GAP;
 
 // The on-water screens. Which screens exist, in what order, is PageModel's business — this
@@ -486,6 +469,10 @@ const MAP_KM_GAP = GLYPH_GAP;
 class RecordingView extends WatchUi.View {
 
     function initialize() {
+        // Page construction is where the words are loaded (docs/copy/watch.json): one
+        // `WatchUi.loadResource` each, once, never inside `onUpdate`. The guard inside
+        // `load()` makes every later call free.
+        Words.load();
         View.initialize();
     }
 
@@ -651,9 +638,9 @@ class RecordingView extends WatchUi.View {
         // pausedBannerY drops a wider box until its corners clear the glass; the long form
         // is used only while that still leaves it in the top third, a banner and not a
         // headline over the page.
-        var w = dc.getTextWidthInPixels(PAUSED_TEXT_LONG, font);
+        var w = dc.getTextWidthInPixels(Words.PAUSED_TEXT_LONG, font);
         var y = pausedBannerY(dc, w, radius);
-        return y <= dc.getHeight() / 2 - radius / 3 ? PAUSED_TEXT_LONG : PAUSED_TEXT;
+        return y <= dc.getHeight() / 2 - radius / 3 ? Words.PAUSED_TEXT_LONG : Words.PAUSED_TEXT;
     }
 
     // Ink centre of that banner. Shared with the layout test, which asserts the box corner
@@ -723,7 +710,7 @@ class RecordingView extends WatchUi.View {
         var v = AppSettings.speedToDisplay(PbFlash.best2sMps).format("%.1f");
         var y = cy - (hHot + hS) / 2 + hS + hHot / 2;
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, cy - (hHot + hS) / 2 + hS / 2, Graphics.FONT_SMALL, "NEW PB", CV);
+        dc.drawText(cx, cy - (hHot + hS) / 2 + hS / 2, Graphics.FONT_SMALL, Words.REC_NEW_PB, CV);
         // fitted like every other giant: the overlay happens to fit on every shipped variant,
         // but "happens to" is what finding 1.1 was made of.
         dc.drawText(cx, y, fitFont(dc, NUMBER_FONTS, 1, v,
@@ -1031,7 +1018,7 @@ class RecordingView extends WatchUi.View {
             dc.drawText(cx, y, fitFont(dc, TEXT_FONTS, PAUSED_FONT_IDX, line,
                 rowBudget(radius, y - cy, inkH(dc, TEXT_FONTS[PAUSED_FONT_IDX]))), line, CV);
         } else {
-            var top = paused ? PAUSED_TEXT : PageModel.clockString();
+            var top = paused ? Words.PAUSED_TEXT : PageModel.clockString();
             dc.setColor(paused ? Graphics.COLOR_YELLOW : Graphics.COLOR_WHITE,
                 Graphics.COLOR_TRANSPARENT);
             // The word takes the text ladder from the rung that fits the clock's BAND: on
@@ -1177,7 +1164,7 @@ class RecordingView extends WatchUi.View {
         var best = t.bestDryStreak.toString();
         var f = streakFont(dc, now, best,
             rowBudget(radius, y - cy, inkH(dc, Graphics.FONT_MEDIUM)), 1);
-        drawStreakPair(dc, cx - streakWidth(dc, now, best, f) / 2, y, STREAK_CAPTION, now,
+        drawStreakPair(dc, cx - streakWidth(dc, now, best, f) / 2, y, Words.STREAK_CAPTION, now,
             best, f, true);
     }
 
@@ -1209,7 +1196,7 @@ class RecordingView extends WatchUi.View {
     // with the layout test, which measures it at "99 / 99".
     static function streakWidth(dc as Dc, now as String, best as String,
             f as Graphics.FontType) as Number {
-        return pairWidth(dc, STREAK_CAPTION, now, best, f, true);
+        return pairWidth(dc, Words.STREAK_CAPTION, now, best, f, true);
     }
 
     static function pairWidth(dc as Dc, caption as String, now as String, best as String,
@@ -1592,7 +1579,7 @@ class RecordingView extends WatchUi.View {
 
         // row 0 — the page's name
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, foilRowY(cy, hT, hV, 0), Graphics.FONT_XTINY, FOIL_TITLE, CV);
+        dc.drawText(cx, foilRowY(cy, hT, hV, 0), Graphics.FONT_XTINY, Words.FOIL_TITLE, CV);
 
         // row 1 — the two shares, teal, exactly as the pair band drew them: a PHASE tint, not
         // the outcome ladder's green (docs/presentation.md)
@@ -1613,8 +1600,8 @@ class RecordingView extends WatchUi.View {
         // row 4 — the column headers, under the numbers they name
         var yh = foilRowY(cy, hT, hV, 4);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(col[1], yh, Graphics.FONT_XTINY, FOIL_COL_TIME, CV);
-        dc.drawText(col[2], yh, Graphics.FONT_XTINY, FOIL_COL_DIST, CV);
+        dc.drawText(col[1], yh, Graphics.FONT_XTINY, Words.FOIL_COL_TIME, CV);
+        dc.drawText(col[2], yh, Graphics.FONT_XTINY, Words.FOIL_COL_DIST, CV);
     }
 
     // One table row: an optional grey key at the block's left edge, then the two values on
@@ -1717,11 +1704,11 @@ class RecordingView extends WatchUi.View {
     }
 
     static function foilKeys(dc as Dc, half as Number, wide as String) as Array<String> {
-        var long = [FOIL_KEY_TOTAL, FOIL_KEY_MAX];
+        var long = [Words.FOIL_KEY_TOTAL, Words.FOIL_KEY_MAX];
         var wLong = foilColWidth(half, foilKeyBlock(dc, long));
         var worst = dc.getTextWidthInPixels(PageModel.worstValue(PageModel.M_FOIL_TIME),
             TEXT_FONTS[FOIL_FLOOR]);
-        return wLong < worst ? [FOIL_KEY_TOTAL_TIGHT, FOIL_KEY_MAX] : long;
+        return wLong < worst ? [Words.FOIL_KEY_TOTAL_TIGHT, Words.FOIL_KEY_MAX] : long;
     }
 
     // The widest of a set of values at the top of the value ladder — i.e. the one that decides
@@ -2128,14 +2115,14 @@ class RecordingView extends WatchUi.View {
         var best10s = AppSettings.speedToDisplay(r.best10sMps).format("%.1f");
 
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, recordsRowY(cy, hHot, hT, 0), Graphics.FONT_XTINY, "best 2s", CV);
+        dc.drawText(cx, recordsRowY(cy, hHot, hT, 0), Graphics.FONT_XTINY, Words.REC_BEST_2S, CV);
         var y = recordsRowY(cy, hHot, hT, 1);
         dc.setColor(Ink.effortWindow(), Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, y, fitFont(dc, NUMBER_FONTS, 1, best2s,
             rowBudget(radius, y - cy, ink)), best2s, CV);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, recordsRowY(cy, hHot, hT, 2), Graphics.FONT_XTINY,
-            "best 10s" + unit, CV);
+            Words.REC_BEST_10S + unit, CV);
         y = recordsRowY(cy, hHot, hT, 3);
         dc.setColor(Ink.effortWindow(), Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, y, fitFont(dc, NUMBER_FONTS, 1, best10s,
@@ -2255,7 +2242,7 @@ class RecordingView extends WatchUi.View {
         if (noWind) {
             dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
             dc.drawText(cx, kindsRowY(cy, hT, hG, noWind, 0), Graphics.FONT_XTINY,
-                KINDS_NO_WIND, CV);
+                Words.KINDS_NO_WIND, CV);
         }
 
         // rows 1-2 the jibes (word above its row), rows 3-4 the tacks (word below its own).
@@ -2264,14 +2251,14 @@ class RecordingView extends WatchUi.View {
         // (this row's and the Turns page's) sit at the same height one swipe apart.
         var y = kindsRowY(cy, hT, hG, noWind, 1);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, y, Graphics.FONT_XTINY, KINDS_JIBES, CV);
+        dc.drawText(cx, y, Graphics.FONT_XTINY, Words.KINDS_JIBES, CV);
         drawLadderRow(dc, cx, kindsRowY(cy, hT, hG, noWind, 2), cy, radius,
             ladderOf(t.cleanJibeCount, t.jibeFlewCount, t.jibeTouchCount, t.jibeFellCount),
             LADDER_FROM);
         drawLadderRow(dc, cx, kindsRowY(cy, hT, hG, noWind, 3), cy, radius,
             ladderOf(-1, t.tackFlewCount, t.tackTouchCount, t.tackFellCount), LADDER_FROM);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, kindsRowY(cy, hT, hG, noWind, 4), Graphics.FONT_XTINY, KINDS_TACKS, CV);
+        dc.drawText(cx, kindsRowY(cy, hT, hG, noWind, 4), Graphics.FONT_XTINY, Words.KINDS_TACKS, CV);
     }
 
     // Row centres: 0 the no-axis line (drawn only when there is no axis, band 0 otherwise),
@@ -2399,7 +2386,7 @@ class RecordingView extends WatchUi.View {
         var sep = (got & LADDER_HEAD_SEPARATORS) != 0
             ? LADDER_HEAD_SEP : LADDER_HEAD_SEP_NARROW;
         var showMark = (got & LADDER_HEAD_MARK) != 0;
-        var caps = [TALLY_CAP_CLEAN, TALLY_CAP_FLEW, TALLY_CAP_TOUCH, TALLY_CAP_FELL];
+        var caps = [Words.TALLY_CAP_CLEAN, Words.TALLY_CAP_FLEW, Words.TALLY_CAP_TOUCH, Words.TALLY_CAP_FELL];
         var cols = [Ink.cleanJibe(), Ink.ladderFlew(), Ink.ladderTouchdown(),
             Ink.ladderFellIn()];
         var LV = Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER;
@@ -2444,10 +2431,10 @@ class RecordingView extends WatchUi.View {
     static function ladderHeaderWidth(dc as Dc, glyph as Number, mark as Boolean,
             sep as String) as Number {
         var w = 3 * dc.getTextWidthInPixels(sep, Graphics.FONT_XTINY)
-            + dc.getTextWidthInPixels(TALLY_CAP_CLEAN, Graphics.FONT_XTINY)
-            + dc.getTextWidthInPixels(TALLY_CAP_FLEW, Graphics.FONT_XTINY)
-            + dc.getTextWidthInPixels(TALLY_CAP_TOUCH, Graphics.FONT_XTINY)
-            + dc.getTextWidthInPixels(TALLY_CAP_FELL, Graphics.FONT_XTINY);
+            + dc.getTextWidthInPixels(Words.TALLY_CAP_CLEAN, Graphics.FONT_XTINY)
+            + dc.getTextWidthInPixels(Words.TALLY_CAP_FLEW, Graphics.FONT_XTINY)
+            + dc.getTextWidthInPixels(Words.TALLY_CAP_TOUCH, Graphics.FONT_XTINY)
+            + dc.getTextWidthInPixels(Words.TALLY_CAP_FELL, Graphics.FONT_XTINY);
         return mark ? w + LADDER_HEAD_MARK_GAP + glyph : w;
     }
 
@@ -2485,8 +2472,8 @@ class RecordingView extends WatchUi.View {
         var LV = Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER;
         var x = cx - streakRow2Width(dc, fNow, fBest, dNow, dBest, f, live) / 2;
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x, y, Graphics.FONT_XTINY, STREAK_ROW_CAPTION, LV);
-        x += dc.getTextWidthInPixels(STREAK_ROW_CAPTION, Graphics.FONT_XTINY) + GLYPH_GAP;
+        dc.drawText(x, y, Graphics.FONT_XTINY, Words.STREAK_ROW_CAPTION, LV);
+        x += dc.getTextWidthInPixels(Words.STREAK_ROW_CAPTION, Graphics.FONT_XTINY) + GLYPH_GAP;
         x = drawStreakRun(dc, x, y, fNow, fBest, f, live, Ink.ladderFlew());
         drawStreakRun(dc, x + TURNS_OK_GAP, y, dNow, dBest, f, live, Ink.ladderTouchdown());
     }
@@ -2522,7 +2509,7 @@ class RecordingView extends WatchUi.View {
 
     static function streakRow2Width(dc as Dc, fNow as String, fBest as String, dNow as String,
             dBest as String, f as Graphics.FontType, live as Boolean) as Number {
-        return dc.getTextWidthInPixels(STREAK_ROW_CAPTION, Graphics.FONT_XTINY) + GLYPH_GAP
+        return dc.getTextWidthInPixels(Words.STREAK_ROW_CAPTION, Graphics.FONT_XTINY) + GLYPH_GAP
             + streakRunWidth(dc, fNow, fBest, f, live) + TURNS_OK_GAP
             + streakRunWidth(dc, dNow, dBest, f, live);
     }
@@ -2566,8 +2553,8 @@ class RecordingView extends WatchUi.View {
         var f = verdictFont(dc, p, s, budget);
         var x = cx - verdictWidth(dc, p, s, f) / 2;
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x, y, Graphics.FONT_XTINY, TURNS_PORT, LV);
-        x += dc.getTextWidthInPixels(TURNS_PORT, Graphics.FONT_XTINY);
+        dc.drawText(x, y, Graphics.FONT_XTINY, Words.TURNS_PORT, LV);
+        x += dc.getTextWidthInPixels(Words.TURNS_PORT, Graphics.FONT_XTINY);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, y, f, p, LV);
         x += dc.getTextWidthInPixels(p, f);
@@ -2575,8 +2562,8 @@ class RecordingView extends WatchUi.View {
         dc.drawText(x, y, Graphics.FONT_XTINY, TURNS_SIDE_SEP, LV);
         x += dc.getTextWidthInPixels(TURNS_SIDE_SEP, Graphics.FONT_XTINY);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x, y, Graphics.FONT_XTINY, TURNS_STBD, LV);
-        x += dc.getTextWidthInPixels(TURNS_STBD, Graphics.FONT_XTINY);
+        dc.drawText(x, y, Graphics.FONT_XTINY, Words.TURNS_STBD, LV);
+        x += dc.getTextWidthInPixels(Words.TURNS_STBD, Graphics.FONT_XTINY);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, y, f, s, LV);
     }
@@ -2596,10 +2583,10 @@ class RecordingView extends WatchUi.View {
     // Width of that row. Shared with the layout test, which measures it at "P 99 / S 99".
     static function verdictWidth(dc as Dc, p as String, s as String,
             f as Graphics.FontType) as Number {
-        return dc.getTextWidthInPixels(TURNS_PORT, Graphics.FONT_XTINY)
+        return dc.getTextWidthInPixels(Words.TURNS_PORT, Graphics.FONT_XTINY)
             + dc.getTextWidthInPixels(p, f)
             + dc.getTextWidthInPixels(TURNS_SIDE_SEP, Graphics.FONT_XTINY)
-            + dc.getTextWidthInPixels(TURNS_STBD, Graphics.FONT_XTINY)
+            + dc.getTextWidthInPixels(Words.TURNS_STBD, Graphics.FONT_XTINY)
             + dc.getTextWidthInPixels(s, f);
     }
 
@@ -2664,9 +2651,9 @@ class RecordingView extends WatchUi.View {
 
     // What the three captions add to a tally row: three words at FONT_XTINY and a gap each.
     static function captionsWidth(dc as Dc) as Number {
-        return dc.getTextWidthInPixels(TALLY_CAP_FLEW, Graphics.FONT_XTINY)
-            + dc.getTextWidthInPixels(TALLY_CAP_TOUCH, Graphics.FONT_XTINY)
-            + dc.getTextWidthInPixels(TALLY_CAP_FELL, Graphics.FONT_XTINY)
+        return dc.getTextWidthInPixels(Words.TALLY_CAP_FLEW, Graphics.FONT_XTINY)
+            + dc.getTextWidthInPixels(Words.TALLY_CAP_TOUCH, Graphics.FONT_XTINY)
+            + dc.getTextWidthInPixels(Words.TALLY_CAP_FELL, Graphics.FONT_XTINY)
             + 3 * TALLY_CAPTION_GAP;
     }
 
@@ -2739,13 +2726,13 @@ class RecordingView extends WatchUi.View {
         // Each count in its ink, its caption after it in the same ink where the row carries
         // captions, the separator in white; the verdict last, in neutral white, so the three
         // coloured counts stay the thing the eye lands on.
-        x = tallyCell(dc, x, y, f, a, TALLY_CAP_FLEW, caps, Ink.ladderFlew());
+        x = tallyCell(dc, x, y, f, a, Words.TALLY_CAP_FLEW, caps, Ink.ladderFlew());
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, y, f, sep, LV);
-        x = tallyCell(dc, x + wSep, y, f, b, TALLY_CAP_TOUCH, caps, Ink.ladderTouchdown());
+        x = tallyCell(dc, x + wSep, y, f, b, Words.TALLY_CAP_TOUCH, caps, Ink.ladderTouchdown());
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, y, f, sep, LV);
-        x = tallyCell(dc, x + wSep, y, f, s, TALLY_CAP_FELL, caps, Ink.ladderFellIn());
+        x = tallyCell(dc, x + wSep, y, f, s, Words.TALLY_CAP_FELL, caps, Ink.ladderFellIn());
         if (!verdict.equals("")) {
             dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
             dc.drawText(x + TURNS_OK_GAP, y, f, verdict, LV);
@@ -2796,7 +2783,7 @@ class RecordingView extends WatchUi.View {
         var halfW = bandHalfWidth(radius, top, top + strip, cy);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, timelineRowY(cy, hT, strip, spark, 0), Graphics.FONT_XTINY,
-            "on foil %", CV);
+            Words.STORY_ON_FOIL, CV);
         dc.setColor(Ink.dim(), Graphics.COLOR_TRANSPARENT);
         dc.drawLine(cx - halfW, top + strip, cx + halfW, top + strip);
         dc.drawLine(cx - halfW, top, cx + halfW, top);
@@ -2826,7 +2813,7 @@ class RecordingView extends WatchUi.View {
         // slot, and a line labelled "speed" reads as an average — which would make the same
         // shape mean something the app never measured.
         dc.drawText(cx, timelineRowY(cy, hT, strip, spark, 2), Graphics.FONT_XTINY,
-            "top speed " + AppSettings.speedLabel(), CV);
+            Words.STORY_TOP_SPEED + AppSettings.speedLabel(), CV);
         var peak = h.peakCms();
         var ref = (c.engine.records.best2sMps * 100.0).toNumber();
         if (ref > peak) {
@@ -2864,7 +2851,7 @@ class RecordingView extends WatchUi.View {
         halfW = bandHalfWidth(radius, yDots - TL_DOT_R, yDots + TL_DOT_R, cy);
         drawOutcomeStrip(dc, cx, yDots, 2 * halfW, h);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, timelineRowY(cy, hT, strip, spark, 5), Graphics.FONT_XTINY, "turns", CV);
+        dc.drawText(cx, timelineRowY(cy, hT, strip, spark, 5), Graphics.FONT_XTINY, Words.STORY_TURNS, CV);
     }
 
     // ---- the outcome strip ----
@@ -2988,7 +2975,7 @@ class RecordingView extends WatchUi.View {
                 box, true);
         }
         if (!drawn) {
-            drawFittedRow(dc, cx, cy, radius, cy, 0, MAP_WAITING, Graphics.COLOR_WHITE);
+            drawFittedRow(dc, cx, cy, radius, cy, 0, Words.MAP_WAITING, Graphics.COLOR_WHITE);
             return;
         }
         // A map with no number on it is a shape. The odometer is the one number the shape
@@ -3010,7 +2997,7 @@ class RecordingView extends WatchUi.View {
         var LV = Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER;
         dc.drawText(x, y, f, km, LV);
         dc.drawText(x + dc.getTextWidthInPixels(km, f) + MAP_KM_GAP, y, Graphics.FONT_XTINY,
-            MAP_KM, LV);
+            Words.MAP_KM, LV);
     }
 
     // Side of the square the trail is drawn in, and the ink centre of the caption hung off its
@@ -3027,7 +3014,7 @@ class RecordingView extends WatchUi.View {
     // Width of that caption: the digits in `f`, then the gap and the unit at FONT_XTINY.
     static function mapKmWidth(dc as Dc, km as String, f as Graphics.FontType) as Number {
         return dc.getTextWidthInPixels(km, f) + MAP_KM_GAP
-            + dc.getTextWidthInPixels(MAP_KM, Graphics.FONT_XTINY);
+            + dc.getTextWidthInPixels(Words.MAP_KM, Graphics.FONT_XTINY);
     }
 
     // FONT_LARGE down to TEXT_FONTS[TALLY_FLOOR] = FONT_SMALL, the readability floor every

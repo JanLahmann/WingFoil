@@ -31,7 +31,7 @@ module BrandSplash {
     // the lockup — hero, a gap of a third of the word's height, the word — sits centred.
     // The third line of the lockup: where to find us, not only who we are (Jan, 14 Sep
     // 2026). Small and grey, so the wordmark stays the word.
-    const DOMAIN = "cleanjibe.org";
+    // The line itself is Words.SPLASH_DOMAIN in docs/copy/watch.json, via the generated Words.mc.
     const DOMAIN_FONT = Graphics.FONT_XTINY;
 
     // hero · gap of a third of the wordmark · wordmark · gap of a quarter of the domain line ·
@@ -59,6 +59,7 @@ class BrandSplashView extends WatchUi.View {
     hidden var _timer as Timer.Timer?;
 
     function initialize() {
+        Words.load();
         View.initialize();
     }
 
@@ -91,10 +92,10 @@ class BrandSplashView extends WatchUi.View {
         Brand.drawHero(dc, cx, BrandSplash.heroY(cy, heroH, wordH, domH));
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, BrandSplash.wordY(cy, heroH, wordH, domH), Graphics.FONT_LARGE,
-            START_TITLE, CV);
+            Words.START_TITLE, CV);
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, BrandSplash.domainY(cy, heroH, wordH, domH), BrandSplash.DOMAIN_FONT,
-            BrandSplash.DOMAIN, CV);
+            Words.SPLASH_DOMAIN, CV);
     }
 }
 

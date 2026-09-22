@@ -4,16 +4,17 @@ import Toybox.Position;
 import Toybox.Timer;
 import Toybox.WatchUi;
 
-// File scope so the static layout helpers (shared with the layout test) can reach them —
-// class consts are instance-scoped in Monkey C.
-const START_TITLE = "CleanJibe";
-const START_HINT = "START to record";
-// The long form, drawn where the hint row has room for it at its own font: a rider who has
-// never used the app presses START to stop and gets PAUSED (START toggles pause, BACK opens
-// the session menu with Save), and no recording page can spare a row to say so. The one
+// THE WORDS ARE IN docs/copy/watch.json (0.9.19). The title, the two hints, the two wind
+// strings and the four GPS rows are members of the generated `Words` module, filled at page
+// construction; the static layout helpers and the layout test reach them by the names they
+// had as file-scope consts, with `Words.` in front.
+//
+// `Words.START_HINT_LONG` is drawn where the hint row has room for it at its own font: a rider who
+// has never used the app presses START to stop and gets PAUSED (START toggles pause, BACK
+// opens the session menu with Save), and no recording page can spare a row to say so. The one
 // screen he reads BEFORE riding is this one, so it says the whole binding here (audit, 15 Sep
 // 2026: "a stranger cannot finish a recording"). The paused banner says it again.
-const START_HINT_LONG = "START records · BACK saves";
+//
 // Nominal fonts as TEXT_FONTS indices: FONT_MEDIUM for the title and — since 0.9.2 — for the
 // GPS STATE row, FONT_SMALL for the wind and hint rows. fitFont() shrinks any of them when the
 // chord at that depth is narrower, which is what still fits the long wind reminder on a 240 px
@@ -37,14 +38,13 @@ const START_BODY_FONT = 2;
 // "hold MENU" is the literal binding: StartDelegate.onMenu() pushes the same WindMenu the
 // session menu opens, and MENU on every fenix in the manifest is a long press of the UP
 // button. Naming a button the rider cannot find would be worse than no reminder at all.
-const START_WIND_UNSET = "set wind - hold MENU";
-const START_WIND_PREFIX = "wind ";
 
 // Pre-session screen: GPS acquisition status, START to begin.
 class StartView extends WatchUi.View {
     hidden var _timer as Timer.Timer?;
 
     function initialize() {
+        Words.load();
         View.initialize();
     }
 
@@ -117,10 +117,10 @@ class StartView extends WatchUi.View {
     // The GPS row: one line whose WORD and COLOUR together carry what the four dots used to.
     // Position.QUALITY_* is an ordered scale, so the four rungs map one-to-one.
     static function gpsText(q as Number) as String {
-        if (q >= Position.QUALITY_GOOD) { return "GPS good"; }
-        if (q >= Position.QUALITY_USABLE) { return "GPS ready"; }
-        if (q >= Position.QUALITY_POOR) { return "GPS weak"; }
-        return "GPS ...";
+        if (q >= Position.QUALITY_GOOD) { return Words.START_GPS_GOOD; }
+        if (q >= Position.QUALITY_USABLE) { return Words.START_GPS_READY; }
+        if (q >= Position.QUALITY_POOR) { return Words.START_GPS_WEAK; }
+        return Words.START_GPS_NONE;
     }
 
     static function gpsColor(q as Number) as Number {
@@ -135,8 +135,8 @@ class StartView extends WatchUi.View {
     static function hintText(dc as Dc, radius as Number, dy as Number) as String {
         var f = TEXT_FONTS[START_BODY_FONT];
         var budget = RecordingView.rowBudget(radius, dy, RecordingView.inkH(dc, f));
-        return dc.getTextWidthInPixels(START_HINT_LONG, f) <= budget
-            ? START_HINT_LONG : START_HINT;
+        return dc.getTextWidthInPixels(Words.START_HINT_LONG, f) <= budget
+            ? Words.START_HINT_LONG : Words.START_HINT;
     }
 
     // The wind row: the axis when there is one, and how to set one when there is not.
@@ -148,8 +148,8 @@ class StartView extends WatchUi.View {
     static function windText() as String {
         var deg = AppSettings.cfg.windDirection;
         return deg < 0
-            ? START_WIND_UNSET
-            : START_WIND_PREFIX + AppSettings.cfg.windMark() + deg.toString() + "° "
+            ? Words.START_WIND_UNSET
+            : Words.START_WIND_PREFIX + AppSettings.cfg.windMark() + deg.toString() + "° "
                 + AppSettings.cfg.compassLabel();
     }
 
@@ -175,7 +175,7 @@ class StartView extends WatchUi.View {
 
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         drawRow(dc, cx, cy, radius, rowY(cy, hTitle, hState, hBody, 0), START_TITLE_FONT,
-            START_TITLE);
+            Words.START_TITLE);
 
         // GPS quality: one line, four rungs, colour and word saying the same thing twice.
         dc.setColor(gpsColor(q), Graphics.COLOR_TRANSPARENT);

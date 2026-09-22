@@ -507,6 +507,22 @@ fits where it can and falls back where it cannot:
   false; it drew `SAVED` regardless until 0.9.11. **Discard asks once**, with the firmware's own
   yes/no dialog, and the session menu stays under it until the answer is yes.
 
+## The words come from docs/copy (0.9.19, ADR-034)
+
+**Not one word on any page above is typed in the Monkey C that draws it.** Every string the
+watch prints is an entry in `docs/copy/watch.json` — the page words, the Garmin Connect
+settings rows, the FIT field names, the launcher name — and `garmin/tools/make_strings.py`
+writes the two `strings.xml` files and `garmin/source/ui/Words.mc` out of it. A page reaches
+a word through `Words.load()`, called from `WingfoilApp.initialize()` and from each View's
+own `initialize()`: one `WatchUi.loadResource` per string, at construction, never inside
+`onUpdate`. The names are the ones the drawing code and the layout suite already used, with
+`Words.` in front of them, so the fitters and the assertions measure exactly what they
+measured before. Every word that names a number carries the glossary id it spells, and
+`web/tools/verify_glossary.py` fails on a page word that is not one of that term's own
+spellings — unless the entry says, in one line, what the 240 px row could not take. Fifteen
+do. The point is the one docs/copy exists for: a wording decided on the phone now lands on
+the wrist in the same change, or a check goes red.
+
 ## The watch link — Settings → Garmin watch
 
 One section, and every row in it is a fact the rider can act on: which watch, whether it is

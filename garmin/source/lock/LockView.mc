@@ -44,6 +44,7 @@ class LockView extends WatchUi.View {
     static const ROW_HINT2 = 5;
 
     function initialize() {
+        Words.load();
         View.initialize();
     }
 
@@ -132,25 +133,25 @@ class LockView extends WatchUi.View {
         dc.clear();
 
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        centered(dc, cx, rowY(h, ROW_TITLE), Graphics.FONT_SMALL, "WingFoil");
+        centered(dc, cx, rowY(h, ROW_TITLE), Graphics.FONT_SMALL, Words.LOCK_TITLE);
 
         dc.setColor(Graphics.COLOR_ORANGE, Graphics.COLOR_TRANSPARENT);
-        centered(dc, cx, rowY(h, ROW_KIND), Graphics.FONT_XTINY, "INVITE BETA");
+        centered(dc, cx, rowY(h, ROW_KIND), Graphics.FONT_XTINY, Words.LOCK_KIND);
 
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         centered(dc, cx, rowY(h, ROW_CODE), codeFont(dc, code), code);
 
         if (LockGate.rejected()) {
             dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
-            centered(dc, cx, rowY(h, ROW_STATUS), Graphics.FONT_XTINY, "key not valid");
+            centered(dc, cx, rowY(h, ROW_STATUS), Graphics.FONT_XTINY, Words.LOCK_KEY_BAD);
         } else {
             dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-            centered(dc, cx, rowY(h, ROW_STATUS), Graphics.FONT_XTINY, "send this code");
+            centered(dc, cx, rowY(h, ROW_STATUS), Graphics.FONT_XTINY, Words.LOCK_SEND_CODE);
         }
 
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        centered(dc, cx, rowY(h, ROW_HINT1), Graphics.FONT_XTINY, "key goes in Garmin");
-        centered(dc, cx, rowY(h, ROW_HINT2), Graphics.FONT_XTINY, "Connect app settings");
+        centered(dc, cx, rowY(h, ROW_HINT1), Graphics.FONT_XTINY, Words.LOCK_HINT_1);
+        centered(dc, cx, rowY(h, ROW_HINT2), Graphics.FONT_XTINY, Words.LOCK_HINT_2);
     }
 
     hidden function centered(dc as Dc, cx as Number, y as Number, font as Graphics.FontType,

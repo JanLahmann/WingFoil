@@ -7,6 +7,11 @@ class WingfoilApp extends Application.AppBase {
 
     function initialize() {
         AppBase.initialize();
+        // The words the glass draws, out of the resource table and into the globals the
+        // pages use (docs/copy/watch.json, garmin/tools/make_strings.py). Once, here, before
+        // any view exists: a menu is built by a delegate rather than by a page, so the app
+        // is the one place upstream of every one of them.
+        Words.load();
         controller = new SessionController();
     }
 

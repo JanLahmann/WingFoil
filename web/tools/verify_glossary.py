@@ -22,6 +22,14 @@ produces a label, the way the kit's lint scans `StatCard(title: "…")` in one f
   js/render.js      the session page's tiles (`k:`) and the takeoff block's rows
   js/trends.js      `renderTotals`, the Trends totals list
 
+  docs/copy/watch.json
+                    every word the WATCH prints that names a number — a page word and a
+                    Garmin Connect field name — held to the term its entry declares. The
+                    watch was outside this lint until 22 September 2026, and it is the
+                    surface the incident above actually happened on: `Turn success 29 %` was
+                    a Garmin Connect row. An entry that names a term whose spelling it does
+                    not use carries a `why`, which is printed like the allow-list below.
+
   docs/copy/presentation.json
                     `label`, `rowMetric` and `divergence` — the key-metrics block (which IS
                     the share card), the library row's cells and the watch-vs-phone rows.
@@ -53,6 +61,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))          # web/
 REPO = os.path.dirname(ROOT)
 GLOSSARY = os.path.join(REPO, "docs", "copy", "glossary.json")
+WATCH = os.path.join(REPO, "docs", "copy", "watch.json")
 
 #: What a metric label may be without being a glossary term — the kit's
 #: `GlossaryLintTests.allowed`, plus the four the browser prints and the phone does not.
@@ -126,8 +135,34 @@ EXTRA: list = []
 
 
 def labels_of(entry: dict) -> list:
-    """Every spelling this term may be printed as: `labels`, and the term itself."""
-    return list(entry.get("labels") or []) + [entry["term"]]
+    """Every spelling this term may be printed as.
+
+    `labels` and the term itself, plus `short` — the same word at the WATCH's width, which
+    docs/copy/glossary.json keeps as a field precisely so that a MIP cell is held to the
+    contract rather than excused from it. The browser never prints a `short`; the watch
+    prints little else.
+    """
+    return (list(entry.get("labels") or [])
+            + [entry["term"]]
+            + ([entry["short"]] if entry.get("short") else []))
+
+
+def watch_rows() -> list:
+    """(entry, where) for every watch string that NAMES A NUMBER.
+
+    Two surfaces, derived by docs/copy/watch.json rather than declared on each entry (see
+    its `_readme`): a PAGE word is an entry with a `var`, the word the glass draws under a
+    number; a GARMIN CONNECT FIELD is an id beginning `Fit` that is not one of the units. A
+    settings row is a question rather than a label and is judged by check_voice.py instead.
+    """
+    doc = json.load(open(WATCH, encoding="utf-8"))
+    rows = []
+    for entry in doc["strings"]:
+        if entry.get("var"):
+            rows.append((entry, "a watch page word"))
+        elif entry["id"].startswith("Fit") and not entry["id"].startswith("FitUnit"):
+            rows.append((entry, "a Garmin Connect field"))
+    return rows
 
 
 def known(label: str, glossary: set) -> bool:
@@ -236,6 +271,44 @@ def main(argv=None) -> int:
             seen.append(("docs/copy/presentation.json", label, where,
                          known(label, glossary)))
 
+    # ---- the watch (22 September 2026) ----
+    #
+    # Held to the term its own entry names, not to the glossary at large: a page that called
+    # the foil share "flights" would pass a check that only asked whether the word is in the
+    # book. A `why` is a deliberate divergence at the glass's width and is printed below,
+    # like the allow-list. A word that IS a glossary spelling and names no term fails — a
+    # label this lint cannot see is a label that drifts, which is the whole case above.
+    spellings = {e["id"]: {s.strip().lower() for s in labels_of(e)} for e in entries}
+    divergences = []
+    for entry, where in watch_rows():
+        checked += 1
+        label, term = entry["text"], entry.get("term")
+        if term is None:
+            ok = not known(label, glossary) or label.strip().lower() in ALLOWED
+            if not ok:
+                problems.append(
+                    'docs/copy/watch.json prints "%s" (%s) as `%s` and names no `term`.\n'
+                    "      It is a spelling of a glossary word, so say which one: add "
+                    '"term": "<glossary id>" to that entry.' % (label, where, entry["id"]))
+            seen.append(("docs/copy/watch.json", label, where, True))
+            continue
+        if term not in spellings:
+            problems.append('docs/copy/watch.json: "%s" names the term `%s`, which is not '
+                            "in docs/copy/glossary.json" % (entry["id"], term))
+            continue
+        ok = label.strip().lower() in spellings[term]
+        if not ok and entry.get("why"):
+            divergences.append((label, term, entry["where"], entry["why"]))
+            ok = True
+        elif not ok:
+            problems.append(
+                'docs/copy/watch.json prints "%s" (%s) for the glossary term `%s`, which '
+                "is not one of its spellings.\n"
+                "      Either spell it the way the term is spelled, or — where the glass "
+                "cannot take that word — add a `why` to the entry saying what it could not "
+                "take." % (label, where, term))
+        seen.append(("docs/copy/watch.json", label, where, ok))
+
     for path, label, where, ok in seen:
         if not ok:
             problems.append(
@@ -251,6 +324,10 @@ def main(argv=None) -> int:
         print("\n  the allow-list — a label may be one of these without being a term:")
         for label in sorted(ALLOWED):
             print("    · %-28s %s" % (label, ALLOWED[label]))
+        print("\n  the watch's divergences — a word the glass could not take, with the "
+              "reason (docs/copy/watch.json):")
+        for label, term, where, why in divergences:
+            print("    · %-18s %-16s %s\n      %s" % (label, term, where, why))
 
     if problems:
         print("\n%d PROBLEM(S) — a number the browser calls something the glossary does "
@@ -260,8 +337,10 @@ def main(argv=None) -> int:
         return 1
 
     print("glossary: %d rider-facing metric labels over %d surfaces, every one a term in "
-          "docs/copy/glossary.json (%d entries) or on the allow-list (%d)"
-          % (checked, len({p for p, _, _, _ in seen}), len(entries), len(ALLOWED)))
+          "docs/copy/glossary.json (%d entries) or on the allow-list (%d); the watch adds "
+          "%d divergences, each with its reason"
+          % (checked, len({p for p, _, _, _ in seen}), len(entries), len(ALLOWED),
+             len(divergences)))
     return 0
 
 

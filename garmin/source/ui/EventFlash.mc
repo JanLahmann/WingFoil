@@ -38,6 +38,10 @@ import WingFoilCore;
 // One flash at a time: a new event simply restarts the walk with the new kind, which is what
 // the rider wants — the newest verdict, not a queue of old ones.
 module EventFlash {
+    // Between the kind of sweep and its verdict on the afterglow strip. A separator, not a
+    // word: docs/copy/watch.json holds the words and this holds the gap between two of them.
+    const FLASH_SEP = " · ";
+
     const FRAME_MS = 100;
     const FRAMES_FULL = 15;        // 15 x 100 ms = 1.5 s
     const FRAMES_RING = 7;         // 0.7 s, the takeoff ring
@@ -198,46 +202,48 @@ module EventFlash {
     }
 
     // The word on the flash. Short enough for FONT_LARGE on the narrowest glass.
+    // Every word here is docs/copy/watch.json's, loaded once into the globals below.
     function word(k as Number, v as Number) as String {
         if (k == EV_FLEW) {
-            return "FLEW";
+            return Words.FLASH_FLEW;
         } else if (k == EV_TOUCH) {
-            return "TOUCH";
+            return Words.FLASH_TOUCH;
         } else if (k == EV_FELL) {
-            return "FELL";
+            return Words.FLASH_FELL;
         } else if (k == EV_CLEAN) {
-            return "CLEAN";
+            return Words.FLASH_CLEAN;
         } else if (k == EV_STREAK) {
-            return v.toString() + " DRY";
+            return v.toString() + Words.FLASH_DRY;
         } else if (k == EV_LONGEST) {
-            return "LONGEST";
+            return Words.FLASH_LONGEST;
         }
         return "";
     }
 
     function turnLabel(tKind as Number) as String {
         if (tKind == TurnDetector.KIND_JIBE) {
-            return "JIBE";
+            return Words.FLASH_JIBE;
         } else if (tKind == TurnDetector.KIND_TACK) {
-            return "TACK";
+            return Words.FLASH_TACK;
         }
-        return "TURN";
+        return Words.FLASH_TURN;
     }
 
-    // The afterglow line: the turn kind with its verdict, or the event by name.
+    // The afterglow line: the turn kind with its verdict, or the event by name. The verdict
+    // half is the Main page's own tally caption, so one word covers both surfaces.
     function stripText(k as Number, tKind as Number, v as Number) as String {
         if (k == EV_FLEW) {
-            return turnLabel(tKind) + " · flew";
+            return turnLabel(tKind) + FLASH_SEP + Words.TALLY_CAP_FLEW;
         } else if (k == EV_TOUCH) {
-            return turnLabel(tKind) + " · touch";
+            return turnLabel(tKind) + FLASH_SEP + Words.TALLY_CAP_TOUCH;
         } else if (k == EV_FELL) {
-            return turnLabel(tKind) + " · fell";
+            return turnLabel(tKind) + FLASH_SEP + Words.TALLY_CAP_FELL;
         } else if (k == EV_CLEAN) {
-            return "CLEAN JIBE";
+            return Words.FLASH_CLEAN_JIBE;
         } else if (k == EV_STREAK) {
-            return v.toString() + " DRY";
+            return v.toString() + Words.FLASH_DRY;
         } else if (k == EV_LONGEST) {
-            return "LONGEST " + mmss(v);
+            return Words.FLASH_LONGEST + " " + mmss(v);
         }
         return "";
     }
