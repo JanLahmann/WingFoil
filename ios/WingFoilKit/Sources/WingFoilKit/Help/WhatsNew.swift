@@ -63,6 +63,35 @@ public enum WhatsNew {
     /// Every entry, newest first.
     public static let entries: [WhatsNewEntry] = [
         WhatsNewEntry(
+            version: "1.0.1",
+            build: 101,
+            channel: .beta,
+            date: "2026-09-22",
+            dateText: "22 September 2026",
+            title: "Tacks on the card",
+            lines: [
+                "Tacks have their own cell on the session page and on the share card, beside the jibes.",
+                "The map behind a track in the sessions list is always the dark one.",
+                "The feedback mail names the channel: release, beta or dev.",
+                "Help: what to do when a watch update does not arrive.",
+                "Best hour opens its window on the map and chart, like the other eight records.",
+                "Please open a session you tacked on and check the new cell against your afternoon.",
+            ]),
+        WhatsNewEntry(
+            version: "1.0.1",
+            build: 100,
+            channel: .dev,
+            date: "2026-09-22",
+            dateText: "22 September 2026",
+            title: "Tacks on the card",
+            lines: [
+                "Tacks have their own cell on the session page and on the share card, beside the jibes.",
+                "The map behind a track in the sessions list is always the dark one.",
+                "The feedback mail names the channel: release, beta or dev.",
+                "Help: what to do when a watch update does not arrive.",
+                "Best hour opens its window on the map and chart, like the other eight records.",
+            ]),
+        WhatsNewEntry(
             version: "0.9.17",
             build: nil,
             channel: .release,

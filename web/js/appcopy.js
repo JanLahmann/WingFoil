@@ -290,6 +290,21 @@ export const WELCOME = {
 /** What's new, release and beta only — the filter /whats-new/ uses. */
 export const WHATS_NEW = [
   {
+    "version": "1.0.1",
+    "build": 101,
+    "channel": "beta",
+    "date": "2026-09-22",
+    "title": "Tacks on the card",
+    "lines": [
+      "Tacks have their own cell on the session page and on the share card, beside the jibes.",
+      "The map behind a track in the sessions list is always the dark one.",
+      "The feedback mail names the channel: release, beta or dev.",
+      "Help: what to do when a watch update does not arrive.",
+      "Best hour opens its window on the map and chart, like the other eight records.",
+      "Please open a session you tacked on and check the new cell against your afternoon."
+    ]
+  },
+  {
     "version": "0.9.17",
     "build": null,
     "channel": "release",
@@ -1566,6 +1581,29 @@ export const HELP = {
           ],
           "summary": "All of them, one way or another. Each row says what that one costs you.",
           "title": "Which watches work with CleanJibe"
+        },
+        {
+          "body": [
+            "Garmin's Connect IQ store sometimes queues an update without installing it, most often on the fenix 5 Plus family.",
+            "Restart the watch, then sync in Garmin Connect.",
+            "If it still shows the old version, install it through Garmin Express over the cable.",
+            "CleanJibe updates often, so you meet this here more than with other apps."
+          ],
+          "channels": [
+            "release",
+            "beta",
+            "dev"
+          ],
+          "id": "watchUpdateStuck",
+          "items": [],
+          "related": [
+            "whichWatch",
+            "shareFromWatchApp",
+            "icuTroubleshooting",
+            "engineVersion"
+          ],
+          "summary": "The store queued it without installing it. Restart the watch, then sync.",
+          "title": "The watch update does not arrive"
         },
         {
           "body": [

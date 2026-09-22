@@ -784,18 +784,26 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    damage. Both shapes were in the App Store build (1.0.0, build 60) —
    `ios/WingFoilKit/Sources/WingFoilKit/FitImport/` had not changed since it was cut.
 
-   **One residual, outside our code, and it is the open end of this hunt.** A FIT that is
-   whole, correct-CRC and framable can still trap *inside* FitFileParser 1.5.2:
-   `rzfit_swift_map.swift:1030-1048` (`rzfit_swift_string_for_type`) narrows a `FIT_UINT32`
-   raw value into `FIT_ENUM` / `FIT_UINT8` / `FIT_UINT16` with the **exact** initializer, so a
-   value wider than the profile's type dies on "Not enough bits to represent the passed
-   value" — uncatchable, inside `FitFile.init`, before a line of ours runs. (`FitMessage.swift:146`
-   has the same shape.) Reproduce it with
-   `FUZZ_MUTANTS=12 swift test --filter repairedMutantsNeverTrap`: the mutant is
+   **The one residual, and how it was closed.** A FIT that is whole, correct-CRC and framable
+   used to trap *inside* FitFileParser 1.5.2: `rzfit_swift_string_for_type` in
+   `rzfit_swift_map.swift` narrowed a `FIT_UINT32` raw value into `FIT_ENUM` / `FIT_UINT8` /
+   `FIT_UINT16` with the **exact** initializer, so a value wider than the profile's type died
+   on "Not enough bits to represent the passed value" — uncatchable, inside `FitFile.init`,
+   before a line of ours ran. No gate of ours could see it, because the file is structurally
+   valid. Reproduce the mutant that found it with
+   `FUZZ_MUTANTS=12 swift test --filter repairedMutantsNeverTrap`:
    `2026-08-03-1440_nago-torbole-windsurfen_native.fit` seed 8, which is why the committed
-   budget is six. No gate of ours can see it — the file is structurally valid — and the fix
-   is one word upstream (`truncatingIfNeeded:`) or a pinned fork. Until then it is a known
-   way for a stranger's recording to kill the app on the first sync.
+   budget is six.
+
+   The fix was one word, `truncatingIfNeeded:`, which is what the C SDK does with the same
+   bytes. It shipped as a vendored copy of 1.5.2 on 20 September 2026 and went **upstream** on
+   the 21st (roznet/FitFileParser#15). Since 22 September 2026 the copy is gone and
+   `Package.swift` pins `roznet/FitFileParser` at the merge commit
+   `6f50aa12b3fcb226c601b1160374f4c5f7930835` — a revision and not a tag, because the newest
+   release, 1.5.2, predates the fix by three years. The merge also carries Garmin's FIT SDK
+   21.158 in place of 21.115, so the move was taken with the goldens and the whole fuzz behind
+   it: `swift test`, then `FUZZ_ALL=1 swift test --filter MutationFuzz` over every recording in
+   the corpus. It moves to `.exact("…")` the day upstream cuts a release.
    Library-depth suites (phase 4, all on real fixture FITs):
    - `MigrationTests` — a database migrated only `upTo: "v1"` is filled the way the v1 app
      did (raw rows + archived FITs), then opened as the current `AppDatabase`. Asserts the

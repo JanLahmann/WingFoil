@@ -224,6 +224,9 @@ public enum HelpTopicID: String, CaseIterable, Sendable, Identifiable {
     case icuTroubleshooting
     case icuPrivacy, privacy, libraryBackup
     case stravaImport, shareFromWatchApp, whichWatch, phoneOnly
+    /// The Connect IQ store queues an update and never installs it — the one Garmin
+    /// failure the phone cannot see and cannot fix, so it is written down instead.
+    case watchUpdateStuck
     /// The browser app, and the answer to "is there an Android app".
     case browserApp
     case foilPct, flights, longestFlight, distance, mapLegend
@@ -773,6 +776,26 @@ public enum HelpCatalog {
             ],
             related: [.shareFromWatchApp, .icuSetup, .appleWatchApp, .appleWorkoutApp,
                       .stravaImport, .phoneOnly, .sourceClass, .speedRecords]),
+
+        // **The Connect IQ store queues an update and does not install it.** Jan's own
+        // watches have done it, the fenix 5 Plus family does it most, and CleanJibe ships
+        // often enough that a rider meets it here before he meets it anywhere else — so the
+        // answer belongs beside "which watches work" rather than in a mail. Two fixes, in
+        // the order that costs least: a restart and a sync, then the cable.
+        HelpTopic(
+            id: .watchUpdateStuck, section: .setup,
+            title: "The watch update does not arrive",
+            summary: "The store queued it without installing it. Restart the watch, "
+                + "then sync.",
+            body: [
+                "Garmin's Connect IQ store sometimes queues an update without installing "
+                + "it, most often on the fenix 5 Plus family.",
+                "Restart the watch, then sync in Garmin Connect.",
+                "If it still shows the old version, install it through Garmin Express over "
+                + "the cable.",
+                "CleanJibe updates often, so you meet this here more than with other apps.",
+            ],
+            related: [.whichWatch, .shareFromWatchApp, .icuTroubleshooting, .engineVersion]),
 
         HelpTopic(
             id: .icuTroubleshooting, section: .setup, title: "When the sync does not work",

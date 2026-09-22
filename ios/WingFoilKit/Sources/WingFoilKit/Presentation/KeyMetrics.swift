@@ -12,10 +12,12 @@ import Foundation
 ///
 /// 1. `basics` — duration (`10:45 min` / `1:57 h`), distance, average speed.
 /// 2. `maxSpeed` — the best 2 s record, labelled with the window it is, never "top speed".
-/// 3. `tally` + `streaks` — the outcome ladder's own three counts, plus the two streaks
-///    §5.1 flagged as computed-and-never-shown on either platform. The tally's caption
-///    carries the **clean jibe** count as well as the total, so the one number a rider
-///    quotes about his turns is in the block rather than three screens down.
+/// 3. `tally` + `tacks` + `falls` + `streaks` — the outcome ladder's own three counts for
+///    the jibes and, since 22 September 2026, the same three for the **tacks** where the
+///    session had any; then every fall of the afternoon and the two streaks §5.1 flagged
+///    as computed-and-never-shown on either platform. The jibe tally's caption carries the
+///    **clean jibe** count as well as the total, so the one number a rider quotes about his
+///    turns is in the block rather than three screens down.
 /// 4. `rates` — the per-hour rates (`docs/algorithms.md` "Session rates"); JPH counts
 ///    **dry** jibes since 0.7.0 and CPH the **clean** ones since 0.10.0, and both labels
 ///    say which set they count.
@@ -53,6 +55,10 @@ public struct KeyMetrics: Sendable, Equatable {
     /// view. The counts stay numbers rather than a joined string precisely because the
     /// colour is the point — `docs/presentation.md`, "the outcome ladder is a verdict
     /// scale and nothing else may borrow it".
+    ///
+    /// Two of them since 22 September 2026: the jibe ladder, and the **tack** ladder
+    /// beside it on the sessions where the rider tacked. One shape, one set of inks, two
+    /// sets of turns — the captions say which is which.
     public struct Tally: Sendable, Equatable {
         public let flewThrough: Int
         public let touchdown: Int
@@ -91,6 +97,20 @@ public struct KeyMetrics: Sendable, Equatable {
     public let speedExtras: [Metric]
     /// nil when no turn was counted: a tally of three zeros is not a verdict.
     public let tally: Tally?
+    /// **The tacks, on the same ladder** (22 September 2026). The engine has typed both
+    /// kinds of turn since 0.3.0 and this block only ever drew the jibes, so a rider who
+    /// tacks read an afternoon with a quarter of its maneuvers missing from the one place
+    /// that summarises it.
+    ///
+    /// Its caption carries no *clean* count: clean is a jibe word in this product and a
+    /// tack has no clean reading to carry (`TurnSummary.tacksSuccessful`, and the Tacks
+    /// card on the Turns tab, which dropped its fourth number for the same reason).
+    ///
+    /// nil on a session with no tack in it — and nil when the tally above it has fallen
+    /// back to *every counted turn*, because the tacks are already inside those three
+    /// numbers and a block that printed them twice would be answering one question with
+    /// two cells (docs/review-checklist.md, pattern F).
+    public let tacks: Tally?
     /// "5 flew · 11 dry", nil with no counted turns. Flying leads: it is the harder of
     /// the two runs and the one the rider is chasing, and `longestFlewStreak` is always
     /// the smaller number, so the pair reads strict-then-lenient in both halves.
@@ -111,11 +131,13 @@ public struct KeyMetrics: Sendable, Equatable {
     public let rates: [Metric]
 
     public init(basics: [Metric], maxSpeed: Metric, speedExtras: [Metric] = [],
-                tally: Tally?, streaks: Metric?, falls: Metric? = nil, rates: [Metric]) {
+                tally: Tally?, tacks: Tally? = nil, streaks: Metric?,
+                falls: Metric? = nil, rates: [Metric]) {
         self.basics = basics
         self.maxSpeed = maxSpeed
         self.speedExtras = speedExtras
         self.tally = tally
+        self.tacks = tacks
         self.streaks = streaks
         self.falls = falls
         self.rates = rates
@@ -142,6 +164,7 @@ public struct KeyMetrics: Sendable, Equatable {
                 Metric(key: "alpha500", label: "alpha 500", value: knots(records.alpha500Kn)),
             ],
             tally: tally(t),
+            tacks: tackTally(t),
             streaks: t.turnsCounted > 0
                 ? Metric(key: "streaks", label: "best streaks",
                          value: String(t.longestFlewStreak) + " flew · "
@@ -203,6 +226,24 @@ public struct KeyMetrics: Sendable, Equatable {
         let o = t.outcomes
         return Tally(flewThrough: o.flewThrough, touchdown: o.touchdown, fellIn: o.fellIn,
                      caption: "of \(t.turnsCounted) turns")
+    }
+
+    /// **The tack ladder**, beside the jibe one, on the sessions that have tacks in them.
+    ///
+    /// Same three counts, same inks, same shape — what differs is the set of turns and the
+    /// caption that names it ("of 14 tacks"). There is no clean clause: `tacksSuccessful`
+    /// is the engine's *score* verdict, and `turns.py` says outright that it must never be
+    /// called clean, because clean is a jibe word in this product.
+    ///
+    /// Two gates, not one. `tacks > 0` is the obvious half. `jibes > 0` is the other: when
+    /// the wind axis named no jibes the tally above has fallen back to **every counted
+    /// turn**, and on such a session the tacks are those turns — the two cells would print
+    /// one set of numbers twice under two captions. The fallback already reports them.
+    static func tackTally(_ t: TurnSummary) -> Tally? {
+        guard t.tacks > 0, t.jibes > 0 else { return nil }
+        let o = t.tackOutcomes
+        return Tally(flewThrough: o.flewThrough, touchdown: o.touchdown, fellIn: o.fellIn,
+                     caption: "of " + String(t.tacks) + (t.tacks == 1 ? " tack" : " tacks"))
     }
 
     /// JPH · CPH · WPH, one decimal.

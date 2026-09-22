@@ -607,7 +607,7 @@ screens below a map, ten legend chips and three paragraphs of legend documentati
 |---|---|
 | 1 | duration (`10:45 min` / `1:57 h`) · distance · average speed |
 | 2 | the best 2 s record, labelled **"max 2 s"**, in the largest type · beside it **5×10 s** and **alpha 500** at the ordinary size, "—" where the session produced none (since 6 Sep 2026). These two are **block-only**: the share card is the block *minus* them — one speed on a card, the one a rider quotes; the Records page owns the set. The web renders them with the `extra` class, which is how `card_parity.mjs` tells them apart |
-| 3 | the outcome tally on the ladder's inks · the two turn streaks |
+| 3 | the jibe tally on the ladder's inks · **the tack tally beside it** where the session had tacks (22 Sep 2026) · every fall of the afternoon · the two turn streaks |
 | 4 | **JPH** (dry jibes) and **WPH** (`docs/algorithms.md` "Session rates"), one decimal |
 
 The rules, which are the only thing the two implementations can disagree about:
@@ -654,6 +654,27 @@ The rules, which are the only thing the two implementations can disagree about:
     stop (7 Sep 2026). A fifth cell on row 3 is a cell the streaks pair would lose, and the
     count is a *qualification* of the tally rather than a metric standing beside it. It stays
     in neutral ink — see "Clean jibe" above.
+- **The tacks get the same ladder, beside the jibes** (22 September 2026). The engine has
+  typed both kinds of turn since 0.3.0 and this block only ever drew one of them, so a rider
+  who tacks read an afternoon with a quarter of its maneuvers missing from the one place
+  that sums it up. The cell is the jibe tally's twin — the same three counts, the same three
+  inks, the same words under them — and only the caption differs: **"of 14 tacks"**, or "of
+  1 tack".
+  - **No clean clause, ever.** `tacksSuccessful` is the engine's *score* verdict and
+    `turns.py` says outright that it must never be called clean: clean is a jibe word in this
+    product and a tack has no clean/dirty reading to carry. The Tacks card on the Turns tab
+    dropped its fourth number for the same reason, and this cell was never given one.
+  - **Two gates, not one:** `turns.tacks > 0` **and** `turns.jibes > 0`. The second is the
+    one worth writing down — when the wind axis named no jibes the cell above has fallen
+    back to the ladder over *every counted turn*, and on such a session those turns are the
+    tacks, so a second cell would print one set of numbers twice under two captions
+    (`docs/review-checklist.md`, pattern F).
+  - **It is a card cell too**, straight after the jibe tally, because the card is the block
+    (`ShareCardStats`). It is not a `lean` key: lean is the four a rider quotes walking off
+    the water plus the honest fall count, and a tack ladder is neither.
+  - **Row 3 therefore holds four cells on a tacking session.** The web's `auto-fit` grid
+    wraps them by itself; iOS takes the two-column layout it already uses at accessibility
+    sizes, because `63 · 1 · 6` does not fit a quarter of a phone.
 - **Streaks are `summary.turns.longestFlewStreak` / `longestDryStreak`**, rendered
   `5 flew · 11 dry` — the first time either app draws them. They are over counted turns,
   which is what the engine measures them over; nothing is re-derived here.
@@ -4539,7 +4560,7 @@ diagnostics makes the reporter scroll past them to write his report. Prefilled, 
 
 | section | what it carries |
 |---|---|
-| App | marketing version and build, dev (TUNING) or public, `AnalysisEngine.version`, and the count of tuned thresholds — that last line only when there are some, and only on the dev build, which is the only one that applies them |
+| App | marketing version and build, **the channel in one word** — `release build`, `beta build` or `dev build, TUNING on` — `AnalysisEngine.version`, and the count of tuned thresholds. That last line only when there are some, and only on the dev build, which is the only one that applies them. The channel line said *public build* on the App Store app and on the public beta alike until 22 September 2026, so a reader answering a report could not tell a tester's phone from a buyer's, and nearly every report comes from the beta (pattern L: one taxonomy per concept). It is `AppChannel.channel`, the one `#if` the app keeps for the purpose, handed to the kit as `FeedbackFacts.App.channel` |
 | Phone | the model identifier (`iPhone18,2`) with its marketing name in front of it where the table knows one, the iOS version, the locale |
 | Watch | the paired Garmin's name from the companion link, the CleanJibe watch app's version decoded from the last BLE card's build tag (`APP_MINOR * 256 + FIT schema`), whether an Apple Watch is paired (`WCSession`, omitted when it cannot be asked), Health auto-import on or off |
 | Library | how many sessions, and the count per door they came in by — a session merged from two sources is counted under both, which is the answer a duplicate report needs |

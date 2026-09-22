@@ -37,13 +37,17 @@ struct KeyMetricsView: View {
                 ForEach(metrics.speedExtras) { cell($0) }
             }
 
-            // The tally is the **jibe** ladder and its caption says so ("of 57 jibes").
-            // The falls cell beside it is the **session**, straight-line swims included —
-            // the two are different questions and were one number until 20 September 2026,
-            // when a tester who fell three times read a 1.
-            if metrics.tally != nil || metrics.streaks != nil || metrics.falls != nil {
-                row {
+            // The tally is the **jibe** ladder and its caption says so ("of 57 jibes"), and
+            // since 22 September 2026 the **tack** ladder sits next to it on the afternoons
+            // that have tacks in them — same three counts, same inks, its own caption.
+            // The falls cell beside them is the **session**, straight-line swims included —
+            // a different question again, and one number until 20 September 2026, when a
+            // tester who fell three times read a 1.
+            if metrics.tally != nil || metrics.tacks != nil || metrics.streaks != nil
+                || metrics.falls != nil {
+                row(count: tallyRowCount) {
                     if let tally = metrics.tally { tallyCell(tally) }
+                    if let tacks = metrics.tacks { tallyCell(tacks) }
                     if let falls = metrics.falls { cell(falls) }
                     if let streaks = metrics.streaks { cell(streaks) }
                 }
@@ -64,12 +68,22 @@ struct KeyMetricsView: View {
         .denseRowTypeSizeCap()
     }
 
+    /// How many tiles the tally row is carrying. Three is the block's shape everywhere
+    /// else; the tack ladder makes it four on the sessions the rider tacked on, and four
+    /// abreast is where `63 · 1 · 6` stops fitting a quarter of a phone.
+    private var tallyRowCount: Int {
+        [metrics.tally != nil, metrics.tacks != nil,
+         metrics.falls != nil, metrics.streaks != nil].filter { $0 }.count
+    }
+
     /// One line of tiles: side by side, or two to a line once the type is large enough that
-    /// three would truncate. `.topLeading` so a tile whose label wraps onto three lines does
-    /// not drag its neighbour's number down with it.
+    /// three would truncate — and the same two-column wrap once the line is carrying four
+    /// of them, which is the shape the web's `auto-fit` grid takes at the same width.
+    /// `.topLeading` so a tile whose label wraps onto three lines does not drag its
+    /// neighbour's number down with it.
     @ViewBuilder
-    private func row(@ViewBuilder _ content: () -> some View) -> some View {
-        if typeSize.isAccessibilitySize {
+    private func row(count: Int = 3, @ViewBuilder _ content: () -> some View) -> some View {
+        if typeSize.isAccessibilitySize || count > 3 {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12,
                                                          alignment: .topLeading),
                                      count: 2),

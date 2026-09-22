@@ -55,20 +55,23 @@ enum FeedbackMail {
     private static func appFacts(store: SessionStore) -> FeedbackFacts.App {
         let info = Bundle.main.infoDictionary
         #if TUNING
-        let isDev = true
         // Only the dev build ever *applies* stored overrides (`SessionStore.init`), so only
-        // the dev build may claim any: a public build with a leftover tuning blob in its
-        // defaults is running the published thresholds, and saying otherwise would send a
-        // reader looking for a difference that is not there.
+        // the dev build may claim any: a release or beta build with a leftover tuning blob
+        // in its defaults is running the published thresholds, and saying otherwise would
+        // send a reader looking for a difference that is not there.
         let tuned = store.tuning.totalChangedCount
         #else
-        let isDev = false
         let tuned = 0
         #endif
+        // The channel comes from `AppChannel`, which is the one `#if` in the app that
+        // answers "which build is this" (docs/channels.md). The body used to print a
+        // `TUNING` bool as two words over three builds, and called the App Store app and
+        // the public beta alike a "public build".
         return FeedbackFacts.App(
             version: info?["CFBundleShortVersionString"] as? String ?? "0",
             build: info?["CFBundleVersion"] as? String ?? "0",
-            isDev: isDev, engineVersion: AnalysisEngine.version, tunedThresholds: tuned)
+            channel: AppChannel.channel, engineVersion: AnalysisEngine.version,
+            tunedThresholds: tuned)
     }
 
     @MainActor

@@ -93,7 +93,7 @@ import Testing
     private func facts(build: String = "75", crashes: [CrashDigest],
                        watchRuns: Int? = nil) -> FeedbackFacts {
         FeedbackFacts(
-            app: .init(version: "1.0", build: build, isDev: false, engineVersion: "0.20.0"),
+            app: .init(version: "1.0", build: build, channel: .release, engineVersion: "0.20.0"),
             phone: .init(model: "iPhone18,2", system: "iOS 26.0", locale: "en_DE"),
             watch: .init(garminModel: nil, garminAppVersion: nil, appleWatchPaired: nil,
                          healthImport: nil, garminCrashRuns: watchRuns),

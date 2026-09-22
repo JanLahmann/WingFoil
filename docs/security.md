@@ -55,7 +55,7 @@ sits on one of them.
 5. **CDN → browser.** Pyodide from jsdelivr, a wheel from PyPI, analytics from umami — three
    third parties whose code runs *inside* boundary 4.
 6. **Contributor / CI → shipped artifact.** The repo, the Actions workflows, the pinned
-   dependencies, the vendored FitFileParser.
+   dependencies, FitFileParser among them — pinned to a commit rather than to a tag.
 
 ---
 
@@ -142,8 +142,12 @@ Recorded because a threat model that lists only problems reads as if nothing was
 - **The PWA share target** parks the shared file in a cache, redirects, and never sends it
   anywhere.
 - **Dependency pinning** is good: `Package.resolved` committed with exact revisions,
-  `uv.lock` with 1294 hashes and CI running `--locked`, Pyodide pinned, and the vendored
-  FitFileParser's provenance written down in `ios/vendor/FitFileParser/VENDORED.md`.
+  `uv.lock` with 1294 hashes and CI running `--locked`, and Pyodide pinned. FitFileParser was
+  a vendored copy from 20 to 22 September 2026, for the one-word fix that stops a valid FIT
+  trapping inside the decoder; the fix is upstream now (roznet/FitFileParser#15) and the
+  dependency is a `.revision(…)` on the merge commit, because the newest release predates it
+  by three years. A revision pin is a pin: `Package.resolved` records the same forty hex
+  digits the manifest asks for.
 - **No token is logged** anywhere — not in `FeedbackReport`, not in `CrashDigest`, not in the
   iCloud sync payload (recordings, `meta.json`, `tombstones.json`, and nothing else).
 

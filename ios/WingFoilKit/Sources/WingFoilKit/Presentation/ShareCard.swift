@@ -51,11 +51,16 @@ public struct ShareCardStats: Sendable, Equatable {
                       caption: metric.caption)
         }
 
-        /// The outcome tally as one cell: the three counts as a value, and the block's own
-        /// caption ("of 50 jibes · 12 clean") underneath, so the numbers can never be
-        /// mistaken for a tally of some other set of turns.
-        public init(_ tally: KeyMetrics.Tally) {
-            self.init(key: Key.tally, label: "flew · touchdown · fell",
+        /// An outcome tally as one cell: the three counts as a value, and the block's own
+        /// caption ("of 50 jibes · 12 clean", "of 14 tacks") underneath, so the numbers can
+        /// never be mistaken for a tally of some other set of turns.
+        ///
+        /// `key` because the block carries two of these since 22 September 2026 — the jibe
+        /// ladder and the tack ladder — and they are the same cell over two sets of turns.
+        /// The label is deliberately the same words on both: it names the three inks, and
+        /// what the three inks are counting is what the caption says.
+        public init(_ tally: KeyMetrics.Tally, key: String = Key.tally) {
+            self.init(key: key, label: "flew · touchdown · fell",
                       value: String(tally.flewThrough) + " · " + String(tally.touchdown)
                           + " · " + String(tally.fellIn),
                       caption: tally.caption, tally: tally)
@@ -70,6 +75,10 @@ public struct ShareCardStats: Sendable, Equatable {
         public static let avgSpeed = "avgSpeed"
         public static let maxSpeed = "max2s"
         public static let tally = "tally"
+        /// **The tack ladder** (22 September 2026), beside the jibe one on a session with
+        /// tacks in it. Not a `KeyMetrics.Metric` key either, for the same reason `tally`
+        /// is not: a `Tally` is three counts, not a string.
+        public static let tacks = "tacks"
         public static let streaks = "streaks"
         /// **Every fall of the session** (20 September 2026). The tally beside it is the
         /// jibe ladder and says so; this is the session, straight-line swims included.
@@ -299,14 +308,17 @@ public struct ShareCardStats: Sendable, Equatable {
     }
 
     /// The key-metrics block flattened into cells, in the block's own reading order:
-    /// duration · distance · avg speed, the max 2 s window, the tally and the streaks, then
-    /// the per-hour rates. Absent entries stay absent — a session with no wind axis has no
+    /// duration · distance · avg speed, the max 2 s window, the jibe tally, the tack tally
+    /// where the session had tacks, the falls and the streaks, then the per-hour rates. Absent entries stay absent — a session with no wind axis has no
     /// jibe rate, and `KeyMetrics.rates` is empty rather than 0.0, so the card simply has
     /// two fewer cells (the same rule, because it is the same list).
     public static func stats(from metrics: KeyMetrics, preset: Preset) -> [Stat] {
         var out = metrics.basics.map(Stat.init)
         out.append(Stat(metrics.maxSpeed))
         if let tally = metrics.tally { out.append(Stat(tally)) }
+        // The tacks ride straight after the jibes, which is where the block draws them and
+        // what makes the pair read as one question asked about two kinds of turn.
+        if let tacks = metrics.tacks { out.append(Stat(tacks, key: Key.tacks)) }
         if let falls = metrics.falls { out.append(Stat(falls)) }
         if let streaks = metrics.streaks { out.append(Stat(streaks)) }
         out.append(contentsOf: metrics.rates.map(Stat.init))

@@ -24,24 +24,48 @@ public struct FeedbackFacts: Sendable, Equatable {
         /// `CFBundleVersion` — the build number, which is the one thing that identifies a
         /// TestFlight build uniquely (both variants share the marketing version).
         public let build: String
-        /// The `TUNING` variant. Named in the subject as well as the body: the dev build is
-        /// the one that can be running thresholds nobody else has.
-        public let isDev: Bool
+        /// **Which of the three channels wrote this mail** (22 September 2026).
+        ///
+        /// It was a `Bool` for the `TUNING` variant, so the body had two words for three
+        /// builds and called both the App Store app and the public beta a *public build* —
+        /// a reader answering a report could not tell a tester's phone from a buyer's, and
+        /// the beta is where nearly every report comes from (docs/review-checklist.md,
+        /// pattern L: one taxonomy per concept). The channel is the taxonomy docs/channels.md
+        /// already uses, and the app hands it in from the one `#if` it keeps for the purpose
+        /// (`AppChannel.channel`).
+        public let channel: HelpChannel
+        /// The `TUNING` variant — dev, and only dev. Named in the subject as well as the
+        /// body: it is the one build that can be running thresholds nobody else has.
+        public var isDev: Bool { channel == .dev }
         public let engineVersion: String
         /// How many analysis thresholds this phone has moved off their published defaults
-        /// (`TuningOverrides.changedCount`). Zero on every public build, and on a dev build
-        /// that has not been touched; the line is left out when it is zero rather than
+        /// (`TuningOverrides.changedCount`). Zero on the release and the beta, which never
+        /// apply a stored override, and on a dev build that has not been touched. The line
+        /// is left out when it is zero rather than
         /// printing a reassuring "0", because an absent line is read as "nothing unusual"
         /// and a present one as "look here".
         public let tunedThresholds: Int
 
-        public init(version: String, build: String, isDev: Bool,
+        public init(version: String, build: String, channel: HelpChannel,
                     engineVersion: String, tunedThresholds: Int = 0) {
             self.version = version
             self.build = build
-            self.isDev = isDev
+            self.channel = channel
             self.engineVersion = engineVersion
             self.tunedThresholds = tunedThresholds
+        }
+
+        /// The channel in the rider's own words, for the line under the rule.
+        ///
+        /// Three words for three builds, and the release says **release** rather than
+        /// "public": the App Store app and the public beta were both a *public build*, and
+        /// the beta is where the reports come from.
+        var channelName: String {
+            switch channel {
+            case .release: "release build"
+            case .beta: "beta build"
+            case .dev: "dev build, TUNING on"
+            }
         }
     }
 
@@ -493,8 +517,7 @@ public enum FeedbackReport {
 
     private static func appLines(_ app: FeedbackFacts.App) -> [String] {
         var lines = [
-            "\(Branding.appName) \(app.version) (\(app.build))"
-                + (app.isDev ? " · dev build, TUNING on" : " · public build"),
+            "\(Branding.appName) \(app.version) (\(app.build)) · \(app.channelName)",
             "Analysis engine \(app.engineVersion)",
         ]
         if app.tunedThresholds > 0 {
