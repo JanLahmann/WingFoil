@@ -13,6 +13,7 @@
   "wingfoil_lab/hrcost.py",
   "wingfoil_lab/jump.py",
   "wingfoil_lab/parse.py",
+  "wingfoil_lab/presentation.py",
   "wingfoil_lab/pump.py",
   "wingfoil_lab/takeoff.py",
   "wingfoil_lab/tcx.py",

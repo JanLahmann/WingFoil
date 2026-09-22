@@ -92,5 +92,1679 @@
       "count": 1,
       "flewThrough": 0
     }
-  ]
+  ],
+  "document": {
+    "block": {
+      "rows": [
+        {
+          "cells": [
+            {
+              "captions": [],
+              "colourRole": "neutral",
+              "key": "duration",
+              "labelId": "presentation.label.duration",
+              "unitKind": "durationS",
+              "value": 5080.0
+            },
+            {
+              "captions": [],
+              "colourRole": "neutral",
+              "key": "distance",
+              "labelId": "presentation.label.distance",
+              "unitKind": "distanceKm",
+              "value": 12.764
+            },
+            {
+              "captions": [],
+              "colourRole": "neutral",
+              "key": "avgSpeed",
+              "labelId": "presentation.label.avgSpeed",
+              "unitKind": "speedKn",
+              "value": 6.069
+            }
+          ],
+          "id": "basics"
+        },
+        {
+          "cells": [
+            {
+              "captions": [],
+              "colourRole": "neutral",
+              "key": "max2s",
+              "labelId": "presentation.label.max2s",
+              "unitKind": "speedKn",
+              "value": 11.363
+            },
+            {
+              "captions": [],
+              "colourRole": "neutral",
+              "key": "best5x10s",
+              "labelId": "presentation.label.best5x10s",
+              "unitKind": "speedKn",
+              "value": 10.625
+            },
+            {
+              "captions": [],
+              "colourRole": "neutral",
+              "key": "alpha500",
+              "labelId": "presentation.label.alpha500",
+              "unitKind": "speedKn",
+              "value": 9.679
+            }
+          ],
+          "id": "speed"
+        },
+        {
+          "cells": [
+            {
+              "captions": [
+                {
+                  "args": {
+                    "clean": 3,
+                    "jibes": 31
+                  },
+                  "id": "presentation.caption.ofJibes"
+                }
+              ],
+              "colourRole": "outcome.ladder",
+              "key": "tally",
+              "labelId": "presentation.label.outcomeLadder",
+              "tally": {
+                "fellIn": 12,
+                "flewThrough": 11,
+                "touchdown": 8
+              },
+              "unitKind": "count",
+              "value": null
+            },
+            {
+              "captions": [
+                {
+                  "args": {
+                    "tacks": 1
+                  },
+                  "id": "presentation.caption.ofTacks"
+                }
+              ],
+              "colourRole": "outcome.ladder",
+              "key": "tacks",
+              "labelId": "presentation.label.outcomeLadder",
+              "tally": {
+                "fellIn": 1,
+                "flewThrough": 0,
+                "touchdown": 0
+              },
+              "unitKind": "count",
+              "value": null
+            },
+            {
+              "captions": [
+                {
+                  "args": {
+                    "inTurn": 12,
+                    "straight": 4
+                  },
+                  "id": "presentation.caption.fallsSplit"
+                }
+              ],
+              "colourRole": "neutral",
+              "key": "falls",
+              "labelId": "glossary.fellIn",
+              "unitKind": "count",
+              "value": 16
+            },
+            {
+              "captions": [],
+              "colourRole": "neutral",
+              "counts": [
+                {
+                  "labelId": "glossary.flewThrough",
+                  "value": 3
+                },
+                {
+                  "labelId": "glossary.dry",
+                  "value": 4
+                }
+              ],
+              "key": "streaks",
+              "labelId": "presentation.label.streaks",
+              "unitKind": "count",
+              "value": null
+            }
+          ],
+          "id": "turns"
+        },
+        {
+          "cells": [
+            {
+              "captions": [],
+              "colourRole": "neutral",
+              "key": "jph",
+              "labelId": "glossary.jph",
+              "unitKind": "rate",
+              "value": 16.7
+            },
+            {
+              "captions": [],
+              "colourRole": "neutral",
+              "key": "cph",
+              "labelId": "glossary.cph",
+              "unitKind": "rate",
+              "value": 2.6
+            },
+            {
+              "captions": [],
+              "colourRole": "neutral",
+              "key": "wph",
+              "labelId": "glossary.wph",
+              "unitKind": "rate",
+              "value": 14.1
+            }
+          ],
+          "id": "rates"
+        }
+      ]
+    },
+    "card": {
+      "forbiddenKeys": [
+        "best500m",
+        "flightCount",
+        "flights",
+        "foilPct",
+        "longestFlight",
+        "wind"
+      ],
+      "leanKeys": [
+        "distance",
+        "duration",
+        "falls",
+        "max2s",
+        "tally"
+      ],
+      "tiles": [
+        {
+          "captions": [],
+          "colourRole": "neutral",
+          "key": "duration",
+          "labelId": "presentation.label.duration",
+          "presets": [
+            "complete",
+            "lean"
+          ],
+          "unitKind": "durationS",
+          "value": 5080.0
+        },
+        {
+          "captions": [],
+          "colourRole": "neutral",
+          "key": "distance",
+          "labelId": "presentation.label.distance",
+          "presets": [
+            "complete",
+            "lean"
+          ],
+          "unitKind": "distanceKm",
+          "value": 12.764
+        },
+        {
+          "captions": [],
+          "colourRole": "neutral",
+          "key": "avgSpeed",
+          "labelId": "presentation.label.avgSpeed",
+          "presets": [
+            "complete"
+          ],
+          "unitKind": "speedKn",
+          "value": 6.069
+        },
+        {
+          "captions": [],
+          "colourRole": "neutral",
+          "key": "max2s",
+          "labelId": "presentation.label.max2s",
+          "presets": [
+            "complete",
+            "lean"
+          ],
+          "unitKind": "speedKn",
+          "value": 11.363
+        },
+        {
+          "captions": [
+            {
+              "args": {
+                "clean": 3,
+                "jibes": 31
+              },
+              "id": "presentation.caption.ofJibes"
+            }
+          ],
+          "colourRole": "outcome.ladder",
+          "key": "tally",
+          "labelId": "presentation.label.outcomeLadder",
+          "presets": [
+            "complete",
+            "lean"
+          ],
+          "tally": {
+            "fellIn": 12,
+            "flewThrough": 11,
+            "touchdown": 8
+          },
+          "unitKind": "count",
+          "value": null
+        },
+        {
+          "captions": [
+            {
+              "args": {
+                "tacks": 1
+              },
+              "id": "presentation.caption.ofTacks"
+            }
+          ],
+          "colourRole": "outcome.ladder",
+          "key": "tacks",
+          "labelId": "presentation.label.outcomeLadder",
+          "presets": [
+            "complete"
+          ],
+          "tally": {
+            "fellIn": 1,
+            "flewThrough": 0,
+            "touchdown": 0
+          },
+          "unitKind": "count",
+          "value": null
+        },
+        {
+          "captions": [
+            {
+              "args": {
+                "inTurn": 12,
+                "straight": 4
+              },
+              "id": "presentation.caption.fallsSplit"
+            }
+          ],
+          "colourRole": "neutral",
+          "key": "falls",
+          "labelId": "glossary.fellIn",
+          "presets": [
+            "complete",
+            "lean"
+          ],
+          "unitKind": "count",
+          "value": 16
+        },
+        {
+          "captions": [],
+          "colourRole": "neutral",
+          "counts": [
+            {
+              "labelId": "glossary.flewThrough",
+              "value": 3
+            },
+            {
+              "labelId": "glossary.dry",
+              "value": 4
+            }
+          ],
+          "key": "streaks",
+          "labelId": "presentation.label.streaks",
+          "presets": [
+            "complete"
+          ],
+          "unitKind": "count",
+          "value": null
+        },
+        {
+          "captions": [],
+          "colourRole": "neutral",
+          "key": "jph",
+          "labelId": "glossary.jph",
+          "presets": [
+            "complete"
+          ],
+          "unitKind": "rate",
+          "value": 16.7
+        },
+        {
+          "captions": [],
+          "colourRole": "neutral",
+          "key": "cph",
+          "labelId": "glossary.cph",
+          "presets": [
+            "complete"
+          ],
+          "unitKind": "rate",
+          "value": 2.6
+        },
+        {
+          "captions": [],
+          "colourRole": "neutral",
+          "key": "wph",
+          "labelId": "glossary.wph",
+          "presets": [
+            "complete"
+          ],
+          "unitKind": "rate",
+          "value": 14.1
+        }
+      ]
+    },
+    "defaults": {
+      "cardPreset": "complete",
+      "recordWindow": "best2s",
+      "rowMetrics": [
+        "foilShare",
+        "jibes",
+        "best2s"
+      ],
+      "section": "ride",
+      "speedRecordPolicy": "preferVerified"
+    },
+    "divergence": {
+      "available": false,
+      "lines": []
+    },
+    "engineVersion": "0.24.0",
+    "filters": [
+      {
+        "count": 32,
+        "flewThrough": 11,
+        "sideId": "both",
+        "typeId": "both"
+      },
+      {
+        "count": 14,
+        "flewThrough": 6,
+        "sideId": "port",
+        "typeId": "both"
+      },
+      {
+        "count": 18,
+        "flewThrough": 5,
+        "sideId": "starboard",
+        "typeId": "both"
+      },
+      {
+        "count": 31,
+        "flewThrough": 11,
+        "sideId": "both",
+        "typeId": "jibes"
+      },
+      {
+        "count": 14,
+        "flewThrough": 6,
+        "sideId": "port",
+        "typeId": "jibes"
+      },
+      {
+        "count": 17,
+        "flewThrough": 5,
+        "sideId": "starboard",
+        "typeId": "jibes"
+      },
+      {
+        "count": 1,
+        "flewThrough": 0,
+        "sideId": "both",
+        "typeId": "tacks"
+      },
+      {
+        "count": 0,
+        "flewThrough": 0,
+        "sideId": "port",
+        "typeId": "tacks"
+      },
+      {
+        "count": 1,
+        "flewThrough": 0,
+        "sideId": "starboard",
+        "typeId": "tacks"
+      }
+    ],
+    "flightEnds": {
+      "drawn": 5,
+      "flightCount": 23,
+      "marks": [
+        {
+          "colourRole": "outcome.fellIn",
+          "flightIndex": 6,
+          "hollow": true,
+          "index": 6,
+          "outcomeId": "fellIn",
+          "stoppedS": 17.0,
+          "ts": 1170.0
+        },
+        {
+          "colourRole": "outcome.fellIn",
+          "flightIndex": 7,
+          "hollow": true,
+          "index": 7,
+          "outcomeId": "fellIn",
+          "stoppedS": 54.0,
+          "ts": 1272.0
+        },
+        {
+          "colourRole": "outcome.touchdown",
+          "flightIndex": 14,
+          "hollow": true,
+          "index": 14,
+          "outcomeId": "touchdown",
+          "stoppedS": 0.0,
+          "ts": 3074.0
+        },
+        {
+          "colourRole": "outcome.fellIn",
+          "flightIndex": 21,
+          "hollow": true,
+          "index": 21,
+          "outcomeId": "fellIn",
+          "stoppedS": 47.0,
+          "ts": 4807.0
+        },
+        {
+          "colourRole": "outcome.fellIn",
+          "flightIndex": 22,
+          "hollow": true,
+          "index": 22,
+          "outcomeId": "fellIn",
+          "stoppedS": 35.0,
+          "ts": 5039.0
+        }
+      ],
+      "ownedByTurn": 16,
+      "total": 23,
+      "truncated": 2
+    },
+    "markers": {
+      "cleanJibe": 3,
+      "courseChange": 4,
+      "fellIn": 17,
+      "flewThrough": 11,
+      "pumping": 34,
+      "splash": 3,
+      "takeoff": {
+        "failed": 11,
+        "free": 0,
+        "pumped": 23,
+        "total": 34
+      },
+      "touchdown": 9
+    },
+    "notASession": {
+      "args": {},
+      "isSession": true,
+      "lineId": null,
+      "reasonId": null,
+      "tagId": null
+    },
+    "presentationVersion": 1,
+    "records": {
+      "achieved": [
+        "best2s",
+        "best10s",
+        "best5x10s",
+        "best100m",
+        "best250m",
+        "best500m",
+        "bestNm",
+        "alpha500"
+      ],
+      "default": "best2s",
+      "kinds": [
+        {
+          "achieved": true,
+          "colourRole": "effort.window",
+          "key": "best2s",
+          "labelId": "tokens.recordWindow.best2s",
+          "offered": true,
+          "unitKind": "speedKn",
+          "value": 11.363,
+          "verified": true,
+          "windows": [
+            {
+              "durS": 2.0,
+              "startTs": 2802.0
+            }
+          ]
+        },
+        {
+          "achieved": true,
+          "colourRole": "effort.window",
+          "key": "best10s",
+          "labelId": "tokens.recordWindow.best10s",
+          "offered": true,
+          "unitKind": "speedKn",
+          "value": 10.707,
+          "verified": true,
+          "windows": [
+            {
+              "durS": 10.0,
+              "startTs": 3471.0
+            }
+          ]
+        },
+        {
+          "achieved": true,
+          "colourRole": "effort.window",
+          "key": "best5x10s",
+          "labelId": "tokens.recordWindow.best5x10s",
+          "offered": true,
+          "unitKind": "speedKn",
+          "value": 10.625,
+          "verified": true,
+          "windows": [
+            {
+              "durS": 10.0,
+              "startTs": 3471.0
+            },
+            {
+              "durS": 10.0,
+              "startTs": 2228.0
+            },
+            {
+              "durS": 10.0,
+              "startTs": 3027.0
+            },
+            {
+              "durS": 10.0,
+              "startTs": 2242.0
+            },
+            {
+              "durS": 10.0,
+              "startTs": 2892.0
+            }
+          ]
+        },
+        {
+          "achieved": true,
+          "colourRole": "effort.window",
+          "key": "best100m",
+          "labelId": "tokens.recordWindow.best100m",
+          "offered": true,
+          "unitKind": "speedKn",
+          "value": 10.567,
+          "verified": true,
+          "windows": [
+            {
+              "durS": 18.4,
+              "startTs": 3468.6
+            }
+          ]
+        },
+        {
+          "achieved": true,
+          "colourRole": "effort.window",
+          "key": "best250m",
+          "labelId": "tokens.recordWindow.best250m",
+          "offered": true,
+          "unitKind": "speedKn",
+          "value": 10.205,
+          "verified": true,
+          "windows": [
+            {
+              "durS": 47.62,
+              "startTs": 3462.38
+            }
+          ]
+        },
+        {
+          "achieved": true,
+          "colourRole": "effort.window",
+          "key": "best500m",
+          "labelId": "tokens.recordWindow.best500m",
+          "offered": true,
+          "unitKind": "speedKn",
+          "value": 9.753,
+          "verified": true,
+          "windows": [
+            {
+              "durS": 99.65,
+              "startTs": 2420.35
+            }
+          ]
+        },
+        {
+          "achieved": true,
+          "colourRole": "effort.window",
+          "key": "bestNm",
+          "labelId": "tokens.recordWindow.bestNm",
+          "offered": true,
+          "unitKind": "speedKn",
+          "value": 8.944,
+          "verified": true,
+          "windows": [
+            {
+              "durS": 402.49,
+              "startTs": 4224.0
+            }
+          ]
+        },
+        {
+          "achieved": false,
+          "colourRole": "effort.window",
+          "key": "bestHour",
+          "labelId": "tokens.recordWindow.bestHour",
+          "offered": false,
+          "unitKind": "speedKn",
+          "value": 0.0,
+          "verified": true,
+          "windows": []
+        },
+        {
+          "achieved": true,
+          "colourRole": "effort.window",
+          "key": "alpha500",
+          "labelId": "tokens.recordWindow.alpha500",
+          "offered": true,
+          "unitKind": "speedKn",
+          "value": 9.679,
+          "verified": true,
+          "windows": [
+            {
+              "durS": 90.0,
+              "startTs": 2429.0
+            }
+          ]
+        }
+      ],
+      "policy": "preferVerified",
+      "verified": true
+    },
+    "row": {
+      "offered": [
+        "best10s",
+        "best2s",
+        "cleanJibes",
+        "distance",
+        "dryStreak",
+        "duration",
+        "falls",
+        "flights",
+        "foilShare",
+        "jibes",
+        "turns"
+      ],
+      "slots": [
+        {
+          "captions": [],
+          "colourRole": "neutral",
+          "key": "foilShare",
+          "labelId": "presentation.rowMetric.foilShare",
+          "unitKind": "percent",
+          "value": 59.74
+        },
+        {
+          "captions": [],
+          "colourRole": "neutral",
+          "key": "jibes",
+          "labelId": "presentation.rowMetric.jibes",
+          "unitKind": "count",
+          "value": 31
+        },
+        {
+          "captions": [],
+          "colourRole": "neutral",
+          "key": "best2s",
+          "labelId": "presentation.rowMetric.best2s",
+          "unitKind": "speedKn",
+          "value": 11.363
+        }
+      ],
+      "tagIds": [],
+      "tally": {
+        "fellIn": 13,
+        "flewThrough": 11,
+        "touchdown": 8
+      }
+    },
+    "splash": {
+      "episodes": 3,
+      "marks": [
+        {
+          "colourRole": "effort.splash",
+          "durationS": 2.0,
+          "during": {
+            "args": {
+              "ordinal": 4,
+              "turnId": "jibe"
+            },
+            "id": "presentation.wristUnder.duringTurn"
+          },
+          "flightEndIndex": null,
+          "title": {
+            "args": {
+              "durationS": 2.0
+            },
+            "id": "presentation.wristUnder.titleFor"
+          },
+          "ts": 857.0,
+          "turnIndex": 3
+        },
+        {
+          "colourRole": "effort.splash",
+          "durationS": 0.0,
+          "during": {
+            "args": {
+              "ordinal": 20,
+              "turnId": "jibe"
+            },
+            "id": "presentation.wristUnder.duringTurn"
+          },
+          "flightEndIndex": null,
+          "title": {
+            "args": {},
+            "id": "presentation.wristUnder.title"
+          },
+          "ts": 3333.0,
+          "turnIndex": 21
+        },
+        {
+          "colourRole": "effort.splash",
+          "durationS": 1.0,
+          "during": {
+            "args": {
+              "ordinal": 27,
+              "turnId": "jibe"
+            },
+            "id": "presentation.wristUnder.duringTurn"
+          },
+          "flightEndIndex": null,
+          "title": {
+            "args": {
+              "durationS": 1.0
+            },
+            "id": "presentation.wristUnder.titleFor"
+          },
+          "ts": 4152.0,
+          "turnIndex": 29
+        }
+      ]
+    },
+    "turns": {
+      "legend": [
+        {
+          "colourRole": "phase.flying",
+          "count": null,
+          "defaultVisible": true,
+          "labelId": "tokens.layer.flying",
+          "layerId": "flying"
+        },
+        {
+          "colourRole": "phase.offFoil",
+          "count": null,
+          "defaultVisible": true,
+          "labelId": "tokens.layer.offFoil",
+          "layerId": "offFoil"
+        },
+        {
+          "colourRole": "effort.window",
+          "count": null,
+          "defaultVisible": true,
+          "labelId": "tokens.layer.effort",
+          "layerId": "effort"
+        },
+        {
+          "colourRole": "effort.pumping",
+          "count": 34,
+          "defaultVisible": true,
+          "labelId": "tokens.layer.pumping",
+          "layerId": "pumping"
+        },
+        {
+          "colourRole": "clean.jibe",
+          "count": 3,
+          "defaultVisible": true,
+          "labelId": "tokens.layer.cleanJibe",
+          "layerId": "cleanJibe"
+        },
+        {
+          "colourRole": "outcome.flew",
+          "count": 11,
+          "defaultVisible": true,
+          "labelId": "tokens.layer.flewThrough",
+          "layerId": "flewThrough"
+        },
+        {
+          "colourRole": "outcome.touchdown",
+          "count": 9,
+          "defaultVisible": true,
+          "labelId": "tokens.layer.touchdown",
+          "layerId": "touchdown"
+        },
+        {
+          "colourRole": "outcome.fellIn",
+          "count": 17,
+          "defaultVisible": true,
+          "labelId": "tokens.layer.fellIn",
+          "layerId": "fellIn"
+        },
+        {
+          "colourRole": "outcome.courseChange",
+          "count": 4,
+          "defaultVisible": true,
+          "labelId": "tokens.layer.courseChange",
+          "layerId": "courseChange"
+        },
+        {
+          "colourRole": "effort.takeoff",
+          "count": 34,
+          "defaultVisible": true,
+          "labelId": "tokens.layer.takeoff",
+          "layerId": "takeoff"
+        },
+        {
+          "colourRole": "effort.splash",
+          "count": 3,
+          "defaultVisible": true,
+          "labelId": "tokens.layer.splash",
+          "layerId": "splash"
+        },
+        {
+          "colourRole": "direction.ink",
+          "count": null,
+          "defaultVisible": true,
+          "labelId": "tokens.layer.direction",
+          "layerId": "direction"
+        }
+      ],
+      "strip": [
+        {
+          "aborted": false,
+          "borderline": false,
+          "clean": false,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.touchdown",
+          "counted": true,
+          "endTs": 549.0,
+          "entryKn": 11.142,
+          "exitKn": 7.92,
+          "index": 0,
+          "layerId": "touchdown",
+          "minKn": 7.469,
+          "minTs": 551.0,
+          "ordinal": 1,
+          "outcomeId": "touchdown",
+          "outcomeReasonId": "off_foil",
+          "score": 0.6703,
+          "sideId": "starboard",
+          "ts": 541.0,
+          "typeId": "jibe"
+        },
+        {
+          "aborted": false,
+          "borderline": false,
+          "clean": false,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.fellIn",
+          "counted": true,
+          "endTs": 652.0,
+          "entryKn": 9.569,
+          "exitKn": 7.596,
+          "index": 1,
+          "layerId": "fellIn",
+          "minKn": 2.17,
+          "minTs": 654.0,
+          "ordinal": 2,
+          "outcomeId": "fellIn",
+          "outcomeReasonId": "stop",
+          "score": 0.2268,
+          "sideId": "port",
+          "ts": 646.0,
+          "typeId": "jibe"
+        },
+        {
+          "aborted": false,
+          "borderline": false,
+          "clean": false,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.fellIn",
+          "counted": true,
+          "endTs": 747.0,
+          "entryKn": 8.826,
+          "exitKn": 7.358,
+          "index": 2,
+          "layerId": "fellIn",
+          "minKn": 3.594,
+          "minTs": 749.0,
+          "ordinal": 3,
+          "outcomeId": "fellIn",
+          "outcomeReasonId": "stop",
+          "score": 0.4073,
+          "sideId": "starboard",
+          "ts": 743.0,
+          "typeId": "jibe"
+        },
+        {
+          "aborted": false,
+          "borderline": false,
+          "clean": false,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.fellIn",
+          "counted": true,
+          "endTs": 855.0,
+          "entryKn": 9.717,
+          "exitKn": 4.892,
+          "index": 3,
+          "layerId": "fellIn",
+          "minKn": 3.642,
+          "minTs": 857.0,
+          "ordinal": 4,
+          "outcomeId": "fellIn",
+          "outcomeReasonId": "submerged",
+          "score": 0.3748,
+          "sideId": "port",
+          "ts": 848.0,
+          "typeId": "jibe"
+        },
+        {
+          "aborted": false,
+          "borderline": false,
+          "clean": false,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.touchdown",
+          "counted": true,
+          "endTs": 993.0,
+          "entryKn": 9.922,
+          "exitKn": 6.998,
+          "index": 4,
+          "layerId": "touchdown",
+          "minKn": 5.088,
+          "minTs": 995.0,
+          "ordinal": 5,
+          "outcomeId": "touchdown",
+          "outcomeReasonId": "off_foil",
+          "score": 0.5128,
+          "sideId": "starboard",
+          "ts": 986.0,
+          "typeId": "jibe"
+        },
+        {
+          "aborted": false,
+          "borderline": false,
+          "clean": false,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.touchdown",
+          "counted": true,
+          "endTs": 1061.0,
+          "entryKn": 8.761,
+          "exitKn": 5.098,
+          "index": 5,
+          "layerId": "touchdown",
+          "minKn": 1.604,
+          "minTs": 1063.0,
+          "ordinal": 6,
+          "outcomeId": "touchdown",
+          "outcomeReasonId": "off_foil",
+          "score": 0.1831,
+          "sideId": "port",
+          "ts": 1056.0,
+          "typeId": "jibe"
+        },
+        {
+          "aborted": false,
+          "borderline": false,
+          "clean": false,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.touchdown",
+          "counted": true,
+          "endTs": 1140.0,
+          "entryKn": 10.534,
+          "exitKn": 5.269,
+          "index": 6,
+          "layerId": "touchdown",
+          "minKn": 3.717,
+          "minTs": 1142.0,
+          "ordinal": 7,
+          "outcomeId": "touchdown",
+          "outcomeReasonId": "off_foil",
+          "score": 0.3529,
+          "sideId": "starboard",
+          "ts": 1132.0,
+          "typeId": "jibe"
+        },
+        {
+          "aborted": false,
+          "borderline": false,
+          "clean": false,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.touchdown",
+          "counted": true,
+          "endTs": 2210.0,
+          "entryKn": 9.142,
+          "exitKn": 5.844,
+          "index": 7,
+          "layerId": "touchdown",
+          "minKn": 4.693,
+          "minTs": 2212.0,
+          "ordinal": 8,
+          "outcomeId": "touchdown",
+          "outcomeReasonId": "off_foil",
+          "score": 0.5133,
+          "sideId": "starboard",
+          "ts": 2202.0,
+          "typeId": "jibe"
+        },
+        {
+          "aborted": false,
+          "borderline": false,
+          "clean": true,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.flew",
+          "counted": true,
+          "endTs": 2267.0,
+          "entryKn": 10.77,
+          "exitKn": 7.915,
+          "index": 8,
+          "layerId": "cleanJibe",
+          "minKn": 7.703,
+          "minTs": 2266.0,
+          "ordinal": 9,
+          "outcomeId": "flewThrough",
+          "outcomeReasonId": null,
+          "score": 0.7152,
+          "sideId": "port",
+          "ts": 2260.0,
+          "typeId": "jibe"
+        },
+        {
+          "aborted": true,
+          "borderline": false,
+          "clean": false,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.fellIn",
+          "counted": true,
+          "endTs": 2298.0,
+          "entryKn": 10.124,
+          "exitKn": 4.649,
+          "index": 9,
+          "layerId": "fellIn",
+          "minKn": 2.486,
+          "minTs": 2300.0,
+          "ordinal": 1,
+          "outcomeId": "fellIn",
+          "outcomeReasonId": "stop",
+          "score": 0.2456,
+          "sideId": "starboard",
+          "ts": 2295.0,
+          "typeId": "tack"
+        },
+        {
+          "aborted": false,
+          "borderline": false,
+          "clean": false,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.fellIn",
+          "counted": true,
+          "endTs": 2379.0,
+          "entryKn": 9.886,
+          "exitKn": 7.744,
+          "index": 10,
+          "layerId": "fellIn",
+          "minKn": 6.989,
+          "minTs": 2381.0,
+          "ordinal": 10,
+          "outcomeId": "fellIn",
+          "outcomeReasonId": "stop",
+          "score": 0.7069,
+          "sideId": "starboard",
+          "ts": 2372.0,
+          "typeId": "jibe"
+        },
+        {
+          "aborted": false,
+          "borderline": false,
+          "clean": false,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.flew",
+          "counted": true,
+          "endTs": 2478.0,
+          "entryKn": 10.242,
+          "exitKn": 7.327,
+          "index": 11,
+          "layerId": "flewThrough",
+          "minKn": 6.82,
+          "minTs": 2476.0,
+          "ordinal": 11,
+          "outcomeId": "flewThrough",
+          "outcomeReasonId": null,
+          "score": 0.6659,
+          "sideId": "port",
+          "ts": 2470.0,
+          "typeId": "jibe"
+        },
+        {
+          "aborted": false,
+          "borderline": false,
+          "clean": false,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.fellIn",
+          "counted": true,
+          "endTs": 2539.0,
+          "entryKn": 10.703,
+          "exitKn": 8.653,
+          "index": 12,
+          "layerId": "fellIn",
+          "minKn": 0.857,
+          "minTs": 2541.0,
+          "ordinal": 12,
+          "outcomeId": "fellIn",
+          "outcomeReasonId": "stop",
+          "score": 0.0801,
+          "sideId": "starboard",
+          "ts": 2531.0,
+          "typeId": "jibe"
+        },
+        {
+          "aborted": false,
+          "borderline": false,
+          "clean": false,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.flew",
+          "counted": true,
+          "endTs": 2650.0,
+          "entryKn": 9.585,
+          "exitKn": 7.071,
+          "index": 13,
+          "layerId": "flewThrough",
+          "minKn": 6.431,
+          "minTs": 2649.0,
+          "ordinal": 13,
+          "outcomeId": "flewThrough",
+          "outcomeReasonId": null,
+          "score": 0.6709,
+          "sideId": "port",
+          "ts": 2642.0,
+          "typeId": "jibe"
+        },
+        {
+          "aborted": true,
+          "borderline": false,
+          "clean": false,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.fellIn",
+          "counted": true,
+          "endTs": 2664.0,
+          "entryKn": 8.392,
+          "exitKn": 7.064,
+          "index": 14,
+          "layerId": "fellIn",
+          "minKn": 5.238,
+          "minTs": 2665.0,
+          "ordinal": 14,
+          "outcomeId": "fellIn",
+          "outcomeReasonId": "stop",
+          "score": 0.6241,
+          "sideId": "starboard",
+          "ts": 2657.0,
+          "typeId": "jibe"
+        },
+        {
+          "aborted": false,
+          "borderline": false,
+          "clean": false,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.flew",
+          "counted": true,
+          "endTs": 2751.0,
+          "entryKn": 10.743,
+          "exitKn": 7.187,
+          "index": 15,
+          "layerId": "flewThrough",
+          "minKn": 6.209,
+          "minTs": 2753.0,
+          "ordinal": 15,
+          "outcomeId": "flewThrough",
+          "outcomeReasonId": null,
+          "score": 0.578,
+          "sideId": "starboard",
+          "ts": 2743.0,
+          "typeId": "jibe"
+        },
+        {
+          "aborted": false,
+          "borderline": false,
+          "clean": false,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.fellIn",
+          "counted": true,
+          "endTs": 2811.0,
+          "entryKn": 11.548,
+          "exitKn": 9.352,
+          "index": 16,
+          "layerId": "fellIn",
+          "minKn": 6.067,
+          "minTs": 2813.0,
+          "ordinal": 16,
+          "outcomeId": "fellIn",
+          "outcomeReasonId": "stop",
+          "score": 0.5254,
+          "sideId": "port",
+          "ts": 2803.0,
+          "typeId": "jibe"
+        },
+        {
+          "aborted": false,
+          "borderline": false,
+          "clean": false,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.fellIn",
+          "counted": true,
+          "endTs": 2930.0,
+          "entryKn": 10.65,
+          "exitKn": 6.692,
+          "index": 17,
+          "layerId": "fellIn",
+          "minKn": 6.376,
+          "minTs": 2932.0,
+          "ordinal": 17,
+          "outcomeId": "fellIn",
+          "outcomeReasonId": "stop",
+          "score": 0.5987,
+          "sideId": "starboard",
+          "ts": 2923.0,
+          "typeId": "jibe"
+        },
+        {
+          "aborted": false,
+          "borderline": false,
+          "clean": false,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.courseChange",
+          "counted": false,
+          "endTs": 2935.0,
+          "entryKn": 7.724,
+          "exitKn": 6.3,
+          "index": 18,
+          "layerId": "courseChange",
+          "minKn": 2.667,
+          "minTs": 2937.0,
+          "ordinal": null,
+          "outcomeId": "fellIn",
+          "outcomeReasonId": "stop",
+          "score": 0.3453,
+          "sideId": "port",
+          "ts": 2931.0,
+          "typeId": "roundUp"
+        },
+        {
+          "aborted": false,
+          "borderline": false,
+          "clean": false,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.flew",
+          "counted": true,
+          "endTs": 3063.0,
+          "entryKn": 10.171,
+          "exitKn": 6.817,
+          "index": 19,
+          "layerId": "flewThrough",
+          "minKn": 6.817,
+          "minTs": 3063.0,
+          "ordinal": 18,
+          "outcomeId": "flewThrough",
+          "outcomeReasonId": null,
+          "score": 0.6703,
+          "sideId": "port",
+          "ts": 3056.0,
+          "typeId": "jibe"
+        },
+        {
+          "aborted": false,
+          "borderline": false,
+          "clean": false,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.fellIn",
+          "counted": true,
+          "endTs": 3167.0,
+          "entryKn": 10.053,
+          "exitKn": 6.072,
+          "index": 20,
+          "layerId": "fellIn",
+          "minKn": 6.072,
+          "minTs": 3167.0,
+          "ordinal": 19,
+          "outcomeId": "fellIn",
+          "outcomeReasonId": "stop",
+          "score": 0.604,
+          "sideId": "starboard",
+          "ts": 3159.0,
+          "typeId": "jibe"
+        },
+        {
+          "aborted": false,
+          "borderline": false,
+          "clean": false,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.fellIn",
+          "counted": true,
+          "endTs": 3325.0,
+          "entryKn": 9.964,
+          "exitKn": 6.944,
+          "index": 21,
+          "layerId": "fellIn",
+          "minKn": 6.672,
+          "minTs": 3324.0,
+          "ordinal": 20,
+          "outcomeId": "fellIn",
+          "outcomeReasonId": "submerged",
+          "score": 0.6696,
+          "sideId": "port",
+          "ts": 3317.0,
+          "typeId": "jibe"
+        },
+        {
+          "aborted": false,
+          "borderline": false,
+          "clean": false,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.flew",
+          "counted": true,
+          "endTs": 3446.0,
+          "entryKn": 9.937,
+          "exitKn": 6.391,
+          "index": 22,
+          "layerId": "flewThrough",
+          "minKn": 5.947,
+          "minTs": 3448.0,
+          "ordinal": 21,
+          "outcomeId": "flewThrough",
+          "outcomeReasonId": null,
+          "score": 0.5985,
+          "sideId": "starboard",
+          "ts": 3438.0,
+          "typeId": "jibe"
+        },
+        {
+          "aborted": false,
+          "borderline": false,
+          "clean": false,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.fellIn",
+          "counted": true,
+          "endTs": 3511.0,
+          "entryKn": 10.512,
+          "exitKn": 6.839,
+          "index": 23,
+          "layerId": "fellIn",
+          "minKn": 6.702,
+          "minTs": 3512.0,
+          "ordinal": 22,
+          "outcomeId": "fellIn",
+          "outcomeReasonId": "stop",
+          "score": 0.6376,
+          "sideId": "port",
+          "ts": 3503.0,
+          "typeId": "jibe"
+        },
+        {
+          "aborted": false,
+          "borderline": false,
+          "clean": false,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.flew",
+          "counted": true,
+          "endTs": 3675.0,
+          "entryKn": 9.717,
+          "exitKn": 6.616,
+          "index": 24,
+          "layerId": "flewThrough",
+          "minKn": 5.968,
+          "minTs": 3677.0,
+          "ordinal": 23,
+          "outcomeId": "flewThrough",
+          "outcomeReasonId": null,
+          "score": 0.6142,
+          "sideId": "starboard",
+          "ts": 3667.0,
+          "typeId": "jibe"
+        },
+        {
+          "aborted": false,
+          "borderline": false,
+          "clean": true,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.flew",
+          "counted": true,
+          "endTs": 3761.0,
+          "entryKn": 10.797,
+          "exitKn": 8.222,
+          "index": 25,
+          "layerId": "cleanJibe",
+          "minKn": 7.981,
+          "minTs": 3763.0,
+          "ordinal": 24,
+          "outcomeId": "flewThrough",
+          "outcomeReasonId": null,
+          "score": 0.7392,
+          "sideId": "port",
+          "ts": 3753.0,
+          "typeId": "jibe"
+        },
+        {
+          "aborted": false,
+          "borderline": false,
+          "clean": false,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.courseChange",
+          "counted": false,
+          "endTs": 3778.0,
+          "entryKn": 7.933,
+          "exitKn": 10.007,
+          "index": 26,
+          "layerId": "courseChange",
+          "minKn": 7.933,
+          "minTs": 3771.0,
+          "ordinal": null,
+          "outcomeId": "flewThrough",
+          "outcomeReasonId": null,
+          "score": 1.0,
+          "sideId": "starboard",
+          "ts": 3771.0,
+          "typeId": "roundUp"
+        },
+        {
+          "aborted": false,
+          "borderline": false,
+          "clean": false,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.flew",
+          "counted": true,
+          "endTs": 3870.0,
+          "entryKn": 9.59,
+          "exitKn": 7.654,
+          "index": 27,
+          "layerId": "flewThrough",
+          "minKn": 6.445,
+          "minTs": 3869.0,
+          "ordinal": 25,
+          "outcomeId": "flewThrough",
+          "outcomeReasonId": null,
+          "score": 0.672,
+          "sideId": "starboard",
+          "ts": 3862.0,
+          "typeId": "jibe"
+        },
+        {
+          "aborted": false,
+          "borderline": false,
+          "clean": false,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.touchdown",
+          "counted": true,
+          "endTs": 3966.0,
+          "entryKn": 10.542,
+          "exitKn": 7.357,
+          "index": 28,
+          "layerId": "touchdown",
+          "minKn": 1.999,
+          "minTs": 3968.0,
+          "ordinal": 26,
+          "outcomeId": "touchdown",
+          "outcomeReasonId": "off_foil",
+          "score": 0.1896,
+          "sideId": "port",
+          "ts": 3961.0,
+          "typeId": "jibe"
+        },
+        {
+          "aborted": false,
+          "borderline": false,
+          "clean": false,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.fellIn",
+          "counted": true,
+          "endTs": 4150.0,
+          "entryKn": 9.701,
+          "exitKn": 4.534,
+          "index": 29,
+          "layerId": "fellIn",
+          "minKn": 2.824,
+          "minTs": 4152.0,
+          "ordinal": 27,
+          "outcomeId": "fellIn",
+          "outcomeReasonId": "submerged",
+          "score": 0.2911,
+          "sideId": "starboard",
+          "ts": 4144.0,
+          "typeId": "jibe"
+        },
+        {
+          "aborted": false,
+          "borderline": false,
+          "clean": false,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.touchdown",
+          "counted": true,
+          "endTs": 4336.0,
+          "entryKn": 10.734,
+          "exitKn": 6.618,
+          "index": 30,
+          "layerId": "touchdown",
+          "minKn": 6.49,
+          "minTs": 4337.0,
+          "ordinal": 28,
+          "outcomeId": "touchdown",
+          "outcomeReasonId": "off_foil",
+          "score": 0.6046,
+          "sideId": "port",
+          "ts": 4328.0,
+          "typeId": "jibe"
+        },
+        {
+          "aborted": false,
+          "borderline": false,
+          "clean": false,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.courseChange",
+          "counted": false,
+          "endTs": 4419.0,
+          "entryKn": 9.955,
+          "exitKn": 8.478,
+          "index": 31,
+          "layerId": "courseChange",
+          "minKn": 8.478,
+          "minTs": 4419.0,
+          "ordinal": null,
+          "outcomeId": "flewThrough",
+          "outcomeReasonId": null,
+          "score": 0.8516,
+          "sideId": "starboard",
+          "ts": 4415.0,
+          "typeId": "roundUp"
+        },
+        {
+          "aborted": false,
+          "borderline": false,
+          "clean": true,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.flew",
+          "counted": true,
+          "endTs": 4470.0,
+          "entryKn": 9.406,
+          "exitKn": 7.605,
+          "index": 32,
+          "layerId": "cleanJibe",
+          "minKn": 6.726,
+          "minTs": 4472.0,
+          "ordinal": 29,
+          "outcomeId": "flewThrough",
+          "outcomeReasonId": null,
+          "score": 0.7151,
+          "sideId": "starboard",
+          "ts": 4462.0,
+          "typeId": "jibe"
+        },
+        {
+          "aborted": false,
+          "borderline": false,
+          "clean": false,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.flew",
+          "counted": true,
+          "endTs": 4552.0,
+          "entryKn": 10.692,
+          "exitKn": 7.926,
+          "index": 33,
+          "layerId": "flewThrough",
+          "minKn": 7.174,
+          "minTs": 4548.0,
+          "ordinal": 30,
+          "outcomeId": "flewThrough",
+          "outcomeReasonId": null,
+          "score": 0.671,
+          "sideId": "port",
+          "ts": 4544.0,
+          "typeId": "jibe"
+        },
+        {
+          "aborted": false,
+          "borderline": false,
+          "clean": false,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.courseChange",
+          "counted": false,
+          "endTs": 4619.0,
+          "entryKn": 9.2,
+          "exitKn": 9.123,
+          "index": 34,
+          "layerId": "courseChange",
+          "minKn": 8.509,
+          "minTs": 4617.0,
+          "ordinal": null,
+          "outcomeId": "flewThrough",
+          "outcomeReasonId": null,
+          "score": 0.9249,
+          "sideId": "starboard",
+          "ts": 4615.0,
+          "typeId": "bearAway"
+        },
+        {
+          "aborted": false,
+          "borderline": false,
+          "clean": false,
+          "cleanBlockedById": null,
+          "colourRole": "outcome.touchdown",
+          "counted": true,
+          "endTs": 4630.0,
+          "entryKn": 10.126,
+          "exitKn": 6.212,
+          "index": 35,
+          "layerId": "touchdown",
+          "minKn": 3.704,
+          "minTs": 4632.0,
+          "ordinal": 31,
+          "outcomeId": "touchdown",
+          "outcomeReasonId": "off_foil",
+          "score": 0.3658,
+          "sideId": "starboard",
+          "ts": 4623.0,
+          "typeId": "jibe"
+        }
+      ]
+    }
+  }
 }
