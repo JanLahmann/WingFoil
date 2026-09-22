@@ -176,6 +176,16 @@ def render() -> str:
     feedback_out = {key: feedback[key]
                     for key in ("doors", "invitation", "prompts", "subjectPrefix")}
 
+    # THE WORDS THE PRESENTATION DOCUMENT POINTS AT (ADR-033, round 3). The document
+    # carries ids and raw values and no sentence at all, so every renderer on the session
+    # path — the block, the card, the wrist-under callout, the divergence banner — resolves
+    # them here. Copied whole, minus the file's two non-copy keys: the groups ARE the id
+    # namespace (`presentation.<group>.<id>`), so a generator that picked groups would have
+    # to be edited on the day the kit authors a sixth one.
+    presentation = json.loads((COPY / "presentation.json").read_text(encoding="utf-8"))
+    presentation_out = {key: value for key, value in presentation.items()
+                        if key not in ("_readme", "schema")}
+
     return HEADER + (
         "/** The four tabs, the five menu rows and the four session sub-tabs\n"
         " *  (docs/copy/app-shell.json). One order, one wording, both surfaces. */\n"
@@ -213,10 +223,20 @@ def render() -> str:
         " *  export is still to come, and the page says so. */\n"
         "export const HELP = %s;\n\n"
         "/** The feedback door, word for word (docs/copy/feedback.json). */\n"
-        "export const FEEDBACK = %s;\n"
+        "export const FEEDBACK = %s;\n\n"
+        "/**\n"
+        " * The words the presentation document points at (docs/copy/presentation.json,\n"
+        " * authored by the kit's `PresentationCopy`).\n"
+        " *\n"
+        " * The document carries an **id** and the arguments a sentence interpolates, never\n"
+        " * the sentence (ADR-033, rule 1). `js/presentation.js` is the resolver: it reads\n"
+        " * this, the glossary in ./copy.js and the token catalogue in ./tokens.js, which\n"
+        " * are the four namespaces a `labelId` may use and there are no others.\n"
+        " */\n"
+        "export const PRESENTATION = %s;\n"
         % (_js(shell_out), _js(ways_in), _js(guide_out), _js(settings),
            _js(settings_sections), _js(welcome),
-           _js(entries), _js(help_out), _js(feedback_out)))
+           _js(entries), _js(help_out), _js(feedback_out), _js(presentation_out)))
 
 
 def main(argv=None) -> int:

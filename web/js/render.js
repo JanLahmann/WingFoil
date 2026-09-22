@@ -15,7 +15,8 @@
  */
 
 import { speed, speedNumber, speedUnit } from "./appsettings.js";
-import { hm, keyMetricEntries } from "./cardstats.js";
+import { keyMetricEntries } from "./cardstats.js";
+import { hm, text } from "./presentation.js";
 import { GLOSSARY, NOT_A_SESSION } from "./copy.js";
 import { EXPERIMENTAL_NOTE, lexicon } from "./lexicon.js";
 import { applyTurnFilter, renderFigures } from "./session.js";
@@ -51,7 +52,7 @@ export function render(result, { highlight = null, isExample = false } = {}) {
   renderSummary(result, isExample);
   renderFigures(result, highlight);
   renderTakeoffs(el("takeoff-body"), g, meta);
-  renderTurns(el("turns-table"), el("turns-caption"), g, v, meta);
+  renderTurns(el("turns-table"), el("turns-caption"), result, meta);
   renderEnds(el("ends-table"), el("ends-caption"), g, meta);
   // Last, and after the table exists: the legend chips filter the turn rows as well as the
   // two figures, and this is the one call that applies the state they are already in to a
@@ -76,14 +77,12 @@ export function render(result, { highlight = null, isExample = false } = {}) {
  *      0.7.0, CPH over the *clean* ones since 0.10.0
  *
  * **This function is now layout only.** Every rule the two platforms have to agree on —
- * which entries exist, in what order, with which labels and which strings — moved to
- * `keyMetricEntries` in js/cardstats.js when the share card arrived, because the card has
- * to print *this* list and a second implementation of it would be a second answer to "was
- * that a good session" travelling in a picture. The Swift twin is pinned by
- * `PresentationTests.keyMetrics*`; the block-against-card equality is pinned by
- * `web/tools/verify_presentation.py` §5. A difference anywhere in that triangle is a bug.
+ * which entries exist, in what order, with which labels and which strings — is in the
+ * presentation document (ADR-033), which `keyMetricEntries` in js/cardstats.js draws. The
+ * card has to print *this* list, and a second implementation of it would be a second answer
+ * to "was that a good session" travelling in a picture.
  */
-export function keyMetrics(g) {
+export function keyMetrics(doc) {
   const cell = (e) => {
     // A tally is the one kind of cell that is not a string: its three counts are drawn on
     // the verdict ladder's own inks. `e.value` spells the same three numbers, so a renderer
@@ -101,7 +100,7 @@ export function keyMetrics(g) {
   };
 
   const rows = [];
-  for (const e of keyMetricEntries(g)) {
+  for (const e of keyMetricEntries(doc)) {
     (rows[e.row] || (rows[e.row] = [])).push(e);
   }
   return rows.filter(Boolean)
@@ -143,9 +142,25 @@ export function clockNoteFor(meta) {
 }
 
 
+/**
+ * One of the nine record kinds, off the document's `records` section.
+ *
+ * The tiles used to read `golden.records.<key>Kn` straight, which is a second reading of a
+ * set the document already resolves once — value, window provenance, whether the recording
+ * measured its own speed and whether the rider's policy lets it stand
+ * (docs/presentation/document.md, "`records` — the nine kinds"). The *words* come from the
+ * same place the legend chip and the Records page take them, `tokens.recordWindow.<id>`,
+ * so `Best 2 s` has one spelling in the product.
+ */
+const recordKn = (doc, key) =>
+  (doc?.records?.kinds || []).find((k) => k.key === key)?.value ?? null;
+
+const recordLabel = (key) => text(`tokens.recordWindow.${key}`) ?? key;
+
 function renderSummary(result, isExample = false) {
   const g = result.golden, meta = result.meta, caps = g.capabilities;
-  const s = g.summary, rec = g.records, w = g.wind;
+  const doc = result.presentation;
+  const s = g.summary, w = g.wind;
   // The words this session is read in (docs/presentation/labels.md, "Discipline lexicon"). The
   // config echo is the engine's own statement about which preset produced this document —
   // absent on a wingfoil run, which is the default this resolves to.
@@ -197,7 +212,7 @@ function renderSummary(result, isExample = false) {
     .map(([t, accent, title]) => `<span class="badge${accent ? " accent" : ""}"` +
          (title ? ` title="${esc(title)}"` : "") + `>${esc(t)}</span>`).join("");
 
-  el("key-metrics").innerHTML = keyMetrics(g);
+  el("key-metrics").innerHTML = keyMetrics(result.presentation);
   renderNotASession(g);
 
   const windTile = w
@@ -221,7 +236,7 @@ function renderSummary(result, isExample = false) {
     // note stays the file's own timer time, which is what that word means here.
     { k: "Duration", v: hm(s.durationS), n: `moving ${hms(meta.timerTimeS)}` },
     { k: "Distance", v: nf(s.distanceKm, 1), unit: "km",
-      n: `best 500 m ${speed(rec.best500mKn, 1)}` },
+      n: `best 500 m ${speed(recordKn(doc, "best500m"), 1)}` },
     { k: words.onFoil, v: pct(s.foilPct),
       n: `${hms(s.foilTimeS)} ${words.foilTimeLower}` },
     // engine 0.13.0: `longestFlightM` becomes `maxFlightM` — the maximum flight distance,
@@ -231,12 +246,12 @@ function renderSummary(result, isExample = false) {
     // The tiles carry their unit in a `<small>` of their own, so the number comes through
     // `speedNumber` and the word through `speedUnit` — one formatter, whichever half of it
     // a cell needs (js/appsettings.js; `Speed` in the kit).
-    { k: "Best 2 s", v: speedNumber(rec.best2sKn), unit: speedUnit(),
-      n: `10 s ${speed(rec.best10sKn)}` },
-    { k: "Best 5×10 s", v: speedNumber(rec.best5x10sKn), unit: speedUnit(),
-      n: `1 NM ${speed(rec.bestNmKn)}` },
-    { k: "Alpha 500", v: speedNumber(rec.alpha500Kn), unit: speedUnit(),
-      n: `250 m ${speed(rec.best250mKn)}` },
+    { k: recordLabel("best2s"), v: speedNumber(recordKn(doc, "best2s")), unit: speedUnit(),
+      n: `10 s ${speed(recordKn(doc, "best10s"))}` },
+    { k: recordLabel("best5x10s"), v: speedNumber(recordKn(doc, "best5x10s")),
+      unit: speedUnit(), n: `1 NM ${speed(recordKn(doc, "bestNm"))}` },
+    { k: recordLabel("alpha500"), v: speedNumber(recordKn(doc, "alpha500")),
+      unit: speedUnit(), n: `250 m ${speed(recordKn(doc, "best250m"))}` },
     { k: "Turns", v: int(s.turns.turnsCounted),
       // The **outcome** share over every counted turn. It used to print `successPct`, the
       // engine's score verdict, which is not one of the rider's two tiers (flew through,
@@ -394,7 +409,12 @@ function outcomePill(outcome) {
 
 const yn = (b) => (b ? "yes" : "–");
 
-function renderTurns(table, caption, g, v, meta) {
+function renderTurns(table, caption, result, meta) {
+  const g = result.golden;
+  // **The rows are the document's strip**, one entry per detected sweep in time order,
+  // counted and uncounted together — the same list the map's marks and the turn page's
+  // "3 of 14" read (docs/presentation/document.md, "`turns` — the legend and the strip").
+  const strip = result.presentation?.turns?.strip || [];
   const s = g.summary.turns;
   // **Two tiers, and the score verdict is neither of them.** The rider reads *flew
   // through* — the outcome, no touchdown and no swim — and *clean*, which is a jibe that
@@ -449,18 +469,23 @@ function renderTurns(table, caption, g, v, meta) {
                 "arc m", "R m"];
   table.innerHTML = `<thead><tr>${head
     .map((h, i) => `<th${i <= 4 || i === 9 || i === 10 ? ' class="l"' : ""}>${esc(h)}</th>`).join("")}</tr></thead>
-    <tbody>${g.turns.map((t, i) => `
+    <tbody>${strip.map((e) => {
+      // **The row is the document's strip entry**, joined to the golden for the columns the
+      // strip does not carry — the arc, the radius and the two flags are workbench numbers
+      // the rider's surfaces never print, so they stay out of the document (ADR-033).
+      const t = g.turns[e.index];
+      return `
       <tr>
-        <td class="l">${i + 1}</td>
-        <td class="l">${clockAt(meta, t.ts)}</td>
-        <td class="l">${esc(t.type)}${t.counted ? "" : ' <span class="pill">not counted</span>'}</td>
+        <td class="l">${e.index + 1}</td>
+        <td class="l">${clockAt(meta, e.ts)}</td>
+        <td class="l">${esc(t.type)}${e.counted ? "" : ' <span class="pill">not counted</span>'}</td>
         <td class="l dim">${esc(t.direction)}</td>
-        <td class="l dim">${esc(t.side)}</td>
-        <td>${speedNumber(t.entryKn)}</td>
-        <td>${speedNumber(t.minKn)}</td>
-        <td>${nf(t.score * 100, 0)} %</td>
-        <td>${yn(t.clean)}</td>
-        <td class="l">${outcomePill(t.outcome)}${t.borderline ? ' <span class="pill">borderline</span>' : ""}</td>
+        <td class="l dim">${esc(e.sideId ?? "")}</td>
+        <td>${speedNumber(e.entryKn)}</td>
+        <td>${speedNumber(e.minKn)}</td>
+        <td>${nf(e.score * 100, 0)} %</td>
+        <td>${yn(e.clean)}</td>
+        <td class="l">${outcomePill(t.outcome)}${e.borderline ? ' <span class="pill">borderline</span>' : ""}</td>
         <td class="l dim">${esc(outcomeText(t, cfg.turnPumpedMarginalSpeed,
                                           g.config?.discipline) ?? "")}</td>
         <td>${nf(t.stoppedS, 1)}</td>
@@ -469,7 +494,8 @@ function renderTurns(table, caption, g, v, meta) {
         <td class="dim">${yn(t.submerged)}</td>
         <td class="dim">${nf(t.arcM, 0)}</td>
         <td class="dim">${nf(t.radiusM, 0)}</td>
-      </tr>`).join("")}</tbody>`;
+      </tr>`;
+    }).join("")}</tbody>`;
 }
 
 function renderEnds(table, caption, g, meta) {

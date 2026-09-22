@@ -43,102 +43,143 @@ export const PHRASES = {
  * analyzer's `?` beside the key-metrics block opens.
  *
  * `id` is a slug that outlives a rewording, so it is what a caller keys on.
- * Entries carry other fields in the JSON; only these three are copied here.
+ * `short` is the same word at the watch's width and `expansion` is what follows
+ * it after a middot where a rate is printed in full — the two lengths a
+ * presentation-document cell picks between (js/presentation.js). Entries carry
+ * other fields in the JSON; only these five are copied here.
  */
 export const GLOSSARY = [
   {
     "id": "foilShare",
     "term": "On foil",
+    "short": "on foil",
+    "expansion": "",
     "line": "How much of the session was spent flying rather than merely moving."
   },
   {
     "id": "flights",
     "term": "Flights & touchdowns",
+    "short": "flights",
+    "expansion": "",
     "line": "One takeoff starts a flight. A touchdown or a swim ends it. Both are counted."
   },
   {
     "id": "turnVerdicts",
     "term": "Turn verdicts",
+    "short": "verdict",
+    "expansion": "",
     "line": "Every turn gets one: flew through, touchdown, or fell in."
   },
   {
     "id": "dryStreak",
     "term": "Dry streak",
+    "short": "dry",
+    "expansion": "",
     "line": "How many jibes in a row you stayed out of the water, and the best run of the day."
   },
   {
     "id": "jph",
     "term": "JPH",
+    "short": "JPH",
+    "expansion": "dry jibes per hour",
     "line": "Dry jibes per hour. Falling in more often cannot raise it."
   },
   {
     "id": "cph",
     "term": "CPH",
+    "short": "CPH",
+    "expansion": "clean jibes per hour",
     "line": "Clean jibes per hour. Clean: flew through, held your speed, and 10 quiet seconds after."
   },
   {
     "id": "tph",
     "term": "TPH",
+    "short": "TPH",
+    "expansion": "turns per hour",
     "line": "Turns per hour, every counted turn and not only the jibes. It stands in for JPH on a session whose wind axis named no jibes."
   },
   {
     "id": "wph",
     "term": "WPH",
+    "short": "WPH",
+    "expansion": "swims per hour",
     "line": "Swims per hour. The number nobody wants, kept honest anyway."
   },
   {
     "id": "speedRecords",
     "term": "Speed records",
+    "short": "best",
+    "expansion": "",
     "line": "Your fastest 2 seconds, 10 seconds, 500 m and nautical mile. The speedsurfing world uses the same windows."
   },
   {
     "id": "best5x10s",
     "term": "Best 5×10 s",
+    "short": "5×10 s",
+    "expansion": "",
     "line": "The mean of your best five separate 10-second runs. They may not overlap, so one lucky reach cannot carry it."
   },
   {
     "id": "alpha500",
     "term": "Alpha 500",
+    "short": "alpha",
+    "expansion": "",
     "line": "Your fastest 500 m that ends within 50 m of where it started. It contains a jibe, so it measures the turn as well as the speed."
   },
   {
     "id": "flewThrough",
     "term": "Flew through",
+    "short": "flew",
+    "expansion": "",
     "line": "The turn kept the foil, from the sweep until you were flying again."
   },
   {
     "id": "clean",
     "term": "Clean",
+    "short": "clean",
+    "expansion": "",
     "line": "A jibe that flew through, held 70 % of its entry speed, and stayed quiet for 10 s."
   },
   {
     "id": "speedKept",
     "term": "Speed kept",
+    "short": "speed",
+    "expansion": "",
     "line": "The share of counted turns that held 70 % of their entry speed and never dropped off the foil."
   },
   {
     "id": "dry",
     "term": "Dry",
+    "short": "dry",
+    "expansion": "",
     "line": "You did not fall in. A touchdown still counts as dry."
   },
   {
     "id": "touchdown",
     "term": "Touchdown",
+    "short": "touch",
+    "expansion": "",
     "line": "The foil went in and you kept going. Dry, and not clean."
   },
   {
     "id": "fellIn",
     "term": "Fell in",
+    "short": "fell in",
+    "expansion": "",
     "line": "Every time you ended up in the water, in a turn or in a straight line."
   },
   {
     "id": "takeoffs",
     "term": "Takeoffs",
+    "short": "up",
+    "expansion": "",
     "line": "How many times you got up on the foil. One takeoff starts every flight."
   },
   {
     "id": "takeoffAttempts",
     "term": "Attempts",
+    "short": "tries",
+    "expansion": "",
     "line": "Every pumping burst, whether you got up or not. Attempts are takeoffs plus failed attempts."
   }
 ];

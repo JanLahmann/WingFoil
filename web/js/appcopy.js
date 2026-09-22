@@ -2938,3 +2938,76 @@ export const FEEDBACK = {
   ],
   "subjectPrefix": "CleanJibe feedback"
 };
+
+/**
+ * The words the presentation document points at (docs/copy/presentation.json,
+ * authored by the kit's `PresentationCopy`).
+ *
+ * The document carries an **id** and the arguments a sentence interpolates, never
+ * the sentence (ADR-033, rule 1). `js/presentation.js` is the resolver: it reads
+ * this, the glossary in ./copy.js and the token catalogue in ./tokens.js, which
+ * are the four namespaces a `labelId` may use and there are no others.
+ */
+export const PRESENTATION = {
+  "banner": {
+    "divergence": "Watch and phone disagree on {metrics}",
+    "divergenceMore": "{first} and {rest} more",
+    "divergencePair": "{first} and {second}"
+  },
+  "caption": {
+    "fallsSplit": "{inTurn} in a turn · {straight} in a straight line",
+    "ofJibes": "of {jibes} jibes · {clean} clean",
+    "ofTacks": {
+      "one": "of 1 tack",
+      "other": "of {tacks} tacks"
+    },
+    "ofTurns": "of {turns} turns"
+  },
+  "divergence": {
+    "flights": "Flights",
+    "foilTime": "Foil time",
+    "jibes": "Jibes",
+    "tacks": "Tacks",
+    "takeoffAttempts": "Takeoff attempts",
+    "takeoffs": "Takeoffs"
+  },
+  "label": {
+    "alpha500": "alpha 500",
+    "avgSpeed": "avg speed",
+    "best5x10s": "5×10 s",
+    "distance": "distance",
+    "duration": "duration",
+    "max2s": "max 2 s",
+    "outcomeLadder": "flew · touchdown · fell",
+    "streaks": "best streaks"
+  },
+  "rowMetric": {
+    "best10s": "best 10 s",
+    "best2s": "best 2 s",
+    "cleanJibes": "clean",
+    "distance": "distance",
+    "dryStreak": "dry streak",
+    "duration": "time",
+    "falls": "fell in",
+    "flights": "flights",
+    "foilShare": "foil",
+    "jibes": "jibes",
+    "turns": "turns"
+  },
+  "turnKind": {
+    "bearAway": "bear-away",
+    "jibe": "jibe",
+    "roundUp": "round-up",
+    "tack": "tack",
+    "turn": "turn"
+  },
+  "wristUnder": {
+    "afterFlight": "after flight {flight} ended",
+    "afterFlightStopped": "after flight {flight} ended, stopped {stoppedS} s",
+    "duringAnyTurn": "during a {turn}",
+    "duringTurn": "during {turn} {ordinal}",
+    "offFoil": "while off foil",
+    "title": "Wrist under",
+    "titleFor": "Wrist under · {durationS} s"
+  }
+};
