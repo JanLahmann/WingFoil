@@ -19,7 +19,8 @@ from wingfoil_lab.flightend import (FELL_IN, FLIGHT_END_OUTCOMES, GLIDE_OUT, TOU
 from wingfoil_lab.parse import parse_fit
 from wingfoil_lab.pump import pump_track, pump_track_from_arrays
 from wingfoil_lab.takeoff import analyze_takeoffs
-from wingfoil_lab.turns import detect_turns, summarize_turns
+from wingfoil_lab.turns import (FLEW_THROUGH, TurnConfig, detect_turns,
+                                summarize_turns)
 from wingfoil_lab.wind import WindEstimate, estimate_wind
 
 FIXTURES = Path(__file__).resolve().parents[2] / "fixtures"
@@ -219,6 +220,51 @@ def test_a_fall_inside_a_turn_belongs_to_the_turn_and_is_not_counted_twice():
     assert summary.in_turn.fell_in == 1
     assert summary.straight.fell_in == 0              # the double count that must not happen
     assert summary.all_ends.fell_in == 1
+
+
+def _mush_out_then_stop(coast_n=17):
+    """A jibe the rider never gets going again after, coasting into a standstill.
+
+    The coast sits above `foilExitSpeed` and below the recovery threshold, so the stop it
+    ends in begins ~20 s past the sweep -- past `turnOutcomeLookahead`, inside
+    `turnOutcomeLookaheadNotRecovered`. Engine 0.24.0, ADR-032.
+    """
+    ramp = list(np.linspace(90.0, 270.0, 7))
+    speed = ([6.0] * 40 + list(np.linspace(6.0, 5.0, 7)) + [5.0] * 2
+             + [3.0] * coast_n + [0.3] * 12 + [6.0] * 40)
+    return [90.0] * 40 + ramp + [270.0] * (len(speed) - 47), speed
+
+
+def test_the_mush_out_fall_is_booked_once_as_the_turns_own():
+    """**A fall the turn caused is the turn's fall**, and nobody else's (engine 0.24.0).
+
+    Until 0.24.0 the turn's tail stopped at 12 s, one sample short of the standstill: the
+    jibe read `touchdown` and the very same event was counted a second time as a
+    straight-line `fell_in`. Both halves of that are asserted here, on and off.
+    """
+    course, speed = _mush_out_then_stop()
+    ct = _track(course, speed)
+    flights = segment_flights(ct)
+    turns = detect_turns(ct, flights, WIND_N)
+    assert len(turns) == 1 and turns[0].outcome == FELL_IN
+
+    ends = classify_flight_ends(ct, flights, turns)
+    assert ends[0].outcome == FELL_IN and ends[0].owned_by_turn == 0
+    summary = summarize_flight_ends(ends)
+    assert summary.straight.fell_in == 0          # the double count that must not happen
+    split = split_outcomes(summarize_turns(turns), summary)
+    assert (split.turn_falls, split.straight_falls, split.falls) == (1, 0, 1)
+
+    # The 0.23.0 reading of the same track: the turn denied the fall and the flight-end
+    # channel booked it on its own, so the session claimed a touchdown *and* a fall.
+    old_turns = detect_turns(ct, flights, WIND_N,
+                             TurnConfig(outcome_lookahead_not_recovered_s=12.0))
+    old_ends = classify_flight_ends(ct, flights, old_turns)
+    assert old_turns[0].outcome == FLEW_THROUGH
+    assert old_ends[0].outcome == FELL_IN and not old_ends[0].in_turn
+    old_split = split_outcomes(summarize_turns(old_turns),
+                               summarize_flight_ends(old_ends))
+    assert (old_split.turn_falls, old_split.straight_falls) == (0, 1)
 
 
 def test_a_straight_line_fall_is_owned_by_nobody():

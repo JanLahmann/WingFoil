@@ -505,10 +505,15 @@ def test_fall_is_a_long_stop():
     turns = _detect(*_jibe_then([0.3] * 11))
     assert len(turns) == 1
     assert turns[0].outcome == FELL_IN and not turns[0].borderline
-    # 9 s of it, not the full 10: `turnOutcomeWindow` is 12 s since engine 0.13.0, so the
-    # stop is measured over the same tail the outcome is judged over and no further.
-    assert turns[0].stopped_s == pytest.approx(9.0)
-    assert turns[0].off_foil_s >= 9.0
+    # The whole 10 s of it. He never recovers inside `turnOutcomeLookahead`, so since engine
+    # 0.24.0 the tail follows him to `turnOutcomeLookaheadNotRecovered` and the stop is
+    # measured to its end instead of being cut off at the 12 s cap (it read 9 s until then).
+    assert turns[0].stopped_s == pytest.approx(10.0)
+    assert turns[0].off_foil_s >= 10.0
+    # Switch the rule off and the 0.23.0 reading comes back, unchanged.
+    old = _detect(*_jibe_then([0.3] * 11),
+                  config=TurnConfig(outcome_lookahead_not_recovered_s=12.0))[0]
+    assert old.outcome == FELL_IN and old.stopped_s == pytest.approx(9.0)
 
 
 def test_stop_between_the_two_thresholds_is_a_borderline_touchdown():
@@ -542,30 +547,37 @@ def _mush_out(exit_speed=4.0, decay=0.25, n=16):
                  _leg(270.0, 40, speed=0.2))
 
 
-def test_mush_out_after_the_turn_is_the_turns_fault():
-    """The 12 s tail catches the mush-out; what happens after it is not the turn's.
+def test_mush_out_after_the_turn_is_the_turns_fall():
+    """**A fall the turn caused is the turn's fall** (engine 0.24.0, ADR-032).
 
-    The turn is charged with the collapse it can be seen to have caused -- the exit is off
-    the foil inside the window, so this is a **touchdown** and not a fly-through. The
-    standstill this fixture eventually reaches lands past `turnOutcomeWindow` (12 s since
-    engine 0.13.0, equal to `turnOutcomeLookahead`), and a fall a quarter of a minute after
-    the sweep is a straight-line fall: the flight-end channel counts it, and WPH with it.
+    The rider never gets going again, so the tail follows him past the 12 s cap and finds
+    the standstill he coasts into: this is the turn's `fell_in`, not a `touchdown` with a
+    straight-line fall booked beside it. Until 0.24.0 the stop began one sample past
+    `turnOutcomeLookahead` and the same event was counted twice, once under each name.
     """
     turn = _detect(*_mush_out())[0]
-    assert turn.outcome == TOUCHDOWN
-    assert turn.outcome_window_s > 5.0            # the old fixed 5 s tail saw none of this
+    assert turn.outcome == FELL_IN and turn.outcome_reason == REASON_STOP
+    assert turn.stopped_s > TurnConfig().fall_stop_s
+    assert turn.outcome_window_s > TurnConfig().outcome_lookahead_s
 
-    # With the 60 s window 0.13.0 replaced, the same fixture read as the turn's own fall --
-    # the turn was blamed for a collapse three quarters of a minute past its exit.
-    wide = _detect(*_mush_out(), config=TurnConfig(outcome_window_s=60.0))[0]
-    assert wide.outcome == FELL_IN
+    # Switch the rule off (the tail back at 12 s) and the 0.23.0 verdict returns: the turn
+    # is charged only with the loss of foil it could be seen to cause inside the cap.
+    old = _detect(*_mush_out(),
+                  config=TurnConfig(outcome_lookahead_not_recovered_s=12.0))[0]
+    assert old.outcome == TOUCHDOWN
+    assert old.outcome_window_s > 5.0             # the old fixed 5 s tail saw none of this
 
 
 def test_a_short_lookahead_would_have_called_the_mush_out_a_fly_through():
-    """Regression guard on `turnOutcomeLookahead`: at the old 5 s the collapse is invisible."""
+    """Regression guard on `turnOutcomeLookahead`: at the old 5 s the collapse is invisible.
+
+    Both caps move together here: `turnOutcomeLookaheadNotRecovered` is the *same* tail
+    seen further, so leaving it at 30 s while the lookahead reads 5 would not restore the
+    5 s engine — it would restore its cap and none of its blindness.
+    """
     course, speed = _mush_out()
-    assert _detect(course, speed, config=TurnConfig(outcome_lookahead_s=5.0))[0].outcome \
-        == FLEW_THROUGH
+    short = TurnConfig(outcome_lookahead_s=5.0, outcome_lookahead_not_recovered_s=5.0)
+    assert _detect(course, speed, config=short)[0].outcome == FLEW_THROUGH
 
 
 def test_recovery_closes_the_window_so_a_later_touchdown_is_not_absorbed():
@@ -589,6 +601,107 @@ def test_the_window_stops_at_a_recording_gap():
     turn = detect_turns(ct, segment_flights(ct), WIND_N)[0]
     assert turn.outcome == FLEW_THROUGH
     assert turn.outcome_window_s <= 4.0
+
+
+# --- the not-recovered tail (engine 0.24.0, ADR-032) -------------------------------------
+#
+# "A fall the turn caused is the turn's fall." A rider who never gets going again is
+# followed to `turnOutcomeLookaheadNotRecovered` (30 s) instead of `turnOutcomeLookahead`
+# (12 s); recovery still closes the tail wherever it happens, and a gap still ends it.
+
+
+def _coast_then_stop(coast_n, coast_speed=3.0, stop_n=12, touch=0):
+    """A jibe, `touch` samples off the foil, a coast that never recovers, then a standstill.
+
+    The coast sits between `foilExitSpeed` (2.22 m/s) and the recovery threshold (70 % of a
+    6 m/s entry = 4.2 m/s): the rider is still flying, and still not flying *again*. `touch`
+    puts a short loss of foil just past the sweep, shorter than the flight `exitHold`, so
+    the turn has a `touchdown` to be promoted from.
+    """
+    return _join(_leg(90.0, 40),
+                 _ramp(90.0, 270.0, 7, np.linspace(6.0, 5.0, 7)),
+                 _leg(270.0, 2, speed=5.0),
+                 _leg(270.0, touch, speed=1.5),
+                 _leg(270.0, coast_n, speed=coast_speed),
+                 _leg(270.0, stop_n, speed=0.3),
+                 _leg(270.0, 40))
+
+
+def test_a_stop_twenty_seconds_out_is_still_the_turns_fall():
+    """The stop begins past the 12 s cap and he never recovered: the turn's `fell_in`."""
+    turn = _detect(*_coast_then_stop(17))[0]
+    assert turn.outcome == FELL_IN and turn.outcome_reason == REASON_STOP
+    assert turn.outcome_window_s > TurnConfig().outcome_lookahead_s
+    # The 0.23.0 engine never saw the stop at all and called the jibe a fly-through.
+    old = _detect(*_coast_then_stop(17),
+                  config=TurnConfig(outcome_lookahead_not_recovered_s=12.0))[0]
+    assert old.outcome == FLEW_THROUGH
+
+
+def test_recovery_still_closes_the_tail_and_a_later_stop_is_not_the_turns():
+    """Back to cruising 8 s out, a standstill at 25 s: a touchdown, and somebody else's fall.
+
+    The rule is gated on *not having recovered*, so a rider who powered out of the jibe is
+    judged over exactly the seconds he always was -- and the fall a quarter of a minute
+    later is the straight-line loss the flight-end channel counts.
+    """
+    course, speed = _join(_leg(90.0, 40),
+                          _ramp(90.0, 270.0, 7, np.linspace(6.0, 5.0, 7)),
+                          _leg(270.0, 2, speed=1.5),        # a touch, inside the flight
+                          _leg(270.0, 14, speed=6.0),       # recovery: the tail closes here
+                          _leg(270.0, 14, speed=0.3),       # the stop, ~25 s past the sweep
+                          _leg(270.0, 40))
+    turn = _detect(course, speed)[0]
+    assert turn.outcome == TOUCHDOWN and turn.stopped_s == 0.0
+    assert turn.outcome_window_s < TurnConfig().outcome_lookahead_s
+
+
+def test_a_stop_past_the_not_recovered_tail_is_not_the_turns_either():
+    """40 s out is drift, then a stop -- beyond 30 s the turn is no longer on the hook."""
+    turn = _detect(*_coast_then_stop(37, touch=2))[0]
+    assert turn.outcome == TOUCHDOWN and turn.stopped_s == 0.0
+    assert turn.outcome_window_s == pytest.approx(
+        TurnConfig().outcome_lookahead_not_recovered_s, abs=1.0)
+
+
+def test_a_gap_inside_the_tail_ends_the_measurement_as_it_always_did():
+    """A hole in the recording is not evidence that the rider failed to recover."""
+    course, speed = _coast_then_stop(17)
+    t = np.arange(len(course), dtype=float)
+    t[57:] += 30.0                       # 30 s missing ~8 s past the sweep, before the stop
+    ct = _track(course, speed, t=t)
+    turn = detect_turns(ct, segment_flights(ct), WIND_N)[0]
+    assert turn.outcome == FLEW_THROUGH
+    assert turn.outcome_window_s <= TurnConfig().outcome_lookahead_s
+
+
+def test_a_turn_the_rider_recovered_from_is_untouched_by_the_longer_tail():
+    """On a real 1 Hz session: only a tail that ran past the 12 s cap may change a verdict.
+
+    At a steady cadence a window shorter than `turnOutcomeLookahead` means the search was
+    closed by a recovery or a gap, so this is the corpus form of the invariant -- a turn the
+    rider flew out of keeps the verdict the 0.23.0 engine gave it, to the digit.
+    """
+    ct = clean(parse_fit(TODAY))
+    flights = segment_flights(ct)
+    wind = estimate_wind(ct, flights)
+    cfg = TurnConfig()
+    on = detect_turns(ct, flights, wind, cfg)
+    off = detect_turns(ct, flights, wind,
+                       TurnConfig(outcome_lookahead_not_recovered_s=12.0))
+    assert len(on) == len(off)
+    recovered = 0
+    for a, b in zip(on, off):
+        assert a.start_t == b.start_t
+        if a.outcome_window_s < cfg.outcome_lookahead_s:
+            recovered += 1
+            assert (a.outcome, a.borderline, a.stopped_s, a.off_foil_s) \
+                == (b.outcome, b.borderline, b.stopped_s, b.off_foil_s)
+        elif a.outcome != b.outcome:
+            assert a.outcome_window_s > cfg.outcome_lookahead_s
+    assert recovered >= 10                        # the assertion above is not vacuous
+    assert any(t.outcome == TOUCHDOWN and t.outcome_window_s < cfg.outcome_lookahead_s
+               for t in on)                       # ...and it covers recovered touchdowns
 
 
 def test_positional_channel_catches_a_touchdown_the_doppler_smooths_away():

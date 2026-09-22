@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.23.0",
+  "engineVersion": "0.24.0",
   "config": {
     "foilEntrySpeed": 12.0,
     "entryHold": 2.0,
@@ -43,6 +43,7 @@
     "turnTouchdownMaxStop": 3.0,
     "turnFallStop": 5.0,
     "turnOutcomeLookahead": 12.0,
+    "turnOutcomeLookaheadNotRecovered": 30.0,
     "turnRecoverPct": 70.0,
     "turnRecoverHold": 2.0,
     "turnOutcomeWindow": 12.0,

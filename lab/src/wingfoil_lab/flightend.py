@@ -57,7 +57,7 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from .evidence import (KMH_TO_MPS, OffFoilEvidence, elapsed, longest_stop,
-                       off_foil_evidence, off_foil_run, recovery_end)
+                       off_foil_evidence, off_foil_run, outcome_tail)
 from .filters import CleanTrack
 from .flight import FlightResult
 from .pump import PumpTrack
@@ -88,6 +88,11 @@ class FlightEndConfig:
     recover_pct: float = 70.0             # turnRecoverPct
     recover_hold_s: float = 2.0           # turnRecoverHold
     outcome_lookahead_s: float = 12.0     # turnOutcomeLookahead
+    #: turnOutcomeLookaheadNotRecovered (engine 0.24.0, ADR-032): the same not-recovered
+    #: tail the turns use, read through the same `evidence.outcome_tail`, so one rule
+    #: decides how long a rider who never gets going again is followed for whichever
+    #: channel is watching him.
+    outcome_lookahead_not_recovered_s: float = 30.0
     outcome_window_s: float = 60.0        # turnOutcomeWindow
 
 
@@ -224,9 +229,9 @@ def _classify(index: int, end_t: float, ev: OffFoilEvidence, cfg: FlightEndConfi
         # The segment ends here, so the flight machine never saw an exit: the *recording*
         # stopped mid-flight. Nothing after it is evidence about anything.
         return FlightEnd(flight_index=index, t=float(end_t), outcome=UNKNOWN, truncated=True)
-    hi = recovery_end(t, ev.gap, ev.doppler, lo,
-                      end_t + cfg.outcome_lookahead_s, end_t,
-                      _recover_threshold(ev, end_t, cfg), cfg.recover_hold_s)
+    hi, _ = outcome_tail(t, ev.gap, ev.doppler, lo, end_t, end_t,
+                         _recover_threshold(ev, end_t, cfg), cfg.recover_hold_s,
+                         cfg.outcome_lookahead_s, cfg.outcome_lookahead_not_recovered_s)
     end = FlightEnd(flight_index=index, t=float(end_t), outcome=GLIDE_OUT,
                     window_s=float(max(t[hi] - end_t, 0.0)))
     win = (t >= end_t) & (t <= t[hi])
