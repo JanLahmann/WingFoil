@@ -36,7 +36,7 @@ import {
 } from "./appcopy.js";
 import {
   forgetSettings, gearFor, gearMap, markWelcomeSeen, onSettingsChange, setGearFor,
-  setUnits, units, welcomeSeen,
+  setSpeedRecords, setUnits, speedRecords, units, welcomeSeen,
 } from "./appsettings.js";
 /* r7-w5: how much every explanation on this site says, and the `?` that carries the rest.
    One switch, remembered, obeyed by Settings, the session page and the panel notes alike. */
@@ -313,6 +313,17 @@ function wireSettings() {
   }
   markUnits();
 
+  // Settings → Speed records. Same shape as the unit switch above it, and for the same
+  // reason: three buttons, one stored word, and everything that reads a record asks the
+  // store rather than remembering an answer of its own.
+  for (const button of document.querySelectorAll("#settings-speed-records .seg-btn")) {
+    button.addEventListener("click", () => {
+      setSpeedRecords(button.dataset.speedRecords);
+      markSpeedRecords();
+    });
+  }
+  markSpeedRecords();
+
   // **THE CONFIRMATION IS ON THE PAGE** (Jan, 20 September 2026). It was `window.confirm`,
   // which is the browser asking in the browser's words over an app that has its own, and
   // on a phone the two are indistinguishable. One question, two answers, both here, and
@@ -343,6 +354,25 @@ function markUnits() {
   for (const button of document.querySelectorAll("#settings-units .seg-btn")) {
     button.setAttribute("aria-pressed", String(button.dataset.units === chosen));
   }
+}
+
+/** What the chosen mode does, under the buttons. One line per mode, the phone's own
+ *  (`SpeedRecordPolicy.summary` in the kit): three two-word labels cannot say when an
+ *  unverified record counts, and that is the whole difference between them. */
+const SPEED_RECORD_SUMMARY = {
+  onlyVerified: "Only records your watch measured. Nothing else counts.",
+  preferVerified: "A measured record wins. An estimated one fills an empty row, marked.",
+  includeUnverified: "Every record counts. Estimated ones are marked.",
+};
+
+function markSpeedRecords() {
+  const chosen = speedRecords();
+  for (const button of document.querySelectorAll("#settings-speed-records .seg-btn")) {
+    button.setAttribute("aria-pressed",
+                        String(button.dataset.speedRecords === chosen));
+  }
+  const line = el("speed-records-summary");
+  if (line) line.textContent = SPEED_RECORD_SUMMARY[chosen] || "";
 }
 
 /** The release notes /whats-new/ prints, in the app that they are about. Rendered rather

@@ -66,6 +66,8 @@ struct ShareComposerView: View {
     /// (`ReelExportSheet`). BETA, with the door that raises it.
     #if BETA
     @State private var showReel = false
+    /// The analysis mail's own sheet, raised by the row under the switcher. BETA.
+    @State private var showSendToDeveloper = false
     #endif
     /// Width the sheet has for the preview; 0 until the first layout pass.
     @State private var availableWidth: CGFloat = 0
@@ -101,7 +103,12 @@ struct ShareComposerView: View {
     private var stats: ShareCardStats {
         ShareCardStats.make(row: row, title: displayTitle,
                             metrics: metrics, preset: preset,
-                            note: noteDraft, timeZone: row.displayZone)
+                            note: noteDraft,
+                            // Settings → Speed records. A card is an all-time claim in a
+                            // chat thread, so "Only verified" takes the record cell off a
+                            // class-(c) card rather than sending it out marked.
+                            policy: store.speedRecordPolicy,
+                            timeZone: row.displayZone)
     }
 
     /// What the card is titled *right now* — the draft while it is being typed, the session's
@@ -146,6 +153,19 @@ struct ShareComposerView: View {
                         ForEach(Payload.allCases) { Text($0.label).tag($0) }
                     }
                     .pickerStyle(.segmented)
+
+                    // **The third thing this page can do**, under the switcher rather than
+                    // inside it (Jan, 21 Sep 2026). The Card/FIT segments answer one
+                    // request — send this to someone — and a third segment would make a
+                    // rider choose between "share" and "report" before he has decided he
+                    // wants either. A full-width row directly under the control is where
+                    // he is already looking, and it carries the same afternoon whichever
+                    // segment is showing.
+                    //
+                    // BETA (docs/channels.md): the App Store build has no row and no sheet.
+                    #if BETA
+                    sendToDeveloperRow
+                    #endif
 
                     switch payload {
                     case .card: cardSection
@@ -218,6 +238,12 @@ struct ShareComposerView: View {
             .task {
                 let environment = ProcessInfo.processInfo.environment
                 if environment["UI_SHARE"] == "fit" { payload = .fit }
+                // `UI_SHARE=developer` raises the analysis sheet over the composer: the row
+                // that opens it is a tap `simctl` cannot make, and the sheet is a beta door
+                // so the hook is behind the same flag the row is.
+                #if BETA
+                if environment["UI_SHARE"] == "developer" { showSendToDeveloper = true }
+                #endif
                 if let raw = environment["UI_SHAPE"],
                    let wanted = ShareCardStats.Shape(rawValue: raw) { shape = wanted }
                 // `UI_STATS=lean|complete` photographs the other preset without writing
@@ -247,6 +273,32 @@ struct ShareComposerView: View {
             .presentationSizing(.page)
         }
     }
+
+    #if BETA
+    /// The row that opens `SendToDeveloperSheet`. One line under it, because the row's own
+    /// label says what it does and the line says what it is *for* — a number that looks
+    /// wrong, which is the only reason a rider taps it.
+    @ViewBuilder
+    private var sendToDeveloperRow: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Button { showSendToDeveloper = true } label: {
+                Label("Send this session to the developer",
+                      systemImage: "text.bubble.badge.clock")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.large)
+
+            Text("A number looks wrong? Send the recording with your notes.")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .center)
+        }
+        .sheet(isPresented: $showSendToDeveloper) {
+            SendToDeveloperSheet(row: row, detail: detail)
+        }
+    }
+    #endif
 
     // MARK: - Naming the session
 
@@ -539,7 +591,7 @@ struct ShareComposerView: View {
                      metrics == nil ? "0" : "1",
                      map == nil ? "0" : "1"].joined(separator: "|")
         return shape.rawValue + "|" + preset.rawValue + "|" + background
-            + "|" + parts
+            + "|" + parts + "|" + store.speedRecordPolicy.rawValue
             + "|" + displayTitle + "|" + noteDraft
     }
 

@@ -237,11 +237,15 @@ public enum HelpTopicID: String, CaseIterable, Sendable, Identifiable {
     // than kept as aliases, because a `?` that still compiles against `.best2s` is a `?`
     // nobody notices is pointing at a page that no longer exists.
     case speedRecords
+    /// Settings → Speed records: which records a track with no speed channel may hold.
+    case verifiedRecords
     case turnTypes, turnOutcomes, turnSuccess, portStarboard, falls, touchdowns, glideOuts
     case takeoffAttempts, pumpsToTakeoff, pumpStrokes
     case heartRate
     case windAxis
     case shareCard, replayClip, shareFit, riderAttribution
+    /// The Share page's beta door: this session's recording, to the developer, by mail.
+    case sendSessionToDeveloper
     case sourceClass, divergence, engineVersion, windsurf
 
     public var id: String { rawValue }
@@ -1120,10 +1124,31 @@ public enum HelpCatalog {
                 .init(term: "\"Uncertified\"",
                       detail: "A recording with positions but no speed channel has its "
                           + "speed differentiated from them, which reads high. Every GPX is "
-                          + "one, and some converted exports. Shown, never a personal "
-                          + "best."),
+                          + "one, and some converted exports. Marked wherever it is "
+                          + "shown."),
             ],
-            related: [.sourceClass, .turnOutcomes, .divergence]),
+            related: [.verifiedRecords, .sourceClass, .turnOutcomes, .divergence]),
+
+        // Settings → Speed records (Jan, 22 September 2026). The topic the `?` on that
+        // section opens, and the one place the three modes are spelled out for a rider.
+        // Four sentences, because the question is small and the answer is a choice: what
+        // the two words mean, what each mode does, and where the setting is.
+        HelpTopic(
+            id: .verifiedRecords, section: .records,
+            title: "Verified and unverified speed records",
+            summary: "Choose whether a record from a track without measured speed counts.",
+            body: [
+                "A verified record comes off a recording that carries your watch's own "
+                + "Doppler speed. An unverified one is worked out from positions, which "
+                + "reads high.",
+                "Only verified keeps unverified records out of your all-time table, your "
+                + "trends and your cards. The session that set one still shows it, marked.",
+                "Prefer verified is the default. A verified record wins its row, and an "
+                + "unverified one fills a row no verified record has reached.",
+                "Include unverified counts every record and marks the ones it could not "
+                + "verify. Settings \u{2192} Speed records is where you choose.",
+            ],
+            related: [.speedRecords, .sourceClass, .stravaImport]),
 
         // MARK: Turns & losses
 
@@ -1452,7 +1477,26 @@ public enum HelpCatalog {
             ],
             links: [HelpLink(title: "Open the browser analyzer",
                              url: URL(string: Branding.siteURL)!)],
-            related: [.riderAttribution, .shareCard]),
+            related: [.riderAttribution, .shareCard, .sendSessionToDeveloper]),
+
+        // The Share page's beta door (Jan, 21 September 2026). BETA in the app, so the
+        // topic is bound to the beta channel and never reaches the release index
+        // (docs/channels.md).
+        HelpTopic(
+            id: .sendSessionToDeveloper, section: .sharing, channel: .beta,
+            title: "Send a session to the developer",
+            summary: "Mail one session and your notes, so a wrong number can be chased.",
+            body: [
+                "A number that looks wrong can only be chased on the recording that "
+                + "produced it. This puts that recording, your notes and this build's facts "
+                + "into one mail.",
+                "The file holds your track, your heart rate and your times. It is used only "
+                + "to improve the detection and it is never published.",
+                "You see the whole mail before it goes. Edit any line, delete any line, or "
+                + "close it and nothing is sent.",
+                "Open a session, tap Share, then Send this session to the developer.",
+            ],
+            related: [.shareFit, .sourceClass, .divergence]),
 
         HelpTopic(
             id: .riderAttribution, section: .sharing, title: "Sessions someone else rode",

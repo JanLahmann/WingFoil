@@ -148,8 +148,14 @@ struct RecordsView: View {
     }
 
     /// Any of these changing means the query has to run again.
+    ///
+    /// Settings → Speed records is part of it: the setting is applied at the query, so
+    /// moving it has to run the query again (`LibraryStore.records(_:policy:)`). Nothing
+    /// is re-imported and no stored number moves — the same `record_effort` rows are read
+    /// under the other rule.
     private var reloadKey: String {
         "\(filter.spotId ?? "-")|\(filter.gearId ?? "-")|\(store.libraryGeneration)"
+            + "|\(store.speedRecordPolicy.rawValue)"
     }
 
     /// One burst per import, on arrival at the screen that owns the number.
@@ -201,12 +207,25 @@ struct RecordsView: View {
         ContentUnavailableView {
             Label(emptyTitle, systemImage: "trophy")
         } description: {
-            Text(store.sessions.isEmpty
-                 ? "Import or sync a session and its speed records appear here."
-                 : store.hasOnlyExampleSessions
-                   ? ExampleOnlyNote.records
-                   : "No qualifying speed window under this filter.")
+            Text(emptyMessage)
         }
+    }
+
+    /// **Four empty screens, because a table that empties has to say which of four
+    /// reasons it was.** The fourth is the newest: under Settings → Speed records, "Only
+    /// verified", a library of GPX and Strava afternoons has no speed record at all, and a
+    /// screen that said "no qualifying speed window" would send a rider looking for a
+    /// wind that was never the problem (docs/review-checklist.md, pattern G).
+    private var emptyMessage: String {
+        if store.sessions.isEmpty {
+            return "Import or sync a session and its speed records appear here."
+        }
+        if store.hasOnlyExampleSessions { return ExampleOnlyNote.records }
+        if store.speedRecordPolicy == .onlyVerified {
+            return "No verified speed record yet. These recordings worked their speed out "
+                + "from positions. Settings has the other two answers."
+        }
+        return "No qualifying speed window under this filter."
     }
 
     private var emptyTitle: String {
@@ -216,6 +235,10 @@ struct RecordsView: View {
 
     private var recordsHeader: some View { RecordTableHeader() }
 
+    /// The footer counts what the table is actually showing, which is why it is written
+    /// after the policy has been applied rather than before: under "Only verified" every
+    /// row is certified by construction, and the sentence says so instead of describing a
+    /// filter the rider cannot see the effect of.
     private var footnote: String {
         let certified = records.filter(\.certified).count
         // "Uncertified" is the rider's word for a class-(c) GP3S source: a recording with
@@ -235,7 +258,8 @@ struct RecordsView: View {
     }
 
     private func reload() async {
-        records = (try? await store.library.records(filter)) ?? []
+        records = (try? await store.library.records(filter,
+                                                    policy: store.speedRecordPolicy)) ?? []
         sessionRecords = (try? await store.library.sessionRecords(filter)) ?? []
         loaded = true
     }

@@ -269,7 +269,17 @@ public struct LibraryStore: Sendable {
 
     /// All-time bests per kind under the filter, strongest kinds first in catalogue order.
     /// A kind with no qualifying effort anywhere is simply absent from the result.
-    public func records(_ filter: LibraryFilter = LibraryFilter()) async throws -> [RecordBest] {
+    ///
+    /// **The verified/unverified decision is taken here, at query time** (Settings → Speed
+    /// records, 22 September 2026). The `record_effort` table keeps every effort whatever
+    /// the setting says; `SpeedRecordRule.eligible` decides, per kind, which of them the
+    /// rider's policy lets stand, and it runs *before* the maximum is taken — that is the
+    /// whole of "a verified record wins whenever one exists". A kind whose only efforts are
+    /// unverified drops out of the result under `onlyVerified`, exactly like a kind nobody
+    /// has ever set.
+    public func records(_ filter: LibraryFilter = LibraryFilter(),
+                        policy: SpeedRecordPolicy = .preferVerified) async throws
+        -> [RecordBest] {
         try await database.writer.read { db in
             let (join, whereSQL, args) = Self.clause(filter, alias: "s")
             let efforts = try RecordEffortRow.fetchAll(db, sql: """
@@ -289,7 +299,14 @@ public struct LibraryStore: Sendable {
             }
 
             return RecordKind.allCases.compactMap { kind -> RecordBest? in
-                guard let history = byKind[kind.rawValue], !history.isEmpty,
+                guard let all = byKind[kind.rawValue], !all.isEmpty else { return nil }
+                // One call per kind, because `preferVerified` is a statement about a kind:
+                // best 2 s may be filled by an unverified effort on a library that holds a
+                // verified 500 m and no verified 2 s.
+                let history = SpeedRecordRule.eligible(all, policy: policy) {
+                    $0.sourceClass != "c"
+                }
+                guard !history.isEmpty,
                       let best = history.max(by: { $0.valueKn < $1.valueKn }) else { return nil }
                 let window = best.windowStartTs.map {
                     RecordWindow(startTs: $0, durS: best.windowDurS ?? 0)

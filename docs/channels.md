@@ -131,6 +131,7 @@ c through GPX and TCX as well. The app's `sourceClass` column is the source of t
 | Group by month, year, spot; filter menu; chips | beta | |
 | Spots, gear, periods | release | |
 | Records, trends, all-time tables | release | |
+| Speed records: only verified / prefer verified / include unverified | **release** | Settings → Speed records, 22 Sep 2026. Whether a record off a track with no Doppler speed may stand. One rule in the kit (`SpeedRecordRule.eligible`, pattern L) read by the records table, the personal bests, the celebration, the Trends best-2 s series, the share card and the widget snapshot, and one function in Python (`library.eligible`) read by the browser's aggregate. Applied at query time, so moving it re-reads the same rows and re-imports nothing. Release because it meets all four rules on the day it ships: it is a setting over an engine number that has been in every build since 0.9.0, it has a help topic (*Verified and unverified speed records*), it needs no watch to review (the example session and any GPX show both answers), and it removes a report rather than opening one |
 | Backup and restore, deleted-session memory | release | |
 | iCloud Drive library sync: two devices, one library | dev | issue #7, ADR-026. Settings → iCloud Drive, one switch, `#if DEV`. Before beta: **rule 1** on two real devices — Jan's iPhone and iPad, ten or more sessions crossing both ways with a rename, a gear change and a delete on each side, no session doubled and none resurrected; a help topic on what does and does not travel (the analysis is redone on each device, the folder counts against the rider's iCloud storage); the privacy page naming iCloud Drive as a destination for recordings; the container registered on the App Store app id and both profiles regenerated, which is what moving the entitlement out of the dev-only container needs |
 | Example session, welcome screen, help catalogue | release | |
@@ -145,6 +146,7 @@ c through GPX and TCX as well. The app's `sourceClass` column is the source of t
 | Replay clips with the rider's own music | release | |
 | Session video export (the film) | beta | |
 | Send a session to a friend, sessions someone else rode | release | the scrubbed original FIT through the share sheet |
+| Send a session to the developer | beta | Share → *Send this session to the developer*, 21 Sep 2026. A comment field, a consent sentence, and the ordinary feedback-mail path carrying the **archived original** unscrubbed plus this session's headline numbers and any watch-vs-phone rows. `#if BETA` in the app, so the release build has no row, no sheet and no attachment path; the help topic is bound to `.beta` and never reaches the release index. Before release: **rule 1** on ten mails from two riders, and a decision about what the unscrubbed file may carry that the scrubbed one may not (docs/analytics.md) |
 
 ### Watches
 

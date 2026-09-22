@@ -256,4 +256,138 @@ import Testing
         #expect(items.first { $0.name == "subject" }?.value == FeedbackReport.subject(all))
         #expect(items.first { $0.name == "body" }?.value == FeedbackReport.body(all))
     }
+
+    // MARK: - Sending one session to the developer (beta)
+
+    /// The session the analysis mail is about, with everything only that mail carries.
+    private var analysed: FeedbackFacts.Session {
+        FeedbackFacts.Session(
+            id: "A1B2C3", date: "30 August 2026", spot: "Torbole",
+            discipline: "Wingfoil", duration: "1:42:11", sourceClass: "a",
+            engineStamp: "0.23.0",
+            distance: "18.4 km",
+            tally: "18 flew through \u{00B7} 4 touchdown \u{00B7} 2 fell in",
+            windSource: "estimate \u{00B7} axis 212\u{00B0}",
+            divergences: ["Best 2 s: watch 24.10 kn, phone 23.80 kn, delta 0.30 kn"])
+    }
+
+    /// Named for the afternoon, not for the build: a mailbox sorted by subject then groups
+    /// the mails about one session, and the build is under the rule with the rest.
+    @Test func theAnalysisSubjectNamesTheSession() {
+        #expect(SessionAnalysisMail.subject(date: "30 August 2026")
+                == "CleanJibe session 30 August 2026 \u{2014} for analysis")
+    }
+
+    /// The rider's half first, then what he is agreeing to, then the rule. Asserted by
+    /// index for the reason the feedback mail's own opening is: a lost blank line reads
+    /// fine in a diff and badly in a mail client.
+    @Test func theAnalysisBodyOpensWithTheNoteAndTheConsent() {
+        let body = SessionAnalysisMail.body(facts(session: analysed),
+                                            comment: "  jibe 7 says touchdown, it flew  ",
+                                            attachment: .originalRecording(
+                                                filename: "2026-08-30-torbole.fit"))
+        let lines = body.split(separator: "\n", omittingEmptySubsequences: false)
+        #expect(lines[0] == "What looks wrong:")
+        #expect(lines[1] == "jibe 7 says touchdown, it flew", "the comment is trimmed")
+        #expect(lines[2] == "")
+        #expect(lines[3] == SessionAnalysisMail.consent)
+        #expect(lines[4] == "")
+        #expect(lines[5] == FeedbackReport.Separator.rule)
+        #expect(lines[6] == FeedbackReport.Separator.note)
+    }
+
+    /// An empty comment still leaves a labelled, empty field rather than collapsing the
+    /// mail's first two lines into one — the same shape a filled one has.
+    @Test func anEmptyCommentKeepsItsField() {
+        let lines = SessionAnalysisMail.body(facts(session: analysed), comment: "",
+                                             attachment: .none)
+            .split(separator: "\n", omittingEmptySubsequences: false)
+        #expect(lines[0] == "What looks wrong:")
+        #expect(lines[1] == "")
+        #expect(lines[3] == SessionAnalysisMail.consent)
+    }
+
+    /// The consent sentence says three things and no more: what is in the file, what it is
+    /// for, and what will not happen to it. It is the sentence the sheet shows above the
+    /// button, so the screen and the mail cannot say different things.
+    @Test func theConsentSentenceSaysWhatIsInTheFile() {
+        let consent = SessionAnalysisMail.consent
+        #expect(consent.contains("track"))
+        #expect(consent.contains("heart rate"))
+        #expect(consent.contains("never published"))
+        #expect(consent.split(separator: ".").count == 3)
+    }
+
+    /// The same fact sheet the feedback mail prints, plus this session's headline numbers
+    /// and the watch-vs-phone rows. Two mails, one block, so a reader answering either is
+    /// reading the same lines in the same order.
+    @Test func theAnalysisBodyCarriesTheDiagnosticsAndTheHeadlineNumbers() {
+        let body = SessionAnalysisMail.body(facts(session: analysed), comment: "x",
+                                            attachment: .originalRecording(
+                                                filename: "2026-08-30-torbole.fit"))
+        for expected in ["CleanJibe 1.0 (17) \u{00B7} release build",
+                         "Analysis engine 0.20.0",
+                         "iPhone 17 Pro Max (iPhone18,2)",
+                         "42 sessions",
+                         "30 August 2026 \u{00B7} Torbole",
+                         "Source class a \u{00B7} Wingfoil \u{00B7} 1:42:11",
+                         "Distance 18.4 km",
+                         "Jibes 18 flew through \u{00B7} 4 touchdown \u{00B7} 2 fell in",
+                         "Wind estimate \u{00B7} axis 212\u{00B0}",
+                         "Session id A1B2C3",
+                         "Attached",
+                         "2026-08-30-torbole.fit",
+                         "Watch and phone disagree",
+                         "Best 2 s: watch 24.10 kn, phone 23.80 kn, delta 0.30 kn"] {
+            #expect(body.contains(expected), "the mail never says \(expected)")
+        }
+        #expect(body.hasSuffix("sent from CleanJibe"))
+    }
+
+    /// A session with no summary card behind it has nothing to disagree with, so the block
+    /// is absent rather than present and empty.
+    @Test func theDivergenceBlockIsAbsentWhenNothingDisagrees() {
+        let quiet = FeedbackFacts.Session(
+            id: "A1B2C3", date: "30 August 2026", spot: nil, discipline: nil,
+            duration: "1:42:11", sourceClass: "b", engineStamp: nil)
+        let body = SessionAnalysisMail.body(facts(session: quiet), comment: "x",
+                                            attachment: .none)
+        #expect(!body.contains(SessionAnalysisMail.divergenceHeading))
+        // And the headline lines are absent too, rather than printed as zeros: a mail that
+        // said "0.0 km" would send a reader looking for a bug in the distance.
+        #expect(!body.contains("Distance"))
+        #expect(!body.contains("Jibes "))
+    }
+
+    /// Three attachments, three sentences. A session that arrived as positions says so, and
+    /// a session with nothing archived says *that* rather than leaving the reader to
+    /// discover the missing file after he has opened the mail.
+    @Test func theAttachmentSaysWhichFileItIs() {
+        func attached(_ attachment: SessionAnalysisMail.Attachment) -> String {
+            SessionAnalysisMail.body(facts(session: analysed), comment: "x",
+                                     attachment: attachment)
+        }
+        #expect(attached(.originalRecording(filename: "a.fit"))
+                .contains("The original recording, as it was imported."))
+        #expect(attached(.derivedTrack(filename: "a.gpx"))
+                .contains("arrived without a recording of its own"))
+        #expect(attached(.none).contains("No recording could be read for this session."))
+    }
+
+    /// The fallback route. No URL scheme carries an attachment, so the body goes alone and
+    /// the caller says so; what must not happen is a body cut short at an ampersand a
+    /// rider typed.
+    @Test func theAnalysisMailtoSurvivesAnAmpersand() throws {
+        let subject = SessionAnalysisMail.subject(date: "30 August 2026")
+        let body = SessionAnalysisMail.body(facts(session: analysed),
+                                            comment: "3 jibes & 2 tacks, +1 fall?",
+                                            attachment: .none)
+        let url = try #require(SessionAnalysisMail.mailtoURL(subject: subject, body: body))
+        #expect(url.scheme == "mailto")
+        #expect(url.path == FeedbackReport.recipient)
+        let items = try #require(URLComponents(url: url, resolvingAgainstBaseURL: false)?
+            .queryItems)
+        #expect(items.first { $0.name == "subject" }?.value == subject)
+        #expect(items.first { $0.name == "body" }?.value == body)
+    }
 }

@@ -319,25 +319,97 @@ def test_the_three_rates_are_drawn_side_by_side_and_read_the_engine():
 
 
 def test_the_best_2s_series_is_knots_and_marks_what_it_cannot_certify():
-    """The one speed series. A class-(c) session differentiated its speed from positions,
-    so the point is drawn and drawn *marked* — the same rule the records table applies."""
+    """The one speed series, under all three answers to Settings -> Speed records.
+
+    A class-(c) session differentiated its speed from positions. Whether its point is
+    *drawn* is the reader's setting (`library.eligible`); whether it is *marked* when it is
+    drawn never was — the mark is a fact about the recording.
+    """
     watch = entry("watch", "2026-08-03", 1000.0, records={"best2sKn": 14.2})
     gpx = entry("gpx", "2026-08-10", 2000.0, sourceClass="c",
                 records={"best2sKn": 15.9})
     blank = entry("blank", "2026-08-11", 3000.0, records={})
-    charts = {c["key"]: c for c in
-              library.aggregate([watch, gpx, blank])["trends"]["charts"]}
-    best = charts["best2s"]
+    rows = [watch, gpx, blank]
+
+    def series(policy=library.DEFAULT_SPEED_RECORD_POLICY):
+        charts = {c["key"]: c for c in
+                  library.aggregate(rows, policy)["trends"]["charts"]}
+        return charts, charts["best2s"]
+
+    charts, best = series("includeUnverified")
     assert (best["label"], best["unit"], best["speed"]) == ("Best 2 s", "kn", True)
     assert [p["v"] for p in best["lines"][0]["points"]] == [14.2, 15.9, None]
     assert [p["certified"] for p in best["lines"][0]["points"]] == [True, False, True]
     assert best["uncertified"] is True
+
+    # The default: a verified point exists, so the unverified one does not fill a column
+    # it cannot be compared in. It keeps its column and loses its value, the way every
+    # other "this session cannot report that" gap on the page is drawn.
+    _, default = series()
+    assert [p["v"] for p in default["lines"][0]["points"]] == [14.2, None, None]
+    assert [p["certified"] for p in default["lines"][0]["points"]] == [True, False, True]
+    # Nothing unverified is drawn any more, so the chart no longer carries the badge.
+    assert default["uncertified"] is False
+
+    # "Only verified" answers the same way here, because the verified point is there to be
+    # preferred. The two modes part company on a library with nothing verified in it.
+    _, strict = series("onlyVerified")
+    assert [p["v"] for p in strict["lines"][0]["points"]] == [14.2, None, None]
+    only_c = {c["key"]: c for c in
+              library.aggregate([gpx], "preferVerified")["trends"]["charts"]}["best2s"]
+    assert [p["v"] for p in only_c["lines"][0]["points"]] == [15.9]
+    assert only_c["uncertified"] is True
+    no_c = {c["key"]: c for c in
+            library.aggregate([gpx], "onlyVerified")["trends"]["charts"]}["best2s"]
+    assert [p["v"] for p in no_c["lines"][0]["points"]] == [None]
+
     # No class-(c) session in the library, no mark on the chart at all.
     assert {c["key"]: c for c in library.aggregate([watch])["trends"]["charts"]
             }["best2s"]["uncertified"] is False
     # And the certification is the speed chart's alone: nothing else claims a speed.
     assert not any("certified" in p for key, c in charts.items() if key != "best2s"
                    for line in c["lines"] for p in line["points"])
+
+
+def test_the_speed_record_policy_answers_per_kind():
+    """**Settings -> Speed records, over a mixed library** — the lab's half of the rule the
+    kit tests in `SpeedRecordPolicyTests`.
+
+    The pair that matters: a verified session holding the best 2 s, and an unverified one
+    that reads higher on best 2 s *and* is the only session that ever set a best 500 m.
+    ``preferVerified`` has to answer two ways on one library.
+    """
+    watch = entry("watch", "2026-08-03", 1000.0, records={"best2sKn": 20.0})
+    gpx = entry("gpx", "2026-08-10", 2000.0, sourceClass="c",
+                records={"best2sKn": 31.0, "best500mKn": 9.0})
+    rows = [watch, gpx]
+
+    def table(policy):
+        return {r["key"]: (r["value"], r["certified"])
+                for r in library.aggregate(rows, policy)["records"]}
+
+    assert table("onlyVerified") == {"best2sKn": (20.0, True)}
+    assert table("preferVerified") == {"best2sKn": (20.0, True),
+                                       "best500mKn": (9.0, False)}
+    assert table("includeUnverified") == {"best2sKn": (31.0, False),
+                                          "best500mKn": (9.0, False)}
+
+    # The default, and the fallback for anything unreadable — the same rule
+    # `SpeedRecordPolicyStore` makes, so an older browser cannot land on an empty table.
+    assert library.DEFAULT_SPEED_RECORD_POLICY == "preferVerified"
+    for bad in (None, "", "yes", "certified"):
+        assert library.aggregate(rows, bad)["speedRecordPolicy"] == "preferVerified"
+    assert library.aggregate(rows)["records"] == library.aggregate(
+        rows, "preferVerified")["records"]
+
+    # The rule itself, asked directly. It takes the candidates of ONE kind, because
+    # "prefer verified" is a statement about a kind.
+    assert library.eligible([watch, gpx], "onlyVerified") == [watch]
+    assert library.eligible([watch, gpx], "preferVerified") == [watch]
+    assert library.eligible([gpx], "preferVerified") == [gpx]
+    assert library.eligible([watch, gpx], "includeUnverified") == [watch, gpx]
+    for policy in library.SPEED_RECORD_POLICIES:
+        assert library.eligible([], policy) == []
 
 
 # ------------------------------------------------------------------------- periods

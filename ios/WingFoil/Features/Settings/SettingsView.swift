@@ -11,6 +11,11 @@ struct SettingsView: View {
 
     var body: some View {
         NavigationStack {
+            // `ScrollViewReader` for one reason: the screenshot hook below. A Form this
+            // long puts most of its sections off screen, and `simctl` cannot scroll, so a
+            // section added near the bottom could never be photographed
+            // (docs/testing.md, "iOS screenshot hooks").
+            ScrollViewReader { proxy in
             Form {
                 // **Settings keeps switches and accounts, and nothing else** (Jan, build
                 // 58). A block of three rows used to open this screen — "What CleanJibe
@@ -36,6 +41,9 @@ struct SettingsView: View {
                 sessionListSection
                 rowShowsSection
                 unitsSection
+                    .id("units")
+                speedRecordsSection
+                    .id("speedRecords")
                 // Windsurf, and the per-discipline thresholds behind it: DEV.
                 #if DEV
                 windsurfSection
@@ -98,6 +106,18 @@ struct SettingsView: View {
             // regular-width way to ask for the room a `.large` detent asks for on a phone,
             // and it does nothing at compact width, where there is no other size to have.
             .presentationSizing(.page)
+            #if DEBUG && targetEnvironment(simulator)
+            // `UI_SCROLL_TO=<id>` parks the screen on one section — the anchors are the
+            // `.id(…)`s above, and an unknown one is a no-op rather than a wrong screen.
+            .task {
+                guard let anchor = ProcessInfo.processInfo.environment["UI_SCROLL_TO"]
+                else { return }
+                // The Form has to have laid out once before an id resolves.
+                try? await Task.sleep(nanoseconds: 400_000_000)
+                withAnimation(.none) { proxy.scrollTo(anchor, anchor: .center) }
+            }
+            #endif
+            }
         }
     }
 
@@ -436,6 +456,36 @@ struct SettingsView: View {
             Text(SettingsCopy.section("units").title)
         } footer: {
             settingFooter("units")
+        }
+    }
+
+    /// **Whether a record from a track that never measured a speed may stand** (Jan,
+    /// 22 September 2026).
+    ///
+    /// Right under Units because it is the other question about how a speed reads. A
+    /// wheel rather than a segmented control: three labels of two words each do not fit
+    /// three segments on a phone, and the chosen line needs a sentence under it — the modes
+    /// differ by *when* an unverified record counts, which is not legible from a label.
+    ///
+    /// The picker writes `store.speedRecordPolicy`, which is all the redraw there is: the
+    /// Records and Trends screens key their query on it and re-read the same
+    /// `record_effort` rows under the new rule (`LibraryStore.records(_:policy:)`).
+    /// Nothing is re-imported and no stored number moves.
+    private var speedRecordsSection: some View {
+        Section {
+            Picker(SettingsCopy.section("speedRecords").title, selection: Binding(
+                get: { store.speedRecordPolicy },
+                set: { store.speedRecordPolicy = $0 })) {
+                    ForEach(SpeedRecordPolicy.allCases) { Text($0.label).tag($0) }
+                }
+            Text(store.speedRecordPolicy.summary)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        } header: {
+            Text(SettingsCopy.section("speedRecords").title)
+        } footer: {
+            settingFooter("speedRecords")
         }
     }
 

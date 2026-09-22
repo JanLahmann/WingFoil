@@ -85,6 +85,12 @@ public enum Copy {
 
     // MARK: - The feedback mails
 
+    /// Why a fallback sheet is on screen at all. Said by both of the app's prefilled
+    /// mails — the feedback one and the analysis one — so it lives here rather than in the
+    /// two sheets that show it (docs/review-checklist.md, pattern F).
+    public static let noMailAccount =
+        "No mail account is set up on this phone, so CleanJibe cannot open a mail for you."
+
     /// The way out when the phone has no mail account set up.
     public static let copyTheReportInstead =
         "Copy the report and send it from any mail app to " + FeedbackReport.recipient + "."

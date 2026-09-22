@@ -74,14 +74,23 @@ public enum PersonalBestDetector {
     ///
     /// **An empty `previous` yields nothing.** The first import populates every kind at
     /// once, and calling that nine simultaneous personal bests would fire a celebration at
-    /// the one moment it means least — there was nothing to beat. Only certified sources
-    /// are eligible: a class-(c) recording can read high, and a confetti burst is exactly
-    /// the wrong response to a bad speed sample.
+    /// the one moment it means least — there was nothing to beat.
+    ///
+    /// **Whether an unverified record may celebrate is the rider's setting** (Settings →
+    /// Speed records, 22 September 2026), and it is the same `SpeedRecordRule` the table
+    /// and the trends read. It used to be a flat "certified only", which is exactly
+    /// `onlyVerified`; the default `preferVerified` keeps a class-(c) record out of the
+    /// burst whenever the library holds a verified one of that kind, and lets it celebrate
+    /// where it is the only record there is — marked, like everywhere else. `current` is
+    /// one row per kind, so the rule is asked once per kind the way it must be.
     public static func improvements(previous: PersonalBestSnapshot,
-                                    current: [RecordBest]) -> [NewPersonalBest] {
+                                    current: [RecordBest],
+                                    policy: SpeedRecordPolicy = .preferVerified)
+        -> [NewPersonalBest] {
         guard !previous.isEmpty else { return [] }
         return current.compactMap { record in
-            guard record.certified else { return nil }
+            guard SpeedRecordRule.stands(verified: record.certified, policy: policy)
+            else { return nil }
             guard let before = previous.value(for: record.kind) else {
                 return NewPersonalBest(kind: record.kind, valueKn: record.valueKn,
                                        previousKn: nil, sessionId: record.sessionId)

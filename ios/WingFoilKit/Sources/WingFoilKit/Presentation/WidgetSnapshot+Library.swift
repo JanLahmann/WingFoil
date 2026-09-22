@@ -59,8 +59,14 @@ extension WidgetSnapshot {
     /// column: the session index denormalizes CPH and not JPH, and a rate the widget made
     /// up out of `jibes` would sit beside the session page's JPH disagreeing with it.
     /// `now` is a parameter so every window here is testable.
+    ///
+    /// `policy` is Settings → Speed records. The widget's "Best 2 s" is an all-time claim
+    /// about the rider, so it obeys the same `SpeedRecordRule` the records table does. The
+    /// widget process cannot read the setting for itself, which is why the phone resolves
+    /// it here and publishes the answer rather than the question.
     public static func make(sessions: [SessionRow], now: Date = Date(),
                             jibesPerHour: [String: Double] = [:],
+                            policy: SpeedRecordPolicy = .preferVerified,
                             titleForRow: (SessionRow) -> String,
                             trackForRow: (SessionRow) -> TrackThumbnail? = { _ in nil })
         -> WidgetSnapshot {
@@ -107,9 +113,10 @@ extension WidgetSnapshot {
         let seasonRows = season(ridden, now: now)
         snapshot.season = seasonSummary(seasonRows.rows, label: seasonRows.label)
         snapshot.bests = bests(ridden, scope: .allTime, jibesPerHour: jibesPerHour,
-                               titleForRow: titleForRow)
+                               policy: policy, titleForRow: titleForRow)
         snapshot.facts = rotation(season: seasonRows.rows, all: ridden, now: now,
-                                  jibesPerHour: jibesPerHour, titleForRow: titleForRow,
+                                  jibesPerHour: jibesPerHour, policy: policy,
+                                  titleForRow: titleForRow,
                                   allTime: snapshot.bests ?? [])
         return snapshot
     }
@@ -196,10 +203,11 @@ extension WidgetSnapshot {
     /// CPH keeps its own row on the Records screen.
     static func bests(_ rows: [SessionRow], scope: FactScope,
                       jibesPerHour: [String: Double],
+                      policy: SpeedRecordPolicy = .preferVerified,
                       titleForRow: (SessionRow) -> String) -> [Fact] {
         [FactKind.best2s, .longestFlight, .bestJph].compactMap {
             best(rows, kind: $0, scope: scope, jibesPerHour: jibesPerHour,
-                 titleForRow: titleForRow)
+                 policy: policy, titleForRow: titleForRow)
         }
     }
 
@@ -208,13 +216,14 @@ extension WidgetSnapshot {
     /// afternoon of a new one, and "on this day" whenever an earlier year has an answer.
     static func rotation(season: [SessionRow], all: [SessionRow], now: Date,
                          jibesPerHour: [String: Double],
+                         policy: SpeedRecordPolicy = .preferVerified,
                          titleForRow: (SessionRow) -> String,
                          allTime: [Fact]) -> [Fact] {
         var facts: [Fact] = []
         if !season.isEmpty {
             facts = ([FactKind.best2s, .longestFlight, .bestJph, .longestDryStreak]).compactMap {
                 best(season, kind: $0, scope: .season, jibesPerHour: jibesPerHour,
-                     titleForRow: titleForRow)
+                     policy: policy, titleForRow: titleForRow)
             }
         } else {
             facts = allTime
@@ -225,9 +234,18 @@ extension WidgetSnapshot {
 
     /// The best row for one kind, or nil when nobody has a positive value for it — absent
     /// rather than a dash, the rule `LibraryStore.sessionRecords` follows.
+    ///
+    /// The speed kind goes through `SpeedRecordRule` first, once, for the one kind it is
+    /// about — the same call the records table makes per record kind. Every other kind
+    /// takes the whole list: how many jibes an afternoon held is not a claim its speed
+    /// channel makes (`SessionRecordKind`).
     static func best(_ rows: [SessionRow], kind: FactKind, scope: FactScope,
                      jibesPerHour: [String: Double],
+                     policy: SpeedRecordPolicy = .preferVerified,
                      titleForRow: (SessionRow) -> String) -> Fact? {
+        let rows = kind == .best2s
+            ? SpeedRecordRule.eligible(rows, policy: policy) { $0.sourceClass != "c" }
+            : rows
         var best: (Double, SessionRow)?
         for row in rows {
             guard let value = value(kind, in: row, jibesPerHour: jibesPerHour), value > 0
@@ -242,12 +260,10 @@ extension WidgetSnapshot {
     static func value(_ kind: FactKind, in row: SessionRow,
                       jibesPerHour: [String: Double]) -> Double? {
         switch kind {
-        // A speed record is the one number a class (c) recording can be wrong about
-        // (`RecordBest.certified`), and a personal best nobody can stand behind is worse
-        // than none: the widget's speed is certified-only. The session records below take
-        // no such filter — how many jibes an afternoon held is not a claim its speed
-        // channel makes (`SessionRecordKind`).
-        case .best2s: row.sourceClass == "c" ? nil : row.best2sKn
+        // No certification filter here any more: which rows may hold the speed record is
+        // the rider's setting, and `best(_:kind:…)` above asks `SpeedRecordRule` once for
+        // the whole candidate list rather than row by row.
+        case .best2s: row.best2sKn
         case .longestFlight: row.longestFlightS
         // The same floor "Best CPH" takes, for the same reason: a rate a rider can set by
         // going home early is not a personal best (`SessionRecordKind.cphMinDurationS`).

@@ -605,6 +605,23 @@
         Every number on this page, as one JSON file.
       </p>
       <p><button class="ghost" id="download-json" type="button">Download analysis JSON</button></p>
+
+      <!-- SEND THIS SESSION TO THE DEVELOPER — the browser's half of the phone's Share
+           page door. It sits in the export panel rather than beside "Share card" for the
+           reason the phone puts it under the switcher: a card is for a friend, this is for
+           a number that looks wrong, and the rider who is doubting a number is reading
+           this panel. Folded, because a comment field open on every session would be a
+           form nobody asked for. -->
+      <details id="send-dev-fold">
+        <summary><span class="help-section-name">Send this session to the developer</span></summary>
+        <p class="muted small">A number looks wrong? Send the recording with your notes.</p>
+        <label class="sr-only" for="send-dev-note">Your notes</label>
+        <textarea id="send-dev-note" rows="3"
+                  placeholder="What looks wrong? Which turns or times?"></textarea>
+        <p class="muted small" id="send-dev-consent"></p>
+        <p><button class="primary" id="send-dev-go" type="button">Send to the developer</button></p>
+        <p class="muted small" id="send-dev-status" role="status"></p>
+      </details>
     </section>
 
   </div>
@@ -747,6 +764,23 @@
       <button type="button" class="seg-btn" data-units="kn" aria-pressed="true">Knots</button>
       <button type="button" class="seg-btn" data-units="kmh" aria-pressed="false">km/h</button>
     </div>
+  </section>
+
+  <!-- SPEED RECORDS: whether a track that never measured a speed may hold a record. The
+       phone's own section, in the phone's place, with the phone's own three labels
+       (`SpeedRecordPolicy` in the kit). The rule behind it is one function in Python,
+       applied when the library is aggregated, so moving this re-asks the question rather
+       than rewriting anything that is stored. -->
+  <section class="panel" id="settings-speed-records" data-settings="speedRecords">
+    <div class="seg" role="group" aria-label="Speed records">
+      <button type="button" class="seg-btn" data-speed-records="onlyVerified"
+              aria-pressed="false">Only verified</button>
+      <button type="button" class="seg-btn" data-speed-records="preferVerified"
+              aria-pressed="true">Prefer verified</button>
+      <button type="button" class="seg-btn" data-speed-records="includeUnverified"
+              aria-pressed="false">Include unverified</button>
+    </div>
+    <p class="muted small" id="speed-records-summary"></p>
   </section>
 
   <!-- YOUR DATA: the phone's Storage and Library backup, plus the one thing only a browser

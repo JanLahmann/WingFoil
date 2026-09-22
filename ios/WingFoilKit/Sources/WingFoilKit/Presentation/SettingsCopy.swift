@@ -169,6 +169,19 @@ public enum SettingsCopy {
             ],
             help: .speedRecords, web: true),
 
+        // Right under Units, because it is the other question about how a speed reads.
+        SettingsSectionCopy(
+            id: "speedRecords",
+            title: "Speed records",
+            lead: "Choose whether records from tracks without measured speed count.",
+            footer: [
+                "Verified means your watch measured the speed with Doppler.",
+                "Unverified means CleanJibe worked it out from positions. That reads high.",
+                "Prefer verified fills a row with an unverified record only when no "
+                + "verified one exists.",
+            ],
+            help: .verifiedRecords, web: true),
+
         SettingsSectionCopy(
             id: "storage",
             title: "Storage",

@@ -1434,17 +1434,42 @@
                 "beta",
                 "dev"
               ],
-              "detail" : "A recording with positions but no speed channel has its speed differentiated from them, which reads high. Every GPX is one, and some converted exports. Shown, never a personal best.",
+              "detail" : "A recording with positions but no speed channel has its speed differentiated from them, which reads high. Every GPX is one, and some converted exports. Marked wherever it is shown.",
               "term" : "\"Uncertified\""
             }
           ],
           "related" : [
+            "verifiedRecords",
             "sourceClass",
             "turnOutcomes",
             "divergence"
           ],
           "summary" : "Your fastest 2 seconds, 10 seconds, 500 m and nautical mile. The speedsurfing world uses the same windows.",
           "title" : "Speed records"
+        },
+        {
+          "body" : [
+            "A verified record comes off a recording that carries your watch's own Doppler speed. An unverified one is worked out from positions, which reads high.",
+            "Only verified keeps unverified records out of your all-time table, your trends and your cards. The session that set one still shows it, marked.",
+            "Prefer verified is the default. A verified record wins its row, and an unverified one fills a row no verified record has reached.",
+            "Include unverified counts every record and marks the ones it could not verify. Settings → Speed records is where you choose."
+          ],
+          "channels" : [
+            "release",
+            "beta",
+            "dev"
+          ],
+          "id" : "verifiedRecords",
+          "items" : [
+
+          ],
+          "related" : [
+            "speedRecords",
+            "sourceClass",
+            "stravaImport"
+          ],
+          "summary" : "Choose whether a record from a track without measured speed counts.",
+          "title" : "Verified and unverified speed records"
         }
       ]
     },
@@ -1990,10 +2015,34 @@
           ],
           "related" : [
             "riderAttribution",
-            "shareCard"
+            "shareCard",
+            "sendSessionToDeveloper"
           ],
           "summary" : "Share the original recording, stripped of anything identifying.",
           "title" : "Sending a session to a friend"
+        },
+        {
+          "body" : [
+            "A number that looks wrong can only be chased on the recording that produced it. This puts that recording, your notes and this build's facts into one mail.",
+            "The file holds your track, your heart rate and your times. It is used only to improve the detection and it is never published.",
+            "You see the whole mail before it goes. Edit any line, delete any line, or close it and nothing is sent.",
+            "Open a session, tap Share, then Send this session to the developer."
+          ],
+          "channels" : [
+            "beta",
+            "dev"
+          ],
+          "id" : "sendSessionToDeveloper",
+          "items" : [
+
+          ],
+          "related" : [
+            "shareFit",
+            "sourceClass",
+            "divergence"
+          ],
+          "summary" : "Mail one session and your notes, so a wrong number can be chased.",
+          "title" : "Send a session to the developer"
         },
         {
           "body" : [

@@ -632,6 +632,52 @@ def _sorted(digests) -> list:
     return ds
 
 
+#: **Which record a track with no measured speed may hold** — the browser's twin of the
+#: kit's `SpeedRecordPolicy` / `SpeedRecordRule` (Settings -> Speed records, 22 Sep 2026).
+#:
+#: The three answers, in the kit's own spelling so the two platforms cannot drift:
+#:
+#:   * ``onlyVerified``      an unverified record never stands.
+#:   * ``preferVerified``    the default. Per record kind a verified record wins whenever
+#:                           there is one; an unverified record fills a row no verified
+#:                           record of that kind has reached, and it stays marked.
+#:   * ``includeUnverified`` every record stands, marked.
+#:
+#: **Applied here, at aggregate time, and never written into a digest.** A stored digest
+#: keeps every record it ever held; `aggregate` decides what is read back out of it. So a
+#: reader who changes the setting gets the other answer on the next draw with nothing
+#: re-imported, and a library saved under one setting is not a library that has to be
+#: re-saved under another.
+SPEED_RECORD_POLICIES = ("onlyVerified", "preferVerified", "includeUnverified")
+DEFAULT_SPEED_RECORD_POLICY = "preferVerified"
+
+
+def _policy(value) -> str:
+    """An unknown or missing value reads as the default, the way the kit's store does."""
+    return value if value in SPEED_RECORD_POLICIES else DEFAULT_SPEED_RECORD_POLICY
+
+
+def _verified(d: dict) -> bool:
+    """Did this recording measure its own speed? The one rule the whole app reads
+    (`LibraryQueries.certified` in the kit): class (c) is the GPX-grade source."""
+    return d.get("sourceClass") != "c"
+
+
+def eligible(candidates: list, policy: str) -> list:
+    """**The one function that answers "may this record stand"** — `SpeedRecordRule.eligible`.
+
+    Call it once per record *kind*: ``preferVerified`` is a statement about a kind, and a
+    mixed bag would answer the question for the wrong set.
+    """
+    policy = _policy(policy)
+    if policy == "includeUnverified":
+        return list(candidates)
+    verified = [d for d in candidates if _verified(d)]
+    if policy == "onlyVerified":
+        return verified
+    return verified if verified else list(candidates)
+
+
 def _stamp(d: dict) -> dict:
     """The bit of a digest every records row / trend point needs to name its session."""
     return {"id": d.get("id"), "fileName": d.get("fileName"), "spot": d.get("spot"),
@@ -644,19 +690,27 @@ def _stamp(d: dict) -> dict:
             # rider's session; it stands there *marked*, because an all-time best is
             # exactly where an unverifiable number does the most damage.
             "sourceClass": d.get("sourceClass"),
-            "certified": d.get("sourceClass") != "c"}
+            "certified": _verified(d)}
 
 
-def _records(ds: list) -> list:
+def _records(ds: list, policy: str = DEFAULT_SPEED_RECORD_POLICY) -> list:
     """All-time best per GP3S kind, with the session and the window it came from.
 
     Ties go to the *earliest* session — the record was set then, not re-set later.
     A kind nobody has a positive value for is dropped rather than shown as a dash.
+
+    `policy` is the reader's Settings -> Speed records choice, and it is applied **per
+    kind and before the maximum is taken** — that is the whole of "a verified record wins
+    whenever one exists". A kind whose only holders are unverified drops out under
+    ``onlyVerified``, exactly like a kind nobody has ever set.
     """
     out = []
     for key, _wkey, label, unit in RECORD_KINDS:
+        holders = eligible([d for d in ds
+                            if (_num((d.get("records") or {}).get(key)) or 0) > 0],
+                           policy)
         best = None
-        for d in ds:                                  # ds is already oldest-first
+        for d in holders:                             # ds is already oldest-first
             v = _num((d.get("records") or {}).get(key))
             if v is None or v <= 0:
                 continue
@@ -853,7 +907,8 @@ def _session_records(ds: list) -> list:
     return out
 
 
-def _points(ds: list, pick, certify: bool = False) -> list:
+def _points(ds: list, pick, certify: bool = False,
+            policy: str = DEFAULT_SPEED_RECORD_POLICY) -> list:
     """One line's points, oldest first. `i` is the column, not a date: the per-session
     charts are categorical.
 
@@ -863,12 +918,21 @@ def _points(ds: list, pick, certify: bool = False) -> list:
     because it is still the rider's afternoon, and it is drawn marked — the same rule, and
     the same word, the records table applies to an all-time best (`_stamp`).
     """
+    # Settings -> Speed records, on the one series it is about. The same `eligible` call
+    # the records table makes, once, for the one record kind this chart draws; a point the
+    # rule drops keeps its column and loses its value, which is how every other "this
+    # session cannot report that" gap on this page is drawn.
+    kept = None
+    if certify:
+        kept = {id(d) for d in eligible([d for d in ds if pick(d) is not None], policy)}
     pts = []
     for i, d in enumerate(ds):
         v = pick(d)
+        if kept is not None and v is not None and id(d) not in kept:
+            v = None
         p = {"i": i, "id": d.get("id"), "v": None if v is None else round(v, 3)}
         if certify:
-            p["certified"] = d.get("sourceClass") != "c"
+            p["certified"] = _verified(d)
         pts.append(p)
     return pts
 
@@ -946,7 +1010,7 @@ def _side_pct(d: dict, side: str):
     return _num(by.get("flewThroughPct"))
 
 
-def _trends(ds: list) -> dict:
+def _trends(ds: list, policy: str = DEFAULT_SPEED_RECORD_POLICY) -> dict:
     """Per-session series, oldest first. One `charts` entry == one SVG in the UI.
 
     `role` is a drawing hint, not data: the renderer maps primary/secondary onto the two
@@ -958,7 +1022,7 @@ def _trends(ds: list) -> dict:
     is what stops a chart about entry tacks being drawn in a vocabulary that means
     something else (docs/presentation/layers-map-colour-type.md "Entry tack", app-ui-review.md §5.2).
     """
-    charts = _charts(ds)
+    charts = _charts(ds, policy)
     for c in charts:
         c.update(_y_axis(c["lines"], bool(c.get("percent"))))
         # Does this chart hold a value no recording could certify? Answered here rather than
@@ -1024,7 +1088,7 @@ def _weeks(ds: list) -> list:
     return out
 
 
-def _charts(ds: list) -> list:
+def _charts(ds: list, policy: str = DEFAULT_SPEED_RECORD_POLICY) -> list:
     return [
         {"key": "foilPct", "label": "On foil", "unit": "%", "percent": True,
          "lines": [{"key": "foilPct", "label": "on foil", "role": "primary",
@@ -1064,7 +1128,8 @@ def _charts(ds: list) -> list:
         # certify.
         {"key": "best2s", "label": "Best 2 s", "unit": "kn", "speed": True,
          "lines": [{"key": "best2sKn", "label": "best 2 s", "role": "primary",
-                    "points": _points(ds, _best2s, certify=True)}]},
+                    "points": _points(ds, _best2s, certify=True,
+                                      policy=policy)}]},
         {"key": "pumps", "label": "Avg pumps to takeoff", "unit": "",
          "lines": [{"key": "avgPumpsToTakeoff", "label": "pumps", "role": "primary",
                     "points": _points(ds, lambda d: _num((d.get("takeoff") or {}).get("avgPumpsToTakeoff")))}]},
@@ -1680,7 +1745,7 @@ def custom_period_json(digests_json: str, start: str | None = None,
 # ------------------------------------------------------------------ the whole view
 
 
-def aggregate(digests) -> dict:
+def aggregate(digests, policy: str = DEFAULT_SPEED_RECORD_POLICY) -> dict:
     """The whole Records & Trends view, in one Python call over the stored digests.
 
     The example session and a friend's session are filtered out here and nowhere else —
@@ -1688,9 +1753,11 @@ def aggregate(digests) -> dict:
     which is what lets the UI say "nothing here counts yet" without knowing the rule.
     """
     ds = [d for d in _sorted(digests) if counts_towards_records(d)]
+    policy = _policy(policy)
     return {"schema": SCHEMA, "count": len(ds), "totals": _totals(ds),
-            "records": _records(ds), "sessionRecords": _session_records(ds),
-            "trends": _trends(ds),
+            "speedRecordPolicy": policy,
+            "records": _records(ds, policy), "sessionRecords": _session_records(ds),
+            "trends": _trends(ds, policy),
             # The whole periods section rides on the aggregate the view already asks for:
             # it reads the same digests, and a second round trip to Pyodide for the same
             # list would be a second answer waiting to disagree with this one. Only the
@@ -1699,8 +1766,9 @@ def aggregate(digests) -> dict:
                         "seasons": _seasons(ds)}}
 
 
-def aggregate_json(digests_json: str) -> str:
-    return json.dumps(aggregate(digests_json), allow_nan=False)
+def aggregate_json(digests_json: str,
+                   policy: str = DEFAULT_SPEED_RECORD_POLICY) -> str:
+    return json.dumps(aggregate(digests_json, policy), allow_nan=False)
 
 
 # ------------------------------------------------------------------- bulk zip export

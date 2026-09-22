@@ -229,6 +229,14 @@ for word (`SettingsCopy`), because it is the same feature; "Notify me" runs the 
 path the switch does, which is what puts the iOS permission sheet under the finger that asked
 for it. `NewActivityPrompt.shouldAsk(… keyIsProven:)` holds the rule.
 
+**Speed records sits under Units**, because it is the other question about how a speed reads
+(22 September 2026). What it does is written out above, under "Whether an uncertified record
+counts at all"; what the section itself carries is a picker of three, the chosen mode's own
+line under it, and the footer's three register-1 sentences — what verified means, what
+unverified means, and what "prefer" does — with the `?` opening *Verified and unverified
+speed records*. The browser draws the same section in the same place from
+`docs/copy/settings.json`.
+
 **"Coming in a future release"** — the channel list (docs/channels.md), read the way a rider
 asks it. It was *Curious about what is coming* until 14 September 2026 (an App Store app that
 opens by being curious about itself reads as an apology) and *What is being tested* until the
