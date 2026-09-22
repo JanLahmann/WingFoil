@@ -1,0 +1,275 @@
+> Part of `docs/presentation.md`. Engine 0.24.0. `presentationVersion` 1.
+
+## The presentation document — every fact once
+
+Five surfaces draw one session: the iPhone, the web analyzer, the share card, the
+home-screen widgets and the watch's summary card. Each of them computed the same block, the
+same tally, the same record set and the same callout sentence for itself, in four languages,
+and the only thing holding them together was `web/tools/verify_presentation.py`, which
+re-derives each fact a *third* time so that the other two can be compared against a rule
+rather than against each other. That verifier is a good mechanism and it is why the surfaces
+agree today. It is also the sign of the problem: a fact that needs a third implementation to
+stay true is a fact with no owner.
+
+**The engine emits the presentation facts once.** `build_presentation(golden)` in the lab
+(authoritative) and `PresentationDocument.build(_:)` in the kit produce the same JSON, byte
+for byte, for every fixture in the corpus. A surface becomes a *renderer*: it formats, lays
+out and decides nothing else.
+
+ADR-033 holds the decision and the three rounds. **Round 1 — this file — defines and
+produces the document. No renderer reads it yet and no verifier has been retired.**
+
+### The three rules
+
+1. **No rider sentence is in the document.** Every word a rider reads is an **id** plus the
+   arguments the sentence interpolates. `presentation.caption.ofJibes` with
+   `{"jibes": 50, "clean": 12}` — never `"of 50 jibes · 12 clean"`. Four id namespaces, and
+   there are no others:
+
+   | namespace | resolves in | holds |
+   |---|---|---|
+   | `glossary.<id>` | `docs/copy/glossary.json` | the nineteen words the product is made of |
+   | `tokens.recordWindow.<id>` | `design/tokens.json` → `recordWindows.order[].label` | `Best 2 s` … `Alpha 500` |
+   | `tokens.layer.<id>` | `design/tokens.json` → `layers[].label` | the legend chips |
+   | `presentation.<group>.<id>` | `docs/copy/presentation.json` | everything else: the block's own labels, the row's short spellings, the captions and the wrist-under callout |
+   | `verdicts.notASession.*` | `docs/copy/verdicts.json` | the not-a-session tag and its two lines |
+
+   A value that is an *engine enum* — `too_short`, `off_foil`, `axis_after`, `port` — is
+   passed through as itself. It is an id like any other; the renderer owns its words.
+
+2. **No formatted number is in the document.** A value is raw and carries a `unitKind`; the
+   renderer formats it through `Speed` / `Units` / `KeyMetrics.duration`. **The speed unit
+   is not an input to the document** — that is the whole point: one document serves a rider
+   reading knots and a rider reading km/h, and the two cannot end up with different records.
+   The record *policy* **is** an input, as an argument, because it decides which records may
+   stand at all.
+
+3. **No colour value is in the document.** A cell carries a `colourRole`: a path into
+   `design/tokens.json` (`outcome.fellIn`, `phase.flying`, `effort.window`, `clean.jibe`),
+   the ladder's own `outcome.ladder` for a three-rung tally, or the literal `neutral` for a
+   cell drawn in the surface's body ink. A hex never leaves `design/tokens.json`.
+
+### Determinism
+
+Sorted keys at every depth, fixed rounding per `unitKind`, no clock, no locale, no set
+iteration. Both implementations round the same way — scale, round half to even on the scaled
+double, divide — and `-0.0` is normalised to `0.0`.
+
+| `unitKind` | decimals | what it is |
+|---|---|---|
+| `speedKn` | 3 | knots, as the engine measures them |
+| `distanceKm` | 3 | kilometres |
+| `distanceM` | 1 | metres |
+| `durationS` | 1 | the session clock, seconds |
+| `seconds` | 2 | a timestamp or a span on the session clock |
+| `roundedSeconds` | 0 | a span a sentence names in whole seconds |
+| `percent` | 2 | a share, 0–100 |
+| `rate` | 1 | a per-hour rate |
+| `score` | 4 | the turn score, 0–1 |
+| `count` | — | a whole number |
+| `none` | — | the cell carries no scalar (a tally, a pair) |
+
+`document_json` (Python) and `PresentationValue.json()` (Swift) write it: two-space indent,
+keys sorted, ASCII only. Both were built so the goldens can be compared **as text**:
+a document that says `2` where the other says `2.0` is a document two renderers can disagree
+about, and a tree comparison would pass it.
+
+### The cell
+
+`block`, `card` and `row` are made of cells, and a cell is always the same seven fields:
+
+```json
+{
+  "key": "falls",
+  "labelId": "glossary.fellIn",
+  "value": 11,
+  "unitKind": "count",
+  "captions": [{"id": "presentation.caption.fallsSplit",
+                "args": {"inTurn": 10, "straight": 1}}],
+  "colourRole": "neutral"
+}
+```
+
+- `key` — the cell's stable identity. The same key names the same fact in the block, on the
+  card and in a preset's key set.
+- `value` — raw, or `null` where the session produced none. A missing value is **absent,
+  never 0** (`docs/presentation/labels.md`, "Formatter rules"): the renderer draws the
+  em dash.
+- `captions` — zero or more. A list rather than an optional because a cell that grows a
+  second qualifier should not change shape.
+- Two optional fields, and a cell has at most one of them:
+  - **`tally`** — `{flewThrough, touchdown, fellIn}`, the outcome ladder. Its own field
+    because it is *one fact on a fixed three-rung scale with a colour*, which is why the
+    counts stay numbers rather than a joined string.
+  - **`counts`** — an ordered list of `{labelId, value}`. The streaks cell, where the two
+    halves are two *different* metrics ("5 flew · 11 dry") rather than three rungs of one.
+
+### The sections
+
+#### `block` — the key-metrics block
+
+`{"rows": [{"id": …, "cells": […]}]}`, in reading order: `basics`, `speed`, `turns`,
+`rates`. **A row with no cells is absent**, which is how row 4 disappears on a recording
+with no hour to divide by. Every gate is `docs/presentation/key-metrics.md`'s and nothing
+here re-derives a number.
+
+| row | cells | notes |
+|---|---|---|
+| `basics` | `duration` · `distance` · `avgSpeed` | always three; `avgSpeed` is the engine's km/h converted to knots, and the *unit on screen* is still the renderer's |
+| `speed` | `max2s` · `best5x10s` · `alpha500` | always three. The last two are **block-only**: `card` drops them |
+| `turns` | `tally` · `tacks`? · `falls`? · `streaks`? | the jibe ladder (or the counted-turn fallback), the tack ladder where the session had tacks *and* jibes, every fall of the afternoon, the two streaks |
+| `rates` | `jph` + `cph`, or `tph`; then `wph` | gated on the jibe **count**, never the jibe rate |
+
+#### `card` — the share card
+
+`{"tiles": […], "leanKeys": […], "forbiddenKeys": […]}`. A tile **is** a block cell plus a
+`presets` list (`["complete"]` or `["complete", "lean"]`). The tiles are the block's cells in
+the block's order, minus `best5x10s` and `alpha500`: a card carries one speed, the one a
+rider quotes. A preset can only *drop* a tile — it may not reword, reorder or invent one, and
+`forbiddenKeys` names the tile-wall numbers that may never reach a card at all.
+
+#### `row` — the library row
+
+`{"slots": [cell, cell, cell], "offered": […], "tally": …, "tagIds": […]}`. Three slots, the
+rider's default triple (`RowMetric.defaultTriple`); `offered` is every metric a rider can put
+in a slot, so the copy lint can see which labels are reachable. The row's `tally` is over
+**every counted turn**, not over the jibes — a row scanned against its neighbours has to be
+one set of turns the whole way down the list — and is `null` where nothing was counted.
+`tagIds` carries the quiet not-a-session tag.
+
+#### `records` — the nine kinds
+
+`{"kinds": […], "achieved": […], "policy": …, "verified": …, "default": …}`. All nine kinds
+are always present, in catalogue order, so the table has its shape before it has its numbers.
+Per kind:
+
+| field | means |
+|---|---|
+| `value` | knots, or `null` |
+| `windows` | the provenance the map glows on; **a list**, because `best5x10s` *is* its five disjoint runs and one segment misnames it |
+| `achieved` | a value **and** a window: a record with neither is inert and says nothing |
+| `verified` | the recording measured its own speed (`capabilities.hasDoppler`) |
+| `offered` | `achieved` **and** the rider's policy lets it stand (`SpeedRecordRule.stands`) |
+
+`default` is `best2s` when the session achieved it, and `null` rather than an arbitrary
+substitute.
+
+#### `turns` — the legend and the strip
+
+`legend` is the twelve layers of `design/tokens.json` in its order, each with its `labelId`,
+its `colourRole` and the `count` that decides whether its chip is a live toggle. A *line*
+layer (`flying`, `offFoil`, `effort`, `direction`) has `count: null` — it has nothing to be
+live about.
+
+`strip` is one entry per detected sweep, in time order, counted and uncounted together: the
+Turns tab's list, the maneuver map and the turn page all read it. Beyond the engine's own
+per-turn fields it carries three presentation facts:
+
+- `ordinal` — the turn's position **among the counted turns of its own kind**, which is the
+  number the turn page's "3 of 14" and the wrist-under callout both name. Computed once so
+  two surfaces cannot count differently. `null` on a course change.
+- `layerId` — the chip this mark answers to: `cleanJibe` where the turn is clean, otherwise
+  its outcome layer. The clean-jibe star lies *across* the ladder rather than inside it.
+- `colourRole` — the ladder's ink for the outcome. An uncounted sweep is
+  `outcome.courseChange`, whatever its outcome field says.
+
+#### `markers`, `flightEnds`, `splash`
+
+`markers` is the counts `fixtures/presentation/*.expected.json` has always pinned:
+`flewThrough`, `touchdown`, `fellIn`, `courseChange`, `cleanJibe`, `splash`, `pumping`, and
+the `takeoff` split (`pumped` / `free` / `failed` / `total`).
+
+`flightEnds` is `flightCount` plus the three buckets that partition it (`drawn`,
+`ownedByTurn`, `truncated`, `total`) and `marks`, one entry per **drawn** end — the hollow
+marks no turn explains. The enforcement arithmetic is unchanged and now reads off the
+document: `takeoff.pumped + takeoff.free == flightCount` and `flightEnds.total ==
+flightCount`.
+
+`splash` is "wrist under": `episodes`, and one `mark` per submersion episode carrying its
+`title` and `during` as **copy ids with arguments**. This is the sharpest case for the whole
+round — the same sentence is spelled today in `SessionDetail.splashTitle` (Swift),
+`web/js/`'s callout (JavaScript) and `expected_wrist_under` (Python), and the third exists
+only to stop the first two drifting.
+
+#### `filters`, `defaults`
+
+`filters` is every type × **entry**-side combination over the counted turns, with the
+flew-through share's numerator. Side is the tack the turn was entered on, never the rotation.
+
+`defaults` is what a surface opens on: `recordWindow` (`best2s`, or `null`), `section`
+(`ride`), `cardPreset` (`complete`), `rowMetrics` (the default triple) and the
+`speedRecordPolicy` the document was built with.
+
+#### `divergence`, `notASession`
+
+`divergence` is `{"available": …, "lines": […]}`, each line a `metricId`. A watch summary is
+not part of the analysis, so a document built from one alone carries the empty, honest
+answer. **The banner's numbers are not in it yet**: `Divergence` holds pre-formatted strings
+today, and putting those in the document would break rule 2. Round 2 gives `DivergenceCheck`
+raw values and the lines grow `watch` / `phone` / `unitKind`.
+
+`notASession` is `{"isSession", "reasonId", "tagId", "lineId", "args"}`. The reason is the
+engine's code, the line is an id into `docs/copy/verdicts.json`, and `args` carries the two
+numbers that decided — so the sentence can name the evidence and a rider whose real session
+was mis-read can disagree with it.
+
+### What stays with the renderer
+
+The document is **facts**. Everything below is a decision a surface is entitled to make, and
+the document must never try to make it:
+
+- **Formatting.** `10:45 min` vs `1:57 h`, `13.47 kn` vs `24.9 km/h`, `47 %` vs `4.5 %`, the
+  em dash for an absent value, the thousands separator. One formatter per surface
+  (`Speed`, `Fmt`, `viz.js`), reading the rider's Settings.
+- **The words.** The document names an id; `docs/copy` holds the sentence and the renderer
+  interpolates the arguments, including plurals ("of 1 tack") and the discipline lexicon
+  (`planing` for `flying`).
+- **Layout.** Grid, column count, wrapping, which cells share a row at which width, the
+  two-column fallback iOS takes at accessibility sizes, the web's `auto-fit`.
+- **Type and Dynamic Type.** Sizes, weights, truncation, the accessibility-size reflow. A
+  row of four cells on a tacking session is the renderer's problem.
+- **Ordering that depends on width.** The document's order is the *reading* order; a
+  renderer may wrap it, and a narrow surface may stack what a wide one puts side by side. It
+  may not re-sort it.
+- **The colour values.** `design/tokens.json` resolves a role to a hex, per platform and per
+  display class (the `_MIP` twins).
+- **Interaction.** Selection, toggles, scrub, zoom, which section is showing, what a tap
+  does. `defaults` says where to start, not what happens next.
+- **Everything about the image.** Card aspect, track drawing, map snapshot, QR, branding
+  line — a card's *content* is the document, its picture is not.
+- **The rider's own words.** A share title and caption are the sender talking to the
+  receiver, not a metric; they never enter the document (`§5b` below stays a verifier).
+
+### Coverage — every `verify_presentation.py` section, answered
+
+Round 3 retires what this table says is carried. **Nothing is deleted in round 1.**
+
+| verifier section | the document's answer |
+|---|---|
+| **1.** contract shape (layers, records, filter grid) | carried — `turns.legend[].layerId`, `records.kinds[].key` in catalogue order, `filters[].typeId`/`sideId`. The *labels* stay in `design/tokens.json`, which the document points at rather than copies |
+| **2.** eligibility rules, re-derived | carried — `markers`, `turns.strip[].layerId`, `flightEnds.marks`, `splash.marks`, `filters`. The rules run once, in `build_presentation` |
+| **2b.** glide-out ends fold into `flewThrough` | carried — `flightEnds.marks[].outcomeId`, which is `flewThrough` for a `glide_out`; the mark's `hollow` flag is what makes it the hollow one |
+| **2c.** flight-count invariants | carried — `flightEnds.flightCount` beside `markers.takeoff` and the three buckets; the lab test asserts the arithmetic on the document itself |
+| **3.** counts agree with the summary | **renderer-only, and deliberately.** It ties the document to the *analysis* document's own `summary`, which is the engine's half of the contract, not presentation's. It is the check that would catch `build_presentation` mis-reading the golden, so it outlives round 3 |
+| **4.** the same facts out of `web_entry` | **renderer-only.** It is about the browser's call path — Pyodide, the worker, `meta` — and the session clock and its note, which are `meta.utcOffsetSource` facts the analysis document does not carry. The document is built from an analysis and says nothing about how one was obtained |
+| **4 (session clock, clock note)** | **not carried, round 2.** `meta.utcOffsetS` / `utcOffsetSource` and the note's four cases belong in the document as a `clock` section with an id per rung; they are outside this round because the analysis golden has no `meta` |
+| **5.** the card is the block | carried — `card.tiles` *are* `block` cells by construction, and `card.leanKeys` / `forbiddenKeys` are the preset contract. The verifier's third spelling of every value string becomes a renderer test |
+| **5 (wrist under)** | carried — `splash.marks[].title` / `.during`, as ids with arguments |
+| **5a.** the rate row on the three missing sessions | carried — `block.rows[id=rates]`. The three synthetic cases move to the lab's `test_the_branches_no_corpus_fixture_is` and to `card_parity.mjs`'s renderer test |
+| **5b.** the rider's title and caption | **renderer-only, for ever.** A title and a caption are the sender's own words, not facts about the session; the document must not carry them. `statsUnchanged` — that the caption did not become a cell — is exactly what `card.tiles` makes structurally impossible |
+| **5c.** the card's optional map background | **renderer-only.** Projection, framing and inset are drawing |
+| **5d.** the period card | **not carried.** A period is *many* sessions; this document is one. `fixtures/periods/periods.expected.json` is its own contract and stays |
+| **5e.** the period outlines share one scale | **renderer-only**, and about a period besides |
+| **6.** why a turn is a touchdown or a fall | **half carried.** `turns.strip[].outcomeReasonId` and `.cleanBlockedById` are in the document; the *sentence* they open (`TurnAnalytics.outcomeText`, with its margin speed and its lexicon swap) is not, and moves to `docs/copy` in round 2 |
+
+### Where it lives
+
+| | |
+|---|---|
+| schema | this file |
+| lab (authoritative) | `lab/src/wingfoil_lab/presentation.py` — `build_presentation(golden, policy=, divergence=)` |
+| kit | `ios/WingFoilKit/Sources/WingFoilKit/Presentation/PresentationDocument.swift` |
+| web | the same lab module, through `web/lab_bundle` |
+| goldens | `fixtures/presentation/*.expected.json`, key `document`, written by `web/tools/make_presentation_goldens.py` |
+| the ids | `docs/copy/presentation.json`, `docs/copy/glossary.json`, `docs/copy/verdicts.json`, `design/tokens.json` |
+| pinned by | `lab/tests/test_presentation.py` (determinism, coverage, ids) and `GoldenTests.presentationDocumentMatchesTheGoldenByte` (the Swift twin, byte for byte) |

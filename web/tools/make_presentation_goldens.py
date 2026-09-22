@@ -48,7 +48,12 @@ PERIODS_OUT = REPO / "fixtures" / "periods" / "periods.expected.json"
 OUTLINES_OUT = REPO / "fixtures" / "periods" / "outlines.expected.json"
 
 sys.path.insert(0, str(WEB / "lab_bundle"))
+# The *authoritative* lab, ahead of the bundle's copy of it: `bundle_lab.py --check` is
+# what proves the two are the same sources, and this file must not be the thing that
+# quietly reads a stale bundle instead.
+sys.path.insert(0, str(REPO / "lab" / "src"))
 import library                                                          # noqa: E402
+from wingfoil_lab.presentation import build_presentation                # noqa: E402
 
 SUFFIX = ".expected.json"
 
@@ -220,6 +225,16 @@ def facts(stem: str, doc: dict) -> dict:
         "recordWindows": windows,
         "defaultRecordWindow": RECORD_DEFAULT if RECORD_DEFAULT in windows else None,
         "filters": filter_tallies(doc),
+        # **The presentation document** (ADR-033, docs/presentation/document.md): every
+        # rider-facing fact of this session, emitted once by the lab and, byte for byte,
+        # by `PresentationDocument` in the kit. The counts above stay: they are the
+        # arithmetic this file has always pinned, and round 3 is when the surfaces that
+        # re-derive them start reading the document instead.
+        #
+        # Keys are sorted inside it (`presentation.sorted_tree`) so that `json.dumps`
+        # here and the Swift canonical writer — which sorts — agree without this file
+        # being re-ordered.
+        "document": build_presentation(doc),
     }
 
 

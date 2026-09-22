@@ -14,6 +14,49 @@ apart is a history, not a contract. There are four:
 An Accepted entry may carry a clause saying what a later ADR narrowed or what has moved since.
 That is the point of the line: it says which half of an old paragraph is still load-bearing.
 
+## ADR-033 · One presentation document — the engine emits every rider-facing fact once
+**Status: Accepted** (Jan, 22 September 2026; `presentationVersion` 1, no engine bump).
+
+Five surfaces draw one session — the iPhone, the web analyzer, the share card, the
+home-screen widgets and the watch's summary card — and each of them computed the block, the
+tally, the record set and the wrist-under callout **for itself**, in Swift, JavaScript,
+Python and Monkey C. Nothing structural held them together. What held them together was
+`web/tools/verify_presentation.py`, which re-derives every one of those facts a *third* time
+so the other two can be checked against a rule rather than against each other — 1 653
+assertions, and they pass. That verifier is why the surfaces agree today, and it is also the
+diagnosis: a fact that needs a third implementation to stay true is a fact with no owner.
+The failures it caught are the ones you would predict — a card and the block a tap away
+naming different numbers for one afternoon, one metric with five spellings across four
+surfaces, a tally that reported one fall on a day with three in it.
+
+**The engine emits the facts once, as a document, and every surface becomes a renderer.**
+`build_presentation` in the lab (authoritative) and `PresentationDocument.build` in the kit
+produce the same JSON byte for byte, pinned per fixture in
+`fixtures/presentation/*.expected.json`. Its three rules are what make it a contract rather
+than a second rendering: **no rider sentence** (every word is an id into `docs/copy` plus
+the arguments it interpolates), **no formatted number** (a raw value and a `unitKind` — the
+speed unit is deliberately *not* an input, which is how one document serves a rider reading
+knots and a rider reading km/h), and **no colour value** (a role, a path into
+`design/tokens.json`). The rider's speed-record *policy* **is** an input, as an argument,
+because it decides which records may stand at all. `docs/presentation/document.md` is the
+schema, the list of what a renderer may still decide, and a table answering every section of
+the verifier: carried and where, or renderer-only and why.
+
+**Three rounds, and only the first is done.** Round 1 defines the document, produces it on
+both platforms and pins it — **no renderer switched and no verifier was retired**. Round 2
+grows the two things the analysis alone cannot say: the session clock and its
+trust note (`meta.utcOffsetSource`), and the outcome sentence behind
+`outcomeReasonId` / `cleanBlockedById`, plus raw values for the divergence banner, which
+holds pre-formatted strings today. Round 3 switches the renderers and retires the verifier
+sections the table marks as carried.
+
+A renderer keeps everything that is a decision rather than a fact: formatting, layout,
+Dynamic Type, ordering within a row that depends on width, interaction, the card's picture,
+and the rider's own title and caption — which are the sender talking to the receiver and are
+never facts about the session. The cost is a golden per fixture that grew from ~2 KB to
+~40 KB; that is the contract being written down instead of assumed, and it is the same trade
+`fixtures/goldens` already makes for the engine.
+
 ## ADR-032 · A fall the turn caused is the turn's fall
 **Status: Accepted** (Jan, 22 September 2026; engine 0.24.0, release channel).
 

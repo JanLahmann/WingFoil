@@ -1345,4 +1345,85 @@ import Testing
         }
         #expect(sawArray, "no golden carried a records.windows.best5x10s array")
     }
+
+    // MARK: - The presentation document
+
+    /// **The document the lab wrote, byte for byte** (ADR-033,
+    /// `docs/presentation/document.md`).
+    ///
+    /// `fixtures/presentation/<stem>.expected.json` carries a `document` key built by
+    /// `wingfoil_lab.presentation.build_presentation`. `PresentationDocument.build` is the
+    /// Swift twin, and this compares the two as *text* rather than as trees: a document
+    /// that says `2` where Python says `2.0`, or sorts one object differently, is a
+    /// document two renderers can disagree about, and a tree comparison would pass it.
+    ///
+    /// The analysis is decoded from the golden rather than re-derived —
+    /// `goldensMatchWhenPresent` already holds the engine to those files, and this test is
+    /// about presentation.
+    @Test func presentationDocumentMatchesTheGoldenByte() throws {
+        let dir = testFixturesDir.appendingPathComponent("presentation")
+        let files = ((try? FileManager.default.contentsOfDirectory(
+            at: dir, includingPropertiesForKeys: nil)) ?? [])
+            .filter { $0.lastPathComponent.hasSuffix(".expected.json") }
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
+        try #require(!files.isEmpty,
+                     "fixtures/presentation is empty — run make_presentation_goldens.py")
+
+        for url in files {
+            let text = try String(contentsOf: url, encoding: .utf8)
+            let stem = url.lastPathComponent.replacingOccurrences(
+                of: ".expected.json", with: "")
+            let want = try #require(Self.embeddedDocument(in: text),
+                                    "\(stem): no `document` key — regenerate the goldens")
+            let source = testFixturesDir
+                .appendingPathComponent("goldens/\(stem).expected.json")
+            let analysis = try JSONDecoder().decode(SessionAnalysis.self,
+                                                    from: Data(contentsOf: source))
+            // Indented by two, because the golden embeds it one level down.
+            let got = PresentationDocument.build(analysis).json(indent: 2)
+            #expect(got == want, "\(stem): the presentation document differs from the lab's")
+            if got != want, let line = Self.firstDifference(got, want) {
+                let note: String = "\(stem): first difference at line \(line.index):\n"
+                    + "  swift: \(line.got)\n  lab:   \(line.want)"
+                Issue.record(Comment(rawValue: note))
+            }
+        }
+    }
+
+    /// Lift the `document` object out of the golden file's own text, braces matched.
+    ///
+    /// Safe because no string inside the document can contain a brace — every one of them
+    /// is an id, an enum value or a version, which the lab's
+    /// `test_no_string_in_the_document_is_a_sentence` holds on the other side. The
+    /// returned text starts at the `{` and is indented exactly as the file indents it.
+    static func embeddedDocument(in text: String) -> String? {
+        guard let marker = text.range(of: "\"document\": {") else { return nil }
+        var depth = 0
+        let start = text.index(before: marker.upperBound)          // the opening brace
+        var index = start
+        while index < text.endIndex {
+            let character = text[index]
+            if character == "{" { depth += 1 }
+            if character == "}" {
+                depth -= 1
+                if depth == 0 { return String(text[start...index]) }
+            }
+            index = text.index(after: index)
+        }
+        return nil
+    }
+
+    /// The first line the two texts disagree on, so a failure names a field instead of
+    /// printing two thirty-kilobyte documents at each other.
+    static func firstDifference(_ got: String, _ want: String)
+    -> (index: Int, got: String, want: String)? {
+        let a = got.split(separator: "\n", omittingEmptySubsequences: false)
+        let b = want.split(separator: "\n", omittingEmptySubsequences: false)
+        for index in 0..<max(a.count, b.count) {
+            let left = index < a.count ? String(a[index]) : "<end>"
+            let right = index < b.count ? String(b[index]) : "<end>"
+            if left != right { return (index + 1, left, right) }
+        }
+        return nil
+    }
 }

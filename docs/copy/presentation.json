@@ -1,0 +1,79 @@
+{
+  "_readme": [
+    "THE WORDS THE PRESENTATION DOCUMENT POINTS AT.",
+    "",
+    "`docs/presentation/document.md` is the schema. The document carries no rider sentence:",
+    "every label and every caption in it is an ID plus the arguments the sentence",
+    "interpolates, and this file is where the ids that are not already somewhere else are",
+    "resolved. The three other namespaces a `labelId` may use:",
+    "",
+    "  glossary.<id>              docs/copy/glossary.json — the nineteen words",
+    "  tokens.recordWindow.<id>   design/tokens.json recordWindows.order[].label",
+    "  tokens.layer.<id>          design/tokens.json layers[].label",
+    "  verdicts.notASession.*     docs/copy/verdicts.json",
+    "",
+    "HAND-AUTHORED, like the Strava sentence and the lexicon (docs/copy/README.md, \"The",
+    "contract\"). A regeneration of the kit-owned files leaves it alone. The strings are the",
+    "ones the iOS kit and web/js already print, character for character; round 3 of \"one",
+    "presentation document\" is when the renderers start reading them from here instead of",
+    "from their own literals (ADR-033).",
+    "",
+    "`label` is the word under the number. `caption` is the small line under a cell, and",
+    "carries `{placeholders}` naming the document's own caption arguments. A caption with",
+    "a `one` key has a singular form, used when its first argument is 1.",
+    "",
+    "`turnKind` is the rider's word for a kind of sweep, which the wrist-under callout",
+    "interpolates; `rowMetric` is the library row's own short spelling of a metric, which",
+    "is deliberately shorter than the glossary term because it sits under a value in",
+    "caption type beside two others."
+  ],
+  "schema": 1,
+  "label": {
+    "alpha500": "alpha 500",
+    "avgSpeed": "avg speed",
+    "best5x10s": "5×10 s",
+    "distance": "distance",
+    "duration": "duration",
+    "max2s": "max 2 s",
+    "outcomeLadder": "flew · touchdown · fell",
+    "streaks": "best streaks"
+  },
+  "rowMetric": {
+    "best10s": "best 10 s",
+    "best2s": "best 2 s",
+    "cleanJibes": "clean",
+    "distance": "distance",
+    "dryStreak": "dry streak",
+    "duration": "time",
+    "falls": "fell in",
+    "flights": "flights",
+    "foilShare": "foil",
+    "jibes": "jibes",
+    "turns": "turns"
+  },
+  "turnKind": {
+    "bearAway": "bear-away",
+    "jibe": "jibe",
+    "roundUp": "round-up",
+    "tack": "tack",
+    "turn": "turn"
+  },
+  "caption": {
+    "fallsSplit": "{inTurn} in a turn · {straight} in a straight line",
+    "ofJibes": "of {jibes} jibes · {clean} clean",
+    "ofTacks": {
+      "one": "of 1 tack",
+      "other": "of {tacks} tacks"
+    },
+    "ofTurns": "of {turns} turns"
+  },
+  "wristUnder": {
+    "afterFlight": "after flight {flight} ended",
+    "afterFlightStopped": "after flight {flight} ended, stopped {stoppedS} s",
+    "duringAnyTurn": "during a {turn}",
+    "duringTurn": "during {turn} {ordinal}",
+    "offFoil": "while off foil",
+    "title": "Wrist under",
+    "titleFor": "Wrist under · {durationS} s"
+  }
+}

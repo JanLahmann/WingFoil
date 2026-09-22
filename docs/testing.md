@@ -573,6 +573,29 @@ second way and then re-runs the engine through `web_entry` on the CIQ fixture to
 numbers survive the path the browser actually takes. A count that differs between the two
 is a failing test, not a bug report.
 
+### The `document` key — every presentation fact once
+
+Since 22 September 2026 each of these files also carries a **`document`**: the whole
+presentation document for that session (ADR-033, `docs/presentation/document.md`), built by
+`wingfoil_lab.presentation.build_presentation` and, byte for byte, by the kit's
+`PresentationDocument.build`. It is the counts above plus everything else a rider-facing
+surface draws — the key-metrics block, the card's tiles, the library row, the nine records,
+the turn strip, the wrist-under callouts — as **ids, raw values and colour roles**, never as
+sentences, formatted numbers or hexes.
+
+Two suites hold it, one per side. `lab/tests/test_presentation.py` asserts the properties the
+schema is worthless without: the same bytes twice, every corpus fixture builds, every label
+and caption is an id that resolves in `docs/copy` (and nothing in `docs/copy/presentation.json`
+is unreachable), and no string in the document is a sentence.
+`GoldenTests.presentationDocumentMatchesTheGoldenByte` lifts the `document` object out of the
+golden's own **text** and compares it to the Swift twin's, line for line — a tree comparison
+would pass a document that says `2` where the lab says `2.0`, and two renderers can disagree
+about exactly that.
+
+Regenerate with `web/tools/make_presentation_goldens.py`. It runs the *authoritative* lab
+(`lab/src`) rather than the bundle, so `bundle_lab.py --check` stays the thing that proves the
+two are one source.
+
 `verify_presentation.py` also owns the **share card's content contract** (§5). A card is a
 PNG in somebody else's chat thread — no re-render, no correction, nothing beside it to check
 against — so it may not name a different number for a session than the key-metrics block on
