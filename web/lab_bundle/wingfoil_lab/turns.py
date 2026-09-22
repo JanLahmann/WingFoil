@@ -181,7 +181,7 @@ from typing import Protocol
 import numpy as np
 
 from .evidence import (KMH_TO_MPS, MPS_TO_KN, OffFoilEvidence, elapsed, longest_stop,
-                       off_foil_evidence, off_foil_run, recovery_end)
+                       off_foil_evidence, off_foil_run, outcome_tail)
 from .filters import CleanTrack, hybrid_speed, unwrapped_cog_deg
 from .flight import FlightResult
 from .pump import PumpTrack
@@ -278,6 +278,17 @@ class TurnConfig:
     touchdown_max_stop_s: float = 3.0     # turnTouchdownMaxStop: still a touchdown
     fall_stop_s: float = 5.0              # turnFallStop: above this = fell in
     outcome_lookahead_s: float = 12.0     # turnOutcomeLookahead: cap on the tail searched
+    #: turnOutcomeLookaheadNotRecovered (engine 0.24.0, ADR-032), seconds: **the tail for a
+    #: rider who never got going again**. The 12 s cap above is sized for a foil that stalls
+    #: and stops; a learner who mushes slowly out of a jibe is still making way at 12 s and
+    #: coasts to a standstill a little after it, so the stop began one sample past the cap
+    #: and the same event was booked twice — a `touchdown` here and a straight-line
+    #: `fell_in` there. While the rider has **not recovered** the tail now follows him this
+    #: far, and `outcome_window_s` follows it (`evidence.outcome_tail`). Recovery still
+    #: closes the tail wherever it happens, and a gap still ends it, so a turn the rider
+    #: powered out of is judged over exactly the seconds it always was. Set it equal to
+    #: `outcome_lookahead_s` to switch the rule off.
+    outcome_lookahead_not_recovered_s: float = 30.0
     recover_pct: float = 70.0             # turnRecoverPct: of entry speed = flying again
     recover_hold_s: float = 2.0           # turnRecoverHold: held this long = turn is over
     outcome_window_s: float = 12.0        # turnOutcomeWindow: = lookahead (engine 0.13.0)
@@ -1006,7 +1017,12 @@ def _outcome(turn: Turn, ev: OffFoilEvidence, cfg: TurnConfig,
     It is set on the same branch that sets `outcome`, so the two can never disagree.
     """
     t = ev.t
-    hi = _window_end(turn, ev, cfg)
+    hi, not_recovered = _window_end(turn, ev, cfg)
+    # The span the off-foil run may be followed over: `turnOutcomeWindow` as always, and
+    # the longer not-recovered tail when that is what the window itself ran to, so the
+    # stop a mush-out ends in is measured by the turn that caused it (ADR-032).
+    window_cap = (cfg.outcome_lookahead_not_recovered_s if not_recovered
+                  else cfg.outcome_window_s)
     turn.outcome_window_s = float(max(t[hi] - turn.end_t, 0.0))
     win = (t >= turn.start_t) & (t <= t[hi])
     turn.pumped = bool(pump is not None and pump.is_pumping(turn.start_t, t[hi]))
@@ -1029,7 +1045,7 @@ def _outcome(turn: Turn, ev: OffFoilEvidence, cfg: TurnConfig,
         return
 
     a = int(lost[0])
-    b, end = off_foil_run(t, ev.flying, a, turn.end_t + cfg.outcome_window_s)
+    b, end = off_foil_run(t, ev.flying, a, turn.end_t + window_cap)
     turn.off_foil_s = elapsed(t, ev.gap, a, end)
     turn.stopped_s = longest_stop(t, ev.gap, ev.speed, a, b, cfg.stop_speed_floor_mps)
     if turn.submerged or turn.stopped_s > cfg.fall_stop_s:
@@ -1046,20 +1062,22 @@ def _outcome(turn: Turn, ev: OffFoilEvidence, cfg: TurnConfig,
         turn.outcome_reason = REASON_STOP if turn.borderline else REASON_OFF_FOIL
 
 
-def _window_end(turn: Turn, ev: OffFoilEvidence, cfg: TurnConfig) -> int:
-    """Last sample index the turn is judged over: recovery, a gap, or the lookahead cap.
+def _window_end(turn: Turn, ev: OffFoilEvidence, cfg: TurnConfig) -> tuple[int, bool]:
+    """(last sample index the turn is judged over, *the rider never recovered*).
 
-    Recovery is `evidence.recovery_end` measured against `turnRecoverPct` of the *turn's*
+    Recovery is `evidence.outcome_tail` measured against `turnRecoverPct` of the *turn's*
     entry speed, floored at `foilEntrySpeed` (below that nothing is flying however slowly
     the turn was entered), and searched only past the speed minimum so the entry itself
-    cannot close the window.
+    cannot close the window. The tail ends at that recovery, at a recording gap, or at
+    `turnOutcomeLookahead` — and since engine 0.24.0 at `turnOutcomeLookaheadNotRecovered`
+    instead when none of the three closed it by then (ADR-032).
     """
     lo = min(int(np.searchsorted(ev.t, turn.start_t, "left")), len(ev.t) - 1)
     thr = max(cfg.recover_pct / 100.0 * turn.entry_kn / MPS_TO_KN,
               cfg.foil_entry_speed_kmh * KMH_TO_MPS)
-    return recovery_end(ev.t, ev.gap, ev.doppler, lo,
-                        turn.end_t + cfg.outcome_lookahead_s, turn.min_t,
-                        thr, cfg.recover_hold_s)
+    return outcome_tail(ev.t, ev.gap, ev.doppler, lo, turn.end_t, turn.min_t,
+                        thr, cfg.recover_hold_s, cfg.outcome_lookahead_s,
+                        cfg.outcome_lookahead_not_recovered_s)
 
 
 def _quiet_blocked(turn: Turn, ev: OffFoilEvidence, cfg: TurnConfig,

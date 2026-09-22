@@ -915,6 +915,7 @@ def _config_dict(a: Analysis) -> dict:
         "turnTouchdownMaxStop": t.touchdown_max_stop_s,
         "turnFallStop": t.fall_stop_s,
         "turnOutcomeLookahead": t.outcome_lookahead_s,
+        "turnOutcomeLookaheadNotRecovered": t.outcome_lookahead_not_recovered_s,
         "turnRecoverPct": t.recover_pct,
         "turnRecoverHold": t.recover_hold_s,
         "turnOutcomeWindow": t.outcome_window_s,

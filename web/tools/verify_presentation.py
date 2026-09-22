@@ -485,8 +485,11 @@ def check_engine() -> None:
     for key in ("markers", "flightCount", "flightEnds", "takeoff", "splash", "pumpingSpans",
                 "recordWindows", "defaultRecordWindow", "filters"):
         check(f"  {CIQ}: {key} from a fresh analysis", fresh[key], facts[key])
-    # The one number the whole layer exists for, stated out loud.
-    check(f"  {CIQ}: failed takeoff attempts", fresh["takeoff"]["failed"], 14)
+    # The one number the whole layer exists for, stated out loud. It read 14 until engine
+    # 0.24.0 widened a not-recovered turn's ownership window to 30 s: four of those bursts
+    # land inside a turn now, which makes them `recovery` pumping and not a failed takeoff
+    # (docs/algorithms.md, "What 0.24.0 did to the corpus"; ADR-032).
+    check(f"  {CIQ}: failed takeoff attempts", fresh["takeoff"]["failed"], 11)
     check_session_clock(result)
 
 

@@ -307,6 +307,34 @@ def recovery_end(t: np.ndarray, gap: np.ndarray, dop: np.ndarray, lo: int,
     return hi
 
 
+def outcome_tail(t: np.ndarray, gap: np.ndarray, dop: np.ndarray, lo: int,
+                 from_t: float, after_t: float, thr_mps: float, hold_s: float,
+                 lookahead_s: float, not_recovered_s: float) -> tuple[int, bool]:
+    """(last sample index of an outcome tail, *did the rider never recover*).
+
+    **A fall the turn caused is the turn's fall** (engine 0.24.0, ADR-032). `recovery_end`
+    above answers "how long is this event on the hook" and closes the tail at the first
+    recovery, the first gap, or a cap. Until 0.24.0 that cap was `lookahead_s` (12 s) for
+    everyone, and a rider who *never recovers* — the learner who mushes slowly out of a jibe
+    and coasts to a stop — had his stop begin just past it, so the maneuver read `touchdown`
+    and the stop was booked a second time by the other channel. The tail now follows a
+    rider who is **still not flying again** for up to `not_recovered_s` (30 s).
+
+    Recovery is unchanged and still closes the tail wherever it happens, so this only ever
+    lengthens a tail that had nothing to close it. A recording gap still ends the
+    measurement exactly as before: a gap inside the first `lookahead_s` closes the tail
+    there *and* reports `False` — the samples the far side of a hole are not evidence that
+    the rider failed to recover, they are no evidence at all.
+
+    The second return is the **not-recovered condition**, defined once here and read by both
+    `turns.py` and `flightend.py`: the tail ran past `lookahead_s` without recovery and
+    without a gap. Equivalently: *no recovery at any point between the event and the stop.*
+    """
+    hi = recovery_end(t, gap, dop, lo, from_t + max(lookahead_s, not_recovered_s),
+                      after_t, thr_mps, hold_s)
+    return hi, bool(float(t[hi]) > from_t + lookahead_s)
+
+
 def off_foil_run(t: np.ndarray, flying: np.ndarray, a: int,
                  cap_t: float) -> tuple[int, int]:
     """From the first non-flying sample `a`, (last non-flying index, first flying index).
