@@ -523,6 +523,36 @@ public struct SessionIngestor: Sendable {
         return analysis
     }
 
+    /// **The direct transfer's second stream, landing after the session did.**
+    ///
+    /// The watch sends the recording first and the 25 Hz wrist magnitudes minutes later
+    /// (docs/transfer-format.md §6, ADR-031). This files the wrist archive beside the
+    /// original the session was built from and re-derives — no second ingest, no second
+    /// analysis path, and nothing invented: `SessionArchive.rawTrack` attaches the sidecar,
+    /// `SourceCapabilities.hasAccel` becomes true because `track.accel` is no longer empty,
+    /// and `PumpAnalyzer` produces a `PumpTrack` where it produced nil.
+    ///
+    /// **The class letter does not move and is not meant to.** `sourceClass` is already `a`:
+    /// the stream carries the four record developer fields. What moves is what the summary
+    /// can say — pumps to takeoff, failed attempts, the pump rung of the touchdown ladder,
+    /// the pump-versus-cruise heart-rate split — all of which read nil without a `PumpTrack`.
+    ///
+    /// Returns nil where the session is not a direct one, because a wrist stream has nothing
+    /// to attach to a FIT: the FIT carries its own.
+    @discardableResult
+    public func attachWristStream(_ data: Data, to row: SessionRow) async throws
+            -> SessionAnalysis? {
+        guard let original = try? archive.originalData(for: row.id),
+              DirectStream.isStream(original) else { return nil }
+        // Refused rather than filed if it cannot be read: a sidecar nothing can decode would
+        // be re-attached and re-refused at every re-analysis for ever.
+        guard let decoded = try? DirectWristDecoder.decode(data), !decoded.1.isEmpty else {
+            return nil
+        }
+        try archive.storeWrist(data, id: row.id)
+        return try await reanalyze(row)
+    }
+
     /// Re-derives every session whose stored engine version is not the current one
     /// (plan §3.3, lazy re-analysis on an engine bump). The aggregate screens call this
     /// before they read, because a stale row would silently skew a whole trend line.
@@ -741,6 +771,25 @@ public struct SessionIngestor: Sendable {
                 .filter(Column("startDate") >= lower && Column("startDate") <= upper)
                 .fetchAll(db)
             return candidates.first { abs($0.durationS - durationS) <= tolerance }
+        }
+    }
+
+    /// **The session a direct transfer's second stream belongs to.**
+    ///
+    /// Start within `dedupeToleranceS` and nothing else, because a wrist stream carries no
+    /// duration to match a session on — its header states the start epoch the record
+    /// stream's does, which is the card's `KEY_START` and half of ADR-013's key. The nearest
+    /// row wins where two sessions somehow sit inside one minute of each other.
+    public func session(nearStart start: Date) async throws -> SessionRow? {
+        let tolerance = dedupeToleranceS
+        let lower = start.addingTimeInterval(-tolerance)
+        let upper = start.addingTimeInterval(tolerance)
+        return try await database.writer.read { db in
+            try SessionRow
+                .filter(Column("startDate") >= lower && Column("startDate") <= upper)
+                .fetchAll(db)
+                .min { abs($0.startDate.timeIntervalSince(start))
+                     < abs($1.startDate.timeIntervalSince(start)) }
         }
     }
 

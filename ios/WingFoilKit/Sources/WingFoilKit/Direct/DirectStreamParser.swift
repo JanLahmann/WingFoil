@@ -11,10 +11,14 @@ import Foundation
 /// **Source class.** The stream carries the receiver's own Doppler channel, the positions and
 /// the four record developer fields of docs/fit-schema.md, so `SourceCapabilities.sourceClass`
 /// answers `"a"` — the same letter the FIT of the same afternoon gets, because it is the same
-/// watch app writing the same four fields. No letter is invented here (pattern L). What it
-/// does *not* carry is the wrist stream, which is dev3's (`hasAccel` false) — and that is
-/// already the ordinary shape of a class-(a) recording, because `accelLogging` is off by
-/// default on the watch.
+/// watch app writing the same four fields. No letter is invented here (pattern L).
+///
+/// **The wrist stream does not change that letter and was never going to.** `sourceClass` is
+/// `a` on developer fields, `b` on speed, `c` otherwise; `hasAccel` is not one of its inputs.
+/// What stream 1 changes is the *analysis*: with it the phone runs the lab's own pump chain
+/// over real 25 Hz magnitudes instead of reading the watch's live approximation off the
+/// `pump_cadence` column (ADR-005 — the phone is authoritative), and the takeoff, turn and
+/// HR-cost consumers that degrade to nil without a `PumpTrack` stop degrading.
 public enum DirectStreamParser {
 
     public enum ParseError: Error, CustomStringConvertible {
@@ -27,9 +31,17 @@ public enum DirectStreamParser {
         }
     }
 
-    public static func parse(data: Data) throws -> RawTrack {
+    /// `wrist` is stream 1's archive where it has arrived, nil where it has not or never
+    /// will. A wrist stream that cannot be decoded is dropped rather than thrown: the record
+    /// stream is the session and a damaged second channel must not cost the rider his
+    /// afternoon.
+    public static func parse(data: Data, wrist: Data? = nil) throws -> RawTrack {
         let (header, records) = try DirectStreamDecoder.decode(data)
-        return try build(header: header, records: records)
+        var windows: [DirectWristWindow] = []
+        if let wrist, let decoded = try? DirectWristDecoder.decode(wrist) {
+            windows = decoded.1
+        }
+        return try build(header: header, records: records, windows: windows)
     }
 
     public static func parse(url: URL) throws -> RawTrack {
@@ -43,7 +55,8 @@ public enum DirectStreamParser {
 
     // MARK: - Assembly
 
-    static func build(header: DirectStreamHeader, records: [DirectRecord]) throws -> RawTrack {
+    static func build(header: DirectStreamHeader, records: [DirectRecord],
+                      windows: [DirectWristWindow] = []) throws -> RawTrack {
         guard let first = records.first else { throw ParseError.noRecords }
 
         var track = RawTrack()
@@ -91,6 +104,9 @@ public enum DirectStreamParser {
             samples.append(s)
         }
         track.samples = samples
+        // Stream 1, where it arrived. The windows land on the SAME `base` the records do, so
+        // the two channels share one clock and the pump grid can be aligned with the fixes.
+        track.accel = DirectWristDecoder.samples(windows, base: base)
 
         // The wind axis the rider entered, in the field the FIT parser puts `wind_dir_user`
         // in — so `WindEstimator` and the turn namer read one channel whichever door the
@@ -111,8 +127,13 @@ public enum DirectStreamParser {
         // detectors that write them into the FIT. They are there in every record of every
         // stream this app will ever decode.
         caps.hasDevFields = true
-        // The wrist magnitudes are stream 1, which is dev3's (docs/transfer-format.md §6).
-        caps.hasAccel = false
+        // The wrist magnitudes are stream 1 (docs/transfer-format.md §2b): true when it has
+        // arrived, false while the record stream is on its own — which is the ordinary shape
+        // of a class-(a) recording anyway, because `accelLogging` is off by default.
+        caps.hasAccel = !track.accel.isEmpty
+        // The stream carries real per-sample times off the watch's own 25 Hz grid. Nothing
+        // was reconstructed from file order here, which is what this flag is about (ADR-030).
+        caps.accelClockReconstructed = false
         // No lap messages on the wire. The FIT's laps are hints the phone re-derives anyway
         // (docs/fit-schema.md, "watch lap boundaries are hints"), and `hasWatchLaps` is
         // `laps.count > 1` there — so no laps means the flag is false and the engine

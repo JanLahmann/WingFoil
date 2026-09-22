@@ -41,7 +41,14 @@ public struct DirectPage: Sendable, Equatable {
         static let count = "n"
         static let end = "e"
         static let bytes = "b"
+        /// Flags. Bit 0: the payload is packed four bytes per 32-bit Number.
+        static let flags = "f"
+        /// And then this is its true length in bytes, because the last word is zero-filled.
+        static let length = "bl"
     }
+
+    /// `f` bit 0 — the fenix 5 Plus family's page (docs/transfer-format.md §3).
+    public static let packedFlag = 1
 
     /// 2010-01-01 … 2100-01-01, the same window a card's start has to land in.
     static let plausibleEpoch = CompanionSummary.plausibleEpoch
@@ -84,33 +91,63 @@ public struct DirectPage: Sendable, Equatable {
         guard let raw = dictionary[Key.bytes] else {
             throw CompanionDecodeError.missingKey(Key.bytes)
         }
-        guard let bytes = Self.payloadBytes(raw), !bytes.isEmpty,
-              bytes.count <= DirectStream.pageBytes else {
+        let flags = CompanionSummary.integer(dictionary[Key.flags]) ?? 0
+        let packed = flags & Self.packedFlag != 0
+        // `bl` is required when `f` says packed and meaningless otherwise: a page that says
+        // it is packed and does not say how long it is cannot be unpacked at all, and
+        // guessing four bytes per word would invent up to three trailing zeros.
+        let claimed = CompanionSummary.integer(dictionary[Key.length])
+        if packed, claimed == nil { throw CompanionDecodeError.missingKey(Key.length) }
+        guard let bytes = Self.payloadBytes(raw, packed: packed, byteLength: claimed),
+              !bytes.isEmpty, bytes.count <= DirectStream.pageBytes else {
             throw CompanionDecodeError.notAnInteger(key: Key.bytes)
         }
         self.bytes = bytes
     }
 
-    /// **The two shapes a page of bytes arrives in.**
+    /// **The three shapes a page of bytes arrives in.**
     ///
     /// `ByteArray` exists only from Connect IQ 6.0.0 — the fenix 8, the fr970 and the enduro
     /// 3 have it, the fenix 7 (5.2.0) and the fenix 5 Plus (3.3.3) do not — so a page from an
-    /// older watch is an `Array<Number>`, one byte per 32-bit Number. Both are read here, in
-    /// one place, exactly as the link probe already reads its own `b` key. A Number outside
-    /// 0…255 means the sender packed something this build cannot unpack (dev3's four-per-
-    /// Number encoding), and the page is refused rather than truncated into nonsense.
-    static func payloadBytes(_ raw: Any?) -> Data? {
-        if let data = raw as? Data { return data }
-        if let bytes = raw as? [UInt8] { return Data(bytes) }
+    /// older watch is an `Array<Number>`. There it is **four payload bytes per 32-bit
+    /// Number**, little-endian within the word, and the message says so with `f` and `bl`:
+    /// one byte per Number is what 0.9.14-dev2 sent, and `PhoneLink.estimateBytes` prices a
+    /// Number at five wire bytes, so an 8 000 B page cost 40 KB and the pre-6.0.0 fleet could
+    /// never have carried one.
+    ///
+    /// Without the flag an `Array<Number>` is still read one byte per Number, and a value
+    /// outside 0…255 there means a watch packed something this build was not told about —
+    /// the page is refused rather than truncated into nonsense.
+    static func payloadBytes(_ raw: Any?, packed: Bool = false,
+                             byteLength: Int? = nil) -> Data? {
+        if let data = raw as? Data { return packed ? nil : data }
+        if let bytes = raw as? [UInt8] { return packed ? nil : Data(bytes) }
         guard let values = raw as? [Any] else { return nil }
-        var out = Data(capacity: values.count)
-        for value in values {
-            guard let byte = CompanionSummary.integer(value), byte >= 0, byte <= 255 else {
-                return nil
+        guard packed else {
+            var out = Data(capacity: values.count)
+            for value in values {
+                guard let byte = CompanionSummary.integer(value), byte >= 0, byte <= 255 else {
+                    return nil
+                }
+                out.append(UInt8(byte))
             }
-            out.append(UInt8(byte))
+            return out
         }
-        return out
+        // A word holds four bytes, so the claimed length has to be within one word of what
+        // the array can hold — no shorter than the words before the last, no longer than all
+        // of them. A page that lies about its length is refused, not padded.
+        guard let length = byteLength, length > 0, length <= 4 * values.count,
+              length > 4 * (values.count - 1) else { return nil }
+        var out = Data(capacity: 4 * values.count)
+        for value in values {
+            // A Monkey C Number is signed 32-bit, so a word whose top byte is ≥ 0x80 arrives
+            // negative. The bit pattern is what matters and both signs give the same one.
+            guard let word = CompanionSummary.integer(value),
+                  word >= Int(Int32.min), word <= Int(UInt32.max) else { return nil }
+            let bits = UInt32(bitPattern: Int32(truncatingIfNeeded: word))
+            for i in 0..<4 { out.append(UInt8(truncatingIfNeeded: bits >> (8 * i))) }
+        }
+        return out.prefix(length)
     }
 
     /// The ACK this page is answered with, at once: `["cjrAck": [sid, st, p]]`.
