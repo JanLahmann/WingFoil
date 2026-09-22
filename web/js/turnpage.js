@@ -67,30 +67,27 @@ const el = (id) => document.getElementById(id);
 /** Every counted turn, in time order. The engine emits turns in time order, so this is the
  *  array's own order with the course changes taken out: a bear-away has no verdict, no
  *  score, no entry tack and no outcome word, and its numbers row would be five dashes. */
-function turnIndices(g) {
-  return g.turns.map((t, i) => (t.counted ? i : -1)).filter((i) => i >= 0);
+function turnIndices() {
+  return (doc?.presentation?.turns?.strip || [])
+    .filter((entry) => entry.counted).map((entry) => entry.index);
 }
 
 /** Every **drawn** flight end: the ones no turn owns and the recording did not truncate. A
  *  turn-owned end is the same swim already counted at its jibe, and a truncated one is a
  *  recording that stopped. Neither has anything for a page to say. */
-function endIndices(g) {
-  return g.flightEnds
-    .map((e, i) => ((e.ownedByTurn === null || e.ownedByTurn === undefined)
-                    && !e.truncated ? i : -1))
-    .filter((i) => i >= 0);
+function endIndices() {
+  return (doc?.presentation?.flightEnds?.marks || []).map((mark) => mark.index);
 }
 
-const setFor = (kind) => (kind === "turn" ? turnIndices(doc.golden) : endIndices(doc.golden));
+const setFor = (kind) => (kind === "turn" ? turnIndices() : endIndices());
 
 /** "Jibe 7" — the ordinal counts turns of the same *kind*, because that is what a rider
- *  means: his seventh jibe, not the seventh thing the detector saw. */
-function ordinalOf(index, g) {
-  const turn = g.turns[index];
-  const same = turnIndices(g).filter((i) => g.turns[i].type === turn.type);
-  const at = same.indexOf(index);
-  return at < 0 ? null : at + 1;
-}
+ *  means: his seventh jibe, not the seventh thing the detector saw.
+ *
+ *  `turns.strip[].ordinal` is that number, computed once in the engine so this title and
+ *  the map's wrist-under callout cannot count differently (ADR-033, round 3). */
+const ordinalOf = (index) =>
+  (doc?.presentation?.turns?.strip?.[index]?.ordinal ?? null);
 
 /* --------------------------------------------------------------------- wiring */
 
@@ -252,7 +249,7 @@ function draw() {
 
 function pageTitle(turn, end, g) {
   if (end) return "Flight " + (end.flightIndex + 1) + " · " + endOutcomeLabel(end.outcome);
-  const ordinal = ordinalOf(open.index, g);
+  const ordinal = ordinalOf(open.index);
   const kind = typeLabel(turn.type);
   const head = ordinal === null ? kind : `${kind} ${ordinal}`;
   return `${head} · ${OUTCOME_LABEL[turn.outcome] || turn.outcome}`;
