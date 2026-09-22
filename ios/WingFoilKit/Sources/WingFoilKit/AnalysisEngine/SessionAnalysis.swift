@@ -220,7 +220,22 @@ public enum AnalysisEngine {
     /// 558 → 565, tacks 2 → 4, course changes 147 → 140, turn `fellIn` 41 → 50 and
     /// straight-line falls 45 → 44 — clean jibes stay at 161 and no rate numerator moves.
     /// `config.turnAbortMinAngle` and the per-turn `aborted` flag are the schema change.
-    public static let version = "0.23.0"
+    ///
+    /// 0.24.0 says **a fall the turn caused is the turn's fall** (docs/algorithms.md "Turn
+    /// outcome" step 0, ADR-032). A learner who mushes slowly out of a jibe is still making
+    /// way at `turnOutcomeLookahead` and coasts to a standstill just after it, so the turn
+    /// read `touchdown` and the stop it ended in was booked all over again — either as a
+    /// straight-line `fellIn`, or, where the turn already owned that flight end, as nothing
+    /// at all. While the rider has **not recovered** the outcome tail now follows him for
+    /// `turnOutcomeLookaheadNotRecovered` (30 s) and the ownership window with it; recovery
+    /// still closes the tail wherever it happens and a gap still ends it, so a turn the
+    /// rider powered out of is judged over exactly the seconds it always was. Over the 21
+    /// goldens turn `touchdown` goes 213 → 132 and turn `fellIn` 85 → 188, straight-line
+    /// falls 90 → 80, and the falls the two channels between them lost — a flight end the
+    /// engine called `fellIn` inside a turn that denied it — fall 110 → 18. The flight-end
+    /// channel's own 277 falls do not move at all, and neither does WPH.
+    /// `config.turnOutcomeLookaheadNotRecovered` is the schema change.
+    public static let version = "0.24.0"
 }
 
 /// **Is this recording a session?** — docs/algorithms.md "Not a session" (engine 0.19.0).
@@ -343,6 +358,10 @@ public struct AnalysisConfig: Sendable, Codable, Equatable {
     public var turnTouchdownMaxStop: Double
     public var turnFallStop: Double
     public var turnOutcomeLookahead: Double
+    /// turnOutcomeLookaheadNotRecovered (engine 0.24.0, ADR-032): the tail a rider who never
+    /// recovered is followed over. Optional so a stored `analysis.json` written before it
+    /// still decodes as nil — "this document does not say" — and re-derives on its version.
+    public var turnOutcomeLookaheadNotRecovered: Double?
     public var turnRecoverPct: Double
     public var turnOutcomeWindow: Double
     public var turnBaroDrop: Double
@@ -414,6 +433,7 @@ public struct AnalysisConfig: Sendable, Codable, Equatable {
         turnTouchdownMaxStop = turn.touchdownMaxStopS
         turnFallStop = turn.fallStopS
         turnOutcomeLookahead = turn.outcomeLookaheadS
+        turnOutcomeLookaheadNotRecovered = turn.outcomeLookaheadNotRecoveredS
         turnRecoverPct = turn.recoverPct
         turnOutcomeWindow = turn.outcomeWindowS
         turnBaroDrop = turn.baroDropM

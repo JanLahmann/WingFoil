@@ -463,6 +463,50 @@ half-angle bisector against the circular mean wherever both are defined, batches
 offsets, batches stamped days off the session, batches queued behind one record, and a pump
 grid handed NaNs and a fifty-day span.
 
+Engine 0.24.0 says **a fall the turn caused is the turn's fall** (docs/algorithms.md, "Turn
+outcome" step 0; ADR-032), and it is the largest move in the two outcome ladders since they
+were built. The outcome tail follows a rider who has **not recovered** for
+`turnOutcomeLookaheadNotRecovered` (30 s) instead of `turnOutcomeLookahead` (12 s), and
+`turnOutcomeWindow` rises with it. Across the 21 goldens turn `touchdown` goes 213 → 132, turn
+`fell_in` 85 → 188, `borderline` 29 → 9, counted turns 597 → 615 (the aborted pass keeps a
+sweep only where the ladder says `fell_in`), straight-line falls 90 → 80 and clean jibes
+158 → **157**. `turnOutcomeLookaheadNotRecovered` joins `config` on every golden and is the
+schema change.
+
+**The flight-end channel is the control, and it does not move.** Its 277 `fell_in`, 72
+`touchdown` and 52 `glide_out` are identical before and after, on every fixture, and so is
+WPH — which is what says no fall was invented here. Total falls nevertheless rise 175 → 268,
+because the corpus was **under-counting** them: the number to read is *falls the two channels
+between them lost* — a flight end the engine called `fell_in`, owned by a turn whose own ladder
+said `touchdown` — and it falls **110 → 18**.
+
+It is checked from five sides:
+
+1. **The rule off is the old engine.** Setting `turnOutcomeLookaheadNotRecovered` equal to
+   `turnOutcomeLookahead` reproduces 0.23.0's goldens byte for byte, which is how the before
+   column of the table in algorithms.md was measured, and both `test_fall_is_a_long_stop` and
+   `test_mush_out_after_the_turn_is_the_turns_fall` assert the two readings side by side.
+2. **The four shapes, synthetic**, in `test_turns.py`: a mush-out that stops 20 s out is the
+   turn's `fell_in`; a rider back to cruising 8 s out keeps his `touchdown` however long he
+   stops at 25 s; a stop 40 s out is past the tail and is nobody's; and a **recording gap
+   inside the tail** ends the measurement exactly as it always did.
+3. **No turn the rider recovered from may move**, on a real 1 Hz session
+   (`test_a_turn_the_rider_recovered_from_is_untouched_by_the_longer_tail`): at a steady
+   cadence a window shorter than the lookahead means a recovery or a gap closed it, and every
+   such turn keeps its outcome, its `borderline`, its `stoppedS` and its `offFoilS`. Over the
+   whole corpus 375 turns recover inside the lookahead and none changed verdict.
+4. **Booked once**, in `test_flightend.py`: the same mush-out track is run through both
+   channels, and the fall it ends in appears as one turn fall and zero straight falls — with
+   the 0.23.0 reading of the identical track asserted beside it, where the turn flew through
+   and the flight-end channel booked the fall on its own.
+5. **The whole corpus, both engines**, `test_corpus.py` and `GoldenTests`, and the presentation
+   goldens follow it — markers and turn-filter counts move wherever a verdict did.
+
+**One number outside the two ladders moves, and it is meant to.** The takeoff channel reads the
+same ownership window to tell a `recovery` pump burst from a failed takeoff attempt, so on the
+one accelerometer fixture attempts go 37 → 34, failed 14 → 11, unknown 1 → 0 and recovery
+0 → 4 (`test_pump_episodes_are_serialized_whole`).
+
 ### Fixture provenance — the converted recordings, and why
 
 Every fixture in `fixtures/sessions/**` is one of Jan's own recordings kept as it came off

@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.23.0",
+  "engineVersion": "0.24.0",
   "config": {
     "discipline": "windsurfFin",
     "foilEntrySpeed": 20.0,
@@ -44,6 +44,7 @@
     "turnTouchdownMaxStop": 3.0,
     "turnFallStop": 5.0,
     "turnOutcomeLookahead": 12.0,
+    "turnOutcomeLookaheadNotRecovered": 30.0,
     "turnRecoverPct": 70.0,
     "turnRecoverHold": 2.0,
     "turnOutcomeWindow": 12.0,
@@ -149,7 +150,7 @@
       "stoppedS": 0.0,
       "pumped": false,
       "submerged": false,
-      "outcomeWindowS": 12.0
+      "outcomeWindowS": 23.0
     },
     {
       "ts": 222.0,
@@ -285,7 +286,7 @@
       "stoppedS": 0.0,
       "pumped": false,
       "submerged": false,
-      "outcomeWindowS": 12.0
+      "outcomeWindowS": 20.0
     },
     {
       "ts": 362.0,
@@ -417,11 +418,11 @@
       "outcomeReason": "stop",
       "aborted": false,
       "borderline": false,
-      "offFoilS": 14.0,
-      "stoppedS": 8.0,
+      "offFoilS": 26.0,
+      "stoppedS": 11.0,
       "pumped": false,
       "submerged": false,
-      "outcomeWindowS": 12.0
+      "outcomeWindowS": 15.0
     },
     {
       "ts": 571.0,
@@ -455,7 +456,7 @@
       "stoppedS": 0.0,
       "pumped": false,
       "submerged": false,
-      "outcomeWindowS": 12.0
+      "outcomeWindowS": 30.0
     }
   ],
   "flightEnds": [
@@ -469,7 +470,7 @@
       "minKn": 0.0,
       "pumped": false,
       "submerged": false,
-      "windowS": 12.0,
+      "windowS": 15.0,
       "truncated": false,
       "ownedByTurn": 8
     },
@@ -483,7 +484,7 @@
       "minKn": 0.0,
       "pumped": false,
       "submerged": false,
-      "windowS": 12.0,
+      "windowS": 30.0,
       "truncated": false,
       "ownedByTurn": 9
     }

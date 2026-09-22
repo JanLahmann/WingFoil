@@ -299,6 +299,36 @@ public enum Evidence {
         return hi
     }
 
+    /// (last sample index of an outcome tail, *did the rider never recover*).
+    ///
+    /// **A fall the turn caused is the turn's fall** (engine 0.24.0, ADR-032).
+    /// `recoveryEnd` above answers "how long is this event on the hook" and closes the tail
+    /// at the first recovery, the first gap, or a cap. Until 0.24.0 that cap was
+    /// `lookaheadS` (12 s) for everyone, and a rider who *never recovers* — the learner who
+    /// mushes slowly out of a jibe and coasts to a stop — had his stop begin just past it,
+    /// so the maneuver read `touchdown` and the stop was booked a second time by the other
+    /// channel. The tail now follows a rider who is **still not flying again** for up to
+    /// `notRecoveredS` (30 s).
+    ///
+    /// Recovery is unchanged and still closes the tail wherever it happens, so this only
+    /// ever lengthens a tail that had nothing to close it. A recording gap still ends the
+    /// measurement exactly as before: a gap inside the first `lookaheadS` closes the tail
+    /// there *and* reports `false` — the samples the far side of a hole are not evidence
+    /// that the rider failed to recover, they are no evidence at all.
+    ///
+    /// The second return is the **not-recovered condition**, defined once here and read by
+    /// both `TurnDetector` and `FlightEndClassifier`: the tail ran past `lookaheadS`
+    /// without recovery and without a gap. Equivalently: *no recovery at any point between
+    /// the event and the stop.* Mirrors `outcome_tail` in `lab/src/wingfoil_lab/evidence.py`.
+    static func outcomeTail(t: [Double], gap: [Bool], doppler: [Double], lo: Int,
+                            fromT: Double, afterT: Double, thrMps: Double, holdS: Double,
+                            lookaheadS: Double, notRecoveredS: Double) -> (Int, Bool) {
+        let hi = recoveryEnd(t: t, gap: gap, doppler: doppler, lo: lo,
+                             capT: fromT + max(lookaheadS, notRecoveredS),
+                             afterT: afterT, thrMps: thrMps, holdS: holdS)
+        return (hi, t[hi] > fromT + lookaheadS)
+    }
+
     /// From the first non-flying sample `a`, (last non-flying index, first flying index).
     /// The run is followed past the judging window until foiling resumes, capped at `capT`
     /// so an event just before a break does not absorb it.

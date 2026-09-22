@@ -81,6 +81,9 @@ public enum TurnTraceBuilder {
         case recovered(thrKn: Double)
         /// Ran out at `turnOutcomeLookahead` past the sweep.
         case lookahead
+        /// Ran out at `turnOutcomeLookaheadNotRecovered` — the rider was followed past the
+        /// 12 s cap because he was still not flying again (engine 0.24.0, ADR-032).
+        case notRecovered
         /// A recording gap; the samples the far side are not evidence about this one.
         case gap
         /// The recording itself ended.
@@ -91,6 +94,8 @@ public enum TurnTraceBuilder {
             case .recovered(let thrKn):
                 return String(format: "Flying again. Doppler back to %.1f kn and held", thrKn)
             case .lookahead: return "The lookahead cap ran out"
+            case .notRecovered:
+                return "Still not flying again. The cap for that ran out"
             case .gap: return "A recording gap ended it"
             case .trackEnd: return "The recording ended"
             }
@@ -100,6 +105,7 @@ public enum TurnTraceBuilder {
             switch self {
             case .recovered: return "turnRecoverPct · turnRecoverHold"
             case .lookahead: return "turnOutcomeLookahead"
+            case .notRecovered: return "turnOutcomeLookaheadNotRecovered"
             case .gap: return "gapMinS"
             case .trackEnd: return "—"
             }
@@ -189,7 +195,8 @@ public enum TurnTraceBuilder {
 
         // 3. Why the outcome window closed.
         let engineTurn = TurnWorkbench.turn(from: record)
-        let (windowHi, reason) = windowEnd(engineTurn, ev: ev, config: config)
+        let (windowHi, reason, notRecovered) = windowEnd(engineTurn, ev: ev,
+                                                         config: config)
         let derivedWindowS = max(ev.t[windowHi] - record.endTs, 0)
         add("Outcome window",
             String(format: "closed %.0f s after the sweep. %@", derivedWindowS, reason.phrase),
@@ -203,8 +210,12 @@ public enum TurnTraceBuilder {
         let lo = min(searchSortedLeft(ev.t, record.ts), ev.count - 1)
         let win = lo..<max(lo, searchSortedRight(ev.t, ev.t[windowHi]))
         if let a = win.first(where: { !ev.flying[$0] }) {
+            // The same cap the detector used: the not-recovered tail where that is what the
+            // window ran to, `turnOutcomeWindow` otherwise (engine 0.24.0, ADR-032).
+            let windowCap = notRecovered ? config.outcomeLookaheadNotRecoveredS
+                                          : config.outcomeWindowS
             let (b, end) = Evidence.offFoilRun(t: ev.t, flying: ev.flying, a: a,
-                                               capT: record.endTs + config.outcomeWindowS)
+                                               capT: record.endTs + windowCap)
             let offFoilS = Evidence.elapsed(t: ev.t, gap: ev.gap, a: a, b: end)
             let stoppedS = Evidence.longestStop(t: ev.t, gap: ev.gap, v: ev.speed, a: a, b: b,
                                                 floor: config.stopSpeedFloorMps)
@@ -323,16 +334,28 @@ public enum TurnTraceBuilder {
     /// Written out rather than called because the reason is the whole point of the step and the
     /// engine's version returns only an index — and it is checked against the engine's index in
     /// `TurnTraceTests`, so the mirror cannot drift silently.
+    /// `notRecovered` is the engine's own condition (`Evidence.outcomeTail`): the tail ran
+    /// past `turnOutcomeLookahead` with neither a recovery nor a gap to close it. It is not
+    /// the same question as `reason`, which names *what* stopped the search — a gap, or the
+    /// end of the recording, can stop it past the 12 s cap without the rider recovering.
     public static func windowEnd(_ turn: Turn, ev: OffFoilEvidence,
-                                 config: TurnConfig) -> (index: Int, reason: WindowEndReason) {
+                                 config: TurnConfig)
+        -> (index: Int, reason: WindowEndReason, notRecovered: Bool) {
         let lo = min(searchSortedLeft(ev.t, turn.startT), ev.count - 1)
         let thr = max(config.recoverPct / 100 * turn.entryKn / Units.mpsToKn,
                       config.foilEntrySpeedKmh / Units.mpsToKmh)
-        let capT = turn.endT + config.outcomeLookaheadS
+        // Two caps since engine 0.24.0: the search runs to the longer of them and the
+        // shorter one only names which of the two it was (`Evidence.outcomeTail`, ADR-032).
+        let lookaheadT = turn.endT + config.outcomeLookaheadS
+        let capT = turn.endT + max(config.outcomeLookaheadS,
+                                   config.outcomeLookaheadNotRecoveredS)
         var hi = lo, last = -1, held = 0.0, i = lo
         var reason = WindowEndReason.trackEnd
         while i < ev.count {
-            if ev.t[i] > capT { reason = .lookahead; break }
+            if ev.t[i] > capT {
+                reason = capT > lookaheadT ? .notRecovered : .lookahead
+                break
+            }
             if i > lo, ev.gap[i] { reason = .gap; break }
             hi = i
             defer { i += 1 }
@@ -345,7 +368,7 @@ public enum TurnTraceBuilder {
                 break
             }
         }
-        return (hi, reason)
+        return (hi, reason, ev.t[hi] > lookaheadT)
     }
 
     /// What the quiet tail found, as a sentence — `TurnDetector.quietBlocked` with its working

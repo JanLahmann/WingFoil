@@ -14,6 +14,74 @@ apart is a history, not a contract. There are four:
 An Accepted entry may carry a clause saying what a later ADR narrowed or what has moved since.
 That is the point of the line: it says which half of an old paragraph is still load-bearing.
 
+## ADR-032 · A fall the turn caused is the turn's fall
+**Status: Accepted** (Jan, 22 September 2026; engine 0.24.0, release channel).
+
+A tester's fenix recordings, Smart Recording. A learner does not fall out of a jibe, he
+**mushes out of it**: the foil stops carrying, he keeps coasting at two or three metres a
+second, and a quarter of a minute later he is sitting on his board. The engine judged the
+outcome over `turnOutcomeLookahead` — 12 s past the sweep — and the stop on those recordings
+begins a **median 12 s** after it. Exactly at the cap. So the ladder saw the loss of foil but
+not the standstill, called the turn a `touchdown`, and the *same event* was booked a second
+time: as a straight-line `fell_in` where the flight end landed past the turn's ownership
+window, and as **nothing at all** where it landed inside one — the flight-end channel gave the
+fall to the turn, and the turn denied it.
+
+The cap is not wrong, it is **modelling the wrong rider**. Twelve seconds is how long a foil
+takes to bleed from foiling speed to a standstill; it is not how long a rider takes to coast to
+one. Three shapes were weighed.
+
+| | shape | what it costs |
+|---|---|---|
+| **a** | raise `turnOutcomeLookahead` to 30 s for everyone | a jibe the rider *powers* out of would be on the hook for half a minute again. This is the 60 s window engine 0.13.0 removed, and it is what "a mush-out three quarters of a minute past the exit was charged to the turn" already says |
+| **b** | keep the cap, and let the flight-end channel keep the fall | leaves the verdict on the maneuver wrong. The rider reads *touchdown* on a jibe he swam out of, and the two channels disagree about one event in the same document |
+| **c** | **follow the rider while he has not recovered**, to 30 s | the tail lengthens only where there is nothing to close it |
+
+Decision: **(c)**. `turnOutcomeLookaheadNotRecovered` = **30 s**. The outcome tail follows a
+rider who has **not recovered** — recovery unchanged: Doppler back above `turnRecoverPct` of
+the entry speed, floored at `foilEntrySpeed`, held `turnRecoverHold` — for up to 30 s, and
+`turnOutcomeWindow` rises with it, so the fall is booked **once**: as the turn's outcome, never
+also as a straight-line fall.
+
+**30 s, and not more, is measured.** For a touchdown turn whose rider never recovered before
+stopping, the stop begins within 30 s in **78 of 85** corpus cases, and in 17 of 17 on the
+tester's own. The seven beyond it begin at 33–93 s — drift, and then a stop, which is not the
+turn's fall.
+
+**The not-recovered condition is defined once and shared** (`evidence.outcome_tail`, read by
+`turns.py` and `flightend.py` and by the Swift twins of both): *no recovery at any point
+between `turnEnd` and the stop*, equivalently a tail that ran past `turnOutcomeLookahead` with
+neither a recovery nor a gap to close it. Two implementations of one condition is how two
+channels start disagreeing again, which is the whole shape of the bug (pattern L). A
+**recording gap still ends the measurement** exactly as before, and reports "recovered" for the
+purpose of the cap: a hole is not evidence that the rider failed to get going again, it is no
+evidence at all. The **12 s cap stays** for everything else the tail is used for — `axisAfterDeg`
+is still measured to `turnEnd + turnOutcomeLookahead`, and the scored window never read the tail.
+
+**Consequence, on the 21 committed goldens.** Turn `touchdown` 213 → 132, turn `fell_in`
+85 → 188, straight-line falls 90 → 80, counted turns 597 → 615 (the aborted-turn pass keeps a
+sweep only where the ladder says `fell_in`, ADR-028). Clean jibes 158 → **157**. **The
+flight-end channel does not move by one verdict** — 277 falls before and after — and WPH is
+unchanged on every fixture, which is what says no fall was invented. Total falls rise 175 → 268
+because the corpus was **under-counting** them: falls the two channels between them lost — a
+flight end the engine called `fell_in`, owned by a turn that denied it — fall **110 → 18**. Of
+the 96 turns that go `touchdown` → `fell_in`, 89 own a flight end that already read `fell_in`.
+JPH falls with the dry jibes; the one clean jibe that moves exits at 8.6 kn, never gets back
+above `foilEntrySpeed`, stops for 16 s and ends in a 29 s swim.
+
+**No turn the rider recovered from can move**, by construction: recovery closes the tail at the
+same sample whichever cap is in force. On the corpus 375 turns recover inside the lookahead and
+none changed verdict, and setting `turnOutcomeLookaheadNotRecovered` equal to
+`turnOutcomeLookahead` reproduces 0.23.0's goldens byte for byte — which is how the before
+column of the table in algorithms.md was measured.
+
+**Not ported to the watch**, and the divergence is written down (algorithms.md, "Watch
+approximation"). `LOOKAHEAD_S` there is an unconditional 12 s, so the live verdict on a
+mush-out is `touchdown` where the phone says `fell_in`. The watch has no second ladder to
+disagree with — nothing on the wrist books a straight-line fall — the live detector would have
+to hold a maneuver open for half a minute of samples, and the phone re-derives the session from
+the FIT anyway. The data field stays parked (ADR-020).
+
 ## ADR-031 · The wrist stream is **windowed 25 Hz**, not decimated and not summarised
 **Status: Proposed** (dev channel; docs/channels.md, all four rules unmet).
 

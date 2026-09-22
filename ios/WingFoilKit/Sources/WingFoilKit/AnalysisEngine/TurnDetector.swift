@@ -60,6 +60,17 @@ public struct TurnConfig: Sendable, Equatable {
     public var fallStopS: Double = 5.0
     /// turnOutcomeLookahead: cap on the tail past the sweep the outcome is judged over.
     public var outcomeLookaheadS: Double = 12.0
+    /// turnOutcomeLookaheadNotRecovered (engine 0.24.0, ADR-032), seconds: **the tail for a
+    /// rider who never got going again**. The 12 s cap above is sized for a foil that
+    /// stalls and stops; a learner who mushes slowly out of a jibe is still making way at
+    /// 12 s and coasts to a standstill a little after it, so the stop began one sample past
+    /// the cap and the same event was booked twice — a `touchdown` here and a straight-line
+    /// `fellIn` there. While the rider has **not recovered** the tail now follows him this
+    /// far, and `outcomeWindowS` follows it (`Evidence.outcomeTail`). Recovery still closes
+    /// the tail wherever it happens, and a gap still ends it, so a turn the rider powered
+    /// out of is judged over exactly the seconds it always was. Set it equal to
+    /// `outcomeLookaheadS` to switch the rule off.
+    public var outcomeLookaheadNotRecoveredS: Double = 30.0
     public var recoverPct: Double = 70.0
     public var recoverHoldS: Double = 2.0
     /// turnOutcomeWindow: cap on following the recovery. Equal to `outcomeLookaheadS` since
@@ -1169,7 +1180,12 @@ public enum TurnDetector {
     static func outcome(_ turn: inout Turn, ev: OffFoilEvidence, config: TurnConfig,
                         pump: PumpTrack?) {
         let t = ev.t
-        let hi = windowEnd(turn, ev: ev, config: config)
+        let (hi, notRecovered) = windowEnd(turn, ev: ev, config: config)
+        // The span the off-foil run may be followed over: `turnOutcomeWindow` as always, and
+        // the longer not-recovered tail when that is what the window itself ran to, so the
+        // stop a mush-out ends in is measured by the turn that caused it (ADR-032).
+        let windowCap = notRecovered ? config.outcomeLookaheadNotRecoveredS
+                                     : config.outcomeWindowS
         let startT = turn.startT, windowEndT = t[hi]
         turn.outcomeWindowS = max(windowEndT - turn.endT, 0)
         // [first sample at or after startT, last sample at or before windowEndT].
@@ -1201,7 +1217,7 @@ public enum TurnDetector {
         }
 
         let (b, end) = Evidence.offFoilRun(t: t, flying: ev.flying, a: a,
-                                           capT: turn.endT + config.outcomeWindowS)
+                                           capT: turn.endT + windowCap)
         turn.offFoilS = Evidence.elapsed(t: t, gap: ev.gap, a: a, b: end)
         turn.stoppedS = Evidence.longestStop(t: t, gap: ev.gap, v: ev.speed, a: a, b: b,
                                              floor: config.stopSpeedFloorMps)
@@ -1221,16 +1237,22 @@ public enum TurnDetector {
         }
     }
 
-    /// Last sample index the turn is judged over: recovery, a gap, or the lookahead cap.
+    /// (last sample index the turn is judged over, *the rider never recovered*).
     /// Recovery is measured against `turnRecoverPct` of the *turn's* entry speed, floored
-    /// at `foilEntrySpeed`, and searched only past the speed minimum.
-    static func windowEnd(_ turn: Turn, ev: OffFoilEvidence, config: TurnConfig) -> Int {
+    /// at `foilEntrySpeed`, and searched only past the speed minimum. The tail ends at that
+    /// recovery, at a recording gap, or at `turnOutcomeLookahead` — and since engine 0.24.0
+    /// at `turnOutcomeLookaheadNotRecovered` instead when none of the three closed it by
+    /// then (ADR-032).
+    static func windowEnd(_ turn: Turn, ev: OffFoilEvidence,
+                          config: TurnConfig) -> (Int, Bool) {
         let lo = min(searchSortedLeft(ev.t, turn.startT), ev.count - 1)
         let thr = max(config.recoverPct / 100 * turn.entryKn / mpsToKn,
                       config.foilEntrySpeedKmh * kmhToMps)
-        return Evidence.recoveryEnd(t: ev.t, gap: ev.gap, doppler: ev.doppler, lo: lo,
-                                    capT: turn.endT + config.outcomeLookaheadS,
-                                    afterT: turn.minT, thrMps: thr, holdS: config.recoverHoldS)
+        return Evidence.outcomeTail(t: ev.t, gap: ev.gap, doppler: ev.doppler, lo: lo,
+                                    fromT: turn.endT, afterT: turn.minT, thrMps: thr,
+                                    holdS: config.recoverHoldS,
+                                    lookaheadS: config.outcomeLookaheadS,
+                                    notRecoveredS: config.outcomeLookaheadNotRecoveredS)
     }
 }
 

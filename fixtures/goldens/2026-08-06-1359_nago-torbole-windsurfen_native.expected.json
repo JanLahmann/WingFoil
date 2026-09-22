@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.23.0",
+  "engineVersion": "0.24.0",
   "config": {
     "foilEntrySpeed": 12.0,
     "entryHold": 2.0,
@@ -43,6 +43,7 @@
     "turnTouchdownMaxStop": 3.0,
     "turnFallStop": 5.0,
     "turnOutcomeLookahead": 12.0,
+    "turnOutcomeLookaheadNotRecovered": 30.0,
     "turnRecoverPct": 70.0,
     "turnRecoverHold": 2.0,
     "turnOutcomeWindow": 12.0,
@@ -249,18 +250,18 @@
       "outcomeReason": "off_foil",
       "aborted": false,
       "borderline": false,
-      "offFoilS": 12.0,
+      "offFoilS": 32.0,
       "stoppedS": 0.0,
       "pumped": false,
       "submerged": false,
-      "outcomeWindowS": 11.0
+      "outcomeWindowS": 29.0
     },
     {
       "ts": 377.0,
       "endTs": 383.0,
       "minTs": 385.0,
-      "type": "bear_away",
-      "counted": false,
+      "type": "jibe",
+      "counted": true,
       "entryKn": 11.504,
       "minKn": 5.686,
       "exitKn": 9.013,
@@ -279,15 +280,15 @@
       "axisAfterDeg": null,
       "arcM": 42.92,
       "radiusM": 33.81,
-      "outcome": "touchdown",
+      "outcome": "fell_in",
       "outcomeReason": "stop",
-      "aborted": false,
-      "borderline": true,
-      "offFoilS": 12.0,
-      "stoppedS": 4.0,
+      "aborted": true,
+      "borderline": false,
+      "offFoilS": 30.0,
+      "stoppedS": 17.0,
       "pumped": false,
       "submerged": false,
-      "outcomeWindowS": 12.0
+      "outcomeWindowS": 29.0
     },
     {
       "ts": 505.0,
@@ -351,11 +352,11 @@
       "outcomeReason": "off_foil",
       "aborted": false,
       "borderline": false,
-      "offFoilS": 9.0,
+      "offFoilS": 25.0,
       "stoppedS": 0.0,
       "pumped": false,
       "submerged": false,
-      "outcomeWindowS": 9.0
+      "outcomeWindowS": 30.0
     },
     {
       "ts": 773.0,
@@ -419,11 +420,11 @@
       "outcomeReason": "off_foil",
       "aborted": false,
       "borderline": false,
-      "offFoilS": 14.0,
+      "offFoilS": 18.0,
       "stoppedS": 0.0,
       "pumped": false,
       "submerged": false,
-      "outcomeWindowS": 12.0
+      "outcomeWindowS": 26.0
     },
     {
       "ts": 1373.0,
@@ -450,14 +451,14 @@
       "arcM": 47.78,
       "radiusM": 18.1,
       "outcome": "touchdown",
-      "outcomeReason": "off_foil",
+      "outcomeReason": "stop",
       "aborted": false,
-      "borderline": false,
-      "offFoilS": 8.0,
-      "stoppedS": 0.0,
+      "borderline": true,
+      "offFoilS": 17.0,
+      "stoppedS": 4.0,
       "pumped": false,
       "submerged": false,
-      "outcomeWindowS": 9.0
+      "outcomeWindowS": 24.0
     },
     {
       "ts": 1543.0,
@@ -484,21 +485,21 @@
       "arcM": 40.25,
       "radiusM": 18.25,
       "outcome": "touchdown",
-      "outcomeReason": "off_foil",
+      "outcomeReason": "stop",
       "aborted": false,
-      "borderline": false,
-      "offFoilS": 11.0,
-      "stoppedS": 0.0,
+      "borderline": true,
+      "offFoilS": 28.0,
+      "stoppedS": 5.0,
       "pumped": false,
       "submerged": false,
-      "outcomeWindowS": 10.0
+      "outcomeWindowS": 26.0
     },
     {
       "ts": 1680.0,
       "endTs": 1687.0,
       "minTs": 1688.0,
-      "type": "bear_away",
-      "counted": false,
+      "type": "jibe",
+      "counted": true,
       "entryKn": 9.429,
       "minKn": 4.107,
       "exitKn": 8.46,
@@ -517,15 +518,15 @@
       "axisAfterDeg": null,
       "arcM": 38.44,
       "radiusM": 21.72,
-      "outcome": "touchdown",
-      "outcomeReason": "off_foil",
-      "aborted": false,
+      "outcome": "fell_in",
+      "outcomeReason": "stop",
+      "aborted": true,
       "borderline": false,
-      "offFoilS": 14.0,
-      "stoppedS": 0.0,
+      "offFoilS": 31.0,
+      "stoppedS": 25.0,
       "pumped": false,
       "submerged": false,
-      "outcomeWindowS": 5.0
+      "outcomeWindowS": 30.0
     },
     {
       "ts": 1915.0,
@@ -619,15 +620,15 @@
       "axisAfterDeg": 50.7,
       "arcM": 47.95,
       "radiusM": 16.7,
-      "outcome": "touchdown",
-      "outcomeReason": "off_foil",
+      "outcome": "fell_in",
+      "outcomeReason": "stop",
       "aborted": false,
       "borderline": false,
-      "offFoilS": 11.0,
-      "stoppedS": 0.0,
+      "offFoilS": 26.0,
+      "stoppedS": 19.0,
       "pumped": false,
       "submerged": false,
-      "outcomeWindowS": 11.0
+      "outcomeWindowS": 30.0
     },
     {
       "ts": 2195.0,
@@ -763,7 +764,7 @@
       "stoppedS": 0.0,
       "pumped": false,
       "submerged": false,
-      "outcomeWindowS": 11.0
+      "outcomeWindowS": 23.0
     },
     {
       "ts": 2386.0,
@@ -895,11 +896,11 @@
       "outcomeReason": "off_foil",
       "aborted": false,
       "borderline": false,
-      "offFoilS": 15.0,
-      "stoppedS": 0.0,
+      "offFoilS": 29.0,
+      "stoppedS": 3.0,
       "pumped": false,
       "submerged": false,
-      "outcomeWindowS": 12.0
+      "outcomeWindowS": 27.0
     },
     {
       "ts": 2738.0,
@@ -929,11 +930,11 @@
       "outcomeReason": "off_foil",
       "aborted": false,
       "borderline": false,
-      "offFoilS": 12.0,
+      "offFoilS": 33.0,
       "stoppedS": 0.0,
       "pumped": false,
       "submerged": false,
-      "outcomeWindowS": 12.0
+      "outcomeWindowS": 28.0
     },
     {
       "ts": 2806.0,
@@ -967,7 +968,7 @@
       "stoppedS": 0.0,
       "pumped": false,
       "submerged": false,
-      "outcomeWindowS": 11.0
+      "outcomeWindowS": 13.0
     },
     {
       "ts": 2830.0,
@@ -1015,7 +1016,7 @@
       "minKn": 0.45,
       "pumped": false,
       "submerged": false,
-      "windowS": 4.0,
+      "windowS": 30.0,
       "truncated": false,
       "ownedByTurn": null
     },
@@ -1029,7 +1030,7 @@
       "minKn": 2.249,
       "pumped": false,
       "submerged": false,
-      "windowS": 11.0,
+      "windowS": 29.0,
       "truncated": false,
       "ownedByTurn": 0
     },
@@ -1043,7 +1044,7 @@
       "minKn": 0.0,
       "pumped": false,
       "submerged": false,
-      "windowS": 12.0,
+      "windowS": 30.0,
       "truncated": false,
       "ownedByTurn": 1
     },
@@ -1057,7 +1058,7 @@
       "minKn": 2.449,
       "pumped": false,
       "submerged": false,
-      "windowS": 9.0,
+      "windowS": 29.0,
       "truncated": false,
       "ownedByTurn": 3
     },
@@ -1071,7 +1072,7 @@
       "minKn": 1.831,
       "pumped": false,
       "submerged": false,
-      "windowS": 12.0,
+      "windowS": 28.0,
       "truncated": false,
       "ownedByTurn": null
     },
@@ -1085,7 +1086,7 @@
       "minKn": 2.158,
       "pumped": false,
       "submerged": false,
-      "windowS": 9.0,
+      "windowS": 21.0,
       "truncated": false,
       "ownedByTurn": 5
     },
@@ -1099,7 +1100,7 @@
       "minKn": 0.0,
       "pumped": false,
       "submerged": false,
-      "windowS": 12.0,
+      "windowS": 30.0,
       "truncated": false,
       "ownedByTurn": null
     },
@@ -1113,7 +1114,7 @@
       "minKn": 1.695,
       "pumped": false,
       "submerged": false,
-      "windowS": 11.0,
+      "windowS": 17.0,
       "truncated": false,
       "ownedByTurn": 6
     },
@@ -1127,7 +1128,7 @@
       "minKn": 1.252,
       "pumped": false,
       "submerged": false,
-      "windowS": 11.0,
+      "windowS": 28.0,
       "truncated": false,
       "ownedByTurn": 7
     },
@@ -1141,7 +1142,7 @@
       "minKn": 0.0,
       "pumped": false,
       "submerged": false,
-      "windowS": 10.0,
+      "windowS": 29.0,
       "truncated": false,
       "ownedByTurn": 8
     },
@@ -1155,7 +1156,7 @@
       "minKn": 1.071,
       "pumped": false,
       "submerged": false,
-      "windowS": 10.0,
+      "windowS": 18.0,
       "truncated": false,
       "ownedByTurn": null
     },
@@ -1169,7 +1170,7 @@
       "minKn": 0.306,
       "pumped": false,
       "submerged": false,
-      "windowS": 9.0,
+      "windowS": 30.0,
       "truncated": false,
       "ownedByTurn": 11
     },
@@ -1183,7 +1184,7 @@
       "minKn": 1.232,
       "pumped": false,
       "submerged": false,
-      "windowS": 10.0,
+      "windowS": 26.0,
       "truncated": false,
       "ownedByTurn": null
     },
@@ -1197,7 +1198,7 @@
       "minKn": 1.0,
       "pumped": false,
       "submerged": false,
-      "windowS": 11.0,
+      "windowS": 28.0,
       "truncated": false,
       "ownedByTurn": 19
     },
@@ -1211,7 +1212,7 @@
       "minKn": 1.541,
       "pumped": false,
       "submerged": false,
-      "windowS": 12.0,
+      "windowS": 27.0,
       "truncated": false,
       "ownedByTurn": 20
     },
@@ -1225,7 +1226,7 @@
       "minKn": 0.0,
       "pumped": false,
       "submerged": false,
-      "windowS": 12.0,
+      "windowS": 30.0,
       "truncated": false,
       "ownedByTurn": null
     },
@@ -2041,14 +2042,14 @@
     "durationS": 3508.0,
     "timerTimeS": 3456.0,
     "avgSpeedKmh": 11.11,
-    "turnsPerHour": 13.5,
-    "jibesPerHour": 13.5,
+    "turnsPerHour": 12.5,
+    "jibesPerHour": 12.5,
     "cleanJibesPerHour": 2.1,
     "wetPerHour": 7.3,
     "windowRates": {
       "windowMin": 15.0,
-      "bestJph": 24.0,
-      "bestJphStartTs": 1915.0,
+      "bestJph": 20.0,
+      "bestJphStartTs": 261.0,
       "bestWph": 12.0,
       "bestWphStartTs": 1692.0,
       "series": [
@@ -2154,77 +2155,77 @@
         },
         {
           "ts": 1200.0,
-          "jph": 16.0,
+          "jph": 12.0,
           "wph": 8.0
         },
         {
           "ts": 1260.0,
-          "jph": 16.0,
+          "jph": 12.0,
           "wph": 8.0
         },
         {
           "ts": 1320.0,
-          "jph": 16.0,
+          "jph": 12.0,
           "wph": 8.0
         },
         {
           "ts": 1380.0,
-          "jph": 12.0,
+          "jph": 8.0,
           "wph": 8.0
         },
         {
           "ts": 1440.0,
-          "jph": 16.0,
+          "jph": 12.0,
           "wph": 8.0
         },
         {
           "ts": 1500.0,
-          "jph": 16.0,
+          "jph": 12.0,
           "wph": 8.0
         },
         {
           "ts": 1560.0,
-          "jph": 12.0,
+          "jph": 8.0,
           "wph": 12.0
         },
         {
           "ts": 1620.0,
-          "jph": 12.0,
+          "jph": 8.0,
           "wph": 12.0
         },
         {
           "ts": 1680.0,
-          "jph": 12.0,
+          "jph": 8.0,
           "wph": 12.0
         },
         {
           "ts": 1740.0,
-          "jph": 12.0,
+          "jph": 8.0,
           "wph": 8.0
         },
         {
           "ts": 1800.0,
-          "jph": 20.0,
+          "jph": 16.0,
           "wph": 8.0
         },
         {
           "ts": 1860.0,
-          "jph": 20.0,
+          "jph": 16.0,
           "wph": 8.0
         },
         {
           "ts": 1920.0,
-          "jph": 20.0,
+          "jph": 16.0,
           "wph": 8.0
         },
         {
           "ts": 1980.0,
-          "jph": 20.0,
+          "jph": 16.0,
           "wph": 12.0
         },
         {
           "ts": 2040.0,
-          "jph": 20.0,
+          "jph": 16.0,
           "wph": 12.0
         },
         {
@@ -2277,23 +2278,23 @@
     "turns": {
       "tacks": 0,
       "tacksSuccessful": 0,
-      "jibes": 13,
+      "jibes": 15,
       "jibesSuccessful": 2,
       "unclassified": 0,
-      "turnsCounted": 13,
+      "turnsCounted": 15,
       "turnsSuccessful": 4,
-      "successPct": 30.77,
-      "rejected": 10,
-      "port": 6,
-      "starboard": 7,
+      "successPct": 26.67,
+      "rejected": 8,
+      "port": 7,
+      "starboard": 8,
       "unknownSide": 0,
       "longestDryStreak": 4,
       "longestFlewStreak": 1,
       "outcomes": {
         "flewThrough": 4,
-        "touchdown": 9,
-        "fellIn": 0,
-        "borderline": 0
+        "touchdown": 8,
+        "fellIn": 3,
+        "borderline": 2
       },
       "tackOutcomes": {
         "flewThrough": 0,
@@ -2303,9 +2304,9 @@
       },
       "jibeOutcomes": {
         "flewThrough": 4,
-        "touchdown": 9,
-        "fellIn": 0,
-        "borderline": 0
+        "touchdown": 8,
+        "fellIn": 3,
+        "borderline": 2
       }
     },
     "flightEnds": {
@@ -2332,9 +2333,9 @@
       }
     },
     "outcomeSplit": {
-      "turnFalls": 0,
+      "turnFalls": 3,
       "straightFalls": 4,
-      "turnTouchdowns": 9,
+      "turnTouchdowns": 8,
       "straightTouchdowns": 2,
       "glideOuts": 0,
       "unknownEnds": 1

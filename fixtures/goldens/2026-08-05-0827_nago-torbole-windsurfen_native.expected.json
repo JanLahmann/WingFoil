@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.23.0",
+  "engineVersion": "0.24.0",
   "config": {
     "foilEntrySpeed": 12.0,
     "entryHold": 2.0,
@@ -43,6 +43,7 @@
     "turnTouchdownMaxStop": 3.0,
     "turnFallStop": 5.0,
     "turnOutcomeLookahead": 12.0,
+    "turnOutcomeLookaheadNotRecovered": 30.0,
     "turnRecoverPct": 70.0,
     "turnRecoverHold": 2.0,
     "turnOutcomeWindow": 12.0,
@@ -210,15 +211,15 @@
       "axisAfterDeg": 52.72,
       "arcM": 44.22,
       "radiusM": 19.89,
-      "outcome": "touchdown",
+      "outcome": "fell_in",
       "outcomeReason": "stop",
       "aborted": false,
-      "borderline": true,
-      "offFoilS": 8.0,
-      "stoppedS": 5.0,
+      "borderline": false,
+      "offFoilS": 26.0,
+      "stoppedS": 23.0,
       "pumped": false,
       "submerged": false,
-      "outcomeWindowS": 11.0
+      "outcomeWindowS": 29.0
     },
     {
       "ts": 272.0,
@@ -278,15 +279,15 @@
       "axisAfterDeg": 56.98,
       "arcM": 42.89,
       "radiusM": 20.96,
-      "outcome": "touchdown",
-      "outcomeReason": "off_foil",
+      "outcome": "fell_in",
+      "outcomeReason": "stop",
       "aborted": false,
       "borderline": false,
-      "offFoilS": 8.0,
-      "stoppedS": 0.0,
+      "offFoilS": 24.0,
+      "stoppedS": 10.0,
       "pumped": false,
       "submerged": false,
-      "outcomeWindowS": 10.0
+      "outcomeWindowS": 25.0
     },
     {
       "ts": 522.0,
@@ -380,15 +381,15 @@
       "axisAfterDeg": 75.97,
       "arcM": 44.37,
       "radiusM": 18.71,
-      "outcome": "touchdown",
-      "outcomeReason": "off_foil",
+      "outcome": "fell_in",
+      "outcomeReason": "stop",
       "aborted": false,
       "borderline": false,
-      "offFoilS": 9.0,
-      "stoppedS": 1.0,
+      "offFoilS": 22.0,
+      "stoppedS": 18.0,
       "pumped": false,
       "submerged": false,
-      "outcomeWindowS": 12.0
+      "outcomeWindowS": 29.0
     },
     {
       "ts": 885.0,
@@ -414,15 +415,15 @@
       "axisAfterDeg": 42.71,
       "arcM": 42.36,
       "radiusM": 20.52,
-      "outcome": "touchdown",
-      "outcomeReason": "off_foil",
+      "outcome": "fell_in",
+      "outcomeReason": "stop",
       "aborted": false,
       "borderline": false,
-      "offFoilS": 11.0,
-      "stoppedS": 0.0,
+      "offFoilS": 30.0,
+      "stoppedS": 23.0,
       "pumped": false,
       "submerged": false,
-      "outcomeWindowS": 7.0
+      "outcomeWindowS": 30.0
     },
     {
       "ts": 983.0,
@@ -452,11 +453,11 @@
       "outcomeReason": "stop",
       "aborted": false,
       "borderline": false,
-      "offFoilS": 9.0,
-      "stoppedS": 6.0,
+      "offFoilS": 31.0,
+      "stoppedS": 25.0,
       "pumped": false,
       "submerged": false,
-      "outcomeWindowS": 11.0
+      "outcomeWindowS": 30.0
     },
     {
       "ts": 1143.0,
@@ -826,11 +827,11 @@
       "outcomeReason": "off_foil",
       "aborted": false,
       "borderline": false,
-      "offFoilS": 11.0,
+      "offFoilS": 17.0,
       "stoppedS": 0.0,
       "pumped": false,
       "submerged": false,
-      "outcomeWindowS": 10.0
+      "outcomeWindowS": 26.0
     },
     {
       "ts": 1947.0,
@@ -894,11 +895,11 @@
       "outcomeReason": "stop",
       "aborted": false,
       "borderline": false,
-      "offFoilS": 9.0,
-      "stoppedS": 7.0,
+      "offFoilS": 27.0,
+      "stoppedS": 24.0,
       "pumped": false,
       "submerged": false,
-      "outcomeWindowS": 12.0
+      "outcomeWindowS": 29.0
     },
     {
       "ts": 2339.0,
@@ -962,11 +963,11 @@
       "outcomeReason": "stop",
       "aborted": true,
       "borderline": false,
-      "offFoilS": 14.0,
-      "stoppedS": 6.0,
+      "offFoilS": 30.0,
+      "stoppedS": 15.0,
       "pumped": false,
       "submerged": false,
-      "outcomeWindowS": 11.0
+      "outcomeWindowS": 26.0
     }
   ],
   "flightEnds": [
@@ -980,7 +981,7 @@
       "minKn": 0.0,
       "pumped": false,
       "submerged": false,
-      "windowS": 9.0,
+      "windowS": 29.0,
       "truncated": false,
       "ownedByTurn": 0
     },
@@ -994,7 +995,7 @@
       "minKn": 0.173,
       "pumped": false,
       "submerged": false,
-      "windowS": 11.0,
+      "windowS": 26.0,
       "truncated": false,
       "ownedByTurn": null
     },
@@ -1008,9 +1009,9 @@
       "minKn": 0.287,
       "pumped": false,
       "submerged": false,
-      "windowS": 10.0,
+      "windowS": 26.0,
       "truncated": false,
-      "ownedByTurn": null
+      "ownedByTurn": 2
     },
     {
       "flightIndex": 3,
@@ -1022,7 +1023,7 @@
       "minKn": 0.0,
       "pumped": false,
       "submerged": false,
-      "windowS": 9.0,
+      "windowS": 30.0,
       "truncated": false,
       "ownedByTurn": 5
     },
@@ -1036,7 +1037,7 @@
       "minKn": 1.559,
       "pumped": false,
       "submerged": false,
-      "windowS": 11.0,
+      "windowS": 30.0,
       "truncated": false,
       "ownedByTurn": 6
     },
@@ -1050,7 +1051,7 @@
       "minKn": 0.0,
       "pumped": false,
       "submerged": false,
-      "windowS": 11.0,
+      "windowS": 26.0,
       "truncated": false,
       "ownedByTurn": 7
     },
@@ -1092,7 +1093,7 @@
       "minKn": 1.905,
       "pumped": false,
       "submerged": false,
-      "windowS": 11.0,
+      "windowS": 19.0,
       "truncated": false,
       "ownedByTurn": 18
     },
@@ -1120,7 +1121,7 @@
       "minKn": 0.0,
       "pumped": false,
       "submerged": false,
-      "windowS": 10.0,
+      "windowS": 30.0,
       "truncated": false,
       "ownedByTurn": 20
     },
@@ -1134,7 +1135,7 @@
       "minKn": 0.0,
       "pumped": false,
       "submerged": false,
-      "windowS": 11.0,
+      "windowS": 29.0,
       "truncated": false,
       "ownedByTurn": 22
     }
@@ -1827,90 +1828,90 @@
     "durationS": 2524.0,
     "timerTimeS": 2451.0,
     "avgSpeedKmh": 12.2,
-    "turnsPerHour": 29.4,
-    "jibesPerHour": 29.4,
+    "turnsPerHour": 23.5,
+    "jibesPerHour": 23.5,
     "cleanJibesPerHour": 5.9,
     "wetPerHour": 14.7,
     "windowRates": {
       "windowMin": 15.0,
       "bestJph": 48.0,
-      "bestJphStartTs": 522.0,
+      "bestJphStartTs": 1143.0,
       "bestWph": 24.0,
       "bestWphStartTs": 218.0,
       "series": [
         {
           "ts": 0.0,
-          "jph": 28.0,
+          "jph": 12.0,
           "wph": 20.0
         },
         {
           "ts": 60.0,
-          "jph": 28.0,
+          "jph": 12.0,
           "wph": 20.0
         },
         {
           "ts": 120.0,
-          "jph": 28.0,
+          "jph": 12.0,
           "wph": 24.0
         },
         {
           "ts": 180.0,
-          "jph": 28.0,
+          "jph": 12.0,
           "wph": 24.0
         },
         {
           "ts": 240.0,
-          "jph": 24.0,
+          "jph": 12.0,
           "wph": 20.0
         },
         {
           "ts": 300.0,
-          "jph": 24.0,
+          "jph": 12.0,
           "wph": 16.0
         },
         {
           "ts": 360.0,
-          "jph": 32.0,
+          "jph": 20.0,
           "wph": 16.0
         },
         {
           "ts": 420.0,
-          "jph": 36.0,
+          "jph": 28.0,
           "wph": 12.0
         },
         {
           "ts": 480.0,
-          "jph": 44.0,
+          "jph": 36.0,
           "wph": 12.0
         },
         {
           "ts": 540.0,
-          "jph": 44.0,
+          "jph": 36.0,
           "wph": 16.0
         },
         {
           "ts": 600.0,
-          "jph": 44.0,
+          "jph": 36.0,
           "wph": 16.0
         },
         {
           "ts": 660.0,
-          "jph": 48.0,
+          "jph": 40.0,
           "wph": 16.0
         },
         {
           "ts": 720.0,
-          "jph": 44.0,
+          "jph": 36.0,
           "wph": 16.0
         },
         {
           "ts": 780.0,
-          "jph": 48.0,
+          "jph": 40.0,
           "wph": 20.0
         },
         {
           "ts": 840.0,
-          "jph": 44.0,
+          "jph": 40.0,
           "wph": 16.0
         },
         {
@@ -1997,9 +1998,9 @@
       "longestFlewStreak": 8,
       "outcomes": {
         "flewThrough": 14,
-        "touchdown": 6,
-        "fellIn": 3,
-        "borderline": 1
+        "touchdown": 2,
+        "fellIn": 7,
+        "borderline": 0
       },
       "tackOutcomes": {
         "flewThrough": 0,
@@ -2009,9 +2010,9 @@
       },
       "jibeOutcomes": {
         "flewThrough": 14,
-        "touchdown": 6,
-        "fellIn": 3,
-        "borderline": 1
+        "touchdown": 2,
+        "fellIn": 7,
+        "borderline": 0
       }
     },
     "flightEnds": {
@@ -2025,22 +2026,22 @@
       "straight": {
         "glideOut": 0,
         "touchdown": 0,
-        "fellIn": 3,
+        "fellIn": 2,
         "unknown": 0,
         "borderline": 0
       },
       "inTurn": {
         "glideOut": 0,
         "touchdown": 1,
-        "fellIn": 7,
+        "fellIn": 8,
         "unknown": 1,
         "borderline": 0
       }
     },
     "outcomeSplit": {
-      "turnFalls": 3,
-      "straightFalls": 3,
-      "turnTouchdowns": 6,
+      "turnFalls": 7,
+      "straightFalls": 2,
+      "turnTouchdowns": 2,
       "straightTouchdowns": 0,
       "glideOuts": 0,
       "unknownEnds": 1

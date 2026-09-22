@@ -167,7 +167,8 @@ public struct TuningOverrides: Sendable, Equatable {
     /// - `entrySpeedWindow` is read identically by the turn scorer and the flight-end
     ///   classifier ("the speed it was going at before").
     /// - The stop ladder (`turnStopSpeedFloor`, `turnTouchdownMaxStop`, `turnFallStop`,
-    ///   `turnOutcomeLookahead`, `turnRecoverPct`, `turnRecoverHold`) is one physical question
+    ///   `turnOutcomeLookahead`, `turnOutcomeLookaheadNotRecovered`, `turnRecoverPct`,
+    ///   `turnRecoverHold`) is one physical question
     ///   — did the rider stop, and for how long — and `FlightEndConfig` says in its own doc
     ///   comment that it carries the same numbers on purpose. So they move as a pair.
     ///
@@ -216,6 +217,15 @@ public struct TuningOverrides: Sendable, Equatable {
             // (docs/algorithms.md); one slider keeps them equal. An explicit
             // `turnOutcomeWindow` (stored by an older dev build) still wins below.
             out.turn.outcomeWindowS = v
+        }
+        // The not-recovered tail is the same tail seen further (engine 0.24.0, ADR-032), and
+        // it is its own row: the two caps are what the rule is *made of*, so tying them
+        // would leave nothing to compare. A lookahead pushed past it costs nothing —
+        // `Evidence.outcomeTail` takes the longer of the two and then finds no rider still
+        // un-recovered beyond it, which is the rule switched off, exactly as at equality.
+        if let v = self[.turnOutcomeLookaheadNotRecovered] {
+            out.turn.outcomeLookaheadNotRecoveredS = v
+            out.flightEnd.outcomeLookaheadNotRecoveredS = v
         }
         if let v = self[.turnRecoverPct] {
             out.turn.recoverPct = v
@@ -539,6 +549,7 @@ public enum TuningParameter: String, CaseIterable, Sendable, Codable {
     case turnTouchdownMaxStop
     case turnFallStop
     case turnOutcomeLookahead
+    case turnOutcomeLookaheadNotRecovered
     case turnRecoverPct
     case turnRecoverHold
     case turnOutcomeWindow
@@ -723,6 +734,11 @@ public struct TuningParameterSpec: Sendable, Equatable {
               range: 5...30, step: 1,
               title: "How long the verdict looks after the sweep",
               note: "the outcome is judged over this tail unless you are flying again sooner; the flight-end verdict uses the same tail"),
+        .init(parameter: .turnOutcomeLookaheadNotRecovered, group: .outcomes, unit: "s",
+              defaultValue: 30, range: 5...60, step: 1,
+              title: "…and how long if you never got going again",
+              note: "the same tail, followed this far while you are still not flying again; "
+                  + "set it to the lookahead to switch the rule off"),
         .init(parameter: .turnRecoverPct, group: .outcomes, unit: "%", defaultValue: 70,
               range: 40...95, step: 5,
               title: "Flying again at",

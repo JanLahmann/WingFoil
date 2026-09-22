@@ -68,16 +68,23 @@ import Testing
     }
 
     /// The instrumented window mirror must land on the **same sample** as the engine's, or the
-    /// reason it prints belongs to a different instant. Checked on every counted turn.
+    /// reason it prints belongs to a different instant. Checked on every counted turn — and
+    /// since engine 0.24.0 the *not-recovered* flag with it, because that is what decides how
+    /// far the off-foil run below is followed (ADR-032).
     @Test func windowEndMirrorsTheEngine() throws {
         let (analysis, track) = try Self.session()
         let context = TurnWorkbench.context(analysis: analysis, track: track)
         let ev = try #require(context.evidence)
+        var notRecovered = 0
         for record in analysis.turns where record.counted {
             let turn = TurnWorkbench.turn(from: record)
             let mine = TurnTraceBuilder.windowEnd(turn, ev: ev, config: context.turn)
-            #expect(mine.index == TurnDetector.windowEnd(turn, ev: ev, config: context.turn))
+            let theirs = TurnDetector.windowEnd(turn, ev: ev, config: context.turn)
+            #expect(mine.index == theirs.0)
+            #expect(mine.notRecovered == theirs.1)
+            notRecovered += theirs.1 ? 1 : 0
         }
+        #expect(notRecovered > 0)                 // the fixture exercises the longer tail
     }
 
     /// The quiet tail mirror must reach the engine's own verdict on every jibe the engine

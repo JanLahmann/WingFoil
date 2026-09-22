@@ -80,7 +80,7 @@ def smoke_golden():
 def test_schema_shape(smoke_golden):
     g = smoke_golden
     assert list(g.keys()) == TOP_KEYS
-    assert g["engineVersion"] == "0.23.0"
+    assert g["engineVersion"] == "0.24.0"
     assert set(g["capabilities"].keys()) == CAP_KEYS
     assert set(g["records"].keys()) == RECORD_KEYS
     assert set(g["summary"].keys()) == SUMMARY_KEYS
@@ -239,24 +239,27 @@ def test_wet_per_hour_counts_straight_falls_as_well_as_turn_falls():
 def test_jibes_per_hour_counts_only_the_jibes_he_sailed_out_of():
     """The 0.7.0 numerator: dry jibes, not every jibe the detector named.
 
-    2026-08-29 is the session that shows the size of it -- 56 jibes, 6 of them swum, so the
-    headline reads 26.7 an hour and not 29.9. A rider cannot raise this number by falling
+    2026-08-29 is the session that shows the size of it -- 56 jibes, 10 of them swum, so the
+    headline reads 24.5 an hour and not 29.9. A rider cannot raise this number by falling
     more often, which is the whole point of the change.
 
     It shows it twice over since engine 0.21.0: the aborted turn added one jibe *and* one
     swum jibe to this session (55/5 before it), and the rate did not move by a hundredth --
-    which is the guarantee that pass was built to keep.
+    which is the guarantee that pass was built to keep. Engine 0.24.0 moved four more of its
+    jibes from `touchdown` to `fell_in` (6 -> 10): the rider never got going again and coasted
+    to a standstill past the old 12 s cap, so the fall each of them ended in is now the
+    jibe's own and JPH reads 24.5 (ADR-032).
     """
     a = analyze(CIQ_LONG)
     g = build_golden(a)
     s = g["summary"]
     jibes, fell = s["turns"]["jibes"], s["turns"]["jibeOutcomes"]["fellIn"]
-    assert (jibes, fell) == (56, 6)
+    assert (jibes, fell) == (56, 10)
 
     # The per-turn list and the tally agree on what "dry" means -- flew-through and
     # touchdown alike, because pumping back up out of a touchdown is a jibe he made.
     dry = dry_jibe_times(a.turns)
-    assert len(dry) == jibes - fell == 50
+    assert len(dry) == jibes - fell == 46
     assert dry == sorted(dry)
     outcomes = s["turns"]["jibeOutcomes"]
     assert len(dry) == outcomes["flewThrough"] + outcomes["touchdown"]
@@ -265,18 +268,18 @@ def test_jibes_per_hour_counts_only_the_jibes_he_sailed_out_of():
     # not an hour on the water, and dividing by them deflated every rate on the page.
     hours = s["timerTimeS"] / 3600.0
     assert s["timerTimeS"] < s["durationS"]
-    assert s["jibesPerHour"] == pytest.approx(len(dry) / hours, abs=0.05) == 26.7
+    assert s["jibesPerHour"] == pytest.approx(len(dry) / hours, abs=0.05) == 24.5
     # `turnsPerHour` asks the same "dry" question over *every* counted turn (0.13.0).
     turn_out = s["turns"]["outcomes"]
     dry_turns = s["turns"]["turnsCounted"] - turn_out["fellIn"]
     assert s["turnsPerHour"] == pytest.approx(dry_turns / hours, abs=0.05)
     assert s["jibesPerHour"] < jibes / hours
 
-    # And CPH is the stricter reading of the same 55 jibes: 25 he rode all the way through
+    # And CPH is the stricter reading of the same 56 jibes: 25 he rode all the way through
     # *and* had ten quiet seconds after (24 until engine 0.18.0 retired the pump rung; 26
-    # before the quiet tail), 13.3 an hour against the dry 26.7. Never above JPH -- since
+    # before the quiet tail), 13.3 an hour against the dry 24.5. Never above JPH -- since
     # engine 0.12.0 a clean jibe is a `flew_through` one by *definition* and not merely in
-    # practice, so the nesting is structural: every clean jibe is one of the 50 dry ones.
+    # practice, so the nesting is structural: every clean jibe is one of the 46 dry ones.
     clean = s["turns"]["jibesSuccessful"]
     assert clean == 25
     assert s["cleanJibesPerHour"] == pytest.approx(clean / hours, abs=0.05) == 13.3
@@ -402,8 +405,13 @@ def test_pump_episodes_are_serialized_whole():
 
     This is the block that lets a consumer *place* a failed attempt, so the contract is
     both directions of it -- the counts reconcile with the tallies beside them, and every
-    episode carries the instants a lookup needs. The 14 failed attempts of this session
-    were the point: they were counted from 0.2.0 onward and locatable from 0.3.0.
+    episode carries the instants a lookup needs. The failed attempts of this session were
+    the point: they were counted from 0.2.0 onward and locatable from 0.3.0.
+
+    Engine 0.24.0 moved four of them (14 -> 11, and the lone `unknown` with them): a turn
+    whose rider never recovered is now on the hook for 30 s rather than 12, and
+    `_turn_owner` reads that same window -- so a burst inside it is the rider pumping his
+    way out of the maneuver, which is `recovery` and not a takeoff he failed (ADR-032).
     """
     a = analyze(CIQ)
     g = build_golden(a)
@@ -412,7 +420,7 @@ def test_pump_episodes_are_serialized_whole():
     assert len(eps) == len(a.takeoffs.episodes)     # every episode, not just the failed ones
     assert all(set(e.keys()) == EPISODE_KEYS for e in eps)
     counts = Counter(e["outcome"] for e in eps)
-    assert counts["failed"] == tk["failedAttempts"] == 14
+    assert counts["failed"] == tk["failedAttempts"] == 11
     assert counts["success"] == tk["takeoffSuccesses"] == len(g["flights"]) == 23
     assert counts["in_flight"] == tk["inFlightEpisodes"]
     assert counts["unknown"] == tk["unknownAttempts"]
