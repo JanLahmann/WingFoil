@@ -35,6 +35,12 @@ struct DirectTransferReceipt: Codable, Sendable, Equatable {
     var seconds: Double
     /// True for a stream that was assembled after a day of silence rather than completed.
     var cutShort: Bool
+    /// Which stream: 0 the recording, 1 the wrist magnitudes. **Optional** because a receipt
+    /// written before 0.9.18-dev1 has no such key, and a non-optional would make every one
+    /// of those fail to decode and the Settings row go blank for a version.
+    var stream: Int?
+
+    var isWrist: Bool { stream == Int(DirectWrist.wristStream) }
 }
 
 /// **The receiving half of the direct transfer** (docs/transfer-format.md §3 and §5).
@@ -116,7 +122,9 @@ final class DirectTransferInbox {
             // radio is the slow part.
             acknowledge?(page.sessionStartEpochS, page.stream, page.index)
             let stamp = Date().formatted(date: .omitted, time: .standard)
-            onPage?("page \(page.index + 1)" + (page.pageCount > 0 ? " of \(page.pageCount)" : "")
+            let which = page.stream == Int(DirectWrist.wristStream) ? "wrist " : ""
+            onPage?("\(which)page \(page.index + 1)"
+                    + (page.pageCount > 0 ? " of \(page.pageCount)" : "")
                     + (already ? " again" : "") + " · \(page.bytes.count) B · \(stamp)")
             guard !already else { return }
 
@@ -172,10 +180,9 @@ final class DirectTransferInbox {
     /// (docs/transfer-format.md §1).
     private func assemble(session: Int, stream: Int, directory: URL, pages: [Int],
                           cutShort: Bool) throws {
-        guard stream == DirectStream.recordStream else {
-            // Stream 1 is dev3's wrist magnitudes and has no parser yet. Its pages are left
-            // where they are rather than concatenated into a file nothing can read.
-            log.info("direct stream \(stream) is not the record stream — left in the inbox")
+        guard stream == DirectStream.recordStream
+                || stream == Int(DirectWrist.wristStream) else {
+            log.info("direct stream \(stream) is one this build does not read — left in the inbox")
             return
         }
         var archive = Data()
@@ -187,7 +194,13 @@ final class DirectTransferInbox {
         guard !archive.isEmpty else { return }
 
         let inbox = try garminInboxURL()
-        let destination = inbox.appendingPathComponent("\(session).\(TrackFormat.direct.fileExtension)")
+        // The wrist stream is not a recording and never becomes a session of its own: it is
+        // a second channel of the one that crossed before it (docs/transfer-format.md §6).
+        // So it lands under its own extension, the sweep's `pending()` does not pick it up,
+        // and `SessionStore` attaches it to the row that is already there.
+        let destination = stream == DirectStream.recordStream
+            ? inbox.appendingPathComponent("\(session).\(TrackFormat.direct.fileExtension)")
+            : inbox.appendingPathComponent("\(session).\(Self.wristExtension)")
         try archive.write(to: destination, options: .atomic)
         // The pages go only after the file they became is on disk. This stream's directory
         // and not the session's: dev3's wrist stream is a sibling of it and is not this
@@ -204,7 +217,8 @@ final class DirectTransferInbox {
             sessionStart: Date(timeIntervalSince1970: Double(session)),
             pages: pages.count,
             seconds: Date().timeIntervalSince(startedAt[session] ?? Date()),
-            cutShort: cutShort)
+            cutShort: cutShort,
+            stream: stream)
         lastReceipt = receipt
         Self.save(receipt)
         startedAt[session] = nil
@@ -234,6 +248,25 @@ final class DirectTransferInbox {
         return files
             .filter { $0.pathExtension == TrackFormat.direct.fileExtension }
             .sorted { $0.lastPathComponent < $1.lastPathComponent }
+    }
+
+    /// The extension an assembled **wrist** stream waits under. Not `.cjr`, so `pending()`
+    /// can never hand one to the importer as if it were a recording.
+    static let wristExtension = "cjrw"
+
+    /// Wrist streams waiting to be attached, as `(session start, file)` pairs. Read at
+    /// launch beside `pending()`: the record stream may have been imported in one run of
+    /// the app and its wrist stream arrived in the next.
+    static func pendingWrist() -> [(session: Int, url: URL)] {
+        guard let inbox = try? garminInboxURL(),
+              let files = try? FileManager.default.contentsOfDirectory(
+                at: inbox, includingPropertiesForKeys: nil) else { return [] }
+        return files
+            .filter { $0.pathExtension == wristExtension }
+            .compactMap { url in
+                Int(url.deletingPathExtension().lastPathComponent).map { (session: $0, url: url) }
+            }
+            .sorted { $0.session < $1.session }
     }
 
     /// **A stream that never completed.** After a day without a page it is assembled as far

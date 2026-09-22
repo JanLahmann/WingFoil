@@ -2724,6 +2724,41 @@ final class SessionStore {
                 try? FileManager.default.removeItem(at: url)
             }
         }
+        await attachPendingWristStreams()
+    }
+
+    /// **The wrist stream, landing after its session.**
+    ///
+    /// Stream 1 is not a recording and never becomes a row of its own: it is the 25 Hz
+    /// magnitudes of the session that crossed before it (docs/transfer-format.md §6,
+    /// ADR-031). So it is matched to the row by the same ±60 s start-epoch key the rest of
+    /// the direct transfer uses (ADR-013) and handed to `attachWristStream`, which files it
+    /// beside the archived original and re-derives — the pump, takeoff, turn-pump and
+    /// HR-cost answers that read nil without an accelerometer stop reading nil.
+    ///
+    /// A stream whose session is not here is **left in the inbox**, not refused: the pages
+    /// may simply have outrun the record stream's import, and the next launch tries again.
+    private func attachPendingWristStreams() async {
+        let waiting = DirectTransferInbox.pendingWrist()
+        guard !waiting.isEmpty else { return }
+        for (session, url) in waiting {
+            guard let data = try? Data(contentsOf: url) else { continue }
+            let start = Date(timeIntervalSince1970: Double(session))
+            guard let row = try? await ingestor.session(nearStart: start) else { continue }
+            do {
+                if try await ingestor.attachWristStream(data, to: row) != nil {
+                    try? FileManager.default.removeItem(at: url)
+                    await load()
+                } else {
+                    // The row is there and the stream does not belong to it — a FIT took the
+                    // afternoon over, or the bytes will not decode. Either way it is never
+                    // going to attach, so it goes to `refused/` rather than round again.
+                    DirectTransferInbox.setAside(url)
+                }
+            } catch {
+                errorMessage = "Could not attach the wrist stream your watch sent: \(error)"
+            }
+        }
     }
 
     func refreshCompanionState() {
