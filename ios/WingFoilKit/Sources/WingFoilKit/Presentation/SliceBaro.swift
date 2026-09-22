@@ -103,7 +103,7 @@ public struct SliceBaro: Sendable, Equatable {
 ///
 /// Since engine 0.22.0 that is not one number for the afternoon: the wrist-under test reads
 /// a **local baseline** that walks with the altimeter and holds under a spike
-/// (`Evidence.submergedTrace`, docs/algorithms.md "Turn outcome" step 2). So the strip asks
+/// (`Evidence.submergedTrace`, docs/algorithms/pumping.md "Turn outcome" step 2). So the strip asks
 /// for the line in force at the moment it is drawing rather than for a median of the day —
 /// which is what keeps the −`dropM` rule on the picture where the mask actually crossed it,
 /// on a watch whose reference stepped 190 m between stretches as readily as on one whose

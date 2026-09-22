@@ -17,7 +17,7 @@ struct SettingsView: View {
                 // does", "Help" (then called "What the numbers mean") and "Send feedback"
                 // — with two paragraphs of footer under them — and every one of the three
                 // is a row of the library
-                // menu one tap away (docs/presentation.md, "The library menu"). Two homes
+                // menu one tap away (docs/presentation/copy-menu-settings.md, "The library menu"). Two homes
                 // for the same door is two places to keep in step and one more screen for a
                 // rider to search; the menu is the one that greets him, so the menu keeps
                 // them. Nothing was lost: the menu's rows open the same screens, and
@@ -320,7 +320,7 @@ struct SettingsView: View {
     // "Manage spots…" row inside the spot filter menu itself, so the chip that filters by
     // spot is the chip that manages them.
 
-    /// The one engine parameter the rider owns (docs/algorithms.md "Default turn type").
+    /// The one engine parameter the rider owns (docs/algorithms/wind.md "Default turn type").
     ///
     /// The wind axis is a line, so which end of it the wind blows from is a coin flip until
     /// something breaks the tie. The no-go zone usually does; where it cannot, "I mostly
@@ -330,7 +330,7 @@ struct SettingsView: View {
         Section {
             // **"I mostly ride"** — the preset every imported session gets when its recording
             // does not say, which is every source but the CleanJibe watch app: wingfoil is not
-            // a sport in Garmin, Strava, intervals.icu or Apple Health (docs/presentation.md,
+            // a sport in Garmin, Strava, intervals.icu or Apple Health (docs/presentation/labels.md,
             // "Confirming the discipline on import"). Above the turn habit because it is the
             // more basic of the two questions — which rig, then which turn.
             //
@@ -418,7 +418,7 @@ struct SettingsView: View {
     ///
     /// The engine stays in m/s and knots from end to end — the record windows are defined
     /// in knots and a golden may not move because a rider changed a picker
-    /// (docs/algorithms.md, "Speed records"). This converts on the way to the screen only,
+    /// (docs/algorithms/records.md, "Speed records"). This converts on the way to the screen only,
     /// through the platform's one formatter (`Speed`), which is why the share card and the
     /// records follow it without a line of their own.
     ///

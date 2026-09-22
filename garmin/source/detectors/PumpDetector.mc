@@ -4,7 +4,7 @@ import Toybox.System;
 import WingFoilCore;
 
 // Live pump-stroke and takeoff-attempt detection from the wrist accelerometer.
-// Watch twin of lab/src/wingfoil_lab/pump.py + takeoff.py (docs/algorithms.md "Pumping
+// Watch twin of lab/src/wingfoil_lab/pump.py + takeoff.py (docs/algorithms/pumping.md "Pumping
 // (accelerometer)" and "Pump / takeoff detection" -> "Watch approximation"). Every threshold
 // below is the tuned lab default; nothing is re-tuned here.
 //
@@ -23,7 +23,7 @@ import WingFoilCore;
 // garmin/field/ -- must never reference one.
 //
 // It is a LIVE approximation of the lab, which sees the whole session at once. The
-// deviations are listed in docs/algorithms.md "Watch approximation"; the load-bearing ones:
+// deviations are listed in docs/algorithms/watch-pump.md "Watch approximation"; the load-bearing ones:
 //   * the filter is causal, so a stroke is reported ~GROUP_DELAY_MS after it happened. Stroke
 //     TIMES are corrected for that delay, so windows measured against GPS events are right;
 //     only the vibe is late.
@@ -38,7 +38,7 @@ class PumpDetector {
         EVENT_TAKEOFF = 1       // a pumped attempt just produced a confirmed flight
     }
 
-    // ---- docs/algorithms.md "Pumping (accelerometer)" (lab-tuned, not user-settable) ----
+    // ---- docs/algorithms/pumping.md "Pumping (accelerometer)" (lab-tuned, not user-settable) ----
     const GRID_HZ = 25;                 // pumpResampleHz
     const STEP_MS = 40;                 // 1000 / GRID_HZ
     const N_TAPS = 51;                  // pumpFilterSpan 2 s x 25 Hz, forced odd
@@ -49,7 +49,7 @@ class PumpDetector {
     const REFRACTORY_MS = 400;          // pumpRefractory
     const BURST_GAP_MS = 1500;          // pumpStrokeMaxInterval
     const MIN_STROKES = 4;              // pumpMinStrokes
-    // The session total's two extra gates (engine 0.8.0, docs/algorithms.md "The session
+    // The session total's two extra gates (engine 0.8.0, docs/algorithms/pumping.md "The session
     // total"). No unit conversion is involved: _y1 is the output of the SAME 51-tap
     // Hamming sinc band-pass the lab uses, over |a| already normalised to g by _scale, so
     // the watch's band-passed peak IS the lab's `PumpTrack.band` value and pumpBurstPeakG
@@ -57,14 +57,14 @@ class PumpDetector {
     // taps are identical, so there is no gain difference to correct for either.)
     const BURST_PEAK_G = 0.8;           // pumpBurstPeakG -- PROVISIONAL, see the docs
     const MIN_SPEED_KMH = 3.0;          // pumpMinSpeedKmh: below this it is a swim stroke
-    // ---- docs/algorithms.md "Takeoff analysis" ----
+    // ---- docs/algorithms/takeoff.md "Takeoff analysis" ----
     const ATTEMPT_WINDOW_MS = 10000;    // takeoffAttemptWindow (also attemptFailSilence)
     // An effort may not be declared failed while a burst that BEGAN inside the window is
     // still too young to have reached MIN_STROKES: (MIN_STROKES - 1) * BURST_GAP_MS = 4500 ms
     // is the longest a legal qualifying burst can take to form, GROUP_DELAY_MS is how late
     // the filter reports its strokes, and one 1 Hz tick is the batch the last of them arrives
     // in. Without this grace the 10 s silence expires between a joining burst's first and
-    // fourth stroke and one long bout is counted as several attempts (docs/algorithms.md
+    // fourth stroke and one long bout is counted as several attempts (docs/algorithms/watch-pump.md
     // "Watch approximation" row 5a).
     const ATTEMPT_JOIN_GRACE_MS = 6500;
     const FREE_TAKEOFF = 3;             // freeTakeoff: fewer strokes = the wind did the work
@@ -387,7 +387,7 @@ class PumpDetector {
         if (moving) {
             _burstMoving++;
         }
-        // The session total (docs/algorithms.md "The session total"). A burst is credited
+        // The session total (docs/algorithms/pumping.md "The session total"). A burst is credited
         // once, retroactively, on the stroke that first makes it qualify -- which may be a
         // late one, since the amplitude test is on the burst's MAXIMUM -- and per stroke
         // after that.

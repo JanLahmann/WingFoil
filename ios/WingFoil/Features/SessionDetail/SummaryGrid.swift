@@ -54,7 +54,7 @@ struct SessionFoilGrid: View {
 
     private var summary: SessionSummary { detail.analysis.summary }
 
-    /// The words this session is read in (docs/presentation.md, "Discipline lexicon").
+    /// The words this session is read in (docs/presentation/labels.md, "Discipline lexicon").
     private var words: DisciplineLexicon { detail.row.analysisDiscipline.lexicon }
 
     var body: some View {
@@ -64,7 +64,7 @@ struct SessionFoilGrid: View {
             // block and the watch's own "Foil %" already use. It was titled "Foil time"
             // over a percentage while the watch printed a *duration* under those same two
             // words, so a rider reading the watch and then the phone saw one label over two
-            // quantities (docs/presentation.md, "Label table"). The duration is still here,
+            // quantities (docs/presentation/labels.md, "Label table"). The duration is still here,
             // in the caption, which is where it now reads as what the share is a share of.
             StatCard(title: words.onFoil, value: Fmt.pct(summary.foilPct),
                      caption: Fmt.duration(summary.foilTimeS) + " " + words.foilTimeLower,
@@ -84,7 +84,7 @@ struct SessionFoilGrid: View {
             // number and the same spelling the key-metrics block prints two cards up. It
             // used to be `detail.durationS`, the raw sample span, which is 10338 s against
             // 7742 s on the corpus's Rheinstetten afternoon — two clocks, one word, eight
-            // points apart on the screen (docs/presentation.md, "One clock").
+            // points apart on the screen (docs/presentation/one-clock.md, "One clock").
             StatCard(title: "Distance", value: Fmt.km(summary.distanceKm),
                      caption: KeyMetrics.duration(summary.durationS) + " elapsed",
                      help: .distance)
@@ -284,7 +284,7 @@ struct SessionTurnsSection: View {
                     // with a mid-turn swim that ended no flight it does not. The flight-end
                     // channel answers the rider's question on its own: one event per actual
                     // swim, and `all == inTurn + straight` by construction
-                    // (docs/algorithms.md, "Wet is every fall, not every fallen jibe"). It
+                    // (docs/algorithms/rates.md, "Wet is every fall, not every fallen jibe"). It
                     // is also what WPH divides and what the library row and the share card
                     // now print, so the four surfaces say one number.
                     StatCard(title: MetricGlossary.entry("fellIn").term,
@@ -320,7 +320,7 @@ struct SessionTurnsSection: View {
     ///
     /// The clean number rides last rather than joining the three: it is the stricter
     /// reading of the same turns, not a fourth rung of the ladder, and it never wears the
-    /// ladder's inks (docs/presentation.md, "Clean jibe").
+    /// ladder's inks (docs/presentation/clean-jibe.md, "Clean jibe").
     ///
     /// **The Tacks card carries no fourth number.** It used to print `tacksSuccessful`
     /// under the word "clean" — the engine's score verdict, which is not a tier the rider

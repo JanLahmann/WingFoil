@@ -15,7 +15,7 @@
  *
  * The presentation *values* are not written here: they come from js/tokens.js, generated
  * from design/tokens.json, which is also where the iOS app's EventMarkerStyle gets them
- * (docs/presentation.md "Enforcement"). `C` maps those tokens onto this app's role names,
+ * (docs/presentation/enforcement.md "Enforcement"). `C` maps those tokens onto this app's role names,
  * so nothing downstream has to know a token from a literal.
  */
 
@@ -49,12 +49,12 @@ export const C = {
   effort: TOKENS.effort.window.hex,
   // Entry tack. A side is not a verdict and not an effort, so it gets a vocabulary of its
   // own rather than borrowing one: one hue at two lightnesses, the quieter half dashed
-  // (docs/presentation.md "Entry tack"). Before these tokens existed the trend chart drew
+  // (docs/presentation/layers-map-colour-type.md "Entry tack"). Before these tokens existed the trend chart drew
   // the pair in the ladder's green and an unowned magenta — app-ui-review.md §5.2/§5.3.
   sidePort: TOKENS.side.port.hex, sideStarboard: TOKENS.side.starboard.hex,
   // The strict verdict's own ink. "Flew through" is how a jibe ENDED; clean is what it
   // COST, and the two disagree on purpose — so the star carries a green of its own and
-  // never the ladder's (docs/presentation.md "Clean jibe").
+  // never the ladder's (docs/presentation/clean-jibe.md "Clean jibe").
   clean: TOKENS.clean.jibe.hex,
 };
 
@@ -133,7 +133,7 @@ export const int = (v) =>
 
 /**
  * **A share, under the one percent rule** — `Fmt.pct` on iOS and `library._f_pct` in the
- * analyzer are its twins (docs/presentation.md, "Label table").
+ * analyzer are its twins (docs/presentation/labels.md, "Label table").
  *
  * One decimal below 10 %, none at or above it, and always a space before the sign.
  *

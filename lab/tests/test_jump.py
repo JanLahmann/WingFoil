@@ -1,4 +1,4 @@
-"""Jump detection + height estimation (docs/algorithms.md "Jumps (theoretical, uncalibrated)").
+"""Jump detection + height estimation (docs/algorithms/jumps.md "Jumps (theoretical, uncalibrated)").
 
 There is no labelled jump anywhere in the corpus, so every accuracy assertion here is against
 the synthetic generator in `jump.py`. The tests that matter most are therefore the *negative*

@@ -4,7 +4,7 @@
     cd lab && uv run python tools/report_360.py          # every session in fixtures/sessions
     cd lab && uv run python tools/report_360.py --quiet  # one line per session, no candidates
 
-The detector is dark in the engine (`detectThreeSixty`, docs/algorithms.md "360 spins"); this
+The detector is dark in the engine (`detectThreeSixty`, docs/algorithms/turns.md "360 spins"); this
 tool is the only thing that turns it on, and it exists to answer one question honestly: on
 real water, is a candidate a spin the rider rode, or one of the shapes that merely look like
 one? So every candidate is printed with the evidence needed to tell them apart --

@@ -35,7 +35,7 @@ const sessionLabel = (s, ...fallbacks) =>
 // A line's `role` (set in lab_bundle/library.py) picks its ink. `primary`/`secondary` are
 // the app's own two blues for a metric with no vocabulary of its own; the two `side.*`
 // roles exist because a chart about ENTRY TACK must not borrow one that means something
-// else — see docs/presentation.md "Entry tack" and app-ui-review.md §5.2.
+// else — see docs/presentation/layers-map-colour-type.md "Entry tack" and app-ui-review.md §5.2.
 const ROLE = {
   primary: { color: C.foil, dash: null, width: 1.9 },
   secondary: { color: C.tint, dash: "5 3", width: 1.7 },
@@ -465,7 +465,7 @@ async function showRange(from, to) {
  * The word under a chart's title, and beside a point in its tooltip.
  *
  * **The chart series stays in knots, on purpose** — the same divergence the phone states
- * for its four Swift Charts axes (docs/presentation.md, "The definitions round", item 5).
+ * for its four Swift Charts axes (docs/presentation/labels.md, "The definitions round", item 5).
  * `library._y_axis` picks the domain and the gridline step from the values it was given,
  * in Python, and re-picking them in the browser would be a second copy of that rule and a
  * row of ticks at 3.7 km/h. So the axis is knots and **says** knots, through the one

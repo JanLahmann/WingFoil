@@ -4,7 +4,7 @@ import UIKit
 import WingFoilKit
 
 /// **"There is a newer build than the one you are holding."** — the beta's half of a problem
-/// TestFlight does not actually solve (docs/channels.md, beta furniture; docs/presentation.md,
+/// TestFlight does not actually solve (docs/channels.md, beta furniture; docs/presentation/status-feedback-start-widgets-ipad.md,
 /// "The beta's update reminder").
 ///
 /// TestFlight offers a build; it does not insist on one, and a tester who has notifications

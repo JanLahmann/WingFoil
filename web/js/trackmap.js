@@ -145,7 +145,7 @@ export function groundUnder(v, { b, W, H, PAD }) {
  * The standard OSM layer is pale, and every ink on this track — foil teal, the outcome
  * ladder, splash cyan, the effort orange, the off-foil grey — was chosen against the dark
  * surface under it and is a contract that may not move because of what is behind it
- * (docs/presentation.md, "Colour and glyph vocabulary"). So the ground is drawn *into* the
+ * (docs/presentation/layers-map-colour-type.md, "Colour and glyph vocabulary"). So the ground is drawn *into* the
  * surface rather than over it: at this opacity a town reads as a town and a coastline as a
  * coastline, and the darkest thing on the picture is still the water.
  *
@@ -265,7 +265,7 @@ export function onGroundButton(ev, redraw) {
  * same map**: the figure and its legend are moved into a full-viewport shell and drawn
  * again at the viewport's own size. Not a second map — a second map would be a second
  * camera, a second playhead and a second set of chips to keep in step with the first, which
- * is the bug the one-playhead rule exists to prevent (docs/presentation.md, "Scrub and
+ * is the bug the one-playhead rule exists to prevent (docs/presentation/scrub-pairing.md, "Scrub and
  * zoom").
  *
  * So every gesture the inline map has is already here, unchanged: wheel and pinch zoom about

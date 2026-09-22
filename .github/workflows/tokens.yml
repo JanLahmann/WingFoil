@@ -1,4 +1,4 @@
-# The presentation values cannot drift silently (docs/presentation.md "Enforcement" 1).
+# The presentation values cannot drift silently (docs/presentation/enforcement.md "Enforcement" 1).
 #
 # design/tokens.json is the only file a human edits; DesignTokens.swift, css/tokens.css
 # and js/tokens.js are generated from it. This job regenerates into a temp tree and

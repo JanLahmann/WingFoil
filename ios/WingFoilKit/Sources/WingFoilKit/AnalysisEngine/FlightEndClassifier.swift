@@ -1,6 +1,6 @@
 import Foundation
 
-/// Flight-end thresholds (docs/algorithms.md "Flight-end outcome"). Deliberately the *same
+/// Flight-end thresholds (docs/algorithms/pumping.md "Flight-end outcome"). Deliberately the *same
 /// numbers* as the turn ladder — one physical question ("did the rider stop, and for how
 /// long") deserves one set of thresholds however the loss started. They are separate fields
 /// only so a future tuning pass can move one end without the other.
@@ -115,7 +115,7 @@ public struct OutcomeSplit: Sendable, Codable, Equatable {
 }
 
 /// Classifies every flight ending with the *same three-channel evidence ladder* the turns
-/// use (`Evidence`, docs/algorithms.md "Turn outcome" steps 0–4). Only the leaf verdicts
+/// use (`Evidence`, docs/algorithms/pumping.md "Turn outcome" steps 0–4). Only the leaf verdicts
 /// differ, because a flight end is by definition already off the foil — there is no
 /// `flew_through`.
 ///

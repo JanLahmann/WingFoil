@@ -412,7 +412,7 @@
       <div class="panel-head">
         <div>
           <!-- The tag sits ON the title line, because it is what this recording IS
-               (docs/presentation.md, "Not a session"): the engine says `summary.isSession`
+               (docs/presentation/not-a-session-spots.md, "Not a session"): the engine says `summary.isSession`
                is false, and the page says so where the rider is already looking. Its words
                are the app's, from docs/copy/verdicts.json through js/copy.js — nothing is
                deleted, nothing is hidden, and the note under the key metrics says what was
@@ -451,7 +451,7 @@
            the same order as the iOS app (docs/app-ui-review.md 1.1 / 4). -->
       <div class="keys" id="key-metrics"></div>
       <!-- DIRECTLY UNDER the key-metrics block, which is the block it is about
-           (docs/presentation.md, "Not a session"): the line names the two numbers that
+           (docs/presentation/not-a-session-spots.md, "Not a session"): the line names the two numbers that
            decided, and a rider whose real session was mis-read has to be able to read it
            against them and disagree rather than be told a verdict. -->
       <p class="note" id="not-a-session-note" hidden></p>
@@ -488,7 +488,7 @@
     <nav class="sections" id="section-nav" aria-label="Session sections" hidden></nav>
 
     <!-- Track and Speed share the one chip, and that is a contract requirement rather than
-         a layout preference: docs/presentation.md "Scrub and zoom" mandates one playhead
+         a layout preference: docs/presentation/scrub-pairing.md "Scrub and zoom" mandates one playhead
          across the map dot and the strip's scrub position, and "Pairing" focuses the strip
          on the flight whose track you tapped. Separating them would put half of a visible
          link on another page. Do not give either its own section. -->
@@ -845,7 +845,7 @@
      them back on the way out, so what opens is the map the rider was already reading —
      same camera, same playhead, same layer chips — at the size of the window. A second map
      would be a second camera and a second playhead to keep in step with the first, which is
-     the bug the one-playhead rule exists to prevent (docs/presentation.md, "Scrub and
+     the bug the one-playhead rule exists to prevent (docs/presentation/scrub-pairing.md, "Scrub and
      zoom"). Outside <main> because it is fixed over the whole page. -->
 <div class="map-full" id="map-full" role="dialog" aria-label="Map, full screen" hidden>
   <div class="map-full-bar">

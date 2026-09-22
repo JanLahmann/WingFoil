@@ -1,6 +1,6 @@
 """HR cost of pumping: what every takeoff attempt cost in heartbeats, and how that drifts.
 
-Contract: docs/algorithms.md "HR cost". Jan's question is simple -- *"my HR goes up when I
+Contract: docs/algorithms/hr-cost.md "HR cost". Jan's question is simple -- *"my HR goes up when I
 pump"* -- and the session data can answer four versions of it:
 
 1. **per takeoff**: the HR rise from the start of the pumping effort to the peak reached
@@ -67,7 +67,7 @@ EVENT_KINDS = (TAKEOFF, SWIM)
 
 @dataclass
 class HrConfig:
-    """docs/algorithms.md "HR cost" defaults."""
+    """docs/algorithms/hr-cost.md "HR cost" defaults."""
 
     peak_window_s: float = 30.0        # hrCostPeakWindow: peak searched this far past the anchor
     baseline_window_s: float = 10.0    # hrBaselineWindow: median of the samples before it
@@ -289,7 +289,7 @@ def hr_track_from_arrays(t, bpm, config: HrConfig | None = None) -> HrTrack | No
     samples 6 s apart bracket it perfectly well, while speed integration is what a gap
     protects. Since engine 0.23.0 the two numbers happen to *agree* on a Smart Recording
     track, because the cleaner's own Smart Recording floor is this valley (`smartGapS` 10 s,
-    docs/algorithms.md "speed sample hygiene"); they remain separate rules, because a 1 Hz
+    docs/algorithms/hygiene.md "speed sample hygiene"); they remain separate rules, because a 1 Hz
     track still cuts speed at 3 s and HR at 10. A hole can only hide a *higher* peak than
     the one observed, so a windowed cost read across one is biased low, never high.
     """

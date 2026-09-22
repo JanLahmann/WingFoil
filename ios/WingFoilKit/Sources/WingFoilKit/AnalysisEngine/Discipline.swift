@@ -1,6 +1,6 @@
 import Foundation
 
-/// **Discipline presets — one engine, three rigs** (docs/algorithms.md "Disciplines").
+/// **Discipline presets — one engine, three rigs** (docs/algorithms/disciplines.md "Disciplines").
 ///
 /// A discipline is *not* a fork of the engine. Every stage, every clock and every verdict is
 /// the one docs/algorithms.md describes; a preset only picks the numbers a few of them are
@@ -87,7 +87,7 @@ public enum Discipline: String, Sendable, Codable, CaseIterable, Equatable {
     }
 
     /// **The preset a freshly imported session is read under**, before anybody has confirmed
-    /// anything (docs/presentation.md, "Confirming the discipline on import").
+    /// anything (docs/presentation/labels.md, "Confirming the discipline on import").
     ///
     /// The recording's own field if it has one — authoritative, and the review step never
     /// asks about it. Otherwise the rider's declared default (Settings → "I mostly ride"),

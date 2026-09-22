@@ -10,7 +10,7 @@ import Foundation
 /// a section anchor to the tab it lives on. The views are layout over this.
 ///
 /// **The split is between the figures and the cards, and that is not a matter of taste.**
-/// `docs/presentation.md` "Scrub and zoom" mandates one playhead — the chart's scrub
+/// `docs/presentation/scrub-pairing.md` "Scrub and zoom" mandates one playhead — the chart's scrub
 /// position and the map's dot are the same timestamp, and moving either moves both — and
 /// "Pairing" adds that tapping a flown stretch of track focuses the chart on that flight. Map
 /// and chart are one instrument. A tab set that gives Map a page of its own breaks the
@@ -82,7 +82,7 @@ public enum SessionSection: String, CaseIterable, Sendable, Identifiable {
         }
     }
 
-    /// The switcher's words **in this session's discipline** (docs/presentation.md,
+    /// The switcher's words **in this session's discipline** (docs/presentation/labels.md,
     /// "Discipline lexicon"). Only one tab has a word to swap — a windsurfer does not take
     /// off, he gets planing — and `.wingfoil` returns `label` unchanged, character for
     /// character.

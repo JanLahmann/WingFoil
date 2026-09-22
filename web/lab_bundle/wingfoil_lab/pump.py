@@ -1,4 +1,4 @@
-"""Pump-stroke detection from the wrist accelerometer (docs/algorithms.md "Pumping").
+"""Pump-stroke detection from the wrist accelerometer (docs/algorithms/pumping.md "Pumping").
 
 A wing pump is a whole-body, roughly 1 Hz oscillation the wrist sees as a large swing in
 |a|. Everything else the wrist does while foiling -- chop, arm drift, wing trim -- is either
@@ -39,7 +39,7 @@ from .parse import RawTrack
 
 @dataclass
 class PumpConfig:
-    """docs/algorithms.md "Pumping (accelerometer)" defaults."""
+    """docs/algorithms/pumping.md "Pumping (accelerometer)" defaults."""
 
     band_lo_hz: float = 0.5              # pumpBandLo
     band_hi_hz: float = 2.5              # pumpBandHi
@@ -117,7 +117,7 @@ def pump_track(track: RawTrack, config: PumpConfig | None = None) -> PumpTrack |
 
 #: Ceiling on the resample grid: four hours at the default 25 Hz. A guard against a stream
 #: whose clock is broken, never a rule about the session -- no recording on the water comes
-#: near it (docs/algorithms.md, "Recordings the importer refuses"). Twin of
+#: near it (docs/algorithms/imports.md, "Recordings the importer refuses"). Twin of
 #: `PumpAnalyzer.maxBins` in the Swift kit.
 MAX_PUMP_BINS = 4 * 3600 * 25
 

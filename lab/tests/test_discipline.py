@@ -1,6 +1,6 @@
 """Discipline presets — wingfoil is untouched, windsurf is the same engine minus the wing.
 
-The contract this file holds (docs/algorithms.md "Disciplines"):
+The contract this file holds (docs/algorithms/disciplines.md "Disciplines"):
 
 1. **wingfoil is not merely equal to today, it is today.** The preset is not applied at all,
    so the committed corpus golden is reproduced byte-for-byte and nothing in the config echo

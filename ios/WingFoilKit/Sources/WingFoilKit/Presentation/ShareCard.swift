@@ -30,7 +30,7 @@ public struct ShareCardStats: Sendable, Equatable {
         /// Set only on the outcome-tally cell, whose three counts are drawn on the verdict
         /// ladder's own inks. `value` already spells the same three numbers out, so a
         /// renderer that ignores this still prints the truth — it just prints it in one
-        /// colour (docs/presentation.md, "the outcome ladder is a verdict scale").
+        /// colour (docs/presentation/layers-map-colour-type.md, "the outcome ladder is a verdict scale").
         public let tally: KeyMetrics.Tally?
 
         public var id: String { key }

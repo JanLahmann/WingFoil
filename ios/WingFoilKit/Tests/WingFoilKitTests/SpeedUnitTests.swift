@@ -126,7 +126,7 @@ import Testing
     ///    Settings → Units switches knots to km/h has to be able to say "knots" and "km/h".
     ///    None of them prints a measured speed.
     /// 3. **The dev workbench and the tuning sheet**, which read the engine in the engine's
-    ///    own units on purpose (docs/presentation.md, "The dev workbench") — a threshold in
+    ///    own units on purpose (docs/presentation/labels.md, "The dev workbench") — a threshold in
     ///    km/h is the number in `TuningOverrides`, not a reading off the water.
     static let exempt: [String: String] = [
         "ios/WingFoilKit/Sources/WingFoilKit/Presentation/SpeedUnit.swift":

@@ -365,7 +365,7 @@ public enum LibraryListing {
     /// A provisional row is one too: the watch says the afternoon happened, and the rider
     /// counting his week does not care that its recording is still in the air. What is not
     /// counted is a recording the engine says was never a session (`SessionRow.isSession`,
-    /// docs/algorithms.md "Not a session"); a provisional row's own `no_recording` verdict is
+    /// docs/algorithms/not-a-session.md "Not a session"); a provisional row's own `no_recording` verdict is
     /// therefore read past here, and only here.
     public static func riddenCount(_ rows: [SessionRow]) -> Int {
         rows.filter { $0.isSession || $0.isProvisional }.count

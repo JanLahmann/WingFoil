@@ -14,7 +14,7 @@ import Testing
 /// that agree today are not two implementations that cannot drift: the block is fifteen
 /// numbers in one order with one set of formatters, and the only way to keep that true across
 /// a Python module and a Swift one is to make one of them the reference and check the other
-/// against it. Python is the reference (docs/presentation.md, "Periods").
+/// against it. Python is the reference (docs/presentation/trends-periods.md, "Periods").
 @Suite struct PeriodTests {
 
     // MARK: - The fixture

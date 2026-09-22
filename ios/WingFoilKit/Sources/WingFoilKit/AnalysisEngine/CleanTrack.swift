@@ -1,6 +1,6 @@
 import Foundation
 
-/// Sample-hygiene parameters (docs/algorithms.md "Speed sample hygiene"). The gap rule
+/// Sample-hygiene parameters (docs/algorithms/hygiene.md "Speed sample hygiene"). The gap rule
 /// is dt-aware: gap iff dt > max(`gapMinS`, `gapFactor` × median dt, `smartGapS` on a
 /// Smart Recording track) — hard segment
 /// break, never interpolated across (dt-weighted windows subsume the 1 Hz
@@ -58,7 +58,7 @@ public struct CleanSample: Sendable, Equatable {
     public var cumDistM: Double
     /// Barometric altitude, carried through unfiltered. On the water its *absolute*
     /// value is meaningless, but a dunked wrist reads hundreds of metres low
-    /// (`turnBaroDrop`, docs/algorithms.md "Turn outcome" step 2) and that transient
+    /// (`turnBaroDrop`, docs/algorithms/pumping.md "Turn outcome" step 2) and that transient
     /// has to survive to the outcome ladder. nil for sources without the channel.
     public var altM: Double?
 

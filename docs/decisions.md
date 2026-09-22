@@ -207,7 +207,7 @@ out of a file, and `nil` is the state a source with no accelerometer is already 
 Consequence: engine **0.23.0**. Three config keys join the document (`smartGapS`,
 `smartMedianDtS`, `spikeMaxDtS`), one leaves it (`windMaxLobeSeparation`), one capability key
 joins (`accelClockReconstructed`). Every Smart Recording golden moves and no 1 Hz golden
-moves by a digit; the per-fixture table is in docs/algorithms.md, "A cadence is not a hole".
+moves by a digit; the per-fixture table is in docs/algorithms/hygiene.md, "A cadence is not a hole".
 The headline on the eleven Smart Recording fixtures: distance 151.8 → 184.4 km against 184.2
 km of FIT session totals, timer time 43 508 → 60 387 s, flights 825 → 346, counted turns
 369 → 378, `unknown` flight ends 668 → 37, `fell_in` flight ends 69 → 201, clean jibes
@@ -263,7 +263,7 @@ because an aborted sweep is kept only where the ladder calls it a fall (ADR-028)
 the map. **The watch already agreed with this rule and not with the old one** — its live test
 has always read a slow pressure baseline that holds under a spike — so this closes a
 divergence rather than opening one; the settle release is the one half still to be ported, in
-a change of its own (docs/algorithms.md, "Watch divergences").
+a change of its own (docs/algorithms/pumping.md, "Watch divergences").
 
 ## ADR-028 · An attempted turn that ends in the water is **a turn that fell in**
 **Status: Accepted.**
@@ -305,7 +305,7 @@ jibes 558 → 565, course changes 147 → 140, turn `fell_in` 41 → 50, straigh
 **clean jibes 161 → 161** and no rate numerator moved on any fixture. Eight of the nine new
 turns are falls the page had attributed to nothing at all. **A new watch divergence** (its
 first since 0.13.0): the wrist has no such pass and under-counts turns and falls on a session
-with aborted maneuvers in it, until it is ported — docs/algorithms.md, "Watch divergences",
+with aborted maneuvers in it, until it is ported — docs/algorithms/pumping.md, "Watch divergences",
 says what it should do. Not decided here, and left for Jan: the tester's *second* attempt is
 still not a fall, because it stopped dead for 4 s before a 42 s recording gap and `turnFallStop`
 is 5 s. That is a flight-end question — what a stop that runs into a long gap means — and this

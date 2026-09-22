@@ -13,7 +13,7 @@ UTC, and a session displayed in the *viewer's* current zone is right only while 
 and the session share one — which stops being true on the next DST boundary and on the
 first flight to a different country. `activity.local_timestamp - activity.timestamp` is the
 UTC offset the *watch* was wearing when it saved the file, and it is what every displayed
-clock is formatted in (`RawTrack.start_utc_offset_s`, `docs/presentation.md` "Session
+clock is formatted in (`RawTrack.start_utc_offset_s`, `docs/presentation/session-time-video.md` "Session
 time"). Since engine 0.9.1 the parser also records **which rung of the ladder answered**
 (`RawTrack.start_utc_offset_source`), because an offset guessed from longitude is a solar
 guess that can be an hour out under DST and a page that prints it as fact is over-claiming.

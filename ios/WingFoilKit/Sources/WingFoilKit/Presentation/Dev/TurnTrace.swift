@@ -16,8 +16,8 @@ import Foundation
 /// The commonest honest cause is an analysis stored before a config field was echoed, which is
 /// why `TurnWorkbench.Context.assumedDefaults` is carried onto the trace as its own note.
 ///
-/// Contract: docs/algorithms.md "Turn outcome" steps 0–5, and the clean rule in
-/// `TurnDetector.cleanVerdict`. Presentation: docs/presentation.md, "Dev workbench".
+/// Contract: docs/algorithms/pumping.md "Turn outcome" steps 0–5, and the clean rule in
+/// `TurnDetector.cleanVerdict`. Presentation: docs/presentation/channels-tuning.md, "Dev workbench".
 public struct TurnTrace: Sendable, Equatable {
 
     /// What a step's re-derivation had to say about the record beside it.

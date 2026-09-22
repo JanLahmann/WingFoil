@@ -14,21 +14,21 @@ public enum AnalysisEngine {
     /// in a row" at all, and a missing streak would decode as 0 — indistinguishable from a
     /// real session where every turn ended wet. It must re-derive.
     ///
-    /// 0.5.0 adds the **default-turn-type prior** (docs/algorithms.md "Default turn type"):
+    /// 0.5.0 adds the **default-turn-type prior** (docs/algorithms/wind.md "Default turn type"):
     /// `config.windDefaultTurnType`, and the evidence trail it leaves on the wind object.
     /// Unlike the three bumps above this one *can* move pre-existing numbers — a session
     /// whose no-go cones nearly tie can now have its wind direction resolved the other way,
     /// taking every tack/jibe label with it — which is exactly why a stored document must
     /// re-derive rather than be read as if the rider had never declared a habit.
     ///
-    /// 0.6.0 adds the **session rate metrics** (docs/algorithms.md "Session rates"):
+    /// 0.6.0 adds the **session rate metrics** (docs/algorithms/rates.md "Session rates"):
     /// `summary.durationS` / `avgSpeedKmh` / `turnsPerHour` / `jibesPerHour` / `wetPerHour`
     /// (`cleanJibesPerHour` joins them in 0.10.0).
     /// Nothing pre-existing moves — they are arithmetic over numbers the summary already
     /// carried — but a 0.5.0 document cannot answer "how busy was that hour" at all, and a
     /// missing rate decoded as 0 would claim a session with no jibes in it.
     ///
-    /// 0.7.0 reworks that block twice (docs/algorithms.md "Session rates"). `jibesPerHour`
+    /// 0.7.0 reworks that block twice (docs/algorithms/rates.md "Session rates"). `jibesPerHour`
     /// now counts **dry** jibes — `turns.jibes - turns.jibeOutcomes.fellIn` — so the number
     /// a rider reads as the measure of his afternoon stops counting the jibes he swam out
     /// of; unlike the four bumps above, this one *moves* a value every stored document
@@ -36,7 +36,7 @@ public enum AnalysisEngine {
     /// adds the rolling 15-minute view of the same two events (`config.windowRateMin`): the
     /// busiest quarter of an hour, which a session average cannot say.
     ///
-    /// 0.8.0 fixes the **session total** (docs/algorithms.md "The session total").
+    /// 0.8.0 fixes the **session total** (docs/algorithms/pumping.md "The session total").
     /// `summary.takeoff.totalPumpStrokes` was the one pump metric that skipped
     /// `pumpMinStrokes`, so it reported the raw output of the peak picker — and chop, it
     /// turns out, runs at pumping cadence and clears `pumpStrokeAmp` at its crests, so a
@@ -54,7 +54,7 @@ public enum AnalysisEngine {
     /// 0.8.2 moves no metric at all — it adds one: the session's own UTC offset
     /// (`RawTrack.startUtcOffsetS`, `meta.utcOffsetS`, `session.startUtcOffsetS`), so that
     /// a session's times read the way the rider saw them rather than the way the reader's
-    /// device would render the same instant (docs/presentation.md, "Session time"). The
+    /// device would render the same instant (docs/presentation/session-time-video.md, "Session time"). The
     /// analysis numbers are byte-identical to 0.8.1's; the bump is here because the
     /// document gained a field and stored rows have to pick it up.
     ///
@@ -76,15 +76,15 @@ public enum AnalysisEngine {
     /// 0.9.0's GPX door made that the common case rather than the exotic one, because a GPX
     /// usually states no zone at all. The ladder is unchanged; what was missing was the
     /// qualification, and a stored 0.9.0 document cannot supply it retroactively, which is
-    /// what the bump is for (docs/presentation.md, "Session time").
+    /// what the bump is for (docs/presentation/session-time-video.md, "Session time").
     ///
     /// 0.10.0 adds one field and moves no other: `summary.cleanJibesPerHour`
-    /// (docs/algorithms.md "Session rates"), the rate over the **strict** verdict —
+    /// (docs/algorithms/rates.md "Session rates"), the rate over the **strict** verdict —
     /// `turns.jibesSuccessful` over the same elapsed hour every other rate divides by. It is
     /// arithmetic over a count the summary has always carried, so every stored number
     /// re-derives identical; what a 0.9.1 document cannot do is answer the question the
     /// rider actually asks. JPH says he got away with the jibe, CPH says he rode it, and CPH
-    /// is what the key-metrics block prints from here on (docs/presentation.md, "Clean
+    /// is what the key-metrics block prints from here on (docs/presentation/clean-jibe.md, "Clean
     /// jibe"). A missing rate decoded as 0 would claim a session with no clean jibes in it,
     /// which is why the bump — and the null — are both here.
     ///
@@ -189,7 +189,7 @@ public enum AnalysisEngine {
     /// (`TurnAnalytics.outcomeText`) instead of leaving the rider to read `stoppedS`.
     ///
     /// 0.19.0 says **whether a recording is a session at all** — `summary.isSession` and
-    /// `summary.notASessionReason` (docs/algorithms.md "Not a session", `SessionVerdict`).
+    /// `summary.notASessionReason` (docs/algorithms/not-a-session.md "Not a session", `SessionVerdict`).
     /// A recording with no foil time in it that is either shorter than 120 s or covers less
     /// than 200 m is the one a rider starts on the beach and stops again; Jan's library held
     /// thirteen of them on 13–14 September 2026, 0:00–0:24 min and 0.0 km each, and every one
@@ -199,7 +199,7 @@ public enum AnalysisEngine {
     /// change, and a 0.18.0 document cannot answer the question at all.
     ///
     /// 0.20.0 adds **the plausibility gate** on the uncertified speed record
-    /// (docs/algorithms.md "The plausibility gate", `GP3SCalculator`). A best 2 s
+    /// (docs/algorithms/records.md "The plausibility gate", `GP3SCalculator`). A best 2 s
     /// differentiated from positions rides on two fixes, and one bad one is the whole
     /// record: 2026-08-29's positional copy read 31.77 kn against the FIT's certified 13.21,
     /// while its best 10 s was 12.51 against 12.62. On a source whose `hasDoppler` is false,
@@ -208,7 +208,7 @@ public enum AnalysisEngine {
     /// 31.77 → 13.13 kn. Certified Doppler records are never gated, no window of 10 s or
     /// longer is, and no fixture in the corpus moves.
     ///
-    /// 0.21.0 adds **the aborted turn** (docs/algorithms.md "The aborted turn",
+    /// 0.21.0 adds **the aborted turn** (docs/algorithms/turns.md "The aborted turn",
     /// `TurnDetector.abortCandidates`). Jan, 20 September 2026: *"an attempted turn that ends
     /// in the water is a turn that fell in."* A tester tried two tacks on 19 September, went in
     /// both times, and read back no tack and no fall in a turn — the scan asks for
@@ -238,7 +238,7 @@ public enum AnalysisEngine {
     public static let version = "0.24.0"
 }
 
-/// **Is this recording a session?** — docs/algorithms.md "Not a session" (engine 0.19.0).
+/// **Is this recording a session?** — docs/algorithms/not-a-session.md "Not a session" (engine 0.19.0).
 ///
 /// One rule, three implementations: `wingfoil_lab.goldens.session_verdict`,
 /// `web/lab_bundle/library.py`'s `session_verdict`, and this. A recording is **not** a
@@ -251,7 +251,7 @@ public enum AnalysisEngine {
 /// so. What is not a session is the thirty seconds he recorded on the beach and stopped
 /// again. The verdict is a **label and never a deletion**: the row, the page and the map
 /// stay; the recording is only kept out of the counts, trends, records, period and gear
-/// totals that describe riding (docs/presentation.md "Not a session").
+/// totals that describe riding (docs/presentation/not-a-session-spots.md "Not a session").
 public enum SessionVerdict: Sendable {
     /// The duration floor, seconds. Generous on purpose — it is unreachable for any
     /// recording in which the rider flew, so it never has to protect one.
@@ -282,7 +282,7 @@ public enum SessionVerdict: Sendable {
     }
 }
 
-/// Session-rate parameters (docs/algorithms.md "Session rates"). Mirrors the lab's
+/// Session-rate parameters (docs/algorithms/rates.md "Session rates"). Mirrors the lab's
 /// `RateConfig`.
 public struct RatesConfig: Sendable, Equatable {
     /// The rolling window the per-hour series is measured over. 15 minutes is long enough
@@ -299,7 +299,7 @@ public struct RatesConfig: Sendable, Equatable {
 /// Echo of the parameters actually used, keyed by their docs/algorithms.md names.
 /// Speeds in km/h, holds in s, accel in m/s².
 public struct AnalysisConfig: Sendable, Codable, Equatable {
-    /// Which **preset** produced this document (docs/algorithms.md "Disciplines"), or nil
+    /// Which **preset** produced this document (docs/algorithms/disciplines.md "Disciplines"), or nil
     /// for the default. Absent rather than `"wingfoil"`, the same rule the experimental 360
     /// block follows: the config block records what produced *this* document, and a key
     /// printed on every golden would be an announcement of a layer that, for the default, is
@@ -734,7 +734,7 @@ public struct TurnRecord: Sendable, Codable, Equatable {
     }
 }
 
-/// Golden-schema flight end (docs/algorithms.md "Flight-end outcome").
+/// Golden-schema flight end (docs/algorithms/pumping.md "Flight-end outcome").
 public struct FlightEndRecord: Sendable, Codable, Equatable {
     public var flightIndex: Int
     public var ts: Double
@@ -805,7 +805,7 @@ public struct FlightEndRecord: Sendable, Codable, Equatable {
     }
 }
 
-/// Golden-schema submersion episode (engine 0.16.0, docs/algorithms.md "Submersion
+/// Golden-schema submersion episode (engine 0.16.0, docs/algorithms/pumping.md "Submersion
 /// episodes"). One continuous spell the barometer says the wrist spent under water.
 ///
 /// The map draws one "wrist under" diamond per entry. It is deliberately a *second* reading
@@ -886,7 +886,7 @@ public struct WindEstimate: Sendable, Codable, Equatable {
     /// Diagnostic only: weighted corr(cos TWA, speed). The corpus runs positive (upwind
     /// faster on a foil), which is why it is not the 180° rule.
     public var speedAsymmetry: Double
-    /// The default-turn-type prior's evidence trail (docs/algorithms.md "Default turn
+    /// The default-turn-type prior's evidence trail (docs/algorithms/wind.md "Default turn
     /// type"): |default − other| ÷ votes, the strength of the rider's declared majority.
     public var turnTypeMargin: Double
     /// The axis end the declared habit favours. Nil when the prior did not run (`balanced`,
@@ -1058,7 +1058,7 @@ public struct TakeoffRecord: Sendable, Codable, Equatable {
     }
 }
 
-/// Golden-schema pumping episode (docs/algorithms.md "Takeoff analysis", the outcome
+/// Golden-schema pumping episode (docs/algorithms/takeoff.md "Takeoff analysis", the outcome
 /// ladder). One continuous effort, classified exactly once.
 ///
 /// Every outcome is carried, not just `failed`: the summary already counts the five
@@ -1126,7 +1126,7 @@ public struct PumpEpisodeRecord: Sendable, Codable, Equatable {
     }
 }
 
-/// Session basics and the per-hour rates (docs/algorithms.md "Session rates").
+/// Session basics and the per-hour rates (docs/algorithms/rates.md "Session rates").
 ///
 /// All four rates share one denominator — **timer time** (`timerTimeS`, T2: the sum of the
 /// non-gap steps, i.e. the session minus its pauses) since engine 0.13.0. They answer "per
@@ -1155,7 +1155,7 @@ public struct SessionRates: Sendable, Equatable {
     public var jibesPerHour: Double?
     /// **Clean** jibes per hour (engine 0.10.0): `turns.jibesSuccessful` over the same hour —
     /// the strict verdict, a counted jibe flown all the way through carrying its speed
-    /// (docs/presentation.md "Clean jibe"). Not a new measurement, just the engine's
+    /// (docs/presentation/clean-jibe.md "Clean jibe"). Not a new measurement, just the engine's
     /// per-turn `success` flag given a rate. Dry asks whether he got away with it; clean
     /// asks whether he rode it, and clean is the one the key-metrics block prints.
     public var cleanJibesPerHour: Double?
@@ -1191,7 +1191,7 @@ public struct WindowRatePoint: Sendable, Codable, Equatable {
     }
 }
 
-/// The rolling-window rate series and its two peaks (docs/algorithms.md "Session rates").
+/// The rolling-window rate series and its two peaks (docs/algorithms/rates.md "Session rates").
 /// Mirrors the lab's `WindowRates` / `window_rates`.
 ///
 /// `bestJph` / `bestWph` are the **true** sliding maxima, not the largest value in `series`:
@@ -1461,7 +1461,7 @@ public struct SessionAnalysis: Sendable, Codable, Equatable {
     /// Decoded leniently so a stored `analysis.json` from 0.2.0 still opens; such a row is
     /// stale by `engineVersion` anyway and `reanalyzeStale()` re-derives it.
     public var pumpEpisodes: [PumpEpisodeRecord]
-    /// The HR-cost block (docs/algorithms.md "HR cost"). Optional only so a stored
+    /// The HR-cost block (docs/algorithms/hr-cost.md "HR cost"). Optional only so a stored
     /// `analysis.json` written before the block existed still decodes; a fresh analysis
     /// always fills it, with `hasHR: false` when the source carries no heart rate.
     public var hr: HrAnalysis?
@@ -1551,7 +1551,7 @@ public enum SessionSummarizer {
                                ratesConfig: RatesConfig = RatesConfig(),
                                discipline: Discipline = .wingfoil,
                                tuning: TuningOverrides = TuningOverrides()) -> SessionAnalysis {
-        // **Preset first, the rider's overrides on top** (docs/presentation.md "Tuning").
+        // **Preset first, the rider's overrides on top** (docs/presentation/channels-tuning.md "Tuning").
         // The preset is identity for wingfoil — not merely equal to it, *not applied* — and
         // the overrides are this discipline's own set, so a fin slider says what the fin's
         // threshold is and a preset can never stomp a knob the rider has just moved. Both are
@@ -1567,10 +1567,10 @@ public enum SessionSummarizer {
         let segmentation = FlightSegmenter.segment(clean, config: flightConfig)
         // `certified` is the file's own answer to "did you measure this speed" — the same
         // flag `sourceClass` reads. False puts the plausibility gate on the sub-10 s records
-        // (docs/algorithms.md "The plausibility gate").
+        // (docs/algorithms/records.md "The plausibility gate").
         let records = GP3SCalculator.records(for: clean, config: recordsConfig,
                                              certified: raw.capabilities.hasSpeed)
-        // `turnConfig` because the default-turn-type prior (docs/algorithms.md "Default turn
+        // `turnConfig` because the default-turn-type prior (docs/algorithms/wind.md "Default turn
         // type") votes on the very sweeps `TurnDetector` is about to report — one turn
         // config, or the prior and the session would be talking about different turns.
         let wind = WindEstimator.estimate(clean, flights: segmentation, config: windConfig,
@@ -1610,7 +1610,7 @@ public enum SessionSummarizer {
                                 flightEnds: ends, pump: pump, turns: turns, config: hrConfig)
 
         // `ends` because the streaks span both channels: a straight-line swim ends a run of
-        // clean turns too (docs/algorithms.md "Turn streaks").
+        // clean turns too (docs/algorithms/pumping.md "Turn streaks").
         let turnSummary = TurnDetector.summarize(turns, ends: ends)
         let endSummary = FlightEndClassifier.summarize(ends)
         let submersions = Self.submersions(clean, evidence: evidence, turns: turns, ends: ends)
@@ -1626,7 +1626,7 @@ public enum SessionSummarizer {
         summary.flightEnds = endSummary
         summary.outcomeSplit = FlightEndClassifier.split(turns: turnSummary, ends: endSummary)
         summary.takeoff = TakeoffAnalyzer.summarize(takeoffs)
-        // Session rates (docs/algorithms.md "Session rates"): **timer time** as the one
+        // Session rates (docs/algorithms/rates.md "Session rates"): **timer time** as the one
         // denominator since engine 0.13.0 — the hour a rate divides by has to be an hour
         // the recorder was running — *dry* turns and *dry* jibes as the TPH/JPH numerators
         // (one he swam out of is one he did not make) and *every* fell-in end as the wet
@@ -1644,7 +1644,7 @@ public enum SessionSummarizer {
                                                  startT: clean.samples.first?.t ?? 0,
                                                  durationS: clean.spanS,
                                                  config: ratesConfig)
-        // Is this a session at all (engine 0.19.0, docs/algorithms.md "Not a session")?
+        // Is this a session at all (engine 0.19.0, docs/algorithms/not-a-session.md "Not a session")?
         // Read off the summary's own three numbers, after the rates have filled `durationS`.
         let verdict = SessionVerdict.of(foilTimeS: summary.foilTimeS,
                                         durationS: summary.durationS,
@@ -1678,7 +1678,7 @@ public enum SessionSummarizer {
             summary: summary)
     }
 
-    /// The session's submersion episodes, attributed (docs/algorithms.md "Submersion
+    /// The session's submersion episodes, attributed (docs/algorithms/pumping.md "Submersion
     /// episodes"). Mirrors the lab's `session_submersions`.
     ///
     /// The two window lists are the *same* spans the two outcome ladders judged over,

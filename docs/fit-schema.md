@@ -51,7 +51,7 @@ The device app writes `foil_state`(0) · `pump_cadence`(2) · `turn_marker`(3) �
 
 **`turn_marker` is two events on two different seconds, not one.** 1–3 mark the second the COG
 sweep is *confirmed* and say what kind of maneuver it was; 4–6 mark the second its *outcome*
-resolves — the end of the recovery-gated window, which is 2–14 s later (docs/algorithms.md
+resolves — the end of the recovery-gated window, which is 2–14 s later (docs/algorithms/pumping.md
 "Turn outcome"). A detected turn therefore writes exactly two non-zero markers, and the
 watch's `tack_count`/`jibe_count` equal the number of 1/2 markers. The field is rewritten
 every record, so a marker never bleeds into the following second. Values 4–6 are an addition
@@ -109,7 +109,7 @@ of headroom; app 0.9.0 spent it on `wind_dir_auto`(44). Declared in one place:
 | 34 | `turn_success_pct` | uint8 | % | summary | turns that **kept their speed** / attempted turns (score ≥ `turnSuccessPct` and never off the foil), over *all* counted turns including the generic ones. **Garmin Connect must label this row `Speed kept`** — see the box below |
 | 38 | `total_pump_strokes` | uint16 | strokes | — | **watch-written**: strokes in qualifying bursts (≥ `pumpMinStrokes`, burst peak ≥ `pumpBurstPeakG`, speed ≥ `pumpMinSpeedKmh` — engine ≥ 0.8.0's rules, live-approximated). Watches on app ≤ 0.9.2 still write every detected peak; the phone recomputes and is authoritative |
 | 39 | `wind_dir_user` | uint16 | deg | — | the axis the **RIDER** set: direction the wind blows **from**, true; 65535 = unset. Set in GCM (`windDirDeg`) or on the watch (BACK → Session → Wind, 16 compass points). The value written is the one in effect at save; the watch classifies only turns detected *after* it was set, so a mid-session change can leave earlier turns generic — the phone re-runs classification over the whole track and is authoritative |
-| 44 | `wind_dir_auto` | uint16 | deg | — | the axis the **WATCH** estimated for itself (device app ≥ 0.9.0, docs/algorithms.md "Watch approximation: auto wind"); 65535 = the estimator never locked or was switched off. Same units and meaning as 39, and deliberately a *separate* field: one is the rider's word and the other an inference from an hour of course headings, and only the first may be shown as fact. Either, both or neither may be present — both means the rider set an axis part-way through a session the watch had already estimated |
+| 44 | `wind_dir_auto` | uint16 | deg | — | the axis the **WATCH** estimated for itself (device app ≥ 0.9.0, docs/algorithms/wind.md "Watch approximation: auto wind"); 65535 = the estimator never locked or was switched off. Same units and meaning as 39, and deliberately a *separate* field: one is the rider's word and the other an inference from an hour of course headings, and only the first may be shown as fact. Either, both or neither may be present — both means the rider set an axis part-way through a session the watch had already estimated |
 | 43 | `app_version` | uint16 | — | — | high byte = app minor version, low byte = SCHEMA_VERSION |
 | 54 | `cfg_pack` | uint32 | — | — | **packed v2**, replaces 40/41/42. `entry_cms << 16 \| minFlight_s << 11 \| exit_cms` (entry 16 b cm/s · minFlight 5 b s 0–31 · exit 11 b cm/s 0–2047). Byte-for-byte the class-(d) encoding, so one unpacker serves both |
 | 55 | `takeoff_pack` | uint32 | — | — | **packed v2**, replaces 35/36/37. `avgPumps_x10 << 16 \| attempts << 8 \| successes`, each a byte the `PumpDetector` saturates at 254 |
@@ -130,7 +130,7 @@ written**: the phone computes them exactly and there is no field slot to spare.
 > ordinary English one. The cost was measured on 19 September 2026: a tester compared *Turn
 > success 29 %* in Garmin Connect with *93 % flew through* on the website and a 44 % on the
 > phone, and had no way to learn those are three different measurements — two of them wearing
-> one word (docs/algorithms.md, "Glossary — four words that are not synonyms").
+> one word (docs/algorithms/turns.md, "Glossary — four words that are not synonyms").
 >
 > **Scope.** A **display label only**. Field id 34, its type, its units, its semantics and
 > every parser stay exactly as they are; `SCHEMA_VERSION` does not move. The same word is the
@@ -143,7 +143,7 @@ written**: the phone computes them exactly and there is no field slot to spare.
 kind.** Naming a sweep a tack or a jibe needs a wind direction. Until device app 0.9.0 the
 watch had exactly one source for one, the bearing the rider entered by hand
 (`wind_dir_user`); since 0.9.0 it can also estimate one and writes that in `wind_dir_auto`
-(docs/algorithms.md "Watch approximation: auto wind"). With neither, every turn it detects
+(docs/algorithms/wind.md "Watch approximation: auto wind"). With neither, every turn it detects
 stays generic. A **`0`/`0` pair with no `wind_dir_user` and no `wind_dir_auto`** — which is
 what older builds wrote in that case, having no way to say "unknown" in a uint8 — therefore
 means *unclassified*, not *none*, and the parser (`FitSessionParser.watchSummary`) treats the
@@ -257,7 +257,7 @@ plus the phone's own jibe classification, which is what `cleanJibesPerHour` alre
 | 39 | `wind_dir_user` | uint16 | 2 | 65535 = unset |
 | 43 | `app_version` | uint16 | 2 | high byte app minor, low byte `SCHEMA_VERSION` — still **1** here: the class-(d) schema below is unchanged by the device app's v1→v2 packing, and it was already packed. This is exactly why a parser keys off field *presence*, not the version number |
 | 50 | `turn_outcomes` | uint32 | 4 | **packed**: `flew << 16 \| touchdown << 8 \| fell`, each uint8 saturating at 254 |
-| 51 | `clean_jibes` | uint8 | 1 | **field 0.9.6.** Counted jibes that were **clean** — score ≥ `turnSuccessPct`, the foil never lost across the scored window, **and** the turn's outcome resolved to `flew_through` (engine ≥ 0.12.0; docs/presentation.md "Clean jibe"). The outcome conjunct is what the watch applies too (`TurnDetector.mc`), and it is what makes the invariant below true rather than accidental. Saturates at 254. Deliberately **not** packed into `turn_outcomes`(50): those three lanes are the outcome ladder and partition the counted turns, whereas this is a stricter question asked of one of them, so it is a count that overlaps `flew` rather than a fourth share of the same total. Written on every tick like every other field in this table — the data field has no omit path, so a 0 here is a written 0. Read it with the same caution the class-(d) `tack_count`/`jibe_count` pair needs: **a session with no wind axis names nothing a jibe**, so `clean_jibes` = 0 alongside `wind_dir_user` = 65535 means *unclassified*, not *none*. It can never exceed the `flew` lane of field 50, and a file where it does has been mis-parsed |
+| 51 | `clean_jibes` | uint8 | 1 | **field 0.9.6.** Counted jibes that were **clean** — score ≥ `turnSuccessPct`, the foil never lost across the scored window, **and** the turn's outcome resolved to `flew_through` (engine ≥ 0.12.0; docs/presentation/clean-jibe.md "Clean jibe"). The outcome conjunct is what the watch applies too (`TurnDetector.mc`), and it is what makes the invariant below true rather than accidental. Saturates at 254. Deliberately **not** packed into `turn_outcomes`(50): those three lanes are the outcome ladder and partition the counted turns, whereas this is a stricter question asked of one of them, so it is a count that overlaps `flew` rather than a fourth share of the same total. Written on every tick like every other field in this table — the data field has no omit path, so a 0 here is a written 0. Read it with the same caution the class-(d) `tack_count`/`jibe_count` pair needs: **a session with no wind axis names nothing a jibe**, so `clean_jibes` = 0 alongside `wind_dir_user` = 65535 means *unclassified*, not *none*. It can never exceed the `flew` lane of field 50, and a file where it does has been mis-parsed |
 | 53 | `discipline_id` | uint8 | 1 | 1 = wingfoil — the compact form of the app's `discipline`(20) string |
 | 54 | `cfg_pack` | uint32 | 4 | **packed**: `entry_cms << 16 \| minFlight_s << 11 \| exit_cms` (entry 16 b cm/s · minFlight 5 b s · exit 11 b cm/s) — the compact form of `cfg_entry_speed`(40)/`cfg_min_flight`(42)/`cfg_exit_speed`(41) |
 
@@ -290,7 +290,7 @@ as a string (16 B and a scarce slot), `longest_flight_m`(25), `best_5x10s`(28)�
   `turn_outcomes` maps to the same flew/touchdown/fell tallies the phone derives from the
   record-level `turn_marker` values 4–6, and `cfg_pack` to the same three thresholds.
 - **`clean_jibes`(51) is the watch's own count, not a rate.** No CPH is ever written to a FIT,
-  by either app: the numerator is cheap and the denominator is the argument (docs/algorithms.md
+  by either app: the numerator is cheap and the denominator is the argument (docs/algorithms/rates.md
   "Session rates" — the phone divides by the cleaned track, the device app by the session
   clock, the data field by the native activity's timer time). Writing a rounded rate would
   freeze one denominator into the file forever. Divide it yourself.
@@ -314,4 +314,4 @@ as a string (16 B and a scarce slot), `longest_flight_m`(25), `best_5x10s`(28)�
   checks whether the device *timed* that stream or merely stamped it — a fenix 5 Plus writes
   constant timestamps days off the session with all-zero offsets — and rebuilds the clock from
   file order when it did not, flagging `capabilities.accelClockReconstructed`. The rule and
-  its two tests are in docs/algorithms.md, "Reading the stream".
+  its two tests are in docs/algorithms/pumping.md, "Reading the stream".

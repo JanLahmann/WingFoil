@@ -160,7 +160,7 @@ public struct SessionIngestor: Sendable {
     public var flightConfig = FlightConfig()
     public var recordsConfig = RecordsConfig()
     /// Carries the rider's declared `defaultTurnType` into the wind estimator
-    /// (docs/algorithms.md "Default turn type").
+    /// (docs/algorithms/wind.md "Default turn type").
     public var windConfig = WindConfig()
     /// Settings → Tuning: the published thresholds, moved by hand on this phone — **one set
     /// per discipline** (`TuningOverrideSets`). Empty on every install that has not touched
@@ -169,7 +169,7 @@ public struct SessionIngestor: Sendable {
     /// under its own discipline's set and no other.
     public var tuning = TuningOverrideSets()
     /// **Settings → "I mostly ride"**: the preset every imported session gets when its
-    /// recording does not say (docs/presentation.md, "Confirming the discipline on import").
+    /// recording does not say (docs/presentation/labels.md, "Confirming the discipline on import").
     ///
     /// Wingfoil by default, and on a wingfoil rider's phone this property changes nothing at
     /// all — it is the value the resolver already fell back to. It exists for the windsurfer,
@@ -266,7 +266,7 @@ public struct SessionIngestor: Sendable {
         // analysis, flag cleared — instead of appearing beside it. Replacing rather than
         // inserting keeps the gear the rider already picked, keeps anything holding the id
         // valid, and means the library never shows one session twice.
-        // **Which preset this session is read under**, decided once, here (docs/algorithms.md
+        // **Which preset this session is read under**, decided once, here (docs/algorithms/disciplines.md
         // "Disciplines"). The recording's own `discipline` field if it has one — the CleanJibe
         // watch app's, authoritative, never asked about again. Else whatever the rider already
         // settled on a provisional row this FIT is taking over. Else his declared default,
@@ -585,7 +585,7 @@ public struct SessionIngestor: Sendable {
         return stale.count
     }
 
-    /// **Analyse this session as another discipline** (docs/algorithms.md "Disciplines").
+    /// **Analyse this session as another discipline** (docs/algorithms/disciplines.md "Disciplines").
     ///
     /// Writes the rider's answer into `disciplineOverride` and re-derives that one session
     /// through the ordinary path — the new stamp is what makes the stored document stale, so
@@ -704,7 +704,7 @@ public struct SessionIngestor: Sendable {
             // `session.spotId` carries no foreign key, so the last session leaving a place
             // would otherwise leave the place behind: "Spot 2 · 0 · Never sailed", a phantom
             // of a session the rider deleted on purpose. Same write, so the two facts are
-            // never apart (docs/presentation.md, "Spots").
+            // never apart (docs/presentation/not-a-session-spots.md, "Spots").
             try SpotClusterer.pruneEmptySpots(db: db)
         }
         archive.delete(id: id)

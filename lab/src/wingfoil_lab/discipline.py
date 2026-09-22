@@ -1,4 +1,4 @@
-"""Discipline presets -- one engine, three rigs (docs/algorithms.md "Disciplines").
+"""Discipline presets -- one engine, three rigs (docs/algorithms/disciplines.md "Disciplines").
 
 A discipline is **not a fork of the engine**. Every stage, every clock and every verdict is
 the one docs/algorithms.md describes; a preset only picks the numbers a few of them are asked

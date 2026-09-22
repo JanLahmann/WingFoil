@@ -102,7 +102,7 @@ import Testing
     /// 3.8 m/s in 1 s, under `maxAccelMps2` (4.0), so this is exactly the case the spike
     /// filter does *not* catch. Trapezoid: the two intervals either side of the bad sample
     /// carry 7.9 m each ⇒ best 2 s 7.9 m/s, best 10 s 6.38, ratio 1.238. Same track and
-    /// same three numbers as the lab's `test_gate_*` (docs/algorithms.md "The
+    /// same three numbers as the lab's `test_gate_*` (docs/algorithms/records.md "The
     /// plausibility gate").
     private func oneBadFix() -> RawTrack {
         speedTrack(dt: 1, duration: 299) { t in t == 150 ? 9.8 : 6.0 }

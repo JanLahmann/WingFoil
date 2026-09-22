@@ -121,7 +121,7 @@ export function keyMetrics(g) {
  * exception, so the over-claim was the common one: a July session in Torbole read an hour
  * early with the page insisting it was as recorded.
  *
- * `meta.utcOffsetSource` (docs/presentation.md "Session time") names the rung that
+ * `meta.utcOffsetSource` (docs/presentation/session-time-video.md "Session time") names the rung that
  * answered, and the note is written from it:
  *
  *   activity | icu   exact — the recording or the athlete's account said so
@@ -146,7 +146,7 @@ export function clockNoteFor(meta) {
 function renderSummary(result, isExample = false) {
   const g = result.golden, meta = result.meta, caps = g.capabilities;
   const s = g.summary, rec = g.records, w = g.wind;
-  // The words this session is read in (docs/presentation.md, "Discipline lexicon"). The
+  // The words this session is read in (docs/presentation/labels.md, "Discipline lexicon"). The
   // config echo is the engine's own statement about which preset produced this document —
   // absent on a wingfoil run, which is the default this resolves to.
   const words = lexicon(g.config?.discipline);
@@ -172,7 +172,7 @@ function renderSummary(result, isExample = false) {
   if (meta.discipline) badges.push([meta.discipline, true]);
   // Beside the discipline badge and never instead of it: the badge says what the *recording*
   // is, this says how it was read and that the reading is not one anybody has checked yet
-  // (docs/algorithms.md "Disciplines"). The web has no override — the preset is whatever the
+  // (docs/algorithms/disciplines.md "Disciplines"). The web has no override — the preset is whatever the
   // recording's own developer field asked for.
   if (words.chip) badges.push([words.chip, false, EXPERIMENTAL_NOTE]);
   // What the recording is, said in the words the rider owns. The three source classes are
@@ -305,7 +305,7 @@ function distanceNote(km) {
 /**
  * **This recording is not a session** — the tag on the title and the one line under it.
  *
- * Engine 0.19.0 decides (docs/algorithms.md, "Not a session"): no foil time at all, AND
+ * Engine 0.19.0 decides (docs/algorithms/not-a-session.md, "Not a session"): no foil time at all, AND
  * either under two minutes or under two hundred metres. The analyzer has computed that
  * verdict since the bundle went to 0.19.0 and said nothing about it, so a thirty-second
  * beach recording was drawn here as a session and tagged on the phone. The engine's own
@@ -406,7 +406,7 @@ function renderTurns(table, caption, g, v, meta) {
   // caption said "≥ 70 %" whatever the analysis had been run with, and it named only half
   // the rule. Both halves are stated now — the score against `turnSuccessPct` on the
   // maneuver channel, and a minimum that never dropped below the foil exit speed
-  // (docs/algorithms.md, "Turn success").
+  // (docs/algorithms/turns.md, "Turn success").
   const cfg = g.config || {};
   const threshold = cfg.turnSuccessPct === null || cfg.turnSuccessPct === undefined
     ? null : `${nf(cfg.turnSuccessPct, 0)} %`;

@@ -1,7 +1,7 @@
 /* The session page's clock note, dumped as JSON for `verify_presentation.py` §4.
  *
  * Every time on a session page is drawn in the session's own zone, and since engine 0.9.1
- * the note under the title says how well that zone is *known* (docs/presentation.md
+ * the note under the title says how well that zone is *known* (docs/presentation/session-time-video.md
  * "Session time"). The rule is one `switch` over `meta.utcOffsetSource`, and the sentence
  * it picks is the only place the page tells a reader whether to trust a clock — so it is
  * asserted from the outside rather than trusted to a comment, in the same spirit as

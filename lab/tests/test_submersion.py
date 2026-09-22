@@ -1,4 +1,4 @@
-"""The wrist-under mask and its episodes (docs/algorithms.md "Turn outcome" step 2 and
+"""The wrist-under mask and its episodes (docs/algorithms/pumping.md "Turn outcome" step 2 and
 "Submersion episodes").
 
 Two halves. The **mask** (engine 0.22.0, ADR-029) reads a local, causal baseline rather than

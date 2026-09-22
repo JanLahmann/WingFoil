@@ -9,7 +9,7 @@ import Foundation
 /// ladder. Only the maneuver-specific parts stay with the caller: which window is judged,
 /// which entry speed the recovery is measured against, and what the verdict is called.
 ///
-/// Contract: docs/algorithms.md "Turn outcome" steps 0–4. Mirrors
+/// Contract: docs/algorithms/pumping.md "Turn outcome" steps 0–4. Mirrors
 /// `lab/src/wingfoil_lab/evidence.py` (the authoritative reference).
 public struct OffFoilEvidence: Sendable {
     /// Sample times (whole track, gaps included).
@@ -148,7 +148,7 @@ public enum Evidence {
 
     /// (mask, baseline): the wrist-under test and the line each sample was judged against.
     ///
-    /// Causal and local (engine 0.22.0, docs/algorithms.md "Turn outcome" step 2). A sample
+    /// Causal and local (engine 0.22.0, docs/algorithms/pumping.md "Turn outcome" step 2). A sample
     /// is wet when it sits `dropM` below the baseline **in force at that moment**, not below
     /// the session's median: a watch that re-anchors its altitude after a swim otherwise
     /// turns every later stretch into a swim of its own.
@@ -200,7 +200,7 @@ public enum Evidence {
         submergedTrace(alt, t: t, gap: gap, dropM: dropM).mask
     }
 
-    /// Two runs closer together than this are one submersion (docs/algorithms.md
+    /// Two runs closer together than this are one submersion (docs/algorithms/pumping.md
     /// "Submersion episodes"): a dunk and the wave that follows it are one event to the
     /// rider, and a slew-limited altimeter can cross the threshold twice on the way back up.
     public static let submersionMergeS = 2.0

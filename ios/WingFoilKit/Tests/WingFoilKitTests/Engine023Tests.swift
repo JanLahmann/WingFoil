@@ -23,7 +23,7 @@ import Testing
         return track
     }
 
-    /// The three terms of the rule (docs/algorithms.md "speed sample hygiene").
+    /// The three terms of the rule (docs/algorithms/hygiene.md "speed sample hygiene").
     @Test func theGapThresholdHasASmartRecordingFloor() {
         // Smart Recording: median dt 2 ⇒ the 10 s floor applies, so a 5 s and an 8 s step
         // are cadence, not holes, and only the 17 s one cuts.

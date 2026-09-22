@@ -24,7 +24,7 @@ import SwiftUI
 ///
 /// The cap exists because the ramp has to end somewhere and 30 % over the entry speed is
 /// already a remarkable turn; past it the line is simply the hot colour rather than a
-/// colour nobody can name. Definitions: docs/presentation.md, "Turn detail".
+/// colour nobody can name. Definitions: docs/presentation/turn-detail.md, "Turn detail".
 public enum TurnSpeedRamp {
 
     /// Where the hot end of the ramp sits, as a multiple of the turn's entry speed.

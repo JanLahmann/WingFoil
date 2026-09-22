@@ -179,7 +179,7 @@ const shortDate = (e) => {
  * in the kit, keyed by the same ids so the two lists can only drift in one direction.
  *
  * The words are the kit's, character for character, because one wording per metric is the
- * rule across iOS and web (docs/presentation.md, "Label table") and `verify_glossary.py`
+ * rule across iOS and web (docs/presentation/labels.md, "Label table") and `verify_glossary.py`
  * holds every one of them to `docs/copy/glossary.json`. The value is a field of the Python
  * digest, printed — nothing here derives a metric, and the speed is only put into the unit
  * this browser reads (js/appsettings.js).
@@ -187,7 +187,7 @@ const shortDate = (e) => {
  * **`falls` is every fall of the session**, in a turn or in a straight line: `wetExits`,
  * the flight-end channel WPH divides, and not the turn ladder's fell-in count. The ladder's
  * is a share of the jibes and only reads right beside its other two rungs, which the row's
- * foot already draws (docs/algorithms.md, "Wet is every fall, not every fallen jibe").
+ * foot already draws (docs/algorithms/rates.md, "Wet is every fall, not every fallen jibe").
  */
 const ROW_METRICS = {
   foilShare: { label: "foil", value: (e) => pct(e.foilPct) },

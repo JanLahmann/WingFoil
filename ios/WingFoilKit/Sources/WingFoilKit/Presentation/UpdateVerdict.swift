@@ -1,7 +1,7 @@
 import Foundation
 
 /// **How loudly the switch asks** — the one word `web/app/version.json` carries per channel
-/// (docs/presentation.md, "The beta's update reminder").
+/// (docs/presentation/status-feedback-start-widgets-ipad.md, "The beta's update reminder").
 ///
 /// Two levels and no third, because there are only two honest answers to "you are behind":
 /// *say so once and let him get on with it*, and *this build is not worth a report any more*.

@@ -20,7 +20,7 @@ enum WidgetPalette {
 /// bytes of JSON, and a bad one for a rider who reads `47%` on his home screen and `47 %`
 /// on the session page a tap later — so every rule below is the kit's, spelled out, named,
 /// and pinned by the doc comment to the function it must not drift from
-/// (docs/presentation.md, "Label table" and "Formatter rules").
+/// (docs/presentation/labels.md, "Label table" and "Formatter rules").
 enum WidgetFormat {
 
     /// A share, under the one percent rule — one decimal below 10 %, none at or above it,

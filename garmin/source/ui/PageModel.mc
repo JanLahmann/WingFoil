@@ -98,7 +98,7 @@ module PageModel {
         M_TAKEOFFS = 17,
         M_PUMPS_TO_TAKEOFF = 18,
         M_TAKEOFF_COST = 19,
-        // "now/best" no-fall streak (docs/algorithms.md "Turn streaks"). On the main screen
+        // "now/best" no-fall streak (docs/algorithms/pumping.md "Turn streaks"). On the main screen
         // it has its own row; here it is a cell like any other, for a rider who wants it on
         // page 3 instead.
         M_STREAK = 20,
@@ -689,7 +689,7 @@ module PageModel {
     //     tacks           flew · touch · fell
     //
     // Tacks have no clean rung and never will: a clean JIBE is what the product is named
-    // after and what `cleanJibeCount` counts (docs/presentation.md "Clean jibe"). A star over
+    // after and what `cleanJibeCount` counts (docs/presentation/clean-jibe.md "Clean jibe"). A star over
     // the tack row would be inventing a verdict the engine does not compute.
     //
     // These are accessors, not strings: the row is drawn as coloured cells, and a formatted
@@ -781,7 +781,7 @@ module PageModel {
 
     // ---- CPH: clean jibes per hour (device app 0.9.5) ----
     //
-    // A tally answers "how many", a rate answers "how busy" (docs/algorithms.md "Session
+    // A tally answers "how many", a rate answers "how busy" (docs/algorithms/rates.md "Session
     // rates"). The phone divides by the elapsed span of the CLEANED TRACK, gaps included; the
     // watch has no cleaned track, so it divides by the session's own wall clock — the same
     // number the post-save verdict page already prints as "of 1:47:12". That divergence is

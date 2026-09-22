@@ -8,7 +8,7 @@ import Foundation
 /// formatters.
 ///
 /// **The engine is untouched.** Records are defined in knots by the speedsurfing world
-/// (docs/algorithms.md, "Speed records") and the analysis stays in m/s and knots from end
+/// (docs/algorithms/records.md, "Speed records") and the analysis stays in m/s and knots from end
 /// to end. This converts one number on the way to a screen, and never on the way into a
 /// record, a golden or a FIT.
 public enum SpeedUnit: String, Codable, Sendable, CaseIterable, Identifiable {

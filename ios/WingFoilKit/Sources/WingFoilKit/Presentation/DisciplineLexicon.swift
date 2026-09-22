@@ -1,6 +1,6 @@
 import Foundation
 
-/// **One lexicon per discipline** (docs/presentation.md "Discipline lexicon").
+/// **One lexicon per discipline** (docs/presentation/labels.md "Discipline lexicon").
 ///
 /// A windsurfer on a fin does not fly and has no foil to lose. Every word in this table is a
 /// word the engine has no opinion about — the numbers, the verdicts and the layer names are

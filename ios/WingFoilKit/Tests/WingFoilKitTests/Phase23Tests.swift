@@ -159,7 +159,7 @@ import Testing
 
     // MARK: - Default turn type (the 180° prior)
 
-    // docs/algorithms.md "Default turn type". Mirrors the block of the same name in
+    // docs/algorithms/wind.md "Default turn type". Mirrors the block of the same name in
     // `lab/tests/test_wind.py`: the blend is exercised twice over, as pure arithmetic and
     // end to end on a constructed track.
 
@@ -406,7 +406,7 @@ import Testing
         #expect(!chop.isPumping(from: 10, to: 90))
     }
 
-    /// The session total (engine 0.8.0, docs/algorithms.md "The session total") counts a
+    /// The session total (engine 0.8.0, docs/algorithms/pumping.md "The session total") counts a
     /// stroke only when it is in a burst of `pumpMinStrokes`, its burst peaks at
     /// `pumpBurstPeakG`, and the board was moving. Real chop is *at* pumping cadence and
     /// only about half the amplitude, so amplitude is the test that separates them — and
@@ -577,7 +577,7 @@ import Testing
         return end
     }
 
-    /// docs/algorithms.md "Turn streaks": dry counts staying out of the water, so a
+    /// docs/algorithms/pumping.md "Turn streaks": dry counts staying out of the water, so a
     /// touchdown extends it; flew is the strict run and a touchdown resets it too.
     @Test func touchdownExtendsDryButBreaksFlew() {
         let s = TurnDetector.streaks(streakTurns([.flewThrough, .touchdown, .flewThrough]))

@@ -18,7 +18,7 @@ import Foundation
 ///   0 bpm is a measurement ("this attempt cost nothing"), and it is one this session may
 ///   genuinely have made — see `bpm(_:)`.
 ///
-/// Definitions: docs/algorithms.md "HR cost (phone)". Computation: `HrCost.swift`.
+/// Definitions: docs/algorithms/hr-cost.md "HR cost (phone)". Computation: `HrCost.swift`.
 public struct HrCostCard: Sendable, Equatable {
 
     /// One secondary number with its label and the coverage/reason line under it.

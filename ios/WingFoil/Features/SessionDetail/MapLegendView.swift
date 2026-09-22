@@ -65,7 +65,7 @@ struct MapLegendView: View {
     }
 
     /// This map's chips **for this session's discipline**: the pumping chip is not offered
-    /// where the pump channel was never run (docs/algorithms.md "Disciplines").
+    /// where the pump channel was never run (docs/algorithms/disciplines.md "Disciplines").
     private var layers: [MapLayer] { scope.layers(discipline) }
 
     private var discipline: Discipline { detail.row.analysisDiscipline }
@@ -186,7 +186,7 @@ struct MapLegendView: View {
     /// It leads because it is the mark a rider opens the map to find, and because it is the
     /// one mark here that is not a rung of the ladder: putting it after "fell in" would file
     /// the strict verdict as the ladder's fourth outcome, which is precisely what it is not
-    /// (docs/presentation.md, "Clean jibe"). The order is the scope's
+    /// (docs/presentation/clean-jibe.md, "Clean jibe"). The order is the scope's
     /// (`MapLayerScope.layers`), so a map's chips read in the same order as every other
     /// map's, minus the ones it cannot draw.
     private var markerRow: some View {

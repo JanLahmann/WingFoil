@@ -40,7 +40,7 @@ struct RootView: View {
             // The beta's "a newer build exists" screen (insist level only; the remind level
             // is a line in the library). Under the two overlays below on purpose: a library
             // the app cannot read, or a start-over that needs a relaunch, is more specific
-            // than a build number and must win (docs/presentation.md, "The beta's update
+            // than a build number and must win (docs/presentation/status-feedback-start-widgets-ipad.md, "The beta's update
             // reminder").
             #if BETA
             .overlay { UpdateReminderScreen() }

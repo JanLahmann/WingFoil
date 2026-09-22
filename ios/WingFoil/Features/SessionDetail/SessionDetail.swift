@@ -33,7 +33,7 @@ struct SessionDetail: Sendable {
     /// What happened at a maneuver or a straight-line flight end — the thing the map and
     /// the chart both mark. `filled` separates the two channels: a solid dot is a *turn*
     /// outcome, a hollow ring is a straight-line flight end that no turn explains
-    /// (docs/algorithms.md "Flight-end outcome", ownership).
+    /// (docs/algorithms/pumping.md "Flight-end outcome", ownership).
     struct EventMarker: Identifiable, Sendable {
         enum Tone: Sendable {
             case flew            // green: never left the foil / glided out
@@ -57,7 +57,7 @@ struct SessionDetail: Sendable {
         /// tap on its row in the Turns tab opens — by construction rather than by a lookup
         /// on a timestamp that could match the wrong one.
         var turnIndex: Int?
-        /// A **clean jibe** — the strict verdict (docs/presentation.md, "Clean jibe"). It is
+        /// A **clean jibe** — the strict verdict (docs/presentation/clean-jibe.md, "Clean jibe"). It is
         /// drawn as a filled star in the clean ink instead of the outcome dot, and it answers
         /// to the `cleanJibe` chip *as well as* to its outcome chip: clean cuts across the
         /// ladder rather than sitting on it, so hiding either one hides the mark.
@@ -65,7 +65,7 @@ struct SessionDetail: Sendable {
         var title: String
         var detail: String
         /// The flight this mark ends, when it is a straight-line flight end — tap-only, and
-        /// nil on a turn marker, which is not a flight boundary (docs/presentation.md,
+        /// nil on a turn marker, which is not a flight boundary (docs/presentation/scrub-pairing.md,
         /// "Pairing").
         var pairing: String?
         var flightIndex: Int?
@@ -123,7 +123,7 @@ struct SessionDetail: Sendable {
         /// print, and a failed attempt never reached the foil at all.
         var timeToFoilS: Double?
         /// The flight this attempt started, or "no flight" when it did not — tap-only
-        /// (docs/presentation.md, "Pairing").
+        /// (docs/presentation/scrub-pairing.md, "Pairing").
         var pairing: String?
         var flightIndex: Int?
 
@@ -251,7 +251,7 @@ struct SessionDetail: Sendable {
     /// GP3S efforts with map/chart geometry, strongest set first.
     let efforts: [RecordEffort]
     /// Every flight with the end that stopped it and the strokes that started it — what the
-    /// tap-only pairing lines are written from (docs/presentation.md, "Pairing").
+    /// tap-only pairing lines are written from (docs/presentation/scrub-pairing.md, "Pairing").
     let pairings: [FlightPairing.Flight]
     /// Watch-vs-phone disagreements worth a banner (class (a) only, empty otherwise).
     let divergences: [Divergence]
@@ -350,7 +350,7 @@ struct SessionDetail: Sendable {
 
     /// What the track callout is showing. One value for all four tappable things, because
     /// they all answer the same question — "what is this?" — and the pairing line is the
-    /// only part that differs (docs/presentation.md, "Pairing").
+    /// only part that differs (docs/presentation/scrub-pairing.md, "Pairing").
     struct Callout: Identifiable, Equatable, Sendable {
         var id: String
         var title: String
@@ -509,7 +509,7 @@ struct SessionDetail: Sendable {
     }
 
     /// The track as runs of one phase each, **cut at the engine's exact flight boundaries**
-    /// (`TrackPhaseCut`, docs/presentation.md "Phase tints").
+    /// (`TrackPhaseCut`, docs/presentation/layers-map-colour-type.md "Phase tints").
     ///
     /// This used to ask the question per sample — "is this fix inside a flight?" — and start
     /// a new segment whenever the answer changed. On a coarse source that answer never
@@ -918,7 +918,7 @@ struct SessionDetail: Sendable {
     /// It used to prefix "Best " onto a bare `RecordKind.label` ("10 s") for every kind but
     /// the two composites, which is what left the app calling one record `2 s` in the
     /// session table and `Best 2 s` in the chip. The prefix now lives in the label itself,
-    /// once, for every surface that names a record (docs/presentation.md, "Label table").
+    /// once, for every surface that names a record (docs/presentation/labels.md, "Label table").
     static func effortLabel(_ kind: RecordKind) -> String { kind.label }
 
     /// The positioned track between two session-clock times.

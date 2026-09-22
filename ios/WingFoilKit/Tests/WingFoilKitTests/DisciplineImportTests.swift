@@ -3,7 +3,7 @@ import GRDB
 import Testing
 @testable import WingFoilKit
 
-/// **Where an imported session's preset comes from** (docs/presentation.md, "Confirming the
+/// **Where an imported session's preset comes from** (docs/presentation/labels.md, "Confirming the
 /// discipline on import"): the recording's own `discipline` field, then the rider's declared
 /// default, and the sport code never — plus the review model the confirmation sheet reads.
 @Suite struct DisciplineImportTests {
@@ -209,7 +209,7 @@ import Testing
     // Settings → Analysis → "Windsurf (experimental)", off on a fresh install. Everything
     // windsurf-facing hangs off it, and with it off the app is the wingfoil-only one it was
     // before the preset existed — without unlearning a single session already read as
-    // windsurf (docs/presentation.md, "Confirming the discipline on import").
+    // windsurf (docs/presentation/labels.md, "Confirming the discipline on import").
 
     @Test func nothingIsReviewedWhileTheSwitchIsOff() {
         let rows = [guessed("a", 1), guessed("b", 2, preset: .windsurfFin)]

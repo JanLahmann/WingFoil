@@ -14,7 +14,7 @@ import Foundation
 /// he fell out of. `rule(turn:slice:)` returns the rung so a test can assert the ladder without
 /// asserting prose, and `line` is the wording laid over it.
 ///
-/// Definitions: docs/presentation.md, "Turn detail".
+/// Definitions: docs/presentation/turn-detail.md, "Turn detail".
 public enum TurnCoach {
 
     /// The rungs, most specific first. `line` walks them in this order.

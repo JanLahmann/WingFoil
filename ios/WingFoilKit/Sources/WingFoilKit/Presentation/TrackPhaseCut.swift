@@ -1,7 +1,7 @@
 import Foundation
 
 /// The track split into runs of one phase each, cut at the engine's exact flight
-/// boundaries (docs/presentation.md, "Phase tints").
+/// boundaries (docs/presentation/layers-map-colour-type.md, "Phase tints").
 ///
 /// The obvious spelling — walk the samples, ask "is this fix inside a flight?", start a new
 /// run whenever the answer changes — is wrong on a coarse source, and wrong in the direction

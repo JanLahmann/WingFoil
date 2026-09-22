@@ -8,6 +8,7 @@ before changing anything:
   Swift kit, the web bundle and the watch must match this file to the digit.
 - `docs/presentation.md` — what the rider sees and why: labels, tabs, maps, the turn page,
   tuning, the dev workbench. One wording per metric across iOS and web.
+- Both are indexes; the sections live in `docs/algorithms/` and `docs/presentation/`.
 - `docs/testing.md` — goldens, verifiers, simulator hooks, the three channels' archives.
 - `docs/channels.md` — **which feature is in which channel** (release / beta / dev), and the
   four rules a feature meets before it moves up one. The website's "what is coming" list, the

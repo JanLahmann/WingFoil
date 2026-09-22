@@ -63,7 +63,7 @@ public struct StravaActivity: Sendable, Codable, Identifiable, Equatable {
     public var timezone: String?
     /// Strava's `utc_offset`, in seconds. The exact answer to "what clock was he on", and
     /// the reason a Strava session gets rung 1 of the offset ladder rather than the
-    /// longitude guess (docs/algorithms.md "Session time").
+    /// longitude guess (docs/algorithms/flight.md "Session time").
     public var utcOffsetS: Int?
     public var elapsedTimeS: Int?
     public var movingTimeS: Int?

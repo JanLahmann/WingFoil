@@ -5,7 +5,7 @@ here is re-derived by `ios/WingFoilKit` from the same original FIT and asserted 
 this file (`GoldenTests`), so anything added here becomes a parity obligation.
 
 Engine 0.2.0 fills the phases the 0.1.0 schema left as documented empties — `turns`,
-`wind`, `takeoffs` — and adds `flightEnds` (docs/algorithms.md "Flight-end outcome", a
+`wind`, `takeoffs` — and adds `flightEnds` (docs/algorithms/pumping.md "Flight-end outcome", a
 phase-2/3 output the original schema predates). Source capabilities still degrade the
 same way the modules do: no accel ⇒ `pumps`/stroke counts null, no barometer ⇒ no
 submersion evidence, Smart-Recording truncation ⇒ `unknown` outcomes excluded from tallies.
@@ -23,7 +23,7 @@ change again — nothing pre-existing moved — but the absence of a streak is n
 statement as a streak of 0, and only the version bump keeps a 0.3.0 document from being
 read as the latter.
 
-Engine 0.5.0 adds the **default-turn-type prior** (docs/algorithms.md "Default turn type"):
+Engine 0.5.0 adds the **default-turn-type prior** (docs/algorithms/wind.md "Default turn type"):
 `config.windDefaultTurnType` / `windTurnPriorWeight`, and the evidence trail it leaves on
 the wind object (`turnTypeMargin`, `turnTypeDirDeg`, `turnTypeVotes`, `priorFlipped`).
 Unlike the three bumps above this one *can* move pre-existing numbers — a session whose
@@ -32,14 +32,14 @@ tack/jibe label with it — which is exactly why a stored document must re-deriv
 be read as if the rider had never declared a habit. On the current corpus nothing moves:
 every fixture's cone margin is already decisive, so the prior is never consulted.
 
-Engine 0.6.0 adds the **session rate metrics** (docs/algorithms.md "Session rates"):
+Engine 0.6.0 adds the **session rate metrics** (docs/algorithms/rates.md "Session rates"):
 `summary.durationS` / `avgSpeedKmh` / `turnsPerHour` / `jibesPerHour` / `wetPerHour`. Nothing
 pre-existing moves — they are arithmetic over numbers the summary already carried — but a
 0.5.0 document cannot answer "how busy was that hour" at all, and a missing rate read as 0
 would claim a session with no jibes in it. The denominator is elapsed session time, not
 foiling time, so every one of them is a rate *per hour on the water*.
 
-Engine 0.7.0 reworks that block twice over (docs/algorithms.md "Session rates"). First,
+Engine 0.7.0 reworks that block twice over (docs/algorithms/rates.md "Session rates"). First,
 `jibesPerHour` counts **dry** jibes only — `turns.jibes - turns.jibeOutcomes.fellIn` — so the
 number a rider reads as the measure of his afternoon stops counting the jibes he swam out of;
 this *moves* a pre-existing value on every fixture with a fallen jibe in it, which is exactly
@@ -49,7 +49,7 @@ say *when* the rider was going well, and the busiest quarter of an hour is the p
 remembers. Its peak is measured over full windows only — a three-minute burst scaled to the
 hour is a lie, and this file does not tell it.
 
-Engine 0.8.0 fixes `summary.takeoff.totalPumpStrokes` (docs/algorithms.md "The session
+Engine 0.8.0 fixes `summary.takeoff.totalPumpStrokes` (docs/algorithms/pumping.md "The session
 total"). It was the one pump metric that skipped `pumpMinStrokes`, so it reported the raw
 output of the peak picker -- and chop, measured, runs at pumping cadence and clears
 `pumpStrokeAmp` at its crests, so a flight contributed roughly one "stroke" per chop crest.
@@ -59,7 +59,7 @@ a stroke only inside a qualifying burst whose tallest peak reaches `pumpBurstPea
 286 -> 31, 3091 -> 701, 1341 -> 395; every other field on every fixture is unchanged, and the
 twelve accel-less goldens keep their null.
 
-Engine 0.8.1 finishes that job on `takeoffs[].inFlightStrokes` (docs/algorithms.md "In-flight
+Engine 0.8.1 finishes that job on `takeoffs[].inFlightStrokes` (docs/algorithms/pumping.md "In-flight
 strokes"). 0.8.0 left it on the burst-length rule alone, so the bundled example reported a
 total of 31 beside an in-flight 60 -- a part larger than its whole, on the very count the
 chop hurts most. It now takes the same `pumpBurstPeakG` gate (not the speed one: the window
@@ -77,7 +77,7 @@ their accel-less nulls and empties exactly as the twelve accel-less FIT goldens 
 not have produced this one, and because that is the signal the apps re-derive on.
 
 Engine 0.9.1 changes no number either. It adds one field *outside* the golden —
-`RawTrack.start_utc_offset_source`, surfaced as `meta.utcOffsetSource` (docs/presentation.md
+`RawTrack.start_utc_offset_source`, surfaced as `meta.utcOffsetSource` (docs/presentation/session-time-video.md
 "Session time") — which records **which rung** of the UTC-offset ladder answered. The ladder
 itself is unchanged; what was missing was the qualification, and without it a page printed
 "times as recorded on the water" over an offset that was a solar guess from longitude, an
@@ -85,9 +85,9 @@ hour out under DST. That is a claim about the data, so it is engine-side, and a 
 document written before it cannot say which rung it used — which is why the version moves
 and every golden is rewritten with the new stamp and identical numbers.
 
-Engine 0.10.0 adds `summary.cleanJibesPerHour` (docs/algorithms.md "Session rates"), the
+Engine 0.10.0 adds `summary.cleanJibesPerHour` (docs/algorithms/rates.md "Session rates"), the
 rate over the **strict** verdict — `turns.jibesSuccessful / (durationS/3600)`, the jibes he
-carved all the way through carrying his speed (docs/presentation.md "Clean jibe"). Nothing
+carved all the way through carrying his speed (docs/presentation/clean-jibe.md "Clean jibe"). Nothing
 pre-existing moves: it is arithmetic over a count the summary has carried since 0.1.0, and
 every other value on every fixture is byte-identical to 0.9.1's. The bump is because a 0.9.1
 document cannot answer the question the rider actually asks — JPH says he got away with the
@@ -99,7 +99,7 @@ Engine 0.11.0 changes no number and adds five keys to each entry of `turns` — 
 detector already computed and then dropped on the floor: the turn's own record kept only
 its two endpoints, so a per-turn page could say a jibe went 11.1 → 7.5 kn but not *when*
 the bottom was, what it came out at, how hard it was carved, or where the wind stood at
-either end. `exitKn` is the one new *definition* (docs/algorithms.md, "Turn detection &
+either end. `exitKn` is the one new *definition* (docs/algorithms/turns.md, "Turn detection &
 classification"): the maneuver channel at the first sample at or after `endTs` — the same
 channel and the same 3 dp as `minKn`, so the three read as one line. The TWA pair is
 explicit **null** without a usable wind axis, by the same rule every other unmeasurable
@@ -184,7 +184,7 @@ start rather than at the dip. The same mask is now also serialized as events, on
 contiguous run of it (gap-broken, near ones merged), each carrying `ts`, `endTs`, `durationS`,
 `dropM` and what it happened during. The `submerged` flags are untouched -- same mask, same
 threshold, same verdicts -- so a 0.15.0 golden differs from a 0.16.0 one only by the version
-stamp and the new block. See docs/algorithms.md "Submersion episodes".
+stamp and the new block. See docs/algorithms/pumping.md "Submersion episodes".
 
 Engine 0.17.0 gives **the clean jibe a quiet tail**, and it is the second bump here that moves
 numbers on purpose. Jan, 7 Sep 2026: *"an additional requirement for a clean jibe: no touch
@@ -199,7 +199,7 @@ outcome, not a count, not a streak, not JPH or TPH. Each turn gains `cleanBlocke
 reason a jibe the page cannot otherwise explain is not clean (`axis_after`,
 `quiet_flight_end`, `quiet_off_foil`, `quiet_submerged`, else null), and `config` gains
 `turnCleanQuietS`. Over the 17 committed fixtures clean jibes fall 160 -> 152; over the 21
-sessions of the corpus 278 -> 261. See docs/algorithms.md "The quiet tail".
+sessions of the corpus 278 -> 261. See docs/algorithms/turns.md "The quiet tail".
 
 Engine 0.18.0 **retires the pump rung and gives every touchdown and fall a reason**. Step 3 of
 the ladder promoted a fly-through to a touchdown when the accelerometer heard a burst and a
@@ -216,10 +216,10 @@ is kept beside it as the gate. Beside it every turn gains
 that decided, as a code whose words live in presentation. Over the 17 committed fixtures jibes
 go 289 -> 295 flew through, 212 -> 206 touched down, 37 fell in unchanged, and clean 150 -> 151;
 over the 21 sessions of the corpus 493 -> 506, 270 -> 257, 55 unchanged, clean 263 -> 266. See
-docs/algorithms.md "Turn outcome" and ADR-022.
+docs/algorithms/pumping.md "Turn outcome" and ADR-022.
 
 Engine 0.19.0 **says whether a recording is a session at all**. `summary.isSession` and
-`summary.notASessionReason` (docs/algorithms.md "Not a session"): a recording with no foil
+`summary.notASessionReason` (docs/algorithms/not-a-session.md "Not a session"): a recording with no foil
 time in it that is either shorter than 120 s or covers less than 200 m is a *recording*, not
 a session -- the one a rider starts on the beach and stops again, which Jan's library held
 thirteen of on 13-14 Sep 2026 at 0:00-0:24 min and 0.0 km each, quietly dragging the Trends
@@ -232,7 +232,7 @@ and the map, and leaves the recording out of the counts, trends, records and tot
 describe riding.
 
 Engine 0.20.0 adds **the plausibility gate** on the uncertified speed record
-(docs/algorithms.md "The plausibility gate"). Jan, 19 Sep 2026: *"uncertified speed record:
+(docs/algorithms/records.md "The plausibility gate"). Jan, 19 Sep 2026: *"uncertified speed record:
 maybe only accept if it seems reasonable vs the 10 s record."* A best 2 s differentiated from
 positions rides on two fixes, and one of them being wrong is the whole record: 2026-08-29's
 positional copy read **31.77 kn** against the FIT's certified 13.21, 2.4x, while its best 10 s
@@ -246,7 +246,7 @@ positional readings already agree to two per cent. On the committed fixtures **n
 moves** -- both class (c) goldens sit at 1.05 -- but the config key is a schema change and a
 0.19.0 document was written by an engine that could not have refused a record.
 
-Engine 0.21.0 adds **the aborted turn** (docs/algorithms.md "The aborted turn"). Jan, 20 Sep
+Engine 0.21.0 adds **the aborted turn** (docs/algorithms/turns.md "The aborted turn"). Jan, 20 Sep
 2026: *"an attempted turn that ends in the water is a turn that fell in."* A tester tried two
 tacks on 19 Sep, went in both times, and read back no tack and no fall in a turn -- because the
 scan asks for `turnMinAngle` of heading change and a rider who falls halfway round never gets
@@ -291,7 +291,7 @@ from .wind import WindConfig, WindEstimate, estimate_wind
 
 @dataclass
 class RateConfig:
-    """Session-rate parameters (docs/algorithms.md "Session rates").
+    """Session-rate parameters (docs/algorithms/rates.md "Session rates").
 
     One knob: the rolling window the per-hour series is measured over. 15 minutes is long
     enough that a single jibe cannot dominate it and short enough to separate the hour the
@@ -340,7 +340,7 @@ class Analysis:
     takeoff_config: TakeoffConfig
     hr_config: HrConfig
     rate_config: RateConfig
-    #: Which preset produced this document (docs/algorithms.md "Disciplines"). Defaulted so
+    #: Which preset produced this document (docs/algorithms/disciplines.md "Disciplines"). Defaulted so
     #: every existing construction of `Analysis` still reads as what it was: a wingfoil run.
     discipline: Discipline = Discipline.WINGFOIL
 
@@ -374,7 +374,7 @@ def analyze(path: str | Path, filter_config: FilterConfig | None = None,
     ct = clean(track, fcfg)
     fr = segment_flights(ct, flcfg)
     rec = gp3s.records(ct)
-    # `tcfg` because the default-turn-type prior (docs/algorithms.md "Default turn type")
+    # `tcfg` because the default-turn-type prior (docs/algorithms/wind.md "Default turn type")
     # votes on the very sweeps `detect_turns` is about to report -- one turn config, or the
     # prior and the session would be talking about different turns.
     wind = estimate_wind(ct, fr, wcfg, tcfg)
@@ -412,7 +412,7 @@ def analyze(path: str | Path, filter_config: FilterConfig | None = None,
     hr = analyze_hr(track, fr, takeoffs, ends, pt, turns, hcfg)
 
     # `ends` because the streaks span both channels: a straight-line swim ends a run of
-    # clean turns too (docs/algorithms.md "Turn streaks").
+    # clean turns too (docs/algorithms/pumping.md "Turn streaks").
     turn_summary = summarize_turns(turns, ends, tcfg)
     end_summary = summarize_flight_ends(ends)
     subs = session_submersions(ct, ev, turns, ends)
@@ -431,7 +431,7 @@ def analyze(path: str | Path, filter_config: FilterConfig | None = None,
 
 def session_submersions(ct: CleanTrack, ev: OffFoilEvidence | None, turns: list[Turn],
                         ends: list[FlightEnd]) -> list[Submersion]:
-    """The session's submersion episodes, attributed (docs/algorithms.md "Submersion
+    """The session's submersion episodes, attributed (docs/algorithms/pumping.md "Submersion
     episodes").
 
     The two window lists are the *same* spans the two outcome ladders judged over, rebuilt
@@ -455,7 +455,7 @@ def session_submersions(ct: CleanTrack, ev: OffFoilEvidence | None, turns: list[
 
 @dataclass
 class SessionRates:
-    """Session basics and the per-hour rates (docs/algorithms.md "Session rates").
+    """Session basics and the per-hour rates (docs/algorithms/rates.md "Session rates").
 
     All four rates share one denominator -- **timer time** (`timer_time_s`, T2: the sum of
     the non-gap steps, i.e. the session minus its pauses) since engine 0.13.0. They answer
@@ -494,7 +494,7 @@ class WindowRate:
 
 @dataclass
 class WindowRates:
-    """The rolling-window rate series and its two peaks (docs/algorithms.md "Session rates").
+    """The rolling-window rate series and its two peaks (docs/algorithms/rates.md "Session rates").
 
     `best_jph` / `best_wph` are the **true** sliding maxima, not the largest value in
     `series`: the count in a window can only be highest when the window opens on an event,
@@ -535,7 +535,7 @@ def session_start_t(ct: CleanTrack) -> float:
     return 0.0 if len(t) == 0 else float(t.iloc[0])
 
 
-#: "Not a session" -- the duration floor, seconds (docs/algorithms.md "Not a session").
+#: "Not a session" -- the duration floor, seconds (docs/algorithms/not-a-session.md "Not a session").
 #: Only ever consulted for a recording whose `foilTimeS` is 0, which is why it can be set
 #: generously: the corpus's shortest recording is 59 s long -- *inside* this floor -- and is
 #: a session on its 30 s of foil time, which the conjunction asks about first.
@@ -546,7 +546,7 @@ NOT_A_SESSION_MAX_DURATION_S = 120.0
 NOT_A_SESSION_MAX_DISTANCE_M = 200.0
 
 #: The reason codes `summary.notASessionReason` may carry. Codes, never sentences -- the
-#: words live in presentation (docs/presentation.md "Not a session"). `no_recording` is
+#: words live in presentation (docs/presentation/not-a-session-spots.md "Not a session"). `no_recording` is
 #: never produced here: it belongs to a library row that has a card and no recording yet,
 #: and this module only ever sees a recording that was analyzed.
 NOT_A_SESSION_REASONS = ("too_short", "no_distance", "no_recording")
@@ -554,7 +554,7 @@ NOT_A_SESSION_REASONS = ("too_short", "no_distance", "no_recording")
 
 def session_verdict(foil_time_s: float, duration_s: float,
                     distance_m: float) -> tuple[bool, str | None]:
-    """Is this recording a session? (docs/algorithms.md "Not a session", engine 0.19.0)
+    """Is this recording a session? (docs/algorithms/not-a-session.md "Not a session", engine 0.19.0)
 
     Returns `(is_session, reason)`; `reason` is None exactly when `is_session` is True.
 
@@ -568,7 +568,7 @@ def session_verdict(foil_time_s: float, duration_s: float,
 
     The verdict is a *label*, never a deletion. A recording that fails it keeps its page,
     its map and its row; it is only kept out of the counts, trends, records, period and gear
-    totals that describe riding (docs/presentation.md "Not a session").
+    totals that describe riding (docs/presentation/not-a-session-spots.md "Not a session").
     """
     if foil_time_s > 0:
         return True, None
@@ -603,7 +603,7 @@ def session_rates(duration_s: float, timer_time_s: float, distance_m: float,
 
     `clean_jibes` is the strict reading of the same set -- `turns.jibesSuccessful`, the jibes
     he carved all the way through carrying his speed *and* flew out of (engine >= 0.12.0;
-    docs/presentation.md "Clean jibe"). Clean is therefore a subset of dry, which is the
+    docs/presentation/clean-jibe.md "Clean jibe"). Clean is therefore a subset of dry, which is the
     point: the two rates now nest, and CPH can never exceed JPH.
     Dry asks whether he got away with it; clean asks whether he rode it, and CPH is the one
     the rider is actually chasing.
@@ -751,7 +751,7 @@ def build_golden(a: Analysis) -> dict:
             "hasWatchLaps": bool(caps.has_watch_laps),
             "hasAccel": bool(caps.has_accel),
             # The accel stream carried no clock of its own and was timed from file order
-            # (engine 0.23.0, docs/algorithms.md "Pumping"). False on every stream the
+            # (engine 0.23.0, docs/algorithms/pumping.md "Pumping"). False on every stream the
             # device timed, which is every fixture in the corpus.
             "accelClockReconstructed": bool(caps.accel_clock_reconstructed),
             "hasHR": bool(caps.has_hr),
@@ -783,7 +783,7 @@ def build_golden(a: Analysis) -> dict:
         "pumpEpisodes": [_episode_json(e) for e in a.takeoffs.episodes],
         "hr": _hr_json(a.hr),
         "summary": {
-            # Is this recording a session at all (engine 0.19.0, docs/algorithms.md "Not a
+            # Is this recording a session at all (engine 0.19.0, docs/algorithms/not-a-session.md "Not a
             # session")? `isSession` is true for every recording in which the rider flew,
             # and for every skunked afternoon long enough or far enough to have been one.
             # `notASessionReason` is a code and never a sentence; null when `isSession`.
@@ -795,7 +795,7 @@ def build_golden(a: Analysis) -> dict:
             "longestFlightS": round(longest_s, 1),
             "maxFlightM": round(max_m, 1),
             "distanceKm": round(rec.distance_m / 1000.0, 3),
-            # The two clocks (docs/algorithms.md "Session rates"): `durationS` is T1, the
+            # The two clocks (docs/algorithms/rates.md "Session rates"): `durationS` is T1, the
             # elapsed cleaned span and the duration every surface displays; `timerTimeS` is
             # T2, the non-gap total, and since engine 0.13.0 the denominator of avgSpeedKmh
             # and of all four per-hour rates.
@@ -875,7 +875,7 @@ def _config_dict(a: Analysis) -> dict:
         "minSatellites": fcfg.min_satellites,
         "maxAccel1Hz": fcfg.max_accel_1hz,
         # gap iff dt > max(gapMinS, gapFactor * median dt, smartGapS when the median says
-        # Smart Recording) -- engine 0.23.0, docs/algorithms.md "speed sample hygiene".
+        # Smart Recording) -- engine 0.23.0, docs/algorithms/hygiene.md "speed sample hygiene".
         "gapMinS": fcfg.gap_min_s,
         "gapFactor": fcfg.gap_factor,
         "smartGapS": fcfg.smart_gap_s,
@@ -947,7 +947,7 @@ def _config_dict(a: Analysis) -> dict:
         "pumpRefractory": p.refractory_s,
         "pumpStrokeMaxInterval": p.stroke_max_interval_s,
         "pumpMinStrokes": p.min_strokes,
-        "pumpBurstPeakG": p.burst_peak_g,          # PROVISIONAL (docs/algorithms.md)
+        "pumpBurstPeakG": p.burst_peak_g,          # PROVISIONAL (docs/algorithms/pumping.md)
         "pumpMinSpeedKmh": p.min_speed_kmh,
         # takeoff
         "takeoffMaxRun": k.max_run_s,
@@ -1075,7 +1075,7 @@ def _end_json(e: FlightEnd) -> dict:
 
 
 def _submersion_json(s: Submersion) -> dict:
-    """One submersion episode (engine 0.16.0, docs/algorithms.md "Submersion episodes").
+    """One submersion episode (engine 0.16.0, docs/algorithms/pumping.md "Submersion episodes").
 
     Both indices are explicit **null** rather than absent: "this dunk belongs to no turn" is
     a fact the map draws ("while off foil"), and a missing key would make it indistinguishable
@@ -1110,7 +1110,7 @@ def _takeoff_json(k: Takeoff) -> dict:
 
 
 def _episode_json(e: PumpEpisode) -> dict:
-    """One classified pumping effort (docs/algorithms.md "Takeoff analysis", the outcome
+    """One classified pumping effort (docs/algorithms/takeoff.md "Takeoff analysis", the outcome
     ladder). Written for **every** outcome, not just `failed`.
 
     The summary already counts these five buckets; what it cannot carry is *when*. A failed
@@ -1135,7 +1135,7 @@ def _episode_json(e: PumpEpisode) -> dict:
 
 
 def _hr_json(h: HrAnalysis) -> dict:
-    """The HR-cost block (docs/algorithms.md "HR cost").
+    """The HR-cost block (docs/algorithms/hr-cost.md "HR cost").
 
     Always written, never omitted: a source with no heart-rate channel is a *fact* about
     that source, and `hasHR: false` beside empty lists says it. Omitting the block would
@@ -1268,7 +1268,7 @@ def _outcome_counts_json(c: OutcomeCounts) -> dict:
 
 def _turn_summary_json(s: TurnSummary) -> dict:
     """The turn tallies. `threeSixties` appears **only** when the 360 detector ran
-    (`detectThreeSixty`, docs/algorithms.md "360 spins"): the field is experimental, so a
+    (`detectThreeSixty`, docs/algorithms/turns.md "360 spins"): the field is experimental, so a
     document written with the detector down carries no trace of it and stays identical to
     every golden committed before it existed. `None` is therefore spelled as *absence*
     rather than as null -- a key that is present is a key a consumer may start reading."""

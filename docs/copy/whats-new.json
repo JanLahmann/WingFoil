@@ -34,6 +34,20 @@
       ]
     },
     {
+      "version": "0.9.18",
+      "build": null,
+      "channel": "release",
+      "date": "2026-09-22",
+      "title": "Pages read on the round glass",
+      "lines": [
+        "Every page read against the round glass: the widest line in the middle, numbers larger, words smaller.",
+        "Turns is one row: clean, flew through, touchdown, fell in. Tacks and jibes get a row each.",
+        "Seven switches in the Connect IQ settings hide the pages you never read.",
+        "The pages after a save are the live pages.",
+        "Every turn is counted again when the wind axis locks, so the tack and jibe rows always add up."
+      ]
+    },
+    {
       "version": "0.9.17",
       "build": null,
       "channel": "release",

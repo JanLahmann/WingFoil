@@ -7,7 +7,7 @@ every difference between the goldens is the source class and nothing else. A TCX
 from some other afternoon would test the parser and prove nothing about the degradation.
 
 A TCX is the one format that can be either input class, and which one is decided by a
-single element (docs/algorithms.md, "TCX import"):
+single element (docs/algorithms/imports.md, "TCX import"):
 
     --speed     writes `Extensions/TPX/Speed` from the FIT's own Doppler channel.
                 The file states a measured speed, so it is class (b) and its speed

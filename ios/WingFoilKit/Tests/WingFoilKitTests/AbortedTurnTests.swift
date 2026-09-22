@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import WingFoilKit
 
-/// **The aborted turn** (engine 0.21.0, docs/algorithms.md "The aborted turn", ADR-028).
+/// **The aborted turn** (engine 0.21.0, docs/algorithms/turns.md "The aborted turn", ADR-028).
 ///
 /// Jan, 20 September 2026: *"an attempted turn that ends in the water is a turn that fell
 /// in."* A tester tried two tacks on 19 September, went in both times, and the session showed

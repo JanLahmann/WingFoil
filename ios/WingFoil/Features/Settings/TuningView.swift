@@ -199,7 +199,7 @@ struct TuningView: View {
         }
     }
 
-    /// **The workbench's one entry point outside a session** (docs/presentation.md, "Dev
+    /// **The workbench's one entry point outside a session** (docs/presentation/channels-tuning.md, "Dev
     /// workbench"). It belongs here rather than in Settings proper because it is the answer to
     /// the question this page asks: a slider says what a threshold *is*, and this says whether
     /// moving it brought the engine closer to what the rider saw.

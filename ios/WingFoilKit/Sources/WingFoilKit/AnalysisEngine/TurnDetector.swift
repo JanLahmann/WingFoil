@@ -1,7 +1,7 @@
 import Foundation
 
 /// Turn detection, scoring and wind-axis classification parameters
-/// (docs/algorithms.md "Turn detection & classification").
+/// (docs/algorithms/turns.md "Turn detection & classification").
 public struct TurnConfig: Sendable, Equatable {
     /// turnMinAngle: net unwrapped COG change.
     public var minAngleDeg: Double = 60.0
@@ -102,7 +102,7 @@ public struct TurnConfig: Sendable, Equatable {
     ///
     /// Over the 21-session corpus the rung was the sole reason for **13 of 270 jibe
     /// touchdowns**, 3 of which held their speed. The watch keeps the old rule at the old speed
-    /// (docs/algorithms.md, "Watch divergences").
+    /// (docs/algorithms/pumping.md, "Watch divergences").
     public var pumpedMarginalSpeedKmh: Double = 8.0
 
     public init() {}
@@ -119,7 +119,7 @@ public enum TurnKind: String, Sendable, Codable {
     public var counted: Bool { self == .tack || self == .jibe || self == .unclassified }
 }
 
-/// The rider-facing three-way verdict (docs/algorithms.md "Turn outcome").
+/// The rider-facing three-way verdict (docs/algorithms/pumping.md "Turn outcome").
 public enum TurnOutcome: String, Sendable, Codable {
     case flewThrough = "flew_through"
     case touchdown
@@ -180,7 +180,7 @@ public struct Turn: Sendable, Equatable {
     public var entryKn: Double
     public var minKn: Double
     /// Maneuver channel at the first sample at or after `endT` — the speed the rider came
-    /// out of the sweep carrying (docs/algorithms.md "Turn detection & classification").
+    /// out of the sweep carrying (docs/algorithms/turns.md "Turn detection & classification").
     public var exitKn: Double = 0
     public var entryKnDoppler: Double
     public var minKnDoppler: Double
@@ -265,7 +265,7 @@ public struct OutcomeCounts: Sendable, Codable, Equatable {
     ///
     /// The same "dry" rule `jibesPerHour` applies to the jibe lane, read here over whichever
     /// family this tally covers — and over `outcomes` it is the `turnsPerHour` numerator
-    /// (engine 0.13.0; docs/algorithms.md "Session rates").
+    /// (engine 0.13.0; docs/algorithms/rates.md "Session rates").
     public var dry: Int { flewThrough + touchdown }
 
     mutating func add(_ turn: Turn) {
@@ -1169,7 +1169,7 @@ public enum TurnDetector {
         return nil
     }
 
-    /// Three-way outcome for one turn (docs/algorithms.md "Turn outcome", steps 0–5), and the
+    /// Three-way outcome for one turn (docs/algorithms/pumping.md "Turn outcome", steps 0–5), and the
     /// reason for it.
     ///
     /// Every scan is bounded to the window's index range by binary search: the evidence

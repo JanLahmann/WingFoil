@@ -182,7 +182,7 @@ def test_only_the_first_track_is_analysed_and_the_count_is_reported():
 
 def test_a_z_timestamp_states_an_instant_and_falls_back_to_longitude():
     """`Z` says *when*, never *what the rider's clock read*. Longitude then answers, coarsely
-    — the 0.8.2 resolution ladder, one rung down (docs/algorithms.md "Session time")."""
+    — the 0.8.2 resolution ladder, one rung down (docs/algorithms/flight.md "Session time")."""
     track = parse_gpx_bytes(_doc(f"<trk><trkseg>{_line(3)}</trkseg></trk>"))
     assert track.start_utc_offset_s == 3600      # lon 10.87° -> round(10.87/15) = 1 h
     # …and it is labelled a guess (engine 0.9.1). This is the common GPX case and the one

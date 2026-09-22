@@ -129,7 +129,7 @@ import ZIPFoundation
         #expect(manifest.gearCount == 2)
         // One: Torbole. The place the deleted synthetic session put itself went with it —
         // a spot exists because sessions were recorded there, and deleting the last of them
-        // prunes it in the same write (docs/presentation.md, "Spots"). It used to outlive
+        // prunes it in the same write (docs/presentation/not-a-session-spots.md, "Spots"). It used to outlive
         // them, which is what left "Spot 2 · 0 · Never sailed" rows in Jan's library.
         #expect(manifest.spotCount == 1)
         #expect(manifest.tombstoneCount == 1)

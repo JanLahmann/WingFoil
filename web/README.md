@@ -105,7 +105,7 @@ web/
 │                               an installed iPhone app reads: `minBuild`, a sentence, a
 │                               level and a link per channel. Jan edits it by hand; sw.js
 │                               never caches it; version.README.md next to it says what the
-│                               two levels do (docs/presentation.md, "The beta's update
+│                               two levels do (docs/presentation/status-feedback-start-widgets-ipad.md, "The beta's update
 │                               reminder")
 ├── sw.js                       service worker: app-shell precache + Pyodide runtime cache,
 │                               and the one POST this site answers — Android's share sheet
@@ -1187,7 +1187,7 @@ groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 4
 4. **Check the numbers** against the golden above: 23 flights, 60 % on foil, 12.76 km,
    Turns 30, Outcomes 9/9/12, wind 36°, best 2 s 11.36 kn. Badges: `wingfoil`,
    `CIQ dev fields`, `accel`, `HR`.
-4b. **Key metrics**, the four rows above the tiles (`docs/presentation.md`, "Key metrics").
+4b. **Key metrics**, the four rows above the tiles (`docs/presentation/key-metrics.md`, "Key metrics").
    On this file: `1:25 · 12.8 km · 4.89 kn`, then `11.36 kn` under **max 2 s**, then
    `9 · 9 · 12` (of 30 jibes · 4 clean) on the ladder's own green/amber/red *(this is the
    only place either app draws the tally in colour outside the map)* beside

@@ -454,7 +454,7 @@ def test_the_360_detector_is_dark_in_the_document():
 
     Byte-for-byte, not "the numbers agree": the point of a dark detector is that a consumer
     cannot tell it exists. The fixture is chosen for teeth — it is one of the three sessions
-    that *does* yield a candidate with the flag up (docs/algorithms.md "360 spins"), so the
+    that *does* yield a candidate with the flag up (docs/algorithms/turns.md "360 spins"), so the
     second half of the test proves the first half is not passing by accident.
     """
     golden = load_golden(golden_path(CIQ_LONG, FIXTURES / "goldens"))

@@ -13,7 +13,7 @@ import Testing
 ///
 /// It is the same argument `PeriodTests` makes, one screen along: two platforms drawing
 /// "the same" chart is worth nothing unless one of them is the reference and the other is
-/// checked against it. Python is the reference (docs/presentation.md, "Trend charts").
+/// checked against it. Python is the reference (docs/presentation/trends-periods.md, "Trend charts").
 ///
 /// The three charts with no point in them are as load-bearing as the seven with points:
 /// this fixture carries no turn outcomes, no per-side split and no pump tally, so both
@@ -78,7 +78,7 @@ import Testing
 
     /// The three rates are one row of the page, not one metric with two optional extras:
     /// CPH says he rode the jibe, JPH says he got away with it, TPH says how busy the
-    /// afternoon was (docs/algorithms.md, "Session rates"). All three come off the engine,
+    /// afternoon was (docs/algorithms/rates.md, "Session rates"). All three come off the engine,
     /// and the two new ones have **no** fallback — a row the v17 sweep has not reached has
     /// a gap in those two lines rather than a number nothing published.
     @Test func theThreeRatesAreDrawnTogether() async throws {

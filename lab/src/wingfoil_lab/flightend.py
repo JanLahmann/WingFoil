@@ -1,13 +1,13 @@
 """Flight-end classification: what happened every time the rider came off the foil.
 
-Contract: docs/algorithms.md "Flight-end outcome". Turn outcomes only explain the losses
+Contract: docs/algorithms/pumping.md "Flight-end outcome". Turn outcomes only explain the losses
 that happen *in a maneuver*, but most sessions also lose the foil in a straight line -- a
 gust dies, the foil ventilates, he catches a wingtip on a reach -- and until now those were
 invisible: flight segmentation reported "a flight ended" and nothing said whether he swam,
 touched down and pumped back up, or simply settled onto the board and kept moving.
 
 Every flight end is classified with the *same three-channel evidence ladder* the turns use
-(`evidence.py`, docs/algorithms.md "Turn outcome" steps 0-4). Only the leaf verdicts differ,
+(`evidence.py`, docs/algorithms/pumping.md "Turn outcome" steps 0-4). Only the leaf verdicts differ,
 because a flight end is by definition already off the foil -- there is no `flew_through`:
 
 ``glide_out``   came off the foil and **kept making way** -- the speed never once reached
@@ -70,7 +70,7 @@ FLIGHT_END_OUTCOMES = (GLIDE_OUT, TOUCHDOWN, FELL_IN, UNKNOWN)
 
 @dataclass
 class FlightEndConfig:
-    """docs/algorithms.md "Flight-end outcome" defaults.
+    """docs/algorithms/pumping.md "Flight-end outcome" defaults.
 
     Deliberately the *same numbers* as the turn ladder: one physical question ("did the
     rider stop, and for how long") deserves one set of thresholds however the loss started,

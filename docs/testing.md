@@ -164,19 +164,19 @@ explicit **null** — "unknown", not zero, and not a flattering 100 %. Without a
 no turn or flight end is ever `submerged` and `submersions` is empty. Smart-Recording
 truncation leaves flight ends
 `unknown` and takeoff runs `truncated`, both excluded from the tallies. The `hr` block
-(docs/algorithms.md "HR cost") is written for **every** source: a session with no heart-rate
+(docs/algorithms/hr-cost.md "HR cost") is written for **every** source: a session with no heart-rate
 channel gets `hasHR: false` beside empty lists and null averages, never a missing block —
 "this source had no HR" and "this golden predates the block" must not look the same. Inside
 it, an unmeasurable window is null throughout (`baselineBpm`, `costBpm`, `avgTakeoffCostBpm`,
 `bpmPerStroke`, …) and never 0.0, which would read as "this attempt was free"; the
 `<name>Valid`/`<name>Total` pair beside each average is the `n valid / n total` that says how
-much of the session it actually speaks for. `pumpEpisodes` (engine 0.3.0, docs/algorithms.md
+much of the session it actually speaks for. `pumpEpisodes` (engine 0.3.0, docs/algorithms/takeoff.md
 "Takeoff analysis") carries **every** classified pumping effort, not only the failed ones: the
 `summary.takeoff` tallies count the five buckets, and this list is the same classification with
 its *instants* attached, which is what lets iOS place a failed attempt on the map instead of
 apologizing for it. It degrades like `turns` — a source with no accelerometer has no bursts to
 classify and gets `[]`, written rather than omitted. The **session rates** (engine 0.6.0,
-docs/algorithms.md "Session rates") share the same never-a-flattering-zero rule: `durationS`
+docs/algorithms/rates.md "Session rates") share the same never-a-flattering-zero rule: `durationS`
 is the elapsed span of the cleaned track, gaps included, and when it is ≤ 0 all five derived
 rates are explicit **null** — "there is no hour to divide by", not "he did nothing in one".
 `wetPerHour` is every `fell_in` *flight end*, straight-line and turn-owned alike, which is a
@@ -244,7 +244,7 @@ events move with the new floor; **`flights`, `records`, `wind`, `takeoffs` and `
 are byte-identical**, which is the check that says the change is confined to the turn channel.
 
 Engine 0.15.0 makes the **wind-axis crossing** an event and **moves no number at all**. Three
-keys join each entry of `turns` — `axisTs`, `axisBeforeDeg`, `axisAfterDeg` (docs/algorithms.md,
+keys join each entry of `turns` — `axisTs`, `axisBeforeDeg`, `axisAfterDeg` (docs/algorithms/turns.md,
 "The crossing, as an event") — and two join `config`: `turnAxisBeforeDeg` and
 `turnAxisAfterDeg`, both **0**, i.e. off. The diff between a 0.14.0 golden and a 0.15.0 one is
 therefore exactly the `engineVersion` stamp, the two config keys and the three per-turn keys,
@@ -255,7 +255,7 @@ unclassified turn and on a session with no usable wind axis, because 0° before 
 read as "he started dead downwind".
 
 Engine 0.16.0 gives **the wrist going under** a list of its own and **moves no number** either.
-One top-level key joins the document — `submersions` (docs/algorithms.md, "Submersion
+One top-level key joins the document — `submersions` (docs/algorithms/pumping.md, "Submersion
 episodes") — and no config key at all, because the run rule and its 2 s merge are not tunables.
 The diff between a 0.15.0 golden and a 0.16.0 one is exactly the `engineVersion` stamp and that
 block, on all seventeen fixtures: the mask, the threshold and every `submerged` flag read from
@@ -268,7 +268,7 @@ flagged on (29 Aug: **7 → 35**), which is the whole point of the change.
 
 Engine 0.17.0 gives **the clean jibe a quiet tail**, and it is the first golden diff since
 0.14.0 that moves a number the rider reads. `turnCleanQuietS` (**10 s**) joins `config` and
-`cleanBlockedBy` joins each entry of `turns` (docs/algorithms.md, "The quiet tail"): a counted
+`cleanBlockedBy` joins each entry of `turns` (docs/algorithms/turns.md, "The quiet tail"): a counted
 jibe is clean only if the ten seconds after its sweep carry no touchdown/fell-in flight end, no
 off-foil spell of 1 s or more and no submerged sample. Across the seventeen fixtures **ten
 `clean` flags flip to false and nothing else changes** — `jibesSuccessful` and
@@ -280,7 +280,7 @@ by the same ten. Over the 21-session corpus it reads 278 → 263.
 
 Engine 0.18.0 **retires the pump rung of the outcome ladder and gives every touchdown and fall
 a reason**. `turnPumpedOutIsTouchdown` (**true**) and `turnPumpedMarginalSpeed` (**8.0**) join
-`config`, and `outcomeReason` joins each entry of `turns` (docs/algorithms.md, "Turn outcome" /
+`config`, and `outcomeReason` joins each entry of `turns` (docs/algorithms/pumping.md, "Turn outcome" /
 "Why"; ADR-022). The rung's corroborating speed moves from a hard-wired `foilEntrySpeed` to
 that parameter, whose default is the exit speed — and since `flying` already requires speed
 above the exit speed, that makes the rung unreachable, deliberately. Across the
@@ -308,7 +308,7 @@ argument is `test_raising_the_marginal_speed_revives_the_rung`, on a synthetic j
 everywhere.
 
 Engine 0.19.0 **says whether a recording is a session at all** — `summary.isSession` and
-`summary.notASessionReason` (docs/algorithms.md, "Not a session"). **No number in any golden
+`summary.notASessionReason` (docs/algorithms/not-a-session.md, "Not a session"). **No number in any golden
 moves**: the diff on all 21 is the version stamp and the two new keys, and every one of them
 reads `true` / `null`, which is the point — the rule is not allowed to reach a recording the
 project already calls a session. The presentation goldens move in their version stamp alone.
@@ -345,7 +345,7 @@ those three numbers is not judged at all and reads as a session: an absence is n
 the same rule the four session rates keep.
 
 Engine 0.21.0 adds **the aborted turn** — a sweep that was still turning when the rider went
-in (docs/algorithms.md, "The aborted turn"; ADR-028). `turnAbortMinAngle` (**45**) joins
+in (docs/algorithms/turns.md, "The aborted turn"; ADR-028). `turnAbortMinAngle` (**45**) joins
 `config` and `aborted` joins each entry of `turns`. It is the second golden diff since 0.14.0
 that moves a number the rider reads, and it moves them in one direction only: over the 18
 committed session fixtures counted turns go 560 → 569, tacks 2 → 4, jibes 558 → 565, course
@@ -380,7 +380,7 @@ It is checked from four sides:
    before — the arithmetic the pass was built to leave alone, asserted on the session where it
    actually happened.
 
-Engine 0.22.0 makes **the wet test read the drop, not the level** (docs/algorithms.md, "Turn
+Engine 0.22.0 makes **the wet test read the drop, not the level** (docs/algorithms/pumping.md, "Turn
 outcome" step 2; ADR-029). No config key joins the document and no per-turn key does either:
 the only stamp in the diff is `engineVersion`, and everything else that moves is the barometer's
 own evidence. The mask's line stops being the session median and becomes a causal local
@@ -419,7 +419,7 @@ It is checked from three sides:
    asserted against the lab's, `dropM` included, so a baseline that walked differently on the
    two implementations would show up as a metre of disagreement on some fixture.
 
-Engine 0.23.0 stops reading a **Smart Recording cadence as a hole** (docs/algorithms.md, "A
+Engine 0.23.0 stops reading a **Smart Recording cadence as a hole** (docs/algorithms/hygiene.md, "A
 cadence is not a hole"; ADR-030), and it is the largest golden diff since the corpus was
 frozen — which is the shape the change predicts rather than a surprise. **The split is the
 check**: every fixture whose median dt is above 1.5 s moves and every 1 Hz fixture does not
@@ -536,7 +536,7 @@ same three numbers.
 **The TCX pair, and the element between them.** The other two converted fixtures are
 `fixtures/sessions/tcx/2026-08-30-1407_nago-torbole-{speed,nospeed}.tcx`, the same afternoon
 again through `lab/tools/fit_to_tcx.py`. They exist because a TCX is the one format that is
-not one input class (docs/algorithms.md, "TCX import"): with `Extensions/TPX/Speed` it is
+not one input class (docs/algorithms/imports.md, "TCX import"): with `Extensions/TPX/Speed` it is
 class (b) and its speed records certify, without it class (c) like a GPX. The pair differs
 by **exactly that element**, which is what makes it an experiment rather than two fixtures —
 and both ends of it land where they should. `-speed` reproduces the CIQ FIT's own numbers
@@ -565,7 +565,7 @@ outside both sums. That arithmetic is what the tap-only pairing lines are writte
 takeoff with no flight to name would print a wrong number in a callout long before any
 tally looked odd.
 
-The rules they apply are `docs/presentation.md` "Marker eligibility", and both sides assert
+The rules they apply are `docs/presentation/trends-periods.md` "Marker eligibility", and both sides assert
 them: Swift in `PresentationTests.presentationGoldensPinEveryMarkerAndFilterCount` (through
 `PresentationFacts`, the kit-side home of the rules that `SessionDetail`'s builders
 iterate), Python in `web/tools/verify_presentation.py`, which re-derives every count a
@@ -822,7 +822,7 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
      On the corpus the process grows ~25 MB, which is the answer to "is it jetsam": on this
      corpus, no.
 
-   This is how the importer's refusals were found (docs/algorithms.md, "Recordings the importer
+   This is how the importer's refusals were found (docs/algorithms/imports.md, "Recordings the importer
    refuses"). A truncated FIT took **198 seconds** and built a 24.6-million-point rate series;
    a mutated one **segfaulted** the test process several files after the mutant that did the
    damage. Both shapes were in the App Store build (1.0.0, build 60) —
@@ -885,7 +885,7 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
      including turning categories back **on**; a hidden *line* category degrades to the
      neutral route rather than erasing the track, while the other phase keeps its tint; a
      category with no instances in the session is not a toggle); the **phase cut**
-     (`TrackPhaseCut`, docs/presentation.md "Phase tints") — a boundary inside a sample
+     (`TrackPhaseCut`, docs/presentation/layers-map-colour-type.md "Phase tints") — a boundary inside a sample
      interval cuts on an interpolated point that lies on the line the map already draws, a
      boundary exactly *on* a fix cuts there without duplicating the vertex (the corpus case:
      both fixes either side of a landing are inside a flight, so per-sample tinting sees no
@@ -1085,7 +1085,7 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    rejected" state can both be captured without reinstalling. It runs in `WingFoilApp.init`, before the
    store reads the keychain, and the wipe it runs is `StartOver.wipe` — the same one
    **Settings → Beta → Start over** runs, so there is one wipe and not two
-   (docs/presentation.md, "Start over"). `UI_START_OVER=1` is its in-process twin: it waits
+   (docs/presentation/status-feedback-start-widgets-ipad.md, "Start over"). `UI_START_OVER=1` is its in-process twin: it waits
    for the first library read and then calls `SessionStore.startOver()`, the very method the
    button calls, so a screenshot taken after it is the real result of the real door rather
    than of a launch-time shortcut. Beta and dev channels only have the button; the hook
@@ -1104,7 +1104,7 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    default and the other value). Per launch, and it leaves the simulator as it found it.
    Worth photographing after any change to a chart, a records table or a narrated sentence:
    every speed on iOS follows the picker, the four chart axes included
-   (docs/presentation.md, "Units"). On the Trends tab pair it with
+   (docs/presentation/labels.md, "Units"). On the Trends tab pair it with
    `UI_SCROLL_TO=best2s`, the page's second anchor: the speed line is the one chart there
    that the picker moves, and it sits below the fold.
 
@@ -1120,29 +1120,29 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    `SIMCTL_CHILD_UI_TEXT_SIZE=ax3 SIMCTL_CHILD_UI_SHEET=help xcrun simctl launch <dev> de.lahmann.wingfoil.dev`.
    On the **Sessions** tab, `UI_GROUP_BY=none|month|year|spot` and `UI_FILTER_SOURCE=<raw>`
    (`icu`, `file`, `gdpr`, `airdrop`, `fixtures`, `example`, `watch`, `applewatch`,
-   `applehealth`, `strava`) stage the list's two controls (docs/presentation.md, "Session
+   `applehealth`, `strava`) stage the list's two controls (docs/presentation/gear-list-session-page.md, "Session
    list"): a segmented control and a toolbar menu are both taps `simctl` cannot make, and
    the grouped headings and the chip row are the whole point of the screenshot. `UI_GROUP_BY`
    writes the stored preference exactly as a tap would; the source filter is per-visit, like
    the control it stands in for. Pair either with `UI_IMPORT_FIXTURES=1`, since the rules
    want a library with more than one month and more than one door in it.
    `UI_SHEET=discipline` raises the post-import review sheet over whatever is in the library
-   (docs/presentation.md, "Confirming the discipline on import"): the sheet the import itself
+   (docs/presentation/labels.md, "Confirming the discipline on import"): the sheet the import itself
    raises has usually been and gone by the time a screenshot is taken, and the banner that
    brings it back is a tap `simctl` cannot make. Pair it with `UI_RESET=1 UI_IMPORT_FIXTURES=1`,
    since a session already in the library has been through the migration and counts as settled.
    `UI_DISCIPLINE=windsurfFoil|windsurfFin` re-analyses the session `UI_OPEN_SESSION` picked
-   under that preset (docs/algorithms.md "Disciplines") **before** the page opens — `simctl`
+   under that preset (docs/algorithms/disciplines.md "Disciplines") **before** the page opens — `simctl`
    cannot tap a segmented control, and setting it afterwards would photograph the wingfoil
    reading with a windsurf chip on it.
    `UI_SHEET=tuning` needs the **dev** build (`TUNING`, below) — it opens Settings → Tuning
    as a sheet of its own rather than "Settings, then push", because `simctl` cannot tap the
    row either. On the public build the value is simply unknown and nothing opens.
    `UI_TUNING_DISCIPLINE=wingfoil|windsurfFoil|windsurfFin` picks which of the page's three
-   sets it opens on (docs/presentation.md "Tuning") — same reason as `UI_DISCIPLINE` above,
+   sets it opens on (docs/presentation/channels-tuning.md "Tuning") — same reason as `UI_DISCIPLINE` above,
    a segmented control is a tap `simctl` cannot make. Dev build only, like the page itself.
    **Since the session page became a four-way switcher** (`SessionSection`,
-   docs/presentation.md "Sections"), every session hook that names a place also **selects
+   docs/presentation/sections-tables.md "Sections"), every session hook that names a place also **selects
    the section that place lives on** — `UI_SCROLL_TO` through `SessionSection.section(owning:)`,
    and `UI_OPEN_TURNS=1`, which used to push a page, by selecting `Turns`. A scroll to an
    anchor on an unselected section reaches nothing at all, silently, and produces a
@@ -1181,7 +1181,7 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    is the only way to photograph a filtered map without a finger. It is applied *after* the stored
    preference and never written back — the override stages a screenshot, it does not edit
    the setting. `UI_MAP_STYLE=standard|muted|satellite|hybrid` does the same for the **ground**
-   the track is drawn on (`MapStyleChoice`, docs/presentation.md "Map style"): the control is a
+   the track is drawn on (`MapStyleChoice`, docs/presentation/layers-map-colour-type.md "Map style"): the control is a
    menu, which `simctl` can no more open than it can tap a chip, and the two photographic
    styles are where the track's halo and its flipped inks are worth looking at. It reaches all
    four map surfaces at once, so one launch photographs the inline map, `UI_FULLSCREEN_MAP=1`
@@ -1200,7 +1200,7 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    the layer legend — and note that the three maps now keep **separate** visibility sets, so
    the layer override is applied to every scope that draws the named layer.
    `UI_MAP_CALLOUT=takeoff|failed|end|flight` opens the track callout on the first mark of
-   that kind, because the pairing line (docs/presentation.md, "Pairing") is deliberately
+   that kind, because the pairing line (docs/presentation/scrub-pairing.md, "Pairing") is deliberately
    *tap-only* and `simctl` has no finger to tap with. It opens exactly the card a tap opens
    — nothing is staged that a rider could not produce — and `flight` also frames that flight
    in the speed chart, which is the other half of what tapping a flown stretch of track does.
@@ -1298,7 +1298,7 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    against); `ReplayClipSoundtrackTests` settles the schedule and the mux, not the listening.
    And whether a clip actually reaches the camera roll.
    **The session video is the opposite case, and that is the point.** The reel
-   (`ReelRenderer`, docs/presentation.md "Session video") never touches ReplayKit: it draws
+   (`ReelRenderer`, docs/presentation/session-time-video.md "Session video") never touches ReplayKit: it draws
    1080 × 1920 frames into a `CVPixelBuffer` with Core Graphics and writes them through an
    `AVAssetWriter`, so it produces a real, playable .mp4 **on a Mac**. `UI_EXPORT_REEL=1`
    renders one headlessly — no taps, no sheet — and leaves `reel.mp4` in the app's Documents
@@ -1392,7 +1392,7 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    `UIInterfaceOrientationLandscapeRight`, `xcodegen generate`, build, shoot, and put it back.
 
    **The iPad is the same recipe with a different `-destination`.** The app ships for both
-   families (docs/presentation.md, "iPad and Mac"), and everything that is iPad-specific about
+   families (docs/presentation/status-feedback-start-widgets-ipad.md, "iPad and Mac"), and everything that is iPad-specific about
    the layout — the 740 pt column, the taller figures, the page-sized sheets, the wider record
    columns — only exists when *both* size classes are regular, which no phone simulator ever
    reports. So it is only ever seen by shooting one:
@@ -2142,7 +2142,7 @@ backup; the aside file is never deleted, so the recipe is reversible by hand.
 
 ### The beta's update reminder — pointing a build at a file of your own
 
-The switch is one static file on the website (`web/app/version.json`, docs/presentation.md
+The switch is one static file on the website (`web/app/version.json`, docs/presentation/status-feedback-start-widgets-ipad.md
 "The beta's update reminder"), so testing it means serving a file of your own and telling the
 build to read that one instead. `UI_VERSION_URL` does exactly that, in **DEBUG only** — the
 shipped build reads one URL and cannot be told otherwise.
@@ -2264,7 +2264,7 @@ the **door**, and the door is the switch's own wording.
 ### Ground-truth labels — the CSV the dev build exports
 
 The dev build lets Jan label a counted turn with what actually happened — *I flew · I touched ·
-I fell* — and scores those labels against the engine (docs/presentation.md, "The dev workbench").
+I fell* — and scores those labels against the engine (docs/presentation/labels.md, "The dev workbench").
 The labels live on the phone, outside the analysis; **Settings → Tuning → Labels → Export labels
 as CSV** is how they leave it, and this is the format the lab reads them back in.
 
@@ -2356,7 +2356,7 @@ through, 2 fallen, 5 clean, 5 port / 5 starboard — **44.7 JPH**, **27.9 CPH** 
 **11.2 WPH**, best 2 s
 **13.47 kn**, alpha 500 **11.70 kn**, wind from **196°** at full confidence, 4 takeoff
 attempts of which 2 succeeded on **31** pump strokes (286 before engine 0.8.0 taught the
-total to reject chop — docs/algorithms.md "The session total") of which **5** in flight (60
+total to reject chop — docs/algorithms/pumping.md "The session total") of which **5** in flight (60
 before 0.8.1 put the same amplitude gate on that count — "In-flight strokes"), and an average
 takeoff HR cost of **16.5 bpm**. Being shorter than the 15-minute rate window, it is also the corpus's worked
 example of the "no flattering peak" rule: `windowRates` reports one point, the whole-session

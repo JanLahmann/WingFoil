@@ -193,7 +193,7 @@ public enum FitSessionParser {
     /// on.
     ///
     /// Every recording in the corpus passes all three, and so does the bundled example.
-    /// docs/algorithms.md, "Recordings the importer refuses".
+    /// docs/algorithms/imports.md, "Recordings the importer refuses".
     static func checkReadable(_ data: Data) throws {
         let bytes = [UInt8](data.prefix(14))
         guard bytes.count >= 14 else { return }
@@ -345,7 +345,7 @@ public enum FitSessionParser {
     /// Naming a sweep a tack or a jibe needs a wind axis. Until device app 0.9.0 the watch had
     /// exactly one source for one: the bearing the rider entered by hand (`wind_dir_user`).
     /// Since 0.9.0 it can also estimate one for itself and writes that in `wind_dir_auto`
-    /// (docs/algorithms.md "Watch approximation: auto wind"); either field means the split is
+    /// (docs/algorithms/wind.md "Watch approximation: auto wind"); either field means the split is
     /// a real observation. Older builds still wrote `tack_count`/`jibe_count` when there was
     /// no axis at all, and the only value they could write was a literal 0 — so a session of
     /// fifty clean jibes arrives claiming zero of each, and the divergence banner reports

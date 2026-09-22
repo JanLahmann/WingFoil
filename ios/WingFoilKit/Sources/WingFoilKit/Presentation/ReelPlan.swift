@@ -29,7 +29,7 @@ public struct ReelMoment: Sendable, Equatable, Identifiable {
         /// (`SubmersionRecord.turnIndex`), and slowing for it would slow twice for one
         /// moment. It still gets a callout: the diamond is the mark every map in the app
         /// draws, and a reel that silently dropped it would be the one surface that does
-        /// not (docs/presentation.md, "Wrist under").
+        /// not (docs/presentation/layers-map-colour-type.md, "Wrist under").
         public var slowsTheClock: Bool {
             switch self {
             case .takeoff, .jibe, .record: true
@@ -48,7 +48,7 @@ public struct ReelMoment: Sendable, Equatable, Identifiable {
     /// Lowercase, because it is a label over a moving picture and not a sentence, and it
     /// borrows its verdict word from `TurnOutcomeKind.label` and its record spelling from
     /// `RecordKind.windowLabel` so the reel cannot invent a second vocabulary
-    /// (docs/presentation.md, "Label table").
+    /// (docs/presentation/labels.md, "Label table").
     public let headline: String
 
     public init(id: String, t: Double, kind: Kind, headline: String) {

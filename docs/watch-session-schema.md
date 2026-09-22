@@ -143,7 +143,7 @@ stale reading stretched to cover a gap is a worse answer than an honest absence.
 Garmin app records (`AccelSample`), and what `PumpAnalyzer` expects: the detector band-passes
 0.5–2.5 Hz, which removes the DC gravity term as a matter of arithmetic, and it is
 orientation-free by construction because a wingfoiler's wrist rotates constantly
-(docs/algorithms.md "Pumping"). Three axes would triple the largest stream in the file to carry
+(docs/algorithms/pumping.md "Pumping"). Three axes would triple the largest stream in the file to carry
 information nothing reads.
 
 **50 Hz** because `PumpConfig.resampleHz` is 25: exactly 2×, so the box-average gets two
@@ -177,7 +177,7 @@ A watch session is **input class (b)** and its speed records **certify**. Both h
 deliberate, and the rule they are read by is unchanged: `LibraryQueries.certified` is
 `sourceClass != "c"`, and `sourceClass` is derived from `SourceCapabilities` exactly as before.
 
-`hasSpeed = true`, and this is **not** the GPX situation. docs/presentation.md's rule is about
+`hasSpeed = true`, and this is **not** the GPX situation. docs/presentation/session-time-video.md's rule is about
 *provenance*: "a speed record is only trustworthy when it came off the receiver's Doppler
 channel". `CLLocation.speed` is exactly that — the GNSS chip's own Doppler solution, reported
 per fix, not differentiated from the positions afterwards. A GPX is class (c) because the file

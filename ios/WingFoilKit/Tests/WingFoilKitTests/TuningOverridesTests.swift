@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import WingFoilKit
 
-/// `TuningOverrides` — the dev build's threshold sliders (docs/presentation.md "Tuning").
+/// `TuningOverrides` — the dev build's threshold sliders (docs/presentation/channels-tuning.md "Tuning").
 ///
 /// The three things that have to hold, because everything downstream is built on them: an
 /// empty set changes *nothing* (the shipping app is byte-identical to one built before the

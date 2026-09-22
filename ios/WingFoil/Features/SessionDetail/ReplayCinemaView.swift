@@ -422,7 +422,7 @@ struct ReplayCinemaView: View {
         }
         // Whatever ground the rider chose, including into the recording — a clip of a session
         // is a clip of *his* map. Apple's attribution is drawn by MapKit and stays visible on
-        // imagery, so a satellite clip carries it (docs/presentation.md, "Map style").
+        // imagery, so a satellite clip carries it (docs/presentation/layers-map-colour-type.md, "Map style").
         .mapStyle(store.mapStyle.mapStyle)
         // Still `.onEnd`, and now it earns its keep: the chevron spacing is measured in
         // screen points, so a rider who zooms in mid-clip gets the arrows re-decimated for

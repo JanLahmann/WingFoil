@@ -19,7 +19,7 @@ import Foundation
 /// the rest are the engine's and stay the engine's — the numbers row prints those. What the
 /// slice measures from the samples is only what the engine does not carry: where the track
 /// went, which way it was pointing, and where on *this* window the speed bottomed out, so the
-/// strip can put a mark there. Definitions: docs/presentation.md, "Turn detail".
+/// strip can put a mark there. Definitions: docs/presentation/turn-detail.md, "Turn detail".
 public struct TurnSlice: Sendable, Equatable {
 
     // MARK: - Input

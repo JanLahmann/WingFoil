@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""HR-cost report for one or more session FITs (docs/algorithms.md "HR cost").
+"""HR-cost report for one or more session FITs (docs/algorithms/hr-cost.md "HR cost").
 
 Prints the per-session summary (takeoff HR cost, pumping vs cruising, bpm per stroke,
 recovery) and the fatigue curve, with coverage beside every aggregate.

@@ -2013,7 +2013,7 @@ import Testing
     ///
     /// A clean jibe is a star and answers to `cleanJibe` alone: hide "flew through" and the
     /// plain dots go while the stars stay; hide "clean jibe" and the stars go while the dots
-    /// stay (docs/presentation.md, "Clean jibe"). Nothing is drawn twice and nothing answers
+    /// stay (docs/presentation/clean-jibe.md, "Clean jibe"). Nothing is drawn twice and nothing answers
     /// to two chips.
     @Test func aCleanJibesPinAnswersToTheCleanChipAndNothingElse() {
         #expect(TurnOutcomeKind.flewThrough.layer == .flewThrough)
@@ -3413,7 +3413,7 @@ import Testing
                     "\(name): the tally is the engine's list, never re-derived")
             #expect(got.pumpingSpans == want.pumpingSpans, "\(name): pumping spans")
 
-            // One takeoff starts every flight, one end stops it — docs/presentation.md
+            // One takeoff starts every flight, one end stops it — docs/presentation/enforcement.md
             // "Enforcement" 3. The pairing lines a callout draws are written from exactly
             // this arithmetic, so it is pinned rather than trusted: a takeoff with no
             // flight to name would print a wrong number in a popover long before any tally
@@ -3473,7 +3473,7 @@ import Testing
     ///
     /// A clean jibe is a *counted* jibe the engine's own `success` flag passed — not a
     /// re-derivation, and deliberately not the ladder's "flew through", which is a different
-    /// reading of the same turn (docs/presentation.md, "Clean jibe"). On the corpus session
+    /// reading of the same turn (docs/presentation/clean-jibe.md, "Clean jibe"). On the corpus session
     /// the two are 25 and 35 of 50 jibes, which is the whole argument for two marks.
     @Test func theStarLayerIsTheStrictVerdictAndNotTheLaddersGreen() throws {
         let url = testFixturesDir.appendingPathComponent(
@@ -3530,7 +3530,7 @@ import Testing
 
     /// The generated tokens and the code's own catalogues are one contract, so a layer or
     /// a record added on one side and not the other fails here rather than showing up as a
-    /// legend chip the web app has never heard of (docs/presentation.md "Enforcement").
+    /// legend chip the web app has never heard of (docs/presentation/enforcement.md "Enforcement").
     @Test func designTokensCarryTheSameCataloguesAsTheCode() {
         #expect(DesignTokens.Layers.order == MapLayer.allCases.map(\.rawValue))
         for entry in DesignTokens.Layers.catalogue {

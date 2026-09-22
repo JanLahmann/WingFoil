@@ -11,7 +11,7 @@
  *
  * Two things this file must never do.
  *
- * 1. **Split the map from the speed strip.** docs/presentation.md "Scrub and zoom" mandates
+ * 1. **Split the map from the speed strip.** docs/presentation/scrub-pairing.md "Scrub and zoom" mandates
  *    ONE playhead — the map dot and the strip's scrub position are the same timestamp and
  *    moving either moves both — and "Pairing" adds that tapping a flown stretch of track
  *    focuses the strip on that flight. They are one instrument with a visible link, not two

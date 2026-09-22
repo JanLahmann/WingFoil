@@ -1192,7 +1192,7 @@ public enum HelpCatalog {
         // **Three requirements, not two** (engine 0.17.0). This topic was a version behind
         // its own engine until 15 September 2026: it still framed clean as 0.12.0's "flew
         // through + 70 %" while the web, the watch listing and /whats-new all described the
-        // quiet tail. docs/algorithms.md ("The quiet tail") is the contract and the three
+        // quiet tail. docs/algorithms/turns.md ("The quiet tail") is the contract and the three
         // tests below are its three, in its order.
         HelpTopic(
             id: .turnSuccess, section: .turns, title: "Clean jibes",

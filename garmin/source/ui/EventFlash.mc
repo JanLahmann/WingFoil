@@ -14,7 +14,7 @@ import WingFoilCore;
 // the top of whatever page is up that keeps the last verdict readable for 20 s. A rider who
 // looks down five seconds after the tick still sees "JIBE · flew".
 //
-// Which events, and how (docs/presentation.md, "The watch's event flash"):
+// Which events, and how (docs/presentation/watch.md, "The watch's event flash"):
 //
 //   a resolved turn      flew / touch / fell     full flash, the ladder's own colours
 //   a clean jibe         clean                   full flash in the clean-jibe ink; the star

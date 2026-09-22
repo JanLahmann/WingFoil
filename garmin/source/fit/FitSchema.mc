@@ -20,7 +20,7 @@ import Toybox.Lang;
 // SESSION was then 15 fields / 48 B: one field of headroom under the hard limit.
 //
 // App 0.9.0 spends it. `wind_dir_auto`(44) carries the axis the watch worked out for itself
-// (docs/algorithms.md "Watch approximation: auto wind") beside `wind_dir_user`(39), which
+// (docs/algorithms/wind.md "Watch approximation: auto wind") beside `wind_dir_user`(39), which
 // stays exactly what it always was: the bearing the RIDER entered. Two fields rather than one
 // because the two are different claims and the phone has to be able to tell them apart —
 // a manual axis is a fact, an estimate is an inference, and the divergence check, the wind

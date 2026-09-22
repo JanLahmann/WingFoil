@@ -37,7 +37,7 @@ extension MapStyleChoice {
 /// line for no reason. Over imagery the same teal lands on sunlit chop, dark water, wet sand
 /// and white wake within one session, and splash-cyan lands on the exact colour of the thing
 /// it is marking. So on those two styles every stroke and every mark gets a dark outer edge —
-/// not a recolour: the phase inks are the contract (docs/presentation.md, "Colour and glyph
+/// not a recolour: the phase inks are the contract (docs/presentation/layers-map-colour-type.md, "Colour and glyph
 /// vocabulary") and may not shift because of what is underneath them. A halo is the one way to
 /// raise contrast without touching the ink.
 ///
@@ -70,7 +70,7 @@ enum TrackHalo {
     /// So over imagery the inks resolve to the light end instead — the same intent ("quieter
     /// than the teal"), read against what is actually underneath. **The hues never move**:
     /// foil-teal, the outcome ladder, splash-cyan and the effort orange are the contract
-    /// (docs/presentation.md, "Colour and glyph vocabulary") and mean the same thing on every
+    /// (docs/presentation/layers-map-colour-type.md, "Colour and glyph vocabulary") and mean the same thing on every
     /// ground. These were never colours; they were contrast.
     ///
     /// The two opacities are separate arguments because they are not the same number: white on

@@ -26,7 +26,7 @@ function wrapDeg180(deg as Float) as Float {
 // THE one rule, at module scope, because two callers need it and they must never drift:
 // `TurnDetector._classify` names the turn the rider just made, and `AutoWind` names the same
 // sweep under BOTH ends of a candidate axis to see which end makes the rider's declared habit
-// the majority (docs/algorithms.md "Default turn type"). A second copy of this arithmetic
+// the majority (docs/algorithms/wind.md "Default turn type"). A second copy of this arithmetic
 // would let the prior vote on a different classification than the session reports.
 //
 // `uIn`/`uOut` are UNWRAPPED bearings: uOut may legitimately sit 200 deg from uIn.
@@ -81,7 +81,7 @@ function sweepCrossing(lo as Float, hi as Float, offset as Float, mid as Float) 
     return best;
 }
 
-// Live turn detection + outcome classification (docs/algorithms.md "Turn detection &
+// Live turn detection + outcome classification (docs/algorithms/turns.md "Turn detection &
 // classification" / "Turn outcome"). Watch approximation of lab/src/wingfoil_lab/turns.py:
 // one forward pass, bounded work per tick, zero allocation after initialize().
 //
@@ -187,7 +187,7 @@ class TurnDetector {
     var successCount as Number = 0;
     // CLEAN JIBES (device app 0.9.5). `successCount` counts every successful turn; this counts
     // the ones that were also classified as JIBES, which is the metric the product is named
-    // after (docs/presentation.md "Clean jibe", docs/algorithms.md "Glossary"). Kept as its own
+    // after (docs/presentation/clean-jibe.md "Clean jibe", docs/algorithms/turns.md "Glossary"). Kept as its own
     // counter rather than derived, because success and kind are decided at different moments —
     // kind when the sweep closes, success when the outcome window resolves — and the only place
     // both are known is `_resolve()`.
@@ -246,7 +246,7 @@ class TurnDetector {
     var bestScorePct as Number = 0;
     var borderlineCount as Number = 0;
 
-    // Turn streaks (docs/algorithms.md "Turn streaks"). A tally says how the session went;
+    // Turn streaks (docs/algorithms/pumping.md "Turn streaks"). A tally says how the session went;
     // a streak says how it FELT — nine fly-throughs scattered one at a time between swims are
     // not the same session as nine in a row, and the counts alone cannot tell them apart.
     //
@@ -728,7 +728,7 @@ class TurnDetector {
         }
     }
 
-    // The straight-line half of the streak rule (docs/algorithms.md "Turn streaks", watch
+    // The straight-line half of the streak rule (docs/algorithms/pumping.md "Turn streaks", watch
     // approximation). A flight that ends while NO turn is being judged is a loss nothing else
     // explains — a ventilated foil, a dying gust, a caught tip — and if the rider swam, the
     // dry run is over whether or not a maneuver was involved.

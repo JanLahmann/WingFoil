@@ -147,7 +147,7 @@ struct TurnDetailMapView: View {
     /// It picks the nearest **vertex**, in metres, in whichever frame is drawn, and hands its
     /// relative time to the page — which puts it in `playheadRt`, which the strips draw as
     /// their rule and this view draws as its dot. So one gesture on either surface moves one
-    /// playhead, which is the app's rule everywhere else (docs/presentation.md, "Scrub and
+    /// playhead, which is the app's rule everywhere else (docs/presentation/scrub-pairing.md, "Scrub and
     /// zoom") and was the one place it did not hold.
     ///
     /// **A tap, and deliberately not a drag.** The first version was a
@@ -245,7 +245,7 @@ struct TurnDetailMapView: View {
     /// "more teal than grey" and drew a turn *accelerated* through exactly like one that
     /// merely held its speed. The width still ramps with it, so the line reads without
     /// colour too, and the legend at the foot of the card puts knots on all of it
-    /// (docs/presentation.md, "Turn detail").
+    /// (docs/presentation/turn-detail.md, "Turn detail").
     private func drawTurn(context: inout GraphicsContext, place: Placer) {
         let points = figure.points(windUp: windUp).filter(\.inTurn)
         guard points.count >= 2 else { return }

@@ -20,7 +20,7 @@ import Foundation
 ///
 /// **It derives, it never re-decides.** `outcome`, `stoppedS`, `offFoilS`, `minKn`,
 /// `pumped` and `submerged` are the engine's and stay the engine's. Definitions:
-/// docs/algorithms.md "Flight-end outcome", docs/presentation.md "Flight-end detail".
+/// docs/algorithms/pumping.md "Flight-end outcome", docs/presentation/turn-detail.md "Flight-end detail".
 public struct FlightEndSlice: Sendable, Equatable {
 
     // MARK: - Output

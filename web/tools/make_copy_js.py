@@ -7,7 +7,7 @@
 The rest of the copy contract is checked against pages (``verify_copy.py``). This is the
 part the browser has to render at run time, from a verdict the engine computes milliseconds
 earlier: a recording with no foil time that went nowhere is **not a session**
-(docs/algorithms.md, "Not a session", engine 0.19.0). The phone tags such a row and says
+(docs/algorithms/not-a-session.md, "Not a session", engine 0.19.0). The phone tags such a row and says
 why; the analyzer computed the same verdict from the same engine and said nothing about it.
 
 There is no build step on this site and no JSON fetch on the session path — the analyzer

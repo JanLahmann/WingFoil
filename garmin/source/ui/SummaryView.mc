@@ -366,7 +366,7 @@ class SummaryView extends WatchUi.View {
     //
     // The odometer is what the unification drops, and it is the one thing on this page that
     // had no live twin. It is not lost: the live Map page prints it under the trail and so
-    // does S8. See docs/presentation.md, "The after-save pages and the live ones".
+    // does S8. See docs/presentation/watch.md, "The after-save pages and the live ones".
     hidden function drawRecords(dc as Dc, c as SessionController) as Void {
         _painter.drawRecordsBody(dc, c);
     }
@@ -413,7 +413,7 @@ class SummaryView extends WatchUi.View {
     // The live Tacks & jibes page, VERBATIM — no flag, because nothing on it means anything
     // different ashore: two counts and how many of each he flew through are the same four
     // numbers before and after the save. It is the fifth page unified with its live twin
-    // (docs/presentation.md, "The after-save pages and the live ones") and the first that was
+    // (docs/presentation/watch.md, "The after-save pages and the live ones") and the first that was
     // born unified.
     hidden function drawKinds(dc as Dc, c as SessionController) as Void {
         _painter.drawKindsBody(dc, c);

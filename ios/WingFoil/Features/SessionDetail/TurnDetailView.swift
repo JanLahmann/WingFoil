@@ -215,7 +215,7 @@ private struct TurnDetailPage: View {
                     numbers(turn, slice: slice)
                     coach(turn, slice: slice)
                     #if TUNING
-                    // The dev build's turn workbench (docs/presentation.md, "Tuning this
+                    // The dev build's turn workbench (docs/presentation/channels-tuning.md, "Tuning this
                     // turn"): the ground-truth label, the outcome ladder's working, the
                     // what-if against the published defaults and the per-sample evidence
                     // table. A screen of its own since 19 Sep 2026, so this is the row that

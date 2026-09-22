@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import WingFoilKit
 
-/// **The beta's usage report** (docs/channels.md, docs/presentation.md "The beta's usage
+/// **The beta's usage report** (docs/channels.md, docs/presentation/status-feedback-start-widgets-ipad.md "The beta's usage
 /// report"). Every assertion here is about a line a rider reads before he sends it: nothing
 /// in this type is allowed to be a surprise in his outbox.
 @Suite struct UsageCountersTests {

@@ -69,7 +69,7 @@ public struct WatchHeartSample: Sendable, Equatable {
 /// about 1.0.
 ///
 /// Magnitude only, exactly like the Garmin stream (`AccelSample`): the pump detector is
-/// orientation-free by construction (docs/algorithms.md "Pumping"), the wrist rotates
+/// orientation-free by construction (docs/algorithms/pumping.md "Pumping"), the wrist rotates
 /// constantly, and three axes at 50 Hz would triple the biggest stream in the container to
 /// carry information nothing reads.
 public struct WatchAccelSample: Sendable, Equatable {
@@ -112,7 +112,7 @@ public struct WatchSessionMeta: Codable, Sendable, Equatable {
     /// `HealthImport` is the writer that needs the other answer: an Apple Workout-app workout
     /// usually carries no `HKMetadataKeyTimeZone` at all, and a device-zone guess handed over
     /// wearing rung 1's provenance would license every surface in the app to state a clock it
-    /// does not know (docs/presentation.md "Session time"). False therefore means *ignore the
+    /// does not know (docs/presentation/session-time-video.md "Session time"). False therefore means *ignore the
     /// number*: `WatchSessionParser` claims nothing, and `SessionIngestor.resolveUtcOffset`
     /// falls through to the longitude rung exactly as it does for a GPX.
     public var utcOffsetKnown: Bool?

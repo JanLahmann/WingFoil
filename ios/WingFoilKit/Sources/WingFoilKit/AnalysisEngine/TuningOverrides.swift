@@ -606,7 +606,7 @@ public struct TuningParameterSpec: Sendable, Equatable {
     /// more thing to explain and nothing to learn from.
     public var hidden: Bool = false
     /// Asks a question of the **pump channel**, which a windsurf preset does not build
-    /// (docs/algorithms.md "Disciplines"). Such a row is shown on the windsurf sets but
+    /// (docs/algorithms/disciplines.md "Disciplines"). Such a row is shown on the windsurf sets but
     /// disabled, with "off for windsurf" where its default caption would be — shown rather
     /// than removed so the page does not change length when the picker moves, and disabled
     /// rather than live because there is no burst for the rung to corroborate.

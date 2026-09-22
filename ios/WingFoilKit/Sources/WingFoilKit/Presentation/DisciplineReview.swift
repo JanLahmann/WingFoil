@@ -1,7 +1,7 @@
 import Foundation
 
 /// **"Is this a wingfoil session?" — the question the import cannot answer itself**
-/// (docs/presentation.md, "Confirming the discipline on import").
+/// (docs/presentation/labels.md, "Confirming the discipline on import").
 ///
 /// Wingfoil is not a sport in Garmin, Strava, intervals.icu or Apple Health. Every recording
 /// that is not the CleanJibe watch app's own therefore arrives saying either nothing or

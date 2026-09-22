@@ -127,7 +127,7 @@ public enum PeriodBlock {
 
     /// `59.7 %` — the one percent rule, and `library._f_pct`'s twin: a decimal below
     /// 10 %, none at or above it, always a space before the sign
-    /// (docs/presentation.md, "Label table").
+    /// (docs/presentation/labels.md, "Label table").
     static func percent(_ value: Double) -> String {
         String(format: abs(value) < 10 ? "%.1f %%" : "%.0f %%", value)
     }
