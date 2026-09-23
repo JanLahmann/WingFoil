@@ -54,7 +54,7 @@ export const GLOSSARY = [
     "term": "On foil",
     "short": "on foil",
     "expansion": "",
-    "line": "How much of the session was spent flying rather than merely moving."
+    "line": "How much of your session you spent flying rather than just moving."
   },
   {
     "id": "flights",
@@ -103,7 +103,7 @@ export const GLOSSARY = [
     "term": "WPH",
     "short": "WPH",
     "expansion": "swims per hour",
-    "line": "Swims per hour. The number nobody wants, kept honest anyway."
+    "line": "Swims per hour. Nobody wants it high, and it counts every fall."
   },
   {
     "id": "speedRecords",

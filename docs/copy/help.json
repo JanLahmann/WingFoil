@@ -117,7 +117,7 @@
                 "beta",
                 "dev"
               ],
-              "detail" : "How much of the session was spent flying rather than merely moving. Also on the watch and in Garmin Connect.",
+              "detail" : "How much of your session you spent flying rather than just moving. Also on the watch and in Garmin Connect.",
               "term" : "On foil"
             },
             {
@@ -180,7 +180,7 @@
                 "beta",
                 "dev"
               ],
-              "detail" : "Swims per hour. The number nobody wants, kept honest anyway.",
+              "detail" : "Swims per hour. Nobody wants it high, and it counts every fall.",
               "term" : "WPH"
             },
             {

@@ -93,8 +93,8 @@ public enum SettingsCopy {
             title: "intervals.icu",
             lead: "Your sessions arrive by themselves, from any watch that syncs there.",
             footer: [
-                "Downloads the original FIT of every windsurf, wing, kite, surf and SUP "
-                + "activity in your intervals.icu account. Two years back.",
+                "CleanJibe takes the original FIT of every windsurf, wing, kite, surf and "
+                + "SUP activity in your intervals.icu account. It goes two years back.",
                 "Activities already in the library are never downloaded again.",
             ],
             help: .icuSetup, web: true),
@@ -108,8 +108,8 @@ public enum SettingsCopy {
                 + "Import screen.",
                 "CleanJibe only reads your Strava account. It never writes, renames or "
                 + "posts anything.",
-                "Sessions imported this way are analysed from positions alone. Their speed "
-                + "records are marked uncertified.",
+                "A session imported this way is analysed from your track alone, so its "
+                + "speed records are marked uncertified.",
                 "Strava lets a new app connect a limited number of riders. Connecting is "
                 + "refused while CleanJibe is full.",
                 "That says nothing about your account.",
@@ -121,8 +121,8 @@ public enum SettingsCopy {
             title: "Deleted sessions",
             lead: "Put back a session you deleted.",
             footer: [
-                "Sessions you deleted stay deleted. Syncing intervals.icu leaves them "
-                + "alone, by hand and in the background.",
+                "Sessions you deleted stay deleted. Every sync of intervals.icu leaves "
+                + "them alone, by hand or in the background.",
                 "Restoring forgets that. The next sync brings back every one of them that "
                 + "is still on intervals.icu.",
             ],
@@ -155,8 +155,7 @@ public enum SettingsCopy {
             title: "Row shows",
             lead: "Pick the three numbers you read your library by.",
             footer: [
-                "Each row carries three numbers, each with its word under it. Pick the "
-                + "three you read your library by.",
+                "Each row carries three numbers, each with its own word under it.",
             ]),
 
         SettingsSectionCopy(
@@ -209,10 +208,11 @@ public enum SettingsCopy {
             title: "Your data",
             lead: "What this browser holds, a copy you keep, and the way to wipe it.",
             footer: [
-                "Saved sessions are written to this browser's private per-origin storage.",
+                "Your saved sessions live in this browser's own private storage.",
                 "They are not synced, not backed up and not visible to any other site.",
                 "Clearing this site's data, or using a private window, deletes them.",
-                "Download all writes one zip. Restore from a backup reads that same file.",
+                "Download all gives you one zip. Restore from a backup reads that same "
+                + "file back.",
             ],
             help: .libraryBackup, web: true, phone: false),
 
