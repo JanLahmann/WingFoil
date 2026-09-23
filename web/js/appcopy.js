@@ -87,17 +87,17 @@ export const SHELL = {
       {
         "id": "garmin",
         "title": "Garmin watch app",
-        "line": "Records on your wrist. Live numbers, and a summary when you save."
+        "line": "It records on your wrist, with live numbers and a summary when you save."
       },
       {
         "id": "iphone",
         "title": "iPhone app",
-        "line": "Reads every session, judges every turn, keeps your library."
+        "line": "It reads every session, judges every turn and keeps your library."
       },
       {
         "id": "browser",
         "title": "Browser app",
-        "line": "The same analysis in a tab. Drop a file, no account."
+        "line": "The same analysis in a tab. Drop a file in, with no account."
       }
     ],
     "travel": [
@@ -142,7 +142,7 @@ export const WAYS_IN = {
     {
       "id": "appleWatchApp",
       "title": "The CleanJibe Apple Watch app",
-      "line": "On the iPhone app. A browser cannot reach your watch.",
+      "line": "Take this one on the iPhone app. A browser cannot reach your watch.",
       "here": false,
       "href": "/start/#guide-appleWatchApp",
       "status": "Apple Watch · everything a Garmin gets"
@@ -150,7 +150,7 @@ export const WAYS_IN = {
     {
       "id": "appleWorkoutApp",
       "title": "Apple's own Workout app",
-      "line": "On the iPhone app. Apple Health is closed to a browser.",
+      "line": "Take this one on the iPhone app. Apple Health is closed to a browser.",
       "here": false,
       "href": "/start/#guide-appleWorkoutApp",
       "status": "Apple Watch · nothing to install"
@@ -166,7 +166,7 @@ export const WAYS_IN = {
     {
       "id": "strava",
       "title": "Strava",
-      "line": "On the iPhone app. Strava sign-in needs it.",
+      "line": "Take this one on the iPhone app. Strava sign-in needs it.",
       "here": false,
       "href": "/start/#guide-strava",
       "status": "any watch that syncs to Strava"

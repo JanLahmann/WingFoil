@@ -46,11 +46,11 @@ public enum CleanJibeFamily {
     /// The three, in the order a session travels through them.
     public static let apps: [App] = [
         App(id: "garmin", title: "Garmin watch app",
-            line: "Records on your wrist. Live numbers, and a summary when you save."),
+            line: "It records on your wrist, with live numbers and a summary when you save."),
         App(id: "iphone", title: "iPhone app",
-            line: "Reads every session, judges every turn, keeps your library."),
+            line: "It reads every session, judges every turn and keeps your library."),
         App(id: "browser", title: "Browser app",
-            line: "The same analysis in a tab. Drop a file, no account."),
+            line: "The same analysis in a tab. Drop a file in, with no account."),
     ]
 
     /// How a session gets from one of them to the next.

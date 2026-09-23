@@ -75,12 +75,12 @@
       {
         "id": "appleWatchApp",
         "here": false,
-        "line": "On the iPhone app. A browser cannot reach your watch."
+        "line": "Take this one on the iPhone app. A browser cannot reach your watch."
       },
       {
         "id": "appleWorkoutApp",
         "here": false,
-        "line": "On the iPhone app. Apple Health is closed to a browser."
+        "line": "Take this one on the iPhone app. Apple Health is closed to a browser."
       },
       {
         "id": "fit",
@@ -90,7 +90,7 @@
       {
         "id": "strava",
         "here": false,
-        "line": "On the iPhone app. Strava sign-in needs it."
+        "line": "Take this one on the iPhone app. Strava sign-in needs it."
       }
     ]
   },
@@ -101,11 +101,11 @@
     "thisApp": "browser",
     "apps": [
       { "id": "garmin", "title": "Garmin watch app",
-        "line": "Records on your wrist. Live numbers, and a summary when you save." },
+        "line": "It records on your wrist, with live numbers and a summary when you save." },
       { "id": "iphone", "title": "iPhone app",
-        "line": "Reads every session, judges every turn, keeps your library." },
+        "line": "It reads every session, judges every turn and keeps your library." },
       { "id": "browser", "title": "Browser app",
-        "line": "The same analysis in a tab. Drop a file, no account." }
+        "line": "The same analysis in a tab. Drop a file in, with no account." }
     ],
     "travel": [
       "A session leaves the watch through intervals.icu and lands on the phone.",

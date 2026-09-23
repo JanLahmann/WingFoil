@@ -47,9 +47,9 @@ public enum WelcomeGuide {
     /// detection first (nothing else is possible without it), then the counts, then the
     /// verdicts, then the records, then the replay.
     public static let lede =
-        "CleanJibe shows your time on the foil, every flight, every touchdown. Each "
-        + "jibe gets a verdict: flew through, touched down, or fell in. It counts your dry "
-        + "streak and your fastest seconds. Then it plays it back with a commentary."
+        "You get your time on the foil, every flight, every touchdown. Each jibe gets a "
+        + "verdict: flew through, touched down, or fell in. It counts your dry streak and "
+        + "your fastest seconds. Then it plays it back with a commentary."
 
     /// The vocabulary, four lines of it. Enough that the words on the session page are
     /// already familiar; short enough that nobody skips the screen to escape it.
@@ -83,7 +83,7 @@ public enum WelcomeGuide {
     public static let tryExampleTitle = "Try the example session"
     public static let tryExampleDetail =
         "10 real minutes on Lake Garda, already analysed. You get the track, the replay, "
-        + "the turn outcomes and the share card. Nothing to connect first."
+        + "the turn outcomes and the share card. You connect nothing first."
 
     /// The real path. The empty library's first row takes it from here, so this says only
     /// where it goes — but it names intervals.icu *and* says why a third party is in the
@@ -99,10 +99,10 @@ public enum WelcomeGuide {
     /// what it is for and what pressing it does.
     public static let connectTitle = "Set up intervals.icu"
     public static let connectDetail =
-        "Garmin has no open API, so CleanJibe collects your sessions through intervals.icu. "
-        + "It is free: 4 steps, about 5 minutes, once.\n\n"
-        + "This closes the welcome screen. The 4 steps are in Settings → intervals.icu. "
-        + "Every session arrives on its own."
+        "Garmin has no open API, so your sessions come across through intervals.icu. It is "
+        + "free, and the setup is 4 steps and about 5 minutes, once.\n\n"
+        + "This closes the welcome screen. The 4 steps are waiting in "
+        + "Settings → intervals.icu. Every session then arrives on its own."
 
     /// The quiet way out. Not a hidden one: a rider who wants to import a file by hand has
     /// nothing to gain from either button above — but "Later" on its own does not tell him
@@ -110,8 +110,8 @@ public enum WelcomeGuide {
     /// two rather than a bare verb.
     public static let laterTitle = "Later"
     public static let laterDetail =
-        "You can also open a .fit file straight from Files, Mail or a message. Yours, or "
-        + "one a friend sent you."
+        "You can also open a .fit file straight from Files, Mail or a message. It can be "
+        + "yours, or one a friend sent you."
 }
 
 /// Whether to say hello, and whether this install has already been said hello to.
