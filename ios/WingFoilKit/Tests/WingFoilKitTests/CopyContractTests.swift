@@ -498,6 +498,7 @@ import Testing
                 "promise": WelcomeGuide.promise,
                 "headline": WelcomeGuide.headline,
                 "callToAction": Branding.callToAction,
+                "tagline": Branding.tagline,
                 "captionOffer": ShareCaption.offer,
             ])
             return
@@ -506,6 +507,7 @@ import Testing
         Self.same(WelcomeGuide.promise, json["promise"], "phrases.json", "promise")
         Self.same(WelcomeGuide.headline, json["headline"], "phrases.json", "headline")
         Self.same(Branding.callToAction, json["callToAction"], "phrases.json", "callToAction")
+        Self.same(Branding.tagline, json["tagline"], "phrases.json", "tagline")
         Self.same(ShareCaption.offer, json["captionOffer"], "phrases.json", "captionOffer")
         Self.same(Copy.stravaFall, json["stravaFall"], "phrases.json", "stravaFall")
 

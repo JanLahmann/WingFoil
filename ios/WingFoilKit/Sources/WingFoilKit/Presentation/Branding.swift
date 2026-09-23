@@ -46,4 +46,9 @@ public enum Branding {
     /// subtitle rather than beside it as a sentence. "wingfoil" here is the sport, which is
     /// why it is not the brand's capitalisation.
     public static let callToAction = "analyze your wingfoil sessions free — " + site
+
+    /// **The tagline** (Jan, 23 September 2026): the one fragment the voice allows under the
+    /// wordmark (docs/voice.md, rule 5). It sits under the mark on the start screen and on
+    /// every page of the site; the share card keeps `callToAction`, which carries the site.
+    public static let tagline = "Your WingFoil session, measured."
 }
