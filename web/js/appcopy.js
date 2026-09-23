@@ -377,8 +377,8 @@ export const WHATS_NEW = [
     "lines": [
       "The card's falls tile says all of it, on every card size.",
       "A session sent to the developer is stripped of your watch's serial number and profile.",
-      "Average speed on the web reads what it always did.",
-      "The analysis mail's subject uses the app's own dot."
+      "Average speed on the web is back to the number it always showed.",
+      "The analysis mail's subject uses the same dot the app does."
     ]
   },
   {
@@ -389,10 +389,10 @@ export const WHATS_NEW = [
     "title": "A fall is the turn's fall",
     "lines": [
       "A jibe you never got going again after is a fall, not a touchdown.",
-      "Falls and jibes per hour move on re-analysis: falls the two counts had lost between them are counted once now.",
+      "Falls and jibes per hour change when a session is analysed again, and no fall is lost between them.",
       "Settings → Speed records: choose whether records from tracks without measured speed count. Default: verified first.",
       "Send a session to the developer from its Share page, with your notes.",
-      "Engine 0.24.0 re-derives your library once.",
+      "Engine 0.24.0 works your library out again, once.",
       "Please compare a session's falls with your own memory of the afternoon."
     ]
   },
@@ -421,7 +421,7 @@ export const WHATS_NEW = [
       "A jibe you never got going again after is a fall on the wrist too.",
       "The buzz comes as soon as the stop is long enough to be a fall.",
       "The tack and jibe rows equal the phone's on the same session.",
-      "Every word the watch prints comes from the one copy source the phone and the site read."
+      "Every word the watch prints now comes from the same place the phone and the site read."
     ]
   },
   {
