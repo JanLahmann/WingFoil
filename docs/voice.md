@@ -1,10 +1,35 @@
 # Voice — how CleanJibe talks to a rider
 
-Jan, 15 September 2026: *"knapp, klar, begeisternd"*, and intuitive to operate. This file is
-the voice every rider-facing sentence is written in — the iPhone app, the watch, the website,
-the store texts, the tester notes. Every agent that writes or edits rider text reads it first;
-a prompt then needs one line: *"voice per docs/voice.md"*. `docs/copy/` holds the sentences
-that appear on more than one surface; this file says how any sentence sounds.
+Jan, 15 September 2026: *"knapp, klar, begeisternd"*, and intuitive to operate. Jan, 23
+September 2026, reading the app and the site as a rider: the sentences had become a manual.
+This file is the voice every rider-facing sentence is written in — the iPhone app, the watch,
+the website, the store texts, the tester notes. Every agent that writes or edits rider text
+reads it first; a prompt then needs one line: *"voice per docs/voice.md, beach test"*.
+`docs/copy/` holds the sentences that appear on more than one surface; this file says how any
+sentence sounds.
+
+## Who is talking
+
+**The team that builds CleanJibe, wingfoilers themselves, telling you how it works.** Not a
+manual, not a marketing page, not a datasheet. We know the app inside out and we know what
+you were doing out there, so we talk about *your session, your turns, your afternoon*, and
+about how the app can support you and your passion for wingfoiling. For the interested
+rider we also explain the app's mechanics: how a verdict is reached, what comes from the
+watch and what from the phone, how it fits with Garmin, Strava, intervals.icu and the other
+tools you already use. That understanding helps you use the app well. It comes after the
+part about you, never instead of it. Friendly and natural, never clever.
+
+Three traits, and what each one rules out:
+
+| we want | we do not want |
+|---|---|
+| **about you first.** "You flew through eight of them." "Your best 2 s all season." Then, for the interested rider, how the app did it. | **mechanics with no rider in the sentence.** "It proves the route from the watch to the phone." "Opens a mail with the facts filled in." |
+| **natural rhythm.** A short sentence, then a longer one that carries a thought, the way you would say it. | **fragments and staccato.** "Wing foiling, measured." "Settings → intervals.icu, 4 steps, once." "Free." |
+| **wingfoiler words**, including the insider ones: *flew through, touchdown, dry streak, best 2 s, alpha 500, uncertified record, upwind, foil up, pump*. | **IT words.** *route, door, class (b), pipeline, re-derive, digest, ingest, sync target, payload.* |
+
+**The beach test.** Read the sentence aloud to a mate at the van. If you would not say it
+that way, rewrite it. This test beats every rule below; the rules exist so that a lint can
+catch the mechanics before a person has to.
 
 ## Three registers, and where each one is allowed
 
@@ -18,25 +43,30 @@ Never a fourth. The editorial register the texts had until 15 September — long
 em-dashes, an aside in the middle, the *why* before the *what*, a pointe at the end — is
 retired for rider text. It lives on in code comments and in `docs/`, where it belongs.
 
-## Ten rules
+## Eleven rules
 
 1. **One thought per sentence.** About 12 words; never more than 20. Two "and"s or a pair of
    dashes is two sentences.
-2. **Verb first, then the thing.** *Ride one session.* *Open it.* *Check each turn.* Not
-   "The real test is one session on the water: record it…".
+2. **The rider first, the mechanics after.** *Your session shows up in CleanJibe by
+   itself.* Then, where it helps: *intervals.icu carries it over, because Garmin has no open
+   API.* A sentence about the mechanics is allowed when a rider can do something with it:
+   choose a tool, fix a setup, understand a verdict. It is cut when it only describes what
+   the software did.
 3. **What, then why — and the why only if it changes what the rider does.** "Restart the
    watch once after installing." needs no reason. "Sessions arrive by themselves" needs one
    clause: "Garmin has no open API, so intervals.icu is the bridge."
 4. **No em-dash, no semicolon, no parenthesis in rider text.** A dash is a second sentence
    hiding. A parenthesis is either needed (then a sentence) or not (then gone).
-5. **No framing, no pointe.** Banned shapes: *the one thing…*, *the half only you can do*,
-   *exactly as…*, *which is the whole point*, *not X, but Y* as a flourish, *and that is why…*.
-   Say the thing.
+5. **No framing, no pointe, no fragment.** Banned shapes: *the one thing…*, *the half only
+   you can do*, *exactly as…*, *which is the whole point*, *not X, but Y* as a flourish, *and
+   that is why…*, *…, nothing else.*, and a verbless fragment as a sentence (*Free.* *Once.*
+   *Wing foiling, measured.*). A fragment is allowed as a heading only. Say the thing.
 6. **Rider vocabulary, exactly.** *flew through*, *touchdown*, *fell in*, *clean*, *dry
    streak*, *on foil*. Never *carried*, *success*, *no-fall*, *swim rate*
    (`docs/copy/phrases.json` → `lexicon`). Path notation for the app: *Settings → intervals.icu*.
 7. **Second person, present tense.** *You*, not *the rider*; *opens*, not *will open*. The app
-   is *CleanJibe* or *the app*, never *we* in register 1 and 3. *We* is allowed in register 2.
+   is *CleanJibe* or *the app*. *We* is the team that builds it, used sparingly and where a
+   person is meant: *tell us what you saw*, *we read every mail*. Never *I*.
 8. **Numbers stay numbers.** *2 s*, *500 m*, *10 riders*, *42 watches*. No "a handful", no
    "about ten" where the number is known.
 9. **Register 2 gets one line of energy, not a paragraph.** A question, an image, a promise
@@ -44,15 +74,42 @@ retired for rider text. It lives on in code comments and in `docs/`, where it be
 10. **Every cut fact keeps a home.** If a sentence goes, its fact goes to `docs/`, the help,
     or a store text, or it was not a fact.
 
+11. **Wingfoiler words yes, IT words no.** A wingfoiler's insider word is welcome and is
+    taught once in the glossary: *uncertified record*, *alpha 500*, *dry streak*, *foil up*.
+    An IT word never reaches a rider: *route*, *door*, *class (b)*, *pipeline*, *re-derive*,
+    *digest*, *payload* stay in `docs/`. When in doubt: would another wingfoiler use the
+    word on the beach?
+
 ## Before and after, from our own texts
+
+**Getting started, no wind (register 1) — the 23 September pair**
+> Before: *If you cannot wait for wind. Record a 3 to 5 minute walk on the watch. It proves the
+> route from the watch to the phone, nothing else.*
+>
+> After: *No wind today? Record a five-minute walk with the watch app. It shows up in CleanJibe
+> like a session would, so you know the whole path works before your next day on the water.*
+
+**Getting started, feedback (register 1)**
+> Before: *Then say how it read. Menu → Support & ideas opens a mail with the facts filled in.*
+>
+> After: *Tell us what you saw. Menu → Support & ideas opens a mail to us, with your app and
+> watch details already in it. Write what looked wrong. That is how the app gets better.*
+
+**Import, Strava (register 1)**
+> Before: *Positions only, records uncertified. Without the watch's own speed, a fall can read
+> as a touchdown.*
+>
+> After: *Strava keeps the track but not the watch's speed measurement. Falls are harder to
+> tell from touchdowns, and the speed records count as uncertified.*
 
 **Getting started, framing (register 1)**
 > Before: *The real test is one session on the water: record it the way you always do, bring it
 > in, and read the turn verdicts against what you remember — which jibes you flew through,
 > where you touched down, where you fell in.*
 >
-> After: *Ride one session as you always do. Open it in CleanJibe. Check each turn: flew
-> through, touchdown, fell in. Only you know which it really was.*
+> After: *Ride one session as you always do, then open it in CleanJibe. Every turn gets a
+> verdict: flew through, touchdown, or fell in. You were there, so you can tell us where it
+> got one wrong.*
 
 **Website hero (register 2, one of the four)**
 > Before: *CleanJibe reads a wingfoil session off your watch and tells you what actually
@@ -67,8 +124,8 @@ retired for rider text. It lives on in code comments and in `docs/`, where it be
 > Before: *Garmin has no open API for a personal app, so intervals.icu is the free bridge:
 > connect your Garmin there once and every session arrives here by itself.*
 >
-> After: *Garmin has no open API, so intervals.icu is the bridge. Connect Garmin there once.
-> Every session then arrives here by itself. Free.*
+> After: *Garmin has no open API, so intervals.icu is the bridge. Connect your Garmin there
+> once, and every session arrives here by itself. It is free.*
 
 **Glossary, CPH (register 3)**
 > Before: *Clean jibes per hour: you flew through it, you held your speed, and the ten seconds
@@ -81,8 +138,8 @@ retired for rider text. It lives on in code comments and in `docs/`, where it be
 > Before: *A wrist under water is how a fall is recognised: the pressure sensor sees it and the
 > swim is scored. The GPS gap is marked, not sailed through.*
 >
-> After: *A wrist under water counts as a fall. The pressure sensor sees it. The GPS gap is
-> marked, not filled.*
+> After: *When your wrist goes under, the watch's pressure sensor notices, and that counts as a
+> fall. The gap in the GPS track is marked, not filled in.*
 
 **End of a session (register 2, one of the four)**
 > *Eight jibes, six flew through, your best 2 s all season. Share the card.*
@@ -122,6 +179,6 @@ retired for rider text. It lives on in code comments and in `docs/`, where it be
 
 ## How to ask for text
 
-One line in the prompt: *"Rider text in the voice of docs/voice.md, register N."* Name the
-register when it is not 1. Quote this file's before/after pair that is closest to the surface
+One line in the prompt: *"Rider text in the voice of docs/voice.md, register N, beach test."*
+Name the register when it is not 1. Quote this file's before/after pair that is closest to the surface
 being written. Then let the voice lint and the budgets say no before Jan has to.
