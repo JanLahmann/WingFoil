@@ -54,7 +54,7 @@
         "Foil time",
         "foil time"
       ],
-      "line" : "How much of the session was spent flying rather than merely moving.",
+      "line" : "How much of your session you spent flying rather than just moving.",
       "places" : [
         "watchPage",
         "fitField",
@@ -245,7 +245,7 @@
         "WPH",
         "WPH · swims per hour"
       ],
-      "line" : "Swims per hour. The number nobody wants, kept honest anyway.",
+      "line" : "Swims per hour. Nobody wants it high, and it counts every fall.",
       "places" : [
         "phonePage",
         "card",

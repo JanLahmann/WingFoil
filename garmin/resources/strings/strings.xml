@@ -19,13 +19,13 @@
     <string id="SetExitHold">Exit hold (s)</string>
     <string id="SetMinFlight">Min flight duration (s)</string>
     <string id="SetUseKnots">Show speed in knots</string>
-    <string id="SetShowLabels">Show cell labels. Off: glyph only</string>
+    <string id="SetShowLabels">Show cell labels. Off: the symbol only</string>
     <string id="SetSport">Record as sport</string>
     <string id="SportWindsurf">Windsurf (recommended)</string>
     <string id="SportKitesurf">Kitesurf</string>
     <string id="SportGeneric">Generic</string>
     <string id="SetAccelLogging">Log accelerometer for pump analysis</string>
-    <string id="SetAccelLoggingNote">Records full wrist motion for pump analysis on the phone. The activity file gets roughly 20x larger, so the transfer to Garmin Connect after saving can take several minutes. Leave off for fast transfers.</string>
+    <string id="SetAccelLoggingNote">Your wrist motion is recorded, so the phone can count your pump strokes. The file gets about 20 times larger and can take several minutes to reach Garmin Connect. Leave it off for a fast transfer.</string>
     <string id="SetPumpDetection">Detect pumping + takeoffs</string>
     <string id="SetAlertTakeoff">Vibrate on pumped takeoff</string>
     <string id="SetAlertPb">Vibrate on speed PB</string>
@@ -43,7 +43,7 @@
     <string id="SetAutoPause">Auto-pause when stopped</string>
     <string id="SetAutoPauseDelay">Auto-pause delay (s)</string>
     <string id="SetVisualAlerts">Show alerts on screen</string>
-    <string id="SetVisualAlertsNote">Every buzz also paints. The glass flashes the verdict for 1.5 s. A line at the top keeps the last one for 20 s.</string>
+    <string id="SetVisualAlertsNote">Every buzz also shows on screen. The glass flashes the verdict for 1.5 s. A line at the top keeps the last one for 20 s.</string>
     <string id="SetAlertIntervalMin">Interval alert (min, 0 = off)</string>
     <string id="SetAlertIntervalKm">Interval alert (km, 0 = off)</string>
 
@@ -104,7 +104,7 @@
     <string id="StartTitle">CleanJibe</string>
     <string id="StartHint">START to record</string>
     <string id="StartHintLong">START records · BACK saves</string>
-    <string id="StartWindUnset">set wind - hold MENU</string>
+    <string id="StartWindUnset">set wind · hold MENU</string>
     <string id="StartWindPrefix">wind</string>
     <string id="StartGpsGood">GPS good</string>
     <string id="StartGpsReady">GPS ready</string>

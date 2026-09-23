@@ -251,7 +251,7 @@ import Testing
         let prose = (topic.body + topic.items.map(\.detail))
             .joined(separator: " ").lowercased()
         for phrase in ["new iphone", "icloud", "deleted", "gear", "accelerometer",
-                       "additive", "refused"] {
+                       "never overwrites", "refused"] {
             #expect(prose.contains(phrase), "the backup topic never mentions \(phrase)")
         }
         // The recordings inside are the rider's own, unscrubbed — the opposite promise

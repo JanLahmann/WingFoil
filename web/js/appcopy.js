@@ -87,17 +87,17 @@ export const SHELL = {
       {
         "id": "garmin",
         "title": "Garmin watch app",
-        "line": "Records on your wrist. Live numbers, and a summary when you save."
+        "line": "It records on your wrist, with live numbers and a summary when you save."
       },
       {
         "id": "iphone",
         "title": "iPhone app",
-        "line": "Reads every session, judges every turn, keeps your library."
+        "line": "It reads every session, judges every turn and keeps your library."
       },
       {
         "id": "browser",
         "title": "Browser app",
-        "line": "The same analysis in a tab. Drop a file, no account."
+        "line": "The same analysis in a tab. Drop a file in, with no account."
       }
     ],
     "travel": [
@@ -142,7 +142,7 @@ export const WAYS_IN = {
     {
       "id": "appleWatchApp",
       "title": "The CleanJibe Apple Watch app",
-      "line": "On the iPhone app. A browser cannot reach your watch.",
+      "line": "Take this one on the iPhone app. A browser cannot reach your watch.",
       "here": false,
       "href": "/start/#guide-appleWatchApp",
       "status": "Apple Watch · everything a Garmin gets"
@@ -150,7 +150,7 @@ export const WAYS_IN = {
     {
       "id": "appleWorkoutApp",
       "title": "Apple's own Workout app",
-      "line": "On the iPhone app. Apple Health is closed to a browser.",
+      "line": "Take this one on the iPhone app. Apple Health is closed to a browser.",
       "here": false,
       "href": "/start/#guide-appleWorkoutApp",
       "status": "Apple Watch · nothing to install"
@@ -166,7 +166,7 @@ export const WAYS_IN = {
     {
       "id": "strava",
       "title": "Strava",
-      "line": "On the iPhone app. Strava sign-in needs it.",
+      "line": "Take this one on the iPhone app. Strava sign-in needs it.",
       "here": false,
       "href": "/start/#guide-strava",
       "status": "any watch that syncs to Strava"
@@ -177,14 +177,14 @@ export const WAYS_IN = {
 /** The five routes in, as the welcome screen lists them
  *  (docs/guide/getting-started.json, the order both surfaces print). */
 export const GUIDE = {
-  "framing": "Ride one session as you always do. Open it in CleanJibe. Check each turn: flew through, touchdown, fell in. Only you know which it really was.",
-  "lede": "Take the route that matches your wrist. Go outside: every route needs GPS, and a watch indoors records no positions. Every route ends the same way. The session lands in CleanJibe, analysed as it arrives.",
+  "framing": "Ride one session as you always do, then open it in CleanJibe. Every turn gets a verdict: flew through, touchdown, or fell in. You were there, so you can tell us where it got one wrong.",
+  "lede": "Take the way in that matches your wrist. Go outside, because every one of them needs GPS and a watch indoors records no positions. They all end the same way. Your session lands in CleanJibe, analysed as it arrives.",
   "routes": [
     {
       "id": "garmin",
       "title": "Garmin with the CleanJibe watch app",
       "status": "fenix, epix, Forerunner and the rest",
-      "summary": "Install it from Connect IQ, ride, save. Sessions sync through intervals.icu: Settings → intervals.icu, 4 steps, once.",
+      "summary": "Install it from Connect IQ, then ride and save. Your sessions come across through intervals.icu, which takes 4 steps in Settings → intervals.icu, once.",
       "href": "/start/#guide-garmin"
     },
     {
@@ -212,7 +212,7 @@ export const GUIDE = {
       "id": "strava",
       "title": "Strava",
       "status": "any watch that syncs to Strava",
-      "summary": "Settings → Strava → Connect with Strava, then Import → Import from Strava…. Positions only, records uncertified. Without the watch's own speed, a fall can read as a touchdown.",
+      "summary": "Settings → Strava → Connect with Strava, then Import → Import from Strava…. Strava keeps your track but not your watch's speed, so records are uncertified.",
       "href": "/start/#guide-strava"
     }
   ]
@@ -221,8 +221,8 @@ export const GUIDE = {
 /** The sentence at the top of a Settings section, the phone's own
  *  (`GettingStartedGuide.settingsIcu` / `.settingsStrava`). */
 export const SETTINGS = {
-  "intervalsIcu": "Garmin has no open API, so intervals.icu is the bridge. Connect Garmin there once. Every session then arrives here by itself. Free.",
-  "strava": "Any watch that syncs to Strava, no file needed. Positions only, so speed records are uncertified. Without the watch's own speed, a fall can read as a touchdown."
+  "intervalsIcu": "Garmin has no open API, so intervals.icu is the bridge. Connect your Garmin there once, and every session arrives here by itself. It is free.",
+  "strava": "Any watch that syncs to Strava works, with no file to move. Strava keeps your track but not your watch's speed, so the records are uncertified."
 };
 
 /**
@@ -239,7 +239,7 @@ export const SETTINGS_SECTIONS = [
     "title": "intervals.icu",
     "lead": "Your sessions arrive by themselves, from any watch that syncs there.",
     "footer": [
-      "Downloads the original FIT of every windsurf, wing, kite, surf and SUP activity in your intervals.icu account. Two years back.",
+      "CleanJibe takes the original FIT of every windsurf, wing, kite, surf and SUP activity in your intervals.icu account. It goes two years back.",
       "Activities already in the library are never downloaded again."
     ],
     "help": "icuSetup"
@@ -251,7 +251,7 @@ export const SETTINGS_SECTIONS = [
     "footer": [
       "Strava opens, you say yes, and CleanJibe can list your activities on the Import screen.",
       "CleanJibe only reads your Strava account. It never writes, renames or posts anything.",
-      "Sessions imported this way are analysed from positions alone. Their speed records are marked uncertified.",
+      "A session imported this way is analysed from your track alone, so its speed records are marked uncertified.",
       "Strava lets a new app connect a limited number of riders. Connecting is refused while CleanJibe is full.",
       "That says nothing about your account."
     ],
@@ -262,7 +262,7 @@ export const SETTINGS_SECTIONS = [
     "title": "Deleted sessions",
     "lead": "Put back a session you deleted.",
     "footer": [
-      "Sessions you deleted stay deleted. Syncing intervals.icu leaves them alone, by hand and in the background.",
+      "Sessions you deleted stay deleted. Every sync of intervals.icu leaves them alone, by hand or in the background.",
       "Restoring forgets that. The next sync brings back every one of them that is still on intervals.icu."
     ],
     "help": "libraryBackup"
@@ -299,7 +299,7 @@ export const SETTINGS_SECTIONS = [
     "title": "Row shows",
     "lead": "Pick the three numbers you read your library by.",
     "footer": [
-      "Each row carries three numbers, each with its word under it. Pick the three you read your library by."
+      "Each row carries three numbers, each with its own word under it."
     ],
     "phoneOnly": true
   },
@@ -328,10 +328,10 @@ export const SETTINGS_SECTIONS = [
     "title": "Your data",
     "lead": "What this browser holds, a copy you keep, and the way to wipe it.",
     "footer": [
-      "Saved sessions are written to this browser's private per-origin storage.",
+      "Your saved sessions live in this browser's own private storage.",
       "They are not synced, not backed up and not visible to any other site.",
       "Clearing this site's data, or using a private window, deletes them.",
-      "Download all writes one zip. Restore from a backup reads that same file."
+      "Download all gives you one zip. Restore from a backup reads that same file back."
     ],
     "help": "libraryBackup"
   },
@@ -377,8 +377,8 @@ export const WHATS_NEW = [
     "lines": [
       "The card's falls tile says all of it, on every card size.",
       "A session sent to the developer is stripped of your watch's serial number and profile.",
-      "Average speed on the web reads what it always did.",
-      "The analysis mail's subject uses the app's own dot."
+      "Average speed on the web is back to the number it always showed.",
+      "The analysis mail's subject uses the same dot the app does."
     ]
   },
   {
@@ -389,10 +389,10 @@ export const WHATS_NEW = [
     "title": "A fall is the turn's fall",
     "lines": [
       "A jibe you never got going again after is a fall, not a touchdown.",
-      "Falls and jibes per hour move on re-analysis: falls the two counts had lost between them are counted once now.",
+      "Falls and jibes per hour change when a session is analysed again, and no fall is lost between them.",
       "Settings → Speed records: choose whether records from tracks without measured speed count. Default: verified first.",
       "Send a session to the developer from its Share page, with your notes.",
-      "Engine 0.24.0 re-derives your library once.",
+      "Engine 0.24.0 works your library out again, once.",
       "Please compare a session's falls with your own memory of the afternoon."
     ]
   },
@@ -421,7 +421,7 @@ export const WHATS_NEW = [
       "A jibe you never got going again after is a fall on the wrist too.",
       "The buzz comes as soon as the stop is long enough to be a fall.",
       "The tack and jibe rows equal the phone's on the same session.",
-      "Every word the watch prints comes from the one copy source the phone and the site read."
+      "Every word the watch prints now comes from the same place the phone and the site read."
     ]
   },
   {
@@ -815,7 +815,7 @@ export const HELP = {
       "topics": [
         {
           "body": [
-            "Ride one session as you always do. Open it in CleanJibe. Check each turn: flew through, touchdown, fell in. Only you know which it really was."
+            "Ride one session as you always do, then open it in CleanJibe. Every turn gets a verdict: flew through, touchdown, or fell in. You were there, so you can tell us where it got one wrong."
           ],
           "channels": [
             "release",
@@ -830,7 +830,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Install it from Connect IQ, ride, save. Sessions sync through intervals.icu: Settings → intervals.icu, 4 steps, once.",
+              "detail": "Install it from Connect IQ, then ride and save. Your sessions come across through intervals.icu, which takes 4 steps in Settings → intervals.icu, once.",
               "term": "Garmin with the CleanJibe watch app"
             },
             {
@@ -864,7 +864,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Settings → Strava → Connect with Strava, then Import → Import from Strava…. Positions only, records uncertified. Without the watch's own speed, a fall can read as a touchdown.",
+              "detail": "Settings → Strava → Connect with Strava, then Import → Import from Strava…. Strava keeps your track but not your watch's speed, so records are uncertified.",
               "term": "Strava"
             },
             {
@@ -873,8 +873,8 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Record a 3 to 5 minute walk on the watch. It proves the route from the watch to the phone, nothing else.",
-              "term": "If you cannot wait for wind"
+              "detail": "Record a 3 to 5 minute walk on the watch. It arrives in CleanJibe like a session would, so you know the whole way in works.",
+              "term": "No wind today?"
             },
             {
               "channels": [
@@ -882,8 +882,8 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Menu → Support & ideas opens a mail with the facts filled in. TestFlight's own feedback works too if you are on the beta.",
-              "term": "Then say how it read"
+              "detail": "Menu → Support & ideas opens a mail to us, with your app and watch details already in it. On the beta, TestFlight's own feedback works too.",
+              "term": "Tell us what you saw"
             },
             {
               "channels": [
@@ -925,7 +925,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "How much of the session was spent flying rather than merely moving. Also on the watch and in Garmin Connect.",
+              "detail": "How much of your session you spent flying rather than just moving. Also on the watch and in Garmin Connect.",
               "term": "On foil"
             },
             {
@@ -988,7 +988,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Swims per hour. The number nobody wants, kept honest anyway.",
+              "detail": "Swims per hour. Nobody wants it high, and it counts every fall.",
               "term": "WPH"
             },
             {
@@ -1457,7 +1457,7 @@ export const HELP = {
             "shareFromWatchApp",
             "whichWatch"
           ],
-          "summary": "Connect once, then pick the sessions you want. Positions only, so speed records are uncertified.",
+          "summary": "Connect once, then pick the sessions you want. Strava keeps your track but not your watch's speed.",
           "title": "Import from Strava"
         },
         {
@@ -1554,7 +1554,7 @@ export const HELP = {
                 "dev"
               ],
               "detail": "Record in the Strava app and connect Strava here. Strava's phone app cannot export a file, so the import reads the activity out of your account instead.",
-              "term": "Strava, the route that needs no file"
+              "term": "Strava, the way in that needs no file"
             },
             {
               "channels": [
@@ -1613,7 +1613,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Where a browser offers it, the page installs. It gets an icon, opens without browser chrome and works with no signal.",
+              "detail": "Where a browser offers it, the page installs. It gets an icon on your home screen, opens like an app and works with no signal.",
               "term": "Install it from the browser"
             },
             {
@@ -1672,7 +1672,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Record with Apple's Workout app and import through Strava or intervals.icu. The beta adds two doors: Apple Health, and the CleanJibe watch app, which records the wrist too.",
+              "detail": "Record with Apple's Workout app and import through Strava or intervals.icu. The beta adds two more ways in: Apple Health, and the CleanJibe watch app, which records the wrist too.",
               "term": "Apple Watch"
             },
             {
@@ -1840,7 +1840,7 @@ export const HELP = {
             "Setting up a new iPhone from this one carries your library across, and so does an iCloud backup.",
             "Settings → Library backup is for the case neither covers. That is a phone set up as new, or the app deleted and installed again.",
             "The file holds every recording you imported, and what nothing else can bring back. That is each session's name and caption, whose it was, its gear. Your spot names and the sessions you deleted on purpose are there too.",
-            "Restoring is additive. Sessions already in your library keep their own analysis. Details you changed since are left alone. Restoring the same file twice does nothing the second time. Sessions you deleted after the backup stay deleted."
+            "Restoring never overwrites. Sessions already in your library keep their own analysis. Details you changed since are left alone. Restoring the same file twice does nothing the second time. Sessions you deleted after the backup stay deleted."
           ],
           "channels": [
             "release",
@@ -1972,7 +1972,7 @@ export const HELP = {
         {
           "body": [
             "A flight starts when your speed holds above the entry threshold, 12 km/h by default, for 2 seconds. It ends when the speed drops below the exit threshold, 8 km/h, for 3 seconds.",
-            "Start and end are backdated to the first qualifying sample.",
+            "The flight is dated back to the first moment that counted, at both ends.",
             "\"On foil\" is that flying time divided by timer time. Timer time is the total, minus any stretch where the recording stopped or the GPS dropped out.",
             "Taxiing, swimming and the drift upwind count against it. A gap in the recording does not.",
             "Anything under 5 seconds is not counted as a flight. \"Foil time\" is the number of minutes. \"On foil\" is the share of the session they are."
@@ -2224,7 +2224,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "A recording with positions but no speed channel has its speed differentiated from them, which reads high. Every GPX is one, and some converted exports. Marked wherever it is shown.",
+              "detail": "A recording with positions but no speed channel has its speed worked out from them, which reads high. Every GPX is one, and some converted exports. It is marked everywhere.",
               "term": "\"Uncertified\""
             }
           ],
@@ -2345,7 +2345,7 @@ export const HELP = {
           "body": [
             "Every turn gets one of three outcomes. The judgement runs from the turn start until you are flying again. That means speed back above 70 % of your entry speed for 2 seconds. The window is capped at 12 seconds.",
             "A jibe exited at marginal speed can bleed off for 6 to 12 seconds before the foil stalls. That mush-out is the jibe's fault. A jibe you power out of closes its window in a second or two.",
-            "Three channels are read inside it. Speed always. The barometer, where a wrist under water reads as a huge altitude drop. The accelerometer, on a CleanJibe watch recording."
+            "Three things are read inside it. Your speed, always. The barometer, because a wrist under water looks like a huge drop in altitude. The accelerometer, on a CleanJibe watch recording."
           ],
           "channels": [
             "release",
@@ -2528,7 +2528,7 @@ export const HELP = {
         {
           "body": [
             "The flight ended and you kept moving. You settled onto the board and taxied on, or you chose to stop riding. No stop was ever measured, so this is not counted as a loss.",
-            "Flight ends where the recording itself stopped are reported as unknown. There is no evidence there, so they are left out of every tally."
+            "When a flight ends because the recording stopped, CleanJibe calls it unknown. There is nothing there to judge, so it stays out of every tally."
           ],
           "channels": [
             "release",
@@ -2897,9 +2897,9 @@ export const HELP = {
         },
         {
           "body": [
-            "A session from the CleanJibe watch app carries the summary the watch computed live. It was computed in one forward pass with no memory to spare. The phone recomputes the same session properly, and the two are compared.",
+            "A session from the CleanJibe watch app brings the summary the watch worked out while you rode. The watch does that in one pass, with very little memory. The phone does the whole job again, and compares the two.",
             "The banner appears when foil time differs by more than 5 %. It appears for a speed record off by more than 0.3 knots. It appears for a flight, turn or attempt count off by more than one.",
-            "The phone's number is the authoritative one. Nothing is wrong with your session. The banner says the watch's live approximation needs tuning."
+            "The phone's number is the one to go by. Nothing is wrong with your session. The banner says the watch's live guess needs tuning."
           ],
           "channels": [
             "release",
@@ -2912,14 +2912,14 @@ export const HELP = {
             "sourceClass",
             "engineVersion"
           ],
-          "summary": "Normal, expected, and the phone's number is the right one.",
+          "summary": "This is normal, and the phone's number is the one to trust.",
           "title": "When the watch and the phone show different numbers"
         },
         {
           "body": [
             "The footer of a session shows which version of the analysis engine produced its numbers.",
-            "Sessions computed with an older version are recomputed when the engine changes results. The recompute reads each session's archived original file the next time you open it.",
-            "The original recording is never modified. Only the derived analysis is, and you can drop and rebuild it at any time from Settings."
+            "When a new version would give a session different numbers, CleanJibe works it out again. It reads that session's own archived recording, the next time you open it.",
+            "Your original recording is never changed. Only the numbers are, and you can throw them away and rebuild them at any time from Settings."
           ],
           "channels": [
             "release",
@@ -2932,14 +2932,14 @@ export const HELP = {
             "sourceClass",
             "divergence"
           ],
-          "summary": "Every session is re-derived when the engine changes.",
+          "summary": "When the analysis improves, your old sessions are worked out again.",
           "title": "Analysis engine version"
         },
         {
           "body": [
-            "A session can be analysed as **Wingfoil**, **Windsurf foil** or **Windsurf fin**. The row is on the session's Details tab, under \"Analyse as\". Changing it re-derives that session and nothing else.",
+            "A session can be analysed as **Wingfoil**, **Windsurf foil** or **Windsurf fin**. The row is on the session's Details tab, under \"Analyse as\". Changing it works that one session out again, and nothing else.",
             "None of Garmin, Strava, intervals.icu and Apple Health has a wingfoil sport. Most riders record under the windsurf profile. A new session cannot say which rig it was ridden on.",
-            "So it is read as whatever you set under Settings → \"I mostly ride\", marked with a **?** until you have looked, and listed after each import. Sessions from the CleanJibe watch app are never asked about."
+            "So CleanJibe reads it as whatever you set under Settings → \"I mostly ride\". It is marked with a **?** until you have looked, and listed after each import. Sessions from the CleanJibe watch app are never asked about."
           ],
           "channels": [
             "dev"
@@ -2997,7 +2997,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "\"Foil time\" reads as planing time and \"lost the foil\" as stopped planing. Windsurf sessions count towards your trends. There is no separate record set.",
+              "detail": "\"Foil time\" means planing time here, and \"lost the foil\" means stopped planing. Windsurf sessions count towards your trends. There is no separate record set.",
               "term": "In the library"
             }
           ],

@@ -88,7 +88,7 @@ import Testing
     /// channel; the release's list is unchanged, which is the other half of the rule.
     @Test func theGettingStartedTopicListsTheRoutesOfTheChannelThatAsks() {
         let apple = ["The CleanJibe Apple Watch app", "Apple's own Workout app"]
-        let closing = ["If you cannot wait for wind", "Then say how it read"]
+        let closing = ["No wind today?", "Tell us what you saw"]
 
         // Three routes in the App Store build, five on the beta and the dev — both closing
         // notes and the web line in every channel.

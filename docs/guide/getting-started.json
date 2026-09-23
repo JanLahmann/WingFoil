@@ -34,15 +34,15 @@
     "`**bold**` is markdown in the app and <strong> on the web; *italic* likewise."
   ],
   "schema": "cleanjibe.getting-started/1",
-  "framing": "Ride one session as you always do. Open it in CleanJibe. Check each turn: flew through, touchdown, fell in. Only you know which it really was.",
+  "framing": "Ride one session as you always do, then open it in CleanJibe. Every turn gets a verdict: flew through, touchdown, or fell in. You were there, so you can tell us where it got one wrong.",
   "app": {
     "topicTitle": "Getting started",
     "topicSummary": "Your first session on the water, and where to send what you find."
   },
   "sections": {
     "routes": {
-      "title": "The routes, one per watch",
-      "lede": "Take the route that matches your wrist. Go outside: every route needs GPS, and a watch indoors records no positions. Every route ends the same way. The session lands in CleanJibe, analysed as it arrives.",
+      "title": "The ways in, one per watch",
+      "lede": "Take the way in that matches your wrist. Go outside, because every one of them needs GPS and a watch indoors records no positions. They all end the same way. Your session lands in CleanJibe, analysed as it arrives.",
       "betaLegend": "in the public beta today, not yet in the App Store release."
     },
     "troubleshooting": {
@@ -51,7 +51,7 @@
     },
     "report": {
       "title": "What a good report says",
-      "lede": "One short message. A screenshot of the session page beats a paragraph. \"This number looks wrong\" is a good report."
+      "lede": "Keep it short. A screenshot of the session page beats a paragraph. \"This number looks wrong\" is a good report."
     }
   },
   "routes": [
@@ -65,7 +65,7 @@
         "dev"
       ],
       "class": "a",
-      "summary": "Install it from Connect IQ, ride, save. Sessions sync through intervals.icu: Settings → intervals.icu, 4 steps, once.",
+      "summary": "Install it from Connect IQ, then ride and save. Your sessions come across through intervals.icu, which takes 4 steps in Settings → intervals.icu, once.",
       "steps": [
         {
           "title": "Install the watch app",
@@ -203,7 +203,7 @@
         "dev"
       ],
       "class": "c",
-      "summary": "Settings → Strava → Connect with Strava, then Import → Import from Strava…. Positions only, records uncertified. Without the watch's own speed, a fall can read as a touchdown.",
+      "summary": "Settings → Strava → Connect with Strava, then Import → Import from Strava…. Strava keeps your track but not your watch's speed, so records are uncertified.",
       "steps": [
         {
           "title": "Connect once",
@@ -231,22 +231,22 @@
   "extras": [
     {
       "id": "dryRun",
-      "title": "If you cannot wait for wind",
+      "title": "No wind today?",
       "status": "20 minutes, no water",
       "channels": [
         "release",
         "beta",
         "dev"
       ],
-      "summary": "Record a 3 to 5 minute walk on the watch. It proves the route from the watch to the phone, nothing else.",
+      "summary": "Record a 3 to 5 minute walk on the watch. It arrives in CleanJibe like a session would, so you know the whole way in works.",
       "steps": [
         {
           "title": "3 to 5 minutes of movement",
           "detail": "A bike ride draws the nicest track. Anything above about 12 km/h counts as flying. Walking works too. Go outside: indoors there are no positions."
         },
         {
-          "title": "Bring it in by your own route",
-          "detail": "Whichever route above matches your watch. It answers one question: does a recording made on your watch reach CleanJibe on your phone?"
+          "title": "Bring it in your own way",
+          "detail": "Take whichever way in above matches your watch. It answers one question: does a recording made on your watch reach CleanJibe on your phone?"
         },
         {
           "title": "What you should see",
@@ -254,20 +254,20 @@
         },
         {
           "title": "Turns and jibes reading zero",
-          "detail": "Expected on a bike or on foot: there is nothing to jibe. This checks the route from the watch, never the analysis."
+          "detail": "Expected on a bike or on foot: there is nothing to jibe. This checks the way in from the watch, never the analysis."
         }
       ]
     },
     {
       "id": "sayHowItRead",
-      "title": "Then say how it read",
+      "title": "Tell us what you saw",
       "status": "your verdicts against the engine's",
       "channels": [
         "release",
         "beta",
         "dev"
       ],
-      "summary": "Menu → Support & ideas opens a mail with the facts filled in. TestFlight's own feedback works too if you are on the beta.",
+      "summary": "Menu → Support & ideas opens a mail to us, with your app and watch details already in it. On the beta, TestFlight's own feedback works too.",
       "steps": [
         {
           "title": "Read the verdicts against your memory",
@@ -283,7 +283,7 @@
         },
         {
           "title": "Attach the file if a session read wrong",
-          "detail": "With the .fit the detection can be re-run and fixed. Without it there is only guesswork. Ideas and wishes are as welcome as faults."
+          "detail": "With the .fit we can run the detection again and fix it. Without it there is only guesswork. Ideas and wishes are as welcome as faults."
         },
         {
           "title": "Send a card, and say how it reads",
@@ -307,8 +307,8 @@
   },
   "settings": {
     "_note": "One sentence each, at the top of the matching Settings section. The app reads them from GettingStartedGuide, so the help and the switches say the same thing.",
-    "intervalsIcu": "Garmin has no open API, so intervals.icu is the bridge. Connect Garmin there once. Every session then arrives here by itself. Free.",
-    "strava": "Any watch that syncs to Strava, no file needed. Positions only, so speed records are uncertified. Without the watch's own speed, a fall can read as a touchdown."
+    "intervalsIcu": "Garmin has no open API, so intervals.icu is the bridge. Connect your Garmin there once, and every session arrives here by itself. It is free.",
+    "strava": "Any watch that syncs to Strava works, with no file to move. Strava keeps your track but not your watch's speed, so the records are uncertified."
   },
   "troubleshooting": {
     "surfaces": [
@@ -355,7 +355,7 @@
     ],
     "entries": [
       {
-        "term": "Which route",
+        "term": "Which way in",
         "detail": "Garmin, any .fit, Strava, the CleanJibe watch app, or Apple's Workout app."
       },
       {

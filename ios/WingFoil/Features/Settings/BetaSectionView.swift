@@ -184,7 +184,7 @@ struct ComingSoonSection: View {
 
     #if BETA
     private static let footer =
-        "What is being ridden with in this build, and the doors only a handful of testers "
+        "What is being ridden with in this build, and what only a handful of testers "
         + "have behind it."
     #else
     private static let footer =

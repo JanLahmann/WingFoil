@@ -174,9 +174,10 @@ struct TakeoffsAnalysisView: View {
         if attempts.isEmpty {
             ContentUnavailableView("No \(filter.description)",
                                    systemImage: "arrow.up.circle",
-                                   description: Text("This session has none. A source with "
-                                                     + "no accelerometer cannot see a failed "
-                                                     + "attempt at all."))
+                                   description: Text("This session has none. A recording "
+                                                     + "without a wrist accelerometer "
+                                                     + "cannot see a failed attempt at "
+                                                     + "all."))
                 .frame(maxWidth: .infinity, minHeight: 160)
         } else {
             VStack(spacing: 0) {

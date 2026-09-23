@@ -471,8 +471,8 @@ struct SessionDetailView: View {
                      + "follows once Garmin Connect has synced it. Pull down on Sessions "
                      + "after intervals.icu has the activity. Or share the .fit file into "
                      + "CleanJibe.\n\n"
-                     + "Then this page fills with the map, every turn and the records, and "
-                     + "these numbers are re-derived from the recording.")
+                     + "Then this page fills with the map, every turn and the records. "
+                     + "These numbers are worked out again from the recording.")
             }
             .frame(maxWidth: .infinity)
         }
