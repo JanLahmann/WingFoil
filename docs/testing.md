@@ -1126,7 +1126,7 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    button calls, so a screenshot taken after it is the real result of the real door rather
    than of a launch-time shortcut. Beta and dev channels only have the button; the hook
    compiles in any DEBUG build. `UI_IMPORT_FIXTURES=1`, `UI_OPEN_SESSION=latest|<name>`,
-   `UI_TAB=records|trends|gear`, `UI_SHEET=help|settings|import|tuning|discipline` and
+   `UI_TAB=records|trends|gear`, `UI_SHEET=help|settings|import|family|tuning|discipline` and
    `UI_HELP_TOPIC=<HelpTopicID>` park the app on a given screen, since `simctl` cannot tap.
    `UI_SYNC_CONTAINER=<path>` points the dev build's iCloud Drive sync at a plain directory
    instead of the ubiquity container, so two simulators can share one library

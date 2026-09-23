@@ -287,6 +287,9 @@ struct LibraryView: View {
                 switch ProcessInfo.processInfo.environment["UI_SHEET"] {
                 case "help": sheet = .help
                 case "settings": sheet = .settings
+                // `UI_SHEET=family` is the only way to a menu row's screen from `simctl`,
+                // which cannot open a menu. The row is `AppMenuRow.family`.
+                case "family": sheet = .family
                 // `import` is the way to reach the Apple Health source (ADR-017), which is
                 // otherwise two taps behind a toolbar button `simctl` cannot press. It stages
                 // only the sheet: the Health screen behind it fills itself from the machine's
