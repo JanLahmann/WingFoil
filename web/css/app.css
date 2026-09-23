@@ -850,13 +850,6 @@ details.help-section[open] > summary { border-bottom: 1px solid var(--line-soft)
 
 .wipe-acts { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
 
-#whats-new-fold > summary {
-  padding: 4px 0;
-  color: var(--ink-2);
-  font-size: 13px;
-  cursor: pointer;
-}
-
 /* The turn page's footnote: one line by default, eleven paragraphs when asked. */
 .tp-footlead { margin: 0; }
 /* r7-w5:end */

@@ -59,7 +59,8 @@ SESSION_SECTION = KIT / "SessionSection.swift"
 
 #: The pages the shell routes to. A missing one is a tab that opens nothing.
 PAGE_IDS = ["page-sessions", "page-session", "page-records", "page-trends", "page-periods",
-            "page-period", "page-gear", "page-settings", "page-help"]
+            "page-period", "page-gear", "page-settings", "page-help", "page-started",
+            "page-whats-new"]
 
 # --------------------------------------------------------------- the ported screens
 

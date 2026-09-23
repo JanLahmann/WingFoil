@@ -69,6 +69,11 @@ const PAGES = {
   gear: "gear",
   settings: null,
   help: null,
+  // The two menu destinations that used to lead off the app: *Getting started* went to the
+  // Help index, and the release notes lived in a fold inside Settings. Both are screens on
+  // the phone, so both are pages here (Jan, 23 September 2026).
+  started: null,
+  "whats-new": null,
 };
 
 /** The routes this page answered to before it had tabs. A bookmark, a link from the
@@ -115,6 +120,38 @@ export function showPage(name, arg = null) {
     renderDeleted().catch(() => {});                                       // r3-w1
   }
   if (page === "help") openHelpAt(arg);
+  if (page === "started") renderGettingStarted();
+}
+
+/**
+ * **Getting started, inside the app.**
+ *
+ * The phone opens `HelpTopicID.gettingStarted` as a sheet of its own from the same menu
+ * row (`AppMenuButton.tap`), and this is that topic, rendered from the same catalogue —
+ * docs/copy/help.json, through `js/appcopy.js`. Nothing is written twice: the topic's last
+ * item is already *the same guide, with every step, on the web*, which is what /start/ is
+ * for and why that page does not move.
+ *
+ * A build whose catalogue is still the stub says so rather than drawing an empty page.
+ */
+function renderGettingStarted() {
+  const host = el("started-body");
+  if (!host) return;
+  const topic = helpTopic("gettingStarted");
+  if (!topic) {
+    host.innerHTML = `<p class="note">The guide is on the iPhone app and on the website.</p>
+      <p><a href="/start/">Get started</a></p>`;
+    return;
+  }
+  // Drawn rather than handed to `topicHtml`: that one wears the article's id, and the Help
+  // page already carries this topic under it. Two elements with one id is a deep link that
+  // lands on whichever of them the browser saw first.
+  host.innerHTML = `
+    <p class="what">${esc(topic.summary)}</p>
+    ${(topic.body || []).map((p) => `<p>${esc(p)}</p>`).join("")}
+    ${(topic.items || []).length ? `<dl class="glossary-list">${topic.items.map((i) => `
+      <div class="g-entry"><dt>${esc(i.term)}</dt><dd>${esc(i.detail)}</dd></div>`)
+      .join("")}</dl>` : ""}`;
 }
 
 /** Send the reader to one help topic, from anywhere: the `?` beside an explanation, a
@@ -184,7 +221,7 @@ function wireMenu() {
       track("app-menu-row-opened", { row });
       closeMenu();
       if (row === "whatItDoes") openWelcome();
-      else if (row === "gettingStarted") showPage("help");
+      else if (row === "gettingStarted") showPage("started");
       else if (row === "settings") showPage("settings");
       else if (row === "help") showPage("help");
       else if (row === "support") location.href = feedbackMail();

@@ -894,19 +894,49 @@
     <p class="muted small"><a href="../privacy/" data-umami-event="app-privacy">Privacy</a></p>
   </section>
 
-  <!-- The release notes, folded. Thirty cards under a heading is the exact shape of Jan's
-       complaint about this page, and /whats-new/ is the reader's page for them; here they
-       are the answer to "what changed in the thing I am looking at". -->
+  <!-- The release notes have a page of their own now, the way the phone's menu has a
+       *What's new* screen. Thirty cards under a heading was the exact shape of Jan's
+       complaint about this page, and a fold holding thirty cards is that page in disguise;
+       this row is the door to it. -->
   <section class="panel" id="settings-whats-new" data-settings="whatsNew">
-    <details id="whats-new-fold">
-      <summary><span class="help-section-name">Read the release notes</span></summary>
-      <!-- Filled from js/appcopy.js, which the generator writes out of
-           docs/copy/whats-new.json. Nothing dated is typed into this page: the voice lint
-           reads it as a rider surface and fails a hand-written build number. -->
-      <div id="whats-new-body"></div>
-    </details>
+    <p><button class="ghost small-btn" type="button" data-goto="whats-new"
+      data-umami-event="app-whats-new-opened">Read the release notes</button></p>
   </section>
 
+</div>
+
+<!-- ========================================================== GETTING STARTED -->
+<!-- THE GUIDE, IN THE APP (Jan, 23 September 2026). *Getting started* is a menu row on both
+     shells and it used to send a browser reader to the Help index, which is not what the
+     row promises, while every other door on this page led out to /start/. The phone opens
+     the `gettingStarted` help topic as a sheet of its own; this page is that topic,
+     rendered from the same docs/copy/help.json the phone's HelpTopicSheet reads.
+     /start/ stays where it is: it is the page a visitor meets before he has either app,
+     with every route's steps under it, and this page's last item is the link to it. -->
+<div class="page" id="page-started" data-page="started" hidden>
+  <p class="crumb"><button class="linkish" type="button" data-goto="sessions">Back to
+    Sessions</button></p>
+  <section class="panel">
+    <div class="panel-head">
+      <div><h1 class="page-title">Getting started</h1></div>
+    </div>
+    <div id="started-body"></div>
+  </section>
+</div>
+
+<!-- ============================================================== WHAT'S NEW -->
+<!-- The release notes, as a page rather than as a fold inside Settings. Nothing dated is
+     typed here: js/appshell.js writes the cards out of js/appcopy.js, which the generator
+     renders from docs/copy/whats-new.json — the same file /whats-new/ is written from. -->
+<div class="page" id="page-whats-new" data-page="whats-new" hidden>
+  <p class="crumb"><button class="linkish" type="button" data-goto="settings">Back to
+    Settings</button></p>
+  <section class="panel">
+    <div class="panel-head">
+      <div><h1 class="page-title">What&rsquo;s new</h1></div>
+    </div>
+    <div id="whats-new-body"></div>
+  </section>
 </div>
 
 <!-- ====================================================================== HELP -->
