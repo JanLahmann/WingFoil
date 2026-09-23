@@ -127,11 +127,31 @@ struct HealthSwitchesTests {
 /// **The app's one menu, in one order** (pattern M).
 struct AppMenuRowsTests {
 
-    @Test("five rows, in the order a rider meets the app")
+    @Test("six rows, in the order a rider meets the app")
     func theOrderIsFixed() {
-        #expect(AppMenuRow.ordered == [.whatItDoes, .gettingStarted, .settings,
+        #expect(AppMenuRow.ordered == [.whatItDoes, .family, .gettingStarted, .settings,
                                        .help, .support])
         #expect(Set(AppMenuRow.ordered) == Set(AppMenuRow.allCases))
+    }
+
+    /// **The family row is the family screen's own name**, the way the support row is the
+    /// feedback door's: one string, one home.
+    @Test("the family row is named by the screen it opens")
+    func familyIsNamedOnce() {
+        #expect(AppMenuRow.family.title == CleanJibeFamily.title)
+    }
+
+    /// The whole screen is under 120 words, because a rider opening it wants the shape of
+    /// the product and not its history (docs/voice.md, the paragraph budgets).
+    @Test("the family screen is three apps and how a session travels, briefly")
+    func theFamilyIsBrief() {
+        #expect(CleanJibeFamily.apps.count == 3)
+        let words = ([CleanJibeFamily.title, CleanJibeFamily.intro, CleanJibeFamily.here]
+                     + CleanJibeFamily.apps.flatMap { [$0.title, $0.line] }
+                     + CleanJibeFamily.travel)
+            .flatMap { $0.split(separator: " ") }
+            .count
+        #expect(words <= 120, "\(words) words")
     }
 
     @Test("one divider, and it falls before Settings")

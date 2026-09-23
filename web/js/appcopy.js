@@ -12,8 +12,8 @@
  * when the page has drifted from either.
  */
 
-/** The four tabs, the five menu rows and the four session sub-tabs
- *  (docs/copy/app-shell.json). One order, one wording, both surfaces. */
+/** The four tabs, the six menu rows, the four session sub-tabs and the family
+ *  screen (docs/copy/app-shell.json). One order, one wording, both surfaces. */
 export const SHELL = {
   "tabs": [
     {
@@ -37,6 +37,10 @@ export const SHELL = {
     {
       "id": "whatItDoes",
       "title": "What CleanJibe does"
+    },
+    {
+      "id": "family",
+      "title": "The CleanJibe family"
     },
     {
       "id": "gettingStarted",
@@ -73,7 +77,35 @@ export const SHELL = {
       "id": "log",
       "title": "Details"
     }
-  ]
+  ],
+  "family": {
+    "title": "The CleanJibe family",
+    "intro": "CleanJibe is three apps on one analysis engine.",
+    "here": "You are using this one now.",
+    "thisApp": "browser",
+    "apps": [
+      {
+        "id": "garmin",
+        "title": "Garmin watch app",
+        "line": "Records on your wrist. Live numbers, and a summary when you save."
+      },
+      {
+        "id": "iphone",
+        "title": "iPhone app",
+        "line": "Reads every session, judges every turn, keeps your library."
+      },
+      {
+        "id": "browser",
+        "title": "Browser app",
+        "line": "The same analysis in a tab. Drop a file, no account."
+      }
+    ],
+    "travel": [
+      "A session leaves the watch through intervals.icu and lands on the phone.",
+      "The phone and the browser trade sessions as files.",
+      "The CleanJibe Apple Watch app records too. It is in the beta."
+    ]
+  }
 };
 
 /**

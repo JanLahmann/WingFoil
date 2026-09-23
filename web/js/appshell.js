@@ -1,4 +1,4 @@
-/* The shell: four tabs, one menu, seven pages.
+/* The shell: four tabs, one menu, eleven pages.
  *
  * Jan, 19 September 2026: *"iOS is the reference, the web is the port"*. So this file is
  * the browser's `RootView` — the four tabs the phone has, in its order and its words, with
@@ -9,11 +9,13 @@
  *
  * WHAT THIS FILE OWNS
  *
- *   routing      `#/sessions`, `#/records`, `#/trends`, `#/gear`, `#/settings`, `#/help`
- *                and `#/session`. The four tabs are the four the phone has; Settings and
- *                Help are menu rows, which is why they are pages and not tabs; `#/session`
- *                is what a row opens, the way the phone pushes `SessionDetailView`.
- *   the menu     the five rows of `AppMenuRow.ordered`, its one divider, and the build line
+ *   routing      `#/sessions`, `#/records`, `#/trends`, `#/periods`, `#/period/<key>`,
+ *                `#/gear`, `#/settings`, `#/help`, `#/started`, `#/whats-new`, `#/family`
+ *                and `#/session`. The four tabs are the four the phone has; the rest are
+ *                what a menu row or a row on a page opens, which is why they are pages and
+ *                not tabs — `#/session` the way the phone pushes `SessionDetailView`, and
+ *                `#/periods` the way it pushes Periods off Trends.
+ *   the menu     the six rows of `AppMenuRow.ordered`, its one divider, and the build line
  *                under them.
  *   the welcome  once per browser, and again whenever *What CleanJibe does* is tapped.
  *   Settings     units, start over, About and What's new. The intervals.icu panel is markup
@@ -32,7 +34,7 @@
  */
 
 import {
-  FEEDBACK, GUIDE, HELP, SETTINGS_SECTIONS, WELCOME, WHATS_NEW,
+  FEEDBACK, GUIDE, HELP, SETTINGS_SECTIONS, SHELL, WELCOME, WHATS_NEW,
 } from "./appcopy.js";
 import {
   forgetSettings, gearFor, gearMap, markWelcomeSeen, onSettingsChange, setGearFor,
@@ -74,6 +76,8 @@ const PAGES = {
   // the phone, so both are pages here (Jan, 23 September 2026).
   started: null,
   "whats-new": null,
+  // Three apps, one engine, and which of them this is (`AppMenuRow.family`).
+  family: null,
 };
 
 /** The routes this page answered to before it had tabs. A bookmark, a link from the
@@ -121,6 +125,37 @@ export function showPage(name, arg = null) {
   }
   if (page === "help") openHelpAt(arg);
   if (page === "started") renderGettingStarted();
+  if (page === "family") renderFamily();
+}
+
+/**
+ * **The CleanJibe family** — the three apps, and how a session travels between them.
+ *
+ * The words are the kit's `CleanJibeFamily`, carried here by docs/copy/app-shell.json, so
+ * this page and the phone's screen are one screen. The one thing this shell answers for
+ * itself is which of the three it IS: `thisApp` in the copy names it, and the row it names
+ * wears `here`.
+ *
+ * Nothing in it links out. Every app named here is reached from a store the reader is
+ * already in or from the page he is already on, and three install links would make this an
+ * advertisement rather than an answer.
+ */
+function renderFamily() {
+  const host = el("family-body");
+  const family = SHELL.family;
+  if (!host || !family) return;
+  el("family-title").textContent = family.title;
+  host.innerHTML = `
+    <p class="family-intro">${esc(family.intro)}</p>
+    <div class="family-apps">${family.apps.map((app) => `
+      <div class="family-app${app.id === family.thisApp ? " here" : ""}">
+        <p class="family-app-title">${esc(app.title)}${
+          app.id === family.thisApp
+            ? `<span class="dim">${esc(family.here)}</span>` : ""}</p>
+        <p class="muted small">${esc(app.line)}</p>
+      </div>`).join("")}</div>
+    <div class="family-travel">${family.travel.map((line) =>
+      `<p class="muted small">${esc(line)}</p>`).join("")}</div>`;
 }
 
 /**
@@ -221,6 +256,7 @@ function wireMenu() {
       track("app-menu-row-opened", { row });
       closeMenu();
       if (row === "whatItDoes") openWelcome();
+      else if (row === "family") showPage("family");
       else if (row === "gettingStarted") showPage("started");
       else if (row === "settings") showPage("settings");
       else if (row === "help") showPage("help");

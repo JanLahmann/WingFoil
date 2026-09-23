@@ -4,11 +4,11 @@ import WingFoilKit
 /// **The app's one menu, on every tab, in the same place** (docs/review-checklist.md,
 /// pattern M).
 ///
-/// It lived in `LibraryView`'s toolbar and nowhere else, so *What CleanJibe does*, *Getting
-/// started*, *Settings*, *Help* and *Support & ideas* were five doors a rider could only
-/// reach from the Sessions tab. App-wide furniture is not one tab's property: a rider
-/// reading Trends who wants to know what a number means should not have to remember which
-/// tab keeps the reference.
+/// It lived in `LibraryView`'s toolbar and nowhere else, so *What CleanJibe does*, *The
+/// CleanJibe family*, *Getting started*, *Settings*, *Help* and *Support & ideas* were six
+/// doors a rider could only reach from the Sessions tab. App-wide furniture is not one
+/// tab's property: a rider reading Trends who wants to know what a number means should not
+/// have to remember which tab keeps the reference.
 ///
 /// One `View`, four call sites. `AppMenuButton` is the menu itself, used by all four tab
 /// roots through `ToolbarItem(placement: .topBarLeading)`; `appMenuHost()` is the plumbing
@@ -48,6 +48,7 @@ struct AppMenuButton: View {
         // Asked for, not re-armed: the welcome screen again, raised by RootView once the
         // menu is gone (`SessionStore.replayWelcome`).
         case .whatItDoes: store.replayWelcome()
+        case .family: sheet = .family
         case .gettingStarted: sheet = .helpTopic(.gettingStarted)
         case .settings: sheet = .settings
         case .help: sheet = .help
@@ -82,6 +83,7 @@ private struct AppMenuHost: ViewModifier {
                 switch which {
                 case .settings: SettingsView()
                 case .importer: ImportView()
+                case .family: FamilyView()
                 case .help: HelpView()
                 case .helpTopic(let topic): HelpTopicSheet(id: topic)
                 default: EmptyView()

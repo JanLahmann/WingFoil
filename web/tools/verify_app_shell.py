@@ -8,8 +8,13 @@ Jan, 19 September 2026: *"iOS is the reference, the web is the port"*. A port is
 while somebody checks, so this holds three lists from both ends at once:
 
   THE FOUR TABS         ios/WingFoil/App/RootView.swift    ->  docs/copy/app-shell.json
-  THE FIVE MENU ROWS    ios/WingFoilKit/.../AppMenuRows.swift (the last row's title is
-                        FeedbackDoors.menuRow, so docs/copy/feedback.json is read for it)
+  THE SIX MENU ROWS     ios/WingFoilKit/.../AppMenuRows.swift (two titles are constants
+                        rather than literals: the support row is FeedbackDoors.menuRow, so
+                        docs/copy/feedback.json is read for it, and the family row is
+                        CleanJibeFamily.title, so that file is read for it)
+  THE FAMILY SCREEN     ios/WingFoilKit/.../CleanJibeFamily.swift -> docs/copy/app-shell.json
+                        (the three apps, their lines and how a session travels; under 120
+                        words, which is the budget the kit's own test holds too)
   THE SESSION SUB-TABS  ios/WingFoilKit/.../SessionSection.swift
   THE SETTINGS SECTIONS ios/WingFoilKit/.../SettingsCopy.swift -> docs/copy/settings.json
                         (written by ``SettingsCopyExportTests``; the page declares each
@@ -55,12 +60,13 @@ WEB_TWINS = ("storage", "backup")
 ROOT_VIEW = REPO / "ios" / "WingFoil" / "App" / "RootView.swift"
 KIT = REPO / "ios" / "WingFoilKit" / "Sources" / "WingFoilKit" / "Presentation"
 MENU_ROWS = KIT / "AppMenuRows.swift"
+FAMILY = KIT / "CleanJibeFamily.swift"
 SESSION_SECTION = KIT / "SessionSection.swift"
 
 #: The pages the shell routes to. A missing one is a tab that opens nothing.
 PAGE_IDS = ["page-sessions", "page-session", "page-records", "page-trends", "page-periods",
             "page-period", "page-gear", "page-settings", "page-help", "page-started",
-            "page-whats-new"]
+            "page-whats-new", "page-family"]
 
 # --------------------------------------------------------------- the ported screens
 
@@ -225,6 +231,30 @@ def ios_tabs() -> list[str]:
     return re.findall(r'\.tabItem \{ Label\("([^"]*)"', source)
 
 
+def ios_family() -> dict:
+    """`CleanJibeFamily`, read off the Swift: the title, the two lines, the three apps and
+    the travel notes, in declaration order.
+
+    A regex rather than a parser for the same reason every other reader here is one: there
+    is no Swift toolchain in this directory, and what is being checked is that two files
+    carry the same sentences.
+    """
+    source = FAMILY.read_text(encoding="utf-8")
+
+    def constant(name: str) -> str:
+        m = re.search(rf'static let {name} = "([^"]*)"', source)
+        return m.group(1) if m else ""
+
+    apps = [{"id": a, "title": t, "line": _CHAIN.sub("", line)}
+            for a, t, line in re.findall(
+                r'App\(id: "([^"]*)", title: "([^"]*)",\s*line: "((?:[^"]|"\s*\+\s*")*)"\)',
+                source)]
+    travel_block = source[source.find("static let travel"):]
+    travel = re.findall(r'^\s+"([^"]*)",$', travel_block, re.M)
+    return {"title": constant("title"), "intro": constant("intro"),
+            "here": constant("here"), "apps": apps, "travel": travel}
+
+
 def ios_menu() -> list[tuple[str, str, bool]]:
     source = MENU_ROWS.read_text(encoding="utf-8")
     titles = _switch_cases(source, "title")
@@ -236,9 +266,11 @@ def ios_menu() -> list[tuple[str, str, bool]]:
     # string for it. docs/copy/feedback.json already pins that constant from the kit side.
     doors = feedback["doors"]["app"]
     menu_row = doors.split("→")[-1].strip()
+    family_title = ios_family()["title"]
     out = []
     for case in order:
-        title = titles.get(case) or (menu_row if case == "support" else "")
+        title = titles.get(case) or {"support": menu_row,
+                                     "family": family_title}.get(case, "")
         out.append((case, title, case == after))
     return out
 
@@ -283,10 +315,26 @@ def main(argv=None) -> int:
 
     json_menu = [(m["id"], m["title"], bool(m.get("afterDivider")))
                  for m in shell["menu"]]
-    same("the five menu rows are the phone's", json_menu, ios_menu())
+    same("the six menu rows are the phone's", json_menu, ios_menu())
 
     json_sections = [(s["id"], s["title"]) for s in shell["sessionSections"]]
     same("the session sub-tabs are the phone's", json_sections, ios_sections())
+
+    # 1b · THE FAMILY SCREEN, word for word against the kit. It is one screen on two shells
+    # and there is no third place it could be written, so the JSON is the Swift or it is a
+    # second draft (docs/presentation/copy-menu-settings.md, "One copy, many surfaces").
+    kit_family = ios_family()
+    json_family = {key: shell["family"][key]
+                   for key in ("title", "intro", "here", "apps", "travel")}
+    same("the family screen is the kit's", json_family, kit_family)
+    words = len(" ".join(
+        [json_family["title"], json_family["intro"], json_family["here"]]
+        + [f"{a['title']} {a['line']}" for a in json_family["apps"]]
+        + json_family["travel"]).split())
+    if words > 120:
+        problems.append(f"the family screen is {words} words, and the budget is 120")
+    else:
+        notes.append(f"ok    the family screen is {words} words of its 120")
 
     # 2 · the ways in, against the guide (pattern J)
     routes = {r["id"]: r for r in guide["routes"]}

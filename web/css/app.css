@@ -929,3 +929,22 @@ details.help-section[open] > summary { border-bottom: 1px solid var(--line-soft)
 #share-switch { margin: 12px 0; }
 #share-switch > #send-dev-fold { margin-top: 10px; }
 #share-fit-pane p { margin: 8px 0; }
+
+/* ------------------------------------------------------- The CleanJibe family
+
+   Three cards and three lines under them. The card for the app the reader is in is the
+   one with the ink: it is the only fact on this page the copy cannot carry, because the
+   copy is the same on all three. */
+.family-intro { margin: 0 0 14px; font-weight: 600; }
+.family-apps { display: grid; gap: 10px; margin-bottom: 16px; }
+.family-app {
+  padding: 10px 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+}
+.family-app.here { border-color: var(--line); background: var(--surface-1); }
+.family-app-title { margin: 0 0 3px; display: flex; flex-wrap: wrap; gap: 8px;
+                    align-items: baseline; font-weight: 600; font-size: 13.5px; }
+.family-app-title .dim { font-weight: 400; font-size: 12px; }
+.family-app p.muted { margin: 0; }
+.family-travel p { margin: 0 0 6px; }
