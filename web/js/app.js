@@ -16,7 +16,7 @@ import { closePopover, render, renderFigures, renderGlossary, resetSession } fro
 import { CANCELLED, analyze as runAnalysis, cancel as cancelWorker, on, warmUp } from "./rpc.js";
 import { mountSections, resetSections } from "./sections.js";
 import { mountShareCard, openPeriodCard, openShareCard } from "./sharecard.js";
-import { listEntries } from "./store.js";
+import { getFitBlob, listEntries } from "./store.js";
 import { CONSENT, send as sendToDeveloper } from "./senddev.js";
 import { track } from "./track.js";
 import { esc, hms, int, nf } from "./viz.js";
@@ -542,6 +542,32 @@ function developerFacts() {
 function wireShareCard() {
   mountShareCard();
   el("share-card").addEventListener("click", () => openShareCard(state.last));
+  // THE FIT SEGMENT'S OWN EXPORT. The bytes are the ones that were dropped, kept on this
+  // page since the analysis — the same copy "Save to library" writes out, so a rider who
+  // shares a session and a rider who saves it hand over the same file.
+  //
+  // A browser cannot hand a file to another app, so this is a download and says so in its
+  // label. It is NOT scrubbed: `lab/tools/scrub_fit.py` has no twin in the bundle yet, so
+  // the file is the original from the watch and the pane says exactly that.
+  el("card-fit-download").addEventListener("click", async () => {
+    const note = el("card-fit-note");
+    // The bytes the page is holding, or the ones the library kept: a session opened out of
+    // storage never passed through this page's `lastBytes`, and it is the same file.
+    let blob = state.lastBytes ? new Blob([state.lastBytes],
+                                          { type: "application/octet-stream" }) : null;
+    if (!blob && state.sessionId) blob = await getFitBlob(state.sessionId).catch(() => null);
+    if (!blob) {
+      note.textContent = "This session has no recording in this browser.";
+      return;
+    }
+    note.textContent = "";
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = state.last?.file?.name || "session.fit";
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    track("app-session-fit-downloaded");
+  });
 }
 
 /* ----------------------------------------------------------------------- library */

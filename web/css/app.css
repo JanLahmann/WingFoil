@@ -920,3 +920,12 @@ details.help-section[open] > summary { border-bottom: 1px solid var(--line-soft)
 .tt-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .tt-chip { display: inline-flex; align-items: center; gap: 5px; }
 .tt-n { font-variant-numeric: tabular-nums; font-size: 12px; color: var(--ink-2); }
+
+/* ---------------------------------------------------------------- the Share dialog
+
+   Two segments and a row under them, the phone's own shape
+   (ios/WingFoil/Features/Share/ShareComposerView.swift). The row is not a third segment,
+   because reporting a number is not a way of sharing an afternoon. */
+#share-switch { margin: 12px 0; }
+#share-switch > #send-dev-fold { margin-top: 10px; }
+#share-fit-pane p { margin: 8px 0; }

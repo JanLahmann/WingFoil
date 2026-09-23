@@ -1114,6 +1114,32 @@ export function mountShareCard() {
   });
   el("card-download").addEventListener("click", download);
   el("card-share").addEventListener("click", share);
+  for (const b of dialog.querySelectorAll("[data-share]")) {
+    b.addEventListener("click", () => showPayload(b.dataset.share));
+  }
+}
+
+/* ------------------------------------------------------------------ the switcher
+ *
+ * Two segments, the phone's own (`ShareComposerView.Payload`): the card a friend looks at,
+ * and the recording a friend opens in an app of his own. They answer one request, which is
+ * why they are segments of one dialog rather than two doors on the session page.
+ *
+ * *Send this session to the developer* is not a third segment. It is the row under the
+ * switcher, on both shells, for the reason the phone states: a third segment would make a
+ * rider choose between sharing and reporting before he has decided he wants either.
+ */
+function showPayload(which) {
+  const fit = which === "fit";
+  el("share-card-pane").hidden = fit;
+  el("share-fit-pane").hidden = !fit;
+  // The two card exports leave with the card. The FIT segment has its own download, beside
+  // the sentence that says what the file is.
+  el("card-download").hidden = fit;
+  el("card-share").hidden = fit || !canShareFiles();
+  for (const b of el("card-dialog").querySelectorAll("[data-share]")) {
+    b.setAttribute("aria-pressed", String(b.dataset.share === which));
+  }
 }
 
 /** The remaining-characters line, shown only once the limit is in sight — a counter under an
@@ -1161,6 +1187,10 @@ export function openShareCard(result) {
   // and a "Share…" button that silently does nothing on a desktop browser is worse than no
   // button at all. Re-tested on every open, because a page can be opened on either.
   el("card-share").hidden = !canShareFiles();
+  // A session has a recording behind it and something to report about it, so it gets the
+  // switcher and the row. Both open on the card, which is what a rider pressed Share for.
+  el("share-switch").hidden = false;
+  showPayload("card");
   syncChoices();
   dialog.showModal();
   refresh();
@@ -1203,6 +1233,10 @@ export async function openPeriodCard(period, entries) {
   syncNoteCount();
   el("card-sub").textContent = `${period.title} · ${period.dateLine}`;
   el("card-share").hidden = !canShareFiles();
+  // A period has no recording behind it and nothing to report about one, so it has neither
+  // the switcher nor the row. The card is the whole of what this dialog offers a period.
+  el("share-switch").hidden = true;
+  showPayload("card");
   syncChoices();
   dialog.showModal();
   refresh();

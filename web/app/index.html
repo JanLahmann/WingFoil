@@ -432,7 +432,7 @@
                document this panel is about, and a topbar action would have to say which
                session it meant. Ghost rather than primary — saving is the thing to do with
                a session you just analyzed; sharing is the thing to do with one you liked. -->
-          <button class="ghost" id="share-card" type="button" hidden>Share card</button>
+          <button class="ghost" id="share-card" type="button" hidden>Share</button>
           <button class="primary" id="save-session" type="button" hidden>Save to library</button>
         </div>
       </div>
@@ -441,7 +441,7 @@
            (ux-audit A3.3, change #10). One line, on the result head, naming the control
            by the label it wears. Same words as the line under the homepage's hero card. -->
       <p class="note" id="card-offer">
-        <strong>Make a card of this.</strong> <em>Share card</em> is above. Your track, your
+        <strong>Make a card of this.</strong> <em>Share</em> is above. Your track, your
         numbers, one picture, drawn here and saved here.
       </p>
       <p class="note highlight-note" id="highlight-note" hidden></p>
@@ -615,23 +615,9 @@
         Every number on this page, as one JSON file.
       </p>
       <p><button class="ghost" id="download-json" type="button">Download analysis JSON</button></p>
-
-      <!-- SEND THIS SESSION TO THE DEVELOPER — the browser's half of the phone's Share
-           page door. It sits in the export panel rather than beside "Share card" for the
-           reason the phone puts it under the switcher: a card is for a friend, this is for
-           a number that looks wrong, and the rider who is doubting a number is reading
-           this panel. Folded, because a comment field open on every session would be a
-           form nobody asked for. -->
-      <details id="send-dev-fold">
-        <summary><span class="help-section-name">Send this session to the developer</span></summary>
-        <p class="muted small">A number looks wrong? Send the recording with your notes.</p>
-        <label class="sr-only" for="send-dev-note">Your notes</label>
-        <textarea id="send-dev-note" rows="3"
-                  placeholder="What looks wrong? Which turns or times?"></textarea>
-        <p class="muted small" id="send-dev-consent"></p>
-        <p><button class="primary" id="send-dev-go" type="button">Send to the developer</button></p>
-        <p class="muted small" id="send-dev-status" role="status"></p>
-      </details>
+      <!-- *Send this session to the developer* used to be a fold here. It is on the Share
+           dialog now, under the switcher, which is where the phone keeps it
+           (ios/WingFoil/Features/Share/ShareComposerView.swift, `sendToDeveloperRow`). -->
     </section>
 
   </div>
@@ -1126,8 +1112,57 @@
      Wiring: js/sharecard.js; the content is js/cardstats.js. -->
 <dialog id="card-dialog" class="ask card-dialog" aria-labelledby="card-title">
   <div class="ask-form">
-    <h2 id="card-title">Share card</h2>
+    <h2 id="card-title">Share</h2>
     <p class="muted small" id="card-sub"></p>
+
+    <!-- THE PHONE'S SWITCHER, AND THE ROW UNDER IT (ios/WingFoil/Features/Share/
+         ShareComposerView.swift). Two segments, because they answer one request — send
+         this to someone — and the difference is only what the someone does with it: look
+         at it, or open it in an app of their own.
+
+         *Send this session to the developer* is a full-width row directly under the
+         switcher rather than a third segment, and that is the phone's own decision: a
+         third segment would make a rider choose between "share" and "report" before he
+         has decided he wants either (Jan, 21 Sep 2026). The row carries the same
+         afternoon whichever segment is showing.
+
+         Hidden for a period card, which has no recording and nothing to report. -->
+    <div id="share-switch">
+      <div class="seg" role="group" aria-label="Share">
+        <button type="button" class="seg-btn" data-share="card" aria-pressed="true">Card</button>
+        <button type="button" class="seg-btn" data-share="fit" aria-pressed="false">FIT file</button>
+      </div>
+      <details id="send-dev-fold">
+        <summary><span class="help-section-name">Send this session to the developer</span></summary>
+        <p class="muted small">A number looks wrong? Send the recording with your notes.</p>
+        <label class="sr-only" for="send-dev-note">Your notes</label>
+        <textarea id="send-dev-note" rows="3"
+                  placeholder="What looks wrong? Which turns or times?"></textarea>
+        <p class="muted small" id="send-dev-consent"></p>
+        <p><button class="primary" id="send-dev-go" type="button">Send to the developer</button></p>
+        <p class="muted small" id="send-dev-status" role="status"></p>
+      </details>
+    </div>
+
+    <!-- THE FIT SEGMENT. The phone scrubs the copy it hands out — the watch serial, the
+         paired-accessory name and the rider profile come off it — and a browser has no
+         scrubber yet, so this says what it is giving: the file as it was recorded. The
+         line is the honest one until `lab/tools/scrub_fit.py` has a twin here. -->
+    <div id="share-fit-pane" hidden>
+      <p class="muted small">The file as it was recorded. It carries the track, the
+        speeds, the heart rate and every lap.</p>
+      <p class="muted small">It is the original from your watch, so it still holds the
+        watch serial number and your rider profile. The iPhone app strips both before it
+        shares one.</p>
+      <p><button class="primary" id="card-fit-download" type="button">Download the
+        .fit</button></p>
+      <p class="muted small" id="card-fit-note" role="status"></p>
+    </div>
+
+    <!-- THE CARD SEGMENT: the preview, the two fields, the shape, the detail, the map
+         switch and the export. Everything that was on this dialog before it had a
+         switcher, in one wrapper so the FIT segment can take its place. -->
+    <div id="share-card-pane">
     <div class="card-preview">
       <canvas id="card-canvas" aria-label="Preview of the share card"></canvas>
     </div>
@@ -1171,6 +1206,7 @@
     </div>
     <p class="muted small">PNG · <span id="card-size"></span> · nothing leaves this device
       until you send it.</p>
+    </div>
     <div class="ask-actions">
       <button type="button" class="ghost" id="card-close">Close</button>
       <!-- Only on browsers where `navigator.canShare({files})` is true — the phone path
