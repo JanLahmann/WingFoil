@@ -545,8 +545,8 @@ public enum HelpCatalog {
         // too late.
         HelpTopic(
             id: .stravaImport, section: .setup, title: "Import from Strava",
-            summary: "Connect once, then pick the sessions you want. Positions only, so "
-                + "speed records are uncertified.",
+            summary: "Connect once, then pick the sessions you want. Strava keeps your "
+                + "track but not your watch's speed.",
             body: [
                 "CleanJibe lists your Strava sessions and imports the ones you pick. It only "
                 + "reads. It never writes, renames or posts to your account.",
@@ -676,7 +676,7 @@ public enum HelpCatalog {
                 + "recording on the beach.",
             ],
             items: [
-                .init(term: "Strava, the route that needs no file",
+                .init(term: "Strava, the way in that needs no file",
                       detail: "Record in the Strava app and connect Strava here. Strava's "
                           + "phone app cannot export a file, so the import reads the "
                           + "activity out of your account instead."),
@@ -726,7 +726,8 @@ public enum HelpCatalog {
                           + "not the iPhone app and has no channels."),
                 .init(term: "Install it from the browser",
                       detail: "Where a browser offers it, the page installs. It gets an "
-                          + "icon, opens without browser chrome and works with no signal."),
+                          + "icon on your home screen, opens like an app and works with no "
+                          + "signal."),
                 .init(term: "Into the share sheet",
                       detail: "Once it is installed, hold a file on the phone and pick "
                           + "Share, then CleanJibe. The analysis opens on it."),
@@ -880,10 +881,10 @@ public enum HelpCatalog {
                 + "bring back. That is each session's name and caption, whose it was, its "
                 + "gear. Your spot names and the sessions you deleted on purpose are there "
                 + "too.",
-                "Restoring is additive. Sessions already in your library keep their own "
-                + "analysis. Details you changed since are left alone. Restoring the same "
-                + "file twice does nothing the second time. Sessions you deleted after "
-                + "the backup stay deleted.",
+                "Restoring never overwrites. Sessions already in your library keep "
+                + "their own analysis. Details you changed since are left alone. Restoring "
+                + "the same file twice does nothing the second time. Sessions you deleted "
+                + "after the backup stay deleted.",
             ],
             items: [
                 .init(term: "Save the file yourself",
@@ -967,7 +968,7 @@ public enum HelpCatalog {
                 "A flight starts when your speed holds above the entry threshold, "
                 + "12 km/h by default, for 2 seconds. It ends when the speed drops below the "
                 + "exit threshold, 8 km/h, for 3 seconds.",
-                "Start and end are backdated to the first qualifying sample.",
+                "The flight is dated back to the first moment that counted, at both ends.",
                 "\"On foil\" is that flying time divided by timer time. Timer time is the "
                 + "total, minus any stretch where the recording stopped or the GPS dropped "
                 + "out.",
@@ -1123,9 +1124,8 @@ public enum HelpCatalog {
                 // about a window — and the one a rider needs before he posts a number.
                 .init(term: "\"Uncertified\"",
                       detail: "A recording with positions but no speed channel has its "
-                          + "speed differentiated from them, which reads high. Every GPX is "
-                          + "one, and some converted exports. Marked wherever it is "
-                          + "shown."),
+                          + "speed worked out from them, which reads high. Every GPX is "
+                          + "one, and some converted exports. It is marked everywhere."),
             ],
             related: [.verifiedRecords, .sourceClass, .turnOutcomes, .divergence]),
 
@@ -1195,9 +1195,9 @@ public enum HelpCatalog {
                 "A jibe exited at marginal speed can bleed off for 6 to 12 seconds before "
                 + "the foil stalls. That mush-out is the jibe's fault. A jibe you power out "
                 + "of closes its window in a second or two.",
-                "Three channels are read inside it. Speed always. The barometer, where a "
-                + "wrist under water reads as a huge altitude drop. The accelerometer, on a "
-                + "CleanJibe watch recording.",
+                "Three things are read inside it. Your speed, always. The barometer, "
+                + "because a wrist under water looks like a huge drop in altitude. The "
+                + "accelerometer, on a CleanJibe watch recording.",
             ],
             items: [
                 .init(term: "Flew through",
@@ -1305,8 +1305,9 @@ public enum HelpCatalog {
                 "The flight ended and you kept moving. You settled onto the board and "
                 + "taxied on, or you chose to stop riding. No stop was ever measured, so "
                 + "this is not counted as a loss.",
-                "Flight ends where the recording itself stopped are reported as unknown. "
-                + "There is no evidence there, so they are left out of every tally.",
+                "When a flight ends because the recording stopped, CleanJibe calls it "
+                + "unknown. There is nothing there to judge, so it stays out of every "
+                + "tally.",
             ],
             related: [.falls, .touchdowns, .sourceClass]),
 
@@ -1543,12 +1544,11 @@ public enum HelpCatalog {
         HelpTopic(
             id: .divergence, section: .quality,
             title: "When the watch and the phone show different numbers",
-            summary: "Normal, expected, and the phone's number is the right one.",
+            summary: "This is normal, and the phone's number is the one to trust.",
             body: [
-                "A session from the CleanJibe watch app carries the summary the watch "
-                + "computed live. It was computed in one forward pass with no memory to "
-                + "spare. The phone recomputes the same session properly, and the two are "
-                + "compared.",
+                "A session from the CleanJibe watch app brings the summary the watch worked "
+                + "out while you rode. The watch does that in one pass, with very little "
+                + "memory. The phone does the whole job again, and compares the two.",
                 "The banner appears when foil time differs by more than 5 %. It appears for "
                 + "a speed record off by more than 0.3 knots. It appears for a flight, turn "
                 + "or attempt count off by more than one.",
@@ -1559,15 +1559,15 @@ public enum HelpCatalog {
 
         HelpTopic(
             id: .engineVersion, section: .quality, title: "Analysis engine version",
-            summary: "Every session is re-derived when the engine changes.",
+            summary: "When the analysis improves, your old sessions are worked out again.",
             body: [
                 "The footer of a session shows which version of the analysis engine "
                 + "produced its numbers.",
-                "Sessions computed with an older version are recomputed when the engine "
-                + "changes results. The recompute reads each session's archived original "
-                + "file the next time you open it.",
-                "The original recording is never modified. Only the derived analysis is, "
-                + "and you can drop and rebuild it at any time from Settings.",
+                "When a new version would give a session different numbers, CleanJibe works "
+                + "it out again. It reads that session's own archived recording, the next "
+                + "time you open it.",
+                "Your original recording is never changed. Only the numbers are, and you "
+                + "can throw them away and rebuild them at any time from Settings.",
             ],
             related: [.sourceClass, .divergence]),
 
@@ -1578,13 +1578,14 @@ public enum HelpCatalog {
             body: [
                 "A session can be analysed as **Wingfoil**, **Windsurf foil** or **Windsurf "
                 + "fin**. The row is on the session's Details tab, under \"Analyse as\". "
-                + "Changing it re-derives that session and nothing else.",
+                + "Changing it works that one session out again, and nothing else.",
                 "None of Garmin, Strava, intervals.icu and Apple Health has a wingfoil "
                 + "sport. Most riders record under the windsurf profile. A new session "
                 + "cannot say which rig it was ridden on.",
-                "So it is read as whatever you set under Settings → \"I mostly ride\", marked "
-                + "with a **?** until you have looked, and listed after each import. Sessions "
-                + "from the CleanJibe watch app are never asked about.",
+                "So CleanJibe reads it as whatever you set under Settings → \"I mostly "
+                + "ride\". It is marked with a **?** until you have looked, and listed "
+                + "after each import. Sessions from the CleanJibe watch app are never "
+                + "asked about.",
             ],
             items: [
                 .init(term: "What works",
@@ -1608,9 +1609,9 @@ public enum HelpCatalog {
                           + "are none in the corpus yet. If your planing time looks wrong, "
                           + "report that number."),
                 .init(term: "In the library",
-                      detail: "\"Foil time\" reads as planing time and \"lost the foil\" as "
-                          + "stopped planing. Windsurf sessions count towards your "
-                          + "trends. There is no separate record set."),
+                      detail: "\"Foil time\" means planing time here, and \"lost the "
+                          + "foil\" means stopped planing. Windsurf sessions count towards "
+                          + "your trends. There is no separate record set."),
             ],
             related: [.foilPct, .turnOutcomes, .pumpsToTakeoff, .engineVersion]),
     ]

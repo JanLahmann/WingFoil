@@ -70,8 +70,9 @@ public enum GettingStartedGuide {
     /// The one sentence that opens both the topic and the page: what the
     /// test actually is. First on purpose, on both surfaces.
     public static let framing =
-        "Ride one session as you always do. Open it in CleanJibe. Check each turn: flew "
-            + "through, touchdown, fell in. Only you know which it really was."
+        "Ride one session as you always do, then open it in CleanJibe. Every turn gets a "
+            + "verdict: flew through, touchdown, or fell in. You were there, so you can tell "
+            + "us where it got one wrong."
 
     /// The topic's own index line.
     public static let topicSummary =
@@ -84,8 +85,9 @@ public enum GettingStartedGuide {
             title: "Garmin with the CleanJibe watch app",
             channel: .release,
             classID: "a",
-            summary: "Install it from Connect IQ, ride, save. Sessions sync through "
-                + "intervals.icu: Settings → intervals.icu, 4 steps, once.",
+            summary: "Install it from Connect IQ, then ride and save. Your sessions come "
+                + "across through intervals.icu, which takes 4 steps in Settings → "
+                + "intervals.icu, once.",
             steps: [
                 .init(number: 1,
                       title: "Install the watch app",
@@ -219,8 +221,8 @@ public enum GettingStartedGuide {
             channel: .release,
             classID: "c",
             summary: "Settings → Strava → Connect with Strava, then Import → Import from "
-                + "Strava…. Positions only, records uncertified. Without the watch's own "
-                + "speed, a fall can read as a touchdown.",
+                + "Strava…. Strava keeps your track but not your watch's speed, so records "
+                + "are uncertified.",
             steps: [
                 .init(number: 1,
                       title: "Connect once",
@@ -253,10 +255,10 @@ public enum GettingStartedGuide {
     public static let notes: [GettingStartedRoute] = [
         GettingStartedRoute(
             id: "dryRun",
-            title: "If you cannot wait for wind",
+            title: "No wind today?",
             channel: .release,
-            summary: "Record a 3 to 5 minute walk on the watch. It proves the route from the "
-                + "watch to the phone, nothing else.",
+            summary: "Record a 3 to 5 minute walk on the watch. It arrives in CleanJibe like a "
+                + "session would, so you know the whole way in works.",
             steps: [
                 .init(number: 1,
                       title: "3 to 5 minutes of movement",
@@ -264,8 +266,8 @@ public enum GettingStartedGuide {
                           + "km/h counts as flying. Walking works too. Go outside: indoors "
                           + "there are no positions."),
                 .init(number: 2,
-                      title: "Bring it in by your own route",
-                      detail: "Whichever route above matches your watch. It answers one "
+                      title: "Bring it in your own way",
+                      detail: "Take whichever way in above matches your watch. It answers one "
                           + "question: does a recording made on your watch reach CleanJibe on "
                           + "your phone?"),
                 .init(number: 3,
@@ -275,14 +277,14 @@ public enum GettingStartedGuide {
                 .init(number: 4,
                       title: "Turns and jibes reading zero",
                       detail: "Expected on a bike or on foot: there is nothing to jibe. This "
-                          + "checks the route from the watch, never the analysis."),
+                          + "checks the way in from the watch, never the analysis."),
             ]),
         GettingStartedRoute(
             id: "sayHowItRead",
-            title: "Then say how it read",
+            title: "Tell us what you saw",
             channel: .release,
-            summary: "Menu → Support & ideas opens a mail with the facts filled in. "
-                + "TestFlight's own feedback works too if you are on the beta.",
+            summary: "Menu → Support & ideas opens a mail to us, with your app and watch "
+                + "details already in it. On the beta, TestFlight's own feedback works too.",
             steps: [
                 .init(number: 1,
                       title: "Read the verdicts against your memory",
@@ -300,9 +302,9 @@ public enum GettingStartedGuide {
                           + "Send."),
                 .init(number: 4,
                       title: "Attach the file if a session read wrong",
-                      detail: "With the .fit the detection can be re-run and fixed. Without it "
-                          + "there is only guesswork. Ideas and wishes are as welcome as "
-                          + "faults."),
+                      detail: "With the .fit we can run the detection again and fix it. "
+                          + "Without it there is only guesswork. Ideas and wishes are as "
+                          + "welcome as faults."),
                 .init(number: 5,
                       title: "Send a card, and say how it reads",
                       detail: "The share button on the session page draws a **share card** "
@@ -321,15 +323,15 @@ public enum GettingStartedGuide {
     /// detour exists at all, in one breath. The longer version, for the setup
     /// card and the help topic, is `IcuSetupGuide.rationale`.
     public static let settingsIcu =
-        "Garmin has no open API, so intervals.icu is the bridge. Connect Garmin there once. "
-            + "Every session then arrives here by itself. Free."
+        "Garmin has no open API, so intervals.icu is the bridge. Connect your Garmin there "
+            + "once, and every session arrives here by itself. It is free."
 
     /// **Settings → Strava**, the caption above the connect button: what this
     /// account is for, and what it costs. The footer under the button says the
     /// rest — what is read, what is never written, and the connection cap.
     public static let settingsStrava =
-        "Any watch that syncs to Strava, no file needed. Positions only, so speed records are "
-            + "uncertified. Without the watch's own speed, a fall can read as a touchdown."
+        "Any watch that syncs to Strava works, with no file to move. Strava keeps your track "
+            + "but not your watch's speed, so the records are uncertified."
 
     /// The routes and notes a build on `channel` may name, as the help topic's items —
     /// title as the term, summary as the detail — with the web page named last.

@@ -120,7 +120,7 @@ import Testing
 
         // One route per item, with the heading a rider scans for.
         for route in ["Garmin with the CleanJibe watch app", "Any watch that writes a .fit",
-                      "Strava", "If you cannot wait for wind"] {
+                      "Strava", "No wind today?"] {
             #expect(topic.items.contains { $0.term == route }, "no route \"\(route)\"")
         }
         // The intervals.icu route names the door and the step count, and hands the steps to
