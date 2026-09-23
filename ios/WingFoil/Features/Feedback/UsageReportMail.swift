@@ -224,7 +224,7 @@ struct UsageAskCard: View {
 
             Text("A mail you read and edit before you send it. It carries which parts of "
                  + "CleanJibe you have used, how often, and anything that has gone wrong "
-                 + "on this phone. It decides which doors open for everyone else.")
+                 + "on this phone. It decides what everyone else gets next.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

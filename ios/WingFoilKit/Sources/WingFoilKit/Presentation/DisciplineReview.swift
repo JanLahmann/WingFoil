@@ -147,5 +147,5 @@ public enum DisciplineReview {
         "Wingfoil does not exist in Garmin, Strava, intervals.icu or Apple Health. "
         + "So a recording cannot say which rig it was ridden on.\n\n"
         + "You can change this later on any session with Details → \"Analyse as\". Everything "
-        + "is then re-derived from the original file."
+        + "is then worked out again from the original file."
 }

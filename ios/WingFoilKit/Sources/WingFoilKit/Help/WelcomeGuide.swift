@@ -99,10 +99,10 @@ public enum WelcomeGuide {
     /// what it is for and what pressing it does.
     public static let connectTitle = "Set up intervals.icu"
     public static let connectDetail =
-        "Garmin has no open API, so your sessions come across through intervals.icu. It is "
-        + "free, and the setup is 4 steps and about 5 minutes, once.\n\n"
-        + "This closes the welcome screen. The 4 steps are waiting in "
-        + "Settings → intervals.icu. Every session then arrives on its own."
+        "Garmin has no open API, so your sessions come in through intervals.icu. That is "
+        + "free and takes about 5 minutes.\n\n"
+        + "This closes the welcome screen. The 4 steps are in Settings → intervals.icu. "
+        + "Every session then arrives on its own."
 
     /// The quiet way out. Not a hidden one: a rider who wants to import a file by hand has
     /// nothing to gain from either button above — but "Later" on its own does not tell him

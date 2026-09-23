@@ -764,8 +764,8 @@ public enum HelpCatalog {
                           + "a FIT from connect.garmin.com on a computer."),
                 .init(term: "Apple Watch",
                       detail: "Record with Apple's Workout app and import through Strava or "
-                          + "intervals.icu. The beta adds two doors: Apple Health, and the "
-                          + "CleanJibe watch app, which records the wrist too."),
+                          + "intervals.icu. The beta adds two more ways in: Apple Health, "
+                          + "and the CleanJibe watch app, which records the wrist too."),
                 .init(term: "Polar, Suunto, COROS and the rest",
                       detail: "Connect the watch to intervals.icu, or export one session "
                           + "from the phone app as a FIT and share it in. A FIT certifies "
@@ -1552,8 +1552,8 @@ public enum HelpCatalog {
                 "The banner appears when foil time differs by more than 5 %. It appears for "
                 + "a speed record off by more than 0.3 knots. It appears for a flight, turn "
                 + "or attempt count off by more than one.",
-                "The phone's number is the authoritative one. Nothing is wrong with your "
-                + "session. The banner says the watch's live approximation needs tuning.",
+                "The phone's number is the one to go by. Nothing is wrong with your "
+                + "session. The banner says the watch's live guess needs tuning.",
             ],
             related: [.sourceClass, .engineVersion]),
 
