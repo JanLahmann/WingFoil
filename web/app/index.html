@@ -121,6 +121,10 @@
   <div class="ask-form menu-sheet" tabindex="-1" autofocus>
     <ul class="menu-rows">
       <li><button type="button" data-menu="whatItDoes"><svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 13V6.4a1.4 1.4 0 0 1 2.8 0V12m0-6.1V4.9a1.4 1.4 0 0 1 2.8 0V12m0-5.3a1.4 1.4 0 0 1 2.8 0V13m0-2.6a1.4 1.4 0 0 1 2.8 0V15a5.5 5.5 0 0 1-5.5 5.5h-1A5.5 5.5 0 0 1 8 15v-2.3a1.4 1.4 0 0 0-2.8 0v1.6M4 5.6 2.6 4.2M6.4 3.4V1.6"/></svg>What CleanJibe does</button></li>
+      <!-- THE SECOND HALF OF THE ROW ABOVE IT: what this is, and what else there is of it.
+           A rider who met one of the three apps had no way inside it of learning that the
+           other two exist (Jan, 23 September 2026). Three stacked plates as a line icon. -->
+      <li><button type="button" data-menu="family"><svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8 21 7.2 12 11.6 3 7.2Z"/><path d="M3.6 12 12 16.1 20.4 12"/><path d="M3.6 16.6 12 20.7 20.4 16.6"/></svg>The CleanJibe family</button></li>
       <li><button type="button" data-menu="gettingStarted"><svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.4A3 3 0 0 0 9.4 5H4.6a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h4.8A3 3 0 0 1 12 19.4a3 3 0 0 1 2.6-1.4h4.8a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-4.8A3 3 0 0 0 12 6.4zm0 0V19"/></svg>Getting started</button></li>
       <li class="after-divider"><button type="button" data-menu="settings"><svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.1 5.4 10.2 2.9 13.8 2.9 13.9 5.4 15.3 6 17.2 4.3 19.7 6.8 18 8.7 18.6 10.1 21.1 10.2 21.1 13.8 18.6 13.9 18 15.3 19.7 17.2 17.2 19.7 15.3 18 13.9 18.6 13.8 21.1 10.2 21.1 10.1 18.6 8.7 18 6.8 19.7 4.3 17.2 6 15.3 5.4 13.9 2.9 13.8 2.9 10.2 5.4 10.1 6 8.7 4.3 6.8 6.8 4.3 8.7 6Z"/><circle cx="12" cy="12" r="3.2"/></svg>Settings</button></li>
       <li><button type="button" data-menu="help"><svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.6a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .9-1 1.7v.3"/><circle cx="12" cy="17" r="0.9"/></svg>Help</button></li>
@@ -432,7 +436,7 @@
                document this panel is about, and a topbar action would have to say which
                session it meant. Ghost rather than primary — saving is the thing to do with
                a session you just analyzed; sharing is the thing to do with one you liked. -->
-          <button class="ghost" id="share-card" type="button" hidden>Share card</button>
+          <button class="ghost" id="share-card" type="button" hidden>Share</button>
           <button class="primary" id="save-session" type="button" hidden>Save to library</button>
         </div>
       </div>
@@ -441,7 +445,7 @@
            (ux-audit A3.3, change #10). One line, on the result head, naming the control
            by the label it wears. Same words as the line under the homepage's hero card. -->
       <p class="note" id="card-offer">
-        <strong>Make a card of this.</strong> <em>Share card</em> is above. Your track, your
+        <strong>Make a card of this.</strong> <em>Share</em> is above. Your track, your
         numbers, one picture, drawn here and saved here.
       </p>
       <p class="note highlight-note" id="highlight-note" hidden></p>
@@ -561,6 +565,16 @@
              whenever the chips are hiding nothing. -->
         <p class="muted small" id="turns-filter-note" hidden></p>
       </div>
+      <!-- A CARD PER TURN, THEN THE TALLY, THEN THE LIST — the phone's own order on this
+           tab (docs/screens.md, Sessions · Turns). The cards and the tally are drawn by
+           js/turncards.js out of the presentation document's `turns.strip`; the table
+           below them stays, because the arc, the radius and the two workbench flags are
+           columns the document does not carry and the tab has always shown.
+           The filtered MAP is the one on Ride, which the same chips drive: a second map
+           would be a second camera and a second playhead to keep in step with the first
+           (docs/presentation/scrub-pairing.md, "Scrub and zoom"). -->
+      <div class="turn-cards" id="turn-cards"></div>
+      <div class="turn-tally" id="turns-tally" hidden></div>
       <div class="table-scroll"><table id="turns-table"></table></div>
     </section>
 
@@ -605,23 +619,9 @@
         Every number on this page, as one JSON file.
       </p>
       <p><button class="ghost" id="download-json" type="button">Download analysis JSON</button></p>
-
-      <!-- SEND THIS SESSION TO THE DEVELOPER — the browser's half of the phone's Share
-           page door. It sits in the export panel rather than beside "Share card" for the
-           reason the phone puts it under the switcher: a card is for a friend, this is for
-           a number that looks wrong, and the rider who is doubting a number is reading
-           this panel. Folded, because a comment field open on every session would be a
-           form nobody asked for. -->
-      <details id="send-dev-fold">
-        <summary><span class="help-section-name">Send this session to the developer</span></summary>
-        <p class="muted small">A number looks wrong? Send the recording with your notes.</p>
-        <label class="sr-only" for="send-dev-note">Your notes</label>
-        <textarea id="send-dev-note" rows="3"
-                  placeholder="What looks wrong? Which turns or times?"></textarea>
-        <p class="muted small" id="send-dev-consent"></p>
-        <p><button class="primary" id="send-dev-go" type="button">Send to the developer</button></p>
-        <p class="muted small" id="send-dev-status" role="status"></p>
-      </details>
+      <!-- *Send this session to the developer* used to be a fold here. It is on the Share
+           dialog now, under the switcher, which is where the phone keeps it
+           (ios/WingFoil/Features/Share/ShareComposerView.swift, `sendToDeveloperRow`). -->
     </section>
 
   </div>
@@ -665,6 +665,40 @@
     <div id="trends-spot-filter" class="filter-bar"></div>
     <!-- r3-w3:end -->
     <div id="trends-body"></div>
+  </section>
+</div>
+
+<!-- ================================================== PERIODS (under Trends) -->
+<!-- The phone's Periods screen, pushed from Trends (docs/screens.md, Trends · Periods).
+     It was a fold on the third tab here, and a fold holding fifteen numbers per period is
+     a page in disguise. js/trends.js fills both of these out of the same aggregate
+     Records and Trends already read. -->
+<div class="page" id="page-periods" data-page="periods" hidden>
+  <p class="crumb"><button class="linkish" type="button" data-goto="trends">Back to
+    Trends</button></p>
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <h1 class="page-title">Periods</h1>
+        <p class="muted small">A trip, a month or a season, each with the same block of
+          numbers.</p>
+      </div>
+    </div>
+    <div id="periods-body" data-screen="Periods" data-empty="No periods yet"></div>
+  </section>
+</div>
+
+<div class="page" id="page-period" data-page="period" hidden>
+  <p class="crumb"><button class="linkish" type="button" data-goto="periods">Back to
+    Periods</button></p>
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <h1 class="page-title" id="period-title">Period</h1>
+        <p class="muted small" id="period-sub"></p>
+      </div>
+    </div>
+    <div id="period-body"></div>
   </section>
 </div>
 
@@ -759,6 +793,33 @@
          data-empty="No deleted sessions yet."></div>
   </section>
 
+  <!-- THE FOUR SECTIONS A BROWSER CANNOT DO, in the phone's own place in the order
+       (Jan, 23 September 2026: the browser app mirrors the iPhone app page for page).
+       Leaving them out was the older reading of "the web is the port", and it cost a
+       rider the answer to "where is Notifications?": an absent section says nothing, and
+       a section that says where it lives says the one thing he needs. The header and the
+       line above each are the phone's own (docs/copy/settings.json); the line below is
+       the browser's, in the spec register, and it is the same four words each time
+       because it is a label rather than prose.
+
+       Storage and Library backup are NOT here: the browser answers both under **Your
+       data**, which stands where they stand (docs/screens.md, deviation 18). -->
+  <section class="panel" data-settings="notifications">
+    <p class="muted small">On the iPhone app.</p>
+  </section>
+
+  <section class="panel" data-settings="analysis">
+    <p class="muted small">On the iPhone app.</p>
+  </section>
+
+  <section class="panel" data-settings="sessionList">
+    <p class="muted small">On the iPhone app.</p>
+  </section>
+
+  <section class="panel" data-settings="rowShows">
+    <p class="muted small">On the iPhone app.</p>
+  </section>
+
   <section class="panel" id="settings-units" data-settings="units">
     <div class="seg" role="group" aria-label="Speed units">
       <button type="button" class="seg-btn" data-units="kn" aria-pressed="true">Knots</button>
@@ -823,19 +884,66 @@
     <p class="muted small"><a href="../privacy/" data-umami-event="app-privacy">Privacy</a></p>
   </section>
 
-  <!-- The release notes, folded. Thirty cards under a heading is the exact shape of Jan's
-       complaint about this page, and /whats-new/ is the reader's page for them; here they
-       are the answer to "what changed in the thing I am looking at". -->
+  <!-- The release notes have a page of their own now, the way the phone's menu has a
+       *What's new* screen. Thirty cards under a heading was the exact shape of Jan's
+       complaint about this page, and a fold holding thirty cards is that page in disguise;
+       this row is the door to it. -->
   <section class="panel" id="settings-whats-new" data-settings="whatsNew">
-    <details id="whats-new-fold">
-      <summary><span class="help-section-name">Read the release notes</span></summary>
-      <!-- Filled from js/appcopy.js, which the generator writes out of
-           docs/copy/whats-new.json. Nothing dated is typed into this page: the voice lint
-           reads it as a rider surface and fails a hand-written build number. -->
-      <div id="whats-new-body"></div>
-    </details>
+    <p><button class="ghost small-btn" type="button" data-goto="whats-new"
+      data-umami-event="app-whats-new-opened">Read the release notes</button></p>
   </section>
 
+</div>
+
+<!-- ========================================================= THE CLEANJIBE FAMILY -->
+<!-- THREE APPS, ONE ENGINE, and which of them you are reading this on. The words are the
+     kit's (`CleanJibeFamily`), carried here by docs/copy/app-shell.json and pinned from
+     both ends by web/tools/verify_app_shell.py, so the phone's screen and this page are
+     one screen. js/appshell.js draws it; nothing in it links out, because a list of three
+     apps with three install links on it is an advertisement rather than an answer. -->
+<div class="page" id="page-family" data-page="family" hidden>
+  <p class="crumb"><button class="linkish" type="button" data-goto="sessions">Back to
+    Sessions</button></p>
+  <section class="panel">
+    <div class="panel-head">
+      <div><h1 class="page-title" id="family-title">The CleanJibe family</h1></div>
+    </div>
+    <div id="family-body"></div>
+  </section>
+</div>
+
+<!-- ========================================================== GETTING STARTED -->
+<!-- THE GUIDE, IN THE APP (Jan, 23 September 2026). *Getting started* is a menu row on both
+     shells and it used to send a browser reader to the Help index, which is not what the
+     row promises, while every other door on this page led out to /start/. The phone opens
+     the `gettingStarted` help topic as a sheet of its own; this page is that topic,
+     rendered from the same docs/copy/help.json the phone's HelpTopicSheet reads.
+     /start/ stays where it is: it is the page a visitor meets before he has either app,
+     with every route's steps under it, and this page's last item is the link to it. -->
+<div class="page" id="page-started" data-page="started" hidden>
+  <p class="crumb"><button class="linkish" type="button" data-goto="sessions">Back to
+    Sessions</button></p>
+  <section class="panel">
+    <div class="panel-head">
+      <div><h1 class="page-title">Getting started</h1></div>
+    </div>
+    <div id="started-body"></div>
+  </section>
+</div>
+
+<!-- ============================================================== WHAT'S NEW -->
+<!-- The release notes, as a page rather than as a fold inside Settings. Nothing dated is
+     typed here: js/appshell.js writes the cards out of js/appcopy.js, which the generator
+     renders from docs/copy/whats-new.json — the same file /whats-new/ is written from. -->
+<div class="page" id="page-whats-new" data-page="whats-new" hidden>
+  <p class="crumb"><button class="linkish" type="button" data-goto="settings">Back to
+    Settings</button></p>
+  <section class="panel">
+    <div class="panel-head">
+      <div><h1 class="page-title">What&rsquo;s new</h1></div>
+    </div>
+    <div id="whats-new-body"></div>
+  </section>
 </div>
 
 <!-- ====================================================================== HELP -->
@@ -1025,8 +1133,57 @@
      Wiring: js/sharecard.js; the content is js/cardstats.js. -->
 <dialog id="card-dialog" class="ask card-dialog" aria-labelledby="card-title">
   <div class="ask-form">
-    <h2 id="card-title">Share card</h2>
+    <h2 id="card-title">Share</h2>
     <p class="muted small" id="card-sub"></p>
+
+    <!-- THE PHONE'S SWITCHER, AND THE ROW UNDER IT (ios/WingFoil/Features/Share/
+         ShareComposerView.swift). Two segments, because they answer one request — send
+         this to someone — and the difference is only what the someone does with it: look
+         at it, or open it in an app of their own.
+
+         *Send this session to the developer* is a full-width row directly under the
+         switcher rather than a third segment, and that is the phone's own decision: a
+         third segment would make a rider choose between "share" and "report" before he
+         has decided he wants either (Jan, 21 Sep 2026). The row carries the same
+         afternoon whichever segment is showing.
+
+         Hidden for a period card, which has no recording and nothing to report. -->
+    <div id="share-switch">
+      <div class="seg" role="group" aria-label="Share">
+        <button type="button" class="seg-btn" data-share="card" aria-pressed="true">Card</button>
+        <button type="button" class="seg-btn" data-share="fit" aria-pressed="false">FIT file</button>
+      </div>
+      <details id="send-dev-fold">
+        <summary><span class="help-section-name">Send this session to the developer</span></summary>
+        <p class="muted small">A number looks wrong? Send the recording with your notes.</p>
+        <label class="sr-only" for="send-dev-note">Your notes</label>
+        <textarea id="send-dev-note" rows="3"
+                  placeholder="What looks wrong? Which turns or times?"></textarea>
+        <p class="muted small" id="send-dev-consent"></p>
+        <p><button class="primary" id="send-dev-go" type="button">Send to the developer</button></p>
+        <p class="muted small" id="send-dev-status" role="status"></p>
+      </details>
+    </div>
+
+    <!-- THE FIT SEGMENT. The phone scrubs the copy it hands out — the watch serial, the
+         paired-accessory name and the rider profile come off it — and a browser has no
+         scrubber yet, so this says what it is giving: the file as it was recorded. The
+         line is the honest one until `lab/tools/scrub_fit.py` has a twin here. -->
+    <div id="share-fit-pane" hidden>
+      <p class="muted small">The file as it was recorded. It carries the track, the
+        speeds, the heart rate and every lap.</p>
+      <p class="muted small">It is the original from your watch, so it still holds the
+        watch serial number and your rider profile. The iPhone app strips both before it
+        shares one.</p>
+      <p><button class="primary" id="card-fit-download" type="button">Download the
+        .fit</button></p>
+      <p class="muted small" id="card-fit-note" role="status"></p>
+    </div>
+
+    <!-- THE CARD SEGMENT: the preview, the two fields, the shape, the detail, the map
+         switch and the export. Everything that was on this dialog before it had a
+         switcher, in one wrapper so the FIT segment can take its place. -->
+    <div id="share-card-pane">
     <div class="card-preview">
       <canvas id="card-canvas" aria-label="Preview of the share card"></canvas>
     </div>
@@ -1070,6 +1227,7 @@
     </div>
     <p class="muted small">PNG · <span id="card-size"></span> · nothing leaves this device
       until you send it.</p>
+    </div>
     <div class="ask-actions">
       <button type="button" class="ghost" id="card-close">Close</button>
       <!-- Only on browsers where `navigator.canShare({files})` is true — the phone path

@@ -23,6 +23,8 @@ import { applyTurnFilter, renderFigures } from "./session.js";
 /* r3-w3: the turn page and the flight-end page. One hook, one line below: the page reads
    the document it is handed and wires itself to the two tables. js/turnpage.js. */
 import { setSessionDocument } from "./turnpage.js";
+/* The Turns tab's cards and its tally, the phone's two blocks over this tab's list. */
+import { renderTurnCards } from "./turncards.js";
 import { C, OUTCOME_COLOR, OUTCOME_LABEL, SVGNS, clockAt, esc, hms, int, marker, nf,
          outcomeText, pct, pctDigits, sessionDate } from "./viz.js";
 
@@ -52,6 +54,7 @@ export function render(result, { highlight = null, isExample = false } = {}) {
   renderSummary(result, isExample);
   renderFigures(result, highlight);
   renderTakeoffs(el("takeoff-body"), g, meta);
+  renderTurnCards(el("turn-cards"), result, meta);
   renderTurns(el("turns-table"), el("turns-caption"), result, meta);
   renderEnds(el("ends-table"), el("ends-caption"), g, meta);
   // Last, and after the table exists: the legend chips filter the turn rows as well as the

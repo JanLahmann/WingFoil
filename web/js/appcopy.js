@@ -12,8 +12,8 @@
  * when the page has drifted from either.
  */
 
-/** The four tabs, the five menu rows and the four session sub-tabs
- *  (docs/copy/app-shell.json). One order, one wording, both surfaces. */
+/** The four tabs, the six menu rows, the four session sub-tabs and the family
+ *  screen (docs/copy/app-shell.json). One order, one wording, both surfaces. */
 export const SHELL = {
   "tabs": [
     {
@@ -37,6 +37,10 @@ export const SHELL = {
     {
       "id": "whatItDoes",
       "title": "What CleanJibe does"
+    },
+    {
+      "id": "family",
+      "title": "The CleanJibe family"
     },
     {
       "id": "gettingStarted",
@@ -73,7 +77,35 @@ export const SHELL = {
       "id": "log",
       "title": "Details"
     }
-  ]
+  ],
+  "family": {
+    "title": "The CleanJibe family",
+    "intro": "CleanJibe is three apps on one analysis engine.",
+    "here": "You are using this one now.",
+    "thisApp": "browser",
+    "apps": [
+      {
+        "id": "garmin",
+        "title": "Garmin watch app",
+        "line": "Records on your wrist. Live numbers, and a summary when you save."
+      },
+      {
+        "id": "iphone",
+        "title": "iPhone app",
+        "line": "Reads every session, judges every turn, keeps your library."
+      },
+      {
+        "id": "browser",
+        "title": "Browser app",
+        "line": "The same analysis in a tab. Drop a file, no account."
+      }
+    ],
+    "travel": [
+      "A session leaves the watch through intervals.icu and lands on the phone.",
+      "The phone and the browser trade sessions as files.",
+      "The CleanJibe Apple Watch app records too. It is in the beta."
+    ]
+  }
 };
 
 /**
@@ -234,6 +266,42 @@ export const SETTINGS_SECTIONS = [
       "Restoring forgets that. The next sync brings back every one of them that is still on intervals.icu."
     ],
     "help": "libraryBackup"
+  },
+  {
+    "id": "notifications",
+    "title": "Notifications",
+    "lead": "Hear about a new session while the phone is idle.",
+    "footer": [
+      "While the phone is idle, CleanJibe asks intervals.icu for new activity.\n\nIt looks for windsurf, wing, kite, surf and SUP, from any watch that syncs there.\n\nYou hear about the ones that are not in your library yet.\n\nThe session is downloaded and analysed in the background, so tapping the notification usually opens a finished analysis."
+    ],
+    "help": "notifications",
+    "phoneOnly": true
+  },
+  {
+    "id": "analysis",
+    "title": "Analysis",
+    "lead": "Say which way your turns usually go, so a flat day still reads right.",
+    "footer": [],
+    "help": "turnTypes",
+    "phoneOnly": true
+  },
+  {
+    "id": "sessionList",
+    "title": "Session list",
+    "lead": "Draw the water behind each row's track.",
+    "footer": [
+      "Each row draws its track over a map of the water it was ridden on. The map style is the one your session maps use."
+    ],
+    "phoneOnly": true
+  },
+  {
+    "id": "rowShows",
+    "title": "Row shows",
+    "lead": "Pick the three numbers you read your library by.",
+    "footer": [
+      "Each row carries three numbers, each with its word under it. Pick the three you read your library by."
+    ],
+    "phoneOnly": true
   },
   {
     "id": "units",

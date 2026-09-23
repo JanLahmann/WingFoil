@@ -13,6 +13,9 @@
  */
 
 import { ask } from "./rpc.js";
+/* Periods is a page under Trends now, and one period is a page under that. js/appshell.js
+   owns which page is on screen; it does not import this file, so this is not a cycle. */
+import { showPage } from "./appshell.js";
 /* r3-w3: the "All spots" chip. Records, Trends and Periods answer to one chip here, the way
    they answer to one `LibraryFilterBar` on the phone. js/spots.js. */
 import { filterBySpot, renderSpotChip } from "./spots.js";
@@ -61,9 +64,13 @@ let rangeTo = "";
  *  feeds both, because one Python call over one library cannot disagree with itself. */
 const hosts = () => [el("records-body"), el("trends-body")];
 
+/** Every host this file's one click handler is wired to. The two pages below Trends —
+ *  Periods and one period — are its rows and its buttons as much as the tabs above are. */
+const clickHosts = () => [...hosts(), el("periods-body"), el("period-body")];
+
 export function mountTrends(options) {
   hooks = { ...hooks, ...options };
-  for (const host of hosts()) host.addEventListener("click", onClick);
+  for (const host of clickHosts()) host?.addEventListener("click", onClick);
 }
 
 /**
@@ -204,21 +211,15 @@ function draw(agg, trendAgg = agg) {
   trends.innerHTML = `
     <div class="kv" id="trend-totals"></div>
     <h3 class="sub-head">Periods</h3>
-    <p class="muted small">A trip, a month or a season, each with the same block of numbers.
-      A trip is one spot with no gap wider than ${esc(String(GAP_DAYS))} days and at least
-      two sessions.</p>
-    <p class="muted small">Rates over a period divide the period's own totals. They are not
-      the average of the sessions' own.</p>
-    <div id="period-custom"></div>
-    <div id="period-groups"></div>
+    <p class="muted small">Trips, months and seasons, each with one block of numbers.</p>
+    <p><button class="ghost small-btn" type="button" data-goto="periods"
+      data-umami-event="app-periods-opened">Open Periods</button></p>
     <h3 class="sub-head">Session by session</h3>
     <p class="muted small">Oldest first. Click a point to open that session. A gap in a line
       is a session where the value could not be measured. It is not a zero.</p>
     <div id="trend-charts"></div>`;
 
   renderTotals(el("trend-totals"), trendAgg.totals);
-  renderPeriods(el("period-groups"), trendAgg.periods || {});
-  renderCustomRange(el("period-custom"));
   const charts = el("trend-charts");
   for (const chart of trendAgg.trends.charts) {
     const box = document.createElement("div");
@@ -385,28 +386,24 @@ const blockHtml = (block) => `<div class="kv">${(block || []).map((e) =>
   `<div class="row"><span>${esc(e.label)}</span><span>${esc(e.value)}</span></div>`)
   .join("")}</div>`;
 
-/** One row: a summary line that is always readable, and the block behind a disclosure.
- *
- *  Closed by default, all of them. Fifteen numbers times a dozen periods is a page nobody
- *  reads; a heading plus "12 sessions · 31 July – 7 August 2026" is a list somebody scans,
- *  and the block is one tap away for the one period being looked for. */
+/** One row of the Periods page: the name, and what it is made of. It is a button, because
+ *  it opens the period's own page the way the phone pushes one
+ *  (docs/screens.md, Trends · Period page). It used to be a `<details>` with the whole
+ *  block inside it, which is one screen's worth of numbers times a dozen periods on a page
+ *  that is a list. */
 function periodRow(period) {
   const spot = sportCorrected(period.spot || "");
   const title = period.kind === "trip" && spot
     ? `${spot} · ${period.spanShort}` : period.title;
-  return `<details class="period" data-period="${esc(period.key)}">
-    <summary>
+  return `<button type="button" class="period-row" data-act="period-open"
+    data-key="${esc(period.key)}">
       <span class="period-title">${esc(title)}</span>
       <span class="period-sub">${esc(period.sessions)} session${
         period.sessions === 1 ? "" : "s"} · ${esc(period.dateLine)}</span>
-    </summary>
-    ${blockHtml(period.block)}
-    <div class="period-actions"><button class="ghost small-btn" data-act="period-card"
-      data-key="${esc(period.key)}">Share card</button></div>
-  </details>`;
+  </button>`;
 }
 
-function renderPeriods(host, periods) {
+function renderPeriodRows(host, periods) {
   const parts = [];
   for (const [key, label, note] of GROUPS) {
     const rows = periods[key] || [];
@@ -416,8 +413,64 @@ function renderPeriods(host, periods) {
       ${rows.map(periodRow).join("")}</div>`);
   }
   host.innerHTML = parts.join("")
-    || `<p class="note">No period has a date to sit on yet. A session needs a recorded
-        start before it can belong to a month.</p>`;
+    || `<p class="note">No periods yet. A session needs a recorded start before it can
+        belong to a month.</p>`;
+}
+
+/* ------------------------------------------------------------- the Periods page
+ *
+ * Trends pushes it, the way the phone's Trends tab does (docs/screens.md, Trends ·
+ * Periods). It was a fold on the third tab here, which is the shape the phone deliberately
+ * does not have: a period is a screen, because its block is the same fifteen numbers a
+ * session page carries and a fold with fifteen numbers in it is a page in disguise.
+ *
+ * Both entry points go through `showTrends`, so the aggregate this page reads is the one
+ * Records and Trends are already showing — one Python call over one library.
+ */
+
+/** The list: Trips, Months, Seasons, and the range the rider types. */
+export function showPeriodsPage() {
+  const host = el("periods-body");
+  if (!host) return;
+  const agg = cache.ranged || cache.data;
+  if (!agg) {
+    host.innerHTML = `<p class="note">Your periods start with your first session.</p>
+      <p><button class="ghost small-btn" type="button" data-goto="sessions">Go to
+        Sessions</button></p>`;
+    return;
+  }
+  host.innerHTML = `
+    <p class="muted small">A trip is one spot with no gap wider than
+      ${esc(String(GAP_DAYS))} days and at least two sessions.</p>
+    <p class="muted small">Rates over a period divide the period's own totals. They are not
+      the average of the sessions' own.</p>
+    <div id="period-custom"></div>
+    <div id="period-groups"></div>`;
+  renderCustomRange(el("period-custom"));
+  renderPeriodRows(el("period-groups"), agg.periods || {});
+}
+
+/** One period, as its own page: the aggregate block, and *Share this period*. */
+export function showPeriodPage(key) {
+  const host = el("period-body");
+  if (!host) return;
+  const period = findPeriod(key);
+  if (!period) {
+    el("period-title").textContent = "Period";
+    el("period-sub").textContent = "";
+    host.innerHTML = `<p class="note">That period is not in this library any more.</p>
+      <p><button class="ghost small-btn" type="button" data-goto="periods">Back to
+        Periods</button></p>`;
+    return;
+  }
+  const spot = sportCorrected(period.spot || "");
+  el("period-title").textContent = period.kind === "trip" && spot
+    ? `${spot} · ${period.spanShort}` : period.title;
+  el("period-sub").textContent = `${period.sessions} session${
+    period.sessions === 1 ? "" : "s"} · ${period.dateLine}`;
+  host.innerHTML = `${blockHtml(period.block)}
+    <div class="period-actions"><button class="ghost small-btn" data-act="period-card"
+      data-key="${esc(period.key)}">Share this period</button></div>`;
 }
 
 /**
@@ -470,14 +523,15 @@ async function showRange(from, to) {
     const period = await ask("period", { digestsJson: JSON.stringify(entries),
                                          start: from || null, end: to || null });
     customPeriod = period;
-    out.innerHTML = period.sessions
-      ? `<div class="period-custom-head"><strong>${esc(period.title)}</strong>
-           <span class="dim">${esc(period.sessions)} session${
-             period.sessions === 1 ? "" : "s"} · ${esc(period.dateLine)}</span></div>
-         ${blockHtml(period.block)}
-         <div class="period-actions"><button class="ghost small-btn"
-           data-act="period-card" data-key="${esc(period.key)}">Share card</button></div>`
-      : `<p class="note">No session in that range.</p>`;
+    // A range the rider typed is a period like the other three, so it opens the same page.
+    // Nothing is drawn here but the refusal, which belongs beside the two dates that
+    // caused it (docs/review-checklist.md, pattern G).
+    if (period.sessions) {
+      out.innerHTML = "";
+      showPage("period", encodeURIComponent(period.key));
+      return;
+    }
+    out.innerHTML = `<p class="note">No session in that range.</p>`;
   } catch (err) {
     out.innerHTML = `<p class="note">Could not aggregate that range: ${esc(err.message)}</p>`;
   }
@@ -725,6 +779,10 @@ function onClick(ev) {
   }
   const card = ev.target.closest("button[data-act=period-card]");
   if (card) { hooks.openPeriodCard(findPeriod(card.dataset.key), entries); return; }
+  // A period row opens the period's own page, the way the phone pushes one. The key goes
+  // in the address, so a period can be bookmarked and the Back button works on it.
+  const period = ev.target.closest("button[data-act=period-open]");
+  if (period) { showPage("period", encodeURIComponent(period.dataset.key)); return; }
   // A session record is the whole afternoon, so its row opens the session itself — there
   // is no window inside it to highlight.
   const open = ev.target.closest("button[data-act=session]");
@@ -740,10 +798,11 @@ function onClick(ev) {
  *  the aggregate — it was asked for separately — so it is checked first and by identity. */
 function findPeriod(key) {
   if (customPeriod && customPeriod.key === key) return customPeriod;
-  const groups = cache.data?.periods || {};
-  for (const list of Object.values(groups)) {
-    const found = (list || []).find((p) => p.key === key);
-    if (found) return found;
+  for (const agg of [cache.ranged, cache.data]) {
+    for (const list of Object.values(agg?.periods || {})) {
+      const found = (list || []).find((p) => p.key === key);
+      if (found) return found;
+    }
   }
   return null;
 }

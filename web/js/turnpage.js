@@ -110,6 +110,7 @@ export function setSessionDocument(result) {
   wired = true;
   delegate("turns-table", "turn");
   delegate("ends-table", "end");
+  delegateCards();
   const dialog = el("turn-page");
   if (!dialog) return;
   el("turn-page-close")?.addEventListener("click", closePage);
@@ -133,6 +134,13 @@ function markOpenableRows() {
     const rows = table.querySelectorAll("tbody tr");
     rows.forEach((row, index) => { row.classList.toggle("opens", open.has(index)); });
   }
+  const openable = new Set(turnIndices());
+  for (const card of document.querySelectorAll("#turn-cards .turn-card")) {
+    const index = Number(card.dataset.turn);
+    const opens = openable.has(index);
+    card.classList.toggle("opens", opens);
+    card.disabled = !opens;
+  }
 }
 
 function delegate(tableId, kind) {
@@ -150,6 +158,24 @@ function delegate(tableId, kind) {
     // which turn of which afternoon is the rider's business and not a counter's.
     track("app-turn-page-opened", { kind });
     openPage(kind, index);
+  });
+}
+
+/** The cards above the table, which carry their turn's index outright (`data-turn`) rather
+ *  than by position: js/session.js hides a card the chips are hiding, so a card's place
+ *  among its siblings is not its index. A card for a sweep with no page behind it — a
+ *  course change has no verdict, no score and no entry tack — is marked and does nothing,
+ *  the same rule `markOpenableRows` keeps for the rows. */
+function delegateCards() {
+  const host = el("turn-cards");
+  if (!host) return;
+  host.addEventListener("click", (ev) => {
+    const card = ev.target.closest(".turn-card");
+    if (!card || !doc) return;
+    const index = Number(card.dataset.turn);
+    if (!Number.isInteger(index) || !turnIndices().includes(index)) return;
+    track("app-turn-page-opened", { kind: "turn" });
+    openPage("turn", index);
   });
 }
 

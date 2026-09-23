@@ -1,14 +1,16 @@
 {
   "_readme": [
-    "THE APP SHELL, IN ONE FILE: THE FOUR TABS, THE FIVE MENU ROWS, THE FOUR SESSION TABS.",
+    "THE APP SHELL, IN ONE FILE: THE FOUR TABS, THE SIX MENU ROWS, THE FOUR SESSION TABS.",
     "",
     "The iPhone app is the author of all three lists. The kit and the app hold them:",
     "",
     "  tabs             ios/WingFoil/App/RootView.swift, the four `tabItem` labels",
     "  menu             ios/WingFoilKit/Sources/WingFoilKit/Presentation/AppMenuRows.swift",
     "                   (`AppMenuRow.ordered` and `.title`; the last row's title is",
-    "                   FeedbackDoors.menuRow, which docs/copy/feedback.json already pins)",
+    "                   FeedbackDoors.menuRow, which docs/copy/feedback.json already pins,",
+    "                   and `.family`'s title is CleanJibeFamily.title)",
     "  sessionSections  ios/WingFoilKit/Sources/WingFoilKit/Presentation/SessionSection.swift",
+    "  family           ios/WingFoilKit/Sources/WingFoilKit/Presentation/CleanJibeFamily.swift",
     "",
     "This file is the machine-readable twin the web renders from, so the browser app and the",
     "phone name the same doors in the same order. Both sides are pinned by",
@@ -23,7 +25,11 @@
     "row that says no says why in its own line, and still links to the route on /start/.",
     "",
     "The two rows the phone does not have are `drop` and `example`. They are the analyzer's",
-    "own strengths, they lead the card, and they carry their own titles."
+    "own strengths, they lead the card, and they carry their own titles.",
+    "",
+    "`family` is the three apps and how a session travels between them, under 120 words. It",
+    "is the kit's CleanJibeFamily, word for word. `thisApp` is which of the three THIS shell",
+    "is, so the copy is written once and each shell marks its own row with `here`."
   ],
   "schema": "cleanjibe.app-shell/1",
   "tabs": [
@@ -34,6 +40,7 @@
   ],
   "menu": [
     { "id": "whatItDoes", "title": "What CleanJibe does" },
+    { "id": "family", "title": "The CleanJibe family" },
     { "id": "gettingStarted", "title": "Getting started" },
     { "id": "settings", "title": "Settings", "afterDivider": true },
     { "id": "help", "title": "Help" },
@@ -85,6 +92,25 @@
         "here": false,
         "line": "On the iPhone app. Strava sign-in needs it."
       }
+    ]
+  },
+  "family": {
+    "title": "The CleanJibe family",
+    "intro": "CleanJibe is three apps on one analysis engine.",
+    "here": "You are using this one now.",
+    "thisApp": "browser",
+    "apps": [
+      { "id": "garmin", "title": "Garmin watch app",
+        "line": "Records on your wrist. Live numbers, and a summary when you save." },
+      { "id": "iphone", "title": "iPhone app",
+        "line": "Reads every session, judges every turn, keeps your library." },
+      { "id": "browser", "title": "Browser app",
+        "line": "The same analysis in a tab. Drop a file, no account." }
+    ],
+    "travel": [
+      "A session leaves the watch through intervals.icu and lands on the phone.",
+      "The phone and the browser trade sessions as files.",
+      "The CleanJibe Apple Watch app records too. It is in the beta."
     ]
   }
 }

@@ -1,4 +1,4 @@
-/* The shell: four tabs, one menu, seven pages.
+/* The shell: four tabs, one menu, eleven pages.
  *
  * Jan, 19 September 2026: *"iOS is the reference, the web is the port"*. So this file is
  * the browser's `RootView` — the four tabs the phone has, in its order and its words, with
@@ -9,11 +9,13 @@
  *
  * WHAT THIS FILE OWNS
  *
- *   routing      `#/sessions`, `#/records`, `#/trends`, `#/gear`, `#/settings`, `#/help`
- *                and `#/session`. The four tabs are the four the phone has; Settings and
- *                Help are menu rows, which is why they are pages and not tabs; `#/session`
- *                is what a row opens, the way the phone pushes `SessionDetailView`.
- *   the menu     the five rows of `AppMenuRow.ordered`, its one divider, and the build line
+ *   routing      `#/sessions`, `#/records`, `#/trends`, `#/periods`, `#/period/<key>`,
+ *                `#/gear`, `#/settings`, `#/help`, `#/started`, `#/whats-new`, `#/family`
+ *                and `#/session`. The four tabs are the four the phone has; the rest are
+ *                what a menu row or a row on a page opens, which is why they are pages and
+ *                not tabs — `#/session` the way the phone pushes `SessionDetailView`, and
+ *                `#/periods` the way it pushes Periods off Trends.
+ *   the menu     the six rows of `AppMenuRow.ordered`, its one divider, and the build line
  *                under them.
  *   the welcome  once per browser, and again whenever *What CleanJibe does* is tapped.
  *   Settings     units, start over, About and What's new. The intervals.icu panel is markup
@@ -32,7 +34,7 @@
  */
 
 import {
-  FEEDBACK, GUIDE, HELP, SETTINGS_SECTIONS, WELCOME, WHATS_NEW,
+  FEEDBACK, GUIDE, HELP, SETTINGS_SECTIONS, SHELL, WELCOME, WHATS_NEW,
 } from "./appcopy.js";
 import {
   forgetSettings, gearFor, gearMap, markWelcomeSeen, onSettingsChange, setGearFor,
@@ -62,9 +64,20 @@ const PAGES = {
   session: "sessions",
   records: "records",
   trends: "trends",
+  // Periods and one period are pushed from Trends, so they keep the Trends tab marked —
+  // the phone's own arrangement (docs/screens.md, Trends · Periods · Period page).
+  periods: "trends",
+  period: "trends",
   gear: "gear",
   settings: null,
   help: null,
+  // The two menu destinations that used to lead off the app: *Getting started* went to the
+  // Help index, and the release notes lived in a fold inside Settings. Both are screens on
+  // the phone, so both are pages here (Jan, 23 September 2026).
+  started: null,
+  "whats-new": null,
+  // Three apps, one engine, and which of them this is (`AppMenuRow.family`).
+  family: null,
 };
 
 /** The routes this page answered to before it had tabs. A bookmark, a link from the
@@ -104,13 +117,76 @@ export function showPage(name, arg = null) {
   }
   const want = arg ? `#/${page}/${arg}` : `#/${page}`;
   if (location.hash !== want) history.replaceState(null, "", want);
-  hooks.onShowPage(page);
+  hooks.onShowPage(page, arg);
   if (page === "gear") renderGear().catch(() => {});
   if (page === "settings") {
     renderAbout().catch(() => {});
     renderDeleted().catch(() => {});                                       // r3-w1
   }
   if (page === "help") openHelpAt(arg);
+  if (page === "started") renderGettingStarted();
+  if (page === "family") renderFamily();
+}
+
+/**
+ * **The CleanJibe family** — the three apps, and how a session travels between them.
+ *
+ * The words are the kit's `CleanJibeFamily`, carried here by docs/copy/app-shell.json, so
+ * this page and the phone's screen are one screen. The one thing this shell answers for
+ * itself is which of the three it IS: `thisApp` in the copy names it, and the row it names
+ * wears `here`.
+ *
+ * Nothing in it links out. Every app named here is reached from a store the reader is
+ * already in or from the page he is already on, and three install links would make this an
+ * advertisement rather than an answer.
+ */
+function renderFamily() {
+  const host = el("family-body");
+  const family = SHELL.family;
+  if (!host || !family) return;
+  el("family-title").textContent = family.title;
+  host.innerHTML = `
+    <p class="family-intro">${esc(family.intro)}</p>
+    <div class="family-apps">${family.apps.map((app) => `
+      <div class="family-app${app.id === family.thisApp ? " here" : ""}">
+        <p class="family-app-title">${esc(app.title)}${
+          app.id === family.thisApp
+            ? `<span class="dim">${esc(family.here)}</span>` : ""}</p>
+        <p class="muted small">${esc(app.line)}</p>
+      </div>`).join("")}</div>
+    <div class="family-travel">${family.travel.map((line) =>
+      `<p class="muted small">${esc(line)}</p>`).join("")}</div>`;
+}
+
+/**
+ * **Getting started, inside the app.**
+ *
+ * The phone opens `HelpTopicID.gettingStarted` as a sheet of its own from the same menu
+ * row (`AppMenuButton.tap`), and this is that topic, rendered from the same catalogue —
+ * docs/copy/help.json, through `js/appcopy.js`. Nothing is written twice: the topic's last
+ * item is already *the same guide, with every step, on the web*, which is what /start/ is
+ * for and why that page does not move.
+ *
+ * A build whose catalogue is still the stub says so rather than drawing an empty page.
+ */
+function renderGettingStarted() {
+  const host = el("started-body");
+  if (!host) return;
+  const topic = helpTopic("gettingStarted");
+  if (!topic) {
+    host.innerHTML = `<p class="note">The guide is on the iPhone app and on the website.</p>
+      <p><a href="/start/">Get started</a></p>`;
+    return;
+  }
+  // Drawn rather than handed to `topicHtml`: that one wears the article's id, and the Help
+  // page already carries this topic under it. Two elements with one id is a deep link that
+  // lands on whichever of them the browser saw first.
+  host.innerHTML = `
+    <p class="what">${esc(topic.summary)}</p>
+    ${(topic.body || []).map((p) => `<p>${esc(p)}</p>`).join("")}
+    ${(topic.items || []).length ? `<dl class="glossary-list">${topic.items.map((i) => `
+      <div class="g-entry"><dt>${esc(i.term)}</dt><dd>${esc(i.detail)}</dd></div>`)
+      .join("")}</dl>` : ""}`;
 }
 
 /** Send the reader to one help topic, from anywhere: the `?` beside an explanation, a
@@ -180,7 +256,8 @@ function wireMenu() {
       track("app-menu-row-opened", { row });
       closeMenu();
       if (row === "whatItDoes") openWelcome();
-      else if (row === "gettingStarted") showPage("help");
+      else if (row === "family") showPage("family");
+      else if (row === "gettingStarted") showPage("started");
       else if (row === "settings") showPage("settings");
       else if (row === "help") showPage("help");
       else if (row === "support") location.href = feedbackMail();
