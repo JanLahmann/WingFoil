@@ -561,6 +561,16 @@
              whenever the chips are hiding nothing. -->
         <p class="muted small" id="turns-filter-note" hidden></p>
       </div>
+      <!-- A CARD PER TURN, THEN THE TALLY, THEN THE LIST — the phone's own order on this
+           tab (docs/screens.md, Sessions · Turns). The cards and the tally are drawn by
+           js/turncards.js out of the presentation document's `turns.strip`; the table
+           below them stays, because the arc, the radius and the two workbench flags are
+           columns the document does not carry and the tab has always shown.
+           The filtered MAP is the one on Ride, which the same chips drive: a second map
+           would be a second camera and a second playhead to keep in step with the first
+           (docs/presentation/scrub-pairing.md, "Scrub and zoom"). -->
+      <div class="turn-cards" id="turn-cards"></div>
+      <div class="turn-tally" id="turns-tally" hidden></div>
       <div class="table-scroll"><table id="turns-table"></table></div>
     </section>
 

@@ -43,6 +43,9 @@ import {
 import { KNOTS, speed, speedNumber } from "./appsettings.js";
 import { captionText } from "./presentation.js";
 import { TOKENS } from "./tokens.js";
+/* The Turns tab's tally. It reads the chips' own decision (`turnRowVisible`) rather than
+   deriving a second one, so the cards, this block and the table cannot disagree. */
+import { renderTurnTally } from "./turncards.js";
 // r3-w2:begin — the ground under the track, and the door that opens it full screen
 import {
   fullMapDoor, fullMapHeight, fullMapOpen, groundToggle, groundUnder, onGroundButton,
@@ -1959,11 +1962,22 @@ function afterChips() {
  * of looking at a session, not a claim about what happened in it.
  */
 
-/** Hide the rows the chips are hiding, and say so above the table. */
+/** Hide the rows the chips are hiding, and say so above the table.
+ *
+ *  The cards above the table and the tally between them answer to the same decision: one
+ *  chip, one filter, three views of it (js/turncards.js). The tally is the one of the
+ *  three whose NUMBERS move — it is the phone's filtered tally and says what it is out
+ *  of — while the caption above it stays the document's own whole-session strip of counts. */
 export function applyTurnFilter() {
   const table = el("turns-table");
   const note = el("turns-filter-note");
   if (!table || !state.model) return;
+  for (const card of document.querySelectorAll("#turn-cards .turn-card")) {
+    card.hidden = !turnRowVisible(Number(card.dataset.turn));
+  }
+  if (state.result) {
+    renderTurnTally(el("turns-tally"), state.result, turnRowVisible);
+  }
   let hiddenRows = 0;
   table.querySelectorAll("tbody tr").forEach((row, i) => {
     const show = turnRowVisible(i);

@@ -860,3 +860,70 @@ details.help-section[open] > summary { border-bottom: 1px solid var(--line-soft)
 /* The turn page's footnote: one line by default, eleven paragraphs when asked. */
 .tp-footlead { margin: 0; }
 /* r7-w5:end */
+
+/* ------------------------------------------------------- the Turns tab's cards
+
+   A card per turn, over the tally and the list — the iPhone's own order on this tab
+   (docs/screens.md, Sessions · Turns). Buttons, because every one of them opens the turn
+   page; a card for a course change is disabled and says so on its face rather than
+   wearing a pointer that promises a page.
+
+   The grid is auto-fit so the cards read as a strip on a laptop and as a column on a
+   phone, with no breakpoint of their own. */
+.turn-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+  margin: 0 0 16px;
+}
+
+.turn-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-1);
+  color: var(--ink);
+  font: inherit;
+  cursor: default;
+}
+
+.turn-card.opens { cursor: pointer; }
+.turn-card.opens:hover { background: var(--surface-2); }
+.turn-card[disabled] { opacity: 0.6; }
+
+.tc-head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.tc-name { font-weight: 600; }
+.tc-time { color: var(--ink-3); font-size: 12px; font-variant-numeric: tabular-nums; }
+.tc-verdict { display: flex; flex-wrap: wrap; gap: 6px; }
+.tc-facts { color: var(--ink-3); font-size: 12px; font-variant-numeric: tabular-nums; }
+.tc-why { color: var(--ink-2); font-size: 12px; }
+
+/* The star's own pill. It is never on the ladder's three inks: clean is the stricter
+   reading of the same turn, not a fourth rung (docs/presentation/clean-jibe.md). */
+.pill.clean { color: var(--ink); border-color: var(--line); font-weight: 700; }
+
+/* ------------------------------------------------------- the Turns tab's tally
+
+   The phone's `tallyStrip`: the share, what it is out of, the clean count under it, and
+   one chip per rung. Its numbers move with the chips on Track; the caption above the
+   table does not, because that one is the document's own reading of the whole afternoon. */
+.turn-tally {
+  padding: 12px;
+  margin: 0 0 16px;
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  background: var(--surface-1);
+}
+
+.tt-head { display: flex; align-items: baseline; gap: 10px; }
+.tt-pct { font: 700 22px/1 var(--sans); font-variant-numeric: tabular-nums; }
+.tt-words { display: flex; flex-direction: column; gap: 1px; }
+.tt-label { font-weight: 600; font-size: 13px; }
+.tt-sub, .tt-clean { color: var(--ink-3); font-size: 12px; }
+.tt-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.tt-chip { display: inline-flex; align-items: center; gap: 5px; }
+.tt-n { font-variant-numeric: tabular-nums; font-size: 12px; color: var(--ink-2); }
