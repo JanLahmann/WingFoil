@@ -47,6 +47,11 @@ COPY = REPO / "docs" / "copy"
 GUIDE = REPO / "docs" / "guide" / "getting-started.json"
 PAGE = WEB / "app" / "index.html"
 
+#: The phone's Settings sections the browser draws under one name of its own: **Your
+#: data** is Storage plus Library backup plus the site data only a tab can lose a library
+#: to (docs/screens.md, deviation 18). ``web/tools/make_app_copy.py`` holds the same list.
+WEB_TWINS = ("storage", "backup")
+
 ROOT_VIEW = REPO / "ios" / "WingFoil" / "App" / "RootView.swift"
 KIT = REPO / "ios" / "WingFoilKit" / "Sources" / "WingFoilKit" / "Presentation"
 MENU_ROWS = KIT / "AppMenuRows.swift"
@@ -310,11 +315,14 @@ def main(argv=None) -> int:
     # `SettingsCopyExportTests`, so the phone authors every header and every line. What the
     # page owes is the same sections in the same order, and no section of its own: a
     # browser that invented a Settings heading would be the drift docs/screens.md calls a
-    # gap rather than a deviation. `web` is the flag that says a browser has the section at
-    # all, and `channel` keeps a beta-only one off a page every stranger can open.
+    # gap rather than a deviation. Since 23 September 2026 that is EVERY section the phone
+    # has, in the phone's order: `web` says only whether a browser can do the thing, and a
+    # section it cannot do is drawn with its header, its line, and one more saying where it
+    # is. `channel` still keeps a beta-only section off a page every stranger can open, and
+    # WEB_TWINS is the two the browser answers under a name of its own.
     settings = json.loads((COPY / "settings.json").read_text(encoding="utf-8"))
     want_settings = [s["id"] for s in settings["sections"]
-                     if s["web"] and s["channel"] == "release"]
+                     if s["channel"] == "release" and s["id"] not in WEB_TWINS]
     same("the Settings sections are the phone's, in its order",
          parsed.settings, want_settings)
     for section in settings["sections"]:

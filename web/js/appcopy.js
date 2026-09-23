@@ -236,6 +236,42 @@ export const SETTINGS_SECTIONS = [
     "help": "libraryBackup"
   },
   {
+    "id": "notifications",
+    "title": "Notifications",
+    "lead": "Hear about a new session while the phone is idle.",
+    "footer": [
+      "While the phone is idle, CleanJibe asks intervals.icu for new activity.\n\nIt looks for windsurf, wing, kite, surf and SUP, from any watch that syncs there.\n\nYou hear about the ones that are not in your library yet.\n\nThe session is downloaded and analysed in the background, so tapping the notification usually opens a finished analysis."
+    ],
+    "help": "notifications",
+    "phoneOnly": true
+  },
+  {
+    "id": "analysis",
+    "title": "Analysis",
+    "lead": "Say which way your turns usually go, so a flat day still reads right.",
+    "footer": [],
+    "help": "turnTypes",
+    "phoneOnly": true
+  },
+  {
+    "id": "sessionList",
+    "title": "Session list",
+    "lead": "Draw the water behind each row's track.",
+    "footer": [
+      "Each row draws its track over a map of the water it was ridden on. The map style is the one your session maps use."
+    ],
+    "phoneOnly": true
+  },
+  {
+    "id": "rowShows",
+    "title": "Row shows",
+    "lead": "Pick the three numbers you read your library by.",
+    "footer": [
+      "Each row carries three numbers, each with its word under it. Pick the three you read your library by."
+    ],
+    "phoneOnly": true
+  },
+  {
     "id": "units",
     "title": "Units",
     "lead": "Read speeds in knots or in km/h.",
