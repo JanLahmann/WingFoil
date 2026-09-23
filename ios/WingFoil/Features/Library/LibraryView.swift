@@ -596,7 +596,7 @@ struct LibraryView: View {
             if store.isStravaConfigured {
                 WayInRow(icon: "figure.wave",
                          label: "Set up Strava in Settings",
-                         line: "Strava hands over positions. Records are uncertified.") {
+                         line: "Strava gives your track but not your speed.") {
                     openSettings()
                 }
             }

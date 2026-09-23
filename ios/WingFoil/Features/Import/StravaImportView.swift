@@ -229,7 +229,7 @@ struct StravaImportView: View {
         } footer: {
             Text(markdown: "Everything that comes from the track: foil time, flights, "
                  + "every turn with its verdict, the wind axis, the map.\n\n"
-                 + "What is missing is what Strava does not hand over. There is no speed "
+                 + "What you lose is what Strava does not hand over. It gives no speed "
                  + "channel.\n\n"
                  + "Strava works speed out from the positions, the same way CleanJibe "
                  + "would. Speed records from these sessions are marked "

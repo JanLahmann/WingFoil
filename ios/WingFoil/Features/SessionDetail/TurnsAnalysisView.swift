@@ -307,8 +307,8 @@ struct TurnsAnalysisView: View {
                  + "A clean jibe does both. "
                  + "It flies all the way through and holds at least 70 % of its entry speed.")
             if rejected > 0 {
-                Text(String(rejected) + (rejected == 1 ? " course change" : " course changes")
-                     + " excluded, as everywhere else in the app. "
+                Text(String(rejected) + (rejected == 1 ? " course change is" : " course changes are")
+                     + " left out here, as they are everywhere else. "
                      + "Bear-aways and round-ups are course changes.")
             }
         }
