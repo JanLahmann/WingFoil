@@ -24,7 +24,7 @@ Three traits, and what each one rules out:
 | we want | we do not want |
 |---|---|
 | **about you first.** "You flew through eight of them." "Your best 2 s all season." Then, for the interested rider, how the app did it. | **mechanics with no rider in the sentence.** "It proves the route from the watch to the phone." "Opens a mail with the facts filled in." |
-| **natural rhythm.** A short sentence, then a longer one that carries a thought, the way you would say it. | **fragments and staccato.** "Wing foiling, measured." "Settings → intervals.icu, 4 steps, once." "Free." |
+| **natural rhythm.** A short sentence, then a longer one that carries a thought, the way you would say it. | **fragments and staccato.** "Settings → intervals.icu, 4 steps, once." "Free." |
 | **wingfoiler words**, including the insider ones: *flew through, touchdown, dry streak, best 2 s, alpha 500, uncertified record, upwind, foil up, pump*. | **IT words.** *route, door, class (b), pipeline, re-derive, digest, ingest, sync target, payload.* |
 
 **The beach test.** Read the sentence aloud to a mate at the van. If you would not say it
@@ -60,7 +60,7 @@ retired for rider text. It lives on in code comments and in `docs/`, where it be
 5. **No framing, no pointe, no fragment.** Banned shapes: *the one thing…*, *the half only
    you can do*, *exactly as…*, *which is the whole point*, *not X, but Y* as a flourish, *and
    that is why…*, *…, nothing else.*, and a verbless fragment as a sentence (*Free.* *Once.*
-   *Wing foiling, measured.*). A fragment is allowed as a heading only. Say the thing.
+   *Once.*). A fragment is allowed as a heading or as the tagline under the wordmark only; the tagline is *Your WingFoil session, measured.* (Jan, 23 September 2026). Say the thing.
 6. **Rider vocabulary, exactly.** *flew through*, *touchdown*, *fell in*, *clean*, *dry
    streak*, *on foil*. Never *carried*, *success*, *no-fall*, *swim rate*
    (`docs/copy/phrases.json` → `lexicon`). Path notation for the app: *Settings → intervals.icu*.
