@@ -53,8 +53,8 @@ MENU_ROWS = KIT / "AppMenuRows.swift"
 SESSION_SECTION = KIT / "SessionSection.swift"
 
 #: The pages the shell routes to. A missing one is a tab that opens nothing.
-PAGE_IDS = ["page-sessions", "page-session", "page-records", "page-trends", "page-gear",
-            "page-settings", "page-help"]
+PAGE_IDS = ["page-sessions", "page-session", "page-records", "page-trends", "page-periods",
+            "page-period", "page-gear", "page-settings", "page-help"]
 
 # --------------------------------------------------------------- the ported screens
 
@@ -92,6 +92,8 @@ PORTED_SCREENS = [
     ("trends-range", "Custom range",
      "ios/WingFoil/Features/Library/LibraryFilterMenu.swift",
      "Nothing in this range", "ios/WingFoil/Features/Trends/TrendsView.swift"),
+    ("periods-body", "Periods", "ios/WingFoil/Features/Periods/PeriodsView.swift",
+     "No periods yet", "ios/WingFoil/Features/Periods/PeriodsView.swift"),
 ]
 
 #: A Swift string split over two literals is one authored sentence. Joining the halves

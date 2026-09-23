@@ -20,7 +20,8 @@ import { listEntries } from "./store.js";
 import { CONSENT, send as sendToDeveloper } from "./senddev.js";
 import { track } from "./track.js";
 import { esc, hms, int, nf } from "./viz.js";
-import { invalidateTrends, mountTrends, redrawTrends, showTrends } from "./trends.js";
+import { invalidateTrends, mountTrends, redrawTrends, showPeriodPage, showPeriodsPage,
+         showTrends } from "./trends.js";
 // r3-w1: the four screens the port was missing — the Log tab's gear card and its
 // watch-against-phone block, the quiver's editor, Deleted sessions, Restore from a backup,
 // and the range over the charts. Each is its own file; these are the wires.
@@ -619,10 +620,15 @@ async function openStored(id, record = null, from = "library") {
  * change has to close it: it belongs to the figure that opened it, and when that figure
  * goes off screen so does it.
  */
-function onShowPage(page) {
+function onShowPage(page, arg = null) {
   closePopover();
-  if (page === "records" || page === "trends") {
-    listEntries().then(showTrends).catch(() => showTrends([]));
+  // Periods and one period read the same aggregate Records and Trends do — one Python
+  // call over one library — so they ask for it the same way and draw once it is there.
+  if (page === "records" || page === "trends" || page === "periods" || page === "period") {
+    listEntries().then(showTrends).catch(() => showTrends([])).finally(() => {
+      if (page === "periods") showPeriodsPage();
+      if (page === "period") showPeriodPage(decodeURIComponent(arg || ""));
+    });
   }
   if (page === "sessions") refreshLibrary();
 }

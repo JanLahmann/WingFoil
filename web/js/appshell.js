@@ -62,6 +62,10 @@ const PAGES = {
   session: "sessions",
   records: "records",
   trends: "trends",
+  // Periods and one period are pushed from Trends, so they keep the Trends tab marked —
+  // the phone's own arrangement (docs/screens.md, Trends · Periods · Period page).
+  periods: "trends",
+  period: "trends",
   gear: "gear",
   settings: null,
   help: null,
@@ -104,7 +108,7 @@ export function showPage(name, arg = null) {
   }
   const want = arg ? `#/${page}/${arg}` : `#/${page}`;
   if (location.hash !== want) history.replaceState(null, "", want);
-  hooks.onShowPage(page);
+  hooks.onShowPage(page, arg);
   if (page === "gear") renderGear().catch(() => {});
   if (page === "settings") {
     renderAbout().catch(() => {});

@@ -678,6 +678,40 @@
   </section>
 </div>
 
+<!-- ================================================== PERIODS (under Trends) -->
+<!-- The phone's Periods screen, pushed from Trends (docs/screens.md, Trends · Periods).
+     It was a fold on the third tab here, and a fold holding fifteen numbers per period is
+     a page in disguise. js/trends.js fills both of these out of the same aggregate
+     Records and Trends already read. -->
+<div class="page" id="page-periods" data-page="periods" hidden>
+  <p class="crumb"><button class="linkish" type="button" data-goto="trends">Back to
+    Trends</button></p>
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <h1 class="page-title">Periods</h1>
+        <p class="muted small">A trip, a month or a season, each with the same block of
+          numbers.</p>
+      </div>
+    </div>
+    <div id="periods-body" data-screen="Periods" data-empty="No periods yet"></div>
+  </section>
+</div>
+
+<div class="page" id="page-period" data-page="period" hidden>
+  <p class="crumb"><button class="linkish" type="button" data-goto="periods">Back to
+    Periods</button></p>
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <h1 class="page-title" id="period-title">Period</h1>
+        <p class="muted small" id="period-sub"></p>
+      </div>
+    </div>
+    <div id="period-body"></div>
+  </section>
+</div>
+
 <!-- ======================================================== GEAR & SPOTS (tab 4) -->
 <div class="page" id="page-gear" data-page="gear" hidden>
   <section class="panel">
