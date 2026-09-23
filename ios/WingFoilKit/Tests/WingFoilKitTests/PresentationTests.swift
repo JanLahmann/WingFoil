@@ -379,13 +379,21 @@ import Testing
         }
     }
 
-    /// The app says *you* and *CleanJibe*, never *we*. A help catalogue is the one place
-    /// the author slips into the first person, because he is describing his own work —
-    /// and "our own recordings" tells a rider nothing about which of his files qualifies.
+    /// The app says *you* and *CleanJibe*, and it never says *our*. A help catalogue is the
+    /// one place the author slips into the first person, because he is describing his own
+    /// work — and "our own recordings" tells a rider nothing about which of his files
+    /// qualifies.
+    ///
+    /// **`we` and `us` came off this list on 23 September 2026.** docs/voice.md, rule 7:
+    /// *we* is the team that builds CleanJibe, used sparingly and only where a person is
+    /// meant — *tell us what you saw*, *we read every mail*. The possessive is the slip the
+    /// test was written for, and it is the half that stays banned. *I* is covered by the
+    /// same rule and is not matched here, because the catalogue quotes two Settings rows a
+    /// rider reads in his own voice (*I mostly ride*, *Most of my turns are*).
     @Test func theHelpCatalogueNeverSpeaksInTheFirstPerson() {
-        // Whole words: "your own" and "your watch" both contain the letters of the slips,
+        // Whole words: "your own" and "your watch" both contain the letters of the slip,
         // and both are exactly the voice the app is supposed to be in.
-        let firstPerson = try! Regex(#"\b(our|we|we've|us)\b"#).ignoresCase()
+        let firstPerson = try! Regex(#"\b(our|ours)\b"#).ignoresCase()
         for topic in HelpCatalog.topics {
             let prose = ([topic.title, topic.summary] + topic.body
                          + topic.items.flatMap { [$0.term, $0.detail] }
