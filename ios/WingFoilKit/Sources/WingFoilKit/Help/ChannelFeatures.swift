@@ -45,8 +45,8 @@ public enum ChannelFeatures {
             + "opens straight from Files.",
         "Apple Health, both ways: what Apple's Workout app recorded is read in, and your "
             + "sessions are written back as workouts.",
-        "The CleanJibe Apple Watch app, which records on your wrist with live numbers and "
-            + "hands the session to the phone.",
+        "The CleanJibe Apple Watch app, which records on your wrist and hands the session "
+            + "to the phone.",
         "Home-screen widgets and the watch complication.",
         "The session video: your afternoon as a film rather than a card.",
         "Grouping the library by month, year or spot, and filtering it.",
