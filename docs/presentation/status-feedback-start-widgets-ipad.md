@@ -122,30 +122,49 @@ three doors, because they are where the rider starts next time. Its **invitation
 once**: `FeedbackInvitation.sentence` opened the summary *and* the first paragraph, one line
 under the other, and it now stays in the summary, which is the line the index shows.
 
+**Most wanted** (Jan, 23 Sep 2026). A general feedback door — the menu, the page footers,
+*Request a feature* — opens a short sheet before the mail: the rows of "Coming in a future
+release" as ticks (`MostWanted.offered(in:)`: the beta rows in the release, the dev rows as
+well in beta and dev, so a rider is never offered a row his own Coming page lacks), one free
+line, *Something else you want*, and **Write mail**, enabled with nothing ticked. The ticks
+travel above the rule under the fixed heading **Most wanted**, one line each ending in the
+row's `channels.json` id (`✓ Apple Health, both ways · appleHealth`), so replies are tallied
+by a search; an empty vote leaves no block. *Report a problem with this session…* goes
+straight to the mail: a wish list in front of a bug report is in the way.
+
 ### The beta's usage report
 
-**Beta only** (`#if BETA`, docs/channels.md). The same mail with one more block at the foot of
-it, under one sentence that says what the block is: *"The block below is what the beta counts
-on this phone. It helps development and is a key part of being in the beta. Delete any line
-you would rather not send."* The subject is its own — **`CleanJibe beta usage report`** — so a
-mailbox sorted by subject does not file it as a bug report and answer it as one.
+**Beta only** (`#if BETA`, docs/channels.md). The door opens a short sheet first, **Usage
+report**: a **Your feedback** field on top, focused, with *What works, what does not, what you
+miss* as its placeholder, and under it a **Normal · Extended** switch that opens on Normal
+(*Normal gives one line per feature you used. Extended adds dates and the last error.*).
+**Write mail** composes the mail (`UsageReportText`, asserted in `UsageCountersTests`) and
+hands it to Mail, where every line is still the rider's to delete. The subject is its own —
+**`CleanJibe beta usage report`** — so a mailbox sorted by subject does not file it as a bug
+report.
 
-The block is headed **Usage and features** (`UsageCounters.report`, asserted line by line in
-`UsageCountersTests`) and carries, in this order: the build, the first-launch date, how many
-days the app has been used on and the day the mail was written; then one line per door that
-has been opened — `share card · 12 · last 13 Sep`; then, on **one** line, every door that has
-not been opened at all, which is the half that decides what ships (channels.md, rule 1);
-then the failures this phone has shown, newest first, deduplicated by message with a count
-beside each — the rider-facing sentence, exactly as it was on the screen.
+The body, in order: *Your feedback:* and his words; the rule and one sentence, *"Below is what
+the beta counts on this phone. It shows which features work. Delete any line you would rather
+not send."*; the App, Phone, Watch and Library blocks every feedback mail carries; then the
+counters, headed **Usage and features** (`UsageCounters.report`). Their first line is the build
+and the device, in both layouts — a count without the build it was counted on cannot gate a
+release. Then the first-launch date, the active days and the day written; then the used
+features under their groups (Sources, Watch, Analysis, Reading, Share, Library, Settings,
+Feedback), one line each — `Send map to watch ✓ 12 · ✗ 1`; then, on **one** line, every door
+this build has that nobody opened, which is the half that decides what ships. **Extended**
+adds to each line the tries still without an answer, the first date, the last success, the
+last failure and its reason (a short code, never a file name or a place), the variants under
+it (the share card's shape, preset and background), and at the end the failure sentences the
+phone showed, newest first, deduplicated with a count.
 
-Seventeen doors are counted, one call site each: app opened · the six import doors
-(intervals.icu, file, Strava, Apple Health, share sheet, Garmin ZIP), counted in **sessions**
-rather than in taps · session opened · turn page · share card · replay clip · session video ·
-backup made · backup restored · settings opened · feedback mail · Strava connected. Counts and
-a last-used date, never a timestamped trail: "share card · 12 · last 13 Sep" answers the
-question the beta has, and a log of twelve moments would additionally describe a rider's
-afternoons. They live in this phone's `UserDefaults` (`usage.counters.v1`), they are never
-uploaded, and the only way a number leaves the phone is that mail.
+The features are the table under "What the usage report counts" in docs/channels.md,
+generated from `UsageCounters.Feature` and checked by the kit's suite. Each counts **tried,
+worked, failed** at the point where the outcome is known — an import when its files are read,
+a map when Connect IQ says delivered, a mail when Mail says sent — so "used" and "works" are
+two numbers, and the release gate in channels.md reads the second. A blob from build 107 or
+older decodes, each old count read as that many successes. They live in this phone's
+`UserDefaults` (`usage.counters.v1`), they are never uploaded, and the only way a number
+leaves the phone is that mail.
 
 **The ask.** After every fifth session imported, or a fortnight since the last ask — whichever
 comes first — the library shows one card at the top of the list: *Help the beta: send your
