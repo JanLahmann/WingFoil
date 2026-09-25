@@ -2116,54 +2116,89 @@ import Testing
     /// exists and why the view builds its `MapStyle` from it rather than from a second
     /// `switch`. This is the table; the view is the reader.
     @Test func everyMapStyleResolvesToTheArgumentsItClaims() {
-        #expect(MapStyleChoice.allCases == [.standard, .muted, .satellite, .hybrid])
-
+        // Two grounds, not four: Muted read as Standard and Hybrid as Satellite (Jan, F8i).
+        #expect(MapStyleChoice.allCases == [.standard, .satellite])
         #expect(MapStyleChoice.standard.recipe
-                == MapStyleRecipe(base: .standard, isMuted: false,
-                                  excludesPointsOfInterest: true))
-        // Muted is the *same* base map with its own colour turned down, not a fourth map.
-        #expect(MapStyleChoice.muted.recipe
-                == MapStyleRecipe(base: .standard, isMuted: true,
-                                  excludesPointsOfInterest: true))
-        // Imagery takes no points-of-interest argument: there is no label layer to exclude.
+                == MapStyleRecipe(base: .standard, excludesPointsOfInterest: true))
+        // Satellite is the photography *with* place names — MapKit's hybrid.
         #expect(MapStyleChoice.satellite.recipe
-                == MapStyleRecipe(base: .imagery, isMuted: false,
-                                  excludesPointsOfInterest: nil))
-        #expect(MapStyleChoice.hybrid.recipe
-                == MapStyleRecipe(base: .hybrid, isMuted: false,
-                                  excludesPointsOfInterest: true))
-
-        // A session map is about one track: wherever the argument exists it excludes the
-        // restaurants and the car parks, on every style, including the full-screen map — which
-        // used to be the one place they were drawn.
+                == MapStyleRecipe(base: .hybrid, excludesPointsOfInterest: true))
         for choice in MapStyleChoice.allCases {
-            #expect(choice.recipe.excludesPointsOfInterest != false,
+            #expect(choice.recipe.excludesPointsOfInterest,
                     "\(choice.rawValue) would draw points of interest over the track")
-            // A GPS trace is a plan view of a plane of water.
             #expect(choice.recipe.isFlat)
         }
-        // Only the vector map can be muted.
-        #expect(MapStyleChoice.allCases.filter(\.recipe.isMuted) == [.muted])
     }
 
-    /// The one thing the drawing code reads off the style. Photography needs the halo; the
-    /// vector styles keep today's rendering exactly, which is what stops the halo from
-    /// thickening every line on the map most riders will never leave.
-    @Test func onlyThePhotographicStylesAskForTheTrackHalo() {
-        #expect(MapStyleChoice.allCases.filter(\.isImagery) == [.satellite, .hybrid])
+    /// The one thing the drawing code reads off the style. Photography gets the imagery
+    /// palette; the vector map keeps today's rendering exactly.
+    @Test func onlyThePhotographicStyleAsksForTheImageryPalette() {
+        #expect(MapStyleChoice.allCases.filter(\.isImagery) == [.satellite])
         for choice in MapStyleChoice.allCases {
             #expect(choice.isImagery == choice.recipe.needsTrackHalo,
                     "the halo rule and the ground disagree on \(choice.rawValue)")
         }
-        #expect(!MapStyleChoice.standard.recipe.needsTrackHalo)
-        #expect(!MapStyleChoice.muted.recipe.needsTrackHalo)
+        #expect(MapStyleChoice.standard.palette == .vector)
+        #expect(MapStyleChoice.satellite.palette == .imagery)
+        // Today's weights on the plain map, unchanged, and nothing drawn under the line.
+        #expect(TrackPalette.vector.offFoilOpacity == 0.65)
+        #expect(TrackPalette.vector.neutralOpacity == 0.3)
+        #expect(TrackPalette.vector.casing == nil && TrackPalette.vector.flying == nil)
+        #expect(TrackPalette.vector.markerOutline == 0)
     }
 
-    /// Four names in a menu, and a rider has to be able to tell which one he is on.
+    /// Every ink on every ground, as a number. The grounds are sampled colours: Apple's
+    /// standard-map water in light and dark, and three photographs of one session — deep
+    /// water, sunlit chop, and the beach. A line is legible when its body contrasts with the
+    /// ground **or** its casing does and the body contrasts with the casing, so the edge is
+    /// always there to see (3:1, WCAG's floor for graphics).
+    @Test func everyTrackInkReadsOnEveryGround() throws {
+        typealias Ink = TrackPalette.Ink
+        let photographs: [(String, Ink)] = [
+            ("deep water", Ink(hex: 0x1b3444)),
+            ("sunlit chop", Ink(hex: 0x5d8a96)),
+            ("sand", Ink(hex: 0xcbbd9c)),
+        ]
+        let palette = TrackPalette.imagery
+        let casing = try #require(palette.casing)
+        let inks: [(String, Ink)] = [
+            ("flying", try #require(palette.flying)),
+            ("off foil", try #require(palette.offFoil)),
+            ("neutral", try #require(palette.neutral)),
+        ]
+        for (groundName, ground) in photographs {
+            let edge = casing.over(ground)
+            #expect(Ink.contrast(edge, ground) >= 1.5 || groundName == "deep water",
+                    "the casing vanishes on \(groundName)")
+            for (inkName, ink) in inks {
+                let body = ink.over(ground)
+                let readsOnGround = Ink.contrast(body, ground) >= 3
+                let readsOnEdge = Ink.contrast(ink.over(edge), edge) >= 3
+                #expect(readsOnGround || readsOnEdge,
+                        "\(inkName) is lost on \(groundName)")
+            }
+        }
+        // Deep water is most of the picture: the flying line reads on it by itself, without
+        // leaning on the casing.
+        let flying = try #require(palette.flying)
+        #expect(Ink.contrast(flying, photographs[0].1) >= 6)
+        // The phases keep their order over photography: flying is the loudest line.
+        let deep = photographs[0].1
+        #expect(Ink.contrast(flying, deep)
+                > Ink.contrast(palette.offFoil!.over(deep), deep))
+        #expect(Ink.contrast(palette.offFoil!.over(deep), deep)
+                > Ink.contrast(palette.neutral!.over(deep), deep))
+        // Still teal: blue and green lead, red trails.
+        #expect(flying.b > flying.r && flying.g > flying.r)
+
+        // The vector map: the phase teal itself (#40c8e0) on Apple's water, light and dark.
+        let teal = Ink(hex: 0x40c8e0)
+        #expect(Ink.contrast(teal, Ink(hex: 0x1f3448)) >= 3, "teal on dark-mode water")
+    }
+
+    /// Two names in a menu, and a rider has to be able to tell which one he is on.
     @Test func everyMapStyleIsNamedGlyphedAndSpokenDistinctly() {
-        let labels = MapStyleChoice.allCases.map(\.label)
-        #expect(Set(labels).count == labels.count, "two entries would read the same")
-        #expect(labels.allSatisfy { !$0.isEmpty })
+        #expect(MapStyleChoice.allCases.map(\.label) == ["Map", "Satellite"])
         let symbols = MapStyleChoice.allCases.map(\.symbolName)
         #expect(Set(symbols).count == symbols.count, "two entries would look the same")
         let nouns = MapStyleChoice.allCases.map(\.accessibilityNoun)
@@ -2183,6 +2218,13 @@ import Testing
             MapStyleStore.save(choice, to: defaults)
             #expect(MapStyleStore.load(from: defaults) == choice)
         }
+
+        // The two retired grounds come back as the one they looked like.
+        defaults.set("muted", forKey: MapStyleStore.defaultsKey)
+        #expect(MapStyleStore.load(from: defaults) == .standard)
+        defaults.set("hybrid", forKey: MapStyleStore.defaultsKey)
+        #expect(MapStyleStore.load(from: defaults) == .satellite)
+        #expect(MapStyleChoice.stored("satellite") == .satellite)
 
         // A preference written by a later build — one that offers a style this one does not —
         // must come back as the default rather than as a crash or an empty map.
