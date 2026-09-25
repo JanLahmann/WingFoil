@@ -395,6 +395,23 @@ export const WELCOME = {
 export const WHATS_NEW = [
   {
     "version": "1.0.1",
+    "build": 111,
+    "channel": "beta",
+    "date": "2026-09-26",
+    "title": "Falls counted where they happened",
+    "lines": [
+      "A fall inside a bear-away or round-up now counts as a straight-line fall.",
+      "A touchdown is only a touchdown when you slow down right after coming off the foil.",
+      "A long time off the foil now reads 1 min+.",
+      "The session list folds by month, year or spot, and each spot's name shows once.",
+      "The map offers Map or Satellite, and the track reads clearly on both.",
+      "VoiceOver reads every number with its word, and large text no longer breaks the list.",
+      "Settings, About, Licences lists the open-source parts we build on.",
+      "Swipe left on a session to give it to another rider."
+    ]
+  },
+  {
+    "version": "1.0.1",
     "build": 109,
     "channel": "beta",
     "date": "2026-09-26",
