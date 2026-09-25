@@ -723,7 +723,12 @@ final class SessionStore {
     func renameSpot(_ spot: SpotRow, to name: String) async {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        try? await library.renameSpot(id: spot.id, to: trimmed)
+        do {
+            try await library.renameSpot(id: spot.id, to: trimmed)
+            Usage.record(.gearSpots, detail: "spot")
+        } catch {
+            Usage.failed(.gearSpots, error: error)
+        }
         await load()
     }
 
@@ -751,8 +756,10 @@ final class SessionStore {
     func saveGear(_ gear: GearRow) async {
         do {
             try await library.saveGear(gear)
+            Usage.record(.gearSpots, detail: "gear")
             await load()
         } catch {
+            Usage.failed(.gearSpots, error: error)
             errorMessage = "Could not save gear: \(error)"
         }
     }
@@ -763,7 +770,12 @@ final class SessionStore {
     }
 
     func assignGear(sessionID: String, kind: GearKind, gearID: String?) async {
-        try? await library.assignGear(sessionId: sessionID, kind: kind, gearId: gearID)
+        do {
+            try await library.assignGear(sessionId: sessionID, kind: kind, gearId: gearID)
+            Usage.record(.gearSpots, detail: "assign")
+        } catch {
+            Usage.failed(.gearSpots, error: error)
+        }
         libraryGeneration += 1
         gearAggregates = (try? await library.gearAggregates()) ?? gearAggregates
     }
@@ -784,8 +796,10 @@ final class SessionStore {
         guard SessionNaming.customTitle(title) != row.customTitle else { return }
         do {
             try await library.renameSession(id: row.id, to: title)
+            Usage.record(.rename)
             await load()
         } catch {
+            Usage.failed(.rename, error: error)
             errorMessage = "Could not rename this session: \(error)"
         }
     }
@@ -799,8 +813,10 @@ final class SessionStore {
         guard SessionNaming.note(note) != row.shareNote else { return }
         do {
             try await library.setShareNote(id: row.id, to: note)
+            Usage.record(.rename)
             await load()
         } catch {
+            Usage.failed(.rename, error: error)
             errorMessage = "Could not save this caption: \(error)"
         }
     }
@@ -819,8 +835,10 @@ final class SessionStore {
                 try await ingestor.setDiscipline(discipline, for: row)
             }.value
             thumbnails.invalidate(row.id)
+            Usage.record(.windsurfMode)
             await load()
         } catch {
+            Usage.failed(.windsurfMode, error: error)
             errorMessage = "Could not re-analyse this session: \(error)"
         }
     }
@@ -834,10 +852,12 @@ final class SessionStore {
     func delete(_ row: SessionRow) async {
         do {
             try await ingestor.delete(row, title: SessionDisplay.title(row))
+            Usage.record(.deleteSession)
             thumbnails.invalidate(row.id)
             await load()
             await refreshPersonalBests(celebrate: false)
         } catch {
+            Usage.failed(.deleteSession, error: error)
             errorMessage = "Delete failed: \(error)"
         }
     }
@@ -1052,8 +1072,9 @@ final class SessionStore {
     func confirmPendingImport(rider: String?) async {
         guard let pending = pendingImport else { return }
         pendingImport = nil
-        await runImport(pending.payloads, source: pending.source,
-                        rider: SessionIngestor.riderName(rider))
+        let name = SessionIngestor.riderName(rider)
+        Usage.record(.riderAssign, detail: name == nil ? "mine" : "someone else")
+        await runImport(pending.payloads, source: pending.source, rider: name)
     }
 
     /// Dismissing the prompt imports nothing. There is no safe default for "whose is it"
@@ -1251,8 +1272,11 @@ final class SessionStore {
             errorMessage = Self.failureAlert(summary.failed)
         }
         // The one counted place every file-shaped door passes through — Files, the share
-        // sheet, a Garmin export ZIP, Apple Health — so each is counted once and by name.
-        Usage.recordImport(source, sessions: summary.imported)
+        // sheet, a Garmin export ZIP, Apple Health, the Apple Watch inbox, the direct
+        // transfer — so each is counted once and by name. `quietFailures` is what marks a
+        // pickup nobody asked for, which is how the automatic Health import is told apart.
+        Usage.recordImport(source, automatic: quietFailures, imported: summary.imported,
+                           failed: summary.failed.count)
         await load()
         await refreshPersonalBests(celebrate: true)
         await writeNewSessionsToHealth()
@@ -1342,6 +1366,7 @@ final class SessionStore {
         windsurfEnabled = enabled
         UserDefaults.standard.set(enabled, forKey: Self.windsurfEnabledKey)
         ingestor.windsurfEnabled = enabled
+        Usage.record(.windsurfMode, detail: enabled ? "on" : "off")
         // A sheet raised a moment ago is a question about a feature that is now off.
         if !enabled { disciplineReview = nil }
     }
@@ -1605,6 +1630,7 @@ final class SessionStore {
         } catch is CancellationError {
             status = "Backup stopped"
         } catch {
+            Usage.failed(.backupMade, error: error)
             errorMessage = "Could not write the backup: \(error)"
         }
     }
@@ -1674,13 +1700,19 @@ final class SessionStore {
         do {
             let summary = try await work.value
             status = summary.shortDescription
-            Usage.record(.backupRestored)
+            if summary.failed.isEmpty {
+                Usage.record(.backupRestored)
+            } else {
+                Usage.failed(.backupRestored,
+                             reason: String(summary.failed.count) + " would not restore")
+            }
             // Capped like every other bulk failure list, and — unlike the old `prefix(5)` —
             // it says how many it is not showing rather than dropping them silently.
             errorMessage = Self.failureAlert(summary.failed)
         } catch is CancellationError {
             status = "Restore stopped — the sessions already restored are in your library"
         } catch {
+            Usage.failed(.backupRestored, error: error)
             errorMessage = Self.restoreMessage(error)
         }
         await load()
@@ -1811,11 +1843,13 @@ final class SessionStore {
         }
         do {
             guard let report = try await work.value else {
+                Usage.failed(.iCloudSync, reason: "iCloud Drive not available")
                 syncUnavailable = true
                 if !automatic { status = "iCloud Drive is not available" }
                 return
             }
             syncUnavailable = false
+            Usage.record(.iCloudSync)
             syncLastAt = Date()
             UserDefaults.standard.set(syncLastAt, forKey: Self.iCloudSyncLastKey)
             if !automatic || !report.isEmpty { status = report.shortDescription }
@@ -1826,6 +1860,7 @@ final class SessionStore {
             }
         } catch {
             if !automatic { status = nil }
+            Usage.failed(.iCloudSync, error: error)
             reportSync(error, from: .iCloud, riderAsked: riderAsked,
                        retry: quietICloudRetry)
         }
@@ -1970,6 +2005,7 @@ final class SessionStore {
         let done = await Task.detached(priority: .userInitiated) {
             (try? await ingestor.reanalyzeStale()) ?? 0
         }.value
+        Usage.record(.tuning)
         guard done > 0 else {
             status = "Every session is already on these thresholds"
             return
@@ -2012,6 +2048,7 @@ final class SessionStore {
 
     private func enableHealthWriting() async {
         guard await HealthWriter.shared.requestAuthorization() else {
+            Usage.failed(.healthExport, reason: "permission not granted")
             errorMessage = "Apple Health did not grant permission to add workouts."
             UserDefaults.standard.set(false, forKey: "healthWriteEnabled")
             return
@@ -2051,6 +2088,14 @@ final class SessionStore {
                 exported.insert(row.id)
                 written += 1
             }
+        }
+        // One tally per pass, like an import: every workout Health took, or the count it
+        // refused.
+        if written == pending.count {
+            Usage.record(.healthExport)
+        } else {
+            Usage.failed(.healthExport,
+                         reason: String(pending.count - written) + " not saved by Health")
         }
         UserDefaults.standard.set(Array(exported), forKey: "healthExported")
         if written > 0 {
@@ -2198,6 +2243,7 @@ final class SessionStore {
         isReadingHealth = false
 
         guard !payloads.isEmpty else {
+            if routeless > 0 { Usage.failed(.importHealth, reason: "no GPS route") }
             status = routeless > 0
                 ? "No GPS route in \(routeless == 1 ? "that workout" : "those workouts")"
                 : nil
@@ -2344,12 +2390,14 @@ final class SessionStore {
             setProblem(IcuDiagnosis.describe(summary))
             clearSyncTrouble(.intervals)
             if riderAsked { errorMessage = Self.failureAlert(summary.failed) }
-            Usage.recordImport(.icu, sessions: summary.imported)
+            Usage.recordImport(.icu, imported: summary.imported,
+                               failed: summary.failed.count)
             lastSyncDate = Date()
         } catch {
             let problem = IcuDiagnosis.describe(error)
             setProblem(problem)
             status = nil
+            Usage.failed(.importIcu, error: error)
             let kind = reportSync(error, from: .intervals, riderAsked: riderAsked,
                                   retry: riderAsked ? nil : quietIntervalsRetry)
             // A dropped connection is never a modal, even under the rider's own pull: the
@@ -2438,7 +2486,9 @@ final class SessionStore {
         guard !ids.isEmpty else { return }
         do {
             try await library.forgetTombstones(ids: ids)
+            Usage.record(.restoreDeleted)
         } catch {
+            Usage.failed(.restoreDeleted, error: error)
             errorMessage = "Could not restore those sessions: \(error)"
             return
         }
@@ -2462,7 +2512,9 @@ final class SessionStore {
         guard !isBusy else { return }
         do {
             try await library.forgetAllTombstones()
+            Usage.record(.restoreDeleted)
         } catch {
+            Usage.failed(.restoreDeleted, error: error)
             errorMessage = "Could not restore the deleted sessions: \(error)"
             return
         }
@@ -2823,10 +2875,19 @@ final class SessionStore {
         defer { isBusy = false }
         let ingestor = self.ingestor
         let rows = sessions
-        await Task.detached(priority: .userInitiated) {
+        let failures = await Task.detached(priority: .userInitiated) { () -> Int in
             ingestor.dropAllAnalyses()
-            for row in rows { _ = try? await ingestor.reanalyze(row) }
+            var failures = 0
+            for row in rows {
+                do { _ = try await ingestor.reanalyze(row) } catch { failures += 1 }
+            }
+            return failures
         }.value
+        if failures == 0 {
+            Usage.record(.reanalysis)
+        } else {
+            Usage.failed(.reanalysis, reason: String(failures) + " would not re-analyse")
+        }
         status = "Re-analyzed \(rows.count) session\(rows.count == 1 ? "" : "s") "
             + "with engine \(AnalysisEngine.version)"
         // Which parts of a track were flown can change with the engine, so the cached
@@ -3077,13 +3138,17 @@ final class SessionStore {
     }
 
     /// Hands over to Garmin Connect; the answer comes back through `handleCompanionURL`.
+    /// Counted as a try here and as its outcome in `handleCompanionURL`, when Garmin
+    /// Connect hands the choice back. A try with no answer is the rider who never returned.
     func chooseWatch() {
+        Usage.started(.chooseWatch)
         companion.chooseDevice()
     }
 
     func forgetWatch() {
         companion.forgetDevice()
         companionState = companion.state
+        Usage.record(.chooseWatch, detail: "forget")
     }
 
     /// True when the URL was Garmin Connect returning the rider's device choice — so the
@@ -3091,6 +3156,8 @@ final class SessionStore {
     func handleCompanionURL(_ url: URL) -> Bool {
         guard companion.handle(url: url) else { return false }
         companionState = companion.state
+        Usage.finished(.chooseWatch, failure: companionState.canSend ? nil : "no watch chosen",
+                       detail: "choose")
         status = companionState.headline
         return true
     }
@@ -3207,6 +3274,13 @@ final class SessionStore {
             targets: watchMapTargets, through: companion, force: force,
             progress: { name in if !quiet { self.status = "Drawing \(name)…" } })
         watchMapFailed = report.failure != nil
+        // Delivered means Connect IQ reported the message delivered: `sent` only fills on
+        // that answer. The failure sentence names a spot, so the tally keeps a fixed reason.
+        if report.failure != nil {
+            Usage.failed(.mapToWatch, reason: "not delivered")
+        } else if report.didSomething {
+            Usage.record(.mapToWatch, detail: quiet ? "automatic" : "by hand")
+        }
         // A quiet pass that did nothing leaves the row exactly as it was: only a send or a
         // failure is news.
         guard !quiet || report.didSomething || report.failure != nil else { return }
@@ -3224,13 +3298,16 @@ final class SessionStore {
     func sendWindToWatch(_ degreesFrom: Int) async {
         do {
             try await companion.sendWind(degreesFrom: degreesFrom)
+            Usage.record(.windToWatch)
             windToSend = degreesFrom
             status = degreesFrom == CompanionWind.clear
                 ? "Wind direction cleared on the watch"
                 : "Sent \(degreesFrom)° to the watch"
         } catch let error as CompanionLinkError {
+            Usage.failed(.windToWatch, error: error)
             errorMessage = error.riderMessage
         } catch {
+            Usage.failed(.windToWatch, error: error)
             errorMessage = "Could not send the wind direction: \(error)"
         }
         refreshCompanionState()
@@ -3348,6 +3425,7 @@ final class SessionStore {
             refreshStravaConnection()
         } catch {
             refreshStravaConnection()
+            Usage.failed(.stravaConnected, error: error)
             // He is waiting on this exact tap, so a cause he can act on is a modal. A dead
             // connection is not: the Strava section says it, in place.
             if reportSync(error, from: .strava, riderAsked: true) != .transient {
@@ -3429,7 +3507,8 @@ final class SessionStore {
 
             importedStravaActivities.formUnion(outcome.importedIds)
             if outcome.summary.imported > 0 { hasImportedFromStrava = true }
-            Usage.recordImport(.strava, sessions: outcome.summary.imported)
+            Usage.recordImport(.strava, imported: outcome.summary.imported,
+                               failed: outcome.summary.failed.count)
             status = outcome.summary.shortDescription
             // An automatic pickup keeps quiet about the ones that did not come: they are not
             // marked imported, so the next pickup asks Strava for them again.
@@ -3444,6 +3523,7 @@ final class SessionStore {
             raiseDisciplineReview()
         } catch {
             let automatic = quietFailures
+            Usage.failed(.importStrava, error: error)
             let kind = reportSync(error, from: .strava, riderAsked: !automatic,
                                   retry: automatic ? quietStravaRetry : nil)
             // Only the rider's own tap on Import may raise the modal, and only for a cause
@@ -3668,6 +3748,9 @@ final class SessionStore {
         // 7. Read the empty library, which is what tells `RootView` to say hello.
         await load()
         showWelcomeIfNeeded()
+        // Counted after the wipe, which took the old counters with it: the fresh blob
+        // starts by saying this phone was reset, and that the reset reached the welcome.
+        Usage.record(.startOver)
     }
 
 #endif

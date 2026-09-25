@@ -447,6 +447,12 @@ struct ShareComposerView: View {
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
+            // Counted at the tap, which is the rider sharing a card that exists. What the
+            // share sheet does next is Apple's, and it reports nothing back. The variant is
+            // the shape, the preset and what is behind the numbers.
+            .simultaneousGesture(TapGesture().onEnded {
+                Usage.record(.shareCard, detail: cardVariant)
+            })
         } else {
             ProgressView().frame(maxWidth: .infinity, minHeight: 44)
         }
@@ -526,6 +532,9 @@ struct ShareComposerView: View {
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
+            .simultaneousGesture(TapGesture().onEnded {
+                Usage.record(.fitShare, detail: includeAccelerometer ? "with wrist" : "plain")
+            })
         } else if let fitFailure {
             Label(fitFailure, systemImage: "exclamationmark.triangle")
                 .font(.footnote)
@@ -718,15 +727,17 @@ struct ShareComposerView: View {
         if let image = renderer.uiImage {
             rendered = Image(uiImage: image)
             renderedImage = image
-            // Counted once per visit to the composer, not once per redraw: every shape,
-            // preset, map and photo change re-renders, and "made a card" is the thing the
-            // beta is asking about. What happens after — `ShareLink` hands it to the
-            // system — is Apple's sheet, and it reports nothing back to say otherwise.
-            if !countedCard {
-                countedCard = true
-                Usage.record(.shareCard)
-            }
+        } else if !countedCard {
+            // A card that would not draw is the share card failing, once per visit.
+            countedCard = true
+            Usage.failed(.shareCard, reason: "card did not render")
         }
+    }
+
+    /// "portrait · lean · map": the share card's variant, as the usage report counts it.
+    private var cardVariant: String {
+        let ground = photo != nil ? "photo" : (map != nil ? "map" : "plain")
+        return shape.rawValue + " · " + preset.rawValue + " · " + ground
     }
 
     private func prepareFIT() async {
@@ -737,6 +748,7 @@ struct ShareComposerView: View {
             fitFile = try await store.shareableFIT(for: row, title: displayTitle,
                                                    includeAccelerometer: includeAccelerometer)
         } catch {
+            Usage.failed(.fitShare, error: error)
             fitFailure = "This recording cannot be shared: " + String(describing: error)
         }
     }

@@ -141,7 +141,7 @@ struct ReelExportSheet: View {
     // MARK: - Running it
 
     private func start() {
-        Usage.record(.videoExported)
+        Usage.started(.videoExported)
         model.start(detail: detail, title: title, style: store.mapStyle,
                     visibility: store.mapLayers(for: .ride), length: length)
     }
@@ -211,6 +211,7 @@ final class ReelExportModel {
             case .success(let url):
                 progress = 1
                 stage = .done(url)
+                Usage.finished(.videoExported)
             case .failure(let error):
                 if case ReelRenderer.Failure.cancelled = error { return }
                 fail(error)
@@ -232,6 +233,7 @@ final class ReelExportModel {
     }
 
     private func fail(_ error: any Error) {
+        Usage.finished(.videoExported, failure: UsageCounters.reason(for: error))
         stage = .failed((error as? LocalizedError)?.errorDescription ?? "\(error)")
     }
 }

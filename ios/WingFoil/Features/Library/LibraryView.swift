@@ -148,6 +148,10 @@ struct LibraryView: View {
                     LibraryFilterMenu(filter: $filter, editingRange: editingRange,
                                       library: store.sessions)
                         .disabled(store.sessions.isEmpty)
+                        // A filter that narrows the list counts; clearing one does not.
+                        .onChange(of: filter) { _, now in
+                            if now != LibraryListFilter() { Usage.record(.filters) }
+                        }
                 }
                 #endif
                 ToolbarItem(placement: .topBarTrailing) {
@@ -416,7 +420,10 @@ struct LibraryView: View {
     private var groupControl: some View {
         Picker("Group by", selection: Binding(
             get: { grouping },
-            set: { groupByRaw = $0.rawValue })) {
+            set: {
+                groupByRaw = $0.rawValue
+                Usage.record(.grouping, detail: $0.rawValue)
+            })) {
             ForEach(LibraryGrouping.allCases) { Text($0.title).tag($0) }
         }
         .pickerStyle(.segmented)

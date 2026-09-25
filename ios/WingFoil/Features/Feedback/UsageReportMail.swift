@@ -4,61 +4,29 @@ import SwiftUI
 import UIKit
 import WingFoilKit
 
-/// **The beta's usage report** — the ordinary feedback mail with one more block at the foot
-/// of it (docs/channels.md, "Beta section"; docs/presentation/status-feedback-start-widgets-ipad.md, "The beta's usage report").
+/// **The beta's usage report** — a short sheet, then the mail (docs/channels.md, "What the
+/// usage report counts"; docs/presentation/status-feedback-start-widgets-ipad.md, "The
+/// beta's usage report").
 ///
 /// Two things reach it: the card the library puts at the top of the list every fifth
 /// session or fortnight (`UsageAskCard`), and the permanent row in Settings → Beta. Both
-/// open the same composer with the same subject, so a mailbox sorted by subject has one
-/// thread of them rather than two.
+/// open the same sheet: *Your feedback* first, because the tester's own sentence is worth
+/// more than any counter, then the Normal / Extended switch. *Write mail* composes the body
+/// in the kit (`UsageReportText`) and hands it to Mail, where every line is still his to
+/// read and delete before he sends it.
 ///
 /// **Why the separator sentence is in the mail rather than on a screen before it.** The
-/// rider is going to read the block — that is the whole design — and the sentence he needs
-/// while reading it is "this is what it is, and you may delete any line of it". A consent
-/// screen in front of the composer would be asking him to agree to something he has not
-/// seen yet, which is the shape of a dialog nobody reads.
-///
-/// **A note for whoever unifies this with `FeedbackMail`.** This file presents its own
-/// `MFMailComposeViewController` — through `MailComposeView`, which is shared — because
-/// `feedbackMail(on:)` composes its body from `FeedbackFacts` and takes a subject override
-/// but no body override. When that modifier grows a `body:` parameter, everything below
-/// `UsageReportMail.body` can go and the two rows can call it instead.
+/// rider reads the block in the mail, and the sentence he needs while reading it is "this
+/// is what it is, and you may delete any line of it". A consent screen in front of the
+/// composer would be asking him to agree to something he has not seen yet.
 enum UsageReportMail {
 
-    /// One subject for both doors. Not the report's — "CleanJibe beta feedback · build 23 ·
-    /// fenix 8" — because this mail is not a report of anything going wrong, and a mailbox
-    /// that files it as one answers it as one.
-    static let subject = Branding.appName + " beta usage report"
-
-    /// The sentence between the facts and the counters. It says the two things a rider
-    /// needs before he taps Send: what the block is, and that it is his to edit.
-    static let separator =
-        "The block below is what the beta counts on this phone. It helps development and "
-        + "is a key part of being in the beta. " + Copy.deleteAnyLine
-
-    /// The prefilled body: the ordinary report, the sentence, the counters.
+    /// The prefilled body: his words, the rule, the facts, the counters.
     @MainActor
-    static func body(store: SessionStore) -> String {
-        [FeedbackReport.body(FeedbackMail.facts(store: store)),
-         separator,
-         Usage.report(appVersion: SessionStore.appVersion)]
-            .joined(separator: "\n\n")
-    }
-
-    /// The `mailto:` fallback, escaped the way `FeedbackReport.mailtoURL` escapes: through
-    /// a character set with `&`, `=`, `+` and `?` removed, because a body carrying any of
-    /// them would otherwise be cut short at that character.
-    static func mailtoURL(subject: String, body: String) -> URL? {
-        let allowed = CharacterSet.urlQueryAllowed
-            .subtracting(CharacterSet(charactersIn: "&=+?"))
-        guard let subject = subject.addingPercentEncoding(withAllowedCharacters: allowed),
-              let body = body.addingPercentEncoding(withAllowedCharacters: allowed)
-        else { return nil }
-        var components = URLComponents()
-        components.scheme = "mailto"
-        components.path = FeedbackReport.recipient
-        components.percentEncodedQuery = "subject=\(subject)&body=\(body)"
-        return components.url
+    static func body(store: SessionStore, feedback: String,
+                     layout: UsageCounters.ReportLayout) -> String {
+        UsageReportText.body(facts: FeedbackMail.facts(store: store), feedback: feedback,
+                             counters: Usage.counters, layout: layout)
     }
 }
 
@@ -66,10 +34,10 @@ enum UsageReportMail {
 
 extension View {
 
-    /// Composes and presents the usage report every time `request` changes. A counter
-    /// rather than a `Bool`, for the same reason `feedbackMail(on:)` uses one: the thing
-    /// that asks — a card that then goes away, a row in a sheet — is not reliably in the
-    /// view tree when the sheet would have to present.
+    /// Opens the usage report's sheet every time `request` changes. A counter rather than
+    /// a `Bool`, for the same reason `feedbackMail(on:)` uses one: the thing that asks — a
+    /// card that then goes away, a row in a sheet — is not reliably in the view tree when
+    /// the sheet would have to present.
     func usageReportMail(on request: Binding<Int>) -> some View {
         modifier(UsageReportPresenter(request: request))
     }
@@ -81,21 +49,39 @@ private struct UsageReportPresenter: ViewModifier {
     @Environment(SessionStore.self) private var store
     @Environment(\.openURL) private var openURL
 
+    @State private var asking = false
+    /// The sheet's answer, held until the sheet has gone: one view cannot present two
+    /// sheets at once.
+    @State private var answer: Answer?
     @State private var draft: Draft?
     @State private var fallback: Draft?
+
+    private struct Answer {
+        let feedback: String
+        let layout: UsageCounters.ReportLayout
+    }
 
     private struct Draft: Identifiable {
         let id = UUID()
         let body: String
-        var subject: String { UsageReportMail.subject }
+        var subject: String { UsageReportText.subject }
     }
 
     func body(content: Content) -> some View {
         content
-            .onChange(of: request) { _, _ in compose() }
+            .onChange(of: request) { _, _ in asking = true }
+            .sheet(isPresented: $asking, onDismiss: {
+                guard let answered = answer else { return }
+                answer = nil
+                compose(answered)
+            }) {
+                UsageReportSheet { feedback, layout in
+                    answer = Answer(feedback: feedback, layout: layout)
+                }
+            }
             .sheet(item: $draft) { draft in
                 MailComposeView(subject: draft.subject, messageBody: draft.body,
-                                attachment: nil) { self.draft = nil }
+                                attachment: nil, feature: .usageReport) { self.draft = nil }
                     .ignoresSafeArea()
             }
             .sheet(item: $fallback) { draft in
@@ -105,14 +91,17 @@ private struct UsageReportPresenter: ViewModifier {
 
     /// The same ladder the feedback mail climbs: Mail, then whatever answers `mailto:`,
     /// then the text itself with a button that copies it.
-    private func compose() {
-        // Counted here rather than at the tap, because this is the path both doors share —
-        // and the ask is spent the same way whichever of them was used.
-        Usage.record(.feedbackMail)
+    private func compose(_ answer: Answer) {
+        // Counted here rather than at the tap, because this is the path both doors share,
+        // and the ask is spent the same way whichever of them was used. The try is counted
+        // now; Mail's "sent" is its answer (`MailComposeView`).
+        Usage.started(.usageReport)
         Usage.askAnswered(snooze: false)
-        let composed = Draft(body: UsageReportMail.body(store: store))
+        let composed = Draft(body: UsageReportMail.body(store: store,
+                                                        feedback: answer.feedback,
+                                                        layout: answer.layout))
         guard MFMailComposeViewController.canSendMail() else {
-            guard let url = UsageReportMail.mailtoURL(subject: composed.subject,
+            guard let url = UsageReportText.mailtoURL(subject: composed.subject,
                                                       body: composed.body) else {
                 fallback = composed
                 return
@@ -123,6 +112,60 @@ private struct UsageReportPresenter: ViewModifier {
             return
         }
         draft = composed
+    }
+}
+
+/// **Your feedback, and how much of the counters to send.**
+///
+/// The free text first and focused, because the tester opened this to say something more
+/// often than to send numbers. The switch under it opens on Normal: one line per feature
+/// is what a reader tallies across twenty mails, and Extended is there for the phone
+/// where something keeps failing.
+private struct UsageReportSheet: View {
+    let onWrite: (String, UsageCounters.ReportLayout) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var feedback = ""
+    @State private var layout = UsageCounters.ReportLayout.normal
+    @FocusState private var writing: Bool
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField(UsageReportText.feedbackPrompt, text: $feedback, axis: .vertical)
+                        .lineLimit(3...8)
+                        .focused($writing)
+                } header: {
+                    Text(UsageReportText.feedbackHeading)
+                }
+
+                Section {
+                    Picker("Usage report", selection: $layout) {
+                        ForEach(UsageCounters.ReportLayout.allCases) {
+                            Text($0.label).tag($0)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                } footer: {
+                    Text(UsageReportText.layoutFooter)
+                }
+            }
+            .navigationTitle("Usage report")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Write mail") {
+                        onWrite(feedback, layout)
+                        dismiss()
+                    }
+                }
+            }
+            .onAppear { writing = true }
+        }
     }
 }
 
@@ -222,9 +265,9 @@ struct UsageAskCard: View {
             Label("Help the beta: send your usage report", systemImage: "chart.bar.doc.horizontal")
                 .font(.subheadline.weight(.semibold))
 
-            Text("A mail you read and edit before you send it. It carries which parts of "
-                 + "CleanJibe you have used, how often, and anything that has gone wrong "
-                 + "on this phone. It decides what everyone else gets next.")
+            Text("Tell us what works and what you miss. The mail adds which features you "
+                 + "used and whether they worked. You read it before you send it. "
+                 + "A feature reaches the App Store once testers show it works.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

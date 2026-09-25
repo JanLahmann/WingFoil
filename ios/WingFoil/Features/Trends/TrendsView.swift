@@ -118,6 +118,7 @@ struct TrendsView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink {
                         PeriodsView()
+                            .task { Usage.record(.periods) }
                     } label: {
                         Label("Periods", systemImage: "calendar")
                     }

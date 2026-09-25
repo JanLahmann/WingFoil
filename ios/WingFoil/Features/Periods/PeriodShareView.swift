@@ -190,6 +190,9 @@ struct PeriodShareView: View {
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
+            .simultaneousGesture(TapGesture().onEnded {
+                Usage.record(.periodShare, detail: shape.rawValue)
+            })
         }
         Text("Rendered at " + String(Int(shape.size.width)) + " × "
              + String(Int(shape.size.height))

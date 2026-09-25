@@ -304,7 +304,10 @@ struct SessionDetailView: View {
         // for a rider who never tries the flick. A drag that starts on the map, the chart or
         // the replay slider is that figure's and never turns the page.
         SessionPager(older: neighbours.older, newer: neighbours.newer,
-                     request: $pageRequest, onTurn: { show($0) },
+                     request: $pageRequest, onTurn: { id in
+                         Usage.record(.sessionPaging)
+                         show(id)
+                     },
                      page: page.id(shown),
                      preview: { id in preview(id) })
         .onChange(of: neighboursKey, initial: true) { neighbours = findNeighbours() }
@@ -352,10 +355,7 @@ struct SessionDetailView: View {
         .sheet(isPresented: $renaming) {
             if let row { RenameSessionSheet(row: row, draft: $titleDraft) }
         }
-        .task(id: shown) {
-            Usage.record(.sessionOpened)
-            await load()
-        }
+        .task(id: shown) { await load() }
     }
 
     /// The preset every word and every hidden pump chip on this page reads from.
@@ -369,6 +369,9 @@ struct SessionDetailView: View {
         do {
             let loaded = try await store.detail(for: row)
             detail = loaded
+            // Counted when the page has its analysis, not when it appears: a page that
+            // opens on "could not load" is a session that did not open.
+            Usage.record(.sessionOpened)
             // The commentary needs two things the kit deliberately does not own: a readable
             // name for the place, and the wall-clock time the recording started. Both are
             // the app's (`ShareCardStats.make` draws the same line), so they are handed over
@@ -378,6 +381,7 @@ struct SessionDetailView: View {
                                                startedAt: row.startDate,
                                                timeZone: row.displayZone)
         } catch {
+            Usage.failed(.sessionOpened, error: error)
             failure = "\(error)"
         }
     }
@@ -510,6 +514,7 @@ struct SessionDetailView: View {
                              milestones: store.replayCommentary ? milestones : [])
                 NavigationLink {
                     FullScreenMapView(detail: detail, effort: effort, playheadT: playhead)
+                        .task { Usage.record(.fullScreenMap) }
                 } label: {
                     Label("Open map full screen", systemImage: "map")
                         .font(.footnote)

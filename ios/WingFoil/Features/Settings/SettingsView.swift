@@ -382,6 +382,7 @@ struct SettingsView: View {
                 set: { newValue in
                     guard newValue != store.defaultTurnType else { return }
                     store.defaultTurnType = newValue
+                    Usage.record(.turnDirection)
                     // Stored analyses are not stale by engine version, so only an explicit
                     // re-run applies this to sessions already in the library.
                     if !store.sessions.isEmpty { confirmReanalyze = true }
@@ -433,7 +434,10 @@ struct SettingsView: View {
             ForEach(0..<RowMetric.slots, id: \.self) { slot in
                 Picker(Self.slotName(slot), selection: Binding(
                     get: { Self.metric(store.rowMetrics, slot) },
-                    set: { store.rowMetrics[slot] = $0 })) {
+                    set: {
+                        store.rowMetrics[slot] = $0
+                        Usage.record(.rowMetrics)
+                    })) {
                         ForEach(RowMetric.allCases) { metric in
                             Label(metric.label, systemImage: metric.icon).tag(metric)
                         }
@@ -461,7 +465,10 @@ struct SettingsView: View {
         Section {
             Picker(SettingsCopy.section("units").title, selection: Binding(
                 get: { store.speedUnit },
-                set: { store.speedUnit = $0 })) {
+                set: {
+                    store.speedUnit = $0
+                    Usage.record(.units, detail: $0.rawValue)
+                })) {
                     ForEach(SpeedUnit.allCases) { Text($0.label).tag($0) }
                 }
                 .pickerStyle(.segmented)
@@ -488,7 +495,10 @@ struct SettingsView: View {
         Section {
             Picker(SettingsCopy.section("speedRecords").title, selection: Binding(
                 get: { store.speedRecordPolicy },
-                set: { store.speedRecordPolicy = $0 })) {
+                set: {
+                    store.speedRecordPolicy = $0
+                    Usage.record(.speedRecordPolicy, detail: $0.rawValue)
+                })) {
                     ForEach(SpeedRecordPolicy.allCases) { Text($0.label).tag($0) }
                 }
             Text(store.speedRecordPolicy.summary)

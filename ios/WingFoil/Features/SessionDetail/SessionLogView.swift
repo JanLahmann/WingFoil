@@ -93,6 +93,7 @@ private struct FlightEndsCard: View {
             .id("flight-ends")
             .sheet(item: $opened) { request in
                 FlightEndDetailSheet(detail: detail, start: request.id)
+                    .task { Usage.record(.flightEndPage) }
             }
             #if DEBUG && targetEnvironment(simulator)
             // `UI_OPEN_FLIGHT_END=<index>` opens one flight end's page, for a picture of it.
