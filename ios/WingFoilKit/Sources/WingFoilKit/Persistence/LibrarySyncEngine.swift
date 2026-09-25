@@ -73,7 +73,22 @@ public struct LibrarySyncEngine: Sendable {
     /// the dev build's way of looking at a container before trusting it.
     public struct Plan: Sendable, Equatable {
         public var localSessions = 0
+        /// The sessions the folder holds, counted the way the library counts them: one per
+        /// afternoon, and none the rider deleted. This is the number Settings shows, so it
+        /// has to be comparable with Storage's session count.
+        ///
+        /// It used to be the number of *folders*, and a deleted session keeps its folder:
+        /// `meta.json` stays behind so a device that has not synced since can read the
+        /// deletion (`removeOriginal`). On Jan's dev build that read "69 sessions" beside a
+        /// library of 63, the six being sessions he had deleted since the switch went on.
         public var containerSessions = 0
+        /// Every session folder, deleted or doubled ones included — the raw `ls | wc -l`.
+        public var containerFolders = 0
+        /// Folders of sessions deleted on one device or the other. They stay deleted.
+        public var containerDeleted = 0
+        /// Extra folders for an afternoon another folder already holds. Zero unless the
+        /// ±60 s lookup in `push` was bypassed; a pull folds them into one session.
+        public var containerDuplicates = 0
         /// Here and not there.
         public var toUpload: [String] = []
         /// There and not here.
@@ -102,16 +117,25 @@ public struct LibrarySyncEngine: Sendable {
         let folders = index()
         plan.tombstones = stones.stones.count
         plan.localSessions = locals.count
-        plan.containerSessions = folders.count
+        plan.containerFolders = folders.count
 
-        for (id, meta) in folders {
+        var afternoons: [SyncedSessionMeta] = []
+        for (id, meta) in folders.sorted(by: { $0.key < $1.key }) {
             let here = locals.first { matches(meta, $0) }
             if meta.isDeleted || stones.blocking(id: id, startDate: meta.startDate,
                                                  durationS: meta.durationS,
                                                  toleranceS: toleranceS) != nil {
+                plan.containerDeleted += 1
                 if here != nil { plan.toDeleteHere.append(id) }
                 continue
             }
+            // A second folder for an afternoon already counted is one session, and a pull
+            // lands it as the duplicate it is — so it is neither counted nor pending.
+            if afternoons.contains(where: { sameAfternoon($0, meta) }) {
+                plan.containerDuplicates += 1
+                continue
+            }
+            afternoons.append(meta)
             if here != nil { continue }
             if container.originalURL(for: id) == nil {
                 plan.waiting.append(id)
@@ -123,6 +147,7 @@ public struct LibrarySyncEngine: Sendable {
         for row in locals where folders.values.first(where: { matches($0, row) }) == nil {
             plan.toUpload.append(row.id)
         }
+        plan.containerSessions = afternoons.count
         plan.toDownload.sort()
         plan.toDeleteHere.sort()
         plan.waiting.sort()
@@ -468,6 +493,13 @@ public struct LibrarySyncEngine: Sendable {
         if meta.id == row.id { return true }
         return abs(meta.startDate.timeIntervalSince(row.startDate)) <= toleranceS
             && abs(meta.durationS - row.durationS) <= toleranceS
+    }
+
+    /// Whether two folders describe the same afternoon — the same ±60 s key, folder to folder.
+    func sameAfternoon(_ a: SyncedSessionMeta, _ b: SyncedSessionMeta) -> Bool {
+        if a.id == b.id { return true }
+        return abs(a.startDate.timeIntervalSince(b.startDate)) <= toleranceS
+            && abs(a.durationS - b.durationS) <= toleranceS
     }
 
     /// The sessions this library offers the folder: the rider's own, with a recording.
