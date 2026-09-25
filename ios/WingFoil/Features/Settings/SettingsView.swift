@@ -770,6 +770,15 @@ struct SettingsView: View {
             Link(destination: URL(string: Branding.siteURL + "/privacy/")!) {
                 Label("Privacy", systemImage: "hand.raised")
             }
+            // The open-source libraries the kit is built on, and CleanJibe's own licence
+            // (docs/release/privacy-labels.md audit, 26 September 2026). Same pattern as
+            // the Tuning row above: a `NavigationLink` pushed inside this screen's own
+            // `NavigationStack`, nothing new to present.
+            NavigationLink {
+                LicencesView()
+            } label: {
+                Label("Licences", systemImage: "doc.text")
+            }
         } header: {
             Text(SettingsCopy.section("about").title)
         } footer: {
