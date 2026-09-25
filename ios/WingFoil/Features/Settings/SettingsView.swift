@@ -8,6 +8,9 @@ struct SettingsView: View {
 
     @State private var confirmReanalyze = false
     @State private var setupTopic: HelpTopicID?
+    /// Settings → How much to say (F11). Every footer on this screen reads it through
+    /// `ExplainedFootnote`; this copy is the picker's.
+    @AppStorage(ExplainDetail.storageKey) private var detail: ExplainDetail = .concise
 
     var body: some View {
         NavigationStack {
@@ -27,18 +30,31 @@ struct SettingsView: View {
                 // rider to search; the menu is the one that greets him, so the menu keeps
                 // them. Nothing was lost: the menu's rows open the same screens, and
                 // `UI_SHEET=help` still parks on the Help index from the library.
+                //
+                // **The contents, then the one switch every footer obeys** (F15a, F11,
+                // Jan 25 September 2026). The page is the longest in the app; the chips
+                // are its table of contents, and "how much to say" sits above everything
+                // it changes, where the browser app has it too.
+                jumpSection(proxy)
+                detailSection
                 icuSection
+                    .id("icu")
                 stravaSection
+                    .id("strava")
                 deletedSessionsSection
                 notificationsSection
+                    .id("notifications")
                 // Settings → Garmin watch: DEV (docs/channels.md). Garmin Connect Mobile
                 // owns the Bluetooth link and it stays behind the flag until the link has
                 // real sessions behind it.
                 #if DEV
                 WatchLinkSection()
+                    .id("watch")
                 #endif
                 analysisSection
+                    .id("analysis")
                 sessionListSection
+                    .id("sessionList")
                 rowShowsSection
                 unitsSection
                     .id("units")
@@ -56,25 +72,31 @@ struct SettingsView: View {
                 #if BETA
                 healthSection
                 betaSection
+                    .id("beta")
                 #endif
                 // Every channel, with the TestFlight link only where the reader is not
                 // already on it (docs/channels.md).
                 comingSoonSection
+                    .id("coming")
                 storageSection
+                    .id("storage")
                 // Right under Storage, which is the section that just told the rider how
                 // many megabytes his library is: "and here is how to keep a copy of it"
                 // is the next sentence, not a separate topic.
                 LibraryBackupSection()
+                    .id("backup")
                 // And right under the backup, which is the same subject one step further on:
                 // a copy of the library is for getting it back, this is for having it in two
                 // places at once. Dev only (docs/channels.md, ADR-026).
                 #if DEV
                 ICloudSyncSection()
+                    .id("icloud")
                 #endif
                 #if DEBUG
                 debugSection
                 #endif
                 aboutSection
+                    .id("about")
             }
             // …and inside the page-sized sheet, the same measure every other list keeps.
             .readableColumn()
@@ -92,13 +114,13 @@ struct SettingsView: View {
             .sheet(item: $setupTopic) { HelpTopicSheet(id: $0) }
             .confirmationDialog("Re-run analysis for all sessions?",
                                 isPresented: $confirmReanalyze, titleVisibility: .visible) {
-                Button("Re-analyze \(store.sessions.count) sessions") {
+                Button("Re-analyse \(store.sessions.count) sessions") {
                     Task { await store.rerunAnalysis() }
                 }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("Cached analysis.json files are dropped and recomputed from the archived "
-                     + "FITs. Original recordings are never touched.")
+                Text("Every session is worked out again from its original recording. The "
+                     + "recordings themselves are never changed.")
             }
             // Twelve sections of form. On an iPad the default sheet is the system's form
             // sheet — about 570 × 640 pt — which is a smaller window than the phone's for a
@@ -137,17 +159,75 @@ struct SettingsView: View {
     /// The channel is handed in because a topic's title can differ by channel
     /// (`HelpCatalog.topic(_:channel:)`), exactly as `settingFooter(_: HealthSwitch)` has
     /// always done it.
-    @ViewBuilder
+    ///
+    /// Since 25 September 2026 the footer obeys Settings → How much to say (F11): concise is
+    /// the lead and the `?`, extensive adds the section's own paragraphs, or the topic's
+    /// where the section has none (`ExplainedFootnote`).
     private func settingFooter(_ id: String) -> some View {
         let section = SettingsCopy.section(id)
-        VStack(alignment: .leading, spacing: 6) {
-            Text(section.lead)
-                .fixedSize(horizontal: false, vertical: true)
-            if let topic = section.help {
-                HelpTopicLink(topic) { setupTopic = topic }
+        return ExplainedFootnote(line: section.lead, topic: section.help,
+                                 more: section.footer) { setupTopic = $0 }
+    }
+
+    // MARK: - Finding your way
+
+    /// **The chips that jump to a section** (F15a). One per section this build draws, in
+    /// the page's order, each the section's own header; `Health` and `Beta` only where the
+    /// channel has them, the dev rows only in dev. The ids are the `.id(…)`s in `body`,
+    /// which `UI_SCROLL_TO` uses as well.
+    private var jumpChips: [JumpChips.Chip] {
+        var chips: [JumpChips.Chip] = [
+            .init(id: "icu", title: SettingsCopy.section("icu").title),
+            .init(id: "strava", title: "Strava"),
+            .init(id: "notifications", title: "Notifications"),
+        ]
+        #if DEV
+        chips.append(.init(id: "watch", title: "Watch"))
+        #endif
+        chips += [
+            .init(id: "analysis", title: "Analysis"),
+            .init(id: "sessionList", title: SettingsCopy.section("sessionList").title),
+            .init(id: "units", title: SettingsCopy.section("units").title),
+            .init(id: "speedRecords", title: SettingsCopy.section("speedRecords").title),
+        ]
+        #if BETA
+        chips += [.init(id: "health", title: "Apple Health"), .init(id: "beta", title: "Beta")]
+        #endif
+        chips += [
+            .init(id: "coming", title: "Coming"),
+            .init(id: "storage", title: SettingsCopy.section("storage").title),
+            .init(id: "backup", title: "Backup"),
+        ]
+        #if DEV
+        chips.append(.init(id: "icloud", title: "iCloud"))
+        #endif
+        chips.append(.init(id: "about", title: SettingsCopy.section("about").title))
+        return chips
+    }
+
+    private func jumpSection(_ proxy: ScrollViewProxy) -> some View {
+        Section {
+            JumpChips(chips: jumpChips) { id in
+                withAnimation { proxy.scrollTo(id, anchor: .top) }
             }
+            .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
+            .listRowBackground(Color.clear)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// **How much to say** (F11): one line and a `?` under every section, or the whole
+    /// explanation. Concise by default. The words are the browser app's.
+    private var detailSection: some View {
+        Section {
+            Picker(SettingsCopy.detailTitle, selection: $detail) {
+                ForEach(ExplainDetail.allCases) { Text($0.label).tag($0) }
+            }
+            .pickerStyle(.segmented)
+        } header: {
+            Text(SettingsCopy.detailTitle)
+        } footer: {
+            Text(SettingsCopy.detailCaption)
+        }
     }
 
     // MARK: - Sections
@@ -264,8 +344,8 @@ struct SettingsView: View {
                 // mode and by the Strava help topic this links to.
                 settingFooter("strava")
             } else {
-                Text("This build carries no Strava API keys, so the Strava source is not "
-                     + "offered. Everything else works as usual.")
+                Text("Strava is not available in this build. Everything else works as "
+                     + "usual.")
             }
         }
     }
@@ -338,8 +418,8 @@ struct SettingsView: View {
     @ViewBuilder
     private var notificationsFooter: some View {
         if store.apiKey.isEmpty {
-            Text("Add your intervals.icu API key above first. The check is a call to "
-                 + "your account.")
+            Text("Add your intervals.icu API key above first. The check looks in your "
+                 + "account.")
                 .fixedSize(horizontal: false, vertical: true)
         } else {
             settingFooter("notifications")
@@ -537,8 +617,8 @@ struct SettingsView: View {
             // The honest version of "experimental": what works, what is switched off, and
             // what is a guess — in that order, so a windsurfer who turns it on knows which
             // numbers he may believe before he sees one.
-            Text("Analyse sessions as windsurf foil or fin. Jibes and tacks work, pumping "
-                 + "is off, planing thresholds are provisional.")
+            Text("Analyse sessions as windsurf foil or fin. Jibes and tacks work, and "
+                 + "pumping is off. The planing speeds are still a guess.")
         }
     }
     #endif
@@ -576,7 +656,8 @@ struct SettingsView: View {
         } footer: {
             // One line here too (pattern K). The three paragraphs are on the Tuning page
             // itself, which is where a reader who opened it is.
-            Text("Dev build only. Puts the analysis thresholds on sliders, on this phone.")
+            Text("Dev build only. It puts the analysis thresholds on sliders, on this "
+                 + "phone.")
         }
     }
     #endif
@@ -606,6 +687,7 @@ struct SettingsView: View {
         } footer: {
             settingFooter(HealthSwitch.write)
         }
+        .id("health")
 
         Section {
             Toggle(HealthSwitch.autoImport.title, isOn: Binding(
@@ -619,12 +701,7 @@ struct SettingsView: View {
     /// **What you get, in one line, and the way to the page that says how** (pattern K and
     /// pattern B). The footer stops explaining the mechanism; the help topic keeps it.
     private func settingFooter(_ setting: HealthSwitch) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(setting.footer)
-                .fixedSize(horizontal: false, vertical: true)
-            HelpTopicLink(setting.helpTopic) { setupTopic = setting.helpTopic }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        ExplainedFootnote(line: setting.footer, topic: setting.helpTopic) { setupTopic = $0 }
     }
     #endif
 

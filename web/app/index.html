@@ -750,6 +750,11 @@
         <p class="muted small">Your accounts, your units and what this browser keeps.</p>
       </div>
     </div>
+    <!-- THE PAGE'S CONTENTS, AS CHIPS (Jan, 25 September 2026: the page is very long). One
+         chip per section this page draws, in the page's own order, written by
+         js/appshell.js out of `SETTINGS_SECTIONS` so a chip can never name a section that
+         is not here. The same row the Help page opens with, and the phone's own. -->
+    <nav class="help-index" id="settings-index" aria-label="Settings sections"></nav>
     <!-- HOW MUCH EVERY EXPLANATION ON THIS SITE SAYS, decided once. The same switch is in
          the menu sheet's footer, so a rider reading a session page does not have to come
          here to turn the prose up. Remembered in localStorage behind try/catch, which is

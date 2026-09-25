@@ -99,21 +99,21 @@ public enum IcuSetupGuide {
     public static let privacyNote =
         "Your API key is stored in this iPhone's Keychain. It is never copied to iCloud and "
         + "never written to a log. There is no CleanJibe server to send it to. It goes to "
-        + "intervals.icu itself, over HTTPS, and nowhere else."
+        + "intervals.icu itself, encrypted, and nowhere else."
 
     /// What goes wrong, and what to do about it. Also the body of the troubleshooting topic.
     public static let troubleshooting: [HelpTopic.Item] = [
         .init(term: "\"intervals.icu rejected the API key\"",
-              detail: "A 401: the key is wrong or was regenerated after you pasted it. Copy "
-                  + "it again from Settings → Developer Settings. A stray space at either "
-                  + "end breaks it."),
+              detail: "The key is wrong, or you made a new one after pasting it. Copy it "
+                  + "again from intervals.icu, Settings → Developer Settings. A stray space "
+                  + "at either end breaks it."),
         .init(term: "The sync succeeds but the list stays empty",
               detail: "Either Garmin is not connected in intervals.icu yet, or none of your "
-                  + "activities is a watersport. CleanJibe pulls Windsurf, Kitesurf, Sail, "
+                  + "activities is a watersport. CleanJibe takes Windsurf, Kitesurf, Sail, "
                   + "Surfing, SUP and anything named wing or foil."),
         .init(term: "\"Could not reach intervals.icu\"",
-              detail: "A network problem rather than a key problem: nothing was lost and "
-                  + "nothing was half-imported. Check your connection and sync again."),
+              detail: "The connection dropped, and your key is fine. Nothing was lost or "
+                  + "half-imported. Check your connection and sync again."),
         .init(term: "Older sessions are missing",
               detail: "The sync looks two years back and skips what the library already "
                   + "holds. For more, use Import → FIT or ZIP… with the Garmin export ZIP."),

@@ -76,10 +76,27 @@ private struct HelpIndexList: View {
     }
 
     var body: some View {
+        ScrollViewReader { proxy in
         List {
             if sections.isEmpty {
                 ContentUnavailableView.search(text: query)
                     .listRowBackground(Color.clear)
+            }
+            // **The contents, first** (F14a, Jan 25 September 2026: ten sections and forty
+            // pages are too far to scroll). One chip per section this build lists, the
+            // web's own row (`/help/`'s `help-index`). Hidden while searching, because the
+            // list below is then the answer and a chip onto a section the search emptied
+            // would jump nowhere.
+            if query.trimmingCharacters(in: .whitespaces).isEmpty, sections.count > 1 {
+                Section {
+                    JumpChips(chips: sections.map {
+                        .init(id: $0.section.id, title: $0.section.title)
+                    }) { id in
+                        withAnimation { proxy.scrollTo(id, anchor: .top) }
+                    }
+                    .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
+                    .listRowBackground(Color.clear)
+                }
             }
             ForEach(sections, id: \.section.id) { group in
                 Section {
@@ -90,10 +107,12 @@ private struct HelpIndexList: View {
                 } header: {
                     Label(group.section.title, systemImage: group.section.symbol)
                 }
+                .id(group.section.id)
             }
         }
         .listStyle(.insetGrouped)
-        .searchable(text: $query, prompt: "Search the metrics")
+        }
+        .searchable(text: $query, prompt: "Search help")
         .sheet(item: $selected) { HelpTopicSheet(id: $0) }
         .task {
             // Deep link from a `?` or from a card: the topic sheet has to wait for
@@ -420,6 +439,108 @@ struct HelpTopicLink: View {
         }
         .buttonStyle(.plain)
         .accessibilityHint("Opens help")
+    }
+}
+
+/// **How much every explanation says** (F11, Jan 25 September 2026) — the rider's one
+/// choice, remembered on this phone. Concise is the default: one line and the `?` onto the
+/// topic that holds the rest. Extensive prints that rest under the line. The words are
+/// `SettingsCopy.detail*`, which are the browser app's own (`web/js/explain.js`).
+enum ExplainDetail: String, CaseIterable, Identifiable {
+    case concise, extensive
+
+    /// The `@AppStorage` key. One key, so every surface that obeys the switch reads the
+    /// same answer.
+    static let storageKey = "explainDetail"
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .concise: SettingsCopy.detailConcise
+        case .extensive: SettingsCopy.detailExtensive
+        }
+    }
+}
+
+/// **A footnote that obeys the switch** — the one view every explanatory line is drawn
+/// through, so "concise" means the same thing on every screen.
+///
+/// Concise: `line`, then the `?` with the topic's title (`HelpTopicLink`). Extensive: the
+/// same line and link, and under them `more` — the paragraphs the caller hands in (a
+/// Settings section's own footer), or, where it hands none in, the topic's own summary and
+/// body out of the catalogue. Never a second copy of a sentence: both sources are the ones
+/// the Help page itself prints.
+struct ExplainedFootnote: View {
+    let line: String
+    let topic: HelpTopicID?
+    var more: [String] = []
+    let open: (HelpTopicID) -> Void
+
+    @AppStorage(ExplainDetail.storageKey) private var detail: ExplainDetail = .concise
+
+    private var paragraphs: [String] {
+        if !more.isEmpty { return more }
+        guard let topic else { return [] }
+        let resolved = HelpCatalog.topic(topic, channel: AppChannel.channel)
+        return [resolved.summary] + resolved.body
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(markdown: line)
+                .fixedSize(horizontal: false, vertical: true)
+            if let topic {
+                HelpTopicLink(topic) { open(topic) }
+            }
+            if detail == .extensive {
+                ForEach(Array(paragraphs.enumerated()), id: \.offset) { _, paragraph in
+                    Text(markdown: paragraph)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+/// **A row of chips that jumps to a section** — the contents line at the top of Help and
+/// Settings (F14a, F15a: both pages are long). Horizontal, one line, the web's own
+/// `help-chip` row; a tap hands the id back and the screen scrolls.
+struct JumpChips: View {
+    struct Chip: Identifiable {
+        let id: String
+        let title: String
+        var symbol: String?
+    }
+
+    let chips: [Chip]
+    let jump: (String) -> Void
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(chips) { chip in
+                    Button { jump(chip.id) } label: {
+                        Group {
+                            if let symbol = chip.symbol {
+                                Label(chip.title, systemImage: symbol)
+                            } else {
+                                Text(chip.title)
+                            }
+                        }
+                        .font(.footnote.weight(.medium))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .overlay(Capsule().strokeBorder(Color(.separator)))
+                        .contentShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityHint("Jumps to that section")
+                }
+            }
+            .padding(.vertical, 2)
+        }
     }
 }
 

@@ -17,7 +17,7 @@
     "",
     "Wholly kit-owned: COPY_WRITE=1 swift test --filter CopyContractTests."
   ],
-  "privacyNote" : "Your API key is stored in this iPhone's Keychain. It is never copied to iCloud and never written to a log. There is no CleanJibe server to send it to. It goes to intervals.icu itself, over HTTPS, and nowhere else.",
+  "privacyNote" : "Your API key is stored in this iPhone's Keychain. It is never copied to iCloud and never written to a log. There is no CleanJibe server to send it to. It goes to intervals.icu itself, encrypted, and nowhere else.",
   "saveButton" : "Save & check",
   "steps" : [
     {
