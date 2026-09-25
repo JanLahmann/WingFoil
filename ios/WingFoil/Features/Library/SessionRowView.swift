@@ -45,14 +45,22 @@ struct SessionRowView: View {
                                         windsurfEnabled: store.windsurfEnabled)
     }
 
+    /// Past the accessibility threshold the thumbnail goes above the words instead of
+    /// beside them: 62 pt of track leaves the numbers a column too narrow for "13.47 kn",
+    /// which then broke one letter to a line (release round C, AX3).
+    @Environment(\.dynamicTypeSize) private var typeSize
+
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        let layout = typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
+            : AnyLayout(HStackLayout(alignment: .top, spacing: 12))
+        layout {
             preview
             VStack(alignment: .leading, spacing: 6) {
                 HStack(alignment: .firstTextBaseline) {
                     Text(SessionDisplay.title(row))
                         .font(.headline)
-                        .lineLimit(1)
+                        .lineLimit(typeSize.isAccessibilitySize ? 3 : 1)
                         .minimumScaleFactor(0.8)
                     Spacer(minLength: 8)
                     if let example = SessionDisplay.exampleBadge(row) {
@@ -125,11 +133,18 @@ struct SessionRowView: View {
                 // rider's (Settings → Session list → Row shows); what each one is called
                 // is the kit's, so the word is the same here, on the session page and in
                 // the picker (`RowMetric`).
-                HStack(spacing: 12) {
-                    ForEach(Array(store.rowMetrics.enumerated()), id: \.offset) { _, choice in
-                        metric(choice)
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 12) {
+                        ForEach(Array(store.rowMetrics.enumerated()), id: \.offset) { _, choice in
+                            metric(choice)
+                        }
+                        Spacer(minLength: 0)
                     }
-                    Spacer(minLength: 0)
+                    VStack(alignment: .leading, spacing: 6) {
+                        ForEach(Array(store.rowMetrics.enumerated()), id: \.offset) { _, choice in
+                            metric(choice)
+                        }
+                    }
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -232,6 +247,7 @@ struct SessionRowView: View {
                 .font(.caption2)
                 .foregroundStyle(.readableSecondary)
         }
+        .fixedSize()
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(choice.label + " " + choice.format(row))
     }

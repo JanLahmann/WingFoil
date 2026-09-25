@@ -192,12 +192,21 @@ struct OutcomeTally: View {
 
     var body: some View {
         if total > 0 {
-            HStack(spacing: 3) {
-                part(flewThrough, EventMarkerStyle.color(.flew), "flew")
-                separator
-                part(touchdown, EventMarkerStyle.color(.touchdown), "touch")
-                separator
-                part(fellIn, EventMarkerStyle.color(.fell), "fell")
+            // One line while it fits, and one pair to a line once it does not — never a
+            // pair broken letter by letter down a narrow column (release round C, AX3).
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 3) {
+                    part(flewThrough, EventMarkerStyle.color(.flew), "flew")
+                    separator
+                    part(touchdown, EventMarkerStyle.color(.touchdown), "touch")
+                    separator
+                    part(fellIn, EventMarkerStyle.color(.fell), "fell")
+                }
+                VStack(alignment: .leading, spacing: 1) {
+                    part(flewThrough, EventMarkerStyle.color(.flew), "flew")
+                    part(touchdown, EventMarkerStyle.color(.touchdown), "touch")
+                    part(fellIn, EventMarkerStyle.color(.fell), "fell")
+                }
             }
             .font(font.weight(.semibold).monospacedDigit())
             .accessibilityElement(children: .ignore)
@@ -215,6 +224,7 @@ struct OutcomeTally: View {
                 Text(word).fontWeight(.regular)
             }
         }
+        .fixedSize()
         .foregroundStyle(color)
     }
 

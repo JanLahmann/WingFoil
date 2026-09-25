@@ -11,6 +11,7 @@ import WingFoilKit
 /// chart says how many are missing rather than plotting a flat, flattering line.
 struct TrendsView: View {
     @Environment(SessionStore.self) private var store
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     @State private var filter = LibraryFilter()
     @State private var range = TrendRange.season
@@ -146,7 +147,14 @@ struct TrendsView: View {
         let hours = points.reduce(0) { $0 + $1.durationS } / 3600
         let distance = points.reduce(0.0) { $0 + ($1.distanceKm ?? 0) }
         let flights = points.reduce(0) { $0 + ($1.flightCount ?? 0) }
-        return HStack(spacing: 0) {
+        // Four abreast, or two by two once a quarter of the phone no longer holds a word:
+        // at AX3 "sessions" and "distance" hyphenated (release round C). The key-metrics
+        // block makes the same move at the same threshold.
+        let columns = typeSize.isAccessibilitySize ? 2 : 4
+        return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0,
+                                                            alignment: .top),
+                                        count: columns),
+                         spacing: 12) {
             stat("\(points.count)", "sessions")
             stat(String(format: "%.0f h", hours), "on the water")
             stat(String(format: "%.0f km", distance), "distance")
@@ -161,8 +169,10 @@ struct TrendsView: View {
         VStack(spacing: 2) {
             Text(value).font(.headline.monospacedDigit())
             Text(label).font(.caption2).foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: - Charts
