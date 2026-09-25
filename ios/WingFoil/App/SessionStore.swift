@@ -2346,6 +2346,7 @@ final class SessionStore {
             if riderAsked { errorMessage = Self.failureAlert(summary.failed) }
             Usage.recordImport(.icu, sessions: summary.imported)
             lastSyncDate = Date()
+            lastCheckAt = Date()
         } catch {
             let problem = IcuDiagnosis.describe(error)
             setProblem(problem)
@@ -3538,6 +3539,26 @@ final class SessionStore {
         set {
             withMutation(keyPath: \.lastSyncDate) {
                 UserDefaults.standard.set(newValue, forKey: "lastIcuSync")
+            }
+        }
+    }
+
+    /// **When intervals.icu was last successfully reached, by any means** — the rider's own
+    /// pull, the background wake (`ActivityNotifier.poll`) and the empty library's first
+    /// fill at launch alike. `lastSyncDate` cannot be widened to cover those: it is the
+    /// re-add gate's cursor (`syncFromIntervals`, above), and the background poller
+    /// deliberately never touches it — a poll that moved it would make the re-add gate
+    /// think a manual sync had just run. This is purely for the Settings row, so a phone
+    /// polled every half hour reads today's date instead of the last day someone opened
+    /// the app and pulled to refresh.
+    var lastCheckAt: Date? {
+        get {
+            access(keyPath: \.lastCheckAt)
+            return UserDefaults.standard.object(forKey: "icuLastCheck.v1") as? Date
+        }
+        set {
+            withMutation(keyPath: \.lastCheckAt) {
+                UserDefaults.standard.set(newValue, forKey: "icuLastCheck.v1")
             }
         }
     }
