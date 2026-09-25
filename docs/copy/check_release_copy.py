@@ -81,7 +81,8 @@ TARGETS: list[Target] = [
     Target(
         label="App Store · what the rider reads",
         path="ios/store/appstore.md",
-        blocks=["App name", "Subtitle", "Promotional text", "Description", "Keywords"],
+        blocks=["App name", "Subtitle", "Promotional text", "Description", "What's New",
+                "Keywords"],
         allow={
             "windsurf": (
                 "Garmin's own Windsurf activity profile, named as a recording source, and "
