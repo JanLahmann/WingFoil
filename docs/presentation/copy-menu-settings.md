@@ -216,6 +216,15 @@ has that button. The Strava section is the caption, *Connect with Strava* or the
 athlete with *Disconnect*, and the footer. Everything either section offers is about the
 account; everything either account is *for* happens one sheet away.
 
+**A saved key says so** (Jan, dev 106: an empty key field under a three-day-old *Last sync*).
+With a key in the keychain the field is gone: the row reads *API key saved* with a masked
+`••••••••`, and *Check connection*, *Replace* and *Remove* beside it. *Replace* brings the
+field back as *New API key* with *Save & check* and *Cancel*. The key itself is never put back
+into a field or shown. And the app asks the keychain again whenever the key in memory is
+empty: on every return to the foreground, before a sync, a check or a background poll, and
+when this screen opens. A process iOS starts before the first unlock after a restart cannot
+read it, and before this held an empty key for its whole life.
+
 **Notifications say intervals.icu, because that is what is asked.** The switch read *Notify
 on new Garmin activities* and the check behind it has never been a Garmin one: it is a call
 to the rider's intervals.icu account, and every watch that syncs there — a Garmin, a Polar, a

@@ -79,7 +79,7 @@ session's time is a fact about the session, so it is stored with the session.
   every call site, and the silent decision was wrong at all of them; with the defaults gone
   the compiler names each one and it has to answer out loud.
 - **`.current` is still right in three places**, and is commented as such where it is used:
-  Settings' "Last sync" and the watch link's "Last summary" (events on the reader's clock),
+  Settings' "Last sync" and the watch link's "Last summary from the watch" (events on the reader's clock),
   the trend ranges and week buckets (the reader's calendar), and the spot/gear "last used"
   aggregates (which span sessions and have no one zone). A tombstone also keeps `.current`,
   because a deleted session's recording is gone and nothing is left that knows its zone.

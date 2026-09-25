@@ -532,10 +532,20 @@ There is no "connect" button, because there is nothing here to connect — Garmi
 Mobile owns the Bluetooth link and this app is a guest on it, so each state says what is
 missing (`CompanionLinkState.headline` / `.detail`) rather than that something failed.
 
-**Send wind to watch.** An eight-point compass, not a 0–359 field: nobody knows the wind to
+**Send wind to watch.** A sixteen-point compass, not a 0–359 field: nobody knows the wind to
 the degree, the watch only uses it to decide which side of the axis a turn happened on, and a
-wrong 12° costs nothing while a wrong 120° relabels every tack as a jibe. Manual by decision
-(ADR-013).
+wrong 12° costs nothing while a wrong 120° relabels every tack as a jibe. Sixteen since dev
+106, the same points and degrees as the watch's own *Wind from* menu (22.5° steps rounded
+down, `NNE (22°)`), so a wind set on either side reads back as the same point. The pick is a
+stored, observed property of the store: the computed-over-UserDefaults version it replaced
+wrote the choice and told no view, so the picker drew the old value and the wind looked
+unsettable (Jan, dev 106). Manual by decision (ADR-013).
+
+**What came through.** *Last session from the watch* is the date of the last session sent
+straight over, with *part of it* where the transfer stopped part way. *Last summary from the
+watch* is when the last summary card arrived. The link's own numbers (pages, seconds, the
+probe, the answer the phone sent back) sit folded under **Link details**, because `1 page · 0
+s` means nothing to a rider and everything to the dev build proving the radio.
 
 **Send map to watch.** The watch cannot have a Garmin map — the firmware's own map view kills
 the app on the fenix 8 (docs/watch-map-snapshot.md, GitHub #4) — so the phone draws one for
