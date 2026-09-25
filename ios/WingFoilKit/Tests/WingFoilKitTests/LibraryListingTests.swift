@@ -246,4 +246,96 @@ import Testing
         #expect(ImportSource.allCases.filter { !$0.isOfferedUnconditionally }
                 == [.fixtures, .example])
     }
+
+    // MARK: - Places (F7g)
+
+    func spot(_ id: String, _ name: String, _ lat: Double, _ lon: Double,
+              sessions: Int) -> SpotAggregate {
+        SpotAggregate(spot: SpotRow(id: id, name: name, lat: lat, lon: lon),
+                      sessions: sessions, lastVisit: nil)
+    }
+
+    /// Two clusters called "Hvide Sande" a kilometre and a half apart are one place: one
+    /// entry, the busier spot's id and spelling, both clusters' sessions — and nothing else
+    /// merges.
+    @Test func spotsThatShareANameNearbyAreOnePlace() {
+        let places = SpotPlaces([
+            spot("hs-fjord", "hvide sande", 56.000, 8.140, sessions: 3),
+            spot("garda", "Nago-Torbole", 45.870, 10.880, sessions: 30),
+            spot("hs-sea", "Hvide Sande ", 56.005, 8.118, sessions: 5),
+        ])
+        #expect(places.places.map(\.label) == ["Hvide Sande", "Nago-Torbole"])
+        #expect(places.places.first?.id == "hs-sea")
+        #expect(places.places.first?.spotIds == ["hs-fjord", "hs-sea"])
+        #expect(places.places.first?.sessions == 8)
+        #expect(places.placeID(for: "hs-fjord") == "hs-sea")
+        #expect(places.placeID(for: "garda") == "garda")
+        #expect(places.placeID(for: "unknown") == "unknown")
+        #expect(places.placeID(for: nil) == nil)
+
+        // The filter on the place keeps both clusters' sessions; no session is lost.
+        let rows = [row("a", day(2026, 8, 1), spot: "hs-fjord"),
+                    row("b", day(2026, 8, 2), spot: "hs-sea"),
+                    row("c", day(2026, 8, 3), spot: "garda")]
+        let filter = LibraryListFilter(spotId: "hs-sea")
+        #expect(filter.apply(to: rows, calendar: utc, places: places).map(\.id) == ["a", "b"])
+        // Without places the old id match still holds.
+        #expect(filter.apply(to: rows, calendar: utc).map(\.id) == ["b"])
+
+        // And the Spot grouping draws one section for the place.
+        let groups = LibraryGrouping.spot.groups(
+            rows, spotName: { places.label(for: $0) },
+            placeID: { places.placeID(for: $0) }, calendar: utc)
+        #expect(groups.map(\.heading) == ["Nago-Torbole", "Hvide Sande"])
+        #expect(groups.last?.rows.map(\.id) == ["b", "a"])
+    }
+
+    /// The same name far apart is two places, and the second is numbered so the menu never
+    /// shows two identical rows.
+    @Test func theSameNameFarApartIsTwoPlaces() {
+        let places = SpotPlaces([
+            spot("n-north", "Neustadt", 54.10, 10.81, sessions: 2),
+            spot("n-south", "Neustadt", 49.35, 8.14, sessions: 1),
+        ])
+        #expect(places.places.map(\.label) == ["Neustadt", "Neustadt 2"])
+        #expect(places.placeID(for: "n-south") == "n-south")
+    }
+
+    // MARK: - Folded groups (F7e)
+
+    @Test func foldsAreRememberedPerGroupingAndRoundTrip() {
+        var folds = LibraryFolds()
+        folds.toggle("2026-07", in: .month)
+        folds.toggle("2024", in: .year)
+        #expect(folds.isFolded("2026-07", in: .month))
+        #expect(!folds.isFolded("2026-07", in: .year))
+        #expect(folds.raw == "month=2026-07;year=2024")
+        #expect(LibraryFolds(raw: folds.raw) == folds)
+
+        folds.toggle("2026-07", in: .month)
+        #expect(!folds.isFolded("2026-07", in: .month))
+
+        folds.collapseAll(["2026-08", "2026-07"], in: .month)
+        #expect(folds.allFolded(["2026-08", "2026-07"], in: .month))
+        #expect(folds.raw == "month=2026-07,2026-08;year=2024")
+        folds.expandAll(in: .month)
+        #expect(!folds.anyFolded(["2026-08", "2026-07"], in: .month))
+        #expect(folds.raw == "year=2024")
+
+        // The flat list has nothing to fold, and a garbled string reads as nothing folded.
+        folds.collapseAll(["all"], in: .none)
+        #expect(!folds.isFolded("all", in: .none))
+        #expect(LibraryFolds(raw: "nonsense;=;week=1").raw == "")
+    }
+
+    // MARK: - The list's duration (F7f)
+
+    @Test func theListSpellsDurationsShort() {
+        #expect(KeyMetrics.listDuration(3458) == "58 min")
+        #expect(KeyMetrics.listDuration(3599) == "59 min")
+        #expect(KeyMetrics.listDuration(3600) == KeyMetrics.duration(3600))
+        #expect(KeyMetrics.listDuration(7020) == "1:57 h")
+        #expect(KeyMetrics.listDuration(24) == "24 s")
+        #expect(KeyMetrics.listDuration(90) == "2 min")
+    }
 }

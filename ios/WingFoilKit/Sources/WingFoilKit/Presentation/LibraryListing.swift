@@ -82,8 +82,17 @@ public struct LibraryListFilter: Sendable, Equatable {
     }
 
     /// Does this session survive the filter? All four clauses are ANDed.
-    public func matches(_ row: SessionRow, calendar: Calendar = .current) -> Bool {
-        if let spotId, row.spotId != spotId { return false }
+    ///
+    /// `places` folds spots that are one place to the rider (`SpotPlaces`): two clusters
+    /// both called "Hvide Sande" a kilometre apart are one entry in the menu, so choosing it
+    /// has to keep the sessions of both. Without it the spot clause is the plain id match.
+    public func matches(_ row: SessionRow, calendar: Calendar = .current,
+                        places: SpotPlaces? = nil) -> Bool {
+        if let spotId {
+            let wanted = places?.placeID(for: spotId) ?? spotId
+            let have = places?.placeID(for: row.spotId) ?? row.spotId
+            if have != wanted { return false }
+        }
         if let source, !source.isNamed(in: row.importSource) { return false }
         if let discipline, row.analysisDiscipline != discipline { return false }
         if let dateRange {
@@ -95,8 +104,9 @@ public struct LibraryListFilter: Sendable, Equatable {
         return true
     }
 
-    public func apply(to rows: [SessionRow], calendar: Calendar = .current) -> [SessionRow] {
-        isActive ? rows.filter { matches($0, calendar: calendar) } : rows
+    public func apply(to rows: [SessionRow], calendar: Calendar = .current,
+                      places: SpotPlaces? = nil) -> [SessionRow] {
+        isActive ? rows.filter { matches($0, calendar: calendar, places: places) } : rows
     }
 
     public mutating func clear(_ field: LibraryFilterField) {
@@ -241,8 +251,13 @@ public enum LibraryGrouping: String, Sendable, CaseIterable, Identifiable {
     /// `spotName` answers "what is this spot called" for the row's `spotId` — nil for a
     /// session that has no spot, and nil for one whose spot the table can no longer name,
     /// which are the same thing as far as a heading is concerned.
+    ///
+    /// `placeID` folds a spot id onto its place (`SpotPlaces.placeID`), so two clusters that
+    /// are one place to the rider make one "Hvide Sande" section rather than two. The
+    /// default is the id itself, which is the grouping as it was before places existed.
     public func groups(_ rows: [SessionRow],
                        spotName: (String?) -> String?,
+                       placeID: (String?) -> String? = { $0 },
                        calendar: Calendar = .current) -> [LibraryGroup] {
         let sorted = rows.sorted { $0.startDate > $1.startDate }
         guard self != .none else {
@@ -253,7 +268,8 @@ public enum LibraryGrouping: String, Sendable, CaseIterable, Identifiable {
         var buckets: [String: [SessionRow]] = [:]
         var headings: [String: String] = [:]
         for row in sorted {
-            let bucket = key(for: row, spotName: spotName, calendar: calendar)
+            let bucket = key(for: row, spotName: spotName, placeID: placeID,
+                             calendar: calendar)
             if buckets[bucket.key] == nil {
                 order.append(bucket.key)
                 headings[bucket.key] = bucket.heading
@@ -272,6 +288,7 @@ public enum LibraryGrouping: String, Sendable, CaseIterable, Identifiable {
     }
 
     private func key(for row: SessionRow, spotName: (String?) -> String?,
+                     placeID: (String?) -> String?,
                      calendar: Calendar) -> (key: String, heading: String) {
         switch self {
         case .none:
@@ -285,11 +302,170 @@ public enum LibraryGrouping: String, Sendable, CaseIterable, Identifiable {
             let c = LibraryListing.components(row, calendar: calendar)
             return (String(format: "%04d", c.year ?? 0), "\(c.year ?? 0)")
         case .spot:
-            guard let id = row.spotId, let name = spotName(id) else {
+            guard let id = placeID(row.spotId), let name = spotName(id) else {
                 return (LibraryListing.noSpotKey, "No spot")
             }
             return (id, name)
         }
+    }
+}
+
+// MARK: - Places
+
+/// **The spots a rider would call one place** — what the Sessions tab's spot filter and its
+/// Spot grouping list, one entry per place.
+///
+/// A spot is a 500 m cluster of start coordinates (`SpotClusterer`), and a town is bigger
+/// than that. Hvide Sande has a harbour beach and a fjord beach a kilometre or two apart;
+/// both come back from the geocoder as "Hvide Sande", and the filter menu listed the name
+/// twice with nothing to tell the two rows apart. A rider picking "Hvide Sande" means the
+/// place, so spots that **share a name** (trimmed, case folded) **and lie within
+/// `mergeRadiusM` of each other** are one place here. The spot table is not touched: the
+/// Spots tab, the watch map and the spot's own records still see every cluster, and no
+/// session changes spot.
+///
+/// Two spots with one name that are far apart (a "Neustadt" on each coast) stay two
+/// places, and the second one's label says so with a number — "Neustadt 2" — because two
+/// identical rows in one menu is a choice the rider cannot make.
+public struct SpotPlaces: Sendable, Equatable {
+
+    /// One entry in the menu. `id` is one of its spots' ids (the one with the most
+    /// sessions), so a filter that stores it keeps working with or without places.
+    public struct Place: Sendable, Equatable, Identifiable {
+        public let id: String
+        public let label: String
+        public let spotIds: [String]
+        public let sessions: Int
+    }
+
+    /// How far apart two spots with one name may be and still be one place. Five kilometres
+    /// is a town and its beaches; the next town of the same name is further than that.
+    public static let mergeRadiusM: Double = 5_000
+
+    /// In the order the spots arrived in (the store lists them by name).
+    public let places: [Place]
+    private let placeOfSpot: [String: String]
+
+    public init(_ spots: [SpotAggregate], mergeRadiusM: Double = SpotPlaces.mergeRadiusM) {
+        // Single link within a name: a spot joins the first place of its name that has a
+        // member inside the radius.
+        var members: [[SpotAggregate]] = []
+        for spot in spots {
+            let name = Self.fold(spot.spot.name)
+            let hit = members.firstIndex { group in
+                Self.fold(group[0].spot.name) == name && group.contains {
+                    SpotClusterer.distance(lat1: $0.spot.lat, lon1: $0.spot.lon,
+                                           lat2: spot.spot.lat, lon2: spot.spot.lon)
+                        <= mergeRadiusM
+                }
+            }
+            if let hit { members[hit].append(spot) } else { members.append([spot]) }
+        }
+        var seen: [String: Int] = [:]
+        var places: [Place] = []
+        var index: [String: String] = [:]
+        for group in members {
+            // The busiest spot speaks for the place; ties go to the first listed.
+            let lead = group.enumerated().max {
+                ($0.element.sessions, -$0.offset) < ($1.element.sessions, -$1.offset)
+            }!.element
+            let name = lead.spot.name.trimmingCharacters(in: .whitespaces)
+            let count = (seen[Self.fold(name)] ?? 0) + 1
+            seen[Self.fold(name)] = count
+            let place = Place(id: lead.spot.id,
+                              label: count == 1 ? name : "\(name) \(count)",
+                              spotIds: group.map(\.spot.id),
+                              sessions: group.reduce(0) { $0 + $1.sessions })
+            places.append(place)
+            for spot in group { index[spot.spot.id] = place.id }
+        }
+        self.places = places
+        self.placeOfSpot = index
+    }
+
+    /// The place a spot belongs to; an id the table does not know is its own place, and
+    /// nil stays nil ("No spot").
+    public func placeID(for spotId: String?) -> String? {
+        guard let spotId else { return nil }
+        return placeOfSpot[spotId] ?? spotId
+    }
+
+    /// What the place a spot belongs to is called in the menu, the chip and the header.
+    public func label(for spotId: String?) -> String? {
+        guard let id = placeID(for: spotId) else { return nil }
+        return places.first { $0.id == id }?.label
+    }
+
+    private static func fold(_ name: String) -> String {
+        name.trimmingCharacters(in: .whitespaces)
+            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil)
+    }
+}
+
+// MARK: - Folded groups
+
+/// **Which sections of the grouped list are folded** — tap a header to fold it, Collapse
+/// all / Expand all in the filter menu — remembered per grouping, because "I keep 2024
+/// shut" is a fact about how the rider reads his library by year and says nothing about
+/// how he reads it by spot.
+///
+/// Stored as one string (`library.folded.v1`): `month=2026-07,2026-06;year=2024`. Keys are
+/// `LibraryGroup.key`s, which never contain `;`, `=` or `,` (a month, a year, a spot's
+/// UUID, `nospot`).
+public struct LibraryFolds: Sendable, Equatable {
+
+    private var folded: [LibraryGrouping: Set<String>]
+
+    public init(raw: String = "") {
+        var folded: [LibraryGrouping: Set<String>] = [:]
+        for part in raw.split(separator: ";") {
+            let pair = part.split(separator: "=", maxSplits: 1)
+            guard pair.count == 2, let grouping = LibraryGrouping(rawValue: String(pair[0]))
+            else { continue }
+            folded[grouping] = Set(pair[1].split(separator: ",").map(String.init))
+        }
+        self.folded = folded
+    }
+
+    /// The stored form, in a stable order so an unchanged state writes an unchanged string.
+    public var raw: String {
+        LibraryGrouping.allCases.compactMap { grouping in
+            guard let keys = folded[grouping], !keys.isEmpty else { return nil }
+            return grouping.rawValue + "=" + keys.sorted().joined(separator: ",")
+        }.joined(separator: ";")
+    }
+
+    public func isFolded(_ key: String, in grouping: LibraryGrouping) -> Bool {
+        folded[grouping]?.contains(key) ?? false
+    }
+
+    public mutating func toggle(_ key: String, in grouping: LibraryGrouping) {
+        if isFolded(key, in: grouping) {
+            folded[grouping]?.remove(key)
+        } else {
+            folded[grouping, default: []].insert(key)
+        }
+    }
+
+    /// Every group on screen folded. Replaces what was stored for this grouping, so a group
+    /// that no longer exists does not linger in the string.
+    public mutating func collapseAll(_ keys: [String], in grouping: LibraryGrouping) {
+        guard grouping != .none else { return }
+        folded[grouping] = Set(keys)
+    }
+
+    public mutating func expandAll(in grouping: LibraryGrouping) {
+        folded[grouping] = nil
+    }
+
+    /// Whether every one of these groups is folded — which of the two menu entries to offer.
+    public func allFolded(_ keys: [String], in grouping: LibraryGrouping) -> Bool {
+        !keys.isEmpty && keys.allSatisfy { isFolded($0, in: grouping) }
+    }
+
+    /// Whether any is — the other entry.
+    public func anyFolded(_ keys: [String], in grouping: LibraryGrouping) -> Bool {
+        keys.contains { isFolded($0, in: grouping) }
     }
 }
 

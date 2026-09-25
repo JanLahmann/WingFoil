@@ -375,6 +375,22 @@ public struct KeyMetrics: Sendable, Equatable {
         return String(format: "%d:%02d min", total / 60, total % 60)
     }
 
+    /// **The session list's spelling of the same clock** — `58 min` under an hour, `1:57 h`
+    /// from one up (Jan, 25 Sep 2026, F7f).
+    ///
+    /// The row puts the duration after the date on one line, and `57:38 min` after
+    /// "Wed 17 Sep, 14:05" wrapped at the default text size on a phone. The seconds are
+    /// what the session page's block is for; a list is scanned for "about an hour". Same
+    /// number as `duration`, rounded to the minute, and the hour form is identical so a
+    /// long afternoon reads the same on both screens. Under a minute it is seconds, because
+    /// "0 min" on a 24-second recording says it lasted nothing.
+    public static func listDuration(_ seconds: Double) -> String {
+        let total = max(0, Int(seconds.rounded()))
+        if total >= 3600 { return duration(seconds) }
+        if total < 60 { return "\(total) s" }
+        return "\(min(59, Int((Double(total) / 60).rounded()))) min"
+    }
+
     static func km(_ value: Double) -> String { String(format: "%.1f km", value) }
 
     /// **Every speed on the phone comes out of here**, and `Speed` is what decides the
