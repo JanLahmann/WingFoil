@@ -187,7 +187,7 @@ public enum MetricGlossary {
             id: "flights",
             term: "Flights & touchdowns",
             short: "flights",
-            line: "One takeoff starts a flight. A touchdown or a swim ends it. "
+            line: "One takeoff starts a flight. A touchdown or a fall ends it. "
                 + "Both are counted.",
             sentence: "how long each flight lasted",
             surfaces: [.ios, .watch, .web, .appstore, .ciq],

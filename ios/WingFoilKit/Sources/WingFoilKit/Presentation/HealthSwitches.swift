@@ -37,8 +37,8 @@ public enum HealthSwitch: String, CaseIterable, Sendable, Identifiable {
             "Each session is added to Apple Health as a Surfing workout. A session you "
             + "imported from Health is left alone."
         case .autoImport:
-            "New Health workouts are picked up when you open CleanJibe. Only the types "
-            + "you chose on the Import screen."
+            "New Health workouts are picked up when you open CleanJibe. It takes only "
+            + "the types you chose on the Import screen."
         }
     }
 

@@ -85,6 +85,19 @@ public enum SettingsCopy {
         + "The session is downloaded and analysed in the background, so tapping the "
         + "notification usually opens a finished analysis."
 
+    // MARK: - How much every explanation says (F11, 25 September 2026)
+
+    /// **One switch, and every footer obeys it.** Concise, the default, is the section's
+    /// `lead` and a `?` onto its topic. Extensive prints the paragraphs under it: the
+    /// section's own `footer` where it has one, the topic's summary and body where it does
+    /// not — the reading the browser app has had since 20 September 2026
+    /// (`web/js/explain.js`), in the browser's own words, so the two shells say one thing.
+    public static let detailTitle = "How much to say"
+    public static let detailConcise = "Concise"
+    public static let detailExtensive = "Extensive"
+    public static let detailCaption =
+        "Concise keeps one line under every section. Extensive prints its help page under it."
+
     // MARK: - The sections, in the order SettingsView draws them
 
     public static let sections: [SettingsSectionCopy] = [
@@ -102,7 +115,7 @@ public enum SettingsCopy {
         SettingsSectionCopy(
             id: "strava",
             title: "Strava",
-            lead: "Import what you already ride with. CleanJibe only ever reads it.",
+            lead: "Bring in the sessions you already have on Strava. CleanJibe only reads them.",
             footer: [
                 "Strava opens, you say yes, and CleanJibe can list your activities on the "
                 + "Import screen.",
@@ -163,8 +176,8 @@ public enum SettingsCopy {
             title: "Units",
             lead: "Read speeds in knots or in km/h.",
             footer: [
-                "Speeds are read in knots by the speedsurfing world. Pick km/h if that is "
-                + "the number you think in.",
+                "The speedsurfing world reads speed in knots. Pick km/h if that is the "
+                + "number you think in.",
             ],
             help: .speedRecords, web: true),
 
@@ -184,7 +197,7 @@ public enum SettingsCopy {
         SettingsSectionCopy(
             id: "storage",
             title: "Storage",
-            lead: "What the library costs, and the way to analyse it all again.",
+            lead: "How much room your library takes, and a way to analyse it all again.",
             help: .engineVersion),
 
         SettingsSectionCopy(
