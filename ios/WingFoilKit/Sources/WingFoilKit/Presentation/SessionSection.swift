@@ -49,8 +49,12 @@ public enum SessionSection: String, CaseIterable, Sendable, Identifiable {
     /// The turn cards, with the filtered tally/map/list folded in underneath them — it was
     /// a pushed page two taps and ~2 400 pt deep (§2.1).
     case turns
-    /// Every attempt to get up: the takeoff and pumping tiles, the attempt map and list, and
-    /// what the pumping cost in heartbeats.
+    /// Every flight and every attempt to get up: the takeoff and pumping tiles, one row per
+    /// flight with how it ended, the attempt map and list, and what the pumping cost in
+    /// heartbeats. **"Flights" since 25 Sep 2026** (Jan, F12c): the takeoffs and the flight ends are
+    /// the two halves of one flight, so the tab that had the one gained the other from
+    /// Details and took the flight's name. The case keeps its id — the anchors, the deep
+    /// links and docs/copy/app-shell.json address it by `takeoffs`.
     case takeoffs
     /// The session's own facts: the kit it was ridden on, the wind the analysis assumed,
     /// where the recording came from, and where the watch and the phone disagree.
@@ -77,7 +81,7 @@ public enum SessionSection: String, CaseIterable, Sendable, Identifiable {
         switch self {
         case .ride: "Ride"
         case .turns: "Turns"
-        case .takeoffs: "Takeoffs"
+        case .takeoffs: "Flights"
         case .log: "Details"
         }
     }
@@ -87,7 +91,7 @@ public enum SessionSection: String, CaseIterable, Sendable, Identifiable {
     /// off, he gets planing — and `.wingfoil` returns `label` unchanged, character for
     /// character.
     public func label(_ discipline: Discipline) -> String {
-        self == .takeoffs ? discipline.lexicon.takeoffs : label
+        self == .takeoffs ? discipline.lexicon.flights : label
     }
 
     /// The scroll anchors each section contains, in the order they appear on it.
@@ -106,7 +110,8 @@ public enum SessionSection: String, CaseIterable, Sendable, Identifiable {
         switch self {
         case .ride: ["chart", "replay", "Foil", "summary"]
         case .turns: ["turns", "filters", "tally", "turnsMap", "turnList"]
-        case .takeoffs: ["takeoff", "takeoffFilters", "takeoffsMap", "takeoffList", "hr"]
+        case .takeoffs: ["takeoff", "flights", "takeoffFilters", "takeoffsMap",
+                         "takeoffList", "hr"]
         case .log: ["gear", "wind", "recording", "discipline", "divergence"]
         }
     }

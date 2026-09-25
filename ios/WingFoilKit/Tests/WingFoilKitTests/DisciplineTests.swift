@@ -184,7 +184,7 @@ import Testing
             #expect(words.chip == "windsurf · experimental")
             #expect(words.isExperimental)
             #expect(!words.pumping)
-            #expect(SessionSection.takeoffs.label(discipline) == "Planing starts")
+            #expect(SessionSection.takeoffs.label(discipline) == "Planing runs")
             #expect(MapLayer.flying.label(discipline) == "planing")
             // The pump chip is not offered for a channel that was never run.
             #expect(!MapLayerScope.ride.layers(discipline).contains(.pumping))

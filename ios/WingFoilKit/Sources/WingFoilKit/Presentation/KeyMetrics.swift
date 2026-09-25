@@ -40,14 +40,38 @@ public struct KeyMetrics: Sendable, Equatable {
         /// the same affordance for a plain cell, so a number that needs a qualifier does
         /// not have to become a tally to get one.
         public let caption: String?
+        /// The document's `colourRole` for the value — `clean.jibe` on the clean-jibe cell,
+        /// `neutral` (body ink) everywhere else today.
+        public let colourRole: String
+        /// **A pair cell's two halves**, each with its own ink (F8f, 25 Sep 2026): the
+        /// streaks cell's "3 flew · 5 dry", where the flew half wears the ladder's green.
+        /// Empty on every single-valued cell; `value` still spells the whole pair, so a
+        /// renderer that ignores the parts prints the truth in one colour.
+        public let parts: [Part]
 
         public var id: String { key }
 
-        public init(key: String, label: String, value: String, caption: String? = nil) {
+        public init(key: String, label: String, value: String, caption: String? = nil,
+                    colourRole: String = "neutral", parts: [Part] = []) {
             self.key = key
             self.label = label
             self.value = value
             self.caption = caption
+            self.colourRole = colourRole
+            self.parts = parts
+        }
+    }
+
+    /// One half of a pair cell: the number, its short word and the ink it wears.
+    public struct Part: Sendable, Equatable {
+        public let value: String
+        public let label: String
+        public let colourRole: String
+
+        public init(value: String, label: String, colourRole: String = "neutral") {
+            self.value = value
+            self.label = label
+            self.colourRole = colourRole
         }
     }
 
@@ -63,9 +87,9 @@ public struct KeyMetrics: Sendable, Equatable {
         public let flewThrough: Int
         public let touchdown: Int
         public let fellIn: Int
-        /// What the three numbers are out of, and how many of them were **clean** —
-        /// "of 50 jibes · 12 clean", or "of 51 turns · 12 clean" on a session whose wind
-        /// axis never resolved and which therefore has no jibes.
+        /// What the three numbers are out of — "of 50 jibes", or "of 51 turns" on a session
+        /// whose wind axis never resolved and which therefore has no jibes. The **clean**
+        /// count was a clause here until 25 Sep 2026 and is `KeyMetrics.cleanJibes` now.
         ///
         /// A *clean jibe* is a counted jibe flown all the way through with the speed
         /// carried — the engine's per-turn `clean` flag: `success` (`docs/algorithms.md`,
@@ -102,6 +126,10 @@ public struct KeyMetrics: Sendable, Equatable {
     /// does not carry them (`ShareCardStats` reads `maxSpeed`, never this), because the
     /// card's rule is one speed, the one a rider quotes, and the Records page owns the set.
     public let speedExtras: [Metric]
+    /// **The clean jibes, in a cell of their own** (Jan, 25 Sep 2026, F8e) — first in the
+    /// turns row, drawn with the star in the clean ink. nil on a session with no jibes: the
+    /// wind axis named none, so there is nothing that could have been clean.
+    public let cleanJibes: Metric?
     /// nil when no turn was counted: a tally of three zeros is not a verdict.
     public let tally: Tally?
     /// **The tacks, on the same ladder** (22 September 2026). The engine has typed both
@@ -133,16 +161,18 @@ public struct KeyMetrics: Sendable, Equatable {
     /// WPH already divides — one event per actual swim, and the two halves of the caption
     /// add up to it exactly because they come from the same channel.
     public let falls: Metric?
-    /// JPH + CPH (or TPH alone) and WPH. **Empty** when `durationS <= 0` — the engine reports the
+    /// CPH, then one dry-turn rate — JPH on a jibes-only session, TPH once tacks exist —
+    /// then WPH (Jan, 25 Sep 2026). **Empty** when `durationS <= 0` — the engine reports the
     /// rates as null there, and "no hour to divide by" is an absence, not a 0.0.
     public let rates: [Metric]
 
     public init(basics: [Metric], maxSpeed: Metric, speedExtras: [Metric] = [],
-                tally: Tally?, tacks: Tally? = nil, streaks: Metric?,
-                falls: Metric? = nil, rates: [Metric]) {
+                cleanJibes: Metric? = nil, tally: Tally?, tacks: Tally? = nil,
+                streaks: Metric?, falls: Metric? = nil, rates: [Metric]) {
         self.basics = basics
         self.maxSpeed = maxSpeed
         self.speedExtras = speedExtras
+        self.cleanJibes = cleanJibes
         self.tally = tally
         self.tacks = tacks
         self.streaks = streaks
@@ -194,6 +224,7 @@ public struct KeyMetrics: Sendable, Equatable {
             // overclaim.
             maxSpeed: metric("max2s") ?? Metric(key: "max2s", label: "", value: "—"),
             speedExtras: ["best5x10s", "alpha500"].compactMap(metric),
+            cleanJibes: metric("cleanJibes"),
             tally: cells["tally"].map(Self.tally),
             tacks: cells["tacks"].map(Self.tally),
             streaks: metric("streaks"),
@@ -222,7 +253,19 @@ public struct KeyMetrics: Sendable, Equatable {
         return Metric(key: key,
                       label: PresentationCopy.text(labelID, glossary: glossaryForm(key)) ?? "",
                       value: value(cell),
-                      caption: caption)
+                      caption: caption,
+                      colourRole: cell["colourRole"]?.stringValue ?? "neutral",
+                      parts: parts(cell))
+    }
+
+    /// A pair cell's halves, each in its own ink. Empty on a single-valued cell.
+    static func parts(_ cell: PresentationValue) -> [Part] {
+        (cell["counts"]?.arrayValue ?? []).map { part in
+            Part(value: PresentationCopy.plain(part["value"] ?? .null),
+                 label: PresentationCopy.text(part["labelId"]?.stringValue ?? "",
+                                              glossary: .short) ?? "",
+                 colourRole: part["colourRole"]?.stringValue ?? "neutral")
+        }
     }
 
     /// Which spelling of a glossary word this cell's label wants. Only two cells name one:

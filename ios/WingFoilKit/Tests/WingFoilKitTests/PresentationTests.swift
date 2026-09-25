@@ -460,8 +460,8 @@ import Testing
 
         #expect(stats.title == "Torbole")
         #expect(stats.stats.map(\.key)
-                == ["duration", "distance", "avgSpeed", "max2s", "tally", "streaks",
-                    "jph", "cph", "wph"])
+                == ["duration", "distance", "avgSpeed", "max2s", "cleanJibes", "tally", "streaks",
+                    "cph", "jph", "wph"])
         // Labels and values verbatim from the block — no rewording, no reformatting.
         for metric in block.basics + [block.maxSpeed] + block.rates {
             let cell = stats.stats.first { $0.key == metric.key }
@@ -473,7 +473,7 @@ import Testing
         // ladder's inks, and carries the block's own caption.
         let tally = stats.stats.first { $0.key == "tally" }
         #expect(tally?.value == "35 · 8 · 7")
-        #expect(tally?.caption == "of 50 jibes · 12 clean")
+        #expect(tally?.caption == "of 50 jibes")
         #expect(tally?.tally == block.tally)
         #expect(stats.disclaimer == nil)
     }
@@ -510,9 +510,9 @@ import Testing
                                          longestFlightS: 392, timeZone: fixtureZone)
 
         #expect(outro.stats.map(\.key)
-                == ["duration", "distance", "avgSpeed", "max2s", "tally", "streaks",
-                    "jph", "cph", "wph", "longestFlight"])
-        #expect(outro.stats.count == 10)
+                == ["duration", "distance", "avgSpeed", "max2s", "cleanJibes", "tally", "streaks",
+                    "cph", "jph", "wph", "longestFlight"])
+        #expect(outro.stats.count == 11)
         // "6:32" — the same string the replay's own caption said and the flight table prints.
         #expect(outro.stats.last?.value == FlightPairing.clock(392))
         #expect(outro.stats.last?.value == "6:32")
@@ -538,7 +538,7 @@ import Testing
         for seconds in [nil, 0, -1] as [Double?] {
             let outro = ShareCardStats.outro(row: sampleRow(), title: "x", metrics: block,
                                              longestFlightS: seconds, timeZone: fixtureZone)
-            #expect(outro.stats.count == 9)
+            #expect(outro.stats.count == 10)
             #expect(!outro.stats.contains { $0.key == ShareCardStats.Key.longestFlight })
         }
         #expect(ShareCardStats.longestFlightStat(nil) == nil)
@@ -557,7 +557,7 @@ import Testing
         let lean = ShareCardStats.make(row: sampleRow(), title: "x", metrics: block,
                                        preset: .lean, timeZone: fixtureZone).stats
 
-        #expect(lean.map(\.key) == ["duration", "distance", "max2s", "tally"])
+        #expect(lean.map(\.key) == ["duration", "distance", "max2s", "cleanJibes", "tally"])
         #expect(lean.count < complete.count)
         for cell in lean {
             #expect(complete.contains(cell), "\(cell.key) was reworded by the preset")
@@ -730,17 +730,17 @@ import Testing
         #expect(block.tally?.flewThrough == 35)
         #expect(block.tally?.touchdown == 8)
         #expect(block.tally?.fellIn == 7)
-        #expect(block.tally?.caption == "of 50 jibes · 12 clean")
+        #expect(block.tally?.caption == "of 50 jibes")
         #expect(block.streaks?.value == "5 flew · 11 dry")
-        #expect(block.rates.map(\.key) == ["jph", "cph", "wph"])
+        #expect(block.rates.map(\.key) == ["cph", "jph", "wph"])
+        // CPH leads the row (Jan, 25 Sep 2026): 12 of those 50 were clean, the same 12 the
+        // clean-jibes cell names one row up.
+        #expect(block.rates[0].label == "CPH · clean jibes per hour")
+        #expect(block.rates[0].value == "6.1")
         // 43 dry jibes of 50 over 1:57 — the rate counts the ones he sailed out of, and the
         // label says so, because 50/h would be a different number under the same word.
-        #expect(block.rates[0].label == "JPH · dry jibes per hour")
-        #expect(block.rates[0].value == "22.0")
-        // …and 12 of those 50 were clean, the same 12 the tally's caption names one row up.
-        // Lenient then strict, and neither number is derivable from the other.
-        #expect(block.rates[1].label == "CPH · clean jibes per hour")
-        #expect(block.rates[1].value == "6.1")
+        #expect(block.rates[1].label == "JPH · dry jibes per hour")
+        #expect(block.rates[1].value == "22.0")
         #expect(block.rates[2].value == "12.8")
     }
 
@@ -767,19 +767,25 @@ import Testing
         // The score verdict never reaches the caption, under that word or any other.
         #expect(block.tacks?.caption.contains("clean") == false)
         // …and the jibe tally beside it is untouched.
-        #expect(block.tally?.caption == "of 50 jibes · 12 clean")
+        #expect(block.tally?.caption == "of 50 jibes")
 
         // On the card it is a cell of its own, straight after the jibes, wearing the
         // ladder's counts so the renderer can ink them.
         let stats = ShareCardStats.make(row: sampleRow(), title: "Torbole", metrics: block,
                                         preset: .complete, timeZone: fixtureZone)
         #expect(stats.stats.map(\.key)
-                == ["duration", "distance", "avgSpeed", "max2s", "tally", "tacks",
-                    "streaks", "jph", "cph", "wph"])
+                == ["duration", "distance", "avgSpeed", "max2s", "cleanJibes", "tally",
+                    "tacks", "streaks", "cph", "tph", "wph"])
+        // One dry-turn rate once tacks exist, and it is TPH (Jan, 25 Sep 2026).
+        #expect(block.rates.map(\.key) == ["cph", "tph", "wph"])
+        #expect(block.cleanJibes?.value == "12")
+        #expect(block.cleanJibes?.label == "clean jibes")
+        #expect(block.cleanJibes?.colourRole == "clean.jibe")
+        #expect(block.streaks?.parts.map(\.colourRole) == ["outcome.flew", "neutral"])
         let cell = stats.stats.first { $0.key == "tacks" }
         #expect(cell?.value == "3 · 5 · 6")
         #expect(cell?.caption == "of 14 tacks")
-        #expect(cell?.label == "flew · touchdown · fell")
+        #expect(cell?.label == "flew · touch · fell")
         #expect(cell?.tally == block.tacks)
         // Lean is still the four a rider quotes plus the falls: a tack tally is not one.
         let lean = ShareCardStats.make(row: sampleRow(), title: "x", metrics: block,
@@ -875,7 +881,7 @@ import Testing
         summary.apply(SessionRates(durationS: 59, timerTimeS: 59, distanceM: 226, dryTurns: 0,
                                    dryJibes: 0, fellIn: 0))
         let block = KeyMetrics.make(summary: summary, records: GP3SRecords())
-        #expect(block.rates.map(\.key) == ["jph", "cph", "wph"])
+        #expect(block.rates.map(\.key) == ["cph", "jph", "wph"])
         #expect(block.rates[0].value == "0.0")
         #expect(block.rates[1].value == "0.0")
         #expect(block.tally == nil)
@@ -899,11 +905,11 @@ import Testing
         summary.turns.jibeOutcomes = outcomes(4, 5, 6)
         let block = KeyMetrics.make(summary: summary, records: GP3SRecords())
 
-        #expect(block.rates.map(\.key) == ["jph", "cph", "wph"])
-        #expect(block.rates[0].value == "9.0")
-        #expect(block.rates[1].value == "0.0")
+        #expect(block.rates.map(\.key) == ["cph", "jph", "wph"])
+        #expect(block.rates[0].value == "0.0")
+        #expect(block.rates[1].value == "9.0")
         // …and the tally above names the same set the two jibe rates are about.
-        #expect(block.tally?.caption == "of 15 jibes · 0 clean")
+        #expect(block.tally?.caption == "of 15 jibes")
     }
 
     /// **The afternoon he swam out of every jibe still gets both jibe rates.**
@@ -936,10 +942,10 @@ import Testing
 
         #expect(summary.jibesPerHour == 0)
         #expect(summary.turnsPerHour == 0)
-        #expect(block.rates.map(\.key) == ["jph", "cph", "wph"])
+        #expect(block.rates.map(\.key) == ["cph", "jph", "wph"])
         #expect(block.rates[0].value == "0.0")
         #expect(block.rates[1].value == "0.0")
-        #expect(block.tally?.caption == "of 15 jibes · 0 clean")
+        #expect(block.tally?.caption == "of 15 jibes")
     }
 
     // MARK: - Thumbnail geometry
@@ -3690,7 +3696,9 @@ import Testing
         // "Log" became "Details" on 19 September 2026 (pattern A: a title names what the
         // screen does). The *case* stays `log`, because the anchors, the deep links and
         // docs/copy/app-shell.json all address it by that id.
-        #expect(labels == ["Ride", "Turns", "Takeoffs", "Details"])
+        // "Takeoffs" became "Flights" on 25 September 2026 (Jan, F12c): the flight ends
+        // joined the takeoffs, and the case kept its id for the same reason `log` did.
+        #expect(labels == ["Ride", "Turns", "Flights", "Details"])
         #expect(Set(labels).count == labels.count)
         // The chart and the map's own anchors are on one section, and that is the contract's
         // "one playhead" made structural — nothing may move them apart.
