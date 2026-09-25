@@ -223,6 +223,9 @@ struct SessionRowView: View {
         VStack(alignment: .leading, spacing: 1) {
             HStack(spacing: 3) {
                 Image(systemName: choice.icon).imageScale(.small)
+                    .foregroundStyle(choice.wearsCleanInk
+                                     ? AnyShapeStyle(DesignTokens.Clean.jibe)
+                                     : AnyShapeStyle(.secondary))
                 Text(choice.format(row)).monospacedDigit().foregroundStyle(.primary)
             }
             Text(choice.label)
