@@ -174,9 +174,11 @@ struct SettingsView: View {
             // "Sync intervals.icu" is the same call — as is a pull on the Sessions list.
             // What stays is what this section is for: the key, proving it, when it last
             // ran, and the two help topics.
-            if let last = store.lastSyncDate {
+            if let last = store.lastCheckAt ?? store.lastSyncDate {
                 // `.current` deliberately: this is when *you* last synced, on your own clock —
-                // the one date on this screen that is not about any session.
+                // the one date on this screen that is not about any session. `lastCheckAt`
+                // is the one that actually moves on a background wake; the fallback is only
+                // for a phone that has never had one land yet.
                 LabeledContent("Last sync", value: Fmt.date(last, zone: .current))
             }
             if let trouble = store.syncTroubles[.intervals], trouble.isShown {

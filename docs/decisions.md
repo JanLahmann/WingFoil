@@ -502,8 +502,13 @@ and a row-level rule would silently throw one of those away every pass. **The an
 not synced**: each device re-analyses what it receives, under its own engine version, so the
 folder can never carry a number this build did not compute. **Arrivals go through
 `SessionIngestor`**, so the ±60 s dedupe key, the discipline ladder, the spot clusterer and the
-default gear all run exactly as they do for a file dropped on the app. Changes are observed
-with `NSFileCoordinator` and `NSMetadataQuery`; there are no CloudKit records.
+default gear all run exactly as they do for a file dropped on the app. Every read and write is
+coordinated with `NSFileCoordinator`, because the other writer is the same app on the other
+device; there are no CloudKit records. **Changes are not observed live** — a live watch on the
+container (`NSMetadataQuery`) was the plan and is not built — the folder is checked with a
+pass at launch and on every return to the foreground, at most once every five minutes
+(`SessionStore.syncLibraryIfDue`, `autoSyncInterval`); "Sync now" in Settings is the third way
+in, and asks regardless of the interval.
 
 Consequence: **uuids are per device and are not renumbered.** A session that reached the two
 phones separately has two ids and is one afternoon, so the folder is keyed by whichever device

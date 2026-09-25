@@ -143,6 +143,9 @@ final class ActivityNotifier: NSObject {
 
         guard let (decision, activities) = await list(key: key, mark: mark, now: now,
                                                       ingestor: ingestor) else { return false }
+        // Reached intervals.icu, whatever it had to say — the Settings row reads this, not
+        // `lastSyncDate` (that one is the re-add gate's cursor and stays a manual sync's).
+        store.lastCheckAt = Date()
         for notice in decision.notices { await post(notice) }
         Self.save(decision.mark)
         guard !decision.notices.isEmpty, !Task.isCancelled else { return true }
