@@ -10,11 +10,15 @@ Every flight end is classified with the *same three-channel evidence ladder* the
 (`evidence.py`, docs/algorithms/pumping.md "Turn outcome" steps 0-4). Only the leaf verdicts differ,
 because a flight end is by definition already off the foil -- there is no `flew_through`:
 
-``glide_out``   came off the foil and **kept making way** -- the speed never once reached
-                `turnStopSpeedFloor`. Settling onto the board and taxiing/slogging on, the
-                benign ending; also what a deliberate stop-riding looks like.
+``glide_out``   came off the foil and **kept making way** -- the speed did not reach
+                `turnStopSpeedFloor` within `turnOutcomeLookahead` of the exit. Settling onto
+                the board and taxiing/slogging on, the benign ending; also what a deliberate
+                stop-riding looks like.
 ``touchdown``   came off and came to rest, briefly (up to `turnTouchdownMaxStop`), typically
-                water-starting or pumping straight back into the next flight.
+                water-starting or pumping straight back into the next flight. The first
+                sub-floor sample has to land within `turnOutcomeLookahead` (12 s) of the exit
+                (engine 0.25.0, ADR-035): the touch is the loss, and a dip a minute into a
+                slog is not the moment the foil was lost -- that end is a `glide_out`.
 
 Note the glide/touchdown line is drawn on *whether the rider ever stopped*, not on a stop
 **duration** above zero. Native Smart Recording samples at ~2 s, and the stop measure needs
@@ -43,8 +47,11 @@ turn's* event and is already counted there, so it is flagged `owned_by_turn` (th
 index) and left out of the straight-line tallies. Without this rule every jibe that ended in
 a swim would be counted twice -- once as a `fell_in` jibe and once as a fall -- which is
 exactly the double count that makes a session summary untrustworthy. Ownership is tested
-against *every* detected turn, bear-aways and round-ups included: a fall inside a bear-away's
-window is still explained by that course change, not by a straight-line loss.
+against *counted* turns only (engine 0.25.0, ADR-035): a bear-away or a round-up is not in
+the turn list, the ladders or the streaks, so a fall inside its window is a straight-line
+fall -- docs/algorithms/turns.md "Aborted turns" -- and gets the straight-line mark and
+submersion attribution with it. Before 0.25.0 every detected turn owned, and such a fall
+read "in a turn" on the tile while no turn anywhere said it fell.
 
 The session split that falls out of this -- falls in turns vs straight-line falls, the same
 for touchdowns -- is what `summarize_flight_ends` and `split_outcomes` report.
@@ -239,18 +246,26 @@ def _classify(index: int, end_t: float, ev: OffFoilEvidence, cfg: FlightEndConfi
     end.submerged = bool(ev.submerged[win].any())
 
     lost = np.flatnonzero(win & ~ev.flying)
+    first_dip_s = float("inf")          # exit -> first sample under turnStopSpeedFloor
     if lost.size:
         a = int(lost[0])
         b, last = off_foil_run(t, ev.flying, a, end_t + cfg.outcome_window_s)
         end.off_foil_s = elapsed(t, ev.gap, a, last)
         end.stopped_s = longest_stop(t, ev.gap, ev.speed, a, b, cfg.stop_speed_floor_mps)
         end.min_speed_mps = float(np.min(ev.speed[a:b + 1]))
+        dips = np.flatnonzero(ev.speed[a:b + 1] < cfg.stop_speed_floor_mps)
+        if dips.size:
+            first_dip_s = float(t[a + int(dips[0])] - end_t)
 
     if end.submerged or end.stopped_s > cfg.fall_stop_s:
         end.outcome = FELL_IN
     elif end.min_speed_mps < cfg.stop_speed_floor_mps:
-        end.outcome = TOUCHDOWN
-        end.borderline = end.stopped_s > cfg.touchdown_max_stop_s
+        # The touch is the loss (engine 0.25.0, ADR-035): it has to come within the span
+        # the turn channel judges its own loss over. A first dip later than that, with no
+        # stop over turnFallStop, is a slog that brushed the floor -- a glide-out.
+        if first_dip_s <= cfg.outcome_lookahead_s:
+            end.outcome = TOUCHDOWN
+            end.borderline = end.stopped_s > cfg.touchdown_max_stop_s
     elif end.pumped and _marginal(ev, win, cfg):
         # Same corroboration rule as the turns: accel promotes only when the speed channels
         # also went marginal. At a flight end that test is nearly vacuous -- the flight ended
@@ -277,15 +292,17 @@ def _marginal(ev: OffFoilEvidence, win: np.ndarray, cfg: FlightEndConfig) -> boo
 
 
 def assign_end_ownership(ends: list[FlightEnd], turns: list[Turn]) -> None:
-    """Flag each flight end that falls inside a turn's outcome window, in place.
+    """Flag each flight end that falls inside a counted turn's outcome window, in place.
 
     A turn's window runs from `start_t` to `end_t + outcome_window_s` (the tail its outcome
     was actually judged over, not the lookahead cap), so the two channels agree by
-    construction on which events they are looking at.
+    construction on which events they are looking at. Only a *counted* turn owns (engine
+    0.25.0, ADR-035): an uncounted course change is in no ladder, so the end stays a
+    straight-line end -- the same rule the streaks and `OutcomeSplit` already read.
     """
     for end in ends:
         for k, turn in enumerate(turns):
-            if turn.start_t <= end.t <= turn.end_t + turn.outcome_window_s:
+            if turn.counted and turn.start_t <= end.t <= turn.end_t + turn.outcome_window_s:
                 end.owned_by_turn = k
                 break
 

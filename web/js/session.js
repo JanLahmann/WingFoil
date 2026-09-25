@@ -440,7 +440,10 @@ function buildModel(result) {
         ["outcome", `${OUTCOME_LABEL[e.outcome] || e.outcome}` +
                     (end?.borderline ? " (borderline)" : "")],
         ["channel", "straight-line — no turn explains it"],
-        ["stopped", `${nf(end?.stoppedS, 1)} s · off foil ${nf(end?.offFoilS, 1)} s`],
+        // The off-foil run is followed to `turnOutcomeWindow` (60 s) and no further, so a
+        // value there is a ceiling (engine 0.25.0) — the turn page's "1 min+".
+        ["stopped", `${nf(end?.stoppedS, 1)} s · off foil ` +
+                    (end?.offFoilS >= 60 ? "1 min+" : `${nf(end?.offFoilS, 1)} s`)],
         ["min speed", speed(end?.minKn)],
       ],
     });
