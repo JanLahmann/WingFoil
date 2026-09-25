@@ -504,15 +504,20 @@ public struct SessionIngestor: Sendable {
         let track = try archive.rawTrack(for: row.id)
         let analysis = analyze(track, discipline: row.analysisDiscipline)
         try? archive.writeAnalysis(analysis, id: row.id)
-        var updated = row
-        if updated.startLat == nil,
-           let fix = track.samples.first(where: { $0.lat != nil && $0.lon != nil }) {
-            updated.startLat = fix.lat
-            updated.startLon = fix.lon
-        }
-        updated.apply(analysis)
-        let stored = updated
+        let fix = track.samples.first(where: { $0.lat != nil && $0.lon != nil })
+        let spotRadiusM = self.spotRadiusM
         try await database.writer.write { db in
+            // **The row as it is now, not as the caller last saw it** (release round A).
+            // `reanalyzeStale()` and the rerun button hand over rows read before a sweep
+            // that can take minutes; writing that snapshot back would undo a rename, a rider
+            // or a caption made in the meantime. Only the derived columns move here.
+            // A session deleted meanwhile stays deleted: nothing is written for it.
+            guard var stored = try SessionRow.fetchOne(db, key: row.id) else { return }
+            if stored.startLat == nil, let fix {
+                stored.startLat = fix.lat
+                stored.startLon = fix.lon
+            }
+            stored.apply(analysis)
             try stored.update(db)
             try SessionDerivation.write(analysis, session: stored, db: db)
             if stored.spotId == nil, let lat = stored.startLat, let lon = stored.startLon {

@@ -379,6 +379,46 @@ import ZIPFoundation
         #expect(after.allSatisfy { $0.history.count == 1 })
     }
 
+    /// **An engine bump keeps what the rider wrote** (release round A, 25 Sep 2026).
+    ///
+    /// `reanalyzeStale()` reads every row once and then re-derives them one by one, and the
+    /// rerun button hands over the list the screen was showing — so the row a re-analysis
+    /// holds can be minutes older than the database. A rename, a rider or a caption written
+    /// in those minutes must survive, and so must the gear, which lives in its own table.
+    @Test func reanalysisFromAnOldSnapshotKeepsTheRidersEdits() async throws {
+        let harness = try makeHarness()
+        defer { try? FileManager.default.removeItem(at: harness.root.deletingLastPathComponent()) }
+        let (data, name) = try fixture("2026-08-05-0827")
+        guard case .imported(let snapshot) = try await harness.ingestor.ingest(
+            fitData: data, filename: name, source: .file) else {
+            Issue.record("expected a fresh import")
+            return
+        }
+        let wing = GearRow(name: "Duotone Unit 5 m", kind: .wing)
+        try await harness.store.saveGear(wing)
+        try await harness.store.assignGear(sessionId: snapshot.id, kind: .wing, gearId: wing.id)
+        try await harness.store.renameSession(id: snapshot.id, to: "Lake day")
+        try await harness.store.setShareNote(id: snapshot.id, to: "first clean jibe")
+        try await harness.ingestor.database.writer.write { db in
+            try db.execute(sql: "UPDATE session SET rider = ? WHERE id = ?",
+                           arguments: ["Robert", snapshot.id])
+        }
+
+        harness.ingestor.dropAllAnalyses()
+        _ = try await harness.ingestor.reanalyze(snapshot)   // the row from before the edits
+
+        let after = try #require(try await harness.ingestor.session(id: snapshot.id))
+        #expect(after.customTitle == "Lake day")
+        #expect(after.shareNote == "first clean jibe")
+        #expect(after.rider == "Robert")
+        #expect(after.engineVersion == harness.ingestor.analysisVersion)
+        let gear = try await harness.ingestor.database.writer.read { db in
+            try String.fetchAll(db, sql: "SELECT gearId FROM session_gear WHERE sessionId = ?",
+                                arguments: [snapshot.id])
+        }
+        #expect(gear == [wing.id])
+    }
+
     // MARK: - Gear
 
     @Test func gearCombosDefaultToTheLastUsedAndRollUp() async throws {

@@ -200,7 +200,8 @@ and are worth tagging only as far back as anyone would bisect.
 version sites together and turns docs/testing.md's four channel greps into code:
 
 - **iOS** — `CURRENT_PROJECT_VERSION` identical at every site in `ios/project.yml`, and one
-  `MARKETING_VERSION` outside the release target (which carries its own 1.0.x line).
+  `MARKETING_VERSION` at every target, the release included (one version across the three
+  channels; the release is the lowest build of it).
 - **Watch** — one version across `manifest.xml`, `manifest-beta.xml` and `manifest-dev.xml`
   (the same rule `package.sh` enforces at build time, said before the build).
 - **Engine** — `lab/src/wingfoil_lab/__init__.py`, the web bundle's copy, the kit's
