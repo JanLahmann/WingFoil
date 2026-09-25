@@ -134,6 +134,7 @@ final class ActivityNotifier: NSObject {
     @discardableResult
     func poll() async -> Bool {
         guard isEnabled, let store else { return false }
+        store.reloadApiKeyIfMissing()
         let key = store.apiKey
         guard !key.isEmpty else { return false }
         let ingestor = store.ingestor
