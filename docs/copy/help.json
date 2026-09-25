@@ -1013,7 +1013,7 @@
           "body" : [
             "There is no CleanJibe account and no CleanJibe server. A session you import is analysed on this phone and stays on it. There is no advertising, no analytics and no tracking of any kind.",
             "The app talks to four places, each only when you use it. Your own login goes to intervals.icu and Strava. Apple Maps loads while a map is on screen. To name a new spot, it sends one rounded position.",
-            "CleanJibe never asks for your location. Every coordinate it draws was already inside a file you imported."
+            "On the App Store release, CleanJibe never asks for your location. Every coordinate it draws was already inside a file you imported. The beta and dev builds ask for one, in one place each. The privacy page says where."
           ],
           "channels" : [
             "release",
