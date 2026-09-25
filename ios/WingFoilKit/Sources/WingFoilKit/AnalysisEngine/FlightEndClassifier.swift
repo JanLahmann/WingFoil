@@ -122,7 +122,9 @@ public struct OutcomeSplit: Sendable, Codable, Equatable {
 /// **Ownership.** A flight end inside a detected turn's outcome window is *that turn's*
 /// event, already counted there: it is flagged and kept out of the straight-line tallies.
 /// Without this rule every jibe ending in a swim would be counted twice. Ownership is
-/// tested against *every* detected turn, bear-aways included.
+/// tested against *counted* turns only (engine 0.25.0, ADR-035): a bear-away or round-up is
+/// in no ladder, so a fall inside its window is a straight-line fall (turns.md "Aborted
+/// turns").
 ///
 /// Mirrors `lab/src/wingfoil_lab/flightend.py`.
 public enum FlightEndClassifier {
@@ -198,6 +200,7 @@ public enum FlightEndClassifier {
         end.pumped = pump?.isPumping(from: endT, to: t[hi]) ?? false
         end.submerged = win.contains { ev.submerged[$0] }
 
+        var firstDipS = Double.infinity     // exit -> first sample under turnStopSpeedFloor
         if let a = win.first(where: { !ev.flying[$0] }) {
             let (b, last) = Evidence.offFoilRun(t: t, flying: ev.flying, a: a,
                                                 capT: endT + config.outcomeWindowS)
@@ -207,13 +210,21 @@ public enum FlightEndClassifier {
             var lowest = Double.infinity
             for k in a...b { lowest = min(lowest, ev.speed[k]) }
             end.minSpeedMps = lowest
+            if let k = (a...b).first(where: { ev.speed[$0] < config.stopSpeedFloorMps }) {
+                firstDipS = t[k] - endT
+            }
         }
 
         if end.submerged || end.stoppedS > config.fallStopS {
             end.outcome = .fellIn
         } else if (end.minSpeedMps ?? .infinity) < config.stopSpeedFloorMps {
-            end.outcome = .touchdown
-            end.borderline = end.stoppedS > config.touchdownMaxStopS
+            // The touch is the loss (engine 0.25.0, ADR-035): it has to come within the span
+            // the turn channel judges its own loss over. A first dip later than that, with
+            // no stop over turnFallStop, is a slog that brushed the floor — a glide-out.
+            if firstDipS <= config.outcomeLookaheadS {
+                end.outcome = .touchdown
+                end.borderline = end.stoppedS > config.touchdownMaxStopS
+            }
         } else if end.pumped, marginal(ev, in: win, config: config) {
             // Same corroboration rule as the turns: accel promotes only when the speed
             // channels also went marginal. At a flight end that test is nearly vacuous —
@@ -242,13 +253,16 @@ public enum FlightEndClassifier {
         window.contains { ev.speed[$0] < config.foilEntrySpeedKmh * kmhToMps }
     }
 
-    /// Flag each flight end that falls inside a turn's outcome window. A turn's window runs
-    /// from `startT` to `endT + outcomeWindowS` (the tail its outcome was actually judged
-    /// over, not the lookahead cap), so the two channels agree by construction.
+    /// Flag each flight end that falls inside a counted turn's outcome window. A turn's
+    /// window runs from `startT` to `endT + outcomeWindowS` (the tail its outcome was
+    /// actually judged over, not the lookahead cap), so the two channels agree by
+    /// construction. Only a *counted* turn owns (engine 0.25.0, ADR-035): an uncounted
+    /// course change is in no ladder, so the end stays a straight-line end.
     static func assignOwnership(_ ends: inout [FlightEnd], turns: [Turn]) {
         for i in ends.indices {
             for (k, turn) in turns.enumerated()
-            where turn.startT <= ends[i].t && ends[i].t <= turn.endT + turn.outcomeWindowS {
+            where turn.counted && turn.startT <= ends[i].t
+                && ends[i].t <= turn.endT + turn.outcomeWindowS {
                 ends[i].ownedByTurn = k
                 break
             }

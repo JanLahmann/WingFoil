@@ -235,7 +235,17 @@ public enum AnalysisEngine {
     /// engine called `fellIn` inside a turn that denied it — fall 110 → 18. The flight-end
     /// channel's own 277 falls do not move at all, and neither does WPH.
     /// `config.turnOutcomeLookaheadNotRecovered` is the schema change.
-    public static let version = "0.24.0"
+    ///
+    /// 0.25.0 settles **who owns a fall, and when a touch is a touch** (docs/algorithms/pumping.md
+    /// "Flight-end outcome", ADR-035). Only a *counted* turn owns a flight end: a fall inside
+    /// a bear-away's or round-up's window is a straight-line fall, as turns.md "Aborted turns"
+    /// always said, so the tile no longer reads "in a turn" for a fall no turn claims. And a
+    /// straight-line touchdown needs its first sub-floor sample within `turnOutcomeLookahead`
+    /// (12 s) of the exit; a dip later than that, with no stop over `turnFallStop`, is a
+    /// `glideOut`. Over the 21 goldens 9 falls move from "in a turn" to "in a straight line"
+    /// and 8 straight-line touchdowns become glide-outs; turns, clean jibes, total falls and
+    /// every rate stay where they were. No schema change.
+    public static let version = "0.25.0"
 }
 
 /// **Is this recording a session?** — docs/algorithms/not-a-session.md "Not a session" (engine 0.19.0).
