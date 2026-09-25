@@ -190,10 +190,11 @@
   <section class="home-section" id="app-network">
     <h2>The iPhone app — what leaves your phone</h2>
     <p class="section-lede">
-      Nine entries, and not one of them is a surprise: an account you connected, something a
-      map needs, the name of a place you sail, a mail you wrote and sent yourself, and — while
-      this is a beta — Apple&rsquo;s own crash reports and one small file the app reads to see
-      whether your build is still the current one. There is no tenth.
+      Ten entries, and not one of them is a surprise: an account you connected, something a
+      map needs, the name of a place you sail, a mail you wrote and sent yourself, what iOS
+      itself already knew about a crash on this phone, and — while this is a beta — Apple&rsquo;s
+      own crash reports and one small file the app reads to see whether your build is still the
+      current one. There is no eleventh.
     </p>
 
     <dl class="terms">
@@ -222,10 +223,11 @@
           no comment — and nothing in the app is a quiet step towards it. The access token it
           gets back lives in the <strong>iOS Keychain</strong> on your phone, is never copied
           into iCloud, and is sent only to Strava. <strong>Disconnect</strong>, on either of
-          those two screens, deletes it from the phone; to withdraw the permission at Strava's
-          end as well, use
-          <a href="https://www.strava.com/settings/apps" rel="noopener">strava.com/settings/apps</a>,
-          which is where any app's access is really revoked. Strava lets a new app connect a
+          those two screens, deletes it from the phone and also asks Strava to revoke it, the
+          same as unlinking it yourself at
+          <a href="https://www.strava.com/settings/apps" rel="noopener">strava.com/settings/apps</a>;
+          if your phone is offline when you disconnect, the token is still deleted here, and
+          that page is where you can check or finish the job. Strava lets a new app connect a
           <strong>limited number of riders</strong>, which the app says out
           loud rather than reporting as a failure; if you are told the app is full, tell us. Sessions that arrive this way carry
           positions and no measured speed, so their speed records are marked uncertified — an
@@ -305,10 +307,15 @@
           iOS version and locale, the paired watch and which version of the CleanJibe watch app
           it runs, and the shape of your library — how many sessions, and how many came in by
           each door. Sent from a session page it also names that session's date, spot, duration
-          and source, and attaches that session's share card. There is no track, no file and no
-          coordinate in it. Every line is editable, and <strong>nothing is sent until you tap
-          Send</strong>: it is an ordinary mail, through your own mail account, to a mailbox.
-          There is no CleanJibe server anywhere in that path either.
+          and source, and attaches that session's share card. If iOS has noticed a crash, a
+          hang or a heavy write to disk on this phone since the last mail, the newest few print
+          too: roughly when, what iOS called it, and where in the app it happened. iOS keeps
+          those itself, on this phone, in every channel including the App Store one, and prints
+          them here because there is nowhere else a rider on that channel could ever read them.
+          There is no track, no file and no coordinate in it. Every line is editable, and
+          <strong>nothing is sent until you tap Send</strong>: it is an ordinary mail, through
+          your own mail account, to a mailbox. There is no CleanJibe server anywhere in that
+          path either.
         </dd>
       </div>
       <div class="term">
