@@ -381,6 +381,26 @@ function renderSettingsCopy() {
     host.prepend(lead);
     host.prepend(head);
   }
+  renderSettingsIndex();
+}
+
+/** **The jump list** (Jan, 25 September 2026: Settings is very long). One chip per section
+ *  that is on this page, in the page's order, the Help page's own chips. A tap scrolls the
+ *  section to the top; nothing else moves. */
+function renderSettingsIndex() {
+  const nav = el("settings-index");
+  if (!nav) return;
+  const present = SETTINGS_SECTIONS.filter((section) =>
+    document.querySelector(`[data-settings="${section.id}"]`));
+  nav.innerHTML = present.map((section) =>
+    `<button type="button" class="help-chip" data-settings-jump="${esc(section.id)}">`
+    + `${esc(section.title)}</button>`).join("");
+  nav.addEventListener("click", (ev) => {
+    const chip = ev.target.closest("[data-settings-jump]");
+    if (!chip) return;
+    const target = document.querySelector(`[data-settings="${chip.dataset.settingsJump}"]`);
+    if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
 }
 
 function wireSettings() {

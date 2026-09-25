@@ -247,7 +247,7 @@ export const SETTINGS_SECTIONS = [
   {
     "id": "strava",
     "title": "Strava",
-    "lead": "Import what you already ride with. CleanJibe only ever reads it.",
+    "lead": "Bring in the sessions you already have on Strava. CleanJibe only reads them.",
     "footer": [
       "Strava opens, you say yes, and CleanJibe can list your activities on the Import screen.",
       "CleanJibe only reads your Strava account. It never writes, renames or posts anything.",
@@ -308,7 +308,7 @@ export const SETTINGS_SECTIONS = [
     "title": "Units",
     "lead": "Read speeds in knots or in km/h.",
     "footer": [
-      "Speeds are read in knots by the speedsurfing world. Pick km/h if that is the number you think in."
+      "The speedsurfing world reads speed in knots. Pick km/h if that is the number you think in."
     ],
     "help": "speedRecords"
   },
@@ -924,7 +924,7 @@ export const HELP = {
         },
         {
           "body": [
-            "One word per number, on the watch, on the phone, on the card and on the site. A number that is called two things on two screens is a bug here."
+            "Each number has one word, on the watch, the phone, the card and the site. If you see one number called two things, tell us."
           ],
           "channels": [
             "release",
@@ -948,7 +948,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "One takeoff starts a flight. A touchdown or a swim ends it. Both are counted. Also on the watch and in Garmin Connect.",
+              "detail": "One takeoff starts a flight. A touchdown or a fall ends it. Both are counted. Also on the watch and in Garmin Connect.",
               "term": "Flights & touchdowns"
             },
             {
@@ -1116,7 +1116,7 @@ export const HELP = {
         },
         {
           "body": [
-            "Every release, with the day it shipped. The iPhone app ships as TestFlight builds. The Garmin watch app ships as Connect IQ versions. The two number differently and land on different days."
+            "Here is every release, with the day it shipped. The iPhone app and the Garmin watch app number their versions differently. They also update on different days."
           ],
           "channels": [
             "release",
@@ -1141,9 +1141,9 @@ export const HELP = {
         {
           "body": [
             "The easiest way in is intervals.icu. Garmin has no open API, so intervals.icu receives your activities and hands CleanJibe the original recording. You can also open a .fit by hand, from Files, Mail or a Garmin export ZIP.",
-            "Nothing is uploaded and nothing is changed on either side. CleanJibe lists your activities. It downloads the original recording of the watersport ones. It analyses them on the phone.",
-            "Polar, Suunto and Coros work this way too. Their own apps sync to intervals.icu, and CleanJibe syncs from there.",
-            "What comes back decides how much you get. A FIT gives the full analysis. A GPX or a speedless TCX gives estimated, uncertified speed records."
+            "Nothing is uploaded, and nothing changes in either account. CleanJibe downloads the original recording of each watersport session and analyses it on your phone.",
+            "Polar, Suunto and COROS work this way too. Their own apps sync to intervals.icu, and CleanJibe syncs from there.",
+            "The file your watch left there decides how much you get. A FIT gives you the full analysis. A GPX, or a TCX without speed, gives uncertified speed records."
           ],
           "channels": [
             "release",
@@ -1203,7 +1203,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Under Connect IQ on the activity page: jibes, tacks, foil time, flights and the best 2 seconds. They are written once a wind direction was set.",
+              "detail": "Under Connect IQ on the activity page: jibes, tacks, foil time, flights and the best 2 seconds. They appear once you have set a wind direction on the watch.",
               "term": "Where Garmin Connect shows the jibes"
             },
             {
@@ -1222,7 +1222,7 @@ export const HELP = {
             "icuPrivacy",
             "sourceClass"
           ],
-          "summary": "Four steps, about five minutes, once.",
+          "summary": "Set it up once, in 4 steps and about 5 minutes.",
           "title": "Get set up with intervals.icu"
         },
         {
@@ -1245,7 +1245,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "The check is a call to your intervals.icu account. Add the API key first, in Settings.",
+              "detail": "CleanJibe looks in your intervals.icu account, so add the API key first, in Settings → intervals.icu.",
               "term": "It needs a key"
             },
             {
@@ -1254,7 +1254,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "The switch itself is what asks iOS for permission. CleanJibe makes the offer once, after a key has been proved.",
+              "detail": "Turning it on is what asks iOS for permission. CleanJibe offers it once by itself, right after your key works.",
               "term": "Off by default"
             }
           ],
@@ -1268,9 +1268,10 @@ export const HELP = {
         {
           "body": [
             "A real wingfoil session on Lake Garda. Ten minutes, 2 flights, 10 jibes, 2.6 km and 68 % foil time. The track, the speed chart, the turn outcomes, the pump counts and the heart-rate cost are all filled in.",
-            "It is not your data. CleanJibe badges it EXAMPLE in the list and on its own page. It stays out of Records, Trends and the gear rollups.",
-            "Delete it with a swipe. This screen offers it again.",
-            "It was recorded at Nago-Torbole, Lake Garda with the CleanJibe watch app, every identifier removed. The accelerometer stream was left out because it is larger than the rest of the app. Pump strokes and takeoff effort show as unavailable."
+            "It is not your data. CleanJibe marks it EXAMPLE in the list and on its own page. It stays out of Records, Trends and your gear totals.",
+            "Delete it with a swipe. You can load it again from here.",
+            "We recorded it at Nago-Torbole, Lake Garda with the CleanJibe watch app and removed everything that identifies the rider. We left the accelerometer out, because it is bigger than the whole app.",
+            "So pump strokes and takeoff effort show as unavailable."
           ],
           "channels": [
             "release",
@@ -1290,7 +1291,7 @@ export const HELP = {
         },
         {
           "body": [
-            "The watch app records the GPS track, your heart rate and the wrist accelerometer at 50 Hz. Start it on the watch, ride, end the workout. The session transfers to the phone while both are in range.",
+            "The watch app records the GPS track, your heart rate and the wrist accelerometer at 50 Hz. Start it on the watch, ride, and end the workout. The session moves to the phone while both are in range.",
             "Because the wrist is recorded, pump strokes and failed takeoff attempts are analysed on the phone. The speed is the watch's own, so the records certify."
           ],
           "channels": [
@@ -1305,7 +1306,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "A wrist under water counts as a fall. The pressure sensor sees it. The GPS gap is marked, not filled.",
+              "detail": "When your wrist goes under, the watch's pressure sensor notices, and that counts as a fall. The gap in the GPS track is marked, not filled in.",
               "term": "The wrist may go under"
             },
             {
@@ -1314,7 +1315,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "The session is handed over once you end the workout. If it is not in the list yet, look again in a minute.",
+              "detail": "The watch sends the session once you end the workout. If it is not in the list yet, look again in a minute.",
               "term": "Let the workout finish"
             }
           ],
@@ -1329,9 +1330,9 @@ export const HELP = {
         },
         {
           "body": [
-            "Record a session with Apple's own Workout app and analyse it here. No Garmin, no account, no cable, not even CleanJibe's own watch app.",
+            "Record a session with Apple's own Workout app and analyse it here. You need no Garmin, no account and no cable.",
             "Health has no wingfoil workout type. CleanJibe reads the one you picked as a wingfoil session, because you asked it to.",
-            "Then Import → Apple Health, allow CleanJibe to read workouts, and pick the ones you want. After the first one, switch on \"Import new Health workouts automatically\". The next session is then waiting when you open the app.",
+            "Open Import → Apple Health, allow CleanJibe to read workouts, and pick the ones you want. After the first one, switch on \"Import new Health workouts automatically\". The next session is then waiting when you open the app.",
             "Speed comes off the watch's own GPS receiver, so these speed records are certified. Nothing records your wrist accelerometer, so there are no pump strokes and no failed takeoff attempts."
           ],
           "channels": [
@@ -1355,7 +1356,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "A wrist under water counts as a fall. The pressure sensor sees it. The GPS gap is marked, not filled.",
+              "detail": "When your wrist goes under, the watch's pressure sensor notices, and that counts as a fall. The gap in the GPS track is marked, not filled in.",
               "term": "The wrist may go under"
             },
             {
@@ -1389,8 +1390,8 @@ export const HELP = {
         {
           "body": [
             "CleanJibe lists your Strava sessions and imports the ones you pick. It only reads. It never writes, renames or posts to your account.",
-            "A Strava session shows everything that comes from the track. Foil time, flights, every turn verdict, the wind axis, the map.",
-            "Strava hands over no speed channel, so the speed records are marked uncertified. Without the watch's own speed, a fall can read as a touchdown. Your wrist was not recorded, so there are no pump strokes.",
+            "A Strava session still shows foil time, flights, every turn verdict, the wind axis and the map.",
+            "Strava keeps your track but not your watch's own speed, so the speed records are marked uncertified. Without the watch's own speed, a fall can read as a touchdown. Your wrist was not recorded, so there are no pump strokes.",
             "If the same afternoon is also on intervals.icu, import it from there instead. That is the original file off your watch, so those records certify. Importing both is harmless, because the same session is never added twice."
           ],
           "channels": [
@@ -1433,7 +1434,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Once one session has come in this way, a toggle appears: CleanJibe then checks Strava whenever you open the app.",
+              "detail": "Once one session has come in this way, a switch appears. With it on, CleanJibe checks Strava whenever you open the app.",
               "term": "Keep it automatic"
             },
             {
@@ -1442,7 +1443,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Strava answers 200 requests every 15 minutes. A first import of many seasons may ask you to come back shortly.",
+              "detail": "Strava lets an app ask 200 times every 15 minutes. A first import of many seasons may ask you to come back later.",
               "term": "A long history takes its time"
             },
             {
@@ -1451,7 +1452,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Strava lets a new app connect a limited number of riders. That says nothing about your account. Menu → Support & ideas is the way to report it.",
+              "detail": "Strava lets a new app connect a limited number of riders. That says nothing about your account. Tell us through Menu → Support & ideas.",
               "term": "If connecting is refused"
             },
             {
@@ -1478,9 +1479,9 @@ export const HELP = {
           "body": [
             "Every watch app can export a recording as a file, and CleanJibe reads .fit files. Export the session as a FIT and pick CleanJibe from the share sheet.",
             "If it is not in the row, Save to Files and open it from there.",
-            "Which format, if you are asked: FIT, every time. A FIT carries the receiver's own speed, so its records certify.",
+            "If you are asked for a format, pick FIT. A FIT carries the watch's own speed, so its records certify.",
             "A .gpx or a .tcx carries positions only, so its records are marked uncertified. Those two formats open in the CleanJibe beta.",
-            "Garmin Connect's phone app has no export at all. Garmin owners have two better routes: intervals.icu, or connect.garmin.com on a computer."
+            "Garmin Connect's phone app has no export at all. Garmin owners have two better ways in: intervals.icu, or connect.garmin.com on a computer."
           ],
           "channels": [
             "release",
@@ -1549,9 +1550,9 @@ export const HELP = {
         {
           "body": [
             "A phone records a GPS track as well as most watches do. CleanJibe reads it the same way.",
-            "It is Class C · positions only. The speed is worked out from the positions.",
+            "The Import screen calls it Class C · positions only, because the speed is worked out from the positions.",
             "Foil time, flights, every turn verdict and clean jibe, the wind axis. Speed records are estimated from positions and marked uncertified, and there are no pump strokes or takeoff attempts.",
-            "Where to put the phone: dry, still and pointing at the sky. A waterproof pouch on the upper arm or high on the chest works.",
+            "Keep the phone dry, still and facing the sky. A waterproof pouch on the upper arm or high on the chest works.",
             "A pocket at hip height spends half the session underwater. Start the recording on the beach."
           ],
           "channels": [
@@ -1585,7 +1586,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "FIT. CleanJibe reads a .fit in every build, and a file with the receiver's own speed certifies its records. A .gpx or a .tcx opens in the CleanJibe beta.",
+              "detail": "Pick FIT. CleanJibe reads a .fit in every build, and a file with the watch's own speed certifies its records. A .gpx or a .tcx opens in the CleanJibe beta.",
               "term": "Which format, if you are offered a choice"
             }
           ],
@@ -1596,7 +1597,7 @@ export const HELP = {
             "sourceClass",
             "speedRecords"
           ],
-          "summary": "No watch at all. A tracker app in a pouch. The session comes in through Strava or as a file.",
+          "summary": "Ride with a tracker app on a phone in a pouch. It comes in through Strava or as a file.",
           "title": "Recording with a phone only"
         },
         {
@@ -1618,7 +1619,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "A .fit, a .gpx or a .tcx, from any watch. The browser app is not the iPhone app and has no channels.",
+              "detail": "It reads a .fit, a .gpx or a .tcx from any watch. It has no beta, so every rider gets the same version.",
               "term": "What it reads"
             },
             {
@@ -1627,7 +1628,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Where a browser offers it, the page installs. It gets an icon on your home screen, opens like an app and works with no signal.",
+              "detail": "If your browser offers it, install the page. It gets an icon on your home screen, opens like an app and works with no signal.",
               "term": "Install it from the browser"
             },
             {
@@ -1713,8 +1714,8 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Any GPS-logging app works: record, then import through Strava or share the file in. Positions only, so the records are uncertified. The flights, turns and map are all there.",
-              "term": "A phone in a pocket, or no watch at all"
+              "detail": "Any GPS-logging app works: record, then import through Strava or share the file in. It has positions only, so records are uncertified. The flights, turns and map are all there.",
+              "term": "A phone in a pouch, or no watch at all"
             }
           ],
           "related": [
@@ -1727,7 +1728,7 @@ export const HELP = {
             "sourceClass",
             "speedRecords"
           ],
-          "summary": "All of them, one way or another. Each row says what that one costs you.",
+          "summary": "Every watch works, one way or another. Each row says what yours can and cannot show.",
           "title": "Which watches work with CleanJibe"
         },
         {
@@ -1735,7 +1736,7 @@ export const HELP = {
             "Garmin's Connect IQ store sometimes queues an update without installing it, most often on the fenix 5 Plus family.",
             "Restart the watch, then sync in Garmin Connect.",
             "If it still shows the old version, install it through Garmin Express over the cable.",
-            "CleanJibe updates often, so you meet this here more than with other apps."
+            "We update CleanJibe often, so you may meet this more than with other apps."
           ],
           "channels": [
             "release",
@@ -1755,7 +1756,7 @@ export const HELP = {
         },
         {
           "body": [
-            "Every failure CleanJibe can see is reported as a cause, because the fix differs. A rejected key is your key. An empty list is usually Garmin not connected yet. A network error is neither."
+            "CleanJibe tells you what went wrong, because each problem has its own fix. A rejected key means your key. An empty list usually means Garmin is not connected yet. A network error is neither."
           ],
           "channels": [
             "release",
@@ -1770,7 +1771,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "A 401: the key is wrong or was regenerated after you pasted it. Copy it again from Settings → Developer Settings. A stray space at either end breaks it.",
+              "detail": "The key is wrong, or you made a new one after pasting it. Copy it again from intervals.icu, Settings → Developer Settings. A stray space at either end breaks it.",
               "term": "\"intervals.icu rejected the API key\""
             },
             {
@@ -1779,7 +1780,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Either Garmin is not connected in intervals.icu yet, or none of your activities is a watersport. CleanJibe pulls Windsurf, Kitesurf, Sail, Surfing, SUP and anything named wing or foil.",
+              "detail": "Either Garmin is not connected in intervals.icu yet, or none of your activities is a watersport. CleanJibe takes Windsurf, Kitesurf, Sail, Surfing, SUP and anything named wing or foil.",
               "term": "The sync succeeds but the list stays empty"
             },
             {
@@ -1788,7 +1789,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "A network problem rather than a key problem: nothing was lost and nothing was half-imported. Check your connection and sync again.",
+              "detail": "The connection dropped, and your key is fine. Nothing was lost or half-imported. Check your connection and sync again.",
               "term": "\"Could not reach intervals.icu\""
             },
             {
@@ -1810,8 +1811,8 @@ export const HELP = {
         },
         {
           "body": [
-            "Your API key is stored in this iPhone's Keychain. It is never copied to iCloud and never written to a log. There is no CleanJibe server to send it to. It goes to intervals.icu itself, over HTTPS, and nowhere else.",
-            "The key is a personal read/write token for your intervals.icu account, so treat it like a password. Clear the field in Settings to remove it, or regenerate it in Developer Settings. The old key stops working the moment you do."
+            "Your API key is stored in this iPhone's Keychain. It is never copied to iCloud and never written to a log. There is no CleanJibe server to send it to. It goes to intervals.icu itself, encrypted, and nowhere else.",
+            "The key opens your intervals.icu account, so treat it like a password. Clear the field in Settings to remove it, or regenerate it in Developer Settings. The old key stops working the moment you do."
           ],
           "channels": [
             "release",
@@ -1830,8 +1831,8 @@ export const HELP = {
         },
         {
           "body": [
-            "There is no CleanJibe account and no CleanJibe server. A session you import is analysed on this phone and stays on it. No advertising, no analytics, no tracking of any kind.",
-            "Four places can be reached, each only if you choose it. Your own credential goes to intervals.icu and Strava. Apple Maps loads while a map is on screen. One rounded coordinate per new spot looks up its name.",
+            "There is no CleanJibe account and no CleanJibe server. A session you import is analysed on this phone and stays on it. There is no advertising, no analytics and no tracking of any kind.",
+            "The app talks to four places, each only when you use it. Your own login goes to intervals.icu and Strava. Apple Maps loads while a map is on screen. To name a new spot, it sends one rounded position.",
             "CleanJibe never asks for your location. Every coordinate it draws was already inside a file you imported."
           ],
           "channels": [
@@ -1846,7 +1847,7 @@ export const HELP = {
             "shareFit",
             "libraryBackup"
           ],
-          "summary": "No account, no server, nothing uploaded. The whole policy is on the web.",
+          "summary": "There is no account and no server, and nothing is uploaded. The whole policy is on the web.",
           "title": "What leaves your phone"
         },
         {
@@ -1869,7 +1870,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Back up library writes a temporary file. Save… puts it in Files, iCloud Drive or on a Mac. CleanJibe keeps no copy.",
+              "detail": "Back up library makes the file, and Save… puts it in Files, iCloud Drive or on a Mac. CleanJibe keeps no copy.",
               "term": "Save the file yourself"
             },
             {
@@ -1887,7 +1888,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "A session recorded with the CleanJibe watch app carries a 100 Hz accelerometer stream, about 95 % of its size. The app estimates the total before it starts.",
+              "detail": "A session recorded with the CleanJibe watch app carries a 100 Hz accelerometer recording, about 95 % of its size. The app estimates the total before it starts.",
               "term": "How big it will be"
             },
             {
@@ -1896,7 +1897,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "A backup from a newer version of CleanJibe is refused rather than partly read: update the app and try again. An older one is brought up to date.",
+              "detail": "CleanJibe will not open a backup from a newer version of itself. Update the app and try again. An older backup is brought up to date.",
               "term": "A newer backup"
             }
           ],
@@ -1914,7 +1915,7 @@ export const HELP = {
             "One mail carries all of it. Name a missing column, a word that reads wrong, or something you would rather the app did differently.",
             "Menu → Support & ideas opens the mail. So do \"Something off, or an idea? Send feedback\" at the foot of every page and \"Report a problem with this session…\" in the share sheet.",
             "The mail asks three questions, with a blank line under each.",
-            "Nothing leaves the phone until you tap Send. It is Apple's own composer, and the address is info@cleanjibe.org. No part of CleanJibe sends anything by itself. There is no CleanJibe server to send it to."
+            "Nothing leaves the phone until you tap Send. It is Apple's own composer, and it comes to us at info@cleanjibe.org. We read every mail. No part of CleanJibe sends anything by itself."
           ],
           "channels": [
             "release",
@@ -1929,7 +1930,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Under a line of dashes: app and engine version, tuned thresholds, your phone, iOS and locale. The paired watch is there, with how many sessions came in by which door.",
+              "detail": "Under a line of dashes: app and engine version, tuned thresholds, your phone, iOS and locale. The paired watch is there, with how many sessions came in each way.",
               "term": "What is already in the mail"
             },
             {
@@ -2029,8 +2030,8 @@ export const HELP = {
         },
         {
           "body": [
-            "The longest flight by duration, with the distance covered during it shown underneath.",
-            "Both come from the same segmentation as foil %. So a session with many short flights and a session with one long one can share a foil %."
+            "This is your longest flight by time, with the distance you covered in it underneath.",
+            "Both come from the same flights as foil %. So a session with many short flights and a session with one long one can share a foil %."
           ],
           "channels": [
             "release",
@@ -2048,7 +2049,7 @@ export const HELP = {
         },
         {
           "body": [
-            "Distance is integrated from the device's Doppler speed rather than summed from GPS positions. Position noise inflates a distance total badly at low speed. Doppler does not.",
+            "CleanJibe adds up distance from the watch's Doppler speed, not from GPS positions. Position noise inflates a distance badly at low speed, and Doppler does not.",
             "It covers the whole session: flying, taxiing and drifting."
           ],
           "channels": [
@@ -2061,13 +2062,13 @@ export const HELP = {
           "related": [
             "sourceClass"
           ],
-          "summary": "Distance over the water, integrated from the speed channel.",
+          "summary": "How far you went on the water, added up from the watch's own speed.",
           "title": "Distance"
         },
         {
           "body": [
-            "Every chip under the map is a switch. Tapping one hides that category on the map and in the speed chart at once. The two are one reading of the same session.",
-            "A hidden chip stays in place, struck through, and \"show all\" brings everything back. A category this session has none of is not a switch. The three rows are the track, the events on it, and the map's own controls.",
+            "Every chip under the map is a switch. Tap one to hide that kind of mark on the map and in the speed chart at once.",
+            "A hidden chip stays in place, struck through, and \"show all\" brings everything back. A chip this session has nothing for cannot be switched. The three rows are the track, the marks on it, and the map's own controls.",
             "Tap the track to move the replay playhead. Tap a mark, or a flown stretch, for its own facts."
           ],
           "channels": [
@@ -2101,7 +2102,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Fill carries the channel rather than a second colour. Solid is a maneuver's outcome. Hollow is a straight-line flight end that no turn explains.",
+              "detail": "The fill tells two kinds of mark apart without a second colour. Solid is a turn's outcome. Hollow is a flight that ended on a straight line, outside any turn.",
               "term": "Solid or hollow"
             },
             {
@@ -2149,7 +2150,7 @@ export const HELP = {
         {
           "body": [
             "The set is fixed, so a number here means the same thing as the same number posted anywhere else. That is the six windows below, plus 100 m, 250 m and your best hour.",
-            "All are computed on the device's Doppler speed, with fractional samples interpolated at the window edges. So the result does not depend on whether your watch recorded at 1 Hz or 4 Hz. No minimum-speed filter is applied.",
+            "All of them use the watch's Doppler speed, measured to the exact edge of each window. So a watch that records once a second scores the same as one that records four times. No slow stretch is thrown away.",
             "A window never spans a recording gap. Tap a record card to see where on the track and on the speed trace it happened.",
             "A record certifies only when the recording holds the receiver's own speed channel. The rest are marked uncertified."
           ],
@@ -2193,7 +2194,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Your fastest half-kilometre, measured on integrated Doppler distance rather than straight-line distance. A curved run still counts, and cutting the corner flatters nothing.",
+              "detail": "Your fastest half-kilometre, measured along the line you actually rode. A curved run still counts, and cutting the corner flatters nothing.",
               "term": "Best 500 m"
             },
             {
@@ -2316,7 +2317,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "A real course change that never crosses the axis. Counted separately and left out of the tack and jibe tallies. It is not a maneuver you either made or blew.",
+              "detail": "A real course change that never crosses the axis. Counted separately and left out of the tack and jibe tallies. It is not a manoeuvre you either made or blew.",
               "term": "Bear-away / round-up"
             },
             {
@@ -2325,7 +2326,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "A detected maneuver on a session where the wind axis was too uncertain to name it. Still counted, just unnamed.",
+              "detail": "A turn on a session where the wind axis was too uncertain to name it. It is still counted, just unnamed.",
               "term": "Turn"
             },
             {
@@ -2352,14 +2353,14 @@ export const HELP = {
             "turnOutcomes",
             "portStarboard"
           ],
-          "summary": "What counts as a maneuver, and what is just a change of direction.",
+          "summary": "What counts as a turn, and what is just a change of direction.",
           "title": "Tacks, jibes and course changes"
         },
         {
           "body": [
             "Every turn gets one of three outcomes. The judgement runs from the turn start until you are flying again. That means speed back above 70 % of your entry speed for 2 seconds. The window is capped at 12 seconds.",
             "A jibe exited at marginal speed can bleed off for 6 to 12 seconds before the foil stalls. That mush-out is the jibe's fault. A jibe you power out of closes its window in a second or two.",
-            "Three things are read inside it. Your speed, always. The barometer, because a wrist under water looks like a huge drop in altitude. The accelerometer, on a CleanJibe watch recording."
+            "CleanJibe reads three things inside it. Your speed is always read. So is the barometer, because a wrist under water looks like a huge drop in altitude. On a CleanJibe watch recording, the accelerometer is read too."
           ],
           "channels": [
             "release",
@@ -2424,7 +2425,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "The turn kept the foil, from the sweep until you were flying again. No touchdown, no swim.",
+              "detail": "The turn kept the foil, from the sweep until you were flying again. No touchdown, no fall.",
               "term": "Flew through"
             },
             {
@@ -2469,7 +2470,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "The share of your entry speed you held through the turn, 0 to 100. The evidence behind \"clean\", printed beside every turn.",
+              "detail": "The share of your entry speed you held through the turn, 0 to 100. It is the evidence behind \"clean\", printed beside every turn.",
               "term": "Score"
             }
           ],
@@ -2502,8 +2503,8 @@ export const HELP = {
         {
           "body": [
             "A fall means you stopped for more than 5 seconds, or the barometer caught your wrist going under.",
-            "The split matters. Falls in a turn are a maneuver problem. Falls in a straight line are a gust, a ventilation or a tip catching. Each fall is counted once. A fall inside a turn's window belongs to that turn.",
-            "The jibe tally is a different question. Its three counts are out of your jibes, so a fall in a straight line is not in them. This number is the session."
+            "The split matters. Falls in a turn are a turning problem. Falls in a straight line are a gust, a ventilation or a tip catching. Each fall is counted once. A fall inside a turn's window belongs to that turn.",
+            "The jibe tally is a different question. Its three counts are out of your jibes, so a fall in a straight line is not in them. This number counts the whole session."
           ],
           "channels": [
             "release",
@@ -2602,7 +2603,7 @@ export const HELP = {
             "sourceClass",
             "heartRate"
           ],
-          "summary": "how often you pumped, including the times you did not get up.",
+          "summary": "How often you pumped, including the times you did not get up.",
           "title": "Attempts & getting up"
         },
         {
@@ -2628,7 +2629,7 @@ export const HELP = {
         },
         {
           "body": [
-            "Strokes are detected from the wrist accelerometer, using the magnitude only. How your wrist was rotated does not matter.",
+            "Strokes are counted from the wrist accelerometer. Only the strength of each movement counts, so how your wrist was turned does not matter.",
             "In-flight strokes hold or extend a glide rather than get you up. That is different work, so they are counted separately."
           ],
           "channels": [
@@ -2653,7 +2654,7 @@ export const HELP = {
       "topics": [
         {
           "body": [
-            "HR cost is the rise from your baseline just before an effort to the peak that follows. The baseline is the median of the 10 seconds ending at the start of the takeoff run.",
+            "Heart-rate cost is the rise from your baseline just before an effort to the peak that follows. The baseline is the median of the 10 seconds ending at the start of the takeoff run.",
             "The peak is searched 30 seconds forward, because an optical wrist sensor trails effort by 10 to 20 seconds. Negative values are reported rather than hidden: \"still recovering when you started\" is a different fact from \"this cost nothing\".",
             "The card does not appear on a session whose recording has no usable heart rate. Nothing here is estimated when the sensor was silent."
           ],
@@ -2670,7 +2671,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "The share of a window covered by unstuck samples between 30 and 220 bpm, no more than 10 seconds apart. Below 60 % coverage no number is produced.",
+              "detail": "The share of a window with good readings, between 30 and 220 bpm and no more than 10 seconds apart. Below 60 % no number is shown.",
               "term": "Coverage"
             },
             {
@@ -2688,7 +2689,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "20-minute bins, each showing what its takeoffs cost, with the share of attempts that got up underneath. Bins with nothing usable are shaded, not drawn as zero.",
+              "detail": "Your session in 20-minute blocks, each showing what its takeoffs cost, with the share of attempts that got up underneath. An empty block is shaded, not drawn as zero.",
               "term": "The fatigue chart"
             },
             {
@@ -2717,8 +2718,8 @@ export const HELP = {
       "topics": [
         {
           "body": [
-            "No weather station is involved. The estimate comes from your own track. Your foiling course headings are collected into a weighted histogram. The two dominant reaching directions are found. The wind axis is the line that bisects them.",
-            "That gives an axis but not a side. The tie is broken by the no-go zone. Of the two ends, the wind came from the one you sailed almost nothing within ±45° of.",
+            "No weather station is involved. The estimate comes from your own track. CleanJibe looks at the headings you flew and finds your two main reaching directions. The wind axis is the line halfway between them.",
+            "That gives an axis but not a side. The no-go zone breaks the tie. Of the two ends, the wind came from the one you rode almost nothing within ±45° of.",
             "Confidence combines how cleanly the two reaches separate with how decisive the no-go zone was. Below 50 % the axis is still shown, but your turns stay unnamed \"turns\" rather than tacks and jibes.",
             "A wind direction you set on the watch always wins."
           ],
@@ -2733,7 +2734,7 @@ export const HELP = {
             "turnTypes",
             "portStarboard"
           ],
-          "summary": "The wind direction estimated from how you actually sailed.",
+          "summary": "The wind direction worked out from how you actually rode.",
           "title": "Wind axis & confidence"
         }
       ]
@@ -2745,7 +2746,7 @@ export const HELP = {
         {
           "body": [
             "Any session becomes a card. It holds the track, the numbers that matter, and where the analysis came from. Pick portrait, square or landscape, and Complete or Lean. A photo from your library can go behind it.",
-            "Or turn on the map background and the track is drawn over the water you sailed. That one needs a connection. Without one the card comes out plain.",
+            "Or turn on the map background and the track is drawn over the water you rode. That one needs a connection. Without one the card comes out plain.",
             "The card is made on your phone and goes nowhere until you send it."
           ],
           "channels": [
@@ -2765,7 +2766,7 @@ export const HELP = {
         {
           "body": [
             "The replay plays a session back on its own track, with a commentary that follows what is happening. Scrub to the part worth watching, then record it as a video.",
-            "Ask for a 10, 25 or 60-second clip. The app solves the playback rate to land on it. Or take \"full detail\" and let the session run as long as it runs.",
+            "Ask for a 10, 25 or 60-second clip. The app sets the playback speed to fit it. Or take \"full detail\" and let the session run as long as it runs.",
             "The frame is yours too. Take 9:16 for a story, 1:1 for a post, 16:9 for a chat, or the whole screen. Photos from that afternoon can be spliced in.",
             "You can lay your own music under it, trimmed or looped and faded at both ends. Nothing is uploaded: the video is rendered on the phone."
           ],
@@ -2786,7 +2787,7 @@ export const HELP = {
         {
           "body": [
             "You can share the original .fit file of any session. The watch serial, your rider profile and your lifetime totals are removed first. The ride itself is untouched, so the analysis your friend gets is identical to yours.",
-            "They can open it in CleanJibe, or drop it into the free browser analyzer at cleanjibe.org without installing anything."
+            "They can open it in CleanJibe, or drop it into the free browser app at cleanjibe.org without installing anything."
           ],
           "channels": [
             "release",
@@ -2805,8 +2806,8 @@ export const HELP = {
         },
         {
           "body": [
-            "A number that looks wrong can only be chased on the recording that produced it. This puts that recording, your notes and this build's facts into one mail.",
-            "The file holds your track, your heart rate and your times. It is used only to improve the detection and it is never published.",
+            "We can only chase a wrong number on the recording that produced it. This puts the recording, your notes and the app's details into one mail.",
+            "The file holds your track, your heart rate and your times. We use it only to improve the analysis, and we never publish it.",
             "You see the whole mail before it goes. Edit any line, delete any line, or close it and nothing is sent.",
             "Open a session, tap Share, then Send this session to the developer."
           ],
@@ -2821,8 +2822,8 @@ export const HELP = {
             "sourceClass",
             "divergence"
           ],
-          "summary": "Mail one session and your notes, so a wrong number can be chased.",
-          "title": "Send a session to the developer"
+          "summary": "Mail us one session and your notes, so we can chase a wrong number.",
+          "title": "Send a session to us"
         },
         {
           "body": [
@@ -2851,7 +2852,7 @@ export const HELP = {
       "topics": [
         {
           "body": [
-            "CleanJibe reads whatever your watch put in the file, and every metric degrades gracefully rather than failing or guessing. There are four cases, with the names cleanjibe.org and the Import screen print.",
+            "CleanJibe reads whatever your watch put in the file. A number the file cannot support is left out, never guessed. There are four cases, with the names cleanjibe.org and the Import screen print.",
             "A GPX never carries a speed channel, and a TCX sometimes does. Strava hands over positions and no speed channel, so a Strava import belongs in the last row."
           ],
           "channels": [
@@ -2913,7 +2914,7 @@ export const HELP = {
           "body": [
             "A session from the CleanJibe watch app brings the summary the watch worked out while you rode. The watch does that in one pass, with very little memory. The phone does the whole job again, and compares the two.",
             "The banner appears when foil time differs by more than 5 %. It appears for a speed record off by more than 0.3 knots. It appears for a flight, turn or attempt count off by more than one.",
-            "The phone's number is the one to go by. Nothing is wrong with your session. The banner says the watch's live guess needs tuning."
+            "The phone's number is the one to go by. Nothing is wrong with your session. It only means the watch's live guess needs more work from us."
           ],
           "channels": [
             "release",
@@ -2933,7 +2934,7 @@ export const HELP = {
           "body": [
             "The footer of a session shows which version of the analysis engine produced its numbers.",
             "When a new version would give a session different numbers, CleanJibe works it out again. It reads that session's own archived recording, the next time you open it.",
-            "Your original recording is never changed. Only the numbers are, and you can throw them away and rebuild them at any time from Settings."
+            "Your original recording is never changed. Only the numbers are. Settings → Storage → Re-run analysis works them all out again at any time."
           ],
           "channels": [
             "release",
@@ -3002,7 +3003,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "A first guess, not a reading off real fin sessions. There are none in the corpus yet. If your planing time looks wrong, report that number.",
+              "detail": "They are a first guess, because we have no real fin sessions yet. If your planing time looks wrong, tell us that number.",
               "term": "Those two speeds are provisional"
             },
             {

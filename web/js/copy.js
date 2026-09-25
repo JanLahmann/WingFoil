@@ -61,7 +61,7 @@ export const GLOSSARY = [
     "term": "Flights & touchdowns",
     "short": "flights",
     "expansion": "",
-    "line": "One takeoff starts a flight. A touchdown or a swim ends it. Both are counted."
+    "line": "One takeoff starts a flight. A touchdown or a fall ends it. Both are counted."
   },
   {
     "id": "turnVerdicts",
