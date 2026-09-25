@@ -769,6 +769,22 @@ public struct LibraryStore: Sendable {
 
     // MARK: - Riders
 
+    /// **Whose session this is, after the fact** — the list's swipe action (F7d). Nil or
+    /// blank is "mine"; a name is stored trimmed, the same rule the import prompt keeps
+    /// (`SessionIngestor.riderName`), so a friend reassigned by hand lands on the spelling
+    /// his imported sessions already have.
+    ///
+    /// Only the column moves. Every aggregate reads `rider IS NULL` at query time
+    /// (`LibraryStore.clause`), so records, trends and the gear totals follow on the next
+    /// read, and the iCloud sync carries the field with its own stamp (`SyncedSessionMeta`).
+    public func setRider(id: String, to rider: String?) async throws {
+        let stored = SessionIngestor.riderName(rider)
+        try await database.writer.write { db in
+            try db.execute(sql: "UPDATE session SET rider = ? WHERE id = ?",
+                           arguments: [stored, id])
+        }
+    }
+
     /// The friends whose sessions are already in the library, alphabetically.
     ///
     /// The distinct values of the column *are* the address book — a rider imports two or

@@ -21,16 +21,43 @@ struct LibraryFilterMenu: View {
     /// menu built from what survives the current filter would offer a door, be tapped, and
     /// then no longer offer the door it came from.
     let library: [SessionRow]
+    /// The spots as places (`SpotPlaces`): two clusters that share a name nearby are one
+    /// entry, so "Hvide Sande" is listed once.
+    let places: SpotPlaces
+    /// The grouping in force and the sections it drew, for Collapse all / Expand all.
+    let grouping: LibraryGrouping
+    let groupKeys: [String]
+    @Binding var folds: LibraryFolds
 
     @Environment(SessionStore.self) private var store
 
     var body: some View {
         Menu {
+            // First, because it is about the list the rider is looking at right now, and
+            // only while there are sections to fold.
+            if grouping != .none, !groupKeys.isEmpty {
+                Section {
+                    if !folds.allFolded(groupKeys, in: grouping) {
+                        Button {
+                            withAnimation { folds.collapseAll(groupKeys, in: grouping) }
+                        } label: {
+                            Label("Collapse all", systemImage: "rectangle.compress.vertical")
+                        }
+                    }
+                    if folds.anyFolded(groupKeys, in: grouping) {
+                        Button {
+                            withAnimation { folds.expandAll(in: grouping) }
+                        } label: {
+                            Label("Expand all", systemImage: "rectangle.expand.vertical")
+                        }
+                    }
+                }
+            }
             Section("Spot") {
                 entry("All spots", on: filter.spotId == nil) { filter.spotId = nil }
-                ForEach(store.spots) { spot in
-                    entry(spot.spot.name, on: filter.spotId == spot.spot.id) {
-                        filter.spotId = spot.spot.id
+                ForEach(places.places) { place in
+                    entry(place.label, on: places.placeID(for: filter.spotId) == place.id) {
+                        filter.spotId = place.id
                     }
                 }
             }
@@ -110,10 +137,11 @@ struct LibraryFilterMenu: View {
 /// failure this row exists to prevent.
 struct LibraryFilterChips: View {
     @Binding var filter: LibraryListFilter
+    let places: SpotPlaces
     @Environment(SessionStore.self) private var store
 
     var body: some View {
-        let chips = filter.chips(spotName: { store.spot(id: $0)?.name })
+        let chips = filter.chips(spotName: { places.label(for: $0) ?? store.spot(id: $0)?.name })
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(chips) { chip in

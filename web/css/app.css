@@ -406,7 +406,8 @@ main { padding-bottom: calc(var(--tap) + 34px + env(safe-area-inset-bottom)); }
 
 .row-title { font-weight: 600; }
 
-.row-when { color: var(--ink-3); font-size: 0.92rem; }
+.row-when { color: var(--ink-3); font-size: 0.92rem; white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; }
 
 .row-note { color: var(--ink-3); font-size: 0.8rem; }
 

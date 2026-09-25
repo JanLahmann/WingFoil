@@ -530,6 +530,29 @@ import ZIPFoundation
         #expect(SessionIngestor.riderName(" Jo ") == "Jo")
     }
 
+    /// The list's swipe action: a session can change hands after the import, both ways,
+    /// and the aggregates follow at the next read.
+    @Test func aSessionCanBeReassignedAfterImport() async throws {
+        let harness = try makeHarness()
+        defer { try? FileManager.default.removeItem(at: harness.root.deletingLastPathComponent()) }
+        let (data, name) = try fixture("2026-08-05-0827")
+        guard case .imported(let row) = try await harness.ingestor.ingest(
+            fitData: data, filename: name, source: .file) else {
+            Issue.record("expected a fresh import"); return
+        }
+        #expect(try await harness.store.sessions().map(\.id) == [row.id])
+
+        try await harness.store.setRider(id: row.id, to: "  Joe ")
+        #expect(try await harness.ingestor.session(id: row.id)?.rider == "Joe")
+        #expect(try await harness.store.riders() == ["Joe"])
+        #expect(try await harness.store.sessions().isEmpty,
+                "a friend's session leaves the aggregates")
+
+        try await harness.store.setRider(id: row.id, to: "   ")
+        #expect(try await harness.ingestor.session(id: row.id)?.rider == nil)
+        #expect(try await harness.store.sessions().map(\.id) == [row.id])
+    }
+
     // MARK: - Session records (the non-speed table)
 
     /// Synthetic rows rather than fixtures, because what is under test here is the *rule*

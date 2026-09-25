@@ -17,8 +17,8 @@ import { speed, speedRecords } from "./appsettings.js";
 import { keepTombstone } from "./deleted.js";
 import { sportCorrected } from "./cardstats.js";
 import { NOT_A_SESSION } from "./copy.js";
-import { text } from "./presentation.js";
-import { esc, hms, int, nf, pct, sessionDate, zonedFormat } from "./render.js";
+import { listDuration, text } from "./presentation.js";
+import { esc, int, nf, pct, sessionDate, zonedFormat } from "./render.js";
 import { askRider } from "./rider.js";
 import {
   getAnalysisJson, getFitBlob, listEntries, putSession, removeSession, usage,
@@ -253,7 +253,7 @@ function renderRows(entries) {
     <li class="lib-row" data-id="${esc(e.id)}">
       <button class="lib-open" type="button" data-act="open">
         <span class="row-title">${esc(spotLabel(e))}${tags(e)}</span>
-        <span class="row-when">${esc(shortDate(e))} · ${hms(e.rateDurationS ?? e.durationS)}</span>
+        <span class="row-when">${esc(shortDate(e))} · ${listDuration(e.rateDurationS ?? e.durationS)}</span>
         ${e.isSession === false
           ? `<span class="row-note">${esc(NOT_A_SESSION.tag)}</span>` : ""}
         <span class="row-metrics">${ROW_TRIPLE.map((key) => ROW_METRICS[key]).map((m) =>
