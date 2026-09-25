@@ -225,6 +225,14 @@ empty: on every return to the foreground, before a sync, a check or a background
 when this screen opens. A process iOS starts before the first unlock after a restart cannot
 read it, and before this held an empty key for its whole life.
 
+**"Last sync" now moves on its own** (25 Sep 2026: a phone opened every day for four days
+still read *Last sync 21 Sep*, because only "Sync now" and a pull ever wrote it). The row
+reads the newer of two dates — a manual pull still counts, and so now does the background
+poll (`ActivityNotifier.poll`) and the empty library's first fill at launch, whenever either
+actually reaches intervals.icu. The re-add gate's own cursor is a separate date underneath
+and never moves for a background check, so a quiet poll cannot make a deleted session look
+resurrectable.
+
 **Notifications say intervals.icu, because that is what is asked.** The switch read *Notify
 on new Garmin activities* and the check behind it has never been a Garmin one: it is a call
 to the rider's intervals.icu account, and every watch that syncs there — a Garmin, a Polar, a
