@@ -42,6 +42,14 @@ iOS keeps keychain items across an app delete, so a reinstall gets the intervals
 handed back before the first screen is drawn, and the rule counted a stored key as evidence
 that this install had been welcomed already.
 
+**Superseded on 25 September 2026** (Jan's plan of 24 September, section 7): the screen comes
+up on *every launch* until the library holds a real session (the example does not count) or
+an intervals.icu key is stored, and there is no "don't show this again" switch. The two facts
+switch it off by themselves, so the once-only flag and the upgrade heuristic below are gone
+from `WelcomePrompt`; `welcomeShown.v1` is still written and no longer read. A key does count
+now: a reinstall with a key opens on the list, which fills from intervals.icu on the first
+pull. The history below is kept for why it was once otherwise.
+
 **Only a session is evidence** (`WelcomePrompt`, and its tests). A key says something
 survived a delete; a session says the rider has been through the front door. So
 `isAlreadyWelcomed(sessionCount:)` takes the library and nothing else, and both the silent
@@ -58,6 +66,11 @@ the example session* included: the example imports, and a rider who already owns
 recording lands on his own copy of it (`loadExampleSessionAndOpen`, which is unchanged and
 never depended on the library being empty).
 
+**The second and third offers left the screen on 25 September 2026.** *Set up intervals.icu*
+and *Later* are gone: the X closes the screen, and **Get started** opens Getting started,
+whose *Open CleanJibe Settings* closes the welcome and opens Settings, where the four steps
+are. The rest of this paragraph is the history of the button that was there.
+
 **The second offer is named for what it does** (15 September 2026). It read *"Connect your
 Garmin"* and connected nothing: `onConnect` calls `dismissWelcome()` and that is the whole of
 it, because on a genuine first run the four-step intervals.icu card is already the thing
@@ -72,7 +85,7 @@ chicken-and-egg it used to cause is already solved by the first offer.
 
 **And the empty library leads with the same two ways in.** When the library is empty and the
 welcome has been dismissed, the Sessions tab shows one short row first: the welcome's own
-headline, *Every flight, every jibe, every swim.*, and two buttons, **What CleanJibe does**
+headline (the tagline *Your WingFoil session, measured.* since 25 September 2026), and two buttons, **What CleanJibe does**
 (the welcome screen again) and **Try the example session** (the same call the welcome's first
 offer makes, so both doors land on the same session). Deliberately a row and not a second
 card: the card under it is the thing to *do*, and this is the thing to read first. On a

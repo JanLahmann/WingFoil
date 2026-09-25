@@ -31,13 +31,14 @@ else on the site, and the home page never analyses anything itself.
 
 Channel is the lowest channel that has the screen (`docs/channels.md`). "Doors" are the
 buttons and links that leave the screen. *Menu* is the app menu (**What CleanJibe does ·
-The CleanJibe family · Getting started · Settings · Help · Support & ideas**), which sits on
+Getting started · Settings · Help · Support & ideas · Join the beta**, the last one *You are in
+the beta* in the beta and dev builds), which sits on
 all four tab roots in the same place (pattern M).
 
 | tab / home | screen | what it shows | empty state | doors | channel | web | watch |
 |---|---|---|---|---|---|---|---|
 | — | **Start screen** (splash) | the channel's mark, held, then a crossfade into Sessions | — | none, it dismisses itself | release | missing. A tab does not launch | **Brand splash**, once per installed version |
-| — | **What CleanJibe does** (welcome) | the headline, the promise, three highlights, three answers | — | Try the example session · Set up intervals.icu · Later | release | same, as a dialog: the same headline, the same four words out of the glossary, the same three doors, opened once per browser and again from the menu | **Start screen**: name, GPS state, wind, "START records · BACK saves" |
+| — | **What CleanJibe does** (welcome) | the tagline, one paragraph, the track with its legend, the example and a share-card thumbnail, *What CleanJibe measures*, the family (four apps, the Apple Watch one with a Beta badge), the footer *built with its riders*. Every launch until there is a real session or intervals.icu is connected (25 Sep 2026) | — | ✕ · Try the example session · the card (the example) · Get started (Getting started) · How your sessions get in · Join the beta (release) · Support & ideas · cleanjibe.org | release | same, as a dialog: the tagline, the promise, the four words, the family; *Close · Try the example session · Get started*. Opened once per browser and again from the menu | **Start screen**: name, GPS state, wind, "START records · BACK saves" |
 | — | **Library newer than this build** | why this build cannot open the library | — | Open TestFlight · Restore from backup | release | missing. No schema to outrun | — |
 | — | **A newer build exists** | the update reminder, insist level | — | the link from `version.json` | beta | differs: the **A new version is ready.** banner, with *Reload to update* and *Later* | — |
 | — | (no iOS twin) | the web's install offer | — | *Install* · *Later* | — | web only: a tab can become an app, a phone app cannot | — |
@@ -73,7 +74,7 @@ all four tab roots in the same place (pattern M).
 | Trends | **Share this period** | the period card | — | share · Done | release | same dialog as the session card, opened from the period's own page. It has neither the switcher nor the report row: a period has no recording behind it | — |
 | Gear & spots | **Gear & spots** | the spots section, then wings, boards and foils, each with its totals | **No spots yet**; **No wings yet** per kind | Menu · a spot (rename) · Re-cluster spots · Look up names again · a gear row · Add wing · Show retired gear | release | differs: the spots section is the phone's, and the gear half is one free-text name per session rather than wings, boards and foils kept apart. A spot row carries the two totals the phone drops, because a browser has no session list to sort by spot | — |
 | Gear & spots | **New gear** / the gear's name | name, notes, in use | — | Save · Cancel | release | same, as the **New gear** sheet: name, kind, notes, *In the quiver*, *Save · Cancel* | — |
-| Menu | **The CleanJibe family** | the three apps, one line each, which of them you are using, and how a session travels | — | none, it links nowhere | release | same page, word for word (`#/family`). It marks the browser app where the phone marks itself | — |
+| Menu | **Join the beta** / **You are in the beta** | what the beta is, how to join (release), what is in it (`ChannelFeatures.beta`), how to give feedback | — | Open TestFlight (release) · Send us your ideas · Done | release | same page in the release's words (`#/beta`), with one line of its own: the beta is the iPhone app's | — |
 | Menu | **Settings** | accounts and switches, nothing the menu already holds. Sections: intervals.icu · Strava · Deleted sessions · Notifications · **Garmin watch** (dev) · Analysis · Session list · Row shows · Units · Speed records · **Windsurf** (dev) · **Tuning · dev** (dev) · **Apple Health** (beta) · **Beta** (beta) · Coming in a future release · Storage · Library backup · **iCloud Drive** (dev) · About | one line per section (`SettingsCopy.lead`) and a row that opens its help topic, since 20 September 2026 — pattern K | Get a key in 4 steps · Sync not working? · Connect with Strava · Restore all · Re-run analysis · Back up library · Restore from backup… · Privacy · Done, and the gated rows above | release | same page, the release channel's twelve sections in the phone's order since 23 September 2026. Four of them — Notifications, Analysis, Session list, Row shows — carry the phone's header and line and one more saying *On the iPhone app.* Storage and Library backup are one section, **Your data** (deviation 18), which stands where they stand. *How much to say* and *What's new* are the two the phone does not have | none on the watch. Every setting is in Garmin Connect, including *Data screens* and the **seven show/hide switches** that decide which of the eight data screens exist at all (0.9.18, every stream). The **Wind from** menu is the one on-watch picker |
 | Menu | **Restore library** | what the backup holds and what it would add | — | Restore N sessions · Cancel | release | same, as Settings → **Restore from a backup…**: what the zip holds, how many it would add, *Restore N sessions · Cancel*. It reads the file **Download all (.zip)** wrote | — |
 | Menu | **Coming in a future release** | how to join the beta, what is in it, what is further out | — | Open TestFlight · cleanjibe.org/invite | release | the same list on `/invite/#coming`, from `channels.json` | — |
@@ -97,7 +98,7 @@ the four sub-tabs **Ride · Turns · Takeoffs · Details**, as a switcher on a n
 and as one scrolling document on a wide one. Records and Trends are two tabs over one
 aggregate, under the **All spots** chip, and Trends pushes **Periods**, which pushes one
 **period**. Seven more pages hang off the menu and off Settings: Settings itself, Help,
-**Getting started**, **What's new**, **The CleanJibe family**, and the two above. Five
+**Getting started**, **What's new**, **Join the beta**, and the two above. Five
 dialogs: the welcome, *Whose session is this?*, *New gear*, *Custom range*, the **Share**
 dialog with its two segments and its report row, and the turn page a card or a row opens.
 Two banners: a new version, and the install offer. Five reader pages carry the site nav
@@ -257,10 +258,10 @@ it.
 | **Gear & spots** | spots, then wings, boards and foils | **No spots yet**; **No wings yet** | rename a spot · Re-cluster spots · Look up names again · add gear |
 | **Settings** | the phone's release sections in the phone's order, each a header and one line, from `SettingsCopy` | footers say why a door is off; a phone-only section says *On the iPhone app.* | List recent activities · Forget key · Download all (.zip) · Restore from a backup… · Delete everything on this site · Privacy · Read the release notes |
 | **Help** | the topics, from the kit's help export, in the same ten sections, as a chip index over ten shut folds with a filter | the filter's *0 pages match.* | a topic |
-| **Getting started** | the `gettingStarted` help topic, as the phone's sheet draws it | — | the routes, and /start/ for their steps |
+| **Getting started** | the `gettingStarted` help topic, as the phone's sheet draws it | — | the routes, and /start/ for their steps (the phone's topic no longer names /start) |
 | **What's new** | the release notes, newest first | **Nothing yet.** | — |
-| **The CleanJibe family** | the three apps, how a session travels, and which app you are in | — | none |
-| **What CleanJibe does** (welcome) | the headline, the promise, four words, the routes | — | Try the example session · Set up intervals.icu · Later |
+| **Join the beta** | the kit's `BetaGuide`, the release's wording, and the beta rows of `channels.json` | — | Open TestFlight · Support & ideas |
+| **What CleanJibe does** (welcome) | the tagline, the promise, four words, the family | — | Close · Try the example session · Get started |
 
 **What is still the phone's alone**, plainly. Four kinds of screen, and each for a reason a
 browser cannot argue with:

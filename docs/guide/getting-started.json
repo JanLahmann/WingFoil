@@ -37,7 +37,12 @@
   "framing": "Ride one session as you always do, then open it in CleanJibe. Every turn gets a verdict: flew through, touchdown, or fell in. You were there, so you can tell us where it got one wrong.",
   "app": {
     "topicTitle": "Getting started",
-    "topicSummary": "Your first session on the water, and where to send what you find."
+    "topicSummary": "Your first session on the water, and where to send what you find.",
+    "paragraphs": [
+      "CleanJibe works with Garmin, Strava and other watches. The Apple Watch app is in beta.",
+      "Garmin does not share your sessions directly, so CleanJibe gets them through intervals.icu. It is free and takes about 5 minutes. Set it up once in Settings → intervals.icu. After that, every session syncs by itself.",
+      "You can also open a .fit file straight from Files, Mail or a message. It can be yours, or one a friend sent you."
+    ]
   },
   "sections": {
     "routes": {
@@ -65,7 +70,7 @@
         "dev"
       ],
       "class": "a",
-      "summary": "Install it from Connect IQ, then ride and save. Your sessions come across through intervals.icu, which takes 4 steps in Settings → intervals.icu, once.",
+      "summary": "Install it from Connect IQ, then ride and save. The watch shows live numbers and a summary, and the session reaches CleanJibe through intervals.icu.",
       "steps": [
         {
           "title": "Install the watch app",
@@ -106,7 +111,7 @@
         "dev"
       ],
       "class": "bPlus",
-      "summary": "Record on your Apple Watch. The session comes to the phone by itself, with pump strokes and takeoff attempts included.",
+      "summary": "Install it with the CleanJibe beta and record on your wrist. The watch only records, and the iPhone does the analysis.",
       "steps": [
         {
           "title": "Put it on the watch",
@@ -267,7 +272,7 @@
         "beta",
         "dev"
       ],
-      "summary": "Menu → Support & ideas opens a mail to us, with your app and watch details already in it. On the beta, TestFlight's own feedback works too.",
+      "summary": "Menu → Support & ideas opens a mail to us, with your app and watch details already in it. Your mail decides what we build next.",
       "steps": [
         {
           "title": "Read the verdicts against your memory",
@@ -292,19 +297,6 @@
       ]
     }
   ],
-  "webLine": {
-    "id": "onTheWeb",
-    "title": "The same guide, with every step, on the web",
-    "channels": [
-      "release",
-      "beta",
-      "dev"
-    ],
-    "surfaces": [
-      "app"
-    ],
-    "summary": "{site}/start"
-  },
   "settings": {
     "_note": "One sentence each, at the top of the matching Settings section. The app reads them from GettingStartedGuide, so the help and the switches say the same thing.",
     "intervalsIcu": "Garmin has no open API, so intervals.icu is the bridge. Connect your Garmin there once, and every session arrives here by itself. It is free.",
