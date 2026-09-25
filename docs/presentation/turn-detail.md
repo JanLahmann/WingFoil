@@ -445,6 +445,7 @@ rather than empty.
 
 iOS: `FlightEndSlice` + `FlightEndAnalytics` in the kit (pure, `ManeuverSliceTests`), drawn by
 `FlightEndDetailView` through `TurnDetailMapView` and `StripChrome`. Screenshot hook:
-`UI_OPEN_FLIGHT_END=<index>`, which selects the Details tab first — a sheet attached to an
+`UI_OPEN_FLIGHT_END=<index>`, which selects the Flights tab first (the flight list moved
+there from Details on 25 Sep 2026) — a sheet attached to an
 unselected tab's subtree never appears.
 

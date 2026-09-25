@@ -84,7 +84,8 @@ two checks that prove it are in docs/testing.md, "Three channels".
 - Rider vocabulary: *flew through* (kept the foil, no touchdown, no swim), *clean* (flew
   through + held speed + the gates in algorithms.md), *dry* (did not fall in). "success"
   and "carried" are engine-internal and appear in no rider-facing text.
-- Rates are additive: keep JPH and TPH beside CPH. Don't rebuild swim detection unasked.
+- Rates: CPH first, then ONE dry-turn rate — JPH on a jibes-only session, TPH once tacks
+  exist — then WPH (Jan, 25 Sep 2026). Don't rebuild swim detection unasked.
 - Simulator screenshot hooks (`UI_IMPORT_FIXTURES`, `UI_OPEN_SESSION`, `UI_OPEN_TURNS`,
   `UI_OPEN_TURN`, `UI_OPEN_FLIGHT_END`, `UI_SHEET=tuning|settings|help`, `UI_SCROLL_TO`)
   are listed in docs/testing.md; the app takes ~75 s to load in the simulator.
