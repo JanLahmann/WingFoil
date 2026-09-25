@@ -170,7 +170,7 @@ TARGETS: list[Target] = [
         "appcopy.js",
     )),
     Target("App Store · description", "ios/store/appstore.md", "md",
-           blocks=["Promotional text", "Description"], advisory=True, paragraph_max=None),
+           blocks=["Promotional text", "Description", "What's New"], advisory=True, paragraph_max=None),
     Target("Connect IQ · description", "garmin/store/listing.md", "md",
            blocks=["Description (live text)"], advisory=True, paragraph_max=None),
 ]

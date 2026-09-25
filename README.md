@@ -1,6 +1,6 @@
 # CleanJibe
 
-**Every flight, every jibe, every swim.**
+**Your WingFoil session, measured.**
 
 Did you fly through that jibe? CleanJibe reads your session off the watch. It tells you your
 time on the foil, every flight, your speed records, and a verdict on every turn. Flew
