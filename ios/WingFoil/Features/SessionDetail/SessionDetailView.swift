@@ -276,10 +276,10 @@ struct SessionDetailView: View {
                 // engages the two segmented filters for the shot, unchanged.
                 if environment["UI_OPEN_TURNS"] == "1" { tab = .turns }
                 // `UI_OPEN_FLIGHT_END=<index>` opens one flight end's page. The list of
-                // them is on Log, and the sheet is presented from there
-                // (`SessionLogView.FlightEndsCard`), so the hook has to select that tab
-                // first — a sheet attached to an unselected tab's subtree never appears.
-                if environment["UI_OPEN_FLIGHT_END"] != nil { tab = .log }
+                // them is on Flights since 25 Sep 2026, and the sheet is presented from
+                // there (`FlightsListView`), so the hook has to select that tab first — a
+                // sheet attached to an unselected tab's subtree never appears.
+                if environment["UI_OPEN_FLIGHT_END"] != nil { tab = .takeoffs }
                 if let anchor = environment["UI_SCROLL_TO"] { jump(to: anchor, proxy: proxy) }
                 // `UI_EXPORT_REEL=1` renders a session video with no taps at all and
                 // leaves it in Documents (`ReelHook`). It is deliberately not
@@ -547,9 +547,14 @@ struct SessionDetailView: View {
     /// because the map and the list are the tiles' own drill-in — exactly the shape the Turns
     /// tab has — and the cost is the closing note on all of it. It is silent, no card at all,
     /// on a session whose heart rate measured nothing.
+    ///
+    /// **Flights since 25 Sep 2026** (Jan, F12c): a flight is a takeoff and an end, so the
+    /// flight list — one row per flight, how it got up, how long, how it ended — sits
+    /// between the takeoff tiles and the attempts, and the flight ends left Details for it.
     @ViewBuilder
     private func takeoffs(_ detail: SessionDetail) -> some View {
         SessionTakeoffSection(detail: detail)
+        FlightsListView(detail: detail)
         if !detail.takeoffMarks.isEmpty {
             Divider()
             TakeoffsAnalysisView(detail: detail)
@@ -584,73 +589,77 @@ struct SessionDetailView: View {
     /// false on the neighbour the slide draws beside the page: its arrows are drawn, lit,
     /// so the header does not change as it lands, and take no taps.
     private func header(_ row: SessionRow, detail: SessionDetail?, live: Bool) -> some View {
-        Group {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 10) {
-                    Text(Fmt.date(row.startDate, zone: row.displayZone))
-                        .font(.title3.weight(.semibold))
-                    Spacer(minLength: 8)
-                    // The flick, for a rider who has not found the flick. Two glyphs and no
-                    // words: the arrows are beside a date, and what is on the other side of
-                    // a date needs no label.
-                    // ‹ is the older session and › the newer, on the sides the slide
-                    // brings them in from.
-                    Group {
-                        stepButton("chevron.left", .older,
-                                   lit: !live || neighbours.older != nil,
-                                   reads: "Older session")
-                        stepButton("chevron.right", .newer,
-                                   lit: !live || neighbours.newer != nil,
-                                   reads: "Newer session")
-                    }
-                    .allowsHitTesting(live)
+        // **Compact** (Jan, 25 Sep 2026, F8a): the date and the arrows, then ONE line of
+        // what the recording is — the badge, the chips, where it came from — then the
+        // wind. It was four stacked lines, each in its own type size, above the block
+        // that answers the question the rider opened the page for.
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 10) {
+                Text(Fmt.date(row.startDate, zone: row.displayZone))
+                    .font(.title3.weight(.semibold))
+                Spacer(minLength: 8)
+                // The flick, for a rider who has not found the flick. Two glyphs and no
+                // words: ‹ is the older session and › the newer, on the sides the slide
+                // brings them in from.
+                Group {
+                    stepButton("chevron.left", .older,
+                               lit: !live || neighbours.older != nil,
+                               reads: "Older session")
+                    stepButton("chevron.right", .newer,
+                               lit: !live || neighbours.newer != nil,
+                               reads: "Newer session")
                 }
-                // **Where this recording came from**, under the date and nowhere else on
-                // this tab. It was on the Log tab only, four taps from the question — and
-                // "is this the one my watch recorded, or the copy Strava has" is asked
-                // while looking at the numbers, not while auditing the file.
-                if let source = SessionProvenance.line(importSource: row.importSource) {
-                    Text(source)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                if row.zoneIsEstimated { estimatedClockNote }
-                if row.isExample { exampleNote }
-                if row.rider != nil { riderNote(row) }
-                // The badge alone. Duration and distance used to follow it and were the
-                // first two cells of the key-metrics block eight points lower — the same
-                // two numbers twice on one screen (Jan, 6 Sep 2026). The block is the
-                // contract the card mirrors, so the block keeps them and the header does
-                // not; the library row still carries both for the list.
-                HStack(spacing: 8) {
-                    Text(SessionDisplay.badge(row))
-                        .font(.caption.weight(.semibold))
-                        .padding(.horizontal, 8).padding(.vertical, 3)
-                        .background(SessionDisplay.badgeColor(row).opacity(0.16), in: .capsule)
-                        .foregroundStyle(SessionDisplay.badgeColor(row))
-                    // Beside the discipline badge and never instead of it: the badge says
-                    // what the *recording* is, this says how it is being read and that the
-                    // reading is not one anybody has checked yet.
-                    if let chip = row.analysisDiscipline.lexicon.chip {
-                        Text(chip)
-                            .font(.caption2.weight(.semibold))
-                            .padding(.horizontal, 8).padding(.vertical, 3)
-                            .background(Color.orange.opacity(0.16), in: .capsule)
-                            .foregroundStyle(.orange)
-                    }
-                    #if TUNING
-                    // Beside the discipline badge, because it is the same kind of fact: what
-                    // this session *is*, before any of its numbers are read.
-                    if let count = TuningStamp.changedCount(row.engineVersion ?? "") {
-                        TunedChip(count: count, compact: true)
-                    }
-                    #endif
-                }
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                if let detail { WindRow(detail: detail) }
+                .allowsHitTesting(live)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            // What the recording is and where it came from, on one line where it fits and
+            // wrapped under the badge where it does not. The source used to be a line of its
+            // own; "is this the one my watch recorded, or Strava's copy" is asked while
+            // looking at the numbers, so it stays up here, just smaller.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) { badges(row); sourceText(row) }
+                VStack(alignment: .leading, spacing: 4) { badges(row); sourceText(row) }
+            }
+            if let detail { WindRow(detail: detail) }
+            if row.zoneIsEstimated { estimatedClockNote }
+            if row.isExample { exampleNote }
+            if row.rider != nil { riderNote(row) }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// The discipline badge, and beside it (never instead of it) the experimental chip and,
+    /// in the dev build, the tuned chip: what this session *is*, before any of its numbers
+    /// are read. Duration and distance are not here — they are the block's first two cells.
+    private func badges(_ row: SessionRow) -> some View {
+        HStack(spacing: 6) {
+            Text(SessionDisplay.badge(row))
+                .font(.caption.weight(.semibold))
+                .padding(.horizontal, 8).padding(.vertical, 2)
+                .background(SessionDisplay.badgeColor(row).opacity(0.16), in: .capsule)
+                .foregroundStyle(SessionDisplay.badgeColor(row))
+            if let chip = row.analysisDiscipline.lexicon.chip {
+                Text(chip)
+                    .font(.caption2.weight(.semibold))
+                    .padding(.horizontal, 8).padding(.vertical, 2)
+                    .background(Color.orange.opacity(0.16), in: .capsule)
+                    .foregroundStyle(.orange)
+            }
+            #if TUNING
+            if let count = TuningStamp.changedCount(row.engineVersion ?? "") {
+                TunedChip(count: count, compact: true)
+            }
+            #endif
+        }
+        .fixedSize()
+    }
+
+    @ViewBuilder
+    private func sourceText(_ row: SessionRow) -> some View {
+        if let source = SessionProvenance.line(importSource: row.importSource) {
+            Text(source)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
         }
     }
 
@@ -778,28 +787,42 @@ private struct WindRow: View {
 
     var body: some View {
         if detail.analysis.wind != nil || detail.windDirUserDeg != nil {
-            HStack(spacing: 8) {
+            HStack(spacing: 6) {
                 Image(systemName: "wind")
-                    .font(.caption)
+                    .font(.caption2)
                     .foregroundStyle(.secondary)
                 Text(text)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                HelpButton(topic: .windAxis)
+                    .font(.caption)
+                    .foregroundStyle(isLow ? AnyShapeStyle(Color.orange)
+                                           : AnyShapeStyle(.secondary))
+                    .fixedSize(horizontal: false, vertical: true)
+                HelpButton(topic: .windAxis, size: .caption2)
             }
             .accessibilityElement(children: .combine)
         }
     }
 
+    /// **Confidence is said only when it is low** (Jan, 25 Sep 2026, F8b). "Low" is the
+    /// engine's own bar, `windMinConfidence` (0.5 today): below it the axis is too weak to
+    /// name tacks and jibes, which is the one case where the number changes what the page
+    /// says. Above it, "100 % confident" was reassurance printed on every session, and
+    /// noise the rider learns to skip. The full reading is on Details → Wind either way.
+    private var isLow: Bool {
+        guard let wind = detail.analysis.wind else { return false }
+        return !wind.usable
+    }
+
     private var text: String {
         var parts: [String] = []
         if let wind = detail.analysis.wind {
-            let confidence = Int((wind.confidence * 100).rounded())
-            let qualifier = wind.usable ? "" : " · too weak to name turns"
             let bearing = Fmt.compass(wind.dirDeg) + " "
                 + String(Int(wind.dirDeg.rounded())) + "°"
-            parts.append("Wind from " + bearing + " · " + String(confidence)
-                         + " % confident" + qualifier)
+            var line = "Wind from " + bearing
+            if isLow {
+                let confidence = Int((wind.confidence * 100).rounded())
+                line += " · " + String(confidence) + " % confident, too weak to name turns"
+            }
+            parts.append(line)
         }
         if let user = detail.windDirUserDeg {
             parts.append("set on watch " + String(Int(user.rounded())) + "°")

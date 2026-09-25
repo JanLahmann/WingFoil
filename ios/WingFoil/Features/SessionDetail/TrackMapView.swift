@@ -137,6 +137,7 @@ struct TrackMapView: View {
         }
         .sheet(item: $openedFlightEnd) { request in
             FlightEndDetailSheet(detail: detail, start: request.id)
+                    .task { Usage.record(.flightEndPage) }
         }
         #if DEBUG && targetEnvironment(simulator)
         .onAppear(perform: stageCalloutForScreenshot)

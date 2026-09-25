@@ -461,12 +461,22 @@ main { padding-bottom: calc(var(--tap) + 34px + env(safe-area-inset-bottom)); }
 .tally i { font-style: normal; font-size: 0.75rem; }
 
 .tally b { color: var(--ink-3); font-weight: 400; }
+/* A pair cell's word rides in its number's ink, one weight lighter and smaller. */
+.tally small { font-size: 0.6em; font-weight: 500; }
 
 .tally .flew { color: var(--good-text, var(--good)); }
 
 .tally .touchdown { color: var(--warn-text, var(--warn)); }
 
 .tally .fell { color: var(--bad-text, var(--bad)); }
+/* The clean jibes: the star and the number in the clean ink, never the ladder's green. */
+.tally .clean { color: var(--clean-text, var(--wf-clean-jibe)); }
+/* A glide-out: its own neutral ring, the map's hollow mark — never the flew check. */
+.pill.glide_out { color: var(--ink-2); }
+.tally .glide { color: var(--ink-2); }
+.tally .star::before { content: "★"; margin-right: 2px; }
+.tally .ring::before { content: "○"; margin-right: 2px; }
+.tile .b { font: 600 15px/1.3 var(--sans); font-variant-numeric: tabular-nums; }
 
 /* -------------------------------------------------------------- gear, spots, welcome */
 

@@ -426,7 +426,8 @@ input:focus-visible, button:focus-visible, .btn:focus-visible, .dropzone:focus-v
 /* The hero row: max 2 s in the large type, the two composites beside it at the ordinary
    size — the hero keeps the wider track so the big number never wraps. */
 .key-row:has(> .key.hero) { grid-template-columns: 1.6fr 1fr 1fr; }
-.key .v { font: 650 26px/1.15 var(--sans); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.key .v { font: 650 26px/1.15 var(--sans); letter-spacing: -0.02em; font-variant-numeric: tabular-nums;
+          white-space: nowrap; }
 .key.hero .v { font-size: 32px; }
 .key .k {
   font: 600 10.5px/1.3 var(--sans); text-transform: uppercase; letter-spacing: .07em;
@@ -492,7 +493,8 @@ details.glossary > .muted { margin: 10px 0 0; }
   font: 600 10.5px/1.3 var(--sans); text-transform: uppercase; letter-spacing: .07em;
   color: var(--ink-3);
 }
-.tile .v { font: 650 22px/1.15 var(--sans); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.tile .v { font: 650 22px/1.15 var(--sans); letter-spacing: -0.02em; font-variant-numeric: tabular-nums;
+           white-space: nowrap; }
 .tile .v small { font-size: 13px; font-weight: 500; color: var(--ink-2); margin-left: 5px; }
 .tile .n { font: 12px/1.35 var(--sans); color: var(--ink-3); }
 
@@ -1163,6 +1165,7 @@ footer .fineprint { margin-top: 8px; font-size: 11.5px; color: var(--ink-4, var(
   --warn-text: var(--warn);
   --bad-text:  var(--bad);
   --foil-text: var(--foil);
+  --clean-text: var(--wf-clean-jibe);
 
   --banner-bg: #14293f;   --banner-line: #2a5a91;  --banner-ink: #d9e8fb;
   --accent-bg: #14293f;   --accent-line: #2a5a91;  --accent-ink: #9ec8f5;
@@ -1203,6 +1206,7 @@ footer .fineprint { margin-top: 8px; font-size: 11.5px; color: var(--ink-4, var(
   --lt-warn-text: #835500;
   --lt-bad-text:  #b52424;
   --lt-foil-text: #0a6b7e;
+  --lt-clean-text: #0a7657;
 }
 
 /* The whole theme, as a mapping. Written twice because CSS gives no way to write it once;
@@ -1224,6 +1228,7 @@ footer .fineprint { margin-top: 8px; font-size: 11.5px; color: var(--ink-4, var(
     --warn-text: var(--lt-warn-text);
     --bad-text:  var(--lt-bad-text);
     --foil-text: var(--lt-foil-text);
+    --clean-text: var(--lt-clean-text);
 
     --banner-bg: #e7f0fb;   --banner-line: #9dc0e8;  --banner-ink: #14324f;
     --accent-bg: #e7f0fb;   --accent-line: #9dc0e8;  --accent-ink: #12447d;
@@ -1263,6 +1268,7 @@ footer .fineprint { margin-top: 8px; font-size: 11.5px; color: var(--ink-4, var(
   --warn-text: var(--lt-warn-text);
   --bad-text:  var(--lt-bad-text);
   --foil-text: var(--lt-foil-text);
+  --clean-text: var(--lt-clean-text);
 
   --banner-bg: #e7f0fb;   --banner-line: #9dc0e8;  --banner-ink: #14324f;
   --accent-bg: #e7f0fb;   --accent-line: #9dc0e8;  --accent-ink: #12447d;

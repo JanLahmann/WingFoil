@@ -52,7 +52,7 @@
   "sessionSections": [
     { "id": "ride", "title": "Ride" },
     { "id": "turns", "title": "Turns" },
-    { "id": "takeoffs", "title": "Takeoffs" },
+    { "id": "takeoffs", "title": "Flights" },
     { "id": "log", "title": "Details" }
   ],
   "waysIn": {

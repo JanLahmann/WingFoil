@@ -19,7 +19,7 @@ import { keyMetricEntries } from "./cardstats.js";
 import { hm, text } from "./presentation.js";
 import { GLOSSARY, NOT_A_SESSION } from "./copy.js";
 import { EXPERIMENTAL_NOTE, lexicon } from "./lexicon.js";
-import { applyTurnFilter, renderFigures } from "./session.js";
+import { applyTurnFilter, flightFacts, renderFigures } from "./session.js";
 /* r3-w3: the turn page and the flight-end page. One hook, one line below: the page reads
    the document it is handed and wires itself to the two tables. js/turnpage.js. */
 import { setSessionDocument } from "./turnpage.js";
@@ -54,6 +54,7 @@ export function render(result, { highlight = null, isExample = false } = {}) {
   renderSummary(result, isExample);
   renderFigures(result, highlight);
   renderTakeoffs(el("takeoff-body"), g, meta);
+  renderFlights(el("flights-table"), el("flights-caption"), g, meta);
   renderTurnCards(el("turn-cards"), result, meta);
   renderTurns(el("turns-table"), el("turns-caption"), result, meta);
   renderEnds(el("ends-table"), el("ends-caption"), g, meta);
@@ -76,8 +77,9 @@ export function render(result, { highlight = null, isExample = false } = {}) {
  *      22 September 2026 the tacks beside them where the session had any — then every fall
  *      of the afternoon and the two turn streaks the engine has computed since 0.4.0 and
  *      neither app ever drew
- *   4  JPH + CPH (or TPH alone) and WPH — the per-hour rates: JPH over *dry* jibes since
- *      0.7.0, CPH over the *clean* ones since 0.10.0
+ *   4  CPH, then ONE dry-turn rate — JPH on a jibes-only session, TPH once tacks exist —
+ *      then WPH (Jan, 25 Sep 2026). JPH counts *dry* jibes since 0.7.0, CPH the *clean*
+ *      ones since 0.10.0; row 3 leads with the clean jibes' own cell
  *
  * **This function is now layout only.** Every rule the two platforms have to agree on —
  * which entries exist, in what order, with which labels and which strings — is in the
@@ -90,11 +92,23 @@ export function keyMetrics(doc) {
     // A tally is the one kind of cell that is not a string: its three counts are drawn on
     // the verdict ladder's own inks. `e.value` spells the same three numbers, so a renderer
     // that ignores `e.tally` still prints the truth — it just prints it in one colour.
+    // The clean jibes wear the star and the clean ink (25 Sep 2026, F8e); a pair cell — the
+    // streaks — draws each half in its own ink, flew in the ladder's green (F8f).
+    const ink = (role) => ({ "outcome.flew": "flew", "outcome.touchdown": "touchdown",
+                             "outcome.fellIn": "fell", "clean.jibe": "clean" }[role] || "");
     const v = e.tally
       ? `<span class="tally"><span class="flew">${int(e.tally.flewThrough)}</span>` +
         `<i>·</i><span class="touchdown">${int(e.tally.touchdown)}</span>` +
         `<i>·</i><span class="fell">${int(e.tally.fellIn)}</span></span>`
-      : esc(e.value);
+      : e.parts
+        ? `<span class="tally">${e.parts.map((p) =>
+            `<span class="${ink(p.colourRole)}">${int(p.value)} <small>${esc(p.label)}</small></span>`)
+            .join("<i>·</i>")}</span>`
+        : e.colourRole === "clean.jibe"
+          // The star is drawn by CSS (`.star::before`), so the cell's text stays the
+          // card's own value and the parity check reads one number.
+          ? `<span class="tally"><span class="clean star">${esc(e.value)}</span></span>`
+          : esc(e.value);
     // `extra` marks a block-only cell (5×10 s, alpha 500): the card parity check parses
     // `class="key"` / `class="key hero"` and skips these, which is exactly the contract —
     // the card is the block *minus* its block-only cells (docs/presentation.md).
@@ -218,19 +232,33 @@ function renderSummary(result, isExample = false) {
   el("key-metrics").innerHTML = keyMetrics(result.presentation);
   renderNotASession(g);
 
+  // **Confidence only when it is low** (Jan, 25 Sep 2026, F8b) — the engine's own bar,
+  // `windMinConfidence` (0.5): below it the axis is too weak to name tacks and jibes, the
+  // one case where the number changes what the page says. The phone's wind line, twinned.
+  const windLow = Boolean(w) && w.usable === false;
   const windTile = w
     ? { k: "Wind axis", v: `${nf(w.dirDeg, 0)}°`, unit: "from",
-        n: `confidence ${nf(w.confidence, 2)} · lobes ${nf(w.lobesDeg?.[0], 0)}/${nf(w.lobesDeg?.[1], 0)}°` +
+        n: (windLow ? `${pct(100 * w.confidence)} confident, too weak to name turns` : "") +
            // What the watch had to go on. The rider's own bearing is stated flat; an axis the
            // watch ESTIMATED (session field 44, app >= 0.9.0) carries the same leading "~" it
            // wears on the watch, because an estimate that reads like a measurement is worse
            // than no estimate at all.
            (meta.windDirUserDeg !== null && meta.windDirUserDeg !== undefined
-              ? ` · watch says ${nf(meta.windDirUserDeg, 0)}°` : "") +
+              ? `${windLow ? " · " : ""}watch says ${nf(meta.windDirUserDeg, 0)}°` : "") +
            (meta.windDirAutoDeg !== null && meta.windDirAutoDeg !== undefined
               ? ` · watch estimated ~${nf(meta.windDirAutoDeg, 0)}°` : "") }
     : { k: "Wind axis", v: "—", n: "no usable axis in the COG distribution" };
 
+  // **Each kind of turn with its whole breakdown, as numbers in their inks** (Jan, F9a/b):
+  // the clean jibes first with the star, then the ladder. The phone's Jibes and Tacks
+  // cards, twinned; the "flew through %" and "Turn verdicts" tiles said the same thing
+  // again and are gone.
+  const t = s.turns, sp = s.outcomeSplit;
+  const fig = (cls, n, word, mark = "") =>
+    `<span class="${cls}">${mark}${int(n)} <small>${esc(word)}</small></span>`;
+  const ladder = (o) => [fig("flew", o.flewThrough, "flew"), fig("touchdown", o.touchdown, "touch"),
+                         fig("fell", o.fellIn, "fell")];
+  const breakdown = (parts) => `<span class="tally">${parts.join("<i>·</i>")}</span>`;
   const tiles = [
     // **One clock.** The engine's cleaned span (`summary.durationS`), in the block's own
     // spelling — the same number and the same string the "duration" cell prints a few
@@ -242,10 +270,9 @@ function renderSummary(result, isExample = false) {
       n: `best 500 m ${speed(recordKn(doc, "best500m"), 1)}` },
     { k: words.onFoil, v: pct(s.foilPct),
       n: `${hms(s.foilTimeS)} ${words.foilTimeLower}` },
-    // engine 0.13.0: `longestFlightM` becomes `maxFlightM` — the maximum flight distance,
-    // which is this flight's own only by coincidence. The note follows the field.
-    { k: "Flights", v: int(s.flightCount),
-      n: `longest ${hms(s.longestFlightS)} · max ${int(s.maxFlightM)} m` },
+    // No "Flights" tile (Jan, F8k): the count is the head of the flight list on Flights.
+    // The longest flight stays, because it is a number a rider quotes.
+    { k: "Longest flight", v: hms(s.longestFlightS), n: `max ${int(s.maxFlightM)} m in one flight` },
     // The tiles carry their unit in a `<small>` of their own, so the number comes through
     // `speedNumber` and the word through `speedUnit` — one formatter, whichever half of it
     // a cell needs (js/appsettings.js; `Speed` in the kit).
@@ -255,25 +282,27 @@ function renderSummary(result, isExample = false) {
       unit: speedUnit(), n: `1 NM ${speed(recordKn(doc, "bestNm"))}` },
     { k: recordLabel("alpha500"), v: speedNumber(recordKn(doc, "alpha500")),
       unit: speedUnit(), n: `250 m ${speed(recordKn(doc, "best250m"))}` },
-    { k: "Turns", v: int(s.turns.turnsCounted),
-      // The **outcome** share over every counted turn. It used to print `successPct`, the
-      // engine's score verdict, which is not one of the rider's two tiers (flew through,
-      // and clean) and had no business on a tile under any name.
-      n: `${s.turns.jibes} jibes · ${s.turns.tacks} tacks · `
-         + `${pct(100 * s.turns.outcomes.flewThrough / (s.turns.turnsCounted || 1))} flew through` },
-    // **"Turn verdicts", the glossary's own word** (20 September 2026). The tile was called
-    // "Outcomes", which is a second name for the thing the block, the card, the watch and
-    // /help/ all call the turn verdicts — and the round that started this one began with a
-    // rider reading three names for one number on three screens.
-    { k: "Turn verdicts",
-      v: `${s.turns.outcomes.flewThrough}/${s.turns.outcomes.touchdown}/${s.turns.outcomes.fellIn}`,
-      n: "flew through / touchdown / fell in" },
+    { k: "Jibes", v: int(t.jibes),
+      html: t.jibes ? breakdown([fig("clean star", t.jibesSuccessful, "clean")]
+                                .concat(ladder(t.jibeOutcomes))) : "",
+      n: t.jibes ? "" : "none detected" },
+    { k: "Tacks", v: int(t.tacks),
+      html: t.tacks ? breakdown(ladder(t.tackOutcomes)) : "",
+      n: t.tacks ? "" : "none detected" },
+    // **Touchdowns and glide-outs on one tile** (Jan, F9e): both a flight that ended
+    // without a swim. The glide-out wears its own neutral ring, never the flew colour.
+    { k: "Touchdowns · glide-outs", v: "",
+      html: breakdown([fig("touchdown", sp.turnTouchdowns + sp.straightTouchdowns, "touch"),
+                       fig("glide ring", sp.glideOuts, "glide-out")]),
+      n: `${int(sp.turnTouchdowns)} in turns · ${int(sp.straightTouchdowns)} straight-line` +
+         (sp.unknownEnds ? ` · ${int(sp.unknownEnds)} ${sp.unknownEnds === 1 ? "end" : "ends"} cut by the recording` : "") },
     windTile,
   ];
   el("tiles").innerHTML = tiles.map((t) => `
     <div class="tile">
       <div class="k">${esc(t.k)}</div>
       <div class="v">${esc(t.v)}${t.unit ? `<small>${esc(t.unit)}</small>` : ""}</div>
+      ${t.html ? `<div class="b">${t.html}</div>` : ""}
       <div class="n">${esc(t.n || "")}</div>
     </div>`).join("");
 }
@@ -365,25 +394,23 @@ function renderNotASession(g) {
 function renderTakeoffs(host, g, meta) {
   const k = g.summary.takeoff;
   const accel = g.capabilities.hasAccel;
+  // **One row for takeoffs and attempts** (Jan, 25 Sep 2026, F12b; the phone's
+  // `SessionTakeoffSection`). "Takeoffs 19 of 19 attempts", "Attempts 19" and "Got up —
+  // failures invisible without accel" were one fact three times, the last a claim the
+  // recording could not make. With an accelerometer the row names the attempts and the
+  // share that got up; without one every row that needs it is left out, and one note says
+  // why (F12a) — a column of dashes reads as a measurement that failed.
+  //
+  // "Got up", never "Successful": `success` is engine vocabulary (CLAUDE.md).
   const rows = [
-    // **Takeoffs and attempts, each naming the other** (20 September 2026, the phone's
-    // `SessionTakeoffSection`). The watch counted 15 tries on an afternoon this block
-    // reported 9 takeoffs on, and nothing said both were right.
-    //
-    // **"Got up", not "Successful".** `success` is engine vocabulary and appears in no
-    // rider-facing text (CLAUDE.md) — and on the same afternoon it was this block's word
-    // for a takeoff rate while Garmin Connect used *Turn success* for a turn speed verdict.
-    // One word, two measurements, three screens apart; the turn verdict is **Speed kept**
-    // and this is the rider getting up.
-    ["Takeoffs", `${int(k.takeoffSuccesses)} of ${int(k.takeoffAttempts)} attempts`],
-    ["Attempts", int(k.takeoffAttempts)],
-    ["Got up", k.successPct === null || k.successPct === undefined
-      ? "— failures invisible without accel"
-      : `${pct(k.successPct)} · ${int(k.takeoffSuccesses)} of ${int(k.takeoffAttempts)} attempts`],
-    ["Failed attempts", int(k.failedAttempts)],
-    ["Avg time to foil", k.avgTakeoffS === null ? "—" : `${nf(k.avgTakeoffS, 1)} s`],
-    ["Median time to foil", k.medianTakeoffS === null ? "—" : `${nf(k.medianTakeoffS, 1)} s`],
+    ["Takeoffs", accel
+      ? `${int(k.takeoffSuccesses)} of ${int(k.takeoffAttempts)} attempts` +
+        (k.successPct === null || k.successPct === undefined ? "" : ` · ${pct(k.successPct)} got up`)
+      : `${int(k.takeoffSuccesses)} · one starts every flight`],
   ];
+  if (accel) rows.push(["Failed attempts", int(k.failedAttempts)]);
+  rows.push(["Avg time to foil", k.avgTakeoffS === null ? "—" : `${nf(k.avgTakeoffS, 1)} s`]);
+  rows.push(["Median time to foil", k.medianTakeoffS === null ? "—" : `${nf(k.medianTakeoffS, 1)} s`]);
   const pumpRows = [
     ["Avg pumps to takeoff", nf(k.avgPumpsToTakeoff, 1)],
     ["Median pumps to takeoff", nf(k.medianPumpsToTakeoff, 1)],
@@ -394,11 +421,42 @@ function renderTakeoffs(host, g, meta) {
   host.innerHTML = `
     <div class="kv">${(accel ? rows.concat(pumpRows) : rows)
       .map(([a, b]) => `<div class="row"><span>${esc(a)}</span><span>${esc(b)}</span></div>`).join("")}</div>
-    ${accel ? "" : `<p class="note" style="margin-top:14px">
-      No wrist accelerometer stream in this file, so pump-stroke detection could not run:
-      pumps-to-takeoff and stroke counts are unavailable. Attempts and timings above come from
-      the speed trace alone.</p>`}`;
+    ${accel ? "" : `<p class="muted small" style="margin-top:10px">No accelerometer in this
+      recording, so pumps and failed attempts are not counted.</p>`}`;
 }
+
+/**
+ * **Every flight, one row each: when it got up, how long it lasted, how it ended** — the
+ * phone's `FlightsListView` (Jan, 25 Sep 2026, F12c). A flight is a takeoff and an end, and
+ * the two halves sat on two tabs while the summary printed a bare "Flights" count. The rows
+ * are `flightFacts`, the same pairing the map's flight popover reads, so a flight is
+ * numbered and timed one way on the page. A glide-out wears its own neutral ring, never the
+ * flew-through colour (F9e).
+ */
+function renderFlights(table, caption, g, meta) {
+  if (!table) return;
+  const flights = flightFacts(g);
+  if (caption) caption.textContent = flights.length
+    ? `${plural(flights.length, "flight")}. The flight ends the map marks are listed below.`
+    : "No flight in this recording.";
+  const MARK = { "glided out": "○", touchdown: "▲", "fell in": "✕", "recording ended": "■" };
+  const CLS = { "glided out": "glide", touchdown: "touchdown", "fell in": "fell",
+                "recording ended": "glide" };
+  const accel = g.capabilities.hasAccel;
+  const head = ["flight", "up at", "time", ...(accel ? ["pumps"] : []), "ended"];
+  table.innerHTML = `<thead><tr>${head
+    .map((h, i) => `<th${i <= 1 || i === head.length - 1 ? ' class="l"' : ""}>${esc(h)}</th>`).join("")}</tr></thead>
+    <tbody>${flights.map((f) => `
+      <tr>
+        <td class="l">${f.index + 1}</td>
+        <td class="l">${clockAt(meta, f.startTs)}</td>
+        <td>${hms(f.endTs - f.startTs)}</td>
+        ${accel ? `<td>${f.pumps === null ? "—" : f.pumps === 0 ? "free" : int(f.pumps)}</td>` : ""}
+        <td class="l"><span class="tally"><span class="${CLS[f.outcome]}">${MARK[f.outcome]}</span></span> ${esc(f.outcome)}</td>
+      </tr>`).join("")}</tbody>`;
+}
+
+const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 /* -------------------------------------------------------------------- tables */
 
@@ -406,7 +464,9 @@ function outcomePill(outcome) {
   const holder = document.createElementNS(SVGNS, "svg");
   holder.setAttribute("viewBox", "-6 -6 12 12");
   const shape = { flew_through: "disc", touchdown: "triangle", fell_in: "cross" }[outcome] || "square";
-  marker(holder, { shape, color: OUTCOME_COLOR[outcome] || C.ink3 }, 0, 0, 0.85);
+  // A glide-out is no verdict on a turn: its own neutral mark, never the flew colour (F9e).
+  const color = outcome === "glide_out" ? C.ink3 : OUTCOME_COLOR[outcome] || C.ink3;
+  marker(holder, { shape, color }, 0, 0, 0.85);
   return `<span class="pill ${outcome}">${holder.outerHTML}${OUTCOME_LABEL[outcome] || outcome}</span>`;
 }
 
@@ -467,7 +527,7 @@ function renderTurns(table, caption, result, meta) {
   // The two speed columns carry the unit in the head, so the cells are numbers — and the
   // head is the rider's unit rather than a literal (js/appsettings.js).
   const head = ["#", "time", "type", "turn", "tack", `entry ${speedUnit()}`,
-                `min ${speedUnit()}`, "score",
+                `min ${speedUnit()}`, "held",
                 "clean", "outcome", "why", "stop s", "off foil s", "pump", "wet",
                 "arc m", "R m"];
   table.innerHTML = `<thead><tr>${head

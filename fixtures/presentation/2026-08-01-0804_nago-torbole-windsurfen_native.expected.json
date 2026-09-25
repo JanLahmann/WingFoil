@@ -157,10 +157,17 @@
         {
           "cells": [
             {
+              "captions": [],
+              "colourRole": "clean.jibe",
+              "key": "cleanJibes",
+              "labelId": "presentation.label.cleanJibes",
+              "unitKind": "count",
+              "value": 14
+            },
+            {
               "captions": [
                 {
                   "args": {
-                    "clean": 14,
                     "jibes": 51
                   },
                   "id": "presentation.caption.ofJibes"
@@ -198,10 +205,12 @@
               "colourRole": "neutral",
               "counts": [
                 {
+                  "colourRole": "outcome.flew",
                   "labelId": "glossary.flewThrough",
                   "value": 5
                 },
                 {
+                  "colourRole": "neutral",
                   "labelId": "glossary.dry",
                   "value": 8
                 }
@@ -219,18 +228,18 @@
             {
               "captions": [],
               "colourRole": "neutral",
-              "key": "jph",
-              "labelId": "glossary.jph",
-              "unitKind": "rate",
-              "value": 27.1
-            },
-            {
-              "captions": [],
-              "colourRole": "neutral",
               "key": "cph",
               "labelId": "glossary.cph",
               "unitKind": "rate",
               "value": 10.5
+            },
+            {
+              "captions": [],
+              "colourRole": "neutral",
+              "key": "jph",
+              "labelId": "glossary.jph",
+              "unitKind": "rate",
+              "value": 27.1
             },
             {
               "captions": [],
@@ -255,6 +264,7 @@
         "wind"
       ],
       "leanKeys": [
+        "cleanJibes",
         "distance",
         "duration",
         "falls",
@@ -310,10 +320,21 @@
           "value": 14.99
         },
         {
+          "captions": [],
+          "colourRole": "clean.jibe",
+          "key": "cleanJibes",
+          "labelId": "presentation.label.cleanJibes",
+          "presets": [
+            "complete",
+            "lean"
+          ],
+          "unitKind": "count",
+          "value": 14
+        },
+        {
           "captions": [
             {
               "args": {
-                "clean": 14,
                 "jibes": 51
               },
               "id": "presentation.caption.ofJibes"
@@ -359,10 +380,12 @@
           "colourRole": "neutral",
           "counts": [
             {
+              "colourRole": "outcome.flew",
               "labelId": "glossary.flewThrough",
               "value": 5
             },
             {
+              "colourRole": "neutral",
               "labelId": "glossary.dry",
               "value": 8
             }
@@ -378,17 +401,6 @@
         {
           "captions": [],
           "colourRole": "neutral",
-          "key": "jph",
-          "labelId": "glossary.jph",
-          "presets": [
-            "complete"
-          ],
-          "unitKind": "rate",
-          "value": 27.1
-        },
-        {
-          "captions": [],
-          "colourRole": "neutral",
           "key": "cph",
           "labelId": "glossary.cph",
           "presets": [
@@ -396,6 +408,17 @@
           ],
           "unitKind": "rate",
           "value": 10.5
+        },
+        {
+          "captions": [],
+          "colourRole": "neutral",
+          "key": "jph",
+          "labelId": "glossary.jph",
+          "presets": [
+            "complete"
+          ],
+          "unitKind": "rate",
+          "value": 27.1
         },
         {
           "captions": [],

@@ -123,8 +123,9 @@ about, and a tree comparison would pass it.
   - **`tally`** — `{flewThrough, touchdown, fellIn}`, the outcome ladder. Its own field
     because it is *one fact on a fixed three-rung scale with a colour*, which is why the
     counts stay numbers rather than a joined string.
-  - **`counts`** — an ordered list of `{labelId, value}`. The streaks cell, where the two
-    halves are two *different* metrics ("5 flew · 11 dry") rather than three rungs of one.
+  - **`counts`** — an ordered list of `{labelId, value, colourRole}`. The streaks cell, where
+    the two halves are two *different* metrics ("5 flew · 11 dry") rather than three rungs of
+    one, each in its own ink (`outcome.flew`, `neutral`).
 
 ### The sections
 
@@ -139,8 +140,8 @@ here re-derives a number.
 |---|---|---|
 | `basics` | `duration` · `distance` · `avgSpeed` | always three; `avgSpeed` is the engine's km/h converted to knots, and the *unit on screen* is still the renderer's |
 | `speed` | `max2s` · `best5x10s` · `alpha500` | always three. The last two are **block-only**: `card` drops them |
-| `turns` | `tally` · `tacks`? · `falls`? · `streaks`? | the jibe ladder (or the counted-turn fallback), the tack ladder where the session had tacks *and* jibes, every fall of the afternoon, the two streaks |
-| `rates` | `jph` + `cph`, or `tph`; then `wph` | gated on the jibe **count**, never the jibe rate |
+| `turns` | `cleanJibes`? · `tally` · `tacks`? · `falls`? · `streaks`? | the clean jibes where the session had jibes (`colourRole` `clean.jibe`, 25 Sep 2026), the jibe ladder (or the counted-turn fallback) captioned "of N jibes", the tack ladder where the session had tacks *and* jibes, every fall of the afternoon, the two streaks — each half of the pair with its own `colourRole` |
+| `rates` | `cph`?, then `jph` or `tph`, then `wph` | CPH first; JPH on a jibes-only session, TPH once tacks exist or where no jibes were named (then without CPH). Gated on the **counts**, never a rate (Jan, 25 Sep 2026) |
 
 #### `card` — the share card
 

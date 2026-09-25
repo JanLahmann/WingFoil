@@ -62,8 +62,8 @@ import Testing
         #expect(block.speedExtras.map(\.label) == ["5×10 s", "alpha 500"])
 
         let tally = try #require(block.tally)
-        #expect(tally.label == "flew · touchdown · fell")
-        #expect(tally.caption == "of 18 jibes · 0 clean")
+        #expect(tally.label == "flew · touch · fell")
+        #expect(tally.caption == "of 18 jibes")
         #expect(tally.total == 18)
         // No tack ladder on this afternoon, and the falls cell is the *session*: the tally
         // above it is the jibes and says so (docs/algorithms/rates.md).
@@ -78,11 +78,11 @@ import Testing
         #expect(streaks.label == "best streaks")
         #expect(streaks.value == "1 flew · 4 dry")
 
-        #expect(block.rates.map(\.key) == ["jph", "cph", "wph"])
-        #expect(block.rates.map(\.label) == ["JPH · dry jibes per hour",
-                                             "CPH · clean jibes per hour",
+        #expect(block.rates.map(\.key) == ["cph", "jph", "wph"])
+        #expect(block.rates.map(\.label) == ["CPH · clean jibes per hour",
+                                             "JPH · dry jibes per hour",
                                              "WPH · swims per hour"])
-        #expect(block.rates.map(\.value) == ["5.4", "0.0", "6.6"])
+        #expect(block.rates.map(\.value) == ["0.0", "5.4", "6.6"])
     }
 
     /// **The card is the block, minus the two composites.** It was the document's own rule

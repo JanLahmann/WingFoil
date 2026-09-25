@@ -282,8 +282,11 @@ private struct FlightEndDetailPage: View {
             HStack(spacing: 8) {
                 chip(FlightEndAnalytics.outcomeLabel(end.outcome)
                         + (end.borderline ? " (borderline)" : ""),
-                     symbol: TurnOutcomeKind(end.outcome).symbolName,
-                     tint: TurnOutcomeStyle.color(TurnOutcomeKind(end.outcome)))
+                     // A glide-out wears its own neutral ring, never the flew check (F9e).
+                     symbol: FlightPairing.Outcome(endOutcome: end.outcome,
+                                                   truncated: end.truncated).symbolName,
+                     tint: FlightEndMark.color(FlightPairing.Outcome(endOutcome: end.outcome,
+                                                                     truncated: end.truncated)))
                 if end.pumped {
                     chip("pumped out", symbol: DesignTokens.Glyph.takeoffPumped,
                          tint: DesignTokens.Effort.pumping)

@@ -59,7 +59,7 @@ DEFAULT_RECORD_WINDOW = "best2s"
 DEFAULT_ROW_METRICS = ["foilShare", "jibes", "best2s"]
 
 #: `ShareCardStats.Preset.leanKeys`, in the order the contract spells them.
-LEAN_CARD_KEYS = ["distance", "duration", "falls", "max2s", "tally"]
+LEAN_CARD_KEYS = ["cleanJibes", "distance", "duration", "falls", "max2s", "tally"]
 
 #: Keys that may never reach a card — real numbers the app shows in the tiles below the
 #: block, which on a card would be a second, quieter answer to "was that a good session".
@@ -247,6 +247,15 @@ def _block(doc, summary, turns, records):
     ]})
 
     turn_cells = []
+    # **The clean jibes lead the row, in their own cell** (Jan, 25 Sep 2026, F8e). They
+    # were a clause in the tally's caption — "of 5 jibes · 4 clean" — which made the one
+    # number the product is named for the smallest type in the block. A jibe that is clean
+    # also flew through, so the ladder beside it still counts it: the star is the stricter
+    # reading of the same turns, not a fourth rung.
+    if turns.get("jibes", 0) > 0:
+        turn_cells.append(_cell("cleanJibes", "presentation.label.cleanJibes",
+                                value=turns.get("jibesSuccessful", 0), unit_kind="count",
+                                colour_role="clean.jibe"))
     tally = _tally_cell(turns)
     if tally is not None:
         turn_cells.append(tally)
@@ -257,13 +266,18 @@ def _block(doc, summary, turns, records):
     if falls is not None:
         turn_cells.append(falls)
     if turns.get("turnsCounted", 0) > 0:
-        # Flying leads the pair: the harder run first, and the smaller number always.
+        # Flying leads the pair: the harder run first, and the smaller number always. Each
+        # half wears the ink of what it counts (F8f): a flew streak is the ladder's green,
+        # and a dry streak — flew *or* touched down, never fell — is the body ink, because
+        # no single rung of the ladder is what it counts.
         turn_cells.append(_cell(
             "streaks", "presentation.label.streaks", unit_kind="count",
             counts=[{"labelId": "glossary.flewThrough",
-                     "value": turns.get("longestFlewStreak", 0)},
+                     "value": turns.get("longestFlewStreak", 0),
+                     "colourRole": "outcome.flew"},
                     {"labelId": "glossary.dry",
-                     "value": turns.get("longestDryStreak", 0)}]))
+                     "value": turns.get("longestDryStreak", 0),
+                     "colourRole": "neutral"}]))
     if turn_cells:
         rows.append({"id": "turns", "cells": turn_cells})
 
@@ -276,14 +290,14 @@ def _block(doc, summary, turns, records):
 
 def _tally_cell(turns):
     """The jibe ladder, or the whole counted-turn ladder where the wind axis named no
-    jibes. The caption says which — and carries the clean count only on the jibe half."""
+    jibes. The caption says which. The clean count is the `cleanJibes` cell beside it since
+    25 Sep 2026, so the caption no longer carries it: one fact, one cell."""
     if turns.get("jibes", 0) > 0:
         return _cell("tally", "presentation.label.outcomeLadder", unit_kind="count",
                      colour_role="outcome.ladder",
                      tally=_ladder(turns.get("jibeOutcomes", {})),
                      captions=[_caption("presentation.caption.ofJibes",
-                                        jibes=turns["jibes"],
-                                        clean=turns.get("jibesSuccessful", 0))])
+                                        jibes=turns["jibes"])])
     if turns.get("turnsCounted", 0) <= 0:
         return None
     # No clean clause on the fallback: `turnsSuccessful` is the score verdict over every
@@ -326,18 +340,27 @@ def _falls_cell(summary):
 
 
 def _rate_cells(summary, turns):
-    """Row 4. Empty where there is no hour to divide by; JPH+CPH or the TPH fallback,
-    gated on the jibe **count** and never on the jibe rate."""
+    """Row 4. Empty where there is no hour to divide by.
+
+    **CPH first, then ONE dry-turn rate, then WPH** (Jan, 25 Sep 2026 — it supersedes
+    "JPH and TPH side by side"). The dry-turn rate is JPH while the session's counted
+    turns are all jibes, and TPH once a tack is among them: a tacking rider's jibe rate
+    leaves a share of his afternoon out, and two dry rates side by side are two answers to
+    one question. A session whose wind axis named no jibes has no clean jibes to rate, so
+    CPH is absent there and TPH stands alone. Gated on the **counts**, never on a rate.
+    """
     if summary.get("wetPerHour") is None:
         return []
+    jibes = turns.get("jibes", 0)
+    tph = summary.get("turnsPerHour") or 0.0
     out = []
-    if turns.get("jibes", 0) > 0 or not (summary.get("turnsPerHour") or 0) > 0:
-        out.append(_cell("jph", "glossary.jph", value=summary.get("jibesPerHour") or 0.0,
-                         unit_kind="rate"))
+    if jibes > 0 or not tph > 0:
         out.append(_cell("cph", "glossary.cph",
                          value=summary.get("cleanJibesPerHour") or 0.0, unit_kind="rate"))
+    if turns.get("tacks", 0) > 0 or (jibes <= 0 and tph > 0):
+        out.append(_cell("tph", "glossary.tph", value=tph, unit_kind="rate"))
     else:
-        out.append(_cell("tph", "glossary.tph", value=summary["turnsPerHour"],
+        out.append(_cell("jph", "glossary.jph", value=summary.get("jibesPerHour") or 0.0,
                          unit_kind="rate"))
     out.append(_cell("wph", "glossary.wph", value=summary["wetPerHour"], unit_kind="rate"))
     return out

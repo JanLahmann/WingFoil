@@ -35,6 +35,29 @@ public enum FlightPairing {
             default: self = .glidedOut          // glide_out | flew_through
             }
         }
+
+        /// **The mark a flight's end wears in a list** (25 Sep 2026, F9e). A glide-out
+        /// has its own neutral one — the hollow ring the map already draws it as — and
+        /// never the flew-through check: the rider came off the foil and kept moving,
+        /// which is not a turn that held. Touchdown and fell in keep the ladder's shapes.
+        public var symbolName: String {
+            switch self {
+            case .glidedOut: "circle"
+            case .touchdown: "exclamationmark.triangle.fill"
+            case .fellIn: "xmark.circle.fill"
+            case .recordingEnded: "stop.circle"
+            }
+        }
+
+        /// The ink, as a `design/tokens.json` role: the ladder's for a touchdown and a
+        /// fall, the body's for the two ends that are no verdict at all.
+        public var colourRole: String {
+            switch self {
+            case .touchdown: "outcome.touchdown"
+            case .fellIn: "outcome.fellIn"
+            case .glidedOut, .recordingEnded: "neutral"
+            }
+        }
     }
 
     /// One flight as the pairing states it: everything the four lines need, resolved once.

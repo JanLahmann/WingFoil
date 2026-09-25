@@ -386,3 +386,36 @@ def test_the_not_a_session_line_is_an_id_with_the_two_numbers_that_decided():
 def test_an_unknown_policy_is_refused():
     with pytest.raises(ValueError):
         build_presentation(load(goldens()[0]), policy="whateverTheRiderTyped")
+
+
+def test_the_rate_row_is_cph_then_one_dry_turn_rate(documents):
+    """Jan, 25 Sep 2026: CPH first, then JPH on a jibes-only session or TPH once a tack
+    is among the counted turns, then WPH — never JPH and TPH side by side. And the clean
+    jibes are a cell of their own at the head of the turns row, in the clean ink."""
+    seen = set()
+    for stem, doc in documents.items():
+        golden = load(GOLDENS / (stem + ".expected.json"))
+        turns = golden["summary"]["turns"]
+        rows = {row["id"]: row for row in doc["block"]["rows"]}
+        if "rates" in rows:
+            keys = [c["key"] for c in rows["rates"]["cells"]]
+            if turns.get("tacks", 0) > 0:
+                want = ["cph", "tph", "wph"]
+            elif turns.get("jibes", 0) > 0:
+                want = ["cph", "jph", "wph"]
+            else:
+                want = keys  # the no-jibe fallback is the branch test's
+            assert keys == want, stem
+            assert not {"jph", "tph"} <= set(keys), stem
+            seen.add(tuple(keys))
+        turn_keys = [c["key"] for c in rows.get("turns", {"cells": []})["cells"]]
+        if turns.get("jibes", 0) > 0:
+            clean = rows["turns"]["cells"][0]
+            assert clean["key"] == "cleanJibes", stem
+            assert clean["value"] == turns["jibesSuccessful"], stem
+            assert clean["colourRole"] == "clean.jibe", stem
+            tally = next(c for c in rows["turns"]["cells"] if c["key"] == "tally")
+            assert "clean" not in tally["captions"][0]["args"], stem
+        else:
+            assert "cleanJibes" not in turn_keys, stem
+    assert ("cph", "tph", "wph") in seen and ("cph", "jph", "wph") in seen

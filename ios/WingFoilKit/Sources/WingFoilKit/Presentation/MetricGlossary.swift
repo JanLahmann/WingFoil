@@ -209,7 +209,7 @@ public enum MetricGlossary {
             sentence: "whether you flew through it, touched down, or fell in",
             surfaces: [.ios, .watch, .web, .appstore, .ciq],
             places: [.watchPage, .fitField, .phonePage, .card, .web, .help],
-            labels: ["Turn verdicts", "flew · touchdown · fell"],
+            labels: ["Turn verdicts", "flew · touch · fell"],
             fit: "turn_marker"),
 
         MetricGlossaryEntry(
@@ -249,17 +249,16 @@ public enum MetricGlossary {
             places: [.watchPage, .phonePage, .card, .web, .help],
             labels: ["CPH", "CPH · clean jibes per hour"]),
 
-        // **Beside JPH and CPH, never instead of them** (CLAUDE.md: rates are additive).
-        // The phone and the web have printed "TPH · turns per hour" on every session whose
-        // wind axis named no jibes since engine 0.7.0, and until 15 September 2026 neither
-        // the welcome screen nor /learn could say what it was.
+        // **The one dry-turn rate once tacks exist** (Jan, 25 Sep 2026): CPH first, then JPH
+        // on a jibes-only session or TPH on one with tacks in it, then WPH. It also stands
+        // alone on a session whose wind axis named no jibes, as it has since engine 0.7.0.
         MetricGlossaryEntry(
             id: "tph",
             term: "TPH",
             short: "TPH",
             expansion: "turns per hour",
-            line: "Turns per hour, every counted turn and not only the jibes. It stands "
-                + "in for JPH on a session whose wind axis named no jibes.",
+            line: "Dry turns per hour, tacks and jibes together. It takes the place of "
+                + "JPH once a session has tacks in it.",
             sentence: "your turns per hour",
             surfaces: [.ios, .web],
             places: [.phonePage, .card, .web, .help],

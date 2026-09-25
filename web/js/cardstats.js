@@ -17,7 +17,7 @@
  * Drawing lives in js/sharecard.js. Nothing here knows what a canvas is.
  */
 
-import { cellCaption, cellLabel, cellValue, hm } from "./presentation.js";
+import { cellCaption, cellLabel, cellValue, hm, text } from "./presentation.js";
 import { zonedFormat } from "./viz.js";
 
 /* -------------------------------------------------------------------- branding
@@ -149,6 +149,16 @@ function entry(cell, row) {
     label: cellLabel(cell) + (caption ? CAPTION_SEP + caption : ""),
     value: cellValue(cell),
     ...(cell.tally ? { tally: cell.tally } : {}),
+    // The ink the value wears where it is not the body's — the clean jibes' own (25 Sep
+    // 2026) — and a pair cell's halves, each in its own (the streaks: flew in the ladder's
+    // green). `value` still spells the whole thing, so a renderer that ignores these two
+    // prints the truth in one colour.
+    ...(cell.colourRole && cell.colourRole !== "neutral" ? { colourRole: cell.colourRole } : {}),
+    ...(cell.counts && cell.counts.length
+      ? { parts: cell.counts.map((part) => ({
+          value: part.value, label: text(part.labelId, {}, "short") ?? "",
+          colourRole: part.colourRole || "neutral" })) }
+      : {}),
     row,
     // The session's fastest measured window, alone on its line and in the block's largest
     // type: it is the number a rider quotes (docs/presentation/records.md, "Record windows").

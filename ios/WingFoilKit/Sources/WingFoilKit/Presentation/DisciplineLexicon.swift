@@ -57,8 +57,11 @@ public struct DisciplineLexicon: Sendable, Equatable {
         discipline.isWindsurf ? "planing start" : "takeoff"
     }
 
-    /// The section tab and the map: "Takeoffs" / "Planing starts".
+    /// The map and the takeoff tiles: "Takeoffs" / "Planing starts".
     public var takeoffs: String { discipline.isWindsurf ? "Planing starts" : "Takeoffs" }
+
+    /// The section tab and its list: "Flights" / "Planing runs" (25 Sep 2026).
+    public var flights: String { discipline.isWindsurf ? "Planing runs" : "Flights" }
 
     /// The outcome ladder, in a sentence: "lost the foil" / "stopped planing".
     public var lostTheFoil: String {

@@ -160,8 +160,9 @@ const metres = (m) => (m >= 1000 ? `${(m / 1000).toFixed(2)} km` : `${m.toFixed(
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
-/** Every flight with the end that stopped it and the strokes that started it. */
-function flightFacts(g) {
+/** Every flight with the end that stopped it and the strokes that started it. Exported for
+ *  the Flights tab's list (js/render.js), which is the same pairing in rows. */
+export function flightFacts(g) {
   const ends = new Map((g.flightEnds || []).map((e) => [e.flightIndex, e]));
   const count = (g.flights || []).length;
   return (g.flights || []).map((f, index) => ({

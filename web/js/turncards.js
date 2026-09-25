@@ -64,7 +64,8 @@ export function renderTurnCards(host, result, meta) {
     // voice: skip — a strip of values, one per cell, in the spec register of docs/voice.md.
     const facts = [
       e.sideId ? `${e.sideId} entry` : null,
-      `score ${nf(e.score * 100, 0)} %`,
+      // The score says what it is (F9f): the share of the entry speed the turn held.
+      `${nf(e.score * 100, 0)} % held`,
       `min ${nf(e.minKn, 1)} of ${nf(e.entryKn, 1)}`,
     ].filter(Boolean).join(" · ");
     return `

@@ -39,6 +39,8 @@ import Testing
         "port / starboard": "the entry side, a dimension of a turn rather than a metric",
         "glide-outs": "a flight-end verdict that is not a loss and has no other surface",
         "touchdowns": "the plural of the touchdown term",
+        "touchdowns · glide-outs": "the touchdown term and the glide-out verdict on one card: "
+            + "both a flight that ended without a swim (Jan, 25 Sep 2026)",
         "best streaks": "the dry-streak term at the block's width",
         "pumps to takeoff": "a stroke count, under the takeoffs term",
         "takeoff run": "a clock, under the takeoffs term",
@@ -154,12 +156,14 @@ import Testing
 
     /// **The session page's stat cards**, which are where most of the app's numbers are
     /// actually read, and which are written in the app target where no type can enumerate
-    /// them. So they are scanned: every `StatCard(title: "…")` in `SummaryGrid.swift`.
+    /// them. So they are scanned: every `StatCard(title: "…")` and `BreakdownCard(title: "…")`
+    /// in `SummaryGrid.swift`.
     @Test func everyStatCardTitleIsAGlossaryTerm() throws {
         let file = CopyContractTests.repoRoot
             .appendingPathComponent("ios/WingFoil/Features/SessionDetail/SummaryGrid.swift")
         let text = try String(contentsOf: file, encoding: .utf8)
         let titles = Self.quoted(text, after: #"StatCard\(title: ""#)
+            + Self.quoted(text, after: #"BreakdownCard\(title: ""#)
         #expect(titles.count >= 8, "the scan found \(titles.count) stat cards — check the pattern")
         for title in titles {
             #expect(Self.isKnown(title),

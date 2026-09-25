@@ -75,6 +75,9 @@ public struct ShareCardStats: Sendable, Equatable {
         public static let avgSpeed = "avgSpeed"
         public static let maxSpeed = "max2s"
         public static let tally = "tally"
+        /// **The clean jibes, in a cell of their own** (25 September 2026). They were a
+        /// clause in the tally's caption; the block gave them a cell and the card follows it.
+        public static let cleanJibes = "cleanJibes"
         /// **The tack ladder** (22 September 2026), beside the jibe one on a session with
         /// tacks in it. Not a `KeyMetrics.Metric` key either, for the same reason `tally`
         /// is not: a `Tally` is three counts, not a string.
@@ -117,7 +120,7 @@ public struct ShareCardStats: Sendable, Equatable {
         /// One line under the picker, so the choice is legible before it is made.
         public var summary: String {
             switch self {
-            case .lean: "Duration, distance, max 2 s and the jibe tally."
+            case .lean: "Duration, distance, max 2 s, clean jibes and the jibe tally."
             case .complete: "Everything the app's key-metrics block shows."
             }
         }
@@ -130,7 +133,7 @@ public struct ShareCardStats: Sendable, Equatable {
         /// one fall on an afternoon with three in it — two of them in a straight line. A
         /// card is read next to nothing, so the honest number travels on both presets.
         public static let leanKeys: Set<String> = [
-            Key.duration, Key.distance, Key.maxSpeed, Key.tally, Key.falls,
+            Key.duration, Key.distance, Key.maxSpeed, Key.cleanJibes, Key.tally, Key.falls,
         ]
 
         func keeps(_ key: String) -> Bool {
@@ -325,6 +328,9 @@ public struct ShareCardStats: Sendable, Equatable {
     public static func stats(from metrics: KeyMetrics, preset: Preset) -> [Stat] {
         var out = metrics.basics.map(Stat.init)
         out.append(Stat(metrics.maxSpeed))
+        // The clean jibes lead the turn cells, where the block draws them. Lean keeps them:
+        // the count rode on lean in the tally's caption until it became a cell.
+        if let clean = metrics.cleanJibes { out.append(Stat(clean)) }
         if let tally = metrics.tally { out.append(Stat(tally)) }
         // The tacks ride straight after the jibes, which is where the block draws them and
         // what makes the pair read as one question asked about two kinds of turn.

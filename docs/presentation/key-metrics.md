@@ -11,8 +11,8 @@ screens below a map, ten legend chips and three paragraphs of legend documentati
 |---|---|
 | 1 | duration (`10:45 min` / `1:57 h`) · distance · average speed |
 | 2 | the best 2 s record, labelled **"max 2 s"**, in the largest type · beside it **5×10 s** and **alpha 500** at the ordinary size, "—" where the session produced none (since 6 Sep 2026). These two are **block-only**: the share card is the block *minus* them — one speed on a card, the one a rider quotes; the Records page owns the set. The web renders them with the `extra` class, which is how `card_parity.mjs` tells them apart |
-| 3 | the jibe tally on the ladder's inks · **the tack tally beside it** where the session had tacks (22 Sep 2026) · every fall of the afternoon · the two turn streaks |
-| 4 | **JPH** (dry jibes) and **WPH** (`docs/algorithms/rates.md` "Session rates"), one decimal |
+| 3 | **the clean jibes, in a cell of their own** with the star in the clean ink (25 Sep 2026) · the jibe tally on the ladder's inks, captioned "of N jibes" · **the tack tally beside it** where the session had tacks (22 Sep 2026) · every fall of the afternoon · the two turn streaks, the flew half in the ladder's green |
+| 4 | **CPH first, then one dry-turn rate — JPH on a jibes-only session, TPH once tacks exist — then WPH** (Jan, 25 Sep 2026; `docs/algorithms/rates.md` "Session rates"), one decimal |
 
 The rules, which are the only thing the two implementations can disagree about:
 
@@ -92,18 +92,28 @@ The rules, which are the only thing the two implementations can disagree about:
   cell is captioned **"JPH · dry jibes per hour"**. A rate that counted the swims too could
   be raised by falling more often, and a caption reading "jibes per hour" over a number that
   excludes seven of them would name a different figure than the one printed.
-- **CPH sits beside JPH, never instead of it** (engine 0.10.0). `cleanJibesPerHour` is the
-  strict verdict per hour — the jibes he flew all the way through carrying his speed — and
-  the cell is captioned **"CPH · clean jibes per hour"**. The two are on the row together
-  because they answer the two questions a rider asks in exactly that order: *did I come out
-  of it still sailing*, and *did I ride it*. Neither is derivable from the other. 2026-08-03
-  pm is the session that makes the point — **4.5 JPH beside 0.0 CPH**, fifteen jibes he
-  mostly stayed out of the water on and did not ride one of — and a block printing either
-  number alone would be answering half the question. The pair reads lenient-then-strict, the
-  same direction the tally reads when its caption qualifies the three counts with the clean
-  number.
+- **CPH leads the row, and one dry-turn rate follows it** (Jan, 25 Sep 2026 — it
+  supersedes "CPH beside JPH, never instead of it", engine 0.10.0). `cleanJibesPerHour` is
+  the strict verdict per hour, captioned **"CPH · clean jibes per hour"**, and it is the
+  number the product is named for, so it comes first. The dry rate beside it is **JPH**
+  while every counted turn is a jibe and **TPH** ("dry turns per hour", tacks and jibes
+  together) once a tack is among them: a tacking rider's jibe rate leaves part of his
+  afternoon out, and two dry rates side by side are two answers to one question
+  (`docs/review-checklist.md`, pattern F). 2026-08-03 pm is still the session that makes
+  the point for the pair — **0.0 CPH beside 4.5 JPH**, fifteen jibes he mostly stayed out of
+  the water on and did not ride one of.
   - **CPH never wears the outcome ladder's inks**, here or anywhere — see "Clean jibe"
     above. It is a rate in the block's ordinary type, like every other cell on the row.
+- **The clean jibes are a cell, not a clause** (Jan, 25 Sep 2026, F8e). They were "· 12
+  clean" at the end of the tally's caption, the smallest type in the block for the one
+  number the product is named for. The cell leads row 3 with the star in the clean ink, and
+  the tally's caption is "of 50 jibes". A clean jibe also flew through, so the ladder beside
+  it still counts it: the star is the stricter reading of the same turns, not a fourth rung.
+  The share card follows the block, and **lean keeps the cell**, because lean carried the
+  count in the tally's caption before it became one.
+- **The streaks wear the ladder's green on the flew half** (F8f). The dry half is flew *or*
+  touchdown — no single rung — so it stays in the body ink. The document carries a
+  `colourRole` on each half of the `counts` pair.
 
 **The clean jibe is a personal best, and it gets the celebration.** Until engine 0.10.0 every
 record the app celebrated was a speed. The two that were missing are the ones a wingfoiler
@@ -136,7 +146,7 @@ actually chases, and they are kept beside the nine (`CleanJibeRecordKind`,
   line, so a jibe that is both the fifth dry and the third clean is announced as the clean
   one. It survives a tighter clip budget than an ordinary jibe ordinal and never outranks a
   streak record.
-- **Row 4 degrades JPH to TPH, not to zero — and CPH goes with JPH.** When the wind axis
+- **With no jibes named, TPH stands alone — and CPH goes too.** When the wind axis
   named **no jibes** while turns were counted, the row shows `turnsPerHour` labelled TPH,
   **and no clean-jibe cell at all**: CPH is a jibe rate, and "0.0 clean jibes per hour" over
   a session that named no jibes would be the precise lie the TPH fallback exists to avoid.
@@ -144,8 +154,9 @@ actually chases, and they are kept beside the nine (`CleanJibeRecordKind`,
   needs no fallback: a fell-in flight end is a fall whatever the wind was doing. A session
   with a duration and genuinely no turns keeps JPH and CPH at `0.0`, because those are
   measured zeroes.
-  - **The gate is `turns.jibes > 0 || turnsPerHour <= 0` — the jibe *count*, not the jibe
-    *rate*** (7 Sep 2026). It was `jibesPerHour > 0`, and a rate cannot tell "the wind axis
+  - **The CPH gate is `turns.jibes > 0 || turnsPerHour <= 0` — the jibe *count*, not the
+    jibe *rate*** (7 Sep 2026); the TPH gate is `turns.tacks > 0`, or no jibes beside a
+    positive TPH. It was `jibesPerHour > 0`, and a rate cannot tell "the wind axis
     named no jibes" from "it named fifteen and he swam out of every one": both read
     `jibesPerHour == 0` beside a positive TPH. The second is a session made entirely of
     jibes, and it was getting the TPH fallback and no CPH cell — the exact inverse of the

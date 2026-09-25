@@ -72,7 +72,7 @@ export const SHELL = {
     },
     {
       "id": "takeoffs",
-      "title": "Takeoffs"
+      "title": "Flights"
     },
     {
       "id": "log",
@@ -1012,7 +1012,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Turns per hour, every counted turn and not only the jibes. It stands in for JPH on a session whose wind axis named no jibes.",
+              "detail": "Dry turns per hour, tacks and jibes together. It takes the place of JPH once a session has tacks in it.",
               "term": "TPH"
             },
             {
@@ -3084,7 +3084,10 @@ export const PRESENTATION = {
   },
   "caption": {
     "fallsSplit": "{inTurn} in a turn · {straight} in a straight line",
-    "ofJibes": "of {jibes} jibes · {clean} clean",
+    "ofJibes": {
+      "one": "of 1 jibe",
+      "other": "of {jibes} jibes"
+    },
     "ofTacks": {
       "one": "of 1 tack",
       "other": "of {tacks} tacks"
@@ -3103,10 +3106,11 @@ export const PRESENTATION = {
     "alpha500": "alpha 500",
     "avgSpeed": "avg speed",
     "best5x10s": "5×10 s",
+    "cleanJibes": "clean jibes",
     "distance": "distance",
     "duration": "duration",
     "max2s": "max 2 s",
-    "outcomeLadder": "flew · touchdown · fell",
+    "outcomeLadder": "flew · touch · fell",
     "streaks": "best streaks"
   },
   "rowMetric": {

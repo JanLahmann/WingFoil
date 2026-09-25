@@ -58,10 +58,11 @@ public enum PresentationCopy {
         "alpha500": "alpha 500",
         "avgSpeed": "avg speed",
         "best5x10s": "5×10 s",
+        "cleanJibes": "clean jibes",
         "distance": "distance",
         "duration": "duration",
         "max2s": "max 2 s",
-        "outcomeLadder": "flew · touchdown · fell",
+        "outcomeLadder": "flew · touch · fell",
         "streaks": "best streaks",
     ]
 
@@ -95,7 +96,7 @@ public enum PresentationCopy {
     /// The small line under a cell.
     public static let caption: [String: Line] = [
         "fallsSplit": Line("{inTurn} in a turn · {straight} in a straight line"),
-        "ofJibes": Line("of {jibes} jibes · {clean} clean"),
+        "ofJibes": Line("of {jibes} jibes", one: "of 1 jibe"),
         "ofTacks": Line("of {tacks} tacks", one: "of 1 tack"),
         "ofTurns": Line("of {turns} turns"),
     ]

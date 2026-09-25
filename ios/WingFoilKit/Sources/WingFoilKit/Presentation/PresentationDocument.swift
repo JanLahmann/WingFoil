@@ -249,6 +249,14 @@ public enum PresentationDocument {
         ])]))
 
         var turnCells: [PresentationValue] = []
+        // The clean jibes lead the row, in their own cell (Jan, 25 Sep 2026, F8e): they
+        // were a clause in the tally's caption, the smallest type in the block for the one
+        // number the product is named for. Twin of the lab's `_block`.
+        if summary.turns.jibes > 0 {
+            turnCells.append(cell("cleanJibes", "presentation.label.cleanJibes",
+                                  value: .int(summary.turns.jibesSuccessful),
+                                  unitKind: "count", colourRole: "clean.jibe"))
+        }
         if let tally = tallyCell(summary.turns) { turnCells.append(tally) }
         if let tacks = tackCell(summary.turns) { turnCells.append(tacks) }
         if let falls = fallsCell(summary) { turnCells.append(falls) }
@@ -257,10 +265,15 @@ public enum PresentationDocument {
             turnCells.append(cell("streaks", "presentation.label.streaks",
                                   unitKind: "count",
                                   counts: .array([
+                                    // Each half in the ink of what it counts (F8f): a
+                                    // flew streak is the ladder's green; a dry streak is
+                                    // flew *or* touchdown, no single rung, so body ink.
                                     .object(["labelId": .string("glossary.flewThrough"),
-                                             "value": .int(summary.turns.longestFlewStreak)]),
+                                             "value": .int(summary.turns.longestFlewStreak),
+                                             "colourRole": .string("outcome.flew")]),
                                     .object(["labelId": .string("glossary.dry"),
-                                             "value": .int(summary.turns.longestDryStreak)]),
+                                             "value": .int(summary.turns.longestDryStreak),
+                                             "colourRole": .string("neutral")]),
                                   ])))
         }
         if !turnCells.isEmpty {
@@ -275,13 +288,13 @@ public enum PresentationDocument {
     }
 
     /// The jibe ladder, or the whole counted-turn ladder where the wind axis named no
-    /// jibes. The caption says which — and carries the clean count only on the jibe half.
+    /// jibes. The caption says which. The clean count is the `cleanJibes` cell beside it
+    /// since 25 Sep 2026, so the caption no longer carries it: one fact, one cell.
     static func tallyCell(_ t: TurnSummary) -> PresentationValue? {
         if t.jibes > 0 {
             return cell("tally", "presentation.label.outcomeLadder", unitKind: "count",
                         captions: [caption("presentation.caption.ofJibes",
-                                           ["jibes": .int(t.jibes),
-                                            "clean": .int(t.jibesSuccessful)])],
+                                           ["jibes": .int(t.jibes)])],
                         colourRole: "outcome.ladder", tally: ladder(t.jibeOutcomes))
         }
         guard t.turnsCounted > 0 else { return nil }
@@ -318,20 +331,26 @@ public enum PresentationDocument {
                                         "straight": .int(ends.straight.fellIn)])])
     }
 
-    /// Row 4. Empty where there is no hour to divide by; JPH + CPH or the TPH fallback,
-    /// gated on the jibe **count** and never on the jibe rate.
+    /// Row 4. Empty where there is no hour to divide by. **CPH first, then one dry-turn
+    /// rate, then WPH** (Jan, 25 Sep 2026): JPH while every counted turn is a jibe, TPH once
+    /// a tack is among them, and CPH absent where the wind axis named no jibes. Gated on the
+    /// **counts**, never on a rate. Twin of the lab's `_rate_cells`.
     static func rateCells(_ s: SessionSummary) -> [PresentationValue] {
         guard let wet = s.wetPerHour else { return [] }
         var out: [PresentationValue] = []
-        if s.turns.jibes > 0 || (s.turnsPerHour ?? 0) <= 0 {
-            out.append(cell("jph", "glossary.jph",
-                            value: number(s.jibesPerHour ?? 0, "rate"), unitKind: "rate"))
+        let jibes = s.turns.jibes
+        let tph = s.turnsPerHour ?? 0
+        if jibes > 0 || tph <= 0 {
             out.append(cell("cph", "glossary.cph",
                             value: number(s.cleanJibesPerHour ?? 0, "rate"),
                             unitKind: "rate"))
-        } else if let turns = s.turnsPerHour {
-            out.append(cell("tph", "glossary.tph", value: number(turns, "rate"),
+        }
+        if s.turns.tacks > 0 || (jibes <= 0 && tph > 0) {
+            out.append(cell("tph", "glossary.tph", value: number(tph, "rate"),
                             unitKind: "rate"))
+        } else {
+            out.append(cell("jph", "glossary.jph",
+                            value: number(s.jibesPerHour ?? 0, "rate"), unitKind: "rate"))
         }
         out.append(cell("wph", "glossary.wph", value: number(wet, "rate"),
                         unitKind: "rate"))
