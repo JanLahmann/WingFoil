@@ -63,7 +63,7 @@ struct FamilyView: View {
             .navigationTitle(CleanJibeFamily.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
                 }
             }

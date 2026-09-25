@@ -190,16 +190,17 @@ struct ShareComposerView: View {
             .navigationTitle("Share")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") { dismiss() }
-                }
                 // The same `?` the session page's cards carry, following the switcher: a
                 // rider on the card tab is asking about cards, one on the recording tab is
                 // asking what leaves the phone. Both are topics nobody would ever go
                 // looking for in the Help index, because you only wonder once you are here.
-                ToolbarItem(placement: .primaryAction) {
+                // On the left, so Done stays the rightmost control in the sheet.
+                ToolbarItem(placement: .topBarLeading) {
                     HelpButton(topic: payload == .fit ? .shareFit : .shareCard,
                                size: .body)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
                 }
             }
             // The drafts are the row's, until the rider changes them. Seeded here rather than
