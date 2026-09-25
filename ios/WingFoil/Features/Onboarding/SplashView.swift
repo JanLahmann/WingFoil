@@ -197,7 +197,7 @@ enum Splash {
     /// place for it to drift. The address is split off rather than dropped: it is set on its
     /// own line under this one, smaller and quieter, so the screen reads mark · CleanJibe ·
     /// what the app is for · cleanjibe.org.
-    static let tagline = Branding.callToAction
+    static let tagline = Branding.tagline
         .replacingOccurrences(of: " — " + Branding.site, with: "")
 
     /// Whether a cold start shows the splash at all.
