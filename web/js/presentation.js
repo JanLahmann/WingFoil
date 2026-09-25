@@ -184,6 +184,19 @@ export function hm(sec) {
 }
 
 /**
+ * The session list's spelling of the same clock: `58 min` under an hour, `1:57 h` from one
+ * up, seconds under a minute. The row puts it after the date on one line, and `57:38`
+ * there wrapped on a phone (Jan, F7f). Twin of `KeyMetrics.listDuration`.
+ */
+export function listDuration(sec) {
+  if (sec === null || sec === undefined) return "—";
+  const total = Math.max(0, Math.round(sec));
+  if (total >= 3600) return hm(sec);
+  if (total < 60) return `${total} s`;
+  return `${Math.min(59, Math.round(total / 60))} min`;
+}
+
+/**
  * The document's raw value in the unit the rider reads. The one place a `unitKind` becomes
  * a string on this surface — `KeyMetrics.format` is its twin.
  */
