@@ -41,29 +41,19 @@ struct WatchLinkSection: View {
                 }
             }
 
-            if let probe = store.lastLinkProbe {
-                // The dev build's link probe (docs/direct-transfer.md): the watch times the
-                // send, the phone confirms what arrived.
-                LabeledContent("Link probe", value: probe)
-            }
-            if let line = store.directPageLine {
-                // Every page as it lands, before any session is whole: the line that says
-                // whether the radio reached the app at all.
-                LabeledContent("Direct pages", value: line)
-            }
-            if let line = store.directAnswerLine {
-                LabeledContent("Answer to the watch", value: line)
-            }
             if let direct = store.lastDirectTransfer {
-                // The session the watch sent straight over (docs/transfer-format.md): when
-                // it was ridden, how many pages crossed, how long they took.
-                LabeledContent("Last direct session", value: Self.directSummary(direct))
+                // The session the watch sent straight over (docs/transfer-format.md), in
+                // the rider's words: when it was ridden, and whether all of it came.
+                LabeledContent("Last session from the watch",
+                               value: Self.directLine(direct))
             }
             if let last = store.lastCardAt {
                 // `.current` deliberately: when the watch last reached this phone, which is an
                 // event on the reader's clock rather than a moment in any session.
-                LabeledContent("Last summary", value: Fmt.date(last, zone: .current))
+                LabeledContent("Last summary from the watch",
+                               value: Fmt.date(last, zone: .current))
             }
+            linkDetails
         } header: {
             Text("Garmin watch")
         } footer: {
@@ -132,6 +122,45 @@ struct WatchLinkSection: View {
         }
     }
 
+    /// **The link's own numbers, folded away** (Jan, dev 106: "1 page · 0 s" is
+    /// meaningless to a rider). Pages, seconds, the probe and the answer are how the dev
+    /// build proves the radio (docs/direct-transfer.md). They stay one tap away for that,
+    /// and out of the rows a rider reads. Absent when there is nothing to show.
+    @ViewBuilder
+    private var linkDetails: some View {
+        let probe = store.lastLinkProbe
+        let pages = store.directPageLine
+        let answer = store.directAnswerLine
+        let direct = store.lastDirectTransfer
+        if probe != nil || pages != nil || answer != nil || direct != nil {
+            DisclosureGroup("Link details") {
+                if let direct {
+                    LabeledContent("Last transfer", value: Self.directSummary(direct))
+                }
+                if let pages {
+                    // Every page as it lands, before any session is whole: the line that
+                    // says whether the radio reached the app at all.
+                    LabeledContent("Direct pages", value: pages)
+                }
+                if let answer {
+                    LabeledContent("Answer to the watch", value: answer)
+                }
+                if let probe {
+                    // The watch times the send, the phone confirms what arrived.
+                    LabeledContent("Link probe", value: probe)
+                }
+            }
+        }
+    }
+
+    /// "Sat 19 Sep 19:42", or "Sat 19 Sep 19:42 · part of it" where the transfer stopped
+    /// part way: which session, and whether the whole of it is on the phone. The pages and
+    /// seconds are in Link details.
+    static func directLine(_ receipt: DirectTransferReceipt) -> String {
+        let when = Fmt.date(receipt.sessionStart, zone: .current)
+        return receipt.cutShort ? "\(when) · part of it" : when
+    }
+
     /// "18 Sep 14:07 · 13 pages · 26 s", and "cut short" where the transfer stopped part
     /// way. Three facts on one line, in the order they answer "did it work": which session,
     /// how much of it, how long it took. `.current` deliberately for the date — this row is
@@ -149,11 +178,15 @@ struct WatchLinkSection: View {
         return parts.joined(separator: " · ")
     }
 
-    /// Sixteen points would be false precision on a link whose whole job is telling port
-    /// from starboard; eight is what a rider reads off a forecast anyway.
+    /// Sixteen points, the same ones the watch's own Wind from menu offers
+    /// (`RecordingDelegate`, 22.5° steps in integer arithmetic), so a wind set on either side
+    /// reads back as the same point on the other. Eight was too coarse for a spot where the
+    /// wind is NNE or WSW (Jan, dev 106).
     private static let compass: [(name: String, degrees: Int)] = [
-        ("N", 0), ("NE", 45), ("E", 90), ("SE", 135),
-        ("S", 180), ("SW", 225), ("W", 270), ("NW", 315),
+        ("N", 0), ("NNE", 22), ("NE", 45), ("ENE", 67),
+        ("E", 90), ("ESE", 112), ("SE", 135), ("SSE", 157),
+        ("S", 180), ("SSW", 202), ("SW", 225), ("WSW", 247),
+        ("W", 270), ("WNW", 292), ("NW", 315), ("NNW", 337),
     ]
 }
 

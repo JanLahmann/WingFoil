@@ -257,7 +257,7 @@ with, and a banner offering to review two years of afternoons is a chore, not a 
   rule, decided in one place (`Fmt.date`), so every surface that prints a session's clock
   obeys it without knowing: the **library row**, the **session page's date line**, the
   **feedback mail's facts**, the Health and Strava import lists, the discipline review, the
-  re-add sheet, *Last sync* in Settings and *Last summary* on the watch page. The comparison
+  re-add sheet, *Last sync* in Settings and *Last summary from the watch* on the watch page. The comparison
   is made in the *session's* own zone on both sides, so a session recorded at 00:40 on
   1 January in Auckland is a New Year's session on a phone in Munich. `Fmt.shortDate`
   (`30 Aug 2026` — records' "when · where", gear's *last used*, a spot's *last*) has always

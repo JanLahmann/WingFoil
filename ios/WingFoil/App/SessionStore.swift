@@ -1880,9 +1880,14 @@ final class SessionStore {
 
     /// Off by default (plan phase 4: "optional Apple Health write").
     var healthWriteEnabled: Bool {
-        get { UserDefaults.standard.bool(forKey: "healthWriteEnabled") }
+        get {
+            access(keyPath: \.healthWriteEnabled)
+            return UserDefaults.standard.bool(forKey: "healthWriteEnabled")
+        }
         set {
-            UserDefaults.standard.set(newValue, forKey: "healthWriteEnabled")
+            withMutation(keyPath: \.healthWriteEnabled) {
+                UserDefaults.standard.set(newValue, forKey: "healthWriteEnabled")
+            }
             if newValue { Task { await enableHealthWriting() } }
         }
     }
@@ -1993,9 +1998,14 @@ final class SessionStore {
 
     /// "Import new Health workouts automatically" — off until asked for.
     var healthAutoImport: Bool {
-        get { UserDefaults.standard.bool(forKey: "healthAutoImport") }
+        get {
+            access(keyPath: \.healthAutoImport)
+            return UserDefaults.standard.bool(forKey: "healthAutoImport")
+        }
         set {
-            UserDefaults.standard.set(newValue, forKey: "healthAutoImport")
+            withMutation(keyPath: \.healthAutoImport) {
+                UserDefaults.standard.set(newValue, forKey: "healthAutoImport")
+            }
             guard newValue else { return }
             Task {
                 await watchHealthForNewWorkouts()
@@ -2157,6 +2167,7 @@ final class SessionStore {
 
     func syncFromIntervals() async {
         guard !isBusy else { return }
+        reloadApiKeyIfMissing()
         let key = apiKey
         guard !key.isEmpty else {
             status = "Add your intervals.icu API key in Settings"
@@ -2334,9 +2345,14 @@ final class SessionStore {
     /// Off by default. Turning it on is what asks iOS for permission and what starts the
     /// background refresh task; turning it off cancels both (`ActivityNotifier`).
     var notifyOnNewActivities: Bool {
-        get { UserDefaults.standard.bool(forKey: ActivityNotifier.enabledKey) }
+        get {
+            access(keyPath: \.notifyOnNewActivities)
+            return UserDefaults.standard.bool(forKey: ActivityNotifier.enabledKey)
+        }
         set {
-            UserDefaults.standard.set(newValue, forKey: ActivityNotifier.enabledKey)
+            withMutation(keyPath: \.notifyOnNewActivities) {
+                UserDefaults.standard.set(newValue, forKey: ActivityNotifier.enabledKey)
+            }
             if newValue {
                 Task { await enableActivityNotifications() }
             } else {
@@ -2419,7 +2435,11 @@ final class SessionStore {
 
     private func enableActivityNotifications() async {
         guard await ActivityNotifier.shared.requestAuthorization() else {
-            UserDefaults.standard.set(false, forKey: ActivityNotifier.enabledKey)
+            // Through `withMutation`, so the switch that was just turned on turns itself
+            // back off on screen rather than showing on with nothing behind it.
+            withMutation(keyPath: \.notifyOnNewActivities) {
+                UserDefaults.standard.set(false, forKey: ActivityNotifier.enabledKey)
+            }
             errorMessage = "iOS did not grant permission to send notifications. "
                 + "Turn them on in Settings → Notifications → CleanJibe and try again."
             return
@@ -2632,6 +2652,7 @@ final class SessionStore {
     /// One list call, no downloads. The key itself never leaves the keychain wrapper and
     /// is never logged — only the *outcome* is ever put on screen.
     func checkApiKey() async {
+        reloadApiKeyIfMissing()
         let key = apiKey
         guard !key.isEmpty else {
             keyCheck = .failure(IcuProblem(kind: .noKey))
@@ -2705,9 +2726,21 @@ final class SessionStore {
     #endif
     /// When the last card arrived. The settings row shows it, because "it says ready" and
     /// "something has actually come through" are different facts.
+    ///
+    /// **Observed by hand.** `@Observable` tracks stored properties only, so a computed
+    /// property over UserDefaults that a view reads calls `access` and `withMutation`
+    /// itself, or its row keeps drawing the old value (Jan, dev 106: the Wind from picker).
+    /// The same two calls sit on every such property a Settings row shows or binds.
     var lastCardAt: Date? {
-        get { UserDefaults.standard.object(forKey: "lastCompanionCard") as? Date }
-        set { UserDefaults.standard.set(newValue, forKey: "lastCompanionCard") }
+        get {
+            access(keyPath: \.lastCardAt)
+            return UserDefaults.standard.object(forKey: "lastCompanionCard") as? Date
+        }
+        set {
+            withMutation(keyPath: \.lastCardAt) {
+                UserDefaults.standard.set(newValue, forKey: "lastCompanionCard")
+            }
+        }
     }
 
     /// The watch build tag off the last card (`CompanionSummary.appVersion`,
@@ -2724,12 +2757,22 @@ final class SessionStore {
 
     /// The wind the rider last pushed, remembered so the next push starts where the last
     /// one left off (the wind at a spot rarely changes by 180° between sessions).
-    var windToSend: Int {
-        get {
-            let stored = UserDefaults.standard.object(forKey: "windToSend") as? Int
-            return stored ?? 225
+    ///
+    /// **A stored property, not a computed one over UserDefaults** (Jan, dev 106: "Wind
+    /// from cannot be set"). `@Observable` tracks stored properties only: the computed
+    /// version wrote the pick to the defaults and told no view, so the Picker drew the old
+    /// value again and the choice looked refused. Same shape as `replayCommentary`.
+    var windToSend: Int = SessionStore.storedWindToSend {
+        didSet {
+            guard windToSend != oldValue else { return }
+            UserDefaults.standard.set(windToSend, forKey: Self.windToSendKey)
         }
-        set { UserDefaults.standard.set(newValue, forKey: "windToSend") }
+    }
+
+    static let windToSendKey = "windToSend"
+
+    private static var storedWindToSend: Int {
+        UserDefaults.standard.object(forKey: windToSendKey) as? Int ?? 225
     }
 
     #endif
@@ -3121,9 +3164,14 @@ final class SessionStore {
 
     /// "Import new Strava activities automatically" — off until asked for.
     var stravaAutoImport: Bool {
-        get { UserDefaults.standard.bool(forKey: Self.stravaAutoKey) }
+        get {
+            access(keyPath: \.stravaAutoImport)
+            return UserDefaults.standard.bool(forKey: Self.stravaAutoKey)
+        }
         set {
-            UserDefaults.standard.set(newValue, forKey: Self.stravaAutoKey)
+            withMutation(keyPath: \.stravaAutoImport) {
+                UserDefaults.standard.set(newValue, forKey: Self.stravaAutoKey)
+            }
             guard newValue else { return }
             Task { await checkStravaForNewActivities() }
         }
@@ -3291,6 +3339,22 @@ final class SessionStore {
         apiKey = Self.loadApiKey()
     }
 
+    /// **Reads the keychain again when the key in memory is empty** (Jan, dev 106: the key
+    /// field was empty under a "Last sync" three days old).
+    ///
+    /// `apiKey` is read once, in a property initialiser, and the read cannot tell "no key"
+    /// from "the keychain would not answer". It will not answer before the first unlock
+    /// after a restart, and iOS can launch the app then: a background refresh or a
+    /// prewarmed launch. That process then held "" for its whole life, so the field was
+    /// empty, the sync asked for a key and the background check skipped every wake, with
+    /// the key still safe in the keychain. One cheap query at each of those moments ends
+    /// it. A key the rider removed stays removed, because the keychain then has none.
+    func reloadApiKeyIfMissing() {
+        guard apiKey.isEmpty else { return }
+        let stored = Self.loadApiKey()
+        if !stored.isEmpty { apiKey = stored }
+    }
+
     private static func loadApiKey() -> String {
         #if DEBUG
         if let injected = ProcessInfo.processInfo.environment["ICU_API_KEY"], !injected.isEmpty {
@@ -3301,8 +3365,15 @@ final class SessionStore {
     }
 
     var lastSyncDate: Date? {
-        get { UserDefaults.standard.object(forKey: "lastIcuSync") as? Date }
-        set { UserDefaults.standard.set(newValue, forKey: "lastIcuSync") }
+        get {
+            access(keyPath: \.lastSyncDate)
+            return UserDefaults.standard.object(forKey: "lastIcuSync") as? Date
+        }
+        set {
+            withMutation(keyPath: \.lastSyncDate) {
+                UserDefaults.standard.set(newValue, forKey: "lastIcuSync")
+            }
+        }
     }
 
 #if BETA || DEBUG

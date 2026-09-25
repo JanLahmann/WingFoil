@@ -102,6 +102,9 @@ struct WingFoilApp: App {
                 // next launch. Silent and free on every ordinary foreground.
                 .onChange(of: scenePhase) { _, phase in
                     guard phase == .active else { return }
+                    // A process iOS started before the first unlock could not read the
+                    // key then. The rider has unlocked by now, so ask the keychain again.
+                    store.reloadApiKeyIfMissing()
                     Task {
                         await store.absorbBackgroundImports()
                         // The reliable half of the automatic Health pickup: the rider has
