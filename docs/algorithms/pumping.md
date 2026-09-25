@@ -1,4 +1,4 @@
-> Part of `docs/algorithms.md`. Engine 0.24.0.
+> Part of `docs/algorithms.md`. Engine 0.25.0.
 
 ## Pumping (accelerometer)
 
@@ -643,8 +643,8 @@ the foil — there is no `flew_through`:
 | outcome | test |
 |---|---|
 | `fell_in` | stop > `turnFallStop`, or the barometer says the wrist went under |
-| `touchdown` | the speed reached `turnStopSpeedFloor` at all; `borderline` when the stop exceeds `turnTouchdownMaxStop` |
-| `glide_out` | never reached the stop floor — came off the foil and kept making way (taxi/slog, or a deliberate stop-riding) |
+| `touchdown` | the speed reached `turnStopSpeedFloor`, and its **first** sub-floor sample lies within `turnOutcomeLookahead` (12 s) of the exit (engine 0.25.0); `borderline` when the stop exceeds `turnTouchdownMaxStop` |
+| `glide_out` | did not reach the stop floor within `turnOutcomeLookahead` of the exit — came off the foil and kept making way (taxi/slog, or a deliberate stop-riding). A first dip later than that, with no stop over `turnFallStop`, is a glide-out too, and the pump rung below is not asked |
 | `unknown` | the **recording** ended, not the flight: the last sample is the last of a gap-free segment, so there is zero evidence. Flagged `truncated`, excluded from every tally |
 
 Thresholds are the turn ones, re-declared in `FlightEndConfig` so one end can be re-tuned
@@ -662,6 +662,16 @@ Three details are load-bearing:
   consecutive sub-floor samples, so a real 3 s standstill can measure `stopped_s == 0` —
   2026-08-04 pm has flight ends touching 0.5 m/s that a duration test called glide-outs.
   `stopped_s` still decides `fell_in`/`borderline`, where 5 s and 3 s are resolvable.
+- **The touch is the loss, not a dip a minute later** (engine 0.25.0, ADR-035). The stop
+  floor is asked of the whole off-foil run, which is followed to `turnOutcomeWindow` (60 s)
+  past the end; until 0.25.0 one sample under 1.0 m/s anywhere in that minute made a
+  touchdown. Jan's 4 Sep 2026 import, flight 18: one sample at 0.99 m/s, `stopped_s` 0, the
+  rest of the minute at 1.1–2.5 m/s and the next flight 224 s later — a slog, read as a
+  touchdown "off the foil 61 s". The first sub-floor sample now has to come within
+  `turnOutcomeLookahead` of the exit, the span the turn channel judges its own loss over, so
+  no second threshold is needed. It is measured from the flight's `end_t` and applies to
+  every flight end; the straight-line tally is where it shows. `fell_in` is untouched: a stop
+  over `turnFallStop` or a wet wrist is a swim wherever in the window it happens.
 - **`unknown` is not pedantry.** Before engine 0.23.0, 2026-08-04 pm segmented into 429
   gap-free runs and 111 of its 130 "flights" ended at a segment boundary with the rider still
   doing 4–5 m/s. Classified on visible evidence they all read `glide_out`, and the session
@@ -675,12 +685,51 @@ Three details are load-bearing:
 `end + outcomeWindow`) is *that turn's* event, already counted there: it is flagged
 `owned_by_turn` and kept out of the straight-line tallies. Without this every jibe ending in
 a swim is counted twice — once as a `fell_in` jibe, once as a fall. Ownership is tested
-against **every** detected turn, bear-aways included: a fall inside a bear-away's window is
-still explained by that course change. The session split that falls out — falls in turns vs
-straight-line falls, same for touchdowns — is the rider-facing summary (`split_outcomes`).
+against **counted** turns only (engine 0.25.0, ADR-035): a bear-away or round-up is in no
+ladder, no turn list and no streak, so a fall inside its window is a **straight-line fall** —
+turns.md "Aborted turns" as written — with the hollow mark on the map and the submersion
+attribution that go with it. Until 0.25.0 every detected turn owned, and the falls tile read
+"in a turn" for a fall that no turn anywhere said it had. The session split that falls out —
+falls in turns vs straight-line falls, same for touchdowns — is the rider-facing summary
+(`split_outcomes`), and the streaks, `OutcomeSplit` and the tile now read one ownership rule.
 
 Pump corroboration carries over unchanged: accel promotes `glide_out` → `touchdown` only when
 the speed channels also went marginal. At a flight end that test is near-vacuous (the flight
 ended *because* speed fell below `foilExitSpeed`), and that is intended — a rider who has to
 pump a burst out of it did not glide out by choice.
+It is asked only of an end that never reached the stop floor at all; an end whose first dip
+came after `turnOutcomeLookahead` is already a glide-out and is not promoted back (one corpus
+end, 2026-08-29 flight 28, is both late and pumped).
+
+### What 0.25.0 did to the corpus — one owner, and the touch where it happened
+
+21 goldens, regenerated in this release (0.24.0 → 0.25.0).
+
+| | 0.24.0 | 0.25.0 |
+|---|---|---|
+| flight ends `glide_out` / `touchdown` / `fell_in` / `unknown` | 52 / 72 / 277 / 53 | **72 / 52** / 277 / 53 |
+| flight ends in a turn (`inTurn`) `fell_in` | 197 | **188** |
+| straight-line (`straight`) `glide_out` / `touchdown` / `fell_in` / `unknown` | 15 / 25 / 80 / 26 | **26 / 23 / 89 / 31** |
+| `borderline` flight ends | 15 | 11 |
+| `outcomeSplit.turnFalls` / `turnTouchdowns` | 188 / 132 | 188 / 132 |
+| `outcomeSplit.straightFalls` | 80 | **89** |
+| `outcomeSplit.straightTouchdowns` | 25 | 23 |
+| `outcomeSplit.glideOuts` | 15 | 26 |
+| drawn flight ends (hollow marks) | 120 | 138 |
+| turns, clean jibes (157), streaks, WPH / JPH / TPH / CPH | — | **unchanged** |
+
+**Ownership (Q1).** 9 `fell_in` ends were owned by an uncounted course change (2026-08-29 5,
+2026-08-05 foilmotion 2, 2026-06-13 rheinstetten 1, 2026-08-03 am 1) and are now
+straight-line falls. With them 8 touchdowns, 1 glide-out and 5 `unknown` ends leave the
+in-turn column the same way — 23 ends, 18 of them drawn (the `unknown` ones are truncated and
+never are). The falls tile's total does not move (it counts every `fell_in`
+flight end); only its split does. `outcomeSplit.falls` rises 268 → 277, because those 9 falls
+were in *neither* of its halves: the turn half counts only counted turns, and the straight
+half skipped owned ends.
+
+**Touchdowns (Q2).** 8 straight-line touchdowns become glide-outs, all with a first sub-floor
+sample more than 12 s past the exit and no stop over `turnFallStop`. 12 more are ends inside
+a turn's window: 10 stay owned, where only the `inTurn` tally reads them, and 2 are among the
+touchdowns Q1 released, so they arrive in the straight line as glide-outs. No turn verdict and no clean jibe moves: the quiet tail asks about ten seconds
+after the sweep, and a late dip is by construction outside the span that moved.
 

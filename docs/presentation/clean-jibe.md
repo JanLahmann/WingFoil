@@ -1,4 +1,4 @@
-> Part of `docs/presentation.md`. Engine 0.24.0.
+> Part of `docs/presentation.md`. Engine 0.25.0.
 
 ## Clean jibe — the name of the strict verdict, and how it is spelled
 

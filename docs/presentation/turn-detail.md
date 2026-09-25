@@ -1,4 +1,4 @@
-> Part of `docs/presentation.md`. Engine 0.24.0.
+> Part of `docs/presentation.md`. Engine 0.25.0.
 
 ## Turn detail — one maneuver, at the scale of one maneuver
 
@@ -429,7 +429,12 @@ by the time there is one the rider is off the foil by definition), `pumped out` 
 under` where the record says so. Under them, one line in the turn page's voice:
 `fell in · stopped 7 s · wrist under`, composed by `FlightEndAnalytics.outcomeText` from the
 record's own fields. Off-foil seconds are printed **only where there is no stop to print**: a
-rider who stopped was off the foil too, and saying both says one loss twice. A stop under a
+rider who stopped was off the foil too, and saying both says one loss twice. **At the cap the
+off-foil time reads `1 min+`** — `off the foil 1 min+` in the line, `1 min+` in the Off foil
+cell — never "61 s": the run is followed to `turnOutcomeWindow` (60 s) past the end and no
+further, so a value there means "not flying again within a minute", a ceiling rather than a
+measurement (`FlightEndAnalytics.offFoilText`, the web's `endOffFoilText`; engine 0.25.0,
+ADR-035). A stop under a
 second is not printed at all — at 1 Hz that is one sample, and "0 s" would read as a
 measurement. A `truncated` end says the one true thing about itself, "the recording ended, not
 the flight", instead of a verdict it does not have.

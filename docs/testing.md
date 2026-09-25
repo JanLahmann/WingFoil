@@ -508,6 +508,16 @@ same ownership window to tell a `recovery` pump burst from a failed takeoff atte
 one accelerometer fixture attempts go 37 → 34, failed 14 → 11, unknown 1 → 0 and recovery
 0 → 4 (`test_pump_episodes_are_serialized_whole`).
 
+Engine 0.25.0 (ADR-035) moves only the **flight-end** channel, and only two ways: 9 falls owned
+by an uncounted course change become straight-line falls, and 8 straight-line touchdowns whose
+first sub-floor sample came more than `turnOutcomeLookahead` after the exit become glide-outs
+(algorithms, pumping.md "What 0.25.0 did to the corpus"). **The turn ladder is the control
+this time**: every turn verdict, every clean jibe, both streaks, WPH/JPH/TPH/CPH and the takeoff
+summary are identical before and after on all 21 goldens. The two rules are pinned synthetic
+in `test_flightend.py` (`test_only_a_counted_turn_owns_a_flight_end`,
+`test_a_touchdown_is_a_dip_within_the_lookahead_not_a_minute_later`), the kit follows through
+`GoldenTests`, and the "1 min+" wording through `ManeuverSliceTests`.
+
 ### Fixture provenance — the converted recordings, and why
 
 Every fixture in `fixtures/sessions/**` is one of Jan's own recordings kept as it came off

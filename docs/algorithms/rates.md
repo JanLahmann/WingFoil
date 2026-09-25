@@ -1,4 +1,4 @@
-> Part of `docs/algorithms.md`. Engine 0.24.0.
+> Part of `docs/algorithms.md`. Engine 0.25.0.
 
 ## Session rates (phone, engine ≥ 0.6.0) — `durationS` · `avgSpeedKmh` · `turnsPerHour` · `jibesPerHour` · `cleanJibesPerHour` · `wetPerHour` · `windowRates`
 

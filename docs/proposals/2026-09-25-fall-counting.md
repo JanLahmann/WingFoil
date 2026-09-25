@@ -1,4 +1,4 @@
-# Fall counting — two questions from 4 Sep 2026 (proposal, not applied)
+# Fall counting — two questions from 4 Sep 2026 (applied in engine 0.25.0, ADR-035 — both A)
 
 Jan's two Strava imports "Afternoon Wingfoil", Fri 4 Sep 2026: 16:08 (12:58 min, Strava
 20034356447) and 13:58 (1:42 h, Strava 20034351727). The original CIQ FITs are in the local,

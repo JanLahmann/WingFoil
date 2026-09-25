@@ -14,6 +14,41 @@ apart is a history, not a contract. There are four:
 An Accepted entry may carry a clause saying what a later ADR narrowed or what has moved since.
 That is the point of the line: it says which half of an old paragraph is still load-bearing.
 
+## ADR-035 · Only a counted turn owns a fall, and a touch is a touch only near the exit
+**Status: Accepted** (Jan, 25 September 2026; engine 0.25.0, release channel).
+
+Jan's two Strava imports of 4 September 2026 read *Fell in 2 — 1 in a turn* while no jibe on
+the page fell, and a straight-line *touchdown · off the foil 61 s* that was a slog
+(docs/proposals/2026-09-25-fall-counting.md). Two rules were behind them. **Ownership** was
+tested against every detected turn, so a fall inside an uncounted round-up belonged to it: the
+tile called it "in a turn", while the turn list, the ladders, the streaks and `OutcomeSplit`
+all skipped it, and turns.md "Aborted turns" said it was a straight-line fall. The
+**touchdown** rung asked whether the speed reached `turnStopSpeedFloor` anywhere in the
+off-foil minute, so one sample at 0.99 m/s a minute into a slog was a touchdown.
+
+Decision, both option **A** of the proposal. (1) **Only a counted turn owns a flight end**
+(`assign_end_ownership`, `FlightEndClassifier.assignOwnership`); a fall inside a course
+change's window is a straight-line fall, with its hollow mark and its submersion attribution.
+Weighed and refused: a "course change · fell in" row in the turn list (two numbers for one
+question again) and counting such a course change as an attempted turn (overrides
+`turnClassifyMinAngle`'s refusal; too big for the question). (2) **A straight-line touchdown
+needs its first sub-floor sample within `turnOutcomeLookahead` (12 s) of the exit**; later,
+with no stop over `turnFallStop`, it is a `glide_out`. Refused: the narrower "capped and never
+stopped" test, which moves 2 of the 25 corpus touchdowns where A moves 8 and needs a second
+cap. No new threshold: the rule reuses the span the turn channel already judges its loss over.
+And the presentation reads a capped off-foil time as **"off the foil 1 min+"**, since 60 s is
+where the run stops being followed, not a measurement.
+
+Consequences. On the 21 goldens 9 falls move from in-turn to straight-line and 8 straight-line
+touchdowns become glide-outs (pumping.md "What 0.25.0 did to the corpus"). Turns, clean jibes,
+streaks and every rate are unchanged; the falls tile keeps its total and changes its split;
+`outcomeSplit.falls` rises 268 → 277 because the 9 were in neither half before. The watch
+already treated a fall after a dropped bear-away as an unowned flight end; its flight-end
+touchdown still takes any dip in its 30 s window, written down in turns.md "Not ported yet".
+Out of scope and still open: 12 corpus ends are `fell_in` inside a counted turn whose own ladder
+said `touchdown` or `flew_through` — a verdict disagreement between the two windows, its own
+round.
+
 ## ADR-034 · The watch's words come from docs/copy, like every other surface
 **Status: Accepted** (Jan, 22 September 2026; watch 0.9.19, no version bump, no page changed.)
 

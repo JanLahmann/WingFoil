@@ -1,4 +1,4 @@
-> Part of `docs/algorithms.md`. Engine 0.24.0.
+> Part of `docs/algorithms.md`. Engine 0.25.0.
 
 ## Turn detection & classification
 
@@ -159,7 +159,10 @@ tack and no fall in a turn**. The reason is the entry condition: the scan asks f
 halfway round never gets there. The COG is read only above `turnCogSpeedFloor`, so the
 sailing run *ends at the fall* and the maneuver is missing from the session entirely — or,
 where the part he rode clears 60° but not `turnClassifyMinAngle`, it is filed as an uncounted
-bear-away and the swim is charged to the flight-end channel as a straight-line fall.
+bear-away and the swim is charged to the flight-end channel as a straight-line fall. (Until
+engine 0.25.0 the code disagreed with this sentence: every detected turn owned a flight end, so
+the course change took the swim and the falls tile said "in a turn" for it. Since 0.25.0 only a
+counted turn owns one — pumping.md "Flight-end outcome", ADR-035.)
 
 **The rule.** One more sweep per sailing run is offered to the same machinery: the one that
 was **still turning when the run ended**, read backwards from that last heading — the widest
@@ -728,7 +731,17 @@ rider sees until then.
   given an outcome, so the watch has no equivalent of the lab's bear-away outcome window.
   **Not ported** because nothing on the wrist reads that outcome: a rejected sweep counts
   towards no tally and breaks no streak, and a fall after one still arrives as an unowned
-  flight end.
+  flight end. Since engine 0.25.0 that is the phone's rule too (only a counted turn owns a
+  flight end, ADR-035), so on ownership the two now agree.
+- **A flight end's touchdown is any sub-floor sample in its 30 s window on the watch; on the
+  phone the first one must come within `turnOutcomeLookahead` (12 s) of the exit** (engine
+  0.25.0, ADR-035). `TurnDetector._flightEndTick` sets `_endTouched` on every tick below
+  `STOP_FLOOR_MPS` until `FLIGHT_END_WINDOW_S`, so a slog that brushes the floor between 12 s
+  and 30 s breaks the wrist's flew-through streak while the phone reads a glide-out and keeps
+  it. **Not ported** in the engine round (no garmin/ source in it). The port is one condition:
+  set `_endTouched` only while `_clockS - _endStartS <= LOOKAHEAD_S`. The watch keeps no
+  flight-end tally, so the streak is the only number that can differ, and only in the watch's
+  stricter direction.
 
 #### Not about the detector
 
