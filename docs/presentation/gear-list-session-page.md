@@ -67,12 +67,43 @@ answering a different question at every tap. Once he moves the control the choic
 remembered (`library.groupBy.v1`), because "I read my library by month" is a fact about the
 rider; the *filter* is not remembered, because a narrowing is a question and not a setting.
 
+**A section folds.** The whole header is the button — `August 2026 · 9 sessions ⌄` — and a
+folded section keeps its header and its count, so a shut month still says how much is in it.
+**Collapse all / Expand all** head the filter menu while the list is grouped (only the one that
+would change something is offered). What is folded is remembered **per grouping**
+(`library.folded.v1`, `LibraryFolds`): "I keep 2024 shut" is how the rider reads his library by
+year and says nothing about how he reads it by spot. Folding hides rows, never sessions: the
+count line and the session page's swipe still walk every session of the filtered list. Beta,
+with the grouping.
+
+**A spot is a place here, not a cluster.** A spot is a 500 m cluster and a town is bigger:
+Hvide Sande's harbour beach and fjord beach are two clusters, both geocoded "Hvide Sande", and
+the menu listed the name twice with nothing to choose between. Spots that **share a name**
+(case and accents folded) **within 5 km** of each other are one entry in the spot filter, one
+chip and one Spot section (`SpotPlaces`, pinned by `LibraryListingTests`); the busiest cluster
+lends the place its id and its spelling. The spot table is not touched — the Spots tab, the
+watch map and the spot's own records still see every cluster, and no session changes spot.
+The same name further apart is two places, and the second is numbered (`Neustadt 2`) so the
+menu never shows two identical rows.
+
+**Swipe left on a row: Delete, and Rider.** Delete is first, so a full swipe is still the
+delete it always was. **Rider** (beta, purple) opens the import's own *Whose session is this?*
+picker on that session, with the known names as chips — Mine, or a friend's by name — and the
+aggregates follow on the next read (`LibraryStore.setRider`). It is the way to fix a friend's
+file imported as "mine", or the other way round, without deleting and importing again.
+
+**The date line never wraps.** The list spells the clock short — `58 min` under an hour,
+`1:57 h` from one up, seconds under a minute (`KeyMetrics.listDuration`, web `listDuration`) —
+because `57:38 min` after the date wrapped at the default text size. When even that does not
+fit (a date from last year at a large text size) the weekday goes first, then the line shrinks
+to 80 % rather than break. The session page keeps the seconds (docs/presentation/one-clock.md).
+
 **The filter menu** is one toolbar menu next to Import, with four sections and a single
 choice in each:
 
 | section | entries |
 |---|---|
-| Spot | **All spots**, then every spot in the library |
+| Spot | **All spots**, then every place in the library (spots that share a name nearby are one) |
 | Source | **All sources**, then the doors this library actually holds — intervals.icu, File, Garmin export, AirDrop, Garmin watch, Apple Watch, Apple Health, Strava, Example |
 | Discipline | **All**, Wingfoil, Windsurf foil, Windsurf fin — shown only with the windsurf switch on |
 | Date | **All time**, This year, Last year, Custom range… |

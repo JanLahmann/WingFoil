@@ -230,6 +230,8 @@ c through GPX and TCX as well. The app's `sourceClass` column is the source of t
 |---|---|---|
 | Session list, detail page, four tabs | release | |
 | Group by month, year, spot; filter menu; chips | beta | |
+| Fold a group; Collapse all / Expand all | beta | with the grouping it folds, 25 Sep 2026 (F7e). Before release: moves with the grouping |
+| Swipe a row → Rider: change whose session it is | beta | 25 Sep 2026 (F7d). The import's own picker; release keeps the swipe's Delete only. Before release: **rule 1**, a session reassigned both ways on a real device with Records and Trends checked after each |
 | Spots, gear, periods | release | |
 | Records, trends, all-time tables | release | |
 | Speed records: only verified / prefer verified / include unverified | **release** | Settings → Speed records, 22 Sep 2026. Whether a record off a track with no Doppler speed may stand. One rule in the kit (`SpeedRecordRule.eligible`, pattern L) read by the records table, the personal bests, the celebration, the Trends best-2 s series, the share card and the widget snapshot, and one function in Python (`library.eligible`) read by the browser's aggregate. Applied at query time, so moving it re-reads the same rows and re-imports nothing. Release because it meets all four rules on the day it ships: it is a setting over an engine number that has been in every build since 0.9.0, it has a help topic (*Verified and unverified speed records*), it needs no watch to review (the example session and any GPX show both answers), and it removes a report rather than opening one |

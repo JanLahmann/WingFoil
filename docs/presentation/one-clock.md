@@ -48,3 +48,9 @@ value: `KeyMetrics.duration` (Swift, public for exactly this reason), `hm`
 `hms()` (`h:mm:ss`) and `FlightPairing.clock` survive only for a **clip or a flight** clock,
 which is minutes and seconds by design and is commented as such where it is used.
 
+
+**One exception in spelling, not in clock: the session list.** The row prints the same T1
+rounded to the minute under an hour — `58 min`, and seconds under a minute — because
+`57:38 min` after the date wrapped on a phone (Jan, 25 Sep 2026, F7f). From an hour up it is
+the formatter above, character for character. `KeyMetrics.listDuration` (Swift) and
+`listDuration` (web/js/presentation.js), pinned by `LibraryListingTests`.
