@@ -26,7 +26,7 @@
 
   --ink:       #ffffff;
   --ink-2:     #c3c2b7;
-  --ink-3:     #8a8a80;
+  --ink-3:     #a3a399;   /* 6.2:1 on surface-2 (was #8a8a80, 4.5), the readable secondary */
 
   /* The app's own blue: chrome, links, buttons and the Doppler trace. Not a presentation
      token — the phase tints below are, and a track tinted with the brand colour reads as
@@ -1167,6 +1167,7 @@ footer .fineprint { margin-top: 8px; font-size: 11.5px; color: var(--ink-4, var(
   --banner-bg: #14293f;   --banner-line: #2a5a91;  --banner-ink: #d9e8fb;
   --accent-bg: #14293f;   --accent-line: #2a5a91;  --accent-ink: #9ec8f5;
   --hot-bg:    #17283c;   --link-hover:  #6fa9ea;
+  --help-link: #2ee6a8;
 
   --pill-good-bg: #11240f; --pill-good-line: #245a24; --pill-good-ink: #7fd67f;
   --pill-warn-bg: #26200c; --pill-warn-line: #6a5117; --pill-warn-ink: #f6c86a;
@@ -1227,6 +1228,7 @@ footer .fineprint { margin-top: 8px; font-size: 11.5px; color: var(--ink-4, var(
     --banner-bg: #e7f0fb;   --banner-line: #9dc0e8;  --banner-ink: #14324f;
     --accent-bg: #e7f0fb;   --accent-line: #9dc0e8;  --accent-ink: #12447d;
     --hot-bg:    #e6eefa;   --link-hover:  #17457f;
+    --help-link: #00704e;
 
     --pill-good-bg: #eaf6ea; --pill-good-line: #a8d5a8; --pill-good-ink: #15661f;
     --pill-warn-bg: #fbf3e2; --pill-warn-line: #e2c98a; --pill-warn-ink: #7a5600;
@@ -1265,6 +1267,7 @@ footer .fineprint { margin-top: 8px; font-size: 11.5px; color: var(--ink-4, var(
   --banner-bg: #e7f0fb;   --banner-line: #9dc0e8;  --banner-ink: #14324f;
   --accent-bg: #e7f0fb;   --accent-line: #9dc0e8;  --accent-ink: #12447d;
   --hot-bg:    #e6eefa;   --link-hover:  #17457f;
+  --help-link: #00704e;
 
   --pill-good-bg: #eaf6ea; --pill-good-line: #a8d5a8; --pill-good-ink: #15661f;
   --pill-warn-bg: #fbf3e2; --pill-warn-line: #e2c98a; --pill-warn-ink: #7a5600;

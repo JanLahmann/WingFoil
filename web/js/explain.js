@@ -57,17 +57,28 @@ export function helpSectionOf(id) {
 /* ------------------------------------------------------------------ one element */
 
 /** The `?`, as the page's own control rather than a link: the app routes on the hash and
- *  a rider who middle-clicks a `?` should not open a second copy of the analyzer. */
-function question(id) {
+ *  a rider who middle-clicks a `?` should not open a second copy of the analyzer.
+ *
+ *  `titled` is the door that carries words — a Settings lead, the phone's section footer:
+ *  the same `?` with the topic's own title beside it, on a line of its own, so a link to a
+ *  topic reads as one (Jan, 25 September 2026: bare green text under a section did not).
+ *  It is the phone's `HelpTopicLink`; the bare `?` is its `HelpButton`. */
+function question(id, titled = false) {
   const topic = TOPICS.get(id);
   const button = document.createElement("button");
   button.type = "button";
-  button.className = "explain-q";
   button.dataset.explainQ = id;
+  const title = topic ? topic.title : "Help";
+  if (titled) {
+    button.className = "explain-link";
+    button.innerHTML = `<span class="explain-q" aria-hidden="true">?</span>`
+      + `<span>${esc(title)}</span>`;
+    return button;
+  }
+  button.className = "explain-q";
   button.textContent = "?";
   // The accessible name is the topic's title, because "?" is a bare code and a bare code
   // needs its word within reach (pattern H). Sighted readers get the title on hover.
-  const title = topic ? topic.title : "Help";
   button.setAttribute("aria-label", `Help: ${title}`);
   button.title = title;
   return button;
@@ -99,8 +110,12 @@ function mount(host) {
   if (more) more.dataset.explainOwn = "1";
 
   if (topic) {
-    host.appendChild(document.createTextNode(" "));
-    host.appendChild(question(id));
+    const titled = host.dataset.explainTitled === "1";
+    if (!titled) host.appendChild(document.createTextNode(" "));
+    const q = question(id, titled);
+    // A handed-in body stays last: the link sits under the line, the rest under the link.
+    if (titled && more) host.insertBefore(q, more);
+    else host.appendChild(q);
     if (!more) {
       more = document.createElement("div");
       more.className = "explain-more";

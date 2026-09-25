@@ -365,7 +365,11 @@ function renderSettingsCopy() {
     lead.textContent = section.lead;
     // A section whose `?` would open a topic that is not in this build's catalogue gets no
     // `?`, and nothing is lost: the lead already says what the rows do.
-    if (section.help && helpTopic(section.help)) lead.dataset.explain = section.help;
+    if (section.help && helpTopic(section.help)) {
+      lead.dataset.explain = section.help;
+      // The phone's footer link: the `?` with the topic's title, under the line.
+      lead.dataset.explainTitled = "1";
+    }
     // The phone's footer, where there is one. It is handed in rather than looked up,
     // because these paragraphs are Settings' own and are not a help topic's body.
     if ((section.footer || []).length) {
