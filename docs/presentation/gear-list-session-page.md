@@ -148,20 +148,27 @@ The header names where the recording came from in one line under the date
 *Apple Health*, *File*) — provenance used to live on the Details tab only, so an Apple Watch
 recording and a Health import looked alike. The title is a button: a tap opens a rename sheet
 writing the same `customTitle` the share composer's field writes, so renaming is not a
-side-effect of sharing. A swipe moves to the next or previous session in the list's own order
-(`SessionStore.visibleSessionIDs`), with a greyed ‹ › pair beside the date at the ends; the
-drag needs a horizontal intent (dx over 2.5 × dy) so the inline map keeps its pan.
+side-effect of sharing. A swipe moves to the neighbouring session among the ones the list is
+showing (`SessionStore.visibleSessionIDs`), **in time order** whatever the list's grouping:
+the older afternoon lies on the left, the newer one on the right (Jan, 25 Sep 2026). The ‹ ›
+pair beside the date sits on the same sides — ‹ older, › newer — greyed at the ends. The
+drag needs a horizontal intent (dx over 2.5 × dy, decided once in its first 14 pt) so the
+page's scroll keeps a vertical finger, and **a drag that starts on the map, the speed chart
+or the replay slider never turns the page** (`pagerExclusionZone`): a pan is the map's, a
+flat scrub is the chart's.
 
-**The finger drags the content**: a drag left takes the page left and brings in the *next*
-session in the list's order, a drag right walks back to the previous one — the platform's
-rule, and a sign that is read right and written backwards, so it is `SessionPaging` in the
-kit with `SessionPagingTests` on it rather than a ternary in a gesture closure. The page
-**slides** rather than swapping (Jan, Beta 75): it follows the finger while the drag is on
-the glass (`SessionPaging.follow`, rubber-banded, and barely moving at the ends of the list
-where there is nothing to turn to), then the outgoing page leaves by the edge it was pushed
-towards while the incoming one arrives from the other. The ‹ › pair runs the same animation —
-both go through one `turn(_:)`. A short flick counts when it was thrown hard enough
-(`predictedEndTranslation`), the way a paged scroll view reads one.
+**The finger drags the content**: a drag left takes the page left and brings in the one
+waiting on its right — the *newer* session — and a drag right walks back in time. The
+platform's rule, and a sign that is read right and written backwards, so it is
+`SessionPaging` in the kit with `SessionPagingTests` on it rather than a ternary in a gesture
+closure. The page **slides** rather than swapping (Jan, Beta 75), and since 25 Sep it slides
+the way a paged scroll view does (Jan: "hakelig"): it follows the finger **one to one** with
+the neighbour drawn beside it — the header it will open with over the spinner — and barely
+moves at the ends of the list. A release finishes the slide at the finger's own speed, and
+only when the incoming page is in place is the session on screen changed, so the swap is not
+a movement. The drag state lives in `SessionPager`, not on the page, so a frame of the swipe
+redraws one offset instead of the whole page. The ‹ › pair runs the same slide. A short
+flick counts when it was thrown hard enough (`predictedEndTranslation`).
 
 The library row's track outline can sit on a map: Settings → Session list → *Map behind the
 track in the list*, off by default, an `MKMapSnapshotter` image per session cached beside the

@@ -8,6 +8,13 @@
   scrubber; web: wheel/pinch). While zoomed: scrubbing works within the window, a reset
   affordance is visible, the window's place in the session is indicated, and markers and
   shading outside the visible domain are not drawn.
+- **Which finger is whose** (iOS, 25 Sep 2026). On every chart and strip a tap places the
+  playhead and a *sideways* drag scrubs; an up-or-down finger scrolls the page past it
+  (`ScrubPan`, a UIKit pan that fails at once on a vertical finger and that the scroll
+  view, a paging `TabView` and a sheet's dismiss all wait for). So the turn and flight-end
+  pages scroll to their foot from anywhere, and a scrub on a strip never swipes to the next
+  turn. On the session page a drag that starts on the map, the chart or the replay slider
+  belongs to it and never turns the page (`pagerExclusionZone`).
 - Zoom state is transient per session view — but it survives a section change, which is not
   a new session view (see "Sections" above). On iOS that means the window is owned by
   `SessionDetailView`, not by the chart.
