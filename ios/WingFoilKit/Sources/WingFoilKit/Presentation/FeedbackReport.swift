@@ -464,11 +464,13 @@ public enum FeedbackReport {
     /// "Report a problem with this session…" the app already knows which afternoon, so the
     /// date and the spot are written into the first of those two lines and the rider is
     /// asked one question fewer.
-    public static func body(_ facts: FeedbackFacts) -> String {
+    public static func body(_ facts: FeedbackFacts, mostWanted: MostWanted.Vote = .init())
+        -> String {
         var out: [String] = []
         out += prompt(Prompt.what)
         out += prompt(Prompt.expected)
         out += prompt(Prompt.session, answer: facts.session.map(sessionAnswer))
+        out += mostWanted.lines
         out.append(FeedbackInvitation.sentence)
         out.append("")
         out.append(Separator.rule)
@@ -513,11 +515,13 @@ public enum FeedbackReport {
     /// percent-encodes with `urlQueryAllowed` — a set that contains `&`, `=`, `+` and `?`.
     /// A body carrying any of them (and a rider typing "3 jibes & 2 tacks" carries one)
     /// would be cut short at that character, or arrive with a `+` read back as a space.
-    public static func mailtoURL(_ facts: FeedbackFacts) -> URL? {
+    public static func mailtoURL(_ facts: FeedbackFacts,
+                                 mostWanted: MostWanted.Vote = .init()) -> URL? {
         let allowed = CharacterSet.urlQueryAllowed
             .subtracting(CharacterSet(charactersIn: "&=+?"))
         guard let subject = subject(facts).addingPercentEncoding(withAllowedCharacters: allowed),
-              let body = body(facts).addingPercentEncoding(withAllowedCharacters: allowed)
+              let body = body(facts, mostWanted: mostWanted)
+                .addingPercentEncoding(withAllowedCharacters: allowed)
         else { return nil }
         var components = URLComponents()
         components.scheme = "mailto"

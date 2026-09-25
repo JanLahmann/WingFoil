@@ -45,6 +45,7 @@ import Testing
         var usage = counters()
         usage.record(.importZip, times: 9, at: date(12), timeZone: zone)
         #expect(usage.count(.importZip) == 9)
+        #expect(usage.tally(.importZip).attempted == 9)
     }
 
     @Test func recordingNothingChangesNothing() {
@@ -131,72 +132,264 @@ import Testing
         #expect(usage.failures.isEmpty)
     }
 
+    // MARK: - Tried, worked, failed
+
+    @Test func aTryAndItsOutcomeAreTwoCallsAndOneAttempt() {
+        var usage = counters()
+        usage.attempt(.mapToWatch, at: date(12), timeZone: zone)
+        usage.succeeded(.mapToWatch, at: date(12), timeZone: zone)
+        usage.attempt(.mapToWatch, at: date(13), timeZone: zone)
+        usage.failed(.mapToWatch, reason: "no answer", attempt: false, at: date(13),
+                     timeZone: zone)
+        usage.attempt(.mapToWatch, at: date(14), timeZone: zone)   // never answered
+        let tally = usage.tally(.mapToWatch)
+        #expect(tally.attempted == 3)
+        #expect(tally.succeeded == 1)
+        #expect(tally.failed == 1)
+        #expect(tally.lastReason == "no answer")
+        #expect(tally.firstUse == date(12))
+    }
+
+    /// The release gate's "no open failure": the newest outcome decides.
+    @Test func aFailureIsOpenUntilTheFeatureWorksAgain() {
+        var usage = counters()
+        usage.failed(.healthExport, reason: "HKErrorDomain 5", at: date(12), timeZone: zone)
+        #expect(usage.tally(.healthExport).failureIsOpen)
+        usage.record(.healthExport, at: date(13), timeZone: zone)
+        #expect(!usage.tally(.healthExport).failureIsOpen)
+    }
+
+    @Test func variantsAreCountedUnderTheirFeature() {
+        var usage = counters()
+        usage.record(.shareCard, detail: "story · lean · map", at: date(12), timeZone: zone)
+        usage.record(.shareCard, detail: "story · lean · map", at: date(12), timeZone: zone)
+        usage.record(.shareCard, detail: "square · complete · photo", at: date(13),
+                     timeZone: zone)
+        #expect(usage.tally(.shareCard).details == ["story · lean · map": 2,
+                                                   "square · complete · photo": 1])
+    }
+
+    // MARK: - Reasons carry nothing personal
+
+    private enum SampleError: Error { case notReachable, refused(path: String) }
+
+    @Test func aSwiftErrorBecomesItsTypeAndCase() {
+        let reason = UsageCounters.reason(for: SampleError.refused(path: "/Users/jan/Torbole.fit"))
+        #expect(reason.hasSuffix("SampleError.refused"))
+        #expect(!reason.contains("Torbole"))
+        #expect(UsageCounters.reason(for: SampleError.notReachable).hasSuffix(".notReachable"))
+    }
+
+    @Test func aFoundationErrorBecomesItsDomainAndCode() {
+        let error = URLError(.notConnectedToInternet,
+                             userInfo: [NSURLErrorFailingURLStringErrorKey:
+                                        "https://intervals.icu/athlete/i606193"])
+        #expect(UsageCounters.reason(for: error) == "NSURLErrorDomain -1009")
+    }
+
+    @Test func aReasonIsShort() {
+        var usage = counters()
+        usage.failed(.fitShare, reason: String(repeating: "x", count: 300), at: date(12),
+                     timeZone: zone)
+        #expect(usage.tally(.fitShare).lastReason?.count == UsageCounters.reasonLimit + 1)
+    }
+
     // MARK: - The report
 
     private func filledIn() -> UsageCounters {
         var usage = counters()
         usage.record(.appOpen, times: 87, at: date(14), timeZone: zone)
         usage.record(.importIcu, times: 38, at: date(14), timeZone: zone)
-        usage.record(.shareCard, times: 12, at: date(13), timeZone: zone)
+        usage.failed(.importIcu, reason: "NSURLErrorDomain -1009", at: date(12), timeZone: zone)
+        usage.record(.shareCard, times: 12, detail: "story · lean · map", at: date(13),
+                     timeZone: zone)
+        usage.attempt(.mapToWatch, at: date(13), timeZone: zone)
         usage.recordFailure("Could not reach intervals.icu", at: date(12), timeZone: zone)
         usage.recordFailure("Could not reach intervals.icu", at: date(13), timeZone: zone)
         return usage
     }
 
-    @Test func theReportOpensWithTheBuildAndTheDates() {
-        let lines = filledIn().report(appVersion: "1.1.0 (23)", now: date(14),
-                                      timeZone: zone)
-            .split(separator: "\n", omittingEmptySubsequences: false)
-        #expect(lines[0] == "Usage and features")
-        #expect(lines[1] == "  CleanJibe 1.1.0 (23)")
-        #expect(lines[2] == "  First launch 1 Aug · 3 days active · written 14 Sep")
+    private func report(_ layout: UsageCounters.ReportLayout = .normal,
+                        channel: HelpChannel = .dev) -> String {
+        filledIn().report(appVersion: "1.1.0 (107)", device: "iPhone 17 Pro Max (iPhone18,2)",
+                          channel: channel, layout: layout, now: date(14), timeZone: zone)
     }
 
-    @Test func aUsedFeatureIsOneLineWithACountAndADate() {
-        let report = filledIn().report(appVersion: "1.1.0 (23)", now: date(14),
-                                       timeZone: zone)
-        #expect(report.contains("\n  share card · 12 · last 13 Sep"))
-        #expect(report.contains("\n  imported · intervals.icu · 38 · last 14 Sep"))
+    /// The build and the phone open the block in both layouts (F19 addendum).
+    @Test func bothLayoutsOpenWithTheBuildAndThePhone() {
+        for layout in UsageCounters.ReportLayout.allCases {
+            let lines = report(layout).split(separator: "\n", omittingEmptySubsequences: false)
+            #expect(lines[0] == "Usage and features")
+            #expect(lines[1] == "  CleanJibe 1.1.0 (107) · iPhone 17 Pro Max (iPhone18,2)")
+            #expect(lines[2] == "  First launch 1 Aug · 3 days active · written 14 Sep")
+        }
     }
 
-    /// The half of the block that decides what ships: a door nobody has opened in four
-    /// months is a door the release does not need yet (docs/channels.md, rule 1).
-    @Test func theDoorsNobodyOpenedAreNamedOnce() {
-        let report = filledIn().report(appVersion: "1.1.0 (23)", now: date(14),
-                                       timeZone: zone)
-        let line = report.split(separator: "\n")
-            .first { $0.contains("Not used yet:") }
-        #expect(line != nil)
-        #expect(line?.contains("session video") == true)
-        #expect(line?.contains("backup restored") == true)
-        // …and nothing that *was* used is in it.
-        #expect(line?.contains("share card") == false)
-        // One line, not seventeen.
-        #expect(report.components(separatedBy: "Not used yet:").count == 2)
+    @Test func normalIsOneLinePerUsedFeatureUnderItsGroup() {
+        let text = report()
+        #expect(text.contains("\n  Sources\n    intervals.icu sync ✓ 38 · ✗ 1\n"))
+        #expect(text.contains("\n  Share\n    Share card ✓ 12\n"))
+        // Tried and never answered: a line with nothing ticked, and no dates.
+        #expect(text.contains("\n    Send map to watch ✓ 0\n"))
+        #expect(!text.contains("worked "))
+        #expect(!text.contains("story · lean · map"))
+        #expect(!text.contains("Messages this phone showed"))
     }
 
-    @Test func theFailuresAreListedUnderTheirOwnHeading() {
-        let report = filledIn().report(appVersion: "1.1.0 (23)", now: date(14),
-                                       timeZone: zone)
-        #expect(report.contains("  Failures this phone showed, newest first"))
-        #expect(report.contains("\n    Could not reach intervals.icu · 2 · last 13 Sep"))
+    @Test func extendedAddsDatesReasonsVariantsAndMessages() {
+        let text = report(.extended)
+        #expect(text.contains("    intervals.icu sync ✓ 38 · ✗ 1 · first 12 Sep · "
+                              + "worked 14 Sep · failed 12 Sep, NSURLErrorDomain -1009"))
+        #expect(text.contains("    Send map to watch ✓ 0 · 1 without an answer · first 13 Sep"))
+        #expect(text.contains("\n      story · lean · map ✓ 12"))
+        #expect(text.contains("  Messages this phone showed, newest first"))
+        #expect(text.contains("\n    Could not reach intervals.icu · 2 · last 13 Sep"))
     }
 
-    @Test func aPhoneWithNoFailuresHasNoFailuresHeading() {
+    /// The half of the block that decides what ships: a door nobody has opened is a door
+    /// the release does not need yet (docs/channels.md, rule 1). Named once, and only for
+    /// doors this build has.
+    @Test func theDoorsNobodyOpenedAreNamedOnceAndOnlyWhereTheyExist() {
+        let dev = report(channel: .dev)
+        let line = dev.split(separator: "\n").first { $0.contains("Not used yet:") }
+        #expect(line?.contains("Session video") == true)
+        #expect(line?.contains("Send wind to watch") == true)
+        #expect(line?.contains("Share card") == false)
+        #expect(dev.components(separatedBy: "Not used yet:").count == 2)
+
+        let beta = report(channel: .beta)
+        let betaLine = beta.split(separator: "\n").first { $0.contains("Not used yet:") }
+        #expect(betaLine?.contains("Session video") == true)
+        #expect(betaLine?.contains("Send wind to watch") == false)
+        #expect(betaLine?.contains("iCloud sync") == false)
+    }
+
+    @Test func aPhoneWithNoMessagesHasNoMessagesHeading() {
         var usage = counters()
         usage.record(.appOpen, at: date(14), timeZone: zone)
-        #expect(!usage.report(appVersion: "1.1.0 (23)", now: date(14), timeZone: zone)
-            .contains("Failures"))
+        #expect(!usage.report(appVersion: "1.1.0 (107)", device: "iPhone18,2",
+                              layout: .extended, now: date(14), timeZone: zone)
+            .contains("Messages"))
     }
 
     /// A fresh phone still produces a readable block rather than a heading with nothing
-    /// under it — the first tester to send one will have opened the app twice.
+    /// under it.
     @Test func anUntouchedPhoneStillRendersABlock() {
-        let report = counters(from: 14, month: 9)
-            .report(appVersion: "1.1.0 (23)", now: date(14), timeZone: zone)
-        #expect(report.hasPrefix("Usage and features\n  CleanJibe 1.1.0 (23)"))
-        #expect(report.contains("0 days active"))
-        #expect(report.contains("Not used yet: app opened"))
+        let text = counters(from: 14, month: 9)
+            .report(appVersion: "1.1.0 (107)", device: "iPhone18,2", now: date(14),
+                    timeZone: zone)
+        #expect(text.hasPrefix("Usage and features\n  CleanJibe 1.1.0 (107) · iPhone18,2"))
+        #expect(text.contains("0 days active"))
+        #expect(text.contains("Not used yet: App opened"))
+    }
+
+    // MARK: - The mail
+
+    private var facts: FeedbackFacts {
+        FeedbackFacts(
+            app: .init(version: "1.1.0", build: "107", channel: .beta, engineVersion: "0.24.0"),
+            phone: .init(model: "iPhone18,2", system: "iOS 26.0", locale: "en_DE"),
+            watch: .init(garminModel: nil, garminAppVersion: nil, appleWatchPaired: nil,
+                         healthImport: nil, garminCrashRuns: nil),
+            library: .init(sessionCount: 12, sources: []),
+            session: nil, crashes: [])
+    }
+
+    @Test func theMailOpensWithTheRidersFeedback() {
+        let body = UsageReportText.body(facts: facts, feedback: "  The map never arrives.\n",
+                                        counters: filledIn(), layout: .normal,
+                                        now: date(14), timeZone: zone)
+        let lines = body.split(separator: "\n", omittingEmptySubsequences: false)
+        #expect(lines[0] == "Your feedback:")
+        #expect(lines[1] == "The map never arrives.")
+        #expect(body.contains(UsageReportText.separator))
+        // The build and the device, in the facts and in the counters.
+        #expect(body.contains("CleanJibe 1.1.0 (107) · beta build"))
+        #expect(body.contains("  CleanJibe 1.1.0 (107) · iPhone 17 Pro Max (iPhone18,2)"))
+        #expect(body.hasSuffix("sent from CleanJibe"))
+    }
+
+    @Test func theLayoutSwitchChangesOnlyTheCounters() {
+        let normal = UsageReportText.body(facts: facts, feedback: "", counters: filledIn(),
+                                          layout: .normal, now: date(14), timeZone: zone)
+        let extended = UsageReportText.body(facts: facts, feedback: "", counters: filledIn(),
+                                            layout: .extended, now: date(14), timeZone: zone)
+        #expect(!normal.contains("worked 14 Sep"))
+        #expect(extended.contains("worked 14 Sep"))
+        #expect(normal.hasPrefix("Your feedback:\n\n"))
+    }
+
+    // MARK: - The feature list is docs/channels.md's
+
+    /// The table under "What the usage report counts" in docs/channels.md is this list,
+    /// written by `COPY_WRITE=1 swift test --filter UsageCountersTests` and checked here.
+    @Test func theFeatureListIsTheOneChannelsMdPrints() throws {
+        let url = CopyContractTests.repoRoot.appendingPathComponent("docs/channels.md")
+        let text = try String(contentsOf: url, encoding: .utf8)
+        let begin = "<!-- usage-features:begin -->", end = "<!-- usage-features:end -->"
+        let lower = try #require(text.range(of: begin), "docs/channels.md lacks \(begin)")
+        let upper = try #require(text.range(of: end), "docs/channels.md lacks \(end)")
+        let expected = "\n" + Self.featureTable() + "\n"
+        if CopyContractTests.isWriting {
+            let rewritten = text.replacingCharacters(in: lower.upperBound..<upper.lowerBound,
+                                                     with: expected)
+            try rewritten.write(to: url, atomically: true, encoding: .utf8)
+            return
+        }
+        #expect(String(text[lower.upperBound..<upper.lowerBound]) == expected,
+                """
+                docs/channels.md's usage table is out of step with UsageCounters.Feature. \
+                Regenerate it: COPY_WRITE=1 swift test --filter UsageCountersTests
+                """)
+    }
+
+    static func featureTable() -> String {
+        var rows = ["| group | feature | key | lowest channel |", "|---|---|---|---|"]
+        for feature in UsageCounters.Feature.allCases {
+            let channel: String = switch feature.channel {
+            case .release: "release"
+            case .beta: "beta"
+            case .dev: "dev"
+            }
+            rows.append("| " + feature.group.title + " | " + feature.label + " | `"
+                        + feature.rawValue + "` | " + channel + " |")
+        }
+        return rows.joined(separator: "\n")
+    }
+
+    /// The seventeen keys the blob had before the tallies must still be cases, or an older
+    /// phone's counts would decode under keys nothing reads.
+    @Test func theOldKeysAreStillFeatures() {
+        let old = ["appOpen", "importIcu", "importFile", "importStrava", "importHealth",
+                   "importShareSheet", "importZip", "sessionOpened", "turnPage", "shareCard",
+                   "clipExported", "videoExported", "backupMade", "backupRestored",
+                   "settingsOpened", "feedbackMail", "stravaConnected"]
+        for key in old { #expect(UsageCounters.Feature(rawValue: key) != nil, "\(key)") }
+    }
+
+    // MARK: - Most wanted
+
+    @Test func theReleaseOffersOnlyTheBetaRows() {
+        #expect(MostWanted.offered(in: .release).allSatisfy { $0.channel == .beta })
+        #expect(MostWanted.offered(in: .beta).count == MostWanted.all.count)
+    }
+
+    @Test func theVoteIsOneTalliableLinePerTick() {
+        let vote = MostWanted.Vote(ticked: ["tuning", "appleHealth"], note: " dark mode ")
+        #expect(vote.lines == ["Most wanted",
+                               "  ✓ Apple Health, both ways · appleHealth",
+                               "  ✓ The tuning page · tuning",
+                               "  Also: dark mode",
+                               ""])
+        #expect(MostWanted.Vote().lines.isEmpty)
+    }
+
+    @Test func theFeedbackMailCarriesTheVoteAboveTheRule() {
+        let body = FeedbackReport.body(facts, mostWanted: .init(ticked: ["gpxTcx"]))
+        let vote = try? #require(body.range(of: "Most wanted\n  ✓ GPX and TCX files · gpxTcx"))
+        let rule = body.range(of: FeedbackReport.Separator.rule)
+        #expect(vote != nil && rule != nil && vote!.lowerBound < rule!.lowerBound)
+        #expect(!FeedbackReport.body(facts).contains("Most wanted"))
     }
 
     // MARK: - The ask
@@ -261,8 +454,14 @@ import Testing
             """.utf8)
         let back = try #require(UsageCounters.decode(json))
         #expect(back.count(.shareCard) == 7)
+        #expect(back.tally(.shareCard).attempted == 7)
+        #expect(back.tally(.shareCard).failed == 0)
         #expect(back.failures.isEmpty)
         #expect(back.sessionsSinceAsk == 0)
+        // …and the next write is in the new shape, with the old key gone.
+        let written = try #require(String(data: back.jsonData(), encoding: .utf8))
+        #expect(written.contains("\"tallies\""))
+        #expect(!written.contains("\"uses\""))
     }
 
     /// A counter this build has retired is carried through rather than thrown away with
@@ -275,6 +474,6 @@ import Testing
             """.utf8)
         let back = try #require(UsageCounters.decode(json))
         #expect(back.count(.appOpen) == 5)
-        #expect(back.uses["somethingRetired"]?.count == 3)
+        #expect(back.tallies["somethingRetired"]?.succeeded == 3)
     }
 }

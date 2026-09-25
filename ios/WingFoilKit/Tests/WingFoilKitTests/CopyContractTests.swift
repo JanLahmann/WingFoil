@@ -146,6 +146,16 @@ import Testing
             #expect(ids.count == rows.count, "channels.json · \(key): every row needs an id")
             #expect(Set(ids).count == ids.count, "channels.json · \(key): duplicate ids")
         }
+        // The feedback mail's "Most wanted" ticks are these same rows, by id, in order: a
+        // tick is tallied by the id, so an id the JSON does not have is a vote for nothing.
+        let jsonIds = ["beta", "dev"].flatMap { key in
+            ((json[key] as? [[String: Any]]) ?? []).compactMap { $0["id"] as? String }
+        }
+        #expect(MostWanted.all.map(\.id) == jsonIds,
+                "MostWanted.all is out of step with channels.json's beta and dev ids")
+        let betaIds = ((json["beta"] as? [[String: Any]]) ?? []).compactMap { $0["id"] as? String }
+        #expect(MostWanted.all.filter { $0.channel == .beta }.map(\.id) == betaIds)
+
         // The forbidden list is hand-authored — it is the *release copy's* guard, not a kit
         // constant — but it has to exist and it has to name every door above the release.
         let forbidden = try #require(json["forbiddenInRelease"] as? [String],
