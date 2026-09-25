@@ -22,6 +22,37 @@ struct RiderPromptView: View {
 
     @Environment(SessionStore.self) private var store
 
+    var body: some View {
+        RiderPicker(confirmTitle: "Import",
+                    context: pending.filenames.joined(separator: ", "),
+                    current: nil,
+                    onCancel: { store.cancelPendingImport() },
+                    // Clearing `store.pendingImport` is what dismisses the sheet — the store
+                    // owns the question, so it must also own the answer. Dismissing first
+                    // would run the sheet's own nil-write back through the binding and
+                    // cancel the import we are confirming.
+                    onConfirm: { rider in
+                        Task { await store.confirmPendingImport(rider: rider) }
+                    })
+    }
+}
+
+/// **"Whose session is this?"** — the one picker, asked on the way in (`RiderPromptView`)
+/// and again from the list's swipe action when a session turns out to be somebody else's,
+/// or his own after all (`RiderAssignSheet`). Same question, same chips, same footer, so a
+/// friend reassigned by hand lands on the spelling his imported sessions already carry.
+struct RiderPicker: View {
+    /// "Import" on the way in, "Save" afterwards.
+    let confirmTitle: String
+    /// The line under the question: the files being imported, or the session being moved.
+    let context: String
+    /// Who it is now: nil is "mine".
+    let current: String?
+    let onCancel: () -> Void
+    let onConfirm: (String?) -> Void
+
+    @Environment(SessionStore.self) private var store
+
     @State private var isFriend = false
     @State private var name = ""
     @State private var known: [String] = []
@@ -44,7 +75,7 @@ struct RiderPromptView: View {
                 } header: {
                     Text("Whose session is this?")
                 } footer: {
-                    Text(pending.filenames.joined(separator: ", "))
+                    Text(context)
                         .lineLimit(3)
                         .truncationMode(.middle)
                 }
@@ -84,21 +115,27 @@ struct RiderPromptView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    // Cancelling imports nothing. There is no safe default for "whose is
+                    // Cancelling changes nothing. There is no safe default for "whose is
                     // it" once the app can be handed a stranger's file.
-                    Button("Cancel") { store.cancelPendingImport() }
+                    Button("Cancel") { onCancel() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Import") { confirm() }
+                    Button(confirmTitle) { confirm() }
                         // A friend with no name would be a badge with nothing in it, and a
                         // session excluded from everything for a reason nobody can read.
                         .disabled(isFriend && trimmed.isEmpty)
                 }
             }
-            .task { known = await store.knownRiders() }
+            .task {
+                known = await store.knownRiders()
+                if let current {
+                    isFriend = true
+                    name = current
+                }
+            }
             // The text field is the only thing to do on this screen once "a friend's" is
             // picked; making the rider tap it as well is a step for nothing.
-            .onChange(of: isFriend) { _, friend in nameFocused = friend }
+            .onChange(of: isFriend) { _, friend in if friend && trimmed.isEmpty { nameFocused = true } }
         }
         .presentationDetents([.medium])
     }
@@ -121,12 +158,8 @@ struct RiderPromptView: View {
         .scrollClipDisabled()
     }
 
-    /// Clearing `store.pendingImport` is what dismisses the sheet — the store owns the
-    /// question, so it must also own the answer. Dismissing first would run the sheet's
-    /// own nil-write back through the binding and cancel the import we are confirming.
     private func confirm() {
         guard !(isFriend && trimmed.isEmpty) else { return }
-        let rider = isFriend ? trimmed : nil
-        Task { await store.confirmPendingImport(rider: rider) }
+        onConfirm(isFriend ? trimmed : nil)
     }
 }

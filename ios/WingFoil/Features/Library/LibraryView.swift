@@ -29,6 +29,9 @@ struct LibraryView: View {
     /// (`LibraryGrouping.default`) answer for him until he does.
     #if BETA
     @AppStorage("library.groupBy.v1") private var groupByRaw = ""
+    /// The sections the rider has folded, per grouping (`LibraryFolds`): remembered, like
+    /// the grouping, because "I keep last year shut" is how he reads his library.
+    @AppStorage("library.folded.v1") private var foldsRaw = ""
     #endif
     @State private var filter = LibraryListFilter()
     /// The empty library's fourth way in. The same picker the Import sheet raises, from the
@@ -47,10 +50,17 @@ struct LibraryView: View {
 
     var body: some View {
         @Bindable var store = store
-        let visible = filter.apply(to: store.sessions)
-        let groups = grouping.groups(visible, spotName: { store.spot(id: $0)?.name })
+        // Spots that are one place to the rider — two clusters both called "Hvide Sande" —
+        // are one filter entry and one Spot section (`SpotPlaces`). The table is untouched.
+        let places = SpotPlaces(store.spots)
+        let visible = filter.apply(to: store.sessions, places: places)
+        let groups = grouping.groups(visible,
+                                     spotName: { places.label(for: $0) ?? store.spot(id: $0)?.name },
+                                     placeID: { places.placeID(for: $0) })
         // The run a swipe on the session page walks, in the order the groups draw it — the
-        // filtered, grouped order, not the library's own (`SessionDetailView.order`).
+        // filtered, grouped order, not the library's own (`SessionDetailView.order`). A
+        // folded section is still in the run: folding is about what the list shows, not
+        // about which sessions the rider is reading.
         let visibleIDs = groups.flatMap { $0.rows.map(\.id) }
         NavigationStack(path: $path) {
             ScrollViewReader { proxy in
@@ -83,7 +93,7 @@ struct LibraryView: View {
                     // newest first, in one flat run.
                     #if BETA
                     if filter.isActive {
-                        LibraryFilterChips(filter: $filter)
+                        LibraryFilterChips(filter: $filter, places: places)
                             .listRowInsets(.init(top: 4, leading: 16, bottom: 0, trailing: 16))
                             .listRowSeparator(.hidden)
                             .listRowBackground(Color.clear)
@@ -97,12 +107,14 @@ struct LibraryView: View {
                     }
                     ForEach(groups) { group in
                         Section {
-                            ForEach(group.rows, id: \.id) { row in
-                                NavigationLink(value: row.id) { SessionRowView(row: row) }
+                            if !isFolded(group) {
+                                ForEach(group.rows, id: \.id) { row in
+                                    NavigationLink(value: row.id) { SessionRowView(row: row) }
+                                        .swipeActions(edge: .trailing) { rowActions(row) }
+                                }
                             }
-                            .onDelete { delete($0, in: group.rows) }
                         } header: {
-                            if !group.title.isEmpty { Text(group.title) }
+                            if !group.title.isEmpty { groupHeader(group) }
                         } footer: {
                             // One count line for the whole list, under the last section —
                             // a footer per month would say the same thing over and over.
@@ -146,7 +158,9 @@ struct LibraryView: View {
                 #if BETA
                 ToolbarItem(placement: .topBarTrailing) {
                     LibraryFilterMenu(filter: $filter, editingRange: editingRange,
-                                      library: store.sessions)
+                                      library: store.sessions, places: places,
+                                      grouping: grouping, groupKeys: groups.map(\.key),
+                                      folds: folds)
                         .disabled(store.sessions.isEmpty)
                         // A filter that narrows the list counts; clearing one does not.
                         .onChange(of: filter) { _, now in
@@ -381,6 +395,18 @@ struct LibraryView: View {
         case .helpTopic(let topic): HelpTopicSheet(id: topic)
         #if BETA
         case .dateRange: LibraryDateRangeSheet(filter: $filter, seed: rangeSeed)
+        case .rider(let id):
+            if let row = store.sessions.first(where: { $0.id == id }) {
+                RiderPicker(confirmTitle: "Save",
+                            context: SessionDisplay.title(row) + " · "
+                                + Fmt.date(row.startDate, zone: row.displayZone),
+                            current: row.rider,
+                            onCancel: { sheet = nil },
+                            onConfirm: { rider in
+                                sheet = nil
+                                Task { await store.setRider(row, to: rider) }
+                            })
+            }
         #endif
         #if DEBUG && targetEnvironment(simulator) && TUNING
         // `UI_SHEET=tuning` — a sheet of its own rather than "Settings, then push",
@@ -777,13 +803,73 @@ struct LibraryView: View {
     }
     #endif
 
-    /// A swipe deletes the row that was swiped, which since the list has sections is an
-    /// offset **into that section** and not into the library. Resolved against the group's
-    /// own rows for that reason: indexing `store.sessions` here would delete August's third
-    /// session because September's third was swiped.
-    private func delete(_ offsets: IndexSet, in rows: [SessionRow]) {
-        let doomed = offsets.map { rows[$0] }
-        Task { for row in doomed { await store.delete(row) } }
+    /// **Swipe left on a row: Delete, and — in the beta — Rider** (F7d). Delete first, so
+    /// the full swipe is the delete it has always been; Rider opens the import's own
+    /// "Whose session is this?" picker on the session that was swiped. The row, not an
+    /// offset: since the list has sections an offset is into the section, and resolving it
+    /// against the library would move August's third session because September's was swiped.
+    @ViewBuilder
+    private func rowActions(_ row: SessionRow) -> some View {
+        Button(role: .destructive) {
+            Task { await store.delete(row) }
+        } label: {
+            Label("Delete", systemImage: "trash")
+        }
+        #if BETA
+        Button {
+            sheet = .rider(row.id)
+        } label: {
+            Label("Rider", systemImage: "person.crop.circle")
+        }
+        .tint(.purple)
+        #endif
+    }
+
+    // MARK: - Folding
+
+    #if BETA
+    private var folds: Binding<LibraryFolds> {
+        Binding(get: { LibraryFolds(raw: foldsRaw) },
+                set: { foldsRaw = $0.raw })
+    }
+
+    private func isFolded(_ group: LibraryGroup) -> Bool {
+        LibraryFolds(raw: foldsRaw).isFolded(group.key, in: grouping)
+    }
+    #else
+    private func isFolded(_ group: LibraryGroup) -> Bool { false }
+    #endif
+
+    /// **"August 2026 · 9 sessions ⌄"** — the whole header is the button that folds its
+    /// section. The chevron says it can; the header keeps its count while folded, so a
+    /// shut month still says how much is in it.
+    @ViewBuilder
+    private func groupHeader(_ group: LibraryGroup) -> some View {
+        #if BETA
+        let folded = isFolded(group)
+        Button {
+            withAnimation {
+                var now = LibraryFolds(raw: foldsRaw)
+                now.toggle(group.key, in: grouping)
+                foldsRaw = now.raw
+            }
+        } label: {
+            HStack {
+                Text(group.title)
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.down")
+                    .font(.caption.weight(.semibold))
+                    .rotationEffect(.degrees(folded ? -90 : 0))
+            }
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(group.title)
+        .accessibilityValue(folded ? "Collapsed" : "Expanded")
+        .accessibilityHint(folded ? "Shows this group's sessions" : "Hides this group's sessions")
+        #else
+        Text(group.title)
+        #endif
     }
 }
 
@@ -876,6 +962,8 @@ enum LibrarySheet: Identifiable, Hashable {
     #if BETA
     /// The filter menu's "Custom range…" editor.
     case dateRange
+    /// "Whose session is this?" for one session already in the library — the row's swipe.
+    case rider(String)
     #endif
     #if DEBUG && targetEnvironment(simulator) && TUNING
     /// Screenshot hook only (`UI_SHEET=tuning`), dev build only.
@@ -891,6 +979,7 @@ enum LibrarySheet: Identifiable, Hashable {
         case .helpTopic(let topic): "help.\(topic.rawValue)"
         #if BETA
         case .dateRange: "dateRange"
+        case .rider(let id): "rider.\(id)"
         #endif
         #if DEBUG && targetEnvironment(simulator) && TUNING
         case .tuning: "tuning"

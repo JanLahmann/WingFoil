@@ -95,10 +95,17 @@ struct SessionRowView: View {
                 // the same string the session page opens with (docs/presentation/one-clock.md, "One
                 // clock"). It was `Fmt.duration(row.durationS)`: a different clock in a
                 // different format, one tap away from the page that disagreed with it.
-                Text(Fmt.date(row.startDate, zone: row.displayZone) + " · "
-                     + KeyMetrics.duration(row.rateSeconds))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                //
+                // **One line, always** (Jan, F7f: "57:38 min" wrapped under the date). The
+                // list spells the clock short — `58 min`, `1:57 h` (`KeyMetrics.listDuration`)
+                // — and when even that does not fit (last year's date at a large text size)
+                // the weekday goes before anything wraps, then the line shrinks a little.
+                ViewThatFits(in: .horizontal) {
+                    dateLine(weekday: true)
+                    dateLine(weekday: false)
+                }
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
 
                 if let note = SessionDisplay.provisionalNote(row) {
                     Text(note)
@@ -163,6 +170,17 @@ struct SessionRowView: View {
             guard store.listMapBackdrop else { return }
             thumbnails.requestBackdrop(row, style: store.mapStyle, scale: displayScale)
         }
+    }
+
+    /// "Wed 17 Sep, 14:05 · 58 min", or without the weekday. The shorter one may shrink to
+    /// 80 % rather than wrap — the last answer `ViewThatFits` has.
+    private func dateLine(weekday: Bool) -> some View {
+        let date = weekday
+            ? Fmt.date(row.startDate, zone: row.displayZone)
+            : Fmt.dateNoWeekday(row.startDate, zone: row.displayZone)
+        return Text(date + " · " + KeyMetrics.listDuration(row.rateSeconds))
+            .lineLimit(1)
+            .minimumScaleFactor(weekday ? 1 : 0.8)
     }
 
     /// Track outline over a speed sparkline. Both degrade on their own: a recording with

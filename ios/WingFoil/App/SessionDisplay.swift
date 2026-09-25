@@ -239,6 +239,16 @@ enum Fmt {
         return date.formatted(style)
     }
 
+    /// `date(_:zone:)` without the weekday — "17 Sep, 14:05" — for the session row when the
+    /// full line would wrap. Same year rule, same zone rule.
+    static func dateNoWeekday(_ date: Date, zone: TimeZone,
+                              relativeTo today: Date = Date()) -> String {
+        var style = Date.FormatStyle.dateTime.day().month(.abbreviated).hour().minute()
+        style.timeZone = zone
+        if !isThisYear(date, zone: zone, today: today) { style = style.year() }
+        return date.formatted(style)
+    }
+
     /// Whether a date falls in the same calendar year as the reader's now.
     ///
     /// Both sides are read in the **session's** zone rather than the device's: a session

@@ -1081,6 +1081,23 @@ final class SessionStore {
     /// once the app can be handed a stranger's file.
     func cancelPendingImport() { pendingImport = nil }
 
+    /// **Whose session this is, changed after the import** — the list's swipe action
+    /// (F7d). Nil is "mine". A reload rather than a patch, the same as a rename: the rider
+    /// decides whether the session is in Records, Trends, the gear totals and the widget,
+    /// and every one of those is built from the whole array.
+    func setRider(_ row: SessionRow, to rider: String?) async {
+        let name = SessionIngestor.riderName(rider)
+        guard name != row.rider else { return }
+        do {
+            try await library.setRider(id: row.id, to: name)
+            Usage.record(.riderAssign, detail: name == nil ? "mine" : "someone else")
+            await load()
+        } catch {
+            Usage.failed(.riderAssign, error: error)
+            errorMessage = "Could not change whose session this is: \(error)"
+        }
+    }
+
     /// Friends already in the library, offered by the prompt so a second file from the
     /// same person lands on the same spelling as the first.
     func knownRiders() async -> [String] {
