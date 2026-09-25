@@ -107,6 +107,15 @@ struct RootView: View {
                 .tag(Tab.gear)
                 .tabItem { Label("Gear & spots", systemImage: "bag") }
         }
+        // A tab counts when the rider turns to it. Gear & spots counts by what is saved
+        // there, not by the visit (`SessionStore.saveGear`).
+        .onChange(of: selection) { _, tab in
+            switch tab {
+            case .records: Usage.record(.records)
+            case .trends: Usage.record(.trends)
+            case .sessions, .gear: break
+            }
+        }
     }
 
     // MARK: - The three questions the app owns

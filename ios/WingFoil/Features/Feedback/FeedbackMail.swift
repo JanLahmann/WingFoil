@@ -249,6 +249,9 @@ struct MailComposeView: UIViewControllerRepresentable {
     /// of that name is read as the `View.body` witness rather than as the mail's text.
     let messageBody: String
     var attachment: FeedbackMail.Attachment?
+    /// The beta counter this mail closes. Mail's own answer is the outcome: *sent* worked,
+    /// *failed* failed, a cancel or a draft is a try with no answer.
+    var feature: UsageCounters.Feature? = nil
     let onFinish: () -> Void
 
     func makeUIViewController(context: Context) -> MFMailComposeViewController {
@@ -266,7 +269,7 @@ struct MailComposeView: UIViewControllerRepresentable {
 
     func updateUIViewController(_ controller: MFMailComposeViewController, context: Context) {}
 
-    func makeCoordinator() -> Coordinator { Coordinator(onFinish: onFinish) }
+    func makeCoordinator() -> Coordinator { Coordinator(feature: feature, onFinish: onFinish) }
 
     /// The delegate requirement is `nonisolated` — a main-actor method cannot witness it —
     /// so the callback is too, and states the isolation it actually has.
@@ -277,15 +280,26 @@ struct MailComposeView: UIViewControllerRepresentable {
     /// so that `self` — a non-`Sendable` `NSObject` — is not what crosses into the closure;
     /// the same trap `WatchSessionReceiver` documents from the other side.
     final class Coordinator: NSObject, MFMailComposeViewControllerDelegate {
+        private let feature: UsageCounters.Feature?
         private let onFinish: () -> Void
 
-        init(onFinish: @escaping () -> Void) {
+        init(feature: UsageCounters.Feature?, onFinish: @escaping () -> Void) {
+            self.feature = feature
             self.onFinish = onFinish
         }
 
         nonisolated func mailComposeController(_ controller: MFMailComposeViewController,
                                                didFinishWith result: MFMailComposeResult,
                                                error: (any Error)?) {
+            if let feature {
+                switch result {
+                case .sent: Usage.finished(feature)
+                case .failed:
+                    Usage.finished(feature, failure: error.map { UsageCounters.reason(for: $0) }
+                                   ?? "mail failed")
+                default: break
+                }
+            }
             // `nonisolated(unsafe)` states what the callback's own contract already
             // guarantees and the type system cannot see: this method runs on the main
             // thread, so the closure is not crossing an isolation boundary at all.
@@ -412,6 +426,10 @@ private struct FeedbackMailPresenter: ViewModifier {
 
     @State private var draft: Draft?
     @State private var fallback: Draft?
+    /// The "Most wanted" sheet, up before a general mail. Its answer waits in `vote` until
+    /// the sheet has gone, because one view cannot present two sheets at once.
+    @State private var askingWishes = false
+    @State private var vote: MostWanted.Vote?
 
     /// A composed report, held only while one of the two sheets is up.
     private struct Draft: Identifiable {
@@ -419,18 +437,32 @@ private struct FeedbackMailPresenter: ViewModifier {
         let facts: FeedbackFacts
         let attachment: FeedbackMail.Attachment?
         let subjectOverride: String?
+        var vote = MostWanted.Vote()
 
         var subject: String { subjectOverride ?? FeedbackReport.subject(facts) }
-        var body: String { FeedbackReport.body(facts) }
+        var body: String { FeedbackReport.body(facts, mostWanted: vote) }
     }
 
     func body(content: Content) -> some View {
         content
-            .onChange(of: request) { _, _ in compose() }
+            .onChange(of: request) { _, _ in
+                // A mail about one session goes straight to the composer: the rider is
+                // reporting a problem, and a wish list in front of it is in his way.
+                if session == nil { askingWishes = true } else { compose() }
+            }
+            .sheet(isPresented: $askingWishes, onDismiss: {
+                guard let answered = vote else { return }
+                vote = nil
+                compose(vote: answered)
+            }) {
+                MostWantedSheet { vote = $0 }
+            }
             .sheet(item: $draft) { draft in
                 MailComposeView(subject: draft.subject, messageBody: draft.body,
-                                attachment: draft.attachment) { self.draft = nil }
-                    .ignoresSafeArea()
+                                attachment: draft.attachment, feature: .feedbackMail) {
+                    self.draft = nil
+                }
+                .ignoresSafeArea()
             }
             .sheet(item: $fallback) { draft in
                 FeedbackFallbackSheet(subject: draft.subject, report: draft.body)
@@ -448,17 +480,19 @@ private struct FeedbackMailPresenter: ViewModifier {
             #endif
     }
 
-    private func compose() {
+    private func compose(vote: MostWanted.Vote = .init()) {
         // Every feedback door ends here, so this is the one place the beta counts them.
-        Usage.record(.feedbackMail)
+        // The try is counted now and its answer when Mail says sent (`MailComposeView`).
+        Usage.started(.feedbackMail)
+        if !vote.ticked.isEmpty { Usage.record(.mostWanted, times: vote.ticked.count) }
         let png = card()
         let attachment = png.flatMap { data in
             session.map { FeedbackMail.Attachment.card(png: data, sessionID: $0.id) }
         }
         let composed = Draft(facts: FeedbackMail.facts(store: store, session: session),
-                             attachment: attachment, subjectOverride: subject)
+                             attachment: attachment, subjectOverride: subject, vote: vote)
         guard MFMailComposeViewController.canSendMail() else {
-            guard let url = FeedbackReport.mailtoURL(composed.facts) else {
+            guard let url = FeedbackReport.mailtoURL(composed.facts, mostWanted: vote) else {
                 fallback = composed
                 return
             }
@@ -468,6 +502,75 @@ private struct FeedbackMailPresenter: ViewModifier {
             return
         }
         draft = composed
+    }
+}
+
+/// **"Most wanted"** — the ticks and the free line, before a general feedback mail.
+///
+/// The rows are the "Coming in a future release" rows this build shows
+/// (`MostWanted.offered(in:)`), so a rider is never asked about a feature his own Coming page
+/// does not name. Nothing ticked is a fine answer: *Write mail* is always enabled, and the
+/// mail then carries no Most wanted block at all.
+struct MostWantedSheet: View {
+    let onWrite: (MostWanted.Vote) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var ticked: Set<String> = []
+    @State private var note = ""
+
+    private let offered = MostWanted.offered(in: AppChannel.channel)
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    ForEach(offered) { wish in
+                        Button {
+                            if ticked.contains(wish.id) {
+                                ticked.remove(wish.id)
+                            } else {
+                                ticked.insert(wish.id)
+                            }
+                        } label: {
+                            HStack {
+                                Text(wish.label)
+                                    .foregroundStyle(.primary)
+                                Spacer()
+                                if ticked.contains(wish.id) {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(.tint)
+                                        .fontWeight(.semibold)
+                                }
+                            }
+                            .contentShape(.rect)
+                        }
+                        .accessibilityAddTraits(ticked.contains(wish.id) ? .isSelected : [])
+                    }
+                } header: {
+                    Text(MostWanted.heading)
+                } footer: {
+                    Text(MostWanted.footer)
+                }
+
+                Section {
+                    TextField(MostWanted.notePrompt, text: $note, axis: .vertical)
+                        .lineLimit(1...4)
+                }
+            }
+            .navigationTitle("Send feedback")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Write mail") {
+                        onWrite(MostWanted.Vote(ticked: ticked, note: note))
+                        dismiss()
+                    }
+                }
+            }
+        }
     }
 }
 

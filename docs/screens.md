@@ -84,7 +84,8 @@ all four tab roots in the same place (pattern M).
 | Menu | **Getting started** | the routes, one per watch, in one order | — | see-also topics · Done | release | same, as an in-app page (`#/started`) drawing the `gettingStarted` topic out of the same catalogue the phone's sheet reads. `/start/` stays the visitor's page, with every route's steps, and the topic's last item names it | — |
 | Menu | **What's new** | the release notes, newest first | **Nothing yet** | Done | release | same, as an in-app page (`#/whats-new`) from the same `whats-new.json`, reached from Settings → What's new. `/whats-new/` stays for visitors | — |
 | Menu | **Send feedback** | a mail with the build and the session already in it | — | Send · Cancel | release | the footer's mail link and the GitHub issue link, on every page | — |
-| Menu | **Usage report** | seventeen counters and the failure list, before you send them | — | Send · Cancel | beta | missing | — |
+| Menu | **Usage report** | *Your feedback*, then a Normal · Extended switch; the mail carries tried / worked / failed per feature, with the build and the device | — | Write mail · Cancel | beta | missing | — |
+| Menu | **Send feedback** (Most wanted) | the "Coming in a future release" rows as ticks, and one free line, before a general feedback mail | — | Write mail · Cancel | release | missing | — |
 | Settings | **Map for the watch** | the spot to send, or where you are now | — | Send map to watch | dev | missing | phone-sent tiles under the **Map** page and the Summary **Track** page |
 
 **The browser app today**, in one paragraph. Four tabs, the phone's four, in the phone's

@@ -226,6 +226,7 @@ struct ReplayScrubber: View {
                             playhead = range.lowerBound
                         }
                         isPlaying = true
+                        Usage.record(.replay, detail: "on the page")
                     }
                 } label: {
                     Image(systemName: isPlaying ? "pause.circle.fill" : "play.circle.fill")

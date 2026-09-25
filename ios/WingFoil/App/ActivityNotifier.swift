@@ -142,7 +142,10 @@ final class ActivityNotifier: NSObject {
         let now = Date()
 
         guard let (decision, activities) = await list(key: key, mark: mark, now: now,
-                                                      ingestor: ingestor) else { return false }
+                                                      ingestor: ingestor) else {
+            Usage.failed(.icuBackground, reason: "intervals.icu did not answer")
+            return false
+        }
         // Reached intervals.icu, whatever it had to say — the Settings row reads this, not
         // `lastSyncDate` (that one is the re-add gate's cursor and stays a manual sync's).
         store.lastCheckAt = Date()
@@ -154,6 +157,14 @@ final class ActivityNotifier: NSObject {
         // time the rider taps; whatever does not simply imports on the tap instead.
         let imported = await prefetch(decision.notices, from: activities,
                                       key: key, ingestor: ingestor)
+        // A wake that announced sessions worked when every one of them landed. The empty
+        // wake returned above is not counted: it did nothing, and it happens all day.
+        if imported == decision.notices.count {
+            Usage.record(.icuBackground)
+        } else {
+            Usage.failed(.icuBackground,
+                         reason: String(decision.notices.count - imported) + " not prefetched")
+        }
         if imported > 0 {
             UserDefaults.standard.set(true, forKey: Self.pendingImportKey)
         }
@@ -212,7 +223,12 @@ final class ActivityNotifier: NSObject {
         // the mark were somehow lost.
         let request = UNNotificationRequest(identifier: "wingfoil.newSession.\(notice.activityId)",
                                             content: content, trigger: nil)
-        try? await UNUserNotificationCenter.current().add(request)
+        do {
+            try await UNUserNotificationCenter.current().add(request)
+            Usage.record(.notifications)
+        } catch {
+            Usage.failed(.notifications, error: error)
+        }
     }
 
     // MARK: - The mark

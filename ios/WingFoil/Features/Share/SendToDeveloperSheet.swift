@@ -108,7 +108,7 @@ struct SendToDeveloperSheet: View {
             }
             .sheet(item: $draft) { draft in
                 MailComposeView(subject: draft.subject, messageBody: draft.body,
-                                attachment: draft.attachment) {
+                                attachment: draft.attachment, feature: .sendToDeveloper) {
                     self.draft = nil
                     dismiss()
                 }
@@ -137,7 +137,7 @@ struct SendToDeveloperSheet: View {
     /// report he cannot send from a screen that promised he could is the failure worth
     /// spending a fallback sheet on.
     private func compose() {
-        Usage.record(.feedbackMail)
+        Usage.started(.sendToDeveloper)
         let file = store.analysisAttachment(for: row)
         let facts = FeedbackMail.facts(store: store, session: row, detail: detail)
         let composed = Draft(

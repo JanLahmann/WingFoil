@@ -77,6 +77,107 @@ Settings → "Coming in a future release", which is the app naming its missing d
 A feature moves up a channel when it meets rule 1, has a help topic, is covered by the
 privacy page and has no open report.
 
+### The release gate: used successfully, on two phones
+
+Jan's rule (24 September 2026, F16): **no feature enters the release before testers have used
+it successfully.** The usage report is how that is proven, not a hunch. A beta feature moves
+to the release when, across the usage reports in the mailbox,
+
+- its row shows **at least N successes (✓) on at least two testers' devices** — two different
+  device lines at the top of the counters, and Jan's own iPhone and iPad count as one tester,
+  as in rule 1;
+- **no failure is open** — on every phone that reported it, the newest outcome is a success
+  (`UsageCounters.Tally.failureIsOpen` is false), so a ✗ after the last ✓ holds the feature
+  back until a later report shows it working again;
+- and it meets rules 1 to 4 above.
+
+**N = 5 is a placeholder** (flagged for Jan): the number is a decision, and 5 was chosen as
+the smallest count that is more than a first try. Until it is confirmed, a move-up names the
+counts it relied on in the commit message. A feature with no row in the table below cannot
+pass this gate, which is the point: a door the report does not count is a door nobody has
+shown to work.
+
+## What the usage report counts
+
+One row per feature, generated from `UsageCounters.Feature` (`UsageFeatures.swift` in the kit)
+by `COPY_WRITE=1 swift test --filter UsageCountersTests` and checked by the same suite, so the
+report and this file cannot disagree. Each row counts tries, successes (✓) and failures (✗),
+the date of the last of each, and the last failure's reason — a short code such as
+`NSURLErrorDomain -1009` or an error's type and case, never a file name, a spot or a
+sentence. "Lowest channel" is the first build that has the door; the report names a door as
+*Not used yet* only in a build that has it.
+
+Where the outcome is decided: an import when its files are read (a run with a file that would
+not read is a ✗); intervals.icu and Strava when the service answered; a map to the watch when
+Connect IQ reports it delivered; the wind likewise; Apple Health export per workout Health
+accepted; a backup when the file is written; a restore when it finished; a notification when
+iOS accepted it; a share card, a FIT or a clip when the rider tapped Share or Save and the file
+was there; a page or a tab when it opened; a setting when it changed. The Normal layout of the
+mail prints one line per used feature (*Send map to watch ✓ 12 · ✗ 1*); Extended adds tries
+without an answer, the dates, the reason, the share card's variants and the failure sentences
+the phone showed. Both open with the build and the device.
+
+<!-- usage-features:begin -->
+| group | feature | key | lowest channel |
+|---|---|---|---|
+| App | App opened | `appOpen` | release |
+| Sources | intervals.icu sync | `importIcu` | release |
+| Sources | intervals.icu in the background | `icuBackground` | release |
+| Sources | Strava connect | `stravaConnected` | release |
+| Sources | Strava import | `importStrava` | release |
+| Sources | Apple Health import | `importHealth` | beta |
+| Sources | Apple Health auto-import | `healthAutoImport` | beta |
+| Sources | File import | `importFile` | release |
+| Sources | Share-sheet import | `importShareSheet` | release |
+| Sources | Garmin ZIP import | `importZip` | release |
+| Sources | Direct watch transfer | `watchTransfer` | dev |
+| Watch | Send map to watch | `mapToWatch` | dev |
+| Watch | Send wind to watch | `windToWatch` | dev |
+| Watch | Choose or forget a watch | `chooseWatch` | dev |
+| Watch | Apple Watch recording | `appleWatchRecording` | beta |
+| Analysis | Open a session | `sessionOpened` | release |
+| Analysis | Re-run analysis | `reanalysis` | release |
+| Analysis | Tuning | `tuning` | dev |
+| Analysis | Windsurf mode | `windsurfMode` | dev |
+| Analysis | Turn-direction setting | `turnDirection` | release |
+| Reading | Turn detail | `turnPage` | release |
+| Reading | Flight-end detail | `flightEndPage` | release |
+| Reading | Replay | `replay` | release |
+| Reading | Record replay | `recordReplay` | release |
+| Reading | Map styles | `mapStyle` | release |
+| Reading | Full-screen map | `fullScreenMap` | release |
+| Reading | Filters | `filters` | beta |
+| Reading | Month, year or spot grouping | `grouping` | beta |
+| Reading | Session paging | `sessionPaging` | release |
+| Reading | Trends | `trends` | release |
+| Reading | Records | `records` | release |
+| Reading | Periods | `periods` | release |
+| Share | Share card | `shareCard` | release |
+| Share | Replay clip saved | `clipExported` | release |
+| Share | Session video | `videoExported` | beta |
+| Share | FIT share | `fitShare` | release |
+| Share | Send session to us | `sendToDeveloper` | beta |
+| Share | Period share | `periodShare` | release |
+| Library | Rename or caption | `rename` | release |
+| Library | Assign a rider | `riderAssign` | release |
+| Library | Gear and spots | `gearSpots` | release |
+| Library | Delete a session | `deleteSession` | release |
+| Library | Restore deleted sessions | `restoreDeleted` | release |
+| Library | Backup | `backupMade` | release |
+| Library | Restore from backup | `backupRestored` | release |
+| Library | iCloud sync | `iCloudSync` | dev |
+| Library | Start over | `startOver` | beta |
+| Settings | Settings opened | `settingsOpened` | release |
+| Settings | Units | `units` | release |
+| Settings | Speed-record rule | `speedRecordPolicy` | release |
+| Settings | Row metrics | `rowMetrics` | release |
+| Settings | Notifications delivered | `notifications` | release |
+| Settings | Apple Health export | `healthExport` | beta |
+| Feedback | Feedback mail | `feedbackMail` | release |
+| Feedback | Usage report | `usageReport` | beta |
+| Feedback | Most-wanted ticks | `mostWanted` | release |
+<!-- usage-features:end -->
+
 ## What you need, what you get — the three recording classes
 
 The order here is the order every rider-facing table prints, and it is the site's one
@@ -168,7 +269,8 @@ c through GPX and TCX as well. The app's `sourceClass` column is the source of t
 | Feedback mail with prefilled facts, footers on every page, menu Support | release | |
 | "Coming in a future release" section with the TestFlight link and the beta list | release | named *"Curious about what is coming"* until 14 Sep 2026 and *"What is being tested"* until 15 Sep; the row answers the rider's own question — when do I get these — rather than naming the room they are tried in. **Settings only**: it had a row in the library menu in the release channel and lost it on 15 Sep, because the menu is for what a rider needs now (Jan, build 58). It lists the **beta** rows of this file and nothing else: the dev rows are `#if BETA`, because a handful of hand-picked phones is not a promise to anybody on the App Store. On the page, *How to join the beta* is the **first section and a step** — one tap, library kept, a prominent TestFlight button — not a footnote under the lists. The beta shows the same list without the join section, and the dev rows under it as *Further out*. It is the only surface either list appears on: the Beta section stopped repeating the beta rows on 15 Sep (Jan, dev 68) |
 | Beta section: request a feature, extended feedback mail with usage and feature statistics, check for a newer build, start over | beta | counters kept on the phone, sent only in a mail the rider edits. **Actions only, no list**: it checked the beta rows off one row above the page that lists them again, so a tester read them twice on one screen (Jan, dev 68) |
-| The usage report: seventeen counters, the failure list, and the card the library raises every fifth session or fortnight | beta | `UsageCounters` in the kit, `usage.counters.v1` on the phone; subject "CleanJibe beta usage report", Settings → Beta → Send usage report is the permanent door (docs/presentation/status-feedback-start-widgets-ipad.md, "The beta's usage report") |
+| The usage report: tried / worked / failed per feature (the table under "What the usage report counts"), the failure list, a *Your feedback* field and a Normal / Extended switch in its sheet, and the card the library raises every fifth session or fortnight | beta | `UsageCounters` in the kit, `usage.counters.v1` on the phone (a blob from build 107 or older decodes, each old count read as that many successes); subject "CleanJibe beta usage report", Settings → Beta → Send usage report is the permanent door (docs/presentation/status-feedback-start-widgets-ipad.md, "The beta's usage report"). It is the evidence for the release gate above |
+| "Most wanted" in the feedback mail: the rows of "Coming in a future release" as ticks, plus one free line | release | the general feedback doors (Settings, the page footers, the menu) open a short sheet first; a session's *Report a problem* goes straight to the mail. The ticks travel under the fixed heading **Most wanted**, one line each ending in the row's `channels.json` id, so replies are tallied by searching for `· appleHealth`. The release offers the beta rows its own Coming page lists; beta and dev add the dev rows (`MostWanted.offered(in:)`) |
 | Start over: the tester's uninstall, done properly | beta | last row of the Beta section, red, behind an alert that names every item. iOS keeps keychain items across an app delete, so a reinstall hands the intervals.icu key and the Strava connection back and the fresh first run never happens (Jan, 14 Sep 2026). `StartOver.wipe` is the one wipe — keychain pair, the whole defaults domain plus the app group's, and the container — and `SessionStore.startOver` closes and reopens the library around it, so the welcome screen comes back without a relaunch. The `UI_RESET=1` screenshot hook calls the same wipe (docs/presentation/status-feedback-start-widgets-ipad.md, "Start over") |
 | The update reminder: "there is a newer build than the one you are holding" | beta | `web/app/version.json` on cleanjibe.org is the whole switch — one static file Jan edits, with a `minBuild`, a sentence, a level and a link per channel (web/app/version.README.md). The app reads it at most once every 24 hours, compares `minBuild` with its own `CFBundleVersion` and shows either nothing, one dismissable line at the top of the library (`remind`) or one full screen it cannot get past (`insist`). The comparison is `UpdateVerdict` in the kit, where it is tested; `UpdateReminder` and `UpdateReminderViews` are `#if BETA` in the app, so the release binary carries no URL and `strings` finds no `version.json`. Network failure is silence. Settings → Beta carries the manual check (docs/presentation/status-feedback-start-widgets-ipad.md, "The beta's update reminder") |
 | Start screen, library menu order, Getting started topic | release | |

@@ -112,7 +112,10 @@ struct MapStyleChip: View {
     var body: some View {
         Menu {
             Picker("Map style", selection: Binding(get: { store.mapStyle },
-                                                   set: { store.mapStyle = $0 })) {
+                                                   set: {
+                store.mapStyle = $0
+                Usage.record(.mapStyle, detail: $0.rawValue)
+            })) {
                 ForEach(MapStyleChoice.allCases) { choice in
                     Label(choice.label, systemImage: choice.symbolName).tag(choice)
                 }

@@ -24,19 +24,54 @@ enum Usage {
 
     #if BETA
 
-    /// One use of one door.
-    static func record(_ feature: UsageCounters.Feature, times: Int = 1) {
-        mutate { $0.record(feature, times: times) }
+    /// One use that worked, start to finish: a page opened, a setting changed, a file
+    /// written. `detail` is a short variant code, never free text.
+    static func record(_ feature: UsageCounters.Feature, times: Int = 1,
+                       detail: String? = nil) {
+        mutate { $0.record(feature, times: times, detail: detail) }
     }
 
-    /// Sessions through one door. Counts the sessions rather than the tap — nine files out
-    /// of a Garmin ZIP is nine — and is the one thing that moves the ask along, because
-    /// "every fifth session imported" is a promise about riding, not about tapping.
-    static func recordImport(_ source: ImportSource, sessions: Int) {
-        guard sessions > 0, let feature = feature(for: source) else { return }
+    /// One use that went wrong, start to finish. `reason` is a short code with nothing
+    /// personal in it; for an `Error`, use the overload below.
+    static func failed(_ feature: UsageCounters.Feature, reason: String) {
+        mutate { $0.failed(feature, reason: reason) }
+    }
+
+    static func failed(_ feature: UsageCounters.Feature, error: any Error) {
+        failed(feature, reason: UsageCounters.reason(for: error))
+    }
+
+    /// A try whose answer comes later (`finished`): a map on its way to the watch.
+    static func started(_ feature: UsageCounters.Feature) {
+        mutate { $0.attempt(feature) }
+    }
+
+    /// The answer to an earlier `started`: nil worked, a reason failed.
+    static func finished(_ feature: UsageCounters.Feature, failure: String? = nil,
+                         detail: String? = nil) {
         mutate {
-            $0.record(feature, times: sessions)
-            $0.sessionsSinceAsk += sessions
+            if let failure {
+                $0.failed(feature, reason: failure, attempt: false)
+            } else {
+                $0.succeeded(feature, detail: detail)
+            }
+        }
+    }
+
+    /// An import run through one door. One tally per run, not per session: a sync that
+    /// found nothing new still worked. A run with a file that would not read is a failure.
+    /// The sessions it brought move the ask along, because "every fifth session imported"
+    /// is a promise about riding, not about tapping.
+    static func recordImport(_ source: ImportSource, automatic: Bool = false,
+                             imported: Int, failed: Int) {
+        guard let feature = feature(for: source, automatic: automatic) else { return }
+        mutate {
+            if failed > 0 {
+                $0.failed(feature, reason: String(failed) + " would not read")
+            } else {
+                $0.record(feature)
+            }
+            if imported > 0 { $0.sessionsSinceAsk += imported }
         }
     }
 
@@ -45,17 +80,19 @@ enum Usage {
         mutate { $0.recordFailure(message) }
     }
 
-    /// The doors the report names. The watch's own imports are deliberately not among them:
-    /// a session that arrives from the CleanJibe watch app is already counted, in full, by
-    /// the `Library` block of the feedback mail that carries this one.
-    private static func feature(for source: ImportSource) -> UsageCounters.Feature? {
+    /// The doors the report names. The Garmin summary card is not among them: it is counted,
+    /// in full, by the `Library` block of the mail that carries this one.
+    private static func feature(for source: ImportSource,
+                                automatic: Bool) -> UsageCounters.Feature? {
         switch source {
-        case .icu: .importIcu
+        case .icu: automatic ? .icuBackground : .importIcu
         case .file: .importFile
         case .strava: .importStrava
-        case .appleHealth: .importHealth
+        case .appleHealth: automatic ? .healthAutoImport : .importHealth
         case .airdrop: .importShareSheet
         case .gdpr: .importZip
+        case .appleWatch: .appleWatchRecording
+        case .watchDirect: .watchTransfer
         default: nil
         }
     }
@@ -66,11 +103,6 @@ enum Usage {
         lock.lock()
         defer { lock.unlock() }
         return loaded()
-    }
-
-    /// The "Usage and features" block, ready to be appended to a mail.
-    static func report(appVersion: String) -> String {
-        counters.report(appVersion: appVersion)
     }
 
     /// Whether the library should offer the card at the top of the list.
@@ -122,8 +154,15 @@ enum Usage {
     #else
 
     /// The release channel. Every call site above compiles to nothing.
-    static func record(_ feature: UsageCounters.Feature, times: Int = 1) {}
-    static func recordImport(_ source: ImportSource, sessions: Int) {}
+    static func record(_ feature: UsageCounters.Feature, times: Int = 1,
+                       detail: String? = nil) {}
+    static func failed(_ feature: UsageCounters.Feature, reason: String) {}
+    static func failed(_ feature: UsageCounters.Feature, error: any Error) {}
+    static func started(_ feature: UsageCounters.Feature) {}
+    static func finished(_ feature: UsageCounters.Feature, failure: String? = nil,
+                         detail: String? = nil) {}
+    static func recordImport(_ source: ImportSource, automatic: Bool = false,
+                             imported: Int, failed: Int) {}
     static func failure(_ message: String) {}
 
     #endif

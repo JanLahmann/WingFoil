@@ -656,7 +656,9 @@ struct ReplayCinemaView: View {
             do {
                 try await recorder.start()
                 startedRecordingAt = .now
+                Usage.started(.recordReplay)
             } catch {
+                Usage.failed(.recordReplay, error: error)
                 // Permission refused, or the recorder went away between the button and here.
                 // Either way the replay itself is still worth watching, so the alert offers
                 // it rather than throwing the rider back to the session page.
@@ -668,6 +670,7 @@ struct ReplayCinemaView: View {
                 return
             }
         } else {
+            Usage.record(.replay, detail: "full screen")
             stage = .title
         }
 
@@ -761,12 +764,14 @@ struct ReplayCinemaView: View {
         stage = .wrappingUp
         do {
             if let url = try await recorder.stop(named: ReplayRecorder.clipName(for: detail.row)) {
-                Usage.record(.clipExported)
+                Usage.finished(.recordReplay)
                 stage = .clip(await framed(url))
             } else {
+                Usage.finished(.recordReplay, failure: "no file")
                 dismiss()
             }
         } catch {
+            Usage.finished(.recordReplay, failure: UsageCounters.reason(for: error))
             // The run happened and the file did not survive it — an interruption, or a
             // system-initiated stop. Nothing to offer and nothing to watch again, so this
             // alert has one button.
@@ -1045,10 +1050,13 @@ private struct ReplayClipSheet: View {
         do {
             try await PhotoLibrarySaver.save(video: url)
             saving = .saved
+            Usage.record(.clipExported)
         } catch let failure as PhotoLibrarySaver.Failure {
+            Usage.failed(.clipExported, error: failure)
             saving = .idle
             saveFailure = failure
         } catch {
+            Usage.failed(.clipExported, error: error)
             saving = .idle
             saveFailure = .library((error as NSError).localizedDescription)
         }
