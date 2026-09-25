@@ -35,6 +35,19 @@ import Testing
         }
     }
 
+    /// Each glyph means its word (Jan, 25 September 2026): clean wears the clean jibe's own
+    /// star in its own ink, foil is not a standing figure, and turns is not the sync arrows.
+    @Test func theGlyphsMeanTheirWords() {
+        #expect(RowMetric.cleanJibes.icon == DesignTokens.Glyph.cleanJibe)
+        #expect(RowMetric.allCases.filter(\.wearsCleanInk) == [.cleanJibes])
+        #expect(RowMetric.foilShare.icon == "water.waves.and.arrow.up")
+        #expect(HelpSection.foil.symbol == RowMetric.foilShare.icon)
+        #expect(!RowMetric.allCases.map(\.icon).contains("arrow.triangle.2.circlepath"))
+        // Only the two speed windows share a glyph; everything else is told apart by shape.
+        let icons = RowMetric.allCases.filter { $0 != .best10s }.map(\.icon)
+        #expect(Set(icons).count == icons.count)
+    }
+
     /// Two metrics sharing a word would make the picker unanswerable.
     @Test func theWordsAreDistinct() {
         let labels = Set(RowMetric.allCases.map(\.label))
