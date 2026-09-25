@@ -43,13 +43,18 @@ struct KeyMetricsView: View {
             // The falls cell beside them is the **session**, straight-line swims included —
             // a different question again, and one number until 20 September 2026, when a
             // tester who fell three times read a 1.
-            if metrics.tally != nil || metrics.tacks != nil || metrics.streaks != nil
-                || metrics.falls != nil {
+            //
+            // The clean jibes lead the row in a cell of their own since 25 September 2026
+            // (Jan, F8e): the star, in the clean ink, over the one number the product is
+            // named for. It was a clause in the tally's caption.
+            if metrics.cleanJibes != nil || metrics.tally != nil || metrics.tacks != nil
+                || metrics.streaks != nil || metrics.falls != nil {
                 row(count: tallyRowCount) {
+                    if let clean = metrics.cleanJibes { cleanCell(clean) }
                     if let tally = metrics.tally { tallyCell(tally) }
                     if let tacks = metrics.tacks { tallyCell(tacks) }
                     if let falls = metrics.falls { cell(falls) }
-                    if let streaks = metrics.streaks { cell(streaks) }
+                    if let streaks = metrics.streaks { pairCell(streaks) }
                 }
             }
 
@@ -72,7 +77,7 @@ struct KeyMetricsView: View {
     /// else; the tack ladder makes it four on the sessions the rider tacked on, and four
     /// abreast is where `63 · 1 · 6` stops fitting a quarter of a phone.
     private var tallyRowCount: Int {
-        [metrics.tally != nil, metrics.tacks != nil,
+        [metrics.cleanJibes != nil, metrics.tally != nil, metrics.tacks != nil,
          metrics.falls != nil, metrics.streaks != nil].filter { $0 }.count
     }
 
@@ -116,6 +121,75 @@ struct KeyMetricsView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(metric.label), \(metric.value)")
+    }
+
+    /// **The clean jibes**: the star and the number in the clean ink, never the ladder's
+    /// green — clean is the stricter reading of turns the ladder already counts
+    /// (docs/presentation/clean-jibe.md, "Clean jibe").
+    private func cleanCell(_ metric: KeyMetrics.Metric) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Image(systemName: DesignTokens.Glyph.cleanJibe)
+                    .font(.title3)
+                Text(metric.value)
+                    .font(.title2.weight(.semibold))
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+            }
+            .foregroundStyle(EventMarkerStyle.cleanJibe)
+            Text(metric.label)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(metric.value) \(metric.label)")
+    }
+
+    /// **A pair cell, each half in its own ink** — the streaks' "3 flew · 5 dry", where the
+    /// flew half wears the ladder's green (F8f). The words ride in the number's colour, one
+    /// weight lighter, the shape `OutcomeTally` gives its own words.
+    private func pairCell(_ metric: KeyMetrics.Metric) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            if metric.parts.isEmpty {
+                Text(metric.value).font(.title2.weight(.semibold)).monospacedDigit()
+            } else {
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    ForEach(Array(metric.parts.enumerated()), id: \.offset) { index, part in
+                        if index > 0 { Text("·").foregroundStyle(.tertiary) }
+                        HStack(alignment: .firstTextBaseline, spacing: 2) {
+                            Text(part.value).font(.title2.weight(.semibold))
+                            Text(part.label).font(.subheadline)
+                        }
+                        .foregroundStyle(Self.ink(part.colourRole))
+                    }
+                }
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+            }
+            Text(metric.label)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(metric.label), \(metric.value)")
+    }
+
+    /// A document `colourRole` as this surface's ink. Only the roles the block's cells
+    /// carry are named; everything else is the body ink.
+    private static func ink(_ role: String) -> Color {
+        switch role {
+        case "outcome.flew": DesignTokens.Outcome.flew
+        case "outcome.touchdown": DesignTokens.Outcome.touchdown
+        case "outcome.fellIn": DesignTokens.Outcome.fellIn
+        case "clean.jibe": EventMarkerStyle.cleanJibe
+        default: .primary
+        }
     }
 
     /// The outcome ladder's own three counts, in the ladder's own inks — the same

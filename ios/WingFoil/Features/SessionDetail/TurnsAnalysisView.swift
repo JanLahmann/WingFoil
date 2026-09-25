@@ -303,7 +303,7 @@ struct TurnsAnalysisView: View {
         return VStack(alignment: .leading, spacing: 3) {
             Text("Flew through / touchdown / fell in is the outcome. "
                  + "It says how the turn ended. "
-                 + "Score is how much of your entry speed you held through it, 0 to 100.\n\n"
+                 + "Held is how much of your entry speed you kept through it, 0 to 100 %.\n\n"
                  + "A clean jibe does both. "
                  + "It flies all the way through and holds at least 70 % of its entry speed.")
             if rejected > 0 {
@@ -339,9 +339,19 @@ private struct TurnRowView: View {
                     .minimumScaleFactor(0.8)
             }
             Spacer(minLength: 0)
-            Text(item.scoreText)
-                .font(.subheadline.monospacedDigit())
-                .foregroundStyle(.secondary)
+            // **The score says what it is** (Jan, 25 Sep 2026, F9f): a bare "74" beside a
+            // clock was a number nobody could name. It is the share of the entry speed the
+            // turn held, so it reads "74 %" over "held", the footnote's own word.
+            VStack(alignment: .trailing, spacing: 0) {
+                Text(item.scoreText + " %")
+                    .font(.subheadline.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                Text("held")
+                    .font(.caption2)
+                    .foregroundStyle(.readableSecondary)
+            }
+            .lineLimit(1)
+            .fixedSize()
             Image(systemName: item.outcome.symbolName)
                 .font(.footnote)
                 .foregroundStyle(TurnOutcomeStyle.color(item.outcome))

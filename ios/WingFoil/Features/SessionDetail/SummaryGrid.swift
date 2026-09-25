@@ -69,10 +69,9 @@ struct SessionFoilGrid: View {
             StatCard(title: words.onFoil, value: Fmt.pct(summary.foilPct),
                      caption: Fmt.duration(summary.foilTimeS) + " " + words.foilTimeLower,
                      help: .foilPct)
-            StatCard(title: words.isExperimental ? "Planing runs" : "Flights",
-                     value: "\(summary.flightCount)",
-                     caption: summary.flightCount == 0 ? "none detected" : "detected",
-                     help: .flights)
+            // **No "Flights · N detected" card** (Jan, 25 Sep 2026, F8k): a count with
+            // nothing to open meant nothing to a rider. The flights are a list now, one
+            // row each, on the Flights tab (`FlightsListView`), with the count in its head.
             // The caption is `maxFlightM` (engine 0.13.0): the furthest any *one* flight
             // went, which is not in general the longest one's own distance. It used to read
             // "N m" under "Longest flight" and so claimed a fact the number does not carry.
@@ -169,7 +168,7 @@ struct SessionRecordsTable: View {
             // "Best 5×10 s" is the widest of them. Scaled, so the column still holds that
             // name when the phone is set to a larger text size.
             Text("record").scaledColumn(92, relativeTo: .subheadline)
-            Text(Fmt.knUnit).scaledColumn(62, alignment: .trailing, relativeTo: .subheadline)
+            Text(Fmt.knUnit).scaledColumn(74, alignment: .trailing, relativeTo: .subheadline)
             Text("where").frame(maxWidth: .infinity, alignment: .leading)
         }
         .font(.caption2)
@@ -192,10 +191,15 @@ struct SessionRecordsTable: View {
                 Text(label)
                     .font(.subheadline)
                     .scaledColumn(92, relativeTo: .subheadline)
+                // **One line, always** (25 Sep 2026): "13.25" over "kn" read as two numbers.
+                // The column is wide enough for the widest value in either unit at the
+                // default size, and shrinks the type a little rather than wrap past it.
                 Text(Fmt.kn(value))
                     .font(.subheadline.weight(.semibold).monospacedDigit())
                     .foregroundStyle(value == nil ? .secondary : .primary)
-                    .scaledColumn(62, alignment: .trailing, relativeTo: .subheadline)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .scaledColumn(74, alignment: .trailing, relativeTo: .subheadline)
                 Text(value == nil ? "no qualifying run"
                                   : caption(for: kind["windows"]?.arrayValue?.first))
                     .font(.caption2)
@@ -253,34 +257,26 @@ struct SessionTurnsSection: View {
         if t.turnsCounted > 0 || t.rejected > 0 || summary.flightEnds.all.total > 0 {
             VStack(alignment: .leading, spacing: 20) {
                 cardSection("Turns & losses", anchor: "turns", help: .turnOutcomes) {
-                    StatCard(title: "Jibes", value: "\(t.jibes)",
-                             caption: outcomeCaption(t.jibeOutcomes,
-                                                     clean: t.jibesSuccessful),
-                             help: .turnTypes)
-                    StatCard(title: "Tacks", value: "\(t.tacks)",
-                             caption: outcomeCaption(t.tackOutcomes),
-                             help: .turnTypes)
+                    // **Each kind of turn with its whole breakdown, in numbers** (Jan, 25
+                    // Sep 2026, F9a/b). The ladder's counts were a caption of words under
+                    // one total; they are the ladder's own marks and inks now, and the
+                    // clean jibes lead the jibe card with the star. The separate
+                    // "Flew through %" card said the same thing a third time and is gone.
+                    BreakdownCard(title: "Jibes", value: "\(t.jibes)",
+                                  parts: t.jibes > 0
+                                      ? [BreakdownPart.clean(t.jibesSuccessful)]
+                                        + BreakdownPart.ladder(t.jibeOutcomes)
+                                      : [],
+                                  caption: t.jibes > 0 ? nil : "none detected",
+                                  help: .turnTypes)
+                    BreakdownCard(title: "Tacks", value: "\(t.tacks)",
+                                  parts: t.tacks > 0 ? BreakdownPart.ladder(t.tackOutcomes) : [],
+                                  caption: t.tacks > 0 ? nil : "none detected",
+                                  help: .turnTypes)
                     if t.unclassified > 0 {
                         StatCard(title: "Unclassified turns", value: "\(t.unclassified)",
                                  caption: "no usable wind axis", help: .windAxis)
                     }
-                    // **"Flew through", and the outcome share under it.**
-                    //
-                    // This card was titled "Clean jibes" and printed `successPct` — the
-                    // engine's *score* verdict over every counted turn, tacks and unnamed
-                    // sweeps included. On the 7 Aug golden it read 13.3 % / "4 clean of 30
-                    // turns" where the session's clean jibes are 3: the app's namesake
-                    // metric as a title, over a different number.
-                    //
-                    // The rider has two tiers and the score verdict is neither of them:
-                    // **flew through** is the outcome (no touchdown, no swim) and **clean**
-                    // is a jibe that flew through *and* held its speed. So the card is the
-                    // flew-through share of the jibes, with the clean count qualifying it —
-                    // lenient then strict, the order the key-metrics block reads in.
-                    StatCard(title: "Flew through",
-                             value: Fmt.pct(flewThroughPct(t)),
-                             caption: flewThroughCaption(t),
-                             help: .turnSuccess)
                     StatCard(title: "Port / starboard",
                              value: "\(t.port) / \(t.starboard)",
                              caption: t.rejected > 0
@@ -289,16 +285,10 @@ struct SessionTurnsSection: View {
                                      + " excluded"
                                  : "entered on each tack",
                              help: .portStarboard)
-                    // **Every fall, from one channel** (20 September 2026). The value was
-                    // `split.falls`, which adds the *turn ladder's* fell-in count to the
-                    // *flight-end* channel's straight-line one — two different events, so
-                    // the caption need not add up to the number above it, and on a session
-                    // with a mid-turn swim that ended no flight it does not. The flight-end
-                    // channel answers the rider's question on its own: one event per actual
-                    // swim, and `all == inTurn + straight` by construction
-                    // (docs/algorithms/rates.md, "Wet is every fall, not every fallen jibe"). It
-                    // is also what WPH divides and what the library row and the share card
-                    // now print, so the four surfaces say one number.
+                    // **Every fall, from one channel** (20 September 2026): the flight-end
+                    // channel, one event per actual swim, `all == inTurn + straight` by
+                    // construction (docs/algorithms/rates.md, "Wet is every fall, not every
+                    // fallen jibe"). The same number WPH divides and the block prints.
                     StatCard(title: MetricGlossary.entry("fellIn").term,
                              value: "\(summary.flightEnds.all.fellIn)",
                              caption: String(summary.flightEnds.inTurn.fellIn)
@@ -306,18 +296,22 @@ struct SessionTurnsSection: View {
                                  + String(summary.flightEnds.straight.fellIn)
                                  + " in a straight line",
                              help: .falls)
-                    StatCard(title: "Touchdowns",
-                             value: "\(split.touchdowns)",
-                             caption: String(split.turnTouchdowns) + " in turns · "
-                                 + String(split.straightTouchdowns) + " straight-line",
-                             help: .touchdowns)
-                    StatCard(title: "Glide-outs", value: "\(split.glideOuts)",
-                             caption: split.unknownEnds > 0
-                                 ? String(split.unknownEnds)
-                                     + (split.unknownEnds == 1 ? " flight end" : " flight ends")
-                                     + " unknown, recording cut"
-                                 : "came off and kept moving",
-                             help: .glideOuts)
+                    // **Touchdowns and glide-outs on one card** (Jan, F9e). Both are a
+                    // flight that ended without a swim; the engine tells them apart by
+                    // whether the speed reached the stop floor. The glide-out wears its
+                    // own neutral ring — the map's hollow mark — never the flew check.
+                    BreakdownCard(title: "Touchdowns · glide-outs",
+                                  value: nil,
+                                  parts: [.touchdown(split.touchdowns),
+                                          .glideOut(split.glideOuts)],
+                                  caption: String(split.turnTouchdowns) + " in turns · "
+                                      + String(split.straightTouchdowns) + " straight-line"
+                                      + (split.unknownEnds > 0
+                                         ? " · " + String(split.unknownEnds)
+                                             + (split.unknownEnds == 1 ? " end" : " ends")
+                                             + " cut by the recording"
+                                         : ""),
+                                  help: .touchdowns)
                 }
                 if t.turnsCounted > 0 {
                     Divider()
@@ -327,47 +321,6 @@ struct SessionTurnsSection: View {
         }
     }
 
-    /// The ladder's three counts, and — on the jibe card only — the **clean** count of the
-    /// same set beside them.
-    ///
-    /// The clean number rides last rather than joining the three: it is the stricter
-    /// reading of the same turns, not a fourth rung of the ladder, and it never wears the
-    /// ladder's inks (docs/presentation/clean-jibe.md, "Clean jibe").
-    ///
-    /// **The Tacks card carries no fourth number.** It used to print `tacksSuccessful`
-    /// under the word "clean" — the engine's score verdict, which is not a tier the rider
-    /// has, and which `turns.py` says outright must never be called clean ("'clean' is a
-    /// jibe word in the product, and a tack has no clean/dirty reading to carry"). The
-    /// three outcomes are the whole of what a tack has to report.
-    private func outcomeCaption(_ counts: OutcomeCounts, clean: Int? = nil) -> String {
-        guard counts.total > 0 else { return "none detected" }
-        let ladder = String(counts.flewThrough) + " flew · " + String(counts.touchdown)
-            + " touch · " + String(counts.fellIn) + " fell"
-        guard let clean else { return ladder }
-        return ladder + " · " + String(clean) + " clean"
-    }
-
-    /// The share of the session's **jibes** that never lost the foil, or of every counted
-    /// turn on a session whose wind axis named no jibes — the same fallback the
-    /// key-metrics tally takes, and for the same reason: an empty verdict over an
-    /// afternoon of turns would read as "nothing happened".
-    private func flewThroughPct(_ t: TurnSummary) -> Double? {
-        if t.jibes > 0 { return Double(t.jibeOutcomes.flewThrough) / Double(t.jibes) * 100 }
-        guard t.turnsCounted > 0 else { return nil }
-        return Double(t.outcomes.flewThrough) / Double(t.turnsCounted) * 100
-    }
-
-    /// "24 of 35 jibes · 12 clean" — what the share is out of, and how many of them were
-    /// the stricter thing. The clean clause is dropped on the turn fallback: a session
-    /// with no named jibes has no clean jibes to report.
-    private func flewThroughCaption(_ t: TurnSummary) -> String {
-        if t.jibes > 0 {
-            return String(t.jibeOutcomes.flewThrough) + " of " + String(t.jibes)
-                + " jibes · " + String(t.jibesSuccessful) + " clean"
-        }
-        guard t.turnsCounted > 0 else { return "no counted turns" }
-        return String(t.outcomes.flewThrough) + " of " + String(t.turnsCounted) + " turns"
-    }
 }
 
 // MARK: - Takeoff & pumping
@@ -398,64 +351,63 @@ struct SessionTakeoffSection: View {
                     if !words.pumping {
                         StatCard(title: "Planing starts", value: "\(k.takeoffSuccesses)",
                                  caption: "one per planing run", help: .takeoffAttempts)
-                        StatCard(title: "Run to planing",
-                                 value: k.avgTakeoffS.map { String(format: "%.1f s", $0) } ?? "—",
-                                 caption: k.runsTruncated > 0
-                                     ? String(k.runsJudged) + " judged · "
-                                         + String(k.runsTruncated) + " not in the record"
-                                     : "average over " + String(k.runsJudged) + " runs",
-                                 dimmed: k.avgTakeoffS == nil)
+                        runCard(k, title: "Run to planing")
                     } else {
-                    StatCard(title: "Pumps to takeoff",
-                             value: k.avgPumpsToTakeoff.map { String(format: "%.1f", $0) } ?? "—",
-                             caption: k.avgPumpsToTakeoff == nil
-                                 ? "no accelerometer stream"
-                                 : "median \(k.medianPumpsToTakeoff.map { String(format: "%.0f", $0) } ?? "—")"
-                                     + " · \(k.freeTakeoffs) free",
-                             dimmed: k.avgPumpsToTakeoff == nil, help: .pumpsToTakeoff)
-                    // **Takeoffs and attempts, side by side** (20 September 2026). The
-                    // watch counted 15 tries on the afternoon this card reported 9
-                    // takeoffs, and the rider had no way to see that both were right. Each
-                    // now names the other in its caption (docs/review-checklist.md,
-                    // pattern H).
-                    StatCard(title: MetricGlossary.entry("takeoffs").term,
-                             value: "\(k.takeoffSuccesses)",
-                             caption: "of \(k.takeoffAttempts) attempts",
-                             help: .takeoffAttempts)
-                    StatCard(title: MetricGlossary.entry("takeoffAttempts").term,
-                             value: "\(k.takeoffAttempts)",
-                             caption: k.failedAttempts > 0
-                                 ? "\(k.failedAttempts) failed · \(k.takeoffSuccesses) got up"
-                                 : "all got up",
-                             help: .takeoffAttempts)
-                    // **"Got up", not "Success rate"** (20 September 2026). "success" is
-                    // engine vocabulary and appears in no rider text (CLAUDE.md) — and the
-                    // same afternoon it was this card's word for a takeoff rate while
-                    // Garmin Connect used *Turn success* for a turn speed verdict. Two
-                    // measurements, one word, three screens apart.
-                    StatCard(title: "Got up",
-                             value: k.successPct.map { Fmt.pct($0) } ?? "—",
-                             caption: k.successPct == nil
-                                 ? "failures invisible without accel"
-                                 : "\(k.takeoffSuccesses) of \(k.takeoffAttempts) attempts",
-                             dimmed: k.successPct == nil, help: .takeoffAttempts)
-                    StatCard(title: "Takeoff run",
-                             value: k.avgTakeoffS.map { String(format: "%.1f s", $0) } ?? "—",
-                             caption: k.runsTruncated > 0
-                                 ? String(k.runsJudged) + " judged · "
-                                     + String(k.runsTruncated) + " not in the record"
-                                 : "average over " + String(k.runsJudged) + " runs",
-                             dimmed: k.avgTakeoffS == nil)
-                    if let strokes = k.totalPumpStrokes {
-                        StatCard(title: "Pump strokes", value: "\(strokes)",
-                                 caption: "\(k.inFlightPumpStrokes ?? 0) in flight · "
-                                     + "\(k.inFlightEpisodes) episodes",
-                                 help: .pumpStrokes)
+                        // **One card for takeoffs and attempts** (Jan, F12b). "Takeoffs 19 of
+                        // 19 attempts" and "Attempts 19 · all got up" were one fact twice,
+                        // and "all got up" beside "failures invisible without accel" was a
+                        // claim the recording could not make. With an accelerometer the card
+                        // names the attempts; without one it names what a takeoff is.
+                        StatCard(title: MetricGlossary.entry("takeoffs").term,
+                                 value: "\(k.takeoffSuccesses)",
+                                 caption: hasAccel
+                                     ? "of \(k.takeoffAttempts) attempts"
+                                         + (k.successPct.map { " · " + Fmt.pct($0) + " got up" }
+                                            ?? "")
+                                     : "one starts every flight",
+                                 help: .takeoffAttempts)
+                        if hasAccel {
+                            StatCard(title: "Pumps to takeoff",
+                                     value: k.avgPumpsToTakeoff.map { String(format: "%.1f", $0) }
+                                         ?? "—",
+                                     caption: "median \(k.medianPumpsToTakeoff.map { String(format: "%.0f", $0) } ?? "—")"
+                                         + " · \(k.freeTakeoffs) free",
+                                     dimmed: k.avgPumpsToTakeoff == nil, help: .pumpsToTakeoff)
+                        }
+                        runCard(k, title: "Takeoff run")
+                        if hasAccel, let strokes = k.totalPumpStrokes {
+                            StatCard(title: "Pump strokes", value: "\(strokes)",
+                                     caption: "\(k.inFlightPumpStrokes ?? 0) in flight · "
+                                         + "\(k.inFlightEpisodes) episodes",
+                                     help: .pumpStrokes)
+                        }
                     }
-                    }
+                }
+                // **One small note instead of a row of dashes** (Jan, F12a). Every card that
+                // needs the wrist accelerometer is left out on a recording that has none;
+                // a "—" under "Pumps to takeoff" read as a measurement that failed.
+                if words.pumping, !hasAccel {
+                    Label("No accelerometer in this recording, so pumps and failed "
+                          + "attempts are not counted.", systemImage: "sensor.tag.radiowaves.forward")
+                        .font(.caption2)
+                        .foregroundStyle(.readableSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
         }
+    }
+
+    private var hasAccel: Bool { detail.analysis.capabilities.hasAccel }
+
+    /// How long the run to foil (or to planing) took, and how many runs that is over.
+    private func runCard(_ k: TakeoffSummary, title: String) -> some View {
+        StatCard(title: title,
+                 value: k.avgTakeoffS.map { String(format: "%.1f s", $0) } ?? "—",
+                 caption: k.runsTruncated > 0
+                     ? String(k.runsJudged) + " judged · "
+                         + String(k.runsTruncated) + " not in the record"
+                     : "average over " + String(k.runsJudged) + " runs",
+                 dimmed: k.avgTakeoffS == nil)
     }
 
     /// **The headline of this tab is what did not work.**
@@ -545,5 +497,114 @@ struct StatCard: View {
             RoundedRectangle(cornerRadius: 12)
                 .stroke(Color.orange, lineWidth: highlighted ? 2 : 0)
         }
+    }
+}
+
+// MARK: - Breakdown card
+
+/// One number of a breakdown: its count, its short word, its mark and its ink.
+struct BreakdownPart: Hashable {
+    let value: Int
+    let word: String
+    let symbol: String
+    let color: Color
+
+    /// The clean jibes: the star, in the clean ink, never the ladder's green.
+    static func clean(_ n: Int) -> BreakdownPart {
+        BreakdownPart(value: n, word: "clean", symbol: DesignTokens.Glyph.cleanJibe,
+                      color: EventMarkerStyle.cleanJibe)
+    }
+
+    /// The ladder's three rungs, in the ladder's marks and inks — the same `symbolName`
+    /// and colour every turn row and tally chip wears.
+    static func ladder(_ counts: OutcomeCounts) -> [BreakdownPart] {
+        [BreakdownPart(value: counts.flewThrough, word: "flew",
+                       symbol: TurnOutcomeKind.flewThrough.symbolName,
+                       color: TurnOutcomeStyle.color(.flewThrough)),
+         touchdown(counts.touchdown),
+         BreakdownPart(value: counts.fellIn, word: "fell",
+                       symbol: TurnOutcomeKind.fellIn.symbolName,
+                       color: TurnOutcomeStyle.color(.fellIn))]
+    }
+
+    static func touchdown(_ n: Int) -> BreakdownPart {
+        BreakdownPart(value: n, word: "touch", symbol: TurnOutcomeKind.touchdown.symbolName,
+                      color: TurnOutcomeStyle.color(.touchdown))
+    }
+
+    /// A glide-out's own neutral ring (`FlightPairing.Outcome.glidedOut`), the hollow mark
+    /// the map draws it as — never the flew-through check (F9e).
+    static func glideOut(_ n: Int) -> BreakdownPart {
+        BreakdownPart(value: n, word: "glide-out",
+                      symbol: FlightPairing.Outcome.glidedOut.symbolName,
+                      color: .secondary)
+    }
+}
+
+/// **A card whose answer is a breakdown**, drawn as numbers in their own marks and inks
+/// rather than as a caption of words (Jan, 25 Sep 2026, F9a/b). `value` is the total when
+/// there is one; the breakdown sits under it, and the caption, where there is one, under
+/// that. Same frame, type and ink as `StatCard`, so the grid reads as one kind of card.
+struct BreakdownCard: View {
+    let title: String
+    let value: String?
+    let parts: [BreakdownPart]
+    var caption: String?
+    var help: HelpTopicID?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 4) {
+                Text(title)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                if let help { HelpButton(topic: help, size: .caption2) }
+                Spacer(minLength: 0)
+            }
+            if let value {
+                Text(value)
+                    .font(.title3.weight(.semibold))
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+            }
+            if !parts.isEmpty {
+                // Wraps rather than shrinks: four figures with their words do not fit half a
+                // phone at every text size, and a breakdown squeezed to 60 % is unreadable.
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 8) { ForEach(parts, id: \.self, content: figure) }
+                    VStack(alignment: .leading, spacing: 2) {
+                        ForEach(parts, id: \.self, content: figure)
+                    }
+                }
+            }
+            if let caption {
+                Text(caption)
+                    .font(.caption2)
+                    .foregroundStyle(Color.readableSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 12))
+        .accessibilityElement(children: .combine)
+    }
+
+    private func figure(_ part: BreakdownPart) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 2) {
+            Image(systemName: part.symbol)
+                .font(.caption2)
+            Text("\(part.value)")
+                .font(value == nil ? .title3.weight(.semibold) : .subheadline.weight(.semibold))
+                .monospacedDigit()
+            Text(part.word)
+                .font(.caption2)
+        }
+        .foregroundStyle(part.color)
+        .opacity(part.value == 0 ? 0.55 : 1)
+        .fixedSize()
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(part.value) \(part.word)")
     }
 }
