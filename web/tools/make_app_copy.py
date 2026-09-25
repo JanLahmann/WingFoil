@@ -12,11 +12,12 @@ fails while the file is stale. Stdlib only.
 WHAT IS IN IT
 
   ``SHELL``      docs/copy/app-shell.json: the four tabs, the six menu rows, the four
-                 session sub-tabs and the family screen, in the iPhone app's own order and
-                 words. The Swift side is the author; ``web/tools/verify_app_shell.py``
-                 holds the four against ``RootView.swift``, ``AppMenuRows.swift``,
-                 ``SessionSection.swift`` and ``CleanJibeFamily.swift`` so neither side can
-                 drift alone.
+                 session sub-tabs, the family section and the Beta page (with
+                 docs/copy/channels.json's beta rows as its list), in the iPhone app's
+                 own order and words. The Swift side is the author;
+                 ``web/tools/verify_app_shell.py`` holds them against ``RootView.swift``,
+                 ``AppMenuRows.swift``, ``SessionSection.swift``, ``CleanJibeFamily.swift``
+                 and ``BetaGuide.swift`` so neither side can drift alone.
   ``WAYS_IN``    the empty Sessions tab. The ORDER and the TITLES are
                  docs/guide/getting-started.json's (pattern J: the ways in have one order
                  everywhere); the one line under each, and the two rows the phone does not
@@ -139,7 +140,13 @@ def render() -> str:
 
     routes = {r["id"]: r for r in guide["routes"]}
 
-    shell_out = {key: shell[key] for key in ("tabs", "menu", "sessionSections", "family")}
+    shell_out = {key: shell[key]
+                 for key in ("tabs", "menu", "sessionSections", "family", "beta")}
+    # The Beta page lists what is in the beta: docs/copy/channels.json's beta rows, the
+    # same list the phone's `ChannelFeatures.beta` is pinned to, so there is no second one.
+    channels = json.loads((COPY / "channels.json").read_text(encoding="utf-8"))
+    shell_out["beta"] = dict(shell["beta"],
+                             features=[row["text"] for row in channels["beta"]])
     ways_in = _ways_in(shell, routes)
 
     guide_out = {
@@ -187,6 +194,8 @@ def render() -> str:
         "headline": phrases["headline"],
         "promise": phrases["promise"],
         "highlights": ["foilShare", "flights", "dryStreak", "speedRecords"],
+        # `WelcomeGuide.measuresTitle`, the title over the four.
+        "measuresTitle": "What CleanJibe measures",
     }
 
     entries = [{key: entry.get(key) for key in
@@ -212,8 +221,9 @@ def render() -> str:
                         if key not in ("_readme", "schema")}
 
     return HEADER + (
-        "/** The four tabs, the six menu rows, the four session sub-tabs and the family\n"
-        " *  screen (docs/copy/app-shell.json). One order, one wording, both surfaces. */\n"
+        "/** The four tabs, the six menu rows, the four session sub-tabs, the family\n"
+        " *  section and the Beta page (docs/copy/app-shell.json). One order, one wording,\n"
+        " *  both surfaces. */\n"
         "export const SHELL = %s;\n\n"
         "/**\n"
         " * The empty Sessions tab: the iPhone's ways-in card, with the two doors only a\n"

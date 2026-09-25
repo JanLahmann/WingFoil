@@ -124,11 +124,11 @@
       <!-- THE SECOND HALF OF THE ROW ABOVE IT: what this is, and what else there is of it.
            A rider who met one of the three apps had no way inside it of learning that the
            other two exist (Jan, 23 September 2026). Three stacked plates as a line icon. -->
-      <li><button type="button" data-menu="family"><svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8 21 7.2 12 11.6 3 7.2Z"/><path d="M3.6 12 12 16.1 20.4 12"/><path d="M3.6 16.6 12 20.7 20.4 16.6"/></svg>The CleanJibe family</button></li>
       <li><button type="button" data-menu="gettingStarted"><svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.4A3 3 0 0 0 9.4 5H4.6a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h4.8A3 3 0 0 1 12 19.4a3 3 0 0 1 2.6-1.4h4.8a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-4.8A3 3 0 0 0 12 6.4zm0 0V19"/></svg>Getting started</button></li>
       <li class="after-divider"><button type="button" data-menu="settings"><svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.1 5.4 10.2 2.9 13.8 2.9 13.9 5.4 15.3 6 17.2 4.3 19.7 6.8 18 8.7 18.6 10.1 21.1 10.2 21.1 13.8 18.6 13.9 18 15.3 19.7 17.2 17.2 19.7 15.3 18 13.9 18.6 13.8 21.1 10.2 21.1 10.1 18.6 8.7 18 6.8 19.7 4.3 17.2 6 15.3 5.4 13.9 2.9 13.8 2.9 10.2 5.4 10.1 6 8.7 4.3 6.8 6.8 4.3 8.7 6Z"/><circle cx="12" cy="12" r="3.2"/></svg>Settings</button></li>
       <li><button type="button" data-menu="help"><svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.6a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .9-1 1.7v.3"/><circle cx="12" cy="17" r="0.9"/></svg>Help</button></li>
       <li><button type="button" data-menu="support"><svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.3" y="5.5" width="17.4" height="13" rx="2.4"/><path d="m4.2 7.2 6.9 5a1.6 1.6 0 0 0 1.8 0l6.9-5"/></svg>Support &amp; ideas</button></li>
+      <li><button type="button" data-menu="beta"><svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6M10 3v6.5L4.8 18.4A1.8 1.8 0 0 0 6.4 21h11.2a1.8 1.8 0 0 0 1.6-2.6L14 9.5V3"/><path d="M7.4 15h9.2"/></svg>Join the beta</button></li>
     </ul>
     <!-- HOW MUCH TO SAY, in the menu's footer as well as in Settings (Jan, 20 September
          2026). A rider who finds a session page too wordy is on the session page, and the
@@ -367,7 +367,7 @@
       <li data-step="runtime"><span class="dot"></span><span class="label">Starting the analyzer</span><span class="detail"></span></li>
       <li data-step="engine"><span class="dot"></span><span class="label">Loading the analysis engine</span><span class="detail"></span></li>
       <li data-step="parse"><span class="dot"></span><span class="label">Reading the FIT file</span><span class="detail"></span></li>
-      <li data-step="analyze"><span class="dot"></span><span class="label">Analyzing</span><span class="detail"><span class="elapsed" id="elapsed" hidden></span></span></li>
+      <li data-step="analyze"><span class="dot"></span><span class="label">Analysing</span><span class="detail"><span class="elapsed" id="elapsed" hidden></span></span></li>
     </ol>
     <div class="progress-foot">
       <div>
@@ -895,20 +895,19 @@
 
 </div>
 
-<!-- ========================================================= THE CLEANJIBE FAMILY -->
-<!-- THREE APPS, ONE ENGINE, and which of them you are reading this on. The words are the
-     kit's (`CleanJibeFamily`), carried here by docs/copy/app-shell.json and pinned from
-     both ends by web/tools/verify_app_shell.py, so the phone's screen and this page are
-     one screen. js/appshell.js draws it; nothing in it links out, because a list of three
-     apps with three install links on it is an advertisement rather than an answer. -->
-<div class="page" id="page-family" data-page="family" hidden>
+<!-- ================================================================== THE BETA -->
+<!-- JOIN THE BETA, the phone's Beta page in the release's words (the kit's `BetaGuide`,
+     carried by docs/copy/app-shell.json and pinned by web/tools/verify_app_shell.py). The
+     family that had a page here is a section of the welcome since 25 September 2026.
+     js/appshell.js draws it. -->
+<div class="page" id="page-beta" data-page="beta" hidden>
   <p class="crumb"><button class="linkish" type="button" data-goto="sessions">Back to
     Sessions</button></p>
   <section class="panel">
     <div class="panel-head">
-      <div><h1 class="page-title" id="family-title">The CleanJibe family</h1></div>
+      <div><h1 class="page-title" id="beta-title">Join the beta</h1></div>
     </div>
-    <div id="family-body"></div>
+    <div id="beta-body"></div>
   </section>
 </div>
 
@@ -1032,13 +1031,13 @@
 <dialog id="welcome-dialog" class="ask welcome" aria-labelledby="welcome-title">
   <h2 id="welcome-title">CleanJibe</h2>
   <div id="welcome-body"></div>
-  <!-- THE PHONE'S THREE DOORS, affirmative last (docs/screens.md, "What CleanJibe does").
-       *Set up intervals.icu* is the one a rider with a Garmin takes, and the welcome had
-       two doors where the phone has three. -->
+  <!-- THE PHONE'S TWO WAYS ON, affirmative last (docs/screens.md, "What CleanJibe does"):
+       the example, and Get started. Close is the phone's X; "Later" and "Set up
+       intervals.icu" left the phone's screen on 25 September 2026. -->
   <div class="ask-actions">
-    <button type="button" class="ghost" id="welcome-close">Later</button>
-    <button type="button" class="ghost" id="welcome-icu">Set up intervals.icu</button>
-    <button type="button" class="primary" id="welcome-example">Try the example session</button>
+    <button type="button" class="ghost" id="welcome-close">Close</button>
+    <button type="button" class="ghost" id="welcome-example">Try the example session</button>
+    <button type="button" class="primary" id="welcome-started">Get started</button>
   </div>
 </dialog>
 

@@ -956,9 +956,9 @@ details.help-section[open] > summary { border-bottom: 1px solid var(--line-soft)
 
 /* ------------------------------------------------------- The CleanJibe family
 
-   Three cards and three lines under them. The card for the app the reader is in is the
-   one with the ink: it is the only fact on this page the copy cannot carry, because the
-   copy is the same on all three. */
+   A section of the welcome: four cards and a link under them. The card for the app the
+   reader is in is the one with the ink: it is the only fact here the copy cannot carry,
+   because the copy is the same on every shell. */
 .family-intro { margin: 0 0 14px; font-weight: 600; }
 .family-apps { display: grid; gap: 10px; margin-bottom: 16px; }
 .family-app {
@@ -971,4 +971,6 @@ details.help-section[open] > summary { border-bottom: 1px solid var(--line-soft)
                     align-items: baseline; font-weight: 600; font-size: 13.5px; }
 .family-app-title .dim { font-weight: 400; font-size: 12px; }
 .family-app p.muted { margin: 0; }
-.family-travel p { margin: 0 0 6px; }
+.family-app-title .beta-pill { font-size: 11px; font-weight: 700; }
+.beta-features { margin: 0 0 12px; padding-left: 18px; }
+.beta-features li { margin: 0 0 6px; }

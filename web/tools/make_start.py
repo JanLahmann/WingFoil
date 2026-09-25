@@ -104,11 +104,13 @@ def check_budgets(doc: dict) -> list[str]:
             budget(problems, f"{where}.step {i}", step["detail"], STEP_BUDGET)
     for key in ("intervalsIcu", "strava"):
         budget(problems, f"settings.{key}", doc["settings"][key], SUMMARY_BUDGET)
+    for i, para in enumerate(doc["app"].get("paragraphs", []), 1):
+        budget(problems, f"app.paragraph {i}", para, FRAMING_BUDGET)
     for group in ("troubleshooting", "report"):
         for entry in doc[group]["entries"]:
             budget(problems, f"{group}: {entry['term']}", entry["detail"], SUMMARY_BUDGET)
 
-    ids = [e["id"] for e in doc["routes"] + doc["extras"]] + [doc["webLine"]["id"]]
+    ids = [e["id"] for e in doc["routes"] + doc["extras"]]
     if len(ids) != len(set(ids)):
         problems.append(f"duplicate ids: {ids}")
     return problems
@@ -265,7 +267,11 @@ public enum GettingStartedGuide {
 
 SWIFT_FOOTER = '''
     /// The routes and notes a build on `channel` may name, as the help topic's items —
-    /// title as the term, summary as the detail — with the web page named last.
+    /// title as the term, summary as the detail.
+    ///
+    /// **No web line at the end since 25 September 2026.** It sent a rider who had just
+    /// installed the app to cleanjibe.org/start for the same guide (Jan, F5d: the app is
+    /// self-contained, release round D).
     ///
     /// **The channel comes from the app** (`HelpCatalog.topic(_:channel:)`, dev 65). The
     /// catalogue declares the topic with `.release`, because a static array cannot ask
@@ -277,7 +283,7 @@ SWIFT_FOOTER = '''
         let ways = (routes + notes)
             .filter { channel.has($0.channel) }
             .map { HelpTopic.Item(term: $0.title, detail: $0.summary) }
-        return ways + [onTheWeb]
+        return ways
     }
 }
 '''
@@ -294,6 +300,14 @@ def render_swift(doc: dict) -> str:
     out.append("    public static let topicSummary =\n"
                f"        {swift_literal(doc['app']['topicSummary'], 8, 12)}\n")
 
+    out.append("    /// The paragraphs the app's topic opens with, before the framing: which")
+    out.append("    /// watches, how a Garmin session gets in, and the file way. The web page")
+    out.append("    /// has its own sections for the same facts, so it does not print these.")
+    out.append("    public static let appParagraphs: [String] = [")
+    for para in doc["app"]["paragraphs"]:
+        out.append(f"        {swift_literal(para, 8, 12)},")
+    out.append("    ]\n")
+
     out.append("    /// The ways in, in the order the app and the page list them.")
     out.append("    public static let routes: [GettingStartedRoute] = [")
     out.append("\n".join(swift_entry(r, 8) for r in doc["routes"]))
@@ -303,13 +317,6 @@ def render_swift(doc: dict) -> str:
     out.append("    public static let notes: [GettingStartedRoute] = [")
     out.append("\n".join(swift_entry(e, 8) for e in doc["extras"]))
     out.append("    ]\n")
-
-    web = doc["webLine"]
-    out.append("    /// The last item of the topic, and the only one the web page does not")
-    out.append("    /// render — a page does not send you to itself.")
-    out.append("    public static let onTheWeb = HelpTopic.Item(")
-    out.append(f"        term: {swift_literal(web['title'], 14, 12)},")
-    out.append(f"        detail: {swift_literal(web['summary'], 16, 12)})\n")
 
     out.append("    /// **Settings → intervals.icu**, the caption above the key field: why the")
     out.append("    /// detour exists at all, in one breath. The longer version, for the setup")

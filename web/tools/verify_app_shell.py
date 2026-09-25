@@ -8,13 +8,16 @@ Jan, 19 September 2026: *"iOS is the reference, the web is the port"*. A port is
 while somebody checks, so this holds three lists from both ends at once:
 
   THE FOUR TABS         ios/WingFoil/App/RootView.swift    ->  docs/copy/app-shell.json
-  THE SIX MENU ROWS     ios/WingFoilKit/.../AppMenuRows.swift (two titles are constants
-                        rather than literals: the support row is FeedbackDoors.menuRow, so
-                        docs/copy/feedback.json is read for it, and the family row is
-                        CleanJibeFamily.title, so that file is read for it)
-  THE FAMILY SCREEN     ios/WingFoilKit/.../CleanJibeFamily.swift -> docs/copy/app-shell.json
-                        (the three apps, their lines and how a session travels; under 120
-                        words, which is the budget the kit's own test holds too)
+  THE SIX MENU ROWS     ios/WingFoilKit/.../AppMenuRows.swift (the support row's title is
+                        a constant rather than a literal, FeedbackDoors.menuRow, so
+                        docs/copy/feedback.json is read for it)
+  THE FAMILY SECTION    ios/WingFoilKit/.../CleanJibeFamily.swift -> docs/copy/app-shell.json
+                        (the apps, their lines and their beta badge; under 120 words, which
+                        is the budget the kit's own test holds too). A section of the
+                        welcome since 25 September 2026, no longer a page of its own
+  THE BETA PAGE         ios/WingFoilKit/.../Help/BetaGuide.swift -> docs/copy/app-shell.json
+                        (the release's wording: the web is not in the beta), and the join
+                        link against AppChannel.testFlight
   THE SESSION SUB-TABS  ios/WingFoilKit/.../SessionSection.swift
   THE SETTINGS SECTIONS ios/WingFoilKit/.../SettingsCopy.swift -> docs/copy/settings.json
                         (written by ``SettingsCopyExportTests``; the page declares each
@@ -61,12 +64,14 @@ ROOT_VIEW = REPO / "ios" / "WingFoil" / "App" / "RootView.swift"
 KIT = REPO / "ios" / "WingFoilKit" / "Sources" / "WingFoilKit" / "Presentation"
 MENU_ROWS = KIT / "AppMenuRows.swift"
 FAMILY = KIT / "CleanJibeFamily.swift"
+BETA_GUIDE = KIT.parent / "Help" / "BetaGuide.swift"
+CHANNEL_LINK = REPO / "ios" / "WingFoil" / "Features" / "Settings" / "BetaSectionView.swift"
 SESSION_SECTION = KIT / "SessionSection.swift"
 
 #: The pages the shell routes to. A missing one is a tab that opens nothing.
 PAGE_IDS = ["page-sessions", "page-session", "page-records", "page-trends", "page-periods",
             "page-period", "page-gear", "page-settings", "page-help", "page-started",
-            "page-whats-new", "page-family"]
+            "page-whats-new", "page-beta"]
 
 # --------------------------------------------------------------- the ported screens
 
@@ -231,28 +236,51 @@ def ios_tabs() -> list[str]:
     return re.findall(r'\.tabItem \{ Label\("([^"]*)"', source)
 
 
+def _swift_constants(source: str) -> dict[str, object]:
+    """Every `static let name = "…" + "…"` string and `static let name = ["…", …]` list,
+    with the `+`-chains joined — the shape the kit's copy enums are written in."""
+    out: dict[str, object] = {}
+    for m in re.finditer(r'static let (\w+) =\s*((?:"(?:[^"\\]|\\.)*"\s*\+?\s*)+)', source):
+        out[m.group(1)] = "".join(re.findall(r'"((?:[^"\\]|\\.)*)"', m.group(2)))
+    for m in re.finditer(r'static let (\w+) = \[\n(.*?)\n    \]', source, re.S):
+        items = re.split(r'",\s*\n', _CHAIN.sub("", m.group(2)))
+        out[m.group(1)] = [re.sub(r'^\s*"|",?\s*$', "", i) for i in items if i.strip()]
+    return out
+
+
 def ios_family() -> dict:
-    """`CleanJibeFamily`, read off the Swift: the title, the two lines, the three apps and
-    the travel notes, in declaration order.
+    """`CleanJibeFamily`, read off the Swift: the title, the lines, the apps and their beta
+    flag, in declaration order.
 
     A regex rather than a parser for the same reason every other reader here is one: there
     is no Swift toolchain in this directory, and what is being checked is that two files
     carry the same sentences.
     """
     source = FAMILY.read_text(encoding="utf-8")
-
-    def constant(name: str) -> str:
-        m = re.search(rf'static let {name} = "([^"]*)"', source)
-        return m.group(1) if m else ""
-
-    apps = [{"id": a, "title": t, "line": _CHAIN.sub("", line)}
-            for a, t, line in re.findall(
-                r'App\(id: "([^"]*)", title: "([^"]*)",\s*line: "((?:[^"]|"\s*\+\s*")*)"\)',
+    constants = _swift_constants(source)
+    apps = [{"id": a, "title": t, "line": _CHAIN.sub("", line), "beta": bool(beta)}
+            for a, t, line, beta in re.findall(
+                r'App\(id: "([^"]*)", title: "([^"]*)",\s*line: "((?:[^"]|"\s*\+\s*")*)"'
+                r'(,\s*beta: true)?\)',
                 source)]
-    travel_block = source[source.find("static let travel"):]
-    travel = re.findall(r'^\s+"([^"]*)",$', travel_block, re.M)
-    return {"title": constant("title"), "intro": constant("intro"),
-            "here": constant("here"), "apps": apps, "travel": travel}
+    return {key: constants.get(key, "")
+            for key in ("title", "intro", "here", "betaBadge", "howSessionsGetIn")} \
+        | {"apps": apps}
+
+
+def ios_beta() -> dict:
+    """`BetaGuide`, the release's half of it — the web is not in the beta — and the
+    public TestFlight link the release carries."""
+    constants = _swift_constants(BETA_GUIDE.read_text(encoding="utf-8"))
+    link = re.search(r'static let testFlight = URL\(string: "([^"]*)"\)',
+                     CHANNEL_LINK.read_text(encoding="utf-8"))
+    keys = ("joinTitle", "whatItIs", "inItNowTitle", "howToJoinTitle", "joinButton",
+            "feedbackTitle")
+    # `howToJoin` is the phone's ("in place of this app"); the browser says its own line,
+    # `webJoin`, because the beta it joins is the iPhone app's.
+    return {key: constants.get(key, "") for key in keys} | {
+        "joinURL": link.group(1) if link else "",
+    }
 
 
 def ios_menu() -> list[tuple[str, str, bool]]:
@@ -266,11 +294,9 @@ def ios_menu() -> list[tuple[str, str, bool]]:
     # string for it. docs/copy/feedback.json already pins that constant from the kit side.
     doors = feedback["doors"]["app"]
     menu_row = doors.split("→")[-1].strip()
-    family_title = ios_family()["title"]
     out = []
     for case in order:
-        title = titles.get(case) or {"support": menu_row,
-                                     "family": family_title}.get(case, "")
+        title = titles.get(case) or {"support": menu_row}.get(case, "")
         out.append((case, title, case == after))
     return out
 
@@ -320,21 +346,29 @@ def main(argv=None) -> int:
     json_sections = [(s["id"], s["title"]) for s in shell["sessionSections"]]
     same("the session sub-tabs are the phone's", json_sections, ios_sections())
 
-    # 1b · THE FAMILY SCREEN, word for word against the kit. It is one screen on two shells
-    # and there is no third place it could be written, so the JSON is the Swift or it is a
-    # second draft (docs/presentation/copy-menu-settings.md, "One copy, many surfaces").
+    # 1b · THE FAMILY SECTION, word for word against the kit. It is one section on two
+    # shells and there is no third place it could be written, so the JSON is the Swift or it
+    # is a second draft (docs/presentation/copy-menu-settings.md, "One copy, many surfaces").
     kit_family = ios_family()
-    json_family = {key: shell["family"][key]
-                   for key in ("title", "intro", "here", "apps", "travel")}
-    same("the family screen is the kit's", json_family, kit_family)
+    json_family = {key: shell["family"].get(key)
+                   for key in ("title", "intro", "here", "betaBadge", "howSessionsGetIn",
+                               "apps")}
+    json_family["apps"] = [{"id": a["id"], "title": a["title"], "line": a["line"],
+                            "beta": bool(a.get("beta"))} for a in json_family["apps"] or []]
+    same("the family section is the kit's", json_family, kit_family)
     words = len(" ".join(
-        [json_family["title"], json_family["intro"], json_family["here"]]
-        + [f"{a['title']} {a['line']}" for a in json_family["apps"]]
-        + json_family["travel"]).split())
+        [json_family["title"], json_family["intro"], json_family["here"],
+         json_family["howSessionsGetIn"]]
+        + [f"{a['title']} {a['line']}" for a in json_family["apps"]]).split())
     if words > 120:
-        problems.append(f"the family screen is {words} words, and the budget is 120")
+        problems.append(f"the family section is {words} words, and the budget is 120")
     else:
-        notes.append(f"ok    the family screen is {words} words of its 120")
+        notes.append(f"ok    the family section is {words} words of its 120")
+
+    # 1c · THE BETA PAGE, the release's wording, against the kit and the app's own link.
+    kit_beta = ios_beta()
+    json_beta = {key: shell["beta"].get(key) for key in kit_beta}
+    same("the Beta page is the kit's", json_beta, kit_beta)
 
     # 2 · the ways in, against the guide (pattern J)
     routes = {r["id"]: r for r in guide["routes"]}
