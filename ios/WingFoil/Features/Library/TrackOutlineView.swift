@@ -183,22 +183,35 @@ struct OutcomeTally: View {
     /// block, which owns that wording (docs/presentation.md).
     var words = false
 
+    /// Where the words are off, the three inks are the only thing telling the numbers
+    /// apart — so a reader who has asked the phone to differentiate without colour gets
+    /// the words back (release round C, pattern H).
+    @Environment(\.accessibilityDifferentiateWithoutColor) private var withoutColour
+
     var total: Int { flewThrough + touchdown + fellIn }
 
     var body: some View {
         if total > 0 {
-            HStack(spacing: 3) {
-                part(flewThrough, EventMarkerStyle.color(.flew), "flew")
-                separator
-                part(touchdown, EventMarkerStyle.color(.touchdown), "touch")
-                separator
-                part(fellIn, EventMarkerStyle.color(.fell), "fell")
+            // One line while it fits, and one pair to a line once it does not — never a
+            // pair broken letter by letter down a narrow column (release round C, AX3).
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 3) {
+                    part(flewThrough, EventMarkerStyle.color(.flew), "flew")
+                    separator
+                    part(touchdown, EventMarkerStyle.color(.touchdown), "touch")
+                    separator
+                    part(fellIn, EventMarkerStyle.color(.fell), "fell")
+                }
+                VStack(alignment: .leading, spacing: 1) {
+                    part(flewThrough, EventMarkerStyle.color(.flew), "flew")
+                    part(touchdown, EventMarkerStyle.color(.touchdown), "touch")
+                    part(fellIn, EventMarkerStyle.color(.fell), "fell")
+                }
             }
             .font(font.weight(.semibold).monospacedDigit())
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(String(flewThrough) + " flew through, "
-                                + String(touchdown) + " touchdowns, "
-                                + String(fellIn) + " falls")
+            .accessibilityLabel(SpokenFigures.tally(flewThrough: flewThrough,
+                                                    touchdown: touchdown, fellIn: fellIn))
         }
     }
 
@@ -207,10 +220,11 @@ struct OutcomeTally: View {
     private func part(_ value: Int, _ color: Color, _ word: String) -> some View {
         HStack(spacing: 2) {
             Text("\(value)")
-            if words {
+            if words || withoutColour {
                 Text(word).fontWeight(.regular)
             }
         }
+        .fixedSize()
         .foregroundStyle(color)
     }
 
