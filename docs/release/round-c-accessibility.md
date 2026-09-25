@@ -29,6 +29,8 @@ session map's marks already had VoiceOver labels.
 | 7 | Trend charts (every `TrendChart`, entry-tack chart, sessions per week) | Swift Charts' default walks every mark, sixty dates in a row | one sentence each: "On foil, 12 sessions, latest 64 %, lowest 40 %, highest 72 %" (`SpokenFigures.series`) |
 | 8 | Session speed chart | no summary | "Speed chart, 0:00 to 1:42:10, highest 27.3 kn" |
 | 9 | Records → Session records rows | name and "when · where" were `lineLimit(1)` with a 0.8 shrink: an ellipsis at AX3 | past the threshold both wrap, and the value drops under the name when the two no longer share a line (`ViewThatFits`) |
+| 10 | Library row (Sessions) | at AX3 the 62 pt thumbnail left the figures a column so narrow that "13.47 kn", "flew" and "touch" broke one letter to a line | past the threshold the thumbnail goes above the words; the three figures and the tally each go one to a line when they stop fitting (`ViewThatFits`, `fixedSize`); the title may take three lines |
+| 11 | Trends headline strip | four tiles abreast hyphenated "ses-sions" and "dis-tance" at AX3 | two by two past the threshold, the key-metrics block's rule; each tile one VoiceOver element |
 
 Colour-only audit, the rest (no change needed): turn rows (glyph), turn tally chips
 (glyph + word), flights list (glyph + word), summary-grid breakdowns (glyph + word), turn
@@ -41,8 +43,9 @@ beat is announced by name.
 ## Screenshots
 
 AX3 (`UI_TEXT_SIZE=ax3`), one per main screen, in the round's scratchpad folder `rel-c/`:
-`list-ax3.png`, `session-ax3.png`, `records-ax3.png`, `trends-ax3.png` — see the round
-report for which of them could be taken (the machine was under heavy load).
+`list-ax3.png`, `session-ax3.png`, `records-ax3.png`, `trends-ax3.png`. The list and
+Trends shots are after fixes 10 and 11; the session and records shots were taken before
+fix 9 landed in the simulator build (the Speed records table they show was already right).
 
 ## What remains
 
@@ -53,4 +56,8 @@ report for which of them could be taken (the machine was under heavy load).
   decision for Jan, not an accessibility bug.
 - **The web** has not had this pass: its tally, map dots and charts are the same shape.
 - **VoiceOver on the turn page's strips** already speaks a summary per strip; not re-audited.
-- **Settings and the Form screens** scale with the system and were not changed.
+- **Settings could not be photographed at AX3.** `UI_TEXT_SIZE` reaches the tabs but not a
+  sheet raised by `UI_SHEET=settings` — the sheet opened at the default size, contrary to
+  what docs/testing.md says about sheets inheriting it. A rider's system setting does reach
+  it (it is a plain `Form`); the hook needs `.dynamicTypeSize` applied inside the sheet to
+  photograph it. Not fixed here.
