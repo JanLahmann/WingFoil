@@ -134,12 +134,41 @@ caption that says what they are out of.
 
 And **which three is the rider's**: Settings → Session list → *Row shows*, three pickers in
 the order the row draws them. The options are `RowMetric` in the kit — foil, flights, jibes,
-clean, turns, best 2 s, best 10 s, distance, time, dry streak — and each case owns its word,
+clean, turns, best 2 s, best 10 s, distance, time, dry streak, fell in — and each case owns its word,
 its glyph and how its value is spelled, so the picker, the row and the session page cannot
 drift apart. The default triple is **foil · jibes · best 2 s**: what the list always drew,
 with the middle cell corrected to the jibes its glyph always promised. The choice is one
 stored string (`sessionRowMetrics`), and a slot that cannot be read falls back to the default
 rather than leaving the row a cell short (`RowMetricTests`).
+
+### What each glyph means
+
+A glyph is drawn beside its word, never instead of it, and it still has to mean the word
+(Jan, 25 September 2026): a rider scans by the glyph once he has read the word once. One
+table, `RowMetric.icon` in the kit, drawn by the row and the *Row shows* picker; the help
+topic *On the foil* borrows the foil glyph. The browser's row prints the words without
+glyphs, so it has nothing to follow.
+
+| `RowMetric` | word | SF Symbol | why this one |
+|---|---|---|---|
+| `foilShare` | foil | `water.waves.and.arrow.up` | the board lifted off the water — what foiling is |
+| `flights` | flights | `arrow.up.forward` | getting up and going |
+| `jibes` | jibes | `arrow.triangle.turn.up.right.diamond` | a turn |
+| `cleanJibes` | clean | `star.fill`, in the clean ink (`DesignTokens.Clean.jibe`) | **the clean jibe's own star**, the one on the map and the chart |
+| `turns` | turns | `arrow.uturn.right` | coming back the other way |
+| `best2s` / `best10s` | best 2 s / best 10 s | `speedometer` | speed; the word tells the window |
+| `distance` | distance | `point.topleft.down.to.point.bottomright.curvepath` | a route |
+| `duration` | time | `clock` | time |
+| `dryStreak` | dry streak | `flame` | a streak, as every app draws one |
+| `falls` | fell in | `drop.fill` | water — he went in |
+
+Retired, and why: *clean* wore `checkmark.seal` (a badge nothing else in the app means; the
+star is already the clean jibe's mark); *on foil* wore `figure.wave` (a standing figure, not
+foiling — and the Strava door's glyph); *turns* wore `arrow.triangle.2.circlepath` (the app's
+"Sync now" and intervals.icu glyph). Considered for *on foil* and not taken:
+`arrow.up.to.line` (reads "to the top" or "upload", no water in it) and the drawn front-wing
+silhouette of the gear list (`GearKindIcon`, which names the foil in the bag rather than time
+on it, and cannot be drawn inside a Settings menu picker).
 
 ## The session page: source, name, neighbours
 

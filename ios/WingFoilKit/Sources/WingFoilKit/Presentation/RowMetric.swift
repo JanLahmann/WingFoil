@@ -67,13 +67,20 @@ public enum RowMetric: String, Codable, Sendable, CaseIterable, Identifiable {
 
     /// The SF Symbol beside it. Never alone: the word under it is what makes it readable,
     /// and the glyph is what makes the row scannable once the word has been read once.
+    ///
+    /// **Each glyph has to mean its word** (Jan, 25 September 2026; docs/presentation/
+    /// gear-list-session-page.md, "What each glyph means"). Three were a guess: *clean* wore
+    /// a seal nothing else in the app uses and now wears the clean jibe's own star — the
+    /// mark on the map and the chart; *foil* was a standing figure and is now waves with an
+    /// arrow rising off them, the board lifted clear of the water; *turns* was the two
+    /// circling arrows the app draws for "Sync now" and is now a U-turn.
     public var icon: String {
         switch self {
-        case .foilShare: "figure.wave"
+        case .foilShare: "water.waves.and.arrow.up"
         case .flights: "arrow.up.forward"
         case .jibes: "arrow.triangle.turn.up.right.diamond"
-        case .cleanJibes: "checkmark.seal"
-        case .turns: "arrow.triangle.2.circlepath"
+        case .cleanJibes: DesignTokens.Glyph.cleanJibe
+        case .turns: "arrow.uturn.right"
         case .best2s, .best10s: "speedometer"
         case .distance: "point.topleft.down.to.point.bottomright.curvepath"
         case .duration: "clock"
@@ -81,6 +88,11 @@ public enum RowMetric: String, Codable, Sendable, CaseIterable, Identifiable {
         case .falls: "drop.fill"
         }
     }
+
+    /// Whether the glyph is drawn in the clean jibe's own green (`DesignTokens.Clean.jibe`)
+    /// rather than the row's secondary ink. Only the star: it is the mark the map and the
+    /// chart draw for a clean jibe, and the same star in grey would be a second meaning.
+    public var wearsCleanInk: Bool { self == .cleanJibes }
 
     /// The value, spelled the way every other surface spells it. "—" where the row has no
     /// answer: a session the engine has not read yet reports an absence, never a zero.

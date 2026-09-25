@@ -198,7 +198,7 @@ public enum HelpSection: String, CaseIterable, Sendable, Identifiable {
         switch self {
         case .gettingStarted: "book"
         case .setup: "link"
-        case .foil: "figure.wave"
+        case .foil: RowMetric.foilShare.icon
         case .records: "speedometer"
         case .turns: "arrow.triangle.turn.up.right.diamond"
         case .takeoff: "arrow.up.right"
