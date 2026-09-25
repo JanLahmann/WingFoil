@@ -129,7 +129,7 @@ def config_settings(block: str, key: str) -> dict[str, str]:
 
 
 def check_ios_versions() -> None:
-    """Every target carries the same build number, and one marketing line per channel."""
+    """Every target carries the same build number, and one marketing version for all three channels."""
     text = project_text()
     builds = set(re.findall(r'CURRENT_PROJECT_VERSION:\s*"([^"]+)"', text))
     if len(builds) == 1:
@@ -140,13 +140,15 @@ def check_ios_versions() -> None:
     blocks = target_blocks()
     release_marketing = set(re.findall(r'MARKETING_VERSION:\s*"([^"]+)"', blocks.get("WingFoilRelease", "")))
     shared = set(re.findall(r'MARKETING_VERSION:\s*"([^"]+)"', text)) - release_marketing
-    if len(release_marketing) > 1:
-        fail("ios marketing", f"the release target stamps more than one MARKETING_VERSION: {sorted(release_marketing)}")
-    elif len(shared) == 1:
-        rel = next(iter(release_marketing), "(none — inherits)")
-        ok("ios marketing", f"release {rel}, every other target {shared.pop()}")
-    else:
+    # One marketing version across the three channels (CLAUDE.md): the release target may
+    # restate it but never carry a line of its own.
+    if len(shared) != 1:
         fail("ios marketing", f"MARKETING_VERSION disagrees outside the release target: {sorted(shared)}")
+    elif release_marketing - shared:
+        fail("ios marketing", f"the release target stamps {sorted(release_marketing)}, "
+                              f"every other target {sorted(shared)} — one version for all three")
+    else:
+        ok("ios marketing", f"{shared.pop()} at every target, the release included")
 
 
 def check_garmin_versions() -> None:

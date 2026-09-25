@@ -97,9 +97,8 @@ garmin-package:
 #
 # They create a local annotated tag and stop. Pushing is `git push origin <tag>`, and is
 # Jan's to run, like every other push in this repo.
-# The default is the shared marketing line every target but the release channel carries
-# (0.15.0 today), because the build number is what identifies an upload and the release
-# channel's own 1.0.x line is a store label. Pass VERSION= to tag a release-channel upload:
+# The default is the one marketing version every target carries (1.0.1 today), and the build
+# number is what identifies an upload. VERSION= overrides it, e.g. to tag an old upload:
 #     make tag-ios VERSION=1.0.0
 tag-ios:
 	@git diff --quiet && git diff --cached --quiet || { echo "refusing: the tree is dirty"; exit 1; }
