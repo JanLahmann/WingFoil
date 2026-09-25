@@ -96,7 +96,7 @@ export const GLOSSARY = [
     "term": "TPH",
     "short": "TPH",
     "expansion": "turns per hour",
-    "line": "Turns per hour, every counted turn and not only the jibes. It stands in for JPH on a session whose wind axis named no jibes."
+    "line": "Dry turns per hour, tacks and jibes together. It takes the place of JPH once a session has tacks in it."
   },
   {
     "id": "wph",

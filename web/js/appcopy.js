@@ -71,7 +71,7 @@ export const SHELL = {
     },
     {
       "id": "takeoffs",
-      "title": "Takeoffs"
+      "title": "Flights"
     },
     {
       "id": "log",
@@ -3064,7 +3064,10 @@ export const PRESENTATION = {
   },
   "caption": {
     "fallsSplit": "{inTurn} in a turn · {straight} in a straight line",
-    "ofJibes": "of {jibes} jibes · {clean} clean",
+    "ofJibes": {
+      "one": "of 1 jibe",
+      "other": "of {jibes} jibes"
+    },
     "ofTacks": {
       "one": "of 1 tack",
       "other": "of {tacks} tacks"
@@ -3083,10 +3086,11 @@ export const PRESENTATION = {
     "alpha500": "alpha 500",
     "avgSpeed": "avg speed",
     "best5x10s": "5×10 s",
+    "cleanJibes": "clean jibes",
     "distance": "distance",
     "duration": "duration",
     "max2s": "max 2 s",
-    "outcomeLadder": "flew · touchdown · fell",
+    "outcomeLadder": "flew · touch · fell",
     "streaks": "best streaks"
   },
   "rowMetric": {

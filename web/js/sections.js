@@ -1,4 +1,4 @@
-/* The session page's four sub-tabs: Ride · Turns · Takeoffs · Log.
+/* The session page's four sub-tabs: Ride · Turns · Flights · Log.
  *
  * The web is a port of the iPhone app (Jan, 19 September 2026: "iOS is the reference, the
  * web is the port"), so the session page is cut the way `SessionSection` cuts it and the
@@ -35,7 +35,8 @@ import { closePopover } from "./render.js";
 const SECTIONS = {
   ride: "Ride",
   turns: "Turns",
-  takeoffs: "Takeoffs",
+  // "Flights" since 25 Sep 2026: the takeoffs and the flight ends, one tab (the phone's).
+  takeoffs: "Flights",
   log: "Log",
 };
 

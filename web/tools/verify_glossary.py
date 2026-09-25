@@ -80,6 +80,8 @@ ALLOWED = {
     "port / starboard": "the entry side, a dimension of a turn rather than a metric",
     "glide-outs": "a flight-end verdict that is not a loss and has no other surface",
     "touchdowns": "the plural of the touchdown term",
+    "touchdowns · glide-outs": "the touchdown term and the glide-out verdict on one card: "
+                               "both a flight that ended without a swim (Jan, 25 Sep 2026)",
     "best streaks": "the dry-streak term at the block's width",
     "pumps to takeoff": "a stroke count, under the takeoffs term",
     "takeoff run": "a clock, under the takeoffs term",

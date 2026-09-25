@@ -542,18 +542,37 @@
       <div class="legend" id="strip-legend"></div>
     </section>
 
+    <!-- FLIGHTS, the phone's third tab since 25 Sep 2026 (Jan, F12c): a flight is a
+         takeoff and an end, so the takeoff facts, one row per flight and the flight ends
+         the map marks are one tab. The case keeps its `takeoffs` id, as on the phone. -->
     <section class="panel" id="takeoff-panel" data-section="takeoffs">
       <div class="panel-head"><h2>Takeoffs</h2></div>
       <div id="takeoff-body"></div>
-      <!-- The phone's Takeoffs tab ends with the HR card: what the pumping cost in
+      <!-- The phone's Flights tab ends with the HR card: what the pumping cost in
            heartbeats. This page has no heart-rate figure yet, and a tab that quietly lacks
            half of what its name promises is worse than one that says so. -->
       <p class="muted small" data-explain="takeoffAttempts">What the pumping cost in
         heartbeats is on the iPhone app.</p>
     </section>
 
-    <!-- Turns and Flight ends share a chip: 34 rows and 23 rows are the ~2 000 px of phone
-         scroll §7.2 measured, and they are the same subject read two ways. -->
+    <section class="panel" data-section="takeoffs">
+      <div class="panel-head">
+        <h2>Flights</h2>
+        <p class="muted small" id="flights-caption"></p>
+      </div>
+      <div class="table-scroll"><table id="flights-table"></table></div>
+    </section>
+
+    <section class="panel" data-section="takeoffs">
+      <div class="panel-head">
+        <h2>Flight ends</h2>
+        <p class="muted small" id="ends-caption"></p>
+      </div>
+      <div class="table-scroll"><table id="ends-table"></table></div>
+    </section>
+
+    <!-- Turns. The flight ends that shared this chip moved to Flights on 25 Sep 2026, with
+         the takeoffs they are the other half of. -->
     <section class="panel" data-section="turns">
       <div class="panel-head">
         <h2>Turns</h2>
@@ -578,13 +597,6 @@
       <div class="table-scroll"><table id="turns-table"></table></div>
     </section>
 
-    <section class="panel" data-section="turns">
-      <div class="panel-head">
-        <h2>Flight ends</h2>
-        <p class="muted small" id="ends-caption"></p>
-      </div>
-      <div class="table-scroll"><table id="ends-table"></table></div>
-    </section>
 
 <!-- r3-w1:begin the Log tab's gear card and its watch-against-phone block -->
     <!-- LOG, the phone's fourth tab: the session's own facts. Gear first, because it is the
