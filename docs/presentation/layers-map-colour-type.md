@@ -326,6 +326,19 @@ green = flew through · orange = touchdown · red = fell in · grey = course cha
 **Fill carries the channel:** solid = a maneuver's outcome; hollow = a straight-line flight
 end no turn explains. Same dot, same ladder, different fill.
 
+**Differentiate Without Color swaps the dot for the rung's glyph** (release round C,
+26 Sep 2026). Three dots that differ only in ink are one dot to a reader who cannot use
+colour, so with Settings → Accessibility → Display & Text Size → Differentiate Without Color
+on, every outcome dot on the session map and the Turns map — and the legend chip that
+toggles it — wears the glyph the turn list and the tally chips already use: check = flew
+through, triangle = touchdown, cross = fell in, filled for a maneuver and outlined for a
+straight-line end (the fill channel survives). A course change is no verdict and stays a
+grey dot; the clean star is already a shape. The outcome tally without words (the
+key-metrics block, the provisional page) gets its words back under the same setting
+(`OutcomeDot`, `TurnPinDot`, `OutcomeTally`). VoiceOver reads every tally as numbers with
+their words — "42 flew through, 3 touchdowns, 5 fell in" — and every chart as one sentence
+(`SpokenFigures` in the kit).
+
 **Effort-and-water layers sit deliberately outside the ladder** — nothing in them is a
 verdict, and borrowing the ladder would make a takeoff look like a good jibe:
 pumping = indigo (spans) · takeoff = blue (glyphs) · wrist under = cyan (diamond) ·
