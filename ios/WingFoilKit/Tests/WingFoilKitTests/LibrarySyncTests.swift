@@ -397,6 +397,47 @@ import Testing
         #expect(waiting.pending == 1)
     }
 
+    /// Settings → iCloud Drive said "69 sessions" beside a library of 63 (Jan's Dev 106, 25
+    /// Sep 2026): a deleted session keeps its `meta.json` in the folder, and the count was
+    /// of folders. The count is of sessions — one per afternoon, none deleted.
+    @Test func theFolderCountIsSessionsNotFolders() async throws {
+        let container = try makeContainer()
+        let phone = try makeDevice("phone")
+        let pad = try makeDevice("pad")
+        defer {
+            try? FileManager.default.removeItem(at: container.root)
+            try? FileManager.default.removeItem(at: phone.home)
+            try? FileManager.default.removeItem(at: pad.home)
+        }
+
+        let kept = try await ingest(0, into: phone)
+        let gone = try await ingest(1, into: phone)
+        try await engine(phone, container).sync()
+        try await phone.ingestor.delete(gone)
+        try await engine(phone, container).sync()
+
+        let plan = try await engine(phone, container).plan()
+        #expect(plan.containerFolders == 2)
+        #expect(plan.containerDeleted == 1)
+        #expect(plan.containerSessions == 1)
+        #expect(plan.containerSessions == plan.localSessions)
+        #expect(plan.pending == 0)
+
+        // A second folder for the same afternoon under another uuid is one session, and the
+        // device that lacks it has one to fetch, not two.
+        let (data, _) = try fixture(0)
+        try container.writeOriginal(data, id: "zz-second-folder")
+        try container.writeMeta(SyncedSessionMeta(id: "zz-second-folder",
+                                                  startDate: kept.startDate.addingTimeInterval(5),
+                                                  durationS: kept.durationS))
+        let doubled = try await engine(pad, container).plan()
+        #expect(doubled.containerFolders == 3)
+        #expect(doubled.containerSessions == 1)
+        #expect(doubled.containerDuplicates == 1)
+        #expect(doubled.toDownload.count == 1)
+        #expect(doubled.pending == 1)
+    }
+
     @Test func theContainerIdentifierFollowsTheChannel() {
         #expect(LibrarySyncLayout.containerIdentifier(bundleID: "de.lahmann.wingfoil")
                 == LibrarySyncLayout.releaseContainer)
