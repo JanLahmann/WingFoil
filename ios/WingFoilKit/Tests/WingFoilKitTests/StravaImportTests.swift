@@ -444,6 +444,106 @@ struct StravaImportTests {
         #expect(try await ingestor.allSessions().count == 1)
     }
 
+    /// Strava's copy of a FIT, built from the FIT's own fixes the way Strava serves them
+    /// back: positions on an elapsed clock and nothing else. Also returns the two spans the
+    /// dedupe key compares — every record for the FIT, the fixes alone for Strava.
+    private static func stravaCopy(of fit: Data) throws
+            -> (gpx: Data, activity: StravaActivity, fitSpanS: Double, fixSpanS: Double) {
+        let track = try FitSessionParser.parse(data: fit)
+        let start = try #require(track.startDate)
+        let t0 = try #require(track.samples.first?.t)
+        let tEnd = try #require(track.samples.last?.t)
+        let fixes = track.samples.filter { $0.lat != nil && $0.lon != nil }
+        let firstFix = try #require(fixes.first?.t)
+        let lastFix = try #require(fixes.last?.t)
+        let streams = StravaStreams(
+            time: .init(data: fixes.map { $0.t - firstFix }),
+            latlng: .init(data: fixes.map { [$0.lat!, $0.lon!] }))
+        let activity = StravaActivity(
+            id: "15550001", name: "Wingfoil", sportType: "Windsurf",
+            startDateUtc: ISO8601DateFormatter().string(
+                from: start.addingTimeInterval(firstFix - t0)),
+            utcOffsetS: 7200, elapsedTimeS: Int(lastFix - firstFix))
+        let gpx = try StravaImport.gpx(activity: activity, streams: streams, producer: "test")
+        return (gpx, activity, tEnd - t0, lastFix - firstFix)
+    }
+
+    /// **One afternoon through all three release doors is one session** (release round A,
+    /// 25 Sep 2026) — a file, then intervals.icu, then Strava's copy of the same recording —
+    /// and once it is deleted, Strava's summary of it is blocked by the tombstone the delete
+    /// wrote. Run on the first fixture whose fixes cover its records (the ordinary case).
+    @Test func theSameAfternoonFromFileIcuAndStravaIsOneSessionAndStaysDeleted() async throws {
+        let (ingestor, root) = try makeIngestor()
+        defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
+        var picked: (URL, Data, (gpx: Data, activity: StravaActivity,
+                                 fitSpanS: Double, fixSpanS: Double))?
+        for url in allFixtureFITs() {
+            let data = try Data(contentsOf: url)
+            guard let copy = try? Self.stravaCopy(of: data) else { continue }
+            if abs(copy.fitSpanS - copy.fixSpanS) < 20 { picked = (url, data, copy); break }
+        }
+        let (url, fit, copy) = try #require(picked, "no fixture whose fixes cover its records")
+
+        guard case .imported = try await ingestor.ingest(
+            fitData: fit, filename: url.lastPathComponent, source: .file) else {
+            Issue.record("expected a fresh import")
+            return
+        }
+        guard case .duplicate = try await ingestor.ingest(
+            fitData: fit, filename: url.lastPathComponent, source: .icu,
+            icuActivityId: "i4242") else {
+            Issue.record("expected intervals.icu's copy to dedupe")
+            return
+        }
+        guard case .duplicate(let row) = try await ingestor.ingest(
+            fitData: copy.gpx, filename: StravaImport.filename(for: copy.activity),
+            source: .strava, utcOffsetS: 7200) else {
+            Issue.record("expected Strava's copy to dedupe against the FIT")
+            return
+        }
+        #expect(row.importSource == "file+icu+strava")
+        #expect(row.icuActivityId == "i4242")
+        #expect(row.sourceClass != "c", "the FIT's row stays the one the library keeps")
+        #expect(try await ingestor.allSessions().count == 1)
+
+        // Deleted: the Strava sync's own rule, asked of the activity summary, refuses it.
+        try await ingestor.delete(row)
+        let stones = try await ingestor.library.tombstones()
+        #expect(SessionTombstones.blocks(startDate: copy.activity.startDate,
+                                         movingTimeS: copy.activity.movingTimeS.map(Double.init),
+                                         tombstones: stones) != nil)
+        #expect(try await ingestor.allSessions().isEmpty)
+    }
+
+    /// **Known miss** (release round A finding F-5): a FIT that keeps recording after the
+    /// last fix — the watch left running in the van — spans every record, while Strava's copy
+    /// spans the fixes alone. The two-sided ±60 s duration check then calls them two
+    /// sessions, and the library holds the afternoon twice. Held here as a known issue so
+    /// the day the rule changes this test says so.
+    @Test func aFitWithAPositionlessTailIsNotYetMatchedToItsStravaCopy() async throws {
+        let (ingestor, root) = try makeIngestor()
+        defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
+        var picked: (URL, Data, (gpx: Data, activity: StravaActivity,
+                                 fitSpanS: Double, fixSpanS: Double))?
+        for url in allFixtureFITs() {
+            let data = try Data(contentsOf: url)
+            guard let copy = try? Self.stravaCopy(of: data) else { continue }
+            if copy.fitSpanS - copy.fixSpanS > 120 { picked = (url, data, copy); break }
+        }
+        let (url, fit, copy) = try #require(picked, "no fixture with a position-less tail")
+        _ = try await ingestor.ingest(fitData: fit, filename: url.lastPathComponent,
+                                      source: .file)
+        let outcome = try await ingestor.ingest(
+            fitData: copy.gpx, filename: StravaImport.filename(for: copy.activity),
+            source: .strava, utcOffsetS: 7200)
+        withKnownIssue("F-5: dedupe compares record span with fix span") {
+            guard case .duplicate = outcome else {
+                Issue.record("Strava's copy landed as a second session")
+                return
+            }
+        }
+    }
+
     /// The provenance tags have to stay apart: `strava` is its own source, and merges beside
     /// the others rather than replacing one.
     @Test func stravaProvenanceStaysApartFromTheOtherSources() {
