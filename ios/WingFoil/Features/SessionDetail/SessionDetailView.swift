@@ -245,7 +245,7 @@ struct SessionDetailView: View {
                                  + "Import the session again.")
                             Text(failure)
                                 .font(.caption2)
-                                .foregroundStyle(.tertiary)
+                                .foregroundStyle(.readableSecondary)
                         }
                     }
                 } else {

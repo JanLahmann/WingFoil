@@ -61,7 +61,7 @@ struct HrCostCardView: View {
                 }
                 Text(card.footnote)
                     .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.readableSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -97,7 +97,7 @@ struct HrCostCardView: View {
                 .foregroundStyle(card.headlineMissing ? .secondary : .primary)
             Text(card.headlineCaption)
                 .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(.readableSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -151,7 +151,7 @@ struct HrCostCardView: View {
             if let caption = card.binCaption {
                 Text(caption)
                     .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.readableSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             if let note = card.baselineNote {

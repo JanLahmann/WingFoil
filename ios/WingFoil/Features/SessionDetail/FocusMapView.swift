@@ -78,7 +78,7 @@ struct FocusMapView<Marks: MapContent>: View {
             }
             Text(caption)
                 .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(.readableSecondary)
                 .fixedSize(horizontal: false, vertical: true)
             // The same control every map on this page has, over this map's own set. The lone
             // style chip that used to sit in the caption line is inside it now — the ground

@@ -25,8 +25,8 @@ struct LibraryBackupSection: View {
             sizeRow
             backupRow
             restoreRow
-            Button { helpTopic = .libraryBackup } label: {
-                Label("What a backup covers", systemImage: "questionmark.circle")
+            HelpTopicLink(.libraryBackup, label: "What a backup covers", style: .row) {
+                helpTopic = .libraryBackup
             }
             // On the row rather than on the Section: two `.sheet(item:)` on one view is
             // the classic way to end up with only one of them ever presenting.

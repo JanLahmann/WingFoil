@@ -45,7 +45,7 @@ struct TurnHeadingStripView: View {
                 Text("No usable bearings through this window. "
                      + "The steps were shorter than the receiver's own scatter.")
                     .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.readableSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             } else {
                 chart

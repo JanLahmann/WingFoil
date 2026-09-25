@@ -68,7 +68,7 @@ struct LibraryNewerThanAppView: View {
                 Text("Library version \(refusal.storedVersion) · this build reads up to "
                      + "\(refusal.knownVersion)")
                     .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.readableSecondary)
                     .padding(.top, 8)
 
                 Text("Nothing has been changed. Your sessions are still on this phone, and "

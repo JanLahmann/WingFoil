@@ -52,7 +52,7 @@ struct DevTuningDiffView: View {
             Text(String(moved) + thresholds + " · this session only, "
                  + "computed in memory, nothing stored.")
                 .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(.readableSecondary)
                 .fixedSize(horizontal: false, vertical: true)
             if !diff.changes.isEmpty {
                 Button {
@@ -85,7 +85,7 @@ struct DevTuningDiffView: View {
             HStack(spacing: 8) {
                 Text(Fmt.clock(change.ts))
                     .font(.caption2.monospacedDigit())
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.readableSecondary)
                     .scaledColumn(46, relativeTo: .caption2)
                 Text(change.kind.label)
                     .font(.caption2.weight(.medium))
@@ -99,7 +99,7 @@ struct DevTuningDiffView: View {
                     .minimumScaleFactor(0.8)
                 Spacer(minLength: 0)
                 if change.tunedIndex == nil {
-                    Text("default only").font(.caption2).foregroundStyle(.tertiary)
+                    Text("default only").font(.caption2).foregroundStyle(.readableSecondary)
                 }
             }
             .padding(.vertical, 5)

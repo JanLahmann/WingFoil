@@ -171,10 +171,7 @@ struct ImportView: View {
     /// The way to the topic that answers *how*, by that topic's own title so the row says
     /// where it goes.
     private func helpRow(_ door: ImportDoor) -> some View {
-        Button { helpTopic = door.helpTopic } label: {
-            Label(HelpCatalog.topic(door.helpTopic, channel: AppChannel.channel).title,
-                  systemImage: "questionmark.circle")
-        }
+        HelpTopicLink(door.helpTopic, style: .row) { helpTopic = door.helpTopic }
     }
 
     /// The service, or the kind of thing. Strava's section carries Strava's mark: rule 2 of
@@ -205,13 +202,7 @@ struct ImportView: View {
                 .fixedSize(horizontal: false, vertical: true)
             // Not under the door whose own row is already that link.
             if door.actionTitle(channel: AppChannel.channel) != nil {
-                Button { helpTopic = door.helpTopic } label: {
-                    Text(HelpCatalog.topic(door.helpTopic,
-                                           channel: AppChannel.channel).title)
-                        .font(.footnote.weight(.semibold))
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(Color.accentColor)
+                HelpTopicLink(door.helpTopic) { helpTopic = door.helpTopic }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

@@ -103,7 +103,7 @@ struct TakeoffsAnalysisView: View {
             Text("A free takeoff got up on the wind alone. "
                  + "It is a takeoff too, counted with the rest.")
                 .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(.readableSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .id("takeoffFilters")
@@ -212,7 +212,7 @@ struct TakeoffsAnalysisView: View {
             Text("outcome").frame(maxWidth: .infinity, alignment: .leading)
         }
         .font(.caption2)
-        .foregroundStyle(.tertiary)
+        .foregroundStyle(.readableSecondary)
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
     }
@@ -239,7 +239,7 @@ struct TakeoffsAnalysisView: View {
             }
         }
         .font(.caption2)
-        .foregroundStyle(.tertiary)
+        .foregroundStyle(.readableSecondary)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

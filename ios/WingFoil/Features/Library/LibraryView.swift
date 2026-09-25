@@ -637,8 +637,9 @@ struct LibraryView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
-            Button("What to check") { sheet = .helpTopic(problem.helpTopic) }
-                .font(.caption.weight(.semibold))
+            HelpTopicLink(problem.helpTopic, label: "What to check") {
+                sheet = .helpTopic(problem.helpTopic)
+            }
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)

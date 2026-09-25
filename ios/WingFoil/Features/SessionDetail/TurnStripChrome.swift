@@ -41,7 +41,7 @@ enum StripChrome {
         var body: some View {
             Text(text)
                 .font(.system(size: min(size, 8 * 1.6), weight: .medium))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(.readableSecondary)
         }
     }
 

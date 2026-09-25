@@ -84,7 +84,7 @@ private struct FlightEndsCard: View {
                      + "Find it on the Turns tab. "
                      + "An end the recording cut short has no evidence to judge.")
                     .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.readableSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding()
@@ -177,7 +177,7 @@ private struct WindDetailCard: View {
                 }
                 Text(consequence)
                     .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.readableSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding()
@@ -230,7 +230,7 @@ private struct WindDetailCard: View {
             Text(value).font(.subheadline.weight(.semibold))
             Text(note)
                 .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(.readableSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -262,7 +262,7 @@ private struct RecordingCard: View {
                 if let file = detail.row.originalFilename { Text(file) }
             }
             .font(.caption2)
-            .foregroundStyle(.tertiary)
+            .foregroundStyle(.readableSecondary)
             .frame(maxWidth: .infinity, alignment: .leading)
 
             // Rule 3 of Strava's brand guidelines: anything showing data taken from Strava
@@ -405,7 +405,7 @@ private struct DivergenceDetailCard: View {
             .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 12))
             Text(advice)
                 .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(.readableSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -420,7 +420,7 @@ private struct DivergenceDetailCard: View {
             Text("Δ").scaledColumn(60, alignment: .trailing, relativeTo: .caption)
         }
         .font(.caption2)
-        .foregroundStyle(.tertiary)
+        .foregroundStyle(.readableSecondary)
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
     }

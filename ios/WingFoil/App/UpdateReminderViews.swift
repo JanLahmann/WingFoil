@@ -123,7 +123,7 @@ struct UpdateReminderScreen: View {
 
                     Text("This build is \(reminder.runningBuild).")
                         .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(.readableSecondary)
                         .padding(.top, 8)
 
                     Text("Nothing has been changed and nothing is lost. Your sessions are "

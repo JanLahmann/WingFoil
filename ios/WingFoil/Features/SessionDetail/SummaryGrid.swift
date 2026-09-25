@@ -143,7 +143,7 @@ struct SessionRecordsTable: View {
                 Spacer()
                 if !detail.efforts.isEmpty {
                     Text(selectedEffort == nil ? "tap to locate" : "tap again for 2 s")
-                        .font(.caption2).foregroundStyle(.tertiary)
+                        .font(.caption2).foregroundStyle(.readableSecondary)
                 }
             }
             VStack(spacing: 0) {
@@ -173,7 +173,7 @@ struct SessionRecordsTable: View {
             Text("where").frame(maxWidth: .infinity, alignment: .leading)
         }
         .font(.caption2)
-        .foregroundStyle(.tertiary)
+        .foregroundStyle(.readableSecondary)
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
     }
@@ -199,7 +199,7 @@ struct SessionRecordsTable: View {
                 Text(value == nil ? "no qualifying run"
                                   : caption(for: kind["windows"]?.arrayValue?.first))
                     .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.readableSecondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -488,7 +488,7 @@ struct SessionTakeoffSection: View {
                      : "of " + String(k.takeoffAttempts)
                         + " attempts · red u-turns on the map")
                     .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.readableSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -531,7 +531,7 @@ struct StatCard: View {
                 .minimumScaleFactor(0.6)
             Text(caption)
                 .font(.caption2)
-                .foregroundStyle(captionColor ?? Color(.tertiaryLabel))
+                .foregroundStyle(captionColor ?? Color.readableSecondary)
                 .minimumScaleFactor(0.8)
                 // No line limit: the card is as tall as its caption needs, and the grid row
                 // takes the tallest card. Two lines was a ceiling measured at the default

@@ -72,7 +72,7 @@ struct SpeedChartView: View {
                 } else if !detail.timeline.isEmpty {
                     Text("pinch to zoom · drag to scrub")
                         .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(.readableSecondary)
                 }
             }
 
