@@ -59,7 +59,8 @@ import Testing
         #expect(entries.count >= 3)
         #expect(entries.allSatisfy { !$0.term.isEmpty && $0.detail.count > 40 })
         let all = entries.map { $0.term + " " + $0.detail }.joined(separator: " ").lowercased()
-        #expect(all.contains("401"))
+        // The rejected key, in the words the app shows — not the status code behind it.
+        #expect(all.contains("rejected the api key"))
         #expect(all.contains("garmin"))
         #expect(all.contains("watersport"))
     }
@@ -138,7 +139,7 @@ import Testing
     /// The topic for the rider who owns no Garmin (ADR-017). It has one job — get him from
     /// "I have an Apple Watch" to a session in the library — so it has to name the three
     /// steps *and* the two things he would otherwise learn by being disappointed: a wrist
-    /// under water is the swim evidence, not a mistake (Jan, 15 Sep 2026), and nothing in a
+    /// that goes under is the swim evidence, not a mistake (Jan, 15 Sep 2026), and nothing in a
     /// Health workout records his wrist.
     @Test func theAppleWorkoutTopicSaysHowToRecordAndWhatIsMissing() {
         let topic = HelpCatalog.topic(.appleWorkoutApp)
@@ -146,7 +147,7 @@ import Testing
         let prose = (topic.body + topic.items.flatMap { [$0.term, $0.detail] })
             .joined(separator: " ").lowercased()
         for phrase in ["surfing", "water sports", "sailing", "import", "health",
-                       "under water", "certified", "accelerometer", "automatically"] {
+                       "goes under", "certified", "accelerometer", "automatically"] {
             #expect(prose.contains(phrase), "the Apple Workout topic never mentions \(phrase)")
         }
         // The promise the permission prompt is about to make, made here first.
@@ -162,7 +163,7 @@ import Testing
     /// The rider ceiling is named **neutrally** since 14 September 2026: "a limited number of
     /// riders", not "Strava has not reviewed CleanJibe yet", which tells an App Store rider
     /// that the app in his hand is waiting for permission to exist. The rate limit is the
-    /// real number — two hundred — in the same words here and on the Import screen, which
+    /// real number — two hundred — the same number here and on the Import screen, which
     /// used to say a hundred.
     @Test func theStravaTopicSaysWhatItCostsBeforeTheRiderImports() {
         let topic = HelpCatalog.topic(.stravaImport)
@@ -170,7 +171,7 @@ import Testing
         let prose = (topic.body + topic.items.flatMap { [$0.term, $0.detail] })
             .joined(separator: " ").lowercased()
         for phrase in ["uncertified", "pump strokes", "intervals.icu", "never writes",
-                       "limited number of riders", "200 requests",
+                       "limited number of riders", "200 times",
                        "15 minutes", "support & ideas", "disconnect"] {
             #expect(prose.contains(phrase), "the Strava topic never mentions \(phrase)")
         }
@@ -217,7 +218,7 @@ import Testing
         #expect(prose.contains("connect.garmin.com"))
         #expect(prose.contains("intervals.icu"))
         // FIT over GPX/TCX, and why.
-        #expect(prose.contains("fit, every time"))
+        #expect(prose.contains("pick fit"))
         #expect(prose.contains("uncertified"))
         // Each vendor path links to the page it was verified against, in the items' order.
         #expect(topic.links.count == 4)
@@ -251,16 +252,16 @@ import Testing
         let prose = (topic.body + topic.items.map(\.detail))
             .joined(separator: " ").lowercased()
         for phrase in ["new iphone", "icloud", "deleted", "gear", "accelerometer",
-                       "never overwrites", "refused"] {
+                       "never overwrites", "will not open"] {
             #expect(prose.contains(phrase), "the backup topic never mentions \(phrase)")
         }
         // The recordings inside are the rider's own, unscrubbed — the opposite promise
         // from `shareFit`, and the one a reader could otherwise get wrong.
         #expect(prose.contains(".fit"))
         #expect(prose.contains("nothing is removed"))
-        // The two facts the Settings footer does not carry: the file is temporary, and
-        // saving it is the rider's own job.
-        #expect(prose.contains("temporary"))
+        // The two facts the Settings footer does not carry: CleanJibe keeps no copy of the
+        // file, and saving it is the rider's own job.
+        #expect(prose.contains("keeps no copy"))
         #expect(prose.contains("files, icloud drive or on a mac"))
         #expect(HelpCatalog.search("backup").contains { $0.id == .libraryBackup })
     }

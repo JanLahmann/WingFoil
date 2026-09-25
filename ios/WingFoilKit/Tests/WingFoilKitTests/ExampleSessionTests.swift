@@ -309,7 +309,7 @@ import Testing
         // author, and it went with the rest of the interiority in the copy pass.
         #expect(prose.contains("EXAMPLE"))
         #expect(prose.lowercased().contains("records"))
-        #expect(prose.lowercased().contains("identifier"))
+        #expect(prose.lowercased().contains("everything that identifies the rider"))
         #expect(HelpCatalog.search("example").contains { $0.id == .exampleSession })
 
         // The topic that says "look around" shows what there is to look at.
