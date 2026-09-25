@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.24.0",
+  "engineVersion": "0.25.0",
   "config": {
     "foilEntrySpeed": 12.0,
     "entryHold": 2.0,
@@ -2288,7 +2288,7 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": 12
+      "ownedByTurn": null
     },
     {
       "flightIndex": 4,
@@ -2335,7 +2335,7 @@
     {
       "flightIndex": 7,
       "ts": 1367.0,
-      "outcome": "touchdown",
+      "outcome": "glide_out",
       "borderline": false,
       "offFoilS": 46.0,
       "stoppedS": 3.0,
@@ -2386,7 +2386,7 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": 20
+      "ownedByTurn": null
     },
     {
       "flightIndex": 11,
@@ -2428,7 +2428,7 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": 26
+      "ownedByTurn": null
     },
     {
       "flightIndex": 14,
@@ -2475,7 +2475,7 @@
     {
       "flightIndex": 17,
       "ts": 2654.0,
-      "outcome": "touchdown",
+      "outcome": "glide_out",
       "borderline": false,
       "offFoilS": 59.0,
       "stoppedS": 0.0,
@@ -4735,24 +4735,24 @@
     },
     "flightEnds": {
       "all": {
-        "glideOut": 7,
-        "touchdown": 4,
+        "glideOut": 9,
+        "touchdown": 2,
         "fellIn": 20,
         "unknown": 6,
         "borderline": 0
       },
       "straight": {
-        "glideOut": 1,
-        "touchdown": 2,
+        "glideOut": 2,
+        "touchdown": 1,
         "fellIn": 6,
-        "unknown": 2,
+        "unknown": 5,
         "borderline": 0
       },
       "inTurn": {
-        "glideOut": 6,
-        "touchdown": 2,
+        "glideOut": 7,
+        "touchdown": 1,
         "fellIn": 14,
-        "unknown": 4,
+        "unknown": 1,
         "borderline": 0
       }
     },
@@ -4760,8 +4760,8 @@
       "turnFalls": 15,
       "straightFalls": 6,
       "turnTouchdowns": 12,
-      "straightTouchdowns": 2,
-      "glideOuts": 1,
+      "straightTouchdowns": 1,
+      "glideOuts": 2,
       "unknownEnds": 6
     },
     "takeoff": {

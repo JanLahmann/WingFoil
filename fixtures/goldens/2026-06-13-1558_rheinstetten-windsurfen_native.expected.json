@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.24.0",
+  "engineVersion": "0.25.0",
   "config": {
     "foilEntrySpeed": 12.0,
     "entryHold": 2.0,
@@ -2393,7 +2393,7 @@
       "submerged": false,
       "windowS": 29.0,
       "truncated": false,
-      "ownedByTurn": 2
+      "ownedByTurn": null
     },
     {
       "flightIndex": 3,
@@ -2440,7 +2440,7 @@
     {
       "flightIndex": 6,
       "ts": 919.0,
-      "outcome": "touchdown",
+      "outcome": "glide_out",
       "borderline": false,
       "offFoilS": 36.0,
       "stoppedS": 0.0,
@@ -2631,7 +2631,7 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": 25
+      "ownedByTurn": null
     },
     {
       "flightIndex": 20,
@@ -2720,8 +2720,8 @@
     {
       "flightIndex": 26,
       "ts": 3873.0,
-      "outcome": "touchdown",
-      "borderline": true,
+      "outcome": "glide_out",
+      "borderline": false,
       "offFoilS": 37.0,
       "stoppedS": 4.0,
       "minKn": 1.866,
@@ -2748,7 +2748,7 @@
     {
       "flightIndex": 28,
       "ts": 4137.0,
-      "outcome": "touchdown",
+      "outcome": "glide_out",
       "borderline": false,
       "offFoilS": 18.0,
       "stoppedS": 1.0,
@@ -2776,7 +2776,7 @@
     {
       "flightIndex": 30,
       "ts": 4499.0,
-      "outcome": "touchdown",
+      "outcome": "glide_out",
       "borderline": false,
       "offFoilS": 64.0,
       "stoppedS": 0.0,
@@ -3028,7 +3028,7 @@
     {
       "flightIndex": 48,
       "ts": 6925.0,
-      "outcome": "touchdown",
+      "outcome": "glide_out",
       "borderline": false,
       "offFoilS": 25.0,
       "stoppedS": 1.0,
@@ -6120,33 +6120,33 @@
     },
     "flightEnds": {
       "all": {
-        "glideOut": 1,
-        "touchdown": 12,
+        "glideOut": 6,
+        "touchdown": 7,
         "fellIn": 36,
         "unknown": 5,
-        "borderline": 2
+        "borderline": 1
       },
       "straight": {
-        "glideOut": 0,
-        "touchdown": 6,
-        "fellIn": 11,
-        "unknown": 0,
+        "glideOut": 2,
+        "touchdown": 4,
+        "fellIn": 12,
+        "unknown": 1,
         "borderline": 1
       },
       "inTurn": {
-        "glideOut": 1,
-        "touchdown": 6,
-        "fellIn": 25,
-        "unknown": 5,
-        "borderline": 1
+        "glideOut": 4,
+        "touchdown": 3,
+        "fellIn": 24,
+        "unknown": 4,
+        "borderline": 0
       }
     },
     "outcomeSplit": {
       "turnFalls": 22,
-      "straightFalls": 11,
+      "straightFalls": 12,
       "turnTouchdowns": 13,
-      "straightTouchdowns": 6,
-      "glideOuts": 0,
+      "straightTouchdowns": 4,
+      "glideOuts": 2,
       "unknownEnds": 5
     },
     "takeoff": {

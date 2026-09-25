@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.24.0",
+  "engineVersion": "0.25.0",
   "config": {
     "discipline": "windsurfFin",
     "foilEntrySpeed": 20.0,
