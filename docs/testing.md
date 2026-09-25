@@ -937,13 +937,17 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
      (7-day window, the
      `foilTimeS`→`foilPct` fallback for pre-v2 rows, encode/decode round-trip, and the
      invariant that the store never claims the shared container it does not have).
-   - `SessionPagingTests` — which way a flick turns the session page (`SessionPaging`). The
-     finger drags the content, so left is the **next** session in the list's order and right
-     is the previous one, mirrored at every distance that commits. A short drag stays, a
-     short drag *thrown* hard turns, a flick that reverses mid-drag stays, and a drag that is
-     not much flatter than it is tall belongs to the inline map. Plus the rubber band: the
-     page follows the finger the way it went, never past the limit, and barely at all where
-     there is no session to turn to.
+   - `SessionPagingTests` — which way a flick turns the session page (`SessionPaging`). Time
+     runs left to right: the **older** session waits on the left, the **newer** on the right,
+     and the finger drags the content, so a drag left brings in the newer one — mirrored at
+     every distance that commits. A short drag stays, a short drag *thrown* hard turns, a
+     flick that reverses mid-drag stays, and a drag that is not much flatter than it is tall
+     belongs to the scroll. The page follows the finger one to one where there is a session
+     to turn to and barely at all where there is not; the timeline sorts the list's run by
+     start time, ties in their own order, with nil neighbours at the ends.
+   - `LabelSpacingTests` — words on a strip that must not overprint (`LabelSpacing`): a
+     top-edge caption that would land on one already placed climbs a row, never drops under
+     the plot, and an axis keeps its ticks in priority order while they are a label apart.
    - `RowMetricTests` — the three numbers a library row carries (`RowMetric`). Every case has
      a word and a glyph and no two share a word (pattern H), the default triple is foil ·
      jibes · best 2 s, each case spells its value the way the rest of the app spells it, an

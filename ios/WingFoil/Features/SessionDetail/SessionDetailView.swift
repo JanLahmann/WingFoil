@@ -49,13 +49,13 @@ struct SessionDetailView: View {
     /// would build a stack he then has to unwind, and the back button would lie about
     /// where it goes. Nil until he swipes, so a cold push still draws what it was asked for.
     @State private var shownID: String?
-    /// How far the page is drawn from its resting place while a finger is on it. Zero at
-    /// rest, which is every moment except the drag itself.
-    @State private var dragX: CGFloat = 0
-    /// Which way the last page turn went, so the two halves of the slide — the page
-    /// leaving and the page arriving — are told apart (`pageTurn`). It outlives the drag
-    /// because the transition is read while the animation runs.
-    @State private var lastStep = SessionPaging.Step.next
+    /// A turn the header's ‹ › asked for; `SessionPager` runs it and clears it, so the
+    /// arrow and the flick are one slide.
+    @State private var pageRequest: SessionPaging.Step?
+    /// The sessions either side of this one in time (`SessionPaging.neighbours`). Worked
+    /// out when the page or the list changes rather than in `body`: the replay moves the
+    /// playhead twenty times a second, and a sort per frame is a sort nobody needs.
+    @State private var neighbours = Neighbours()
     /// The title editor. Renaming used to live only inside the share composer, which is a
     /// long way to go to fix a name the list is showing wrong (GitHub issue 13).
     @State private var renaming = false
@@ -95,56 +95,32 @@ struct SessionDetailView: View {
 
     private var row: SessionRow? { store.session(id: shown) }
 
-    /// **The list's order, as the page inherits it** — the filtered, sorted run the Sessions
-    /// tab is showing (`SessionStore.visibleSessionIDs`), so a swipe walks the afternoons in
-    /// the order the rider is reading them rather than in the library's own. Falls back to
-    /// the whole library, which is what a page reached from Records or from a notification
-    /// has behind it.
-    private var order: [String] {
-        store.visibleSessionIDs.contains(shown) ? store.visibleSessionIDs
-                                                : store.sessions.map(\.id)
+    /// The older and newer session beside this one.
+    struct Neighbours: Equatable {
+        var older: String?
+        var newer: String?
     }
 
-    private var position: Int? { order.firstIndex(of: shown) }
-
-    private var previousID: String? {
-        guard let position, position > 0 else { return nil }
-        return order[position - 1]
+    /// **The pages, oldest to newest** — the run the Sessions tab is showing
+    /// (`SessionStore.visibleSessionIDs`: what the filter left), laid out in time rather
+    /// than in the list's grouping, so the older afternoon is always on the left and the
+    /// newer one on the right (Jan, 25 Sep 2026). Falls back to the whole library, which is
+    /// what a page reached from Records or from a notification has behind it.
+    private func findNeighbours() -> Neighbours {
+        let ids = store.visibleSessionIDs.contains(shown) ? store.visibleSessionIDs
+                                                          : store.sessions.map(\.id)
+        let starts = Dictionary(store.sessions.map { ($0.id, $0.startDate) },
+                                uniquingKeysWith: { first, _ in first })
+        let timeline = SessionPaging.timeline(ids.compactMap { id in
+            starts[id].map { (id: id, start: $0) }
+        })
+        let found = SessionPaging.neighbours(of: shown, in: timeline)
+        return Neighbours(older: found.older, newer: found.newer)
     }
 
-    private var nextID: String? {
-        guard let position, position + 1 < order.count else { return nil }
-        return order[position + 1]
-    }
-
-    /// **Turns the page**, one step in the list's order, with the slide that says which way
-    /// it went. The flick and the `‹ ›` pair both come through here, so the two moves are
-    /// the same move and are animated once.
-    ///
-    /// A step with nothing on the other side of it — the ends of the list — still runs:
-    /// the page springs back from wherever the finger left it, which is the answer a
-    /// scroll view gives at its own ends.
-    private func turn(_ step: SessionPaging.Step) {
-        let target = switch step {
-        case .next: nextID
-        case .previous: previousID
-        case .stay: String?.none
-        }
-        withAnimation(.snappy(duration: 0.28)) {
-            dragX = 0
-            if let target {
-                lastStep = step
-                show(target)
-            }
-        }
-    }
-
-    /// The slide itself: the outgoing page leaves by the edge the finger pushed it towards
-    /// and the incoming one arrives from the opposite one. Turning back reverses both.
-    private var pageTurn: AnyTransition {
-        let forward = lastStep != .previous
-        return .asymmetric(insertion: .move(edge: forward ? .trailing : .leading),
-                           removal: .move(edge: forward ? .leading : .trailing))
+    /// What the neighbours depend on: the page, the run the list shows, and the library.
+    private var neighboursKey: [String] {
+        [shown, String(store.sessions.count)] + store.visibleSessionIDs
     }
 
     /// Moves the page to another session and forgets everything that was about the old one.
@@ -320,52 +296,20 @@ struct SessionDetailView: View {
     }
 
     var body: some View {
-        // **The page slides; it does not swap** (Jan, Beta 75). One session is on screen at
-        // a time and the outgoing one leaves the way the finger pushed it: drag left and
-        // the afternoon on screen goes left while the next one arrives from the right. The
-        // `ZStack` is what lets both exist for the third of a second that takes.
-        ZStack {
-            page
-                .id(shown)
-                .transition(pageTurn)
-        }
-        // Mid-drag the whole page rides under the finger (`SessionPaging.follow`), so the
-        // flick is a page turn before it is committed — and visibly nothing at all at the
-        // ends of the list, where there is no page to turn to.
-        .offset(x: dragX)
-        // The sliding pages stop at the screen's edges rather than drawing over the bars.
-        .clipped()
+        // **The page slides; it does not swap** (Jan, Beta 75), and **time runs left to
+        // right** (Jan, 25 Sep 2026): the older afternoon waits on the left, the newer one on
+        // the right, and the finger drags the content — so a drag left brings in the newer
+        // session. The rule is the kit's (`SessionPaging`, pinned by `SessionPagingTests`),
+        // the slide is `SessionPager`'s, and the ‹ › pair beside the date runs the same slide
+        // for a rider who never tries the flick. A drag that starts on the map, the chart or
+        // the replay slider is that figure's and never turns the page.
+        SessionPager(older: neighbours.older, newer: neighbours.newer,
+                     request: $pageRequest, onTurn: { show($0) },
+                     page: page.id(shown),
+                     preview: { id in preview(id) })
+        .onChange(of: neighboursKey, initial: true) { neighbours = findNeighbours() }
         .navigationTitle(row.map(SessionDisplay.title) ?? "Session")
         .navigationBarTitleDisplayMode(.inline)
-        // **A horizontal flick turns the page to the next afternoon.**
-        //
-        // `simultaneousGesture`, so the vertical scroll and the map's own pan keep every
-        // touch they had — and a strict predicate, because the inline map pans horizontally
-        // too: a drag counts only when it is flat and mostly sideways
-        // (`SessionPaging.isHorizontal`). The `‹ ›` pair beside the date is the same move
-        // for a rider who never tries the flick, and the only chrome it costs.
-        //
-        // Which way it goes is the kit's rule and not a ternary typed here: the finger
-        // drags the content, so leftwards brings in the next session in the list's order
-        // (`SessionPaging`, pinned by `SessionPagingTests`).
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 30)
-                .onChanged { value in
-                    let dx = value.translation.width
-                    let dy = value.translation.height
-                    guard SessionPaging.isHorizontal(dx: dx, dy: dy) else {
-                        if dragX != 0 { withAnimation(.snappy) { dragX = 0 } }
-                        return
-                    }
-                    dragX = SessionPaging.follow(
-                        dx: dx, hasTarget: (dx < 0 ? nextID : previousID) != nil)
-                }
-                .onEnded { value in
-                    let step = SessionPaging.step(
-                        dx: value.translation.width, dy: value.translation.height,
-                        predictedDx: value.predictedEndTranslation.width)
-                    turn(step)
-                })
         #if DEBUG && targetEnvironment(simulator)
         .navigationDestination(isPresented: $showFullScreenMap) {
             if let detail {
@@ -610,7 +554,32 @@ struct SessionDetailView: View {
 
     @ViewBuilder
     private var header: some View {
-        if let row {
+        if let row { header(row, detail: detail, live: true) }
+    }
+
+    /// **The neighbour, as the slide shows it** — the header it will open with over the
+    /// same spinner, in the same column, so that when the slide ends and the real page takes
+    /// its place nothing moves.
+    private func preview(_ id: String) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                if let row = store.session(id: id) {
+                    header(row, detail: nil, live: false)
+                }
+                ProgressView("Analyzing…")
+                    .frame(maxWidth: .infinity, minHeight: 200)
+            }
+            .padding(.horizontal)
+            .readableColumn()
+        }
+        .scrollDisabled(true)
+    }
+
+    /// The date and the arrows, where the recording came from, and the badges. `live` is
+    /// false on the neighbour the slide draws beside the page: its arrows are drawn, lit,
+    /// so the header does not change as it lands, and take no taps.
+    private func header(_ row: SessionRow, detail: SessionDetail?, live: Bool) -> some View {
+        Group {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 10) {
                     Text(Fmt.date(row.startDate, zone: row.displayZone))
@@ -619,9 +588,17 @@ struct SessionDetailView: View {
                     // The flick, for a rider who has not found the flick. Two glyphs and no
                     // words: the arrows are beside a date, and what is on the other side of
                     // a date needs no label.
-                    stepButton("chevron.left", .previous, to: previousID,
-                               reads: "Previous session")
-                    stepButton("chevron.right", .next, to: nextID, reads: "Next session")
+                    // ‹ is the older session and › the newer, on the sides the slide
+                    // brings them in from.
+                    Group {
+                        stepButton("chevron.left", .older,
+                                   lit: !live || neighbours.older != nil,
+                                   reads: "Older session")
+                        stepButton("chevron.right", .newer,
+                                   lit: !live || neighbours.newer != nil,
+                                   reads: "Newer session")
+                    }
+                    .allowsHitTesting(live)
                 }
                 // **Where this recording came from**, under the date and nowhere else on
                 // this tab. It was on the Log tab only, four taps from the question — and
@@ -674,20 +651,20 @@ struct SessionDetailView: View {
 
     /// One step along the list, greyed at the ends rather than absent: a control that
     /// vanishes at the last session is a control a rider stops trusting (pattern G).
-    private func stepButton(_ symbol: String, _ step: SessionPaging.Step, to id: String?,
+    private func stepButton(_ symbol: String, _ step: SessionPaging.Step, lit: Bool,
                             reads: String) -> some View {
-        // Through `turn` like the flick, so the arrow slides the page the same way the
+        // Through the pager like the flick, so the arrow slides the page the same way the
         // finger does. A rider who uses both must not see two different animations.
-        Button { turn(step) } label: {
+        Button { pageRequest = step } label: {
             Image(systemName: symbol)
                 .font(.footnote.weight(.semibold))
-                .foregroundStyle(id == nil ? AnyShapeStyle(.tertiary)
-                                           : AnyShapeStyle(Color.accentColor))
+                .foregroundStyle(lit ? AnyShapeStyle(Color.accentColor)
+                                     : AnyShapeStyle(.tertiary))
                 .frame(width: 28, height: 28)
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .disabled(id == nil)
+        .disabled(!lit)
         .accessibilityLabel(reads)
     }
 
