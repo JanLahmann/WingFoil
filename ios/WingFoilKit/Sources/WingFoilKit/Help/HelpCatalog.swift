@@ -853,8 +853,16 @@ public enum HelpCatalog {
                 "The app talks to four places, each only when you use it. Your own "
                 + "login goes to intervals.icu and Strava. Apple Maps loads while a "
                 + "map is on screen. To name a new spot, it sends one rounded position.",
-                "CleanJibe never asks for your location. Every coordinate it draws was "
-                + "already inside a file you imported.",
+                // Release-only, deliberately: the beta and dev builds ship a watch app and
+                // a Garmin link this body cannot name (only `items`, not `body`, is allowed
+                // to branch by channel — see `HelpTopic.withItems`), and each of those does
+                // ask for a location once, in one place (docs/release/privacy-labels.md
+                // audit, 26 September 2026: this line used to say "never", full stop, which
+                // was true on the App Store and false on both other channels).
+                "On the App Store release, CleanJibe never asks for your location. Every "
+                + "coordinate it draws was already inside a file you imported. The beta "
+                + "and dev builds ask for one, in one place each. The privacy page says "
+                + "where.",
             ],
             links: [HelpLink(title: "Open \(Branding.site)/privacy",
                              url: URL(string: Branding.siteURL + "/privacy/")!)],
