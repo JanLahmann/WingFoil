@@ -47,21 +47,26 @@ enum EventMarkerStyle {
     /// map scale is two events to the eye. Shape carries it, so nothing here depends on
     /// telling one green from another; the outcome is still one tap away in the callout,
     /// and still governs whether the mark is drawn at all.
-    @ViewBuilder
     static func dot(_ marker: SessionDetail.EventMarker, size: CGFloat = 11) -> some View {
-        if marker.isCleanJibe {
-            Image(systemName: DesignTokens.Glyph.cleanJibe)
-                .font(.system(size: size + 2, weight: .semibold))
-                .foregroundStyle(cleanJibe)
-                .shadow(radius: 1)
-        } else {
-            let tint = color(marker.tone)
-            Circle()
-                .fill(marker.filled ? tint : Color.clear)
-                .stroke(marker.filled ? Color.white.opacity(0.9) : tint, lineWidth: 2)
-                .frame(width: size, height: size)
-                .shadow(radius: 1)
+        OutcomeDot(marker: marker, size: size)
+    }
+
+    /// **The ladder's shape, for a reader who cannot use its colour** (release round C).
+    /// Three dots that differ only in ink are one dot to a reader who has turned on
+    /// Settings → Accessibility → Display → Differentiate Without Color, so there each rung
+    /// wears the glyph the turn list and the tally chips already use — check, triangle,
+    /// cross — filled for a maneuver and outlined for a straight-line end, the same channel
+    /// the dot's fill carries. A course change is no verdict and stays a grey dot.
+    static func outcomeSymbol(_ tone: SessionDetail.EventMarker.Tone,
+                              filled: Bool = true) -> String? {
+        let kind: TurnOutcomeKind
+        switch tone {
+        case .flew: kind = .flewThrough
+        case .touchdown: kind = .touchdown
+        case .fell: kind = .fellIn
+        case .course: return nil
         }
+        return filled ? kind.symbolName : kind.symbolName.replacingOccurrences(of: ".fill", with: "")
     }
 
     /// Takeoffs and splashes are glyphs, not dots, so they can never be mistaken for an
@@ -124,4 +129,36 @@ extension SessionDetail.EventMarker {
     /// plain flew-through dots go while the stars stay, hide "clean jibe" and the stars go
     /// while the dots stay. Nothing is ever drawn twice, and nothing answers to two chips.
     var layers: [MapLayer] { isCleanJibe ? [.cleanJibe] : [layer] }
+}
+
+/// One outcome mark on a map: the dot, the star for a clean jibe, or — with Differentiate
+/// Without Color on — the rung's glyph (`EventMarkerStyle.outcomeSymbol`). A view rather
+/// than a function so it can read the setting.
+struct OutcomeDot: View {
+    let marker: SessionDetail.EventMarker
+    var size: CGFloat = 11
+    @Environment(\.accessibilityDifferentiateWithoutColor) private var withoutColour
+
+    var body: some View {
+        if marker.isCleanJibe {
+            Image(systemName: DesignTokens.Glyph.cleanJibe)
+                .font(.system(size: size + 2, weight: .semibold))
+                .foregroundStyle(EventMarkerStyle.cleanJibe)
+                .shadow(radius: 1)
+        } else if withoutColour,
+                  let symbol = EventMarkerStyle.outcomeSymbol(marker.tone, filled: marker.filled) {
+            Image(systemName: symbol)
+                .font(.system(size: size + 3, weight: .bold))
+                .foregroundStyle(EventMarkerStyle.color(marker.tone))
+                .background(Circle().fill(.white).padding(1))
+                .shadow(radius: 1)
+        } else {
+            let tint = EventMarkerStyle.color(marker.tone)
+            Circle()
+                .fill(marker.filled ? tint : Color.clear)
+                .stroke(marker.filled ? Color.white.opacity(0.9) : tint, lineWidth: 2)
+                .frame(width: size, height: size)
+                .shadow(radius: 1)
+        }
+    }
 }

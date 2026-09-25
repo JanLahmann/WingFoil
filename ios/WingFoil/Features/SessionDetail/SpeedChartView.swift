@@ -259,6 +259,14 @@ struct SpeedChartView: View {
         .chartYScale(domain: 0...Speed.value(max(detail.maxSpeedKn * 1.1, 5)))
         .chartOverlay { proxy in gestureSurface(proxy) }
         .figureHeight(regular: 190, compact: 150, wide: 260)
+        // What the trace says, in one sentence: the span it shows and its top speed
+        // (release round C). The records beside the chart carry the rest, each with its word.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Speed chart, "
+                            + Fmt.clock(window.visible.lowerBound - fullRange.lowerBound)
+                            + " to "
+                            + Fmt.clock(window.visible.upperBound - fullRange.lowerBound)
+                            + ", highest " + Fmt.kn(detail.maxSpeedKn))
         // A scrub is a flat sideways drag — exactly the drag that turns the session page.
         // One that starts on the chart is the chart's (`pagerExclusionZone`).
         .pagerExclusionZone()

@@ -233,7 +233,12 @@ struct TurnsAnalysisView: View {
                     TrackHalo.around(TurnOutcomeStyle.pin(pin.outcome, clean: pin.clean,
                                                           focused: focused == pin.id),
                                      on: store.mapStyle)
-                        .accessibilityHidden(true)
+                        // A pin is a turn, and a button to its page: "Jibe at 14:03, flew
+                        // through, clean" rather than nothing (release round C).
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(pinLabel(pin))
+                        .accessibilityAddTraits(.isButton)
+                        .accessibilityHint("Opens the turn")
                         // A pin is the turn: tapping it opens the turn's page, the same as
                         // its row. Until 7 Sep 2026 the pin's view swallowed the tap and did
                         // nothing (Jan: "markers cannot be clicked to go to the details").
@@ -261,6 +266,12 @@ struct TurnsAnalysisView: View {
     /// The filtered pins the *layer* chips also allow. A clean jibe is a star answering to
     /// the `cleanJibe` chip alone, exactly as on the session map — the rule is the kit's
     /// (`TurnOutcomeKind.layer(clean:)`), so the two maps cannot drift.
+    private func pinLabel(_ pin: SessionDetail.TurnPin) -> String {
+        let type = items.first { $0.id == pin.id }?.typeLabel ?? "Turn"
+        return SpokenFigures.turnPin(type: type, clock: Fmt.clock(pin.t),
+                                     outcome: pin.outcome, clean: pin.clean)
+    }
+
     private var drawnPins: [SessionDetail.TurnPin] {
         let visibility = self.visibility
         return pins.filter { visibility.isVisible($0.outcome.layer(clean: $0.clean)) }
@@ -398,8 +409,28 @@ enum TurnOutcomeStyle {
                 .foregroundStyle(EventMarkerStyle.cleanJibe)
                 .shadow(radius: focused ? 3 : 1)
         } else {
+            TurnPinDot(outcome: outcome, focused: focused)
+        }
+    }
+}
+
+/// A turn's pin: the ladder's dot, or its glyph with Differentiate Without Color on — the
+/// same rule the session map's marks follow (`OutcomeDot`).
+struct TurnPinDot: View {
+    let outcome: TurnOutcomeKind
+    let focused: Bool
+    @Environment(\.accessibilityDifferentiateWithoutColor) private var withoutColour
+
+    var body: some View {
+        if withoutColour {
+            Image(systemName: outcome.symbolName)
+                .font(.system(size: focused ? 20 : 14, weight: .bold))
+                .foregroundStyle(TurnOutcomeStyle.color(outcome))
+                .background(Circle().fill(.white).padding(1))
+                .shadow(radius: focused ? 3 : 1)
+        } else {
             Circle()
-                .fill(color(outcome))
+                .fill(TurnOutcomeStyle.color(outcome))
                 .stroke(.white.opacity(0.9), lineWidth: focused ? 3 : 2)
                 .frame(width: focused ? 18 : 11, height: focused ? 18 : 11)
                 .shadow(radius: focused ? 3 : 1)

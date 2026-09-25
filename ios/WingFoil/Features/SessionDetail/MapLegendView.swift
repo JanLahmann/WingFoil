@@ -255,6 +255,17 @@ private struct LegendChip: View {
     let layer: MapLayer
     let label: String
     let swatch: Swatch
+    @Environment(\.accessibilityDifferentiateWithoutColor) private var withoutColour
+
+    /// The outcome glyph this chip's marks wear with Differentiate Without Color on.
+    private var outcomeSymbol: String? {
+        switch layer {
+        case .flewThrough: EventMarkerStyle.outcomeSymbol(.flew)
+        case .touchdown: EventMarkerStyle.outcomeSymbol(.touchdown)
+        case .fellIn: EventMarkerStyle.outcomeSymbol(.fell)
+        default: nil
+        }
+    }
     let isOn: Bool
     let count: Int
     let toggle: () -> Void
@@ -315,6 +326,14 @@ private struct LegendChip: View {
                 .fill(isOn ? color : Color.clear)
                 .stroke(color, lineWidth: isOn ? 0 : 1)
                 .frame(width: 16, height: 5)
+        case .dot(let color) where withoutColour && outcomeSymbol != nil:
+            // The chip looks like the mark it toggles, and with Differentiate Without
+            // Color on the mark is the rung's glyph (`OutcomeDot`).
+            Image(systemName: outcomeSymbol ?? "circle")
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(color)
+                .opacity(isOn ? 1 : 0.55)
+                .frame(width: 11, height: 11)
         case .dot(let color):
             Circle()
                 .fill(isOn ? color : Color.clear)

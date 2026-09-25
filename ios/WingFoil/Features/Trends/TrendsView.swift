@@ -344,6 +344,12 @@ struct TrendsView: View {
                 .chartYAxis { AxisMarks(position: .leading) }
                 .chartLegend(position: .bottom, alignment: .leading)
                 .frame(height: 150)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(series.map { line in
+                    SpokenFigures.series(title: line.side + ", flew through",
+                                         values: line.values.map(\.value),
+                                         format: { String(format: "%.0f %%", $0) })
+                }.joined(separator: ". "))
                 Text("Entry tack is the tack you came into the turn on, not the rotation "
                      + "direction. Course changes are excluded.")
                     .font(.caption2)
@@ -374,6 +380,12 @@ struct TrendsView: View {
             .environment(\.calendar, LibraryStore.isoCalendar)
             .chartYAxis { AxisMarks(position: .leading) }
             .frame(height: 140)
+            // The caption under it already says how many weeks had a session; the chart
+            // adds the busiest one.
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Sessions per week, busiest week "
+                                + SpokenFigures.count(weeks.map(\.count).max() ?? 0,
+                                                      "session", "sessions"))
             Text(String(weeks.filter { $0.count > 0 }.count) + " of "
                  + String(weeks.count)
                  + " weeks on the water. Weeks start on Monday, ISO-8601, on your own clock.")
@@ -493,6 +505,10 @@ private struct TrendChart: View {
         }
         .chartYAxis { AxisMarks(position: .leading) }
         .frame(height: 140)
+        // One sentence, not sixty dates read mark by mark (release round C).
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(SpokenFigures.series(title: title, values: series.map(\.value),
+                                                 format: { format($0) + " " + unit }))
     }
 
     private func format(_ value: Double) -> String {

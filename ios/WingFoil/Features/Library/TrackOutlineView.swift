@@ -183,6 +183,11 @@ struct OutcomeTally: View {
     /// block, which owns that wording (docs/presentation.md).
     var words = false
 
+    /// Where the words are off, the three inks are the only thing telling the numbers
+    /// apart — so a reader who has asked the phone to differentiate without colour gets
+    /// the words back (release round C, pattern H).
+    @Environment(\.accessibilityDifferentiateWithoutColor) private var withoutColour
+
     var total: Int { flewThrough + touchdown + fellIn }
 
     var body: some View {
@@ -196,9 +201,8 @@ struct OutcomeTally: View {
             }
             .font(font.weight(.semibold).monospacedDigit())
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(String(flewThrough) + " flew through, "
-                                + String(touchdown) + " touchdowns, "
-                                + String(fellIn) + " falls")
+            .accessibilityLabel(SpokenFigures.tally(flewThrough: flewThrough,
+                                                    touchdown: touchdown, fellIn: fellIn))
         }
     }
 
@@ -207,7 +211,7 @@ struct OutcomeTally: View {
     private func part(_ value: Int, _ color: Color, _ word: String) -> some View {
         HStack(spacing: 2) {
             Text("\(value)")
-            if words {
+            if words || withoutColour {
                 Text(word).fontWeight(.regular)
             }
         }

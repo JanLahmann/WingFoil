@@ -212,5 +212,8 @@ struct KeyMetricsView: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        // One element: "42 flew through, 3 touchdowns, 5 fell in, Jibes — of 50 jibes",
+        // rather than the tally and its caption as two stops that each mean half a thing.
+        .accessibilityElement(children: .combine)
     }
 }

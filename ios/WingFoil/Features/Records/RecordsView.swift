@@ -274,23 +274,39 @@ struct RecordsView: View {
 private struct SessionRecordRowView: View {
     let best: SessionRecordBest
     let title: String
+    /// Past the accessibility threshold the phrase and "when · where" wrap instead of
+    /// shrinking to an ellipsis, and the value drops under the name once the two stop
+    /// fitting one line (release round C) — the all-time table's rule, one table up.
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
+        let large = typeSize.isAccessibilitySize
         VStack(alignment: .leading, spacing: 3) {
-            HStack(alignment: .firstTextBaseline, spacing: 10) {
-                Text(best.kind.label)
-                    .font(.subheadline)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-                Spacer(minLength: 6)
-                Text(value)
-                    .font(.subheadline.weight(.semibold).monospacedDigit())
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .firstTextBaseline, spacing: 10) {
+                    Text(best.kind.label)
+                        .font(.subheadline)
+                        .lineLimit(1)
+                        .minimumScaleFactor(large ? 1 : 0.8)
+                    Spacer(minLength: 6)
+                    Text(value)
+                        .font(.subheadline.weight(.semibold).monospacedDigit())
+                        .lineLimit(1)
+                        .fixedSize()
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(best.kind.label)
+                        .font(.subheadline)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(value)
+                        .font(.subheadline.weight(.semibold).monospacedDigit())
+                }
             }
             Text(provenance)
                 .font(.caption)
                 .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
+                .lineLimit(large ? 3 : 1)
+                .minimumScaleFactor(large ? 1 : 0.8)
             if let note = best.kind.caption {
                 Text(note).font(.caption2).foregroundStyle(.readableSecondary)
             }
