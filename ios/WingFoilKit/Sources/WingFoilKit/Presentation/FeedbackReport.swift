@@ -337,6 +337,14 @@ public enum FeedbackInvitation {
     /// "·" rather than a dash, like every other separator the app draws.
     public static let welcomeSentence =
         "Ideas and wishes are as welcome as bugs · Menu → Support & ideas"
+
+    /// **CleanJibe is built with its riders** (Jan, 24–25 September 2026, F2j and F5c): the
+    /// one wording of the community message. What CleanJibe does opens its footer with it,
+    /// and the Beta page says it once more; the "most wanted" ticks in the mail are where
+    /// it is going.
+    public static let community =
+        "CleanJibe is built with its riders. New features are chosen by demand and tested "
+        + "in the beta."
 }
 
 /// **The doors to that mail, each named exactly as the rider finds it.**

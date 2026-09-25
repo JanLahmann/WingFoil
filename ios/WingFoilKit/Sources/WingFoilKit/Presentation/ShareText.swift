@@ -45,7 +45,7 @@ public enum ShareText {
     public static func fitMessage(place: String?, startedAt: Date,
                                   timeZone: TimeZone) -> String {
         lead(place: place, startedAt: startedAt, timeZone: timeZone) + " · "
-            + Branding.appName + " session. Analyze it free in the browser at "
+            + Branding.appName + " session. Analyse it free in the browser at "
             + Branding.siteURL + ". No account needed."
     }
 

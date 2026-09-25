@@ -20,7 +20,8 @@ import Testing
 
     @Test func theTopicRendersTheGuideAndNothingOfItsOwn() {
         #expect(Self.topic.summary == GettingStartedGuide.topicSummary)
-        #expect(Self.topic.body == [GettingStartedGuide.framing])
+        #expect(Self.topic.body
+                == GettingStartedGuide.appParagraphs + [GettingStartedGuide.framing])
         #expect(Self.topic.items == GettingStartedGuide.items(for: .release))
     }
 
@@ -30,28 +31,30 @@ import Testing
     @Test func everyReleaseRouteIsAnItemInSourceOrder() {
         let expected = (GettingStartedGuide.routes + GettingStartedGuide.notes)
             .filter { $0.channel == .release }
-        #expect(Self.topic.items.count == expected.count + 1, "routes, notes, and the web line")
+        #expect(Self.topic.items.count == expected.count, "routes and notes, no web line")
 
         for (item, route) in zip(Self.topic.items, expected) {
             #expect(item.term == route.title)
             #expect(item.detail == route.summary)
         }
-        #expect(Self.topic.items.last == GettingStartedGuide.onTheWeb)
     }
 
-    /// The on-water framing opens both surfaces, and it is one paragraph rather than a
-    /// walkthrough: the steps are the web's job.
-    @Test func theOnWaterFramingComesFirst() {
+    /// Which watches first, then how a session gets in, then the test on the water — the
+    /// order a rider meets them in (F5a: install, then ride).
+    @Test func theTopicLeadsWithTheWatchesAndEndsWithTheWater() {
         #expect(GettingStartedGuide.framing.hasPrefix("Ride one session as you always do"))
-        #expect(Self.topic.body.first == GettingStartedGuide.framing)
+        #expect(Self.topic.body.last == GettingStartedGuide.framing)
+        #expect(Self.topic.body.first?.contains("Garmin, Strava and other watches") == true)
+        #expect(Self.topic.body.first?.contains("Apple Watch app is in beta") == true)
     }
 
-    /// The last item promises **every step**, and points at the page that has them.
-    @Test func theWebLinePromisesTheSteps() {
-        let web = GettingStartedGuide.onTheWeb
-        #expect(web.term == "The same guide, with every step, on the web")
-        #expect(web.detail == "\(Branding.site)/start")
-        #expect(Self.topic.links.contains { $0.url.absoluteString.hasSuffix("/start") })
+    /// **Self-contained** (F5d, 25 September 2026): no line and no link sends a rider who
+    /// has just installed the app to the website for the same guide.
+    @Test func theTopicDoesNotSendTheRiderToTheWeb() {
+        #expect(Self.topic.links.isEmpty)
+        let prose = (Self.topic.body + Self.topic.items.map(\.detail)).joined(separator: " ")
+        #expect(!prose.contains("\(Branding.site)/start"))
+        #expect(Self.topic.action == .openIcuSettings)
     }
 
     // MARK: - Channels
@@ -91,22 +94,22 @@ import Testing
         let closing = ["No wind today?", "Tell us what you saw"]
 
         // Three routes in the App Store build, five on the beta and the dev — both closing
-        // notes and the web line in every channel.
+        // notes in every channel.
         let release = HelpCatalog.topic(.gettingStarted, channel: .release).items
-        #expect(release.count == 3 + closing.count + 1)
+        #expect(release.count == 3 + closing.count)
         for title in apple {
             #expect(!release.contains { $0.term == title }, "the release names \(title)")
         }
 
         for channel in [HelpChannel.beta, .dev] {
             let items = HelpCatalog.topic(.gettingStarted, channel: channel).items
-            #expect(items.count == 5 + closing.count + 1,
+            #expect(items.count == 5 + closing.count,
                     "\(channel) lists \(items.count) items")
             for title in apple + closing {
                 #expect(items.contains { $0.term == title },
                         "\(channel) does not name \(title)")
             }
-            #expect(items.last == GettingStartedGuide.onTheWeb)
+            #expect(items.last?.term == "Tell us what you saw")
             // The routes stay in source order, and the release's are still all there.
             #expect(release.map(\.term).allSatisfy(items.map(\.term).contains))
         }
@@ -140,7 +143,7 @@ import Testing
         let all = GettingStartedGuide.routes + GettingStartedGuide.notes
         #expect(!all.isEmpty)
 
-        let ids = all.map(\.id) + [GettingStartedGuide.onTheWeb.term]
+        let ids = all.map(\.id)
         #expect(Set(ids).count == ids.count, "duplicate route id")
 
         for route in all {

@@ -78,6 +78,18 @@ public enum GettingStartedGuide {
     public static let topicSummary =
         "Your first session on the water, and where to send what you find."
 
+    /// The paragraphs the app's topic opens with, before the framing: which
+    /// watches, how a Garmin session gets in, and the file way. The web page
+    /// has its own sections for the same facts, so it does not print these.
+    public static let appParagraphs: [String] = [
+        "CleanJibe works with Garmin, Strava and other watches. The Apple Watch app is in beta.",
+        "Garmin does not share your sessions directly, so CleanJibe gets them through "
+            + "intervals.icu. It is free and takes about 5 minutes. Set it up once in "
+            + "Settings → intervals.icu. After that, every session syncs by itself.",
+        "You can also open a .fit file straight from Files, Mail or a message. It can be "
+            + "yours, or one a friend sent you.",
+    ]
+
     /// The ways in, in the order the app and the page list them.
     public static let routes: [GettingStartedRoute] = [
         GettingStartedRoute(
@@ -85,9 +97,9 @@ public enum GettingStartedGuide {
             title: "Garmin with the CleanJibe watch app",
             channel: .release,
             classID: "a",
-            summary: "Install it from Connect IQ, then ride and save. Your sessions come "
-                + "across through intervals.icu, which takes 4 steps in Settings → "
-                + "intervals.icu, once.",
+            summary: "Install it from Connect IQ, then ride and save. The watch shows live "
+                + "numbers and a summary, and the session reaches CleanJibe through "
+                + "intervals.icu.",
             steps: [
                 .init(number: 1,
                       title: "Install the watch app",
@@ -128,8 +140,8 @@ public enum GettingStartedGuide {
             title: "The CleanJibe Apple Watch app",
             channel: .beta,
             classID: "bPlus",
-            summary: "Record on your Apple Watch. The session comes to the phone by itself, "
-                + "with pump strokes and takeoff attempts included.",
+            summary: "Install it with the CleanJibe beta and record on your wrist. The watch "
+                + "only records, and the iPhone does the analysis.",
             steps: [
                 .init(number: 1,
                       title: "Put it on the watch",
@@ -284,7 +296,7 @@ public enum GettingStartedGuide {
             title: "Tell us what you saw",
             channel: .release,
             summary: "Menu → Support & ideas opens a mail to us, with your app and watch "
-                + "details already in it. On the beta, TestFlight's own feedback works too.",
+                + "details already in it. Your mail decides what we build next.",
             steps: [
                 .init(number: 1,
                       title: "Read the verdicts against your memory",
@@ -313,12 +325,6 @@ public enum GettingStartedGuide {
             ]),
     ]
 
-    /// The last item of the topic, and the only one the web page does not
-    /// render — a page does not send you to itself.
-    public static let onTheWeb = HelpTopic.Item(
-        term: "The same guide, with every step, on the web",
-        detail: "\(Branding.site)/start")
-
     /// **Settings → intervals.icu**, the caption above the key field: why the
     /// detour exists at all, in one breath. The longer version, for the setup
     /// card and the help topic, is `IcuSetupGuide.rationale`.
@@ -334,7 +340,11 @@ public enum GettingStartedGuide {
             + "but not your watch's speed, so the records are uncertified."
 
     /// The routes and notes a build on `channel` may name, as the help topic's items —
-    /// title as the term, summary as the detail — with the web page named last.
+    /// title as the term, summary as the detail.
+    ///
+    /// **No web line at the end since 25 September 2026.** It sent a rider who had just
+    /// installed the app to cleanjibe.org/start for the same guide (Jan, F5d: the app is
+    /// self-contained, release round D).
     ///
     /// **The channel comes from the app** (`HelpCatalog.topic(_:channel:)`, dev 65). The
     /// catalogue declares the topic with `.release`, because a static array cannot ask
@@ -346,6 +356,6 @@ public enum GettingStartedGuide {
         let ways = (routes + notes)
             .filter { channel.has($0.channel) }
             .map { HelpTopic.Item(term: $0.title, detail: $0.summary) }
-        return ways + [onTheWeb]
+        return ways
     }
 }

@@ -26,8 +26,10 @@ public struct WelcomeHighlight: Sendable, Equatable, Identifiable {
 /// because a rider who read one of them should not have to learn a second set of words.
 public enum WelcomeGuide {
 
-    /// The one line at the top. The promise, not a feature list.
-    public static let headline = "Every flight, every jibe, every swim."
+    /// The one line at the top: the tagline (Jan, 23 September 2026), the one fragment the
+    /// voice allows under the wordmark. It said "Every flight, every jibe, every swim." until
+    /// 25 September 2026; the start screen and every page of the site already said this.
+    public static let headline = Branding.tagline
 
     /// **The one sentence that says what CleanJibe is**, and the one this project has
     /// hand-copied most often: the homepage's opening, the App Store description's first
@@ -47,9 +49,9 @@ public enum WelcomeGuide {
     /// detection first (nothing else is possible without it), then the counts, then the
     /// verdicts, then the records, then the replay.
     public static let lede =
-        "You get your time on the foil, every flight, every touchdown. Each jibe gets a "
-        + "verdict: flew through, touched down, or fell in. It counts your dry streak and "
-        + "your fastest seconds. Then it plays it back with a commentary."
+        "CleanJibe shows your time on the foil, every flight and every touchdown. Each jibe "
+        + "gets a verdict: flew through, touched down, or fell in. You see your dry streak "
+        + "and your fastest seconds. The replay comes with a commentary."
 
     /// The vocabulary, four lines of it. Enough that the words on the session page are
     /// already familiar; short enough that nobody skips the screen to escape it.
@@ -76,117 +78,98 @@ public enum WelcomeGuide {
         return WelcomeHighlight(term: entry.term, detail: entry.line)
     }
 
-    // MARK: - The three ways on
+    // MARK: - The page, top to bottom
 
-    /// The demo. First, and the prominent one: four setup steps are a lot to walk before
-    /// you know whether the app is worth it, and one tap fills every screen instead.
+    /// The three marks the track drawing carries, named under it. The same words and the
+    /// same order as the turn ladder everywhere else: flew through, touchdown, fell in.
+    public static let legend: [WelcomeLegendItem] = [
+        WelcomeLegendItem(mark: .flew, label: "Flew through"),
+        WelcomeLegendItem(mark: .touchdown, label: "Touchdown"),
+        WelcomeLegendItem(mark: .fellIn, label: "Fell in"),
+    ]
+
+    /// The demo. First, and the prominent one: one tap fills every screen with a real
+    /// session, before the rider has set anything up.
     public static let tryExampleTitle = "Try the example session"
-    public static let tryExampleDetail =
-        "10 real minutes on Lake Garda, already analysed. You get the track, the replay, "
-        + "the turn outcomes and the share card. You connect nothing first."
+    /// One line under it (Jan, 24 September 2026). "Already analysed" and "you connect
+    /// nothing first" are gone: the first is how every session arrives, the second answered
+    /// a question nobody asked.
+    public static let tryExampleDetail = "A real 10-minute session on Lake Garda."
 
-    /// The real path. The empty library's first row takes it from here, so this says only
-    /// where it goes — but it names intervals.icu *and* says why a third party is in the
-    /// story at all. A stranger's name on a first-run screen, with no reason beside it,
-    /// reads as a catch.
-    ///
-    /// **The title is the thing that happens** (15 Sep 2026). It said *"Connect your
-    /// Garmin"*, and the button connects nothing: it closes the welcome screen, and the
-    /// four-step setup card is what was underneath all along (`RootView`, `IcuSetupCard`).
-    /// A first-run button whose only visible effect is that the screen disappears reads as
-    /// a tap that failed — so the label names the card it uncovers, in the same words
-    /// Settings and `GettingStartedGuide.settingsIcu` use for it, and the detail says both
-    /// what it is for and what pressing it does.
-    public static let connectTitle = "Set up intervals.icu"
-    public static let connectDetail =
-        "Garmin has no open API, so your sessions come in through intervals.icu. That is "
-        + "free and takes about 5 minutes.\n\n"
-        + "This closes the welcome screen. The 4 steps are in Settings → intervals.icu. "
-        + "Every session then arrives on its own."
+    /// Under the small share card. Tapping the card opens the example session, which is
+    /// where the rider can make one of his own.
+    public static let shareCardCaption = "Every session gives you a card like this to share."
 
-    /// The quiet way out. Not a hidden one: a rider who wants to import a file by hand has
-    /// nothing to gain from either button above — but "Later" on its own does not tell him
-    /// that hand-importing is even possible, so the third way on gets a line like the other
-    /// two rather than a bare verb.
-    public static let laterTitle = "Later"
-    public static let laterDetail =
-        "You can also open a .fit file straight from Files, Mail or a message. It can be "
-        + "yours, or one a friend sent you."
+    /// The title over the four glossary lines.
+    public static let measuresTitle = "What CleanJibe measures"
+
+    /// The page's one way on, near the bottom: it opens Getting started. The X closes the
+    /// screen; there is no "Later" any more (Jan, 24 September 2026), because the X already
+    /// says it.
+    public static let getStartedTitle = "Get started"
+
+    /// The footer's second sentence, after `FeedbackInvitation.community`. The app draws
+    /// "Join the beta" and "Support & ideas" as links onto the Beta page and the mail.
+    public static let footerRelease = "Join the beta or send ideas via Menu → Support & ideas."
+    /// The same in the beta and the dev build, where the reader is in the beta already.
+    public static let footerBeta = "Send ideas via Menu → Support & ideas."
 }
 
-/// Whether to say hello, and whether this install has already been said hello to.
+/// One mark of the track drawing, and its name.
+public struct WelcomeLegendItem: Sendable, Equatable, Identifiable {
+    public enum Mark: String, Sendable {
+        case flew, touchdown, fellIn
+    }
+    public let mark: Mark
+    public let label: String
+    public var id: String { mark.rawValue }
+
+    public init(mark: Mark, label: String) {
+        self.mark = mark
+        self.label = label
+    }
+}
+
+/// Whether to say hello.
 ///
-/// Pure for the reason every first-run rule in this project is pure: it runs once per
-/// install and is then unreachable for ever, which is exactly the code that rots unwatched.
-/// "Shown twice" and "shown to somebody with three years of sessions" are both bugs that
-/// only a fresh device — or this file's tests — would ever reveal.
+/// **The rule since 25 September 2026** (Jan's plan of 24 September, section 7): the screen
+/// comes up on every launch until the rider has something of his own to look at — a real
+/// session, or intervals.icu connected so that one is on its way. The example session does
+/// not count: it is ours, not his. There is no "don't show this again" switch, because the
+/// two facts above switch it off by themselves.
+///
+/// It replaces the show-once flag (`welcomeShown.v1`), which had two failures of its own:
+/// a rider who closed the screen on day one never saw it again while his library stayed
+/// empty, and the upgrade heuristic had to guess about installs nobody had said anything
+/// about. Two facts about the library and the key need no guess.
+///
+/// **A key counts as connected.** iOS keeps the keychain across an app delete, so a
+/// reinstall with a key goes straight to the list — and that list fills from
+/// intervals.icu on the first pull, which is the right first screen for that rider.
+///
+/// Pure for the reason every first-run rule in this project is pure: the cases are
+/// reachable only on a fresh device, which is exactly the code that rots unwatched.
 public enum WelcomePrompt {
 
-    /// True when the install has plainly been used already, whatever the flag says.
-    ///
-    /// The flag (`welcomeShown.v1`) does not exist on an install that predates the welcome
-    /// screen, and shipping an update that greets a rider mid-season with "here is what
-    /// this app does" would be worse than never greeting anyone. So the library itself is
-    /// the evidence — and **only** the library.
-    ///
-    /// A stored intervals.icu key used to count as well, and that was the bug Jan found in
-    /// release candidate 58 (15 Sep 2026): iOS keeps keychain items across an app delete,
-    /// so a reinstall hands the key back, the welcome was marked seen on sight, and the
-    /// first screen of a genuinely fresh install was the intervals.icu setup card — the
-    /// four steps and a key field, in front of a rider who had not been told what the app
-    /// does. A key says something survived a delete; a session says the rider has been
-    /// through the front door. Only the second is evidence.
-    ///
-    /// - Parameter sessionCount: rows in the library, including the example — someone who
-    ///   loaded the example got the welcome's whole point already.
-    public static func isAlreadyWelcomed(sessionCount: Int) -> Bool {
-        sessionCount > 0
-    }
-
     /// - Parameters:
-    ///   - hasSeen: the flag is written. Once is the whole contract — a welcome screen that
-    ///     comes back on the second launch is not a welcome, it is an obstacle.
-    ///   - sessionCount: see `isAlreadyWelcomed`.
+    ///   - realSessionCount: rows in the library that are the rider's own — the example
+    ///     session is not counted.
+    ///   - icuConnected: an intervals.icu key is stored.
+    ///   - shownThisLaunch: the screen already went up in this process. Once per launch:
+    ///     the question is re-asked on every library change, and "raise it again" would put
+    ///     the screen straight back over the example its own button just opened.
     ///   - isPresenting: something else is on screen — an import asking whose session it
-    ///     is, an error, Settings. A *deferral*, not a refusal: the caller writes the flag
-    ///     when the screen actually goes up, so the next clear moment asks again. Same
-    ///     etiquette as `NewActivityPrompt`, and for the same reason.
-    ///   - requested: **somebody asked for this screen and has not had it yet.** Today the
-    ///     one asker is Settings → Beta → *Start over* (`SessionStore.startOver`), which
-    ///     writes the request down *after* the wipe: everything else about the first run is
-    ///     decided by the **absence** of evidence — no flag, no sessions — and absence is
-    ///     exactly what a wipe cannot guarantee to the next launch (a session that arrives
-    ///     from a sync, a watch or a re-import before the screen goes up is history again,
-    ///     and the upgrade path below would then mark the screen seen on sight). A request
-    ///     is a positive fact, so it survives all of that and outranks all of it — it is
-    ///     honoured over `hasSeen` and over a library of any size, and only `isPresenting`
-    ///     may defer it. The caller clears it when the screen actually goes up.
-    public static func shouldShow(hasSeen: Bool, sessionCount: Int,
+    ///     is, an error, Settings. A *deferral*, not a refusal: the next clear moment asks
+    ///     again. Same etiquette as `NewActivityPrompt`.
+    ///   - requested: **somebody asked for this screen and has not had it yet** — today
+    ///     Settings → Beta → *Start over* (`SessionStore.startOver`). A request outranks
+    ///     the library and the key; only `isPresenting` may defer it.
+    public static func shouldShow(realSessionCount: Int, icuConnected: Bool,
+                                  shownThisLaunch: Bool,
                                   isPresenting: Bool = false,
                                   requested: Bool = false) -> Bool {
         guard !isPresenting else { return false }
         if requested { return true }
-        return !hasSeen && !isAlreadyWelcomed(sessionCount: sessionCount)
-    }
-
-    /// Whether an install that has never seen the screen should have the flag written
-    /// anyway, silently.
-    ///
-    /// The case is the rider who was already using the app when this shipped: he is never
-    /// shown the welcome, so nothing would ever spend the flag, and the day he deletes his
-    /// last session the app would greet him like a stranger. Writing it down the first time
-    /// we notice makes "already welcomed" a fact about the install rather than a fact about
-    /// the current contents of the library.
-    ///
-    /// **A key alone never spends it** — see `isAlreadyWelcomed`.
-    ///
-    /// **A pending request spends nothing at all.** The upgrade path is a guess about an
-    /// install nobody has said anything about; "show me the welcome" is not a guess, and a
-    /// heuristic that marked the screen seen before the request could be honoured is the
-    /// bug Jan found after Start over (build 63): the library had rows again, so the flag
-    /// went down silently and the next launch opened on Sessions.
-    public static func shouldMarkSeenSilently(hasSeen: Bool, sessionCount: Int,
-                                              requested: Bool = false) -> Bool {
-        !requested && !hasSeen && isAlreadyWelcomed(sessionCount: sessionCount)
+        return !shownThisLaunch && realSessionCount == 0 && !icuConnected
     }
 }

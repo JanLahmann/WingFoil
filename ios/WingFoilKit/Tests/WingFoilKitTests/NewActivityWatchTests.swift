@@ -214,7 +214,7 @@ import Testing
                           movingTimeS: 7020, distanceM: 23_000))
         #expect(notice.title == "New session")
         #expect(notice.subtitle == "Nago-Torbole Windsurfen")
-        #expect(notice.body == "1:57 h · 23.0 km — tap to analyze")
+        #expect(notice.body == "1:57 h · 23.0 km — tap to analyse")
         #expect(notice.activityId == "i1")
     }
 
@@ -222,11 +222,11 @@ import Testing
         let bare = NewActivityWatch.notice(
             for: IcuActivity(id: "i2", name: "   ", type: "Windsurf"))
         #expect(bare.subtitle == nil)
-        #expect(bare.body == "Tap to import and analyze")
+        #expect(bare.body == "Tap to import and analyse")
 
         let distanceOnly = NewActivityWatch.notice(
             for: IcuActivity(id: "i3", name: "Session", type: "Windsurf", distanceM: 4200))
-        #expect(distanceOnly.body == "4.2 km — tap to analyze")
+        #expect(distanceOnly.body == "4.2 km — tap to analyse")
     }
 }
 

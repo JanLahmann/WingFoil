@@ -204,8 +204,8 @@ public enum NewActivityWatch {
             subtitle: name.isEmpty ? nil : name,
             // Nothing measured yet is not a failure — an activity can be listed seconds
             // after the upload starts, with the summary still empty.
-            body: facts.isEmpty ? "Tap to import and analyze"
-                                : facts.joined(separator: " · ") + " — tap to analyze")
+            body: facts.isEmpty ? "Tap to import and analyse"
+                                : facts.joined(separator: " · ") + " — tap to analyse")
     }
 }
 

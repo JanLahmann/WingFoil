@@ -449,29 +449,29 @@ import Testing
 }
 
 /// The screen in front of the setup card: what it says, and when it is allowed to say it.
-///
-/// The show-once rule is the whole risk here. Every other outcome of getting it wrong is
-/// invisible on a device that has been used once — which is every device the author owns.
 @Suite struct WelcomeTests {
 
     // MARK: - What it says
 
     @Test func theWelcomeIsWrittenRatherThanStubbed() {
-        #expect(!WelcomeGuide.headline.isEmpty)
+        #expect(WelcomeGuide.headline == Branding.tagline)
         #expect(WelcomeGuide.lede.count > 200, "the one paragraph is the whole pitch")
         #expect(WelcomeGuide.highlights.count >= 4)
         for highlight in WelcomeGuide.highlights {
             #expect(!highlight.term.isEmpty)
             #expect(highlight.detail.count > 40, "\(highlight.term) has a stub detail")
         }
-        for title in [WelcomeGuide.tryExampleTitle, WelcomeGuide.connectTitle,
-                      WelcomeGuide.laterTitle] {
+        for title in [WelcomeGuide.tryExampleTitle, WelcomeGuide.getStartedTitle,
+                      WelcomeGuide.measuresTitle, WelcomeGuide.shareCardCaption,
+                      WelcomeGuide.footerRelease, WelcomeGuide.footerBeta] {
             #expect(!title.isEmpty)
         }
-        for detail in [WelcomeGuide.tryExampleDetail, WelcomeGuide.connectDetail,
-                       WelcomeGuide.laterDetail] {
-            #expect(detail.count > 40)
-        }
+    }
+
+    /// The track drawing's three marks are named in the ladder's own words and order.
+    @Test func theLegendNamesTheThreeMarks() {
+        #expect(WelcomeGuide.legend.map(\.label) == ["Flew through", "Touchdown", "Fell in"])
+        #expect(WelcomeGuide.legend.map(\.mark) == [.flew, .touchdown, .fellIn])
     }
 
     /// The first screen a wingfoiler ever sees must not open in a neighbouring sport's
@@ -480,8 +480,7 @@ import Testing
     @Test func theWelcomeUsesNoSpeedsurfingJargon() {
         let prose = ([WelcomeGuide.headline, WelcomeGuide.lede]
                      + WelcomeGuide.highlights.map { $0.term + " " + $0.detail }
-                     + [WelcomeGuide.tryExampleDetail, WelcomeGuide.connectDetail,
-                        WelcomeGuide.laterDetail])
+                     + [WelcomeGuide.tryExampleDetail, WelcomeGuide.shareCardCaption])
             .joined(separator: " ")
             .lowercased()
         for jargon in ["gp3s", "alpha 500", "ciq", "connect iq", "class a", "class b"] {
@@ -508,87 +507,79 @@ import Testing
         #expect(WelcomeGuide.lede.contains("fell in"))
     }
 
-    /// All three offers name the thing behind them, so no button is a surprise. "Later"
-    /// used to be a bare verb, which told a rider holding a `.fit` file nothing at all.
-    @Test func theThreeOffersNameWhatIsBehindThem() {
+    /// The example's line names the place, and nothing it no longer promises.
+    @Test func theExampleSaysWhereItIsFrom() {
         #expect(WelcomeGuide.tryExampleDetail.contains(ExampleSession.place
             .split(separator: ",").last!.trimmingCharacters(in: .whitespaces)))
-        #expect(WelcomeGuide.connectDetail.contains("intervals.icu"))
-        // …and says *why* a stranger's name is on a first-run screen.
-        #expect(WelcomeGuide.connectDetail.contains("no open API"))
-        #expect(WelcomeGuide.laterDetail.contains(".fit"))
-        #expect(WelcomeGuide.laterDetail.contains("Files"))
+        #expect(!WelcomeGuide.tryExampleDetail.contains("already analysed"))
+    }
+
+    /// The family is honest about each app (F4): the Apple Watch app records only and is
+    /// in the beta, the browser has most of the analysis, not all of it.
+    @Test func theFamilyIsHonestAboutEachApp() {
+        let watch = CleanJibeFamily.apps.first { $0.id == "appleWatch" }
+        #expect(watch?.beta == true)
+        #expect(watch?.line.contains("records") == true)
+        #expect(CleanJibeFamily.apps.filter(\.beta).map(\.id) == ["appleWatch"])
+        let browser = CleanJibeFamily.apps.first { $0.id == "browser" }
+        #expect(browser?.line.hasPrefix("Most of") == true)
+        let phone = CleanJibeFamily.apps.first { $0.id == "iphone" }
+        #expect(phone?.line.contains("Garmin, Strava and other watches") == true)
+    }
+
+    /// The Beta page asks to join only where the reader is not in the beta.
+    @Test func theBetaPageKnowsWhichChannelItIsIn() {
+        #expect(BetaGuide.title(for: .release) == "Join the beta")
+        #expect(BetaGuide.title(for: .beta) == "You are in the beta")
+        #expect(BetaGuide.title(for: .dev) == "You are in the beta")
+        #expect(AppMenuRow.beta.title(in: .release) == BetaGuide.joinTitle)
+        #expect(AppMenuRow.beta.title(in: .beta) == BetaGuide.insideTitle)
+        #expect(AppMenuRow.help.title(in: .beta) == AppMenuRow.help.title)
     }
 
     // MARK: - When it is allowed to say it
 
     @Test func aFreshInstallIsWelcomed() {
-        #expect(WelcomePrompt.shouldShow(hasSeen: false, sessionCount: 0))
+        #expect(WelcomePrompt.shouldShow(realSessionCount: 0, icuConnected: false,
+                                         shownThisLaunch: false))
     }
 
-    /// **The keychain is not evidence** (Jan, release candidate 58, 15 Sep 2026).
-    ///
-    /// iOS keeps keychain items across an app delete, so a reinstall gets the
-    /// intervals.icu key handed back before the first screen is drawn. That used to mark
-    /// the welcome as seen on sight, and the first thing a fresh install showed was the
-    /// setup card — four steps and a key field — instead of "What CleanJibe does".
-    @Test func aSurvivingKeyIsNotAHistory() {
-        #expect(WelcomePrompt.shouldShow(hasSeen: false, sessionCount: 0))
-        #expect(!WelcomePrompt.isAlreadyWelcomed(sessionCount: 0))
-        #expect(!WelcomePrompt.shouldMarkSeenSilently(hasSeen: false, sessionCount: 0))
-    }
-
-    @Test func onceIsTheWholeContract() {
-        #expect(!WelcomePrompt.shouldShow(hasSeen: true, sessionCount: 0))
-        #expect(!WelcomePrompt.shouldMarkSeenSilently(hasSeen: true, sessionCount: 0))
-    }
-
-    /// The upgrade case: a rider mid-season must not be greeted as a stranger. One session
-    /// in the library is the whole of the evidence.
-    @Test func anInstallWithAHistoryIsTreatedAsAlreadyWelcomed() {
-        #expect(WelcomePrompt.isAlreadyWelcomed(sessionCount: 12))
-        #expect(WelcomePrompt.isAlreadyWelcomed(sessionCount: 1))
-        #expect(!WelcomePrompt.isAlreadyWelcomed(sessionCount: 0))
+    /// **Every launch, until there is something of the rider's own** (Jan's plan of
+    /// 24 September, section 7). No once-only flag, no skip switch.
+    @Test func itComesBackEveryLaunchUntilThereIsARealSession() {
+        // A second launch, nothing done: welcomed again.
+        #expect(WelcomePrompt.shouldShow(realSessionCount: 0, icuConnected: false,
+                                         shownThisLaunch: false))
+        // …but only once per launch.
+        #expect(!WelcomePrompt.shouldShow(realSessionCount: 0, icuConnected: false,
+                                          shownThisLaunch: true))
+        // A real session, or intervals.icu connected, and the app opens on the list.
         for count in [1, 12] {
-            #expect(!WelcomePrompt.shouldShow(hasSeen: false, sessionCount: count))
-            // …and the flag is spent anyway, so emptying the library later cannot
-            // resurrect the screen.
-            #expect(WelcomePrompt.shouldMarkSeenSilently(hasSeen: false,
-                                                         sessionCount: count))
+            #expect(!WelcomePrompt.shouldShow(realSessionCount: count, icuConnected: false,
+                                              shownThisLaunch: false))
         }
+        #expect(!WelcomePrompt.shouldShow(realSessionCount: 0, icuConnected: true,
+                                          shownThisLaunch: false))
     }
 
     /// **Start over asks for the screen, and nothing may argue it away** (Jan, build 63).
-    ///
-    /// Settings → Beta → Start over wipes the phone and then relies on the *absence* of a
-    /// flag and of sessions to make the app introduce itself again. Absence is the one
-    /// thing a wipe cannot hand to the next launch — the screen it raises spends the flag
-    /// again, and a library that has rows once more (a sync, a watch, a re-import) reads as
-    /// a history — so the wipe writes a request down instead, and the request outranks both
-    /// rules: a flag already written, and a library of any size.
-    @Test func aRequestedWelcomeOutranksTheFlagAndTheLibrary() {
+    @Test func aRequestedWelcomeOutranksTheLibraryAndTheKey() {
         for count in [0, 1, 12, 300] {
-            #expect(WelcomePrompt.shouldShow(hasSeen: true, sessionCount: count,
-                                             requested: true),
+            #expect(WelcomePrompt.shouldShow(realSessionCount: count, icuConnected: true,
+                                             shownThisLaunch: true, requested: true),
                     "a requested welcome was refused with \(count) sessions in the library")
-            // …and above all, the upgrade path must not mark it seen before it is honoured.
-            #expect(!WelcomePrompt.shouldMarkSeenSilently(hasSeen: false,
-                                                          sessionCount: count,
-                                                          requested: true))
         }
-        // It is still only a request: a screen already up defers it, exactly as a first run
-        // is deferred, and the caller leaves the request standing until it is honoured.
-        #expect(!WelcomePrompt.shouldShow(hasSeen: true, sessionCount: 300,
-                                          isPresenting: true, requested: true))
+        // It is still only a request: a screen already up defers it.
+        #expect(!WelcomePrompt.shouldShow(realSessionCount: 300, icuConnected: true,
+                                          shownThisLaunch: false, isPresenting: true,
+                                          requested: true))
     }
 
     /// Deferral, not refusal — the same etiquette the notification offer keeps.
     @Test func aBusyScreenDefersRatherThanCancels() {
-        #expect(!WelcomePrompt.shouldShow(hasSeen: false, sessionCount: 0,
-                                          isPresenting: true))
-        #expect(WelcomePrompt.shouldShow(hasSeen: false, sessionCount: 0,
-                                         isPresenting: false))
-        // A deferral must not be mistaken for evidence that the rider has been welcomed.
-        #expect(!WelcomePrompt.shouldMarkSeenSilently(hasSeen: false, sessionCount: 0))
+        #expect(!WelcomePrompt.shouldShow(realSessionCount: 0, icuConnected: false,
+                                          shownThisLaunch: false, isPresenting: true))
+        #expect(WelcomePrompt.shouldShow(realSessionCount: 0, icuConnected: false,
+                                         shownThisLaunch: false, isPresenting: false))
     }
 }
