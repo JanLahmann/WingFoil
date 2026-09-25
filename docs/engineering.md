@@ -194,6 +194,72 @@ at all.
 `web/sw.js`. The earlier versions are recoverable from that line's history with `git log -S`,
 and are worth tagging only as far back as anyone would bisect.
 
+## Building 1.0.1 release from its tag
+
+The point of a tag is that this needs no memory of which commit was uploaded — the tag says
+so. What a store archive adds on top of `make ios-build` (which proves the code compiles,
+signing off) is real signing and the one fact `docs/channels.md` states as a rule:
+**release and beta share one App Store Connect record and go up as two builds of the same
+1.0.1, and the App Store build takes the lower number of the pair.** Reproducing "the 1.0.1
+release" means reproducing *that specific build*, not just any build compiled from the
+release scheme.
+
+1. **Find the tag.** `git tag -l 'ios/1.0.1-*'` lists every 1.0.1 upload; the release one is
+   the **lowest build number** of the pair for that version (`ios/1.0.1-111` before
+   `ios/1.0.1-112`, if 112 is the beta that shipped alongside it) — never assume which one
+   without checking `ios/project.yml` at the tag, since the same number briefly sits on every
+   target before the two are told apart at archive time.
+2. **Check out that tag**, on a clean tree (a worktree, so the working checkout is
+   untouched): `git worktree add /tmp/release-1.0.1 ios/1.0.1-111`.
+3. **Regenerate the project and confirm the tag's own claim**: `cd ios && xcodegen generate`,
+   then `python3 ../tools/check_release.py` — the same check `tag-ios` ran before creating
+   the tag, run again here to prove the checkout matches what was promised, not only what was
+   pushed.
+4. **Archive the Release scheme, signed this time** (the `make ios-build` recipe turns
+   signing off on purpose, to prove compilation without needing the team's profiles present):
+   ```sh
+   xcodebuild -project WingFoil.xcodeproj -scheme "WingFoil Release" -configuration Release \
+     -archivePath build/WingFoil-1.0.1-111.xcarchive -destination 'generic/platform=iOS' \
+     archive
+   ```
+   This needs the signing team and provisioning profile Xcode already has configured
+   (`CODE_SIGN_STYLE: Automatic`, `DEVELOPMENT_TEAM: 685X8YLYSB`) — the one part of this that
+   cannot run unattended or in CI.
+5. **Prove the archive is what the tag claims before exporting it**: run the release check a
+   third time against the executable inside the archive, which is the same binary App Review
+   will see —
+   `python3 tools/check_release.py --binary build/WingFoil-1.0.1-111.xcarchive/Products/Applications/WingFoil.app/WingFoil`
+   — flags, plist, marks and the two door strings, against the actual signed output rather
+   than against source.
+6. **Export and upload** through Xcode Organizer (Distribute App → App Store Connect →
+   Upload), or `xcodebuild -exportArchive` with an export-options plist naming
+   `app-store-connect` — either way the build lands in App Store Connect as build 111 on
+   `de.lahmann.wingfoil`, version 1.0.1, in Processing.
+7. **Attach it and, for the beta upload, submit it** with
+   `ios/tools/testflight_publish.py 111 --group internal --app release --wait` for the
+   internal group (no review needed), and the external run once it has processed. The release
+   channel itself is never "submitted" through this script — App Review for the release comes
+   from the App Store submission in App Store Connect's own UI, which is Jan's click
+   (`docs/release/jans-block.md`); this script's `--group external --app release` submits the
+   **beta** build 112 for beta review, the parallel upload from the same tree at
+   `ios/1.0.1-112`.
+8. **The pair, side by side.** Steps 2–7 repeat once more for `ios/1.0.1-112` (`WingFoil Beta`
+   scheme, `Beta Release` configuration) to produce the build TestFlight testers get. Two
+   archives, one version, two build numbers, and the rule that made the tag worth having:
+   whichever of the two is lower is the one App Review sees as "the app," because App Store
+   Connect always offers reviewers the lowest build number of a version that has more than
+   one — the reason `WingFoilRelease` carries no `MARKETING_VERSION` of its own and a stray
+   `"1.0.0"` there once shipped 1.0.1 as 1.0.0 again (`docs/release/round-a-findings.md`,
+   F-1).
+
+None of this was run from here — no tag was created, no archive was signed, nothing was
+uploaded (out of scope for this round, and archiving needs the signing team present on this
+machine). What was run: `make ios-project` then a Debug-configuration, unsigned build of the
+Release scheme (`docs/support.md`'s companion confirmation, step 1) and a second one at
+`-configuration Release` to read the actual signed-shape binary's strings, both against this
+branch's tree — the same two builds `tools/check_release.py --binary` above describes,
+proving the recipe against real output rather than only against the doc.
+
 ## The release check — `tools/check_release.py`
 
 `make release-check`, first in `make all` and a job in CI. Stdlib only, instant. It holds the
