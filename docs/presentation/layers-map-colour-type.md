@@ -402,6 +402,18 @@ background, and the system controls and the status bar drawn on top of that navy
 told what is underneath them. They are the launch screen continued; everything behind them
 is the phone's own appearance.
 
+**Two readable inks, and what tertiary is for** (25 Sep 2026). A word a rider must read — a
+row legend (*foil · clean · best 2 s*), a tile caption, a footnote, a chart's axis label —
+is `.readableSecondary`; a way to a help topic is `.helpLink`. Both are light/dark pairs in
+`ReadableInk` (the kit), each at least 4.5 : 1 on every grouped, cell and fill ground
+(`ReadableInkTests`); the system tertiary label is about 2.3 : 1 on a light list and the
+accent mint 1.6 : 1 on white. `.tertiary` and `.quaternary` stay for chevrons, separator
+dots, placeholders and disabled or off states — never for a word. Every help door that
+carries words is `HelpTopicLink`: the `?` circle and the topic's title (or the screen's own
+label) in `.helpLink`, the same `?` a session tile's `HelpButton` draws. The web twins are
+`--ink-3` (dark lifted to #a3a399, 6.2 : 1 on `--surface-2`), `--help-link`
+(#2ee6a8 / #00704e) and `.explain-link` beside `.explain-q` in js/explain.js.
+
 **A text field the app draws is drawn by the app, not borrowed.** `.textFieldStyle(.roundedBorder)`
 fills itself with `systemBackground` — pure black in dark mode — and the intervals.icu key
 field sits on the setup card's `secondarySystemBackground`, a near-black grey. Two
