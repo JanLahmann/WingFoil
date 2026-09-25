@@ -184,6 +184,11 @@ struct SettingsView: View {
                 // the one date on this screen that is not about any session.
                 LabeledContent("Last sync", value: Fmt.date(last, zone: .current))
             }
+            if let trouble = store.syncTroubles[.intervals], trouble.isShown {
+                Text(trouble.settingsLine)
+                    .font(.footnote)
+                    .foregroundStyle(.orange)
+            }
             Button { setupTopic = .icuSetup } label: {
                 Label("Get a key in 4 steps", systemImage: "list.number")
             }
@@ -223,6 +228,19 @@ struct SettingsView: View {
             } else if store.isStravaConnected {
                 LabeledContent("Connected",
                                value: store.stravaAthlete ?? "your Strava account")
+                if let trouble = store.syncTroubles[.strava], trouble.isShown {
+                    Text(trouble.settingsLine)
+                        .font(.footnote)
+                        .foregroundStyle(.orange)
+                    // The fix, right under the cause. Strava's own button, as everywhere
+                    // this app connects (`StravaBrand`).
+                    if trouble.kind == .reconnect {
+                        StravaConnectButton {
+                            Task { await store.connectStrava(anchor: StravaConsent.anchor()) }
+                        }
+                        .disabled(store.isReadingStrava)
+                    }
+                }
                 Button(role: .destructive) {
                     Task { await store.disconnectStrava() }
                 } label: {

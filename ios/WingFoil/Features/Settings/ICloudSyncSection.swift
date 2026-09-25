@@ -55,6 +55,12 @@ struct ICloudSyncSection: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
+        if !store.syncRunning, let trouble = store.syncTroubles[.iCloud], trouble.isShown {
+            Text(trouble.settingsLine)
+                .font(.footnote)
+                .foregroundStyle(.orange)
+                .fixedSize(horizontal: false, vertical: true)
+        }
         LabeledContent("Last sync") {
             Text(store.syncLastAt.map { $0.formatted(date: .abbreviated, time: .shortened) }
                  ?? "Never")
