@@ -33,8 +33,11 @@ struct ICloudSyncSection: View {
         } footer: {
             // Pattern K: what you get, in one line. Register 3, and no promise the folder
             // cannot keep — the recordings and the names travel, the analysis is redone here.
+            // Not "both devices": the dev build runs on iPhone and iPad, a rider may have
+            // three, and the folder is this app's own. The App Store app does not read it.
             Text("Your sessions and what you called them live in one iCloud Drive folder. "
-                 + "Both devices read it. Deleted sessions stay deleted.")
+                 + "Every iPhone and iPad with this app on your iCloud account reads it. "
+                 + "The app syncs each time you open it. Deleted sessions stay deleted.")
         }
         .task { await store.refreshSyncPlan() }
     }
@@ -57,6 +60,9 @@ struct ICloudSyncSection: View {
                  ?? "Never")
         }
         if let plan = store.syncPlan {
+            // Sessions, not folders: a deleted session keeps its folder so the other device
+            // learns of the deletion, and counting folders read "69" beside a library of 63.
+            // Now the count Storage shows, once Pending is 0.
             LabeledContent("In iCloud Drive") {
                 Text(plan.containerSessions == 1 ? "1 session"
                      : String(plan.containerSessions) + " sessions")

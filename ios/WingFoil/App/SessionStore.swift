@@ -1662,10 +1662,27 @@ final class SessionStore {
         Task { await runLibrarySync() }
     }
 
-    private func runLibrarySync() async {
+    /// The pass nobody tapped for: at launch and on every return to the foreground, at most
+    /// once per `autoSyncInterval`.
+    ///
+    /// Until 25 Sep 2026 the only triggers were the switch and "Sync now", so a phone used
+    /// every day for four days still read "Last sync 21 Sep". ADR-026 promised a folder that
+    /// is simply there on the other device, and a sync that waits for a button is not that.
+    /// Quiet on purpose: no alert on failure and no status line unless something moved,
+    /// because the rider opened the app to look at a session, not at iCloud.
+    func syncLibraryIfDue(now: Date = Date()) async {
+        guard iCloudSyncEnabled, !syncRunning, !isBusy else { return }
+        if let last = syncLastAt, now.timeIntervalSince(last) < Self.autoSyncInterval { return }
+        await runLibrarySync(automatic: true)
+    }
+
+    /// Five minutes: a quick app switch does not cost a pass, a return from the water does.
+    static let autoSyncInterval: TimeInterval = 5 * 60
+
+    private func runLibrarySync(automatic: Bool = false) async {
         syncRunning = true
         isBusy = true
-        status = "Syncing with iCloud Drive…"
+        if !automatic { status = "Syncing with iCloud Drive…" }
         defer {
             syncRunning = false
             isBusy = false
@@ -1680,19 +1697,19 @@ final class SessionStore {
         do {
             guard let report = try await work.value else {
                 syncUnavailable = true
-                status = "iCloud Drive is not available"
+                if !automatic { status = "iCloud Drive is not available" }
                 return
             }
             syncUnavailable = false
             syncLastAt = Date()
             UserDefaults.standard.set(syncLastAt, forKey: Self.iCloudSyncLastKey)
-            status = report.shortDescription
+            if !automatic || !report.isEmpty { status = report.shortDescription }
             if !report.isEmpty {
                 await load()
                 await refreshDerived()
             }
         } catch {
-            errorMessage = "Could not sync with iCloud Drive: \(error)"
+            if !automatic { errorMessage = "Could not sync with iCloud Drive: \(error)" }
         }
         await refreshSyncPlan()
     }

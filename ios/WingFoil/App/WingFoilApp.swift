@@ -45,6 +45,11 @@ struct WingFoilApp: App {
                     // (docs/watch-map-snapshot.md). A no-op unless the top two spots or the
                     // chosen watch have actually changed since the last successful push.
                     await store.refreshWatchMapIfNeeded()
+                    // The iCloud Drive library, once the library it merges into is loaded.
+                    // DEV only (docs/channels.md, ADR-026).
+                    #if DEV
+                    await store.syncLibraryIfDue()
+                    #endif
                 }
                 // The watch's session cards, for as long as the app is alive. A separate
                 // task from the load above because it never finishes: it is a stream, not
@@ -110,6 +115,11 @@ struct WingFoilApp: App {
                         // finished uploading, and opening the app is when he expects to see
                         // the session. Returns at once unless he switched the pickup on.
                         await store.checkStravaForNewActivities()
+                        // …and whatever the other device put in iCloud Drive since. At most
+                        // one pass per five minutes. DEV only (ADR-026).
+                        #if DEV
+                        await store.syncLibraryIfDue()
+                        #endif
                     }
                 }
         }
