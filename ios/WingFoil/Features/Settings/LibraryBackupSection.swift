@@ -41,9 +41,16 @@ struct LibraryBackupSection: View {
             // The paragraphs are `SettingsCopy`'s since 20 September 2026, so the browser
             // app's *Your data* section reads the phone's words rather than its own. The
             // bold on "and" is this screen's furniture over them.
-            Text(markdown: SettingsCopy.footer("backup")
-                    .replacingOccurrences(of: "imported and what",
-                                          with: "imported **and** what"))
+            //
+            // Since 25 September 2026 the four paragraphs obey Settings → How much to say
+            // (F11): concise is the lead, extensive adds them. The help row above is the
+            // `?`, so the footnote carries no second one.
+            ExplainedFootnote(
+                line: SettingsCopy.section("backup").lead, topic: nil,
+                more: SettingsCopy.section("backup").footer.map {
+                    $0.replacingOccurrences(of: "imported and what",
+                                            with: "imported **and** what")
+                }) { _ in }
         }
         .task { await store.refreshBackupEstimate() }
         .sheet(item: Binding(get: { store.restoreOffer },

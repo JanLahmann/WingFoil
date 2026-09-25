@@ -184,11 +184,11 @@ struct ComingSoonSection: View {
 
     #if BETA
     private static let footer =
-        "What is being ridden with in this build, and what only a handful of testers "
-        + "have behind it."
+        "This lists what testers ride with in this build, and what only a few of them "
+        + "have tried."
     #else
     private static let footer =
-        "These functions are not in this app yet. Ride every one of them today in the "
+        "These features are not in this app yet. Ride every one of them today in the "
         + "public beta.\n\n"
         + "Joining takes one tap, and your library comes with you."
     #endif
@@ -230,7 +230,7 @@ struct ComingSoonPage: View {
             } header: {
                 Text("In the public beta")
             } footer: {
-                Text("Ridden with every week and reported on.\n\n"
+                Text("Testers ride with these every week and tell us how they went.\n\n"
                      + "A feature reaches the App Store app with ten sessions from two "
                      + "riders behind it. It also needs a help topic and no open report.")
             }
@@ -244,8 +244,8 @@ struct ComingSoonPage: View {
             } header: {
                 Text("Further out")
             } footer: {
-                Text("Experimental, and on a handful of phones. Ask for one here and it "
-                     + "gets worked on sooner.")
+                Text("These are experiments, on a handful of phones. Ask for one here "
+                     + "and we work on it sooner.")
             }
             #endif
 
@@ -261,7 +261,7 @@ struct ComingSoonPage: View {
     /// holding (docs/channels.md).
     private var joinStep: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("One tap. Your library is kept.")
+            Text("It takes one tap, and your library is kept.")
                 .font(.subheadline.weight(.semibold))
                 .fixedSize(horizontal: false, vertical: true)
             Link(destination: AppChannel.testFlight) {
