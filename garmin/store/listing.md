@@ -6,7 +6,8 @@ listings say *today* — transcribed verbatim from the live store (app on 2 Sept
 console and nowhere in git. Edit it when the store is edited, in the same commit; do not
 rewrite it here and leave the store behind.
 
-Rewrite drafts are a separate thing and are not in this file.
+Rewrite drafts are a separate thing, with one exception written down where it sits: the
+watch app's description carries the 26 September 2026 draft for Jan's sign-off.
 
 Both apps: developer **JanRL** (`7d829c3a-3343-46f5-b946-4556e4579f53`), support
 `info@cleanjibe.org`, website `https://github.com/JanLahmann/WingFoil`, free,
@@ -33,32 +34,70 @@ text — the whole description was rewritten for the open beta.
 
 ### Description (live text)
 
-**One line ahead of the store:** the `NEW TO IT?` paragraph pointing at cleanjibe.org/start
-is written here first and goes into the Connect IQ form by hand at the next upload. It is the
-one deviation from this file's rule, and it is deliberate — the page it names is live now, and
-a listing that had it and a file that did not would be the wrong way round to get caught.
-Delete this note the day the store text matches.
+**Draft ahead of the store, 26 September 2026, for Jan's sign-off.** The block below is
+the rewrite in the team voice of `docs/voice.md`, and it is *not* on the store yet. It goes
+into the Connect IQ form by hand at the next upload, and this note goes the day it does.
+The text it replaces, which the store shows today, is in git at `2c12c1c`, this file.
+
+What changed and why:
+
+* **Rider first, mechanics after** (voice rule 2): what the watch tells you on the water and
+  on its pages comes first. How it records, the browser and the iPhone app come after.
+* **It says honestly that this is the beta.** The public listing is the beta stream
+  (docs/channels.md, "The watch — the same three streams"). A release listing, *CleanJibe
+  Wingfoil Watch App*, opens only when the iPhone app is on the App Store.
+* **The iPhone paragraph** says the Analyzer is on its way to the App Store and points at
+  TestFlight until then. The day 1.0.1 is on sale, the last two sentences become one: *Find
+  it on the App Store.*
+* **Nothing from the dev stream**: no shore map from the phone, no direct transfer, no page
+  editor. The eight pages, the seven show/hide switches and the large-text set are what
+  0.9.19 ships.
+* Every sentence is register 1, at most 20 words, with no dash, semicolon or parenthesis.
+  `docs/copy/check_voice.py` reads this block.
+* **2831 characters.** The form rejects `<` and `>`, and there are none.
 
 ```
-CleanJibe tells you what your wingfoil session actually did: how much of it you spent on the foil, how long each flight lasted, your speed records, and — for every turn — whether you flew through it, touched down, or fell in.
+Did you fly through that jibe? CleanJibe on your Garmin tells you while you ride. It knows when you are up on the foil, counts every flight, and gives every turn its verdict. Flew through, touchdown, or fell in.
 
-OPEN BETA, FREE. Install and ride — no key, no account. It's a beta: tell us what's wrong and what's missing at cleanjibe.org/invite, or use Contact Developer on this page. The detection thresholds are still being tuned and may change between versions; they are published, with the reasoning, at github.com/JanLahmann/WingFoil.
+THIS IS THE BETA
 
-NEW TO IT? cleanjibe.org/start walks you through a 20-minute test on land — record a few minutes, get it onto your phone, see what you should see — and says exactly where to send what you find.
+This listing is the CleanJibe beta. It is free and open to anyone, with no key and no account. New versions come here first, so a threshold can still move between them. Tell us what looks wrong at cleanjibe.org/invite, or with Contact Developer on this page.
+
+NEW TO IT?
+
+cleanjibe.org/start walks you through a 20-minute test on land. Record a few minutes, bring the file onto your phone, and see what you should see. The page also says where to send what you find.
 
 ON THE WATER
-- Live foil state: it knows when the board is up on the foil, and counts every flight and touchdown while you ride.
-- Every turn scored as you make it — flew through, touched down, or fell in — with your dry streak and your tack/jibe tally on screen.
-- Speed records live on the wrist: best 2 s and best 10 s, with a PB alert.
-- The watch works out the wind direction by itself after a few minutes of riding (a ~ marks the estimate; the wind menu always overrides it).
-- Pump strokes and takeoff attempts, counted from the wrist accelerometer. Optional raw accelerometer logging for deep phone analysis is off by default — it makes the activity file about 20x larger and the transfer after saving takes several minutes.
-- Seven configurable pages: speed, session, records, turns, map with breadcrumb, on-foil timeline, clock. A full multi-page summary after you save.
-- Records as a Windsurf activity with per-flight laps, so your sessions stop showing up in Garmin Connect as a walk. 1 s GNSS, multiband where the watch supports it. Auto-pause.
 
-AFTERWARDS, FREE, IN ANY BROWSER
-Open cleanjibe.org and drop the .fit file in. The same analysis engine runs locally in your browser — nothing is uploaded and there is no account — and gives you the track, every flight, every turn with its verdict, speed records, wind axis, and a share card you can post. Keep a library there and it builds your all-time records and season trends. It works on an Android phone just as well, and it also reads sessions recorded with Garmin's own Windsurf profile or a GPX, so you can try it before you ever install anything.
+The watch knows when your board is up on the foil. It counts every flight and every touchdown while you ride.
 
-An iPhone app with the full analysis — maps, turn forensics, replay with commentary and music, records, trends and library backup — is in open TestFlight beta: testflight.apple.com/join/nygqGGcn
+Every turn gets its verdict as you make it: clean, flew through, touchdown or fell in. A buzz and a flash on the glass tell you at once.
+
+Your tacks and jibes are counted apart, each with how many you flew through. Your dry streak shows how many turns in a row you stayed dry.
+
+Your best 2 s and best 10 s show live, and the watch buzzes on a new personal best.
+
+After a few minutes of riding, the watch works out the wind direction by itself. A ~ marks the estimate, and the wind menu always overrides it.
+
+Your pump strokes and takeoff attempts come from your wrist's movement.
+
+YOUR PAGES
+
+Eight pages show your speed, your session, records, turns, and tacks and jibes. Then come the map with your trail, your time on the foil and the clock. Switches in the app's settings hide the pages you never read. Large text swaps them for five big screens, one number each. After you save, a full summary waits for you.
+
+HOW IT RECORDS
+
+The watch records a Windsurf activity with a lap for every flight. Your session no longer shows up in Garmin Connect as a walk. GPS records every second, multiband where your watch has it, and auto-pause is built in.
+
+Raw accelerometer logging is off by default. Switch it on only for deep analysis on the phone. It makes the file about 20 times larger, and the transfer after saving takes minutes.
+
+AFTERWARDS, IN ANY BROWSER
+
+Open cleanjibe.org and drop in the FIT file. The same analysis runs right in your browser, free, with no upload and no account. You get the track, every flight and every turn with its verdict. Your speed records, the wind axis and a share card are there too. Keep a library there and it builds your all-time records and season trends. It works on an Android phone too, and it also reads Garmin's own Windsurf activity and GPX files.
+
+ON AN IPHONE
+
+CleanJibe Wingfoil Analyzer gives you maps, turn pages, replay, records and trends. It is on its way to the App Store. Until then, its beta is open on TestFlight at testflight.apple.com/join/nygqGGcn.
 ```
 
 ### What's New (live text)
