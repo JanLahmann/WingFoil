@@ -88,6 +88,86 @@ final class SessionStore {
         }
     }
 
+    /// **What each automatic source last ran into, if it is still failing** (`SyncTrouble`).
+    ///
+    /// The other half of `errorMessage`: a sync the rider did not start never raises the
+    /// modal. It lands here instead, and the library's footer and each source's Settings
+    /// section read it. Persisted, so "Last try failed" is still true after a relaunch.
+    private(set) var syncTroubles = SessionStore.storedSyncTroubles() {
+        didSet {
+            guard syncTroubles != oldValue,
+                  let data = try? JSONEncoder().encode(syncTroubles) else { return }
+            UserDefaults.standard.set(data, forKey: Self.syncTroublesKey)
+        }
+    }
+
+    static let syncTroublesKey = "syncTroubles.v1"
+
+    private static func storedSyncTroubles() -> SyncTroubles {
+        guard let data = UserDefaults.standard.data(forKey: syncTroublesKey),
+              let troubles = try? JSONDecoder().decode(SyncTroubles.self, from: data)
+        else { return SyncTroubles() }
+        return troubles
+    }
+
+    /// One pending quiet retry per source; a newer failure replaces the older wait.
+    private var quietRetries: [SyncSource: Task<Void, Never>] = [:]
+
+    /// A source's failure, recorded and — when it is worth it — retried after a backoff.
+    ///
+    /// Returns the kind so the caller can decide the one thing left to decide: whether the
+    /// rider is standing in front of *this exact action* and so may be shown the modal. A
+    /// transient failure never is, whoever asked (`SyncFailureKind.transient`).
+    @discardableResult
+    func reportSync(_ kind: SyncFailureKind, from source: SyncSource, riderAsked: Bool,
+                    retry: (@MainActor () async -> Void)? = nil) -> SyncFailureKind {
+        let trouble = syncTroubles.recordFailure(kind, from: source, at: Date(),
+                                                 riderAsked: riderAsked)
+        quietRetries[source]?.cancel()
+        quietRetries[source] = nil
+        if let retry,
+           let delay = SyncRetryPolicy.delay(afterFailures: trouble.failures, kind: kind) {
+            quietRetries[source] = Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .seconds(delay))
+                guard !Task.isCancelled, let self else { return }
+                self.quietRetries[source] = nil
+                await retry()
+            }
+        }
+        return kind
+    }
+
+    @discardableResult
+    func reportSync(_ error: any Error, from source: SyncSource, riderAsked: Bool,
+                    retry: (@MainActor () async -> Void)? = nil) -> SyncFailureKind {
+        reportSync(SyncFailureKind.classify(error), from: source, riderAsked: riderAsked,
+                   retry: retry)
+    }
+
+    /// The quiet retries themselves: each the automatic entry point of its source, so a
+    /// retry is exactly the try the app would have made by itself.
+    private var quietIntervalsRetry: @MainActor () async -> Void {
+        { [weak self] in await self?.syncFromIntervals(riderAsked: false) }
+    }
+
+    private var quietStravaRetry: @MainActor () async -> Void {
+        { [weak self] in await self?.checkStravaForNewActivities() }
+    }
+
+    #if DEV
+    private var quietICloudRetry: @MainActor () async -> Void {
+        { [weak self] in self?.syncLibraryNow(riderAsked: false) }
+    }
+    #endif
+
+    /// A try that worked, or a source the rider switched off: the line it would show is no
+    /// longer true, and neither is any retry still waiting.
+    func clearSyncTrouble(_ source: SyncSource) {
+        syncTroubles.recordSuccess(from: source)
+        quietRetries[source]?.cancel()
+        quietRetries[source] = nil
+    }
+
     /// Live counters of a running bulk import (nil when nothing is importing).
     private(set) var importProgress: ImportSummary?
     /// How many sessions the rider has deleted and the sync is therefore refusing to bring
@@ -994,6 +1074,9 @@ final class SessionStore {
             defer { if scoped { url.stopAccessingSecurityScopedResource() } }
             if let data = try? Data(contentsOf: url) {
                 payloads.append(DiscoveredFit(name: url.lastPathComponent, data: data))
+            } else if quietFailures {
+                reportSync(.other(detail: "could not read \(url.lastPathComponent)"),
+                           from: .watch, riderAsked: false)
             } else {
                 errorMessage = "Could not read \(url.lastPathComponent)"
             }
@@ -1153,7 +1236,20 @@ final class SessionStore {
         }.value
 
         status = summary.shortDescription
-        errorMessage = Self.failureAlert(summary.failed)
+        // A recording that arrived by itself — an Apple Health pickup, the Apple Watch
+        // inbox — never raises the modal: nobody is waiting on it. It goes to the footer.
+        if quietFailures {
+            let from = SyncSource(importSource: source)
+            if summary.failed.isEmpty {
+                if let from { clearSyncTrouble(from) }
+            } else if let from {
+                reportSync(.other(detail: "\(summary.failed.count) file"
+                                  + (summary.failed.count == 1 ? "" : "s") + " would not read"),
+                           from: from, riderAsked: false)
+            }
+        } else {
+            errorMessage = Self.failureAlert(summary.failed)
+        }
         // The one counted place every file-shaped door passes through — Files, the share
         // sheet, a Garmin export ZIP, Apple Health — so each is counted once and by name.
         Usage.recordImport(source, sessions: summary.imported)
@@ -1323,8 +1419,20 @@ final class SessionStore {
     /// Runs an import that the rider did not ask for, with the sheet held back.
     func asAutomaticPickup(_ work: () async -> Void) async {
         isAutomaticPickup = true
-        await work()
+        await withQuietFailures(work)
         isAutomaticPickup = false
+    }
+
+    /// True while something the rider did not ask for is importing — an automatic pickup,
+    /// or a recording the Apple Watch sent. Failures inside go to `syncTroubles`, never to
+    /// the modal (`runImport`).
+    private var quietFailures = false
+
+    func withQuietFailures(_ work: () async -> Void) async {
+        let outer = quietFailures
+        quietFailures = true
+        await work()
+        quietFailures = outer
     }
 
     func raiseDisciplineReview() {
@@ -1615,7 +1723,12 @@ final class SessionStore {
         didSet {
             guard iCloudSyncEnabled != oldValue else { return }
             UserDefaults.standard.set(iCloudSyncEnabled, forKey: Self.iCloudSyncKey)
-            if iCloudSyncEnabled { syncLibraryNow() } else { syncPlan = nil }
+            if iCloudSyncEnabled {
+                syncLibraryNow()
+            } else {
+                syncPlan = nil
+                clearSyncTrouble(.iCloud)
+            }
         }
     }
 
@@ -1657,12 +1770,14 @@ final class SessionStore {
         syncPlan = plan
     }
 
-    func syncLibraryNow() {
+    func syncLibraryNow(riderAsked: Bool = true) {
         guard iCloudSyncEnabled, !syncRunning, !isBusy else { return }
-        Task { await runLibrarySync() }
+        Task { await runLibrarySync(riderAsked: riderAsked) }
     }
 
-    private func runLibrarySync() async {
+    /// **Never a modal.** Both ways in are on Settings → iCloud Drive, which shows the
+    /// failure in place (`ICloudSyncSection`); a dropped connection is retried quietly.
+    private func runLibrarySync(riderAsked: Bool) async {
         syncRunning = true
         isBusy = true
         status = "Syncing with iCloud Drive…"
@@ -1687,12 +1802,15 @@ final class SessionStore {
             syncLastAt = Date()
             UserDefaults.standard.set(syncLastAt, forKey: Self.iCloudSyncLastKey)
             status = report.shortDescription
+            clearSyncTrouble(.iCloud)
             if !report.isEmpty {
                 await load()
                 await refreshDerived()
             }
         } catch {
-            errorMessage = "Could not sync with iCloud Drive: \(error)"
+            status = nil
+            reportSync(error, from: .iCloud, riderAsked: riderAsked,
+                       retry: quietICloudRetry)
         }
         await refreshSyncPlan()
     }
@@ -1979,7 +2097,7 @@ final class SessionStore {
         get { UserDefaults.standard.bool(forKey: "healthAutoImport") }
         set {
             UserDefaults.standard.set(newValue, forKey: "healthAutoImport")
-            guard newValue else { return }
+            guard newValue else { return clearSyncTrouble(.health) }
             Task {
                 await watchHealthForNewWorkouts()
             }
@@ -2138,7 +2256,9 @@ final class SessionStore {
 
     // MARK: - intervals.icu
 
-    func syncFromIntervals() async {
+    /// `riderAsked` is false for the one sync the app starts by itself, the empty library's
+    /// first fill at launch. That one never raises the modal and retries quietly.
+    func syncFromIntervals(riderAsked: Bool = true) async {
         guard !isBusy else { return }
         let key = apiKey
         guard !key.isEmpty else {
@@ -2194,16 +2314,27 @@ final class SessionStore {
             // A sync can succeed and still leave the library empty (Garmin not connected
             // in intervals.icu yet). That is a cause the empty library names, not a crash.
             setProblem(IcuDiagnosis.describe(summary))
-            errorMessage = Self.failureAlert(summary.failed)
+            clearSyncTrouble(.intervals)
+            if riderAsked { errorMessage = Self.failureAlert(summary.failed) }
             Usage.recordImport(.icu, sessions: summary.imported)
             lastSyncDate = Date()
         } catch {
             let problem = IcuDiagnosis.describe(error)
             setProblem(problem)
             status = nil
-            // On an empty library the problem note already carries this cause *and* its fix,
-            // in place. A modal on top of it is the same sentence twice.
-            if !sessions.isEmpty { errorMessage = problem.alertText }
+            let kind = reportSync(error, from: .intervals, riderAsked: riderAsked,
+                                  retry: riderAsked ? nil : quietIntervalsRetry)
+            // A dropped connection is never a modal, even under the rider's own pull: the
+            // spinner stops, the status line says it, the footer keeps it. He pulls again.
+            if kind == .transient {
+                if riderAsked {
+                    status = "Could not reach intervals.icu. Check your connection and pull again."
+                }
+            } else if riderAsked, !sessions.isEmpty {
+                // On an empty library the problem note already carries this cause *and* its
+                // fix, in place. A modal on top of it is the same sentence twice.
+                errorMessage = problem.alertText
+            }
         }
         await load()
         // intervals.icu knows no wingfoil either, so a sync is a batch of guesses like any
@@ -2633,6 +2764,7 @@ final class SessionStore {
         case .success(let report):
             status = report.message
             setProblem(report.caveat)
+            clearSyncTrouble(.intervals)
             // The key works and there is something to fetch: do it now rather than making
             // the first-run user discover pull-to-refresh.
             if report.watersports > 0, sessions.isEmpty { await syncFromIntervals() }
@@ -2743,7 +2875,7 @@ final class SessionStore {
         guard !pending.isEmpty else { return }
         // `.appleWatch`, never `.watch` — that one is the Garmin BLE card, and a row tagged
         // with it would claim a provenance this session does not have.
-        await importFiles(urls: pending, source: .appleWatch)
+        await withQuietFailures { _ = await importFiles(urls: pending, source: .appleWatch) }
         for url in pending { try? FileManager.default.removeItem(at: url) }
     }
 
@@ -2772,9 +2904,13 @@ final class SessionStore {
             }
             lastCardAt = Date()
             lastCardWatchAppVersion = card.appVersion
+            clearSyncTrouble(.watch)
             await load()
         } catch {
-            errorMessage = "Could not store the session your watch sent: \(error)"
+            // Nobody is waiting on a card: it arrives while the rider looks at something
+            // else. The footer says it, and the next card or recording tries again.
+            reportSync(.other(detail: "could not store the session card"), from: .watch,
+                       riderAsked: false)
         }
     }
 
@@ -2867,7 +3003,10 @@ final class SessionStore {
                     DirectTransferInbox.setAside(url)
                 }
             } catch {
-                errorMessage = "Could not attach the wrist stream your watch sent: \(error)"
+                // Left in the inbox, so the next sweep tries again. No modal: this runs by
+                // itself, and the footer carries it.
+                reportSync(.other(detail: "could not attach the wrist stream"), from: .watch,
+                           riderAsked: false)
             }
         }
     }
@@ -3107,7 +3246,7 @@ final class SessionStore {
         get { UserDefaults.standard.bool(forKey: Self.stravaAutoKey) }
         set {
             UserDefaults.standard.set(newValue, forKey: Self.stravaAutoKey)
-            guard newValue else { return }
+            guard newValue else { return clearSyncTrouble(.strava) }
             Task { await checkStravaForNewActivities() }
         }
     }
@@ -3136,6 +3275,7 @@ final class SessionStore {
             status = tokens.athleteName.map { "Connected to Strava as \($0)" }
                 ?? "Connected to Strava"
             Usage.record(.stravaConnected)
+            clearSyncTrouble(.strava)
             await refreshStravaCandidates()
         } catch StravaAuth.ConnectError.cancelled {
             // Backing out of the consent screen is a decision, not a failure. Nothing is
@@ -3143,20 +3283,31 @@ final class SessionStore {
             refreshStravaConnection()
         } catch {
             refreshStravaConnection()
-            errorMessage = Self.stravaMessage(for: error)
+            // He is waiting on this exact tap, so a cause he can act on is a modal. A dead
+            // connection is not: the Strava section says it, in place.
+            if reportSync(error, from: .strava, riderAsked: true) != .transient {
+                errorMessage = Self.stravaMessage(for: error)
+            }
         }
     }
 
     func disconnectStrava() async {
         await StravaAuth.disconnect()
+        clearSyncTrouble(.strava)
         stravaCandidates = []
         refreshStravaConnection()
         status = "Disconnected from Strava"
     }
 
     /// One request: the activity list, each row already marked "in your library" or not.
-    func refreshStravaCandidates() async {
-        guard isStravaConfigured, StravaAuth.loadTokens() != nil else { return }
+    ///
+    /// **Never a modal**, whoever asked. The Import screen opens on this call and "Look
+    /// again" repeats it, and both show the failure as a line on the screen itself
+    /// (`StravaImportView`). `riderAsked` false is the automatic pickup: silent until it has
+    /// failed a few times in a row, and retried quietly in between.
+    @discardableResult
+    func refreshStravaCandidates(riderAsked: Bool = true) async -> Bool {
+        guard isStravaConfigured, StravaAuth.loadTokens() != nil else { return false }
         isReadingStrava = true
         defer { isReadingStrava = false }
         let types = stravaTypes
@@ -3167,9 +3318,13 @@ final class SessionStore {
             stravaCandidates = try await StravaSyncService(client: client, ingestor: ingestor)
                 .candidates(types: types, known: known)
             refreshStravaConnection()
+            clearSyncTrouble(.strava)
+            return true
         } catch {
-            errorMessage = Self.stravaMessage(for: error)
+            reportSync(error, from: .strava, riderAsked: riderAsked,
+                       retry: riderAsked ? nil : quietStravaRetry)
             refreshStravaConnection()
+            return false
         }
     }
 
@@ -3211,17 +3366,28 @@ final class SessionStore {
             if outcome.summary.imported > 0 { hasImportedFromStrava = true }
             Usage.recordImport(.strava, sessions: outcome.summary.imported)
             status = outcome.summary.shortDescription
-            if !outcome.summary.failed.isEmpty {
+            // An automatic pickup keeps quiet about the ones that did not come: they are not
+            // marked imported, so the next pickup asks Strava for them again.
+            if !outcome.summary.failed.isEmpty, !quietFailures {
                 errorMessage = outcome.summary.failed.joined(separator: "\n")
             }
             await load()
             await refreshPersonalBests(celebrate: true)
             await writeNewSessionsToHealth()
             await refreshWatchMapIfNeeded()
-            await refreshStravaCandidates()
+            await refreshStravaCandidates(riderAsked: !quietFailures)
             raiseDisciplineReview()
         } catch {
-            errorMessage = Self.stravaMessage(for: error)
+            let automatic = quietFailures
+            let kind = reportSync(error, from: .strava, riderAsked: !automatic,
+                                  retry: automatic ? quietStravaRetry : nil)
+            // Only the rider's own tap on Import may raise the modal, and only for a cause
+            // he can act on. A dropped connection is the line on the Strava screen.
+            if !automatic, kind != .transient {
+                errorMessage = Self.stravaMessage(for: error)
+            } else if !automatic {
+                status = "Could not reach Strava. Check your connection and try again."
+            }
         }
     }
 
@@ -3230,7 +3396,7 @@ final class SessionStore {
     func checkStravaForNewActivities() async {
         guard stravaAutoImport, isStravaConfigured, !isBusy, !isReadingStrava,
               StravaAuth.loadTokens() != nil else { return }
-        await refreshStravaCandidates()
+        guard await refreshStravaCandidates(riderAsked: false) else { return }
         let fresh = stravaCandidates.filter { !$0.isAlreadyImported }.map(\.id)
         guard !fresh.isEmpty else { return }
         await asAutomaticPickup { await importFromStrava(fresh) }

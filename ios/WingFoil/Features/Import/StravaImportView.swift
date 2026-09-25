@@ -116,6 +116,19 @@ struct StravaImportView: View {
     private var connectedSection: some View {
         Section {
             LabeledContent("Connected", value: store.stravaAthlete ?? "your Strava account")
+            // The screen's own answer when Strava did not: a line, not a modal, and the
+            // fix under it when there is one.
+            if !store.isReadingStrava, let trouble = store.syncTroubles[.strava],
+               trouble.isShown {
+                Text(trouble.settingsLine)
+                    .font(.footnote)
+                    .foregroundStyle(.orange)
+                if trouble.kind == .reconnect {
+                    StravaConnectButton {
+                        Task { await store.connectStrava(anchor: StravaConsent.anchor()) }
+                    }
+                }
+            }
             Button {
                 Task { await store.refreshStravaCandidates() }
             } label: {

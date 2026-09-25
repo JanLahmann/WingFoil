@@ -112,6 +112,12 @@ struct LibraryView: View {
                                 // (docs/presentation/not-a-session-spots.md, "Not a session").
                                 Text(countLine(showing: visible.count,
                                                of: LibraryListing.riddenCount(store.sessions)))
+                                // A source that keeps failing says so here, calmly, instead
+                                // of a modal on launch (`SyncTroubles.footerLines`).
+                                ForEach(store.syncTroubles.footerLines, id: \.self) { line in
+                                    Label(line, systemImage: "exclamationmark.icloud")
+                                        .padding(.top, 2)
+                                }
                             }
                         }
                     }

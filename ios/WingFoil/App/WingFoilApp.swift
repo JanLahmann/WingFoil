@@ -35,7 +35,7 @@ struct WingFoilApp: App {
                     // First launch with a configured key: fill the empty library
                     // without requiring a manual pull-to-refresh.
                     if store.sessions.isEmpty && !store.apiKey.isEmpty {
-                        await store.syncFromIntervals()
+                        await store.syncFromIntervals(riderAsked: false)
                     }
                     // A schema migration or an engine bump leaves every summary row
                     // stale; the aggregate tabs must not read those.
