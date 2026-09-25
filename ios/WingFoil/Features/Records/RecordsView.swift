@@ -292,7 +292,7 @@ private struct SessionRecordRowView: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
             if let note = best.kind.caption {
-                Text(note).font(.caption2).foregroundStyle(.tertiary)
+                Text(note).font(.caption2).foregroundStyle(.readableSecondary)
             }
         }
         .accessibilityElement(children: .combine)
@@ -375,7 +375,7 @@ private struct RecordTableHeader: View {
                 Text("when · where").frame(maxWidth: .infinity, alignment: .leading)
             }
             .font(.caption2)
-            .foregroundStyle(.tertiary)
+            .foregroundStyle(.readableSecondary)
             .accessibilityHidden(true)
         }
     }
@@ -467,7 +467,7 @@ private struct RecordRowView: View {
                     if best.previousBest == nil, best.history.count == 1 {
                         Text("first session with this record")
                             .font(.caption2)
-                            .foregroundStyle(.tertiary)
+                            .foregroundStyle(.readableSecondary)
                     }
                     Spacer(minLength: 0)
                 }

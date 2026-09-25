@@ -112,7 +112,7 @@ struct TurnsAnalysisView: View {
             Text("Entry tack is the tack you came into the turn on. "
                  + "It is not which way the board rotated.")
                 .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(.readableSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .id("filters")
@@ -140,7 +140,7 @@ struct TurnsAnalysisView: View {
                     if tally.total > 0 {
                         Text(tally.cleanCaption)
                             .font(.caption2)
-                            .foregroundStyle(.tertiary)
+                            .foregroundStyle(.readableSecondary)
                     }
                 }
                 Spacer(minLength: 0)
@@ -171,7 +171,7 @@ struct TurnsAnalysisView: View {
             Text("\(count)").font(.caption.monospacedDigit().weight(.medium))
             Text(outcome.label).font(.caption2)
         }
-        .foregroundStyle(count == 0 ? AnyShapeStyle(.tertiary) : AnyShapeStyle(.secondary))
+        .foregroundStyle(count == 0 ? AnyShapeStyle(.secondary) : AnyShapeStyle(.readableSecondary))
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .background(Capsule().fill(Color.secondary.opacity(count == 0 ? 0.06 : 0.14)))
@@ -313,7 +313,7 @@ struct TurnsAnalysisView: View {
             }
         }
         .font(.caption2)
-        .foregroundStyle(.tertiary)
+        .foregroundStyle(.readableSecondary)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
@@ -334,7 +334,7 @@ private struct TurnRowView: View {
                     .font(.subheadline)
                 Text(item.detail)
                     .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.readableSecondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
             }

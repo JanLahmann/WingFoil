@@ -303,7 +303,7 @@ struct TuningView: View {
                  : "off for windsurf. There is no pump channel to corroborate against, so "
                     + "the rung is refused rather than merely unreachable")
                 .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(.readableSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.vertical, 2)
@@ -326,7 +326,7 @@ struct TuningView: View {
                 .fixedSize(horizontal: false, vertical: true)
             Text(parameter.rawValue)
                 .font(.caption2.monospaced())
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(.readableSecondary)
         }
     }
 
@@ -357,9 +357,9 @@ struct TuningView: View {
                    in: spec.range, step: spec.step) {
                 Text(spec.title)
             } minimumValueLabel: {
-                Text(spec.format(spec.range.lowerBound)).font(.caption2).foregroundStyle(.tertiary)
+                Text(spec.format(spec.range.lowerBound)).font(.caption2).foregroundStyle(.readableSecondary)
             } maximumValueLabel: {
-                Text(spec.format(spec.range.upperBound)).font(.caption2).foregroundStyle(.tertiary)
+                Text(spec.format(spec.range.upperBound)).font(.caption2).foregroundStyle(.readableSecondary)
             }
         }
     }

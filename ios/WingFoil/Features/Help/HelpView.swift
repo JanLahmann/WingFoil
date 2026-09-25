@@ -291,6 +291,7 @@ struct HelpTopicSheet: View {
                                         Spacer(minLength: 0)
                                     }
                                     .font(.callout)
+                                    .foregroundStyle(.helpLink)
                                 }
                             }
                         }
@@ -374,11 +375,51 @@ struct HelpButton: View {
         Button { showing = true } label: {
             Image(systemName: "questionmark.circle")
                 .font(size)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(.helpLink)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("What does " + HelpCatalog.topic(topic).title + " mean?")
         .sheet(isPresented: $showing) { HelpTopicSheet(id: topic) }
+    }
+}
+
+/// **The way to a help topic that carries words, behind the same `?`** (Jan, 25 September
+/// 2026: a link in bare green text under a Settings section did not read as one). Every
+/// door onto a topic that is a line of text — a section footer, a list row — is this view,
+/// so the `?` a rider learnt on a session tile means the same thing here, and the ink is
+/// `.helpLink`, which reads on a light list where the accent mint does not.
+///
+/// The words are the topic's own title unless the screen already had its own (`label`).
+/// It takes the action rather than presenting the sheet itself, because each screen already
+/// owns exactly one `.sheet(item:)` for its topics, and a second one on the same view is
+/// the classic way to end up with only one of them ever presenting.
+struct HelpTopicLink: View {
+    enum Style { case footer, row }
+
+    let topic: HelpTopicID
+    var label: String?
+    var style: Style
+    let action: () -> Void
+
+    init(_ topic: HelpTopicID, label: String? = nil, style: Style = .footer,
+         action: @escaping () -> Void) {
+        self.topic = topic
+        self.label = label
+        self.style = style
+        self.action = action
+    }
+
+    var body: some View {
+        Button(action: action) {
+            Label(label ?? HelpCatalog.topic(topic, channel: AppChannel.channel).title,
+                  systemImage: "questionmark.circle")
+                .font(style == .footer ? .footnote.weight(.semibold) : .body)
+                .foregroundStyle(.helpLink)
+                .multilineTextAlignment(.leading)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint("Opens help")
     }
 }
 

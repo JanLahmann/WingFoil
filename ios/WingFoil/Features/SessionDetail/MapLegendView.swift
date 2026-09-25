@@ -285,7 +285,7 @@ private struct LegendChip: View {
         .padding(.horizontal, isToggleable ? 8 : 0)
         .padding(.vertical, isToggleable ? 4 : 0)
         .background(background)
-        .foregroundStyle(isToggleable ? AnyShapeStyle(.secondary) : AnyShapeStyle(.tertiary))
+        .foregroundStyle(.readableSecondary)
         .opacity(opacity)
         .contentShape(.capsule)
     }

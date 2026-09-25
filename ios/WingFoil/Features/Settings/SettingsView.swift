@@ -144,12 +144,7 @@ struct SettingsView: View {
             Text(section.lead)
                 .fixedSize(horizontal: false, vertical: true)
             if let topic = section.help {
-                Button { setupTopic = topic } label: {
-                    Text(HelpCatalog.topic(topic, channel: AppChannel.channel).title)
-                        .font(.footnote.weight(.semibold))
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(Color.accentColor)
+                HelpTopicLink(topic) { setupTopic = topic }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -607,13 +602,7 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(setting.footer)
                 .fixedSize(horizontal: false, vertical: true)
-            Button { setupTopic = setting.helpTopic } label: {
-                Text(HelpCatalog.topic(setting.helpTopic,
-                                       channel: AppChannel.channel).title)
-                    .font(.footnote.weight(.semibold))
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(Color.accentColor)
+            HelpTopicLink(setting.helpTopic) { setupTopic = setting.helpTopic }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

@@ -132,7 +132,7 @@ struct TurnDetailMapView: View {
         HStack(spacing: 2) {
             Text(value).font(.caption2.monospacedDigit())
             if let caption {
-                Text(caption).font(.system(size: 8)).foregroundStyle(.tertiary)
+                Text(caption).font(.system(size: 8)).foregroundStyle(.readableSecondary)
             }
         }
     }

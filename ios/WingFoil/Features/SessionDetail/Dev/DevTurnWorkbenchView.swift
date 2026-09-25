@@ -127,7 +127,7 @@ struct DevTurnWorkbenchView: View {
                 Text("What actually happened, in your words. Scored against the engine in "
                      + "Settings → Tuning → Labels. Never read by the analysis.")
                     .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.readableSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -159,7 +159,7 @@ struct DevTurnWorkbenchView: View {
             }
             Text("Seconds count from the sweep's start. The strip above uses the same clock.")
                 .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(.readableSecondary)
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -170,7 +170,7 @@ struct DevTurnWorkbenchView: View {
         HStack(alignment: .top, spacing: 8) {
             Text(step.atRt.map { String(format: "%+.0f s", $0) } ?? "—")
                 .font(.caption2.monospacedDigit())
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(.readableSecondary)
                 .scaledColumn(44, alignment: .trailing, relativeTo: .caption2)
             VStack(alignment: .leading, spacing: 1) {
                 Text(step.title).font(.caption.weight(.medium))
@@ -191,7 +191,7 @@ struct DevTurnWorkbenchView: View {
                     EmptyView()
                 }
                 if let rule = step.rule {
-                    Text(rule).font(.caption2.monospaced()).foregroundStyle(.tertiary)
+                    Text(rule).font(.caption2.monospaced()).foregroundStyle(.readableSecondary)
                 }
             }
             Spacer(minLength: 0)
@@ -211,7 +211,7 @@ struct DevTurnWorkbenchView: View {
             Text(markdown: "Nothing is tuned for " + discipline
                  + ", so the preset defaults *are* what you are looking at.")
                 .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(.readableSecondary)
         } else if let card = TurnWhatIf.make(turnIndex: index, tuned: detail.analysis,
                                              base: workbench.baseAnalysis(for: detail)) {
             VStack(alignment: .leading, spacing: 8) {
@@ -238,7 +238,7 @@ struct DevTurnWorkbenchView: View {
                     if card.identical {
                         Text("Identical. The thresholds you moved did not touch this turn.")
                             .font(.caption2)
-                            .foregroundStyle(.tertiary)
+                            .foregroundStyle(.readableSecondary)
                     }
                 } else if workbench.entry(for: detail)?.complete == true {
                     Text("The published defaults find no turn here at all. Your tuning "
@@ -262,7 +262,7 @@ struct DevTurnWorkbenchView: View {
 
     private func whatIfRow(_ label: String, _ tuned: String, _ base: String) -> some View {
         GridRow {
-            Text(label).font(.caption2).foregroundStyle(.tertiary)
+            Text(label).font(.caption2).foregroundStyle(.readableSecondary)
             Text(tuned).font(.caption.monospacedDigit())
             Text(base)
                 .font(.caption.monospacedDigit())
@@ -314,7 +314,7 @@ struct DevTurnWorkbenchView: View {
                     + "window in the engine stops."
                 Text(span + gap)
                     .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.readableSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -335,7 +335,7 @@ struct DevTurnWorkbenchView: View {
             cell("band", width: 52)
         }
         .font(.caption2.weight(.semibold).monospaced())
-        .foregroundStyle(.tertiary)
+        .foregroundStyle(.readableSecondary)
         .padding(.vertical, 3)
     }
 

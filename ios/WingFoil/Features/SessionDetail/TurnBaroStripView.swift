@@ -39,7 +39,7 @@ struct TurnBaroStripView: View {
                 Text("No barometer in this recording. "
                      + "Nothing here can say whether the wrist went under.")
                     .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.readableSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }

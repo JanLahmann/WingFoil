@@ -190,7 +190,7 @@ private struct FlightEndDetailPage: View {
             if !windKnown {
                 Text(Copy.noWindForOrientation + " The track is drawn north up.")
                     .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.readableSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             #if TUNING
@@ -315,7 +315,7 @@ private struct FlightEndDetailPage: View {
                 .font(.title3.weight(.semibold).monospacedDigit())
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
-            Text(caption).font(.caption2).foregroundStyle(.tertiary)
+            Text(caption).font(.caption2).foregroundStyle(.readableSecondary)
         }
     }
 
@@ -325,7 +325,7 @@ private struct FlightEndDetailPage: View {
 
     private func cell(_ label: String, _ value: String) -> some View {
         HStack(spacing: 6) {
-            Text(label).font(.caption2).foregroundStyle(.tertiary)
+            Text(label).font(.caption2).foregroundStyle(.readableSecondary)
             Text(value).font(.caption.monospacedDigit())
             Spacer(minLength: 0)
         }
@@ -393,7 +393,7 @@ private struct FlightEndDetailPage: View {
             }
         }
         .font(.caption2)
-        .foregroundStyle(.tertiary)
+        .foregroundStyle(.readableSecondary)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

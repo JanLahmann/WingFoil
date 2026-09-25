@@ -147,7 +147,7 @@ struct SessionRowView: View {
                                  words: true)
                     Text(Fmt.km(row.distanceKm))
                         .font(.caption2.monospacedDigit())
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(.readableSecondary)
                     Spacer(minLength: 0)
                 }
                 // The outcome tally is four numbers in a line; same ceiling, same reason.
@@ -227,7 +227,7 @@ struct SessionRowView: View {
             }
             Text(choice.label)
                 .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(.readableSecondary)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(choice.label + " " + choice.format(row))

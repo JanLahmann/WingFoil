@@ -47,7 +47,7 @@ struct TurnWindowControl: View {
                      : "The quiet tail closes " + String(Int(quietS))
                        + " s after the sweep. Widen the run-out past that to see its rule.")
                     .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.readableSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }

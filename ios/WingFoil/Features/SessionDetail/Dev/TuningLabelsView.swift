@@ -145,7 +145,7 @@ struct TuningLabelsView: View {
                         }
                         Text("\(score.labelled(label))")
                             .font(.caption.monospacedDigit())
-                            .foregroundStyle(.tertiary)
+                            .foregroundStyle(.readableSecondary)
                     }
                 }
                 GridRow {
@@ -153,10 +153,10 @@ struct TuningLabelsView: View {
                     ForEach(TurnOutcomeKind.allCases, id: \.rawValue) { verdict in
                         Text("\(score.called(verdict))")
                             .font(.caption.monospacedDigit())
-                            .foregroundStyle(.tertiary)
+                            .foregroundStyle(.readableSecondary)
                     }
                     Text("\(score.total)").font(.caption.monospacedDigit())
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(.readableSecondary)
                 }
             }
         }

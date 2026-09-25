@@ -180,8 +180,8 @@ struct WelcomeView: View {
                 .opacity(store.isBusy ? 0.6 : 1)
 
                 Text(WelcomeGuide.tryExampleDetail)
-                    .font(.caption)
-                    .foregroundStyle(Brand.paper.opacity(0.68))
+                    .font(.subheadline)
+                    .foregroundStyle(Brand.paper.opacity(0.75))
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -199,8 +199,8 @@ struct WelcomeView: View {
                 }
 
                 Text(WelcomeGuide.connectDetail)
-                    .font(.caption)
-                    .foregroundStyle(Brand.paper.opacity(0.68))
+                    .font(.subheadline)
+                    .foregroundStyle(Brand.paper.opacity(0.75))
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -212,12 +212,12 @@ struct WelcomeView: View {
             // that opening it by hand is a supported way in rather than a postponement.
             VStack(spacing: 6) {
                 Button(WelcomeGuide.laterTitle, action: onLater)
-                    .font(.subheadline)
-                    .foregroundStyle(Brand.paper.opacity(0.6))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Brand.paper.opacity(0.8))
 
                 Text(WelcomeGuide.laterDetail)
-                    .font(.caption2)
-                    .foregroundStyle(Brand.paper.opacity(0.55))
+                    .font(.subheadline)
+                    .foregroundStyle(Brand.paper.opacity(0.75))
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             }
