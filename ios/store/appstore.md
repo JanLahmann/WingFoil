@@ -1,9 +1,17 @@
 # App Store metadata — CleanJibe for iPhone
 
-**A record of the live listing, not a draft of one.** ASC app `6800401377`, bundle
-`de.lahmann.wingfoil`, version **1.0.0**. Every block inside a fence below is what is in App
-Store Connect today, character for character; the prose around them is why, and what has yet
-to be fixed. Written against **build 60, 15 September 2026**.
+**The 1.0.1 listing, drafted for Jan's sign-off (26 September 2026).** ASC app
+`6800401377`, bundle `de.lahmann.wingfoil`, version **1.0.1**. The subtitle, promotional
+text, description, keywords and What's New blocks below are the **draft** in the team voice
+of `docs/voice.md`, written against the release column of `docs/channels.md`. They are not
+in App Store Connect yet. The 1.0.0 text they replace, which is what ASC last held, is in git
+at `2c12c1c`, this file. 1.0.0 was pulled from review on 21 September and never went on sale,
+so 1.0.1 is the first version the public sees. The app name, URLs, age rating, review notes
+and privacy answers are unchanged from build 60, 15 September 2026.
+
+The day Jan pastes the draft into ASC, this paragraph goes back to "a record of the live
+listing", and `docs/copy/phrases.json` → `appStoreSubtitle` flips to the new subtitle in the
+same commit.
 
 Edit App Store Connect and this file together, in that order or the other, but never one
 alone — the live record is what a reviewer reads, and this file is what the next author
@@ -62,67 +70,91 @@ CleanJibe Wingfoil Analyzer for iPhone and browser"), so the family has one surn
 30-character limit. **29 used.**
 
 ```
-Flights, turns, speed records
+Jibes, flights, speed records
 ```
 
 Apple indexes name + subtitle + keywords as one bag, so the subtitle spends its words on
-terms the name does not carry: *flights*, *turns*, *speed*, *records*. It is also the
-product's own vocabulary (docs/copy/glossary.json), which is the point — a rider who reads
-the subtitle and then opens the app meets the same three words on the session page.
+terms the name does not carry. **Jibes** replaced *turns* in the 1.0.1 draft: the name says
+*CleanJibe* as one word, which the store's search does not split, so until now nothing in
+the bag said *jibe* on its own — the word the app is named after and the one a rider types.
+*Turns* is the app's umbrella word and nobody searches for it. *Flights* and *speed records*
+stay: they are the product's vocabulary (docs/copy/glossary.json), the same words the rider
+meets on the session page. A heading-like fragment is allowed here (docs/voice.md, rule 5).
+Live 1.0.0 subtitle: `Flights, turns, speed records`.
 
 ## Promotional text
 
-170-character limit. **145 used.** Editable without shipping a build — this is the
+170-character limit. **153 used.** Editable without shipping a build — this is the
 field to change when there is news, so keep it newsworthy rather than descriptive.
 
 ```
-Every flight, every jibe, every swim from your wingfoil session - analysed on your phone, nothing uploaded, no account needed. Free, open source.
+Your WingFoil session, measured. Did you fly through that jibe? CleanJibe gives every turn its verdict, and your sessions stay on your phone. It is free.
 ```
 
-It is `WelcomeGuide.headline` ("Every flight, every jibe, every swim.") with the rest of the
-sentence around it, which is deliberate: the App Store card and the app's first screen say
-the same seven words. `docs/copy/phrases.json` → `headline` pins them.
+It opens with the tagline, `WelcomeGuide.headline` and `Branding.tagline` ("Your WingFoil
+session, measured.", Jan, 23 September 2026), which is deliberate: the App Store card and the
+app's first screen say the same five words. `docs/copy/phrases.json` → `headline` pins them.
+The tagline is the one fragment the voice allows. The old one, "Every flight, every jibe,
+every swim.", is retired everywhere. Then the promise's question, and two plain sentences.
 
 ## Description
 
-4000-character limit. **3998 used.**
+4000-character limit. **3829 used.**
 
 ```
-CleanJibe turns a wingfoil session into the numbers you actually argue about at the beach: how much of it you spent up on the foil, how long each flight lasted, your speed records, and - for every single turn - whether you flew through it, touched down, or fell in.
+Did you fly through that jibe? CleanJibe reads your session off the watch. It tells you your time on the foil, every flight, your speed records, and a verdict on every turn. Flew through, touchdown, or fell in.
 
-It reads the .fit file your watch recorded and re-analyses the whole thing on your phone. Nothing is uploaded, because there is nowhere to upload it to.
+YOUR SESSION ON ONE PAGE
 
-WHAT YOU GET
+Open a session and the whole afternoon is there. Your track sits on the map with every flight, every turn and every takeoff marked. Tap a mark to see the numbers behind it.
 
-- Foil time and every flight: when the board was really flying, how long the longest one lasted, and how much of the session you spent off the water.
-- A verdict on every turn: flew through, touched down, or fell in - with your dry streak, your clean jibes per hour, and the port/starboard split that tells you which side you are quietly avoiding.
-- Speed records that mean something: best 2 s, best 10 s, 5 x 10 s, 100 m, 250 m, 500 m, 1 NM and Alpha 500, drawn on the track and on the speed chart so you can see where they happened. Records from a positions-only recording are estimated, and say so.
-- The full track on a map, with the flown stretches, the pumping, the takeoffs and every turn marked - tap any of them to see the numbers behind it.
-- A replay you can scrub through, with commentary as it plays, and short clips of it with your own soundtrack to post.
-- A share card for the sessions worth showing: your track, your numbers, and an optional map behind it.
-- All-time records and trends across everything you have ridden, filtered by spot and by gear.
-- The gear you were on, session by session.
-- Send a session to a friend: the recording travels with an invitation, and what they receive is kept out of their own records.
+Every turn has a page of its own. You see your speed through the turn and where the foil came down. The page also says why the verdict came out the way it did.
 
-HOW SESSIONS GET IN
+Clean jibes get a star. Clean means you flew through, held your speed, and stayed dry for 10 seconds after. Your clean jibes per hour sits beside your dry streak. Tacks get their own count.
 
-Sessions arrive on their own if you sync your watch to intervals.icu - paste your own key once in Settings and that is the last time you think about it. Or open a .fit file straight from Files, Mail, AirDrop or a message. Or connect Strava and pick a session from your feed: Strava carries positions only, so the speed records from it are estimates, marked as such - but every flight and every turn verdict is there.
+Your nine speed records are drawn on the track and on the speed chart. They are best 2 s, best 10 s, 5 × 10 s, 100 m, 250 m and 500 m. Then come 1 NM, alpha 500 and best hour. Speeds read in knots or km/h, your choice.
 
-An example session is bundled. You can see the entire app - map, verdicts, replay, share card, records - before importing anything or connecting anything.
+Ride with the CleanJibe watch app on a Garmin and you also get your pump strokes and takeoff attempts.
 
-WORKS WITH YOUR GARMIN, OR WITHOUT ONE
+Watch the session again as a replay, with commentary as it plays. Save a short clip with your own music and post it. The share card shows off the sessions worth showing. It carries your track and your numbers, with the map behind them if you like.
 
-The most complete picture comes from the free CleanJibe Connect IQ watch app: it records the wrist accelerometer, which is what pump strokes and takeoff attempts are counted from. Any other recording with a proper GPS speed channel - Garmin's own Windsurf profile, another Connect IQ app - gives you everything but the pumping. A positions-only recording, from Strava or a phone in a pocket, gives you the flights, the turns and estimated records.
+YOUR SEASON
 
-No Garmin at all? The same engine runs free in any browser at cleanjibe.org, from any watch's file.
+Records and Trends read every session you have ridden. Your all-time bests sit in one table, and you can narrow it to one spot or one piece of gear. Trends draw your foil time, your longest flight and your jibes per hour across the months.
 
-ABOUT PRIVACY, PLAINLY
+Send a session to a friend. It opens on their phone as your session and stays out of their own records.
 
-There is no account and no login. There is no CleanJibe server, so your sessions are not uploaded, not analysed remotely and not stored anywhere but your own phone. There is no advertising and no tracking of any kind - no analytics, no third-party SDK collecting anything. The app never asks for your location; every coordinate it shows was already inside a file you imported. The servers it can contact are intervals.icu and Strava, each with your own credential and only if you connect them, plus Apple: for the map when a map is on screen, and one rounded coordinate per new sailing spot to look up its name. Full policy: cleanjibe.org/privacy
+HOW YOUR SESSIONS GET IN
 
-OPEN SOURCE, AND ARGUED WITH
+Connect intervals.icu once in Settings, and every session arrives by itself. Garmin has no open API, so intervals.icu is the bridge. It is free.
 
-CleanJibe's verdicts were checked by riders against what actually happened on the water, and the detection thresholds moved because of it. Those thresholds are published - the whole engine is open source at github.com/JanLahmann/WingFoil - so if you think a jibe was scored wrong, you can read exactly why it was scored that way, and say so. Ideas and wishes are as welcome as bugs: Menu -> Support & ideas, or info@cleanjibe.org.
+You can also open a FIT file from Files, Mail or AirDrop, or share it to CleanJibe. A Garmin export ZIP brings in your whole history at once.
+
+Strava works too. Pick a session from your feed and it comes in. Strava keeps the track but not the watch's speed measurement. Falls are harder to tell from touchdowns, and the speed records count as uncertified. Strava lets a new app connect a limited number of riders.
+
+No session of your own yet? An example session from Lake Garda is built in. You can try every page before you connect anything.
+
+WHICH WATCH
+
+You get the most from the free CleanJibe watch app for Garmin. It is in open beta on the Connect IQ store. It records your wrist's movement, and that is where the pump strokes and takeoffs come from.
+
+Any other recording with the watch's own speed works as well. Garmin's own Windsurf activity gives you everything except the pumping. A track with positions only still gives you flights, turns and uncertified speed records.
+
+No iPhone at hand? The same analysis runs free in any browser at cleanjibe.org.
+
+HOW IT WORKS
+
+The watch records the session and your phone does the analysis. Every threshold behind a verdict is published, and the whole engine is open source at github.com/JanLahmann/WingFoil. If a jibe got the wrong verdict, you can read why and tell us.
+
+YOUR SESSIONS STAY ON YOUR PHONE
+
+There is no account and no CleanJibe server. Your sessions are never uploaded. There is no advertising, no analytics and no tracking.
+
+The app never asks for your location. Every coordinate it shows was already in your file. It talks to intervals.icu and Strava only if you connect them, each with your own login. Apple draws the map and looks up the name of each new spot from one rounded coordinate. The full policy is at cleanjibe.org/privacy.
+
+TELL US WHAT YOU SAW
+
+We are wingfoilers too, and we read every mail. Menu → Support & ideas opens a mail to us with your app details already in it. Or write to info@cleanjibe.org.
 ```
 
 The opening sentence is the product's one promise, and it is the same sentence the homepage,
@@ -130,25 +162,85 @@ the Connect IQ listing and the library's empty state say — `docs/copy/phrases.
 `promise`, pinned to `WelcomeGuide.promise` by `CopyContractTests`. The store's voice puts
 its own paragraph around it; the sentence itself does not get a second wording.
 
-The turn-verdict bullet called the streak by a name the product does not use until 15 September
-2026, 15:00; the live
-description now says **dry streak**, the product's word (CLAUDE.md, `docs/copy/phrases.json` →
-`lexicon`), and `check_release_copy.py` no longer carries an exemption for it.
+**The order is the voice's rule 2: the rider first, the mechanics after.** The first four
+sections are about the rider's session and season. *How your sessions get in*, *Which watch*
+and *How it works* are for the interested rider: what comes from the watch and what from the
+phone, and how it fits with Garmin, intervals.icu and Strava. Privacy and the way to reach
+us close it. Every sentence is register 1, one thought, at most 20 words, no dash, no
+semicolon, no parenthesis; `docs/copy/check_voice.py` reads this block. The section heads
+are in capitals because the store field has no formatting of its own.
+
+**Only release doors.** Everything named is in the release column of docs/channels.md: the
+session page and its four tabs, turn pages, clean jibes, the nine GP3S records, units, pump
+strokes and takeoffs for class a, replay and clips with music, the share card, Records and
+Trends with the spot and gear menus, sending a session to a friend, intervals.icu, FIT from
+Files, Mail, AirDrop and the share sheet, the Garmin export ZIP, Strava, the example
+session, the feedback mail. Nothing from the beta or dev rows, and
+`check_release_copy.py` holds that. *Windsurf* appears once, as Garmin's own activity
+profile, the recording source the checker exempts by name.
+
+**The Strava sentence** is `phrases.json` → `strava`, verbatim, with the Strava pair from
+docs/voice.md's import example before it. **The Connect IQ watch app is named as a beta**,
+because its public listing is one (docs/channels.md, "The watch — the same three streams").
+
+## What's New in 1.0.1
+
+4000-character limit. **1423 used.** Register 1, one line per change, release doors only.
+
+```
+This is the first CleanJibe on the App Store. Riders in the beta rode it all summer, and their sessions shaped it.
+
+YOUR TURNS AND FALLS
+A jibe you never got going again after counts as a fall, not a touchdown.
+A touchdown only counts when you slow down right after coming off the foil.
+Falls are read from the dunk itself. A watch that resets its height after a swim no longer turns your afternoon into falls.
+Sessions recorded with Garmin's own activity show the full distance, as Garmin Connect does.
+Tacks have their own count beside the jibes, on the session page and on the share card.
+Clean jibes have their own tile with the star.
+
+YOUR PAGES
+Takeoffs and flight endings share one Flights tab.
+Swipe left or right for the next or previous session.
+Settings → Session list picks the three numbers each row shows.
+Settings → Units puts every speed in knots or km/h, on the charts and on the card too.
+Settings → Speed records decides whether records from a track without the watch's speed count.
+Trends draw your jibes per hour, your turns per hour and your best 2 s.
+The map offers Map or Satellite, and your track reads clearly on both.
+VoiceOver reads every number with its word. Large text no longer breaks the list.
+
+TELL US
+The feedback mail has a list to tick. Tell us what you want most.
+Menu → Join the beta shows what we are testing next.
+Settings → About → Licences lists the open-source parts we build on.
+```
+
+**ASC may not offer this field.** 1.0.0 never went on sale, so 1.0.1 is the app's first
+public version, and App Store Connect does not ask a first version for What's New. If the
+field is offered, this is the text. It is written from `docs/copy/whats-new.json`, betas 93
+to 111, keeping only the lines whose feature is in the release column: grouping, the rider
+swipe and *Send to the developer* are beta and left out. The opening line says why a first
+release has a list at all: the beta riders' summer is what it lists.
 
 ## Keywords
 
 100-character limit, comma-separated, **no spaces after commas** (a space costs a character
-and buys nothing). **98 used, 14 terms.**
+and buys nothing). **99 used, 15 terms.**
 
 ```
-wing,wind,gybe,tack,hydrofoil,windsurf,kitefoil,foiling,knots,watersport,downwind,surf,fit,session
+wing,foil,gybe,tack,hydrofoil,windsurf,kitefoil,foiling,knots,gps,downwind,pump,watersport,fit,surf
 ```
 
 Reasoning, since this is the field that is hardest to second-guess later:
 
-* **Nothing here repeats the name or the subtitle.** Apple indexes name + subtitle +
-  keywords as one bag, so `wingfoil`, `foil`, `jibe`, `flights`, `turns`, `speed`,
-  `records`, `analyzer` and `cleanjibe` are all already covered and would be wasted slots.
+* **Nothing here repeats the subtitle.** Apple indexes name + subtitle + keywords as one
+  bag, so `jibe`, `flights`, `speed` and `records` are covered and would be wasted slots.
+  The name is another matter in the 1.0.1 draft: *CleanJibe* and *Wingfoil* are single
+  words, and the store is not known to split them, so `foil` is a keyword of its own now
+  (it was assumed covered by *Wingfoil* until 26 September 2026), and *jibe* moved into the
+  subtitle for the same reason.
+* **`gps`, `pump` and `tack`** are what a rider types looking for a speed or a
+  foiling-technique tool: GPS speedsurfing records, pump strokes on the takeoff, tacks
+  counted apart from jibes. `session` left to make room; it matched every sport there is.
 * **`wing` earns its place twice over.** Apple combines keywords into phrases, so `wing` +
   the name's `wingfoil` covers *"wing foil"* as two words — which is how a large part of the
   sport spells it, and which the one-word app name misses.
@@ -330,10 +422,31 @@ behaviour to everyone except the rider holding it.
 
 ## Screenshots
 
-`ios/store/screenshots-1.0/` — eight 6.9-inch iPhone screenshots at 1320 × 2868, unframed,
-in submission order, plus one alternate. See the README in that directory for what each
-one shows and the exact command that produced it. Apple accepts the 6.9-inch set alone and
-scales it down for every smaller iPhone, so no second size is needed.
+**1.0.1: `ios/store/screenshots/1.0.1/`, six 6.9-inch shots at 1320 × 2868, not yet taken.**
+`shoot.sh` in that directory makes them in one run from the **release** scheme, in its own
+simulator, which it deletes afterwards. It was written on 26 September 2026 at night, when
+the Mac's screen was locked, and a locked screen hangs every `simctl launch`. The script
+refuses to start while the screen is locked. Run it from the repo root on an unlocked Mac:
+`ios/store/screenshots/1.0.1/shoot.sh`, about eight minutes.
+
+| # | file | what it shows | hooks |
+|---|---|---|---|
+| 1 | `01-welcome.png` | the welcome screen, the tagline under the wordmark | `UI_WELCOME=1` |
+| 2 | `02-session.png` | the session page: the track, the key numbers | `UI_OPEN_SESSION=latest` |
+| 3 | `03-turns.png` | the Turns tab: every verdict, clean jibes, the dry streak | `+ UI_OPEN_TURNS=1` |
+| 4 | `04-turn.png` | one turn's page, the speed through the turn and the why-line | `+ UI_OPEN_TURN=3` |
+| 5 | `05-records.png` | the Records tab across the fixture corpus | `UI_TAB=records` |
+| 6 | `06-share-card.png` | the share card with the map behind the track | `UI_SHEET=share UI_MAP=1 UI_STATS=complete` |
+
+The library is the scrubbed fixture corpus plus the bundled example
+(`UI_RESET=1 UI_IMPORT_FIXTURES=1 UI_LOAD_EXAMPLE=1`, once). Look at shot 4 before uploading:
+turn 3 of the latest session should be one a rider wants to see, and another index is one
+edit in the script. Apple accepts the 6.9-inch set alone and scales it down for every
+smaller iPhone.
+
+The 1.0 set in `ios/store/screenshots-1.0/` is from build 15 and shows words the app has
+since changed, *swims per hour* and *clean-jibe percentage* among them. Do not upload it
+again.
 
 Every screenshot is of the **release** build. A screenshot of a door the release lacks is the
 same broken promise as a sentence about one.
@@ -342,9 +455,8 @@ same broken promise as a sentence about one.
 
 Things the App Store submission needs that are **not** in this repo:
 
-* **What's New text for 1.0** — not written, because a first public release has no "what's
-  new". ASC does not require it for a first version; if the field is offered, the
-  Promotional Text above is the right thing to adapt.
+* **What's New** is drafted above, for the case ASC offers the field to a first public
+  version.
 * **Export compliance** — the app uses only HTTPS via the system frameworks, which is the
   standard exemption. Expect to answer: uses encryption **Yes**, exempt **Yes** (only
   standard encryption within the OS).
