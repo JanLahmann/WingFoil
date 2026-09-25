@@ -72,6 +72,9 @@ struct TrackMapView: View {
                 .mapStyle(mapStyle.mapStyle)
                 .figureHeight(regular: 260, compact: 190, wide: 380)
                 .clipShape(.rect(cornerRadius: 14))
+                // A pan that starts on the map is the map's, however flat — never a page
+                // turn (`pagerExclusionZone`).
+                .pagerExclusionZone()
                 .onMapCameraChange(frequency: .onEnd) { context in
                     visibleRegion = context.region
                     direction.camera(moved: context, detail: detail)

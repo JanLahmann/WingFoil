@@ -259,6 +259,9 @@ struct SpeedChartView: View {
         .chartYScale(domain: 0...Speed.value(max(detail.maxSpeedKn * 1.1, 5)))
         .chartOverlay { proxy in gestureSurface(proxy) }
         .figureHeight(regular: 190, compact: 150, wide: 260)
+        // A scrub is a flat sideways drag — exactly the drag that turns the session page.
+        // One that starts on the chart is the chart's (`pagerExclusionZone`).
+        .pagerExclusionZone()
     }
 
     // MARK: - Marks inside the window
@@ -296,8 +299,8 @@ struct SpeedChartView: View {
 
     /// A transparent surface over the plot area carrying both handles on the chart.
     ///
-    /// One finger scrubs (`minimumDistance: 0` so a tap works as well as a drag — tapping a
-    /// spike to see what it was is the common case). Two fingers zoom. They are attached
+    /// One finger scrubs (a tap as well as a sideways drag — tapping a spike to see what it
+    /// was is the common case; a vertical finger scrolls the page). Two fingers zoom. They are attached
     /// simultaneously and separated by `pinchBase`: a pinch also delivers a drag centroid,
     /// and without the guard every zoom would fling the playhead across the session on its
     /// way in.
@@ -308,14 +311,21 @@ struct SpeedChartView: View {
                 Rectangle()
                     .fill(.clear)
                     .contentShape(.rect)
-                    .gesture(
-                        DragGesture(minimumDistance: 0)
-                            .onChanged { value in
-                                guard pinchBase == nil else { return }
-                                guard let t = time(proxy, x: value.location.x - frame.origin.x)
-                                else { return }
-                                playhead = window.clamp(t)
-                            })
+                    // A tap scrubs to where it landed; a sideways drag scrubs along
+                    // (`ScrubPan`); an up-or-down finger scrolls the page past the chart,
+                    // which a `DragGesture(minimumDistance: 0)` here used to refuse.
+                    .onTapGesture { location in
+                        guard pinchBase == nil,
+                              let t = time(proxy, x: location.x - frame.origin.x)
+                        else { return }
+                        playhead = window.clamp(t)
+                    }
+                    .gesture(ScrubPan { location in
+                        guard pinchBase == nil,
+                              let t = time(proxy, x: location.x - frame.origin.x)
+                        else { return }
+                        playhead = window.clamp(t)
+                    })
                     .simultaneousGesture(
                         MagnifyGesture(minimumScaleDelta: 0.02)
                             .onChanged { value in

@@ -210,6 +210,8 @@ struct ReplayScrubber: View {
                        in: range)
                     .tint(.accentColor)
                     .accessibilityLabel("Replay position")
+                    // Sliding the replay is a flat sideways drag; it must not turn the page.
+                    .pagerExclusionZone()
             }
 
             HStack(spacing: 16) {

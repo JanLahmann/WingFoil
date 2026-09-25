@@ -23,6 +23,17 @@ enum StripChrome {
     /// they cannot disagree about what "close" means.
     static let captionGapS = 1.5
 
+    /// How far one row of top-edge captions sits above the one under it — a `caption2` line.
+    static let captionRowStep: CGFloat = 13
+
+    /// The annotation spacing for a caption on `row` (`LabelSpacing.rows`), 0 being the row
+    /// against the plot. Rows only ever climb: the bottom edge is the time axis' numbers and
+    /// the window words, and "out 5.7" sent down there printed through the "5" of *5 s*
+    /// (Jan, 25 Sep 2026).
+    static func captionSpacing(row: Int) -> CGFloat {
+        1 + CGFloat(row) * captionRowStep
+    }
+
     /// The small word under a window band, or beside a rule.
     ///
     /// It scales with the rider's text size, but only so far: these words sit *inside* a
@@ -98,8 +109,8 @@ enum StripChrome {
     }
 
     /// One finger, anywhere on the plot, moves the playhead on every other strip and the dot
-    /// on the drawing. `minimumDistance: 0` so a tap works as well as a drag — the common
-    /// gesture is "what was I doing *there*".
+    /// on the drawing. A tap works as well as a sideways drag — the common gesture is "what
+    /// was I doing *there*" — and an up-or-down finger is the page's scroll, not a scrub.
     ///
     /// Released, not cleared: the rider let go looking at a moment, and snatching the mark
     /// back would undo the one thing the gesture is for.
@@ -111,32 +122,26 @@ enum StripChrome {
                 Rectangle()
                     .fill(.clear)
                     .contentShape(.rect)
-                    // A tap places the playhead; a drag scrubs only once it has moved a
-                    // finger's width sideways. The scroll view must be able to start FIRST on
-                    // a vertical finger, and a recogniser with `minimumDistance: 0` claims the
-                    // touch on contact, simultaneous or not — which is why the page was still
-                    // "hard to grab" on the strips (Jan, 13 Sep 2026, second report). With a
-                    // 12 pt threshold the scroll view owns the vertical case outright, and a
-                    // sideways drag, which a vertical scroll view never wants, becomes ours.
+                    // A tap places the playhead; a drag scrubs once it has moved more
+                    // across than down (`ScrubPan`). The scroll view has to be able to start
+                    // on a vertical finger — the strips are a third of the turn page, and
+                    // stacked in the dev build they were a wall the page could not be
+                    // scrolled past (Jan, 25 Sep 2026). A SwiftUI drag, simultaneous or not,
+                    // took the touch before it knew which way it was going; the UIKit pan
+                    // fails at once on a vertical finger, and a sideways one is the scrub's
+                    // alone, so it no longer swipes the sheet to the next turn either.
                     .onTapGesture { location in
                         guard let rt: Double = proxy.value(atX: location.x - frame.origin.x)
                         else { return }
                         playheadRt.wrappedValue =
                             min(max(rt, domain.lowerBound), domain.upperBound)
                     }
-                    .simultaneousGesture(
-                        DragGesture(minimumDistance: 12)
-                            .onChanged { value in
-                                let dx = abs(value.translation.width)
-                                let dy = abs(value.translation.height)
-                                guard dx > dy else { return }
-                                guard let rt: Double =
-                                        proxy.value(atX: value.location.x - frame.origin.x)
-                                else { return }
-                                playheadRt.wrappedValue =
-                                    min(max(rt, domain.lowerBound), domain.upperBound)
-                            }
-                            .onEnded { _ in })
+                    .gesture(ScrubPan { location in
+                        guard let rt: Double = proxy.value(atX: location.x - frame.origin.x)
+                        else { return }
+                        playheadRt.wrappedValue =
+                            min(max(rt, domain.lowerBound), domain.upperBound)
+                    })
             }
         }
     }

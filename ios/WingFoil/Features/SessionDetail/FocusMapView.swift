@@ -70,6 +70,8 @@ struct FocusMapView<Marks: MapContent>: View {
             .mapStyle(store.mapStyle.mapStyle)
             .figureHeight(regular: 240, compact: 180, wide: 330)
             .clipShape(.rect(cornerRadius: 14))
+            // A pan that starts on the map is the map's, never a page turn.
+            .pagerExclusionZone()
             .onMapCameraChange(frequency: .onEnd) { context in
                 direction.camera(moved: context, detail: detail)
             }

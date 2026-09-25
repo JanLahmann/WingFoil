@@ -82,20 +82,18 @@ struct TurnDetailStripView: View {
             // The three numbers the score is made of, on the trace they were read from.
             // "low" and "out" fall within a second of each other on every jibe whose speed
             // bottomed out at the exit — the fallen ones — and two captions on one x
-            // overprint into "bout 9.0". When they are that close, "out" takes the bottom
-            // edge; when the minimum is at the entry it is "low" that steps down instead.
-            let lowNearIn = abs(slice.speed.minRt) < captionGap
-            let outNearLow = abs(slice.speed.exitRt - slice.speed.minRt) < captionGap
-            mark(at: slice.speed.entryRt, kn: slice.speed.entryKn, label: "in", below: false)
-            mark(at: slice.speed.minRt, kn: slice.speed.minKn, label: "low", below: lowNearIn)
-            mark(at: slice.speed.exitRt, kn: slice.speed.exitKn, label: "out",
-                 below: outNearLow && !lowNearIn)
+            // overprint into "bout 9.0". A caption that would land on one already placed
+            // steps up a row (`captionRows`); none goes under the plot, where "out 5.7" used
+            // to print through the time axis' "5".
+            let rows = captionRows
+            mark(at: slice.speed.entryRt, kn: slice.speed.entryKn, label: "in", row: rows[0])
+            mark(at: slice.speed.minRt, kn: slice.speed.minKn, label: "low", row: rows[1])
+            mark(at: slice.speed.exitRt, kn: slice.speed.exitKn, label: "out", row: rows[2])
 
             // Where the board went through the wind (engine 0.15.0). The crossing sits inside
-            // the sweep and so lands near "low" on most jibes — see `axisLifted`.
-            if let axisRt = slice.axisRt {
-                axisMark(at: axisRt, lifted: axisLifted(axisRt, lowNearIn: lowNearIn,
-                                                        outNearLow: outNearLow))
+            // the sweep and so lands near "low" on most jibes, and climbs past it when it does.
+            if let axisRt = slice.axisRt, rows.count > 3 {
+                axisMark(at: axisRt, row: rows[3])
             }
 
             // Where the quiet tail closes (engine 0.17.0) — the last instant a touchdown or a
@@ -117,6 +115,9 @@ struct TurnDetailStripView: View {
         }
         .chartXScale(domain: domain)
         .chartYScale(domain: 0...ceiling)
+        // Room above the plot for the rows the captions climbed into, so a third row does
+        // not print over the figure above the strip.
+        .padding(.top, CGFloat(captionRows.max() ?? 0) * StripChrome.captionRowStep)
         .chartXAxisLabel("s from the turn")
         .chartYAxisLabel(Fmt.knUnit)
         .chartOverlay { proxy in
@@ -221,18 +222,14 @@ struct TurnDetailStripView: View {
                          caption: captioned ? "quiet" : nil)
     }
 
-    /// Does the "axis" caption have to step up out of the row the speed captions sit in?
-    ///
-    /// It is lifted rather than dropped, which is where "low" and "out" go when *they*
-    /// collide. The bottom edge of this plot is not free: the three window bands each print
-    /// their own word there (`windowLabel`), and the crossing lands inside the `sweep` band by
-    /// construction — so sending "axis" down would trade one overprint for another. Lifted, it
-    /// gets a line of its own above the speeds and can collide with nothing.
-    private func axisLifted(_ axisRt: Double, lowNearIn: Bool, outNearLow: Bool) -> Bool {
-        let occupied = [slice.speed.entryRt]
-            + (lowNearIn ? [] : [slice.speed.minRt])
-            + (outNearLow && !lowNearIn ? [] : [slice.speed.exitRt])
-        return occupied.contains { abs($0 - axisRt) < captionGap }
+    /// **Which row each top-edge caption goes on** — "in", "low", "out" and, where the engine
+    /// recorded one, "axis", in that order (`LabelSpacing.rows`). A caption climbs a row
+    /// rather than drop under the plot: the bottom edge is not free — the window bands each
+    /// print their word there, and under them are the time axis' numbers.
+    private var captionRows: [Int] {
+        var positions = [slice.speed.entryRt, slice.speed.minRt, slice.speed.exitRt]
+        if let axisRt = slice.axisRt { positions.append(axisRt) }
+        return LabelSpacing.rows(positions, gap: captionGap)
     }
 
     /// The crossing: a dashed rule and the word `axis`, and deliberately no dot.
@@ -241,11 +238,12 @@ struct TurnDetailStripView: View {
     /// each mark a number the score is made of, and putting a fourth dot on the trace would
     /// claim the crossing was a fourth reading. It is an instant, so it gets a line.
     @ChartContentBuilder
-    private func axisMark(at rt: Double, lifted: Bool) -> some ChartContent {
+    private func axisMark(at rt: Double, row: Int) -> some ChartContent {
         RuleMark(x: .value("Seconds", rt))
             .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
             .foregroundStyle(Color(.label).opacity(0.35))
-            .annotation(position: .top, alignment: .center, spacing: lifted ? 13 : 1) {
+            .annotation(position: .top, alignment: .center,
+                        spacing: StripChrome.captionSpacing(row: row)) {
                 Text("axis")
                     .font(.caption2)
                     .foregroundStyle(Color(.label).opacity(0.55))
@@ -253,11 +251,12 @@ struct TurnDetailStripView: View {
     }
 
     @ChartContentBuilder
-    private func mark(at rt: Double, kn: Double, label: String, below: Bool) -> some ChartContent {
+    private func mark(at rt: Double, kn: Double, label: String, row: Int) -> some ChartContent {
         RuleMark(x: .value("Seconds", rt))
             .lineStyle(StrokeStyle(lineWidth: 1, dash: [2, 3]))
             .foregroundStyle(Color.secondary.opacity(0.5))
-            .annotation(position: below ? .bottom : .top, alignment: .center, spacing: 1) {
+            .annotation(position: .top, alignment: .center,
+                        spacing: StripChrome.captionSpacing(row: row)) {
                 Text("\(label) \(Fmt.knValue(kn, digits: 1))")
                     .font(.caption2.monospacedDigit())
                     .foregroundStyle(.secondary)

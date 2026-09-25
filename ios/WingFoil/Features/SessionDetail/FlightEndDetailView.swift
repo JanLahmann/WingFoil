@@ -465,13 +465,15 @@ private struct FlightEndStripView: View {
             StripChrome.rule(at: 0, dash: [2, 3], tint: Color.secondary.opacity(0.6),
                              width: 1, caption: nil, onTop: true)
 
-            mark(at: slice.speed.entryRt, kn: slice.speed.entryKn, label: "in")
+            // A caption that would print over one already placed climbs a row
+            // (`captionRows`) — never under the plot, where the time axis' numbers are.
+            let rows = captionRows
+            mark(at: slice.speed.entryRt, kn: slice.speed.entryKn, label: "in", row: rows[0])
             if let lowRt = slice.speed.lowRt, let lowKn = slice.speed.lowKn {
-                mark(at: lowRt, kn: lowKn, label: "low",
-                     below: abs(lowRt) < StripChrome.captionGapS)
+                mark(at: lowRt, kn: lowKn, label: "low", row: rows[1])
             }
             if let outRt = slice.speed.recoverRt, let outKn = slice.speed.outKn {
-                mark(at: outRt, kn: outKn, label: "out")
+                mark(at: outRt, kn: outKn, label: "out", row: rows[2])
             }
 
             ForEach(pumps) { tick in
@@ -490,6 +492,7 @@ private struct FlightEndStripView: View {
         }
         .chartXScale(domain: domain)
         .chartYScale(domain: 0...ceiling)
+        .padding(.top, CGFloat(captionRows.max() ?? 0) * StripChrome.captionRowStep)
         .chartXAxisLabel("s from the end")
         .chartYAxisLabel(Fmt.knUnit)
         .chartOverlay { proxy in
@@ -500,13 +503,26 @@ private struct FlightEndStripView: View {
         .accessibilityLabel(spoken)
     }
 
+    /// The row each of "in", "low" and "out" goes on (`LabelSpacing.rows`). A caption the
+    /// slice has no number for is placed far off the window, where it collides with nothing.
+    private var captionRows: [Int] {
+        let away = domain.upperBound + 1_000
+        return LabelSpacing.rows([slice.speed.entryRt,
+                                  slice.speed.lowKn == nil ? away : (slice.speed.lowRt ?? away),
+                                  slice.speed.outKn == nil ? away + 1_000
+                                                           : (slice.speed.recoverRt ?? away)],
+                                 gap: max(StripChrome.captionGapS,
+                                          (domain.upperBound - domain.lowerBound) / 8))
+    }
+
     @ChartContentBuilder
     private func mark(at rt: Double, kn: Double, label: String,
-                      below: Bool = false) -> some ChartContent {
+                      row: Int = 0) -> some ChartContent {
         RuleMark(x: .value("Seconds", rt))
             .lineStyle(StrokeStyle(lineWidth: 1, dash: [2, 3]))
             .foregroundStyle(Color.secondary.opacity(0.5))
-            .annotation(position: below ? .bottom : .top, alignment: .center, spacing: 1) {
+            .annotation(position: .top, alignment: .center,
+                        spacing: StripChrome.captionSpacing(row: row)) {
                 StripChrome.caption("\(label) \(Fmt.knValue(kn, digits: 1))")
             }
         PointMark(x: .value("Seconds", rt), y: .value("Speed", Speed.value(kn)))

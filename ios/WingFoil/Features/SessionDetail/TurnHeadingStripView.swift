@@ -162,11 +162,21 @@ struct TurnHeadingStripView: View {
     }
 
     /// Ticks the right axis prints: the two thresholds and zero, which are the only rate
-    /// values on this strip that mean anything.
+    /// values on this strip that mean anything — as many of them as fit. On a turn that
+    /// spun at 60 °/s the ±5 continue threshold sits a few points from zero, and "18 · 5 ·
+    /// 0 · −5 · −18" printed as one smear (Jan, 25 Sep 2026). Zero first, then the peak
+    /// threshold, then the continue one, each kept only a label's height from the rest
+    /// (`LabelSpacing.thinned`); the dotted rule of a dropped one is still drawn.
     private var rateTicks: [Double] {
-        [0, continueRateDegS, -continueRateDegS, peakRateDegS, -peakRateDegS]
+        let candidates = [0, peakRateDegS, -peakRateDegS, continueRateDegS, -continueRateDegS]
             .filter { rateDomain.contains($0) }
+        let rateSpan = rateDomain.upperBound - rateDomain.lowerBound
+        return LabelSpacing.thinned(candidates, gap: rateSpan * Self.labelGapFraction)
     }
+
+    /// How far apart two right-axis labels must be, as a share of the axis: a `caption2`
+    /// line on a plot about 120 pt tall.
+    private static let labelGapFraction = 0.12
 
     @ChartContentBuilder
     private func threshold(_ rateDegS: Double, dash: [CGFloat],
