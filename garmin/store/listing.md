@@ -20,10 +20,30 @@ open beta, English only.
 * Type: device app · Version **0.9.19** on the store, **42** products (uploaded 23 Sep 2026, Internal 26; 0.9.18 on 22 Sep, Internal 25; 0.9.17 on 21 Sep, Internal 24; 0.9.16 the same day, Internal 23; 0.9.15 on 20 Sep, Internal 22; 0.9.13 on 17 Sep, Internal 21; 0.9.12 the same day; 0.9.11 on 15 Sep; web/tools/make_devices.py reads this line, keep its shape) · first submitted 2026-08-12, 0.9.4 released 2026-09-01
 * Permissions: Fit, SensorLogging, Communications, Positioning, FitContributor, Sensor
 * Devices (`garmin/manifest-beta.xml`, identical to the release and dev manifests; the count and
-  the family grouping are generated into `docs/copy/garmin-devices.json`): 42 products at 0.9.11 —
+  the family grouping are generated into `docs/copy/garmin-devices.json`): 42 products at 0.9.11,
+  unchanged through 0.9.19 —
   fenix 8 / 7 / 5 Plus families, epix 2 / 2 Pro, Forerunner 255 / 265 / 570 / 955 / 965 / 970,
   MARQ 2, Enduro 2 / 3, D2 Mach 1 / 2, Descent Mk3, Venu 2 / 3, vívoactive 5 / 6, Instinct 3
-  AMOLED (and the tactix / quatix twins those product ids cover)
+  AMOLED — plus **D2 Mach 1 Pro**, which was missing from this list: `garmin/manifest.xml`'s
+  own comment says `epix2pro51mm` answers for it as well as for tactix 7 – AMOLED Edition; the
+  tactix 7 (plain) and quatix 7X Solar twins ride on `fenix7x`'s id and quatix 7 Sapphire on
+  `epix2`'s — none of the four carries a product id of its own, which is what "the tactix /
+  quatix twins those product ids cover" was already saying, just one device short.
+* Minimum firmware: one floor for the whole app, `minApiLevel="3.3.3"` in `garmin/manifest.xml`
+  — Connect IQ 3.3.3 or newer, which Garmin Connect Mobile installs automatically, so this only
+  bites a watch nobody has updated in years. The oldest family on the list, fenix 5 Plus /
+  5S Plus / 5X Plus, got Connect IQ 3.3.3 in firmware 19.10 (2020); every fenix 8 has shipped
+  with newer firmware than that from day one.
+* Battery: **no measured figure exists yet.** Garmin's own multiband-GPS spec puts a fenix 8
+  at roughly 30 hours in that mode (`docs/plan.md`), which is where a two-hour session's
+  percentage would come from if this were Garmin's own recording — it isn't; CleanJibe adds
+  its own accelerometer work and companion-link traffic on top, so that number is not this
+  app's number. The test, once, on a representative watch: charge to 100%, start a normal
+  CleanJibe recording with GPS (multiband where the watch has it) for a continuous 2 hours —
+  no pauses, ridden as normal, phone connected as usual — then read the battery percentage
+  remaining and report the drop. A fenix 8 (AMOLED) bounds the worst case; a fenix 5 Plus
+  (MIP) the best, if a tester has one. Until that number exists, the listing says nothing
+  about battery.
 * Open beta since 0.9.4: no unlock key. The invite lock (ADR-012) is compiled out of every
   channel now; the invite UUID `28942317…` is simply the public listing's UUID.
 
@@ -72,6 +92,50 @@ An iPhone app with the full analysis — maps, turn forensics, replay with comme
 
 0.9.15: Eleven traps closed. A map slot from an older build no longer throws every frame, a heading value out of range no longer stalls the watch, settings from Garmin Connect are clamped to their ranges, a null in an accelerometer batch is skipped, a thirty-hour session keeps its track. A run that never reached its end is counted and told to the phone.
 ```
+
+### Listing images
+
+Read against the 0.9.19 UI (`Read`, frame by frame — no simulator run, no new art):
+
+- `garmin/store/cover-500.png` (2026-08-12, the 500 px store cover) is the brand mark only, no
+  on-watch UI, so no layout change touches it. **Keep.**
+- `brand/store-shots-09/` (committed 2026-09-01, `c4fd9f7`, "store screenshots for the 0.9.4
+  listing") is the *only* on-device screenshot set in git — nothing newer was ever checked in;
+  the layout-review family sheets (docs/testing.md, "the short set") land in a scratch
+  `<outdir>` each round and are never committed. Checked one by one:
+  - `01-main-454.png` — **stale, do not use.** No clean-jibe star (shipped 0.9.6); it shows a
+    tally a 0.9.19 rider will never see.
+  - `02-turns-454.png` — **stale, do not use.** It's the pre-0.9.18 Turns page: a "68% flew ·
+    P29/S22" share row and the wind bearing spelled out ("~NNE") as the header, both removed
+    in 0.9.18's redesign (this file's 0.9.18 row; `docs/algorithms/turns.md`). A page nobody
+    running 0.9.19 will ever see.
+  - `03-foil-454.png` — usable with one wording caveat: it still says "tot", which 0.9.18
+    renamed to "total" when it dropped the flight count from the same row. Cosmetic only.
+    **Use.**
+  - `04-records-454.png` — untouched by 0.9.16–0.9.18. **Use.**
+  - `05-sum-takeoffs-454.png` — already the two-row form 0.9.18's fix asserts ("… to foil" /
+    "+N bpm" on separate lines). **Use.**
+  - `06-sum-verdict-454.png` — a different number (session foil-time share, not turn success),
+    untouched by the "Speed kept" rename. **Use.**
+  - `07-start-454.png` — the start page's copy hasn't moved. **Use.**
+  All seven are 454×454 (`fenix847mm`, the widest glass and Jan's own watch, per
+  docs/testing.md) — the size the store slots have taken since the 0.9.4 upload, so the four
+  kept here (03, 04, 05, 06, 07) need no resize.
+- **Owed, not done here:** a real capture (`garmin/screenshots/tools/capture.sh <device>
+  <outdir>` then `sheet.py`, at minimum the short set on `fenix847mm`) to replace 01-main and
+  02-turns before the next screenshot upload — 0.9.16–0.9.18 moved the layout engine itself
+  (row stack, ink bands), which is what the full 29-family round is owed for anyway
+  (docs/testing.md). Out of scope for this pass: no simulator run, no new art.
+
+### Next watch build
+
+- **Port the phone's early-touch rule (engine 0.25.0, ADR-035).** The watch currently calls
+  any sub-floor sample anywhere in a flight end's 30 s window a touchdown; the phone only
+  counts one landing within `turnOutcomeLookahead` (12 s) of the exit, so a slog that brushes
+  the floor between 12 s and 30 s reads as a glide-out on the phone and a broken flew-through
+  streak on the wrist (`docs/algorithms/turns.md`, "Not ported yet"). The port is one
+  condition in `TurnDetector._flightEndTick`: set `_endTouched` only while `_clockS -
+  _endStartS <= LOOKAHEAD_S`. Not done here — a line for the next watch build, not code.
 
 ---
 
