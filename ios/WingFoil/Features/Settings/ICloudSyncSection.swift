@@ -35,9 +35,8 @@ struct ICloudSyncSection: View {
             // cannot keep — the recordings and the names travel, the analysis is redone here.
             // Not "both devices": the dev build runs on iPhone and iPad, a rider may have
             // three, and the folder is this app's own. The App Store app does not read it.
-            Text("Your sessions and what you called them live in one iCloud Drive folder. "
-                 + "Every iPhone and iPad with this app on your iCloud account reads it. "
-                 + "The app syncs each time you open it. Deleted sessions stay deleted.")
+            Text("Your sessions and their names live in iCloud Drive. "
+                 + "Every iPhone and iPad on your account reads them.")
         }
         .task { await store.refreshSyncPlan() }
     }
