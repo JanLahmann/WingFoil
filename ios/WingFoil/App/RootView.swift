@@ -185,10 +185,10 @@ struct RootView: View {
             DisciplineReviewView(request: $0)
         }
         #endif
-        // The first thing a first launch shows, in front of the ways-in card the library
-        // would otherwise open on. A cover rather than a sheet: it is one screen with three
-        // answers on it and nothing behind it worth peeking at, and a half-swipe that
-        // reveals an empty list is not a fourth answer. Raised here for the same reason the
+        // The first thing a launch shows until the rider has a session of his own, in front
+        // of the ways-in card the library would otherwise open on. A cover rather than a
+        // sheet: nothing behind it is worth peeking at, and a half-swipe that reveals an
+        // empty list is not an answer. Raised here for the same reason the
         // two prompts above are — it belongs to the app, not to any one tab — and it goes
         // through the same "is anything else up?" predicate, so it can never stack.
         //
@@ -204,15 +204,10 @@ struct RootView: View {
                     store.dismissWelcome()
                     Task { await store.loadExampleSessionAndOpen() }
                 },
-                // Straight into the ordinary first run: the library is empty and no key
-                // is stored, so the card of ways in (`LibraryView.waysInCard`) is already
-                // the thing underneath, and its first row is this same door. Nothing to do
-                // but get out of its way, which is why `WelcomeGuide.connectTitle` says
-                // "Set up intervals.icu" and its detail says where the 4 steps are: the
-                // button used to be labelled "Connect your Garmin" and connected nothing
-                // (15 Sep 2026).
-                onConnect: { store.dismissWelcome() },
-                onLater: { store.dismissWelcome() })
+                // Getting started → Open CleanJibe Settings: the four intervals.icu steps
+                // live in Settings (Jan, 25 September 2026), which the Sessions screen owns.
+                onOpenSettings: { store.requestSettings() },
+                onClose: { store.dismissWelcome() })
         }
     }
 
