@@ -2309,9 +2309,10 @@ Four things to check by hand, in this order, because each one is a rule that onl
 device can break:
 
 1. **Nothing doubles.** Sync both ways twice. The library count does not move and
-   `ls "$CONTAINER/Sessions" | wc -l` equals the session count — the folder is keyed by the
-   device that wrote it first, and a second folder for one afternoon is the bug ADR-026's
-   ±60 s lookup exists to prevent.
+   `ls "$CONTAINER/Sessions" | wc -l` equals the session count plus the sessions deleted
+   since the switch went on (a deleted session keeps its `meta.json`) — the folder is keyed
+   by the device that wrote it first, and a second folder for one afternoon is the bug
+   ADR-026's ±60 s lookup exists to prevent.
 2. **A rename crosses, and survives.** Rename on B, sync B, sync A: the name is on A. Then
    sync B again — the name is still there, and did not revert to the folder's older copy.
 3. **A delete sticks.** Delete on A, sync both: the session is gone on B and
@@ -2321,7 +2322,13 @@ device can break:
    both: both survive. Rename the *same* session on both: the one that synced later wins.
 
 The status line is a dry run (`LibrarySyncEngine.plan`) and writes nothing, so reading it is
-always safe: "In iCloud Drive: 41 sessions · Pending: 2".
+always safe: "In iCloud Drive: 41 sessions · Pending: 2". *In iCloud Drive* counts sessions
+the way Storage does — one per afternoon, deleted ones left out — so with Pending at 0 the two
+numbers agree (`theFolderCountIsSessionsNotFolders`; until 25 Sep 2026 it counted folders
+and read 69 beside a library of 63). A pass runs at launch and on every return to the
+foreground, at most once per five minutes (`SessionStore.syncLibraryIfDue`), besides the
+switch and *Sync now*; the automatic one raises no alert and no status line unless something
+moved.
 
 **And the release check.** The whole door is `#if DEV`, so neither the App Store nor the beta
 binary may carry a word of it. Xcode 16 links the app's own code into `WingFoil.debug.dylib`
