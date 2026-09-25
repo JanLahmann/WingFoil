@@ -1,4 +1,4 @@
-> Part of `docs/algorithms.md`. Engine 0.24.0.
+> Part of `docs/algorithms.md`. Engine 0.25.0.
 
 ## Not a session (phone/web, engine ≥ 0.19.0) — `summary.isSession` · `summary.notASessionReason`
 

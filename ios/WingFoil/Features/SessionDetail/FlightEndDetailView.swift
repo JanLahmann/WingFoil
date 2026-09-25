@@ -274,7 +274,7 @@ private struct FlightEndDetailPage: View {
                                      count: typeSize.isAccessibilitySize ? 1 : 2),
                       alignment: .leading, spacing: 8) {
                 cell("Stopped", String(format: "%.0f s", end.stoppedS))
-                cell("Off foil", String(format: "%.0f s", end.offFoilS))
+                cell("Off foil", FlightEndAnalytics.offFoilText(end.offFoilS))
                 cell("Flight", "#\(end.flightIndex + 1)")
                 cell("Evidence", String(format: "%.0f s", end.windowS))
             }

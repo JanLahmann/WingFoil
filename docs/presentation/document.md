@@ -1,4 +1,4 @@
-> Part of `docs/presentation.md`. Engine 0.24.0. `presentationVersion` 1.
+> Part of `docs/presentation.md`. Engine 0.25.0. `presentationVersion` 1.
 
 ## The presentation document — every fact once
 

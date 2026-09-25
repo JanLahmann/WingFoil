@@ -389,6 +389,16 @@ import Testing
                 == "the recording ended, not the flight")
     }
 
+    /// The off-foil run is followed to `turnOutcomeWindow` and no further, so a value at the
+    /// cap is a ceiling: "1 min+", never "61 s" (engine 0.25.0, ADR-035).
+    @Test func aCappedOffFoilTimeReadsAMinutePlus() throws {
+        #expect(FlightEndAnalytics.outcomeText(
+            try flightEnd(outcome: "glide_out", stoppedS: 0, offFoilS: 61))
+                == "glided out · off the foil 1 min+")
+        #expect(FlightEndAnalytics.offFoilText(60) == "1 min+")
+        #expect(FlightEndAnalytics.offFoilText(59) == "59 s")
+    }
+
     /// The word is never the turn ladder's "flew through": by the time there is a flight end
     /// the rider is off the foil by definition.
     @Test func aFlightEndNeverFlewThrough() {

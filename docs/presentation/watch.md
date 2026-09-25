@@ -1,4 +1,4 @@
-> Part of `docs/presentation.md`. Engine 0.24.0.
+> Part of `docs/presentation.md`. Engine 0.25.0.
 
 ## The watch's two layout rules — the equator, and the size ladder
 

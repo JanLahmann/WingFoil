@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.24.0",
+  "engineVersion": "0.25.0",
   "config": {
     "foilEntrySpeed": 12.0,
     "entryHold": 2.0,
@@ -4322,7 +4322,7 @@
       "submerged": false,
       "windowS": 30.0,
       "truncated": false,
-      "ownedByTurn": 5
+      "ownedByTurn": null
     },
     {
       "flightIndex": 4,
@@ -4336,7 +4336,7 @@
       "submerged": false,
       "windowS": 23.0,
       "truncated": false,
-      "ownedByTurn": 9
+      "ownedByTurn": null
     },
     {
       "flightIndex": 5,
@@ -4644,7 +4644,7 @@
       "submerged": false,
       "windowS": 30.0,
       "truncated": false,
-      "ownedByTurn": 87
+      "ownedByTurn": null
     },
     {
       "flightIndex": 27,
@@ -7529,24 +7529,24 @@
       },
       "straight": {
         "glideOut": 2,
-        "touchdown": 2,
-        "fellIn": 8,
+        "touchdown": 3,
+        "fellIn": 10,
         "unknown": 7,
         "borderline": 0
       },
       "inTurn": {
         "glideOut": 1,
-        "touchdown": 3,
-        "fellIn": 15,
+        "touchdown": 2,
+        "fellIn": 13,
         "unknown": 3,
         "borderline": 1
       }
     },
     "outcomeSplit": {
       "turnFalls": 18,
-      "straightFalls": 8,
+      "straightFalls": 10,
       "turnTouchdowns": 7,
-      "straightTouchdowns": 2,
+      "straightTouchdowns": 3,
       "glideOuts": 2,
       "unknownEnds": 10
     },

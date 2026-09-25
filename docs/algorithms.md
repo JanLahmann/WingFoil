@@ -6,7 +6,7 @@ Single source of truth for detection/metric parameters. Three implementations fo
 re-tuned in lab notebooks against the labeled fixture corpus; changed defaults are updated HERE
 first, with the tuning notebook referenced in the commit.
 
-`ENGINE_VERSION`: **0.24.0** (bump on any change that alters outputs; triggers phone re-analysis)
+`ENGINE_VERSION`: **0.25.0** (bump on any change that alters outputs; triggers phone re-analysis)
 
 This file is an index. Every threshold, clock and verdict lives in the topic files under
 `docs/algorithms/`; each one carries a one-line header naming this file and the engine

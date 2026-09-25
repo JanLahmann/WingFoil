@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.24.0",
+  "engineVersion": "0.25.0",
   "config": {
     "foilEntrySpeed": 12.0,
     "entryHold": 2.0,
@@ -1786,7 +1786,7 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": 15
+      "ownedByTurn": null
     },
     {
       "flightIndex": 11,
@@ -1954,7 +1954,7 @@
       "submerged": false,
       "windowS": 13.0,
       "truncated": false,
-      "ownedByTurn": 34
+      "ownedByTurn": null
     },
     {
       "flightIndex": 23,
@@ -3873,17 +3873,17 @@
         "borderline": 1
       },
       "straight": {
-        "glideOut": 0,
+        "glideOut": 1,
         "touchdown": 1,
         "fellIn": 4,
-        "unknown": 2,
+        "unknown": 3,
         "borderline": 0
       },
       "inTurn": {
-        "glideOut": 8,
+        "glideOut": 7,
         "touchdown": 1,
         "fellIn": 10,
-        "unknown": 3,
+        "unknown": 2,
         "borderline": 1
       }
     },
@@ -3892,7 +3892,7 @@
       "straightFalls": 4,
       "turnTouchdowns": 11,
       "straightTouchdowns": 1,
-      "glideOuts": 0,
+      "glideOuts": 1,
       "unknownEnds": 5
     },
     "takeoff": {

@@ -219,6 +219,17 @@ public enum FlightEndAnalytics {
         }
     }
 
+    /// The flight-end channel follows an off-foil run only to `turnOutcomeWindow` (60 s) past
+    /// the end, so a value there is a **ceiling**, not a measurement: "not flying again
+    /// within a minute". It reads "1 min+", never "61 s" (engine 0.25.0, ADR-035).
+    public static let offFoilCapS: Double = 60
+
+    /// **"12 s"**, or **"1 min+"** at the cap — the one wording for a flight end's off-foil
+    /// time, on the page's cell and in its reason line.
+    public static func offFoilText(_ seconds: Double) -> String {
+        seconds >= offFoilCapS ? "1 min+" : String(format: "%.0f s", seconds)
+    }
+
     /// **"fell in · stopped 7 s · wrist under"** — the outcome, then the evidence that made
     /// it, in the order the ladder settles them.
     ///
@@ -236,7 +247,7 @@ public enum FlightEndAnalytics {
         } else if end.offFoilS.rounded() >= 1 {
             // Off-foil seconds only where there is no stop to print: a rider who stopped was
             // off the foil too, and saying both is saying the same loss twice.
-            parts.append(String(format: "off the foil %.0f s", end.offFoilS))
+            parts.append("off the foil " + offFoilText(end.offFoilS))
         }
         if end.submerged { parts.append("wrist under") }
         if end.pumped { parts.append("pumped out") }

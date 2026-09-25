@@ -1106,13 +1106,21 @@ function endNumbers(end, figure) {
     <p class="tp-held">${esc(back)}</p>
     <div class="tp-grid">
       ${cell("Stopped", `${nf(end.stoppedS, 0)} s`)}
-      ${cell("Off foil", `${nf(end.offFoilS, 0)} s`)}
+      ${cell("Off foil", endOffFoilText(end.offFoilS))}
       ${cell("Flight", `#${end.flightIndex + 1}`)}
       ${cell("Evidence", `${nf(end.windowS, 0)} s`)}
     </div>
     <p class="tp-chips">${chips.join(" ")}</p>
     <p class="muted small">${esc(endOutcomeText(end))}</p>
   </div>`;
+}
+
+/** A flight end's off-foil run is followed only to `turnOutcomeWindow` (60 s), so a value
+ * there is a ceiling: "1 min+", never "61 s" (engine 0.25.0, ADR-035). Mirrors
+ * `FlightEndAnalytics.offFoilText`. */
+const END_OFF_FOIL_CAP_S = 60;
+export function endOffFoilText(seconds) {
+  return seconds >= END_OFF_FOIL_CAP_S ? "1 min+" : `${nf(seconds, 0)} s`;
 }
 
 /** The outcome, then the evidence that made it, in the order the ladder settles them. */
@@ -1123,7 +1131,7 @@ function endOutcomeText(end) {
   const parts = [endOutcomeLabel(end.outcome) + (end.borderline ? " (borderline)" : "")];
   if (Math.round(end.stoppedS) >= 1) parts.push(`stopped ${nf(end.stoppedS, 0)} s`);
   else if (Math.round(end.offFoilS) >= 1) {
-    parts.push(`off the foil ${nf(end.offFoilS, 0)} s`);
+    parts.push(`off the foil ${endOffFoilText(end.offFoilS)}`);
   }
   if (end.submerged) parts.push("wrist under");
   if (end.pumped) parts.push("pumped out");

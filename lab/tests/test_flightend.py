@@ -117,6 +117,24 @@ def test_the_glide_touchdown_line_is_reaching_the_floor_not_dwelling_below_it():
     assert ends[0].outcome == TOUCHDOWN               # ...but he plainly stopped
 
 
+def test_a_touchdown_is_a_dip_within_the_lookahead_not_a_minute_later():
+    """**The touch is the loss** (engine 0.25.0, ADR-035).
+
+    A rider slogging on at 1.8 m/s who brushes the floor 20 s into it did not lose the foil
+    there: he lost it at the exit and kept making way. That end is a `glide_out`; the same
+    single dip 6 s after the exit, inside `turnOutcomeLookahead`, is a touchdown.
+    """
+    late = _ends(*_reach(_fly(40), _fly(20, 1.8), [0.5], _fly(20, 1.8), _fly(40)))[2]
+    assert late[0].min_speed_mps == pytest.approx(0.5) and late[0].stopped_s == 0.0
+    assert late[0].outcome == GLIDE_OUT
+    early = _ends(*_reach(_fly(40), _fly(6, 1.8), [0.5], _fly(34, 1.8), _fly(40)))[2]
+    assert early[0].outcome == TOUCHDOWN
+    # The lookahead is the one threshold it reads: widened past the dip, the touch is back.
+    wide = _ends(*_reach(_fly(40), _fly(20, 1.8), [0.5], _fly(20, 1.8), _fly(40)),
+                 config=FlightEndConfig(outcome_lookahead_s=25.0))[2]
+    assert wide[0].outcome == TOUCHDOWN
+
+
 def test_thresholds_are_tunable():
     course, speed = _reach(_fly(40), _fly(5, 0.6), _fly(40))
     strict = FlightEndConfig(touchdown_max_stop_s=1.0, fall_stop_s=2.0)
@@ -265,6 +283,21 @@ def test_the_mush_out_fall_is_booked_once_as_the_turns_own():
     old_split = split_outcomes(summarize_turns(old_turns),
                                summarize_flight_ends(old_ends))
     assert (old_split.turn_falls, old_split.straight_falls) == (0, 1)
+
+
+def test_only_a_counted_turn_owns_a_flight_end():
+    """A course change is in no ladder, so its fall is a straight-line fall (engine 0.25.0,
+    ADR-035; docs/algorithms/turns.md "Aborted turns"). Before 0.25.0 it owned the end and
+    the tile said "in a turn" while no turn anywhere said it fell."""
+    course, speed = _jibe_then([0.3] * 15)
+    ct = _track(course, speed)
+    flights = segment_flights(ct)
+    turns = detect_turns(ct, flights, WIND_N)
+    assert len(turns) == 1 and turns[0].counted
+    turns[0].counted = False                      # the same window, read as a course change
+    ends = classify_flight_ends(ct, flights, turns)
+    assert ends[0].outcome == FELL_IN and not ends[0].in_turn
+    assert summarize_flight_ends(ends).straight.fell_in == 1
 
 
 def test_a_straight_line_fall_is_owned_by_nobody():
