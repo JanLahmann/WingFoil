@@ -7,8 +7,7 @@
     "  tabs             ios/WingFoil/App/RootView.swift, the four `tabItem` labels",
     "  menu             ios/WingFoilKit/Sources/WingFoilKit/Presentation/AppMenuRows.swift",
     "                   (`AppMenuRow.ordered` and `.title`; the last row's title is",
-    "                   FeedbackDoors.menuRow, which docs/copy/feedback.json already pins,",
-    "                   and `.family`'s title is CleanJibeFamily.title)",
+    "                   FeedbackDoors.menuRow, which docs/copy/feedback.json already pins)",
     "  sessionSections  ios/WingFoilKit/Sources/WingFoilKit/Presentation/SessionSection.swift",
     "  family           ios/WingFoilKit/Sources/WingFoilKit/Presentation/CleanJibeFamily.swift",
     "",
@@ -27,9 +26,13 @@
     "The two rows the phone does not have are `drop` and `example`. They are the analyzer's",
     "own strengths, they lead the card, and they carry their own titles.",
     "",
-    "`family` is the three apps and how a session travels between them, under 120 words. It",
-    "is the kit's CleanJibeFamily, word for word. `thisApp` is which of the three THIS shell",
-    "is, so the copy is written once and each shell marks its own row with `here`."
+    "`family` is the apps on one engine, under 120 words: since 25 September 2026 a section",
+    "of the welcome screen rather than a page of its own. It is the kit's CleanJibeFamily, word",
+    "for word. `thisApp` is which of them THIS shell is, so each shell marks its own card.",
+    "",
+    "`beta` is the Beta page, the release's wording of the kit's BetaGuide (the web is not in",
+    "the beta), with the public TestFlight link the release carries. `webJoin` is the one line",
+    "that is the browser's own: the beta it joins is the iPhone app's."
   ],
   "schema": "cleanjibe.app-shell/1",
   "tabs": [
@@ -40,11 +43,11 @@
   ],
   "menu": [
     { "id": "whatItDoes", "title": "What CleanJibe does" },
-    { "id": "family", "title": "The CleanJibe family" },
     { "id": "gettingStarted", "title": "Getting started" },
     { "id": "settings", "title": "Settings", "afterDivider": true },
     { "id": "help", "title": "Help" },
-    { "id": "support", "title": "Support & ideas" }
+    { "id": "support", "title": "Support & ideas" },
+    { "id": "beta", "title": "Join the beta" }
   ],
   "sessionSections": [
     { "id": "ride", "title": "Ride" },
@@ -96,21 +99,43 @@
   },
   "family": {
     "title": "The CleanJibe family",
-    "intro": "CleanJibe is three apps on one analysis engine.",
+    "intro": "CleanJibe is a family of apps on one analysis engine.",
     "here": "You are using this one now.",
+    "betaBadge": "Beta",
+    "howSessionsGetIn": "How your sessions get in",
     "thisApp": "browser",
     "apps": [
-      { "id": "garmin", "title": "Garmin watch app",
-        "line": "It records on your wrist, with live numbers and a summary when you save." },
-      { "id": "iphone", "title": "iPhone app",
-        "line": "It reads every session, judges every turn and keeps your library." },
-      { "id": "browser", "title": "Browser app",
-        "line": "The same analysis in a tab. Drop a file in, with no account." }
-    ],
-    "travel": [
-      "A session leaves the watch through intervals.icu and lands on the phone.",
-      "The phone and the browser trade sessions as files.",
-      "The CleanJibe Apple Watch app records too. It is in the beta."
+      {
+        "id": "garmin",
+        "title": "Garmin watch app",
+        "line": "It records on your wrist, with live numbers and a summary when you save."
+      },
+      {
+        "id": "iphone",
+        "title": "iPhone app",
+        "line": "It reads every session from Garmin, Strava and other watches, judges every turn and keeps your library."
+      },
+      {
+        "id": "browser",
+        "title": "Browser app",
+        "line": "Most of the same analysis in a browser tab. Drop a file in or import from intervals.icu, with no account."
+      },
+      {
+        "id": "appleWatch",
+        "title": "Apple Watch app",
+        "line": "It records your session on the wrist. The analysis happens on the iPhone.",
+        "beta": true
+      }
     ]
+  },
+  "beta": {
+    "joinTitle": "Join the beta",
+    "whatItIs": "The beta is the next CleanJibe, a few weeks early. New features are ridden there first, by riders who want them sooner.",
+    "inItNowTitle": "In the beta right now",
+    "howToJoinTitle": "How to join",
+    "joinButton": "Open TestFlight",
+    "feedbackTitle": "How to give feedback",
+    "joinURL": "https://testflight.apple.com/join/nygqGGcn",
+    "webJoin": "The beta is the iPhone app's. Open the link on your iPhone, and TestFlight installs it."
   }
 }

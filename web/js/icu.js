@@ -137,7 +137,7 @@ async function fetchAndAnalyze(key, id, name, analyzeBuffer) {
                             { headers: { Authorization: authHeader(key) } });
     if (!res.ok) return say(`Download failed: HTTP ${res.status}.`, true);
     const buffer = await res.arrayBuffer();
-    say(`Loaded ${(buffer.byteLength / 1024).toFixed(0)} KB. Analyzing locally.`);
+    say(`Loaded ${(buffer.byteLength / 1024).toFixed(0)} KB. Analysing locally.`);
     // web_entry unwraps gzip/zip itself, so hand the bytes over untouched.
     analyzeBuffer(buffer, `${id}.fit`);
   } catch (err) {

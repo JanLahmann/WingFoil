@@ -83,8 +83,11 @@ import Testing
         for highlight in WelcomeGuide.highlights {
             #expect(Self.words(highlight.detail) <= Self.itemBudget)
         }
-        for detail in [WelcomeGuide.tryExampleDetail, WelcomeGuide.connectDetail,
-                       WelcomeGuide.laterDetail] {
+        for detail in [WelcomeGuide.tryExampleDetail, WelcomeGuide.shareCardCaption,
+                       FeedbackInvitation.community + " " + WelcomeGuide.footerRelease]
+                      + BetaGuide.howToJoin + BetaGuide.feedback
+                      + [BetaGuide.whatItIs, BetaGuide.insideLede]
+                      + GettingStartedGuide.appParagraphs {
             #expect(Self.words(detail) <= Self.paragraphBudget)
         }
 
@@ -123,11 +126,11 @@ import Testing
                       "Strava", "No wind today?"] {
             #expect(topic.items.contains { $0.term == route }, "no route \"\(route)\"")
         }
-        // The intervals.icu route names the door and the step count, and hands the steps to
-        // the topic that owns them — which is on `related`, so the chevron is really there.
+        // The intervals.icu paragraph names the door and the time it takes, and hands the
+        // steps to Settings and the topic that owns them — which is on `related`, so the
+        // chevron is really there.
         #expect(prose.contains("Settings → intervals.icu"))
-        #expect(IcuSetupGuide.steps.count == 4, "the item says \"four steps\"")
-        #expect(prose.contains("4 steps"))
+        #expect(prose.contains("about 5 minutes"))
         #expect(topic.related.contains(.icuSetup))
         // The FIT route says what the import topics say: intervals.icu, or the file itself.
         #expect(prose.contains("Files, Mail, AirDrop"))
@@ -145,10 +148,11 @@ import Testing
         }
         #expect(!HelpCatalog.relatedTopics(of: topic, channel: .release)
                     .contains { $0.id == .appleWatchApp || $0.id == .appleWorkoutApp })
-        // Where a report goes, and the mirror — named last, never as the place the
-        // instructions live.
+        // Where a report goes. The web mirror is not named any more: the app is
+        // self-contained (F5d, 25 September 2026).
         #expect(prose.contains("Menu → Support & ideas"))
-        #expect(topic.items.last?.detail == "\(Branding.site)/start")
-        #expect(topic.links.contains { $0.url.absoluteString.hasSuffix("/start") })
+        #expect(!prose.contains("\(Branding.site)/start"))
+        #expect(topic.links.isEmpty)
+        #expect(topic.action == .openIcuSettings)
     }
 }

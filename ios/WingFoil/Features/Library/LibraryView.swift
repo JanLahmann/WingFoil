@@ -227,6 +227,15 @@ struct LibraryView: View {
             .onChange(of: sheet != nil) { _, presenting in
                 store.isPresentingSheet = presenting
             }
+            // *What CleanJibe does* → Get started → Open CleanJibe Settings. The welcome is
+            // a cover over this screen and cannot present Settings itself, so it asks the
+            // store and closes; the sheet is this screen's (`SessionStore.requestSettings`).
+            .onChange(of: store.settingsRequest) { _, _ in
+                Task {
+                    try? await Task.sleep(for: .milliseconds(500))
+                    sheet = .settings
+                }
+            }
             // Where a tapped "new session" notification lands. Two hooks rather than one:
             // on a cold start from the notification the id is already waiting when this
             // screen appears, and on a warm one it arrives seconds later, after the sync
@@ -297,9 +306,9 @@ struct LibraryView: View {
                 switch ProcessInfo.processInfo.environment["UI_SHEET"] {
                 case "help": sheet = .help
                 case "settings": sheet = .settings
-                // `UI_SHEET=family` is the only way to a menu row's screen from `simctl`,
-                // which cannot open a menu. The row is `AppMenuRow.family`.
-                case "family": sheet = .family
+                // `UI_SHEET=beta` is the only way to a menu row's screen from `simctl`,
+                // which cannot open a menu. The row is `AppMenuRow.beta`.
+                case "beta": sheet = .beta
                 // `import` is the way to reach the Apple Health source (ADR-017), which is
                 // otherwise two taps behind a toolbar button `simctl` cannot press. It stages
                 // only the sheet: the Health screen behind it fills itself from the machine's
@@ -367,7 +376,7 @@ struct LibraryView: View {
         switch which {
         case .settings: SettingsView()
         case .importer: ImportView()
-        case .family: FamilyView()
+        case .beta: BetaView()
         case .help: HelpView()
         case .helpTopic(let topic): HelpTopicSheet(id: topic)
         #if BETA
@@ -855,8 +864,8 @@ private struct BetaPill: View {
 enum LibrarySheet: Identifiable, Hashable {
     case settings
     case importer
-    /// The three apps and how a session travels between them (`AppMenuRow.family`).
-    case family
+    /// The Beta page (`AppMenuRow.beta`): join it, or, in the beta, what is in it.
+    case beta
     /// The Help index (the menu row reads "Help").
     case help
     /// One named topic, opened as itself rather than as "the index, then the topic": one
@@ -877,7 +886,7 @@ enum LibrarySheet: Identifiable, Hashable {
         switch self {
         case .settings: "settings"
         case .importer: "importer"
-        case .family: "family"
+        case .beta: "beta"
         case .help: "help"
         case .helpTopic(let topic): "help.\(topic.rawValue)"
         #if BETA

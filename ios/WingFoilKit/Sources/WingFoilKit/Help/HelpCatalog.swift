@@ -266,16 +266,15 @@ public enum HelpCatalog {
         // **The steps live here, not on the web.** They used to be handed to
         // cleanjibe.org/start; Jan, 15 September 2026: a rider who has just installed the
         // app must not be sent to a browser for the instructions. The site is the mirror,
-        // named on the last line so the same guide can be sent to somebody who has installed
-        // nothing yet.
+        // and since 25 September 2026 the topic no longer names it.
         //
         // **And it really is the same guide, since 15 September 2026.** The topic and the web
         // page were written separately, so "the same guide, on the web" was a claim rather
         // than a fact. Both are now cut from `docs/guide/getting-started.json` by
         // `web/tools/make_start.py`, through the generated `GettingStartedGuide`: the framing
         // below is its `framing`, the items are its routes and notes, and the web page adds
-        // the numbered steps the app has no room for — which is what the last item now
-        // promises. `GettingStartedGuideTests` fails if this topic stops matching it.
+        // the numbered steps the app has no room for. `GettingStartedGuideTests` fails if
+        // this topic stops matching it.
         //
         // One route per item, because a body cannot branch by channel and the routes do: the
         // two Apple doors are beta doors (docs/channels.md).
@@ -295,12 +294,14 @@ public enum HelpCatalog {
             id: .gettingStarted, section: .gettingStarted,
             title: "Getting started",
             summary: GettingStartedGuide.topicSummary,
-            body: [GettingStartedGuide.framing],
+            // Which watches, how a Garmin session gets in, the file way, then the test on
+            // the water (Jan's plan of 24 September, section 3). The four intervals.icu
+            // steps live in Settings; the button under the routes goes there.
+            body: GettingStartedGuide.appParagraphs + [GettingStartedGuide.framing],
             items: GettingStartedGuide.items(for: .release),
-            // Built from `Branding.site` rather than typed out: the hostname is one constant
-            // on this platform and a second copy of it is a second thing to forget.
-            links: [HelpLink(title: "Open \(Branding.site)/start",
-                             url: URL(string: Branding.siteURL + "/start")!)],
+            // No link to cleanjibe.org/start any more (F5d, 25 September 2026): the app is
+            // self-contained, and the page a rider is reading *is* the guide.
+            action: .openIcuSettings,
             related: [.icuSetup, .shareFromWatchApp, .stravaImport, .appleWatchApp,
                       .appleWorkoutApp, .exampleSession, .whichWatch, .sendingFeedback]),
 

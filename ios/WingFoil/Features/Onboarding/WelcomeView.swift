@@ -1,51 +1,64 @@
 import SwiftUI
 import WingFoilKit
 
-/// The first screen of a first launch: what this app is, and the two ways in.
+/// **What CleanJibe does** — the first screen of a first run, and the menu's first row.
 ///
-/// It sits *in front of* the empty library's own card of ways in
-/// (`LibraryView.waysInCard`). That card answers "how does a session get in"; nobody had
-/// answered "what is this for" — and a first run that opens on four intervals.icu steps
-/// asks for five minutes of work before it has earned any. So: one paragraph of what the
-/// app does, then the demo, then the ways in, then a way past both. The four steps
-/// themselves left the first screen on dev 70 and live in Settings → intervals.icu.
+/// Rebuilt on 25 September 2026 from Jan's plan of 24 September (sections 1, 2, 4 and 8):
+/// a welcome from the team rather than a set of doors. Top to bottom it is the mark, the
+/// tagline, one paragraph, the track drawing with its legend, the example session and the
+/// card it makes, what CleanJibe measures, *Get started*, the family, and a footer that
+/// says the app is built with its riders. The intervals.icu set-up left this screen for
+/// Getting started and Settings; "Later" left it because the X says the same.
+///
+/// **The family is a section here, not a screen** (Jan, F4: merge it in if it fits). It
+/// fits: four short cards under the vocabulary, and the menu lost the row.
+///
+/// **Self-contained.** Nothing on it sends the rider to the website for the app's own
+/// content. The one outbound link is cleanjibe.org in the credit, which is a credit.
 ///
 /// Painted in the brand colours rather than the system ones — the only screen in the app
-/// that is. It is a deliberate committed look, and the reason is continuity: the launch
-/// screen is `LaunchMark` on `LaunchBackground` (see project.yml, `UILaunchScreen`), so on
-/// a first run the cold-start frame *becomes* this screen instead of flashing away into a
-/// list. That is also why `Brand` is the right palette here by its own rule — a surface the
-/// app paints itself, with no system background to adapt to.
+/// that is. The launch screen is `LaunchMark` on `LaunchBackground` (see project.yml,
+/// `UILaunchScreen`), so on a first run the cold-start frame *becomes* this screen instead
+/// of flashing away into a list.
 struct WelcomeView: View {
     @Environment(SessionStore.self) private var store
-    /// `.compact` is landscape on a phone: 402 pt of height, which the mark and the
-    /// paragraph would otherwise fill entirely, leaving the buttons below a fold nobody is
-    /// told about. Everything above them shrinks rather than the layout changing shape.
+    /// `.compact` is landscape on a phone: 402 pt of height. Everything above the first
+    /// button shrinks rather than the layout changing shape.
     @Environment(\.verticalSizeClass) private var verticalSizeClass
 
     private var isShort: Bool { verticalSizeClass == .compact }
 
-    /// What the buttons do. The screen is presented in two situations — the first run and
-    /// "show me that again" from Settings — and only the first one has anywhere to go
-    /// afterwards, so the actions are handed in rather than assumed.
+    /// What the screen hands back. It is presented on a first run and from the menu, and
+    /// only the caller knows where "the example" and "Settings" are.
     var onTryExample: () -> Void
-    var onConnect: () -> Void
-    var onLater: () -> Void
+    /// Getting started → *Open CleanJibe Settings*: the cover closes and Settings opens.
+    var onOpenSettings: () -> Void
+    var onClose: () -> Void
+
+    /// The two pages this one opens on top of itself.
+    private enum Page: String, Identifiable {
+        case gettingStarted, beta
+        var id: String { rawValue }
+    }
+    @State private var page: Page?
+    /// Bumped by the footer's *Support & ideas* and the Beta page's feedback button.
+    @State private var supportRequest = 0
+
+    /// The footer's two in-app links travel as URLs on this private scheme, so the
+    /// sentence can stay one `Text` and still carry two taps.
+    private static let linkScheme = "cleanjibe-welcome"
 
     var body: some View {
         ZStack {
             Brand.cardGradient.ignoresSafeArea()
             ScrollView {
-                // The homepage's rhythm, and for its reason (web/index.html): the promise,
-                // then the way in, then the picture, then the vocabulary. Putting the
-                // glossary above the buttons would make the reader earn them.
-                VStack(spacing: isShort ? 18 : 26) {
+                VStack(spacing: isShort ? 20 : 28) {
                     identity
-                    actions
-                    WelcomeTrackMotif()
-                        .frame(height: isShort ? 64 : 84)
-                        .padding(.horizontal, 4)
+                    trackAndLegend
+                    example
                     vocabulary
+                    getStarted
+                    family
                     footer
                 }
                 // 560 pt is about a long line of body text; without the cap the paragraph
@@ -53,84 +66,132 @@ struct WelcomeView: View {
                 .frame(maxWidth: 560)
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, 24)
-                .padding(.top, isShort ? 12 : 28)
+                .padding(.top, isShort ? 8 : 16)
                 .padding(.bottom, 36)
             }
-            // The whole screen scrolls, because it has to: in landscape on the smallest
-            // supported phone the identity block alone is taller than the safe area.
             .scrollBounceBehavior(.basedOnSize)
         }
-        // **The screen's one name** (pattern A, docs/review-checklist.md). It had three —
-        // the menu row calls it *What CleanJibe does*, the screen itself led with a
-        // headline, and every file here calls it "welcome" — so a rider who wanted it again
-        // had no word to look for. The menu row's name is the name, read from the row
-        // itself so there is one home for it (`AppMenuRow.whatItDoes`).
-        .overlay(alignment: .topLeading) {
-            Text(AppMenuRow.whatItDoes.title)
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(Brand.paper.opacity(0.85))
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-                .padding(.top, 18)
-                .padding(.leading, 20)
-                .accessibilityAddTraits(.isHeader)
-        }
-        // A way out that looks like one. The three buttons all leave the screen, but the
-        // rider who opened it *again* from the menu is not choosing a way in, he is reading
-        // — and a page with no close control reads as a gate (Jan, 13 Sep 2026). Same
-        // answer as "Later": nothing is armed or loaded, the screen just goes.
-        .overlay(alignment: .topTrailing) {
-            Button(action: onLater) {
-                // Chrome, not content: the glyph follows the rider's text size like
-                // everything else, but a close button that grew to fill a third of the
-                // screen would cover the screen it closes, so it stops where the system's
-                // own navigation-bar buttons stop.
-                Image(systemName: "xmark")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Brand.paper.opacity(0.85))
-                    .frame(width: 34, height: 34)
-                    .background(Brand.paper.opacity(0.12), in: .circle)
-                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-            }
-            .accessibilityLabel("Close")
-            .padding(.top, 10)
-            .padding(.trailing, 16)
-        }
+        // **The header scrolls nothing under it** (plan section 1). The title and the X
+        // used to float over the content, so the paragraph ran through them and through
+        // the status bar. Now they sit on a blurred bar of their own, inset from the
+        // scroll view, and the bar reaches up behind the status bar.
+        .safeAreaInset(edge: .top, spacing: 0) { header }
         .foregroundStyle(Brand.paper)
+        .tint(Brand.green)
         // The brand navy is dark whatever the phone is set to, so the status bar and every
         // system control on top of it have to be told.
         .preferredColorScheme(.dark)
+        .environment(\.openURL, OpenURLAction { url in
+            guard url.scheme == Self.linkScheme else { return .systemAction }
+            switch url.host() {
+            case "beta": page = .beta
+            case "support": supportRequest += 1
+            default: break
+            }
+            return .handled
+        })
+        .sheet(item: $page) { which in
+            switch which {
+            case .gettingStarted:
+                HelpTopicSheet(id: .gettingStarted)
+                    .environment(\.openIcuSettings) {
+                        page = nil
+                        onOpenSettings()
+                    }
+                    .environment(\.loadExampleSession) {
+                        page = nil
+                        onTryExample()
+                    }
+            case .beta:
+                BetaView()
+                    .environment(\.sendFeedback) {
+                        page = nil
+                        Task {
+                            try? await Task.sleep(for: .milliseconds(400))
+                            supportRequest += 1
+                        }
+                    }
+            }
+        }
+        .feedbackMail(on: $supportRequest)
+    }
+
+    // MARK: - Header
+
+    /// **The screen's one name** (pattern A, docs/review-checklist.md): the menu row's,
+    /// read from the row itself (`AppMenuRow.whatItDoes`). The X is the only way out, and
+    /// that is enough — a page with no close control reads as a gate (Jan, 13 Sep 2026).
+    private var header: some View {
+        HStack(spacing: 12) {
+            Text(AppMenuRow.whatItDoes.title)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Brand.paper.opacity(0.9))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .accessibilityAddTraits(.isHeader)
+            Spacer(minLength: 0)
+            Button(action: onClose) {
+                // Chrome, not content: it stops growing where the system's own
+                // navigation-bar buttons stop.
+                Image(systemName: "xmark")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Brand.paper.opacity(0.9))
+                    .frame(width: 34, height: 34)
+                    .background(Brand.paper.opacity(0.14), in: .circle)
+            }
+            .accessibilityLabel("Close")
+        }
+        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+        .padding(.leading, 20)
+        .padding(.trailing, 14)
+        .padding(.vertical, 8)
+        .background {
+            Rectangle()
+                .fill(.ultraThinMaterial)
+                .overlay(alignment: .bottom) {
+                    Rectangle().fill(Brand.paper.opacity(0.08)).frame(height: 0.5)
+                }
+                .ignoresSafeArea(edges: .top)
+        }
     }
 
     // MARK: - Identity
 
     private var identity: some View {
         VStack(spacing: isShort ? 8 : 14) {
+            // Its own row now, under the header rather than beside the title, and lifted
+            // off the navy: the mark's dark tile was a shade from the page and its edge
+            // barely showed (F1, plan section 2). A light rim and a mint glow set it apart.
             Image(ChannelArt.launchMark)
                 .resizable()
                 .scaledToFit()
                 .frame(width: isShort ? 56 : 88, height: isShort ? 56 : 88)
                 .clipShape(.rect(cornerRadius: isShort ? 13 : 20))
-                .shadow(color: .black.opacity(0.35), radius: 12, y: 6)
+                .overlay {
+                    RoundedRectangle(cornerRadius: isShort ? 13 : 20)
+                        .strokeBorder(Brand.paper.opacity(0.28), lineWidth: 1)
+                }
+                .shadow(color: Brand.green.opacity(0.35), radius: 18)
+                .shadow(color: .black.opacity(0.35), radius: 10, y: 5)
                 .accessibilityHidden(true)
 
             Text(Branding.appName)
                 .font(isShort ? .title.weight(.bold) : .largeTitle.weight(.bold))
                 .kerning(0.5)
 
+            // The tagline, on one line (plan section 2).
             Text(WelcomeGuide.headline)
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(Brand.green)
                 .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
 
-            // The one block on the screen that is set ragged-right rather than centred: it
-            // is eight lines of prose, and eight centred lines are a poster, not a
-            // paragraph.
+            // Set ragged-right rather than centred: four sentences of prose centred are a
+            // poster, not a paragraph.
             Text(WelcomeGuide.lede)
                 .font(.callout)
-                .foregroundStyle(Brand.paper.opacity(0.82))
+                .foregroundStyle(Brand.paper.opacity(0.85))
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -138,35 +199,33 @@ struct WelcomeView: View {
         }
     }
 
-    // MARK: - The vocabulary
+    // MARK: - The drawing and its legend
 
-    private var vocabulary: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            ForEach(WelcomeGuide.highlights) { highlight in
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(highlight.term)
-                        .font(.subheadline.weight(.semibold))
-                    Text(highlight.detail)
-                        .font(.footnote)
-                        .foregroundStyle(Brand.paper.opacity(0.72))
-                        .fixedSize(horizontal: false, vertical: true)
+    /// The track, and under it what its three marks mean — the legend rather than a tap,
+    /// because the example button is two rows further down anyway (plan section 2).
+    private var trackAndLegend: some View {
+        VStack(spacing: 10) {
+            WelcomeTrackMotif()
+                .frame(height: isShort ? 64 : 84)
+                .padding(.horizontal, 4)
+            HStack(spacing: 18) {
+                ForEach(WelcomeGuide.legend) { item in
+                    HStack(spacing: 6) {
+                        LegendMark(mark: item.mark)
+                        Text(item.label)
+                            .font(.footnote)
+                            .foregroundStyle(Brand.paper.opacity(0.85))
+                    }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Brand.paper.opacity(0.07), in: .rect(cornerRadius: 16))
-        .overlay {
-            RoundedRectangle(cornerRadius: 16)
-                .strokeBorder(Brand.paper.opacity(0.10), lineWidth: 1)
+            .accessibilityElement(children: .combine)
         }
     }
 
-    // MARK: - The three ways on
+    // MARK: - The example, and the card it makes
 
-    private var actions: some View {
-        VStack(spacing: 16) {
+    private var example: some View {
+        VStack(spacing: 14) {
             VStack(spacing: 8) {
                 Button(action: onTryExample) {
                     Label(WelcomeGuide.tryExampleTitle, systemImage: "sparkles")
@@ -181,69 +240,260 @@ struct WelcomeView: View {
 
                 Text(WelcomeGuide.tryExampleDetail)
                     .font(.subheadline)
-                    .foregroundStyle(Brand.paper.opacity(0.75))
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            VStack(spacing: 8) {
-                Button(action: onConnect) {
-                    Label(WelcomeGuide.connectTitle, systemImage: "link")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                }
-                .foregroundStyle(Brand.paper)
-                .overlay {
-                    Capsule().strokeBorder(Brand.paper.opacity(0.35), lineWidth: 1.5)
-                }
-
-                Text(WelcomeGuide.connectDetail)
-                    .font(.subheadline)
-                    .foregroundStyle(Brand.paper.opacity(0.75))
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            // Quiet, but present. A rider who came here to import a file by hand has
-            // nothing to gain from either button above, and hiding his way out would make
-            // the screen a gate rather than a greeting. It carries a detail line like the
-            // other two, because "Later" alone does not tell the rider holding a .fit file
-            // that opening it by hand is a supported way in rather than a postponement.
-            VStack(spacing: 6) {
-                Button(WelcomeGuide.laterTitle, action: onLater)
-                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Brand.paper.opacity(0.8))
-
-                Text(WelcomeGuide.laterDetail)
-                    .font(.subheadline)
-                    .foregroundStyle(Brand.paper.opacity(0.75))
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(.top, 2)
+
+            // The card as a highlight (F2d). A third of the width, and a tap opens the
+            // example session rather than the picture: the session is where a card is
+            // made, and a full-size image would be one more screen to close.
+            Button(action: onTryExample) {
+                HStack(spacing: 16) {
+                    Image("welcome-share-card")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: isShort ? 84 : 118)
+                        .clipShape(.rect(cornerRadius: 10))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 10)
+                                .strokeBorder(Brand.paper.opacity(0.18), lineWidth: 1)
+                        }
+                        .shadow(color: .black.opacity(0.3), radius: 8, y: 4)
+                    Text(WelcomeGuide.shareCardCaption)
+                        .font(.subheadline)
+                        .foregroundStyle(Brand.paper.opacity(0.85))
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .buttonStyle(.plain)
+            .disabled(store.isBusy)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(WelcomeGuide.shareCardCaption)
+            .accessibilityHint("Opens the example session")
+            .accessibilityAddTraits(.isButton)
         }
     }
 
-    /// The credit, and — since 14 Sep 2026 — the invitation above it.
-    ///
-    /// This screen is where a new rider is told what the app is for, and it is the last
-    /// moment before he goes off to use it. One sentence here is what stops the first month
-    /// of the beta being bug reports only: *a wish is as welcome as a fault*, said once, in
-    /// the same words the menu row, the page footers, Settings and the mail itself use
-    /// (`FeedbackInvitation.sentence`). It is set a shade brighter than the credit under it,
-    /// because it is addressed to the reader and the credit is not.
+    // MARK: - What CleanJibe measures
+
+    private var vocabulary: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text(WelcomeGuide.measuresTitle)
+                .font(.headline)
+                .accessibilityAddTraits(.isHeader)
+            ForEach(WelcomeGuide.highlights) { highlight in
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(highlight.term)
+                        .font(.subheadline.weight(.semibold))
+                    Text(highlight.detail)
+                        .font(.footnote)
+                        .foregroundStyle(Brand.paper.opacity(0.78))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Brand.paper.opacity(0.07), in: .rect(cornerRadius: 16))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16)
+                .strokeBorder(Brand.paper.opacity(0.10), lineWidth: 1)
+        }
+    }
+
+    // MARK: - Get started
+
+    /// The page's way on: Getting started, where the watches, intervals.icu and the file
+    /// way are. The X still closes the screen.
+    private var getStarted: some View {
+        Button { page = .gettingStarted } label: {
+            Label(WelcomeGuide.getStartedTitle, systemImage: "arrow.right.circle")
+                .font(.headline)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+        }
+        .background(Brand.paper, in: .capsule)
+        .foregroundStyle(Brand.navy)
+    }
+
+    // MARK: - The family
+
+    /// The apps on one engine, each honest about what it does (`CleanJibeFamily`, F4).
+    private var family: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(CleanJibeFamily.title)
+                .font(.title3.weight(.semibold))
+                .accessibilityAddTraits(.isHeader)
+            Text(CleanJibeFamily.intro)
+                .font(.callout)
+                .foregroundStyle(Brand.paper.opacity(0.85))
+                .fixedSize(horizontal: false, vertical: true)
+
+            ForEach(CleanJibeFamily.apps) { app in
+                FamilyCard(app: app, isThisApp: app.id == "iphone") {
+                    page = .beta
+                }
+            }
+
+            // Where the travel notes were: how a session gets from the watch into the app
+            // is Getting started's to say, and it says it once.
+            Button { page = .gettingStarted } label: {
+                HStack(spacing: 6) {
+                    Text(CleanJibeFamily.howSessionsGetIn)
+                    Image(systemName: "chevron.right").font(.caption.weight(.semibold))
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Brand.green)
+            }
+            .padding(.top, 2)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: - Footer
+
+    /// **Built with its riders** (F2j): the community sentence, then the two ways to take
+    /// part as links, then the credit with the site as a link (F2k).
     private var footer: some View {
-        VStack(spacing: 6) {
-            Text(FeedbackInvitation.welcomeSentence)
-                .font(.caption2)
-                .foregroundStyle(Brand.paper.opacity(0.6))
+        VStack(spacing: 8) {
+            Text(footerText)
+                .font(.footnote)
+                .foregroundStyle(Brand.paper.opacity(0.8))
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text(Branding.credit)
-                .font(.caption2)
-                .foregroundStyle(Brand.paper.opacity(0.45))
+            HStack(spacing: 0) {
+                Text(Branding.appName + " · ")
+                Link(Branding.site, destination: URL(string: Branding.siteURL)!)
+                    .foregroundStyle(Brand.green)
+            }
+            .font(.caption)
+            .foregroundStyle(Brand.paper.opacity(0.6))
+        }
+    }
+
+    /// One sentence pair, two links in it. The link words are the ones the kit's sentence
+    /// already contains, so the tap targets can never name something the text does not.
+    private var footerText: AttributedString {
+        #if BETA
+        let second = WelcomeGuide.footerBeta
+        #else
+        let second = WelcomeGuide.footerRelease
+        #endif
+        var text = AttributedString(FeedbackInvitation.community + " " + second)
+        func link(_ words: String, _ host: String) {
+            guard let range = text.range(of: words, options: .backwards) else { return }
+            text[range].link = URL(string: "\(Self.linkScheme)://\(host)")
+            text[range].foregroundColor = Brand.green
+        }
+        #if !BETA
+        link(BetaGuide.joinTitle, "beta")
+        #endif
+        link(FeedbackDoors.menuRow, "support")
+        return text
+    }
+}
+
+/// One app of the family: a picture, its name, what it does, and its badge.
+private struct FamilyCard: View {
+    let app: CleanJibeFamily.App
+    let isThisApp: Bool
+    let onJoinBeta: () -> Void
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 14) {
+            picture
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 8) {
+                    Text(app.title).font(.subheadline.weight(.semibold))
+                    if app.beta {
+                        Text(CleanJibeFamily.betaBadge)
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(Brand.navy)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Brand.green, in: .capsule)
+                    }
+                }
+                if isThisApp {
+                    Text(CleanJibeFamily.here)
+                        .font(.caption)
+                        .foregroundStyle(Brand.green)
+                }
+                Text(app.line)
+                    .font(.footnote)
+                    .foregroundStyle(Brand.paper.opacity(0.8))
+                    .fixedSize(horizontal: false, vertical: true)
+                // The release is not in the beta, so the beta's app carries the way in.
+                // In the beta and the dev build the badge says enough.
+                #if !BETA
+                if app.beta {
+                    Button(BetaGuide.joinTitle, action: onJoinBeta)
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(Brand.green)
+                        .padding(.top, 2)
+                }
+                #endif
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(12)
+        .background(Brand.paper.opacity(isThisApp ? 0.11 : 0.06), in: .rect(cornerRadius: 14))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14)
+                .strokeBorder(Brand.paper.opacity(isThisApp ? 0.22 : 0.10), lineWidth: 1)
+        }
+        .accessibilityElement(children: .contain)
+    }
+
+    /// The Garmin app shows its own screen, from the same simulator sheet the homepage
+    /// uses (web/img/watch-main.png: a fenix 8 page, speed and the jibe tally). The other
+    /// three are glyphs until they have screenshots of their own.
+    @ViewBuilder private var picture: some View {
+        if app.id == "garmin" {
+            Image("welcome-garmin-watch")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 64, height: 64)
+                .clipShape(.circle)
+                .accessibilityLabel("The Garmin watch app's page: speed and the jibe tally")
+        } else {
+            Image(systemName: Self.glyph[app.id] ?? "app")
+                .font(.title2)
+                .foregroundStyle(Brand.green)
+                .frame(width: 64, height: 64)
+                .background(Brand.paper.opacity(0.08), in: .circle)
+                .accessibilityHidden(true)
+        }
+    }
+
+    private static let glyph = [
+        "iphone": "iphone",
+        "browser": "safari",
+        "appleWatch": "applewatch",
+    ]
+}
+
+/// A legend mark, drawn in the same tokens and shapes as the track's own marks.
+private struct LegendMark: View {
+    let mark: WelcomeLegendItem.Mark
+
+    var body: some View {
+        switch mark {
+        case .flew:
+            Circle().fill(DesignTokens.Outcome.flew).frame(width: 11, height: 11)
+        case .touchdown:
+            Image(systemName: "triangle.fill")
+                .font(.system(size: 11))
+                .foregroundStyle(DesignTokens.Outcome.touchdown)
+        case .fellIn:
+            Image(systemName: "xmark")
+                .font(.system(size: 11, weight: .heavy))
+                .foregroundStyle(DesignTokens.Outcome.fellIn)
         }
     }
 }
@@ -373,9 +623,12 @@ private struct WelcomeTrackMotif: View {
             draw(cross, DesignTokens.Outcome.fellIn, width: 3.5)
         }
         .accessibilityElement()
-        .accessibilityLabel("A four-minute excerpt from a real session's track. "
-                            + "Five jibes flown through, one touched down, and one "
-                            + "fallen in with the swim that followed.")
+        // Counted off the marks it draws: four discs, one triangle, one cross. It said
+        // "four-minute" and "five jibes" until 25 September 2026, about a drawing of
+        // 6 min 40 s with four green marks on it.
+        .accessibilityLabel("Almost seven minutes of a real session's track. "
+                            + "Four jibes flown through, one touchdown, and one "
+                            + "fall with the swim that followed.")
     }
 
     /// The slice of SVG path data the motif uses — absolute `M x y`, `L x y`, `Q cx cy x y`

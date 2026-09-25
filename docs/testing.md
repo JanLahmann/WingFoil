@@ -1130,7 +1130,7 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    button calls, so a screenshot taken after it is the real result of the real door rather
    than of a launch-time shortcut. Beta and dev channels only have the button; the hook
    compiles in any DEBUG build. `UI_IMPORT_FIXTURES=1`, `UI_OPEN_SESSION=latest|<name>`,
-   `UI_TAB=records|trends|gear`, `UI_SHEET=help|settings|import|family|tuning|discipline` and
+   `UI_TAB=records|trends|gear`, `UI_SHEET=help|settings|import|beta|tuning|discipline` and
    `UI_HELP_TOPIC=<HelpTopicID>` park the app on a given screen, since `simctl` cannot tap.
    `UI_SYNC_CONTAINER=<path>` points the dev build's iCloud Drive sync at a plain directory
    instead of the ubiquity container, so two simulators can share one library
@@ -1206,15 +1206,15 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    still on the empty state itself. The empty state is now about a screen tall rather than
    a screen and a half, so a plain launch with an empty library photographs most of it.
    `UI_WELCOME=1` raises the **welcome screen** (`WelcomeView`, the full-screen cover a
-   first launch opens on) whatever the library and the `welcomeShown.v1` flag say — any
-   machine that has ever run the app has already spent the one launch that shows it. It
-   presents the same screen by the same route and never writes the flag, so it stages the
-   state without spending it. It fires **once per launch**, deliberately: the decision is
+   launch opens on until there is a real session or an intervals.icu key) whatever the
+   library and the key say — a simulator with the corpus imported would never show it. It
+   presents the same screen by the same route. It fires **once per launch**, deliberately: the decision is
    re-asked on every library change, and re-raising would drop the screen back on top of
    the session its own "Try the example session" button just opened. `UI_RESET=1` clears
-   `welcomeShown.v1` along with everything else, so a reset alone also produces the screen —
-   `UI_WELCOME=1` is for photographing it on a simulator with a library in it. The three
-   buttons cannot be tapped by `simctl`; the primary one's destination is the ordinary
+   the library and the key along with everything else, so a reset alone also produces the
+   screen —
+   `UI_WELCOME=1` is for photographing it on a simulator with a library in it. Its buttons
+   cannot be tapped by `simctl`; the primary one's destination is the ordinary
    session page, reachable with `UI_LOAD_EXAMPLE=1 UI_OPEN_SESSION=example`.
    On the Trends tab `UI_SCROLL_TO=sideSuccess` parks the screen on the port/starboard
    turn-success chart, and `UI_SCROLL_TO=best2s` on the speed line — the one chart on that

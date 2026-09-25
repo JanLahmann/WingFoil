@@ -2692,9 +2692,14 @@ final class SessionStore {
     private var didStageWelcome = false
     #endif
 
+    /// Whether the welcome already went up in this process. Once per launch, not once per
+    /// install (Jan's plan of 24 September 2026, section 7): the screen comes back on the
+    /// next launch for as long as the library has nothing of the rider's own in it.
+    private var didShowWelcomeThisLaunch = false
+
     /// Asked at every moment the answer can change — launch, foreground, a sheet that just
-    /// closed — and answered by the pure predicate, which says yes at most once per install
-    /// and never on an install that plainly has a history.
+    /// closed — and answered by the pure predicate: every launch, until there is a real
+    /// session or intervals.icu is connected.
     func showWelcomeIfNeeded() {
         // Nothing may be decided from a library that has not been read: an empty `sessions`
         // at launch means "still loading" for the first fraction of a second, and greeting
@@ -2704,48 +2709,34 @@ final class SessionStore {
         guard hasLoadedLibrary else { return }
         #if DEBUG && targetEnvironment(simulator)
         // Screenshot hook, same family as `UI_TAB` / `UI_LOAD_EXAMPLE`: `UI_WELCOME=1`
-        // raises the screen whatever the flag and the library say, because a machine that
-        // has ever run the app has spent the one launch that shows it. It stages the
-        // *same* screen by the same route — nothing is drawn here that a first run could
-        // not produce — and, like the other staging hooks, it never writes the flag: the
-        // override photographs the state, it does not spend it.
-        //
-        // Once per launch, though, and that part is load-bearing rather than tidy: this
-        // method is re-asked on every library change, and "raise it again" would put the
-        // screen straight back up over the session its own example button just opened.
+        // raises the screen whatever the library and the key say. Once per launch, like
+        // the real rule, so the example button's own session is not covered again.
         if ProcessInfo.processInfo.environment["UI_WELCOME"] == "1", !didStageWelcome {
             didStageWelcome = true
+            didShowWelcomeThisLaunch = true
             isShowingWelcome = true
             return
         }
         #endif
-        let hasSeen = UserDefaults.standard.bool(forKey: Self.welcomeShownKey)
-        // **The request comes first, before any heuristic can spend the screen.** Start
-        // over writes it down (`welcomeRequestedKey`), and it outranks both the flag and
-        // the library: a phone whose sessions are back — synced, transferred or
-        // re-imported — is exactly the phone the silent mark below would write off.
+        // **The request comes first.** Start over writes it down (`welcomeRequestedKey`),
+        // and it outranks the library and the key: a phone whose sessions are back —
+        // synced, transferred or re-imported — still gets the screen it asked for.
         let requested = UserDefaults.standard.bool(forKey: Self.welcomeRequestedKey)
-        // The upgrade path: an install that already had sessions when this screen shipped
-        // is marked as welcomed on sight, so emptying the library years later cannot make
-        // the app introduce itself to its oldest user.
-        // A *session* is the evidence, and nothing else: an intervals.icu key survives an
-        // app delete in the iOS keychain, so a key on a fresh install says the keychain
-        // remembered, not that the rider has ever been here (Jan, build 58).
-        if WelcomePrompt.shouldMarkSeenSilently(hasSeen: hasSeen,
-                                                sessionCount: sessions.count,
-                                                requested: requested) {
-            UserDefaults.standard.set(true, forKey: Self.welcomeShownKey)
-            return
-        }
-        guard WelcomePrompt.shouldShow(hasSeen: hasSeen,
-                                       sessionCount: sessions.count,
+        // The example is ours, not the rider's, so it does not count as his history.
+        let realSessions = sessions.filter { !$0.isExample && $0.isSession }.count
+        guard WelcomePrompt.shouldShow(realSessionCount: realSessions,
+                                       icuConnected: !apiKey.isEmpty,
+                                       shownThisLaunch: didShowWelcomeThisLaunch,
                                        isPresenting: isPresentingSomething,
                                        requested: requested)
         else { return }
+        // Still written, for the Beta section's list of what Start over clears and for any
+        // older build a phone goes back to; nothing in this build reads it.
         UserDefaults.standard.set(true, forKey: Self.welcomeShownKey)
         // Spent when the screen goes up, and only then — a deferral leaves the request
         // standing, so a Start over the rider walked away from still greets him next launch.
         UserDefaults.standard.removeObject(forKey: Self.welcomeRequestedKey)
+        didShowWelcomeThisLaunch = true
         isShowingWelcome = true
     }
 
@@ -2780,9 +2771,20 @@ final class SessionStore {
         }
     }
 
-    /// Every way off the screen — all three buttons, and the cover's own dismissal.
+    /// Every way off the screen — the X, the example, and the cover's own dismissal.
     func dismissWelcome() {
         isShowingWelcome = false
+    }
+
+    /// Bumped by *Getting started → Open CleanJibe Settings* when that page was opened from
+    /// the welcome: the cover closes, and the Sessions screen, which owns the Settings
+    /// sheet, opens it (`LibraryView`).
+    private(set) var settingsRequest = 0
+
+    /// Close the welcome and open Settings, where the four intervals.icu steps are.
+    func requestSettings() {
+        isShowingWelcome = false
+        settingsRequest += 1
     }
 
     // MARK: - Onboarding
@@ -2889,7 +2891,7 @@ final class SessionStore {
         } else {
             Usage.failed(.reanalysis, reason: String(failures) + " would not re-analyse")
         }
-        status = "Re-analyzed \(rows.count) session\(rows.count == 1 ? "" : "s") "
+        status = "Re-analysed \(rows.count) session\(rows.count == 1 ? "" : "s") "
             + "with engine \(AnalysisEngine.version)"
         // Which parts of a track were flown can change with the engine, so the cached
         // outlines are stale by construction.

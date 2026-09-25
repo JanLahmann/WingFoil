@@ -114,7 +114,7 @@ export async function refresh() {
     // is unaffected, so say so plainly instead of taking the page down.
     el("lib-sub").textContent = "Storage is unavailable in this browser context.";
     el("lib-body").innerHTML = `<p class="note">${esc(err.message)}<br><br>
-      Analyzing files still works. Only saving does not.</p>`;
+      Analysing files still works. Only saving does not.</p>`;
     el("lib-export").disabled = true;
     hooks.setCount(0);
     return [];

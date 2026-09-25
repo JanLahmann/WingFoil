@@ -10,7 +10,7 @@
  * WHAT THIS FILE OWNS
  *
  *   routing      `#/sessions`, `#/records`, `#/trends`, `#/periods`, `#/period/<key>`,
- *                `#/gear`, `#/settings`, `#/help`, `#/started`, `#/whats-new`, `#/family`
+ *                `#/gear`, `#/settings`, `#/help`, `#/started`, `#/whats-new`, `#/beta`
  *                and `#/session`. The four tabs are the four the phone has; the rest are
  *                what a menu row or a row on a page opens, which is why they are pages and
  *                not tabs — `#/session` the way the phone pushes `SessionDetailView`, and
@@ -34,7 +34,7 @@
  */
 
 import {
-  FEEDBACK, GUIDE, HELP, SETTINGS_SECTIONS, SHELL, WELCOME, WHATS_NEW,
+  FEEDBACK, HELP, SETTINGS_SECTIONS, SHELL, WELCOME, WHATS_NEW,
 } from "./appcopy.js";
 import {
   forgetSettings, gearFor, gearMap, markWelcomeSeen, onSettingsChange, setGearFor,
@@ -76,8 +76,9 @@ const PAGES = {
   // the phone, so both are pages here (Jan, 23 September 2026).
   started: null,
   "whats-new": null,
-  // Three apps, one engine, and which of them this is (`AppMenuRow.family`).
-  family: null,
+  // The Beta page (`AppMenuRow.beta`). The family, which had a page here, is a section
+  // of the welcome since 25 September 2026.
+  beta: null,
 };
 
 /** The routes this page answered to before it had tabs. A bookmark, a link from the
@@ -125,37 +126,59 @@ export function showPage(name, arg = null) {
   }
   if (page === "help") openHelpAt(arg);
   if (page === "started") renderGettingStarted();
-  if (page === "family") renderFamily();
+  if (page === "beta") renderBeta();
 }
 
 /**
- * **The CleanJibe family** — the three apps, and how a session travels between them.
+ * **The CleanJibe family** — the apps on one engine, as a section of the welcome.
  *
  * The words are the kit's `CleanJibeFamily`, carried here by docs/copy/app-shell.json, so
- * this page and the phone's screen are one screen. The one thing this shell answers for
- * itself is which of the three it IS: `thisApp` in the copy names it, and the row it names
- * wears `here`.
- *
- * Nothing in it links out. Every app named here is reached from a store the reader is
- * already in or from the page he is already on, and three install links would make this an
- * advertisement rather than an answer.
+ * this section and the phone's are one section. The one thing this shell answers for
+ * itself is which app it IS: `thisApp` names it, and its card wears `here`. The beta's app
+ * carries the way into the beta; nothing else links out.
  */
-function renderFamily() {
-  const host = el("family-body");
+function familyHtml() {
   const family = SHELL.family;
-  if (!host || !family) return;
-  el("family-title").textContent = family.title;
-  host.innerHTML = `
+  if (!family) return "";
+  return `
+    <h3 class="sub-head">${esc(family.title)}</h3>
     <p class="family-intro">${esc(family.intro)}</p>
     <div class="family-apps">${family.apps.map((app) => `
       <div class="family-app${app.id === family.thisApp ? " here" : ""}">
         <p class="family-app-title">${esc(app.title)}${
+          app.beta ? `<span class="pill beta-pill">${esc(family.betaBadge)}</span>` : ""}${
           app.id === family.thisApp
             ? `<span class="dim">${esc(family.here)}</span>` : ""}</p>
-        <p class="muted small">${esc(app.line)}</p>
+        <p class="muted small">${esc(app.line)}</p>${app.beta ? `
+        <p class="small"><button type="button" class="linkish" data-goto="beta">${
+          esc(SHELL.beta.joinTitle)}</button></p>` : ""}
       </div>`).join("")}</div>
-    <div class="family-travel">${family.travel.map((line) =>
-      `<p class="muted small">${esc(line)}</p>`).join("")}</div>`;
+    <p class="small"><button type="button" class="linkish" data-goto="started">${
+      esc(family.howSessionsGetIn)}</button></p>`;
+}
+
+/**
+ * **The Beta page** — the release's wording of the kit's `BetaGuide`, with the public
+ * TestFlight link. The beta is the iPhone app's, so the one line of its own this page has
+ * (`webJoin`) says so; the list is docs/copy/channels.json's beta rows.
+ */
+function renderBeta() {
+  const host = el("beta-body");
+  const beta = SHELL.beta;
+  if (!host || !beta) return;
+  el("beta-title").textContent = beta.joinTitle;
+  host.innerHTML = `
+    <p>${esc(beta.whatItIs)}</p>
+    <h3 class="sub-head">${esc(beta.howToJoinTitle)}</h3>
+    <p class="muted small">${esc(beta.webJoin)}</p>
+    <p><a class="btn primary" href="${esc(beta.joinURL)}" rel="noopener">${
+      esc(beta.joinButton)}</a></p>
+    <h3 class="sub-head">${esc(beta.inItNowTitle)}</h3>
+    <ul class="beta-features">${(beta.features || []).map((f) =>
+      `<li class="small">${esc(f)}</li>`).join("")}</ul>
+    <h3 class="sub-head">${esc(beta.feedbackTitle)}</h3>
+    <p class="muted small">${esc(FEEDBACK.invitation)}</p>
+    <p><a href="${esc(feedbackMail())}">${esc(FEEDBACK.doors.app.split("→").pop().trim())}</a></p>`;
 }
 
 /**
@@ -256,7 +279,7 @@ function wireMenu() {
       track("app-menu-row-opened", { row });
       closeMenu();
       if (row === "whatItDoes") openWelcome();
-      else if (row === "family") showPage("family");
+      else if (row === "beta") showPage("beta");
       else if (row === "gettingStarted") showPage("started");
       else if (row === "settings") showPage("settings");
       else if (row === "help") showPage("help");
@@ -302,18 +325,17 @@ function openWelcome() {
   if (el("welcome-dialog").open) return;
   const line = (id) => GLOSSARY.find((g) => g.id === id);
   const words = WELCOME.highlights.map(line).filter(Boolean);
+  // The phone's order (docs/screens.md, What CleanJibe does, rebuilt 25 September 2026):
+  // the tagline, the promise, what it measures, then the family. *Get started* and the
+  // example are the dialog's two buttons.
   el("welcome-body").innerHTML = `
     <p class="welcome-headline">${esc(WELCOME.headline)}</p>
     <p class="welcome-promise">${esc(WELCOME.promise)}</p>
+    <h3 class="sub-head">${esc(WELCOME.measuresTitle)}</h3>
     <dl class="glossary-list">${words.map((w) => `
       <div class="g-entry"><dt>${esc(w.term)}</dt><dd>${esc(w.line)}</dd></div>`).join("")}
     </dl>
-    <h3 class="sub-head">Getting started</h3>
-    <p class="muted small">${esc(GUIDE.framing)}</p>
-    <ul class="guide-routes">${GUIDE.routes.map((r) => `
-      <li><a href="${esc(r.href)}">${esc(r.title)}</a>
-        <span class="dim">${esc(r.status)}</span>
-        <span class="way-line">${esc(r.summary)}</span></li>`).join("")}</ul>`;
+    ${familyHtml()}`;
   el("welcome-dialog").showModal();
 }
 
@@ -323,12 +345,19 @@ function wireWelcome() {
     markWelcomeSeen();
     dialog.close();
   });
-  // The phone's third door (docs/screens.md, What CleanJibe does). A rider with a Garmin
-  // takes this one, and the browser had nowhere to send him from here.
-  el("welcome-icu").addEventListener("click", () => {
+  // *Get started*, the phone's way on (docs/screens.md, What CleanJibe does): the
+  // Getting started page, where the watches, intervals.icu and the file way are.
+  el("welcome-started").addEventListener("click", () => {
     markWelcomeSeen();
     dialog.close();
-    showPage("settings");
+    showPage("started");
+  });
+  // A card's link inside the dialog goes to a page; the dialog has to close first.
+  el("welcome-body").addEventListener("click", (ev) => {
+    if (ev.target.closest("[data-goto]")) {
+      markWelcomeSeen();
+      dialog.close();
+    }
   });
   el("welcome-example").addEventListener("click", () => {
     markWelcomeSeen();

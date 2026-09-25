@@ -12,8 +12,9 @@
  * when the page has drifted from either.
  */
 
-/** The four tabs, the six menu rows, the four session sub-tabs and the family
- *  screen (docs/copy/app-shell.json). One order, one wording, both surfaces. */
+/** The four tabs, the six menu rows, the four session sub-tabs, the family
+ *  section and the Beta page (docs/copy/app-shell.json). One order, one wording,
+ *  both surfaces. */
 export const SHELL = {
   "tabs": [
     {
@@ -39,10 +40,6 @@ export const SHELL = {
       "title": "What CleanJibe does"
     },
     {
-      "id": "family",
-      "title": "The CleanJibe family"
-    },
-    {
       "id": "gettingStarted",
       "title": "Getting started"
     },
@@ -58,6 +55,10 @@ export const SHELL = {
     {
       "id": "support",
       "title": "Support & ideas"
+    },
+    {
+      "id": "beta",
+      "title": "Join the beta"
     }
   ],
   "sessionSections": [
@@ -80,8 +81,10 @@ export const SHELL = {
   ],
   "family": {
     "title": "The CleanJibe family",
-    "intro": "CleanJibe is three apps on one analysis engine.",
+    "intro": "CleanJibe is a family of apps on one analysis engine.",
     "here": "You are using this one now.",
+    "betaBadge": "Beta",
+    "howSessionsGetIn": "How your sessions get in",
     "thisApp": "browser",
     "apps": [
       {
@@ -92,18 +95,39 @@ export const SHELL = {
       {
         "id": "iphone",
         "title": "iPhone app",
-        "line": "It reads every session, judges every turn and keeps your library."
+        "line": "It reads every session from Garmin, Strava and other watches, judges every turn and keeps your library."
       },
       {
         "id": "browser",
         "title": "Browser app",
-        "line": "The same analysis in a tab. Drop a file in, with no account."
+        "line": "Most of the same analysis in a browser tab. Drop a file in or import from intervals.icu, with no account."
+      },
+      {
+        "id": "appleWatch",
+        "title": "Apple Watch app",
+        "line": "It records your session on the wrist. The analysis happens on the iPhone.",
+        "beta": true
       }
-    ],
-    "travel": [
-      "A session leaves the watch through intervals.icu and lands on the phone.",
-      "The phone and the browser trade sessions as files.",
-      "The CleanJibe Apple Watch app records too. It is in the beta."
+    ]
+  },
+  "beta": {
+    "joinTitle": "Join the beta",
+    "whatItIs": "The beta is the next CleanJibe, a few weeks early. New features are ridden there first, by riders who want them sooner.",
+    "inItNowTitle": "In the beta right now",
+    "howToJoinTitle": "How to join",
+    "joinButton": "Open TestFlight",
+    "feedbackTitle": "How to give feedback",
+    "joinURL": "https://testflight.apple.com/join/nygqGGcn",
+    "webJoin": "The beta is the iPhone app's. Open the link on your iPhone, and TestFlight installs it.",
+    "features": [
+      ".gpx and .tcx files, so a session exported from a Polar, a Suunto or a COROS opens straight from Files.",
+      "Apple Health, both ways: what Apple's Workout app recorded is read in, and your sessions are written back as workouts.",
+      "The CleanJibe Apple Watch app, which records on your wrist with live numbers and hands the session to the phone.",
+      "Home-screen widgets and the watch complication.",
+      "The session video: your afternoon as a film rather than a card.",
+      "Grouping the library by month, year or spot, and filtering it.",
+      "Send a session to the developer from its Share page, with your notes on it.",
+      "Planned: a live view on the Apple Watch. Foil state, flights, records and turn verdicts on the wrist, as the Garmin app shows them."
     ]
   }
 };
@@ -184,14 +208,14 @@ export const GUIDE = {
       "id": "garmin",
       "title": "Garmin with the CleanJibe watch app",
       "status": "fenix, epix, Forerunner and the rest",
-      "summary": "Install it from Connect IQ, then ride and save. Your sessions come across through intervals.icu, which takes 4 steps in Settings → intervals.icu, once.",
+      "summary": "Install it from Connect IQ, then ride and save. The watch shows live numbers and a summary, and the session reaches CleanJibe through intervals.icu.",
       "href": "/start/#guide-garmin"
     },
     {
       "id": "appleWatchApp",
       "title": "The CleanJibe Apple Watch app",
       "status": "Apple Watch · everything a Garmin gets",
-      "summary": "Record on your Apple Watch. The session comes to the phone by itself, with pump strokes and takeoff attempts included.",
+      "summary": "Install it with the CleanJibe beta and record on your wrist. The watch only records, and the iPhone does the analysis.",
       "href": "/start/#guide-appleWatchApp"
     },
     {
@@ -356,14 +380,15 @@ export const SETTINGS_SECTIONS = [
 /** The welcome's headline and promise, and the four glossary ids it shows.
  *  The lines come from `GLOSSARY` in ./copy.js, which is their one home. */
 export const WELCOME = {
-  "headline": "Every flight, every jibe, every swim.",
+  "headline": "Your WingFoil session, measured.",
   "promise": "Did you fly through that jibe? CleanJibe reads your session off the watch. It tells you your time on the foil, every flight, your speed records, and a verdict on every turn. Flew through, touchdown, or fell in.",
   "highlights": [
     "foilShare",
     "flights",
     "dryStreak",
     "speedRecords"
-  ]
+  ],
+  "measuresTitle": "What CleanJibe measures"
 };
 
 /** What's new, release and beta only — the filter /whats-new/ uses. */
@@ -829,6 +854,9 @@ export const HELP = {
       "topics": [
         {
           "body": [
+            "CleanJibe works with Garmin, Strava and other watches. The Apple Watch app is in beta.",
+            "Garmin does not share your sessions directly, so CleanJibe gets them through intervals.icu. It is free and takes about 5 minutes. Set it up once in Settings → intervals.icu. After that, every session syncs by itself.",
+            "You can also open a .fit file straight from Files, Mail or a message. It can be yours, or one a friend sent you.",
             "Ride one session as you always do, then open it in CleanJibe. Every turn gets a verdict: flew through, touchdown, or fell in. You were there, so you can tell us where it got one wrong."
           ],
           "channels": [
@@ -844,7 +872,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Install it from Connect IQ, then ride and save. Your sessions come across through intervals.icu, which takes 4 steps in Settings → intervals.icu, once.",
+              "detail": "Install it from Connect IQ, then ride and save. The watch shows live numbers and a summary, and the session reaches CleanJibe through intervals.icu.",
               "term": "Garmin with the CleanJibe watch app"
             },
             {
@@ -852,7 +880,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Record on your Apple Watch. The session comes to the phone by itself, with pump strokes and takeoff attempts included.",
+              "detail": "Install it with the CleanJibe beta and record on your wrist. The watch only records, and the iPhone does the analysis.",
               "term": "The CleanJibe Apple Watch app"
             },
             {
@@ -896,17 +924,8 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Menu → Support & ideas opens a mail to us, with your app and watch details already in it. On the beta, TestFlight's own feedback works too.",
+              "detail": "Menu → Support & ideas opens a mail to us, with your app and watch details already in it. Your mail decides what we build next.",
               "term": "Tell us what you saw"
-            },
-            {
-              "channels": [
-                "release",
-                "beta",
-                "dev"
-              ],
-              "detail": "cleanjibe.org/start",
-              "term": "The same guide, with every step, on the web"
             }
           ],
           "related": [

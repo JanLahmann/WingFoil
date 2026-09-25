@@ -152,10 +152,15 @@ switches are, what its numbers mean, who to write to — and a list of what this
 have is none of those. It has one home, Settings → **Coming in a future release**, described
 under "Settings" below.
 
-**The welcome screen closes.** Replayed from the menu it has a circular ✕ at the top right,
-because its three buttons are *ways in* and a rider who came back to read it is not choosing
-one; a page whose only exits are labelled "Try the example", "Connect" and "Later" reads as a
-gate (Jan, 13 Sep 2026). ✕ does what "Later" does: nothing is armed or loaded.
+**The welcome screen closes.** It has a circular ✕ at the top right, on a blurred header bar
+the page scrolls under (25 Sep 2026), because a page whose only exits are ways in reads as a
+gate (Jan, 13 Sep 2026). Since 25 September its ways on are *Try the example session* and
+*Get started*; "Later" and "Set up intervals.icu" left it, and ✕ does what "Later" did.
+
+**The family row went, the beta row came** (25 Sep 2026). *The CleanJibe family* is a section
+of *What CleanJibe does* now, so its row left the menu; **Join the beta** is the last row,
+beside *Support & ideas*, and opens the Beta page (`BetaGuide`). In the beta and dev builds
+the row reads **You are in the beta** (`AppMenuRow.title(in:)`).
 
 **Every door on this screen is one sheet.** The Sessions tab used to hang seven
 `.sheet(isPresented:)` modifiers off one view — Settings, Import, Help, a named help topic,

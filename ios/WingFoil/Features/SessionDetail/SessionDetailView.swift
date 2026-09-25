@@ -225,7 +225,7 @@ struct SessionDetailView: View {
                         }
                     }
                 } else {
-                    ProgressView("Analyzing…")
+                    ProgressView("Analysing…")
                         .frame(maxWidth: .infinity, minHeight: 200)
                 }
                 // With the session in it, so the mail names this afternoon by itself.
@@ -571,7 +571,7 @@ struct SessionDetailView: View {
                 if let row = store.session(id: id) {
                     header(row, detail: nil, live: false)
                 }
-                ProgressView("Analyzing…")
+                ProgressView("Analysing…")
                     .frame(maxWidth: .infinity, minHeight: 200)
             }
             .padding(.horizontal)
