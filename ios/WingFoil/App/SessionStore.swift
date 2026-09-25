@@ -1937,7 +1937,7 @@ final class SessionStore {
         // `UI_MAP_STYLE=satellite` starts the app on that ground. Applied *after* the load and
         // never written back — the override stages a screenshot, it does not edit the setting.
         if let raw = ProcessInfo.processInfo.environment["UI_MAP_STYLE"],
-           let wanted = MapStyleChoice(rawValue: raw) { return wanted }
+           let wanted = MapStyleChoice.stored(raw) { return wanted }
         #endif
         return stored
     }

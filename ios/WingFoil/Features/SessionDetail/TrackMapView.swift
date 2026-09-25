@@ -425,11 +425,13 @@ struct TrackContent: MapContent {
             ForEach(direction.chevrons) { chevron in
                 Annotation("", coordinate: Self.coordinate(chevron.lat, chevron.lon),
                            anchor: .center) {
+                    let line = visibility.lineStyle(flying: chevron.flying)
+                    // A dark arrow on a light line needs no outline of its own; only the light
+                    // arrows beside the thin neutral line take the casing (`DirectionChevron`).
                     TrackHalo.around(
                         DirectionChevron(bearingDeg: chevron.bearingDeg - direction.headingDeg,
-                                         style: visibility.lineStyle(flying: chevron.flying),
-                                         ground: style),
-                        on: style)
+                                         style: line, ground: style),
+                        on: line == .neutral ? style : .standard)
                 }
                 .annotationTitles(.hidden)
             }
@@ -503,22 +505,24 @@ struct TrackContent: MapContent {
     /// what the colours claim, not where the rider went. Losing the track to a legend tap
     /// would be a much worse surprise than an unwanted tint.
     ///
-    /// Foil-teal is the same teal on every ground — it is the contract. The other two are
-    /// **ink**, not hue, so over photography they resolve to the light end rather than the
-    /// dark one; see `TrackHalo.ink`.
+    /// On the plain map these are today's inks. Over photography they come from
+    /// `TrackPalette.imagery`: teal lifted towards white for flying, white at two weights for
+    /// the rest — see `TrackHalo`.
     ///
     /// Not private, because the exported session video draws the same track on the same
     /// grounds (`ReelScene`). A reel that picked its own teal would be the one surface where
     /// the phase colours mean something else, on the one surface that leaves the phone.
     static func color(_ line: TrackLineStyle, on style: MapStyleChoice) -> Color {
+        let palette = style.palette
         switch line {
-        case .flying: return DesignTokens.Phase.flying
+        case .flying:
+            return style.isImagery ? TrackHalo.flyingOverImagery : DesignTokens.Phase.flying
         case .offFoil:
-            return TrackHalo.ink(DesignTokens.Phase.offFoil, on: style,
-                                 opacity: 0.65, overImagery: 0.85)
+            if let ink = palette.offFoil { return TrackHalo.color(ink) }
+            return DesignTokens.Phase.offFoil.opacity(palette.offFoilOpacity)
         case .neutral:
-            return TrackHalo.ink(DesignTokens.Phase.offFoil, on: style,
-                                 opacity: 0.3, overImagery: 0.45)
+            if let ink = palette.neutral { return TrackHalo.color(ink) }
+            return DesignTokens.Phase.offFoil.opacity(palette.neutralOpacity)
         }
     }
 
@@ -576,15 +580,15 @@ private extension DirectionChevron {
     /// teal flying track would be invisible, and this stays phase-coloured while separating
     /// from the line in both light and dark mode.
     var tint: Color {
-        // Over photography the label colour is the wrong end of the scale: it is dark in light
-        // mode, and an arrow that had to lose every contest with the event dots would instead
-        // lose to the water. Mixed towards white there, on the same ladder of weights.
+        // Over photography the line under the arrow is itself light (`TrackPalette.imagery`),
+        // so a light arrow vanishes into it. The arrow takes the casing's dark instead: it
+        // reads as a notch in the line, which is what a direction hint should be. The thin
+        // neutral line is too narrow to carry a notch, so its arrows stay light beside it.
         if ground.isImagery {
             switch style {
-            case .flying:
-                return DesignTokens.Phase.flying.mix(with: .white, by: 0.5).opacity(0.85)
-            case .offFoil: return Color.white.opacity(0.6)
-            case .neutral: return Color.white.opacity(0.4)
+            case .flying: return Color.black.opacity(0.6)
+            case .offFoil: return Color.black.opacity(0.5)
+            case .neutral: return Color.white.opacity(0.5)
             }
         }
         switch style {

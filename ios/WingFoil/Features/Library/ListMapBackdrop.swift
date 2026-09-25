@@ -59,11 +59,8 @@ enum ListMapBackdrop {
         switch recipe.base {
         case .standard:
             let configuration = MKStandardMapConfiguration(elevationStyle: .flat)
-            configuration.emphasisStyle = recipe.isMuted ? .muted : .default
             configuration.pointOfInterestFilter = .excludingAll
             return configuration
-        case .imagery:
-            return MKImageryMapConfiguration(elevationStyle: .flat)
         case .hybrid:
             let configuration = MKHybridMapConfiguration(elevationStyle: .flat)
             configuration.pointOfInterestFilter = .excludingAll

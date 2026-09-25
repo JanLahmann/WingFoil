@@ -1240,10 +1240,11 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    `direction`), which
    is the only way to photograph a filtered map without a finger. It is applied *after* the stored
    preference and never written back — the override stages a screenshot, it does not edit
-   the setting. `UI_MAP_STYLE=standard|muted|satellite|hybrid` does the same for the **ground**
+   the setting. `UI_MAP_STYLE=standard|satellite` does the same for the **ground**
    the track is drawn on (`MapStyleChoice`, docs/presentation/layers-map-colour-type.md "Map style"): the control is a
-   menu, which `simctl` can no more open than it can tap a chip, and the two photographic
-   styles are where the track's halo and its flipped inks are worth looking at. It reaches all
+   menu, which `simctl` can no more open than it can tap a chip, and `satellite` is where the
+   track's imagery palette is worth looking at (the retired `muted` and `hybrid` still resolve,
+   to `standard` and `satellite`). It reaches all
    four map surfaces at once, so one launch photographs the inline map, `UI_FULLSCREEN_MAP=1`
    the big one and `UI_SCROLL_TO=turnsMap` the Turns tab's. Same rules as the layer override:
    applied after the stored preference, never written back. `UI_RECORD=<window key>` (`best10s`, `best250m`, `bestNm`, `bestHour`, …) preselects a

@@ -153,9 +153,9 @@ app, any .fit, Strava, and the Garmin ZIP last.
     holds exactly one recording, and says so when it does not.
 11. **The store links live on one page, not on the home page.** `/invite/` holds the Connect
     IQ link and the TestFlight link. One page to keep current when a channel moves.
-12. **The ground under the track is Map or Plain, not four styles.** The phone has Apple's
-    four; the web draws OpenStreetMap, which has no satellite twin, so it offers the two
-    states it actually has. It is off until the rider presses Map, because a background that
+12. **The ground under the track is Map or Plain, not Map or Satellite.** The phone has
+    Apple's map and Apple's photography; the web draws OpenStreetMap, which has no satellite
+    twin, so it offers the two states it actually has. It is off until the rider presses Map, because a background that
     fetched a stranger's home beach unasked would break the promise the analyzer makes
     loudest.
 13. **A spot name comes from OpenStreetMap, not from Apple.** `CLGeocoder` is a phone

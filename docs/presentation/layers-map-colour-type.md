@@ -246,55 +246,65 @@ jibed at — cost a trip to the full-screen map and back.
 
 ## Map style — the ground under the track
 
-Four grounds on iOS, one choice: `standard` · `muted` · `satellite` · `hybrid`, persisted per
-rider in `mapStyle.v1` (`MapStyleChoice`, `MapStyleStore`). Standard is the default and is what
-every map used to be. The web has two, and they are the two it has — see "The web's ground"
-below.
-The reason the other three exist is that a rider at his home spot wants the track to be the
-loudest thing on screen, and a rider looking at somewhere new wants to see the shore — the
-launch, the pier he jibed around, the shallows he stayed off — which only photography shows.
+Two grounds on iOS, one choice: **Map** (`standard`) and **Satellite** (`satellite`),
+persisted per rider in `mapStyle.v1` (`MapStyleChoice`, `MapStyleStore`). Map is the default
+and is what every map used to be. There were four until 25 Sep 2026 — Standard, Muted,
+Satellite, Hybrid — and on a phone Muted read as Standard and Hybrid as Satellite (Jan, F8i):
+four names for two grounds is a menu that makes the rider compare. A stored `muted` comes back
+as Map and a stored `hybrid` as Satellite (`MapStyleChoice.stored`). The web has two as well,
+and they are the two it has — see "The web's ground" below.
+A rider at his home spot wants the track to be the loudest thing on screen; a rider looking at
+somewhere new wants to see the shore — the launch, the pier he jibed around, the shallows he
+stayed off — and the name of the beach, which is why Satellite carries Apple's labels.
 
-| choice | MapKit | points of interest | track halo |
-|---|---|---|---|
-| `standard` | `.standard(elevation: .flat)` | excluded | no |
-| `muted` | `.standard(elevation: .flat, emphasis: .muted)` | excluded | no |
-| `satellite` | `.imagery(elevation: .flat)` | (no label layer) | **yes** |
-| `hybrid` | `.hybrid(elevation: .flat)` | excluded | **yes** |
+| choice | label | MapKit | points of interest | track palette |
+|---|---|---|---|---|
+| `standard` | Map | `.standard(elevation: .flat)` | excluded | `vector` (today's) |
+| `satellite` | Satellite | `.hybrid(elevation: .flat)` | excluded | **`imagery`** |
 
 The table is `MapStyleChoice.recipe` and the view builds its `MapStyle` *from* it, because
-`MapStyle` is opaque and cannot be asserted once built. All four are **flat**: a GPS trace is a
-plan view of a plane of water. Points of interest are excluded wherever the argument exists —
-including on the full-screen map, which used to be the one place they were drawn.
+`MapStyle` is opaque and cannot be asserted once built. Both are **flat**: a GPS trace is a
+plan view of a plane of water. Points of interest are excluded on both; place names and roads
+stay on Satellite, because they are how a rider recognises the beach.
 
 **One setting, five surfaces.** The session's inline map, the full-screen map, the Turns
-tab's map, the Takeoffs tab's map and the cinema replay all read it. The control is a menu
-chip in the legend row — the map's control strip — on every one of them: the analysis maps
-carried a lone style chip in their caption lines until 6 Sep 2026, when they gained the same
-legend as everything else and the chip moved into it, where it belongs.
+tab's map, the Takeoffs tab's map and the cinema replay all read it (the share card, the reel
+and the list backdrop draw on it too). The control is a menu chip in the legend row — the
+map's control strip — on every one of them. The turn page's own map has no ground at all
+(`TurnDetailMapView`), so the rule does not reach it.
 
-**Over photography the track is redrawn to survive it, and the vector styles keep today's
-rendering exactly.** Two rules, both in the shared drawing path (`TrackHalo`,
-`TrackContent`):
+**Over photography the track is drawn from its own palette, and the vector map keeps today's
+rendering exactly.** `TrackPalette.vector` / `TrackPalette.imagery` in the kit, read by the
+shared drawing path (`TrackHalo`, `TrackContent`):
 
-1. **A dark outer edge** on every stroke and every mark — 55 % black, 3 pt either side, one
-   pass under the whole track so no join is overdrawn. Soft on purpose: a hard keyline reads
-   as a second, wider track and turns a busy corner into a smear.
-2. **The inks flip; the hues never do.** Foil-teal, the outcome ladder, splash-cyan and the
-   effort orange mean the same thing on every ground and are drawn identically. But the
-   *inks* — off-foil and neutral track (`Color.secondary`), the direction chevrons
-   (`Color.primary`), the Turns map's quiet route — are semantic label colours that assume the
-   app's background is behind them: dark grey in light mode, invisible on deep water, and a
-   dark halo under a dark grey line only merges the two. Over imagery they resolve to the
-   light end at their own weights (`TrackHalo.ink`). Same intent, read against what is
-   actually underneath.
+| ink | on Map | on Satellite |
+|---|---|---|
+| flying | phase teal `#40c8e0` | teal lifted towards white `#70d6e8` |
+| off foil | secondary label at 65 % | white at 70 % |
+| neutral (hidden layer) | secondary label at 30 % | white at 45 % |
+| casing under every line | none | black at 70 %, 1.5 pt each side, one pass under the whole track |
+| outline around every mark | none | two tight black shadows (1.5 pt, 0.75 pt) |
+| direction chevrons | label ink, mixed into teal on flying | black at 60 % / 50 % — a notch in the light line; white at 50 % beside the neutral line |
+
+1. **A crisp dark casing**, not a soft band. The first version was 55 % black three points
+   either side, and on a bright photograph it read as a dirty smear along the line rather than
+   as an edge (Jan, F8i: "breadcrumb colors for satellite map is not nice"). A narrow dense
+   edge is the keyline every map over imagery uses: it is what keeps the line on sand and
+   white wake, where no light ink can contrast.
+2. **The inks go to the light end; the hues keep their meaning.** Flying is still teal, lifted
+   so deep water does not swallow it; off-foil and neutral are white at two weights so the
+   phases keep their order. The verdict ladder, splash-cyan and the effort orange do not move.
+   The contrast of every ink on every ground — deep water, sunlit chop, sand, and Apple's water
+   in dark mode — is a kit test (`everyTrackInkReadsOnEveryGround`): the body reads on the
+   ground or on its casing at 3:1, and flying reads on deep water by itself at 6:1.
 
 **The web's ground: Map or Plain.** The Ride tab's track map draws over the same
 OpenStreetMap raster tiles the share card uses (`web/js/trackmap.js` on `web/js/cardmap.js`),
 under the same `MAX_TILES` ceiling and with the same no-retry rule: a failed tile is a hole,
 a wholly failed fetch is the plain figure. It is **off until the rider presses Map**, and the
-choice is remembered per device in `wingfoil.trackMap.ground.v1`. There is no four-way picker,
-because the layer has no satellite twin and a control offering four names for one ground would
-be a control that lies. The toggle and the `© OpenStreetMap contributors` credit sit in the
+choice is remembered per device in `wingfoil.trackMap.ground.v1`. There is no Satellite,
+because the layer has no photographic twin and a control offering a name for a ground it
+cannot draw would be a control that lies. The toggle and the `© OpenStreetMap contributors` credit sit in the
 legend's utilities group, where the iOS legend keeps its own style chip, and the credit is
 drawn in the figure's corner as well — the figure travels into a screenshot and the legend
 does not.
@@ -314,9 +324,9 @@ the figure is north-up by construction and the wind arrow and the chevrons are r
 that.
 
 **The replay clip keeps whatever ground was chosen** — a clip of a session is a clip of the
-rider's own map. Note that MapKit draws Apple's attribution itself, so a satellite or hybrid
+rider's own map. Note that MapKit draws Apple's attribution itself, so a Satellite
 clip carries the "Apple Maps · Legal" mark in its corner for the whole recording. That is
-correct and required; a rider who wants a clip without it records on `standard` or `muted`.
+correct and required; a rider who wants a clip without it records on Map.
 
 ## Colour and glyph vocabulary
 
@@ -493,8 +503,8 @@ reason: "All spots" truncated to "All s…" is a filter that no longer says what
 `DesignTokens` (`design/tokens.json`) is the contract — the outcome ladder (flew through /
 touchdown / fell in), the clean-jibe mint, the effort inks, the phase tints, the entry-tack
 brown — and the speed ramp's five authored stops. Those are *meanings*, not decoration: the
-same green means "flew through" in light and in dark. `TrackHalo.ink` (55 % black under a
-track drawn over satellite imagery) is fixed for the same reason, and `Brand` — the navy, the
+same green means "flew through" in light and in dark. `TrackHalo.ink` (70 % black under a
+track drawn over satellite imagery, now `TrackPalette.imagery.casing`) is fixed for the same reason, and `Brand` — the navy, the
 green, the paper — is fixed because the surfaces it paints (the exported card, the splash,
 the confetti) have no system background to adapt to. Everything that is *not* a data colour
 is semantic and flips with the theme; see "Colour and glyph vocabulary" above for which is

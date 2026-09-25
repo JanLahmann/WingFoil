@@ -295,17 +295,14 @@ extension MapStyleRecipe {
     var snapshotConfiguration: MKMapConfiguration {
         switch base {
         case .standard:
-            let configuration = MKStandardMapConfiguration(
-                elevationStyle: .flat, emphasisStyle: isMuted ? .muted : .default)
-            if excludesPointsOfInterest == true {
+            let configuration = MKStandardMapConfiguration(elevationStyle: .flat)
+            if excludesPointsOfInterest {
                 configuration.pointOfInterestFilter = .excludingAll
             }
             return configuration
-        case .imagery:
-            return MKImageryMapConfiguration(elevationStyle: .flat)
         case .hybrid:
             let configuration = MKHybridMapConfiguration(elevationStyle: .flat)
-            if excludesPointsOfInterest == true {
+            if excludesPointsOfInterest {
                 configuration.pointOfInterestFilter = .excludingAll
             }
             return configuration
