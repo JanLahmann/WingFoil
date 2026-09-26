@@ -80,6 +80,14 @@ struct PeriodsView: View {
         }
         loaded = true
         await reloadCustom()
+        #if DEBUG && targetEnvironment(simulator)
+        // `UI_SHARE_PERIOD=trip|month|season` opens the first such period's card composer
+        // for a screenshot (with `UI_TAB=trends UI_OPEN_PERIODS=1`); `simctl` cannot tap.
+        if sharing == nil, let wanted = ProcessInfo.processInfo.environment["UI_SHARE_PERIOD"] {
+            sharing = wanted == "season" ? periods.seasons.first
+                : wanted == "month" ? periods.months.first : periods.trips.first
+        }
+        #endif
     }
 
     private func reloadCustom() async {
