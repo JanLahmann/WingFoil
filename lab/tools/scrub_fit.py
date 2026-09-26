@@ -276,6 +276,74 @@ def _emit_data(record: bytes, mdef: MessageDef, drop: dict[int, str], stats: Scr
     return bytes(patched) if patched is not None else record
 
 
+def blank_leading_positions(raw: bytes, seconds: float) -> bytes:
+    """The same FIT with no position on any `record` stamped within `seconds` of the first
+    record: a watch that recorded before it had a GPS fix (the dedupe's two starts, docs/
+    algorithms/imports.md "One afternoon, one session"). A test fixture maker, not a
+    scrub: every other byte is the original's, and both CRCs are recomputed."""
+    header_size = raw[0]
+    data_size = struct.unpack_from("<I", raw, 4)[0]
+    body_end = header_size + data_size
+    out = bytearray(raw)
+    defs: dict[int, MessageDef] = {}
+    pos, first_ts, last_ts = header_size, None, None
+    while pos < body_end:
+        header = raw[pos]
+        if header & 0x80:                                   # compressed timestamp header
+            mdef = defs[(header >> 5) & 0x03]
+            offset = header & 0x1F
+            ts = None
+            if last_ts is not None:
+                ts = (last_ts & ~0x1F) + offset
+                if ts < last_ts:
+                    ts += 0x20
+        elif header & 0x40:                                 # definition message
+            has_dev = bool(header & 0x20)
+            little = raw[pos + 2] == 0
+            mdef = MessageDef(global_num=struct.unpack_from("<H" if little else ">H",
+                                                            raw, pos + 3)[0],
+                              little_endian=little)
+            cursor, offset = pos + 6, 0
+            for _ in range(raw[pos + 5]):
+                number, size, base = raw[cursor], raw[cursor + 1], raw[cursor + 2]
+                mdef.fields.append(FieldDef(number, size, base, offset))
+                offset += size
+                cursor += 3
+            if has_dev:
+                num_dev = raw[cursor]
+                cursor += 1
+                for _ in range(num_dev):
+                    mdef.dev_fields.append(FieldDef(raw[cursor], raw[cursor + 1], 0, offset))
+                    offset += raw[cursor + 1]
+                    cursor += 3
+            defs[header & 0x0F] = mdef
+            pos = cursor
+            continue
+        else:
+            mdef = defs[header & 0x0F]
+            ts = None
+        fields = {f.number: f for f in mdef.fields}
+        if 253 in fields:
+            f = fields[253]
+            ts = struct.unpack_from("<I" if mdef.little_endian else ">I",
+                                    raw, pos + 1 + f.offset)[0]
+        if ts is not None:
+            last_ts = ts
+        if mdef.global_num == 20 and ts is not None:        # record
+            first_ts = ts if first_ts is None else first_ts
+            if ts - first_ts < seconds:
+                for number in (0, 1):                       # position_lat, position_long
+                    if number in fields:
+                        start = pos + 1 + fields[number].offset
+                        out[start:start + 4] = struct.pack(
+                            "<i" if mdef.little_endian else ">i", 0x7FFFFFFF)
+        pos += 1 + mdef.record_size
+    if header_size == 14:
+        struct.pack_into("<H", out, 12, fit_crc(bytes(out[:12])))
+    struct.pack_into("<H", out, body_end, fit_crc(bytes(out[:body_end])))
+    return bytes(out)
+
+
 # ---------------------------------------------------------------------------------------
 # Reporting / verification
 # ---------------------------------------------------------------------------------------

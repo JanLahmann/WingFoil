@@ -710,7 +710,7 @@ def test_the_digest_carries_the_engines_verdict():
                                   "distanceKm": 0.012}},
            "meta": {"startUtc": "2026-09-14T08:00:00Z"}}
     d = library.digest(doc, "junk.fit")
-    assert d["schema"] == library.SCHEMA == 12
+    assert d["schema"] == library.SCHEMA == 13
     assert (d["isSession"], d["notASessionReason"]) == (False, "no_distance")
     # A document from an older engine carries no keys, so the digest derives them.
     older = {"golden": {"summary": {"foilTimeS": 0.0, "durationS": 24.0, "distanceKm": 0.0}},
@@ -723,10 +723,13 @@ def test_the_digest_carries_the_engines_verdict():
 # ------------------------------------------------------------------ one afternoon, one session
 
 
-def _key(start: float, dur: float, fix: float | None = None, cls: str | None = None) -> dict:
+def _key(start: float, dur: float, fix: float | None = None, cls: str | None = None,
+         fix_start: float | None = None) -> dict:
     e = {"id": f"{start}-{dur}", "startEpoch": start, "durationS": dur, "sourceClass": cls}
     if fix is not None:
         e["fixSpanS"] = fix
+    if fix_start is not None:
+        e["fixStartEpoch"] = fix_start
     return e
 
 
@@ -744,6 +747,71 @@ def test_dedupe_keeps_the_sixty_second_tolerance_on_the_fix_span():
     fit = _key(0.0, 10338.0, fix=7742.0)
     assert library.dedupe_match(_key(0.0, 7802.0, fix=7802.0), [fit])["match"]
     assert not library.dedupe_match(_key(0.0, 7803.0, fix=7803.0), [fit])["match"]
+
+
+def test_dedupe_matches_a_fit_with_a_gps_less_lead_in_to_its_copy_in_either_order():
+    """Two starts a side (Jan, 26 Sep 2026): 90 s of records before the first fix."""
+    fit = _key(0.0, 3690.0, fix=3600.0, fix_start=90.0, cls="b")
+    copy = _key(90.0, 3600.0, fix=3600.0, fix_start=90.0, cls="c")
+    hit = library.dedupe_match(copy, [fit])
+    assert (hit["match"], hit["deltaStartS"], hit["deltaDurS"]) == (True, 0.0, 0.0)
+    assert library.dedupe_match(fit, [copy])["match"]
+    # Without a first-fix start (a row written before schema 13) the record start alone.
+    assert not library.dedupe_match(copy, [_key(0.0, 3690.0, fix=3600.0)])["match"]
+    # The same 60 s tolerance on the second start, both bounds inclusive.
+    assert library.dedupe_match(_key(150.0, 3600.0), [fit])["match"]
+    assert not library.dedupe_match(_key(151.0, 3600.0), [fit])["match"]
+
+
+def test_two_sessions_that_start_within_a_minute_but_differ_in_span_stay_two():
+    fit = _key(0.0, 3690.0, fix=3600.0, fix_start=90.0)
+    assert not library.dedupe_match(_key(30.0, 1800.0, fix=1800.0, fix_start=30.0),
+                                     [fit])["match"]
+    assert not library.dedupe_match(_key(90.0, 3539.0, fix=3539.0, fix_start=90.0),
+                                     [fit])["match"]
+
+
+LEAD_IN_FIT = (Path(__file__).resolve().parents[2] / "fixtures" / "sessions"
+               / "windsurf-native" / "2026-08-01-0804_nago-torbole-windsurfen_native.fit")
+
+
+def _gpx_of_fixes(fit_bytes: bytes) -> bytes:
+    """The copy Strava serves of a FIT: its fixes, nothing else, as a GPX."""
+    import tempfile
+
+    from wingfoil_lab import parse
+    with tempfile.NamedTemporaryFile(suffix=".fit") as tmp:
+        tmp.write(fit_bytes)
+        tmp.flush()
+        df = parse.parse_fit(Path(tmp.name)).records
+    df = df[df["lat"].notna() & df["lon"].notna()]
+    pts = "".join(
+        f'<trkpt lat="{r.lat:.7f}" lon="{r.lon:.7f}"><time>'
+        f'{r.timestamp.strftime("%Y-%m-%dT%H:%M:%SZ")}</time></trkpt>'
+        for r in df.itertuples())
+    return ('<?xml version="1.0"?><gpx version="1.1" creator="test" '
+            'xmlns="http://www.topografix.com/GPX/1/1"><trk><name>Wingfoil</name><trkseg>'
+            f'{pts}</trkseg></trk></gpx>').encode()
+
+
+def test_a_fit_with_a_gps_less_lead_in_meets_the_gpx_of_its_fixes():
+    """A corpus FIT with its first 90 s of positions blanked, and the GPX of its fixes."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
+    import web_entry
+    from scrub_fit import blank_leading_positions
+    raw = blank_leading_positions(LEAD_IN_FIT.read_bytes(), 90.0)
+    fit = library.digest(web_entry.analyze_bytes(raw, "lead-in.fit"), "lead-in.fit")
+    gpx = library.digest(web_entry.analyze_bytes(_gpx_of_fixes(raw), "copy.gpx"), "copy.gpx")
+    assert fit["fixStartEpoch"] - fit["startEpoch"] > 60
+    assert gpx["startEpoch"] == gpx["fixStartEpoch"] == fit["fixStartEpoch"]
+    assert gpx["fixSpanS"] == fit["fixSpanS"]
+    hit = library.dedupe_match(gpx, [fit])
+    assert (hit["match"], hit["storedIsStronger"]) == (True, True)
+    hit = library.dedupe_match(fit, [gpx])
+    assert (hit["match"], hit["replacesWeaker"]) == (True, True)
+    # The record start alone, as before schema 13, called them two sessions.
+    old = {k: v for k, v in fit.items() if k != "fixStartEpoch"}
+    assert not library.dedupe_match(gpx, [old])["match"]
 
 
 def test_dedupe_says_which_copy_the_library_keeps():
