@@ -113,9 +113,15 @@ struct ComplicationView: View {
 
     /// The brand mark as a template: complications are tinted by the watch face, and a
     /// full-colour icon would come back a grey square in every accented and vibrant rendering
-    /// mode. `ComplicationMark` is the app icon's artwork with the navy ground taken out.
+    /// mode. `ComplicationMark` is the app icon's artwork with the navy ground taken out;
+    /// dev wears it mirrored (`ComplicationMark-Dev`, docs/channels.md), beta and release plain.
     private var mark: some View {
-        Image("ComplicationMark")
+        #if DEV
+        let name = "ComplicationMark-Dev"
+        #else
+        let name = "ComplicationMark"
+        #endif
+        return Image(name)
             .renderingMode(.template)
             .resizable()
             .scaledToFit()

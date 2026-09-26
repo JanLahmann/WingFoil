@@ -873,12 +873,17 @@ targets:
           CODE_SIGN_STYLE: Manual
           CODE_SIGN_IDENTITY: "Apple Distribution"
           PROVISIONING_PROFILE_SPECIFIER: "WingFoil Watch Widgets App Store"
+        # Dev's complication wears the mirrored mark (ComplicationMark-Dev), picked in code
+        # under `#if DEV` like the watch app's ChannelArt. Beta and release keep the plain
+        # one: a red BETA label would be lost to the watch face's template tint, a mirror is not.
         Dev Debug:
           <<: *devSigning
           PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil.dev.watchkitapp.widgets
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) DEV"
         Dev Release:
           <<: *devWatchWidgetsSigning
           PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil.dev.watchkitapp.widgets
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) DEV"
     entitlements:
       path: WingFoilWatchWidgets/WingFoilWatchWidgets.entitlements
       properties:
