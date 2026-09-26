@@ -3054,8 +3054,8 @@ export const PRESENTATION = {
     "streaks": "best streaks"
   },
   "rowMetric": {
-    "best2s": "best 2 s",
     "best10s": "best 10 s",
+    "best2s": "best 2 s",
     "cleanJibes": "clean",
     "distance": "distance",
     "dryStreak": "dry streak",
