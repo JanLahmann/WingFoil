@@ -135,6 +135,70 @@ def check_dedupe() -> None:
     check("  delta fields reported", (round_trip["deltaStartS"], round_trip["deltaDurS"]),
           (0.0, 0.0))
 
+    # F-5 (schema 12): two spans a side. A FIT with 43 minutes of records after its last fix
+    # meets the copy of its fixes, in either order; without a fix span it does not.
+    fit = dict(entry(base["startEpoch"], 10338.0, "fit"), fixSpanS=7742.0, sourceClass="b")
+    copy = dict(entry(base["startEpoch"] + 8, 7742.0, "copy"), fixSpanS=7742.0, sourceClass="c")
+    check("  F-5 copy after the FIT matches", library.dedupe_match(copy, [fit])["id"], "fit")
+    check("  F-5 FIT after the copy matches", library.dedupe_match(fit, [copy])["id"], "copy")
+    check("  F-5 reports the span it matched on",
+          library.dedupe_match(fit, [copy])["deltaDurS"], 0.0)
+    check("  F-5 a pre-schema-12 FIT entry still misses",
+          library.dedupe_match(copy, [entry(base["startEpoch"], 10338.0, "old")])["match"],
+          False)
+    check("  F-5 fix spans 61 s apart do not match",
+          library.dedupe_match(dict(copy, durationS=7681.0, fixSpanS=7681.0), [fit])["match"],
+          False)
+    # F-6: which copy the library keeps.
+    hit = library.dedupe_match(fit, [copy])
+    check("  F-6 the FIT replaces a positions-only copy",
+          (hit["replacesWeaker"], hit["storedIsStronger"]), (True, False))
+    hit = library.dedupe_match(copy, [fit])
+    check("  F-6 a positions-only copy never replaces the FIT",
+          (hit["replacesWeaker"], hit["storedIsStronger"]), (False, True))
+    hit = library.dedupe_match(dict(fit, sourceClass="a"), [fit])
+    check("  F-6 speed against speed is neither",
+          (hit["replacesWeaker"], hit["storedIsStronger"]), (False, False))
+    check("  F-6 no match says neither",
+          library.dedupe_match(fit, [])["replacesWeaker"], False)
+
+
+THIRTEEN_JUNE = "2026-06-13-1558_rheinstetten-windsurfen_native"
+
+
+def _gpx_of_fixes(fit_path: Path) -> bytes:
+    """The copy Strava serves of a FIT: its fixes, nothing else, as a GPX."""
+    from wingfoil_lab import parse
+    df = parse.parse_fit(fit_path).records
+    df = df[df["lat"].notna() & df["lon"].notna()]
+    pts = "".join(
+        f'<trkpt lat="{r.lat:.7f}" lon="{r.lon:.7f}"><time>'
+        f'{r.timestamp.strftime("%Y-%m-%dT%H:%M:%SZ")}</time></trkpt>'
+        for r in df.itertuples())
+    return ('<?xml version="1.0"?><gpx version="1.1" creator="test" '
+            'xmlns="http://www.topografix.com/GPX/1/1"><trk><name>Wingfoil</name><trkseg>'
+            f'{pts}</trkseg></trk></gpx>').encode()
+
+
+def check_thirteen_june() -> None:
+    """F-5 and F-6 on the corpus pair: the 13 June FIT and the GPX of its fixes."""
+    section("1d. one afternoon, one session: 13 June FIT and the copy of its fixes")
+    fit_path = REPO / "fixtures" / "sessions" / "windsurf-native" / f"{THIRTEEN_JUNE}.fit"
+    fit = library.digest(web_entry.analyze_bytes(fit_path.read_bytes(), fit_path.name),
+                         fit_path.name)
+    gpx = library.digest(web_entry.analyze_bytes(_gpx_of_fixes(fit_path), "copy.gpx"),
+                         "copy.gpx")
+    check("  the FIT records on past its last fix",
+          fit["durationS"] - fit["fixSpanS"] > 120, True)
+    check("  the copy spans the FIT's fixes", gpx["fixSpanS"], fit["fixSpanS"])
+    check("  classes", (fit["sourceClass"], gpx["sourceClass"]), ("b", "c"))
+    hit = library.dedupe_match(gpx, [fit])
+    check("  copy after FIT is a duplicate the FIT keeps",
+          (hit["match"], hit["replacesWeaker"], hit["storedIsStronger"]), (True, False, True))
+    hit = library.dedupe_match(fit, [gpx])
+    check("  FIT after copy replaces the copy",
+          (hit["match"], hit["replacesWeaker"], hit["storedIsStronger"]), (True, True, False))
+
 
 def check_spot_names() -> None:
     section("1b. spot names from the corpus filename convention")
@@ -241,7 +305,7 @@ def check_attribution() -> None:
         e.pop("schema")
     check("  a schema-1 library is unchanged", library.aggregate(old)["count"], 2)
     check("  digest stamps the current schema",
-          library.digest({"golden": {}, "meta": {}}, "x.fit")["schema"], 11)
+          library.digest({"golden": {}, "meta": {}}, "x.fit")["schema"], 12)
 
     # Schema 10 (engine 0.19.0): the fourth exclusion — a recording that is not a session
     # (docs/algorithms/not-a-session.md "Not a session"). The stored answer when the row carries one, the
@@ -939,6 +1003,7 @@ def main(argv=None) -> int:
     check_period_fixture()
     if not args.fast:
         digests = build_digests()
+        check_thirteen_june()
         check_digest_fidelity()
         check_records(digests)
         check_trends(digests)

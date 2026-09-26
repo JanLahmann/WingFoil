@@ -17,6 +17,7 @@ import { speed, speedRecords } from "./appsettings.js";
 import { keepTombstone } from "./deleted.js";
 import { sportCorrected } from "./cardstats.js";
 import { NOT_A_SESSION } from "./copy.js";
+import { moveGear } from "./gear.js";
 import { listDuration, text } from "./presentation.js";
 import { esc, int, nf, pct, sessionDate, zonedFormat } from "./render.js";
 import { askRider } from "./rider.js";
@@ -43,9 +44,11 @@ export function mountLibrary(options) {
  * Save one analysed session. `digest` is the Python digest that came back with the
  * analysis; `analysisJson` is the document verbatim; `fitBytes` are the original bytes.
  *
- * Dedupe: the "same session" test (start within ±60 s AND duration within ±60 s) runs in
- * Python over the stored index. A match is never resolved silently — the user is asked,
- * and answering no leaves the library untouched rather than adding a second copy.
+ * Dedupe: the "same session" test (start within ±60 s AND duration within ±60 s, either
+ * span a side since schema 12) runs in Python over the stored index. A match is never
+ * resolved silently — the user is asked, and answering no leaves the library untouched
+ * rather than adding a second copy. The one match not asked about is a positions-only copy
+ * of a session stored with speed: it never replaces it (F-6).
  *
  * Attribution: `example` is true only for the bundled recording (js/app.js knows, because
  * it fetched it), and it is the one case that is not asked about — a demonstration nobody
@@ -67,7 +70,18 @@ export async function saveSession({ digest, analysisJson, fitBytes, example = fa
     const existing = index[hit.index] || {};
     replacing = existing;
     const when = existing.startUtc ? sessionDate(existing) : "unknown date";
-    const ok = window.confirm(
+    // One afternoon, one session (release round A F-6, the phone's rule): the recording
+    // with speed is the one the library keeps. A positions-only copy never replaces it, so
+    // that replace is not offered; over a positions-only copy the question names the swap.
+    if (hit.storedIsStronger) {
+      window.alert(`Your library already has your watch's recording of ${when}.\n\n` +
+        `This copy has positions only, so the library keeps the watch's recording.`);
+      return { saved: false, reason: "duplicate" };
+    }
+    const ok = hit.replacesWeaker
+      ? window.confirm(`Your library has a positions-only copy of ${when}.\n\n` +
+          `Replace it with your watch's recording? Your rider and gear stay.`)
+      : window.confirm(
       `This looks like a session you already have.\n\n` +
       `In the library: ${existing.fileName || existing.id} (${when})\n` +
       `Start differs by ${hit.deltaStartS} s, duration by ${hit.deltaDurS} s.\n` +
@@ -91,6 +105,7 @@ export async function saveSession({ digest, analysisJson, fitBytes, example = fa
   }
 
   const entry = await putSession({ digest, analysisJson, fitBytes, replaceId, rider, example });
+  if (replaceId) await moveGear(replaceId, entry.id);
   invalidateTrends();
   await refresh();
   return { saved: true, replaced: Boolean(replaceId), entry };

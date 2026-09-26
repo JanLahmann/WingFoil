@@ -710,7 +710,7 @@ def test_the_digest_carries_the_engines_verdict():
                                   "distanceKm": 0.012}},
            "meta": {"startUtc": "2026-09-14T08:00:00Z"}}
     d = library.digest(doc, "junk.fit")
-    assert d["schema"] == library.SCHEMA == 11
+    assert d["schema"] == library.SCHEMA == 12
     assert (d["isSession"], d["notASessionReason"]) == (False, "no_distance")
     # A document from an older engine carries no keys, so the digest derives them.
     older = {"golden": {"summary": {"foilTimeS": 0.0, "durationS": 24.0, "distanceKm": 0.0}},
@@ -718,3 +718,41 @@ def test_the_digest_carries_the_engines_verdict():
     older_digest = library.digest(older, "junk2.fit")
     assert (older_digest["isSession"], older_digest["notASessionReason"]) \
         == (False, "too_short")
+
+
+# ------------------------------------------------------------------ one afternoon, one session
+
+
+def _key(start: float, dur: float, fix: float | None = None, cls: str | None = None) -> dict:
+    e = {"id": f"{start}-{dur}", "startEpoch": start, "durationS": dur, "sourceClass": cls}
+    if fix is not None:
+        e["fixSpanS"] = fix
+    return e
+
+
+def test_dedupe_matches_a_fit_to_the_copy_of_its_fixes_in_either_order():
+    """F-5: 13 June, 10 338 s of records and 7 742 s of fixes, Strava's copy 8 s later."""
+    fit = _key(1_781_359_080.0, 10338.0, fix=7742.0, cls="b")
+    copy = _key(1_781_359_088.0, 7742.0, fix=7742.0, cls="c")
+    assert library.dedupe_match(copy, [fit])["match"]
+    assert library.dedupe_match(fit, [copy])["match"]
+    # Without a fix span the entry is compared on its duration alone, as before schema 12.
+    assert not library.dedupe_match(copy, [_key(1_781_359_080.0, 10338.0)])["match"]
+
+
+def test_dedupe_keeps_the_sixty_second_tolerance_on_the_fix_span():
+    fit = _key(0.0, 10338.0, fix=7742.0)
+    assert library.dedupe_match(_key(0.0, 7802.0, fix=7802.0), [fit])["match"]
+    assert not library.dedupe_match(_key(0.0, 7803.0, fix=7803.0), [fit])["match"]
+
+
+def test_dedupe_says_which_copy_the_library_keeps():
+    """F-6: a positions-only copy gives way to speed, never the reverse."""
+    fit = _key(0.0, 3600.0, cls="b")
+    copy = _key(5.0, 3590.0, cls="c")
+    new_fit = library.dedupe_match(fit, [copy])
+    assert (new_fit["replacesWeaker"], new_fit["storedIsStronger"]) == (True, False)
+    new_copy = library.dedupe_match(copy, [fit])
+    assert (new_copy["replacesWeaker"], new_copy["storedIsStronger"]) == (False, True)
+    same = library.dedupe_match(_key(0.0, 3600.0, cls="a"), [fit])
+    assert (same["replacesWeaker"], same["storedIsStronger"]) == (False, False)

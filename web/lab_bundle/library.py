@@ -93,7 +93,11 @@ from datetime import datetime, timedelta, timezone
 # has never carried `jibeOutcomes` at all, so a reader that divided for itself would publish a
 # third number under the engine's name. Null on every row written before it, where the two
 # charts simply have no point for that session — a gap in a line is "not measured".
-SCHEMA = 11
+# v12 (26 Sep 2026, release round A F-5 and F-6) carries `fixSpanS`, the span from the first
+# GPS fix to the last, beside `durationS`. The dedupe compares both (`is_same_session`), so a
+# FIT whose watch recorded on without GPS meets the Strava or GPX copy of its fixes. Null on a
+# row written before it, which is then compared on `durationS` alone, as it always was.
+SCHEMA = 12
 
 # "Not a session" — the two floors (docs/algorithms/not-a-session.md "Not a session"). Only ever consulted
 # for a recording with no foil time at all, which is why they can be set generously.
@@ -431,6 +435,9 @@ def digest(doc, file_name: str | None = None) -> dict:
         "startUtc": start_utc,
         "startEpoch": None if start_epoch is None else round(start_epoch, 3),
         "durationS": _num(duration_s, 1),
+        # The dedupe's second span (schema 12): first GPS fix to last. Not a third key
+        # field: it only ever widens what `durationS` already matches.
+        "fixSpanS": _num(meta.get("fixSpanS"), 1),
         # --- the library row ---
         # The session's own UTC offset in seconds (engine 0.8.2), so a stored row can be
         # dated and clocked the way the rider saw it without re-reading the FIT. Null on a
@@ -545,16 +552,51 @@ def digest_json(doc_json: str, file_name: str | None = None) -> str:
 # --------------------------------------------------------------------------- dedupe
 
 
+def _spans(e: dict) -> list:
+    """The spans an entry is compared on: its duration, then its fix span where it has one."""
+    spans = [_num(e.get("durationS")), _num(e.get("fixSpanS"))]
+    return [s for s in spans if s is not None]
+
+
+def _span_delta(a: dict, b: dict):
+    """The smallest duration difference over the two entries' spans, or None. Duration
+    against duration first, so the ordinary case reports exactly what it always did."""
+    a_dur, b_dur = _num(a.get("durationS")), _num(b.get("durationS"))
+    if a_dur is None or b_dur is None:
+        return None
+    plain = abs(a_dur - b_dur)
+    if plain <= DEDUPE_DURATION_S:
+        return plain
+    return min(abs(x - y) for x in _spans(a) for y in _spans(b))
+
+
 def is_same_session(a: dict, b: dict) -> bool:
     """The project's session-identity rule: start within +/-60 s AND duration within
     +/-60 s. Both bounds inclusive. An entry with no usable start never matches anything
-    — silently merging two sessions is worse than storing one twice."""
+    — silently merging two sessions is worse than storing one twice.
+
+    **Two spans a side** (release round A F-5, Jan 26 Sep 2026; the kit's
+    `SessionIngestor.duplicate`): an entry is compared on its duration and on its fix span,
+    and any span of one within 60 s of any span of the other is the same duration. That is
+    what lets a FIT whose watch recorded on without GPS meet the copy of its fixes."""
     a_start, b_start = _num(a.get("startEpoch")), _num(b.get("startEpoch"))
-    a_dur, b_dur = _num(a.get("durationS")), _num(b.get("durationS"))
-    if a_start is None or b_start is None or a_dur is None or b_dur is None:
+    if a_start is None or b_start is None:
         return False
-    return (abs(a_start - b_start) <= DEDUPE_START_S
-            and abs(a_dur - b_dur) <= DEDUPE_DURATION_S)
+    d_dur = _span_delta(a, b)
+    if d_dur is None:
+        return False
+    return abs(a_start - b_start) <= DEDUPE_START_S and d_dur <= DEDUPE_DURATION_S
+
+
+def is_weaker_copy(stored: dict, new: dict) -> bool:
+    """Is `stored` a positions-only copy (class c) of what `new` holds with speed?
+
+    Release round A F-6 (Jan, 26 Sep 2026), the kit's `SessionIngestor.isWeakerCopy`: a
+    Strava or GPX copy gives way to the recording with speed of the same afternoon, and a
+    recording without speed never replaces one that has it. An entry with no class says
+    nothing, so it is neither."""
+    s, n = stored.get("sourceClass"), new.get("sourceClass")
+    return s == "c" and n is not None and n != "c"
 
 
 def dedupe_match(new: dict, existing) -> dict:
@@ -570,17 +612,22 @@ def dedupe_match(new: dict, existing) -> dict:
         if not isinstance(other, dict) or not is_same_session(new, other):
             continue
         d_start = abs(_num(new.get("startEpoch")) - _num(other.get("startEpoch")))
-        d_dur = abs(_num(new.get("durationS")) - _num(other.get("durationS")))
+        d_dur = _span_delta(new, other)
         cand = (d_start + d_dur, i, other, d_start, d_dur)
         if best is None or cand[0] < best[0]:
             best = cand
     if best is None:
         return {"match": False, "index": None, "id": None,
-                "deltaStartS": None, "deltaDurS": None}
+                "deltaStartS": None, "deltaDurS": None,
+                "replacesWeaker": False, "storedIsStronger": False}
     _score, i, other, d_start, d_dur = best
     return {"match": True, "index": i, "id": other.get("id"),
             "fileName": other.get("fileName"),
-            "deltaStartS": round(d_start, 1), "deltaDurS": round(d_dur, 1)}
+            "deltaStartS": round(d_start, 1), "deltaDurS": round(d_dur, 1),
+            # F-6: which copy the library keeps. The new one replaces a positions-only
+            # copy; a positions-only newcomer never replaces the stored recording.
+            "replacesWeaker": is_weaker_copy(other, new),
+            "storedIsStronger": is_weaker_copy(new, other)}
 
 
 def dedupe_match_json(new_json: str, existing_json: str) -> str:
