@@ -156,7 +156,7 @@ private struct RecordingCard: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
                 Text("Recording").font(.headline)
-                HelpButton(topic: .sourceClass, size: .footnote)
+                HelpButton(topic: .whichWatch, size: .footnote)
                 Spacer()
             }
             Text(SessionDisplay.sourceClassNote(detail.row.sourceClass,

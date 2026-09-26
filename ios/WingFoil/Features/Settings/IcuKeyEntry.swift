@@ -39,7 +39,7 @@ struct IcuKeyEntry: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
-                    HelpButton(topic: .icuPrivacy, size: .caption)
+                    HelpButton(topic: .privacy, size: .caption)
                 }
             }
             if store.apiKeyIsInjected {

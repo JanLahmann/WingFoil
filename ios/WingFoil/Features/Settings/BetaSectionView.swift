@@ -60,48 +60,54 @@ struct BetaSectionView: View {
         Section {
             // The existing composer, with a subject of its own: a feature request filed as
             // "CleanJibe 0.15.0 (52): …" reads like a bug report and gets answered like one.
-            FeedbackMailRow(title: "Request a feature", systemImage: "lightbulb",
-                            subjectOverride: "CleanJibe feature request")
+            VStack(alignment: .leading, spacing: 4) {
+                FeedbackMailRow(title: "Request a feature", systemImage: "lightbulb",
+                                subjectOverride: "CleanJibe feature request")
+                // **The one test ask that had no home** (Jan, dev 70). It lived on /start,
+                // which was cut; a beta door's ask belongs beside the beta's own feedback
+                // doors (docs/channels.md, "Feedback and channel furniture"). It names the
+                // three things a tester gets wrong: the preset, the wait, the share.
+                note("Opens a mail with this build already filled in.",
+                     more: ["Testing the session video? Keep the 20 s preset, wait for the "
+                            + "bar, then share the clip."])
+            }
             // The usage and feature statistics docs/channels.md promises the beta:
             // counters kept on the phone, sent only in a mail the rider edits. Permanent,
             // because the library's own card (`UsageAskCard`) is occasional and because
             // "not now" has to leave a way back.
-            UsageReportRow()
+            VStack(alignment: .leading, spacing: 4) {
+                UsageReportRow()
+                note("Adds what this phone has counted to a mail. Nothing goes until you "
+                     + "tap Send.")
+            }
             // "Check for a newer build now", with the last check and the verdict — the
-            // manual door to the once-a-day check (`UpdateReminder`).
+            // manual door to the once-a-day check (`UpdateReminder`). Its own status line
+            // is its caption.
             UpdateReminderSettingsRow()
             // Last row of the section, and the only destructive one in the app. See
             // `SessionStore.startOver`: the thing deleting the app *should* do, and does
             // not, because iOS keeps keychain items across a delete.
-            startOverRow
+            VStack(alignment: .leading, spacing: 4) {
+                startOverRow
+                note("Removes your library, your settings, your intervals.icu key and your "
+                     + "Strava connection.",
+                     more: ["Deleting the app leaves the last two behind in the iOS "
+                            + "keychain."])
+            }
         } header: {
             Text("Beta")
-        } footer: {
-            Text(Self.sectionFooter)
         }
     }
 
-    /// **One footer, and no history in it.** It was four paragraphs: which channel this
-    /// build is, what "Request a feature" opens, what "Send usage report" counts, why
-    /// "Start over" exists. Each is one sentence now, and every fact they carried has a
-    /// home a rider can reach — the usage report's own card and docs/presentation.md, the
-    /// Start over alert, which names every item it takes, and the page one row below.
-    private static var sectionFooter: String {
-        let coming = "Coming in a future release lists what this build has and the App "
-            + "Store one does not.\n\n"
-        let mails = "Request a feature opens a mail with this build already filled in. "
-            + "Send usage report adds what this phone has counted.\n\n"
-            + "Neither sends anything until you tap Send.\n\n"
-        // **The one test ask that had no home** (Jan, dev 70). It lived on /start, which
-        // was cut; a beta door's ask belongs beside the beta's own feedback doors
-        // (docs/channels.md, "Feedback and channel furniture"). One line, and it names the
-        // three things a tester gets wrong: the preset, the wait, the share.
-        let video = "Testing the session video: keep the 20 s preset, wait for the bar, "
-            + "then share the clip.\n\n"
-        let startOver = "Start over removes your library, your settings, your "
-            + "intervals.icu key and your Strava connection.\n\n"
-            + "Deleting the app leaves the last two behind in the iOS keychain."
-        return coming + mails + video + startOver
+    /// **Each row says what it does, under itself** (Jan, 26 September 2026: the section's
+    /// footer was six paragraphs about four rows). One line in the concise reading, the rest
+    /// only in the extensive one (`ExplainedFootnote`, Settings → How much to say). The
+    /// sentence about "Coming in a future release" went: that row's own footer, one section
+    /// down, already says what its page lists.
+    private func note(_ line: String, more: [String] = []) -> some View {
+        ExplainedFootnote(line: line, topic: nil, more: more) { _ in }
+            .font(.caption)
+            .foregroundStyle(.secondary)
     }
 
     /// **Start over.** Red, last, and behind an alert that names everything it takes —
