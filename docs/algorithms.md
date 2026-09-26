@@ -21,7 +21,7 @@ version it is stamped for.
 - [`algorithms/hygiene.md`](algorithms/hygiene.md) — speed sample hygiene on the phone; the
   watch uses its quality gate only.
 - [`algorithms/imports.md`](algorithms/imports.md) — recordings the importer refuses, and the
-  GPX, TCX and Strava import classes.
+  GPX, TCX and Strava import classes, and the dedupe key: one afternoon, one session.
 - [`algorithms/records.md`](algorithms/records.md) — speed records, the GP3S set and the
   plausibility gate for an uncertified short window.
 - [`algorithms/turns.md`](algorithms/turns.md) — turn detection & classification: the

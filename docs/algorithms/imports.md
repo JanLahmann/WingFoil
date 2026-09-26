@@ -179,3 +179,41 @@ rule alone cannot see once Strava has thinned an old stream to 3–5 s per point
 No accelerometer and no developer fields, exactly as for a GPX: `pumpEpisodes` empty, every
 stroke count null, no watch summary and so no divergence check.
 
+
+## One afternoon, one session — the dedupe key (phone/web)
+
+`SessionIngestor.duplicate` / `.yields` (kit) · `library.is_same_session` / `dedupe_match`
+(`web/lab_bundle/library.py`) · docs/decisions.md ADR-013 · release round A F-5, F-6 (Jan,
+26 Sep 2026)
+
+Two recordings are **the same session** when their starts are within **±60 s** and their
+durations are within **±60 s**, both bounds inclusive. An intervals.icu id that is already in
+the library matches before either is asked.
+
+**Two spans a side (F-5).** A recording is compared on its record span (first record to last,
+what the library row prints) *and* on its **fix span** (first GPS fix to last). The durations
+match when any span of one is within 60 s of any span of the other. A watch left running in
+the van records on without a position: the 13 June 2026 FIT spans 10 338 s of records and
+7 742 s of fixes, and Strava's copy of it, which drops every point with no position, spans
+7 742 s and starts 8 s later. The record span alone called those two sessions. The start stays
+one-to-one. On the phone a stored row carries its record span only, so its fix span is read
+from the archived original, and only for a row whose start already matched and whose record
+span did not. On the web the digest carries `fixSpanS` since schema 12; an older entry is
+compared on `durationS` alone.
+
+**Which copy the library keeps (F-6).** The source class is the one fact that says whether a
+recording measured its speed. A **positions-only row** (class c: Strava, a GPX) **gives way**
+to a recording with speed (class a or b) of the same afternoon when it arrives later, from
+intervals.icu, a Garmin ZIP or a file. The row keeps its id, and the rider's name, caption,
+rider, gear and spot stay; the recording, its class, its numbers and its provenance are
+replaced or merged. The rider is told once: *Replaced the Strava copy of 13 June with your
+watch's recording* (several in one run: *Replaced 4 Strava copies with your watch's
+recordings*). **Never the other way**: a recording without speed never replaces one that has
+it, whichever door it came through, the direct stream included; it merges its provenance and
+nothing else. Two copies of the same class keep the first. The web asks before a replace, as
+it always has, and does not offer the replace a positions-only copy would be.
+
+The other takeovers are unchanged: a provisional card gives way to its FIT, and a row the
+direct stream brought in alone gives way to the FIT of the same afternoon (ADR-013). A Garmin
+ZIP still brings back a session the rider deleted (F-7, kept as is): tombstones are asked by
+the intervals.icu and Strava syncs only.
