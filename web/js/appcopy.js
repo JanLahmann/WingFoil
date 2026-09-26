@@ -1849,7 +1849,7 @@ export const HELP = {
           "body": [
             "A flight starts when your speed holds above 12 km/h for 2 s. It ends when your speed stays under 8 km/h for 3 s. Both are the default thresholds.",
             "A flight is dated back to the first moment that counted, at both ends. Anything under 5 s is not a flight.",
-            "A brief touchdown does not split a flight. A one- or two-second tap of the water stays inside it.",
+            "A touchdown or a fall ends a flight. The next takeoff starts a new one.",
             "Taxiing, swimming and the drift upwind count against your time on foil. A gap in the recording does not."
           ],
           "channels": [
@@ -2161,7 +2161,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "A touchdown outside any turn is counted for the session. A short one inside a flight does not split the flight.",
+              "detail": "A touchdown outside any turn is counted for the session. It ends the flight, like any touchdown.",
               "term": "Touchdowns on a straight line"
             }
           ],
