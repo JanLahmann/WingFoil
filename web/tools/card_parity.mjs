@@ -29,9 +29,9 @@ globalThis.window = { addEventListener() {} };
 
 const JS = new URL("../js/", import.meta.url);
 const { keyMetrics } = await import(new URL("render.js", JS).href);
-const { PERIOD_LEAN_KEYS, cardStats, periodCardStats, periodMapAvailable }
-  = await import(new URL("cardstats.js", JS).href);
-const { stackPlacer } = await import(new URL("sharecard.js", JS).href);
+const { HERO_ORDER, PERIOD_LEAN_KEYS, cardStats, cardStory, periodCardStats,
+        periodMapAvailable } = await import(new URL("cardstats.js", JS).href);
+const { stackPlacer, storyBoxes } = await import(new URL("sharecard.js", JS).href);
 const { captionText } = await import(new URL("presentation.js", JS).href);
 
 /**
@@ -121,6 +121,17 @@ for (const path of process.argv.slice(2)) {
     complete: cardStats(document, "complete").map(pair),
     lean: cardStats(document, "lean").map(pair),
     leanKeys: [...document.card.leanKeys].sort(),
+    // Layout B v2 (26 Sep 2026): the story for every hero the rider can pick — the fixture
+    // fixtures/cards/stories.expected.json pins it, and the kit's DocumentRendererTests hold
+    // `ShareCardStats.Story.make` to the same file — and the gap between the words and the
+    // footer on every shape, which the old tile grid ran past on the landscape.
+    stories: Object.fromEntries(HERO_ORDER.map((hero) => [hero, cardStory(document, hero)])),
+    footerGaps: Object.fromEntries(["portrait", "square", "landscape"].map((shape) => {
+      const story = cardStory(document, "clean", { speedNote: "x" });
+      const size = { portrait: [360, 450], square: [360, 360], landscape: [640, 360] }[shape];
+      const boxes = storyBoxes({ story, track: null, note: null }, shape, size[0], size[1]);
+      return [shape, Math.round(boxes.gap * 100) / 100];
+    })),
     // The "wrist under" callout, in the words the web puts on screen. Both halves are copy
     // **ids with arguments** in the document now, so this dumps the resolver's answer —
     // the one sentence, printed by the one renderer (docs/presentation/layers-map-colour-type.md, "Wrist under").

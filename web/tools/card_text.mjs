@@ -188,6 +188,13 @@ function choiceRoundTrip() {
   out.garbageValue = cs.loadCardChoice().map;
   store.delete?.("wingfoil.shareCard.map.v1");
 
+  // The hero (layout B v2): remembered, and anything unknown is clean jibes.
+  cs.saveCardChoice({ shape: "portrait", preset: "complete", map: false, hero: "max2s" });
+  out.heroRemembered = cs.loadCardChoice().hero;
+  store.set("wingfoil.shareCard.hero.v1", "lean");
+  out.heroUnknown = cs.loadCardChoice().hero;
+  store.delete?.("wingfoil.shareCard.hero.v1");
+
   // No storage at all: the defaults, and a write that is a silent no-op.
   store.clear();
   throwing = true;

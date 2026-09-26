@@ -1224,11 +1224,19 @@
       <button type="button" class="seg-btn" data-shape="square" aria-pressed="false">Square</button>
       <button type="button" class="seg-btn" data-shape="landscape" aria-pressed="false">Landscape</button>
     </div>
-    <div class="seg" role="group" aria-label="Detail">
+    <!-- The session card's big number (layout B v2). Only the heroes this session can carry
+         are shown; the labels are written by js/sharecard.js from presentation.card. -->
+    <div class="seg" role="group" aria-label="Big number" id="card-hero-row">
+      <button type="button" class="seg-btn" data-hero="clean" aria-pressed="true">Clean jibes</button>
+      <button type="button" class="seg-btn" data-hero="max2s" aria-pressed="false">Top speed</button>
+      <button type="button" class="seg-btn" data-hero="tacks" aria-pressed="false">Tacks</button>
+    </div>
+    <!-- The period card keeps its two presets. -->
+    <div class="seg" role="group" aria-label="Detail" id="card-preset-row" hidden>
       <button type="button" class="seg-btn" data-preset="complete" aria-pressed="true">Complete</button>
       <button type="button" class="seg-btn" data-preset="lean" aria-pressed="false">Lean</button>
     </div>
-    <p class="note" id="card-preset-note"></p>
+    <p class="note" id="card-preset-note" hidden></p>
     <!-- The map background. Off by default, and hidden outright for a recording with no
          geographic anchor — the only control on this dialog that reaches the network, which
          is why it says so on its own line rather than in the fine print at the bottom. -->
