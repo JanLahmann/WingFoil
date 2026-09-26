@@ -80,6 +80,8 @@ public struct Period: Sendable, Equatable, Identifiable {
     /// against the shared fixture like every other field here.
     public let mapGround: Bool
     public let block: [PeriodBlock.Entry]
+    /// The period card's story beyond the block (layout B v2) — `library.period_card`.
+    public let card: PeriodCard
 
     public var id: String { key }
 }
@@ -347,7 +349,42 @@ extension LibraryStore {
             startDate: first.map(dayKey), endDate: last.map(dayKey),
             sessionIds: picked.map(\.id), sessions: picked.count,
             mapGround: anchored && f.spots == 1,
-            block: PeriodBlock.entries(f))
+            block: PeriodBlock.entries(f),
+            card: card(picked))
+    }
+
+    /// The period card's story beyond the block — the twin of `library.period_card`.
+    ///
+    /// Summed numerators, and "absent is never 0": a row saved before a field existed adds
+    /// nothing, and a period none of whose rows can answer has no answer. The dry rate
+    /// divides by the timer hours of exactly the rows whose ladder it counts.
+    static func card(_ rows: [SessionRow]) -> PeriodCard {
+        func sum(_ pick: (SessionRow) -> Int?) -> Int? {
+            let values = rows.compactMap(pick)
+            return values.isEmpty ? nil : values.reduce(0, +)
+        }
+        let laddered = rows.filter {
+            $0.turnsFlewThrough != nil && $0.turnsTouchdown != nil && $0.turnsFellIn != nil
+        }
+        let outcomes: PeriodCard.Outcomes? = laddered.isEmpty ? nil : PeriodCard.Outcomes(
+            flewThrough: laddered.reduce(0) { $0 + ($1.turnsFlewThrough ?? 0) },
+            touchdown: laddered.reduce(0) { $0 + ($1.turnsTouchdown ?? 0) },
+            fellIn: laddered.reduce(0) { $0 + ($1.turnsFellIn ?? 0) })
+        let jibes = sum { $0.jibes }
+        let tacks = sum { $0.tacks }
+        var card = PeriodCard(outcomes: outcomes, jibes: jibes, tacks: tacks,
+                              flewStreak: rows.compactMap(\.longestFlewStreak).max(),
+                              dryStreak: rows.compactMap(\.longestDryStreak).max(),
+                              falls: sum { $0.wetExits })
+        if let outcomes {
+            card.dryKind = (tacks ?? 0) == 0 && jibes == outcomes.total ? "jibes" : "turns"
+            let timer = laddered.reduce(0.0) { $0 + $1.timerSeconds }
+            if timer > 0 {
+                card.dryRate = KeyMetrics.rate(
+                    Double(outcomes.flewThrough + outcomes.touchdown) / (timer / 3600))
+            }
+        }
+        return card
     }
 
     /// Every number the block prints, summed the way the metric means it.

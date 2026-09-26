@@ -8,9 +8,10 @@
  *
  * **The stats ARE the key-metrics block**, and since round 3 of ADR-033 that is true by
  * construction rather than by agreement: both read the presentation document, where
- * `card.tiles` *are* the `block` cells minus the two composites, each carrying the presets
- * it belongs to. A preset can only ever *drop* a tile; there is nothing here to reword,
- * reorder or invent one with, and nothing on a card is computed that is not in the block.
+ * `card.tiles` *are* the `block` cells minus the two composites. There is nothing here to
+ * reword, reorder or invent one with, and nothing on a card is computed that is not in the
+ * block. Since layout B v2 (26 Sep 2026) the card lays them out as a story — a hero, the
+ * outcome bars, the streak line and a ribbon — and the Lean/Complete presets are gone.
  * `fixtures/presentation/*.expected.json` pins the values themselves, once, for both
  * platforms.
  *
@@ -54,7 +55,7 @@ BRANDING.tagline = "Your WingFoil session, measured.";
 /** "analyze your wingfoil sessions free — cleanjibe.org", built rather than repeated. */
 BRANDING.line = `${BRANDING.cta} — ${BRANDING.site}`;
 
-/* --------------------------------------------------------------- shapes/presets */
+/* ---------------------------------------------------------------------- shapes */
 
 /**
  * Aspect of the exported image — the iOS pixel sizes exactly, because a card posted from
@@ -72,32 +73,6 @@ export const SHAPES = {
 export const SHAPE_ORDER = ["portrait", "square", "landscape"];
 
 export const isWide = (shape) => SHAPES[shape].w > SHAPES[shape].h;
-
-/**
- * How much of the block the card carries. Two, not a checklist of eight: the rider is
- * choosing between "a clean picture with the headline on it" and "the session, fully
- * reported", and every finer distinction is a decision taken at the moment they least want
- * to take one.
- */
-export const PRESETS = {
-  complete: { id: "complete", label: "Complete",
-              summary: "Everything the key-metrics block shows." },
-  lean: { id: "lean", label: "Lean",
-          summary: "Duration, distance, max 2 s and the jibe tally." },
-};
-
-export const PRESET_ORDER = ["complete", "lean"];
-
-/* What `lean` keeps — the five a rider quotes walking off the water — is not a list here
- * any more. Each tile of `card.tiles` carries the presets it belongs to
- * (`LEAN_CARD_KEYS` in lab/src/wingfoil_lab/presentation.py, `ShareCardStats.Preset
- * .leanKeys` in the kit), so a preset cannot invent an entry and the browser cannot hold a
- * second opinion about which five they are.
- *
- * **`falls` is lean too** (20 September 2026). The tally counts *jibe* outcomes and its
- * caption says "of 55 jibes", so a card that carried only the tally reported one fall on an
- * afternoon with three in it — two of them in a straight line. A card is read next to
- * nothing, so the honest number travels on both presets. */
 
 /* ---------------------------------------------------------------- the entries */
 
@@ -119,7 +94,7 @@ export { hm };
  * Each entry:
  *
  *   key     the document cell's own `key` — stable, and the same key names the same fact
- *           in the block, on the card and in a preset's key set
+ *           in the block and on the card
  *   label   exactly the words printed under the number on the page. A cell with something
  *           to qualify carries its caption after an em-dash separator (`CAPTION_SEP`) — the
  *           two tallies' "of 55 jibes" and "of 14 tacks", and the falls cell's split; the
@@ -185,7 +160,7 @@ const BLOCK_ONLY = new Set(["best5x10s", "alpha500"]);
 export const CAPTION_SEP = " — ";
 
 /**
- * The card's stat list: the block, filtered by the preset. Nothing else.
+ * The card's stat list: the block's tiles. Nothing else.
  *
  * There is deliberately no way to *add* a cell — no flight count, no foil percentage, no
  * longest flight. Those live in the tiles below the block, and a card that printed them
@@ -193,13 +168,10 @@ export const CAPTION_SEP = " — ";
  * next to the loud one. (iOS gives its clip *outro* a ninth longest-flight cell; the
  * exported card there does not get it either, and neither does this one.)
  */
-export function cardStats(doc, preset = "complete") {
-  // **The document's own tiles**, which *are* the block's cells minus the two composites,
-  // each carrying the presets it belongs to. A preset can only ever drop a tile: there is
-  // nothing here to reword, reorder or invent one with.
-  return (doc?.card?.tiles || [])
-    .filter((tile) => (tile.presets || []).includes(preset))
-    .map((tile) => entry(tile, 0));
+export function cardStats(doc) {
+  // **The document's own tiles**, which *are* the block's cells minus the two composites:
+  // there is nothing here to reword, reorder or invent one with.
+  return (doc?.card?.tiles || []).map((tile) => entry(tile, 0));
 }
 
 /* ------------------------------------------------------------ layout B v2
@@ -207,7 +179,7 @@ export function cardStats(doc, preset = "complete") {
  * The session card tells the jibe story (Jan, 26 Sep 2026): a hero number, the jibe
  * outcome bar, a tack bar when the session had tacks, the best streak, and one ribbon of
  * rates in words plus max 2 s, duration and distance. Every number is still a tile of
- * `card.tiles` — `cardStats(doc, "complete")`, which verify_presentation §5 holds to the
+ * `card.tiles` — `cardStats(doc)`, which verify_presentation §5 holds to the
  * block — and what this adds is the rider's choice of hero and the card's own words
  * (`presentation.card.*`, authored by the kit's `PresentationCopy.card`).
  *
@@ -220,14 +192,18 @@ export const cardWord = (key, args = {}, count) =>
   text(`presentation.card.${key}`, count === undefined ? args : { ...args, _count: count })
   ?? "";
 
-/** The three numbers a card can be headlined with, in picker order. Clean jibes is the
- *  default. */
+/** The numbers a card can be headlined with, in picker order. Clean jibes is the default.
+ *  `sessions` is the period card's alone, and a period card never offers `tacks`. */
 export const HEROES = {
   clean: { id: "clean", label: cardWord("optionClean") },
   max2s: { id: "max2s", label: cardWord("optionMax2s") },
   tacks: { id: "tacks", label: cardWord("optionTacks") },
+  sessions: { id: "sessions", label: cardWord("optionSessions") },
 };
+/** The session card's heroes, and the fallback order. */
 export const HERO_ORDER = ["clean", "max2s", "tacks"];
+/** The period card's heroes, and the fallback order. */
+export const PERIOD_HERO_ORDER = ["clean", "max2s", "sessions"];
 
 /** The flew / touchdown / fell words the bars' legend prints, from the glossary. */
 const legendWords = () => ["flewThrough", "touchdown", "fellIn"]
@@ -260,7 +236,7 @@ function fallSegments(count) {
  * `speedNote` is the positions-only disclaimer, kept only where a speed is on the card.
  */
 export function cardStory(doc, wanted = "clean", { dateLine = "", speedNote = null } = {}) {
-  const by = Object.fromEntries(cardStats(doc, "complete").map((e) => [e.key, e]));
+  const by = Object.fromEntries(cardStats(doc).map((e) => [e.key, e]));
   const tiles = Object.fromEntries((doc?.card?.tiles || []).map((t) => [t.key, t]));
   const jibesCounted = Boolean(tiles.cleanJibes);
   const cleanN = Number(tiles.cleanJibes?.value);
@@ -348,19 +324,15 @@ export function cardStory(doc, wanted = "clean", { dateLine = "", speedNote = nu
 
 /* ------------------------------------------------------------ the period card
  *
- * The second card kind, and the same card: three shapes, one footer, two presets, the
+ * The second card kind, and the same card: three shapes, one footer, layout B v2, the
  * rider's title and caption. What differs is what is being described — a week rather than
- * an afternoon — so the stats are the aggregate block `library.period_block` produced and
- * the date line is the period's span.
+ * an afternoon — so the numbers are the aggregate block `library.period_block` produced,
+ * the story facts beside it are `library.period_card`'s, and the date line is the span.
  *
- * Nothing here computes anything. `period.block` arrives from Python as `{key, label,
- * value}` strings, and the only thing this file is allowed to do with it is drop entries,
- * which is exactly the licence the session card's presets have.
+ * Nothing here computes a number. `period.block` arrives from Python as `{key, label,
+ * value}` strings and `period.card` as counts and one rate string; this file chooses the
+ * hero and puts the card's own words around them.
  */
-
-/** What the period card's `lean` preset keeps — the five a rider quotes about a holiday.
- *  Identical to `PeriodBlock.leanKeys` in the kit and `library.PERIOD_LEAN_KEYS`. */
-export const PERIOD_LEAN_KEYS = new Set(["sessions", "hours", "cleanJibes", "cph", "best2s"]);
 
 /**
  * Whether a period has a single ground worth drawing under it.
@@ -378,12 +350,108 @@ export const PERIOD_LEAN_KEYS = new Set(["sessions", "hours", "cleanJibes", "cph
  */
 export const periodMapAvailable = (period) => Boolean(period?.mapGround);
 
-/** The card's stat list for a period: the block, filtered by the preset. Nothing else — and,
- *  as on the session card, deliberately no way to *add* a cell. */
-export function periodCardStats(period, preset = "complete") {
-  const entries = (period?.block || []).map(
-    (e) => ({ key: e.key, label: e.label, value: e.value }));
-  return preset === "lean" ? entries.filter((e) => PERIOD_LEAN_KEYS.has(e.key)) : entries;
+/** The card's numbers for a period: the block, verbatim. Nothing else — and, as on the
+ *  session card, deliberately no way to *add* one. */
+export function periodCardStats(period) {
+  return (period?.block || []).map((e) => ({ key: e.key, label: e.label, value: e.value }));
+}
+
+/**
+ * **The period card's story** — layout B v2 for a trip, a month, a season or a range. The
+ * twin of `ShareCardStats.Story.make(period:hero:)` in the kit; both are pinned against
+ * fixtures/cards/period-stories.expected.json.
+ *
+ * Heroes: clean jibes → best 2 s → sessions. The one outcome bar is the jibe bar only when
+ * every counted turn of the period was a jibe (`card.dryKind`), the turn bar otherwise —
+ * a stored row carries no tack ladder to draw a tack bar from. With 0 clean jibes the clean
+ * number and clean jibes / h are left out, as on the session card.
+ */
+export function periodCardStory(period, wanted = "clean") {
+  const block = Object.fromEntries((period?.block || []).map((e) => [e.key, e]));
+  const card = period?.card || {};
+  const cleanN = Number(block.cleanJibes?.value);
+  const clean = block.cleanJibes && cleanN > 0 ? cleanN : null;
+  const speed = block.best2s || null;
+
+  const heroOptions = [];
+  if (clean !== null) heroOptions.push("clean");
+  if (speed) heroOptions.push("max2s");
+  if ((period?.sessions || 0) > 0) heroOptions.push("sessions");
+  const kind = heroOptions.includes(wanted) ? wanted : (heroOptions[0] ?? null);
+
+  const jibes = card.jibes ?? 0;
+  const ofJibes = text("presentation.caption.ofJibes", { jibes: String(jibes), _count: jibes });
+  let hero = null;
+  if (kind === "clean") {
+    hero = { kind, value: String(clean), unit: cardWord("heroClean", {}, clean), sub: ofJibes };
+  } else if (kind === "max2s") {
+    const [value, unit] = splitUnit(speed.value);
+    hero = { kind, value, unit, sub: cardWord("heroMax2s") };
+  } else if (kind === "sessions") {
+    const spots = block.spots?.value ?? "1";
+    hero = { kind, value: String(period.sessions),
+             unit: cardWord("heroSessions", {}, period.sessions),
+             sub: cardWord("heroSessionsSpots", { spots }, Number(spots)) };
+  }
+
+  const bars = [];
+  const o = card.outcomes;
+  const total = o ? o.flewThrough + o.touchdown + o.fellIn : 0;
+  if (o && total > 0) {
+    const isJibes = card.dryKind === "jibes";
+    let right = isJibes
+      ? (kind === "clean" ? null : ofJibes)
+      : text("presentation.caption.ofTurns", { turns: String(total), _count: total });
+    let star = false;
+    if (kind !== "clean" && clean !== null) {
+      right = `${right ?? ""} · ${cardWord("barClean", { clean: String(clean) })}`;
+      star = true;
+    }
+    bars.push({ kind: isJibes ? "jibes" : "turns",
+                label: cardWord(isJibes ? "barJibes" : "barTurns"),
+                flewThrough: o.flewThrough, touchdown: o.touchdown, fellIn: o.fellIn,
+                right, star });
+  }
+
+  const streak = [];
+  const parts = [[card.flewStreak, "glossary.flewThrough", "flew"],
+                 [card.dryStreak, "glossary.dry", "paper"]]
+    .filter(([value]) => value !== null && value !== undefined);
+  if (parts.length) {
+    streak.push({ text: `${cardWord("streak")} `, role: "muted" });
+    parts.forEach(([value, id, role], i) => {
+      if (i) streak.push({ text: " · ", role: "muted" });
+      streak.push({ text: String(value), role });
+      streak.push({ text: ` ${text(id, {}, FORM.short) ?? ""}`, role: "muted" });
+    });
+  }
+  const falls = Number.isInteger(card.falls) ? fallSegments(card.falls) : [];
+
+  const ribbon = [];
+  if (clean !== null && block.cph) {
+    ribbon.push({ key: "cph", label: cardWord("rateCph"), value: block.cph.value, clean: true });
+  }
+  if (card.dryRate) {
+    const jibesOnly = card.dryKind === "jibes";
+    ribbon.push({ key: jibesOnly ? "jph" : "tph",
+                  label: cardWord(jibesOnly ? "rateJph" : "rateTph"),
+                  value: card.dryRate, clean: false });
+  }
+  if (kind !== "sessions" && block.sessions) {
+    ribbon.push({ key: "sessions", label: block.sessions.label, value: block.sessions.value,
+                  clean: false });
+  }
+  if (block.hours) {
+    ribbon.push({ key: "hours", label: cardWord("ribbonHours"), value: block.hours.value,
+                  clean: false });
+  }
+  if (block.distance) {
+    ribbon.push({ key: "distance", label: block.distance.label, value: block.distance.value,
+                  clean: false });
+  }
+
+  return { dateLine: period?.dateLine || "", hero, heroOptions, bars, streak, falls, ribbon,
+           speedNote: null, legend: legendWords() };
 }
 
 /** Everything a period card prints. `tracks` are the outlines to stack behind it — the
@@ -392,12 +460,13 @@ export function periodCardStats(period, preset = "complete") {
  *  No disclaimer: the speed one is a claim about a single recording's speed channel, and
  *  marking a whole holiday because one afternoon came from a GPX would answer a question
  *  nobody asked. */
-export function periodCardContent(period, preset, text = {}, tracks = []) {
+export function periodCardContent(period, hero, text = {}, tracks = []) {
   return {
     title: cleanTitle(text.title) || period.title,
     dateLine: period.dateLine,
     note: cleanNote(text.note) || null,
-    stats: periodCardStats(period, preset),
+    stats: periodCardStats(period),
+    story: periodCardStory(period, HEROES[hero] ? hero : "clean"),
     disclaimer: null,
     tracks,
     track: null,
@@ -518,7 +587,7 @@ export function cardDisclaimer(meta) {
  *
  * So the two fields are transient: they feed this render, and they are remembered per
  * session on this device so that re-opening the dialog does not throw the sentence away.
- * That is the same promise `loadCardChoice` makes about the shape and the preset, one scope
+ * That is the same promise `loadCardChoice` makes about the shape and the hero, one scope
  * narrower — those are about the rider, these are about one afternoon.
  *
  * (iOS does have a session record, and there the title field is a *rename*: it writes to the
@@ -641,15 +710,14 @@ export function saveCardText(key, { title, note }) {
 
 /* ------------------------------------------------------------------- the store
  *
- * The rider's last shape and preset, per device — so the second card comes out the way the
+ * The rider's last shape, hero and map switch, per device — so the second card comes out the way the
  * first one did. Both reads and both writes are wrapped: `localStorage` throws outright in
  * a Safari private window and in a page opened from file://, and a share dialog that cannot
  * open because a preference could not be read would be the worst possible trade.
  */
 
 const LS_SHAPE = "wingfoil.shareCard.shape.v1";
-const LS_PRESET = "wingfoil.shareCard.preset.v1";
-/** The map background, per device — the rider's habit, like the shape and the preset.
+/** The map background, per device — the rider's habit, like the shape and the hero.
  *
  * **Off unless the stored value is exactly `"1"`.** Nothing else counts: an absent key, a
  * key somebody else wrote, a storage that throws — all of them are a plain card, which is
@@ -658,33 +726,30 @@ const LS_PRESET = "wingfoil.shareCard.preset.v1";
  * default that quietly made them would be a promise broken in the one place ("your file
  * never leaves this tab") the analyzer makes it loudest. */
 const LS_MAP = "wingfoil.shareCard.map.v1";
-/** The session card's hero (layout B v2), per device. Anything but a known hero is clean
+/** The card's hero (layout B v2), per device — one habit for both card kinds. Anything but a known hero is clean
  *  jibes, the default — `ShareCardHeroStore` in the kit. */
 const LS_HERO = "wingfoil.shareCard.hero.v1";
 
 /** An unreadable or unknown stored value falls back to the defaults: portrait (the shape a
- *  feed and a chat both show whole), complete (the numbers are the point of the card) and no
- *  map (the card as it has always been). */
+ *  feed and a chat both show whole), clean jibes and no map (the card as it has always
+ *  been). */
 export function loadCardChoice() {
-  let shape = null, preset = null, map = null, hero = null;
+  let shape = null, map = null, hero = null;
   try {
     shape = localStorage.getItem(LS_SHAPE);
-    preset = localStorage.getItem(LS_PRESET);
     map = localStorage.getItem(LS_MAP);
     hero = localStorage.getItem(LS_HERO);
   } catch { /* no storage: the defaults are perfectly good */ }
   return {
     shape: SHAPES[shape] ? shape : "portrait",
-    preset: PRESETS[preset] ? preset : "complete",
     map: map === "1",
     hero: HEROES[hero] ? hero : "clean",
   };
 }
 
-export function saveCardChoice({ shape, preset, map, hero = "clean" }) {
+export function saveCardChoice({ shape, map, hero = "clean" }) {
   try {
     localStorage.setItem(LS_SHAPE, shape);
-    localStorage.setItem(LS_PRESET, preset);
     localStorage.setItem(LS_MAP, map ? "1" : "0");
     localStorage.setItem(LS_HERO, HEROES[hero] ? hero : "clean");
   } catch { /* nothing to do about it, and nothing worth telling the rider */ }

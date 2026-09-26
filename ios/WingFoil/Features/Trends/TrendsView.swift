@@ -17,6 +17,8 @@ struct TrendsView: View {
     @State private var range = TrendRange.season
     @State private var points: [TrendPoint] = []
     @State private var weeks: [WeekBucket] = []
+    /// `UI_OPEN_PERIODS=1` pushes Periods for a screenshot — `simctl` cannot tap the button.
+    @State private var openPeriods = false
 
     enum TrendRange: String, CaseIterable, Identifiable {
         case fourWeeks = "4 w"
@@ -125,6 +127,10 @@ struct TrendsView: View {
                     }
                 }
             }
+            #if DEBUG && targetEnvironment(simulator)
+            .navigationDestination(isPresented: $openPeriods) { PeriodsView() }
+            .task { openPeriods = ProcessInfo.processInfo.environment["UI_OPEN_PERIODS"] == "1" }
+            #endif
             .refreshable { await reload() }
             .task(id: reloadKey) { await reload() }
         }

@@ -16,8 +16,9 @@ import Foundation
 /// into the card with no edit here, and the two cannot disagree because there is only one
 /// of them.
 ///
-/// The preset then chooses how much of that block the card shows (`Preset`). It can only
-/// ever *drop* entries — nothing on the card is computed here that is not in the block.
+/// Since layout B v2 (Jan, 26 Sep 2026) the card draws `story` — a hero, the outcome bars,
+/// the streak line and a ribbon — resolved from the same block; the Lean/Complete presets
+/// went with the tile grid they chose cells for.
 public struct ShareCardStats: Sendable, Equatable {
 
     /// One headline number with its label, in the order the card lays them out.
@@ -92,59 +93,6 @@ public struct ShareCardStats: Sendable, Equatable {
         public static let longestFlight = "longestFlight"
     }
 
-    /// How much of the key-metrics block the card carries.
-    ///
-    /// Two presets rather than a checklist of eight: the rider is choosing between "a clean
-    /// picture with the headline on it" and "the session, fully reported", and every finer
-    /// distinction than that is a decision taken at the moment they least want to take one.
-    ///
-    /// `complete` is the default and shows the block entire — the new rates and streaks are
-    /// the point of asking for them, and a card that hid them by default would be a feature
-    /// nobody found. `lean` is a strict *subset*: it can only remove entries, never
-    /// substitute or reword them, which is what keeps both presets honest against the app.
-    public enum Preset: String, CaseIterable, Sendable, Identifiable, Codable {
-        /// Duration, distance, the best 2 s window, and the jibe tally.
-        case lean
-        /// The whole key-metrics block, in its own order.
-        case complete
-
-        public var id: String { rawValue }
-
-        public var label: String {
-            switch self {
-            case .lean: "Lean"
-            case .complete: "Complete"
-            }
-        }
-
-        /// One line under the picker, so the choice is legible before it is made.
-        public var summary: String {
-            switch self {
-            case .lean: "Duration, distance, max 2 s, clean jibes and the jibe tally."
-            case .complete: "Everything the app's key-metrics block shows."
-            }
-        }
-
-        /// What `lean` keeps — the four a rider quotes walking off the water. Held as keys
-        /// rather than as a rebuilt list so the preset cannot invent an entry: anything not
-        /// produced by `KeyMetrics` is simply never there to be kept.
-        /// **`falls` is lean too** (20 September 2026). The tally counts jibe outcomes and
-        /// its caption says "of 57 jibes", so a card that showed only the tally reported
-        /// one fall on an afternoon with three in it — two of them in a straight line. A
-        /// card is read next to nothing, so the honest number travels on both presets.
-        public static let leanKeys: Set<String> = [
-            Key.duration, Key.distance, Key.maxSpeed, Key.cleanJibes, Key.tally, Key.falls,
-        ]
-
-        func keeps(_ key: String) -> Bool {
-            self == .complete || Self.leanKeys.contains(key)
-        }
-
-        public func filter(_ stats: [Stat]) -> [Stat] {
-            stats.filter { keeps($0.key) }
-        }
-    }
-
     /// Aspect of the exported image.
     public enum Shape: String, CaseIterable, Sendable, Identifiable {
         /// 1080 × 1350 — the tall format feeds and stories prefer.
@@ -197,31 +145,27 @@ public struct ShareCardStats: Sendable, Equatable {
     /// been. `SessionRow.shareNote`, already trimmed and capped by `SessionNaming.note`.
     ///
     /// **A second line of identity, not a ninth stat.** Everything in `stats` is the
-    /// key-metrics block and may not be added to (see `Preset`); this is the sender talking
+    /// key-metrics block and may not be added to; this is the sender talking
     /// to the receiver — "first 20 kn run", "cold and glassy" — which is a thing a picture in
     /// a chat thread wants and a metrics block cannot carry. It sits in the header where a
     /// caption belongs, so the contract that the card's *numbers* are the app's numbers is
     /// untouched by it.
     public let note: String?
     public let stats: [Stat]
-    /// The preset the stats were filtered through — carried so the renderer can size its
-    /// grid to the count without counting cases.
-    public let preset: Preset
     /// Set when the session's records cannot be certified, so the card cannot be read as
     /// a speed claim it has no right to make.
     public let disclaimer: String?
-    /// **The session card's layout B v2** — hero, bars, streak line, ribbon — resolved from
-    /// the same block as `stats`. nil on a period card, which keeps its grid of the period's
-    /// block (a period has no jibe ladder to tell a story with).
+    /// **Layout B v2** — hero, bars, streak line, ribbon — resolved from the same block as
+    /// `stats`, on the session card and the period card alike. nil only on the clip's
+    /// closing card, which lays out `stats` as its own grid.
     public let story: Story?
 
     public init(title: String, dateLine: String, note: String? = nil, stats: [Stat],
-                preset: Preset = .complete, disclaimer: String?, story: Story? = nil) {
+                disclaimer: String?, story: Story? = nil) {
         self.title = title
         self.dateLine = dateLine
         self.note = SessionNaming.note(note)
         self.stats = stats
-        self.preset = preset
         self.disclaimer = disclaimer
         self.story = story
     }
@@ -263,15 +207,13 @@ public struct ShareCardStats: Sendable, Equatable {
     /// `onlyVerified` the max-2 s cell comes off a class-(c) card entirely, and the
     /// disclaimer goes with it, because there is no longer a speed claim to qualify.
     public static func make(row: SessionRow, title: String, metrics: KeyMetrics? = nil,
-                            preset: Preset = .complete,
                             hero: Hero = .clean,
                             note: String? = nil,
                             policy: SpeedRecordPolicy = .preferVerified,
                             timeZone: TimeZone) -> ShareCardStats {
         let verified = row.sourceClass != "c"
         let recordStands = SpeedRecordRule.stands(verified: verified, policy: policy)
-        let all = metrics.map { stats(from: $0, preset: preset) }
-            ?? preset.filter(rowOnlyStats(row))
+        let all = metrics.map(stats(from:)) ?? rowOnlyStats(row)
         let disclaimer = verified || !recordStands ? nil : speedEstimated
         let start = startLine(row.startDate, timeZone: timeZone)
         let rowStats = rowOnlyStats(row).filter { recordStands || $0.key != Key.maxSpeed }
@@ -284,7 +226,6 @@ public struct ShareCardStats: Sendable, Equatable {
             dateLine: dateLine(row.startDate, timeZone: timeZone),
             note: note,
             stats: recordStands ? all : all.filter { $0.key != Key.maxSpeed },
-            preset: preset,
             disclaimer: disclaimer,
             story: story)
     }
@@ -317,12 +258,10 @@ public struct ShareCardStats: Sendable, Equatable {
     public static func outro(row: SessionRow, title: String, metrics: KeyMetrics? = nil,
                              longestFlightS: Double? = nil,
                              timeZone: TimeZone) -> ShareCardStats {
-        let base = make(row: row, title: title, metrics: metrics, preset: .complete,
-                        timeZone: timeZone)
+        let base = make(row: row, title: title, metrics: metrics, timeZone: timeZone)
         guard let flight = longestFlightStat(longestFlightS) else { return base }
         return ShareCardStats(title: base.title, dateLine: base.dateLine, note: base.note,
-                              stats: base.stats + [flight], preset: base.preset,
-                              disclaimer: base.disclaimer)
+                              stats: base.stats + [flight], disclaimer: base.disclaimer)
     }
 
     /// The longest flight as a cell, or nil when there was not one.
@@ -342,11 +281,10 @@ public struct ShareCardStats: Sendable, Equatable {
     /// where the session had tacks, the falls and the streaks, then the per-hour rates. Absent entries stay absent — a session with no wind axis has no
     /// jibe rate, and `KeyMetrics.rates` is empty rather than 0.0, so the card simply has
     /// two fewer cells (the same rule, because it is the same list).
-    public static func stats(from metrics: KeyMetrics, preset: Preset) -> [Stat] {
+    public static func stats(from metrics: KeyMetrics) -> [Stat] {
         var out = metrics.basics.map(Stat.init)
         out.append(Stat(metrics.maxSpeed))
-        // The clean jibes lead the turn cells, where the block draws them. Lean keeps them:
-        // the count rode on lean in the tally's caption until it became a cell.
+        // The clean jibes lead the turn cells, where the block draws them.
         if let clean = metrics.cleanJibes { out.append(Stat(clean)) }
         if let tally = metrics.tally { out.append(Stat(tally)) }
         // The tacks ride straight after the jibes, which is where the block draws them and
@@ -355,7 +293,7 @@ public struct ShareCardStats: Sendable, Equatable {
         if let falls = metrics.falls { out.append(Stat(falls)) }
         if let streaks = metrics.streaks { out.append(Stat(streaks)) }
         out.append(contentsOf: metrics.rates.map(Stat.init))
-        return preset.filter(out)
+        return out
     }
 
     /// The loading-state fallback — see `make`. Deliberately three cells and no tally.
@@ -380,27 +318,5 @@ public struct ShareCardStats: Sendable, Equatable {
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "d MMMM yyyy"
         return formatter.string(from: date)
-    }
-}
-
-/// The one stored copy of the rider's preset choice — per user, not per session, so the
-/// next card comes out the way the last one did.
-///
-/// Same shape as `MapLayerVisibilityStore`, and for the same reason: a preference the
-/// composer reads and writes belongs behind a testable pair of functions rather than in a
-/// `@AppStorage` scattered through a view. An unreadable or unknown stored value falls back
-/// to `complete` — the default is "show the rider everything they asked for", and a preset
-/// added in a later version must not silently strand an older app on a blank card.
-public enum ShareCardPresetStore {
-
-    public static let defaultsKey = "shareCardPreset.v1"
-
-    public static func load(from defaults: UserDefaults) -> ShareCardStats.Preset {
-        defaults.string(forKey: defaultsKey)
-            .flatMap(ShareCardStats.Preset.init(rawValue:)) ?? .complete
-    }
-
-    public static func save(_ preset: ShareCardStats.Preset, to defaults: UserDefaults) {
-        defaults.set(preset.rawValue, forKey: defaultsKey)
     }
 }

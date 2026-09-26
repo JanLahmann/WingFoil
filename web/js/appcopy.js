@@ -3014,6 +3014,14 @@ export const PRESENTATION = {
       "other": "clean jibes"
     },
     "heroMax2s": "top speed · best 2 s",
+    "heroSessions": {
+      "one": "session",
+      "other": "sessions"
+    },
+    "heroSessionsSpots": {
+      "one": "at one spot",
+      "other": "at {spots} spots"
+    },
     "heroTacks": {
       "one": "tack",
       "other": "tacks"
@@ -3026,11 +3034,13 @@ export const PRESENTATION = {
     },
     "optionClean": "Clean jibes",
     "optionMax2s": "Top speed",
+    "optionSessions": "Sessions",
     "optionTacks": "Tacks",
     "optionTitle": "Big number",
     "rateCph": "clean jibes / h",
     "rateJph": "dry jibes / h",
     "rateTph": "dry turns / h",
+    "ribbonHours": "time on the water",
     "speedEstimated": "speed estimated from GPS positions",
     "streak": "best streak"
   },

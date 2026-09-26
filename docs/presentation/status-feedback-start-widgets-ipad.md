@@ -154,7 +154,7 @@ Feedback), one line each — `Send map to watch ✓ 12 · ✗ 1`; then, on **one
 this build has that nobody opened, which is the half that decides what ships. **Extended**
 adds to each line the tries still without an answer, the first date, the last success, the
 last failure and its reason (a short code, never a file name or a place), the variants under
-it (the share card's shape, preset and background), and at the end the failure sentences the
+it (the share card's shape, hero and background), and at the end the failure sentences the
 phone showed, newest first, deduplicated with a count.
 
 The features are the table under "What the usage report counts" in docs/channels.md,

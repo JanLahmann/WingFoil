@@ -3,13 +3,13 @@ import WingFoilKit
 
 /// The **period card** composer — the session card's sheet, with a week on it.
 ///
-/// Everything here is the session composer's contract unchanged: three shapes, two presets,
-/// the rider's own title and one caption, an `ImageRenderer` at 3× and a `ShareLink` handing
+/// Everything here is the session composer's contract unchanged: three shapes, layout B v2
+/// with its hero picker, the rider's own title and one caption, an `ImageRenderer` at 3× and a `ShareLink` handing
 /// the PNG straight to the share sheet with nothing uploaded. What differs is what is being
 /// described, and therefore two things:
 ///
-/// * the stats are the aggregate block (`ShareCardStats.make(period:)`), not a session's
-///   key-metrics block;
+/// * the numbers are the aggregate block and its story facts (`ShareCardStats.make(period:)`),
+///   not a session's key-metrics block, and the third hero is the session count;
 /// * the artwork is every session's outline stacked, because a period has no single ride and
 ///   picking one would be picking a favourite;
 /// * the map background is offered only where the period **has** one ground — every afternoon
@@ -27,10 +27,10 @@ struct PeriodShareView: View {
     @Environment(ThumbnailStore.self) private var thumbnails
 
     @State private var shape = ShareCardStats.Shape.portrait
-    /// Seeded from the last card the rider exported, and written back — the preset is a
-    /// preference about cards, not about this period, and it is the same preference the
-    /// session card reads.
-    @State private var preset = ShareCardPresetStore.load(from: .standard)
+    /// The big number. Seeded from the last card the rider exported, and written back on a
+    /// tap — a preference about cards, not about this period, and the same one the session
+    /// card reads (`ShareCardHeroStore`). A hero this period cannot carry falls back.
+    @State private var hero = ShareCardHeroStore.load(from: .standard)
     /// And so is the map switch: `wingfoil.shareCard.map.v1`, one habit per device, read and
     /// written by both composers. Honoured only where this period can offer a ground.
     @State private var wantsMap = ShareCardMapStore.load(from: .standard)
@@ -49,7 +49,7 @@ struct PeriodShareView: View {
     private var offersMap: Bool { period.mapGround }
 
     private var stats: ShareCardStats {
-        ShareCardStats.make(period: period, preset: preset,
+        ShareCardStats.make(period: period, hero: hero,
                             title: SessionNaming.customTitle(titleDraft),
                             note: noteDraft)
     }
@@ -74,11 +74,19 @@ struct PeriodShareView: View {
                     Button("Done") { dismiss() }
                 }
             }
-            .task { titleDraft = period.title }
+            .task {
+                titleDraft = period.title
+                // `UI_SHAPE` / `UI_HERO` photograph another shape or hero without writing the
+                // rider's stored choice — the session composer's hooks, on this sheet.
+                let environment = ProcessInfo.processInfo.environment
+                if let raw = environment["UI_SHAPE"],
+                   let wanted = ShareCardStats.Shape(rawValue: raw) { shape = wanted }
+                if let raw = environment["UI_HERO"],
+                   let wanted = ShareCardStats.Hero(rawValue: raw) { hero = wanted }
+            }
             .task(id: period.key) { await loadOutlines() }
             .task(id: mapKey) { await loadMap() }
             .task(id: renderKey) { render() }
-            .onChange(of: preset) { ShareCardPresetStore.save(preset, to: .standard) }
             // The session composer's trade, for the same reason: a card preview and an
             // export button do not fit the system's form sheet.
             .presentationSizing(.page)
@@ -141,17 +149,20 @@ struct PeriodShareView: View {
         }
         .pickerStyle(.segmented)
 
-        Picker("Stats", selection: $preset) {
-            ForEach(ShareCardStats.Preset.allCases) { Text($0.label).tag($0) }
+        // The big number (layout B v2): only the heroes this period can carry are offered,
+        // and with one left there is nothing to choose. The binding writes the preference
+        // itself, so only a tap is remembered.
+        if let options = stats.story?.heroOptions, options.count > 1 {
+            Picker(PresentationCopy.card("optionTitle"),
+                   selection: Binding(get: { stats.story?.hero?.kind ?? hero },
+                                      set: { chosen in
+                                          hero = chosen
+                                          ShareCardHeroStore.save(chosen, to: .standard)
+                                      })) {
+                ForEach(options) { Text($0.label).tag($0) }
+            }
+            .pickerStyle(.segmented)
         }
-        .pickerStyle(.segmented)
-
-        Text(preset == .lean
-             ? "Sessions, hours, clean jibes, CPH and max 2 s."
-             : "Everything the period block shows.")
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     /// **Offered only where the period has a ground.** Not offered-and-inert: a switch that is
@@ -205,7 +216,7 @@ struct PeriodShareView: View {
     // MARK: - Work
 
     private var renderKey: String {
-        "\(shape.rawValue)|\(preset.rawValue)|\(titleDraft)|\(noteDraft)|\(outlines.count)"
+        "\(shape.rawValue)|\(hero.rawValue)|\(titleDraft)|\(noteDraft)|\(outlines.count)"
             + "|\(map == nil ? 0 : 1)"
     }
 

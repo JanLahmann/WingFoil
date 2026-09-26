@@ -52,6 +52,11 @@ import Testing
             /// `c` is the recording that could not certify a speed; it is what pins the
             /// mark on the best-2 s series.
             let sourceClass: String
+            /// The period card's story (layout B v2): the tacks, the ladder over every
+            /// counted turn and the flew streak. `a6` has no ladder and no streak.
+            let tacks: Int
+            let outcomes: PeriodCard.Outcomes?
+            let longestFlewStreak: Int?
         }
         /// The per-session trend series the analyzer makes of the same ten afternoons.
         struct Trends: Decodable {
@@ -83,7 +88,6 @@ import Testing
             let seasonStartMonth: Int
             let minJibesForRate: Int
             let blockOrder: [String]
-            let leanKeys: [String]
         }
         struct Expected: Decodable {
             let kind: String
@@ -98,6 +102,7 @@ import Testing
             let sessions: Int
             let mapGround: Bool
             let block: [PeriodBlock.Entry]
+            let card: PeriodCard
             let start: String?
             let end: String?
         }
@@ -162,6 +167,11 @@ import Testing
                 row.best10sKn = session.best10sKn
                 row.engineJibesPerHour = session.jibesPerHour
                 row.engineTurnsPerHour = session.turnsPerHour
+                row.tacks = session.tacks
+                row.turnsFlewThrough = session.outcomes?.flewThrough
+                row.turnsTouchdown = session.outcomes?.touchdown
+                row.turnsFellIn = session.outcomes?.fellIn
+                row.longestFlewStreak = session.longestFlewStreak
                 try row.insert(db)
             }
         }
@@ -187,6 +197,7 @@ import Testing
         #expect(got.sessions == want.sessions, "\(label): session count")
         #expect(got.mapGround == want.mapGround, "\(label): mapGround")
         #expect(got.block == want.block, "\(label): block")
+        #expect(got.card == want.card, "\(label): card")
     }
 
     // MARK: - The contract
@@ -201,7 +212,6 @@ import Testing
         #expect(rules.seasonStartMonth == PeriodRules.seasonStartMonth)
         #expect(rules.minJibesForRate == SessionRecordKind.minJibesForRate)
         #expect(rules.blockOrder == PeriodBlock.order)
-        #expect(rules.leanKeys == PeriodBlock.leanKeys)
     }
 
     @Test func tripsMatchTheAnalyzer() async throws {
@@ -332,35 +342,127 @@ import Testing
 
     // MARK: - The period card
 
-    /// The card **is** the block — same entries, same order, same strings — and a preset can
-    /// only drop from it. The same contract `verify_presentation.py` 5 holds the session card
-    /// to, and 5d holds the analyzer's period card to, asked here of the phone's.
-    @Test func thePeriodCardIsTheBlockAndItsPresetOnlyDrops() async throws {
+    /// The card's numbers **are** the block — same entries, same order, same strings — and
+    /// its story (layout B v2) prints nothing the block and `Period.card` do not carry. The
+    /// same contract `verify_presentation.py` 5d holds the browser's period card to.
+    @Test func thePeriodCardIsTheBlockAndTellsItsStory() async throws {
         let fixture = try Self.loadFixture()
         let set = try await Self.library(fixture).periods()
         let periods = set.trips + set.months + set.seasons
         #expect(!periods.isEmpty)
 
         for period in periods {
-            let complete = ShareCardStats.make(period: period)
-            #expect(complete.stats.map(\.key) == period.block.map(\.key))
-            #expect(complete.stats.map(\.label) == period.block.map(\.label))
-            #expect(complete.stats.map(\.value) == period.block.map(\.value))
+            let card = ShareCardStats.make(period: period)
+            #expect(card.stats.map(\.key) == period.block.map(\.key))
+            #expect(card.stats.map(\.label) == period.block.map(\.label))
+            #expect(card.stats.map(\.value) == period.block.map(\.value))
             // The heading and the span are the period's own; the card re-derives neither.
-            #expect(complete.title == period.title)
-            #expect(complete.dateLine == period.dateLine)
+            #expect(card.title == period.title)
+            #expect(card.dateLine == period.dateLine)
             // A period spans several recordings, so the speed disclaimer — a claim about one
             // recording's speed channel — has nothing to attach to.
-            #expect(complete.disclaimer == nil)
+            #expect(card.disclaimer == nil)
 
-            let lean = ShareCardStats.make(period: period, preset: .lean)
-            let keep = Set(PeriodBlock.leanKeys)
-            #expect(lean.stats.map(\.key) == complete.stats.map(\.key).filter(keep.contains))
-            #expect(lean.stats.allSatisfy { stat in
-                complete.stats.contains { $0.key == stat.key && $0.value == stat.value }
-            }, "lean may drop an entry and may not reword one")
+            let story = try #require(card.story, "\(period.key): a period card tells a story")
+            #expect(story.dateLine == period.dateLine)
+            #expect(story.speedNote == nil)
+            #expect(!story.heroOptions.contains(.tacks))
+            #expect(story.heroOptions.contains(.sessions))
+            let values = Set(period.block.map(\.value))
+            for cell in story.ribbon where cell.key != "jph" && cell.key != "tph" {
+                #expect(values.contains(cell.value), "\(period.key): \(cell.key) is the block's")
+            }
+            if let o = period.card.outcomes {
+                #expect(story.bars.map(\.total) == [o.total])
+                #expect(story.bars.first?.kind == period.card.dryKind)
+            } else {
+                #expect(story.bars.isEmpty)
+            }
         }
     }
+
+    /// The hero falls back clean → top speed → sessions, and with 0 clean jibes the clean
+    /// number and clean jibes / h are left out (Jan, 26 Sep 2026).
+    @Test func thePeriodHeroFallsBackAndZeroCleanIsNeverPrinted() {
+        func period(clean: String?, best2s: String?, card: PeriodCard) -> Period {
+            var block = [PeriodBlock.Entry(key: "sessions", label: "sessions", value: "3"),
+                         PeriodBlock.Entry(key: "hours", label: "hours on the water",
+                                           value: "4.5 h"),
+                         PeriodBlock.Entry(key: "distance", label: "distance", value: "40.0 km")]
+            if let clean {
+                block.append(.init(key: "cleanJibes", label: "clean jibes", value: clean))
+                block.append(.init(key: "cph", label: "CPH · clean jibes per hour", value: "0.0"))
+            }
+            if let best2s { block.append(.init(key: "best2s", label: "best 2 s", value: best2s)) }
+            block.append(.init(key: "spots", label: "spots visited", value: "1"))
+            return Period(kind: .trip, key: "trip:x", title: "Garda", spot: "Garda",
+                          dateLine: "1 – 3 August 2026", spanShort: "1 – 3 Aug",
+                          startDate: "2026-08-01", endDate: "2026-08-03",
+                          sessionIds: ["a", "b", "c"], sessions: 3, mapGround: true,
+                          block: block, card: card)
+        }
+        let ladder = PeriodCard(outcomes: .init(flewThrough: 10, touchdown: 5, fellIn: 5),
+                                jibes: 20, tacks: 0, dryKind: "jibes", dryRate: "3.3",
+                                flewStreak: 4, dryStreak: 9, falls: 6)
+        let zero = Story.make(period: period(clean: "0", best2s: "15.50 kn", card: ladder),
+                              hero: .clean)
+        #expect(zero.heroOptions == [.max2s, .sessions])
+        #expect(zero.hero?.kind == .max2s)
+        #expect(zero.hero?.value == "15.50")
+        #expect(!zero.ribbon.contains { $0.key == "cph" })
+        #expect(zero.bars.first?.right == "of 20 jibes")
+        #expect(zero.bars.first?.star == false)
+        #expect(zero.ribbon.map(\.key) == ["jph", "sessions", "hours", "distance"])
+        #expect(zero.ribbon.map(\.label)
+                == ["dry jibes / h", "sessions", "time on the water", "distance"])
+
+        let noSpeed = Story.make(period: period(clean: "0", best2s: nil, card: ladder),
+                                 hero: .clean)
+        #expect(noSpeed.hero?.kind == .sessions)
+        #expect(noSpeed.hero?.unit == "sessions")
+        #expect(noSpeed.hero?.sub == "at one spot")
+        #expect(!noSpeed.ribbon.contains { $0.key == "sessions" })
+
+        let clean = Story.make(period: period(clean: "7", best2s: "15.50 kn", card: ladder),
+                               hero: .clean)
+        #expect(clean.hero?.value == "7")
+        #expect(clean.hero?.sub == "of 20 jibes")
+        #expect(clean.bars.first?.right == nil)
+        #expect(clean.ribbon.first?.key == "cph")
+        #expect(clean.streak.map(\.text).joined() == "best streak 4 flew · 9 dry")
+        #expect(clean.falls.map(\.text).joined() == "fell in 6 times")
+    }
+
+    /// **The period card's story is the shared fixture**: for every period the analyzer makes
+    /// of the ten afternoons and every hero, the kit's story is the browser's, word for word.
+    /// `fixtures/cards/period-stories.expected.json` is dumped by web/tools/card_parity.mjs
+    /// and held by verify_presentation.py §5d; this holds `Story.make(period:)` to it.
+    @Test func thePeriodStoryIsTheSharedFixture() async throws {
+        let url = testFixturesDir.appendingPathComponent("cards/period-stories.expected.json")
+        let fixture = try #require(try JSONSerialization.jsonObject(
+            with: Data(contentsOf: url)) as? [String: [String: Any]])
+        let loaded = try Self.loadFixture()
+        let store = try await Self.library(loaded)
+        let set = try await store.periods()
+        var periods = set.trips + set.months + set.seasons
+        for range in loaded.custom {
+            periods.append(try await store.periodBlock(from: range.start, to: range.end))
+        }
+        var checked = 0
+        for period in periods {
+            let want = try #require(fixture[period.key], "\(period.key): not in the fixture")
+            for hero in [ShareCardStats.Hero.clean, .max2s, .sessions] {
+                let got = DocumentRendererTests.json(Story.make(period: period, hero: hero))
+                let expected = try #require(want[hero.rawValue] as? [String: Any])
+                #expect(NSDictionary(dictionary: got).isEqual(to: expected),
+                        "\(period.key)/\(hero.rawValue): the kit's story is not the fixture's\n\(got)")
+                checked += 1
+            }
+        }
+        #expect(checked == 3 * fixture.count)
+    }
+
+    private typealias Story = ShareCardStats.Story
 
     /// The map ground is offered exactly where a period **has** one: every afternoon inside a
     /// single 3 km cluster, and every one of them placed by a fix.

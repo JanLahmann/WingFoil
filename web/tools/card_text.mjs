@@ -161,7 +161,7 @@ function roundTrip() {
 
 /* ------------------------------------------------------------- the map switch
  *
- * The rider's habit, per device — the same store the shape and the preset live in, one key
+ * The rider's habit, per device — the same store the shape and the hero live in, one key
  * wider. What is proved here is mostly one thing: **the map is off** unless somebody wrote
  * exactly the value this switch writes. It is the only control on the card that reaches the
  * network, so an absent key, a foreign key, a truthy-looking string and a browser with no
@@ -173,10 +173,10 @@ function choiceRoundTrip() {
   const out = {};
   out.defaultsBeforeAnythingIsWritten = cs.loadCardChoice();
 
-  cs.saveCardChoice({ shape: "landscape", preset: "lean", map: true });
+  cs.saveCardChoice({ shape: "landscape", map: true });
   out.afterTurningOn = cs.loadCardChoice();
   out.storedOn = store.get("wingfoil.shareCard.map.v1");
-  cs.saveCardChoice({ shape: "landscape", preset: "lean", map: false });
+  cs.saveCardChoice({ shape: "landscape", map: false });
   out.afterTurningOff = cs.loadCardChoice();
   out.storedOff = store.get("wingfoil.shareCard.map.v1");
 
@@ -189,7 +189,7 @@ function choiceRoundTrip() {
   store.delete?.("wingfoil.shareCard.map.v1");
 
   // The hero (layout B v2): remembered, and anything unknown is clean jibes.
-  cs.saveCardChoice({ shape: "portrait", preset: "complete", map: false, hero: "max2s" });
+  cs.saveCardChoice({ shape: "portrait", map: false, hero: "max2s" });
   out.heroRemembered = cs.loadCardChoice().hero;
   store.set("wingfoil.shareCard.hero.v1", "lean");
   out.heroUnknown = cs.loadCardChoice().hero;
@@ -201,7 +201,7 @@ function choiceRoundTrip() {
   out.withoutStorage = cs.loadCardChoice();
   let threw = false;
   try {
-    cs.saveCardChoice({ shape: "square", preset: "lean", map: true });
+    cs.saveCardChoice({ shape: "square", map: true });
   } catch { threw = true; }
   out.writeThrewWithoutStorage = threw;
   throwing = false;

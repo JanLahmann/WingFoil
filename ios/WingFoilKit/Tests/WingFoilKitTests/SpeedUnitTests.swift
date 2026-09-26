@@ -43,7 +43,7 @@ import Testing
         row.best2sKn = 13.209
         row.wetExits = 3
         let block = GlossaryLintTests.block(jibes: 50)
-        let card = ShareCardStats.stats(from: block, preset: .complete)
+        let card = ShareCardStats.stats(from: block)
 
         Speed.$override.withValue(.kmh) {
             #expect(KeyMetrics.knots(13.209) == "24.46 km/h")
@@ -51,8 +51,7 @@ import Testing
             #expect(TurnCoach.kn(13.2) == "24.4 km/h")
             #expect(KeyMetrics.make(summary: Self.summary(), records: Self.records())
                         .maxSpeed.value.hasSuffix("km/h"))
-            #expect(ShareCardStats.stats(from: GlossaryLintTests.block(jibes: 50),
-                                         preset: .complete)
+            #expect(ShareCardStats.stats(from: GlossaryLintTests.block(jibes: 50))
                         .first { $0.key == ShareCardStats.Key.maxSpeed }?
                         .value.hasSuffix("km/h") == true)
         }

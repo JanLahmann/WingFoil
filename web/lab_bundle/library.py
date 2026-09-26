@@ -1524,12 +1524,6 @@ PERIOD_BLOCK = [
     ("spots", "spots visited", _f_int),
 ]
 
-#: What the period card's `lean` preset keeps — the five a rider quotes about a holiday.
-#: Keys, not a rebuilt list, so the preset can only ever *drop* an entry: the same rule the
-#: session card's `LEAN_KEYS` follows and for the same reason.
-PERIOD_LEAN_KEYS = ["sessions", "hours", "cleanJibes", "cph", "best2s"]
-
-
 def _sum(ds: list, pick):
     """Σ over the digests that can answer, or None when *none* of them can.
 
@@ -1598,6 +1592,60 @@ def _period_facts(ds: list, spots: int) -> dict:
         "longestFlight": _max(ds, lambda d: _num(d.get("longestFlightS"))),
         "longestDryStreak": _max(ds, lambda d: _streak(d, "longestDryStreak")),
         "spots": float(spots),
+    }
+
+
+def _outcome_sum(ds: list):
+    """The three ladder counts summed over every digest that carries them, or None."""
+    rows = [(d.get("turns") or {}).get("outcomes") for d in ds]
+    rows = [r for r in rows if isinstance(r, dict)]
+    if not rows:
+        return None
+    return {key: sum(int(r.get(key) or 0) for r in rows)
+            for key in ("flewThrough", "touchdown", "fellIn")}
+
+
+def period_card(ds: list) -> dict:
+    """**What the period card tells beyond the block** (layout B v2, Jan, 26 Sep 2026).
+
+    The session card's story — an outcome bar, the best streak, the falls, a dry rate — read
+    off the stored rows the period is made of. Summed numerators, as everywhere in the block,
+    and the same "absent is never 0" rule: None where no row can answer.
+
+    **One outcome bar, not two.** A stored row carries the ladder over *every* counted turn
+    (`turns.outcomes`), not one per kind, so the bar is the jibe bar only when every counted
+    turn of the period was a jibe (`dryKind == "jibes"`), and the turn bar otherwise — never
+    a tack bar made up out of a total. The dry rate follows the bar: dry jibes an hour or dry
+    turns an hour, over the summed timer hours of the rows that carry the ladder.
+
+    `KeyMetrics`-free twin: `LibraryStore.card(_:)` in the kit, pinned against the same
+    fixture (fixtures/periods/periods.expected.json).
+    """
+    outcomes = _outcome_sum(ds)
+    jibes = _sum(ds, lambda d: _count((d.get("turns") or {}).get("jibes")))
+    tacks = _sum(ds, lambda d: _count((d.get("turns") or {}).get("tacks")))
+    # The dry rate's hours are the hours of the rows whose ladder it counts: an afternoon
+    # saved before the ladder existed adds nothing to the numerator, so it adds nothing
+    # to the denominator either.
+    laddered = [d for d in ds if isinstance((d.get("turns") or {}).get("outcomes"), dict)]
+    timer_s = _sum(laddered, _timer_s) or 0.0
+    rate_hours = timer_s / 3600.0 if timer_s > 0 else None
+    dry_kind = None
+    dry_rate = None
+    if outcomes is not None:
+        total = outcomes["flewThrough"] + outcomes["touchdown"] + outcomes["fellIn"]
+        dry_kind = "jibes" if not tacks and jibes == total else "turns"
+        if rate_hours is not None:
+            dry_rate = _f_rate((outcomes["flewThrough"] + outcomes["touchdown"]) / rate_hours)
+    return {
+        "outcomes": outcomes,
+        "jibes": jibes,
+        "tacks": tacks,
+        "dryKind": dry_kind,
+        "dryRate": dry_rate,
+        "flewStreak": _max(ds, lambda d: _streak(d, "longestFlewStreak")),
+        "dryStreak": _max(ds, lambda d: _streak(d, "longestDryStreak")),
+        "falls": _sum(ds, lambda d: _count(d.get("wetExits"))),
     }
 
 
@@ -1721,6 +1769,8 @@ def _period(kind: str, key: str, title: str, ds: list, members: list[int],
         # computes one of those.
         "mapGround": _map_ground(rows, spots),
         "block": period_block(rows, spots),
+        # The period card's story beyond the block — see `period_card`.
+        "card": period_card(rows),
     }
 
 
