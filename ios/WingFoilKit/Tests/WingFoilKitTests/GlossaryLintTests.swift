@@ -95,7 +95,7 @@ import Testing
     /// tally's and the outro's own cell. It is checked separately because it is the one
     /// artefact that leaves the device.
     @Test func everyShareCardLabelIsAGlossaryTerm() {
-        let stats = ShareCardStats.stats(from: Self.block(jibes: 50), preset: .complete)
+        let stats = ShareCardStats.stats(from: Self.block(jibes: 50))
             + [ShareCardStats.longestFlightStat(424)].compactMap { $0 }
         for stat in stats {
             #expect(Self.isKnown(stat.label),

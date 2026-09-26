@@ -515,7 +515,6 @@ import Testing
         #expect(block.speedExtras.map(\.label) == ["5×10 s", "alpha 500"])
         #expect(block.speedExtras.map(\.value) == ["11.50 kn", "—"])
         let stats = ShareCardStats.make(row: sampleRow(), title: "Torbole", metrics: block,
-                                        preset: .complete,
                                         timeZone: TimeZone(identifier: "UTC")!)
         #expect(!stats.stats.contains { $0.key == "best5x10s" || $0.key == "alpha500" })
     }
@@ -529,7 +528,6 @@ import Testing
         records.best2sKn = 13.209
         let block = KeyMetrics.make(summary: torboleSummary(), records: records)
         let stats = ShareCardStats.make(row: sampleRow(), title: "Torbole", metrics: block,
-                                        preset: .complete,
                                         timeZone: TimeZone(identifier: "UTC")!)
 
         #expect(stats.title == "Torbole")
@@ -558,14 +556,11 @@ import Testing
         var records = GP3SRecords()
         records.best2sKn = 13.209
         let block = KeyMetrics.make(summary: torboleSummary(), records: records)
-        for preset in ShareCardStats.Preset.allCases {
-            let stats = ShareCardStats.make(row: sampleRow(), title: "x", metrics: block,
-                                            preset: preset, timeZone: fixtureZone)
-            #expect(!stats.stats.contains { $0.key == "flights" },
-                    "\(preset.rawValue) still carries the flight count")
-            #expect(!stats.stats.contains { $0.key == "foilPct" })
-            #expect(!stats.stats.contains { $0.key == "longestFlight" })
-        }
+        let stats = ShareCardStats.make(row: sampleRow(), title: "x", metrics: block,
+                                        timeZone: fixtureZone)
+        #expect(!stats.stats.contains { $0.key == "flights" }, "the card carries the flight count")
+        #expect(!stats.stats.contains { $0.key == "foilPct" })
+        #expect(!stats.stats.contains { $0.key == "longestFlight" })
     }
 
     /// The **clip's closing card** is the block plus one cell, and that cell is the one thing
@@ -594,8 +589,7 @@ import Testing
 
         // Everything before it is the complete preset, cell for cell — the outro adds, it
         // never rewords.
-        let card = ShareCardStats.make(row: sampleRow(), title: "Torbole", metrics: block,
-                                       preset: .complete, timeZone: fixtureZone)
+        let card = ShareCardStats.make(row: sampleRow(), title: "Torbole", metrics: block, timeZone: fixtureZone)
         #expect(Array(outro.stats.dropLast()) == card.stats)
         #expect(outro.disclaimer == card.disclaimer)
         // …and the exported card itself is untouched: it stays the strict `KeyMetrics` mirror.
@@ -618,27 +612,6 @@ import Testing
         #expect(ShareCardStats.longestFlightStat(nil) == nil)
         #expect(ShareCardStats.longestFlightStat(0) == nil)
         #expect(ShareCardStats.longestFlightStat(65)?.value == "1:05")
-    }
-
-    /// Lean can only *remove*. If it ever substituted or reworded a cell it would be a
-    /// second vocabulary again, and the card would be free to disagree with the app.
-    @Test func leanPresetIsAStrictSubsetOfComplete() {
-        var records = GP3SRecords()
-        records.best2sKn = 13.209
-        let block = KeyMetrics.make(summary: torboleSummary(), records: records)
-        let complete = ShareCardStats.make(row: sampleRow(), title: "x", metrics: block,
-                                           preset: .complete, timeZone: fixtureZone).stats
-        let lean = ShareCardStats.make(row: sampleRow(), title: "x", metrics: block,
-                                       preset: .lean, timeZone: fixtureZone).stats
-
-        #expect(lean.map(\.key) == ["duration", "distance", "max2s", "cleanJibes", "tally"])
-        #expect(lean.count < complete.count)
-        for cell in lean {
-            #expect(complete.contains(cell), "\(cell.key) was reworded by the preset")
-        }
-        // The order the block reads in survives the filter.
-        #expect(lean.map(\.key) == complete.map(\.key).filter(lean.map(\.key).contains))
-        #expect(ShareCardStats.Preset.complete == ShareCardStats.Preset.allCases.last)
     }
 
     /// The rate cells disappear on a session with no hour to divide by — the same rule
@@ -683,20 +656,6 @@ import Testing
         #expect(stats.disclaimer != nil)
     }
 
-    /// A preference, not a per-session choice — and one that defaults to showing the whole
-    /// block, because a rider who never touched the picker asked for the app's own summary.
-    @Test func shareCardPresetSurvivesTheRoundTripAndDefaultsToComplete() throws {
-        let defaults = try scratchDefaults()
-        #expect(ShareCardPresetStore.load(from: defaults) == .complete)
-
-        ShareCardPresetStore.save(.lean, to: defaults)
-        #expect(ShareCardPresetStore.load(from: defaults) == .lean)
-
-        // A value from a build that knows a preset this one does not must not strand the
-        // composer on a blank card.
-        defaults.set("exhaustive", forKey: ShareCardPresetStore.defaultsKey)
-        #expect(ShareCardPresetStore.load(from: defaults) == .complete)
-    }
 
     /// The card names the app and where to find it, from one constant — the same one the
     /// invitation that travels with a shared FIT reads. Both halves have moved once already
@@ -845,8 +804,7 @@ import Testing
 
         // On the card it is a cell of its own, straight after the jibes, wearing the
         // ladder's counts so the renderer can ink them.
-        let stats = ShareCardStats.make(row: sampleRow(), title: "Torbole", metrics: block,
-                                        preset: .complete, timeZone: fixtureZone)
+        let stats = ShareCardStats.make(row: sampleRow(), title: "Torbole", metrics: block, timeZone: fixtureZone)
         #expect(stats.stats.map(\.key)
                 == ["duration", "distance", "avgSpeed", "max2s", "cleanJibes", "tally",
                     "tacks", "streaks", "cph", "tph", "wph"])
@@ -861,10 +819,6 @@ import Testing
         #expect(cell?.caption == "of 14 tacks")
         #expect(cell?.label == "flew · touch · fell")
         #expect(cell?.tally == block.tacks)
-        // Lean is still the four a rider quotes plus the falls: a tack tally is not one.
-        let lean = ShareCardStats.make(row: sampleRow(), title: "x", metrics: block,
-                                       preset: .lean, timeZone: fixtureZone)
-        #expect(!lean.stats.contains { $0.key == "tacks" })
     }
 
     /// One tack is "of 1 tack". Four of the corpus's afternoons have exactly one in them,
@@ -892,8 +846,7 @@ import Testing
         let block = KeyMetrics.make(summary: noJibes, records: records)
         #expect(block.tally?.caption == "of 51 turns")
         #expect(block.tacks == nil)
-        let stats = ShareCardStats.make(row: sampleRow(), title: "x", metrics: block,
-                                        preset: .complete, timeZone: fixtureZone)
+        let stats = ShareCardStats.make(row: sampleRow(), title: "x", metrics: block, timeZone: fixtureZone)
         #expect(!stats.stats.contains { $0.key == "tacks" })
     }
 

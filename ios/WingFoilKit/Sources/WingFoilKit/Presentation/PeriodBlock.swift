@@ -15,9 +15,8 @@ import Foundation
 /// than by an optional binding at draw time.
 ///
 /// **An entry the period cannot supply is omitted, never printed as a dash or a zero.** That
-/// is the block's half of the project's "absent is never 0" rule, and it is also what lets a
-/// card preset be a strict subset: a preset can only ever drop an entry, because anything the
-/// block did not produce was never there to keep.
+/// is the block's half of the project's "absent is never 0" rule, and it is also what lets the
+/// period card leave a number out rather than print a made-up one.
 public enum PeriodBlock {
 
     /// One line of the block. `key` is the contract with `library.PERIOD_BLOCK`.
@@ -60,12 +59,6 @@ public enum PeriodBlock {
         Key.sessions, Key.hours, Key.distance, Key.flights, Key.foilPct, Key.cleanJibes,
         Key.cph, Key.turns, Key.cleanJibeRate, Key.wph, Key.best2s, Key.best10s,
         Key.longestFlight, Key.longestDryStreak, Key.spots,
-    ]
-
-    /// What the period card's `lean` preset keeps — the five a rider quotes about a holiday.
-    /// Keys rather than a rebuilt list, the same rule `ShareCardStats.Preset.leanKeys` follows.
-    public static let leanKeys: [String] = [
-        Key.sessions, Key.hours, Key.cleanJibes, Key.cph, Key.best2s,
     ]
 
     /// Every number the block prints, before it is a string.
@@ -133,44 +126,82 @@ public enum PeriodBlock {
     }
 }
 
-// MARK: - The period card
+// MARK: - The period card's story
+
+/// **What the period card tells beyond the block** (layout B v2, Jan, 26 Sep 2026) — the
+/// twin of `library.period_card`, pinned against the same fixture.
+///
+/// The session card's story read off the stored rows a period is made of: the outcome
+/// ladder summed, the tacks and jibes beside it, the best two streaks, every fall, and a
+/// dry rate. Numbers, except the rate, which is the display string so the two platforms
+/// round it once and identically.
+///
+/// **One outcome bar, not two.** A row carries the ladder over *every* counted turn, not
+/// one per kind, so the bar is the jibe bar only when every counted turn of the period was
+/// a jibe (`dryKind == "jibes"`), and the turn bar otherwise — never a tack bar made up out
+/// of a total.
+public struct PeriodCard: Sendable, Equatable, Codable {
+    public struct Outcomes: Sendable, Equatable, Codable {
+        public let flewThrough: Int
+        public let touchdown: Int
+        public let fellIn: Int
+
+        public init(flewThrough: Int, touchdown: Int, fellIn: Int) {
+            self.flewThrough = flewThrough
+            self.touchdown = touchdown
+            self.fellIn = fellIn
+        }
+
+        public var total: Int { flewThrough + touchdown + fellIn }
+    }
+
+    public var outcomes: Outcomes?
+    public var jibes: Int?
+    public var tacks: Int?
+    /// "jibes" or "turns" — what the bar counts, and so which dry rate it is.
+    public var dryKind: String?
+    /// Dry turns (or jibes) an hour, one decimal, over the timer hours of the rows that
+    /// carry the ladder.
+    public var dryRate: String?
+    public var flewStreak: Int?
+    public var dryStreak: Int?
+    public var falls: Int?
+
+    public init(outcomes: Outcomes? = nil, jibes: Int? = nil, tacks: Int? = nil,
+                dryKind: String? = nil, dryRate: String? = nil, flewStreak: Int? = nil,
+                dryStreak: Int? = nil, falls: Int? = nil) {
+        self.outcomes = outcomes
+        self.jibes = jibes
+        self.tacks = tacks
+        self.dryKind = dryKind
+        self.dryRate = dryRate
+        self.flewStreak = flewStreak
+        self.dryStreak = dryStreak
+        self.falls = falls
+    }
+}
 
 extension ShareCardStats {
 
     /// **A period as a card** — the second card kind, and the same card.
     ///
-    /// Everything the session card contracts for holds here unchanged: the three shapes, the
-    /// footer with its mark, wordmark, call to action and QR, the two presets, the rider's own
-    /// title and one caption. What differs is only what is being *described* — a week rather
-    /// than an afternoon — so the stats are the aggregate block and the date line is the
-    /// period's span.
-    ///
-    /// The stats are the block **verbatim**, exactly as `make(row:…)` takes the rendered
-    /// `KeyMetrics` verbatim, and for the same reason: a card is read next to nothing, so it
-    /// is the last place either app may name a different number than the screen behind it.
-    /// A preset can only drop an entry (`PeriodBlock.leanKeys`), never reword or add one.
+    /// Layout B v2 since 26 Sep 2026, like the session card: the period's name and span, the
+    /// stacked tracks, a hero number (`Hero`), the outcome bar summed, the best streak and a
+    /// ribbon in words. `stats` stays the period's block verbatim — the card's numbers are the
+    /// screen's numbers — and `story` is what is drawn.
     ///
     /// **No disclaimer.** The speed disclaimer is a claim about one recording's speed channel;
     /// a period spans several, and marking a whole holiday because one afternoon came from a
     /// GPX would be answering a question nobody asked. The one speed on the card — best 2 s —
     /// is a record, and the records screen is where a record's certification is stated.
-    public static func make(period: Period, preset: Preset = .complete,
+    public static func make(period: Period, hero: Hero = .clean,
                             title: String? = nil, note: String? = nil) -> ShareCardStats {
         ShareCardStats(title: (title?.isEmpty == false ? title! : period.title),
                        dateLine: period.dateLine,
                        note: note,
-                       stats: periodStats(period.block, preset: preset),
-                       preset: preset,
-                       disclaimer: nil)
-    }
-
-    /// The block as cells, filtered by the preset. Held as keys so the preset cannot invent
-    /// one: anything `PeriodBlock` did not produce was never there to keep.
-    public static func periodStats(_ block: [PeriodBlock.Entry],
-                                   preset: Preset) -> [Stat] {
-        let stats = block.map { Stat(key: $0.key, label: $0.label, value: $0.value) }
-        guard preset == .lean else { return stats }
-        let keep = Set(PeriodBlock.leanKeys)
-        return stats.filter { keep.contains($0.key) }
+                       stats: period.block.map { Stat(key: $0.key, label: $0.label,
+                                                      value: $0.value) },
+                       disclaimer: nil,
+                       story: Story.make(period: period, hero: hero))
     }
 }

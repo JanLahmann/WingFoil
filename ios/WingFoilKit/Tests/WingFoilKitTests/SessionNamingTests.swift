@@ -410,7 +410,7 @@ import Testing
         #expect(captioned.stats == plain.stats)
         #expect(captioned.title == plain.title)
         #expect(captioned.dateLine == plain.dateLine)
-        #expect(captioned.preset == plain.preset)
+        #expect(captioned.story?.ribbon == plain.story?.ribbon)
         #expect(captioned.disclaimer == plain.disclaimer)
     }
 

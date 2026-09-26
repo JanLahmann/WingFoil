@@ -16,11 +16,14 @@ import Foundation
 public extension ShareCardStats {
 
     /// Which number the card is headlined with. The rider's choice, per device
-    /// (`ShareCardHeroStore`); clean jibes is the default.
+    /// (`ShareCardHeroStore`); clean jibes is the default. `sessions` is the period card's
+    /// alone — a session card never offers it, and a period card never offers `tacks`
+    /// (a stored row has no tack ladder to sub-caption it with).
     enum Hero: String, CaseIterable, Sendable, Identifiable, Codable {
         case clean
         case max2s
         case tacks
+        case sessions
 
         public var id: String { rawValue }
 
@@ -30,6 +33,7 @@ public extension ShareCardStats {
             case .clean: PresentationCopy.card("optionClean")
             case .max2s: PresentationCopy.card("optionMax2s")
             case .tacks: PresentationCopy.card("optionTacks")
+            case .sessions: PresentationCopy.card("optionSessions")
             }
         }
     }
@@ -151,7 +155,8 @@ public extension ShareCardStats {
                 heroNumber = HeroNumber(kind: .tacks, value: String(t.total),
                                         unit: PresentationCopy.card("heroTacks", count: t.total),
                                         sub: sub)
-            case nil:
+            case .sessions?, nil:
+                // `sessions` is never among a session's options.
                 heroNumber = nil
             }
 
@@ -222,6 +227,122 @@ public extension ShareCardStats {
             return Story(dateLine: dateLine, hero: heroNumber, heroOptions: options,
                          bars: bars, streak: streak, falls: falls, ribbon: ribbon,
                          speedNote: speed == nil ? nil : speedNote, legend: legendWords)
+        }
+
+        /// **The period card's story** (layout B v2 for a trip, a month, a season or a range):
+        /// the twin of `periodCardStory` in web/js/cardstats.js.
+        ///
+        /// Every number is the period's own — its block (`Period.block`) or the story facts
+        /// beside it (`Period.card`, `library.period_card`). Heroes: clean jibes → best 2 s →
+        /// sessions. The one outcome bar is the jibe bar only when every counted turn was a
+        /// jibe, and the turn bar otherwise. With 0 clean jibes the clean number and clean
+        /// jibes / h are left out, as on the session card.
+        public static func make(period: Period, hero wanted: Hero) -> Story {
+            let block = Dictionary(period.block.map { ($0.key, $0) },
+                                   uniquingKeysWith: { a, _ in a })
+            let card = period.card
+            let clean = block[PeriodBlock.Key.cleanJibes].flatMap { Int($0.value) }
+                .flatMap { $0 > 0 ? $0 : nil }
+            let speed = block[PeriodBlock.Key.best2s]
+
+            var options: [Hero] = []
+            if clean != nil { options.append(.clean) }
+            if speed != nil { options.append(.max2s) }
+            if period.sessions > 0 { options.append(.sessions) }
+            let kind: Hero? = options.contains(wanted) ? wanted : options.first
+
+            let jibes = card.jibes ?? 0
+            let ofJibes = PresentationCopy.text("presentation.caption.ofJibes",
+                                                args: ["jibes": String(jibes),
+                                                       "_count": String(jibes)]) ?? ""
+            var heroNumber: HeroNumber?
+            switch kind {
+            case .clean?:
+                let n = clean ?? 0
+                heroNumber = HeroNumber(kind: .clean, value: String(n),
+                                        unit: PresentationCopy.card("heroClean", count: n),
+                                        sub: ofJibes)
+            case .max2s?:
+                let (number, unit) = split(speed?.value ?? "—")
+                heroNumber = HeroNumber(kind: .max2s, value: number, unit: unit,
+                                        sub: PresentationCopy.card("heroMax2s"))
+            case .sessions?:
+                let spots = block[PeriodBlock.Key.spots]?.value ?? "1"
+                heroNumber = HeroNumber(
+                    kind: .sessions, value: String(period.sessions),
+                    unit: PresentationCopy.card("heroSessions", count: period.sessions),
+                    sub: PresentationCopy.card("heroSessionsSpots", count: Int(spots),
+                                               ["spots": spots]))
+            case .tacks?, nil:
+                heroNumber = nil
+            }
+
+            var bars: [Bar] = []
+            if let o = card.outcomes, o.total > 0 {
+                let isJibes = card.dryKind == "jibes"
+                var right: String?
+                var star = false
+                if isJibes {
+                    right = kind == .clean ? nil : ofJibes
+                } else {
+                    right = PresentationCopy.text("presentation.caption.ofTurns",
+                                                  args: ["turns": String(o.total),
+                                                         "_count": String(o.total)])
+                }
+                if kind != .clean, let clean {
+                    right = (right ?? "") + " · "
+                        + PresentationCopy.card("barClean", ["clean": String(clean)])
+                    star = true
+                }
+                bars.append(Bar(kind: isJibes ? "jibes" : "turns",
+                                label: PresentationCopy.card(isJibes ? "barJibes" : "barTurns"),
+                                flewThrough: o.flewThrough, touchdown: o.touchdown,
+                                fellIn: o.fellIn, right: right, star: star))
+            }
+
+            var streak: [Segment] = []
+            let parts: [(Int, String, String)] = [
+                card.flewStreak.map { ($0, "glossary.flewThrough", "flew") },
+                card.dryStreak.map { ($0, "glossary.dry", "paper") },
+            ].compactMap { $0 }
+            if !parts.isEmpty {
+                streak.append(Segment(text: PresentationCopy.card("streak") + " ", role: "muted"))
+                for (i, part) in parts.enumerated() {
+                    if i > 0 { streak.append(Segment(text: " · ", role: "muted")) }
+                    streak.append(Segment(text: String(part.0), role: part.2))
+                    streak.append(Segment(text: " " + (PresentationCopy.text(
+                        part.1, glossary: .short) ?? ""), role: "muted"))
+                }
+            }
+            let falls = card.falls.map(fallSegments) ?? []
+
+            var ribbon: [Cell] = []
+            if clean != nil, let cph = block[PeriodBlock.Key.cph] {
+                ribbon.append(Cell(key: "cph", label: PresentationCopy.card("rateCph"),
+                                   value: cph.value, clean: true))
+            }
+            if let rate = card.dryRate {
+                let jibesOnly = card.dryKind == "jibes"
+                ribbon.append(Cell(key: jibesOnly ? "jph" : "tph",
+                                   label: PresentationCopy.card(jibesOnly ? "rateJph" : "rateTph"),
+                                   value: rate, clean: false))
+            }
+            if kind != .sessions, let sessions = block[PeriodBlock.Key.sessions] {
+                ribbon.append(Cell(key: sessions.key, label: sessions.label,
+                                   value: sessions.value, clean: false))
+            }
+            if let hours = block[PeriodBlock.Key.hours] {
+                ribbon.append(Cell(key: hours.key, label: PresentationCopy.card("ribbonHours"),
+                                   value: hours.value, clean: false))
+            }
+            if let distance = block[PeriodBlock.Key.distance] {
+                ribbon.append(Cell(key: distance.key, label: distance.label,
+                                   value: distance.value, clean: false))
+            }
+
+            return Story(dateLine: period.dateLine, hero: heroNumber, heroOptions: options,
+                         bars: bars, streak: streak, falls: falls, ribbon: ribbon,
+                         speedNote: nil, legend: legendWords)
         }
 
         /// The card before the analysis has loaded: the three facts the index row carries

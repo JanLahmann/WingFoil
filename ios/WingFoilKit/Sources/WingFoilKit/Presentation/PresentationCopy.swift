@@ -150,6 +150,9 @@ public enum PresentationCopy {
         "heroTacks": Line("tacks", one: "tack"),
         "heroTacksDry": Line("{dry} dry"),
         "heroTacksBeside": Line("{dry} dry · beside {jibes}"),
+        // The period card's third hero (26 Sep 2026): how many afternoons, and where.
+        "heroSessions": Line("sessions", one: "session"),
+        "heroSessionsSpots": Line("at {spots} spots", one: "at one spot"),
         "jibeCount": Line("{jibes} jibes", one: "1 jibe"),
         "barJibes": Line("jibes"),
         "barTacks": Line("tacks"),
@@ -161,11 +164,13 @@ public enum PresentationCopy {
         "rateCph": Line("clean jibes / h"),
         "rateJph": Line("dry jibes / h"),
         "rateTph": Line("dry turns / h"),
+        "ribbonHours": Line("time on the water"),
         "speedEstimated": Line("speed estimated from GPS positions"),
         "optionTitle": Line("Big number"),
         "optionClean": Line("Clean jibes"),
         "optionMax2s": Line("Top speed"),
         "optionTacks": Line("Tacks"),
+        "optionSessions": Line("Sessions"),
     ]
 
     /// One of the card's own words, with its singular form where `count` is 1.

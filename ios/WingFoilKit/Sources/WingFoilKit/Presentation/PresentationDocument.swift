@@ -43,9 +43,6 @@ public enum PresentationDocument {
     /// so the copy lint can see which labels a rider can reach.
     public static let offeredRowMetrics = RowMetric.allCases.map(\.rawValue).sorted()
 
-    /// `ShareCardStats.Preset.leanKeys`, sorted so the document has one spelling of a set.
-    public static let leanCardKeys = ShareCardStats.Preset.leanKeys.sorted()
-
     /// Keys that may never reach a card — real numbers the app shows in the tiles below
     /// the block, which on a card would be a second, quieter answer to "was that a good
     /// session". Sorted, for the same reason.
@@ -158,7 +155,6 @@ public enum PresentationDocument {
             "defaults": .object([
                 "recordWindow": records["default"] ?? .null,
                 "section": .string(SessionSection.ride.rawValue),
-                "cardPreset": .string(ShareCardStats.Preset.complete.rawValue),
                 "rowMetrics": .array(defaultRowMetrics.map(PresentationValue.string)),
                 "speedRecordPolicy": .string(policy.rawValue),
             ]),
@@ -360,24 +356,19 @@ public enum PresentationDocument {
     // MARK: - The card
 
     /// The share card is the block, re-laid-out — minus the two block-only speed cells.
-    /// Nothing is computed here that the block does not already carry: a preset can only
-    /// drop a tile, never reword, reorder or invent one.
+    /// Nothing is computed here that the block does not already carry: the card lays a tile
+    /// out and never rewords, reorders or invents one.
     static func cardSection(_ block: PresentationValue) -> PresentationValue {
         var tiles: [PresentationValue] = []
         for row in block["rows"]?.arrayValue ?? [] {
             for cell in row["cells"]?.arrayValue ?? [] {
                 guard let key = cell["key"]?.stringValue,
                       key != "best5x10s", key != "alpha500" else { continue }
-                var tile = cell.objectValue ?? [:]
-                tile["presets"] = .array(ShareCardStats.Preset.leanKeys.contains(key)
-                                         ? [.string("complete"), .string("lean")]
-                                         : [.string("complete")])
-                tiles.append(.object(tile))
+                tiles.append(cell)
             }
         }
         return .object([
             "tiles": .array(tiles),
-            "leanKeys": .array(leanCardKeys.map(PresentationValue.string)),
             "forbiddenKeys": .array(forbiddenCardKeys.map(PresentationValue.string)),
         ])
     }

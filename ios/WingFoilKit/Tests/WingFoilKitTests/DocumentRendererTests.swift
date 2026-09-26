@@ -101,7 +101,8 @@ import Testing
         for (stem, document) in try Self.everyDocument() {
             let want = try #require(fixture[stem], "\(stem): not in the story fixture")
             let metrics = KeyMetrics.make(block: document["block"] ?? .null)
-            for hero in ShareCardStats.Hero.allCases {
+            // The session card's heroes; `sessions` is the period card's alone.
+            for hero in [ShareCardStats.Hero.clean, .max2s, .tacks] {
                 let story = ShareCardStats.Story.make(metrics: metrics,
                                                       maxSpeed: metrics.maxSpeed,
                                                       hero: hero, dateLine: "",
@@ -168,20 +169,11 @@ import Testing
             let tiles = (document["card"]?["tiles"]?.arrayValue ?? [])
                 .compactMap { $0["key"]?.stringValue }
             let stats = ShareCardStats.stats(from: KeyMetrics.make(block: document["block"]
-                                                                   ?? .null),
-                                             preset: .complete)
+                                                                   ?? .null))
             #expect(stats.map(\.key) == tiles,
                     "\(stem): the card's tiles are not the document's, in its order")
-
-            // And a preset may only drop: `lean` is a subset, never a substitution.
-            let lean = ShareCardStats.stats(from: KeyMetrics.make(block: document["block"]
-                                                                  ?? .null), preset: .lean)
-            #expect(Set(lean.map(\.key)).isSubset(of: Set(tiles)),
-                    "\(stem): lean invented a tile")
-            let leanKeys = Set((document["card"]?["leanKeys"]?.arrayValue ?? [])
-                .compactMap(\.stringValue))
-            #expect(Set(lean.map(\.key)) == Set(tiles).intersection(leanKeys),
-                    "\(stem): lean is not the document's lean set")
+            // The Lean/Complete presets went with the tile grid (26 Sep 2026).
+            #expect(document["card"]?["leanKeys"] == nil, "\(stem): a preset set survived")
         }
     }
 
@@ -189,7 +181,7 @@ import Testing
     /// vocabulary, which is the defect `ShareCardStats` was written to stop.
     @Test func everyTileIsItsBlockCellVerbatim() throws {
         let block = KeyMetrics.make(block: try Self.document(Self.stem)["block"] ?? .null)
-        let stats = ShareCardStats.stats(from: block, preset: .complete)
+        let stats = ShareCardStats.stats(from: block)
         let byKey = Dictionary(uniqueKeysWithValues: stats.map { ($0.key, $0) })
 
         for metric in block.basics + block.speedExtras + [block.maxSpeed] {
