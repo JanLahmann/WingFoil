@@ -34,7 +34,8 @@ mismatch was found anywhere in the repo.** Nothing was changed; there was nothin
 | watchOS `BrandMark-Beta.imageset` | beta | red BETA label | red BETA label | match |
 | watchOS `BrandMark-Dev.imageset` | dev | mirrored | mirrored | match |
 | watchOS `ChannelArt.swift` (start page) | all three | same flags as the phone's | matches | match |
-| watch complication `ComplicationMark.imageset` | all three | **not** in `docs/channels.md`'s list of places the treatment reaches; template-rendering (tinted by the watch face), one asset, no `-Beta`/`-Dev` variant, no channel compile flag on the `WingFoilWatchWidgets` target in `project.yml` | single asset, un-mirrored, un-badged, used by every channel | **not a mismatch — by design.** A red badge would be discarded by template tinting anyway; mirroring the shape *would* survive tinting and isn't done, but the contract doesn't ask for it here. Flagged for Jan's call, not changed. |
+| watch complication `ComplicationMark.imageset` | release / beta | plain mark (a red BETA label would be lost to the face's template tint) | plain, un-badged, template-rendering | match |
+| watch complication `ComplicationMark-Dev.imageset` | dev | mirrored (Jan, 26 Sep 2026) | `ComplicationMark.png` flipped left-right, no new art; picked under `#if DEV`, which `project.yml` defines on the `WingFoilWatchWidgets` target's `Dev Debug` / `Dev Release` only | match |
 | Garmin launcher icon, all 4 native sizes (40/54/60/65) | release | mark as drawn | mark as drawn | match |
 | Garmin launcher icon, all 4 sizes | beta | red BETA label (plain red block below 14 px label height, per `docs/channels.md`) | red BETA label / block | match |
 | Garmin launcher icon, all 4 sizes | dev | mirrored | mirrored | match |
@@ -63,9 +64,11 @@ mismatch was found anywhere in the repo.** Nothing was changed; there was nothin
   current release artwork today. There is no drift between the masters and any committed cut.
 - The web site is single-channel and carries only the release mark, consistently, on every
   page.
-- Two things look like they *could* be mismatches and are not, because they sit outside
-  `docs/channels.md`'s list on purpose: the watch complication (tinted, un-mirrored,
-  un-badged — no channel compile flag wired for it at all) and the two Garmin store-listing
-  cover images (their own, separately documented, ribbon/plain treatment).
+- The watch complication was flagged here as un-mirrored in every channel; Jan decided on
+  26 September 2026 that dev wears the mirror (`ComplicationMark-Dev`) and beta and release
+  keep the plain one, and it is wired so.
+- The two Garmin store-listing cover images look like they *could* be mismatches and are
+  not: they sit outside `docs/channels.md`'s list on purpose (their own, separately
+  documented, ribbon/plain treatment).
 - Nothing was fixed because nothing was broken. No iOS asset changed, so no iOS build was run
   for this audit.
