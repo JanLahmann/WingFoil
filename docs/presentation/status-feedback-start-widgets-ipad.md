@@ -109,7 +109,7 @@ the mail is `MFMailComposeViewController`, every line of it is editable, and the
 CleanJibe server for it to go to in any case. Where Mail is not configured
 (`canSendMail == false`) the same subject and body go to the system's `mailto:` handler; where
 that too goes nowhere, a sheet shows the report in full with one button that copies it. The
-help topic is "Sending feedback", last in *Getting set up* — the section's way back out.
+help topic is "Sending feedback", in *Something wrong?* since 26 September 2026.
 
 **And that topic offers the mail rather than only describing it** (Jan, dev 65). It named
 three doors and had none: a page about sending feedback that asks the reader to go and find

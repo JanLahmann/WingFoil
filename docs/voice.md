@@ -150,7 +150,7 @@ retired for rider text. It lives on in code comments and in `docs/`, where it be
 - `docs/copy/check_release_copy.py` — the lexicon, on the kit, the watch, the site and the
   stores.
 - `web/tools/verify_unique.py` — a page's word budget and no sentence twice. `/help/` is
-  inside it because its ten sections are folds: a reference work is measured the way a
+  inside it because its seven sections are folds: a reference work is measured the way a
   reader meets it.
 - **`docs/copy/check_voice.py`:** over the kit's `Help/` and `Presentation/` string literals, the
   watch strings, the site's five document pages and the two store texts: no em-dash, no semicolon, no

@@ -1,7 +1,9 @@
 # Settings structure — proposal (F15a/e, 25 September 2026)
 
-Status: **the chips and the concise switch are built on `fb/r4-help`; the reorder below is a
-proposal for Jan.** No section moved, because no move was obviously better: today's order
+Status: **approved by Jan on 26 September 2026 and built on `fb/help-settings-2`**: the
+order below, one chip per section (question 4: per section, kept), the Beta footer split
+onto its rows, and no footer `?` under intervals.icu. On 25 September the chips and the
+concise switch were built on `fb/r4-help` and no section had moved, because no move was obviously better: today's order
 already follows Jan's list (sources → watch → analysis → list → units/records → sport →
 health → beta/dev → storage/backup/iCloud → about) except in two places, and both are
 judgement calls.

@@ -163,7 +163,7 @@ and the outcome tally spells itself out: `4 flew · 1 touch · 0 fell`, each wor
 number's ink. The key-metrics block is unchanged — its three counts already stand under a
 caption that says what they are out of.
 
-And **which three is the rider's**: Settings → Session list → *Row shows*, three pickers in
+And **which three is the rider's**: Settings → Session list, three pickers in
 the order the row draws them. The options are `RowMetric` in the kit — foil, flights, jibes,
 clean, turns, best 2 s, best 10 s, distance, time, dry streak, fell in — and each case owns its word,
 its glyph and how its value is spelled, so the picker, the row and the session page cannot

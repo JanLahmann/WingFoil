@@ -174,7 +174,7 @@ offered a choice he has no way to evaluate. Details is the tab about the *record
 riding, which is the question this row asks — not "what did you do", but "how should this be
 read". Changing it re-derives **this session and nothing else** (docs/algorithms/disciplines.md,
 "Disciplines"); the anchor is `discipline`, and `UI_DISCIPLINE=windsurfFin` sets it for a
-screenshot. Help: **Windsurf (experimental)**, under "Where the numbers come from" — on the
+screenshot. Help: **Windsurf (experimental)**, under Read the numbers → Effort & wind — on the
 Help index only while the switch is on, and reachable from this card's `?` either way.
 
 **The web has no override.** There is no per-session settings place on the session page to hang
