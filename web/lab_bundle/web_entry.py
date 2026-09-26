@@ -301,6 +301,10 @@ def _meta(a, disc=None) -> dict:
         "utcOffsetSource": a.track.start_utc_offset_source,
         "durationS": _num(s.get("total_elapsed_time")),
         "timerTimeS": _num(s.get("total_timer_time")) or round(a.clean.timer_time_s, 1),
+        # From the first GPS fix to the last (release round A, F-5). The second span the
+        # library's dedupe compares on: a watch left running in the van records on without
+        # a position, and a copy made of its fixes (Strava's, a GPX) spans the fixes alone.
+        "fixSpanS": _fix_span(df),
         "samples": int(len(df)),
         "sourceClass": caps.source_class,
         # **The rule, decided once, in Python.** `certified = source_class != "c"` is the
@@ -384,6 +388,17 @@ def _watch(s: dict) -> dict | None:
         out["jibeCount"] = None
     out = {k: v for k, v in out.items() if v is not None}
     return out or None
+
+
+def _fix_span(df):
+    """Seconds from the first record with a position to the last, or None without one.
+    The kit's `SessionIngestor.fixSpan`, on the parsed records rather than the samples."""
+    if df.empty or not {"timestamp", "lat", "lon"} <= set(df.columns):
+        return None
+    fixed = df["timestamp"][df["lat"].notna() & df["lon"].notna()]
+    if fixed.empty:
+        return None
+    return _num((fixed.iloc[-1] - fixed.iloc[0]).total_seconds())
 
 
 def _num(v):

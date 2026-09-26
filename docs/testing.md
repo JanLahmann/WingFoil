@@ -901,6 +901,11 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
      the same trigger an engine bump uses), that `reanalyzeStale()` re-derives them exactly
      once and fills `flight`/`turn`/`takeoff_attempt`/`record_effort`/`spot`, and that
      deleting a session cascades.
+   - `StravaImportTests` — the 13 June pair (docs/algorithms/imports.md, "One afternoon, one
+     session"): the FIT with 43 min of records past its last fix meets Strava's copy of its
+     fixes in both orders; the copy never replaces the FIT; the FIT replaces the copy on
+     the same row with name, caption, rider, gear and spot kept, and says so in one line.
+     The web twin is `verify_library` 1 and 1d, and `lab/tests/test_library.py`.
    - `LibraryTests` — the ±60 s/±60 s dedupe key under jitter (45 s ⇒ duplicate, 120 s ⇒
      new session); spot clustering on synthetic fixes *and* on the corpus (Nago-Torbole vs
      Rheinstetten), rename-survives-recluster, offline naming fallback; the `record_effort`

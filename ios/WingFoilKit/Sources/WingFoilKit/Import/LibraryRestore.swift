@@ -307,6 +307,11 @@ public struct LibraryRestore: Sendable {
             case .duplicate(let row):
                 target = row
                 summary.alreadyPresent += 1
+            case .replaced(let row, _):
+                // The backup's FIT replaced a positions-only copy of the same afternoon
+                // (F-6). The row and its gear are the local ones, so it is not fresh.
+                target = row
+                summary.imported += 1
             case .skipped(let reason):
                 summary.failed.append("\(backupRow.originalFilename ?? backupRow.id): \(reason)")
                 return

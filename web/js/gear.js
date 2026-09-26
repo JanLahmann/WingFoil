@@ -125,6 +125,18 @@ export async function assignGear(sessionId, kind, gearId) {
   announce();
 }
 
+/** A replaced session keeps its gear: the stored copy's assignment moves to the new id
+ *  (release round A F-6). Nothing moves when the new id already has gear of its own. */
+export async function moveGear(fromId, toId) {
+  if (!fromId || !toId || fromId === toId) return;
+  const all = { ...((await store.get(ASSIGNED, {})) || {}) };
+  if (!all[fromId] || all[toId]) return;
+  all[toId] = all[fromId];
+  delete all[fromId];
+  await store.put(ASSIGNED, all);
+  announce();
+}
+
 /** Every session assigned to one gear row, for the totals beside its name. */
 async function useCounts() {
   const all = (await store.get(ASSIGNED, {})) || {};

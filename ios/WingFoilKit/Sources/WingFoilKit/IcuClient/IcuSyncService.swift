@@ -15,6 +15,8 @@ public struct IcuSyncSummary: Sendable, Equatable {
     /// which tombstones to forget, and the tombstone's own id is the only thing that survives
     /// both halves of the matching rule.
     public var blockedTombstoneIds: [String] = []
+    /// The positions-only copies a FIT from intervals.icu replaced (F-6), as they were.
+    public var replaced: [SessionRow] = []
 
     public init() {}
 
@@ -30,8 +32,10 @@ public struct IcuSyncSummary: Sendable, Equatable {
         // him, not failing.
         if tombstoned > 0 { parts.append("\(tombstoned) previously deleted") }
         if !failed.isEmpty { parts.append("\(failed.count) failed") }
-        return "\(watersports) watersport session\(watersports == 1 ? "" : "s"): "
+        let tally = "\(watersports) watersport session\(watersports == 1 ? "" : "s"): "
             + parts.joined(separator: ", ")
+        guard let line = SessionIngestor.replacedLine(replaced) else { return tally }
+        return "\(line). \(tally)"
     }
 }
 
@@ -85,6 +89,7 @@ public struct IcuSyncService: Sendable {
                                                  source: .icu, icuActivityId: activity.id) {
                 case .imported: summary.imported += 1
                 case .duplicate: summary.duplicates += 1
+                case .replaced(_, let weaker): summary.replaced.append(weaker)
                 case .skipped: break            // no sport gate on hand-picked icu activities
                 }
             } catch {

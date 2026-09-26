@@ -515,33 +515,144 @@ struct StravaImportTests {
         #expect(try await ingestor.allSessions().isEmpty)
     }
 
-    /// **Known miss** (release round A finding F-5): a FIT that keeps recording after the
-    /// last fix — the watch left running in the van — spans every record, while Strava's copy
-    /// spans the fixes alone. The two-sided ±60 s duration check then calls them two
-    /// sessions, and the library holds the afternoon twice. Held here as a known issue so
-    /// the day the rule changes this test says so.
-    @Test func aFitWithAPositionlessTailIsNotYetMatchedToItsStravaCopy() async throws {
+    /// The first FIT in the corpus, 13 June 2026 at Rheinstetten: 43 minutes of records with
+    /// no position after its last fix (the watch left running in the van). Record span
+    /// 10 338 s, fix span 7 742 s — the pair release round A found as F-5.
+    private static func thirteenJune() throws -> (url: URL, fit: Data,
+            copy: (gpx: Data, activity: StravaActivity, fitSpanS: Double, fixSpanS: Double)) {
+        let url = try #require(findFixtureFIT(stem: "2026-06-13-1558_rheinstetten-windsurfen_native"))
+        let fit = try Data(contentsOf: url)
+        let copy = try stravaCopy(of: fit)
+        #expect(copy.fitSpanS - copy.fixSpanS > 120, "the fixture lost its position-less tail")
+        return (url, fit, copy)
+    }
+
+    /// **F-5, FIT first** (Jan, 26 Sep 2026): the FIT is compared on the span of its fixes as
+    /// well as on its records, so Strava's copy of the fixes lands on the FIT's row. And the
+    /// weaker copy never replaces the stronger one: the row keeps the FIT, its class, its
+    /// span and its archive, and only the provenance merges.
+    @Test func aFitWithAPositionlessTailIsMatchedToItsStravaCopy() async throws {
         let (ingestor, root) = try makeIngestor()
         defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
-        var picked: (URL, Data, (gpx: Data, activity: StravaActivity,
-                                 fitSpanS: Double, fixSpanS: Double))?
-        for url in allFixtureFITs() {
-            let data = try Data(contentsOf: url)
-            guard let copy = try? Self.stravaCopy(of: data) else { continue }
-            if copy.fitSpanS - copy.fixSpanS > 120 { picked = (url, data, copy); break }
+        let (url, fit, copy) = try Self.thirteenJune()
+        guard case .imported(let first) = try await ingestor.ingest(
+            fitData: fit, filename: url.lastPathComponent, source: .file) else {
+            Issue.record("expected a fresh import")
+            return
         }
-        let (url, fit, copy) = try #require(picked, "no fixture with a position-less tail")
-        _ = try await ingestor.ingest(fitData: fit, filename: url.lastPathComponent,
-                                      source: .file)
-        let outcome = try await ingestor.ingest(
+        guard case .duplicate(let row) = try await ingestor.ingest(
             fitData: copy.gpx, filename: StravaImport.filename(for: copy.activity),
-            source: .strava, utcOffsetS: 7200)
-        withKnownIssue("F-5: dedupe compares record span with fix span") {
-            guard case .duplicate = outcome else {
-                Issue.record("Strava's copy landed as a second session")
-                return
-            }
+            source: .strava, utcOffsetS: 7200) else {
+            Issue.record("Strava's copy landed as a second session")
+            return
         }
+        #expect(row.id == first.id)
+        #expect(row.importSource == "file+strava")
+        #expect(row.sourceClass == first.sourceClass)
+        #expect(row.sourceClass != "c")
+        #expect(row.durationS == first.durationS)
+        #expect(ingestor.archive.originalFormat(for: row.id) == .fit)
+        #expect(try await ingestor.allSessions().count == 1)
+        // The Import screen's "In your library" asks the same rule.
+        let start = try #require(copy.activity.startDate)
+        #expect(try await ingestor.holdsSession(startDate: start, durationS: copy.fixSpanS))
+    }
+
+    /// **F-6, Strava first** (Jan, 26 Sep 2026): the positions-only copy gives way to the
+    /// watch's FIT when it arrives later, on the same row. The rider's name, caption, rider,
+    /// gear and spot survive; the recording, the class and the numbers are the FIT's; and
+    /// the rider is told once, in one line.
+    @Test func aStravaCopyGivesWayToTheWatchsRecordingAndKeepsTheRidersEdits() async throws {
+        let (ingestor, root) = try makeIngestor()
+        defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
+        let (url, fit, copy) = try Self.thirteenJune()
+        guard case .imported(let strava) = try await ingestor.ingest(
+            fitData: copy.gpx, filename: StravaImport.filename(for: copy.activity),
+            source: .strava, utcOffsetS: 7200) else {
+            Issue.record("expected a fresh import")
+            return
+        }
+        #expect(strava.sourceClass == "c")
+
+        // The rider's edits, every kind the brief names.
+        let store = ingestor.library
+        let wing = try await store.saveGear(GearRow(name: "Duotone Unit 5 m", kind: .wing))
+        try await store.assignGear(sessionId: strava.id, kind: .wing, gearId: wing.id)
+        try await store.renameSession(id: strava.id, to: "Van day")
+        try await store.setShareNote(id: strava.id, to: "left the watch running")
+        try await store.setRider(id: strava.id, to: "Robert")
+        let moved = SpotRow(name: "Rheinstetten north", lat: 49.0, lon: 8.3)
+        try await ingestor.database.writer.write { db in
+            try moved.insert(db)
+            try db.execute(sql: "UPDATE session SET spotId = ? WHERE id = ?",
+                           arguments: [moved.id, strava.id])
+        }
+
+        guard case .replaced(let row, let weaker) = try await ingestor.ingest(
+            fitData: fit, filename: url.lastPathComponent, source: .icu,
+            icuActivityId: "i613") else {
+            Issue.record("expected the FIT to replace Strava's copy")
+            return
+        }
+        #expect(row.id == strava.id)
+        #expect(weaker.sourceClass == "c")
+        #expect(row.sourceClass != "c")
+        #expect(row.durationS == copy.fitSpanS)
+        #expect(row.importSource == "icu+strava")
+        #expect(row.icuActivityId == "i613")
+        #expect(ingestor.archive.originalFormat(for: row.id) == .fit)
+        #expect(try await ingestor.allSessions().count == 1)
+
+        let after = try #require(try await ingestor.session(id: strava.id))
+        #expect(after.customTitle == "Van day")
+        #expect(after.shareNote == "left the watch running")
+        #expect(after.rider == "Robert")
+        #expect(after.spotId == moved.id)
+        #expect(after.sourceClass == row.sourceClass)
+        #expect(after.engineVersion == ingestor.analysisVersion)
+        let gear = try await ingestor.database.writer.read { db in
+            try String.fetchAll(db, sql: "SELECT gearId FROM session_gear WHERE sessionId = ?",
+                                arguments: [strava.id])
+        }
+        #expect(gear == [wing.id])
+
+        // Told once, in rider words.
+        #expect(SessionIngestor.replacedLine([weaker])
+                == "Replaced the Strava copy of 13 June with your watch's recording")
+        var summary = ImportSummary()
+        summary.replaced = [weaker]
+        #expect(summary.shortDescription
+                == "Replaced the Strava copy of 13 June with your watch's recording")
+
+        // A second arrival of the FIT is an ordinary duplicate: the row is no longer weaker.
+        guard case .duplicate = try await ingestor.ingest(
+            fitData: fit, filename: url.lastPathComponent, source: .file) else {
+            Issue.record("expected the FIT again to be a duplicate")
+            return
+        }
+    }
+
+    /// The takeover rule on its own: positions-only gives way to speed, never the reverse,
+    /// and never to a copy as weak as itself. The direct stream's row keeps its own rule but
+    /// no longer gives way to a Strava copy, which has less in it than the stream.
+    @Test func onlyARecordingWithSpeedTakesOverAPositionsOnlyRow() {
+        var strava = SessionRow(startDate: Date(), durationS: 3600, sourceClass: "c")
+        strava.importSource = "strava"
+        #expect(SessionIngestor.yields(strava, to: .icu, sourceClass: "a"))
+        #expect(SessionIngestor.yields(strava, to: .file, sourceClass: "b"))
+        #expect(!SessionIngestor.yields(strava, to: .file, sourceClass: "c"))
+        var fit = SessionRow(startDate: Date(), durationS: 3600, sourceClass: "b")
+        fit.importSource = "icu"
+        #expect(!SessionIngestor.yields(fit, to: .strava, sourceClass: "c"))
+        #expect(!SessionIngestor.yields(fit, to: .file, sourceClass: "a"))
+        var direct = SessionRow(startDate: Date(), durationS: 3600, sourceClass: "a")
+        direct.importSource = "watchdirect"
+        #expect(SessionIngestor.yields(direct, to: .icu, sourceClass: "a"))
+        #expect(!SessionIngestor.yields(direct, to: .strava, sourceClass: "c"))
+        #expect(!SessionIngestor.yields(direct, to: .watchDirect, sourceClass: "a"))
+        #expect(SessionIngestor.replacedLine([]) == nil)
+        #expect(SessionIngestor.replacedLine([strava, strava])
+                == "Replaced 2 Strava copies with your watch's recordings")
     }
 
     /// The provenance tags have to stay apart: `strava` is its own source, and merges beside

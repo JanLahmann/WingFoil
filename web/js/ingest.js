@@ -10,11 +10,13 @@
  * session is this, and replace the stored copy? — and neither has an answer here: a
  * restore is a file the rider already answered for once, and its attribution travels with
  * it. A duplicate is skipped rather than replaced, which is the phone's own rule for a
- * restore: sessions you already have keep their own analysis.
+ * restore: sessions you already have keep their own analysis. The exception is the phone's
+ * too (F-6): a recording with speed replaces a positions-only copy, keeping rider and gear.
  */
 
 import { speedRecords } from "./appsettings.js";
 import { analyze, ask } from "./rpc.js";
+import { moveGear } from "./gear.js";
 import { listEntries, putSession } from "./store.js";
 
 /**
@@ -45,7 +47,18 @@ export async function ingest(bytes, name, { rider = null, example = false } = {}
     digestJson: JSON.stringify(digest),
     indexJson: JSON.stringify(index),
   });
-  if (hit.match) return { status: "duplicate", name, entry: index[hit.index] || null };
+  const existing = hit.match ? index[hit.index] || null : null;
+  // The one duplicate that is not skipped (release round A F-6, the phone's rule): a
+  // recording with speed takes the place of a positions-only copy, keeping its rider and
+  // its gear.
+  if (existing && hit.replacesWeaker) {
+    const entry = await putSession({ digest, analysisJson, fitBytes: keep,
+                                     replaceId: existing.id,
+                                     rider: existing.rider ?? rider, example });
+    await moveGear(existing.id, entry.id);
+    return { status: "added", replaced: true, name, entry };
+  }
+  if (hit.match) return { status: "duplicate", name, entry: existing };
 
   const entry = await putSession({ digest, analysisJson, fitBytes: keep, rider, example });
   return { status: "added", name, entry };
