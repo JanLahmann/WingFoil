@@ -324,7 +324,10 @@ def test_the_copy_file_carries_no_id_the_document_cannot_reach(documents):
       built here is the empty, honest answer (`docs/presentation/document.md`,
       "`divergence`"). The kit's `CopyContractTests.everyIdTheDocumentCanEmitHasAHome` is
       what covers them, against the resolver the phone actually calls;
-    * `banner` is the one sentence a renderer *builds* rather than names, like `turnKind`.
+    * `banner` is the one sentence a renderer *builds* rather than names, like `turnKind`;
+    * `card` is the share card's own words (layout B v2): the card renderers on the phone
+      and the web read them directly, and `card_parity` plus the kit's card story test hold
+      them, not the document.
     """
     used: list[str] = []
     for doc in list(documents.values()) + branch_documents():
@@ -338,7 +341,7 @@ def test_the_copy_file_carries_no_id_the_document_cannot_reach(documents):
     orphans = sorted(f"presentation.{group}.{key}"
                      for group, entries in presentation.items()
                      if isinstance(entries, dict) and not group.startswith("_")
-                     and group not in ("turnKind", "divergence", "banner")
+                     and group not in ("turnKind", "divergence", "banner", "card")
                      for key in entries
                      if f"presentation.{group}.{key}" not in reachable)
     assert not orphans, f"unreachable copy: {orphans}"
