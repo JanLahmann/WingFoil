@@ -205,7 +205,10 @@ final class ActivityNotifier: NSObject {
             guard !Task.isCancelled else { break }
             guard let activity = activities.first(where: { $0.id == notice.activityId })
             else { continue }
-            if case .imported = try? await service.fetchOne(activity) { imported += 1 }
+            switch try? await service.fetchOne(activity) {
+            case .imported?, .replaced?: imported += 1
+            default: break
+            }
         }
         return imported
     }

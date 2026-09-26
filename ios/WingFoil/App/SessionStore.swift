@@ -1211,6 +1211,9 @@ final class SessionStore {
                 status = row.isExample
                     ? "The example session is already in your library"
                     : "You already have this session — your own import kept"
+            case .replaced(let row, _):
+                landed = row.id
+                status = "Example session loaded — open it to look around"
             case .skipped:
                 status = nil
             }
