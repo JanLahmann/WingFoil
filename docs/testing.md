@@ -612,10 +612,9 @@ PNG in somebody else's chat thread — no re-render, no correction, nothing besi
 against — so it may not name a different number for a session than the key-metrics block on
 the page does. The *drawing* cannot be golden-tested; the *derivation* is a pure function and
 therefore is. `web/tools/card_parity.mjs` runs `keyMetrics` and `cardStats` under Node over
-every analysis golden and dumps three lists per fixture — the rendered block parsed back out
-of its own HTML, `complete`, and `lean` — and §5 asserts that `complete` **is** the rendered
-block (same entries, same order, same labels, same strings), that `lean` is that list filtered
-by the four contract keys and nothing else, that no tile-only cell (flight count, foil %,
+every analysis golden and dumps, per fixture, the rendered block parsed back out of its own
+HTML and the card's tiles (`complete`) — and §5 asserts that the tiles **are** the rendered
+block (same entries, same order, same labels, same strings), that no tile-only cell (flight count, foil %,
 longest flight) ever reaches a card, that the tally's three counts are the golden's own, and —
 in a third spelling of the same rules, written in Python — that the value strings themselves
 are right. It needs `node` on PATH and skips itself with a note when there is none.
@@ -915,12 +914,10 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    - `PresentationTests` — the phase-5 UI layer's *logic*, which is exactly the code whose
      mistakes are invisible in a screenshot. Help-catalogue completeness (every
      `HelpTopicID` case has written content, no duplicate or dangling topic links, search
-     hits body and item text); the share card's content — its `complete` preset is the
+     hits body and item text); the share card's content — its stats are the
      **key-metrics block, cell for cell** (same keys, same order, same labels, same strings,
-     the tally's three counts kept as counts), `lean` a strict *subset* of it that may only
-     remove entries, no flight count on either, "—" rather than a fabricated 0.00 kn, the
-     uncertified disclaimer, and the preset preference round-tripping through
-     `UserDefaults` with an unknown stored value degrading to `complete`; thumbnail geometry
+     the tally's three counts kept as counts), no flight count, "—" rather than a fabricated
+     0.00 kn, and the uncertified disclaimer; thumbnail geometry
      (aspect preserved — a straight-line track must land in a band, not stretched over the
      box; `contentBox` reports the band rather than the square, which is what lets the card
      fill its box; runs split at the phase change and share a vertex; the outcome and

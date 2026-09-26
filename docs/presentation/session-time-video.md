@@ -182,8 +182,9 @@ adds is the choice and the card's own words (`presentation.card.*`, authored by
 `verify_presentation.py` §5a re-derives the rule and asserts the words-to-footer gap on every
 shape, and `DocumentRendererTests.theCardStoryIsTheSharedFixture` holds the kit's.
 
-The **period card** keeps its grid and its two presets (`complete` / `lean`): a period has no
-jibe ladder to tell a story with.
+The **period card** tells the same story (26 Sep 2026) — see docs/presentation/trends-periods.md,
+"The period card". The Lean/Complete presets are gone from both cards, and with them the
+`presets` tags on `card.tiles`.
 
 **The rider gets a title and one caption, and neither is a cell** (schema v9). The card's
 header is the session's name, its date, and — when he wrote one — a single line of his own

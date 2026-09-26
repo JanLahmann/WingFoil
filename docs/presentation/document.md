@@ -112,8 +112,8 @@ about, and a tree comparison would pass it.
 }
 ```
 
-- `key` — the cell's stable identity. The same key names the same fact in the block, on the
-  card and in a preset's key set.
+- `key` — the cell's stable identity. The same key names the same fact in the block and on
+  the card.
 - `value` — raw, or `null` where the session produced none. A missing value is **absent,
   never 0** (`docs/presentation/labels.md`, "Formatter rules"): the renderer draws the
   em dash.
@@ -145,11 +145,12 @@ here re-derives a number.
 
 #### `card` — the share card
 
-`{"tiles": […], "leanKeys": […], "forbiddenKeys": […]}`. A tile **is** a block cell plus a
-`presets` list (`["complete"]` or `["complete", "lean"]`). The tiles are the block's cells in
-the block's order, minus `best5x10s` and `alpha500`: a card carries one speed, the one a
-rider quotes. A preset can only *drop* a tile — it may not reword, reorder or invent one, and
-`forbiddenKeys` names the tile-wall numbers that may never reach a card at all.
+`{"tiles": […], "forbiddenKeys": […]}`. A tile **is** a block cell, verbatim. The tiles are
+the block's cells in the block's order, minus `best5x10s` and `alpha500`: a card carries one
+speed, the one a rider quotes. The card lays them out (layout B v2) and may not reword,
+reorder or invent one, and `forbiddenKeys` names the tile-wall numbers that may never reach a
+card at all. The `presets` tags and `leanKeys` went with the Lean/Complete presets (26 Sep
+2026).
 
 #### `row` — the library row
 
@@ -245,7 +246,7 @@ only to stop the first two drifting.
 flew-through share's numerator. Side is the tack the turn was entered on, never the rotation.
 
 `defaults` is what a surface opens on: `recordWindow` (`best2s`, or `null`), `section`
-(`ride`), `cardPreset` (`complete`), `rowMetrics` (the default triple) and the
+(`ride`), `rowMetrics` (the default triple) and the
 `speedRecordPolicy` the document was built with.
 
 #### `divergence`, `notASession`
@@ -321,7 +322,7 @@ once by `lab/tests/test_presentation.py` and `GoldenTests.presentationDocumentMa
 | **3.** counts agree with the summary | **renderer-only, and deliberately.** It ties the document to the *analysis* document's own `summary`, which is the engine's half of the contract, not presentation's. It is the check that would catch `build_presentation` mis-reading the golden, so it outlives round 3 |
 | **4.** the same facts out of `web_entry` | **renderer-only.** It is about the browser's call path — Pyodide, the worker, `meta` — and the session clock and its note, which are `meta.utcOffsetSource` facts the analysis document does not carry. The document is built from an analysis and says nothing about how one was obtained |
 | **4 (session clock, clock note)** | **not carried, and still not.** `meta.utcOffsetS` / `utcOffsetSource` and the note's four cases belong in the document as a `clock` section with an id per rung; they were outside rounds 2 and 3 because the analysis golden has no `meta`, and the section stays |
-| **5.** the card is the block | **retired** — carried by `card.tiles` *are* `block` cells by construction, and `card.leanKeys` / `forbiddenKeys` are the preset contract. The verifier's third spelling of every value string is gone; what is left is one comparison of the rendered block against the card's `complete`, over every fixture at once |
+| **5.** the card is the block | **retired** — carried by `card.tiles` *are* `block` cells by construction, and `forbiddenKeys` is the card's contract. The verifier's third spelling of every value string is gone; what is left is one comparison of the rendered block against the card's tiles, over every fixture at once |
 | **5 (wrist under)** | **retired** — carried by `splash.marks[].title` / `.during`, as ids with arguments |
 | **5a.** the rate row on the three missing sessions | **retired** — carried by `block.rows[id=rates]`. The three synthetic cases live in the lab's `test_the_branches_no_corpus_fixture_is` |
 | **5b.** the rider's title and caption | **renderer-only, for ever.** A title and a caption are the sender's own words, not facts about the session; the document must not carry them. `statsUnchanged` — that the caption did not become a cell — is exactly what `card.tiles` makes structurally impossible |

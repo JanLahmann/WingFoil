@@ -171,9 +171,9 @@ hand-written test suites agreeing today is not two implementations that cannot d
   out of four is a good week and it is still not a rate. One constant on each side
   (`SessionRecordKind.minJibesForRate`, `library.MIN_JIBES_FOR_RATE`).
 - **An entry the period cannot supply is omitted** — never a dash, never a zero. That is the
-  block's half of "a missing value is absent, never 0", and it is also what lets a card
-  preset be a strict subset: anything the block did not produce was never there to keep. A
-  measured zero is still a value and prints as one (`0.0` swims per hour).
+  block's half of "a missing value is absent, never 0", and it is also what lets the card
+  leave a number out rather than print a made-up one. A measured zero is still a value and
+  prints as one (`0.0` swims per hour).
 - The formatters are the key-metrics block's own (`KeyMetrics.duration` / `km` / `knots` /
   `rate`, and their Python twins), so a duration on a period card reads the way a duration
   reads on a session card.
@@ -181,24 +181,39 @@ hand-written test suites agreeing today is not two implementations that cannot d
 ### The period card
 
 **A second card kind, and deliberately the same card.** Same three shapes at the same pixel
-sizes, same footer — mark, wordmark, `analyze your wingfoil sessions free — cleanjibe.org`,
-QR — same title-and-one-caption header, same two presets. Everything in "The share card
-carries the same block" above holds here unchanged; what differs is only what is being
-described.
+sizes, same footer — the mark, `CleanJibe · cleanjibe.org` above the tagline, QR — same
+title-and-one-caption header, and since 26 Sep 2026 the same **layout B v2**
+(docs/presentation/session-time-video.md, "The share card carries the same block"): the tracks, a hero number, the
+outcome bar, the best streak and one ribbon in words, packed from the footer up so every
+shape — the landscape included — keeps its words clear of the footer. There are no
+Lean/Complete presets any more. What differs is only what is being described.
 
 | | session card | period card |
 |---|---|---|
-| stats | the key-metrics block | the aggregate block |
-| `lean` | duration · distance · max 2 s · tally | sessions · hours · clean jibes · CPH · best 2 s |
-| date line | the session's day | the period's span |
+| numbers | the key-metrics block | the aggregate block, and `card` beside it (below) |
+| heroes | clean jibes → max 2 s → tacks | clean jibes → best 2 s → **sessions** ("12 sessions / at 3 spots") |
+| bars | jibes, and tacks where there were any | **one** bar: jibes when every counted turn was a jibe, turns otherwise |
+| ribbon | clean jibes / h · dry jibes or turns / h · max 2 s · duration · distance | clean jibes / h · dry jibes or turns / h · sessions · time on the water · distance |
+| date line | the session's day and start | the period's span |
 | title default | the session's name | the period's title |
 | artwork | the track outline | **the period's outlines, stacked** |
 | map background | optional, off by default | optional, off by default — **offered only where the period is one place** |
 | speed disclaimer | on a class-(c) source | never |
 
-- **A preset may only drop entries**, held as keys (`PeriodBlock.leanKeys`,
-  `library.PERIOD_LEAN_KEYS`, `PERIOD_LEAN_KEYS` in `js/cardstats.js`) — the same rule and
-  the same reason as the session card's.
+- **The story beyond the block is `period.card`** (`library.period_card`, `PeriodCard` in the
+  kit): the outcome ladder summed over the rows that carry it, the jibes and tacks, the best
+  flew and dry streaks, every fall, and the dry rate — dry turns (or jibes) over the timer
+  hours of those same rows, one decimal. A stored row carries the ladder over *every*
+  counted turn, not one per kind, so the bar is the jibe bar only when the period had no
+  tack and every counted turn was a jibe (`dryKind`), and the turn bar otherwise — never a
+  tack bar invented out of a total.
+- **With 0 clean jibes the clean number and clean jibes / h are left out**, as on the session
+  card, and the hero falls back to the best 2 s, then the session count. Only the heroes the
+  period can carry are offered; the choice is the session card's one stored preference.
+- `Story.make(period:hero:)` (kit) and `periodCardStory` (web/js/cardstats.js) are pinned
+  against `fixtures/cards/period-stories.expected.json`: card_parity.mjs dumps the
+  browser's for every fixture period and hero, `verify_presentation.py` §5d re-derives the
+  rule and asserts the words-to-footer gap on every shape, and `PeriodTests` holds the kit's.
 - **No disclaimer.** "Speeds from a degraded source" is a claim about *one* recording's
   speed channel; a period spans several, and marking a whole holiday because one afternoon
   came from a GPX would answer a question nobody asked. The one speed on the card is a

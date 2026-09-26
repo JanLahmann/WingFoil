@@ -131,7 +131,7 @@ Every one of these goes through `track()` in `web/js/track.js`.
 | `app-session-opened` | `from` (`library`/`record`/`trend`) | `js/app.js` `openStored` | which list people re-open a session from | 3 |
 | `app-tab-switched` | `tab` (the four) | `js/appshell.js`, the tab press only | are Records, Trends and Gear ever reached | 3 |
 | `app-menu-row-opened` | `row` (the five) | `js/appshell.js`, the app menu | which of the phone's five menu rows earns its place in the browser | 3 |
-| `app-card-made` | `how` (`download`/`share`), `kind` (`session`/`period`), `shape`, `hero` (session: `clean`/`max2s`/`tacks`) or `preset` (period), `map` | `js/sharecard.js`, after the PNG exists | **the growth channel.** Which shape and which hero or preset a card is actually made in, and whether the map background is on | 4 |
+| `app-card-made` | `how` (`download`/`share`), `kind` (`session`/`period`), `shape`, `hero` (`clean`/`max2s`/`tacks`, and `sessions` on a period), `map` | `js/sharecard.js`, after the PNG exists | **the growth channel.** Which shape and which hero a card is actually made in, and whether the map background is on | 4 |
 | `app-icu-sync-started` | — | `js/icu.js`, *List recent activities* | how many riders try the bridge at all | 3 |
 | `app-icu-sync-finished` | `activities` (the watersport count) | `js/icu.js`, after the list | does the bridge ever work from a browser | 3 |
 | `app-icu-sync-failed` | `reason` (`blocked`/`key`/`http`) | `js/icu.js` | `blocked` is the expected CORS wall; a rise in `key` is a wording problem in Settings | 3 |
