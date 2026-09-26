@@ -1153,6 +1153,12 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    channels only, like the row that opens it): both are taps `simctl` cannot make. Pair
    either with `UI_OPEN_SESSION=<name> UI_SHEET=share`.
 
+   **A period card**: `UI_TAB=trends UI_OPEN_PERIODS=1 UI_SHARE_PERIOD=trip|month|season`
+   pushes Periods and opens the first such period's composer; `UI_SHAPE` and `UI_HERO`
+   (`clean|max2s|sessions`) stage it without writing the stored choice. The library has to
+   be imported first (`UI_IMPORT_FIXTURES=1` runs on the Sessions tab, so launch once with it
+   alone).
+
    **A screenshot in km/h** needs no hook of its own. Settings → Units is a tap `simctl`
    cannot make, but the choice is an ordinary stored default, so passing it as a launch
    argument puts it in the argument domain and `SessionStore.init` reads it exactly as it
