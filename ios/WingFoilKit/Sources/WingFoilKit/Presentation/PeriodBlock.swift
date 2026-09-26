@@ -136,9 +136,11 @@ public enum PeriodBlock {
 /// dry rate. Numbers, except the rate, which is the display string so the two platforms
 /// round it once and identically.
 ///
-/// **One outcome bar, not two.** A row carries the ladder over *every* counted turn, not
-/// one per kind, so the bar is the jibe bar only when every counted turn of the period was
-/// a jibe (`dryKind == "jibes"`), and the turn bar otherwise — never a tack bar made up out
+/// **A bar per turn kind** (GRDB v19, digest schema 14): `kinds` is the jibe ladder and the
+/// tack ladder summed over the rows, so the card draws the session card's jibe bar and tack
+/// bar. `outcomes` stays the ladder over *every* counted turn — the fallback for a period one
+/// of whose rows carries no split, where the bar is the jibe bar only when every counted turn
+/// was a jibe (`dryKind == "jibes"`) and the turn bar otherwise, never a tack bar made up out
 /// of a total.
 public struct PeriodCard: Sendable, Equatable, Codable {
     public struct Outcomes: Sendable, Equatable, Codable {
@@ -156,6 +158,9 @@ public struct PeriodCard: Sendable, Equatable, Codable {
     }
 
     public var outcomes: Outcomes?
+    /// The per-kind ladders summed, in `TurnKindTally.Kind` order — one entry per kind some
+    /// row counted, or nil when a row that carries `outcomes` does not carry the split.
+    public var kinds: [TurnKindTally]?
     public var jibes: Int?
     public var tacks: Int?
     /// "jibes" or "turns" — what the bar counts, and so which dry rate it is.
@@ -167,10 +172,11 @@ public struct PeriodCard: Sendable, Equatable, Codable {
     public var dryStreak: Int?
     public var falls: Int?
 
-    public init(outcomes: Outcomes? = nil, jibes: Int? = nil, tacks: Int? = nil,
-                dryKind: String? = nil, dryRate: String? = nil, flewStreak: Int? = nil,
-                dryStreak: Int? = nil, falls: Int? = nil) {
+    public init(outcomes: Outcomes? = nil, kinds: [TurnKindTally]? = nil, jibes: Int? = nil,
+                tacks: Int? = nil, dryKind: String? = nil, dryRate: String? = nil,
+                flewStreak: Int? = nil, dryStreak: Int? = nil, falls: Int? = nil) {
         self.outcomes = outcomes
+        self.kinds = kinds
         self.jibes = jibes
         self.tacks = tacks
         self.dryKind = dryKind
@@ -178,6 +184,74 @@ public struct PeriodCard: Sendable, Equatable, Codable {
         self.flewStreak = flewStreak
         self.dryStreak = dryStreak
         self.falls = falls
+    }
+}
+
+/// **One turn kind's outcome ladder** — the shape a stored row, a period and a card share
+/// (GRDB v19, digest schema 14, `library.period_card`'s `kinds`).
+///
+/// A jibe carries its clean count; a tack has no clean reading and carries none. A 360 has no
+/// ladder at all — a spin is not a maneuver attempt and feeds no outcome (docs/algorithms/
+/// turns.md, "360 spins") — so its entry is a count alone, and it exists only where the
+/// experimental detector ran, which today is nowhere.
+public struct TurnKindTally: Sendable, Equatable, Codable {
+    /// The kinds a stored row tallies one by one, in the order a card draws them.
+    public enum Kind: String, Sendable, Codable, CaseIterable {
+        case jibe, tack, threeSixty
+
+        /// Whether this kind has a flew / touchdown / fell ladder at all.
+        public var hasLadder: Bool { self != .threeSixty }
+    }
+
+    public let kind: Kind
+    public let count: Int
+    public let flewThrough: Int?
+    public let touchdown: Int?
+    public let fellIn: Int?
+    public let clean: Int?
+
+    /// A kind with a ladder; `count` is its total.
+    public init(kind: Kind, flewThrough: Int, touchdown: Int, fellIn: Int, clean: Int? = nil) {
+        self.kind = kind
+        self.count = flewThrough + touchdown + fellIn
+        self.flewThrough = flewThrough
+        self.touchdown = touchdown
+        self.fellIn = fellIn
+        self.clean = clean
+    }
+
+    /// A kind that is a count alone (the 360s).
+    public init(kind: Kind, count: Int) {
+        self.kind = kind
+        self.count = count
+        flewThrough = nil
+        touchdown = nil
+        fellIn = nil
+        clean = nil
+    }
+
+    /// The ladder as the card's outcome triple, or nil for a kind that has none.
+    public var outcomes: PeriodCard.Outcomes? {
+        guard let flewThrough, let touchdown, let fellIn else { return nil }
+        return PeriodCard.Outcomes(flewThrough: flewThrough, touchdown: touchdown, fellIn: fellIn)
+    }
+
+    /// The per-kind ladders of several rows, summed — one entry per kind some row counted.
+    /// The twin of `library._kind_sums` (after its all-or-nothing gate, which the caller keeps).
+    public static func sum(_ rows: [[TurnKindTally]]) -> [TurnKindTally] {
+        Kind.allCases.compactMap { kind in
+            let mine = rows.compactMap { row in row.first { $0.kind == kind } }
+            guard !mine.isEmpty else { return nil }
+            guard kind.hasLadder else {
+                return TurnKindTally(kind: kind, count: mine.reduce(0) { $0 + $1.count })
+            }
+            let cleans = mine.compactMap(\.clean)
+            return TurnKindTally(kind: kind,
+                                 flewThrough: mine.reduce(0) { $0 + ($1.flewThrough ?? 0) },
+                                 touchdown: mine.reduce(0) { $0 + ($1.touchdown ?? 0) },
+                                 fellIn: mine.reduce(0) { $0 + ($1.fellIn ?? 0) },
+                                 clean: cleans.isEmpty ? nil : cleans.reduce(0, +))
+        }
     }
 }
 

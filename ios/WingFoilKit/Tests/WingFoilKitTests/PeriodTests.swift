@@ -56,6 +56,20 @@ import Testing
             /// counted turn and the flew streak. `a6` has no ladder and no streak.
             let tacks: Int
             let outcomes: PeriodCard.Outcomes?
+            /// The same ladder per turn kind (digest schema 14 / GRDB v19). `a5` carries the
+            /// ladder and not the split — the row the back-fill could not reach — and `a6`
+            /// neither.
+            struct ByKind: Decodable {
+                struct Ladder: Decodable {
+                    let flewThrough: Int
+                    let touchdown: Int
+                    let fellIn: Int
+                    let clean: Int?
+                }
+                let jibe: Ladder
+                let tack: Ladder
+            }
+            let byKind: ByKind?
             let longestFlewStreak: Int?
         }
         /// The per-session trend series the analyzer makes of the same ten afternoons.
@@ -171,6 +185,14 @@ import Testing
                 row.turnsFlewThrough = session.outcomes?.flewThrough
                 row.turnsTouchdown = session.outcomes?.touchdown
                 row.turnsFellIn = session.outcomes?.fellIn
+                if let split = session.byKind {
+                    row.jibesFlewThrough = split.jibe.flewThrough
+                    row.jibesTouchdown = split.jibe.touchdown
+                    row.jibesFellIn = split.jibe.fellIn
+                    row.tacksFlewThrough = split.tack.flewThrough
+                    row.tacksTouchdown = split.tack.touchdown
+                    row.tacksFellIn = split.tack.fellIn
+                }
                 row.longestFlewStreak = session.longestFlewStreak
                 try row.insert(db)
             }
@@ -366,19 +388,58 @@ import Testing
             let story = try #require(card.story, "\(period.key): a period card tells a story")
             #expect(story.dateLine == period.dateLine)
             #expect(story.speedNote == nil)
-            #expect(!story.heroOptions.contains(.tacks))
             #expect(story.heroOptions.contains(.sessions))
             let values = Set(period.block.map(\.value))
             for cell in story.ribbon where cell.key != "jph" && cell.key != "tph" {
                 #expect(values.contains(cell.value), "\(period.key): \(cell.key) is the block's")
             }
-            if let o = period.card.outcomes {
+            // A bar per turn kind where every laddered row carries the split, and the
+            // tacks hero exactly where there is a tack bar; the one bar otherwise.
+            let kinds = period.card.kinds ?? []
+            let jibe = kinds.first { $0.kind == .jibe }
+            let tack = kinds.first { $0.kind == .tack }
+            if let jibe, jibe.count > 0 {
+                let want = [("jibes", jibe.count)]
+                    + (tack.map { $0.count > 0 ? [("tacks", $0.count)] : [] } ?? [])
+                #expect(story.bars.map(\.kind) == want.map(\.0), "\(period.key): bars")
+                #expect(story.bars.map(\.total) == want.map(\.1), "\(period.key): totals")
+                #expect(story.heroOptions.contains(.tacks) == ((tack?.count ?? 0) > 0))
+            } else if let o = period.card.outcomes {
                 #expect(story.bars.map(\.total) == [o.total])
-                #expect(story.bars.first?.kind == period.card.dryKind)
+                #expect(story.bars.first?.kind == (period.card.kinds == nil
+                                                    ? period.card.dryKind : "turns"))
+                #expect(!story.heroOptions.contains(.tacks))
             } else {
                 #expect(story.bars.isEmpty)
             }
         }
+        // The fixture pins both halves: per-kind bars for the Garda trip, the one turn bar
+        // where `a5` — the row the back-fill could not reach — is in the period.
+        let garda = try #require(set.trips.first { $0.sessionIds.contains("a1") })
+        #expect(garda.card.kinds?.map(\.kind) == [.jibe, .tack])
+        let september = try #require(set.months.first { $0.key == "2026-09" })
+        #expect(september.card.kinds == nil)
+        #expect(september.card.outcomes != nil)
+    }
+
+    /// The per-kind sums are every row's own ladder, added — and the 360 slot, empty on
+    /// every row, never becomes an entry.
+    @Test func thePeriodSumsEachTurnKind() async throws {
+        let fixture = try Self.loadFixture()
+        let set = try await Self.library(fixture).periods()
+        let garda = try #require(set.trips.first { $0.sessionIds.contains("a1") })
+        let rows = fixture.sessions.filter { garda.sessionIds.contains($0.id) }
+        let kinds = try #require(garda.card.kinds)
+        let jibe = try #require(kinds.first { $0.kind == .jibe })
+        let tack = try #require(kinds.first { $0.kind == .tack })
+        #expect(jibe.flewThrough == rows.reduce(0) { $0 + ($1.byKind?.jibe.flewThrough ?? 0) })
+        #expect(jibe.touchdown == rows.reduce(0) { $0 + ($1.byKind?.jibe.touchdown ?? 0) })
+        #expect(jibe.fellIn == rows.reduce(0) { $0 + ($1.byKind?.jibe.fellIn ?? 0) })
+        #expect(jibe.count == rows.reduce(0) { $0 + $1.jibes })
+        #expect(jibe.clean == rows.reduce(0) { $0 + $1.jibesSuccessful })
+        #expect(tack.count == rows.reduce(0) { $0 + $1.tacks })
+        #expect(tack.clean == nil)
+        #expect(!kinds.contains { $0.kind == .threeSixty })
     }
 
     /// The hero falls back clean → top speed → sessions, and with 0 clean jibes the clean
@@ -451,7 +512,7 @@ import Testing
         var checked = 0
         for period in periods {
             let want = try #require(fixture[period.key], "\(period.key): not in the fixture")
-            for hero in [ShareCardStats.Hero.clean, .max2s, .sessions] {
+            for hero in [ShareCardStats.Hero.clean, .max2s, .tacks, .sessions] {
                 let got = DocumentRendererTests.json(Story.make(period: period, hero: hero))
                 let expected = try #require(want[hero.rawValue] as? [String: Any])
                 #expect(NSDictionary(dictionary: got).isEqual(to: expected),
@@ -459,7 +520,7 @@ import Testing
                 checked += 1
             }
         }
-        #expect(checked == 3 * fixture.count)
+        #expect(checked == 4 * fixture.count)
     }
 
     private typealias Story = ShareCardStats.Story

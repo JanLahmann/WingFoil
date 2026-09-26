@@ -229,14 +229,37 @@ public extension ShareCardStats {
                          speedNote: speed == nil ? nil : speedNote, legend: legendWords)
         }
 
+        /// **What a period card draws for one turn kind** (GRDB v19) — its bar, the caption
+        /// beside it and, beside the jibe's (whose hero is the clean count), a hero of its own.
+        /// The twin of `PERIOD_KINDS` in web/js/cardstats.js. A kind the stored rows count but
+        /// this table does not name draws nothing: the 360s, whose detector is off and
+        /// unvalidated, get a row here — and words — only once they are counted.
+        struct PeriodKind {
+            let bar: String
+            let label: String
+            let caption: String
+            let arg: String
+            let hero: Hero?
+        }
+
+        static let periodKinds: [TurnKindTally.Kind: PeriodKind] = [
+            .jibe: PeriodKind(bar: "jibes", label: "barJibes", caption: "ofJibes", arg: "jibes",
+                              hero: nil),
+            .tack: PeriodKind(bar: "tacks", label: "barTacks", caption: "ofTacks", arg: "tacks",
+                              hero: .tacks),
+        ]
+
         /// **The period card's story** (layout B v2 for a trip, a month, a season or a range):
         /// the twin of `periodCardStory` in web/js/cardstats.js.
         ///
         /// Every number is the period's own — its block (`Period.block`) or the story facts
         /// beside it (`Period.card`, `library.period_card`). Heroes: clean jibes → best 2 s →
-        /// sessions. The one outcome bar is the jibe bar only when every counted turn was a
-        /// jibe, and the turn bar otherwise. With 0 clean jibes the clean number and clean
-        /// jibes / h are left out, as on the session card.
+        /// tacks → sessions. The bars are the session card's — the jibe bar, and the tack bar
+        /// beside it where the period had a tack — from the per-kind ladders the rows carry
+        /// (`card.kinds`); a period with no jibe draws the one turn bar, as a session does. A
+        /// period one of whose rows carries no split keeps the old single bar: the jibe bar
+        /// only when every counted turn was a jibe, the turn bar otherwise. With 0 clean jibes
+        /// the clean number and clean jibes / h are left out, as on the session card.
         public static func make(period: Period, hero wanted: Hero) -> Story {
             let block = Dictionary(period.block.map { ($0.key, $0) },
                                    uniquingKeysWith: { a, _ in a })
@@ -245,9 +268,20 @@ public extension ShareCardStats {
                 .flatMap { $0 > 0 ? $0 : nil }
             let speed = block[PeriodBlock.Key.best2s]
 
+            // The kinds this card draws a bar for: the named ones with a ladder and a turn in
+            // it, and only where the jibe ladder has one — otherwise the turn bar below
+            // already counts them.
+            let jibeKind = card.kinds?.first { $0.kind == .jibe }
+            let drawn: [TurnKindTally] = (jibeKind?.count ?? 0) > 0
+                ? (card.kinds ?? []).filter {
+                    periodKinds[$0.kind] != nil && $0.outcomes != nil && $0.count > 0
+                }
+                : []
+
             var options: [Hero] = []
             if clean != nil { options.append(.clean) }
             if speed != nil { options.append(.max2s) }
+            for k in drawn { if let hero = periodKinds[k.kind]?.hero { options.append(hero) } }
             if period.sessions > 0 { options.append(.sessions) }
             let kind: Hero? = options.contains(wanted) ? wanted : options.first
 
@@ -266,6 +300,22 @@ public extension ShareCardStats {
                 let (number, unit) = split(speed?.value ?? "—")
                 heroNumber = HeroNumber(kind: .max2s, value: number, unit: unit,
                                         sub: PresentationCopy.card("heroMax2s"))
+            case .tacks?:
+                if let t = drawn.first(where: { $0.kind == .tack }), let o = t.outcomes {
+                    let dry = String(o.flewThrough + o.touchdown)
+                    let j = jibeKind?.count ?? 0
+                    let sub = j > 0
+                        ? PresentationCopy.card("heroTacksBeside", [
+                            "dry": dry,
+                            "jibes": PresentationCopy.card("jibeCount", count: j,
+                                                           ["jibes": String(j)]),
+                        ])
+                        : PresentationCopy.card("heroTacksDry", ["dry": dry])
+                    heroNumber = HeroNumber(kind: .tacks, value: String(t.count),
+                                            unit: PresentationCopy.card("heroTacks",
+                                                                        count: t.count),
+                                            sub: sub)
+                }
             case .sessions?:
                 let spots = block[PeriodBlock.Key.spots]?.value ?? "1"
                 heroNumber = HeroNumber(
@@ -273,13 +323,31 @@ public extension ShareCardStats {
                     unit: PresentationCopy.card("heroSessions", count: period.sessions),
                     sub: PresentationCopy.card("heroSessionsSpots", count: Int(spots),
                                                ["spots": spots]))
-            case .tacks?, nil:
+            case nil:
                 heroNumber = nil
             }
 
             var bars: [Bar] = []
-            if let o = card.outcomes, o.total > 0 {
-                let isJibes = card.dryKind == "jibes"
+            if !drawn.isEmpty {
+                for k in drawn {
+                    guard let words = periodKinds[k.kind], let o = k.outcomes else { continue }
+                    let mine = words.hero.map { kind == $0 } ?? (kind == .clean)
+                    var right: String? = mine ? nil : PresentationCopy.text(
+                        "presentation.caption.\(words.caption)",
+                        args: [words.arg: String(k.count), "_count": String(k.count)])
+                    var star = false
+                    // The clean clause is the jibe's own count, over the jibes this bar draws.
+                    if k.kind == .jibe, kind != .clean, let c = k.clean, c > 0 {
+                        right = (right ?? "") + " · "
+                            + PresentationCopy.card("barClean", ["clean": String(c)])
+                        star = true
+                    }
+                    bars.append(Bar(kind: words.bar, label: PresentationCopy.card(words.label),
+                                    flewThrough: o.flewThrough, touchdown: o.touchdown,
+                                    fellIn: o.fellIn, right: right, star: star))
+                }
+            } else if let o = card.outcomes, o.total > 0 {
+                let isJibes = card.kinds == nil && card.dryKind == "jibes"
                 var right: String?
                 var star = false
                 if isJibes {

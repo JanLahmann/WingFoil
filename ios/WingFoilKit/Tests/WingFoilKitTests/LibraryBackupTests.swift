@@ -447,6 +447,69 @@ import ZIPFoundation
         #expect(row.startUtcOffsetS != nil)
     }
 
+    /// A backup taken before the per-kind ladder (schema v18) restores into this build with
+    /// both ladders on the row — migrated forward, then analysed by this build's engine — and
+    /// a backup this build takes carries them back out.
+    @Test func aV18BackupRestoresWithTheLadderPerKind() async throws {
+        let box = try scratch()
+        defer { try? FileManager.default.removeItem(at: box) }
+        let (data, name) = try fixture(0)
+        let track = try TrackParser.parse(data: data)
+        let start = try #require(track.startDate)
+        let duration = try #require(track.samples.last.map { $0.t - track.samples[0].t })
+
+        let oldDatabase = box.appendingPathComponent("v18.sqlite")
+        let sessionId = UUID().uuidString
+        let queue = try DatabaseQueue(path: oldDatabase.path)
+        try AppDatabase.migrator.migrate(queue, upTo: "v18")
+        try await queue.write { db in
+            try db.execute(sql: """
+                INSERT INTO session (id, startDate, durationS, sourceClass, originalFilename,
+                                     importSource, isExample, isProvisional, jibes, tacks)
+                VALUES (?, ?, ?, 'b', ?, 'file', 0, 0, 3, 1)
+                """, arguments: [sessionId, start, duration, name])
+        }
+        try await queue.close()
+
+        let manifest = LibraryBackupManifest(
+            schemaVersion: 18, engineVersion: "0.25.0", appVersion: "1.0.0 (112)",
+            createdAt: Date(), sessionCount: 1, recordingCount: 1, gearCount: 0,
+            spotCount: 0, tombstoneCount: 0, archiveBytes: Int64(data.count))
+        let zipURL = box.appendingPathComponent("v18.zip")
+        let zip = try Archive(url: zipURL, accessMode: .create, pathEncoding: nil)
+        try Self.add(try LibraryBackupManifest.encoder().encode(manifest),
+                     at: LibraryBackupLayout.manifestPath, to: zip)
+        try zip.addEntry(with: LibraryBackupLayout.databasePath, fileURL: oldDatabase,
+                         compressionMethod: .deflate)
+        try Self.add(data,
+                     at: LibraryBackupLayout.sessionPath(id: sessionId, file: "original.fit"),
+                     to: zip)
+
+        let destination = try makeLibrary()
+        defer { try? FileManager.default.removeItem(at: destination.container) }
+        let summary = try await LibraryRestore(ingestor: destination.ingestor)
+            .restore(from: zipURL)
+        #expect(summary.imported == 1)
+        #expect(summary.failed.isEmpty)
+
+        let row = try #require(try await destination.ingestor.allSessions().first)
+        let turns = try await destination.ingestor.analysis(for: row).summary.turns
+        let kinds = try #require(row.turnKinds, "the restored row carries the split")
+        #expect(kinds.first { $0.kind == .jibe }?.count == turns.jibes)
+        #expect(kinds.first { $0.kind == .jibe }?.fellIn == turns.jibeOutcomes.fellIn)
+        #expect(kinds.first { $0.kind == .tack }?.touchdown == turns.tackOutcomes.touchdown)
+        #expect(row.threeSixties == nil)
+
+        // …and the next backup carries the new columns out again, old→new→new.
+        let again = box.appendingPathComponent("again.zip")
+        _ = try await writer(for: destination).write(to: again)
+        let second = try makeLibrary()
+        defer { try? FileManager.default.removeItem(at: second.container) }
+        _ = try await LibraryRestore(ingestor: second.ingestor).restore(from: again)
+        let copy = try #require(try await second.ingestor.allSessions().first)
+        #expect(copy.turnKinds == row.turnKinds)
+    }
+
     @Test func aZipThatIsNotABackupIsRefusedPolitely() async throws {
         let box = try scratch()
         defer { try? FileManager.default.removeItem(at: box) }
