@@ -237,6 +237,11 @@ public struct LibrarySyncEngine: Sendable {
         case .duplicate(let row):
             report.duplicates += 1
             return row
+        case .replaced(let row, _):
+            // The folder's FIT took the place of a positions-only copy here (F-6): the
+            // recording is new to this library, the row is not.
+            report.downloaded += 1
+            return row
         case .skipped(let reason):
             report.failed.append("\(meta.id): \(reason)")
             return nil

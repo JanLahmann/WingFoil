@@ -94,6 +94,12 @@ public enum IngestOutcome: Sendable {
     case imported(SessionRow)
     /// Already in the library (dedupe key matched); the row carries the merged note.
     case duplicate(SessionRow)
+    /// Already in the library as a **weaker copy** — positions only, a Strava or GPX file —
+    /// and this recording carries speed, so it took the copy's place (release round A,
+    /// finding F-6). `SessionRow` is the row as it is now, same id, with the rider's name,
+    /// caption, rider, gear and spot kept; `weaker` is the row as it was, for the one line
+    /// the rider is told (`SessionIngestor.replacedLine`).
+    case replaced(SessionRow, weaker: SessionRow)
     /// Bulk import only: a FIT that is not a watersport session.
     case skipped(reason: String)
 }
@@ -105,21 +111,30 @@ public struct ImportSummary: Sendable, Equatable {
     public var duplicates = 0
     public var skipped = 0
     public var failed: [String] = []
+    /// The weaker copies a recording with speed replaced (F-6), as the rows were before.
+    /// Counted in none of the three tallies above, and told once by `shortDescription`.
+    public var replaced: [SessionRow] = []
     /// Name of the file currently being processed — live progress for the UI.
     public var current: String?
 
     public init() {}
 
-    public var isEmpty: Bool { imported == 0 && duplicates == 0 && skipped == 0 && failed.isEmpty }
+    public var isEmpty: Bool {
+        imported == 0 && duplicates == 0 && skipped == 0 && failed.isEmpty && replaced.isEmpty
+    }
 
-    public var processed: Int { imported + duplicates + skipped + failed.count }
+    public var processed: Int { imported + duplicates + skipped + failed.count + replaced.count }
 
     public var shortDescription: String {
         var parts: [String] = ["\(imported) imported"]
         if duplicates > 0 { parts.append("\(duplicates) duplicate\(duplicates == 1 ? "" : "s")") }
         if skipped > 0 { parts.append("\(skipped) skipped") }
         if !failed.isEmpty { parts.append("\(failed.count) failed") }
-        return parts.joined(separator: ", ")
+        let tally = parts.joined(separator: ", ")
+        guard let line = SessionIngestor.replacedLine(replaced) else { return tally }
+        // A run that did nothing but replace says only that.
+        return imported == 0 && duplicates == 0 && skipped == 0 && failed.isEmpty
+            ? line : "\(line). \(tally)"
     }
 
     /// Merges another container's tally into this one (multi-file picks, live progress).
@@ -129,6 +144,7 @@ public struct ImportSummary: Sendable, Equatable {
         duplicates += other.duplicates
         skipped += other.skipped
         failed.append(contentsOf: other.failed)
+        replaced.append(contentsOf: other.replaced)
     }
 }
 
@@ -255,10 +271,18 @@ public struct SessionIngestor: Sendable {
         }
 
         let existing = try await duplicate(startDate: startDate, durationS: duration,
+                                          fixSpanS: Self.fixSpan(of: track),
                                           icuActivityId: icuActivityId)
-        if let existing, !existing.isProvisional, !Self.yields(existing, to: source) {
+        if let existing, !existing.isProvisional,
+           !Self.yields(existing, to: source, sourceClass: caps.sourceClass) {
             let merged = try await note(existing, source: source, icuActivityId: icuActivityId)
             return .duplicate(merged)
+        }
+        // F-6: the row this recording takes over is a positions-only copy, not a card or a
+        // direct stream. Same takeover as theirs below; the outcome says so, because this
+        // is the one takeover a rider can see happen to a session he has already looked at.
+        let weaker = existing.flatMap {
+            !$0.isProvisional && Self.isWeakerCopy($0, than: caps.sourceClass) ? $0 : nil
         }
 
         // A provisional row is the watch's card holding this session's place until the FIT
@@ -332,12 +356,17 @@ public struct SessionIngestor: Sendable {
         }
         row.apply(analysis)
 
+        // A spot the row already has is kept: the rider may have moved the session to
+        // another spot, and the recording that takes the row over was ridden at the same
+        // beach. Assigning again would also count this session twice in the spot's centre.
+        row.spotId = existing?.spotId
         let inserted = row
         row.spotId = try await database.writer.write { db -> String? in
             // `save`, not `insert`: on the provisional path the row already exists and
             // this call is the moment the card's numbers are overwritten by real ones.
             try inserted.save(db)
             try SessionDerivation.write(analysis, session: inserted, db: db)
+            if let kept = inserted.spotId { return kept }
             guard let lat = inserted.startLat, let lon = inserted.startLon else { return nil }
             return try SpotClusterer.assign(sessionId: inserted.id, lat: lat, lon: lon, db: db,
                                             radiusM: spotRadiusM)
@@ -347,6 +376,7 @@ public struct SessionIngestor: Sendable {
         if !row.isExample {
             _ = try? await library.applyDefaultGear(sessionId: row.id)
         }
+        if let weaker { return .replaced(row, weaker: weaker) }
         return .imported(row)
     }
 
@@ -377,10 +407,56 @@ public struct SessionIngestor: Sendable {
     /// column reads `"icu+watchdirect"` and a later copy of that FIT is an ordinary duplicate
     /// again. A second arrival of the same direct stream is one too: a stream does not step
     /// aside for itself.
-    static func yields(_ existing: SessionRow, to source: ImportSource) -> Bool {
+    ///
+    /// **A positions-only row steps aside too** (release round A, F-6, Jan 26 Sep 2026):
+    /// a Strava or GPX copy — class (c), records uncertified — gives way to the recording
+    /// with speed of the same afternoon when it arrives later, from intervals.icu, a Garmin
+    /// ZIP or a file. And **never the other way**: a recording without speed never takes
+    /// over a row that has it, whichever door it came through, the direct stream included.
+    static func yields(_ existing: SessionRow, to source: ImportSource,
+                       sourceClass: String) -> Bool {
+        if sourceClass == "c", existing.sourceClass != "c" { return false }
+        if isWeakerCopy(existing, than: sourceClass) { return true }
         guard source != .watchDirect else { return false }
         let sources = (existing.importSource ?? "").split(separator: "+")
         return sources == [Substring(ImportSource.watchDirect.rawValue)]
+    }
+
+    /// Is this row a positions-only copy of what a recording of `sourceClass` holds?
+    /// Class (c) against (a) or (b): the source class is the one fact that says whether a
+    /// recording measured its speed (docs/algorithms/imports.md, "One afternoon, one session").
+    static func isWeakerCopy(_ existing: SessionRow, than sourceClass: String) -> Bool {
+        existing.sourceClass == "c" && sourceClass != "c"
+    }
+
+    /// **The one line a rider is told** when a recording with speed replaced a weaker copy
+    /// (F-6): *Replaced the Strava copy of 13 June with your watch's recording.* The copy is
+    /// named by where it came from, Strava or a GPX file; the date is the session's own day.
+    /// Several in one run are counted in one line. Nil when nothing was replaced.
+    public static func replacedLine(_ weaker: [SessionRow]) -> String? {
+        guard let first = weaker.first else { return nil }
+        let copy = weaker.allSatisfy { ImportSource.strava.isNamed(in: $0.importSource) }
+            ? "Strava" : "positions-only"
+        guard weaker.count == 1 else {
+            return "Replaced \(weaker.count) \(copy) copies with your watch's recordings"
+        }
+        let formatter = DateFormatter()
+        formatter.timeZone = first.displayZone
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "d MMMM"
+        return "Replaced the \(copy) copy of \(formatter.string(from: first.startDate))"
+            + " with your watch's recording"
+    }
+
+    /// **The span a recording is compared on besides its own** (release round A, F-5): from
+    /// its first GPS fix to its last. A watch left running in the van records on without a
+    /// position, and a copy made of its fixes (Strava's, a GPX) spans the fixes alone. Nil
+    /// for a recording with no fix at all.
+    static func fixSpan(of track: RawTrack) -> Double? {
+        guard let first = track.samples.first(where: { $0.lat != nil && $0.lon != nil }),
+              let last = track.samples.last(where: { $0.lat != nil && $0.lon != nil })
+        else { return nil }
+        return last.t - first.t
     }
 
     public static func isWatersport(_ caps: SourceCapabilities) -> Bool {
@@ -416,6 +492,7 @@ public struct SessionIngestor: Sendable {
                 case .imported: await box.count(\.imported)
                 case .duplicate: await box.count(\.duplicates)
                 case .skipped: await box.count(\.skipped)
+                case .replaced(_, let weaker): await box.replace(weaker)
                 }
             } catch {
                 await box.fail("\(short): \(error)")
@@ -448,6 +525,7 @@ public struct SessionIngestor: Sendable {
         func begin(_ name: String) { summary.current = name }
         func count(_ key: WritableKeyPath<ImportSummary, Int>) { summary[keyPath: key] += 1 }
         func fail(_ message: String) { summary.failed.append(message) }
+        func replace(_ weaker: SessionRow) { summary.replaced.append(weaker) }
     }
 
     // MARK: - Analysis access (lazy re-analysis)
@@ -761,22 +839,48 @@ public struct SessionIngestor: Sendable {
         return (guess, .longitude)
     }
 
-    func duplicate(startDate: Date, durationS: Double,
+    ///
+    /// **Two spans a side** (release round A, F-5, Jan 26 Sep 2026). A recording is compared
+    /// on its record span and on its fix span (`fixSpan`), and two recordings are the same
+    /// session when any span of one is within the tolerance of any span of the other. That
+    /// is what lets a FIT whose watch recorded on without GPS meet the Strava copy of its
+    /// fixes, in either order. The start stays one-to-one. A stored row carries its record
+    /// span only, so its fix span is read from the archived original, and only for a row
+    /// whose start already matched and whose record span did not.
+    func duplicate(startDate: Date, durationS: Double, fixSpanS: Double? = nil,
                    icuActivityId: String? = nil) async throws -> SessionRow? {
         let tolerance = dedupeToleranceS
         let lower = startDate.addingTimeInterval(-tolerance)
         let upper = startDate.addingTimeInterval(tolerance)
-        return try await database.writer.read { db in
+        let incoming = [durationS] + (fixSpanS.map { [$0] } ?? [])
+        let (hit, rest) = try await database.writer.read { db -> (SessionRow?, [SessionRow]) in
             if let icuActivityId,
                let hit = try SessionRow
                 .filter(Column("icuActivityId") == icuActivityId).fetchOne(db) {
-                return hit
+                return (hit, [])
             }
             let candidates = try SessionRow
                 .filter(Column("startDate") >= lower && Column("startDate") <= upper)
                 .fetchAll(db)
-            return candidates.first { abs($0.durationS - durationS) <= tolerance }
+            // The record span first, so the ordinary case answers exactly as it always did.
+            if let hit = candidates.first(where: { abs($0.durationS - durationS) <= tolerance }) {
+                return (hit, [])
+            }
+            if let hit = candidates.first(where: { row in
+                incoming.contains { abs(row.durationS - $0) <= tolerance }
+            }) {
+                return (hit, [])
+            }
+            return (nil, candidates.filter { !$0.isProvisional })
         }
+        if let hit { return hit }
+        // The stored side's fix span, from its archive. A card has no archive and is skipped.
+        for row in rest {
+            guard let track = try? archive.rawTrack(for: row.id),
+                  let stored = Self.fixSpan(of: track) else { continue }
+            if incoming.contains(where: { abs(stored - $0) <= tolerance }) { return row }
+        }
+        return nil
     }
 
     /// **The session a direct transfer's second stream belongs to.**

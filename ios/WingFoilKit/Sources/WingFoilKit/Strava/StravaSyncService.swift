@@ -181,6 +181,11 @@ public struct StravaSyncService: Sendable {
                     importedIds.append(activity.id)
                 case .skipped:
                     break                  // no sport gate on hand-picked Strava activities
+                case .replaced:
+                    // Unreachable: a Strava copy is positions only and never replaces a
+                    // row (`SessionIngestor.yields`). Counted as a duplicate if it ever did.
+                    summary.duplicates += 1
+                    importedIds.append(activity.id)
                 }
             } catch StravaClient.Error.noStreams {
                 summary.withoutStreams += 1
