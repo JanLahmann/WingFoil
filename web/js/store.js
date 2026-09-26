@@ -222,6 +222,19 @@ export async function putSession({ digest, analysisJson, fitBytes, replaceId = n
   return entry;
 }
 
+/**
+ * Merge fields into stored entries, by id, in one index write — the lazy back-fill's door
+ * (js/library.js, `backfillDigests`). Only the entries named change, and only by the fields
+ * given; the storage bookkeeping and the rider's own answers are left as they were. Returns
+ * the whole index, newest first, as `listEntries` would.
+ */
+export async function mergeEntries(updates) {
+  const entries = await listEntries();
+  if (!updates || !updates.size) return entries;
+  const merged = entries.map((e) => (updates.has(e.id) ? { ...e, ...updates.get(e.id) } : e));
+  return writeIndex(merged);
+}
+
 export async function removeSession(id) {
   const be = await backend();
   await be.remove(`${id}.fit`);

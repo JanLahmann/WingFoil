@@ -103,7 +103,23 @@ from datetime import datetime, timedelta, timezone
 # which starts at that fix. Null on a row written before it, which is then compared on
 # `startEpoch` alone, as it always was: nothing is re-digested, a stored row only ever
 # matches less than a fresh one would.
-SCHEMA = 13
+# v14 (26 Sep 2026) carries the outcome ladder **per turn kind** — `turns.byKind`, the jibe
+# ladder with its clean count, the tack ladder, and a `threeSixty` slot that stays null while
+# the 360 detector is off (`detectThreeSixty`, docs/algorithms/turns.md "360 spins"). Until
+# now a row held one ladder over every counted turn, so the period card could draw a jibe bar
+# only for a period without a tack and could never draw a tack bar at all. Copied from the
+# engine's `jibeOutcomes` / `tackOutcomes`, never recomputed. A row written before it is
+# **re-digested lazily** from the analysis document stored beside it (web/js/library.js,
+# `backfillDigests`); a row whose document cannot be read keeps `byKind` absent, and the card
+# falls back to the one turn bar for any period it is in.
+SCHEMA = 14
+
+#: The turn kinds a stored row tallies one by one (schema 14), in the order a card draws
+#: them. `threeSixty` has no ladder — a spin is not a maneuver attempt and feeds no outcome
+#: (docs/algorithms/turns.md "360 spins") — so its slot is a count, and it is null until the
+#: detector runs.
+TURN_KINDS = ("jibe", "tack", "threeSixty")
+LADDER_KINDS = ("jibe", "tack")
 
 # "Not a session" — the two floors (docs/algorithms/not-a-session.md "Not a session"). Only ever consulted
 # for a recording with no foil time at all, which is why they can be set generously.
@@ -281,6 +297,25 @@ def _outcomes(raw) -> dict | None:
     if not isinstance(raw, dict):
         return None
     return {key: int(raw.get(key) or 0) for key in ("flewThrough", "touchdown", "fellIn")}
+
+
+def _by_kind(turns: dict) -> dict | None:
+    """The outcome ladder per turn kind (schema 14), or None when the engine reported none.
+
+    Read straight out of `summary.turns.jibeOutcomes` / `tackOutcomes`: the ladder is the
+    engine's verdict, and a second count here would be a second definition of it. The jibe
+    carries its clean count (`jibesSuccessful`, `Turn.clean`); a tack has no clean reading
+    and carries none. `threeSixty` is `{"count": n}` only where the detector ran and null
+    otherwise — "nobody looked" is not "he did no 360s".
+    """
+    jibe = _outcomes(turns.get("jibeOutcomes"))
+    tack = _outcomes(turns.get("tackOutcomes"))
+    if jibe is None or tack is None:
+        return None
+    spins = _count(turns.get("threeSixties"))
+    return {"jibe": {**jibe, "clean": _count(turns.get("jibesSuccessful"))},
+            "tack": tack,
+            "threeSixty": None if spins is None else {"count": spins}}
 
 
 def _turn_split(turns) -> dict:
@@ -541,6 +576,10 @@ def digest(doc, file_name: str | None = None) -> dict:
             # there rather than three zeroes, which would read as a session in which
             # nothing happened.
             "outcomes": _outcomes(turns.get("outcomes")),
+            # The same ladder split by turn kind (schema 14) — what lets a period card draw
+            # a jibe bar and a tack bar the way the session card does. Absent on a row
+            # written before it until `backfillDigests` re-digests the stored document.
+            "byKind": _by_kind(turns),
             "bySide": _turn_split(g.get("turns")),
         },
         "takeoff": {
@@ -1605,6 +1644,38 @@ def _outcome_sum(ds: list):
             for key in ("flewThrough", "touchdown", "fellIn")}
 
 
+def _kind_sums(ds: list):
+    """The per-kind ladders summed (schema 14), one entry per kind some row counted, in
+    `TURN_KINDS` order — or None when a row that carries the ladder does not carry the split.
+
+    **All or nothing.** A period in which one afternoon could not be re-digested would draw
+    a jibe bar that silently left that afternoon out while the clean count beside it did not,
+    so such a period keeps the one turn bar over every laddered row instead (`period_card`).
+    Each entry is `{kind, count, flewThrough, touchdown, fellIn, clean}`: `clean` only where
+    it applies (jibes), the ladder null for a kind that has none (360s, a count alone).
+    """
+    laddered = [(d.get("turns") or {}) for d in ds]
+    laddered = [t for t in laddered if isinstance(t.get("outcomes"), dict)]
+    if not laddered or not all(isinstance(t.get("byKind"), dict) for t in laddered):
+        return None
+    out = []
+    for kind in TURN_KINDS:
+        rows = [t["byKind"].get(kind) for t in laddered]
+        rows = [r for r in rows if isinstance(r, dict)]
+        if not rows:
+            continue
+        if kind in LADDER_KINDS:
+            ladder = {key: sum(int(r.get(key) or 0) for r in rows)
+                      for key in ("flewThrough", "touchdown", "fellIn")}
+            out.append({"kind": kind, "count": sum(ladder.values()), **ladder,
+                        "clean": _sum(rows, lambda r: _count(r.get("clean")))})
+        else:
+            out.append({"kind": kind, "count": sum(int(r.get("count") or 0) for r in rows),
+                        "flewThrough": None, "touchdown": None, "fellIn": None,
+                        "clean": None})
+    return out
+
+
 def period_card(ds: list) -> dict:
     """**What the period card tells beyond the block** (layout B v2, Jan, 26 Sep 2026).
 
@@ -1612,10 +1683,12 @@ def period_card(ds: list) -> dict:
     off the stored rows the period is made of. Summed numerators, as everywhere in the block,
     and the same "absent is never 0" rule: None where no row can answer.
 
-    **One outcome bar, not two.** A stored row carries the ladder over *every* counted turn
-    (`turns.outcomes`), not one per kind, so the bar is the jibe bar only when every counted
-    turn of the period was a jibe (`dryKind == "jibes"`), and the turn bar otherwise — never
-    a tack bar made up out of a total. The dry rate follows the bar: dry jibes an hour or dry
+    **A bar per turn kind** (schema 14): `kinds` is the jibe ladder and the tack ladder summed
+    over the rows, so the card draws the jibe bar and the tack bar the session card draws.
+    `outcomes` stays the ladder over *every* counted turn — the fallback for a period one of
+    whose rows carries no split (`_kind_sums`), where the bar is the jibe bar only when every
+    counted turn was a jibe (`dryKind == "jibes"`) and the turn bar otherwise, never a tack
+    bar made up out of a total. The dry rate follows `dryKind`: dry jibes an hour or dry
     turns an hour, over the summed timer hours of the rows that carry the ladder.
 
     `KeyMetrics`-free twin: `LibraryStore.card(_:)` in the kit, pinned against the same
@@ -1639,6 +1712,7 @@ def period_card(ds: list) -> dict:
             dry_rate = _f_rate((outcomes["flewThrough"] + outcomes["touchdown"]) / rate_hours)
     return {
         "outcomes": outcomes,
+        "kinds": _kind_sums(ds),
         "jibes": jibes,
         "tacks": tacks,
         "dryKind": dry_kind,

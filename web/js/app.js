@@ -10,7 +10,8 @@ import { mountShell, noteEngine, offerWelcome, setSessionCount, showPage }
 import { WHATS_NEW } from "./appcopy.js";
 import { onSettingsChange, speedRecords } from "./appsettings.js";
 import { mountIcu } from "./icu.js";
-import { mountLibrary, openStoredSession, refresh as refreshLibrary, saveSession }
+import { backfillDigests, mountLibrary, openStoredSession, refresh as refreshLibrary,
+         saveSession }
   from "./library.js";
 import { closePopover, render, renderFigures, renderGlossary, resetSession } from "./render.js";
 import { CANCELLED, analyze as runAnalysis, cancel as cancelWorker, on, warmUp } from "./rpc.js";
@@ -651,10 +652,13 @@ function onShowPage(page, arg = null) {
   // Periods and one period read the same aggregate Records and Trends do — one Python
   // call over one library — so they ask for it the same way and draw once it is there.
   if (page === "records" || page === "trends" || page === "periods" || page === "period") {
-    listEntries().then(showTrends).catch(() => showTrends([])).finally(() => {
-      if (page === "periods") showPeriodsPage();
-      if (page === "period") showPeriodPage(decodeURIComponent(arg || ""));
-    });
+    // The lazy back-fill first (digest schema 14): a row saved before the per-kind turn
+    // ladder is re-digested from its stored document, so the period card gets its bars.
+    listEntries().then(backfillDigests).then(showTrends).catch(() => showTrends([]))
+      .finally(() => {
+        if (page === "periods") showPeriodsPage();
+        if (page === "period") showPeriodPage(decodeURIComponent(arg || ""));
+      });
   }
   if (page === "sessions") refreshLibrary();
 }

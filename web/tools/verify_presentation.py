@@ -486,7 +486,11 @@ def check_card_story() -> None:
 PERIOD_STORIES = REPO / "fixtures" / "cards" / "period-stories.expected.json"
 
 #: The period card's heroes, in picker order and fallback order — a second copy of the rule.
-PERIOD_HERO_ORDER = ["clean", "max2s", "sessions"]
+PERIOD_HERO_ORDER = ["clean", "max2s", "tacks", "sessions"]
+
+#: The bar each turn kind draws on a period card (schema 14) — a second copy of the table in
+#: js/cardstats.js. A kind outside it (the unvalidated 360s) draws nothing.
+PERIOD_KIND_BARS = {"jibe": "jibes", "tack": "tacks"}
 
 
 def check_period_card() -> None:
@@ -544,10 +548,25 @@ def check_period_card() -> None:
         values = {e["key"]: e["value"] for e in block}
         facts = want["card"]
         clean = int(values["cleanJibes"]) if "cleanJibes" in values else 0
-        options = [h for h, ok in (("clean", clean > 0), ("max2s", "best2s" in values),
-                                   ("sessions", want["sessions"] > 0)) if ok]
         o = facts["outcomes"]
         total = sum(o.values()) if o else 0
+        # The bars: one per named kind with a turn in it where the rows carry the split and
+        # the jibe ladder has one; else the one bar over every counted turn.
+        kinds = facts.get("kinds")
+        jibe_n = next((k["count"] for k in kinds or [] if k["kind"] == "jibe"), 0)
+        drawn = [(PERIOD_KIND_BARS[k["kind"]], k["count"]) for k in kinds or []
+                 if kinds is not None and jibe_n > 0 and k["kind"] in PERIOD_KIND_BARS
+                 and k["count"] > 0]
+        if drawn:
+            bars = drawn
+        elif total:
+            bars = [("jibes" if kinds is None and facts["dryKind"] == "jibes" else "turns",
+                     total)]
+        else:
+            bars = []
+        options = [h for h, ok in (("clean", clean > 0), ("max2s", "best2s" in values),
+                                   ("tacks", any(b[0] == "tacks" for b in drawn)),
+                                   ("sessions", want["sessions"] > 0)) if ok]
         for hero in PERIOD_HERO_ORDER:
             story = card["stories"][hero]
             kind = hero if hero in options else (options[0] if options else None)
@@ -562,7 +581,7 @@ def check_period_card() -> None:
                    "ribbon": [c["key"] for c in story["ribbon"]]}
             check(f"  {key}/{hero}: hero, bar and ribbon follow the rule", got,
                   {"hero": kind, "options": options,
-                   "bars": [(facts["dryKind"], total)] if total else [],
+                   "bars": bars,
                    "ribbon": ribbon})
             words = json.dumps(story, ensure_ascii=False)
             check(f"  {key}/{hero}: never prints 0 clean", "\"0 clean" in words, False)
