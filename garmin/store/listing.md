@@ -137,7 +137,12 @@ CleanJibe Wingfoil Analyzer gives you maps, turn pages, replay, records and tren
 Read against the 0.9.19 UI (`Read`, frame by frame — no simulator run, no new art):
 
 - `garmin/store/cover-500.png` (2026-08-12, the 500 px store cover) is the brand mark only, no
-  on-watch UI, so no layout change touches it. **Keep.**
+  on-watch UI, so no layout change touches it. **Keep**, live on the store today.
+- `garmin/store/cover-500-beta.png` (added 26 Sep 2026): this listing *is* the beta stream, so
+  its cover should say so the way the app and watch icons already do — the same red-strip
+  BETA mark, cut from `brand/icon-tile-beta-1024.png` (`brand/tools/make_channel_marks.py`)
+  resized to 500×500, no new art. **Not uploaded by this pass** — swap it in for
+  `cover-500.png` at the next cover edit, and update this note the day it does.
 - `brand/store-shots-09/` (committed 2026-09-01, `c4fd9f7`, "store screenshots for the 0.9.4
   listing") is the *only* on-device screenshot set in git — nothing newer was ever checked in;
   the layout-review family sheets (docs/testing.md, "the short set") land in a scratch
@@ -361,5 +366,7 @@ matching the watch app.
 
 ## Store assets
 
-`garmin/store/` also holds `cover-500.png` (the 500 px store cover) and `screen-speed.png`.
+`garmin/store/` also holds `cover-500.png` (the 500 px store cover, live today), `cover-500-beta.png`
+(the same mark with the beta app icon's red-strip label, cut 26 Sep 2026 for the next cover
+edit — see "Listing images" above) and `screen-speed.png`.
 The rest of the screenshots are generated — see `garmin/screenshots/`.

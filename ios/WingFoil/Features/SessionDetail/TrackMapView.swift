@@ -330,6 +330,10 @@ struct FullScreenMapView: View {
         // the turn and flight-end pages carry their position.
         .navigationTitle("Map")
         .navigationBarTitleDisplayMode(.inline)
+        // Same fix as the session page's own bar (`SessionDetailView`): satellite photography
+        // runs straight up under the floating bar and left "Map" / the session name hard to
+        // read over open water. The vector map already reads fine floating over it.
+        .toolbarBackground(store.mapStyle.isImagery ? .visible : .automatic, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .principal) {
                 VStack(spacing: 0) {

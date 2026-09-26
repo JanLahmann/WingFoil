@@ -313,6 +313,11 @@ struct SessionDetailView: View {
         .onChange(of: neighboursKey, initial: true) { neighbours = findNeighbours() }
         .navigationTitle(row.map(SessionDisplay.title) ?? "Session")
         .navigationBarTitleDisplayMode(.inline)
+        // Satellite photography runs straight up under the floating bar, and the session
+        // name in it read blue-on-blue over open water (Jan, 26 Sep 2026). Forcing the bar's
+        // own background on satellite is enough — the vector map already reads fine floating
+        // over it, so the plain map keeps the bar it always had.
+        .toolbarBackground(store.mapStyle.isImagery ? .visible : .automatic, for: .navigationBar)
         #if DEBUG && targetEnvironment(simulator)
         .navigationDestination(isPresented: $showFullScreenMap) {
             if let detail {
