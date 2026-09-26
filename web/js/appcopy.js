@@ -386,6 +386,22 @@ export const WELCOME = {
 export const WHATS_NEW = [
   {
     "version": "1.0.1",
+    "build": 113,
+    "channel": "beta",
+    "date": "2026-09-26",
+    "title": "A new card to share",
+    "lines": [
+      "The share card is new: your clean jibes big, your jibes and tacks as coloured bars.",
+      "Pick the big number on the card yourself: clean jibes, top speed or tacks.",
+      "Trips, months and seasons get the same new card.",
+      "Your watch's own recording now replaces a Strava copy of the same afternoon, and keeps your edits.",
+      "A session no longer lands twice when the watch recorded a while without GPS.",
+      "Help has seven sections in the order you need them, and Settings a clearer order.",
+      "Getting started opens What CleanJibe does in one tap."
+    ]
+  },
+  {
+    "version": "1.0.1",
     "build": 111,
     "channel": "beta",
     "date": "2026-09-26",
