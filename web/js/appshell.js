@@ -578,9 +578,9 @@ export function noteEngine(versions) {
  *
  * It used to be every section expanded, no index and no search — a wall, with the ladder
  * inverted, because a topic's summary was set smaller than the body under it. It is now
- * what the phone's Help is: ten handles, a filter, and the article you asked for.
+ * what the phone's Help is: seven handles, a filter, and the article you asked for.
  *
- *   * a chip row of the ten sections at the top, in the session switcher's shape;
+ *   * a chip row of the seven sections at the top, in the session switcher's shape;
  *   * one `<details>` per section, **shut**, its handle carrying the topic count;
  *   * a filter over every title and every summary, which opens the sections that still
  *     have a match and says how many are left;
@@ -607,7 +607,7 @@ function renderHelp() {
         <span class="help-count">${countOf(section)}</span>
       </summary>
       ${section.glossary ? glossaryHtml() : ""}
-      ${section.topics.map(topicHtml).join("")}
+      ${sectionTopicsHtml(section)}
     </details>`).join("");
 
   wireHelpFilter();
@@ -623,7 +623,8 @@ const glossaryHtml = () =>
     <div class="g-entry"><dt>${esc(g.term)}</dt><dd>${esc(g.line)}</dd></div>`).join("")}</dl>`;
 
 /** One topic. The summary is `.what` — body size, over the body — because a summary set
- *  smaller than the prose it introduces is a ladder upside down (finding 11). */
+ *  smaller than the prose it introduces is a ladder upside down (finding 11). A signpost
+ *  item (Getting started's ways in) links its term to the topic that owns the steps. */
 const topicHtml = (topic) => `
   <article class="help-topic" id="help-topic-${esc(topic.id)}"
            data-find="${esc(`${topic.title} ${topic.summary}`.toLowerCase())}">
@@ -631,9 +632,26 @@ const topicHtml = (topic) => `
     <p class="what">${esc(topic.summary)}</p>
     ${(topic.body || []).map((p) => `<p>${esc(p)}</p>`).join("")}
     ${(topic.items || []).length ? `<dl class="glossary-list">${topic.items.map((i) => `
-      <div class="g-entry"><dt>${esc(i.term)}</dt><dd>${esc(i.detail)}</dd></div>`)
+      <div class="g-entry"><dt>${itemTerm(i)}</dt><dd>${esc(i.detail)}</dd></div>`)
       .join("")}</dl>` : ""}
   </article>`;
+
+const itemTerm = (item) => item.link && helpTopic(item.link)
+  ? `<a href="#/help/${esc(item.link)}">${esc(item.term)}</a>`
+  : esc(item.term);
+
+/** A section's topics, with a sub-heading wherever the group changes — "Read the numbers"
+ *  is the one section that has them, the way the phone's index draws it. */
+function sectionTopicsHtml(section) {
+  let group = null;
+  return section.topics.map((topic) => {
+    const here = topic.group ? topic.group.id : null;
+    const head = here && here !== group
+      ? `<h5 class="help-group">${esc(topic.group.title)}</h5>` : "";
+    group = here;
+    return head + topicHtml(topic);
+  }).join("");
+}
 
 /** The filter, and the chip row: both are ways of opening one fold out of ten. */
 function wireHelpFilter() {
@@ -691,7 +709,8 @@ function openHelpAt(arg) {
   const section = helpSectionOf(arg);
   if (section) {
     openHelpSection(section);
-    const article = el(`help-topic-${arg}`);
+    // By the topic's own id: an id the merge retired names the topic it went into.
+    const article = el(`help-topic-${helpTopic(arg).id}`);
     if (article) {
       article.scrollIntoView({ block: "start", behavior: "smooth" });
       // A found article says so for a beat. The phone pushes a screen; a fold that simply

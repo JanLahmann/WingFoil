@@ -36,10 +36,15 @@ import { HELP } from "./appcopy.js";
 import { detail, onSettingsChange, setDetail } from "./appsettings.js";
 import { esc } from "./render.js";
 
-/** Every topic in the catalogue, by id — the same lookup the Help page does. */
+/** Every topic in the catalogue, by id — the same lookup the Help page does. An id the
+ *  help merge of 26 September 2026 retired (`aliases` in docs/copy/help.json) finds the
+ *  topic it went into, so a `?` or a bookmark written before the merge still opens. */
 const TOPICS = new Map();
 for (const section of HELP.sections || []) {
-  for (const topic of section.topics || []) TOPICS.set(topic.id, topic);
+  for (const topic of section.topics || []) {
+    TOPICS.set(topic.id, topic);
+    for (const alias of topic.aliases || []) TOPICS.set(alias, topic);
+  }
 }
 
 export function helpTopic(id) {
@@ -48,8 +53,10 @@ export function helpTopic(id) {
 
 /** The section a topic sits in, so a deep link can open the right fold. */
 export function helpSectionOf(id) {
+  const topic = TOPICS.get(id);
+  if (!topic) return null;
   for (const section of HELP.sections || []) {
-    if ((section.topics || []).some((t) => t.id === id)) return section.id;
+    if ((section.topics || []).includes(topic)) return section.id;
   }
   return null;
 }
