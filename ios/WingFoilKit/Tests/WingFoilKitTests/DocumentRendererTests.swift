@@ -89,6 +89,80 @@ import Testing
     /// before it was a renderer's, and `card.tiles` *are* `block` cells by construction —
     /// so this asserts that the Swift card and the document's card agree on which keys
     /// survive, on every fixture rather than on one.
+    /// **Layout B v2 is the shared fixture** (26 Sep 2026): for every corpus document and
+    /// every hero, the kit's story is the browser's, word for word and count for count.
+    /// `fixtures/cards/stories.expected.json` is dumped by web/tools/card_parity.mjs and
+    /// held by verify_presentation.py §5a; this holds `ShareCardStats.Story.make` to it.
+    @Test func theCardStoryIsTheSharedFixture() throws {
+        let url = testFixturesDir.appendingPathComponent("cards/stories.expected.json")
+        let fixture = try #require(try JSONSerialization.jsonObject(
+            with: Data(contentsOf: url)) as? [String: [String: Any]])
+        var checked = 0
+        for (stem, document) in try Self.everyDocument() {
+            let want = try #require(fixture[stem], "\(stem): not in the story fixture")
+            let metrics = KeyMetrics.make(block: document["block"] ?? .null)
+            for hero in ShareCardStats.Hero.allCases {
+                let story = ShareCardStats.Story.make(metrics: metrics,
+                                                      maxSpeed: metrics.maxSpeed,
+                                                      hero: hero, dateLine: "",
+                                                      speedNote: nil)
+                let got = Self.json(story)
+                let expected = try #require(want[hero.rawValue] as? [String: Any])
+                #expect(NSDictionary(dictionary: got).isEqual(to: expected),
+                        "\(stem)/\(hero.rawValue): the kit's story is not the fixture's\n\(got)")
+                checked += 1
+            }
+        }
+        #expect(checked >= 3 * 18)
+    }
+
+    /// A story as the JSON card_parity.mjs dumps.
+    static func json(_ story: ShareCardStats.Story) -> [String: Any] {
+        let hero: Any = story.hero.map {
+            ["kind": $0.kind.rawValue, "value": $0.value, "unit": $0.unit, "sub": $0.sub]
+        } ?? NSNull()
+        let segments = { (s: [ShareCardStats.Story.Segment]) in
+            s.map { ["text": $0.text, "role": $0.role] }
+        }
+        return [
+            "dateLine": story.dateLine,
+            "hero": hero,
+            "heroOptions": story.heroOptions.map(\.rawValue),
+            "bars": story.bars.map { bar -> [String: Any] in
+                ["kind": bar.kind, "label": bar.label, "flewThrough": bar.flewThrough,
+                 "touchdown": bar.touchdown, "fellIn": bar.fellIn,
+                 "right": bar.right.map { $0 as Any } ?? NSNull(), "star": bar.star]
+            },
+            "streak": segments(story.streak),
+            "falls": segments(story.falls),
+            "ribbon": story.ribbon.map {
+                ["key": $0.key, "label": $0.label, "value": $0.value, "clean": $0.clean]
+            },
+            "speedNote": story.speedNote.map { $0 as Any } ?? NSNull(),
+            "legend": story.legend,
+        ]
+    }
+
+    /// With 0 clean jibes the clean number is left out, and the hero falls back to the speed.
+    @Test func zeroCleanJibesLeaveTheCleanNumberOut() throws {
+        let metrics = KeyMetrics.make(
+            block: try Self.document("2026-07-31-1451_nago-torbole-windsurfen_native")["block"]
+                ?? .null)
+        let story = ShareCardStats.Story.make(metrics: metrics, maxSpeed: metrics.maxSpeed,
+                                              hero: .clean, dateLine: "",
+                                              speedNote: ShareCardStats.speedEstimated)
+        #expect(story.hero?.kind == .max2s)
+        #expect(!story.heroOptions.contains(.clean))
+        #expect(story.bars.first?.right == "of 23 jibes")
+        #expect(!story.ribbon.contains { $0.key == "cph" })
+        #expect(story.speedNote == "speed estimated from GPS positions")
+        // No speed on the card (records policy), no note and no speed hero.
+        let bare = ShareCardStats.Story.make(metrics: metrics, maxSpeed: nil, hero: .max2s,
+                                             dateLine: "", speedNote: "x")
+        #expect(bare.hero == nil)
+        #expect(bare.speedNote == nil)
+    }
+
     @Test func theCardCarriesExactlyTheBlockTheDocumentSays() throws {
         for (stem, document) in try Self.everyDocument() {
             let tiles = (document["card"]?["tiles"]?.arrayValue ?? [])

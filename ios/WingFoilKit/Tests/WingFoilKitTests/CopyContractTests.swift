@@ -422,6 +422,9 @@ import Testing
             "wristUnder": PresentationCopy.wristUnder,
             "divergence": PresentationCopy.divergence,
             "banner": PresentationCopy.banner,
+            "card": PresentationCopy.card.mapValues { line -> Any in
+                line.one.map { ["one": $0, "other": line.other] as Any } ?? line.other
+            },
         ]
         if Self.isWriting {
             try Self.write("presentation.json", groups.mapValues { $0 as Any })

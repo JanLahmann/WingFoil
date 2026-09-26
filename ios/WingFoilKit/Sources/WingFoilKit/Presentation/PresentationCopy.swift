@@ -136,6 +136,47 @@ public enum PresentationCopy {
         "divergencePair": "{first} and {second}",
     ]
 
+    /// **The share card's own words** (layout B v2, Jan, 26 Sep 2026). Not reachable by a
+    /// document `labelId`: the card is a renderer of the block, and these are the words it
+    /// lays the block's numbers out with — the hero's line, the two bars' names, the
+    /// streak line, the rates in words and the composer's hero picker.
+    ///
+    /// The rates are spelled out on purpose: a card is read by people who have never seen
+    /// the app, so "CPH" alone is a word nobody taught them. "dry" is the rider vocabulary
+    /// (did not fall in), which is what the JPH and TPH numerators count.
+    public static let card: [String: Line] = [
+        "heroClean": Line("clean jibes", one: "clean jibe"),
+        "heroMax2s": Line("top speed · best 2 s"),
+        "heroTacks": Line("tacks", one: "tack"),
+        "heroTacksDry": Line("{dry} dry"),
+        "heroTacksBeside": Line("{dry} dry · beside {jibes}"),
+        "jibeCount": Line("{jibes} jibes", one: "1 jibe"),
+        "barJibes": Line("jibes"),
+        "barTacks": Line("tacks"),
+        "barTurns": Line("turns"),
+        "barClean": Line("{clean} clean"),
+        "streak": Line("best streak"),
+        "fellIn": Line("fell in {falls} times", one: "fell in once"),
+        "fellInNone": Line("never fell in"),
+        "rateCph": Line("clean jibes / h"),
+        "rateJph": Line("dry jibes / h"),
+        "rateTph": Line("dry turns / h"),
+        "speedEstimated": Line("speed estimated from GPS positions"),
+        "optionTitle": Line("Big number"),
+        "optionClean": Line("Clean jibes"),
+        "optionMax2s": Line("Top speed"),
+        "optionTacks": Line("Tacks"),
+    ]
+
+    /// One of the card's own words, with its singular form where `count` is 1.
+    public static func card(_ key: String, count: Int? = nil,
+                            _ args: [String: String] = [:]) -> String {
+        guard let line = card[key] else { return "" }
+        var text = line.form(for: count)
+        for (k, v) in args { text = text.replacingOccurrences(of: "{\(k)}", with: v) }
+        return text
+    }
+
     // MARK: - Resolving an id
 
     /// Which spelling of a glossary word a cell wants.
@@ -234,6 +275,7 @@ public enum PresentationCopy {
         case "wristUnder": return wristUnder[key].map { Line($0) }
         case "divergence": return divergence[key].map { Line($0) }
         case "banner": return banner[key].map { Line($0) }
+        case "card": return card[key]
         default: return nil
         }
     }

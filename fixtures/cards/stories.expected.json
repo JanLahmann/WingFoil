@@ -1,0 +1,5662 @@
+{
+  "2026-06-13-1558_rheinstetten-windsurfen_native": {
+    "clean": {
+      "bars": [
+        {
+          "fellIn": 22,
+          "flewThrough": 16,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
+          "star": false,
+          "touchdown": 13
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "36"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "clean",
+        "sub": "of 51 jibes",
+        "unit": "clean jibes",
+        "value": "4"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "1.9"
+        },
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "13.8"
+        },
+        {
+          "clean": false,
+          "key": "max2s",
+          "label": "max 2 s",
+          "value": "13.72 kn"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "2:09 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "22.4 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "2"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "5"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "max2s": {
+      "bars": [
+        {
+          "fellIn": 22,
+          "flewThrough": 16,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 51 jibes · 4 clean",
+          "star": true,
+          "touchdown": 13
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "36"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "max2s",
+        "sub": "top speed · best 2 s",
+        "unit": "kn",
+        "value": "13.72"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "1.9"
+        },
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "13.8"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "2:09 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "22.4 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "2"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "5"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "tacks": {
+      "bars": [
+        {
+          "fellIn": 22,
+          "flewThrough": 16,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
+          "star": false,
+          "touchdown": 13
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "36"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "clean",
+        "sub": "of 51 jibes",
+        "unit": "clean jibes",
+        "value": "4"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "1.9"
+        },
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "13.8"
+        },
+        {
+          "clean": false,
+          "key": "max2s",
+          "label": "max 2 s",
+          "value": "13.72 kn"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "2:09 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "22.4 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "2"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "5"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    }
+  },
+  "2026-07-31-1451_nago-torbole-windsurfen_native": {
+    "clean": {
+      "bars": [
+        {
+          "fellIn": 14,
+          "flewThrough": 2,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 23 jibes",
+          "star": false,
+          "touchdown": 7
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "16"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "max2s",
+        "sub": "top speed · best 2 s",
+        "unit": "kn",
+        "value": "12.95"
+      },
+      "heroOptions": [
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "8.2"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "1:11 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "12.5 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "1"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "4"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "max2s": {
+      "bars": [
+        {
+          "fellIn": 14,
+          "flewThrough": 2,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 23 jibes",
+          "star": false,
+          "touchdown": 7
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "16"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "max2s",
+        "sub": "top speed · best 2 s",
+        "unit": "kn",
+        "value": "12.95"
+      },
+      "heroOptions": [
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "8.2"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "1:11 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "12.5 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "1"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "4"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "tacks": {
+      "bars": [
+        {
+          "fellIn": 14,
+          "flewThrough": 2,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 23 jibes",
+          "star": false,
+          "touchdown": 7
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "16"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "max2s",
+        "sub": "top speed · best 2 s",
+        "unit": "kn",
+        "value": "12.95"
+      },
+      "heroOptions": [
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "8.2"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "1:11 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "12.5 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "1"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "4"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    }
+  },
+  "2026-08-01-0804_nago-torbole-windsurfen_native": {
+    "clean": {
+      "bars": [
+        {
+          "fellIn": 15,
+          "flewThrough": 24,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
+          "star": false,
+          "touchdown": 12
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "20"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "clean",
+        "sub": "of 51 jibes",
+        "unit": "clean jibes",
+        "value": "14"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "10.5"
+        },
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "27.1"
+        },
+        {
+          "clean": false,
+          "key": "max2s",
+          "label": "max 2 s",
+          "value": "14.99 kn"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "1:23 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "16.8 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "5"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "max2s": {
+      "bars": [
+        {
+          "fellIn": 15,
+          "flewThrough": 24,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 51 jibes · 14 clean",
+          "star": true,
+          "touchdown": 12
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "20"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "max2s",
+        "sub": "top speed · best 2 s",
+        "unit": "kn",
+        "value": "14.99"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "10.5"
+        },
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "27.1"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "1:23 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "16.8 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "5"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "tacks": {
+      "bars": [
+        {
+          "fellIn": 15,
+          "flewThrough": 24,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
+          "star": false,
+          "touchdown": 12
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "20"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "clean",
+        "sub": "of 51 jibes",
+        "unit": "clean jibes",
+        "value": "14"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "10.5"
+        },
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "27.1"
+        },
+        {
+          "clean": false,
+          "key": "max2s",
+          "label": "max 2 s",
+          "value": "14.99 kn"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "1:23 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "16.8 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "5"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    }
+  },
+  "2026-08-02-0748_nago-torbole-windsurfen_native": {
+    "clean": {
+      "bars": [
+        {
+          "fellIn": 14,
+          "flewThrough": 13,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
+          "star": false,
+          "touchdown": 11
+        },
+        {
+          "fellIn": 1,
+          "flewThrough": 0,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": "of 1 tack",
+          "star": false,
+          "touchdown": 0
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "23"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "clean",
+        "sub": "of 38 jibes",
+        "unit": "clean jibes",
+        "value": "7"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s",
+        "tacks"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "3.3"
+        },
+        {
+          "clean": false,
+          "key": "tph",
+          "label": "dry turns / h",
+          "value": "11.4"
+        },
+        {
+          "clean": false,
+          "key": "max2s",
+          "label": "max 2 s",
+          "value": "13.19 kn"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "2:10 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "21.6 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "2"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "3"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "max2s": {
+      "bars": [
+        {
+          "fellIn": 14,
+          "flewThrough": 13,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 38 jibes · 7 clean",
+          "star": true,
+          "touchdown": 11
+        },
+        {
+          "fellIn": 1,
+          "flewThrough": 0,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": "of 1 tack",
+          "star": false,
+          "touchdown": 0
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "23"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "max2s",
+        "sub": "top speed · best 2 s",
+        "unit": "kn",
+        "value": "13.19"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s",
+        "tacks"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "3.3"
+        },
+        {
+          "clean": false,
+          "key": "tph",
+          "label": "dry turns / h",
+          "value": "11.4"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "2:10 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "21.6 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "2"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "3"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "tacks": {
+      "bars": [
+        {
+          "fellIn": 14,
+          "flewThrough": 13,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 38 jibes · 7 clean",
+          "star": true,
+          "touchdown": 11
+        },
+        {
+          "fellIn": 1,
+          "flewThrough": 0,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": null,
+          "star": false,
+          "touchdown": 0
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "23"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "tacks",
+        "sub": "0 dry · beside 38 jibes",
+        "unit": "tack",
+        "value": "1"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s",
+        "tacks"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "3.3"
+        },
+        {
+          "clean": false,
+          "key": "tph",
+          "label": "dry turns / h",
+          "value": "11.4"
+        },
+        {
+          "clean": false,
+          "key": "max2s",
+          "label": "max 2 s",
+          "value": "13.19 kn"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "2:10 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "21.6 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "2"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "3"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    }
+  },
+  "2026-08-03-0741_nago-torbole-windsurfen_native": {
+    "clean": {
+      "bars": [
+        {
+          "fellIn": 16,
+          "flewThrough": 21,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
+          "star": false,
+          "touchdown": 15
+        },
+        {
+          "fellIn": 2,
+          "flewThrough": 0,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": "of 2 tacks",
+          "star": false,
+          "touchdown": 0
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "29"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "clean",
+        "sub": "of 52 jibes",
+        "unit": "clean jibes",
+        "value": "13"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s",
+        "tacks"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "6.8"
+        },
+        {
+          "clean": false,
+          "key": "tph",
+          "label": "dry turns / h",
+          "value": "18.9"
+        },
+        {
+          "clean": false,
+          "key": "max2s",
+          "label": "max 2 s",
+          "value": "14.36 kn"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "2:03 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "23.6 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "5"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "max2s": {
+      "bars": [
+        {
+          "fellIn": 16,
+          "flewThrough": 21,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 52 jibes · 13 clean",
+          "star": true,
+          "touchdown": 15
+        },
+        {
+          "fellIn": 2,
+          "flewThrough": 0,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": "of 2 tacks",
+          "star": false,
+          "touchdown": 0
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "29"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "max2s",
+        "sub": "top speed · best 2 s",
+        "unit": "kn",
+        "value": "14.36"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s",
+        "tacks"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "6.8"
+        },
+        {
+          "clean": false,
+          "key": "tph",
+          "label": "dry turns / h",
+          "value": "18.9"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "2:03 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "23.6 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "5"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "tacks": {
+      "bars": [
+        {
+          "fellIn": 16,
+          "flewThrough": 21,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 52 jibes · 13 clean",
+          "star": true,
+          "touchdown": 15
+        },
+        {
+          "fellIn": 2,
+          "flewThrough": 0,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": null,
+          "star": false,
+          "touchdown": 0
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "29"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "tacks",
+        "sub": "0 dry · beside 52 jibes",
+        "unit": "tacks",
+        "value": "2"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s",
+        "tacks"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "6.8"
+        },
+        {
+          "clean": false,
+          "key": "tph",
+          "label": "dry turns / h",
+          "value": "18.9"
+        },
+        {
+          "clean": false,
+          "key": "max2s",
+          "label": "max 2 s",
+          "value": "14.36 kn"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "2:03 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "23.6 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "5"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    }
+  },
+  "2026-08-03-1440_nago-torbole-windsurfen_native": {
+    "clean": {
+      "bars": [
+        {
+          "fellIn": 9,
+          "flewThrough": 3,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 18 jibes",
+          "star": false,
+          "touchdown": 6
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "11"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "max2s",
+        "sub": "top speed · best 2 s",
+        "unit": "kn",
+        "value": "12.60"
+      },
+      "heroOptions": [
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "5.4"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "1:59 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "17.5 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "1"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "4"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "max2s": {
+      "bars": [
+        {
+          "fellIn": 9,
+          "flewThrough": 3,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 18 jibes",
+          "star": false,
+          "touchdown": 6
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "11"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "max2s",
+        "sub": "top speed · best 2 s",
+        "unit": "kn",
+        "value": "12.60"
+      },
+      "heroOptions": [
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "5.4"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "1:59 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "17.5 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "1"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "4"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "tacks": {
+      "bars": [
+        {
+          "fellIn": 9,
+          "flewThrough": 3,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 18 jibes",
+          "star": false,
+          "touchdown": 6
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "11"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "max2s",
+        "sub": "top speed · best 2 s",
+        "unit": "kn",
+        "value": "12.60"
+      },
+      "heroOptions": [
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "5.4"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "1:59 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "17.5 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "1"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "4"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    }
+  },
+  "2026-08-04-0822_nago-torbole-windsurfen_native": {
+    "clean": {
+      "bars": [
+        {
+          "fellIn": 7,
+          "flewThrough": 11,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
+          "star": false,
+          "touchdown": 9
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "13"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "clean",
+        "sub": "of 27 jibes",
+        "unit": "clean jibes",
+        "value": "3"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "3.3"
+        },
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "21.9"
+        },
+        {
+          "clean": false,
+          "key": "max2s",
+          "label": "max 2 s",
+          "value": "11.95 kn"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "1:04 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "9.8 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "3"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "max2s": {
+      "bars": [
+        {
+          "fellIn": 7,
+          "flewThrough": 11,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 27 jibes · 3 clean",
+          "star": true,
+          "touchdown": 9
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "13"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "max2s",
+        "sub": "top speed · best 2 s",
+        "unit": "kn",
+        "value": "11.95"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "3.3"
+        },
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "21.9"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "1:04 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "9.8 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "3"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "tacks": {
+      "bars": [
+        {
+          "fellIn": 7,
+          "flewThrough": 11,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
+          "star": false,
+          "touchdown": 9
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "13"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "clean",
+        "sub": "of 27 jibes",
+        "unit": "clean jibes",
+        "value": "3"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "3.3"
+        },
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "21.9"
+        },
+        {
+          "clean": false,
+          "key": "max2s",
+          "label": "max 2 s",
+          "value": "11.95 kn"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "1:04 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "9.8 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "3"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    }
+  },
+  "2026-08-04-1411_nago-torbole-windsurfen_native": {
+    "clean": {
+      "bars": [
+        {
+          "fellIn": 14,
+          "flewThrough": 34,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
+          "star": false,
+          "touchdown": 15
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "22"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "clean",
+        "sub": "of 63 jibes",
+        "unit": "clean jibes",
+        "value": "16"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "6.5"
+        },
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "19.9"
+        },
+        {
+          "clean": false,
+          "key": "max2s",
+          "label": "max 2 s",
+          "value": "12.45 kn"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "2:54 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "26.8 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "6"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "11"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "max2s": {
+      "bars": [
+        {
+          "fellIn": 14,
+          "flewThrough": 34,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 63 jibes · 16 clean",
+          "star": true,
+          "touchdown": 15
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "22"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "max2s",
+        "sub": "top speed · best 2 s",
+        "unit": "kn",
+        "value": "12.45"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "6.5"
+        },
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "19.9"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "2:54 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "26.8 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "6"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "11"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "tacks": {
+      "bars": [
+        {
+          "fellIn": 14,
+          "flewThrough": 34,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
+          "star": false,
+          "touchdown": 15
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "22"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "clean",
+        "sub": "of 63 jibes",
+        "unit": "clean jibes",
+        "value": "16"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "6.5"
+        },
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "19.9"
+        },
+        {
+          "clean": false,
+          "key": "max2s",
+          "label": "max 2 s",
+          "value": "12.45 kn"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "2:54 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "26.8 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "6"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "11"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    }
+  },
+  "2026-08-05-0827_nago-torbole-windsurfen_native": {
+    "clean": {
+      "bars": [
+        {
+          "fellIn": 7,
+          "flewThrough": 14,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
+          "star": false,
+          "touchdown": 2
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "10"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "clean",
+        "sub": "of 23 jibes",
+        "unit": "clean jibes",
+        "value": "4"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "5.9"
+        },
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "23.5"
+        },
+        {
+          "clean": false,
+          "key": "max2s",
+          "label": "max 2 s",
+          "value": "12.23 kn"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "42:04 min"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "8.3 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "max2s": {
+      "bars": [
+        {
+          "fellIn": 7,
+          "flewThrough": 14,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 23 jibes · 4 clean",
+          "star": true,
+          "touchdown": 2
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "10"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "max2s",
+        "sub": "top speed · best 2 s",
+        "unit": "kn",
+        "value": "12.23"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "5.9"
+        },
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "23.5"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "42:04 min"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "8.3 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "tacks": {
+      "bars": [
+        {
+          "fellIn": 7,
+          "flewThrough": 14,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
+          "star": false,
+          "touchdown": 2
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "10"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "clean",
+        "sub": "of 23 jibes",
+        "unit": "clean jibes",
+        "value": "4"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "5.9"
+        },
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "23.5"
+        },
+        {
+          "clean": false,
+          "key": "max2s",
+          "label": "max 2 s",
+          "value": "12.23 kn"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "42:04 min"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "8.3 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    }
+  },
+  "2026-08-05-1356_nago-torbole-foilmotion_foilmotion": {
+    "clean": {
+      "bars": [
+        {
+          "fellIn": 17,
+          "flewThrough": 45,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
+          "star": false,
+          "touchdown": 7
+        },
+        {
+          "fellIn": 1,
+          "flewThrough": 0,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": "of 1 tack",
+          "star": false,
+          "touchdown": 0
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "23"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "clean",
+        "sub": "of 69 jibes",
+        "unit": "clean jibes",
+        "value": "32"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s",
+        "tacks"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "13.5"
+        },
+        {
+          "clean": false,
+          "key": "tph",
+          "label": "dry turns / h",
+          "value": "21.9"
+        },
+        {
+          "clean": false,
+          "key": "max2s",
+          "label": "max 2 s",
+          "value": "14.21 kn"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "2:27 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "32.4 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "9"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "9"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "max2s": {
+      "bars": [
+        {
+          "fellIn": 17,
+          "flewThrough": 45,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 69 jibes · 32 clean",
+          "star": true,
+          "touchdown": 7
+        },
+        {
+          "fellIn": 1,
+          "flewThrough": 0,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": "of 1 tack",
+          "star": false,
+          "touchdown": 0
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "23"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "max2s",
+        "sub": "top speed · best 2 s",
+        "unit": "kn",
+        "value": "14.21"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s",
+        "tacks"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "13.5"
+        },
+        {
+          "clean": false,
+          "key": "tph",
+          "label": "dry turns / h",
+          "value": "21.9"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "2:27 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "32.4 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "9"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "9"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "tacks": {
+      "bars": [
+        {
+          "fellIn": 17,
+          "flewThrough": 45,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 69 jibes · 32 clean",
+          "star": true,
+          "touchdown": 7
+        },
+        {
+          "fellIn": 1,
+          "flewThrough": 0,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": null,
+          "star": false,
+          "touchdown": 0
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "23"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "tacks",
+        "sub": "0 dry · beside 69 jibes",
+        "unit": "tack",
+        "value": "1"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s",
+        "tacks"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "13.5"
+        },
+        {
+          "clean": false,
+          "key": "tph",
+          "label": "dry turns / h",
+          "value": "21.9"
+        },
+        {
+          "clean": false,
+          "key": "max2s",
+          "label": "max 2 s",
+          "value": "14.21 kn"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "2:27 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "32.4 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "9"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "9"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    }
+  },
+  "2026-08-06-0757_nago-torbole-wingfoiling_wingfoiling": {
+    "clean": {
+      "bars": [
+        {
+          "fellIn": 11,
+          "flewThrough": 10,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
+          "star": false,
+          "touchdown": 11
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "14"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "clean",
+        "sub": "of 32 jibes",
+        "unit": "clean jibes",
+        "value": "5"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "3.2"
+        },
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "13.4"
+        },
+        {
+          "clean": false,
+          "key": "max2s",
+          "label": "max 2 s",
+          "value": "13.51 kn"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "1:42 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "14.5 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "3"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "6"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "max2s": {
+      "bars": [
+        {
+          "fellIn": 11,
+          "flewThrough": 10,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 32 jibes · 5 clean",
+          "star": true,
+          "touchdown": 11
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "14"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "max2s",
+        "sub": "top speed · best 2 s",
+        "unit": "kn",
+        "value": "13.51"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "3.2"
+        },
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "13.4"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "1:42 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "14.5 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "3"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "6"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "tacks": {
+      "bars": [
+        {
+          "fellIn": 11,
+          "flewThrough": 10,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
+          "star": false,
+          "touchdown": 11
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "14"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "clean",
+        "sub": "of 32 jibes",
+        "unit": "clean jibes",
+        "value": "5"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "3.2"
+        },
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "13.4"
+        },
+        {
+          "clean": false,
+          "key": "max2s",
+          "label": "max 2 s",
+          "value": "13.51 kn"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "1:42 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "14.5 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "3"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "6"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    }
+  },
+  "2026-08-06-1359_nago-torbole-windsurfen_native": {
+    "clean": {
+      "bars": [
+        {
+          "fellIn": 3,
+          "flewThrough": 4,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
+          "star": false,
+          "touchdown": 8
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "7"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "clean",
+        "sub": "of 15 jibes",
+        "unit": "clean jibes",
+        "value": "2"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "2.1"
+        },
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "12.5"
+        },
+        {
+          "clean": false,
+          "key": "max2s",
+          "label": "max 2 s",
+          "value": "13.89 kn"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "58:28 min"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "10.7 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "1"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "4"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "max2s": {
+      "bars": [
+        {
+          "fellIn": 3,
+          "flewThrough": 4,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 15 jibes · 2 clean",
+          "star": true,
+          "touchdown": 8
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "7"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "max2s",
+        "sub": "top speed · best 2 s",
+        "unit": "kn",
+        "value": "13.89"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "2.1"
+        },
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "12.5"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "58:28 min"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "10.7 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "1"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "4"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "tacks": {
+      "bars": [
+        {
+          "fellIn": 3,
+          "flewThrough": 4,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
+          "star": false,
+          "touchdown": 8
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "7"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "clean",
+        "sub": "of 15 jibes",
+        "unit": "clean jibes",
+        "value": "2"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "2.1"
+        },
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "12.5"
+        },
+        {
+          "clean": false,
+          "key": "max2s",
+          "label": "max 2 s",
+          "value": "13.89 kn"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "58:28 min"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "10.7 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "1"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "4"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    }
+  },
+  "2026-08-07-0754_nago-torbole-windsurfen_ciq": {
+    "clean": {
+      "bars": [
+        {
+          "fellIn": 12,
+          "flewThrough": 11,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
+          "star": false,
+          "touchdown": 8
+        },
+        {
+          "fellIn": 1,
+          "flewThrough": 0,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": "of 1 tack",
+          "star": false,
+          "touchdown": 0
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "16"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "clean",
+        "sub": "of 31 jibes",
+        "unit": "clean jibes",
+        "value": "3"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s",
+        "tacks"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "2.6"
+        },
+        {
+          "clean": false,
+          "key": "tph",
+          "label": "dry turns / h",
+          "value": "16.7"
+        },
+        {
+          "clean": false,
+          "key": "max2s",
+          "label": "max 2 s",
+          "value": "11.36 kn"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "1:25 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "12.8 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "3"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "4"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "max2s": {
+      "bars": [
+        {
+          "fellIn": 12,
+          "flewThrough": 11,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 31 jibes · 3 clean",
+          "star": true,
+          "touchdown": 8
+        },
+        {
+          "fellIn": 1,
+          "flewThrough": 0,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": "of 1 tack",
+          "star": false,
+          "touchdown": 0
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "16"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "max2s",
+        "sub": "top speed · best 2 s",
+        "unit": "kn",
+        "value": "11.36"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s",
+        "tacks"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "2.6"
+        },
+        {
+          "clean": false,
+          "key": "tph",
+          "label": "dry turns / h",
+          "value": "16.7"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "1:25 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "12.8 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "3"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "4"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "tacks": {
+      "bars": [
+        {
+          "fellIn": 12,
+          "flewThrough": 11,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 31 jibes · 3 clean",
+          "star": true,
+          "touchdown": 8
+        },
+        {
+          "fellIn": 1,
+          "flewThrough": 0,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": null,
+          "star": false,
+          "touchdown": 0
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "16"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "tacks",
+        "sub": "0 dry · beside 31 jibes",
+        "unit": "tack",
+        "value": "1"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s",
+        "tacks"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "2.6"
+        },
+        {
+          "clean": false,
+          "key": "tph",
+          "label": "dry turns / h",
+          "value": "16.7"
+        },
+        {
+          "clean": false,
+          "key": "max2s",
+          "label": "max 2 s",
+          "value": "11.36 kn"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "1:25 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "12.8 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "3"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "4"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    }
+  },
+  "2026-08-29-1440_nago-torbole-windsurfen_ciq": {
+    "clean": {
+      "bars": [
+        {
+          "fellIn": 10,
+          "flewThrough": 42,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
+          "star": false,
+          "touchdown": 4
+        },
+        {
+          "fellIn": 1,
+          "flewThrough": 0,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": "of 1 tack",
+          "star": false,
+          "touchdown": 0
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "25"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "clean",
+        "sub": "of 56 jibes",
+        "unit": "clean jibes",
+        "value": "25"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s",
+        "tacks"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "13.3"
+        },
+        {
+          "clean": false,
+          "key": "tph",
+          "label": "dry turns / h",
+          "value": "24.5"
+        },
+        {
+          "clean": false,
+          "key": "max2s",
+          "label": "max 2 s",
+          "value": "13.21 kn"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "1:57 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "23.0 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "7"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "11"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "max2s": {
+      "bars": [
+        {
+          "fellIn": 10,
+          "flewThrough": 42,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 56 jibes · 25 clean",
+          "star": true,
+          "touchdown": 4
+        },
+        {
+          "fellIn": 1,
+          "flewThrough": 0,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": "of 1 tack",
+          "star": false,
+          "touchdown": 0
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "25"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "max2s",
+        "sub": "top speed · best 2 s",
+        "unit": "kn",
+        "value": "13.21"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s",
+        "tacks"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "13.3"
+        },
+        {
+          "clean": false,
+          "key": "tph",
+          "label": "dry turns / h",
+          "value": "24.5"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "1:57 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "23.0 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "7"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "11"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "tacks": {
+      "bars": [
+        {
+          "fellIn": 10,
+          "flewThrough": 42,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 56 jibes · 25 clean",
+          "star": true,
+          "touchdown": 4
+        },
+        {
+          "fellIn": 1,
+          "flewThrough": 0,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": null,
+          "star": false,
+          "touchdown": 0
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "25"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "tacks",
+        "sub": "0 dry · beside 56 jibes",
+        "unit": "tack",
+        "value": "1"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s",
+        "tacks"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "13.3"
+        },
+        {
+          "clean": false,
+          "key": "tph",
+          "label": "dry turns / h",
+          "value": "24.5"
+        },
+        {
+          "clean": false,
+          "key": "max2s",
+          "label": "max 2 s",
+          "value": "13.21 kn"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "1:57 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "23.0 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "7"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "11"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    }
+  },
+  "2026-08-30-1407_nago-torbole": {
+    "clean": {
+      "bars": [
+        {
+          "fellIn": 2,
+          "flewThrough": 8,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
+          "star": false,
+          "touchdown": 0
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "2"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "clean",
+        "sub": "of 10 jibes",
+        "unit": "clean jibes",
+        "value": "5"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "28.1"
+        },
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "45.0"
+        },
+        {
+          "clean": false,
+          "key": "max2s",
+          "label": "max 2 s",
+          "value": "13.65 kn"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "10:45 min"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "2.5 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "max2s": {
+      "bars": [
+        {
+          "fellIn": 2,
+          "flewThrough": 8,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 10 jibes · 5 clean",
+          "star": true,
+          "touchdown": 0
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "2"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "max2s",
+        "sub": "top speed · best 2 s",
+        "unit": "kn",
+        "value": "13.65"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "28.1"
+        },
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "45.0"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "10:45 min"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "2.5 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "tacks": {
+      "bars": [
+        {
+          "fellIn": 2,
+          "flewThrough": 8,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
+          "star": false,
+          "touchdown": 0
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "2"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "clean",
+        "sub": "of 10 jibes",
+        "unit": "clean jibes",
+        "value": "5"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "28.1"
+        },
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "45.0"
+        },
+        {
+          "clean": false,
+          "key": "max2s",
+          "label": "max 2 s",
+          "value": "13.65 kn"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "10:45 min"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "2.5 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    }
+  },
+  "2026-08-30-1407_nago-torbole-nospeed": {
+    "clean": {
+      "bars": [
+        {
+          "fellIn": 2,
+          "flewThrough": 8,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
+          "star": false,
+          "touchdown": 0
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "2"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "clean",
+        "sub": "of 10 jibes",
+        "unit": "clean jibes",
+        "value": "5"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "28.1"
+        },
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "45.0"
+        },
+        {
+          "clean": false,
+          "key": "max2s",
+          "label": "max 2 s",
+          "value": "13.65 kn"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "10:45 min"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "2.5 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "max2s": {
+      "bars": [
+        {
+          "fellIn": 2,
+          "flewThrough": 8,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 10 jibes · 5 clean",
+          "star": true,
+          "touchdown": 0
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "2"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "max2s",
+        "sub": "top speed · best 2 s",
+        "unit": "kn",
+        "value": "13.65"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "28.1"
+        },
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "45.0"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "10:45 min"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "2.5 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "tacks": {
+      "bars": [
+        {
+          "fellIn": 2,
+          "flewThrough": 8,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
+          "star": false,
+          "touchdown": 0
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "2"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "clean",
+        "sub": "of 10 jibes",
+        "unit": "clean jibes",
+        "value": "5"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "28.1"
+        },
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "45.0"
+        },
+        {
+          "clean": false,
+          "key": "max2s",
+          "label": "max 2 s",
+          "value": "13.65 kn"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "10:45 min"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "2.5 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    }
+  },
+  "2026-08-30-1407_nago-torbole-speed": {
+    "clean": {
+      "bars": [
+        {
+          "fellIn": 2,
+          "flewThrough": 8,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
+          "star": false,
+          "touchdown": 0
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "2"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "clean",
+        "sub": "of 10 jibes",
+        "unit": "clean jibes",
+        "value": "5"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "28.3"
+        },
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "45.4"
+        },
+        {
+          "clean": false,
+          "key": "max2s",
+          "label": "max 2 s",
+          "value": "13.47 kn"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "10:45 min"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "2.6 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "max2s": {
+      "bars": [
+        {
+          "fellIn": 2,
+          "flewThrough": 8,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 10 jibes · 5 clean",
+          "star": true,
+          "touchdown": 0
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "2"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "max2s",
+        "sub": "top speed · best 2 s",
+        "unit": "kn",
+        "value": "13.47"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "28.3"
+        },
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "45.4"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "10:45 min"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "2.6 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "tacks": {
+      "bars": [
+        {
+          "fellIn": 2,
+          "flewThrough": 8,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
+          "star": false,
+          "touchdown": 0
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "2"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "clean",
+        "sub": "of 10 jibes",
+        "unit": "clean jibes",
+        "value": "5"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "28.3"
+        },
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "45.4"
+        },
+        {
+          "clean": false,
+          "key": "max2s",
+          "label": "max 2 s",
+          "value": "13.47 kn"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "10:45 min"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "2.6 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    }
+  },
+  "2026-08-30-1407_nago-torbole-windsurfen_ciq": {
+    "clean": {
+      "bars": [
+        {
+          "fellIn": 2,
+          "flewThrough": 8,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
+          "star": false,
+          "touchdown": 0
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "2"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "clean",
+        "sub": "of 10 jibes",
+        "unit": "clean jibes",
+        "value": "5"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "28.3"
+        },
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "45.4"
+        },
+        {
+          "clean": false,
+          "key": "max2s",
+          "label": "max 2 s",
+          "value": "13.47 kn"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "10:45 min"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "2.6 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "max2s": {
+      "bars": [
+        {
+          "fellIn": 2,
+          "flewThrough": 8,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 10 jibes · 5 clean",
+          "star": true,
+          "touchdown": 0
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "2"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "max2s",
+        "sub": "top speed · best 2 s",
+        "unit": "kn",
+        "value": "13.47"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "28.3"
+        },
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "45.4"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "10:45 min"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "2.6 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "tacks": {
+      "bars": [
+        {
+          "fellIn": 2,
+          "flewThrough": 8,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
+          "star": false,
+          "touchdown": 0
+        }
+      ],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "2"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "clean",
+        "sub": "of 10 jibes",
+        "unit": "clean jibes",
+        "value": "5"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "28.3"
+        },
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "45.4"
+        },
+        {
+          "clean": false,
+          "key": "max2s",
+          "label": "max 2 s",
+          "value": "13.47 kn"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "10:45 min"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "2.6 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    }
+  },
+  "smoke-60s": {
+    "clean": {
+      "bars": [],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "never fell in"
+        }
+      ],
+      "hero": {
+        "kind": "max2s",
+        "sub": "top speed · best 2 s",
+        "unit": "kn",
+        "value": "11.88"
+      },
+      "heroOptions": [
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "0.0"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "0:59 min"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "0.2 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": []
+    },
+    "max2s": {
+      "bars": [],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "never fell in"
+        }
+      ],
+      "hero": {
+        "kind": "max2s",
+        "sub": "top speed · best 2 s",
+        "unit": "kn",
+        "value": "11.88"
+      },
+      "heroOptions": [
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "0.0"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "0:59 min"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "0.2 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": []
+    },
+    "tacks": {
+      "bars": [],
+      "dateLine": "",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "never fell in"
+        }
+      ],
+      "hero": {
+        "kind": "max2s",
+        "sub": "top speed · best 2 s",
+        "unit": "kn",
+        "value": "11.88"
+      },
+      "heroOptions": [
+        "max2s"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "0.0"
+        },
+        {
+          "clean": false,
+          "key": "duration",
+          "label": "duration",
+          "value": "0:59 min"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "0.2 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": []
+    }
+  }
+}
