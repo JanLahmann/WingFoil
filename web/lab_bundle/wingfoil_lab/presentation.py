@@ -33,7 +33,6 @@ __all__ = [
     "RECORD_KINDS",
     "DEFAULT_RECORD_WINDOW",
     "DEFAULT_ROW_METRICS",
-    "LEAN_CARD_KEYS",
     "FORBIDDEN_CARD_KEYS",
     "MAP_LAYERS",
     "TURN_TYPE_FILTERS",
@@ -57,9 +56,6 @@ DEFAULT_RECORD_WINDOW = "best2s"
 
 #: `RowMetric.defaultTriple` — what a library row draws until the rider says otherwise.
 DEFAULT_ROW_METRICS = ["foilShare", "jibes", "best2s"]
-
-#: `ShareCardStats.Preset.leanKeys`, in the order the contract spells them.
-LEAN_CARD_KEYS = ["cleanJibes", "distance", "duration", "falls", "max2s", "tally"]
 
 #: Keys that may never reach a card — real numbers the app shows in the tiles below the
 #: block, which on a card would be a second, quieter answer to "was that a good session".
@@ -369,20 +365,13 @@ def _rate_cells(summary, turns):
 def _card(block):
     """The share card is the block, re-laid-out — minus the two block-only speed cells.
 
-    Nothing is computed here that the block does not already carry: a preset can only drop
-    a tile, never reword, reorder or invent one.
+    Nothing is computed here that the block does not already carry: the card lays the
+    tiles out (layout B v2) and never rewords, reorders or invents one. The Lean/Complete
+    presets that used to tag each tile went with the tile grid (26 Sep 2026).
     """
-    tiles = []
-    for row in block["rows"]:
-        for cell in row["cells"]:
-            if cell["key"] in ("best5x10s", "alpha500"):
-                continue
-            tile = dict(cell)
-            tile["presets"] = (["complete", "lean"] if cell["key"] in LEAN_CARD_KEYS
-                               else ["complete"])
-            tiles.append(tile)
-    return {"tiles": tiles, "leanKeys": list(LEAN_CARD_KEYS),
-            "forbiddenKeys": list(FORBIDDEN_CARD_KEYS)}
+    tiles = [dict(cell) for row in block["rows"] for cell in row["cells"]
+             if cell["key"] not in ("best5x10s", "alpha500")]
+    return {"tiles": tiles, "forbiddenKeys": list(FORBIDDEN_CARD_KEYS)}
 
 
 def _row(summary, turns, records, is_session):
@@ -707,7 +696,6 @@ def build_presentation(golden, *, policy=DEFAULT_SPEED_RECORD_POLICY, divergence
         "defaults": {
             "recordWindow": record_block["default"],
             "section": "ride",
-            "cardPreset": "complete",
             "rowMetrics": list(DEFAULT_ROW_METRICS),
             "speedRecordPolicy": policy,
         },

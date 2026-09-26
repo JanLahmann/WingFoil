@@ -8,8 +8,8 @@
  *
  *   block      the rendered `keyMetrics` HTML, parsed back into {label, value} pairs —
  *              the actual markup the page puts on screen, not the array behind it
- *   complete   `cardStats(document, "complete")`
- *   lean       `cardStats(document, "lean")`
+ *   complete   `cardStats(document)` — the card's tiles
+ *   stories    `cardStory(document, hero)` for every hero (layout B v2)
  *
  * Run from the repo root, with the PRESENTATION goldens as arguments — the browser
  * draws the document they carry and derives nothing:
@@ -29,8 +29,8 @@ globalThis.window = { addEventListener() {} };
 
 const JS = new URL("../js/", import.meta.url);
 const { keyMetrics } = await import(new URL("render.js", JS).href);
-const { HERO_ORDER, PERIOD_LEAN_KEYS, cardStats, cardStory, periodCardStats,
-        periodMapAvailable } = await import(new URL("cardstats.js", JS).href);
+const { HERO_ORDER, PERIOD_HERO_ORDER, cardStats, cardStory, periodCardStats,
+        periodCardStory, periodMapAvailable } = await import(new URL("cardstats.js", JS).href);
 const { stackPlacer, storyBoxes } = await import(new URL("sharecard.js", JS).href);
 const { captionText } = await import(new URL("presentation.js", JS).href);
 
@@ -57,8 +57,10 @@ const normalize = (s) => s.replace(/\s*·\s*/g, " · ").trim();
 
 /* The **period** card, from the shared fixture rather than from an analysis golden: a
  * period is a set of afternoons, so the thing to dump is what `library.periods` made of ten
- * of them and what the card does with each one's block. Same two questions as above —
- * complete is the block, lean is a strict subset of it — asked of the second card kind. */
+ * of them and what the card does with each one — its numbers (the block), its story for
+ * every hero (layout B v2), and the gap between the words and the footer on every shape,
+ * measured with a caption in the header and the tallest story any hero gives. */
+const SIZES = { portrait: [360, 450], square: [360, 360], landscape: [640, 360] };
 const periodsPath = new URL("../../fixtures/periods/periods.expected.json", import.meta.url);
 const fixture = JSON.parse(readFileSync(periodsPath, "utf8"));
 const periods = [];
@@ -70,8 +72,15 @@ for (const group of ["trips", "months", "seasons", "custom"]) {
       title: period.title,
       dateLine: period.dateLine,
       block: period.block.map((e) => ({ key: e.key, label: e.label, value: e.value })),
-      complete: periodCardStats(period, "complete"),
-      lean: periodCardStats(period, "lean"),
+      stats: periodCardStats(period),
+      stories: Object.fromEntries(PERIOD_HERO_ORDER.map(
+        (hero) => [hero, periodCardStory(period, hero)])),
+      footerGaps: Object.fromEntries(Object.entries(SIZES).map(([shape, [w, h]]) => {
+        const gaps = PERIOD_HERO_ORDER.map((hero) => storyBoxes(
+          { story: periodCardStory(period, hero), track: null, tracks: [], note: "x" },
+          shape, w, h).gap);
+        return [shape, Math.round(Math.min(...gaps) * 100) / 100];
+      })),
       // Whether the composer offers a ground under this period at all. The rule itself is
       // `library._map_ground`'s; what is dumped here is that the browser reads it and does
       // not invent a second one.
@@ -118,9 +127,7 @@ for (const path of process.argv.slice(2)) {
   out.push({
     file: `fixtures/goldens/${path.split("/").pop()}`,
     block: parseBlock(keyMetrics(document)),
-    complete: cardStats(document, "complete").map(pair),
-    lean: cardStats(document, "lean").map(pair),
-    leanKeys: [...document.card.leanKeys].sort(),
+    complete: cardStats(document).map(pair),
     // Layout B v2 (26 Sep 2026): the story for every hero the rider can pick — the fixture
     // fixtures/cards/stories.expected.json pins it, and the kit's DocumentRendererTests hold
     // `ShareCardStats.Story.make` to the same file — and the gap between the words and the
@@ -128,7 +135,7 @@ for (const path of process.argv.slice(2)) {
     stories: Object.fromEntries(HERO_ORDER.map((hero) => [hero, cardStory(document, hero)])),
     footerGaps: Object.fromEntries(["portrait", "square", "landscape"].map((shape) => {
       const story = cardStory(document, "clean", { speedNote: "x" });
-      const size = { portrait: [360, 450], square: [360, 360], landscape: [640, 360] }[shape];
+      const size = SIZES[shape];
       const boxes = storyBoxes({ story, track: null, note: null }, shape, size[0], size[1]);
       return [shape, Math.round(boxes.gap * 100) / 100];
     })),
@@ -145,6 +152,5 @@ for (const path of process.argv.slice(2)) {
 process.stdout.write(JSON.stringify({
   cards: out,
   periods,
-  periodLeanKeys: [...PERIOD_LEAN_KEYS],
   stacks,
 }));

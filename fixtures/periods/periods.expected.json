@@ -22,13 +22,6 @@
       "longestFlight",
       "longestDryStreak",
       "spots"
-    ],
-    "leanKeys": [
-      "sessions",
-      "hours",
-      "cleanJibes",
-      "cph",
-      "best2s"
     ]
   },
   "sessions": [
@@ -56,6 +49,13 @@
       "best10sKn": 12.0,
       "jibesPerHour": 7.2,
       "turnsPerHour": 11.5,
+      "tacks": 4,
+      "outcomes": {
+        "flewThrough": 6,
+        "touchdown": 3,
+        "fellIn": 3
+      },
+      "longestFlewStreak": 3,
       "sourceClass": "b"
     },
     {
@@ -82,6 +82,13 @@
       "best10sKn": 13.2,
       "jibesPerHour": 10.8,
       "turnsPerHour": 14.4,
+      "tacks": 6,
+      "outcomes": {
+        "flewThrough": 14,
+        "touchdown": 7,
+        "fellIn": 5
+      },
+      "longestFlewStreak": 5,
       "sourceClass": "b"
     },
     {
@@ -108,6 +115,13 @@
       "best10sKn": 11.4,
       "jibesPerHour": 12.0,
       "turnsPerHour": 16.8,
+      "tacks": 2,
+      "outcomes": {
+        "flewThrough": 4,
+        "touchdown": 2,
+        "fellIn": 2
+      },
+      "longestFlewStreak": 2,
       "sourceClass": "b"
     },
     {
@@ -134,6 +148,13 @@
       "best10sKn": 10.9,
       "jibesPerHour": 8.0,
       "turnsPerHour": 12.0,
+      "tacks": 4,
+      "outcomes": {
+        "flewThrough": 5,
+        "touchdown": 4,
+        "fellIn": 5
+      },
+      "longestFlewStreak": 2,
       "sourceClass": "b"
     },
     {
@@ -160,6 +181,13 @@
       "best10sKn": 11.8,
       "jibesPerHour": 9.6,
       "turnsPerHour": 12.8,
+      "tacks": 4,
+      "outcomes": {
+        "flewThrough": 9,
+        "touchdown": 5,
+        "fellIn": 4
+      },
+      "longestFlewStreak": 3,
       "sourceClass": "b"
     },
     {
@@ -186,6 +214,13 @@
       "best10sKn": 12.6,
       "jibesPerHour": 8.4,
       "turnsPerHour": 10.8,
+      "tacks": 2,
+      "outcomes": {
+        "flewThrough": 7,
+        "touchdown": 2,
+        "fellIn": 2
+      },
+      "longestFlewStreak": 4,
       "sourceClass": "b"
     },
     {
@@ -212,6 +247,13 @@
       "best10sKn": 10.2,
       "jibesPerHour": 12.0,
       "turnsPerHour": 18.0,
+      "tacks": 2,
+      "outcomes": {
+        "flewThrough": 2,
+        "touchdown": 2,
+        "fellIn": 3
+      },
+      "longestFlewStreak": 1,
       "sourceClass": "b"
     },
     {
@@ -231,13 +273,20 @@
       "longestFlightS": 110.0,
       "jibes": 12,
       "jibesSuccessful": 4,
-      "turnsCounted": 15,
+      "turnsCounted": 12,
       "longestDryStreak": 5,
       "wetExits": 8,
       "best2sKn": 12.2,
       "best10sKn": 10.6,
       "jibesPerHour": 8.6,
       "turnsPerHour": 11.1,
+      "tacks": 0,
+      "outcomes": {
+        "flewThrough": 4,
+        "touchdown": 3,
+        "fellIn": 5
+      },
+      "longestFlewStreak": 2,
       "sourceClass": "b"
     },
     {
@@ -257,13 +306,20 @@
       "longestFlightS": 95.0,
       "jibes": 7,
       "jibesSuccessful": 3,
-      "turnsCounted": 9,
+      "turnsCounted": 7,
       "longestDryStreak": 4,
       "wetExits": 5,
       "best2sKn": 11.5,
       "best10sKn": 9.8,
       "jibesPerHour": 6.7,
       "turnsPerHour": 9.3,
+      "tacks": 0,
+      "outcomes": {
+        "flewThrough": 3,
+        "touchdown": 1,
+        "fellIn": 3
+      },
+      "longestFlewStreak": 2,
       "sourceClass": "c"
     },
     {
@@ -290,6 +346,9 @@
       "best10sKn": null,
       "jibesPerHour": null,
       "turnsPerHour": null,
+      "tacks": 1,
+      "outcomes": null,
+      "longestFlewStreak": null,
       "sourceClass": "b"
     }
   ],
@@ -444,47 +503,47 @@
               {
                 "i": 0,
                 "id": "a1",
-                "v": null
+                "v": 50.0
               },
               {
                 "i": 1,
                 "id": "a2",
-                "v": null
+                "v": 53.846
               },
               {
                 "i": 2,
                 "id": "b1",
-                "v": null
+                "v": 50.0
               },
               {
                 "i": 3,
                 "id": "b2",
-                "v": null
+                "v": 63.636
               },
               {
                 "i": 4,
                 "id": "a3",
-                "v": null
+                "v": 50.0
               },
               {
                 "i": 5,
                 "id": "a4",
-                "v": null
+                "v": 35.714
               },
               {
                 "i": 6,
                 "id": "a5",
-                "v": null
+                "v": 28.571
               },
               {
                 "i": 7,
                 "id": "c1",
-                "v": null
+                "v": 33.333
               },
               {
                 "i": 8,
                 "id": "c2",
-                "v": null
+                "v": 42.857
               },
               {
                 "i": 9,
@@ -1130,7 +1189,21 @@
           "label": "spots visited",
           "value": "1"
         }
-      ]
+      ],
+      "card": {
+        "outcomes": {
+          "flewThrough": 16,
+          "touchdown": 7,
+          "fellIn": 6
+        },
+        "jibes": 23,
+        "tacks": 6,
+        "dryKind": "turns",
+        "dryRate": "11.0",
+        "flewStreak": 4,
+        "dryStreak": 7,
+        "falls": 8
+      }
     },
     {
       "kind": "trip",
@@ -1224,7 +1297,21 @@
           "label": "spots visited",
           "value": "1"
         }
-      ]
+      ],
+      "card": {
+        "outcomes": {
+          "flewThrough": 24,
+          "touchdown": 12,
+          "fellIn": 10
+        },
+        "jibes": 34,
+        "tacks": 12,
+        "dryKind": "turns",
+        "dryRate": "12.3",
+        "flewStreak": 5,
+        "dryStreak": 9,
+        "falls": 13
+      }
     }
   ],
   "months": [
@@ -1298,7 +1385,17 @@
           "label": "spots visited",
           "value": "1"
         }
-      ]
+      ],
+      "card": {
+        "outcomes": null,
+        "jibes": 3,
+        "tacks": 1,
+        "dryKind": null,
+        "dryRate": null,
+        "flewStreak": null,
+        "dryStreak": null,
+        "falls": null
+      }
     },
     {
       "kind": "month",
@@ -1353,7 +1450,7 @@
         {
           "key": "turns",
           "label": "turns",
-          "value": "9"
+          "value": "7"
         },
         {
           "key": "cleanJibeRate",
@@ -1390,7 +1487,21 @@
           "label": "spots visited",
           "value": "1"
         }
-      ]
+      ],
+      "card": {
+        "outcomes": {
+          "flewThrough": 3,
+          "touchdown": 1,
+          "fellIn": 3
+        },
+        "jibes": 7,
+        "tacks": 0,
+        "dryKind": "jibes",
+        "dryRate": "5.3",
+        "flewStreak": 2,
+        "dryStreak": 4,
+        "falls": 5
+      }
     },
     {
       "kind": "month",
@@ -1445,7 +1556,7 @@
         {
           "key": "turns",
           "label": "turns",
-          "value": "15"
+          "value": "12"
         },
         {
           "key": "cleanJibeRate",
@@ -1482,7 +1593,21 @@
           "label": "spots visited",
           "value": "1"
         }
-      ]
+      ],
+      "card": {
+        "outcomes": {
+          "flewThrough": 4,
+          "touchdown": 3,
+          "fellIn": 5
+        },
+        "jibes": 12,
+        "tacks": 0,
+        "dryKind": "jibes",
+        "dryRate": "6.0",
+        "flewStreak": 2,
+        "dryStreak": 5,
+        "falls": 8
+      }
     },
     {
       "kind": "month",
@@ -1574,7 +1699,21 @@
           "label": "spots visited",
           "value": "1"
         }
-      ]
+      ],
+      "card": {
+        "outcomes": {
+          "flewThrough": 2,
+          "touchdown": 2,
+          "fellIn": 3
+        },
+        "jibes": 5,
+        "tacks": 2,
+        "dryKind": "turns",
+        "dryRate": "12.0",
+        "flewStreak": 1,
+        "dryStreak": 2,
+        "falls": 3
+      }
     },
     {
       "kind": "month",
@@ -1670,7 +1809,21 @@
           "label": "spots visited",
           "value": "2"
         }
-      ]
+      ],
+      "card": {
+        "outcomes": {
+          "flewThrough": 39,
+          "touchdown": 20,
+          "fellIn": 18
+        },
+        "jibes": 59,
+        "tacks": 18,
+        "dryKind": "turns",
+        "dryRate": "12.0",
+        "flewStreak": 5,
+        "dryStreak": 9,
+        "falls": 23
+      }
     },
     {
       "kind": "month",
@@ -1762,7 +1915,21 @@
           "label": "spots visited",
           "value": "1"
         }
-      ]
+      ],
+      "card": {
+        "outcomes": {
+          "flewThrough": 6,
+          "touchdown": 3,
+          "fellIn": 3
+        },
+        "jibes": 8,
+        "tacks": 4,
+        "dryKind": "turns",
+        "dryRate": "10.8",
+        "flewStreak": 3,
+        "dryStreak": 6,
+        "falls": 4
+      }
     }
   ],
   "seasons": [
@@ -1836,7 +2003,17 @@
           "label": "spots visited",
           "value": "1"
         }
-      ]
+      ],
+      "card": {
+        "outcomes": null,
+        "jibes": 3,
+        "tacks": 1,
+        "dryKind": null,
+        "dryRate": null,
+        "flewStreak": null,
+        "dryStreak": null,
+        "falls": null
+      }
     },
     {
       "kind": "season",
@@ -1899,7 +2076,7 @@
         {
           "key": "turns",
           "label": "turns",
-          "value": "120"
+          "value": "115"
         },
         {
           "key": "cleanJibeRate",
@@ -1936,7 +2113,21 @@
           "label": "spots visited",
           "value": "3"
         }
-      ]
+      ],
+      "card": {
+        "outcomes": {
+          "flewThrough": 54,
+          "touchdown": 29,
+          "fellIn": 32
+        },
+        "jibes": 91,
+        "tacks": 24,
+        "dryKind": "turns",
+        "dryRate": "10.4",
+        "flewStreak": 5,
+        "dryStreak": 9,
+        "falls": 43
+      }
     }
   ],
   "custom": [
@@ -2035,7 +2226,21 @@
           "label": "spots visited",
           "value": "2"
         }
-      ]
+      ],
+      "card": {
+        "outcomes": {
+          "flewThrough": 34,
+          "touchdown": 16,
+          "fellIn": 13
+        },
+        "jibes": 49,
+        "tacks": 14,
+        "dryKind": "turns",
+        "dryRate": "12.0",
+        "flewStreak": 5,
+        "dryStreak": 9,
+        "falls": 17
+      }
     },
     {
       "start": null,
@@ -2129,7 +2334,21 @@
           "label": "spots visited",
           "value": "1"
         }
-      ]
+      ],
+      "card": {
+        "outcomes": {
+          "flewThrough": 6,
+          "touchdown": 3,
+          "fellIn": 3
+        },
+        "jibes": 8,
+        "tacks": 4,
+        "dryKind": "turns",
+        "dryRate": "10.8",
+        "flewStreak": 3,
+        "dryStreak": 6,
+        "falls": 4
+      }
     },
     {
       "start": "2027-01-01",
@@ -2187,7 +2406,7 @@
         {
           "key": "turns",
           "label": "turns",
-          "value": "14"
+          "value": "12"
         },
         {
           "key": "cleanJibeRate",
@@ -2224,7 +2443,21 @@
           "label": "spots visited",
           "value": "2"
         }
-      ]
+      ],
+      "card": {
+        "outcomes": {
+          "flewThrough": 3,
+          "touchdown": 1,
+          "fellIn": 3
+        },
+        "jibes": 10,
+        "tacks": 1,
+        "dryKind": "turns",
+        "dryRate": "5.3",
+        "flewStreak": 2,
+        "dryStreak": 4,
+        "falls": 5
+      }
     }
   ]
 }

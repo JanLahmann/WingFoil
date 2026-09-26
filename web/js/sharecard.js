@@ -38,10 +38,11 @@
 
 import { CREDIT, frameTrack, mapBackdrop, placeOn } from "./cardmap.js";
 import {
-  BRANDING, CAPTION_SEP, HEROES, NOTE_LIMIT, PRESETS, SHAPES, TITLE_LIMIT,
+  BRANDING, CAPTION_SEP, HEROES, NOTE_LIMIT, SHAPES, TITLE_LIMIT,
   cardDateLine, cardStartLine, cardStory,
   cardDisclaimer, cardKey, cardStats, cardTitle, cardTitleDraft, cleanNote, cleanTitle,
-  isWide, loadCardChoice, loadCardText, periodCardContent, periodMapAvailable,
+  isWide, loadCardChoice, loadCardText, periodCardContent, periodCardStory,
+  periodMapAvailable,
   saveCardChoice, saveCardText,
 } from "./cardstats.js";
 import { getAnalysisJson } from "./store.js";
@@ -100,11 +101,7 @@ const OFF_FOIL = alpha(BRAND.paper, 0.45);
 
 /* --------------------------------------------------------------------- geometry */
 
-const PAD_X = 16, PAD_TOP = 14, PAD_BOTTOM = 12, STACK_GAP = 8;
-/** The wide shape's word column, as a fraction of the card: fixed rather than intrinsic,
- *  so the cells are the same size on a wide card as on a tall one and the track gets the
- *  whole remainder. */
-const WIDE_COLUMN = 0.40;
+const PAD_X = 16, PAD_TOP = 14, PAD_BOTTOM = 12;
 
 /* ----------------------------------------------------------------------- fonts */
 
@@ -509,7 +506,7 @@ async function buildStackMap(tracks, box, W, H, scale) {
  * town's white building fill under the footer — and not against open water, which needs
  * about half of this.
  */
-function drawScrim(ctx, W, H, wide, column = WIDE_COLUMN) {
+function drawScrim(ctx, W, H, wide, column) {
   ctx.fillStyle = alpha(BRAND.navy, 0.34);
   ctx.fillRect(0, 0, W, H);
 
@@ -536,12 +533,6 @@ function drawScrim(ctx, W, H, wide, column = WIDE_COLUMN) {
   ctx.fillStyle = "rgba(0, 0, 0, 0.55)";
   ctx.fillRect(x0, 0, W - x0, H);
 }
-
-/** What a stat cell is filled with. White at a tenth over the brand gradient — which is how
- *  the card has always drawn it, and how `ShareCardView` draws it — but the *opposite*
- *  direction over a map: a translucent white plate over a town's white building fill is not
- *  a plate at all, and the eight numbers are the half of the card a reader actually reads. */
-const cellFill = (mapped) => (mapped ? "rgba(0, 0, 0, 0.34)" : "rgba(255, 255, 255, 0.10)");
 
 /** How much of the header's width the credit takes on a tall card, in layout points, so the
  *  title can be told to stop short of it. Measured once at the credit's own size. */
@@ -618,28 +609,6 @@ function drawFitted(ctx, text, x, y, maxWidth, size, weight, family, color) {
   return s;
 }
 
-/**
- * `text` as one line, or two, whichever it takes to fit `maxWidth` at `size` without
- * `fitSize`'s shrink (22 September 2026, twin of the two-line caption budget in
- * `ShareCardView`). The falls cell's split ("15 in a turn · 10 in a straight line") is the
- * block's longest caption, and at the dense four-column layout `fitSize`'s floorless shrink
- * had nowhere left to go but illegible. Splits at the space nearest the middle — which for
- * `fallsSplit` lands close to the "·" — rather than mid-word. Every shorter caption already
- * fits on one line at `size` and this returns it unsplit.
- */
-function wrapCaption(ctx, text, maxWidth, size, weight, family) {
-  ctx.font = `${weight} ${size}px ${family}`;
-  if (ctx.measureText(text).width <= maxWidth) return [text];
-  const mid = text.length / 2;
-  let breakAt = -1, closest = Infinity;
-  for (let i = 0; i < text.length; i++) {
-    if (text[i] !== " ") continue;
-    const d = Math.abs(i - mid);
-    if (d < closest) { closest = d; breakAt = i; }
-  }
-  return breakAt < 0 ? [text] : [text.slice(0, breakAt), text.slice(breakAt + 1)];
-}
-
 /* ------------------------------------------------------------------ the pieces */
 
 function drawBackground(ctx, w, h) {
@@ -701,115 +670,6 @@ function drawHeader(ctx, { title, dateLine, note }, box, family, titleInset = 0)
   }
 }
 
-/** Four across once the block is more than a headline. The complete block is up to eight
- *  cells; at two columns that is four rows and a card with no room left for the ride it is
- *  about. The wide shape keeps two, because its word column is 40 % of the card. */
-const columnCount = (stats, shape) => (isWide(shape) || stats.length <= 4 ? 2 : 4);
-/** Smaller type and tighter cells for the full block — the same trade the block itself
- *  makes on a phone, where eight numbers do not get eight headlines. */
-const isDense = (stats) => stats.length > 4;
-
-function gridMetrics(stats, shape) {
-  const dense = isDense(stats);
-  return {
-    cols: columnCount(stats, shape),
-    gap: dense ? 5 : 8,
-    padV: dense ? 4 : 8,
-    padH: dense ? 6 : 10,
-    radius: dense ? 9 : 12,
-    labelSize: dense ? 7.5 : 9,
-    valueSize: dense ? 16 : 21,
-    captionSize: dense ? 7 : 8.5,
-    /** The second caption line's baseline gap — tighter than the `+ 4` above the first
-     *  line, the way a wrapped line always sits closer to the one above it than to the
-     *  value it is a caption of. */
-    captionLineGap: 2,
-    // Uniform, so the grid is a grid: the caption line is reserved on every cell even
-    // though only two of them have one (the tally, and the falls cell's split since 20
-    // September 2026). Sized to the tallest content (label + value + caption + descender)
-    // and no more — every point spent here is a point the track, which is what the picture
-    // is about, does not get. The dense count carries a second caption line's worth (22
-    // September 2026): the falls cell's split no longer fits one line at four columns, and
-    // the reservation is uniform across every dense cell for the same reason the first
-    // line's is, whether or not that cell's own caption needs it.
-    cellH: dense ? 54 : 56,
-  };
-}
-
-function gridHeight(stats, shape) {
-  const m = gridMetrics(stats, shape);
-  const rows = Math.max(1, Math.ceil(stats.length / m.cols));
-  return rows * m.cellH + (rows - 1) * m.gap;
-}
-
-function drawGrid(ctx, stats, box, shape, family, mapped = false) {
-  const m = gridMetrics(stats, shape);
-  const dense = isDense(stats);
-  const cellW = (box.w - m.gap * (m.cols - 1)) / m.cols;
-  stats.forEach((stat, i) => {
-    const cx = box.x + (i % m.cols) * (cellW + m.gap);
-    const cy = box.y + Math.floor(i / m.cols) * (m.cellH + m.gap);
-    ctx.fillStyle = cellFill(mapped);
-    roundRect(ctx, cx, cy, cellW, m.cellH, m.radius);
-    ctx.fill();
-
-    const inner = cellW - m.padH * 2;
-    // A cell's caption hangs off its label after an em-dash — the tally's "of 55 jibes"
-    // and the falls cell's "4 in a turn · 21 in a straight line". Splitting it here is
-    // layout, not content: the two halves are the block's own words in the block's own
-    // order (js/cardstats.js, CAPTION_SEP), and iOS holds them in two fields and joins
-    // them with the same separator.
-    const [label, caption] = stat.label.split(CAPTION_SEP);
-    let y = cy + m.padV + m.labelSize;
-    drawFitted(ctx, label, cx + m.padH, y, inner, m.labelSize, 600, family,
-               alpha(BRAND.green, 0.85));
-    y += m.valueSize + 2;
-    drawValue(ctx, stat, cx + m.padH, y, inner, m.valueSize, family);
-    if (caption) {
-      // Fitted like the label above it rather than drawn raw: the tally's caption grew a
-      // clean count ("of 50 jibes · 12 clean"), the falls cell's names two places, and a
-      // card is a PNG — a caption that runs out of its cell is permanent, where a point of
-      // type size is only small.
-      y += m.captionSize + 4;
-      // Two lines at the dense (four-column) layout, the falls cell's own reason
-      // (22 September 2026) — see `wrapCaption` and `gridMetrics.cellH`. Every shorter
-      // caption comes back as one line and draws exactly as it always did.
-      const lines = dense
-        ? wrapCaption(ctx, caption, inner, m.captionSize, 400, family)
-        : [caption];
-      lines.forEach((line, i) => {
-        if (i > 0) y += m.captionSize + m.captionLineGap;
-        drawFitted(ctx, line, cx + m.padH, y, inner, m.captionSize, 400, family,
-                   alpha(BRAND.paper, 0.6));
-      });
-    }
-  });
-}
-
-/** The tally cell is the one that is not a string: its three counts are drawn on the
- *  verdict ladder's own inks, the same way the key-metrics block draws them on the page.
- *  Every other cell is `stat.value` and nothing else. */
-function drawValue(ctx, stat, x, y, maxWidth, size, family) {
-  if (!stat.tally) {
-    drawFitted(ctx, stat.value, x, y, maxWidth, size, 700, family, BRAND.paper);
-    return;
-  }
-  const t = stat.tally;
-  const parts = [
-    [String(t.flewThrough), C.good], [" · ", alpha(BRAND.paper, 0.45)],
-    [String(t.touchdown), C.warn], [" · ", alpha(BRAND.paper, 0.45)],
-    [String(t.fellIn), C.bad],
-  ];
-  const s = fitSize(ctx, parts.map((p) => p[0]).join(""), maxWidth, size, 700, family);
-  ctx.font = `700 ${s}px ${family}`;
-  let cx = x;
-  for (const [text, color] of parts) {
-    ctx.fillStyle = color;
-    ctx.fillText(text, cx, y);
-    cx += ctx.measureText(text).width;
-  }
-}
-
 /** Height of the footer block, and the QR's side.
  *
  * 48 pt is 144 exported px. The code used to be 33 pt / 99 px, which was three whole pixels
@@ -824,7 +684,6 @@ function drawValue(ctx, stat, x, y, maxWidth, size, family) {
  * shapes and 15 pt of width from the wordmark on the wide one. Both checked at all three
  * shapes. iOS carries the same 48 pt in `ShareCardView`, changed separately. */
 const QR_SIZE = 48;                                  // layout points → 144 exported px
-const footerHeight = (disclaimer) => QR_SIZE + (disclaimer ? 8 : 0);
 
 /** The asset's module count: a 25-module version-2 symbol plus the four modules of quiet
  *  zone the spec wants, baked into the PNG. One module is therefore exactly 1 layout point,
@@ -943,13 +802,6 @@ function drawFooter(ctx, content, box, art, family) {
   ctx.fillText(sep, textX + nameW, midY + 1);
   drawFitted(ctx, BRANDING.tagline, textX, midY + 15, textW, 10.5, 500, family,
              alpha(BRAND.paper, 0.8));
-  // The period card's disclaimer slot (always null today); the session card draws its speed
-  // note next to the speed instead.
-  if (content.disclaimer && !content.story) {
-    ctx.font = `400 7px ${family}`;
-    ctx.fillStyle = alpha(C.effort, 0.9);
-    ctx.fillText(content.disclaimer, textX, midY + 24);
-  }
 }
 
 /* ---------------------------------------------------------- layout B v2
@@ -1104,14 +956,16 @@ function drawRibbon(ctx, story, x, y, w, family, vs = 15) {
 const ribbonNote = (story) => (story.speedNote && story.ribbon.some((c) => c.key === "max2s")
   ? NOTE_H : 0);
 
-/** Which of the square's two track boxes draws the ride larger. */
-function largerBox(track, boxes) {
-  const ext = track ? extent(track) : null;
-  if (!ext) return boxes[0];
+/** Which of the square's two track boxes draws the ride larger — one ride's extent, or a
+ *  period's stack at its one shared scale. */
+function largerBox(content, boxes) {
+  const ext = content.track ? extent(content.track) : null;
+  const stack = content.tracks?.length ? content.tracks : null;
+  if (!ext && !stack) return boxes[0];
   let best = boxes[0], bestScale = -1;
   for (const b of boxes) {
     if (b.h < 20 || b.w < 20) continue;
-    const s = placerFor(ext, b).scale;
+    const s = ext ? placerFor(ext, b).scale : (stackPlacer(stack, b)?.scale ?? -1);
     if (s > bestScale) { bestScale = s; best = b; }
   }
   return best;
@@ -1127,7 +981,8 @@ export function storyBoxes(content, shape, W, H) {
   const headH = headerHeight(content);
   const inner = { x: PAD_X, y: PAD_TOP, w: W - PAD_X * 2, h: H - PAD_TOP - PAD_BOTTOM };
   const footer = { y: inner.y + inner.h - QR_SIZE, h: QR_SIZE };
-  const hasArt = Boolean(content.track);
+  // A period card has no single ride and a stack of them instead; the box is the same box.
+  const hasArt = Boolean(content.track) || Boolean(content.tracks?.length);
 
   if (isWide(shape)) {
     const colW = W * STORY_COLUMN;
@@ -1163,7 +1018,7 @@ export function storyBoxes(content, shape, W, H) {
     if (square) {
       const bx = W * 0.5;
       const beside = { x: bx, y: inner.y - 2, w: inner.x + inner.w - bx, h: heroY - 2 - inner.y };
-      track = largerBox(content.track, [beside, below]);
+      track = largerBox(content, [beside, below]);
       if (track === beside) headerW = bx - inner.x - 8;
     } else {
       track = below;
@@ -1213,8 +1068,7 @@ export async function drawCard(canvas, content, shape, options = {}) {
   ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
   const W = size.w / SCALE, H = size.h / SCALE;
   const wide = isWide(shape);
-  const boxes = content.story ? storyBoxes(content, shape, W, H)
-                              : cardBoxes(content, shape, W, H);
+  const boxes = storyBoxes(content, shape, W, H);
 
   // The one await between the layout and the ink. Off — the default — neither branch is
   // reached at all, and everything below draws the card this file has always drawn. A period
@@ -1231,7 +1085,7 @@ export async function drawCard(canvas, content, shape, options = {}) {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.drawImage(map.image, 0, 0, size.w, size.h);
     ctx.restore();
-    drawScrim(ctx, W, H, wide, content.story ? STORY_COLUMN : WIDE_COLUMN);
+    drawScrim(ctx, W, H, wide, STORY_COLUMN);
   } else {
     drawBackground(ctx, W, H);
   }
@@ -1249,56 +1103,10 @@ export async function drawCard(canvas, content, shape, options = {}) {
 
   const titleInset = map && !wide ? creditWidth(ctx, family) + 8 : 0;
   drawHeader(ctx, content, boxes.header, family, titleInset);
-  if (content.story) drawStory(ctx, content, boxes, family);
-  else drawGrid(ctx, content.stats, boxes.grid, shape, family, Boolean(map));
+  drawStory(ctx, content, boxes, family);
   drawFooter(ctx, content, boxes.footer, art, family);
   if (map) drawCredit(ctx, boxes.inner, wide, family);
   return canvas;
-}
-
-/**
- * Where the four pieces sit, in layout points.
- *
- * Pulled out of `drawCard` because the map framing needs the *track box* before anything is
- * drawn: the whole promise of the map background is that the ride lands where it would have
- * landed anyway, and that can only be kept by asking the layout first and painting second.
- */
-function cardBoxes(content, shape, W, H) {
-  const stats = content.stats;
-  const footH = footerHeight(content.disclaimer);
-  const gridH = gridHeight(stats, shape);
-  const headH = headerHeight(content);
-  const inner = { x: PAD_X, y: PAD_TOP, w: W - PAD_X * 2, h: H - PAD_TOP - PAD_BOTTOM };
-
-  // A period card has no single ride and a stack of them instead, and either way the box is
-  // the same box — the layout does not care which artwork lands in it.
-  const hasArt = Boolean(content.track) || Boolean(content.tracks?.length);
-
-  if (isWide(shape)) {
-    // Track left, everything that is words right — at 1920×1080 a track stretched across
-    // the full width leaves the stat block a 70-pt strip and the title reads as a caption
-    // under a banner.
-    const colW = W * WIDE_COLUMN;
-    const trackW = inner.w - colW - STACK_GAP * 2;
-    const cx = inner.x + trackW + STACK_GAP * 2;
-    return {
-      inner,
-      track: hasArt ? { x: inner.x, y: inner.y, w: trackW, h: inner.h } : null,
-      header: { x: cx, y: inner.y, w: colW },
-      grid: { x: cx, y: inner.y + headH + STACK_GAP, w: colW },
-      footer: { x: cx, y: inner.y + inner.h - footH, w: colW, h: footH },
-    };
-  }
-  const trackY = inner.y + headH + STACK_GAP;
-  const gridY = inner.y + inner.h - footH - STACK_GAP - gridH;
-  return {
-    inner,
-    track: hasArt
-      ? { x: inner.x, y: trackY, w: inner.w, h: gridY - STACK_GAP - trackY } : null,
-    header: { x: inner.x, y: inner.y, w: inner.w },
-    grid: { x: inner.x, y: gridY, w: inner.w },
-    footer: { x: inner.x, y: inner.y + inner.h - footH, w: inner.w, h: footH },
-  };
 }
 
 /**
@@ -1315,7 +1123,7 @@ export function cardContent(result, hero = "clean", text = {}) {
     title: cleanTitle(text.title) || cardTitle(result.file?.name),
     dateLine,
     note: cleanNote(text.note) || null,
-    stats: cardStats(result.presentation, "complete"),
+    stats: cardStats(result.presentation),
     // Layout B v2: the hero, the bars, the streak line and the ribbon (js/cardstats.js).
     story: cardStory(result.presentation, HEROES[hero] ? hero : "clean",
                      { dateLine, speedNote: disclaimer }),
@@ -1330,8 +1138,7 @@ export function cardContent(result, hero = "clean", text = {}) {
 
 /* ------------------------------------------------------------------ the dialog */
 
-const state = { result: null, key: "", shape: "portrait", preset: "complete", map: false,
-                hero: "clean",
+const state = { result: null, key: "", shape: "portrait", map: false, hero: "clean",
                 title: "", note: "", blob: null, seq: 0,
                 // The second payload: a period, and the outlines of the sessions in it.
                 // Null for the session card, which is every card this composer used to make.
@@ -1351,9 +1158,6 @@ export function mountShareCard() {
   el("card-close").addEventListener("click", () => dialog.close());
   for (const b of dialog.querySelectorAll("[data-shape]")) {
     b.addEventListener("click", () => choose({ shape: b.dataset.shape }));
-  }
-  for (const b of dialog.querySelectorAll("[data-preset]")) {
-    b.addEventListener("click", () => choose({ preset: b.dataset.preset }));
   }
   for (const b of dialog.querySelectorAll("[data-hero]")) {
     if (HEROES[b.dataset.hero]) b.textContent = HEROES[b.dataset.hero].label;
@@ -1427,7 +1231,6 @@ export function openShareCard(result) {
   state.key = cardKey(result);
   const saved = loadCardChoice();
   state.shape = saved.shape;
-  state.preset = saved.preset;
   state.hero = saved.hero;
   // Remembered, but only where it can be honoured: a document with no geographic anchor
   // (no fixes, or one analysed by a build that predates it) has no map to offer, and a
@@ -1466,8 +1269,9 @@ export function openShareCard(result) {
 /**
  * Open the same composer for a **period**.
  *
- * The dialog, the shapes, the presets, the title and caption fields and the export are the
- * session card's, unchanged: this is the same card describing a week instead of an afternoon.
+ * The dialog, the shapes, the hero picker, the title and caption fields and the export are
+ * the session card's, unchanged: this is the same card describing a week instead of an
+ * afternoon, in the same layout (B v2).
  * Two things are different and both are stated rather than inferred — the artwork is every
  * session's outline stacked rather than one ride, and the map switch is offered only where a
  * period *has* a single ground (`periodMapAvailable`; docs/presentation.md).
@@ -1486,7 +1290,6 @@ export async function openPeriodCard(period, entries) {
   state.key = `period:${period.key}`;
   const saved = loadCardChoice();
   state.shape = saved.shape;
-  state.preset = saved.preset;
   state.hero = saved.hero;
   // Remembered, but only where it can be honoured — the same rule the session card follows,
   // asking a different question: a period has a ground when all of its afternoons were at one
@@ -1540,7 +1343,7 @@ async function loadTracks(period, entries) {
 /** Everything the card prints, for whichever payload the composer is holding. */
 function content() {
   return state.period
-    ? periodCardContent(state.period, state.preset,
+    ? periodCardContent(state.period, state.hero,
                         { title: state.title, note: state.note }, state.tracks)
     : cardContent(state.result, state.hero, { title: state.title, note: state.note });
 }
@@ -1553,10 +1356,9 @@ const mapAvailable = (result) => (state.period ? periodMapAvailable(state.period
 
 function choose(next) {
   Object.assign(state, next);
-  // Two stores, two scopes: the shape, the preset and the map are the rider's habit and
+  // Two stores, two scopes: the shape, the hero and the map are the rider's habit and
   // belong to the device, the title and caption belong to this one session (`cardKey`).
-  saveCardChoice({ shape: state.shape, preset: state.preset, map: state.map,
-                   hero: state.hero });
+  saveCardChoice({ shape: state.shape, map: state.map, hero: state.hero });
   saveCardText(state.key, { title: state.title, note: state.note });
   syncChoices();
   refresh();
@@ -1567,19 +1369,12 @@ function syncChoices() {
   for (const b of dialog.querySelectorAll("[data-shape]")) {
     b.setAttribute("aria-pressed", String(b.dataset.shape === state.shape));
   }
-  // The period card keeps its two presets; the session card picks its hero instead (layout
-  // B v2), and only the heroes this session can carry are offered.
-  const period = Boolean(state.period);
-  el("card-preset-row").hidden = !period;
-  el("card-preset-note").hidden = !period;
-  for (const b of dialog.querySelectorAll("[data-preset]")) {
-    b.setAttribute("aria-pressed", String(b.dataset.preset === state.preset));
-  }
-  el("card-preset-note").textContent = PRESETS[state.preset].summary;
-  const story = !period && state.result
-    ? cardStory(state.result.presentation, state.hero) : null;
+  // Both cards pick their hero (layout B v2), and only the heroes this session or this
+  // period can carry are offered.
+  const story = state.period ? periodCardStory(state.period, state.hero)
+    : (state.result ? cardStory(state.result.presentation, state.hero) : null);
   const shown = story?.hero?.kind ?? null;
-  el("card-hero-row").hidden = period || !story || story.heroOptions.length < 2;
+  el("card-hero-row").hidden = !story || story.heroOptions.length < 2;
   for (const b of dialog.querySelectorAll("[data-hero]")) {
     b.hidden = !story || !story.heroOptions.includes(b.dataset.hero);
     b.setAttribute("aria-pressed", String(b.dataset.hero === shown));
@@ -1669,7 +1464,7 @@ async function download() {
 function cardEventProps(how) {
   return { how, kind: state.period ? "period" : "session",
            shape: state.shape, map: !!state.map,
-           ...(state.period ? { preset: state.preset } : { hero: state.hero }) };
+           hero: state.hero };
 }
 
 /** Feature-detected with a *file*, not with `navigator.share`: several browsers can share a

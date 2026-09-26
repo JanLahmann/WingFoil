@@ -211,24 +211,12 @@
         "longestFlight",
         "wind"
       ],
-      "leanKeys": [
-        "cleanJibes",
-        "distance",
-        "duration",
-        "falls",
-        "max2s",
-        "tally"
-      ],
       "tiles": [
         {
           "captions": [],
           "colourRole": "neutral",
           "key": "duration",
           "labelId": "presentation.label.duration",
-          "presets": [
-            "complete",
-            "lean"
-          ],
           "unitKind": "durationS",
           "value": 59.0
         },
@@ -237,10 +225,6 @@
           "colourRole": "neutral",
           "key": "distance",
           "labelId": "presentation.label.distance",
-          "presets": [
-            "complete",
-            "lean"
-          ],
           "unitKind": "distanceKm",
           "value": 0.226
         },
@@ -249,9 +233,6 @@
           "colourRole": "neutral",
           "key": "avgSpeed",
           "labelId": "presentation.label.avgSpeed",
-          "presets": [
-            "complete"
-          ],
           "unitKind": "speedKn",
           "value": 7.446
         },
@@ -260,10 +241,6 @@
           "colourRole": "neutral",
           "key": "max2s",
           "labelId": "presentation.label.max2s",
-          "presets": [
-            "complete",
-            "lean"
-          ],
           "unitKind": "speedKn",
           "value": 11.879
         },
@@ -280,10 +257,6 @@
           "colourRole": "neutral",
           "key": "falls",
           "labelId": "glossary.fellIn",
-          "presets": [
-            "complete",
-            "lean"
-          ],
           "unitKind": "count",
           "value": 0
         },
@@ -292,9 +265,6 @@
           "colourRole": "neutral",
           "key": "cph",
           "labelId": "glossary.cph",
-          "presets": [
-            "complete"
-          ],
           "unitKind": "rate",
           "value": 0.0
         },
@@ -303,9 +273,6 @@
           "colourRole": "neutral",
           "key": "jph",
           "labelId": "glossary.jph",
-          "presets": [
-            "complete"
-          ],
           "unitKind": "rate",
           "value": 0.0
         },
@@ -314,16 +281,12 @@
           "colourRole": "neutral",
           "key": "wph",
           "labelId": "glossary.wph",
-          "presets": [
-            "complete"
-          ],
           "unitKind": "rate",
           "value": 0.0
         }
       ]
     },
     "defaults": {
-      "cardPreset": "complete",
       "recordWindow": "best2s",
       "rowMetrics": [
         "foilShare",

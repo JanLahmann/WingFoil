@@ -136,7 +136,7 @@ DOCUMENT_READS = [
     ("2. eligibility — which chip a mark answers to", "session.js",
      ["doc?.turns?.strip", "entry.layerId", "doc?.flightEnds?.marks", "doc?.splash?.marks"]),
     ("2b. a glide-out folds into flew through", "session.js", ["mark.outcomeId"]),
-    ("5. the card is the block", "cardstats.js", ["doc?.card?.tiles", "tile.presets"]),
+    ("5. the card is the block", "cardstats.js", ["doc?.card?.tiles"]),
     ("5a. the rate row is the document's row 4", "cardstats.js", ["doc?.block?.rows"]),
     ("the records the tiles print", "render.js", ["doc?.records?.kinds"]),
     ("the turn page's 3 of 14", "turnpage.js",
@@ -382,10 +382,9 @@ def check_card() -> None:
     dumped = json.loads(raw)
     cards = dumped["cards"]
 
-    # The block the page renders and the card's `complete` preset, over every fixture, as
-    # one comparison. A preset may only DROP a tile, so `complete` — which drops none — is
-    # the block minus its two block-only speeds, which is exactly what `card.tiles` is.
-    check("  complete == the rendered block, every fixture",
+    # The block the page renders and the card's tiles, over every fixture, as one
+    # comparison: the block minus its two block-only speeds, which is what `card.tiles` is.
+    check("  the card's tiles == the rendered block, every fixture",
           [[{"label": e["label"], "value": e["value"]} for e in card["complete"]]
            for card in cards],
           [card["block"] for card in cards])
@@ -481,23 +480,29 @@ def check_card_story() -> None:
     check("  every shape keeps at least 4 pt between the words and the footer", tight, {})
 
 
-#: What the **period** card's `lean` keeps — `PeriodBlock.leanKeys` on iOS and
-#: `library.PERIOD_LEAN_KEYS` in the analyzer, spelled here so the JavaScript is checked
-#: against a third copy of the rule rather than against itself.
-PERIOD_LEAN_KEYS = ["sessions", "hours", "cleanJibes", "cph", "best2s"]
+#: The period card's stories (layout B v2), pinned for both platforms: card_parity.mjs dumps
+#: the browser's, `PeriodTests.thePeriodStoryIsTheSharedFixture` holds the kit's to the same
+#: file. Rewritten with CARD_STORY_WRITE=1, like the session card's.
+PERIOD_STORIES = REPO / "fixtures" / "cards" / "period-stories.expected.json"
+
+#: The period card's heroes, in picker order and fallback order — a second copy of the rule.
+PERIOD_HERO_ORDER = ["clean", "max2s", "sessions"]
+
 
 def check_period_card() -> None:
-    """The period card is the period's block, and its presets can only drop from it.
+    """The period card is the period's block, told as a story (layout B v2).
 
-    Exactly the contract the session card is held to one section above, asked of the second
-    card kind. The block itself is re-derived here from `library.periods` — so the
+    Exactly the contract the session card is held to above, asked of the second card kind:
+    the numbers are the block, the story prints nothing the block and `period.card` do not
+    carry, the hero falls back, 0 clean jibes are never printed, and every shape keeps its
+    words clear of the footer. The block itself is re-derived here from `library.periods` — so the
     JavaScript agreeing with the shared fixture is checked against what `library` produces
     *now*, and not against a file that may have been left behind by an edit to it.
     """
     if not _CARD_DUMP:
         return
     dumped = _CARD_DUMP[-1]
-    section("5d. the period card carries the period's block, unchanged")
+    section("5d. the period card carries the period's block and tells its story")
     sys.path.insert(0, str(WEB / "lab_bundle"))
     sys.path.insert(0, str(WEB / "tools"))
     import library                                                       # noqa: PLC0415
@@ -505,10 +510,14 @@ def check_period_card() -> None:
 
     periods = dumped.get("periods") or []
     check("  the fixture's periods were all measured", len(periods) > 0, True)
-    check("  periodLeanKeys is the contract's set",
-          dumped.get("periodLeanKeys"), PERIOD_LEAN_KEYS)
-    check("  ...and it is a subset of the block, so a preset can only drop",
-          set(PERIOD_LEAN_KEYS) <= {k for k, _l, _f in library.PERIOD_BLOCK}, True)
+    stories = {card["key"]: card["stories"] for card in periods}
+    if os.environ.get("CARD_STORY_WRITE"):
+        PERIOD_STORIES.write_text(json.dumps(stories, indent=2, ensure_ascii=False,
+                                             sort_keys=True) + "\n", encoding="utf-8")
+        print(f"  wrote {PERIOD_STORIES.relative_to(REPO)}")
+    stored = (json.loads(PERIOD_STORIES.read_text(encoding="utf-8"))
+              if PERIOD_STORIES.exists() else None)
+    check("  the browser's period stories are the shared fixture", stories, stored)
 
     digests = [periods_gen.period_digest(s) for s in periods_gen.PERIOD_SESSIONS]
     fresh = library.periods(digests)
@@ -527,28 +536,60 @@ def check_period_card() -> None:
         block = [{"key": e["key"], "label": e["label"], "value": e["value"]}
                  for e in want["block"]]
 
-        # 1. Complete IS the block: same entries, same order, same words, same strings.
-        check(f"  {key}: complete == the period's block", card["complete"], block)
+        # 1. The card's numbers ARE the block: same entries, order, words and strings.
+        check(f"  {key}: the card's numbers == the period's block", card["stats"], block)
 
-        # 2. Lean is a strict SUBSET, in the block's own order.
-        check(f"  {key}: lean is the block filtered by its lean keys",
-              card["lean"], [e for e in block if e["key"] in PERIOD_LEAN_KEYS])
+        # 2. The story, re-derived from the block and `period.card` by a second copy of the
+        #    rule: which heroes, which bar, which ribbon cells.
+        values = {e["key"]: e["value"] for e in block}
+        facts = want["card"]
+        clean = int(values["cleanJibes"]) if "cleanJibes" in values else 0
+        options = [h for h, ok in (("clean", clean > 0), ("max2s", "best2s" in values),
+                                   ("sessions", want["sessions"] > 0)) if ok]
+        o = facts["outcomes"]
+        total = sum(o.values()) if o else 0
+        for hero in PERIOD_HERO_ORDER:
+            story = card["stories"][hero]
+            kind = hero if hero in options else (options[0] if options else None)
+            ribbon = (["cph"] if clean > 0 and "cph" in values else []) \
+                + ([("jph" if facts["dryKind"] == "jibes" else "tph")]
+                   if facts["dryRate"] else []) \
+                + (["sessions"] if kind != "sessions" else []) \
+                + [k for k in ("hours", "distance") if k in values]
+            got = {"hero": (story["hero"] or {}).get("kind"), "options": story["heroOptions"],
+                   "bars": [(b["kind"], b["flewThrough"] + b["touchdown"] + b["fellIn"])
+                            for b in story["bars"]],
+                   "ribbon": [c["key"] for c in story["ribbon"]]}
+            check(f"  {key}/{hero}: hero, bar and ribbon follow the rule", got,
+                  {"hero": kind, "options": options,
+                   "bars": [(facts["dryKind"], total)] if total else [],
+                   "ribbon": ribbon})
+            words = json.dumps(story, ensure_ascii=False)
+            check(f"  {key}/{hero}: never prints 0 clean", "\"0 clean" in words, False)
+            for cell in story["ribbon"]:
+                if cell["key"] in values:
+                    check(f"  {key}/{hero}: {cell['key']} is the block's", cell["value"],
+                          values[cell["key"]])
 
-        # 3. Nothing outside the catalogue may reach a card, and the order is the
+        # 3. Every shape keeps at least 4 pt between the words and the footer.
+        check(f"  {key}: every shape clears the footer",
+              {s: g for s, g in card["footerGaps"].items() if g < 4}, {})
+
+        # 4. Nothing outside the catalogue may reach a card, and the order is the
         #    catalogue's.
-        keys = [e["key"] for e in card["complete"]]
+        keys = [e["key"] for e in card["stats"]]
         catalogue = [k for k, _l, _f in library.PERIOD_BLOCK]
         check(f"  {key}: every cell is in the catalogue", set(keys) <= set(catalogue), True)
         check(f"  {key}: in the catalogue's order",
               keys, [k for k in catalogue if k in set(keys)])
 
-        # 4. The heading and the span are the period's own, not re-derived at draw time.
+        # 5. The heading and the span are the period's own, not re-derived at draw time.
         check(f"  {key}: the card's headline is the period's title",
               card["title"], want["title"])
         check(f"  {key}: the date line is the period's span", card["dateLine"],
               want["dateLine"])
 
-        # 5. The map ground, re-derived here by a second copy of the rule: one spot cluster,
+        # 6. The map ground, re-derived here by a second copy of the rule: one spot cluster,
         #    and every afternoon in it placed by a fix rather than by the name of its file.
         #    The browser may only *read* the flag — a second clustering implementation in
         #    js/ would be a second answer to "was this one place".
@@ -863,10 +904,10 @@ def check_card_map(got: dict) -> None:
     section("5c. the card's optional map background")
 
     s = got["choice"]
-    check("  nothing stored: portrait, complete, no map", s["defaultsBeforeAnythingIsWritten"],
-          {"shape": "portrait", "preset": "complete", "map": False, "hero": "clean"})
+    check("  nothing stored: portrait, clean jibes, no map", s["defaultsBeforeAnythingIsWritten"],
+          {"shape": "portrait", "map": False, "hero": "clean"})
     check("  the switch remembers on", s["afterTurningOn"],
-          {"shape": "landscape", "preset": "lean", "map": True, "hero": "clean"})
+          {"shape": "landscape", "map": True, "hero": "clean"})
     check("  and stores it as the contract's value", s["storedOn"], MAP_ON)
     check("  and remembers off", s["afterTurningOff"]["map"], False)
     check("  which is stored, not deleted", s["storedOff"], "0")
@@ -874,7 +915,7 @@ def check_card_map(got: dict) -> None:
     check("  a foreign truthy value is still off", s["foreignTruthyValue"], False)
     check("  and so is garbage under the key", s["garbageValue"], False)
     check("  a browser with no storage gets the defaults", s["withoutStorage"],
-          {"shape": "portrait", "preset": "complete", "map": False, "hero": "clean"})
+          {"shape": "portrait", "map": False, "hero": "clean"})
     check("  and writing to one is a silent no-op", s["writeThrewWithoutStorage"], False)
     check("  the hero is remembered per device", s["heroRemembered"], "max2s")
     check("  and an unknown hero is clean jibes", s["heroUnknown"], "clean")

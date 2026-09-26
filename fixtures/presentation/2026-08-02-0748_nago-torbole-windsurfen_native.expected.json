@@ -283,24 +283,12 @@
         "longestFlight",
         "wind"
       ],
-      "leanKeys": [
-        "cleanJibes",
-        "distance",
-        "duration",
-        "falls",
-        "max2s",
-        "tally"
-      ],
       "tiles": [
         {
           "captions": [],
           "colourRole": "neutral",
           "key": "duration",
           "labelId": "presentation.label.duration",
-          "presets": [
-            "complete",
-            "lean"
-          ],
           "unitKind": "durationS",
           "value": 7779.0
         },
@@ -309,10 +297,6 @@
           "colourRole": "neutral",
           "key": "distance",
           "labelId": "presentation.label.distance",
-          "presets": [
-            "complete",
-            "lean"
-          ],
           "unitKind": "distanceKm",
           "value": 21.564
         },
@@ -321,9 +305,6 @@
           "colourRole": "neutral",
           "key": "avgSpeed",
           "labelId": "presentation.label.avgSpeed",
-          "presets": [
-            "complete"
-          ],
           "unitKind": "speedKn",
           "value": 5.553
         },
@@ -332,10 +313,6 @@
           "colourRole": "neutral",
           "key": "max2s",
           "labelId": "presentation.label.max2s",
-          "presets": [
-            "complete",
-            "lean"
-          ],
           "unitKind": "speedKn",
           "value": 13.186
         },
@@ -344,10 +321,6 @@
           "colourRole": "clean.jibe",
           "key": "cleanJibes",
           "labelId": "presentation.label.cleanJibes",
-          "presets": [
-            "complete",
-            "lean"
-          ],
           "unitKind": "count",
           "value": 7
         },
@@ -363,10 +336,6 @@
           "colourRole": "outcome.ladder",
           "key": "tally",
           "labelId": "presentation.label.outcomeLadder",
-          "presets": [
-            "complete",
-            "lean"
-          ],
           "tally": {
             "fellIn": 14,
             "flewThrough": 13,
@@ -387,9 +356,6 @@
           "colourRole": "outcome.ladder",
           "key": "tacks",
           "labelId": "presentation.label.outcomeLadder",
-          "presets": [
-            "complete"
-          ],
           "tally": {
             "fellIn": 1,
             "flewThrough": 0,
@@ -411,10 +377,6 @@
           "colourRole": "neutral",
           "key": "falls",
           "labelId": "glossary.fellIn",
-          "presets": [
-            "complete",
-            "lean"
-          ],
           "unitKind": "count",
           "value": 23
         },
@@ -435,9 +397,6 @@
           ],
           "key": "streaks",
           "labelId": "presentation.label.streaks",
-          "presets": [
-            "complete"
-          ],
           "unitKind": "count",
           "value": null
         },
@@ -446,9 +405,6 @@
           "colourRole": "neutral",
           "key": "cph",
           "labelId": "glossary.cph",
-          "presets": [
-            "complete"
-          ],
           "unitKind": "rate",
           "value": 3.3
         },
@@ -457,9 +413,6 @@
           "colourRole": "neutral",
           "key": "tph",
           "labelId": "glossary.tph",
-          "presets": [
-            "complete"
-          ],
           "unitKind": "rate",
           "value": 11.4
         },
@@ -468,16 +421,12 @@
           "colourRole": "neutral",
           "key": "wph",
           "labelId": "glossary.wph",
-          "presets": [
-            "complete"
-          ],
           "unitKind": "rate",
           "value": 11.0
         }
       ]
     },
     "defaults": {
-      "cardPreset": "complete",
       "recordWindow": "best2s",
       "rowMetrics": [
         "foilShare",
