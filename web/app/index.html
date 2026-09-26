@@ -795,19 +795,15 @@
     </div>
     <div id="icu-status" class="icu-status" role="status"></div>
     <div id="icu-results"></div>
-    <!-- Where the key is kept is its own help topic on the phone (`icuPrivacy`), and it was
-         two paragraphs here. One line, and the `?` carries the rest. -->
-    <p class="muted small" data-explain="icuPrivacy">Your API key stays in this browser and
+    <!-- Where the key is kept is an item of the phone's "What leaves your phone" topic
+         (`privacy`; it was a topic of its own, `icuPrivacy`, until 26 September 2026), and
+         it was two paragraphs here. One line, and the `?` carries the rest. -->
+    <p class="muted small" data-explain="privacy">Your API key stays in this browser and
       goes to <code>api.intervals.icu</code> and nowhere else.</p>
   </section>
 
   <section class="panel" data-settings="strava">
     <p class="muted small">Strava is on the iPhone app. Signing in needs it.</p>
-  </section>
-
-  <section class="panel" id="settings-deleted" data-settings="deleted">
-    <div id="deleted-body" data-screen="Deleted sessions"
-         data-empty="No deleted sessions yet."></div>
   </section>
 
   <!-- THE FOUR SECTIONS A BROWSER CANNOT DO, in the phone's own place in the order
@@ -826,14 +822,6 @@
   </section>
 
   <section class="panel" data-settings="analysis">
-    <p class="muted small">On the iPhone app.</p>
-  </section>
-
-  <section class="panel" data-settings="sessionList">
-    <p class="muted small">On the iPhone app.</p>
-  </section>
-
-  <section class="panel" data-settings="rowShows">
     <p class="muted small">On the iPhone app.</p>
   </section>
 
@@ -859,6 +847,12 @@
               aria-pressed="false">Include unverified</button>
     </div>
     <p class="muted small" id="speed-records-summary"></p>
+  </section>
+
+  <!-- The list, after the two sections that decide how its numbers read: the phone's
+       "Session list" and "Row shows" are one section since 26 September 2026. -->
+  <section class="panel" data-settings="sessionList">
+    <p class="muted small">On the iPhone app.</p>
   </section>
 
   <!-- YOUR DATA: the phone's Storage and Library backup, plus the one thing only a browser
@@ -894,6 +888,13 @@
         </p>
       </div>
     </div>
+  </section>
+
+  <!-- Deleted sessions, with the library since 26 September 2026: it is about what the
+       library keeps, as on the phone, where it sits beside the backup. -->
+  <section class="panel" id="settings-deleted" data-settings="deleted">
+    <div id="deleted-body" data-screen="Deleted sessions"
+         data-empty="No deleted sessions yet."></div>
   </section>
 
   <section class="panel" id="settings-about" data-settings="about">

@@ -37,47 +37,44 @@ struct SettingsView: View {
                 // it changes, where the browser app has it too.
                 jumpSection(proxy)
                 detailSection
+                // **Seven groups, in the order of 26 September 2026**
+                // (docs/proposals/2026-09-25-settings-structure.md, approved): your sessions
+                // come in, your watch, how it reads, the list, your library, the test
+                // builds, about. The chips below follow the same order.
+                //
+                // 1 · Your sessions come in.
                 icuSection
                     .id("icu")
                 stravaSection
                     .id("strava")
-                deletedSessionsSection
+                // Apple Health, both directions: BETA. Unproven, and the release channel
+                // carries no HealthKit entitlement to ask with. Up here with the sources
+                // since 26 September 2026: it is an import first, and its "add to Health"
+                // switch goes with it.
+                #if BETA
+                healthSection
+                #endif
                 notificationsSection
                     .id("notifications")
-                // Settings → Garmin watch: DEV (docs/channels.md). Garmin Connect Mobile
-                // owns the Bluetooth link and it stays behind the flag until the link has
-                // real sessions behind it.
+                // 2 · Your watch. Settings → Garmin watch: DEV (docs/channels.md). Garmin
+                // Connect Mobile owns the Bluetooth link and it stays behind the flag until
+                // the link has real sessions behind it.
                 #if DEV
                 WatchLinkSection()
                     .id("watch")
                 #endif
+                // 3 · How it reads. Windsurf is a row of Analysis in dev, because it
+                // changes what "I mostly ride" offers.
                 analysisSection
                     .id("analysis")
-                sessionListSection
-                    .id("sessionList")
-                rowShowsSection
                 unitsSection
                     .id("units")
                 speedRecordsSection
                     .id("speedRecords")
-                // Windsurf, and the per-discipline thresholds behind it: DEV.
-                #if DEV
-                windsurfSection
-                #endif
-                #if TUNING
-                tuningSection
-                #endif
-                // Apple Health, both directions: BETA. Unproven, and the release channel
-                // carries no HealthKit entitlement to ask with.
-                #if BETA
-                healthSection
-                betaSection
-                    .id("beta")
-                #endif
-                // Every channel, with the TestFlight link only where the reader is not
-                // already on it (docs/channels.md).
-                comingSoonSection
-                    .id("coming")
+                // 4 · The list: the map switch and the three numbers, one section.
+                sessionListSection
+                    .id("sessionList")
+                // 5 · Your library.
                 storageSection
                     .id("storage")
                 // Right under Storage, which is the section that just told the rider how
@@ -92,9 +89,25 @@ struct SettingsView: View {
                 ICloudSyncSection()
                     .id("icloud")
                 #endif
+                deletedSessionsSection
+                    .id("deleted")
+                // 6 · The test builds: Beta (beta), Tuning (dev), and what is coming, which
+                // every channel has, with the TestFlight link only where the reader is not
+                // already on it (docs/channels.md).
+                #if BETA
+                betaSection
+                    .id("beta")
+                #endif
+                #if TUNING
+                tuningSection
+                    .id("tuning")
+                #endif
+                comingSoonSection
+                    .id("coming")
                 #if DEBUG
                 debugSection
                 #endif
+                // 7 · About.
                 aboutSection
                     .id("about")
             }
@@ -163,9 +176,12 @@ struct SettingsView: View {
     /// Since 25 September 2026 the footer obeys Settings → How much to say (F11): concise is
     /// the lead and the `?`, extensive adds the section's own paragraphs, or the topic's
     /// where the section has none (`ExplainedFootnote`).
-    private func settingFooter(_ id: String) -> some View {
+    ///
+    /// `link: false` drops the `?` where the section already carries a button onto the
+    /// same topic (intervals.icu: "Get a key in 4 steps", 26 September 2026).
+    private func settingFooter(_ id: String, link: Bool = true) -> some View {
         let section = SettingsCopy.section(id)
-        return ExplainedFootnote(line: section.lead, topic: section.help,
+        return ExplainedFootnote(line: section.lead, topic: link ? section.help : nil,
                                  more: section.footer) { setupTopic = $0 }
     }
 
@@ -179,29 +195,39 @@ struct SettingsView: View {
         var chips: [JumpChips.Chip] = [
             .init(id: "icu", title: SettingsCopy.section("icu").title),
             .init(id: "strava", title: "Strava"),
-            .init(id: "notifications", title: "Notifications"),
         ]
+        #if BETA
+        chips.append(.init(id: "health", title: "Apple Health"))
+        #endif
+        chips.append(.init(id: "notifications", title: "Notifications"))
         #if DEV
         chips.append(.init(id: "watch", title: "Watch"))
         #endif
         chips += [
             .init(id: "analysis", title: "Analysis"),
-            .init(id: "sessionList", title: SettingsCopy.section("sessionList").title),
             .init(id: "units", title: SettingsCopy.section("units").title),
             .init(id: "speedRecords", title: SettingsCopy.section("speedRecords").title),
-        ]
-        #if BETA
-        chips += [.init(id: "health", title: "Apple Health"), .init(id: "beta", title: "Beta")]
-        #endif
-        chips += [
-            .init(id: "coming", title: "Coming"),
+            .init(id: "sessionList", title: SettingsCopy.section("sessionList").title),
             .init(id: "storage", title: SettingsCopy.section("storage").title),
             .init(id: "backup", title: "Backup"),
         ]
         #if DEV
         chips.append(.init(id: "icloud", title: "iCloud"))
         #endif
-        chips.append(.init(id: "about", title: SettingsCopy.section("about").title))
+        // Only while the section is drawn: a chip onto nothing would jump nowhere.
+        if store.deletedSessionCount > 0 {
+            chips.append(.init(id: "deleted", title: "Deleted"))
+        }
+        #if BETA
+        chips.append(.init(id: "beta", title: "Beta"))
+        #endif
+        #if TUNING
+        chips.append(.init(id: "tuning", title: "Tuning"))
+        #endif
+        chips += [
+            .init(id: "coming", title: "Coming"),
+            .init(id: "about", title: SettingsCopy.section("about").title),
+        ]
         return chips
     }
 
@@ -277,7 +303,8 @@ struct SettingsView: View {
         } footer: {
             // The words are the kit's since 20 September 2026 (`SettingsCopy`), so the
             // browser app's Settings page prints the same line rather than a second one.
-            settingFooter("icu")
+            // No `?` under it: "Get a key in 4 steps" above opens the same topic.
+            settingFooter("icu", link: false)
         }
     }
 
@@ -353,9 +380,10 @@ struct SettingsView: View {
     /// The quiet way out of a deletion, and the only place the tombstones
     /// (`SessionTombstoneRow`) are ever visible.
     ///
-    /// It is right under the sync section because that is the only thing they affect: a
-    /// deleted session is skipped by intervals.icu and by nothing else — a FIT the rider
-    /// picks by hand always imports, whatever he deleted before.
+    /// It sits with the library since 26 September 2026, beside the backup: it is about
+    /// what the library keeps. (A deleted session is skipped by intervals.icu and by
+    /// nothing else — a FIT the rider picks by hand always imports, whatever he deleted
+    /// before.)
     ///
     /// Absent when there is nothing deleted, which is almost every install. A permanent row
     /// reading "Previously deleted: 0" would be a feature announcing itself to people who
@@ -443,6 +471,25 @@ struct SettingsView: View {
     /// exactly that, in the rider's words rather than the estimator's.
     private var analysisSection: some View {
         Section {
+            // **Windsurf (experimental)**, DEV — the one switch every windsurf-facing
+            // control hangs off (Jan, 13 Sep 2026: *"windsurf should be hidden. Maybe
+            // enable with a switch"*). A row of Analysis since 26 September 2026, first,
+            // because it decides whether "I mostly ride" right under it is there at all.
+            // Its warning is the row's own caption rather than the section's footer.
+            #if DEV
+            Toggle(isOn: Binding(
+                get: { store.windsurfEnabled },
+                set: { store.setWindsurfEnabled($0) })) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Windsurf (experimental)")
+                    Text("Analyse sessions as windsurf foil or fin. Jibes and tacks work, "
+                         + "and pumping is off. The planing speeds are still a guess.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            #endif
             // **"I mostly ride"** — the preset every imported session gets when its recording
             // does not say, which is every source but the CleanJibe watch app: wingfoil is not
             // a sport in Garmin, Strava, intervals.icu or Apple Health (docs/presentation/labels.md,
@@ -486,32 +533,21 @@ struct SettingsView: View {
     // (20 September 2026, pattern K and rule 10 of docs/voice.md).
 
 
-    /// **The map behind a row's track** (item 6 of the 18 Sep 2026 round).
+    /// **What a library row shows** — one section since 26 September 2026, where it was
+    /// "Session list" and "Row shows", two headers over one question.
     ///
-    /// Off by default, and it stays that way unless a rider asks: the plain outline is the
-    /// shape at a glance, and a snapshot per row costs a network round trip he did not ask
-    /// for. The ground is whatever the maps are already drawn on (`MapStyleChoice`), so
-    /// there is no second style choice to keep in step.
+    /// **Which three numbers a row carries** (Jan, Beta 75: *"review meaning of numbers and
+    /// the icons, maybe make configurable"*): the three pickers are the list's three cells
+    /// in the order they are drawn. Every option is offered by its word and its glyph
+    /// together (`RowMetric`), which is the same pair the row draws — so the picker teaches
+    /// the row rather than describing it.
+    ///
+    /// **The map behind a row's track** (item 6 of the 18 Sep 2026 round), last. Off by
+    /// default, and it stays that way unless a rider asks: the plain outline is the shape
+    /// at a glance, and a snapshot per row costs a network round trip he did not ask for.
+    /// The ground is whatever the maps are already drawn on (`MapStyleChoice`), so there is
+    /// no second style choice to keep in step.
     private var sessionListSection: some View {
-        Section {
-            Toggle("Map behind the track in the list", isOn: Binding(
-                get: { store.listMapBackdrop },
-                set: { store.listMapBackdrop = $0 }))
-        } header: {
-            Text(SettingsCopy.section("sessionList").title)
-        } footer: {
-            settingFooter("sessionList")
-        }
-    }
-
-    /// **Which three numbers a library row carries** (Jan, Beta 75: *"review meaning of
-    /// numbers and the icons, maybe make configurable"*).
-    ///
-    /// Directly under the switch that is also about the list, and the three pickers are the
-    /// list's three cells in the order they are drawn. Every option is offered by its word
-    /// and its glyph together (`RowMetric`), which is the same pair the row draws — so the
-    /// picker teaches the row rather than describing it.
-    private var rowShowsSection: some View {
         Section {
             ForEach(0..<RowMetric.slots, id: \.self) { slot in
                 Picker(Self.slotName(slot), selection: Binding(
@@ -525,10 +561,13 @@ struct SettingsView: View {
                         }
                     }
             }
+            Toggle("Map behind the track in the list", isOn: Binding(
+                get: { store.listMapBackdrop },
+                set: { store.listMapBackdrop = $0 }))
         } header: {
-            Text(SettingsCopy.section("rowShows").title)
+            Text(SettingsCopy.section("sessionList").title)
         } footer: {
-            settingFooter("rowShows")
+            settingFooter("sessionList")
         }
     }
 
@@ -541,8 +580,7 @@ struct SettingsView: View {
     /// through the platform's one formatter (`Speed`), which is why the share card and the
     /// records follow it without a line of their own.
     ///
-    /// Right under "Row shows" because that is the other question about how the library
-    /// reads, and it is where the browser app already draws it.
+    /// Right under Analysis, and above the list whose numbers it decides how to print.
     private var unitsSection: some View {
         Section {
             Picker(SettingsCopy.section("units").title, selection: Binding(
@@ -606,42 +644,15 @@ struct SettingsView: View {
         slot < triple.count ? triple[slot] : RowMetric.defaultTriple[slot]
     }
 
-    #if DEV
-    /// **"Windsurf (experimental)"** — the one switch every windsurf-facing control hangs off
-    /// (Jan, 13 Sep 2026: *"windsurf should be hidden. Maybe enable with a switch"*).
-    ///
-    /// Off on a fresh install, and off is the app a wingfoiler downloaded: no rig picker above,
-    /// no "Analyse as" card on a session's Log tab, no question after an import, no `?` on a
-    /// library row and no windsurf topic on the Help index. On, everything is where it was.
-    ///
-    /// Its own section rather than a fourth row in Analysis, because the footer is a warning
-    /// about what the feature cannot do yet and it has to sit under the switch it is warning
-    /// about rather than under three unrelated rows — and because a switch that changes what
-    /// the section above it contains should not be inside that section.
-    private var windsurfSection: some View {
-        Section {
-            Toggle("Windsurf (experimental)", isOn: Binding(
-                get: { store.windsurfEnabled },
-                set: { store.setWindsurfEnabled($0) }))
-        } footer: {
-            // The honest version of "experimental": what works, what is switched off, and
-            // what is a guess — in that order, so a windsurfer who turns it on knows which
-            // numbers he may believe before he sees one.
-            Text("Analyse sessions as windsurf foil or fin. Jibes and tacks work, and "
-                 + "pumping is off. The planing speeds are still a guess.")
-        }
-    }
-    #endif
-
     #if TUNING
     /// **Dev build only.** The whole section — and the page behind it — is compiled out of the
     /// app external testers get (`#if TUNING`, the "WingFoil Dev" scheme). A rider on the
     /// public build has no tuning UI, no stored overrides read, and an engine that can only
     /// run the published defaults.
     ///
-    /// It sits under Analysis because that is the section it deepens: "Most of my turns are"
-    /// is the one engine setting *everybody* owns; this is every other one, for the two of us
-    /// working out where they should sit.
+    /// It sits in the tester block, after Beta, since 26 September 2026: it is a tool for
+    /// the people testing the engine, not a setting a rider owns. "Most of my turns are" in
+    /// Analysis is the one engine setting *everybody* owns; this is every other one.
     private var tuningSection: some View {
         Section {
             NavigationLink {

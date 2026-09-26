@@ -21,7 +21,7 @@ struct HelpView: View {
                         Button("Done") { dismiss() }
                     }
                 }
-            // Forty-odd topics in ten sections, searchable — a screen, not a question. Same
+            // Forty topics in seven sections, searchable — a screen, not a question. Same
             // trade as Settings: `.page` at regular width, the phone unchanged.
             .presentationSizing(.page)
         }
@@ -100,7 +100,19 @@ private struct HelpIndexList: View {
             }
             ForEach(sections, id: \.section.id) { group in
                 Section {
-                    ForEach(group.topics) { topic in
+                    ForEach(Array(group.topics.enumerated()), id: \.element.id) { index, topic in
+                        // "Read the numbers" is sub-headed (`HelpSubsection`): a heading
+                        // row wherever the sub-section changes, so seventeen topics read
+                        // in the five parts the old sections were.
+                        if let sub = topic.subsection,
+                           index == 0 || group.topics[index - 1].subsection != sub {
+                            Label(sub.title, systemImage: sub.symbol)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .textCase(.uppercase)
+                                .padding(.top, 4)
+                                .accessibilityAddTraits(.isHeader)
+                        }
                         Button { selected = topic.id } label: { row(topic) }
                             .buttonStyle(.plain)
                     }
@@ -171,6 +183,16 @@ struct HelpTopicSheet: View {
                                   windsurfEnabled: store?.windsurfEnabled ?? true)
     }
 
+    /// The topic an item links to, if this build lists it — the same rule the "see also"
+    /// list keeps, so a signpost never opens a page the index hides.
+    private func linked(_ item: HelpTopic.Item) -> HelpTopicID? {
+        guard let link = item.link else { return nil }
+        let target = HelpCatalog.topic(link, channel: AppChannel.channel)
+        return HelpCatalog.isListed(target, channel: AppChannel.channel,
+                                    windsurfEnabled: store?.windsurfEnabled ?? true)
+            ? link : nil
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -221,8 +243,23 @@ struct HelpTopicSheet: View {
                         VStack(alignment: .leading, spacing: 12) {
                             ForEach(Array(topic.items.enumerated()), id: \.offset) { _, item in
                                 VStack(alignment: .leading, spacing: 3) {
-                                    Text(markdown: item.term)
-                                        .font(.subheadline.weight(.semibold))
+                                    // A signpost item (Getting started's ways in) opens its
+                                    // topic from the term, where this build lists it.
+                                    if let link = linked(item) {
+                                        Button { next = link } label: {
+                                            HStack(spacing: 6) {
+                                                Text(markdown: item.term)
+                                                Image(systemName: "chevron.right")
+                                                    .font(.caption2)
+                                            }
+                                            .font(.subheadline.weight(.semibold))
+                                            .foregroundStyle(.helpLink)
+                                        }
+                                        .buttonStyle(.plain)
+                                    } else {
+                                        Text(markdown: item.term)
+                                            .font(.subheadline.weight(.semibold))
+                                    }
                                     Text(markdown: item.detail)
                                         .font(.callout)
                                         .foregroundStyle(.secondary)

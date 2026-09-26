@@ -314,7 +314,8 @@ struct LibraryView: View {
                 // `UI_SHEET=help` parks the app on the Help index for a screenshot;
                 // `UI_HELP_TOPIC=icuSetup` opens one topic straight away.
                 if let raw = ProcessInfo.processInfo.environment["UI_HELP_TOPIC"],
-                   let topic = HelpTopicID(rawValue: raw) {
+                   let topic = HelpCatalog.topic(id: raw)?.id {
+                    // Through the catalogue, so an id the help merge retired still lands.
                     sheet = .helpTopic(topic)
                 }
                 switch ProcessInfo.processInfo.environment["UI_SHEET"] {

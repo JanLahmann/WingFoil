@@ -99,6 +99,13 @@ public enum SettingsCopy {
         "Concise keeps one line under every section. Extensive prints its help page under it."
 
     // MARK: - The sections, in the order SettingsView draws them
+    //
+    // **The order of 26 September 2026** (docs/proposals/2026-09-25-settings-structure.md,
+    // approved): the sources a session comes in by, then how it reads, then the list, then
+    // the library — where Deleted sessions went, beside the backup, because it is about the
+    // library and appears only once something was deleted. The phone's Apple Health,
+    // Garmin watch, Windsurf, Beta, Tuning and iCloud sections are not in this list: the
+    // browser has none of them, and their words are their own views'.
 
     public static let sections: [SettingsSectionCopy] = [
         SettingsSectionCopy(
@@ -130,18 +137,6 @@ public enum SettingsCopy {
             help: .stravaImport, web: true),
 
         SettingsSectionCopy(
-            id: "deleted",
-            title: "Deleted sessions",
-            lead: "Put back a session you deleted.",
-            footer: [
-                "Sessions you deleted stay deleted. Every sync of intervals.icu leaves "
-                + "them alone, by hand or in the background.",
-                "Restoring forgets that. The next sync brings back every one of them that "
-                + "is still on intervals.icu.",
-            ],
-            help: .libraryBackup, web: true),
-
-        SettingsSectionCopy(
             id: "notifications",
             title: "Notifications",
             lead: "Hear about a new session while the phone is idle.",
@@ -153,23 +148,6 @@ public enum SettingsCopy {
             title: "Analysis",
             lead: "Say which way your turns usually go, so a flat day still reads right.",
             help: .turnTypes),
-
-        SettingsSectionCopy(
-            id: "sessionList",
-            title: "Session list",
-            lead: "Draw the water behind each row's track.",
-            footer: [
-                "Each row draws its track over a map of the water it was ridden on. The "
-                + "map style is the one your session maps use.",
-            ]),
-
-        SettingsSectionCopy(
-            id: "rowShows",
-            title: "Row shows",
-            lead: "Pick the three numbers you read your library by.",
-            footer: [
-                "Each row carries three numbers, each with its own word under it.",
-            ]),
 
         SettingsSectionCopy(
             id: "units",
@@ -193,6 +171,21 @@ public enum SettingsCopy {
                 + "verified one exists.",
             ],
             help: .verifiedRecords, web: true),
+
+        // **One section for the list** (26 September 2026). "Session list" and "Row shows"
+        // were two headers over one question, what a library row shows, so the three
+        // pickers and the map switch share a header now. It sits after Units and Speed
+        // records, which decide how the numbers in it read.
+        SettingsSectionCopy(
+            id: "sessionList",
+            title: "Session list",
+            lead: "Pick the three numbers each row shows, and whether the water is drawn "
+                + "behind its track.",
+            footer: [
+                "Each row carries three numbers, each with its own word under it.",
+                "The track can be drawn over a map of the water it was ridden on. The map "
+                + "style is the one your session maps use.",
+            ]),
 
         SettingsSectionCopy(
             id: "storage",
@@ -229,6 +222,20 @@ public enum SettingsCopy {
             ],
             help: .libraryBackup, web: true, phone: false),
 
+        // Down here since 26 September 2026: it is about the library, and it appears only
+        // when something was deleted, so at the top it jumped the sources.
+        SettingsSectionCopy(
+            id: "deleted",
+            title: "Deleted sessions",
+            lead: "Put back a session you deleted.",
+            footer: [
+                "Sessions you deleted stay deleted. Every sync of intervals.icu leaves "
+                + "them alone, by hand or in the background.",
+                "Restoring forgets that. The next sync brings back every one of them that "
+                + "is still on intervals.icu.",
+            ],
+            help: .libraryBackup, web: true),
+
         SettingsSectionCopy(
             id: "about",
             title: "About",
@@ -240,7 +247,9 @@ public enum SettingsCopy {
             id: "whatsNew",
             title: "What's new",
             lead: "The release notes, newest first.",
-            help: .whatsNew, web: true, phone: false),
+            // No `?`: the row under it opens the notes, and the help topic was a button
+            // onto the same screen (26 September 2026).
+            web: true, phone: false),
     ]
 
     /// One section by id. Trapping is deliberate: the ids are written in this file and read

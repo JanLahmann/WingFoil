@@ -300,7 +300,7 @@ import Testing
         #expect(!ExampleSession.place.isEmpty)
 
         let topic = HelpCatalog.topic(.exampleSession)
-        #expect(topic.section == .setup)
+        #expect(topic.section == .start)
         #expect(topic.action == .loadExampleSession)
         #expect(topic.body.count >= 3)
         let prose = topic.body.joined(separator: " ")

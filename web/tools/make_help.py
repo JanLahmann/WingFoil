@@ -21,12 +21,18 @@ WHAT IT RENDERS, into the block between ``<!-- help:begin -->`` and ``<!-- help:
    marked ``data-copy="glossary"``, which is the pin ``web/tools/verify_copy.py`` holds. It
    was ``/learn/``'s job and it is the one thing on this page that is not a help topic: a
    rider who followed a metric's name here wants the one-liner, not a page.
-2. **The ten sections, as folds.** One ``<details>`` per ``HelpSection``, in the
+2. **The seven sections, as folds.** One ``<details>`` per ``HelpSection``, in the
    catalogue's order, each holding its topics as articles: the summary, the body, the items
    as a definition list, and the "read next" links. Closed, because forty pages of
-   reference is a book and the ten handles are its contents — and because
+   reference is a book and the seven handles are its contents — and because
    ``web/tools/verify_unique.py`` counts a page the way a reader meets it, which is what
-   lets a reference work live on a site with word budgets.
+   lets a reference work live on a site with word budgets. "Read the numbers" is
+   sub-headed (a topic's ``group``), the way the phone's index is.
+
+**THE MERGE OF 26 SEPTEMBER 2026 KEEPS ITS OLD LINKS.** A topic's ``aliases`` are the ids
+it absorbed; each is an empty anchor at the top of the article, so ``#help-foilPct`` still
+opens the fold and lands on Flights and foil time. An item's ``link`` is the topic it is
+the signpost for, drawn as a link on its term when that topic is printed.
 
 **CHANNEL-AWARE, the same way the release notes are.** Every topic and every item carries
 the channels that may read it. A row the release has is printed plainly; a row only the
@@ -181,8 +187,11 @@ def render_glossary(entries: list[dict]) -> list[str]:
 def render_topic(topic: dict, printed: set[str], titles: dict[str, str],
                  indent: int) -> list[str]:
     pad = " " * indent
-    lines = [
-        f'{pad}<article class="panel piece" id="help-{topic["id"]}">',
+    lines = [f'{pad}<article class="panel piece" id="help-{topic["id"]}">']
+    # The ids this topic absorbed, as anchors an old link still lands on.
+    for alias in topic.get("aliases", []):
+        lines.append(f'{pad}  <span class="help-alias" id="help-{alias}"></span>')
+    lines += [
         f'{pad}  <div class="piece-head">',
         f'{pad}    <h3>{html_text(topic["title"])}{pill(topic)}</h3>',
         f"{pad}  </div>",
@@ -195,9 +204,12 @@ def render_topic(topic: dict, printed: set[str], titles: dict[str, str],
     if items:
         lines.append(f'{pad}  <dl class="terms">')
         for item in items:
+            term = html_text(item["term"])
+            if item.get("link") in printed:
+                term = f'<a href="#help-{item["link"]}">{term}</a>'
             lines += [
                 f'{pad}    <div class="term">',
-                f"{pad}      <dt>{html_text(item['term'])}{pill(item)}</dt>",
+                f"{pad}      <dt>{term}{pill(item)}</dt>",
                 f"{pad}      <dd>{html_text(item['detail'])}</dd>",
                 f"{pad}    </div>",
             ]
@@ -242,8 +254,8 @@ def render_sections(sections: list[dict]) -> list[str]:
         "",
         # THE CONTENTS, AND A WAY TO SEARCH IT (docs/web-design-review.md, finding 11; the
         # browser app got the same two on 20 September 2026 and this is the same renderer's
-        # half of it). Ten shut folds are a table of contents only if the reader can see all
-        # ten at once, and a reference work is only a reference work if he can look
+        # half of it). Seven shut folds are a table of contents only if the reader can see all
+        # seven at once, and a reference work is only a reference work if he can look
         # something up in it. The chips scroll sideways under 720 px, in the shape the
         # section nav already takes there (finding 13).
         '    <nav class="help-index" aria-label="Help sections">',
@@ -277,7 +289,14 @@ def render_sections(sections: list[dict]) -> list[str]:
             "      </summary>",
             "",
         ]
+        group = None
         for topic in topics:
+            # A sub-heading wherever the group changes ("Read the numbers" only).
+            here = (topic.get("group") or {}).get("id")
+            if here and here != group:
+                lines += [f'      <h3 class="help-group">'
+                          f'{html_text(topic["group"]["title"])}</h3>', ""]
+            group = here
             lines += render_topic(topic, printed, titles, indent=6)
         lines += ["    </details>", ""]
     lines += ["  </section>", "", *FILTER_SCRIPT, ""]
@@ -336,7 +355,7 @@ def render_html(sections: list[dict], glossary: list[dict]) -> str:
         "       `make_help.py --check` fails while it is stale. The head, the hero and the",
         "       footer are the page's own.",
         "",
-        "       THE FOLDS ARE SHUT. Forty pages of reference is a book, and the ten handles",
+        "       THE FOLDS ARE SHUT. Forty pages of reference is a book, and the seven handles",
         "       are its contents. It is also what keeps a reference work on a site with word",
         "       budgets: verify_unique.py counts a page the way a reader meets it.",
         "",

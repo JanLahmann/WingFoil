@@ -34,19 +34,6 @@
     {
       "channel" : "release",
       "footer" : [
-        "Sessions you deleted stay deleted. Every sync of intervals.icu leaves them alone, by hand or in the background.",
-        "Restoring forgets that. The next sync brings back every one of them that is still on intervals.icu."
-      ],
-      "help" : "libraryBackup",
-      "id" : "deleted",
-      "lead" : "Put back a session you deleted.",
-      "phone" : true,
-      "title" : "Deleted sessions",
-      "web" : true
-    },
-    {
-      "channel" : "release",
-      "footer" : [
         "While the phone is idle, CleanJibe asks intervals.icu for new activity.\n\nIt looks for windsurf, wing, kite, surf and SUP, from any watch that syncs there.\n\nYou hear about the ones that are not in your library yet.\n\nThe session is downloaded and analysed in the background, so tapping the notification usually opens a finished analysis."
       ],
       "help" : "notifications",
@@ -66,28 +53,6 @@
       "lead" : "Say which way your turns usually go, so a flat day still reads right.",
       "phone" : true,
       "title" : "Analysis",
-      "web" : false
-    },
-    {
-      "channel" : "release",
-      "footer" : [
-        "Each row draws its track over a map of the water it was ridden on. The map style is the one your session maps use."
-      ],
-      "id" : "sessionList",
-      "lead" : "Draw the water behind each row's track.",
-      "phone" : true,
-      "title" : "Session list",
-      "web" : false
-    },
-    {
-      "channel" : "release",
-      "footer" : [
-        "Each row carries three numbers, each with its own word under it."
-      ],
-      "id" : "rowShows",
-      "lead" : "Pick the three numbers you read your library by.",
-      "phone" : true,
-      "title" : "Row shows",
       "web" : false
     },
     {
@@ -115,6 +80,18 @@
       "phone" : true,
       "title" : "Speed records",
       "web" : true
+    },
+    {
+      "channel" : "release",
+      "footer" : [
+        "Each row carries three numbers, each with its own word under it.",
+        "The track can be drawn over a map of the water it was ridden on. The map style is the one your session maps use."
+      ],
+      "id" : "sessionList",
+      "lead" : "Pick the three numbers each row shows, and whether the water is drawn behind its track.",
+      "phone" : true,
+      "title" : "Session list",
+      "web" : false
     },
     {
       "channel" : "release",
@@ -161,6 +138,19 @@
     {
       "channel" : "release",
       "footer" : [
+        "Sessions you deleted stay deleted. Every sync of intervals.icu leaves them alone, by hand or in the background.",
+        "Restoring forgets that. The next sync brings back every one of them that is still on intervals.icu."
+      ],
+      "help" : "libraryBackup",
+      "id" : "deleted",
+      "lead" : "Put back a session you deleted.",
+      "phone" : true,
+      "title" : "Deleted sessions",
+      "web" : true
+    },
+    {
+      "channel" : "release",
+      "footer" : [
         "Wind is estimated on this device from your track."
       ],
       "help" : "privacy",
@@ -175,7 +165,6 @@
       "footer" : [
 
       ],
-      "help" : "whatsNew",
       "id" : "whatsNew",
       "lead" : "The release notes, newest first.",
       "phone" : false,

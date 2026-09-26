@@ -20,9 +20,10 @@ import Testing
 
     @Test func theTopicRendersTheGuideAndNothingOfItsOwn() {
         #expect(Self.topic.summary == GettingStartedGuide.topicSummary)
-        #expect(Self.topic.body
-                == GettingStartedGuide.appParagraphs + [GettingStartedGuide.framing])
-        #expect(Self.topic.items == GettingStartedGuide.items(for: .release))
+        #expect(Self.topic.body == GettingStartedGuide.appParagraphs)
+        // The guide's rows, word for word; the catalogue adds only the link on each.
+        #expect(Self.topic.items.map { HelpTopic.Item(term: $0.term, detail: $0.detail) }
+                == GettingStartedGuide.items(for: .release))
     }
 
     /// Titles and summaries, in order, against the data rather than against the same call
@@ -41,9 +42,13 @@ import Testing
 
     /// Which watches first, then how a session gets in, then the test on the water — the
     /// order a rider meets them in (F5a: install, then ride).
+    ///
+    /// The framing sentence left the app's topic on 26 September 2026: *what a verdict is*
+    /// is What CleanJibe does, one menu row away, and the water is the last two items.
     @Test func theTopicLeadsWithTheWatchesAndEndsWithTheWater() {
         #expect(GettingStartedGuide.framing.hasPrefix("Ride one session as you always do"))
-        #expect(Self.topic.body.last == GettingStartedGuide.framing)
+        #expect(Self.topic.body == GettingStartedGuide.appParagraphs)
+        #expect(Self.topic.items.last?.term == "Tell us what you saw")
         #expect(Self.topic.body.first?.contains("Garmin, Strava and other watches") == true)
         #expect(Self.topic.body.first?.contains("Apple Watch app is in beta") == true)
     }
@@ -117,23 +122,30 @@ import Testing
         // The default is the strictest reader, so a caller that forgets to say which build
         // it is names no door it may not have.
         #expect(HelpCatalog.topic(.gettingStarted).items == release)
-        // …and the two Apple topics are still only reachable as "see also" on the channels
-        // that have them, which is the same rule one level up.
+        // …and the two Apple topics are only reachable, as the links on their own rows, on
+        // the channels that have them — the same rule one level up.
         for channel in HelpChannel.allCases {
-            let related = HelpCatalog.relatedTopics(of: Self.topic, channel: channel)
-                .map(\.id)
-            let reachesApple = related.contains(.appleWatchApp)
-                && related.contains(.appleWorkoutApp)
-            #expect(reachesApple == (channel >= .beta), "\(channel) related: \(related)")
+            let links = HelpCatalog.topic(.gettingStarted, channel: channel).items
+                .compactMap(\.link)
+            let reachesApple = links.contains(.appleWatchApp) && links.contains(.appleWorkoutApp)
+            #expect(reachesApple == (channel >= .beta), "\(channel) links: \(links)")
         }
     }
 
     /// Every route the app names has a `related` topic that owns its steps, so the item is
     /// a signpost rather than a second copy of an instruction.
     @Test func everyRouteHasATopicThatOwnsIt() {
+        let items = HelpCatalog.topic(.gettingStarted, channel: .dev).items
+        #expect(items.allSatisfy { $0.link != nil }, "a way in with no link")
+        let links = items.compactMap(\.link)
         for id in [HelpTopicID.icuSetup, .shareFromWatchApp, .stravaImport,
                    .appleWatchApp, .appleWorkoutApp] {
-            #expect(Self.topic.related.contains(id), "no related topic \(id.rawValue)")
+            #expect(links.contains(id), "no row links \(id.rawValue)")
+        }
+        // Every route and note in the guide has an entry, so a new route cannot ship as a
+        // row that opens nothing.
+        for route in GettingStartedGuide.routes + GettingStartedGuide.notes {
+            #expect(HelpCatalog.routeTopics[route.id] != nil, "\(route.id) has no topic")
         }
     }
 

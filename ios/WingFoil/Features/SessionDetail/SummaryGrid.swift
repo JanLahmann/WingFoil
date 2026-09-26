@@ -58,7 +58,9 @@ struct SessionFoilGrid: View {
     private var words: DisciplineLexicon { detail.row.analysisDiscipline.lexicon }
 
     var body: some View {
-        cardSection(words.isExperimental ? "Planing" : "Foil", help: .foilPct) {
+        // One `?`, on the section: the three cards' own `?`s opened three pages until
+        // 26 September 2026, and since the merge they would open the same one three times.
+        cardSection(words.isExperimental ? "Planing" : "Foil", help: .flights) {
             // **"On foil" is the share; "Foil time" is the duration.** The card prints the
             // percentage, so it takes the share's name — the one the web tile, the period
             // block and the watch's own "Foil %" already use. It was titled "Foil time"
@@ -67,8 +69,7 @@ struct SessionFoilGrid: View {
             // quantities (docs/presentation/labels.md, "Label table"). The duration is still here,
             // in the caption, which is where it now reads as what the share is a share of.
             StatCard(title: words.onFoil, value: Fmt.pct(summary.foilPct),
-                     caption: Fmt.duration(summary.foilTimeS) + " " + words.foilTimeLower,
-                     help: .foilPct)
+                     caption: Fmt.duration(summary.foilTimeS) + " " + words.foilTimeLower)
             // **No "Flights · N detected" card** (Jan, 25 Sep 2026, F8k): a count with
             // nothing to open meant nothing to a rider. The flights are a list now, one
             // row each, on the Flights tab (`FlightsListView`), with the count in its head.
@@ -77,16 +78,14 @@ struct SessionFoilGrid: View {
             // "N m" under "Longest flight" and so claimed a fact the number does not carry.
             StatCard(title: "Longest flight",
                      value: Fmt.duration(summary.longestFlightS),
-                     caption: "max " + Fmt.meters(summary.maxFlightM) + " in one flight",
-                     help: .longestFlight)
+                     caption: "max " + Fmt.meters(summary.maxFlightM) + " in one flight")
             // The caption is the **engine's** cleaned span (`summary.durationS`), the same
             // number and the same spelling the key-metrics block prints two cards up. It
             // used to be `detail.durationS`, the raw sample span, which is 10338 s against
             // 7742 s on the corpus's Rheinstetten afternoon — two clocks, one word, eight
             // points apart on the screen (docs/presentation/one-clock.md, "One clock").
             StatCard(title: "Distance", value: Fmt.km(summary.distanceKm),
-                     caption: KeyMetrics.duration(summary.durationS) + " elapsed",
-                     help: .distance)
+                     caption: KeyMetrics.duration(summary.durationS) + " elapsed")
         }
     }
 }
@@ -311,7 +310,7 @@ struct SessionTurnsSection: View {
                                              + (split.unknownEnds == 1 ? " end" : " ends")
                                              + " cut by the recording"
                                          : ""),
-                                  help: .touchdowns)
+                                  help: .turnOutcomes)
                 }
                 if t.turnsCounted > 0 {
                     Divider()

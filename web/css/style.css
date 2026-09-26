@@ -1384,6 +1384,21 @@ a.brand:hover .mark { box-shadow: inset 0 0 0 1px var(--mark-ring-hover); }
 
 .help-count { color: var(--ink-3); font-size: 10.5px; }
 
+/* The sub-headings inside "Read the numbers" (26 September 2026): the five old section
+   names, small and in capitals over their topics, on /help/ and in the browser app's Help
+   alike. The phone draws the same rows in its index. */
+.help-group {
+  margin: 18px 0 4px;
+  color: var(--ink-3);
+  font: 600 11px/1.2 var(--sans);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* An id the help merge retired, kept as an empty anchor at the top of the topic it went
+   into, so an old link still lands on the right article. */
+.help-alias { display: block; height: 0; overflow: hidden; }
+
 .help-search { display: flex; gap: 10px; align-items: center; margin: 0 0 12px; }
 
 .help-search input {

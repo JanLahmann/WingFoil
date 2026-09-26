@@ -241,12 +241,14 @@ import Testing
     }
 
     @Test func theHelpIndexHidesTheTopicButTheCatalogueKeepsIt() {
-        #expect(HelpCatalog.indexTopics().map(\.id) == HelpCatalog.topics.map(\.id))
+        // Everything but the topics on no index at all (What's new, a menu screen).
+        let indexed = HelpCatalog.topics.map(\.id).filter { !HelpCatalog.offIndex.contains($0) }
+        #expect(HelpCatalog.indexTopics().map(\.id) == indexed)
         let hidden = HelpCatalog.indexTopics(windsurfEnabled: false).map(\.id)
         #expect(!hidden.contains(.windsurf))
-        #expect(hidden.count == HelpCatalog.topics.count - 1)
+        #expect(hidden.count == indexed.count - 1)
         // Every other topic survives, in catalogue order.
-        #expect(hidden == HelpCatalog.topics.map(\.id).filter { $0 != .windsurf })
+        #expect(hidden == indexed.filter { $0 != .windsurf })
         // The page itself is still there: a `?` on a session that *is* read as windsurf, and
         // any deep link written down elsewhere, must still open it.
         #expect(HelpCatalog.topic(.windsurf).title == "Windsurf (experimental)")

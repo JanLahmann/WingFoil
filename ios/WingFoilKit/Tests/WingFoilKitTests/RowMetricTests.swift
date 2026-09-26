@@ -41,7 +41,7 @@ import Testing
         #expect(RowMetric.cleanJibes.icon == DesignTokens.Glyph.cleanJibe)
         #expect(RowMetric.allCases.filter(\.wearsCleanInk) == [.cleanJibes])
         #expect(RowMetric.foilShare.icon == "water.waves.and.arrow.up")
-        #expect(HelpSection.foil.symbol == RowMetric.foilShare.icon)
+        #expect(HelpSubsection.foil.symbol == RowMetric.foilShare.icon)
         #expect(!RowMetric.allCases.map(\.icon).contains("arrow.triangle.2.circlepath"))
         // Only the two speed windows share a glyph; everything else is told apart by shape.
         let icons = RowMetric.allCases.filter { $0 != .best10s }.map(\.icon)

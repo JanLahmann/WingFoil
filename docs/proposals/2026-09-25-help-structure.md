@@ -1,8 +1,11 @@
 # Help structure — proposal (F14c, 25 September 2026)
 
-Status: **proposal for Jan. Nothing below is built.** The navigation (chips + search on
-iPhone, the same on both web help pages) and the voice sweep shipped on `fb/r4-help`; the
-restructure waits for a yes.
+Status: **approved by Jan on 26 September 2026 and built on `fb/help-settings-2`.** Built
+as written, with the counts as they came out: 47 topics before (45 on the web), 41 after,
+40 on the dev index (What's new is off it), 38 on the public web page. The merged ids
+redirect (`HelpCatalog.redirects`), and Getting started's ways in became links on their
+own rows instead of a "see also". The "What CleanJibe does" link from Getting started is
+not built: the framing sentence went, and the menu row sits one below.
 
 ## Today
 
