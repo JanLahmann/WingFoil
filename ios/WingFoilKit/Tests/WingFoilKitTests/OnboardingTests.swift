@@ -69,7 +69,7 @@ import Testing
 
     @Test func setupHelpTopicsAreCompleteAndCarryTheirLinks() {
         let setup = HelpCatalog.topic(.icuSetup)
-        #expect(setup.section == .setup)
+        #expect(setup.section == .bringIn)
         // The card and the topic render the *same* steps — asserted, not assumed. The topic
         // adds three items the card has no room for: why Garmin calls the session Windsurf,
         // where Garmin Connect shows the jibes, and why its Runs card stays empty (Alfred,
@@ -85,30 +85,20 @@ import Testing
         let trouble = HelpCatalog.topic(.icuTroubleshooting)
         #expect(trouble.items == IcuSetupGuide.troubleshooting)
 
-        let privacy = HelpCatalog.topic(.icuPrivacy)
-        #expect(privacy.body.contains(IcuSetupGuide.privacyNote))
+        // Where the key is kept is an item of "What leaves your phone" since
+        // 26 September 2026, and says what the setup card's note says.
+        let privacy = HelpCatalog.topic(.privacy)
+        let key = privacy.items.map(\.detail).joined(separator: " ")
+        #expect(key.contains("Keychain"))
+        #expect(key.contains("intervals.icu itself"))
+        #expect(key.contains("Developer Settings"))
 
-        // The setup section is reachable from the index and holds exactly these sixteen, in
-        // this order — the example session sits second, right after the path it is an
-        // alternative to; the two Apple doors sit third and fourth because for a rider with
-        // no Garmin they are not a footnote about data quality but the whole way in
-        // (ADR-017); Strava and the share sheet follow them for exactly the same reason
-        // (ADR-023), with "Recording with a phone only" beside the share-sheet topic
-        // because it is the same reader one step further down — no Garmin, no Apple Watch,
-        // and now no watch at all — and the watch table under them answering "will mine
-        // work" once instead of a third of an answer in each; the update that never
-        // arrives sits straight under that table, because it is the same rider asking the
-        // next question about the same watch; the two intervals.icu
-        // troubleshooting topics stay together; and the backup topic sits under them
-        // because it is the one a rider reads before he leaves a phone rather than when he
-        // arrives on one — with "Sending feedback" last of all, which is the section's way
-        // back out: every topic above it is how a session gets in, and that one is what to
-        // do when it did not.
-        #expect(HelpCatalog.topics(in: .setup).map(\.id)
-                == [.icuSetup, .notifications, .exampleSession, .appleWatchApp, .appleWorkoutApp,
-                    .stravaImport, .shareFromWatchApp, .phoneOnly, .browserApp, .whichWatch,
-                    .watchUpdateStuck, .icuTroubleshooting, .icuPrivacy, .privacy,
-                    .libraryBackup, .sendingFeedback])
+        // The sources a session comes in by, in the order a rider meets them: the
+        // intervals.icu bridge first, then Strava and the share sheet, the browser, and the
+        // notification that says a new one arrived.
+        #expect(HelpCatalog.topics(in: .bringIn).map(\.id)
+                == [.icuSetup, .stravaImport, .shareFromWatchApp, .browserApp,
+                    .notifications])
     }
 
     /// **The page about sending feedback offers to send it** (Jan, dev 65), and says the
@@ -143,11 +133,15 @@ import Testing
     /// Health workout records his wrist.
     @Test func theAppleWorkoutTopicSaysHowToRecordAndWhatIsMissing() {
         let topic = HelpCatalog.topic(.appleWorkoutApp)
-        #expect(topic.section == .setup)
+        #expect(topic.section == .record)
         let prose = (topic.body + topic.items.flatMap { [$0.term, $0.detail] })
             .joined(separator: " ").lowercased()
+        // "The wrist may go under" is said once, on the watch app's page, which is first
+        // on `related` (26 September 2026).
+        #expect(topic.related.first == .appleWatchApp)
+        #expect(HelpCatalog.topic(.appleWatchApp).items.contains { $0.term == "The wrist may go under" })
         for phrase in ["surfing", "water sports", "sailing", "import", "health",
-                       "goes under", "certified", "accelerometer", "automatically"] {
+                       "certified", "accelerometer", "automatically"] {
             #expect(prose.contains(phrase), "the Apple Workout topic never mentions \(phrase)")
         }
         // The promise the permission prompt is about to make, made here first.
@@ -167,7 +161,7 @@ import Testing
     /// used to say a hundred.
     @Test func theStravaTopicSaysWhatItCostsBeforeTheRiderImports() {
         let topic = HelpCatalog.topic(.stravaImport)
-        #expect(topic.section == .setup)
+        #expect(topic.section == .bringIn)
         let prose = (topic.body + topic.items.flatMap { [$0.term, $0.detail] })
             .joined(separator: " ").lowercased()
         for phrase in ["uncertified", "pump strokes", "intervals.icu", "never writes",
@@ -196,7 +190,7 @@ import Testing
     /// rider reads.
     @Test func theShareSheetTopicNamesEveryBrandAndTheOneThatCannot() {
         let topic = HelpCatalog.topic(.shareFromWatchApp)
-        #expect(topic.section == .setup)
+        #expect(topic.section == .bringIn)
         let terms = topic.items.map(\.term)
         for vendor in ["Suunto", "COROS", "Polar", "Garmin"] {
             #expect(terms.contains(vendor), "no path for \(vendor)")
@@ -220,17 +214,16 @@ import Testing
         // FIT over GPX/TCX, and why.
         #expect(prose.contains("pick fit"))
         #expect(prose.contains("uncertified"))
-        // Each vendor path links to the page it was verified against, in the items' order.
-        #expect(topic.links.count == 4)
-        #expect(topic.links.first?.title.hasPrefix("Garmin") == true)
-        #expect(topic.links.allSatisfy { $0.url.scheme == "https" })
+        // No vendor links (26 September 2026): each item carries its path, and a support
+        // page goes stale and takes the rider out of the app.
+        #expect(topic.links.isEmpty)
     }
 
     /// One table, so "will my watch work" is answered in one place. Every door the app has
     /// must appear in it — a row missing here is a rider concluding his watch is unsupported.
     @Test func theWatchTableCoversEveryDoorTheAppHas() {
         let topic = HelpCatalog.topic(.whichWatch)
-        #expect(topic.section == .setup)
+        #expect(topic.section == .start)
         let prose = (topic.body + topic.items.flatMap { [$0.term, $0.detail] })
             .joined(separator: " ").lowercased()
         for door in ["garmin", "apple watch", "polar", "suunto", "coros", "strava", "gpx"] {
@@ -239,7 +232,8 @@ import Testing
         // The two axes the table is actually about.
         #expect(prose.contains("certified"))
         #expect(prose.contains("accelerometer"))
-        #expect(topic.items.count == 6)
+        // Two Garmin rows, two Apple Watch rows, the other brands, Strava, the phone.
+        #expect(topic.items.count == 7)
     }
 
     /// The backup topic has to answer three questions in order, because a rider who reads
@@ -248,7 +242,7 @@ import Testing
     /// and can restoring hurt what is already on the phone (no).
     @Test func theBackupTopicSaysWhatIsCoveredAlreadyAndWhatIsNot() {
         let topic = HelpCatalog.topic(.libraryBackup)
-        #expect(topic.section == .setup)
+        #expect(topic.section == .library)
         let prose = (topic.body + topic.items.map(\.detail))
             .joined(separator: " ").lowercased()
         for phrase in ["new iphone", "icloud", "deleted", "gear", "accelerometer",
@@ -268,7 +262,7 @@ import Testing
 
     @Test func setupTopicIsSearchable() {
         #expect(HelpCatalog.search("Developer Settings").contains { $0.id == .icuSetup })
-        #expect(HelpCatalog.search("keychain").contains { $0.id == .icuPrivacy })
+        #expect(HelpCatalog.search("keychain").contains { $0.id == .privacy })
     }
 
     // MARK: - Error mapping

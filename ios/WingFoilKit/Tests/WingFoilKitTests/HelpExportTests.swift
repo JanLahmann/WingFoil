@@ -51,16 +51,23 @@ import Testing
         var sections: [[String: Any]] = []
         for section in HelpCatalog.sections {
             var topics: [[String: Any]] = []
-            for listed in HelpCatalog.topics(in: section) {
+            // A topic on no index (What's new, since 26 September 2026) is not exported:
+            // the site has its own /whats-new/ page, and a fold onto a button would be a
+            // page about a page.
+            for listed in HelpCatalog.topics(in: section)
+            where !HelpCatalog.offIndex.contains(listed.id) {
                 let topic = HelpCatalog.topic(listed.id, channel: .dev)
                 let items: [[String: Any]] = topic.items.map { item in
                     let lowest = ladder.first { channel in
                         HelpCatalog.topic(listed.id, channel: channel).items.contains(item)
                     } ?? .dev
-                    return ["term": item.term, "detail": item.detail,
-                            "channels": channels(from: lowest)]
+                    var row: [String: Any] = ["term": item.term, "detail": item.detail,
+                                              "channels": channels(from: lowest)]
+                    // The signpost's topic, which the web draws as a link on the term.
+                    if let link = item.link { row["link"] = link.rawValue }
+                    return row
                 }
-                topics.append([
+                var row: [String: Any] = [
                     "id": topic.id.rawValue,
                     "title": topic.title,
                     "summary": topic.summary,
@@ -68,7 +75,15 @@ import Testing
                     "items": items,
                     "related": topic.related.map(\.rawValue),
                     "channels": channels(from: listed.channel),
-                ])
+                    // The ids the merge retired that now open this topic, so an old
+                    // `/help/#help-foilPct` or `#/help/sourceClass` still arrives.
+                    "aliases": HelpCatalog.aliases(of: topic.id),
+                ]
+                // The sub-heading inside "Read the numbers".
+                if let sub = topic.subsection {
+                    row["group"] = ["id": sub.rawValue, "title": sub.title]
+                }
+                topics.append(row)
             }
             sections.append(["id": section.rawValue, "title": section.title,
                              "topics": topics])
@@ -149,8 +164,8 @@ import Testing
                         "\(id): every channel list ends at dev, the widest reader")
             }
         }
-        #expect(ids.count == HelpTopicID.allCases.count,
-                "the export drops a topic the catalogue has")
+        #expect(ids.count == HelpTopicID.allCases.count - HelpCatalog.offIndex.count,
+                "the export drops a topic the catalogue lists")
         // Every "see also" resolves to a topic that was exported, so the page's own links
         // cannot point at an article it never drew.
         for section in sections {

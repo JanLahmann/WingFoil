@@ -126,28 +126,31 @@ import Testing
                       "Strava", "No wind today?"] {
             #expect(topic.items.contains { $0.term == route }, "no route \"\(route)\"")
         }
+        // Each way in is a link on its own row, onto the topic that owns the steps
+        // (26 September 2026), so the page needs no "see also" at all.
+        let links = { (channel: HelpChannel) in
+            HelpCatalog.topic(.gettingStarted, channel: channel).items.compactMap(\.link)
+        }
+        #expect(topic.related.isEmpty)
         // The intervals.icu paragraph names the door and the time it takes, and hands the
-        // steps to Settings and the topic that owns them — which is on `related`, so the
-        // chevron is really there.
+        // steps to Settings and the topic that owns them.
         #expect(prose.contains("Settings → intervals.icu"))
         #expect(prose.contains("about 5 minutes"))
-        #expect(topic.related.contains(.icuSetup))
+        #expect(links(.release).contains(.icuSetup))
         // The FIT route says what the import topics say: intervals.icu, or the file itself.
         #expect(prose.contains("Files, Mail, AirDrop"))
-        #expect(topic.related.contains(.shareFromWatchApp))
+        #expect(links(.release).contains(.shareFromWatchApp))
         // Strava, in the app's own spelling.
         #expect(prose.contains("Settings → Strava → Connect with Strava"))
         #expect(prose.contains("Import → Import from Strava"))
-        #expect(topic.related.contains(.stravaImport))
-        // The two Apple doors are beta doors, so they are topics on `related` rather than
-        // paragraphs in a body that cannot branch by channel (docs/channels.md).
-        #expect(topic.related.contains(.appleWatchApp))
-        #expect(topic.related.contains(.appleWorkoutApp))
+        #expect(links(.release).contains(.stravaImport))
+        // The two Apple doors are beta doors, so their rows — and their links — exist only
+        // in the channels that have them (docs/channels.md).
         for beta in [HelpTopicID.appleWatchApp, .appleWorkoutApp] {
             #expect(HelpCatalog.topic(beta).channel == .beta)
+            #expect(!links(.release).contains(beta))
+            #expect(links(.beta).contains(beta))
         }
-        #expect(!HelpCatalog.relatedTopics(of: topic, channel: .release)
-                    .contains { $0.id == .appleWatchApp || $0.id == .appleWorkoutApp })
         // Where a report goes. The web mirror is not named any more: the app is
         // self-contained (F5d, 25 September 2026).
         #expect(prose.contains("Menu → Support & ideas"))

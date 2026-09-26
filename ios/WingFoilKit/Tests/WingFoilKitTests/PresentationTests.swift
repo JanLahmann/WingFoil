@@ -72,7 +72,7 @@ import Testing
     @Test func theSpeedRecordsTopicIsTheWholeSetAndIsStillSearchable() {
         // Two pages since 22 September 2026: the set, and the setting that decides which
         // of them may stand (Settings → Speed records).
-        #expect(HelpCatalog.topics(in: .records).map(\.id)
+        #expect(HelpCatalog.topics.filter { $0.subsection == .records }.map(\.id)
                 == [.speedRecords, .verifiedRecords])
 
         let topic = HelpCatalog.topic(.speedRecords)
@@ -80,8 +80,12 @@ import Testing
         // The session page's own wording, not a second spelling of it.
         #expect(topic.summary == MetricGlossary.entry("speedRecords").line)
         let terms = topic.items.map(\.term)
-        #expect(terms.contains(MetricGlossary.entry("best5x10s").term))
-        #expect(terms.contains(MetricGlossary.entry("alpha500").term))
+        // 5×10 s and alpha 500 are the glossary's, and the page names them rather than
+        // copying them (26 September 2026), with the glossary first on `related`.
+        #expect(!terms.contains(MetricGlossary.entry("best5x10s").term))
+        #expect(!terms.contains(MetricGlossary.entry("alpha500").term))
+        #expect(topic.body.joined(separator: " ").contains(MetricGlossary.entry("alpha500").term))
+        #expect(topic.related.first == .numbers)
         #expect(terms.last == "\"Uncertified\"", "the mark is the last item")
         // Alfred, 18 September 2026: three apps, three units, no rule. The answer is a list
         // of where each switch is, and it sits with the numbers it applies to.
@@ -89,8 +93,8 @@ import Testing
         // Two unit lines since 20 September 2026: the phone has a switch of its own now
         // (Settings → Units), and the other three readers keep theirs.
         #expect(terms.contains("The other three readers"))
-        // The six windows, the two unit lines and the mark.
-        #expect(terms.count == 9)
+        // The four windows the glossary does not define, the two unit lines and the mark.
+        #expect(terms.count == 7)
 
         // What a rider actually types. Each has to reach this one page.
         for needle in ["2 s", "10 s", "500 m", "alpha", "nautical", "uncertified",
@@ -101,8 +105,77 @@ import Testing
     }
 
     @Test func helpTopicLookupByRawStringRoundTrips() {
-        #expect(HelpCatalog.topic(id: "foilPct")?.id == .foilPct)
+        #expect(HelpCatalog.topic(id: "flights")?.id == .flights)
         #expect(HelpCatalog.topic(id: "not-a-topic") == nil)
+    }
+
+    /// **The ids the merge retired still open something** (26 September 2026). A `?` in the
+    /// app cannot compile against one, but a link written down in a mail, a doc or a web
+    /// page cannot be recompiled, so each lands on the topic it was merged into.
+    @Test func retiredHelpIdsRedirectToTheirNewTopic() {
+        let expected: [String: HelpTopicID] = [
+            "foilPct": .flights, "longestFlight": .flights, "distance": .flights,
+            "touchdowns": .turnOutcomes, "icuPrivacy": .privacy, "sourceClass": .whichWatch,
+        ]
+        #expect(HelpCatalog.redirects == expected)
+        for (old, new) in expected {
+            #expect(HelpTopicID(rawValue: old) == nil, "\(old) is still a live id")
+            #expect(HelpCatalog.topic(id: old)?.id == new, "\(old) does not land on \(new)")
+            #expect(HelpCatalog.aliases(of: new).contains(old))
+        }
+    }
+
+    /// **Seven sections, in the rider's order** (the approved help structure of
+    /// 26 September 2026): install, record, bring it in, read the numbers, share, the
+    /// library, fix a problem — with every topic in the section the proposal names.
+    @Test func theHelpIndexIsSevenSectionsInTheRidersOrder() {
+        #expect(HelpCatalog.sections == [.start, .record, .bringIn, .readNumbers, .share,
+                                         .library, .somethingWrong])
+        let listed = { (section: HelpSection) in
+            HelpCatalog.indexTopics(channel: .dev).filter { $0.section == section }.map(\.id)
+        }
+        #expect(listed(.start) == [.gettingStarted, .whichWatch, .exampleSession])
+        #expect(listed(.record) == [.appleWatchApp, .appleWorkoutApp, .phoneOnly])
+        #expect(listed(.bringIn) == [.icuSetup, .stravaImport, .shareFromWatchApp, .browserApp,
+                                     .notifications])
+        #expect(listed(.readNumbers) == [.numbers, .mapLegend, .flights, .speedRecords,
+                                         .verifiedRecords, .turnTypes, .turnOutcomes,
+                                         .turnSuccess, .portStarboard, .falls, .glideOuts,
+                                         .takeoffAttempts, .pumpsToTakeoff, .pumpStrokes,
+                                         .heartRate, .windAxis, .windsurf])
+        #expect(listed(.share) == [.shareCard, .replayClip, .shareFit])
+        #expect(listed(.library) == [.libraryBackup, .riderAttribution, .privacy,
+                                     .engineVersion])
+        #expect(listed(.somethingWrong) == [.icuTroubleshooting, .watchUpdateStuck,
+                                            .divergence, .sendingFeedback,
+                                            .sendSessionToDeveloper])
+        // No section over eight topics except the sub-headed one, and every topic of that
+        // one after the glossary and the map carries a sub-heading.
+        for section in HelpCatalog.sections where section != .readNumbers {
+            #expect(listed(section).count <= 8, "\(section) has \(listed(section).count)")
+        }
+        let numbers = HelpCatalog.topics(in: .readNumbers)
+        #expect(numbers.prefix(2).allSatisfy { $0.subsection == nil || $0.id == .mapLegend })
+        #expect(numbers.dropFirst().allSatisfy { $0.subsection != nil })
+        #expect(HelpCatalog.topics.filter { $0.section != .readNumbers }
+                    .allSatisfy { $0.subsection == nil })
+        // What's new is a menu screen, not an index row.
+        #expect(!HelpCatalog.indexTopics(channel: .dev).contains { $0.id == .whatsNew })
+        #expect(HelpCatalog.topic(.whatsNew).links.isEmpty)
+    }
+
+    /// **"See also" earns its place**: three at most, never the topic itself, and never a
+    /// topic the body already links row by row (Getting started's items do that).
+    @Test func seeAlsoIsThreeAtMost() {
+        for topic in HelpCatalog.topics {
+            #expect(topic.related.count <= 3,
+                    "\(topic.id.rawValue) offers \(topic.related.count) see-also links")
+            let linked = Set(topic.items.compactMap(\.link))
+            #expect(linked.isDisjoint(with: topic.related),
+                    "\(topic.id.rawValue) links a topic twice")
+        }
+        #expect(HelpCatalog.topic(.gettingStarted).related.isEmpty)
+        #expect(HelpCatalog.topic(.exampleSession).related == [.icuSetup])
     }
 
     // MARK: - Help, by channel (docs/channels.md)
@@ -125,7 +198,7 @@ import Testing
         let dev = Set(HelpCatalog.indexTopics(channel: .dev).map(\.id))
         #expect(Set(release.map(\.id)).isSubset(of: beta))
         #expect(beta.isSubset(of: dev))
-        #expect(dev == Set(HelpTopicID.allCases))
+        #expect(dev == Set(HelpTopicID.allCases).subtracting(HelpCatalog.offIndex))
         // The two that are actually bound, so a topic cannot lose its gate unnoticed.
         #expect(!beta.contains(.windsurf))
         #expect(!Set(release.map(\.id)).contains(.appleWorkoutApp))
@@ -251,9 +324,8 @@ import Testing
     /// (`sendSessionToDeveloper`), which is why it is bound to `.beta` and the release
     /// index never lists it.
     @Test func theSharingSectionIsWrittenAndSaysWhereThingsGo() {
-        #expect(HelpCatalog.topics(in: .sharing).map(\.id)
-                == [.shareCard, .replayClip, .shareFit, .sendSessionToDeveloper,
-                    .riderAttribution])
+        #expect(HelpCatalog.topics(in: .share).map(\.id)
+                == [.shareCard, .replayClip, .shareFit])
 
         // The card and the clip are both rendered locally, and both say so — that is the
         // half of each topic a rider is actually deciding on.
@@ -268,9 +340,11 @@ import Testing
             #expect(clip.contains(word), "the clip topic never mentions \(word)")
         }
         // The shared FIT is scrubbed, and the topic names the analyzer that can open it.
+        // …and hands the reader the topic about it rather than a link out of the app.
         let fit = HelpCatalog.topic(.shareFit)
         #expect(fit.body.joined(separator: " ").contains(Branding.site))
-        #expect(fit.links.contains { $0.url.absoluteString == Branding.siteURL })
+        #expect(fit.links.isEmpty)
+        #expect(fit.related.first == .browserApp)
         // A friend's session is shown but never counted — the whole point of the prompt.
         let rider = HelpCatalog.topic(.riderAttribution).body.joined(separator: " ")
         #expect(rider.lowercased().contains("records"))
@@ -285,7 +359,8 @@ import Testing
     /// has anything to import, so the topic now has to spell them exactly as the website does
     /// or the reader cannot match the row he read to the screen he is on.
     @Test func theSourceTopicAnswersDoINeedTheWatchApp() {
-        let topic = HelpCatalog.topic(.sourceClass)
+        // One topic since 26 September 2026: the watch table, each row naming its class.
+        let topic = HelpCatalog.topic(.whichWatch)
         let all = ([topic.title, topic.summary] + topic.body
                    + topic.items.flatMap { [$0.term, $0.detail] }).joined(separator: " ")
         // Every name the class is given, in the web's spelling.
@@ -297,12 +372,11 @@ import Testing
         for jargon in ["class a", "class b", "class c"] {
             #expect(!all.contains(jargon), "the source topic still says \"\(jargon)\"")
         }
-        #expect(topic.summary.contains("CleanJibe watch app"))
-        // One item per class since the copy pass of 15 September 2026: the body used to
-        // repeat all four rows in prose and then again as three items, which is the
-        // duplication the budget was written to end.
-        #expect(topic.items.count == RecordingClass.allCases.count)
-        #expect(topic.items.map(\.term) == RecordingClass.allCases.map(\.name))
+        #expect(all.contains("CleanJibe watch app"))
+        // Rows by watch, and every row names its class.
+        #expect(topic.items.allSatisfy { item in
+            RecordingClass.allCases.contains { item.detail.contains($0.name) }
+        })
     }
 
     /// The class names are a contract with the website and with docs/channels.md: the same
