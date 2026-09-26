@@ -39,10 +39,10 @@ struct ShareComposerView: View {
 
     @State private var payload = Payload.card
     @State private var shape = ShareCardStats.Shape.portrait
-    /// How much of the key-metrics block the card carries. Seeded from the last card the
-    /// rider exported (`ShareCardPresetStore`) and written back on every change — a
-    /// preference, not a per-session choice, so a rider who wants lean cards asks once.
-    @State private var preset = ShareCardPresetStore.load(from: .standard)
+    /// Which number the card is headlined with (layout B v2): clean jibes, the best 2 s or
+    /// the tacks. Seeded from the last card the rider exported (`ShareCardHeroStore`) and
+    /// written back on every tap — a preference, not a per-session choice.
+    @State private var hero = ShareCardHeroStore.load(from: .standard)
     @State private var pickedItem: PhotosPickerItem?
     @State private var photo: Image?
     @State private var photoFailed = false
@@ -97,12 +97,12 @@ struct ShareComposerView: View {
 
     private enum Field: Hashable { case title, note }
 
-    /// The card's numbers *are* the app's key-metrics block, filtered by the preset — same
+    /// The card's numbers *are* the app's key-metrics block, told as layout B v2 — same
     /// model, same strings, one source (`ShareCardStats`). `metrics` is nil only while the
     /// analysis behind the sheet is still loading, which the card degrades for on its own.
     private var stats: ShareCardStats {
         ShareCardStats.make(row: row, title: displayTitle,
-                            metrics: metrics, preset: preset,
+                            metrics: metrics, hero: hero,
                             note: noteDraft,
                             // Settings → Speed records. A card is an all-time claim in a
                             // chat thread, so "Only verified" takes the record cell off a
@@ -246,10 +246,10 @@ struct ShareComposerView: View {
                 #endif
                 if let raw = environment["UI_SHAPE"],
                    let wanted = ShareCardStats.Shape(rawValue: raw) { shape = wanted }
-                // `UI_STATS=lean|complete` photographs the other preset without writing
+                // `UI_HERO=clean|max2s|tacks` photographs another hero without writing
                 // the rider's stored choice, which a tap on the picker would.
-                if let raw = environment["UI_STATS"],
-                   let wanted = ShareCardStats.Preset(rawValue: raw) { preset = wanted }
+                if let raw = environment["UI_HERO"],
+                   let wanted = ShareCardStats.Hero(rawValue: raw) { hero = wanted }
                 // `UI_MAP=1|0` photographs the card with and without the ground under it
                 // without writing the rider's stored choice, which a tap on the switch would.
                 if let raw = environment["UI_MAP"] { wantsMap = raw == "1" }
@@ -408,29 +408,22 @@ struct ShareComposerView: View {
         }
         .pickerStyle(.segmented)
 
-        // Presets rather than eight checkboxes. The rider is choosing between "a picture
-        // with the headline on it" and "the session, reported" — and a per-stat editor
-        // would put a scrolling list of toggles in a sheet whose whole job is to be
-        // finished in four taps. `Complete` is the default because the block it mirrors is
-        // the one at the top of the session in the app.
-        VStack(spacing: 4) {
+        // The big number (layout B v2, Jan, 26 Sep 2026) — it replaced Lean/Complete. Only
+        // the heroes this session can carry are offered: no clean jibes, no "Clean jibes";
+        // no tacks, no "Tacks". With one left there is nothing to choose, and no picker.
+        if let options = stats.story?.heroOptions, options.count > 1 {
             // The binding writes the preference itself rather than an `onChange` on the
-            // state, so only a *tap* is remembered — the screenshot hook below sets the
-            // same state and must not rewrite what the rider chose.
-            Picker("Stats", selection: Binding(get: { preset },
-                                               set: { chosen in
-                                                   preset = chosen
-                                                   ShareCardPresetStore.save(chosen,
-                                                                             to: .standard)
-                                               })) {
-                ForEach(ShareCardStats.Preset.allCases) { Text($0.label).tag($0) }
+            // state, so only a *tap* is remembered — the screenshot hook sets the same state
+            // and must not rewrite what the rider chose.
+            Picker(PresentationCopy.card("optionTitle"),
+                   selection: Binding(get: { stats.story?.hero?.kind ?? hero },
+                                      set: { chosen in
+                                          hero = chosen
+                                          ShareCardHeroStore.save(chosen, to: .standard)
+                                      })) {
+                ForEach(options) { Text($0.label).tag($0) }
             }
             .pickerStyle(.segmented)
-
-            Text(preset.summary)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
         }
 
         mapToggle
@@ -599,7 +592,7 @@ struct ShareComposerView: View {
         let parts = [thumbnail == nil ? "0" : "1",
                      metrics == nil ? "0" : "1",
                      map == nil ? "0" : "1"].joined(separator: "|")
-        return shape.rawValue + "|" + preset.rawValue + "|" + background
+        return shape.rawValue + "|" + hero.rawValue + "|" + background
             + "|" + parts + "|" + store.speedRecordPolicy.rawValue
             + "|" + displayTitle + "|" + noteDraft
     }
@@ -737,7 +730,7 @@ struct ShareComposerView: View {
     /// "portrait · lean · map": the share card's variant, as the usage report counts it.
     private var cardVariant: String {
         let ground = photo != nil ? "photo" : (map != nil ? "map" : "plain")
-        return shape.rawValue + " · " + preset.rawValue + " · " + ground
+        return shape.rawValue + " · " + hero.rawValue + " · " + ground
     }
 
     private func prepareFIT() async {
