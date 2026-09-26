@@ -447,13 +447,13 @@ struct StravaImportTests {
     /// Strava's copy of a FIT, built from the FIT's own fixes the way Strava serves them
     /// back: positions on an elapsed clock and nothing else. Also returns the two spans the
     /// dedupe key compares — every record for the FIT, the fixes alone for Strava.
-    private static func stravaCopy(of fit: Data) throws
+    private static func stravaCopy(of fit: Data, upTo limit: Double = .infinity) throws
             -> (gpx: Data, activity: StravaActivity, fitSpanS: Double, fixSpanS: Double) {
         let track = try FitSessionParser.parse(data: fit)
         let start = try #require(track.startDate)
         let t0 = try #require(track.samples.first?.t)
         let tEnd = try #require(track.samples.last?.t)
-        let fixes = track.samples.filter { $0.lat != nil && $0.lon != nil }
+        let fixes = track.samples.filter { $0.lat != nil && $0.lon != nil && $0.t <= limit }
         let firstFix = try #require(fixes.first?.t)
         let lastFix = try #require(fixes.last?.t)
         let streams = StravaStreams(
@@ -630,6 +630,181 @@ struct StravaImportTests {
             Issue.record("expected the FIT again to be a duplicate")
             return
         }
+    }
+
+    /// The same FIT with no position on any `record` stamped within `seconds` of the first
+    /// record: a watch that recorded before it had a fix. Every other byte is the
+    /// original's and both CRCs are recomputed — the twin of
+    /// `lab/tools/scrub_fit.py blank_leading_positions`.
+    private static func blankingLeadingPositions(of raw: Data, seconds: UInt32) throws -> Data {
+        var out = [UInt8](raw)
+        let headerSize = Int(out[0])
+        let dataSize = Int(out[4]) | Int(out[5]) << 8 | Int(out[6]) << 16 | Int(out[7]) << 24
+        let bodyEnd = headerSize + dataSize
+        struct Def { var global: Int; var little: Bool
+                     var fields: [Int: (offset: Int, size: Int)]; var size: Int }
+        func u32(_ at: Int, _ little: Bool) -> UInt32 {
+            let b = (0..<4).map { UInt32(out[at + $0]) }
+            return little ? b[0] | b[1] << 8 | b[2] << 16 | b[3] << 24
+                          : b[3] | b[2] << 8 | b[1] << 16 | b[0] << 24
+        }
+        var defs: [Int: Def] = [:]
+        var pos = headerSize
+        var firstTs: UInt32?, lastTs: UInt32?
+        while pos < bodyEnd {
+            let header = Int(out[pos])
+            var ts: UInt32?
+            let def: Def
+            if header & 0x80 != 0 {                                 // compressed timestamp
+                def = try #require(defs[(header >> 5) & 0x03])
+                if let last = lastTs {
+                    var t = (last & ~0x1F) + UInt32(header & 0x1F)
+                    if t < last { t += 0x20 }
+                    ts = t
+                }
+            } else if header & 0x40 != 0 {                          // definition
+                let little = out[pos + 2] == 0
+                let global = little ? Int(out[pos + 3]) | Int(out[pos + 4]) << 8
+                                    : Int(out[pos + 4]) | Int(out[pos + 3]) << 8
+                var cursor = pos + 6, offset = 0
+                var fields: [Int: (offset: Int, size: Int)] = [:]
+                for _ in 0..<Int(out[pos + 5]) {
+                    fields[Int(out[cursor])] = (offset, Int(out[cursor + 1]))
+                    offset += Int(out[cursor + 1])
+                    cursor += 3
+                }
+                if header & 0x20 != 0 {
+                    let count = Int(out[cursor])
+                    cursor += 1
+                    for _ in 0..<count { offset += Int(out[cursor + 1]); cursor += 3 }
+                }
+                defs[header & 0x0F] = Def(global: global, little: little,
+                                          fields: fields, size: offset)
+                pos = cursor
+                continue
+            } else {
+                def = try #require(defs[header & 0x0F])
+            }
+            if let f = def.fields[253] { ts = u32(pos + 1 + f.offset, def.little) }
+            if let ts { lastTs = ts }
+            if def.global == 20, let ts {                           // record
+                if firstTs == nil { firstTs = ts }
+                if ts - firstTs! < seconds {
+                    let invalid: [UInt8] = def.little ? [0xFF, 0xFF, 0xFF, 0x7F]
+                                                      : [0x7F, 0xFF, 0xFF, 0xFF]
+                    for number in [0, 1] {                          // position_lat, _long
+                        guard let f = def.fields[number] else { continue }
+                        out.replaceSubrange((pos + 1 + f.offset)..<(pos + 5 + f.offset),
+                                            with: invalid)
+                    }
+                }
+            }
+            pos += 1 + def.size
+        }
+        func crc(_ bytes: ArraySlice<UInt8>) -> UInt16 {
+            let table: [UInt16] = [0x0000, 0xCC01, 0xD801, 0x1400, 0xF001, 0x3C00, 0x2800,
+                                   0xE401, 0xA001, 0x6C00, 0x7800, 0xB401, 0x5000, 0x9C01,
+                                   0x8801, 0x4400]
+            var c: UInt16 = 0
+            for byte in bytes {
+                var tmp = table[Int(c & 0xF)]
+                c = (c >> 4) & 0x0FFF
+                c = c ^ tmp ^ table[Int(byte & 0xF)]
+                tmp = table[Int(c & 0xF)]
+                c = (c >> 4) & 0x0FFF
+                c = c ^ tmp ^ table[Int((byte >> 4) & 0xF)]
+            }
+            return c
+        }
+        if headerSize == 14 {
+            let h = crc(out[0..<12])
+            out[12] = UInt8(h & 0xFF); out[13] = UInt8(h >> 8)
+        }
+        let f = crc(out[0..<bodyEnd])
+        out[bodyEnd] = UInt8(f & 0xFF); out[bodyEnd + 1] = UInt8(f >> 8)
+        return Data(out)
+    }
+
+    /// A corpus FIT (1 August 2026, Torbole) with its first 90 s of positions blanked: the
+    /// watch recorded for a minute and a half before its first fix. Strava's copy of it
+    /// starts at that fix.
+    private static func leadIn() throws -> (fit: Data,
+            copy: (gpx: Data, activity: StravaActivity, fitSpanS: Double, fixSpanS: Double)) {
+        let url = try #require(findFixtureFIT(stem: "2026-08-01-0804_nago-torbole-windsurfen_native"))
+        let fit = try blankingLeadingPositions(of: Data(contentsOf: url), seconds: 90)
+        let track = try FitSessionParser.parse(data: fit)
+        let start = try #require(track.startDate)
+        let firstFix = try #require(SessionIngestor.fixStart(of: track))
+        #expect(firstFix.timeIntervalSince(start) > 60, "the lead-in was not blanked")
+        return (fit, try stravaCopy(of: fit))
+    }
+
+    /// **Two starts a side, FIT first** (Jan, 26 Sep 2026): the FIT's first-fix start meets
+    /// the start of Strava's copy, which the record start alone would have called a second
+    /// session.
+    @Test func aFitWithAGpsLessLeadInIsMatchedToItsStravaCopy() async throws {
+        let (ingestor, root) = try makeIngestor()
+        defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
+        let (fit, copy) = try Self.leadIn()
+        guard case .imported(let first) = try await ingestor.ingest(
+            fitData: fit, filename: "lead-in.fit", source: .file) else {
+            Issue.record("expected a fresh import")
+            return
+        }
+        #expect(copy.activity.startDate!.timeIntervalSince(first.startDate) > 60)
+        guard case .duplicate(let row) = try await ingestor.ingest(
+            fitData: copy.gpx, filename: StravaImport.filename(for: copy.activity),
+            source: .strava, utcOffsetS: 7200) else {
+            Issue.record("Strava's copy landed as a second session")
+            return
+        }
+        #expect(row.id == first.id)
+        #expect(row.importSource == "file+strava")
+        #expect(row.sourceClass != "c")
+        #expect(try await ingestor.allSessions().count == 1)
+    }
+
+    /// **Two starts a side, Strava first**: the FIT arriving later replaces the copy (F-6).
+    @Test func aStravaCopyGivesWayToTheFitWithAGpsLessLeadIn() async throws {
+        let (ingestor, root) = try makeIngestor()
+        defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
+        let (fit, copy) = try Self.leadIn()
+        guard case .imported(let strava) = try await ingestor.ingest(
+            fitData: copy.gpx, filename: StravaImport.filename(for: copy.activity),
+            source: .strava, utcOffsetS: 7200) else {
+            Issue.record("expected a fresh import")
+            return
+        }
+        guard case .replaced(let row, _) = try await ingestor.ingest(
+            fitData: fit, filename: "lead-in.fit", source: .file) else {
+            Issue.record("expected the FIT to replace Strava's copy")
+            return
+        }
+        #expect(row.id == strava.id)
+        #expect(row.sourceClass != "c")
+        #expect(row.durationS == copy.fitSpanS)
+        #expect(try await ingestor.allSessions().count == 1)
+    }
+
+    /// **No false merge**: a recording that starts within a minute of the FIT's first fix
+    /// but spans half of it is another session, whichever start it meets.
+    @Test func aRecordingThatStartsNearTheFirstFixButSpansLessIsAnotherSession() async throws {
+        let (ingestor, root) = try makeIngestor()
+        defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
+        let (fit, copy) = try Self.leadIn()
+        let half = try Self.stravaCopy(of: fit, upTo: copy.fitSpanS / 2)
+        #expect(copy.fixSpanS - half.fixSpanS > 60)
+        guard case .imported = try await ingestor.ingest(
+            fitData: fit, filename: "lead-in.fit", source: .file) else {
+            Issue.record("expected a fresh import")
+            return
+        }
+        guard case .imported = try await ingestor.ingest(
+            fitData: half.gpx, filename: "half.gpx", source: .strava, utcOffsetS: 7200) else {
+            Issue.record("a shorter recording merged into the FIT")
+            return
+        }
+        #expect(try await ingestor.allSessions().count == 2)
     }
 
     /// The takeover rule on its own: positions-only gives way to speed, never the reverse,

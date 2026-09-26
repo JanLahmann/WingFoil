@@ -272,6 +272,7 @@ public struct SessionIngestor: Sendable {
 
         let existing = try await duplicate(startDate: startDate, durationS: duration,
                                           fixSpanS: Self.fixSpan(of: track),
+                                          fixStart: Self.fixStart(of: track),
                                           icuActivityId: icuActivityId)
         if let existing, !existing.isProvisional,
            !Self.yields(existing, to: source, sourceClass: caps.sourceClass) {
@@ -457,6 +458,14 @@ public struct SessionIngestor: Sendable {
               let last = track.samples.last(where: { $0.lat != nil && $0.lon != nil })
         else { return nil }
         return last.t - first.t
+    }
+
+    /// **The start a recording is compared on besides its own**: the instant of its first
+    /// GPS fix. A watch that records before it has a position starts earlier than a copy
+    /// made of its fixes. Nil for a recording with no fix at all. Mirrors `fixStartUtc` in
+    /// web/lab_bundle/web_entry.py.
+    static func fixStart(of track: RawTrack) -> Date? {
+        track.samples.first(where: { $0.lat != nil && $0.lon != nil })?.timestamp
     }
 
     public static func isWatersport(_ caps: SourceCapabilities) -> Bool {
@@ -844,15 +853,28 @@ public struct SessionIngestor: Sendable {
     /// on its record span and on its fix span (`fixSpan`), and two recordings are the same
     /// session when any span of one is within the tolerance of any span of the other. That
     /// is what lets a FIT whose watch recorded on without GPS meet the Strava copy of its
-    /// fixes, in either order. The start stays one-to-one. A stored row carries its record
-    /// span only, so its fix span is read from the archived original, and only for a row
-    /// whose start already matched and whose record span did not.
+    /// fixes, in either order.
+    ///
+    /// **Two starts a side** (Jan, 26 Sep 2026), the same way: the record start and the
+    /// first-fix start (`fixStart`), any of one within the tolerance of any of the other. A
+    /// watch that recorded for over a minute before its first fix starts where the copy of
+    /// its fixes does not. A stored row carries its record start and span only, so its fix
+    /// start and fix span are read from the archived original, and only for a row the
+    /// columns could not answer for: one whose start matched and whose span did not, or one
+    /// that started earlier and was still recording at the incoming start.
     func duplicate(startDate: Date, durationS: Double, fixSpanS: Double? = nil,
+                   fixStart: Date? = nil,
                    icuActivityId: String? = nil) async throws -> SessionRow? {
         let tolerance = dedupeToleranceS
-        let lower = startDate.addingTimeInterval(-tolerance)
-        let upper = startDate.addingTimeInterval(tolerance)
-        let incoming = [durationS] + (fixSpanS.map { [$0] } ?? [])
+        let starts = [startDate] + (fixStart.map { [$0] } ?? [])
+        let spans = [durationS] + (fixSpanS.map { [$0] } ?? [])
+        let earliest = starts.min() ?? startDate
+        let lower = earliest.addingTimeInterval(-tolerance)
+        let upper = (starts.max() ?? startDate).addingTimeInterval(tolerance)
+        // A stored row's first fix lies inside its own recording, so a row can only start
+        // near an incoming start by its fix if it began before and ran past it.
+        let reach = lower.addingTimeInterval(-Self.maxSessionDurationS)
+        @Sendable func near(_ a: Date, _ b: Date) -> Bool { abs(a.timeIntervalSince(b)) <= tolerance }
         let (hit, rest) = try await database.writer.read { db -> (SessionRow?, [SessionRow]) in
             if let icuActivityId,
                let hit = try SessionRow
@@ -862,23 +884,37 @@ public struct SessionIngestor: Sendable {
             let candidates = try SessionRow
                 .filter(Column("startDate") >= lower && Column("startDate") <= upper)
                 .fetchAll(db)
-            // The record span first, so the ordinary case answers exactly as it always did.
-            if let hit = candidates.first(where: { abs($0.durationS - durationS) <= tolerance }) {
-                return (hit, [])
-            }
-            if let hit = candidates.first(where: { row in
-                incoming.contains { abs(row.durationS - $0) <= tolerance }
+                .filter { row in starts.contains { near(row.startDate, $0) } }
+            // Record start and record span first, so the ordinary case answers exactly as
+            // it always did.
+            if let hit = candidates.first(where: {
+                near($0.startDate, startDate) && abs($0.durationS - durationS) <= tolerance
             }) {
                 return (hit, [])
             }
-            return (nil, candidates.filter { !$0.isProvisional })
+            if let hit = candidates.first(where: { row in
+                spans.contains { abs(row.durationS - $0) <= tolerance }
+            }) {
+                return (hit, [])
+            }
+            let earlier = try SessionRow
+                .filter(Column("startDate") >= reach && Column("startDate") < lower)
+                .fetchAll(db)
+                .filter { $0.startDate.addingTimeInterval($0.durationS) >= lower }
+            return (nil, (candidates + earlier).filter { !$0.isProvisional })
         }
         if let hit { return hit }
-        // The stored side's fix span, from its archive. A card has no archive and is skipped.
+        // The stored side's fix start and fix span, from its archive. A card has no archive
+        // and is skipped.
         for row in rest {
-            guard let track = try? archive.rawTrack(for: row.id),
-                  let stored = Self.fixSpan(of: track) else { continue }
-            if incoming.contains(where: { abs(stored - $0) <= tolerance }) { return row }
+            guard let track = try? archive.rawTrack(for: row.id) else { continue }
+            let storedStarts = [row.startDate] + (Self.fixStart(of: track).map { [$0] } ?? [])
+            let storedSpans = [row.durationS] + (Self.fixSpan(of: track).map { [$0] } ?? [])
+            let startMatches = storedStarts.contains { a in starts.contains { near(a, $0) } }
+            let spanMatches = storedSpans.contains { a in
+                spans.contains { abs(a - $0) <= tolerance }
+            }
+            if startMatches && spanMatches { return row }
         }
         return nil
     }
