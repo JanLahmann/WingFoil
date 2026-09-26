@@ -38,7 +38,8 @@
 
 import { CREDIT, frameTrack, mapBackdrop, placeOn } from "./cardmap.js";
 import {
-  BRANDING, CAPTION_SEP, NOTE_LIMIT, PRESETS, SHAPES, TITLE_LIMIT, cardDateLine,
+  BRANDING, CAPTION_SEP, HEROES, NOTE_LIMIT, PRESETS, SHAPES, TITLE_LIMIT,
+  cardDateLine, cardStartLine, cardStory,
   cardDisclaimer, cardKey, cardStats, cardTitle, cardTitleDraft, cleanNote, cleanTitle,
   isWide, loadCardChoice, loadCardText, periodCardContent, periodMapAvailable,
   saveCardChoice, saveCardText,
@@ -508,7 +509,7 @@ async function buildStackMap(tracks, box, W, H, scale) {
  * town's white building fill under the footer — and not against open water, which needs
  * about half of this.
  */
-function drawScrim(ctx, W, H, wide) {
+function drawScrim(ctx, W, H, wide, column = WIDE_COLUMN) {
   ctx.fillStyle = alpha(BRAND.navy, 0.34);
   ctx.fillRect(0, 0, W, H);
 
@@ -526,7 +527,7 @@ function drawScrim(ctx, W, H, wide) {
   // brightening at the right-hand edge leaves the last stat cell and the QR sitting on
   // whatever the map put there. It ramps in over 70 points so the edge of the panel is not
   // a visible seam down the middle of the picture.
-  const x0 = W * (1 - WIDE_COLUMN) - PAD_X;
+  const x0 = W * (1 - column) - PAD_X;
   const h = ctx.createLinearGradient(x0 - 70, 0, x0, 0);
   h.addColorStop(0, "rgba(0, 0, 0, 0)");
   h.addColorStop(1, "rgba(0, 0, 0, 0.55)");
@@ -692,9 +693,8 @@ function drawHeader(ctx, { title, dateLine, note }, box, family, titleInset = 0)
   // title rather than moving it, by the rule the whole card follows.
   drawFitted(ctx, title, box.x, box.y + 22, Math.max(box.w - titleInset, 40), 25, 700,
              family, BRAND.paper);
-  ctx.font = `500 12px ${family}`;
-  ctx.fillStyle = alpha(BRAND.paper, 0.72);
-  ctx.fillText(dateLine, box.x, box.y + 38);
+  drawFitted(ctx, dateLine, box.x, box.y + 38, box.w, 12, 500, family,
+             alpha(BRAND.paper, 0.72));
   if (note) {
     drawFitted(ctx, note, box.x, box.y + 50, box.w, 10.5, 500, family,
                alpha(BRAND.paper, 0.88));
@@ -889,9 +889,11 @@ function drawQrMark(ctx, mark, x, y, size) {
  * not what happens if they go there. One line does that instead, and the QR means they do
  * not have to type it.
  */
-function drawFooter(ctx, { disclaimer }, box, art, family) {
+function drawFooter(ctx, content, box, art, family) {
   const qr = art.qr ? QR_SIZE : 0;
-  const markSize = 20;
+  // Layout B v2 (Jan, 26 Sep 2026): the mark at 30 pt, "CleanJibe · cleanjibe.org" at 16 pt
+  // ABOVE the tagline — the name and the address are what a stranger has to remember.
+  const markSize = 30;
   const x = box.x;
   const top = box.y + (box.h - QR_SIZE) / 2;
 
@@ -914,29 +916,281 @@ function drawFooter(ctx, { disclaimer }, box, art, family) {
   if (art.mark) {
     const my = top + (QR_SIZE - markSize) / 2;
     ctx.save();
-    roundRect(ctx, x, my, markSize, markSize, 4.5);
+    roundRect(ctx, x, my, markSize, markSize, 7);
     ctx.clip();
     ctx.drawImage(art.mark, x, my, markSize, markSize);
     ctx.restore();
     // The mark's own background is the brand navy, which is the card's background too, so
     // without an edge it reads as a squiggle floating in the footer rather than as an icon.
-    roundRect(ctx, x + 0.25, my + 0.25, markSize - 0.5, markSize - 0.5, 4.5);
+    roundRect(ctx, x + 0.25, my + 0.25, markSize - 0.5, markSize - 0.5, 7);
     ctx.strokeStyle = alpha(BRAND.paper, 0.22);
     ctx.lineWidth = 0.5;
     ctx.stroke();
-    textX = x + markSize + 7;
+    textX = x + markSize + 9;
   }
 
   const textW = Math.max(box.x + box.w - qr - (qr ? 8 : 0) - textX, 40);
   const midY = top + QR_SIZE / 2;
-  drawFitted(ctx, BRANDING.name, textX, midY - 3, textW, 13, 700, family, BRAND.paper);
-  drawFitted(ctx, BRANDING.line, textX, midY + 10, textW, 9.5, 500, family,
-             alpha(BRAND.paper, 0.86));
-  if (disclaimer) {
+  // "CleanJibe" in paper and " · cleanjibe.org" in brand green, one line, shrunk together.
+  const sep = ` · ${BRANDING.site}`;
+  const size = fitSize(ctx, BRANDING.name + sep, textW, 16, 800, family);
+  ctx.font = `800 ${size}px ${family}`;
+  ctx.fillStyle = BRAND.paper;
+  ctx.fillText(BRANDING.name, textX, midY + 1);
+  const nameW = ctx.measureText(BRANDING.name).width;
+  ctx.font = `700 ${size}px ${family}`;
+  ctx.fillStyle = BRAND.green;
+  ctx.fillText(sep, textX + nameW, midY + 1);
+  drawFitted(ctx, BRANDING.tagline, textX, midY + 15, textW, 10.5, 500, family,
+             alpha(BRAND.paper, 0.8));
+  // The period card's disclaimer slot (always null today); the session card draws its speed
+  // note next to the speed instead.
+  if (content.disclaimer && !content.story) {
     ctx.font = `400 7px ${family}`;
     ctx.fillStyle = alpha(C.effort, 0.9);
-    ctx.fillText(disclaimer, textX, midY + 20);
+    ctx.fillText(content.disclaimer, textX, midY + 24);
   }
+}
+
+/* ---------------------------------------------------------- layout B v2
+ *
+ * The session card (Jan, 26 Sep 2026): header · track · hero · the outcome bars · the streak
+ * line · one ribbon · the footer. There is no tile grid, so nothing can grow past the footer
+ * the way the old eleven-tile landscape did; `storyBoxes` still asserts the gap.
+ *
+ * **The track gets every point the words do not need** (Jan, 26 Sep 2026): the stack below
+ * it is packed tight from the footer up, and on the square the ride takes whichever of two
+ * boxes — beside the title, or the full width under it — draws it larger.
+ */
+
+const HERO_H = 50;
+const BAR_H = 33, BAR_GAP = 5;
+const STREAK_H = 16;
+const RIBBON_H = 30;
+const NOTE_H = 10;
+/** The landscape's word column in layout B v2 — narrower than the grid's was, so the ride
+ *  gets the width. */
+const STORY_COLUMN = 0.43;
+
+const MUTED = () => alpha(BRAND.paper, 0.75);
+const ROLE_INK = { muted: null, paper: BRAND.paper, flew: C.good, fell: C.bad };
+
+function star(ctx, cx, cy, r, color) {
+  ctx.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.45 : r;
+    const px = cx + Math.cos(a) * rr, py = cy + Math.sin(a) * rr;
+    if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py);
+  }
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+
+function put(ctx, s, x, y, size, weight, color, family, align = "left") {
+  ctx.font = `${weight} ${size}px ${family}`;
+  ctx.fillStyle = color;
+  ctx.textAlign = align;
+  ctx.fillText(s, x, y);
+  ctx.textAlign = "left";
+  return ctx.measureText(s).width;
+}
+
+/** The hero: ★ 25 clean jibes / of 56 jibes, 13.21 kn / top speed · best 2 s, or 3 tacks. */
+function drawHero(ctx, story, x, y, w, family) {
+  const h = story.hero;
+  if (!h) return;
+  const base = y + 44;
+  let nx = x - 2;
+  if (h.kind === "clean") {
+    star(ctx, x + 16, y + 26, 15.5, C.clean);
+    nx = x + 36;
+  }
+  const big = fitSize(ctx, h.value, w * 0.6, 58, 800, family);
+  const nw = put(ctx, h.value, nx, base, big, 800, BRAND.paper, family);
+  const tx = nx + nw + 8, tw = Math.max(x + w - tx, 30);
+  drawFitted(ctx, h.unit, tx, y + 26, tw, 15, 700,
+             family, h.kind === "clean" ? C.clean : BRAND.paper);
+  drawFitted(ctx, h.sub, tx, y + 41, tw, 11, 500, family, MUTED());
+  if (h.kind === "max2s" && story.speedNote) {
+    drawFitted(ctx, story.speedNote, tx, y + 53, tw, 8.5, 500, family, alpha(C.effort, 0.95));
+  }
+}
+const heroHeight = (story) => (!story.hero ? 0
+  : HERO_H + (story.hero.kind === "max2s" && story.speedNote ? NOTE_H : 0));
+
+/** One outcome bar: the label row, the bar, the three counts in the ladder's colours. */
+function drawBar(ctx, bar, legend, x, y, w, family) {
+  put(ctx, bar.label.toUpperCase(), x, y + 8, 8.5, 700, alpha(BRAND.green, 0.95), family);
+  if (bar.right) {
+    let rx = x + w;
+    if (bar.star) { star(ctx, rx - 5, y + 4.5, 5, C.clean); rx -= 13; }
+    put(ctx, bar.right, rx, y + 8, 9.5, 600, alpha(BRAND.paper, 0.85), family, "right");
+  }
+  const by = y + 11, bh = 7;
+  const tot = bar.flewThrough + bar.touchdown + bar.fellIn || 1;
+  const parts = [[bar.flewThrough, C.good, legend[0]], [bar.touchdown, C.warn, legend[1]],
+                 [bar.fellIn, C.bad, legend[2]]];
+  ctx.save();
+  roundRect(ctx, x, by, w, bh, bh / 2);
+  ctx.clip();
+  ctx.fillStyle = alpha(BRAND.paper, 0.12);
+  ctx.fillRect(x, by, w, bh);
+  let cx = x;
+  for (const [n, col] of parts) {
+    const pw = (w * n) / tot;
+    ctx.fillStyle = col;
+    ctx.fillRect(cx, by, pw, bh);
+    cx += pw;
+  }
+  ctx.restore();
+  // A zero is dimmed, not dropped, so two bars' legends line up.
+  let lx = x;
+  for (const [n, col, word] of parts) {
+    ctx.globalAlpha = n === 0 ? 0.45 : 1;
+    lx += put(ctx, String(n), lx, y + 30, 12, 700, col, family) + 3;
+    lx += put(ctx, word, lx, y + 30, 9.5, 500, alpha(BRAND.paper, 0.78), family) + 10;
+    ctx.globalAlpha = 1;
+  }
+}
+const barsHeight = (story) => story.bars.length * (BAR_H + BAR_GAP);
+
+/** The streak line: segments in their inks, then the falls after a gap. Shrinks as one. */
+function drawStreak(ctx, story, x, y, w, family) {
+  const runs = [...story.streak];
+  if (story.streak.length && story.falls.length) runs.push({ text: "     ", role: "muted" });
+  runs.push(...story.falls);
+  if (!runs.length) return;
+  const sizeOf = (r) => (r.role === "muted" ? 9.5 : 11);
+  const weightOf = (r) => (r.role === "muted" ? 500 : 700);
+  let total = 0;
+  for (const r of runs) {
+    ctx.font = `${weightOf(r)} ${sizeOf(r)}px ${family}`;
+    total += ctx.measureText(r.text).width;
+  }
+  const k = total > w ? w / total : 1;
+  let lx = x;
+  for (const r of runs) {
+    lx += put(ctx, r.text, lx, y, sizeOf(r) * k, weightOf(r),
+              ROLE_INK[r.role] || MUTED(), family);
+  }
+}
+const hasStreak = (story) => story.streak.length > 0 || story.falls.length > 0;
+
+/** The ribbon: rates in words first, then max 2 s, duration and distance. */
+function drawRibbon(ctx, story, x, y, w, family, vs = 15) {
+  const cells = story.ribbon;
+  if (!cells.length) return;
+  const cw = w / cells.length;
+  ctx.fillStyle = alpha(BRAND.paper, 0.18);
+  ctx.fillRect(x, y, w, 0.5);
+  cells.forEach((cell, i) => {
+    const cx = x + i * cw, inner = cw - (i ? 7 : 0) - 4;
+    if (i) {
+      ctx.fillStyle = alpha(BRAND.paper, 0.18);
+      ctx.fillRect(cx - 0.5, y + 7, 0.5, vs + 11);
+    }
+    const lx = cx + (i ? 7 : 0);
+    drawFitted(ctx, cell.label, lx, y + 15, inner, 9, 600, family, alpha(BRAND.green, 0.9));
+    drawFitted(ctx, cell.value, lx, y + 17 + vs, inner, vs, 700, family,
+               cell.clean ? C.clean : BRAND.paper);
+    if (cell.key === "max2s" && story.speedNote) {
+      // Next to the speed it qualifies: under the ribbon, starting at the max 2 s cell.
+      drawFitted(ctx, story.speedNote, lx, y + RIBBON_H + 8, x + w - lx, 8, 500, family,
+                 alpha(C.effort, 0.95));
+    }
+  });
+}
+const ribbonNote = (story) => (story.speedNote && story.ribbon.some((c) => c.key === "max2s")
+  ? NOTE_H : 0);
+
+/** Which of the square's two track boxes draws the ride larger. */
+function largerBox(track, boxes) {
+  const ext = track ? extent(track) : null;
+  if (!ext) return boxes[0];
+  let best = boxes[0], bestScale = -1;
+  for (const b of boxes) {
+    if (b.h < 20 || b.w < 20) continue;
+    const s = placerFor(ext, b).scale;
+    if (s > bestScale) { bestScale = s; best = b; }
+  }
+  return best;
+}
+
+/**
+ * Where layout B v2 puts everything, in layout points. Packed from the footer upwards so the
+ * track takes the rest. Exported for card_parity: the gap between the words and the footer
+ * is asserted on every shape.
+ */
+export function storyBoxes(content, shape, W, H) {
+  const story = content.story;
+  const headH = headerHeight(content);
+  const inner = { x: PAD_X, y: PAD_TOP, w: W - PAD_X * 2, h: H - PAD_TOP - PAD_BOTTOM };
+  const footer = { y: inner.y + inner.h - QR_SIZE, h: QR_SIZE };
+  const hasArt = Boolean(content.track);
+
+  if (isWide(shape)) {
+    const colW = W * STORY_COLUMN;
+    const cx = inner.x + inner.w - colW;
+    const header = { x: cx, y: inner.y, w: colW };
+    const heroY = inner.y + headH + 2;
+    const barsY = heroY + heroHeight(story) + 4;
+    const streakY = barsY + barsHeight(story) + 8;
+    const ribY = streakY + (hasStreak(story) ? STREAK_H - 4 : -8) + 2;
+    const bottom = ribY + RIBBON_H + ribbonNote(story);
+    return {
+      inner, wide: true, column: colW,
+      track: hasArt ? { x: inner.x, y: inner.y, w: cx - inner.x - 16, h: inner.h } : null,
+      header, hero: { x: cx, y: heroY, w: colW }, bars: { x: cx, y: barsY, w: colW },
+      streak: hasStreak(story) ? { x: cx, y: streakY, w: colW } : null,
+      ribbon: { x: cx, y: ribY, w: colW },
+      footer: { x: cx, y: footer.y, w: colW, h: footer.h },
+      gap: footer.y - bottom,
+    };
+  }
+
+  const square = shape === "square";
+  const ribY = footer.y - 8 - RIBBON_H - ribbonNote(story);
+  const streakOn = hasStreak(story) && !square;
+  const streakY = ribY - 10;
+  const barsY = (streakOn ? streakY - 11 - 4 : ribY - 6) - barsHeight(story);
+  const heroY = barsY - heroHeight(story) - (story.hero ? 2 : 0);
+  const headerBottom = inner.y + headH;
+  let track = null;
+  let headerW = inner.w;
+  if (hasArt) {
+    const below = { x: inner.x, y: headerBottom + 4, w: inner.w, h: heroY - 4 - headerBottom - 4 };
+    if (square) {
+      const bx = W * 0.5;
+      const beside = { x: bx, y: inner.y - 2, w: inner.x + inner.w - bx, h: heroY - 2 - inner.y };
+      track = largerBox(content.track, [beside, below]);
+      if (track === beside) headerW = bx - inner.x - 8;
+    } else {
+      track = below;
+    }
+  }
+  return {
+    inner, wide: false,
+    track,
+    header: { x: inner.x, y: inner.y, w: headerW },
+    hero: { x: inner.x, y: heroY, w: inner.w }, bars: { x: inner.x, y: barsY, w: inner.w },
+    streak: streakOn ? { x: inner.x, y: streakY, w: inner.w } : null,
+    ribbon: { x: inner.x, y: ribY, w: inner.w },
+    footer: { x: inner.x, y: footer.y, w: inner.w, h: footer.h },
+    gap: footer.y - (ribY + RIBBON_H + ribbonNote(story)),
+  };
+}
+
+function drawStory(ctx, content, boxes, family) {
+  const story = content.story;
+  drawHero(ctx, story, boxes.hero.x, boxes.hero.y, boxes.hero.w, family);
+  story.bars.forEach((bar, i) => {
+    drawBar(ctx, bar, story.legend, boxes.bars.x, boxes.bars.y + i * (BAR_H + BAR_GAP),
+            boxes.bars.w, family);
+  });
+  if (boxes.streak) drawStreak(ctx, story, boxes.streak.x, boxes.streak.y, boxes.streak.w, family);
+  drawRibbon(ctx, story, boxes.ribbon.x, boxes.ribbon.y, boxes.ribbon.w, family,
+             boxes.wide ? 14 : 15);
 }
 
 /* -------------------------------------------------------------------- the card */
@@ -959,7 +1213,8 @@ export async function drawCard(canvas, content, shape, options = {}) {
   ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
   const W = size.w / SCALE, H = size.h / SCALE;
   const wide = isWide(shape);
-  const boxes = cardBoxes(content, shape, W, H);
+  const boxes = content.story ? storyBoxes(content, shape, W, H)
+                              : cardBoxes(content, shape, W, H);
 
   // The one await between the layout and the ink. Off — the default — neither branch is
   // reached at all, and everything below draws the card this file has always drawn. A period
@@ -976,7 +1231,7 @@ export async function drawCard(canvas, content, shape, options = {}) {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.drawImage(map.image, 0, 0, size.w, size.h);
     ctx.restore();
-    drawScrim(ctx, W, H, wide);
+    drawScrim(ctx, W, H, wide, content.story ? STORY_COLUMN : WIDE_COLUMN);
   } else {
     drawBackground(ctx, W, H);
   }
@@ -994,7 +1249,8 @@ export async function drawCard(canvas, content, shape, options = {}) {
 
   const titleInset = map && !wide ? creditWidth(ctx, family) + 8 : 0;
   drawHeader(ctx, content, boxes.header, family, titleInset);
-  drawGrid(ctx, content.stats, boxes.grid, shape, family, Boolean(map));
+  if (content.story) drawStory(ctx, content, boxes, family);
+  else drawGrid(ctx, content.stats, boxes.grid, shape, family, Boolean(map));
   drawFooter(ctx, content, boxes.footer, art, family);
   if (map) drawCredit(ctx, boxes.inner, wide, family);
   return canvas;
@@ -1052,13 +1308,18 @@ function cardBoxes(content, shape, W, H) {
  * and a caption that has no derived form at all. Both default to nothing, so every caller
  * that predates them (and every test) gets the card exactly as it was.
  */
-export function cardContent(result, preset, text = {}) {
+export function cardContent(result, hero = "clean", text = {}) {
+  const dateLine = cardStartLine(result.meta);
+  const disclaimer = cardDisclaimer(result.meta);
   return {
     title: cleanTitle(text.title) || cardTitle(result.file?.name),
-    dateLine: cardDateLine(result.meta),
+    dateLine,
     note: cleanNote(text.note) || null,
-    stats: cardStats(result.presentation, preset),
-    disclaimer: cardDisclaimer(result.meta),
+    stats: cardStats(result.presentation, "complete"),
+    // Layout B v2: the hero, the bars, the streak line and the ribbon (js/cardstats.js).
+    story: cardStory(result.presentation, HEROES[hero] ? hero : "clean",
+                     { dateLine, speedNote: disclaimer }),
+    disclaimer,
     track: buildTrack(result),
     // The key back to the globe, for the optional map background and for nothing else. Null
     // on a document analysed before the anchor existed (one re-opened from the library) and
@@ -1070,6 +1331,7 @@ export function cardContent(result, preset, text = {}) {
 /* ------------------------------------------------------------------ the dialog */
 
 const state = { result: null, key: "", shape: "portrait", preset: "complete", map: false,
+                hero: "clean",
                 title: "", note: "", blob: null, seq: 0,
                 // The second payload: a period, and the outlines of the sessions in it.
                 // Null for the session card, which is every card this composer used to make.
@@ -1092,6 +1354,10 @@ export function mountShareCard() {
   }
   for (const b of dialog.querySelectorAll("[data-preset]")) {
     b.addEventListener("click", () => choose({ preset: b.dataset.preset }));
+  }
+  for (const b of dialog.querySelectorAll("[data-hero]")) {
+    if (HEROES[b.dataset.hero]) b.textContent = HEROES[b.dataset.hero].label;
+    b.addEventListener("click", () => choose({ hero: b.dataset.hero }));
   }
   el("card-map").addEventListener("change", (ev) => choose({ map: ev.target.checked }));
   // `input`, not `change`: the preview is the point of the field, so it follows the typing.
@@ -1162,6 +1428,7 @@ export function openShareCard(result) {
   const saved = loadCardChoice();
   state.shape = saved.shape;
   state.preset = saved.preset;
+  state.hero = saved.hero;
   // Remembered, but only where it can be honoured: a document with no geographic anchor
   // (no fixes, or one analysed by a build that predates it) has no map to offer, and a
   // switch that is on and does nothing is worse than a switch that is not there.
@@ -1220,6 +1487,7 @@ export async function openPeriodCard(period, entries) {
   const saved = loadCardChoice();
   state.shape = saved.shape;
   state.preset = saved.preset;
+  state.hero = saved.hero;
   // Remembered, but only where it can be honoured — the same rule the session card follows,
   // asking a different question: a period has a ground when all of its afternoons were at one
   // place, and none at all when they were 15 km apart.
@@ -1274,7 +1542,7 @@ function content() {
   return state.period
     ? periodCardContent(state.period, state.preset,
                         { title: state.title, note: state.note }, state.tracks)
-    : cardContent(state.result, state.preset, { title: state.title, note: state.note });
+    : cardContent(state.result, state.hero, { title: state.title, note: state.note });
 }
 
 /** Whether the card on screen can carry a map at all. A session can when the document has a
@@ -1287,7 +1555,8 @@ function choose(next) {
   Object.assign(state, next);
   // Two stores, two scopes: the shape, the preset and the map are the rider's habit and
   // belong to the device, the title and caption belong to this one session (`cardKey`).
-  saveCardChoice({ shape: state.shape, preset: state.preset, map: state.map });
+  saveCardChoice({ shape: state.shape, preset: state.preset, map: state.map,
+                   hero: state.hero });
   saveCardText(state.key, { title: state.title, note: state.note });
   syncChoices();
   refresh();
@@ -1298,10 +1567,23 @@ function syncChoices() {
   for (const b of dialog.querySelectorAll("[data-shape]")) {
     b.setAttribute("aria-pressed", String(b.dataset.shape === state.shape));
   }
+  // The period card keeps its two presets; the session card picks its hero instead (layout
+  // B v2), and only the heroes this session can carry are offered.
+  const period = Boolean(state.period);
+  el("card-preset-row").hidden = !period;
+  el("card-preset-note").hidden = !period;
   for (const b of dialog.querySelectorAll("[data-preset]")) {
     b.setAttribute("aria-pressed", String(b.dataset.preset === state.preset));
   }
   el("card-preset-note").textContent = PRESETS[state.preset].summary;
+  const story = !period && state.result
+    ? cardStory(state.result.presentation, state.hero) : null;
+  const shown = story?.hero?.kind ?? null;
+  el("card-hero-row").hidden = period || !story || story.heroOptions.length < 2;
+  for (const b of dialog.querySelectorAll("[data-hero]")) {
+    b.hidden = !story || !story.heroOptions.includes(b.dataset.hero);
+    b.setAttribute("aria-pressed", String(b.dataset.hero === shown));
+  }
   const offered = mapAvailable(state.result);
   const box = el("card-map");
   box.checked = state.map;
@@ -1386,7 +1668,8 @@ async function download() {
  *  no number off the ride (docs/analytics.md). */
 function cardEventProps(how) {
   return { how, kind: state.period ? "period" : "session",
-           shape: state.shape, preset: state.preset, map: !!state.map };
+           shape: state.shape, map: !!state.map,
+           ...(state.period ? { preset: state.preset } : { hero: state.hero }) };
 }
 
 /** Feature-detected with a *file*, not with `navigator.share`: several browsers can share a

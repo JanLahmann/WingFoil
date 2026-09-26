@@ -54,6 +54,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import re
 import shutil
 import subprocess
@@ -399,6 +400,85 @@ def check_card() -> None:
     # Stashed rather than checked here, so the period card's section prints after this one —
     # one `card_parity.mjs` run answers every question below.
     _CARD_DUMP.append(dumped)
+
+
+#: The layout B v2 stories, pinned for both platforms: card_parity.mjs dumps the browser's,
+#: `DocumentRendererTests.theCardStoryIsTheSharedFixture` holds the kit's to the same file.
+#: Rewrite it with CARD_STORY_WRITE=1 after a deliberate change to the card's words.
+STORIES = REPO / "fixtures" / "cards" / "stories.expected.json"
+
+#: The card's heroes, in picker order, and the fallback order when a session cannot carry
+#: the rider's choice (Jan, 26 Sep 2026) — spelled here as a second copy of the rule.
+HERO_ORDER = ["clean", "max2s", "tacks"]
+
+
+def _story_rule(document: dict, wanted: str) -> dict:
+    """The structure layout B v2 must have, re-derived from the document's tiles alone."""
+    tiles = {t["key"]: t for t in document["card"]["tiles"]}
+    counted = "cleanJibes" in tiles
+    clean = tiles["cleanJibes"]["value"] if counted else 0
+    speed = "max2s" in tiles and tiles["max2s"].get("value") is not None
+    options = [h for h, ok in (("clean", clean > 0), ("max2s", speed),
+                               ("tacks", "tacks" in tiles)) if ok]
+    kind = wanted if wanted in options else (options[0] if options else None)
+    bars = []
+    if "tally" in tiles:
+        bars.append({"kind": "jibes" if counted else "turns",
+                     "right": not (counted and kind == "clean"),
+                     "star": counted and kind != "clean" and clean > 0})
+    if "tacks" in tiles:
+        bars.append({"kind": "tacks", "right": kind != "tacks", "star": False})
+    ribbon = []
+    if clean > 0 and "cph" in tiles:
+        ribbon.append("cph")
+    ribbon += ["tph"] if "tph" in tiles else (["jph"] if "jph" in tiles else [])
+    if speed and kind != "max2s":
+        ribbon.append("max2s")
+    ribbon += [k for k in ("duration", "distance") if k in tiles]
+    return {"hero": kind, "options": options, "bars": bars, "ribbon": ribbon}
+
+
+def check_card_story() -> None:
+    """Layout B v2: the hero, its fallback, the bars, the ribbon — and no "0 clean"."""
+    if not _CARD_DUMP:
+        return
+    section("5a. the session card tells the jibe story (layout B v2)")
+    cards = _CARD_DUMP[-1]["cards"]
+    dumped = {Path(c["file"]).name.replace(gen.SUFFIX, ""): c["stories"] for c in cards}
+    if os.environ.get("CARD_STORY_WRITE"):
+        STORIES.parent.mkdir(parents=True, exist_ok=True)
+        STORIES.write_text(json.dumps(dumped, indent=2, ensure_ascii=False, sort_keys=True)
+                           + "\n", encoding="utf-8")
+        print(f"  wrote {STORIES.relative_to(REPO)}")
+    stored = json.loads(STORIES.read_text(encoding="utf-8")) if STORIES.exists() else None
+    check("  the browser's stories are the shared fixture", dumped, stored)
+
+    for path in sorted(PRESENTATION.glob(f"*{gen.SUFFIX}")):
+        stem = path.name.replace(gen.SUFFIX, "")
+        document = json.loads(path.read_text(encoding="utf-8"))["document"]
+        for hero in HERO_ORDER:
+            story = dumped.get(stem, {}).get(hero)
+            if story is None:
+                FAILED.append(f"  {stem}/{hero}: no story dumped")
+                continue
+            want = _story_rule(document, hero)
+            got = {"hero": (story["hero"] or {}).get("kind"), "options": story["heroOptions"],
+                   "bars": [{"kind": b["kind"], "right": b["right"] is not None,
+                             "star": b["star"]} for b in story["bars"]],
+                   "ribbon": [c["key"] for c in story["ribbon"]]}
+            check(f"  {stem}/{hero}: hero, bars and ribbon follow the rule", got, want)
+            # With 0 clean jibes the clean number is left out — no "★ 0", no "0 clean".
+            words = json.dumps(story, ensure_ascii=False)
+            check(f"  {stem}/{hero}: never prints 0 clean", "\"0 clean" in words
+                  or (story["hero"] or {}).get("value") == "0" and hero == "clean", False)
+            # No bare acronym: the rates are in words.
+            check(f"  {stem}/{hero}: the rates are in words",
+                  [c["label"] for c in story["ribbon"] if c["label"] in ("CPH", "JPH", "TPH")],
+                  [])
+
+    gaps = {Path(c["file"]).name: c["footerGaps"] for c in cards}
+    tight = {name: g for name, g in gaps.items() if min(g.values()) < 4}
+    check("  every shape keeps at least 4 pt between the words and the footer", tight, {})
 
 
 #: What the **period** card's `lean` keeps — `PeriodBlock.leanKeys` on iOS and
@@ -784,9 +864,9 @@ def check_card_map(got: dict) -> None:
 
     s = got["choice"]
     check("  nothing stored: portrait, complete, no map", s["defaultsBeforeAnythingIsWritten"],
-          {"shape": "portrait", "preset": "complete", "map": False})
+          {"shape": "portrait", "preset": "complete", "map": False, "hero": "clean"})
     check("  the switch remembers on", s["afterTurningOn"],
-          {"shape": "landscape", "preset": "lean", "map": True})
+          {"shape": "landscape", "preset": "lean", "map": True, "hero": "clean"})
     check("  and stores it as the contract's value", s["storedOn"], MAP_ON)
     check("  and remembers off", s["afterTurningOff"]["map"], False)
     check("  which is stored, not deleted", s["storedOff"], "0")
@@ -794,8 +874,10 @@ def check_card_map(got: dict) -> None:
     check("  a foreign truthy value is still off", s["foreignTruthyValue"], False)
     check("  and so is garbage under the key", s["garbageValue"], False)
     check("  a browser with no storage gets the defaults", s["withoutStorage"],
-          {"shape": "portrait", "preset": "complete", "map": False})
+          {"shape": "portrait", "preset": "complete", "map": False, "hero": "clean"})
     check("  and writing to one is a silent no-op", s["writeThrewWithoutStorage"], False)
+    check("  the hero is remembered per device", s["heroRemembered"], "max2s")
+    check("  and an unknown hero is clean jibes", s["heroUnknown"], "clean")
 
     check("  the OSM credit is the contract's string", got["credit"], OSM_CREDIT)
 
@@ -982,6 +1064,7 @@ def main(argv=None) -> int:
     else:
         check_engine()
     check_card()
+    check_card_story()
     check_card_text()
     check_period_card()
     check_outline_stack()

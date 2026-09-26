@@ -48,6 +48,41 @@
     },
     "ofTurns": "of {turns} turns"
   },
+  "card": {
+    "barClean": "{clean} clean",
+    "barJibes": "jibes",
+    "barTacks": "tacks",
+    "barTurns": "turns",
+    "fellIn": {
+      "one": "fell in once",
+      "other": "fell in {falls} times"
+    },
+    "fellInNone": "never fell in",
+    "heroClean": {
+      "one": "clean jibe",
+      "other": "clean jibes"
+    },
+    "heroMax2s": "top speed · best 2 s",
+    "heroTacks": {
+      "one": "tack",
+      "other": "tacks"
+    },
+    "heroTacksBeside": "{dry} dry · beside {jibes}",
+    "heroTacksDry": "{dry} dry",
+    "jibeCount": {
+      "one": "1 jibe",
+      "other": "{jibes} jibes"
+    },
+    "optionClean": "Clean jibes",
+    "optionMax2s": "Top speed",
+    "optionTacks": "Tacks",
+    "optionTitle": "Big number",
+    "rateCph": "clean jibes / h",
+    "rateJph": "dry jibes / h",
+    "rateTph": "dry turns / h",
+    "speedEstimated": "speed estimated from GPS positions",
+    "streak": "best streak"
+  },
   "divergence": {
     "flights": "Flights",
     "foilTime": "Foil time",

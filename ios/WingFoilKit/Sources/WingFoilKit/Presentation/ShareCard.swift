@@ -210,16 +210,25 @@ public struct ShareCardStats: Sendable, Equatable {
     /// Set when the session's records cannot be certified, so the card cannot be read as
     /// a speed claim it has no right to make.
     public let disclaimer: String?
+    /// **The session card's layout B v2** — hero, bars, streak line, ribbon — resolved from
+    /// the same block as `stats`. nil on a period card, which keeps its grid of the period's
+    /// block (a period has no jibe ladder to tell a story with).
+    public let story: Story?
 
     public init(title: String, dateLine: String, note: String? = nil, stats: [Stat],
-                preset: Preset = .complete, disclaimer: String?) {
+                preset: Preset = .complete, disclaimer: String?, story: Story? = nil) {
         self.title = title
         self.dateLine = dateLine
         self.note = SessionNaming.note(note)
         self.stats = stats
         self.preset = preset
         self.disclaimer = disclaimer
+        self.story = story
     }
+
+    /// The disclaimer a positions-only recording's speed wears, in rider words, drawn next
+    /// to the speed it qualifies.
+    public static var speedEstimated: String { PresentationCopy.card("speedEstimated") }
 
     // MARK: - Building
 
@@ -255,6 +264,7 @@ public struct ShareCardStats: Sendable, Equatable {
     /// disclaimer goes with it, because there is no longer a speed claim to qualify.
     public static func make(row: SessionRow, title: String, metrics: KeyMetrics? = nil,
                             preset: Preset = .complete,
+                            hero: Hero = .clean,
                             note: String? = nil,
                             policy: SpeedRecordPolicy = .preferVerified,
                             timeZone: TimeZone) -> ShareCardStats {
@@ -262,14 +272,21 @@ public struct ShareCardStats: Sendable, Equatable {
         let recordStands = SpeedRecordRule.stands(verified: verified, policy: policy)
         let all = metrics.map { stats(from: $0, preset: preset) }
             ?? preset.filter(rowOnlyStats(row))
+        let disclaimer = verified || !recordStands ? nil : speedEstimated
+        let start = startLine(row.startDate, timeZone: timeZone)
+        let rowStats = rowOnlyStats(row).filter { recordStands || $0.key != Key.maxSpeed }
+        let story: Story = metrics.map {
+            Story.make(metrics: $0, maxSpeed: recordStands ? $0.maxSpeed : nil, hero: hero,
+                       dateLine: start, speedNote: disclaimer)
+        } ?? Story.rowOnly(rowStats, hero: hero, dateLine: start, speedNote: disclaimer)
         return ShareCardStats(
             title: title,
             dateLine: dateLine(row.startDate, timeZone: timeZone),
             note: note,
             stats: recordStands ? all : all.filter { $0.key != Key.maxSpeed },
             preset: preset,
-            disclaimer: verified || !recordStands
-                ? nil : "Speeds from a degraded source — uncertified")
+            disclaimer: disclaimer,
+            story: story)
     }
 
     /// The **closing card of a clip**: the complete block, plus the longest flight.

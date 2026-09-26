@@ -1283,14 +1283,15 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    simulator can photograph: `MFMailComposeViewController` refuses to appear where no mail
    account exists, and `simctl` cannot tap the row in any case.
    In the share sheet (`UI_SHEET=share`), `UI_SHARE=fit` flips to the recording tab,
-   `UI_SHAPE=portrait|square|landscape` picks the aspect and `UI_STATS=lean|complete` picks
-   the stat preset — three controls `simctl` likewise cannot tap. The last one sets the same
+   `UI_SHAPE=portrait|square|landscape` picks the aspect and `UI_HERO=clean|max2s|tacks` picks
+   the card's big number (layout B v2; it replaced `UI_STATS`, which went with Lean/Complete)
+   — three controls `simctl` likewise cannot tap. The last one sets the same
    state the picker does but, unlike a tap on the picker, does **not** write the rider's
    stored choice. `UI_TITLE=…` and `UI_CAPTION=…` (schema v9) fill the composer's two text
    fields, which `simctl` cannot type into: they seed the drafts *and* the committed values,
    so the sheet photographs a named session without renaming the one in the library.
    `UI_MAP=1|0` flips the card's **map background** — the `MKMapSnapshotter` ground under the
-   track — which is off by default and, like `UI_STATS`, is set here without writing the
+   track — which is off by default and, like `UI_HERO`, is set here without writing the
    rider's stored choice. It is drawn on whatever `UI_MAP_STYLE` selected, so the two hooks
    pair: `UI_MAP=1 UI_MAP_STYLE=satellite` photographs the case the scrim was tuned against.
    A simulator with no network renders the plain card instead, silently, which is exactly what

@@ -17,7 +17,8 @@
  * Drawing lives in js/sharecard.js. Nothing here knows what a canvas is.
  */
 
-import { cellCaption, cellLabel, cellValue, hm, text } from "./presentation.js";
+import { FORM, cellCaption, cellLabel, cellValue, hm, text } from "./presentation.js";
+import { PRESENTATION } from "./appcopy.js";
 import { zonedFormat } from "./viz.js";
 
 /* -------------------------------------------------------------------- branding
@@ -45,6 +46,10 @@ export const BRANDING = {
   /** What the QR resolves to — the same address, as something a camera can open. */
   url: "https://cleanjibe.org",
 };
+
+/** The tagline (Jan, 23 Sep 2026) — the line under "CleanJibe · cleanjibe.org" in the card's
+ *  footer since layout B v2. `Branding.tagline` in the kit. */
+BRANDING.tagline = "Your WingFoil session, measured.";
 
 /** "analyze your wingfoil sessions free — cleanjibe.org", built rather than repeated. */
 BRANDING.line = `${BRANDING.cta} — ${BRANDING.site}`;
@@ -197,6 +202,150 @@ export function cardStats(doc, preset = "complete") {
     .map((tile) => entry(tile, 0));
 }
 
+/* ------------------------------------------------------------ layout B v2
+ *
+ * The session card tells the jibe story (Jan, 26 Sep 2026): a hero number, the jibe
+ * outcome bar, a tack bar when the session had tacks, the best streak, and one ribbon of
+ * rates in words plus max 2 s, duration and distance. Every number is still a tile of
+ * `card.tiles` — `cardStats(doc, "complete")`, which verify_presentation §5 holds to the
+ * block — and what this adds is the rider's choice of hero and the card's own words
+ * (`presentation.card.*`, authored by the kit's `PresentationCopy.card`).
+ *
+ * The twin of `ShareCardStats.Story.make` in the kit. Both are pinned against one fixture,
+ * fixtures/cards/stories.expected.json, by card_parity.mjs and DocumentRendererTests.
+ */
+
+/** The card's own words, with the singular form where `count` is 1. */
+export const cardWord = (key, args = {}, count) =>
+  text(`presentation.card.${key}`, count === undefined ? args : { ...args, _count: count })
+  ?? "";
+
+/** The three numbers a card can be headlined with, in picker order. Clean jibes is the
+ *  default. */
+export const HEROES = {
+  clean: { id: "clean", label: cardWord("optionClean") },
+  max2s: { id: "max2s", label: cardWord("optionMax2s") },
+  tacks: { id: "tacks", label: cardWord("optionTacks") },
+};
+export const HERO_ORDER = ["clean", "max2s", "tacks"];
+
+/** The flew / touchdown / fell words the bars' legend prints, from the glossary. */
+const legendWords = () => ["flewThrough", "touchdown", "fellIn"]
+  .map((id) => text(`glossary.${id}`, {}, FORM.lowercased) ?? "");
+
+/** "13.21 kn" → ["13.21", "kn"]: the hero draws the number big and the unit beside it. */
+const splitUnit = (value) => {
+  const i = String(value).lastIndexOf(" ");
+  return i < 0 ? [String(value), ""] : [value.slice(0, i), value.slice(i + 1)];
+};
+
+/** "fell in 25 times", with the number in the fell-in ink. */
+function fallSegments(count) {
+  if (count === 0) return [{ text: cardWord("fellInNone"), role: "muted" }];
+  const line = PRESENTATION.card.fellIn;
+  const template = typeof line === "string" ? line
+    : (count === 1 ? (line.one ?? line.other) : line.other);
+  const halves = template.split("{falls}");
+  if (halves.length !== 2) return [{ text: template, role: "muted" }];
+  return [{ text: halves[0], role: "muted" }, { text: String(count), role: "fell" },
+          { text: halves[1], role: "muted" }].filter((s) => s.text);
+}
+
+/**
+ * Everything layout B v2 prints about one session, as strings and counts.
+ *
+ * `wanted` is the rider's hero; the card falls back when the session cannot carry it —
+ * clean jibes → best 2 s → tacks → none. With 0 clean jibes the clean number is left out
+ * everywhere (Jan, 26 Sep 2026): no "★ 0", no "0 clean", no 0.0 clean jibes an hour.
+ * `speedNote` is the positions-only disclaimer, kept only where a speed is on the card.
+ */
+export function cardStory(doc, wanted = "clean", { dateLine = "", speedNote = null } = {}) {
+  const by = Object.fromEntries(cardStats(doc, "complete").map((e) => [e.key, e]));
+  const tiles = Object.fromEntries((doc?.card?.tiles || []).map((t) => [t.key, t]));
+  const jibesCounted = Boolean(tiles.cleanJibes);
+  const cleanN = Number(tiles.cleanJibes?.value);
+  const clean = jibesCounted && cleanN > 0 ? cleanN : null;
+  const speed = by.max2s && by.max2s.value !== "—" ? by.max2s : null;
+  const tacks = tiles.tacks?.tally || null;
+  const sum = (t) => t.flewThrough + t.touchdown + t.fellIn;
+
+  const heroOptions = [];
+  if (clean !== null) heroOptions.push("clean");
+  if (speed) heroOptions.push("max2s");
+  if (tacks) heroOptions.push("tacks");
+  const kind = heroOptions.includes(wanted) ? wanted : (heroOptions[0] ?? null);
+
+  const tally = tiles.tally?.tally || null;
+  const jibes = tally ? sum(tally) : 0;
+  const jibePhrase = cardWord("jibeCount", { jibes: String(jibes) }, jibes);
+  const ofJibes = text("presentation.caption.ofJibes", { jibes: String(jibes), _count: jibes });
+
+  let hero = null;
+  if (kind === "clean") {
+    hero = { kind, value: String(clean), unit: cardWord("heroClean", {}, clean), sub: ofJibes };
+  } else if (kind === "max2s") {
+    const [value, unit] = splitUnit(speed.value);
+    hero = { kind, value, unit, sub: cardWord("heroMax2s") };
+  } else if (kind === "tacks") {
+    const n = sum(tacks), dry = String(tacks.flewThrough + tacks.touchdown);
+    hero = { kind, value: String(n), unit: cardWord("heroTacks", {}, n),
+             sub: jibesCounted && jibes > 0
+               ? cardWord("heroTacksBeside", { dry, jibes: jibePhrase })
+               : cardWord("heroTacksDry", { dry }) };
+  }
+
+  const bars = [];
+  if (tally) {
+    let right = null, star = false;
+    if (!jibesCounted) right = cellCaption(tiles.tally);
+    else if (kind === "clean") right = null;
+    else if (clean !== null) {
+      right = `${ofJibes} · ${cardWord("barClean", { clean: String(clean) })}`;
+      star = true;
+    } else right = ofJibes;
+    bars.push({ kind: jibesCounted ? "jibes" : "turns",
+                label: cardWord(jibesCounted ? "barJibes" : "barTurns"),
+                flewThrough: tally.flewThrough, touchdown: tally.touchdown,
+                fellIn: tally.fellIn, right, star });
+  }
+  if (tacks) {
+    bars.push({ kind: "tacks", label: cardWord("barTacks"),
+                flewThrough: tacks.flewThrough, touchdown: tacks.touchdown,
+                fellIn: tacks.fellIn,
+                right: kind === "tacks" ? null : cellCaption(tiles.tacks), star: false });
+  }
+
+  const streak = [];
+  const parts = by.streaks?.parts || [];
+  if (parts.length) {
+    streak.push({ text: `${cardWord("streak")} `, role: "muted" });
+    parts.forEach((part, i) => {
+      if (i) streak.push({ text: " · ", role: "muted" });
+      streak.push({ text: String(part.value),
+                    role: part.colourRole === "outcome.flew" ? "flew" : "paper" });
+      streak.push({ text: ` ${part.label}`, role: "muted" });
+    });
+  }
+  const fallsN = tiles.falls ? Number(tiles.falls.value) : NaN;
+  const falls = Number.isInteger(fallsN) ? fallSegments(fallsN) : [];
+
+  const ribbon = [];
+  if (clean !== null && by.cph) {
+    ribbon.push({ key: "cph", label: cardWord("rateCph"), value: by.cph.value, clean: true });
+  }
+  if (by.tph) ribbon.push({ key: "tph", label: cardWord("rateTph"), value: by.tph.value, clean: false });
+  else if (by.jph) ribbon.push({ key: "jph", label: cardWord("rateJph"), value: by.jph.value, clean: false });
+  if (speed && kind !== "max2s") {
+    ribbon.push({ key: "max2s", label: speed.label, value: speed.value, clean: false });
+  }
+  for (const key of ["duration", "distance"]) {
+    if (by[key]) ribbon.push({ key, label: by[key].label, value: by[key].value, clean: false });
+  }
+
+  return { dateLine, hero, heroOptions, bars, streak, falls, ribbon,
+           speedNote: speed ? speedNote : null, legend: legendWords() };
+}
+
 /* ------------------------------------------------------------ the period card
  *
  * The second card kind, and the same card: three shapes, one footer, two presets, the
@@ -336,6 +485,16 @@ export function cardDateLine(meta) {
     { day: "numeric", month: "long", year: "numeric" });
 }
 
+/** `29 August 2026 · 14:40` — the date line and the start time, on the session's own clock:
+ *  the session card's header since layout B v2 (`ShareCardStats.startLine` in the kit). */
+export function cardStartLine(meta) {
+  const day = cardDateLine(meta);
+  if (!day) return "";
+  const time = zonedFormat(meta.startUtc, meta.utcOffsetS,
+    { hour: "2-digit", minute: "2-digit", hour12: false });
+  return `${day} · ${time}`;
+}
+
 /** Set when the session's records cannot be certified, so the card cannot be read as a
  *  speed claim it has no right to make.
  *
@@ -347,7 +506,7 @@ export function cardDateLine(meta) {
  *  must not certify a degraded recording by default. */
 export function cardDisclaimer(meta) {
   const certified = meta?.certified ?? (meta?.sourceClass !== "c");
-  return certified ? null : "Speeds from a degraded source — uncertified";
+  return certified ? null : cardWord("speedEstimated");
 }
 
 /* ------------------------------------------------------- what the rider calls it
@@ -499,28 +658,34 @@ const LS_PRESET = "wingfoil.shareCard.preset.v1";
  * default that quietly made them would be a promise broken in the one place ("your file
  * never leaves this tab") the analyzer makes it loudest. */
 const LS_MAP = "wingfoil.shareCard.map.v1";
+/** The session card's hero (layout B v2), per device. Anything but a known hero is clean
+ *  jibes, the default — `ShareCardHeroStore` in the kit. */
+const LS_HERO = "wingfoil.shareCard.hero.v1";
 
 /** An unreadable or unknown stored value falls back to the defaults: portrait (the shape a
  *  feed and a chat both show whole), complete (the numbers are the point of the card) and no
  *  map (the card as it has always been). */
 export function loadCardChoice() {
-  let shape = null, preset = null, map = null;
+  let shape = null, preset = null, map = null, hero = null;
   try {
     shape = localStorage.getItem(LS_SHAPE);
     preset = localStorage.getItem(LS_PRESET);
     map = localStorage.getItem(LS_MAP);
+    hero = localStorage.getItem(LS_HERO);
   } catch { /* no storage: the defaults are perfectly good */ }
   return {
     shape: SHAPES[shape] ? shape : "portrait",
     preset: PRESETS[preset] ? preset : "complete",
     map: map === "1",
+    hero: HEROES[hero] ? hero : "clean",
   };
 }
 
-export function saveCardChoice({ shape, preset, map }) {
+export function saveCardChoice({ shape, preset, map, hero = "clean" }) {
   try {
     localStorage.setItem(LS_SHAPE, shape);
     localStorage.setItem(LS_PRESET, preset);
     localStorage.setItem(LS_MAP, map ? "1" : "0");
+    localStorage.setItem(LS_HERO, HEROES[hero] ? hero : "clean");
   } catch { /* nothing to do about it, and nothing worth telling the rider */ }
 }

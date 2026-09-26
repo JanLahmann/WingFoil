@@ -2544,7 +2544,7 @@ export const HELP = {
         {
           "aliases": [],
           "body": [
-            "Any session becomes a card. It holds the track, the numbers that matter, and where the analysis came from. Pick portrait, square or landscape, and Complete or Lean. A photo from your library can go behind it.",
+            "Any session becomes a card. It holds the track, the numbers that matter, and where the analysis came from. Pick a shape and the big number: clean jibes, top speed or tacks. A photo of yours can go behind it.",
             "Or turn on the map background and the track is drawn over the water you rode. That one needs a connection. Without one the card comes out plain.",
             "The card is made on your phone and goes nowhere until you send it."
           ],
@@ -2999,6 +2999,41 @@ export const PRESENTATION = {
     },
     "ofTurns": "of {turns} turns"
   },
+  "card": {
+    "barClean": "{clean} clean",
+    "barJibes": "jibes",
+    "barTacks": "tacks",
+    "barTurns": "turns",
+    "fellIn": {
+      "one": "fell in once",
+      "other": "fell in {falls} times"
+    },
+    "fellInNone": "never fell in",
+    "heroClean": {
+      "one": "clean jibe",
+      "other": "clean jibes"
+    },
+    "heroMax2s": "top speed · best 2 s",
+    "heroTacks": {
+      "one": "tack",
+      "other": "tacks"
+    },
+    "heroTacksBeside": "{dry} dry · beside {jibes}",
+    "heroTacksDry": "{dry} dry",
+    "jibeCount": {
+      "one": "1 jibe",
+      "other": "{jibes} jibes"
+    },
+    "optionClean": "Clean jibes",
+    "optionMax2s": "Top speed",
+    "optionTacks": "Tacks",
+    "optionTitle": "Big number",
+    "rateCph": "clean jibes / h",
+    "rateJph": "dry jibes / h",
+    "rateTph": "dry turns / h",
+    "speedEstimated": "speed estimated from GPS positions",
+    "streak": "best streak"
+  },
   "divergence": {
     "flights": "Flights",
     "foilTime": "Foil time",
@@ -3019,8 +3054,8 @@ export const PRESENTATION = {
     "streaks": "best streaks"
   },
   "rowMetric": {
-    "best10s": "best 10 s",
     "best2s": "best 2 s",
+    "best10s": "best 10 s",
     "cleanJibes": "clean",
     "distance": "distance",
     "dryStreak": "dry streak",

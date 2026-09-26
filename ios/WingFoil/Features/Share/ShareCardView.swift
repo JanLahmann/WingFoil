@@ -152,7 +152,8 @@ struct ShareCardView: View {
                     .init(color: .black.opacity(0.80), location: 1)],
             startPoint: .top, endPoint: .bottom)
         if shape.isWide {
-            let edge = (size.width * (1 - Self.wideColumn) - 16) / size.width
+            let column = stats.story == nil ? Self.wideColumn : Self.storyColumn
+        let edge = (size.width * (1 - column) - 16) / size.width
             LinearGradient(
                 stops: [.init(color: .black.opacity(0), location: max(edge - 70 / size.width, 0)),
                         .init(color: .black.opacity(0.55), location: edge),
@@ -247,7 +248,9 @@ struct ShareCardView: View {
     @ViewBuilder
     private var content: some View {
         Group {
-            if shape.isWide { wideContent } else { tallContent }
+            if let story = stats.story {
+                if shape.isWide { storyWide(story) } else { storyTall(story) }
+            } else if shape.isWide { wideContent } else { tallContent }
         }
         .padding(.horizontal, 16)
         .padding(.top, 14)
@@ -307,9 +310,12 @@ struct ShareCardView: View {
                 // Room for the map credit in the corner above it. It shrinks the title rather
                 // than moving it, by the rule the whole card follows.
                 .padding(.trailing, titleTrailingInset)
-            Text(stats.dateLine)
+            // The session card's line carries the start time too ("29 August 2026 · 14:40").
+            Text(stats.story?.dateLine ?? stats.dateLine)
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(Brand.paper.opacity(0.72))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
             if let note = stats.note {
                 Text(note)
                     .font(.system(size: 10.5, weight: .medium))
@@ -523,6 +529,296 @@ struct ShareCardView: View {
         }
     }
 
+    // MARK: - Layout B v2
+
+    // The session card (Jan, 26 Sep 2026): header · track · hero · the outcome bars · the
+    // streak line · one ribbon · the footer — the twin of `storyBoxes` / `drawStory` in
+    // web/js/sharecard.js, point for point. There is no tile grid, so nothing can grow past
+    // the footer the way the old eleven-tile landscape did. **The track gets every point the
+    // words do not need** (Jan, 26 Sep 2026): the stack is packed from the footer up, and on
+    // the square the ride takes whichever of two boxes — beside the title, or the full width
+    // under it — draws it larger.
+
+    static let heroHeight: CGFloat = 50
+    static let barHeight: CGFloat = 33
+    static let barGap: CGFloat = 5
+    static let streakHeight: CGFloat = 16
+    static let ribbonHeight: CGFloat = 30
+    static let noteHeight: CGFloat = 10
+    /// The landscape's word column in layout B v2 — `STORY_COLUMN` on the web.
+    static let storyColumn: CGFloat = 0.43
+
+    private func heroHeight(_ story: ShareCardStats.Story) -> CGFloat {
+        guard let hero = story.hero else { return 0 }
+        return Self.heroHeight + (hero.kind == .max2s && story.speedNote != nil ? Self.noteHeight : 0)
+    }
+
+    private func barsHeight(_ story: ShareCardStats.Story) -> CGFloat {
+        CGFloat(story.bars.count) * (Self.barHeight + Self.barGap)
+    }
+
+    private func ribbonNote(_ story: ShareCardStats.Story) -> CGFloat {
+        story.speedNote != nil && story.ribbon.contains { $0.key == ShareCardStats.Key.maxSpeed }
+            ? Self.noteHeight : 0
+    }
+
+    private func hasStreak(_ story: ShareCardStats.Story) -> Bool {
+        !story.streak.isEmpty || !story.falls.isEmpty
+    }
+
+    /// Whether the square puts the ride beside the title rather than under it — the one that
+    /// draws it larger for this ride's own proportions (`largerBox` on the web).
+    private func squareTrackBeside(_ story: ShareCardStats.Story) -> Bool {
+        guard shape == .square, let box = thumbnail?.contentBox else { return false }
+        let dx = max(box.maxX - box.minX, 1e-6), dy = max(box.maxY - box.minY, 1e-6)
+        let inner = size.height - 14 - 12
+        let headH: CGFloat = 42 + (stats.note == nil ? 0 : 14)
+        let ribY = 14 + inner - ShareCardView.qrSide - 8 - Self.ribbonHeight - ribbonNote(story)
+        let barsY = ribY - 6 - barsHeight(story)
+        let heroY = barsY - heroHeight(story) - (story.hero == nil ? 0 : 2)
+        let inset = ShareCardStats.trackInset * 2
+        func scale(_ w: CGFloat, _ h: CGFloat) -> Double {
+            min(Double(w - inset) / dx, Double(h - inset) / dy)
+        }
+        let beside = scale(size.width / 2 - 16, heroY - 2 - 12)
+        let below = scale(size.width - 32, heroY - 4 - (14 + headH) - 4)
+        return beside > below
+    }
+
+    private func storyTall(_ story: ShareCardStats.Story) -> some View {
+        let square = shape == .square
+        let beside = squareTrackBeside(story)
+        return VStack(alignment: .leading, spacing: 0) {
+            if beside {
+                HStack(alignment: .top, spacing: 8) {
+                    header.frame(width: size.width / 2 - 16 - 8, alignment: .topLeading)
+                    track.padding(.top, -2)
+                }
+                .frame(maxHeight: .infinity)
+                .padding(.bottom, 2)
+            } else {
+                header
+                track.padding(.vertical, 4)
+            }
+            if story.hero != nil {
+                storyHero(story).padding(.bottom, 2)
+            }
+            storyBars(story)
+            if hasStreak(story) && !square {
+                storyStreak(story)
+                    .frame(height: 15, alignment: .bottomLeading)
+                    .padding(.top, 2)
+            }
+            storyRibbon(story, valueSize: 15, width: size.width - 32)
+                .padding(.top, hasStreak(story) && !square ? 8 : 6)
+            footer
+        }
+    }
+
+    private func storyWide(_ story: ShareCardStats.Story) -> some View {
+        HStack(alignment: .top, spacing: 16) {
+            track
+            VStack(alignment: .leading, spacing: 0) {
+                header
+                if story.hero != nil { storyHero(story).padding(.top, 2) }
+                storyBars(story).padding(.top, 4)
+                if hasStreak(story) {
+                    storyStreak(story).frame(height: 15, alignment: .bottomLeading).padding(.top, 2)
+                }
+                storyRibbon(story, valueSize: 14, width: size.width * Self.storyColumn)
+                    .padding(.top, 10)
+                Spacer(minLength: 0)
+                footer
+            }
+            .frame(width: size.width * Self.storyColumn)
+        }
+    }
+
+    /// ★ 25 clean jibes / of 56 jibes — or 13.21 kn / top speed · best 2 s, or 3 tacks.
+    private func storyHero(_ story: ShareCardStats.Story) -> some View {
+        let hero = story.hero!
+        return HStack(alignment: .center, spacing: 8) {
+            if hero.kind == .clean {
+                Image(systemName: DesignTokens.Glyph.cleanJibe)
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundStyle(DesignTokens.Clean.jibe)
+            }
+            Text(hero.value)
+                .font(.system(size: 58, weight: .heavy, design: .rounded))
+                .foregroundStyle(Brand.paper)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+                .fixedSize(horizontal: true, vertical: false)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(hero.unit)
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(hero.kind == .clean ? DesignTokens.Clean.jibe : Brand.paper)
+                Text(hero.sub)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(Brand.paper.opacity(0.75))
+                if hero.kind == .max2s, let note = story.speedNote {
+                    Text(note)
+                        .font(.system(size: 8.5, weight: .medium))
+                        .foregroundStyle(.orange.opacity(0.95))
+                }
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.6)
+            Spacer(minLength: 0)
+        }
+        .frame(height: heroHeight(story))
+    }
+
+    private func storyBars(_ story: ShareCardStats.Story) -> some View {
+        VStack(alignment: .leading, spacing: Self.barGap) {
+            ForEach(Array(story.bars.enumerated()), id: \.offset) { _, bar in
+                storyBar(bar, legend: story.legend)
+            }
+        }
+    }
+
+    /// One outcome bar: its name and caption, the bar, and the three counts in the ladder's
+    /// colours. A zero is dimmed, not dropped, so two bars' legends line up.
+    private func storyBar(_ bar: ShareCardStats.Story.Bar, legend: [String]) -> some View {
+        let parts: [(Int, Color, String)] = [
+            (bar.flewThrough, DesignTokens.Outcome.flew, (legend.count > 0 ? legend[0] : "")),
+            (bar.touchdown, DesignTokens.Outcome.touchdown, (legend.count > 1 ? legend[1] : "")),
+            (bar.fellIn, DesignTokens.Outcome.fellIn, (legend.count > 2 ? legend[2] : "")),
+        ]
+        let total = max(bar.total, 1)
+        return VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 4) {
+                Text(bar.label.uppercased())
+                    .font(.system(size: 8.5, weight: .bold))
+                    .foregroundStyle(Brand.green.opacity(0.95))
+                Spacer(minLength: 4)
+                if let right = bar.right {
+                    Text(right)
+                        .font(.system(size: 9.5, weight: .semibold))
+                        .foregroundStyle(Brand.paper.opacity(0.85))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                    if bar.star {
+                        Image(systemName: DesignTokens.Glyph.cleanJibe)
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(DesignTokens.Clean.jibe)
+                    }
+                }
+            }
+            .frame(height: 10)
+            GeometryReader { geo in
+                HStack(spacing: 0) {
+                    ForEach(0..<3, id: \.self) { i in
+                        parts[i].1.frame(width: geo.size.width * CGFloat(parts[i].0) / CGFloat(total))
+                    }
+                }
+                .frame(width: geo.size.width, alignment: .leading)
+                .background(Brand.paper.opacity(0.12))
+                .clipShape(.capsule)
+            }
+            .frame(height: 7)
+            HStack(spacing: 10) {
+                ForEach(0..<3, id: \.self) { i in
+                    HStack(alignment: .firstTextBaseline, spacing: 3) {
+                        Text("\(parts[i].0)")
+                            .font(.system(size: 12, weight: .bold, design: .rounded))
+                            .foregroundStyle(parts[i].1)
+                        Text(parts[i].2)
+                            .font(.system(size: 9.5, weight: .medium))
+                            .foregroundStyle(Brand.paper.opacity(0.78))
+                    }
+                    .opacity(parts[i].0 == 0 ? 0.45 : 1)
+                }
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+        }
+        .frame(height: Self.barHeight, alignment: .top)
+    }
+
+    private func storyInk(_ role: String) -> Color {
+        switch role {
+        case "paper": Brand.paper
+        case "flew": DesignTokens.Outcome.flew
+        case "fell": DesignTokens.Outcome.fellIn
+        default: Brand.paper.opacity(0.75)
+        }
+    }
+
+    /// "best streak 7 flew · 11 dry     fell in 25 times", each number in its ink.
+    private func storyStreak(_ story: ShareCardStats.Story) -> some View {
+        var runs = story.streak
+        if !story.streak.isEmpty && !story.falls.isEmpty {
+            runs.append(.init(text: "     ", role: "muted"))
+        }
+        runs += story.falls
+        let line = runs.reduce(Text("")) { text, run in
+            text + Text(run.text)
+                .font(.system(size: run.role == "muted" ? 9.5 : 11,
+                              weight: run.role == "muted" ? .medium : .bold))
+                .foregroundColor(storyInk(run.role))
+        }
+        return line.lineLimit(1).minimumScaleFactor(0.6)
+    }
+
+    /// The ribbon: the rates in words first, then max 2 s, duration and distance.
+    private func storyRibbon(_ story: ShareCardStats.Story, valueSize: CGFloat,
+                             width: CGFloat) -> some View {
+        // Fixed cell widths, the web's `cw`: an intrinsic layout lets one long label take the
+        // width — and the type size — of the number under it.
+        let cellW = width / CGFloat(max(story.ribbon.count, 1))
+        return VStack(alignment: .leading, spacing: 2) {
+            Rectangle().fill(Brand.paper.opacity(0.18)).frame(height: 0.5)
+            HStack(alignment: .top, spacing: 0) {
+                ForEach(Array(story.ribbon.enumerated()), id: \.offset) { i, cell in
+                    HStack(spacing: 0) {
+                        if i > 0 {
+                            Rectangle().fill(Brand.paper.opacity(0.18))
+                                .frame(width: 0.5, height: valueSize + 11)
+                                .padding(.trailing, 6.5)
+                        }
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(cell.label)
+                                .font(.system(size: 9, weight: .semibold))
+                                .foregroundStyle(Brand.green.opacity(0.9))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.5)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            Text(cell.value)
+                                .font(.system(size: valueSize, weight: .bold, design: .rounded))
+                                .foregroundStyle(cell.clean ? DesignTokens.Clean.jibe : Brand.paper)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.5)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .padding(.trailing, 4)
+                    }
+                    .frame(width: cellW, alignment: .leading)
+                }
+            }
+            .padding(.top, 4)
+            if ribbonNote(story) > 0, let note = story.speedNote {
+                // Next to the speed it qualifies: under the ribbon, from the max 2 s cell on.
+                let index = story.ribbon.firstIndex { $0.key == ShareCardStats.Key.maxSpeed } ?? 0
+                GeometryReader { geo in
+                    Text(note)
+                        .font(.system(size: 8, weight: .medium))
+                        .foregroundStyle(.orange.opacity(0.95))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                        .padding(.leading, geo.size.width * CGFloat(index)
+                                 / CGFloat(max(story.ribbon.count, 1)) + (index > 0 ? 7 : 0))
+                }
+                .frame(height: Self.noteHeight)
+            }
+        }
+        // Its own height, never squeezed: a proposed height shorter than the two lines would
+        // shrink the numbers through their scale factor.
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
     // MARK: - Footer
 
     /// The mark, the name, the invitation and the code — the whole point of a card someone
@@ -550,26 +846,30 @@ struct ShareCardView: View {
     /// wordmark's width on the wide one; both are checked at all three shapes, and the
     /// wordmark's `minimumScaleFactor` absorbs what is left.
     private var footer: some View {
-        HStack(alignment: .center, spacing: 7) {
+        // Layout B v2 (Jan, 26 Sep 2026): the mark at 30 pt, and "CleanJibe · cleanjibe.org"
+        // at 16 pt ABOVE the tagline — the name and the address are what a stranger has to
+        // remember. The twin of `drawFooter` in web/js/sharecard.js.
+        HStack(alignment: .center, spacing: 9) {
             Image("LaunchMark")
                 .resizable()
                 .interpolation(.high)
-                .frame(width: 22, height: 22)
-                .clipShape(.rect(cornerRadius: 5))
-            VStack(alignment: .leading, spacing: 0) {
-                Text(Branding.appName)
-                    .font(.system(size: 12.5, weight: .bold, design: .rounded))
-                    .foregroundStyle(Brand.paper)
+                .frame(width: 30, height: 30)
+                .clipShape(.rect(cornerRadius: 7))
+            VStack(alignment: .leading, spacing: 1) {
+                (Text(Branding.appName).foregroundColor(Brand.paper)
+                    + Text(" · " + Branding.site).foregroundColor(Brand.green))
+                    .font(.system(size: 16, weight: .heavy, design: .rounded))
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
-                Text(Branding.callToAction)
-                    .font(.system(size: 8, weight: .medium))
-                    .foregroundStyle(Brand.paper.opacity(0.72))
+                Text(Branding.tagline)
+                    .font(.system(size: 10.5, weight: .medium))
+                    .foregroundStyle(Brand.paper.opacity(0.8))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.55)
+                    .minimumScaleFactor(0.6)
             }
             Spacer(minLength: 4)
-            if let disclaimer = stats.disclaimer {
+            // The session card draws its speed note next to the speed instead.
+            if stats.story == nil, let disclaimer = stats.disclaimer {
                 Text(disclaimer)
                     .font(.system(size: 7.5))
                     .foregroundStyle(.orange.opacity(0.9))

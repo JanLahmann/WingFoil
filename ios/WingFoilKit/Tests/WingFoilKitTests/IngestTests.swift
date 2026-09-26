@@ -207,7 +207,7 @@ import Testing
 
         let card = ShareCardStats.make(row: row, title: "Nago-Torbole",
                                        timeZone: row.displayZone)
-        #expect(card.disclaimer == "Speeds from a degraded source — uncertified")
+        #expect(card.disclaimer == "speed estimated from GPS positions")
 
         let best = try await LibraryStore(database: ingestor.database).records()
         #expect(!best.isEmpty)
