@@ -223,6 +223,12 @@ struct LibraryView: View {
                     supportRequest += 1
                 }
             }
+            // Getting started → What CleanJibe does: the menu row's own door, raised by
+            // RootView once this sheet has finished closing.
+            .environment(\.openWelcome) {
+                sheet = nil
+                store.replayWelcome()
+            }
             .environment(\.openIcuSettings) {
                 // One sheet at a time: let Help finish dismissing before Settings arrives,
                 // or iOS drops the second presentation on the floor. The wait stays even

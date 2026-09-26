@@ -102,6 +102,8 @@ struct WelcomeView: View {
                         page = nil
                         onTryExample()
                     }
+                    // Opened from the welcome, the door goes back to it.
+                    .environment(\.openWelcome) { page = nil }
             case .beta:
                 BetaView()
                     .environment(\.sendFeedback) {

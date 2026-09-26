@@ -156,6 +156,7 @@ struct HelpTopicSheet: View {
     @Environment(\.openIcuSettings) private var openSettings
     @Environment(\.loadExampleSession) private var loadExample
     @Environment(\.sendFeedback) private var sendFeedback
+    @Environment(\.openWelcome) private var openWelcome
     /// Optional on purpose: a `?` is drawn on cards all over the app, and this sheet must
     /// not be the one view that insists on a store being in the environment. Without one the
     /// "see also" list is filtered by the channel alone, which is the filter that matters.
@@ -191,6 +192,13 @@ struct HelpTopicSheet: View {
         return HelpCatalog.isListed(target, channel: AppChannel.channel,
                                     windsurfEnabled: store?.windsurfEnabled ?? true)
             ? link : nil
+    }
+
+    /// *What CleanJibe does*, on the Getting started page only, and only where a screen
+    /// handed down a way to raise the welcome (nil inside the welcome's own sheet, which
+    /// goes back to it instead).
+    private var welcomeDoor: (@MainActor () -> Void)? {
+        id == .gettingStarted ? openWelcome : nil
     }
 
     var body: some View {
@@ -273,7 +281,7 @@ struct HelpTopicSheet: View {
                         .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 14))
                     }
 
-                    if !topic.links.isEmpty || topic.action != nil {
+                    if !topic.links.isEmpty || topic.action != nil || welcomeDoor != nil {
                         VStack(alignment: .leading, spacing: 10) {
                             ForEach(topic.links, id: \.url) { link in
                                 Link(destination: link.url) {
@@ -288,6 +296,18 @@ struct HelpTopicSheet: View {
                                     open()
                                 } label: {
                                     Label("Open CleanJibe Settings", systemImage: "gearshape")
+                                        .font(.callout.weight(.semibold))
+                                }
+                            }
+                            // Getting started's second door (Jan, 26 September 2026): the
+                            // welcome page, under the menu row's own name and symbol.
+                            if let open = welcomeDoor {
+                                Button {
+                                    open()
+                                    dismiss()
+                                } label: {
+                                    Label(AppMenuRow.whatItDoes.title,
+                                          systemImage: AppMenuRow.whatItDoes.symbolName)
                                         .font(.callout.weight(.semibold))
                                 }
                             }
@@ -400,7 +420,19 @@ private struct SendFeedbackKey: EnvironmentKey {
     static let defaultValue: (@MainActor () -> Void)? = nil
 }
 
+/// "Show me the welcome again", handed down by the screen that owns the menu — the same
+/// door as Menu → What CleanJibe does (`SessionStore.replayWelcome`). Nil anywhere else, so
+/// Getting started simply has no such button there.
+private struct OpenWelcomeKey: EnvironmentKey {
+    static let defaultValue: (@MainActor () -> Void)? = nil
+}
+
 extension EnvironmentValues {
+    var openWelcome: (@MainActor () -> Void)? {
+        get { self[OpenWelcomeKey.self] }
+        set { self[OpenWelcomeKey.self] = newValue }
+    }
+
     var openIcuSettings: (@MainActor () -> Void)? {
         get { self[OpenIcuSettingsKey.self] }
         set { self[OpenIcuSettingsKey.self] = newValue }

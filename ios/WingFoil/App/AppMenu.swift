@@ -113,6 +113,12 @@ private struct AppMenuHost: ViewModifier {
                 sheet = nil
                 Task { await store.loadExampleSession() }
             }
+            // Getting started → What CleanJibe does: the menu row's own door, raised by
+            // RootView once this sheet has finished closing.
+            .environment(\.openWelcome) {
+                sheet = nil
+                store.replayWelcome()
+            }
             // The root's own questions must not land on top of a sheet this tab opened.
             .onChange(of: sheet != nil) { _, presenting in
                 store.isPresentingSheet = presenting
