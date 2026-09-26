@@ -350,7 +350,9 @@ watch, so each channel wears its own cut of the brand mark, decided with Jan on 
 The label is red because nothing else in the mark is; the mirror keeps every colour and
 proportion, so the dev app still reads as CleanJibe. Below 14 px of label height the word
 becomes a plain red block (the 40 px Garmin launcher, the 19 px badge); on the Apple Watch
-icon the label moves inward so the circular mask does not cut it.
+icon the label moves inward so the circular mask does not cut it. The watch complication is
+tinted by the face, so a label would vanish: dev wears the mirror (`ComplicationMark-Dev`,
+decided with Jan on 26 September 2026), beta and release the plain `ComplicationMark`.
 
 What does **not** change with the channel: the share card, its QR centre and the replay
 clip cards. Everything that leaves the phone carries the release mark, because a card

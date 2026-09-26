@@ -209,7 +209,16 @@ function renderGettingStarted() {
     ${(topic.body || []).map((p) => `<p>${esc(p)}</p>`).join("")}
     ${(topic.items || []).length ? `<dl class="glossary-list">${topic.items.map((i) => `
       <div class="g-entry"><dt>${esc(i.term)}</dt><dd>${esc(i.detail)}</dd></div>`)
-      .join("")}</dl>` : ""}`;
+      .join("")}</dl>` : ""}
+    <p><button type="button" class="ghost" id="started-welcome">${esc(welcomeRowTitle())}</button></p>`;
+  // The phone's second door on this page (Jan, 26 September 2026): the welcome again, under
+  // the menu row's own name — the same dialog Menu → What CleanJibe does opens.
+  el("started-welcome").addEventListener("click", openWelcome);
+}
+
+/** The menu row's title, so the button and the row cannot word the welcome twice. */
+function welcomeRowTitle() {
+  return (SHELL.menu || []).find((r) => r.id === "whatItDoes")?.title || "What CleanJibe does";
 }
 
 /** Send the reader to one help topic, from anywhere: the `?` beside an explanation, a

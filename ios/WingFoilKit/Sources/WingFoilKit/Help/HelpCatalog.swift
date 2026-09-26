@@ -850,8 +850,7 @@ public enum HelpCatalog {
                 + "your speed stays under 8 km/h for 3 s. Both are the default thresholds.",
                 "A flight is dated back to the first moment that counted, at both ends. "
                 + "Anything under 5 s is not a flight.",
-                "A brief touchdown does not split a flight. A one- or two-second tap of the "
-                + "water stays inside it.",
+                "A touchdown or a fall ends a flight. The next takeoff starts a new one.",
                 "Taxiing, swimming and the drift upwind count against your time on foil. A "
                 + "gap in the recording does not.",
             ],
@@ -1020,11 +1019,12 @@ public enum HelpCatalog {
                       detail: "You stopped for more than 5 s, or the barometer says your wrist "
                           + "went under."),
                 // What the Touchdowns topic said, before it was merged in here
-                // (26 September 2026): a touchdown is counted outside turns too, and a
-                // short one does not end a flight.
+                // (26 September 2026): a touchdown is counted outside turns too. It said a
+                // short one does not end a flight; Jan confirmed the same day that a
+                // touchdown or a fall ends a flight (the glossary's line), so it says that.
                 .init(term: "Touchdowns on a straight line",
-                      detail: "A touchdown outside any turn is counted for the session. A "
-                          + "short one inside a flight does not split the flight."),
+                      detail: "A touchdown outside any turn is counted for the session. It "
+                          + "ends the flight, like any touchdown."),
             ],
             image: HelpImage(asset: "help-turn-list",
                              caption: "Every turn, with the verdict and the evidence behind "
