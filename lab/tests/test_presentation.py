@@ -16,7 +16,7 @@ from pathlib import Path
 import pytest
 
 from wingfoil_lab.presentation import (DEFAULT_RECORD_WINDOW, DEFAULT_ROW_METRICS,
-                                       FORBIDDEN_CARD_KEYS, LEAN_CARD_KEYS,
+                                       FORBIDDEN_CARD_KEYS,
                                        PRESENTATION_VERSION, RECORD_KINDS,
                                        SPEED_RECORD_POLICIES, build_presentation,
                                        document_json, round_to, sorted_tree)
@@ -138,7 +138,7 @@ def test_the_flight_count_invariants_hold_in_the_document(documents):
 
 
 def test_the_card_is_the_block_minus_the_two_block_only_speeds(documents):
-    """A preset may drop a tile. It may not reword, reorder or invent one."""
+    """The card may lay a tile out. It may not reword, reorder, drop or invent one."""
     for stem, doc in documents.items():
         block = [c for row in doc["block"]["rows"] for c in row["cells"]]
         tiles = doc["card"]["tiles"]
@@ -146,10 +146,9 @@ def test_the_card_is_the_block_minus_the_two_block_only_speeds(documents):
             [c["key"] for c in block if c["key"] not in ("best5x10s", "alpha500")], stem
         for tile in tiles:
             cell = next(c for c in block if c["key"] == tile["key"])
-            assert {k: v for k, v in tile.items() if k != "presets"} == cell, stem
-            assert ("lean" in tile["presets"]) == (tile["key"] in LEAN_CARD_KEYS), stem
+            assert tile == cell, stem
             assert tile["key"] not in FORBIDDEN_CARD_KEYS, stem
-        assert doc["card"]["leanKeys"] == LEAN_CARD_KEYS
+        assert "leanKeys" not in doc["card"], stem
 
 
 def test_the_records_block_is_the_nine_kinds_in_order(documents):

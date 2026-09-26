@@ -524,8 +524,32 @@ def test_the_block_is_the_one_list_in_the_one_order():
     assert keys == ["sessions", "hours", "distance", "flights", "foilPct", "cleanJibes",
                     "cph", "turns", "cleanJibeRate", "wph", "best2s", "best10s",
                     "longestFlight", "longestDryStreak", "spots"]
-    # A preset may only ever drop an entry, so `lean` cannot name one the block lacks.
-    assert set(library.PERIOD_LEAN_KEYS) <= set(keys)
+    # The Lean/Complete presets went with the tile grid (layout B v2, 26 Sep 2026).
+    assert not hasattr(library, "PERIOD_LEAN_KEYS")
+
+
+def test_the_period_card_sums_the_ladder_and_names_the_bar_by_what_it_counts():
+    """Layout B v2 for a period: one outcome bar over every counted turn, called the jibe
+    bar only when every one of them was a jibe; the dry rate follows it, over timer hours."""
+    jibes_only = {"counted": 8, "jibes": 8, "tacks": 0, "longestFlewStreak": 4,
+                  "longestDryStreak": 6,
+                  "outcomes": {"flewThrough": 4, "touchdown": 2, "fellIn": 2}}
+    a = at("a", "2026-08-01", "Garda", timerTimeS=1800.0, wetExits=3, turns=jibes_only)
+    b = at("b", "2026-08-02", "Garda", timerTimeS=1800.0, wetExits=1,
+           turns={**jibes_only, "longestFlewStreak": 7, "longestDryStreak": 5})
+    card = library.period_card([a, b])
+    assert card["outcomes"] == {"flewThrough": 8, "touchdown": 4, "fellIn": 4}
+    assert (card["dryKind"], card["dryRate"]) == ("jibes", "12.0")   # 12 dry in an hour
+    assert (card["flewStreak"], card["dryStreak"], card["falls"]) == (7, 6, 4)
+    # One tack in the period, and the bar is the turn bar: the stored ladder is over every
+    # counted turn, and a jibe bar with a tack in it would be a jibe bar that lies.
+    c = at("c", "2026-08-03", "Garda", turns={**jibes_only, "counted": 9, "tacks": 1,
+           "outcomes": {"flewThrough": 5, "touchdown": 2, "fellIn": 2}})
+    assert library.period_card([a, c])["dryKind"] == "turns"
+    # A row saved before the ladder existed answers nothing, never three zeroes.
+    old = at("old", "2026-08-04", "Garda", turns={**jibes_only, "outcomes": None})
+    assert library.period_card([old])["outcomes"] is None
+    assert library.period_card([old])["dryRate"] is None
 
 
 def test_a_rate_over_a_period_divides_summed_by_summed():
