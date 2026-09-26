@@ -187,7 +187,7 @@ stroke count null, no watch summary and so no divergence check.
 26 Sep 2026)
 
 Two recordings are **the same session** when their starts are within **±60 s** and their
-durations are within **±60 s**, both bounds inclusive. An intervals.icu id that is already in
+durations are within **±60 s**, both bounds inclusive, each asked on two values a side. An intervals.icu id that is already in
 the library matches before either is asked.
 
 **Two spans a side (F-5).** A recording is compared on its record span (first record to last,
@@ -195,11 +195,22 @@ what the library row prints) *and* on its **fix span** (first GPS fix to last). 
 match when any span of one is within 60 s of any span of the other. A watch left running in
 the van records on without a position: the 13 June 2026 FIT spans 10 338 s of records and
 7 742 s of fixes, and Strava's copy of it, which drops every point with no position, spans
-7 742 s and starts 8 s later. The record span alone called those two sessions. The start stays
-one-to-one. On the phone a stored row carries its record span only, so its fix span is read
-from the archived original, and only for a row whose start already matched and whose record
-span did not. On the web the digest carries `fixSpanS` since schema 12; an older entry is
-compared on `durationS` alone.
+7 742 s and starts 8 s later. The record span alone called those two sessions.
+
+**Two starts a side.** The start is compared the same way: the **record start** (the first
+record) *and* the **first-fix start** (the first record with a position), any of one within
+60 s of any of the other. A watch that recorded for over a minute before its first fix starts
+where the copy of its fixes does not: a FIT with 90 s of records before its first fix and
+Strava's copy of it, which starts at that fix, were two sessions on the record start alone.
+Starts and spans are asked independently, so two recordings that start within a minute but
+whose spans are more than 60 s apart stay two sessions.
+
+On the phone a stored row carries its record start and span only, so its first-fix start and
+fix span are read from the archived original, and only for a row the columns could not answer
+for: one whose start matched and whose span did not, or one that started earlier and was
+still recording at the incoming start. On the web the digest carries `fixSpanS` since schema
+12 and `fixStartEpoch` since schema 13; an older entry is compared on `durationS` and
+`startEpoch` alone, and nothing is re-digested.
 
 **Which copy the library keeps (F-6).** The source class is the one fact that says whether a
 recording measured its speed. A **positions-only row** (class c: Strava, a GPX) **gives way**

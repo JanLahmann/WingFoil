@@ -97,7 +97,13 @@ from datetime import datetime, timedelta, timezone
 # GPS fix to the last, beside `durationS`. The dedupe compares both (`is_same_session`), so a
 # FIT whose watch recorded on without GPS meets the Strava or GPX copy of its fixes. Null on a
 # row written before it, which is then compared on `durationS` alone, as it always was.
-SCHEMA = 12
+# v13 (26 Sep 2026) carries `fixStartEpoch`, the instant of the first GPS fix, beside
+# `startEpoch`. The dedupe compares both starts the way it compares both spans, so a FIT
+# whose watch recorded for over a minute before its first fix meets the copy of its fixes,
+# which starts at that fix. Null on a row written before it, which is then compared on
+# `startEpoch` alone, as it always was: nothing is re-digested, a stored row only ever
+# matches less than a fresh one would.
+SCHEMA = 13
 
 # "Not a session" — the two floors (docs/algorithms/not-a-session.md "Not a session"). Only ever consulted
 # for a recording with no foil time at all, which is why they can be set generously.
@@ -438,6 +444,9 @@ def digest(doc, file_name: str | None = None) -> dict:
         # The dedupe's second span (schema 12): first GPS fix to last. Not a third key
         # field: it only ever widens what `durationS` already matches.
         "fixSpanS": _num(meta.get("fixSpanS"), 1),
+        # The dedupe's second start (schema 13): the first GPS fix. Same footing as the
+        # fix span: it only ever widens what `startEpoch` already matches.
+        "fixStartEpoch": _fix_start(meta.get("fixStartUtc")),
         # --- the library row ---
         # The session's own UTC offset in seconds (engine 0.8.2), so a stored row can be
         # dated and clocked the way the rider saw it without re-reading the FIT. Null on a
@@ -552,6 +561,30 @@ def digest_json(doc_json: str, file_name: str | None = None) -> str:
 # --------------------------------------------------------------------------- dedupe
 
 
+def _fix_start(iso):
+    epoch = _epoch(iso)
+    return None if epoch is None else round(epoch, 3)
+
+
+def _starts(e: dict) -> list:
+    """The starts an entry is compared on: its record start, then its first fix where it
+    has one."""
+    starts = [_num(e.get("startEpoch")), _num(e.get("fixStartEpoch"))]
+    return [s for s in starts if s is not None]
+
+
+def _start_delta(a: dict, b: dict):
+    """The smallest start difference over the two entries' starts, or None. Record start
+    against record start first, so the ordinary case reports exactly what it always did."""
+    a_start, b_start = _num(a.get("startEpoch")), _num(b.get("startEpoch"))
+    if a_start is None or b_start is None:
+        return None
+    plain = abs(a_start - b_start)
+    if plain <= DEDUPE_START_S:
+        return plain
+    return min(abs(x - y) for x in _starts(a) for y in _starts(b))
+
+
 def _spans(e: dict) -> list:
     """The spans an entry is compared on: its duration, then its fix span where it has one."""
     spans = [_num(e.get("durationS")), _num(e.get("fixSpanS"))]
@@ -578,14 +611,18 @@ def is_same_session(a: dict, b: dict) -> bool:
     **Two spans a side** (release round A F-5, Jan 26 Sep 2026; the kit's
     `SessionIngestor.duplicate`): an entry is compared on its duration and on its fix span,
     and any span of one within 60 s of any span of the other is the same duration. That is
-    what lets a FIT whose watch recorded on without GPS meet the copy of its fixes."""
-    a_start, b_start = _num(a.get("startEpoch")), _num(b.get("startEpoch"))
-    if a_start is None or b_start is None:
+    what lets a FIT whose watch recorded on without GPS meet the copy of its fixes.
+
+    **Two starts a side** (Jan, 26 Sep 2026): the same for the start — the record start and
+    the first-fix start, any of one within 60 s of any of the other. A watch that recorded
+    for over a minute before its first fix starts where its copy does not."""
+    d_start = _start_delta(a, b)
+    if d_start is None:
         return False
     d_dur = _span_delta(a, b)
     if d_dur is None:
         return False
-    return abs(a_start - b_start) <= DEDUPE_START_S and d_dur <= DEDUPE_DURATION_S
+    return d_start <= DEDUPE_START_S and d_dur <= DEDUPE_DURATION_S
 
 
 def is_weaker_copy(stored: dict, new: dict) -> bool:
@@ -611,7 +648,7 @@ def dedupe_match(new: dict, existing) -> dict:
     for i, other in enumerate(entries):
         if not isinstance(other, dict) or not is_same_session(new, other):
             continue
-        d_start = abs(_num(new.get("startEpoch")) - _num(other.get("startEpoch")))
+        d_start = _start_delta(new, other)
         d_dur = _span_delta(new, other)
         cand = (d_start + d_dur, i, other, d_start, d_dur)
         if best is None or cand[0] < best[0]:

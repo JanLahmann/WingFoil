@@ -45,7 +45,7 @@ export function mountLibrary(options) {
  * analysis; `analysisJson` is the document verbatim; `fitBytes` are the original bytes.
  *
  * Dedupe: the "same session" test (start within ±60 s AND duration within ±60 s, either
- * span a side since schema 12) runs in Python over the stored index. A match is never
+ * span a side since schema 12, either start since 13) runs in Python over the stored index. A match is never
  * resolved silently — the user is asked, and answering no leaves the library untouched
  * rather than adding a second copy. The one match not asked about is a positions-only copy
  * of a session stored with speed: it never replaces it (F-6).

@@ -170,6 +170,10 @@ def _gpx_of_fixes(fit_path: Path) -> bytes:
     """The copy Strava serves of a FIT: its fixes, nothing else, as a GPX."""
     from wingfoil_lab import parse
     df = parse.parse_fit(fit_path).records
+    return _gpx_of_records(df)
+
+
+def _gpx_of_records(df) -> bytes:
     df = df[df["lat"].notna() & df["lon"].notna()]
     pts = "".join(
         f'<trkpt lat="{r.lat:.7f}" lon="{r.lon:.7f}"><time>'
@@ -198,6 +202,40 @@ def check_thirteen_june() -> None:
     hit = library.dedupe_match(fit, [gpx])
     check("  FIT after copy replaces the copy",
           (hit["match"], hit["replacesWeaker"], hit["storedIsStronger"]), (True, True, False))
+
+
+LEAD_IN = "2026-08-01-0804_nago-torbole-windsurfen_native"
+
+
+def check_lead_in() -> None:
+    """Two starts a side (schema 13): a FIT whose first 90 s have no position, and the GPX
+    of its fixes, which starts at the first fix."""
+    import tempfile
+
+    from wingfoil_lab import parse
+    section("1e. one afternoon, one session: a FIT recording 90 s before its first fix")
+    sys.path.insert(0, str(REPO / "lab" / "tools"))
+    from scrub_fit import blank_leading_positions
+    src = REPO / "fixtures" / "sessions" / "windsurf-native" / f"{LEAD_IN}.fit"
+    raw = blank_leading_positions(src.read_bytes(), 90.0)
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / "lead-in.fit"
+        path.write_bytes(raw)
+        copy = _gpx_of_records(parse.parse_fit(path).records)
+    fit = library.digest(web_entry.analyze_bytes(raw, "lead-in.fit"), "lead-in.fit")
+    gpx = library.digest(web_entry.analyze_bytes(copy, "copy.gpx"), "copy.gpx")
+    check("  the FIT records over a minute before its first fix",
+          fit["fixStartEpoch"] - fit["startEpoch"] > 60, True)
+    check("  the copy starts at the FIT's first fix", gpx["startEpoch"], fit["fixStartEpoch"])
+    hit = library.dedupe_match(gpx, [fit])
+    check("  copy after FIT is a duplicate the FIT keeps",
+          (hit["match"], hit["deltaStartS"], hit["storedIsStronger"]), (True, 0.0, True))
+    hit = library.dedupe_match(fit, [gpx])
+    check("  FIT after copy replaces the copy",
+          (hit["match"], hit["replacesWeaker"]), (True, True))
+    old = {k: v for k, v in fit.items() if k != "fixStartEpoch"}
+    check("  a pre-schema-13 FIT entry still misses",
+          library.dedupe_match(gpx, [old])["match"], False)
 
 
 def check_spot_names() -> None:
@@ -305,7 +343,7 @@ def check_attribution() -> None:
         e.pop("schema")
     check("  a schema-1 library is unchanged", library.aggregate(old)["count"], 2)
     check("  digest stamps the current schema",
-          library.digest({"golden": {}, "meta": {}}, "x.fit")["schema"], 12)
+          library.digest({"golden": {}, "meta": {}}, "x.fit")["schema"], 13)
 
     # Schema 10 (engine 0.19.0): the fourth exclusion — a recording that is not a session
     # (docs/algorithms/not-a-session.md "Not a session"). The stored answer when the row carries one, the
@@ -1004,6 +1042,7 @@ def main(argv=None) -> int:
     if not args.fast:
         digests = build_digests()
         check_thirteen_june()
+        check_lead_in()
         check_digest_fidelity()
         check_records(digests)
         check_trends(digests)

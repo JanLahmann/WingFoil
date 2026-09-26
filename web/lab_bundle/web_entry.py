@@ -305,6 +305,10 @@ def _meta(a, disc=None) -> dict:
         # library's dedupe compares on: a watch left running in the van records on without
         # a position, and a copy made of its fixes (Strava's, a GPX) spans the fixes alone.
         "fixSpanS": _fix_span(df),
+        # The instant of the first GPS fix (the dedupe's second start, digest schema 13): a
+        # watch that records before it has a position starts earlier than the copy of its
+        # fixes. Null without a fix.
+        "fixStartUtc": _fix_start(df),
         "samples": int(len(df)),
         "sourceClass": caps.source_class,
         # **The rule, decided once, in Python.** `certified = source_class != "c"` is the
@@ -390,13 +394,26 @@ def _watch(s: dict) -> dict | None:
     return out or None
 
 
-def _fix_span(df):
-    """Seconds from the first record with a position to the last, or None without one.
-    The kit's `SessionIngestor.fixSpan`, on the parsed records rather than the samples."""
+def _fixes(df):
+    """The timestamps of the records with a position, or None."""
     if df.empty or not {"timestamp", "lat", "lon"} <= set(df.columns):
         return None
     fixed = df["timestamp"][df["lat"].notna() & df["lon"].notna()]
-    if fixed.empty:
+    return None if fixed.empty else fixed
+
+
+def _fix_start(df):
+    """The first record with a position, as ISO-8601 UTC, or None without one. The kit's
+    `SessionIngestor.fixStart`."""
+    fixed = _fixes(df)
+    return None if fixed is None else fixed.iloc[0].isoformat()
+
+
+def _fix_span(df):
+    """Seconds from the first record with a position to the last, or None without one.
+    The kit's `SessionIngestor.fixSpan`, on the parsed records rather than the samples."""
+    fixed = _fixes(df)
+    if fixed is None:
         return None
     return _num((fixed.iloc[-1] - fixed.iloc[0]).total_seconds())
 
