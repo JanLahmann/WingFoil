@@ -552,6 +552,60 @@ def test_the_period_card_sums_the_ladder_and_names_the_bar_by_what_it_counts():
     assert library.period_card([old])["dryRate"] is None
 
 
+def test_the_digest_carries_the_ladder_per_turn_kind():
+    """Schema 14: the jibe ladder with its clean count, the tack ladder, and a 360 slot that
+    stays null while the detector is off — copied from the engine, never recounted."""
+    turns = {"jibes": 5, "tacks": 2, "jibesSuccessful": 2,
+             "jibeOutcomes": {"flewThrough": 3, "touchdown": 1, "fellIn": 1, "borderline": 0},
+             "tackOutcomes": {"flewThrough": 0, "touchdown": 1, "fellIn": 1, "borderline": 1}}
+    doc = {"golden": {"summary": {"turns": turns}},
+           "meta": {"startUtc": "2026-09-14T08:00:00Z", "durationS": 3600.0}}
+    by_kind = library.digest(doc, "a.fit")["turns"]["byKind"]
+    assert by_kind == {"jibe": {"flewThrough": 3, "touchdown": 1, "fellIn": 1, "clean": 2},
+                       "tack": {"flewThrough": 0, "touchdown": 1, "fellIn": 1},
+                       "threeSixty": None}
+    # The detector ran: the slot is a count, and nothing else moves.
+    spun = {**doc, "golden": {"summary": {"turns": {**turns, "threeSixties": 3}}}}
+    assert library.digest(spun, "a.fit")["turns"]["byKind"]["threeSixty"] == {"count": 3}
+    # A document from before the split answers nothing — which is what the back-fill
+    # writes back as `byKind: null`, so it is asked once.
+    bare = {**doc, "golden": {"summary": {"turns": {"jibes": 5}}}}
+    assert library.digest(bare, "a.fit")["turns"]["byKind"] is None
+
+
+def test_the_period_card_sums_each_turn_kind_and_falls_back_when_a_row_cannot():
+    """The per-kind ladders summed over the rows; one row without the split (the back-fill
+    could not reach it) and the card keeps the one turn bar, never a partial jibe bar."""
+    def turns(jf, jt, jx, clean, tf, tt, tx):
+        return {"counted": jf + jt + jx + tf + tt + tx, "jibes": jf + jt + jx,
+                "tacks": tf + tt + tx,
+                "outcomes": {"flewThrough": jf + tf, "touchdown": jt + tt,
+                             "fellIn": jx + tx},
+                "byKind": {"jibe": {"flewThrough": jf, "touchdown": jt, "fellIn": jx,
+                                    "clean": clean},
+                           "tack": {"flewThrough": tf, "touchdown": tt, "fellIn": tx},
+                           "threeSixty": None}}
+    a = at("a", "2026-08-01", "Garda", turns=turns(5, 2, 1, 4, 1, 1, 2))
+    b = at("b", "2026-08-02", "Garda", turns=turns(3, 1, 0, 2, 0, 0, 1))
+    kinds = library.period_card([a, b])["kinds"]
+    assert kinds == [
+        {"kind": "jibe", "count": 12, "flewThrough": 8, "touchdown": 3, "fellIn": 1,
+         "clean": 6},
+        {"kind": "tack", "count": 5, "flewThrough": 1, "touchdown": 1, "fellIn": 3,
+         "clean": None},
+    ]
+    # No row counted a 360, so there is no 360 entry — not a zero one.
+    assert all(k["kind"] != "threeSixty" for k in kinds)
+    unsplit = at("c", "2026-08-03", "Garda",
+                 turns={k: v for k, v in turns(1, 0, 0, 1, 0, 0, 0).items() if k != "byKind"})
+    assert library.period_card([a, unsplit])["kinds"] is None
+    assert library.period_card([a, unsplit])["outcomes"]["flewThrough"] == 7
+    # A row with no ladder at all is not a row that lacks the split: it adds nothing either way.
+    old = at("old", "2026-08-04", "Garda", turns={"jibes": 3, "outcomes": None})
+    assert library.period_card([a, old])["kinds"][0]["count"] == 8
+    assert library.period_card([old])["kinds"] is None
+
+
 def test_a_rate_over_a_period_divides_summed_by_summed():
     """Ten minutes with one clean jibe and three hours with three is not "6.0 and 1.0, so
     3.5 an hour" — it is four clean jibes in three hours and ten minutes."""
@@ -734,7 +788,7 @@ def test_the_digest_carries_the_engines_verdict():
                                   "distanceKm": 0.012}},
            "meta": {"startUtc": "2026-09-14T08:00:00Z"}}
     d = library.digest(doc, "junk.fit")
-    assert d["schema"] == library.SCHEMA == 13
+    assert d["schema"] == library.SCHEMA == 14
     assert (d["isSession"], d["notASessionReason"]) == (False, "no_distance")
     # A document from an older engine carries no keys, so the digest derives them.
     older = {"golden": {"summary": {"foilTimeS": 0.0, "durationS": 24.0, "distanceKm": 0.0}},
