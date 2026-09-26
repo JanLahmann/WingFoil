@@ -51,11 +51,6 @@
   },
   {
     "path": "ios/WingFoilKit/Sources/WingFoilKit/Presentation",
-    "text": "Speeds from a degraded source",
-    "why": "ShareCard's uncertified disclaimer. web/js/cardstats.js prints the same string and web/tools/card_parity.mjs compares the two card stat blocks string by string, so the dash cannot move on one platform alone."
-  },
-  {
-    "path": "ios/WingFoilKit/Sources/WingFoilKit/Presentation",
     "text": "iPhone SE (3rd generation)",
     "why": "FeedbackReport's device table: Apple's own marketing name for that phone, printed in a diagnostic mail so a report names the device the way Apple does. It is data, not a sentence."
   },

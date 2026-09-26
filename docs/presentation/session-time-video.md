@@ -151,12 +151,39 @@ advertisement. Where the browser will not carry text beside a file
 (`navigator.canShare({files, text})` false), the file still goes and the sentence goes on the
 clipboard instead, with *Caption copied* under the dialog's buttons.
 
-Two presets choose how much of it appears, and a preset may only **remove** entries:
+**Layout B v2 — the jibe story** (Jan, 26 Sep 2026; proposal
+`docs/proposals/2026-09-25-share-card.md`). The session card is no longer a grid of tiles.
+Top to bottom (portrait): the title; the date **and start time** on the session's clock
+("29 August 2026 · 14:40"); the track, which takes every point the words do not need; the
+**hero number**; the jibe outcome bar (flew through · touchdown · fell in in the ladder's
+colours, a zero dimmed rather than dropped); a **tack bar** on the same ladder whenever the
+session had a tack, even one; the best-streak line with the session's falls; one **ribbon**
+— the rates in words, then max 2 s, duration and distance; the footer. The square moves the
+track beside the title when that draws the ride larger, and drops the streak line; the
+landscape puts the track left and everything else in a 43 % column on the right.
 
-| preset | cells |
+| slot | what it prints |
 |---|---|
-| `complete` (default) | the whole block: duration · distance · avg speed · max 2 s · tally · streaks · JPH/TPH · CPH · WPH |
-| `lean` | duration · distance · max 2 s · tally |
+| hero (the rider's choice, per device; clean jibes by default) | **★ 25 clean jibes / of 56 jibes**, or **13.21 kn / top speed · best 2 s**, or **3 tacks / 0 dry · beside 58 jibes** (offered only when the session has tacks) |
+| jibe bar caption | nothing beside the clean hero; "of 56 jibes · 25 clean ★" beside any other hero |
+| ribbon | "clean jibes / h" (CPH, in the clean ink) · "dry jibes / h" (JPH) on a jibes-only session or "dry turns / h" (TPH) once tacks exist · max 2 s (unless it is the hero) · duration · distance. No bare acronym, and WPH is not on the card |
+| speed note | "speed estimated from GPS positions" on a positions-only (class c) recording, next to the speed: under the hero, or under the ribbon from the max 2 s cell on |
+
+**With 0 clean jibes the clean number is left out everywhere** (Jan, 26 Sep 2026): the hero
+falls back to the best 2 s (then the tacks), the bar carries no clean clause and the ribbon no
+clean jibes / h. The fallback order for any hero a session cannot carry is clean → max 2 s →
+tacks → none, and the composer offers only the heroes the session can carry.
+
+Every number is still a tile of `card.tiles`, which §5 holds to the block; what the story
+adds is the choice and the card's own words (`presentation.card.*`, authored by
+`PresentationCopy.card`). `ShareCardStats.Story.make` (kit) and `cardStory`
+(web/js/cardstats.js) are pinned against one fixture, `fixtures/cards/stories.expected.json`
+— `web/tools/card_parity.mjs` dumps the browser's for every corpus document and every hero,
+`verify_presentation.py` §5a re-derives the rule and asserts the words-to-footer gap on every
+shape, and `DocumentRendererTests.theCardStoryIsTheSharedFixture` holds the kit's.
+
+The **period card** keeps its grid and its two presets (`complete` / `lean`): a period has no
+jibe ladder to tell a story with.
 
 **The rider gets a title and one caption, and neither is a cell** (schema v9). The card's
 header is the session's name, its date, and — when he wrote one — a single line of his own
@@ -279,13 +306,14 @@ document analysed before the geographic anchor existed (`view.geo`, added by
 canvas. A rider on a beach still gets a card.
 
 **The footer is a contract of its own, and both platforms print it identically**: the app's
-mark, the wordmark **CleanJibe**, the call to action `analyze your wingfoil sessions free —
-cleanjibe.org`, and a **QR code to `https://cleanjibe.org`** in the trailing corner. The card
+mark at 30 pt, **CleanJibe · cleanjibe.org** at 16 pt (the name in paper, the address in brand
+green) **above** the tagline `Your WingFoil session, measured.` (layout B v2, 26 Sep 2026),
+and a **QR code to `https://cleanjibe.org`** in the trailing corner. The card
 is the declared promotion channel — it leaves the phone as a PNG and is read in somebody
 else's chat by a rider who has never heard of the app — so the footer is the only part of it
 addressed to the receiver rather than to the sender, and it may not differ between the card
 the phone exports and the card the web composes. The strings come from `Branding` in the kit
-(`appName`, `callToAction`, `siteURL`), pinned by test, and from `BRANDING` in
+(`appName`, `site`, `tagline`, `siteURL`), pinned by test, and from `BRANDING` in
 `web/js/cardstats.js` on the other side — one constant per platform, never a literal at a
 draw site.
 
@@ -388,7 +416,7 @@ knows the word GPX:
 | session badge | `limited data` (web `render.js`), `SessionDisplay.sourceClassNote` (iOS) — the title/subtitle names both absences: estimated speed, no pump data |
 | records table | an `uncertified` chip beside the **value** (web `trends.js`, iOS `RecordsView`) — beside the claim, not beside the session |
 | personal bests | the celebration reads the same rule the table does (`PersonalBestDetector.improvements(previous:current:policy:)`). The clean-jibe records are exempt: a jibe count is not a speed and a bad fix cannot inflate it |
-| share card | `disclaimer` — "Speeds from a degraded source — uncertified" (`ShareCardStats`, `cardDisclaimer`) — the card leaves the device, so it cannot be read as a speed claim |
+| share card | "speed estimated from GPS positions" (`ShareCardStats.speedEstimated`, `cardDisclaimer`), next to the speed it qualifies — the card leaves the device, so it cannot be read as a speed claim |
 
 The same source class also has no accelerometer, so the pump and takeoff-effort figures are
 absent rather than zero, by the never-a-flattering-zero rule the goldens already follow
