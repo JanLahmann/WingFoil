@@ -157,7 +157,7 @@ export const WAYS_IN = {
     },
     {
       "id": "garmin",
-      "title": "Garmin with the CleanJibe watch app",
+      "title": "Garmin, as you ride today",
       "line": "Paste your intervals.icu key in Settings. Sessions arrive by themselves.",
       "here": true,
       "href": "/start/#guide-garmin",
@@ -201,14 +201,14 @@ export const WAYS_IN = {
 /** The five routes in, as the welcome screen lists them
  *  (docs/guide/getting-started.json, the order both surfaces print). */
 export const GUIDE = {
-  "framing": "Ride one session as you always do, then open it in CleanJibe. Every turn gets a verdict: flew through, touchdown, or fell in. You were there, so you can tell us where it got one wrong.",
+  "framing": "Ride one session as you always do, then open it in CleanJibe. Every turn gets a verdict: flew through, touchdown, or fell in. We ride too, so tell us where it read one of yours wrong.",
   "lede": "Take the way in that matches your wrist. Go outside, because every one of them needs GPS and a watch indoors records no positions. They all end the same way. Your session lands in CleanJibe, analysed as it arrives.",
   "routes": [
     {
       "id": "garmin",
-      "title": "Garmin with the CleanJibe watch app",
+      "title": "Garmin, as you ride today",
       "status": "fenix, epix, Forerunner and the rest",
-      "summary": "Install it from Connect IQ, then ride and save. The watch shows live numbers and a summary, and the session reaches CleanJibe through intervals.icu.",
+      "summary": "Ride as always, with Windsurf or any watersport profile. Connect intervals.icu once, and your old sessions come in too. The CleanJibe watch app adds verdicts on your wrist.",
       "href": "/start/#guide-garmin"
     },
     {
@@ -245,7 +245,7 @@ export const GUIDE = {
 /** The sentence at the top of a Settings section, the phone's own
  *  (`GettingStartedGuide.settingsIcu` / `.settingsStrava`). */
 export const SETTINGS = {
-  "intervalsIcu": "Garmin has no open API, so intervals.icu is the bridge. Connect your Garmin there once, and every session arrives here by itself. It is free.",
+  "intervalsIcu": "Your Garmin sessions arrive here by themselves, your old ones too. Garmin has no open API, so intervals.icu is the bridge. Connect your Garmin there once. It is free.",
   "strava": "Any watch that syncs to Strava works, with no file to move. Strava keeps your track but not your watch's speed, so the records are uncertified."
 };
 
@@ -896,9 +896,11 @@ export const HELP = {
         {
           "aliases": [],
           "body": [
-            "CleanJibe works with Garmin, Strava and other watches. The Apple Watch app is in beta.",
-            "Garmin does not share your sessions directly, so CleanJibe gets them through intervals.icu. It is free and takes about 5 minutes. Set it up once in Settings → intervals.icu. After that, every session syncs by itself.",
-            "You can also open a .fit file straight from Files, Mail or a message. It can be yours, or one a friend sent you."
+            "Ride with the watch you already have. Your session comes into CleanJibe, and every turn gets a verdict.",
+            "On a Garmin, ride as always, with Windsurf or any other watersport profile. Set up intervals.icu once in Settings → intervals.icu. It is free, takes about 5 minutes, and your old sessions come in too.",
+            "Want more out there? The CleanJibe watch app buzzes each verdict on your wrist. It counts your pump strokes and takeoff attempts, and keeps your dry streak on the glass.",
+            "You can also open a .fit file straight from Files, Mail or a message. It can be yours, or one a friend sent you.",
+            "We ride too. We built CleanJibe for the jibes we were chasing ourselves."
           ],
           "channels": [
             "release",
@@ -913,9 +915,9 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Install it from Connect IQ, then ride and save. The watch shows live numbers and a summary, and the session reaches CleanJibe through intervals.icu.",
+              "detail": "Ride as always, with Windsurf or any watersport profile. Connect intervals.icu once, and your old sessions come in too. The CleanJibe watch app adds verdicts on your wrist.",
               "link": "icuSetup",
-              "term": "Garmin with the CleanJibe watch app"
+              "term": "Garmin, as you ride today"
             },
             {
               "channels": [
@@ -985,10 +987,10 @@ export const HELP = {
             "sourceClass"
           ],
           "body": [
-            "CleanJibe reads a recording, not a brand. Anything that records a GPS track works. A number your file cannot support is left blank, never guessed.",
-            "Two things separate the rows. **Certified speed** means the file holds your watch's own speed. Without it, speed is worked out from positions, and every record is marked uncertified.",
+            "Every watch that records a GPS track works. A number your file cannot support is left blank, never guessed.",
+            "Two things set the rows apart. First, **measured speed**: your file holds the watch's own speed, so your speed records count. Without it, speed is estimated from positions and the records are marked uncertified.",
             "**Pump strokes and takeoff attempts** need a wrist accelerometer recorded during the session. Only the CleanJibe watch apps record one.",
-            "Each row names its class, the way the Import screen and the session log print it."
+            "Each row ends with the class the Import screen prints."
           ],
           "channels": [
             "release",
@@ -1003,7 +1005,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Class A · Garmin watch app. Everything. Foil time, flights, every turn verdict and clean jibe, certified speed records, the wind axis. Pump strokes and takeoff attempts too.",
+              "detail": "You get everything, and each verdict buzzes on your wrist. It adds pump strokes and takeoff attempts. Class A · Garmin watch app.",
               "term": "Garmin, with the CleanJibe watch app"
             },
             {
@@ -1012,7 +1014,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Class B · any speed-certified file. Everything except pump strokes and takeoff attempts, which need a wrist accelerometer nothing else records. Speed records certify. Sessions come in through intervals.icu.",
+              "detail": "You get every verdict and flight, with measured speed records. Your old sessions come in through intervals.icu too. Class B · any speed-certified file.",
               "term": "Garmin, with Garmin's own profile or another app"
             },
             {
@@ -1021,7 +1023,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Bring it in through Strava or intervals.icu. In the beta, Apple Health hands it over as Class B · any speed-certified file.",
+              "detail": "Bring it in through Strava or intervals.icu. In the beta, Apple Health hands it over with measured speed. Class B · any speed-certified file.",
               "term": "Apple Watch, with Apple's Workout app"
             },
             {
@@ -1030,7 +1032,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Class B+ · Apple Watch app, in the beta. Everything Class B gets, plus pump strokes and takeoff attempts from your wrist.",
+              "detail": "It is in the beta. You get measured speed, plus pump strokes and takeoff attempts from your wrist. Class B+ · Apple Watch app.",
               "term": "Apple Watch, with the CleanJibe watch app"
             },
             {
@@ -1039,7 +1041,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Connect the watch to intervals.icu, or share one session in as a FIT, which certifies its records. A .gpx is Class C · positions only.",
+              "detail": "A FIT gives you measured speed records, through intervals.icu or shared in by hand. A .gpx carries positions only. Class C · positions only.",
               "term": "Polar, Suunto, COROS and the rest"
             },
             {
@@ -1048,7 +1050,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Connect Strava and pick the sessions. Strava hands over positions, altitude and heart rate but no speed channel. That makes it Class C · positions only.",
+              "detail": "You get every verdict and flight, with speed estimated from positions. Connect Strava and pick the sessions. Class C · positions only.",
               "term": "Anything that ends up on Strava"
             },
             {
@@ -1057,7 +1059,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Any GPS-logging app works. Record, then bring it in through Strava or share the file. It is Class C · positions only, and the flights, turns and map are there.",
+              "detail": "Your flights, turns and map, with speed estimated from positions. Record with any GPS app and share the file in. Class C · positions only.",
               "term": "A phone in a pouch, or no watch at all"
             }
           ],
@@ -1245,7 +1247,7 @@ export const HELP = {
         {
           "aliases": [],
           "body": [
-            "The easiest way in is intervals.icu. Garmin has no open API, so intervals.icu receives your activities and hands CleanJibe the original recording. You can also open a .fit by hand, from Files, Mail or a Garmin export ZIP.",
+            "Your Garmin sessions come in by themselves, your old ones too. The easiest way is intervals.icu, because Garmin has no open API. You can also open a .fit by hand, from Files, Mail or a Garmin export ZIP.",
             "Nothing is uploaded, and nothing changes in either account. CleanJibe downloads the original recording of each watersport session and analyses it on your phone.",
             "Polar, Suunto and COROS work this way too. Their own apps sync to intervals.icu, and CleanJibe syncs from there.",
             "The file your watch left there decides how much you get. A FIT gives you the full analysis. A GPX, or a TCX without speed, gives uncertified speed records."
@@ -1290,7 +1292,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Paste it into the field below. In the app that field is Settings → intervals.icu. Tap Save & check. CleanJibe verifies it and says how many activities it can see.",
+              "detail": "In CleanJibe, open Settings → intervals.icu and paste the key. Tap Save & check. CleanJibe checks it and says how many activities it can see.",
               "term": "4. Paste the key into CleanJibe"
             },
             {
@@ -1863,10 +1865,10 @@ export const HELP = {
             "longestFlight"
           ],
           "body": [
-            "A flight starts when your speed holds above 12 km/h for 2 s. It ends when your speed stays under 8 km/h for 3 s. Both are the default thresholds.",
+            "A flight is every stretch you stayed up on the foil. It starts once you hold 12 km/h for 2 s. It ends when you drop under 8 km/h for 3 s.",
             "A flight is dated back to the first moment that counted, at both ends. Anything under 5 s is not a flight.",
             "A touchdown or a fall ends a flight. The next takeoff starts a new one.",
-            "Taxiing, swimming and the drift upwind count against your time on foil. A gap in the recording does not."
+            "Taxiing, time in the water and the drift upwind count against your time on foil. A gap in the recording does not."
           ],
           "channels": [
             "release",
@@ -1894,7 +1896,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "How many separate times you got up and stayed up. It answers \"how many times did I have to get up again\".",
+              "detail": "How many separate times you got up and stayed up.",
               "term": "Flights"
             },
             {
@@ -1912,7 +1914,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Added up from the watch's Doppler speed, not from positions, because position noise inflates a distance at low speed. It covers flying, taxiing and drifting.",
+              "detail": "How far you went, flying, taxiing and drifting. It adds up the watch's measured speed rather than positions, because position noise inflates a distance at low speed.",
               "term": "Distance"
             }
           ],
@@ -2046,8 +2048,8 @@ export const HELP = {
         {
           "aliases": [],
           "body": [
-            "A turn is detected from your course. It needs at least 60° of net heading change within 8 seconds, with a peak rate of 25°/s. You must be on the foil, or within 3 s of it.",
-            "It must also carve a real arc. That means at least 12 m of path, at an effective radius of at least 6 m. A rider spinning around beside the board carves no arc.",
+            "Every jibe and tack you carve counts as a turn. To count, it needs 60° of heading change inside 8 s, on the foil or within 3 s of it.",
+            "It must also carve a real arc. That means at least 12 m of path, at a radius of 6 m or more. Spinning around beside the board carves no arc.",
             "What kind of turn it was depends on the wind axis:"
           ],
           "channels": [
@@ -2129,9 +2131,10 @@ export const HELP = {
             "touchdowns"
           ],
           "body": [
-            "Every turn gets one of three outcomes. The judgement runs from the turn start until you are flying again. That means speed back above 70 % of your entry speed for 2 seconds. The window is capped at 12 seconds.",
+            "Every turn ends one of three ways: you flew through, touched down, or fell in. CleanJibe watches from the turn start until you are flying again.",
+            "Flying again means 2 s back above 70 % of your entry speed. The window closes after 12 s.",
             "A jibe exited at marginal speed can bleed off for 6 to 12 seconds before the foil stalls. That mush-out is the jibe's fault. A jibe you power out of closes its window in a second or two.",
-            "CleanJibe reads three things inside it. Your speed is always read. So is the barometer, because a wrist under water looks like a huge drop in altitude. On a CleanJibe watch recording, the accelerometer is read too."
+            "Inside that window, your speed is always read. So is the barometer, because a wrist under water looks like a huge drop in altitude. On a CleanJibe watch recording, the accelerometer is read too."
           ],
           "channels": [
             "release",
@@ -2192,10 +2195,11 @@ export const HELP = {
         {
           "aliases": [],
           "body": [
-            "A turn that **flew through** never lost the foil, from its start until you were flying again. A **clean** jibe flew through, held its speed, and stayed quiet after.",
-            "Holding the speed: your minimum speed through the turn stays at or above 70 % of your entry speed. You never drop below the foil exit speed.",
-            "Staying quiet means the 10 seconds after the turn. They hold no touchdown or fall, no second or more off the foil, and no wrist under water.",
-            "So clean is a strict subset of flew through. A jibe that held its speed and then lost the foil coming out is not clean."
+            "This is the jibe you were working for. A **clean** jibe passes three gates: it flew through, held its speed, and stayed quiet for the 10 s after.",
+            "**Flew through** means you never lost the foil until you were flying again.",
+            "Holding the speed means your slowest point stays at or above 70 % of your entry speed. You never drop below the foil exit speed.",
+            "Staying quiet means the 10 s after the turn hold no touchdown or fall. They also hold no second or more off the foil, and no wrist under water.",
+            "Every clean jibe also flew through. A jibe that flew through can still miss clean, if you lost speed or touched down coming out."
           ],
           "channels": [
             "release",
@@ -2231,7 +2235,7 @@ export const HELP = {
             "numbers",
             "turnOutcomes"
           ],
-          "summary": "A jibe you fly all the way through without losing much speed. The 10 seconds after it stay quiet too.",
+          "summary": "The jibe you were working for: foil up the whole way, speed held, straight back to riding.",
           "title": "Clean jibes"
         },
         {
@@ -2336,9 +2340,9 @@ export const HELP = {
         {
           "aliases": [],
           "body": [
-            "The takeoff run starts at the rising speed before the flight. It starts at the pump burst that led into it, if that came first. So the count is the strokes of the effort that produced the flight.",
-            "Takeoffs under 3 strokes are counted as free: you got up on the wind alone. That is a fact about the conditions, so free takeoffs are kept out of the averages and reported separately.",
-            "Runs the recording cut short are left out of the averages. They still count as takeoffs that worked: the flight happened, only its cost is unknown."
+            "Every flight shows how many pump strokes it took to get up. The count starts at the rising speed before the flight, or at the pump burst that led into it.",
+            "Under 3 strokes is a free takeoff: the wind got you up alone. Free takeoffs say more about the conditions than about you. They stay out of the averages and are shown on their own.",
+            "When the recording cut a run short, its cost is unknown. The flight still counts as a takeoff that worked, but it stays out of the averages."
           ],
           "channels": [
             "release",
@@ -2386,9 +2390,10 @@ export const HELP = {
         {
           "aliases": [],
           "body": [
-            "Heart-rate cost is the rise from your baseline just before an effort to the peak that follows. The baseline is the median of the 10 seconds ending at the start of the takeoff run.",
-            "The peak is searched 30 seconds forward, because an optical wrist sensor trails effort by 10 to 20 seconds. Negative values are reported rather than hidden: \"still recovering when you started\" is a different fact from \"this cost nothing\".",
-            "The card does not appear on a session whose recording has no usable heart rate. Nothing here is estimated when the sensor was silent."
+            "Heart-rate cost shows how hard each takeoff hit you. It is how far your pulse climbed from just before the pumping to its peak.",
+            "Your baseline is the median of the 10 s before the takeoff run. The peak is searched 30 s forward, because a wrist sensor trails effort by 10 to 20 s.",
+            "A negative cost means you were still recovering when you started. That is not the same as a takeoff that cost nothing.",
+            "The card does not appear when your recording has no usable heart rate. Nothing is estimated while the sensor was silent."
           ],
           "channels": [
             "release",
@@ -2416,7 +2421,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "A wrist sensor under a wetsuit sleeve in cold water drops out and sticks. A made-up average is worse than a missing one.",
+              "detail": "A wrist sensor under a wetsuit sleeve in cold water drops out and sticks. Then you see no number rather than a guess.",
               "term": "Why it drops out"
             },
             {
@@ -2443,13 +2448,14 @@ export const HELP = {
             "pumpsToTakeoff",
             "whichWatch"
           ],
-          "summary": "What an attempt costs in heartbeats, and when that can be trusted.",
+          "summary": "How hard each takeoff hit you, and when to trust the number.",
           "title": "Heart rate: cost and coverage"
         },
         {
           "aliases": [],
           "body": [
-            "No weather station is involved. The estimate comes from your own track. CleanJibe looks at the headings you flew and finds your two main reaching directions. The wind axis is the line halfway between them.",
+            "Your turns become tacks and jibes because CleanJibe knows the wind. It works the wind out from your own track, with no weather station.",
+            "It finds your two main reaching directions in the headings you flew. The wind axis is the line halfway between them.",
             "That gives an axis but not a side. The no-go zone breaks the tie. Of the two ends, the wind came from the one you rode almost nothing within ±45° of.",
             "Confidence combines how cleanly the two reaches separate with how decisive the no-go zone was. Below 50 % the axis is still shown, but your turns stay unnamed \"turns\" rather than tacks and jibes.",
             "A wind direction you set on the watch always wins."
