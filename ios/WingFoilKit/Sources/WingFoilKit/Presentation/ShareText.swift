@@ -79,7 +79,7 @@ public enum ShareText {
 
 /// The sentence that travels **beside** a shared card, on both platforms.
 ///
-/// "Torbole · 30 August 2026 · 66 % on the foil · 30 clean jibes — analysed with CleanJibe,
+/// "Torbole · 30 August 2026 · 66 % on the foil · 30 clean jibes · analysed with CleanJibe,
 /// free at cleanjibe.org."
 ///
 /// **Why the numbers are in the text and not only in the picture.** A card arrives in a chat
@@ -96,10 +96,9 @@ public enum ShareText {
 /// a rider who shares the same afternoon from the phone and from the browser gets two
 /// different sentences about it.
 ///
-/// **The one em dash the app is allowed.** Everywhere else the separator is "·". Here it is
-/// " — ", because the web's sentence has it and the point of this type is that the two are
-/// byte-identical; the dash is what separates the *report* from the *offer*, which is a
-/// different kind of break from the one between two facts.
+/// **One separator, "·", facts and offer alike.** Until 27 September 2026 the offer hung
+/// off an em dash; the voice review (docs/voice.md, rule 4) took it out on both platforms
+/// at once, because the point of this type is that the two are byte-identical.
 public enum ShareCaption {
 
     /// "analysed with CleanJibe, free at cleanjibe.org" — the offer, and the only half of the
@@ -137,7 +136,7 @@ public enum ShareCaption {
         let facts = parts(title: title, dateLine: dateLine,
                           foilPct: foilPct, cleanJibes: cleanJibes)
         guard !facts.isEmpty else { return offer }
-        return facts.joined(separator: " · ") + " — " + offer
+        return facts.joined(separator: " · ") + " · " + offer
     }
 
     /// The **subject** the share sheet offers where a subject exists at all — mail, and

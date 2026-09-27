@@ -933,7 +933,7 @@ public enum HelpCatalog {
                           + "shows windsurf in knots."),
                 // Last, because it is the one line that is about the recording rather than
                 // about a window — and the one a rider needs before he posts a number.
-                .init(term: "\"Uncertified\"",
+                .init(term: "\"Estimated\"",
                       detail: "A recording with positions but no speed channel has its "
                           + "speed worked out from them, which reads high. Every GPX is "
                           + "one, and some converted exports. It is marked everywhere."),
@@ -946,18 +946,18 @@ public enum HelpCatalog {
         // the two words mean, what each mode does, and where the setting is.
         HelpTopic(
             id: .verifiedRecords, section: .readNumbers, subsection: .records,
-            title: "Verified and unverified speed records",
+            title: "Measured and estimated speed records",
             summary: "Choose whether a record from a track without measured speed counts.",
             body: [
-                "A verified record comes off a recording that carries your watch's own "
-                + "Doppler speed. An unverified one is worked out from positions, which "
+                "A measured record comes off a recording that carries your watch's own "
+                + "Doppler speed. An estimated one is worked out from positions, which "
                 + "reads high.",
-                "Only verified keeps unverified records out of your all-time table, your "
+                "Only measured keeps estimated records out of your all-time table, your "
                 + "trends and your cards. The session that set one still shows it, marked.",
-                "Prefer verified is the default. A verified record wins its row, and an "
-                + "unverified one fills a row no verified record has reached.",
-                "Include unverified counts every record and marks the ones it could not "
-                + "verify. Settings \u{2192} Speed records is where you choose.",
+                "Prefer measured is the default. A measured record wins its row, and an "
+                + "estimated one fills a row no measured record has reached.",
+                "Include estimated counts every record and marks the estimated ones. "
+                + "Settings \u{2192} Speed records is where you choose.",
             ],
             related: [.speedRecords, .whichWatch, .stravaImport]),
 
@@ -1526,9 +1526,9 @@ public enum HelpCatalog {
                           + "thresholds, your phone, iOS and locale. The paired watch is "
                           + "there, with how many sessions came in each way."),
                 .init(term: "From a session",
-                      detail: "It also carries that session's date, spot, discipline, "
-                          + "duration, source class, engine stamp and identifier, with its "
-                          + "share card attached."),
+                      detail: "It also carries that session's date, spot and length, "
+                          + "what recorded it and which app version read it. Its share "
+                          + "card is attached."),
                 .init(term: "Read it before you send",
                       detail: "Every line is there to read and to edit. If this phone has no "
                           + "mail account, the app hands the same text to whatever you do "
@@ -1563,7 +1563,7 @@ public enum HelpCatalog {
                 + "to improve the analysis, and we never publish it.",
                 "You see the whole mail before it goes. Edit any line, delete any line, or "
                 + "close it and nothing is sent.",
-                "Open a session, tap Share, then Send this session to the developer.",
+                "Open a session, tap Share, then Send this session to us.",
             ],
             related: [.shareFit, .divergence]),
 

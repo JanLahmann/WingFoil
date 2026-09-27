@@ -81,7 +81,7 @@ import Testing
         #expect(block.rates.map(\.key) == ["cph", "jph", "wph"])
         #expect(block.rates.map(\.label) == ["CPH · clean jibes per hour",
                                              "JPH · dry jibes per hour",
-                                             "WPH · swims per hour"])
+                                             "WPH · falls per hour"])
         #expect(block.rates.map(\.value) == ["0.0", "5.4", "6.6"])
     }
 

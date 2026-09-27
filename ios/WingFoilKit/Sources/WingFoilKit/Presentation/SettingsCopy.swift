@@ -129,7 +129,7 @@ public enum SettingsCopy {
                 "CleanJibe only reads your Strava account. It never writes, renames or "
                 + "posts anything.",
                 "A session imported this way is analysed from your track alone, so its "
-                + "speed records are marked uncertified.",
+                + "speed records are marked estimated.",
                 "Strava lets a new app connect a limited number of riders. Connecting is "
                 + "refused while CleanJibe is full.",
                 "That says nothing about your account.",
@@ -165,10 +165,10 @@ public enum SettingsCopy {
             title: "Speed records",
             lead: "Choose whether records from tracks without measured speed count.",
             footer: [
-                "Verified means your watch measured the speed with Doppler.",
-                "Unverified means CleanJibe worked it out from positions. That reads high.",
-                "Prefer verified fills a row with an unverified record only when no "
-                + "verified one exists.",
+                "Measured means your watch measured the speed with Doppler.",
+                "Estimated means CleanJibe worked it out from positions. That reads high.",
+                "Prefer measured fills a row with an estimated record only when no "
+                + "measured one exists.",
             ],
             help: .verifiedRecords, web: true),
 

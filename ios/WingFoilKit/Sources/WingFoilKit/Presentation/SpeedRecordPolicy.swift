@@ -45,9 +45,9 @@ public enum SpeedRecordPolicy: String, Codable, Sendable, CaseIterable, Identifi
     /// The word in the picker.
     public var label: String {
         switch self {
-        case .onlyVerified: "Only verified"
-        case .preferVerified: "Prefer verified"
-        case .includeUnverified: "Include unverified"
+        case .onlyVerified: "Only measured"
+        case .preferVerified: "Prefer measured"
+        case .includeUnverified: "Include estimated"
         }
     }
 

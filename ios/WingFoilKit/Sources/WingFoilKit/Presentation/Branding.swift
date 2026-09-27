@@ -38,14 +38,14 @@ public enum Branding {
     /// and the one-line attribution on a shared clip or card.
     public static let credit = appName + " · " + site
 
-    /// "analyze your wingfoil sessions free — cleanjibe.org" — the line on everything that
+    /// "Analyse your wingfoil sessions free at cleanjibe.org." — the line on everything that
     /// leaves the phone, and the one string the web share card and this one must agree on
     /// character for character (`docs/presentation.md`, the card contract).
     ///
-    /// Lowercase throughout, including the first word: it sits under the wordmark as its
-    /// subtitle rather than beside it as a sentence. "wingfoil" here is the sport, which is
-    /// why it is not the brand's capitalisation.
-    public static let callToAction = "analyze your wingfoil sessions free — " + site
+    /// A sentence since 27 September 2026 (Jan, the voice review): British spelling, a
+    /// capital, no em-dash. "wingfoil" here is the sport, which is why it is not the brand's
+    /// capitalisation.
+    public static let callToAction = "Analyse your wingfoil sessions free at " + site + "."
 
     /// **The tagline** (Jan, 23 September 2026): the one fragment the voice allows under the
     /// wordmark (docs/voice.md, rule 5). It sits under the mark on the start screen and on

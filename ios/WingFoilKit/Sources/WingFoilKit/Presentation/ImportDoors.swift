@@ -123,7 +123,7 @@ public enum ImportDoor: String, CaseIterable, Sendable, Identifiable {
         }
     }
 
-    /// "Class A · Garmin watch app or Class B · any speed-certified file".
+    /// "Class A · Garmin watch app or Class B · any file with measured speed".
     public func classLabel(channel: HelpChannel) -> String {
         let names = recordingClasses(channel: channel).map(\.name)
         guard names.count > 1 else { return names.first ?? "" }
@@ -142,7 +142,7 @@ public enum ImportDoor: String, CaseIterable, Sendable, Identifiable {
             + "Nothing to import here."
         case .appleHealth:
             "Workouts recorded with Apple's own Workout app. Speed comes off the watch, "
-            + "so those records certify."
+            + "so those records are measured."
         case .file:
             channel.has(.beta)
             ? "One FIT, GPX, TCX or ZIP from any watch. AirDrop and the share sheet land "
@@ -150,7 +150,7 @@ public enum ImportDoor: String, CaseIterable, Sendable, Identifiable {
             : "One FIT or ZIP from any watch. AirDrop and the share sheet land here too."
         case .strava:
             "Sessions you pick from your Strava account. Positions only, so records are "
-            + "uncertified. " + Copy.stravaFall
+            + "estimated. " + Copy.stravaFall
         case .garminZip:
             "Every original FIT your Garmin account holds. Ask for the ZIP under "
             + "Account → Export Your Data. Duplicates are skipped."

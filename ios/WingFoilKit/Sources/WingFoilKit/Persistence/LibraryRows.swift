@@ -220,8 +220,8 @@ public enum SessionRecordKind: String, CaseIterable, Sendable, Codable {
             "Clean jibes per hour of session time. Sessions of at least "
                 + String(Int(Self.cphMinDurationS / 60)) + " minutes."
         case .bestCleanJibeRate: "Sessions with at least \(Self.minJibesForRate) jibes."
-        case .longestDryStreak: "Maneuvers in a row without a swim."
-        case .longestFlewStreak: "Maneuvers in a row that never touched down."
+        case .longestDryStreak: "Turns in a row without falling in."
+        case .longestFlewStreak: "Turns in a row that never touched down."
         default: nil
         }
     }
