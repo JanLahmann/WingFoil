@@ -122,7 +122,7 @@ import Testing
         let prose = (topic.body + items).joined(separator: " ")
 
         // One route per item, with the heading a rider scans for.
-        for route in ["Garmin with the CleanJibe watch app", "Any watch that writes a .fit",
+        for route in ["Garmin, as you ride today", "Any watch that writes a .fit",
                       "Strava", "No wind today?"] {
             #expect(topic.items.contains { $0.term == route }, "no route \"\(route)\"")
         }

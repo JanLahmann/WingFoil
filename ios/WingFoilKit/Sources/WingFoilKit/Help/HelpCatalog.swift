@@ -354,42 +354,48 @@ public enum HelpCatalog {
             id: .whichWatch, section: .start, title: "Which watches work with CleanJibe",
             summary: "Every watch works, one way or another. Each row says what yours "
                 + "can show.",
+            // **What you get first, the class after** (UX review, 27 September 2026). Jan
+            // kept the classes on the Import screen, so each row still ends with the name
+            // the screen prints, but the line opens with what the rider gets from his watch.
             body: [
-                "CleanJibe reads a recording, not a brand. Anything that records a GPS track "
-                + "works. A number your file cannot support is left blank, never guessed.",
-                "Two things separate the rows. **Certified speed** means the file holds your "
-                + "watch's own speed. Without it, speed is worked out from positions, and "
-                + "every record is marked uncertified.",
+                "Every watch that records a GPS track works. A number your file cannot "
+                + "support is left blank, never guessed.",
+                "Two things set the rows apart. First, **measured speed**: your file holds "
+                + "the watch's own speed, so your speed records count. Without it, speed is "
+                + "estimated from positions and the records are marked uncertified.",
                 "**Pump strokes and takeoff attempts** need a wrist accelerometer recorded "
                 + "during the session. Only the CleanJibe watch apps record one.",
-                "Each row names its class, the way the Import screen and the session log "
-                + "print it.",
+                "Each row ends with the class the Import screen prints.",
             ],
             items: [
                 .init(term: "Garmin, with the CleanJibe watch app",
-                      detail: RecordingClass.a.footerLine),
+                      detail: "You get everything, and each verdict buzzes on your wrist. "
+                          + "It adds pump strokes and takeoff attempts. "
+                          + RecordingClass.a.name + "."),
                 .init(term: "Garmin, with Garmin's own profile or another app",
-                      detail: RecordingClass.b.footerLine
-                          + " Sessions come in through intervals.icu."),
+                      detail: "You get every verdict and flight, with measured speed "
+                          + "records. Your old sessions come in through intervals.icu too. "
+                          + RecordingClass.b.name + "."),
                 .init(term: "Apple Watch, with Apple's Workout app",
                       detail: "Bring it in through Strava or intervals.icu. In the beta, "
-                          + "Apple Health hands it over as " + RecordingClass.b.name + "."),
+                          + "Apple Health hands it over with measured speed. "
+                          + RecordingClass.b.name + "."),
                 .init(term: "Apple Watch, with the CleanJibe watch app",
-                      detail: RecordingClass.bPlus.name + ", in the beta. Everything "
-                          + "Class B gets, plus pump strokes and takeoff attempts from your "
-                          + "wrist."),
+                      detail: "It is in the beta. You get measured speed, plus pump strokes and "
+                          + "takeoff attempts from your wrist. " + RecordingClass.bPlus.name
+                          + "."),
                 .init(term: "Polar, Suunto, COROS and the rest",
-                      detail: "Connect the watch to intervals.icu, or share one session in "
-                          + "as a FIT, which certifies its records. A .gpx is "
+                      detail: "A FIT gives you measured speed records, through intervals.icu "
+                          + "or shared in by hand. A .gpx carries positions only. "
                           + RecordingClass.c.name + "."),
                 .init(term: "Anything that ends up on Strava",
-                      detail: "Connect Strava and pick the sessions. Strava hands over "
-                          + "positions, altitude and heart rate but no speed channel. That "
-                          + "makes it " + RecordingClass.c.name + "."),
+                      detail: "You get every verdict and flight, with speed estimated from "
+                          + "positions. Connect Strava and pick the sessions. "
+                          + RecordingClass.c.name + "."),
                 .init(term: "A phone in a pouch, or no watch at all",
-                      detail: "Any GPS-logging app works. Record, then bring it in through "
-                          + "Strava or share the file. It is " + RecordingClass.c.name
-                          + ", and the flights, turns and map are there."),
+                      detail: "Your flights, turns and map, with speed estimated from "
+                          + "positions. Record with any GPS app and share the file in. "
+                          + RecordingClass.c.name + "."),
             ],
             related: [.shareFromWatchApp, .appleWatchApp, .stravaImport]),
 
@@ -846,13 +852,13 @@ public enum HelpCatalog {
             title: "Flights and foil time",
             summary: "How often you got up, how long you stayed up, and how far you went.",
             body: [
-                "A flight starts when your speed holds above 12 km/h for 2 s. It ends when "
-                + "your speed stays under 8 km/h for 3 s. Both are the default thresholds.",
+                "A flight is every stretch you stayed up on the foil. It starts once you "
+                + "hold 12 km/h for 2 s. It ends when you drop under 8 km/h for 3 s.",
                 "A flight is dated back to the first moment that counted, at both ends. "
                 + "Anything under 5 s is not a flight.",
                 "A touchdown or a fall ends a flight. The next takeoff starts a new one.",
-                "Taxiing, swimming and the drift upwind count against your time on foil. A "
-                + "gap in the recording does not.",
+                "Taxiing, time in the water and the drift upwind count against your time on "
+                + "foil. A gap in the recording does not.",
             ],
             items: [
                 .init(term: "Foil time and On foil",
@@ -860,15 +866,14 @@ public enum HelpCatalog {
                           + "timer time, which leaves out any stretch where the recording "
                           + "stopped or lost GPS."),
                 .init(term: "Flights",
-                      detail: "How many separate times you got up and stayed up. It answers "
-                          + "\"how many times did I have to get up again\"."),
+                      detail: "How many separate times you got up and stayed up."),
                 .init(term: "Longest flight",
                       detail: "Your longest flight by time, with its distance underneath. "
                           + "Many short flights and one long one can give the same On foil."),
                 .init(term: "Distance",
-                      detail: "Added up from the watch's Doppler speed, not from positions, "
-                          + "because position noise inflates a distance at low speed. It "
-                          + "covers flying, taxiing and drifting."),
+                      detail: "How far you went, flying, taxiing and drifting. It adds up the "
+                          + "watch's measured speed rather than positions, because position "
+                          + "noise inflates a distance at low speed."),
             ],
             related: [.turnOutcomes, .takeoffAttempts, .whichWatch]),
 
@@ -966,12 +971,10 @@ public enum HelpCatalog {
             title: "Tacks, jibes and course changes",
             summary: "What counts as a turn, and what is just a change of direction.",
             body: [
-                "A turn is detected from your course. It needs at least 60° of net heading "
-                + "change within 8 seconds, with a peak rate of 25°/s. You must be on the "
-                + "foil, or within 3 s of it.",
-                "It must also carve a real arc. That means at least 12 m of path, at an "
-                + "effective radius of at least 6 m. A rider spinning around beside the "
-                + "board carves no arc.",
+                "Every jibe and tack you carve counts as a turn. To count, it needs 60° of "
+                + "heading change inside 8 s, on the foil or within 3 s of it.",
+                "It must also carve a real arc. That means at least 12 m of path, at a "
+                + "radius of 6 m or more. Spinning around beside the board carves no arc.",
                 "What kind of turn it was depends on the wind axis:",
             ],
             items: [
@@ -999,15 +1002,16 @@ public enum HelpCatalog {
             title: "Turn outcomes: flew through, touchdown, fell in",
             summary: "What actually happened to the foil in the turn.",
             body: [
-                "Every turn gets one of three outcomes. The judgement runs from the turn "
-                + "start until you are flying again. That means speed back above 70 % of "
-                + "your entry speed for 2 seconds. The window is capped at 12 seconds.",
+                "Every turn ends one of three ways: you flew through, touched down, or fell "
+                + "in. CleanJibe watches from the turn start until you are flying again.",
+                "Flying again means 2 s back above 70 % of your entry speed. The window "
+                + "closes after 12 s.",
                 "A jibe exited at marginal speed can bleed off for 6 to 12 seconds before "
                 + "the foil stalls. That mush-out is the jibe's fault. A jibe you power out "
                 + "of closes its window in a second or two.",
-                "CleanJibe reads three things inside it. Your speed is always read. So is "
-                + "the barometer, because a wrist under water looks like a huge drop in "
-                + "altitude. On a CleanJibe watch recording, the accelerometer is read too.",
+                "Inside that window, your speed is always read. So is the barometer, because "
+                + "a wrist under water looks like a huge drop in altitude. On a CleanJibe "
+                + "watch recording, the accelerometer is read too.",
             ],
             items: [
                 .init(term: "Flew through",
@@ -1038,18 +1042,18 @@ public enum HelpCatalog {
         // tests below are its three, in its order.
         HelpTopic(
             id: .turnSuccess, section: .readNumbers, subsection: .turns, title: "Clean jibes",
-            summary: "A jibe you fly all the way through without losing much speed. The "
-                + "10 seconds after it stay quiet too.",
+            summary: "The jibe you were working for: foil up the whole way, speed held, "
+                + "straight back to riding.",
             body: [
-                "A turn that **flew through** never lost the foil, from its start until you "
-                + "were flying again. A **clean** jibe flew through, held its speed, and "
-                + "stayed quiet after.",
-                "Holding the speed: your minimum speed through the turn stays at or above "
-                + "70 % of your entry speed. You never drop below the foil exit speed.",
-                "Staying quiet means the 10 seconds after the turn. They hold no touchdown "
-                + "or fall, no second or more off the foil, and no wrist under water.",
-                "So clean is a strict subset of flew through. A jibe that held its speed "
-                + "and then lost the foil coming out is not clean.",
+                "This is the jibe you were working for. A **clean** jibe passes three gates: "
+                + "it flew through, held its speed, and stayed quiet for the 10 s after.",
+                "**Flew through** means you never lost the foil until you were flying again.",
+                "Holding the speed means your slowest point stays at or above 70 % of your "
+                + "entry speed. You never drop below the foil exit speed.",
+                "Staying quiet means the 10 s after the turn hold no touchdown or fall. They "
+                + "also hold no second or more off the foil, and no wrist under water.",
+                "Every clean jibe also flew through. A jibe that flew through can still "
+                + "miss clean, if you lost speed or touched down coming out.",
             ],
             // **The four glossary lines went on 26 September 2026.** Flew through, Clean,
             // Speed kept and Dry were items here, copied out of `MetricGlossary`, so the
@@ -1136,15 +1140,14 @@ public enum HelpCatalog {
             title: "Pumps to takeoff",
             summary: "How many strokes each flight cost you.",
             body: [
-                "The takeoff run starts at the rising speed before the flight. It starts "
-                + "at the pump burst that led into it, if that came first. So the count is "
-                + "the strokes of the effort that produced the flight.",
-                "Takeoffs under 3 strokes are counted as free: you got up on the wind alone. "
-                + "That is a fact about the conditions, so free takeoffs are kept out of the "
-                + "averages and reported separately.",
-                "Runs the recording cut short are left out of the averages. They still "
-                + "count as takeoffs that worked: the flight happened, only its cost is "
-                + "unknown.",
+                "Every flight shows how many pump strokes it took to get up. The count "
+                + "starts at the rising speed before the flight, or at the pump burst that "
+                + "led into it.",
+                "Under 3 strokes is a free takeoff: the wind got you up alone. Free takeoffs "
+                + "say more about the conditions than about you. They stay out of the "
+                + "averages and are shown on their own.",
+                "When the recording cut a run short, its cost is unknown. The flight still "
+                + "counts as a takeoff that worked, but it stays out of the averages.",
             ],
             related: [.takeoffAttempts, .pumpStrokes, .heartRate]),
 
@@ -1163,17 +1166,16 @@ public enum HelpCatalog {
         HelpTopic(
             id: .heartRate, section: .readNumbers, subsection: .effortWind,
             title: "Heart rate: cost and coverage",
-            summary: "What an attempt costs in heartbeats, and when that can be trusted.",
+            summary: "How hard each takeoff hit you, and when to trust the number.",
             body: [
-                "Heart-rate cost is the rise from your baseline just before an effort to the peak "
-                + "that follows. The baseline is the median of the 10 seconds ending at the "
-                + "start of the takeoff run.",
-                "The peak is searched 30 seconds forward, because an optical wrist sensor "
-                + "trails effort by 10 to 20 seconds. Negative values are reported rather than "
-                + "hidden: \"still recovering when you started\" is a different fact from "
-                + "\"this cost nothing\".",
-                "The card does not appear on a session whose recording has no usable heart "
-                + "rate. Nothing here is estimated when the sensor was silent.",
+                "Heart-rate cost shows how hard each takeoff hit you. It is how far your "
+                + "pulse climbed from just before the pumping to its peak.",
+                "Your baseline is the median of the 10 s before the takeoff run. The peak is "
+                + "searched 30 s forward, because a wrist sensor trails effort by 10 to 20 s.",
+                "A negative cost means you were still recovering when you started. That is "
+                + "not the same as a takeoff that cost nothing.",
+                "The card does not appear when your recording has no usable heart rate. "
+                + "Nothing is estimated while the sensor was silent.",
             ],
             items: [
                 .init(term: "Coverage",
@@ -1182,7 +1184,7 @@ public enum HelpCatalog {
                           + "is shown."),
                 .init(term: "Why it drops out",
                       detail: "A wrist sensor under a wetsuit sleeve in cold water drops out "
-                          + "and sticks. A made-up average is worse than a missing one."),
+                          + "and sticks. Then you see no number rather than a guess."),
                 .init(term: "The fatigue chart",
                       detail: "Your session in 20-minute blocks, each showing what its "
                           + "takeoffs cost, with the share of attempts that got up underneath. "
@@ -1199,9 +1201,10 @@ public enum HelpCatalog {
             title: "Wind axis & confidence",
             summary: "The wind direction worked out from how you actually rode.",
             body: [
-                "No weather station is involved. The estimate comes from your own track. "
-                + "CleanJibe looks at the headings you flew and finds your two main "
-                + "reaching directions. The wind axis is the line halfway between them.",
+                "Your turns become tacks and jibes because CleanJibe knows the wind. It "
+                + "works the wind out from your own track, with no weather station.",
+                "It finds your two main reaching directions in the headings you flew. The "
+                + "wind axis is the line halfway between them.",
                 "That gives an axis but not a side. The no-go zone breaks the tie. Of the "
                 + "two ends, the wind came from the one you rode almost nothing within "
                 + "±45° of.",

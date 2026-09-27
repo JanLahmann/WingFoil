@@ -71,8 +71,8 @@ public enum GettingStartedGuide {
     /// test actually is. First on purpose, on both surfaces.
     public static let framing =
         "Ride one session as you always do, then open it in CleanJibe. Every turn gets a "
-            + "verdict: flew through, touchdown, or fell in. You were there, so you can tell "
-            + "us where it got one wrong."
+            + "verdict: flew through, touchdown, or fell in. We ride too, so tell us where it "
+            + "read one of yours wrong."
 
     /// The topic's own index line.
     public static let topicSummary =
@@ -82,49 +82,55 @@ public enum GettingStartedGuide {
     /// watches, how a Garmin session gets in, and the file way. The web page
     /// has its own sections for the same facts, so it does not print these.
     public static let appParagraphs: [String] = [
-        "CleanJibe works with Garmin, Strava and other watches. The Apple Watch app is in beta.",
-        "Garmin does not share your sessions directly, so CleanJibe gets them through "
-            + "intervals.icu. It is free and takes about 5 minutes. Set it up once in "
-            + "Settings → intervals.icu. After that, every session syncs by itself.",
+        "Ride with the watch you already have. Your session comes into CleanJibe, and every "
+            + "turn gets a verdict.",
+        "On a Garmin, ride as always, with Windsurf or any other watersport profile. Set up "
+            + "intervals.icu once in Settings → intervals.icu. It is free, takes about 5 "
+            + "minutes, and your old sessions come in too.",
+        "Want more out there? The CleanJibe watch app buzzes each verdict on your wrist. It "
+            + "counts your pump strokes and takeoff attempts, and keeps your dry streak on "
+            + "the glass.",
         "You can also open a .fit file straight from Files, Mail or a message. It can be "
             + "yours, or one a friend sent you.",
+        "We ride too. We built CleanJibe for the jibes we were chasing ourselves.",
     ]
 
     /// The ways in, in the order the app and the page list them.
     public static let routes: [GettingStartedRoute] = [
         GettingStartedRoute(
             id: "garmin",
-            title: "Garmin with the CleanJibe watch app",
+            title: "Garmin, as you ride today",
             channel: .release,
-            classID: "a",
-            summary: "Install it from Connect IQ, then ride and save. The watch shows live "
-                + "numbers and a summary, and the session reaches CleanJibe through "
-                + "intervals.icu.",
+            classID: "b",
+            summary: "Ride as always, with Windsurf or any watersport profile. Connect "
+                + "intervals.icu once, and your old sessions come in too. The CleanJibe watch "
+                + "app adds verdicts on your wrist.",
             steps: [
                 .init(number: 1,
-                      title: "Install the watch app",
-                      detail: "**CleanJibe Wingfoil Tracker (Beta)** is on the Connect IQ "
-                          + "store. Take it from the web, or from Connect IQ inside the "
-                          + "Garmin Connect app. No key, no account."),
+                      title: "Ride as always",
+                      detail: "Record with Garmin's Windsurf profile, or SUP, Kitesurf or "
+                          + "Surfing. CleanJibe takes every watersport session, and anything "
+                          + "named wing or foil."),
                 .init(number: 2,
-                      title: "Record and save",
-                      detail: "Charge the watch and the phone. Press START, pick "
-                          + "**CleanJibe**, wait for GPS good, press START again. Ride. "
-                          + "Glance at the tally once. Then STOP and **Save**."),
+                      title: "Connect intervals.icu once",
+                      detail: "Make a free account at intervals.icu and connect Garmin there. "
+                          + "Copy your personal API key into Settings → **intervals.icu**. It "
+                          + "takes about 5 minutes."),
                 .init(number: 3,
-                      title: "Let Garmin Connect sync",
-                      detail: "The watch uploads to Garmin Connect by itself next to the "
-                          + "phone. Open Garmin Connect once if it is taking its time."),
+                      title: "Your old sessions come in too",
+                      detail: "CleanJibe brings in your last two years of sessions and "
+                          + "analyses each one as it lands. After a ride, pull down on "
+                          + "Sessions and the new one is on top."),
                 .init(number: 4,
-                      title: "Bridge it with intervals.icu",
-                      detail: "Free account at intervals.icu, connect Garmin there, copy your "
-                          + "personal API key, paste it into Settings → **intervals.icu**. 4 "
-                          + "steps, about 5 minutes, once."),
+                      title: "Want more? Install the watch app",
+                      detail: "**CleanJibe Wingfoil Tracker (Beta)** on Connect IQ buzzes each "
+                          + "verdict on your wrist. It counts pump strokes and takeoff "
+                          + "attempts, and shows your dry streak."),
                 .init(number: 5,
-                      title: "Pull down on Sessions",
-                      detail: "That is the refresh: CleanJibe checks intervals.icu, imports "
-                          + "what is new and analyses it as it lands. Your session appears at "
-                          + "the top."),
+                      title: "Record and save with it",
+                      detail: "Press START, pick **CleanJibe**, wait for GPS good and press "
+                          + "START again. To finish, press START to pause, then BACK and "
+                          + "**Save**."),
                 .init(number: 6,
                       title: "No intervals.icu? The long way",
                       detail: "connect.garmin.com → the activity → the gear icon → **Export "
@@ -305,8 +311,9 @@ public enum GettingStartedGuide {
                           + "marked among them."),
                 .init(number: 2,
                       title: "Say where it disagrees with you",
-                      detail: "A jibe you know you flew through, marked as a touchdown. A swim "
-                          + "it never noticed, or a wind direction you did not sail in."),
+                      detail: "Maybe it marked a jibe you flew through as a touchdown. Maybe "
+                          + "it missed a time you fell in, or found a wind you did not sail "
+                          + "in."),
                 .init(number: 3,
                       title: "Send it from the app",
                       detail: "Menu → **Support & ideas** fills in your build, phone, iOS "
@@ -329,8 +336,9 @@ public enum GettingStartedGuide {
     /// detour exists at all, in one breath. The longer version, for the setup
     /// card and the help topic, is `IcuSetupGuide.rationale`.
     public static let settingsIcu =
-        "Garmin has no open API, so intervals.icu is the bridge. Connect your Garmin there "
-            + "once, and every session arrives here by itself. It is free."
+        "Your Garmin sessions arrive here by themselves, your old ones too. Garmin has no open "
+            + "API, so intervals.icu is the bridge. Connect your Garmin there once. It is "
+            + "free."
 
     /// **Settings → Strava**, the caption above the connect button: what this
     /// account is for, and what it costs. The footer under the button says the
