@@ -39,10 +39,13 @@ public enum IcuSetupGuide {
     /// true: a shared `.fit` and a Garmin export ZIP both work, and a rider who does not
     /// want a third-party account read that sentence as a wall. The alternatives are named
     /// here rather than left to a troubleshooting item at the bottom of a different topic.
+    ///
+    /// **The rider first** (UX review, 27 September 2026): what he gets, his old sessions
+    /// included, before the reason Garmin needs a bridge at all.
     public static let rationale =
-        "The easiest way in is intervals.icu. Garmin has no open API, so intervals.icu "
-        + "receives your activities and hands CleanJibe the original recording. You can "
-        + "also open a .fit by hand, from Files, Mail or a Garmin export ZIP."
+        "Your Garmin sessions come in by themselves, your old ones too. The easiest way is "
+        + "intervals.icu, because Garmin has no open API. You can also open a .fit by hand, "
+        + "from Files, Mail or a Garmin export ZIP."
 
     /// The same point in one breath, for the setup card — where the four steps below it
     /// are what the reader is actually there for.
@@ -88,9 +91,12 @@ public enum IcuSetupGuide {
         IcuSetupStep(
             number: 4,
             title: "Paste the key into CleanJibe",
-            detail: "Paste it into the field below. In the app that field is "
-                + "Settings → intervals.icu. Tap " + saveButton
-                + ". CleanJibe verifies it and says how many activities it can see.",
+            // **True wherever it is read** (UX review, 27 September 2026). It said "the
+            // field below", and the Help topic has no field at all; the button under the
+            // step opens the section it names.
+            detail: "In CleanJibe, open Settings → intervals.icu and paste the key. Tap "
+                + saveButton + ". CleanJibe checks it and says how many activities it can "
+                + "see.",
             action: .openIcuSettings),
     ]
 

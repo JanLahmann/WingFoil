@@ -417,8 +417,10 @@ def pin_ciq_title(site: Site, phrases: dict, report: Report):
 # a store page, and phrases.json already owns it for the two pinned spans. Until this pin
 # existed, web/start/index.html printed two different names for one listing 150 lines
 # apart, one of which the store does not show (ux-audit B2, change #6).
+# The step's title may lead in (27 September 2026: "Want more? Install the watch app", the
+# Garmin route's invitation after the stock-profile way in), so the pin reads the tail.
 GUIDE_INSTALL_STEP = re.compile(
-    r"<h[1-6][^>]*>\s*Install the watch app\s*</h[1-6]>\s*<p>\s*<strong>(.*?)</strong>", re.S)
+    r"<h[1-6][^>]*>[^<]*Install the watch app\s*</h[1-6]>\s*<p>\s*<strong>(.*?)</strong>", re.S)
 
 
 def pin_ciq_title_in_guide(want: str, report: Report):
@@ -431,7 +433,7 @@ def pin_ciq_title_in_guide(want: str, report: Report):
     step = GUIDE_INSTALL_STEP.search(block.group(0))
     if not step:
         report.fail("web/start/index.html", "phrases.ciqListingTitle",
-                    'the generated guide has no "Install the watch app" step opening with a '
+                    'the generated guide has no "… Install the watch app" step opening with a '
                     "bolded listing name — re-scope this pin, do not delete it")
         return
     got = flat(html_module.unescape(re.sub(r"<[^>]+>", "", step.group(1))))

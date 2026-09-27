@@ -33,7 +33,7 @@
       "title" : "Generate your personal API key"
     },
     {
-      "detail" : "Paste it into the field below. In the app that field is Settings → intervals.icu. Tap Save & check. CleanJibe verifies it and says how many activities it can see.",
+      "detail" : "In CleanJibe, open Settings → intervals.icu and paste the key. Tap Save & check. CleanJibe checks it and says how many activities it can see.",
       "title" : "Paste the key into CleanJibe"
     }
   ]

@@ -49,8 +49,22 @@ import Testing
         #expect(GettingStartedGuide.framing.hasPrefix("Ride one session as you always do"))
         #expect(Self.topic.body == GettingStartedGuide.appParagraphs)
         #expect(Self.topic.items.last?.term == "Tell us what you saw")
-        #expect(Self.topic.body.first?.contains("Garmin, Strava and other watches") == true)
-        #expect(Self.topic.body.first?.contains("Apple Watch app is in beta") == true)
+        // Rider first (UX review, 27 September 2026): the first line is the watch you
+        // already have, and no beta talk opens a release build's help.
+        #expect(Self.topic.body.first?.hasPrefix("Ride with the watch you already have") == true)
+        #expect(!Self.topic.body.joined(separator: " ").contains("beta"))
+        // The Garmin rider's own way in comes before the invitation to the watch app, and
+        // it says his old sessions come too.
+        let garmin = Self.topic.body.firstIndex { $0.hasPrefix("On a Garmin") }
+        let watchApp = Self.topic.body.firstIndex { $0.contains("CleanJibe watch app") }
+        if let garmin, let watchApp {
+            #expect(garmin < watchApp)
+            #expect(Self.topic.body[garmin].contains("old sessions"))
+        } else {
+            Issue.record("the Garmin paragraph or the watch-app invitation is missing")
+        }
+        // We ride too, and say so once.
+        #expect(Self.topic.body.contains { $0.hasPrefix("We ride too") })
     }
 
     /// **Self-contained** (F5d, 25 September 2026): no line and no link sends a rider who
