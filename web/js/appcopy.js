@@ -386,6 +386,23 @@ export const WELCOME = {
 export const WHATS_NEW = [
   {
     "version": "1.0.1",
+    "build": 115,
+    "channel": "beta",
+    "date": "2026-09-27",
+    "title": "Your afternoon, told",
+    "lines": [
+      "Every session tells its story in one line, and a record shows right where you set it.",
+      "The turn page leads with the verdict, and a miss comes with one plain tip.",
+      "Not how you remember a turn? Tell us from the turn page itself.",
+      "Clean means the same everywhere: flew through, held your speed, then 10 quiet seconds on the foil.",
+      "Speed records say measured or estimated, and the card never prints your falls.",
+      "Trends tells you how the season is going, with a line on every chart.",
+      "Getting started brings in the sessions you already have, from any Garmin profile.",
+      "Trips and seasons get a tack bar beside the jibes."
+    ]
+  },
+  {
+    "version": "1.0.1",
     "build": 113,
     "channel": "beta",
     "date": "2026-09-26",
