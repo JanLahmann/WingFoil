@@ -90,7 +90,9 @@ print, in this order and for this reason:
    15 September 2026 the instructions live IN the app (Jan: never send a rider to the
    website for them): one sentence on the real test — one session on the
    water, read the turn verdicts against what you remember — then the routes as items,
-   Garmin with the CleanJibe watch app first, any .fit second, Strava third, the
+   Garmin as you ride today first (any watersport profile through intervals.icu, old
+   sessions included, with the CleanJibe watch app as the invitation to more), any .fit
+   second, Strava third, the
    three-to-five-minute walk as "if you cannot wait for wind", where to send what you find,
    and the web page named last as the same guide. The two Apple routes are beta topics it
    links to, so the release never names them. Word budgets are enforced by `HelpBudgetTests`.
