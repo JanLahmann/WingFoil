@@ -282,7 +282,7 @@ struct ShareComposerView: View {
     private var sendToDeveloperRow: some View {
         VStack(alignment: .leading, spacing: 4) {
             Button { showSendToDeveloper = true } label: {
-                Label("Send this session to the developer",
+                Label("Send this session to us",
                       systemImage: "text.bubble.badge.clock")
                     .frame(maxWidth: .infinity)
             }

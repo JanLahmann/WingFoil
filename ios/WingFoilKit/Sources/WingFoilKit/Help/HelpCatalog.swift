@@ -1566,7 +1566,7 @@ public enum HelpCatalog {
                 + "to improve the analysis, and we never publish it.",
                 "You see the whole mail before it goes. Edit any line, delete any line, or "
                 + "close it and nothing is sent.",
-                "Open a session, tap Share, then Send this session to the developer.",
+                "Open a session, tap Share, then Send this session to us.",
             ],
             related: [.shareFit, .divergence]),
 

@@ -28,6 +28,10 @@ struct TurnDetailSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var selection: Int
+    /// Bumped whenever the page on screen is a clean jibe — on the open and on every swipe
+    /// onto one — and the success haptic follows it. A counter rather than the selection so
+    /// swiping between two clean jibes taps twice and a touchdown never taps.
+    @State private var cheers = 0
 
     init(detail: SessionDetail, start: Int) {
         self.detail = detail
@@ -57,6 +61,11 @@ struct TurnDetailSheet: View {
             // One per visit to the turn page, not one per swipe: the question the beta has
             // is whether the page is reached at all.
             .task { Usage.record(.turnPage) }
+            // The clean jibe gets its moment (UX review #5, 27 Sep 2026): one short success
+            // tap as it comes on screen, the same feedback the Records page gives a new best.
+            .onAppear { cheerIfClean(selection) }
+            .onChange(of: selection) { _, new in cheerIfClean(new) }
+            .sensoryFeedback(.success, trigger: cheers)
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -86,34 +95,45 @@ struct TurnDetailSheet: View {
         .presentationDragIndicator(.visible)
     }
 
-    /// **"Turn 7 of 12"** — the name of the screen, and where in the set you are.
-    ///
-    /// Pattern A (docs/review-checklist.md): the title used to be *"Jibe 7 · flew through"*,
-    /// which is the turn's *content*. A screen titled by its content has no name a rider can
-    /// ask for, and the swipe position was a caption underneath. The word is the name, the
-    /// ordinal is content, and the content moves to `subtitle` — which is where the kind and
-    /// the verdict now are, unchanged.
-    private var title: String {
-        guard let position else { return "Turn" }
-        return "Turn \(position) of \(indices.count)"
+    private func cheerIfClean(_ index: Int) {
+        guard detail.analysis.turns.indices.contains(index),
+              detail.analysis.turns[index].clean else { return }
+        cheers += 1
     }
 
-    /// "Jibe 7 · flew through · swipe for the next" — the session map's own wording for the
-    /// turn (`SessionDetail.turnTitle`), with the rider's ordinal in front of it. The ordinal
-    /// counts turns of the same *kind*, because "jibe 7" is what a rider means: it is his
-    /// seventh jibe, not the seventh thing the detector saw.
+    /// **"Jibe 2 of 5"** — the turn, counted among its own kind (UX review #5, 27 Sep 2026).
+    ///
+    /// "Jibe 2" is what a rider means: his second jibe, not the second thing the detector
+    /// saw. The title used to be "Turn 7 of 12" (pattern A: a screen needs a name, and the
+    /// verdict is content), and it still is no verdict: that moved to the hero word under
+    /// the drawing, where it is large. "of 5" says how many jibes the afternoon held.
+    private var title: String {
+        TurnDetailSheet.kindPosition(of: selection, in: detail)
+            .map { "\($0.kind) \($0.ordinal) of \($0.count)" } ?? "Turn"
+    }
+
+    /// "42:15 · turn 7 of 12" — when on the session clock, as the Turns list prints it, and
+    /// where in the swipe set you are. The set mixes jibes and tacks, so the title's "of 5"
+    /// is not the swipe count and this line is. "swipe for the next" went: the page dots of
+    /// every iPhone pager say it, and it sat inside the content line (UX review #5).
     private var subtitle: String {
-        guard detail.analysis.turns.indices.contains(selection) else {
-            return "swipe for the next"
+        guard detail.analysis.turns.indices.contains(selection), let position else {
+            return ""
         }
         let turn = detail.analysis.turns[selection]
-        let ordinal = indices
-            .filter { detail.analysis.turns[$0].type == turn.type }
-            .firstIndex(of: selection)
-            .map { $0 + 1 }
-        let kind = TurnAnalytics.typeLabel(turn.type)
-        let head = ordinal.map { "\(kind) \($0)" } ?? kind
-        return "\(head) · \(TurnOutcomeKind(turn.outcome).label) · swipe for the next"
+        return Fmt.clock(turn.ts) + " · turn \(position) of \(indices.count)"
+    }
+
+    /// The turn's kind, its ordinal among the counted turns of that kind, and how many
+    /// there are — the title's three numbers and the doubt mail's first line.
+    static func kindPosition(of index: Int, in detail: SessionDetail)
+        -> (kind: String, ordinal: Int, count: Int)? {
+        let turns = detail.analysis.turns
+        guard turns.indices.contains(index) else { return nil }
+        let type = turns[index].type
+        let same = turns.indices.filter { turns[$0].counted && turns[$0].type == type }
+        guard let at = same.firstIndex(of: index) else { return nil }
+        return (TurnAnalytics.typeLabel(type), at + 1, same.count)
     }
 }
 
@@ -205,6 +225,7 @@ private struct TurnDetailPage: View {
                                       windUp: windUp, playheadRt: playheadRt,
                                       onPick: { playheadRt = $0 })
                     if !slice.hasGeometry { noGeometryNote }
+                    verdict(turn, slice: slice)
                     TurnDetailStripView(slice: slice, ghost: showsGhost ? ghost : nil,
                                         windows: .init(config: detail.analysis.config),
                                         pumps: pumpTicks(turn),
@@ -213,7 +234,6 @@ private struct TurnDetailPage: View {
                     extraStrips(slice)
                     #endif
                     numbers(turn, slice: slice)
-                    coach(turn, slice: slice)
                     #if TUNING
                     // The dev build's turn workbench (docs/presentation/channels-tuning.md, "Tuning this
                     // turn"): the ground-truth label, the outcome ladder's working, the
@@ -223,6 +243,7 @@ private struct TurnDetailPage: View {
                     // testers get.
                     DevTurnWorkbenchLink(detail: detail, index: index)
                     #endif
+                    TurnDoubtButton(detail: detail, index: index)
                     footnote(turn)
                 } else {
                     ProgressView().frame(maxWidth: .infinity, minHeight: 200)
@@ -389,16 +410,11 @@ private struct TurnDetailPage: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
+            // The outcome and the star are the hero's now (`verdict`), so the chips are the
+            // facts beside the verdict: why a flown jibe lost its star, the pump-out, the
+            // wrist. Saying "touchdown" large and again in a chip was one fact twice.
             HStack(spacing: 8) {
-                chip(TurnOutcomeKind(turn.outcome).label,
-                     symbol: TurnOutcomeKind(turn.outcome).symbolName,
-                     tint: TurnOutcomeStyle.color(TurnOutcomeKind(turn.outcome)))
-                // The engine's `clean` verdict, not the score flag beside it: a jibe that
-                // held its speed and still went in wears the outcome chip alone.
-                if turn.clean {
-                    chip("clean", symbol: DesignTokens.Glyph.cleanJibe,
-                         tint: DesignTokens.Clean.jibe)
-                } else if let reason = notCleanText(turn) {
+                if !turn.clean, let reason = notCleanText(turn) {
                     // A jibe that flew through and held its speed and is still not clean
                     // (engine 0.17.0). Without this the page said "flew through", said
                     // nothing else, and left the missing star looking like a bug. The star
@@ -507,14 +523,37 @@ private struct TurnDetailPage: View {
         }
     }
 
-    // MARK: - The sentence
+    // MARK: - The verdict and the sentence
 
-    private func coach(_ turn: TurnRecord, slice: TurnSlice) -> some View {
-        Text(TurnCoach.line(turn: turn, slice: slice, pumpStrokes: pumpStrokes))
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity, alignment: .leading)
+    /// **The verdict, large, and the coach line under it** (UX review #5 and #6, 27 Sep
+    /// 2026). The word a rider opened the page to read — "Clean", "Flew through",
+    /// "Touchdown", "Fell in" — in its outcome ink, with the star on a clean one. Then the
+    /// one sentence about where the speed went and, on a turn that was not clean, what to
+    /// try next time (`TurnCoach.tip`). The sentence used to sit under the numbers card,
+    /// below six cells of facts; it is the page's story, so it comes straight after the
+    /// word it explains.
+    private func verdict(_ turn: TurnRecord, slice: TurnSlice) -> some View {
+        let kind = TurnOutcomeKind(turn.outcome)
+        let ink = turn.clean ? DesignTokens.Clean.jibe : TurnOutcomeStyle.color(kind)
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(TurnCoach.verdictWord(turn))
+                    .font(.largeTitle.weight(.bold))
+                    .foregroundStyle(ink)
+                Image(systemName: turn.clean ? DesignTokens.Glyph.cleanJibe : kind.symbolName)
+                    .font(.title2)
+                    .foregroundStyle(ink)
+                    .accessibilityHidden(true)
+                Spacer(minLength: 0)
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.isHeader)
+            Text(TurnCoach.line(turn: turn, slice: slice, pumpStrokes: pumpStrokes,
+                                quietS: detail.analysis.config.turnCleanQuietS))
+                .font(.body)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
     }
 
     #if TUNING
@@ -552,11 +591,12 @@ private struct TurnDetailPage: View {
                 + Copy.northAndWind
             Text(drawn + ticks)
             Text("Tap the drawing for the reading at that sample. The strips follow it.")
-            Text("Score is how much of your entry speed you held through the turn.\n\n"
-                 + "Speed here is the manoeuvre channel the verdict was scored on, "
-                 + "derived from position. "
-                 + "The GPS Doppler speed the records use is smoothed through a turn. "
-                 + "It would read lower at the low point.")
+            // "Score is…" and the paragraph on the manoeuvre channel and the Doppler speed
+            // went to the help (UX review #9, 27 Sep 2026): the page prints "held 87 %",
+            // never "score", and which speed channel the verdict was scored on is a
+            // mechanic for the interested rider, one tap away. The channel fact's home is
+            // docs/presentation/turn-detail.md, "The strip".
+            TurnHelpLink()
             // The windows are read off this analysis' own config echo, not `TurnConfig()`:
             // on a dev build with tuning on, the defaults are exactly what these are not.
             let windows = TurnDetailStripView.Windows(config: detail.analysis.config)
@@ -589,5 +629,80 @@ private struct TurnDetailPage: View {
         .font(.caption2)
         .foregroundStyle(.readableSecondary)
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+/// The `?` onto the clean-jibe topic at the foot of the turn page, with its own sheet so the
+/// page owns none.
+private struct TurnHelpLink: View {
+    @State private var topic: HelpTopicID?
+
+    var body: some View {
+        HelpTopicLink(.turnSuccess) { topic = .turnSuccess }
+            .sheet(item: $topic) { HelpTopicSheet(id: $0) }
+    }
+}
+
+/// **"Not how I remember it?"** — the doubt, answered where it arises (UX review #4,
+/// 27 Sep 2026), in every channel.
+///
+/// The beta and dev builds open the send sheet with this session's recording and the turn
+/// already named in the note (`SendToDeveloperSheet`, docs/channels.md "Send a session to
+/// us", beta). The App Store build has no send sheet and no attachment path, so there the
+/// same button opens the ordinary feedback mail with the same first line and no file.
+private struct TurnDoubtButton: View {
+    let detail: SessionDetail
+    let index: Int
+
+    #if BETA
+    @State private var sending = false
+    #else
+    @State private var request = 0
+    #endif
+
+    private var note: String? {
+        guard let position = TurnDetailSheet.kindPosition(of: index, in: detail) else {
+            return nil
+        }
+        let turn = detail.analysis.turns[index]
+        return TurnDoubt.note(kind: position.kind, ordinal: position.ordinal,
+                              count: position.count, clock: Fmt.clock(turn.ts),
+                              verdict: TurnCoach.verdictWord(turn))
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Button(action: open) {
+                Label(TurnDoubt.button, systemImage: "text.bubble")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            #if BETA
+            Text(TurnDoubt.betaHint)
+                .font(.caption2)
+                .foregroundStyle(.readableSecondary)
+                .frame(maxWidth: .infinity)
+            #else
+            Text(TurnDoubt.releaseHint)
+                .font(.caption2)
+                .foregroundStyle(.readableSecondary)
+                .frame(maxWidth: .infinity)
+            #endif
+        }
+        #if BETA
+        .sheet(isPresented: $sending) {
+            SendToDeveloperSheet(row: detail.row, detail: detail, prefill: note ?? "")
+        }
+        #else
+        .feedbackMail(on: $request, session: detail.row, note: note)
+        #endif
+    }
+
+    private func open() {
+        #if BETA
+        sending = true
+        #else
+        request += 1
+        #endif
     }
 }

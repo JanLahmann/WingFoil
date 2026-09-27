@@ -1153,7 +1153,7 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    ("Two devices, one library", below).
 
    `UI_SHARE=fit` opens the share sheet on the recording tab, and **`UI_SHARE=developer`**
-   raises *Send this session to the developer* over it (`SendToDeveloperSheet`, beta
+   raises *Send this session to us* over it (`SendToDeveloperSheet`, beta
    channels only, like the row that opens it): both are taps `simctl` cannot make. Pair
    either with `UI_OPEN_SESSION=<name> UI_SHEET=share`.
 

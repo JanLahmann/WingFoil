@@ -460,7 +460,7 @@ between them; the browser draws the same three as a segmented group with the sam
 (`SpeedRecordPolicy.summary`, `SPEED_RECORD_SUMMARY` in `web/js/appshell.js`). Under **Only
 verified** a table that empties says why rather than going blank (pattern G).
 
-### Send this session to the developer — the Share page's third thing (beta)
+### Send this session to us — the Share page's third thing (beta)
 
 Jan, 21 September 2026. The Card and FIT file segments answer one request, *send this to
 someone*; this answers another, *this number is wrong*, and the only way to chase that is on

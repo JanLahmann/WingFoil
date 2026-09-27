@@ -392,4 +392,27 @@ import Testing
         #expect(items.first { $0.name == "subject" }?.value == subject)
         #expect(items.first { $0.name == "body" }?.value == body)
     }
+
+    // MARK: - Doubting one turn (27 Sep 2026)
+
+    /// Which turn, when, and what the app called it, in one line both mails open with.
+    @Test func theTurnDoubtNoteNamesTheTurn() {
+        #expect(TurnDoubt.note(kind: "Jibe", ordinal: 2, count: 5, clock: "42:15",
+                               verdict: "Touchdown")
+                == "Jibe 2 of 5 at 42:15. CleanJibe says: touchdown.")
+    }
+
+    /// The release build's mail: the note answers the first question, and the rider is left
+    /// the second.
+    @Test func theFeedbackBodyCarriesTheNoteUnderTheFirstQuestion() {
+        let note = "Tack 1 of 3 at 3:07. CleanJibe says: fell in."
+        let lines = FeedbackReport.body(facts(), note: note)
+            .split(separator: "\n", omittingEmptySubsequences: false)
+        #expect(lines[0] == Substring(FeedbackReport.Prompt.what))
+        #expect(lines[1] == Substring(note))
+        #expect(lines[3] == Substring(FeedbackReport.Prompt.expected))
+        #expect(lines[4] == "")
+        // Without a note the mail is exactly what it was.
+        #expect(FeedbackReport.body(facts()) == FeedbackReport.body(facts(), note: nil))
+    }
 }
