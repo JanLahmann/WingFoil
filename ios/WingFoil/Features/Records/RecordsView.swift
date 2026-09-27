@@ -110,7 +110,7 @@ struct RecordsView: View {
                         Text("Session records")
                     } footer: {
                         Text("These are your best afternoons rather than your best "
-                             + "windows, so nothing here is marked certified. A poor "
+                             + "windows, so nothing here is marked estimated. A poor "
                              + "recording can get a speed wrong, but the jibe count and "
                              + "the minutes are not about speed.")
                     }
@@ -186,8 +186,8 @@ struct RecordsView: View {
                 Text(best.headline)
                     .font(.subheadline.weight(.medium))
             }
-            Text("Your best afternoon of clean jibes. Clean: you flew all the way "
-                 + "through and held your speed.")
+            Text("Your best afternoon of clean jibes. Clean: you flew through, held "
+                 + "your speed, then 10 quiet seconds on the foil.")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
@@ -222,7 +222,7 @@ struct RecordsView: View {
         }
         if store.hasOnlyExampleSessions { return ExampleOnlyNote.records }
         if store.speedRecordPolicy == .onlyVerified {
-            return "No verified speed record yet. These recordings worked their speed out "
+            return "No measured speed record yet. These recordings worked their speed out "
                 + "from positions. Settings has the other two answers."
         }
         return "No qualifying speed window under this filter."
@@ -244,9 +244,9 @@ struct RecordsView: View {
         // "Uncertified" is the rider's word for a class-(c) GP3S source: a recording with
         // no Doppler speed channel of its own. It is the badge the row already wears.
         let head = "Doppler speed, GP3S windows. " + String(certified) + " of "
-            + String(records.count) + " come from certified sources. "
-        let tail = "A certified source is the recording device's own speed channel. "
-            + "Uncertified sources are marked.\n\n"
+            + String(records.count) + " have measured speed. "
+        let tail = "Measured speed comes from the watch's own speed channel. "
+            + "Speed estimated from positions is marked.\n\n"
             + "The dot on a record's name says how fresh it is. "
             + "Filled within a month. Hollow within the season. "
             + "Faint when it is older than 6 months."
@@ -479,7 +479,7 @@ private struct RecordRowView: View {
                 HStack(spacing: 6) {
                     if !stacked { Spacer().scaledColumn(columns.name, relativeTo: .subheadline) }
                     if isNew { badge("NEW", Color.accentColor) }
-                    if !best.certified { badge("uncertified", .orange) }
+                    if !best.certified { badge("estimated", .orange) }
                     if best.previousBest == nil, best.history.count == 1 {
                         Text("first session with this record")
                             .font(.caption2)

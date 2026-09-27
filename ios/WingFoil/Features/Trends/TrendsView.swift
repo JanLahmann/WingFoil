@@ -218,8 +218,8 @@ struct TrendsView: View {
         TrendChart(title: "Clean jibes", unit: "per session", points: points,
                    tone: Color.accentColor,
                    value: { $0.cleanJibes.map(Double.init) },
-                   note: "Jibes that flew all the way through and held at least 70 % of "
-                       + "their entry speed. A strict subset of the rate above.")
+                   note: "Jibes that flew through, held at least 70 % of their entry "
+                       + "speed, then 10 quiet seconds on the foil.")
         TrendChart(title: "CPH", unit: "clean jibes / h", points: points,
                    tone: Color.accentColor,
                    value: \.cleanJibesPerHour,
@@ -232,7 +232,7 @@ struct TrendsView: View {
         TrendChart(title: "JPH", unit: "jibes / h", points: points,
                    tone: Color.accentColor,
                    value: \.jibesPerHour,
-                   note: "Jibes you sailed out of, per hour. Swims do not count.")
+                   note: "Jibes you sailed out of, per hour. A jibe you fell in does not count.")
         TrendChart(title: "TPH", unit: "turns / h", points: points,
                    tone: Color.accentColor,
                    value: \.turnsPerHour,
@@ -486,7 +486,7 @@ private struct TrendChart: View {
                 if uncertifiedCount > 0 {
                     Text(String(uncertifiedCount) + " of " + String(series.count)
                          + " had no speed channel. That speed came from positions and "
-                         + "reads high, so it is uncertified.")
+                         + "reads high, so it is marked estimated.")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }

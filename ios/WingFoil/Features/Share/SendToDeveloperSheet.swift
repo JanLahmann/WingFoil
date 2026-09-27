@@ -96,7 +96,7 @@ struct SendToDeveloperSheet: View {
                 .padding()
                 .readableColumn()
             }
-            .navigationTitle("Send to the developer")
+            .navigationTitle("Send to us")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -220,7 +220,7 @@ private struct SendToDeveloperFallbackSheet: View {
                 .padding()
                 .readableColumn()
             }
-            .navigationTitle("Send to the developer")
+            .navigationTitle("Send to us")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {

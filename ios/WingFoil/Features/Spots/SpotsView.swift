@@ -38,20 +38,20 @@ struct SpotsView: View {
                         .buttonStyle(.plain)
                     }
                 } footer: {
-                    Text("Tap to rename. Coordinates are the running centroid of the "
-                         + "sessions that start there.")
+                    Text("Tap to rename. The pin sits in the middle of where your "
+                         + "sessions start.")
                 }
             }
 
             Section {
-                Button("Re-cluster spots") { Task { await store.reclusterSpots() } }
+                Button("Rebuild spots") { Task { await store.reclusterSpots() } }
                     .disabled(store.sessions.isEmpty)
                 Button("Look up names again") { Task { await store.nameSpots() } }
                     .disabled(!spots.contains { $0.spot.autoNamed })
             } footer: {
-                Text("Re-clustering rebuilds every spot from the session coordinates. "
-                     + "The radius is " + String(Int(SpotClusterer.defaultRadiusM))
-                     + " m. Names you typed are kept.")
+                Text("Rebuild spots sorts your sessions into spots again, "
+                     + String(Int(SpotClusterer.defaultRadiusM))
+                     + " m apart. Names you typed stay.")
             }
         }
         .navigationTitle("Spots")

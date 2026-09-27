@@ -246,12 +246,12 @@ struct StravaImportView: View {
                  + "channel.\n\n"
                  + "Strava works speed out from the positions, the same way CleanJibe "
                  + "would. Speed records from these sessions are marked "
-                 + "**uncertified**.\n\n"
+                 + "**estimated**.\n\n"
                  + "Nothing records your wrist, so there are no pump strokes and no "
                  + "failed takeoff attempts.\n\n"
                  + "If the same session is also on intervals.icu, import it there "
-                 + "instead. That is the original file from your watch, and it "
-                 + "certifies.")
+                 + "instead. That is the original file from your watch, and its "
+                 + "speed is measured.")
         }
     }
 

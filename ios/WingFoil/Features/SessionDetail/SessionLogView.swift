@@ -102,7 +102,7 @@ private struct WindDetailCard: View {
         }
         return usable
             ? "Good enough to name turns, so tacks and jibes are called what they are."
-            : "Not good enough to name turns, so the maneuvers stay unnamed rather than "
+            : "Not good enough to name turns, so the manoeuvres stay unnamed rather than "
                 + "being guessed at. Setting the wind on the watch fixes it."
     }
 

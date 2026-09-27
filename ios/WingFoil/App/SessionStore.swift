@@ -736,7 +736,7 @@ final class SessionStore {
         do {
             try await library.recluster()
             await load()
-            status = "Re-clustered into \(spots.count) spot\(spots.count == 1 ? "" : "s")"
+            status = "Sorted into \(spots.count) spot\(spots.count == 1 ? "" : "s")"
             // A re-cluster can mint new places, and the ones it mints wear placeholders.
             // Naming them here is what keeps "Re-cluster spots" from being a button that
             // replaces names with numbers.

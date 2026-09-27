@@ -40,8 +40,8 @@ struct SessionGearCard: View {
                 }
             }
             if options(.wing).isEmpty && options(.board).isEmpty && options(.foil).isEmpty {
-                Text("Add wings, boards and foils on the Gear tab to correlate sessions "
-                     + "with what you rode.")
+                Text("Add your wings, boards and foils on the Gear tab. Then every session "
+                     + "knows what you rode.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
