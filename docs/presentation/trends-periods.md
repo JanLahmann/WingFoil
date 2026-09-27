@@ -14,9 +14,9 @@ three numbers, none of them clean jibes.
 | **Longest flight** | `longestFlightS` |
 | **Flew-through rate** | counted turns that never lost the foil, over counted turns |
 | **Clean jibes** | `jibesSuccessful`, per session |
-| **CPH** | `cleanJibesPerHour` |
-| **JPH** | `jibesPerHour` — dry jibes per hour |
-| **TPH** | `turnsPerHour` — dry counted turns per hour |
+| **CPH** — iOS: *Clean jibes an hour (CPH)* | `cleanJibesPerHour` |
+| **JPH** — iOS: *Dry jibes an hour (JPH)* | `jibesPerHour` — dry jibes per hour |
+| **TPH** — iOS: *Dry turns an hour (TPH)* | `turnsPerHour` — dry counted turns per hour |
 | **Best 2 s** | `records.best2sKn`, in knots |
 | **Flew through by entry tack** | the flew-through share of the turns *entered* on each tack |
 
@@ -44,6 +44,30 @@ as an **open ring** (shape, not a second hue, so it survives a colour-vision che
 word in its tooltip and an `uncertified` badge on the chart head, and iOS writes one caption
 line under the chart — *"1 of 10 had no speed channel…"* — beside the caption it already uses
 for sessions that cannot report a metric at all.
+
+### iOS: a verdict on every chart, the favourites first (27 Sep 2026)
+
+UX review fix 10: Trends was ten lines and no verdict. The iOS page now says how the season
+is going; the web page follows in its own round and still draws the bare codes.
+
+- **One headline per chart**, `TrendHeadline` in the kit: the latest month against the month
+  before, or against every earlier session in the range when that month is empty — *"14 a
+  session this month, up from 9 in August."* A month is summed up the way its metric is
+  defined: the mean a session (clean jibes, pumps, flew-through, port share), the month's
+  totals over its hours (on foil, CPH, JPH, TPH: an hour-weighted mean, which is the Periods
+  rule below), or its best session (longest flight, best 2 s). *"That is your best month yet."* is
+  added when the month beats at least two earlier months; fewer pumps is better, and the
+  port share has no better side. Nothing is said below two sessions in the month or two to
+  compare with.
+- **The season line** above the charts, `SeasonLine`: weeks on the water in a row (a week
+  still under way with no session does not break the run), the best run this season, and
+  this month's clean jibes. Always over the season, whatever the range picker says.
+- **Order**: On foil, Clean jibes, Best 2 s, Longest flight, Flew-through rate, the three
+  rates, Sessions per week; Pumps to takeoff, Port / starboard and Flew through by entry
+  tack fold under **More**, open or shut per device (`trendsShowMore`).
+- **Footers obey Settings → How much to say** (`ExplainedFootnote`): the weeks caption,
+  the custom range and the period page show one line concise; how a week is cut and how a
+  period's rate is divided are in the extensive reading.
 
 ## Trend weeks — ISO-8601, Monday, local
 

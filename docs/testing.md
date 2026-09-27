@@ -1238,8 +1238,8 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    `UI_WELCOME=1` is for photographing it on a simulator with a library in it. Its buttons
    cannot be tapped by `simctl`; the primary one's destination is the ordinary
    session page, reachable with `UI_LOAD_EXAMPLE=1 UI_OPEN_SESSION=example`.
-   On the Trends tab `UI_SCROLL_TO=sideSuccess` parks the screen on the port/starboard
-   turn-success chart, and `UI_SCROLL_TO=best2s` on the speed line — the one chart on that
+   On the Trends tab `UI_SCROLL_TO=sideSuccess` opens **More** and parks the screen on the
+   port/starboard turn-success chart, and `UI_SCROLL_TO=best2s` on the speed line — the one chart on that
    page the Units picker moves, which is why it has an anchor of its own. On the session page,
    `UI_SCROLL_TO=<anchor>` (`chart` for the speed chart, `replay`, `summary`, `turns` for
    the turn cards and the drill-in row, `takeoff`, `takeoffsMap` / `takeoffList` for the

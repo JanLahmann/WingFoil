@@ -48,7 +48,7 @@ struct PeriodsView: View {
                       + "than " + String(PeriodRules.tripGapDays) + " days, at least "
                       + String(PeriodRules.tripMinSessions) + " sessions.")
             group("Months", periods.months,
-                  note: "Calendar months, on the day the rider had.")
+                  note: "Calendar months, by the day you rode.")
             group("Seasons", periods.seasons,
                   note: "1 April to 31 March, so a February session counts towards the "
                       + "winter it belongs to.")
@@ -124,8 +124,12 @@ struct PeriodsView: View {
         } header: {
             Text("A range of your own")
         } footer: {
-            Text("Both dates count. Rates over a period divide the period's own totals. "
-                 + "They are not the average of the sessions' own.")
+            // Concise: one line. The arithmetic sits in the extensive reading
+            // (Settings → How much to say), said once here and once on a period's page.
+            ExplainedFootnote(line: "Both dates count.", topic: nil,
+                              more: ["A rate over your range divides the range's own "
+                                     + "totals. It never averages the sessions' rates."])
+            { _ in }
         }
         .onChange(of: from) { Task { await reloadCustom() } }
         .onChange(of: to) { Task { await reloadCustom() } }
@@ -235,9 +239,11 @@ struct PeriodDetailView: View {
             } header: {
                 Text(period.dateLine)
             } footer: {
-                Text("Rates over a period divide the period's own totals. Clean jibes go "
-                     + "over the hours those afternoons cost. Never the average of the "
-                     + "sessions' own rates.")
+                ExplainedFootnote(line: "Every rate here is over these afternoons' own hours.",
+                                  topic: nil,
+                                  more: ["Clean jibes an hour is every clean jibe of the "
+                                         + "period over all its hours on the water."])
+                { _ in }
             }
             Section {
                 Button {

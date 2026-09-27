@@ -68,5 +68,20 @@
     "path": "web/start/index.html",
     "text": "CleanJibe Wingfoil Tracker (Beta)",
     "why": "the Connect IQ store's own listing title, on the page the getting-started guide is generated into. The kit carries the same exemption for the same string, and the page is read as well since its guide block stopped being skipped. A rider searches the store for the name letter by letter, so the brackets are part of it and not an aside."
+  },
+  {
+    "path": "ios/WingFoil/Features/Trends/TrendsView.swift",
+    "text": "(CPH)",
+    "why": "a chart title that spells the rate out and keeps its code beside it in brackets (UX review fix 10, Jan, 27 Sep 2026). A heading, not a sentence: the code is the label a rider meets on the session page, so the bracket is the glossary, not an aside."
+  },
+  {
+    "path": "ios/WingFoil/Features/Trends/TrendsView.swift",
+    "text": "(JPH)",
+    "why": "a chart title that spells the rate out and keeps its code beside it in brackets (UX review fix 10, Jan, 27 Sep 2026). A heading, not a sentence: the code is the label a rider meets on the session page, so the bracket is the glossary, not an aside."
+  },
+  {
+    "path": "ios/WingFoil/Features/Trends/TrendsView.swift",
+    "text": "(TPH)",
+    "why": "a chart title that spells the rate out and keeps its code beside it in brackets (UX review fix 10, Jan, 27 Sep 2026). A heading, not a sentence: the code is the label a rider meets on the session page, so the bracket is the glossary, not an aside."
   }
 ]

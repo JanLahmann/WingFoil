@@ -17,6 +17,13 @@ struct TrendsView: View {
     @State private var range = TrendRange.season
     @State private var points: [TrendPoint] = []
     @State private var weeks: [WeekBucket] = []
+    /// The season line's own buckets and sessions, whatever the range picker says: a streak
+    /// cut off at four weeks is not the rider's streak.
+    @State private var seasonWeeks: [WeekBucket] = []
+    @State private var seasonPoints: [TrendPoint] = []
+    /// Pumps and the port/starboard pair sit under **More**, folded or open per device
+    /// (UX review fix 10, 27 Sep 2026): the favourites come first, the rest one tap away.
+    @AppStorage("trendsShowMore") private var showMore = false
     /// `UI_OPEN_PERIODS=1` pushes Periods for a screenshot — `simctl` cannot tap the button.
     @State private var openPeriods = false
 
@@ -86,6 +93,11 @@ struct TrendsView: View {
                             .frame(maxWidth: .infinity, minHeight: 220)
                     } else {
                         summaryStrip
+                        if let line = seasonLine {
+                            Text(line)
+                                .font(.subheadline)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                         charts
                     }
                     FeedbackFooter()
@@ -105,7 +117,9 @@ struct TrendsView: View {
                     guard !points.isEmpty,
                           let anchor = ProcessInfo.processInfo.environment["UI_SCROLL_TO"]
                     else { return }
-                    proxy.scrollTo(anchor, anchor: .top)
+                    // The entry-tack chart is folded under More; the hook opens it first.
+                    if anchor == "sideSuccess" { showMore = true }
+                    Task { @MainActor in proxy.scrollTo(anchor, anchor: .top) }
                 }
                 #endif
                 }
@@ -145,6 +159,27 @@ struct TrendsView: View {
         scoped.since = range.since()
         points = (try? await store.library.trend(scoped, policy: store.speedRecordPolicy)) ?? []
         weeks = (try? await store.library.weeks(scoped)) ?? []
+        var season = filter
+        season.since = TrendRange.season.since()
+        if range == .season {
+            seasonWeeks = weeks
+            seasonPoints = points
+        } else {
+            seasonWeeks = (try? await store.library.weeks(season)) ?? []
+            seasonPoints = (try? await store.library.trend(season,
+                                                           policy: store.speedRecordPolicy)) ?? []
+        }
+    }
+
+    /// Weeks in a row and this month's clean jibes, over the season (`SeasonLine`).
+    private var seasonLine: String? {
+        let calendar = Calendar.current
+        let month = calendar.dateInterval(of: .month, for: Date())
+        let thisMonth = seasonPoints.filter { month?.contains($0.date) ?? false }
+        let counted = thisMonth.compactMap(\.cleanJibes)
+        return SeasonLine.text(weekCounts: seasonWeeks.map(\.count),
+                               cleanJibesThisMonth: counted.isEmpty ? nil
+                                   : counted.reduce(0, +))
     }
 
     // MARK: - Headline numbers
@@ -194,22 +229,15 @@ struct TrendsView: View {
         // "On foil" is the *share*; "Foil time" is a duration and belongs to the number of
         // seconds (docs/presentation/labels.md, "Label table"). The web chart has always been
         // titled this; the two now plot one metric under one name.
+        // **The rider's favourites first** (UX review fix 10, 27 Sep 2026): on foil, clean
+        // jibes, best 2 s, longest flight. Then the flew-through rate and the three rates,
+        // then the weeks. Pumps and the two port/starboard charts fold under **More**.
+        // Every chart carries a one-line headline out of `TrendHeadline`: this month against
+        // the one before, and "your best month yet" when it is.
         TrendChart(title: "On foil", unit: "%", points: points,
                    tone: DesignTokens.Phase.flying,
-                   value: \.foilPct, domain: 0...100)
-        TrendChart(title: "Longest flight", unit: "min", points: points,
-                   tone: DesignTokens.Phase.flying,
-                   value: { $0.longestFlightS.map { $0 / 60 } })
-        // **"Flew-through rate", over every counted turn** — the same metric and the same
-        // title the analyzer's chart now carries, where it plotted `successPct` (the
-        // engine's score verdict) under the name "Clean jibe rate". Both platforms draw one
-        // number under one name; the stricter reading is the "Clean jibes" chart below.
-        TrendChart(title: "Flew-through rate", unit: "%", points: points,
-                   tone: DesignTokens.Outcome.flew,
-                   value: \.flewThroughPct, domain: 0...100,
-                   note: "Turns that never lost the foil. Every counted turn, not "
-                       + "jibes alone.")
-        // Clean jibes and CPH are **counts of maneuvers**, not ladder verdicts, so they
+                   value: \.foilPct, domain: 0...100, headline: TrendHeadline.onFoil)
+        // Clean jibes and the rates are **counts of maneuvers**, not ladder verdicts, so they
         // deliberately do not wear `Outcome.flew`: on a page where the green line already
         // means "flew through", a second green line would read as a second flew-through
         // series (the same misread app-ui-review.md §5.2 caught on the entry-tack chart).
@@ -219,24 +247,8 @@ struct TrendsView: View {
                    tone: Color.accentColor,
                    value: { $0.cleanJibes.map(Double.init) },
                    note: "Jibes that flew through, held at least 70 % of their entry "
-                       + "speed, then 10 quiet seconds on the foil.")
-        TrendChart(title: "CPH", unit: "clean jibes / h", points: points,
-                   tone: Color.accentColor,
-                   value: \.cleanJibesPerHour,
-                   note: "Clean jibes per hour of session time.")
-        // **Rates are additive**: CPH keeps the front screen, and the two beside it answer
-        // the other two questions a rider asks about an afternoon — did I get away with the
-        // jibes (JPH), and how busy was it (TPH). Three lines in the order he reads them,
-        // the same three the analyzer draws (docs/algorithms/rates.md, "Session rates"). Both
-        // numerators are dry: a swim is not a maneuver made.
-        TrendChart(title: "JPH", unit: "jibes / h", points: points,
-                   tone: Color.accentColor,
-                   value: \.jibesPerHour,
-                   note: "Jibes you sailed out of, per hour. A jibe you fell in does not count.")
-        TrendChart(title: "TPH", unit: "turns / h", points: points,
-                   tone: Color.accentColor,
-                   value: \.turnsPerHour,
-                   note: "Every counted turn you stayed dry through, per hour.")
+                       + "speed, then 10 quiet seconds on the foil.",
+                   headline: TrendHeadline.cleanJibes)
         // The one speed line on the page, in the rider's unit like every other speed in
         // both apps (Settings → Units). The series itself is converted, not just the
         // caption: an axis counted in knots under a `km/h` label is the defect the setting
@@ -258,23 +270,65 @@ struct TrendsView: View {
                        return point.best2sKn.map { Speed.value($0) }
                    },
                    uncertified: { !$0.certified },
-                   note: "Your quickest two seconds of the session.")
+                   note: "Your quickest two seconds of the session.",
+                   headline: TrendHeadline.best2s(unit: Fmt.knUnit))
             // The second screenshot anchor on this page, and the reason is the unit: this
             // is the only chart here that moves when a rider picks km/h, and it sits below
             // the fold where `simctl` cannot reach it (docs/testing.md, "A screenshot in
             // km/h").
             .id("best2s")
-        TrendChart(title: "Pumps to takeoff", unit: "strokes", points: points,
-                   tone: DesignTokens.Effort.window,
-                   value: \.avgPumpsToTakeoff,
-                   note: "Needs the wrist accelerometer. Only CleanJibe watch "
-                       + "recordings carry it.")
-        TrendChart(title: "Port / starboard", unit: "% port", points: points,
-                   tone: DesignTokens.Side.port,
-                   value: \.portSharePct, domain: 0...100, reference: 50,
-                   note: "50 % is symmetric. The gap is the side you avoid.")
-        sideSuccessChart
+        // Foil time and longest flight are both *flight* facts and therefore the phase teal
+        // (docs/presentation/layers-map-colour-type.md "Colour and glyph vocabulary").
+        TrendChart(title: "Longest flight", unit: "min", points: points,
+                   tone: DesignTokens.Phase.flying,
+                   value: { $0.longestFlightS.map { $0 / 60 } },
+                   headline: TrendHeadline.longestFlight)
+        // **"Flew-through rate", over every counted turn** — the same metric and the same
+        // title the analyzer's chart carries. The stricter reading is "Clean jibes" above.
+        TrendChart(title: "Flew-through rate", unit: "%", points: points,
+                   tone: DesignTokens.Outcome.flew,
+                   value: \.flewThroughPct, domain: 0...100,
+                   note: "Turns that never lost the foil. Every counted turn, not "
+                       + "jibes alone.",
+                   headline: TrendHeadline.flewThrough)
+        // **Rates are additive**, and the titles spell the codes out (pattern H): a rider
+        // who has not met "CPH" reads what it counts, and the code stays beside it for the
+        // one who has. The analyzer's charts still carry the bare codes until the web round.
+        TrendChart(title: "Clean jibes an hour (CPH)", unit: "clean jibes / h",
+                   points: points, tone: Color.accentColor,
+                   value: \.cleanJibesPerHour,
+                   headline: TrendHeadline.cleanJibesPerHour)
+        TrendChart(title: "Dry jibes an hour (JPH)", unit: "jibes / h", points: points,
+                   tone: Color.accentColor,
+                   value: \.jibesPerHour,
+                   note: "Jibes you sailed out of without falling in.",
+                   headline: TrendHeadline.jibesPerHour)
+        TrendChart(title: "Dry turns an hour (TPH)", unit: "turns / h", points: points,
+                   tone: Color.accentColor,
+                   value: \.turnsPerHour,
+                   note: "Every counted turn you stayed dry through.",
+                   headline: TrendHeadline.turnsPerHour)
         weeklyChart
+        DisclosureGroup(isExpanded: $showMore) {
+            VStack(alignment: .leading, spacing: 18) {
+                TrendChart(title: "Pumps to takeoff", unit: "pumps", points: points,
+                           tone: DesignTokens.Effort.window,
+                           value: \.avgPumpsToTakeoff,
+                           note: "Only sessions recorded with the CleanJibe watch app "
+                               + "count your pumps.",
+                           headline: TrendHeadline.pumpsToTakeoff)
+                // The port share is a side, so it takes the side ink.
+                TrendChart(title: "Port / starboard", unit: "% port", points: points,
+                           tone: DesignTokens.Side.port,
+                           value: \.portSharePct, domain: 0...100, reference: 50,
+                           note: "50 % is even. The gap is the side you avoid.",
+                           headline: TrendHeadline.portShare)
+                sideSuccessChart
+            }
+            .padding(.top, 12)
+        } label: {
+            Text("More").font(.subheadline.weight(.semibold))
+        }
     }
 
     /// **Which sessions may hold a point on the one speed series** — the rider's Speed
@@ -331,7 +385,7 @@ struct TrendsView: View {
             }
             if total == 0 {
                 Text("No session in this range has turns with a usable entry tack. "
-                     + "That needs a wind axis the engine trusts.")
+                     + "That needs a wind direction the app can trust.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
@@ -366,8 +420,8 @@ struct TrendsView: View {
                                          values: line.values.map(\.value),
                                          format: { String(format: "%.0f %%", $0) })
                 }.joined(separator: ". "))
-                Text("Entry tack is the tack you came into the turn on, not the rotation "
-                     + "direction. Course changes are excluded.")
+                Text("Each line splits your turns by the tack you came in on. Course "
+                     + "changes do not count.")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
@@ -402,9 +456,13 @@ struct TrendsView: View {
             .accessibilityLabel("Sessions per week, busiest week "
                                 + SpokenFigures.count(weeks.map(\.count).max() ?? 0,
                                                       "session", "sessions"))
-            Text(String(weeks.filter { $0.count > 0 }.count) + " of "
-                 + String(weeks.count)
-                 + " weeks on the water. Weeks start on Monday, ISO-8601, on your own clock.")
+            // Concise: the count. Extensive adds how a week is cut (Settings → How much
+            // to say); the calendar rule itself is docs/presentation/trends-periods.md.
+            ExplainedFootnote(line: String(weeks.filter { $0.count > 0 }.count) + " of "
+                                  + String(weeks.count) + " weeks on the water.",
+                              topic: nil,
+                              more: ["A week runs Monday to Sunday, on your phone's clock."])
+            { _ in }
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
@@ -428,11 +486,13 @@ private struct TrendChart: View {
     /// one — the same claim, in the same word, the Records table makes about an all-time
     /// best. The points are still drawn: they are still his afternoons.
     var uncertified: ((TrendPoint) -> Bool)?
+    /// How the one-line verdict above the chart sums up a month (`TrendHeadline`).
+    var headline: TrendHeadline.Spec?
 
     init(title: String, unit: String, points: [TrendPoint], tone: Color,
          value: @escaping (TrendPoint) -> Double?, domain: ClosedRange<Double>? = nil,
          reference: Double? = nil, uncertified: ((TrendPoint) -> Bool)? = nil,
-         note: String? = nil) {
+         note: String? = nil, headline: TrendHeadline.Spec? = nil) {
         self.title = title
         self.unit = unit
         self.points = points
@@ -442,6 +502,18 @@ private struct TrendChart: View {
         self.reference = reference
         self.uncertified = uncertified
         self.note = note
+        self.headline = headline
+    }
+
+    /// This month against the one before, from the points the chart draws. Hours are the
+    /// session's own clock, so a rate sums up as the month's totals over its hours.
+    private var headlineText: String? {
+        guard let headline else { return nil }
+        let samples = points.compactMap { point in
+            value(point).map { TrendHeadline.Sample(date: point.date, value: $0,
+                                                     hours: point.durationS / 3600) }
+        }
+        return TrendHeadline.line(samples, spec: headline)
     }
 
     private var series: [(date: Date, value: Double)] {
@@ -465,9 +537,13 @@ private struct TrendChart: View {
                         .foregroundStyle(.secondary)
                 }
             }
+            if let headlineText {
+                Text(headlineText)
+                    .font(.footnote)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             if series.isEmpty {
-                Text(note ?? ("No session in this range reports "
-                              + title.lowercased() + "."))
+                Text(note ?? "No session in this range can report this yet.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
