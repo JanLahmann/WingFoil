@@ -78,5 +78,20 @@
     "path": "web/js/sharecard.js",
     "text": "— analysed with",
     "why": "the share caption's tail: the counts, then the dash, then phrases.captionOffer verbatim. web/tools/verify_copy.py pins the tail character for character and web/tools/card_parity.mjs compares the card against the phone's, so the dash is part of a cross-platform mark rather than punctuation in a sentence. Same reason as Branding.callToAction in the kit."
+  },
+  {
+    "path": "ios/WingFoil/Features/Trends/TrendsView.swift",
+    "text": "(CPH)",
+    "why": "a chart title that spells the rate out and keeps its code beside it in brackets (UX review fix 10, Jan, 27 Sep 2026). A heading, not a sentence: the code is the label a rider meets on the session page, so the bracket is the glossary, not an aside."
+  },
+  {
+    "path": "ios/WingFoil/Features/Trends/TrendsView.swift",
+    "text": "(JPH)",
+    "why": "a chart title that spells the rate out and keeps its code beside it in brackets (UX review fix 10, Jan, 27 Sep 2026). A heading, not a sentence: the code is the label a rider meets on the session page, so the bracket is the glossary, not an aside."
+  },
+  {
+    "path": "ios/WingFoil/Features/Trends/TrendsView.swift",
+    "text": "(TPH)",
+    "why": "a chart title that spells the rate out and keeps its code beside it in brackets (UX review fix 10, Jan, 27 Sep 2026). A heading, not a sentence: the code is the label a rider meets on the session page, so the bracket is the glossary, not an aside."
   }
 ]
