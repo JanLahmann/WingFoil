@@ -24,6 +24,10 @@ struct ShareComposerView: View {
     /// The already-loaded detail, when the screen has it: the card's outline then comes
     /// from geometry that is in memory rather than from a second FIT parse.
     var detail: SessionDetail?
+    /// The session's story (`SessionStory`), from the page that opened the sheet: the
+    /// caption's lead and the card's "Best ever" ribbon, the same line and the same records
+    /// the page draws over its block.
+    var story: SessionStory?
 
     /// What the sheet is currently offering.
     private enum Payload: String, CaseIterable, Identifiable {
@@ -131,8 +135,10 @@ struct ShareComposerView: View {
     private var card: ShareCardView {
         ShareCardView(stats: stats, shape: shape, thumbnail: thumbnail, photo: photo,
                       map: photo == nil ? map : nil,
+                      recordBadge: story?.cardBadge,
                       onTrackFrame: { trackBox = $0 })
     }
+
 
     /// The track and its marks as **coordinates**, for the map snapshot: the same two
     /// collections `shareOutline` normalizes into the card's unit box, one step earlier.
@@ -568,7 +574,9 @@ struct ShareComposerView: View {
     /// formatted strings chosen by a preset, and a rider who picked `lean` would otherwise
     /// get a different sentence for the same session.
     private var cardCaption: String {
-        ShareCaption.line(title: displayTitle, dateLine: stats.dateLine,
+        // The session's story leads (the line over the block, `SessionStory`); the
+        // facts and the offer follow.
+        ShareCaption.line(story: story?.line, title: displayTitle, dateLine: stats.dateLine,
                           foilPct: row.foilPct, cleanJibes: cleanJibes)
     }
 

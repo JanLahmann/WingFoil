@@ -19,7 +19,6 @@
  */
 
 import { FORM, cellCaption, cellLabel, cellValue, hm, text } from "./presentation.js";
-import { PRESENTATION } from "./appcopy.js";
 import { zonedFormat } from "./viz.js";
 
 /* -------------------------------------------------------------------- branding
@@ -216,16 +215,12 @@ const splitUnit = (value) => {
   return i < 0 ? [String(value), ""] : [value.slice(0, i), value.slice(i + 1)];
 };
 
-/** "fell in 25 times", with the number in the fell-in ink. */
+/** "never fell in", and nothing for any other count: the card never prints the falls
+ * (UX review, 26 Sep 2026). A card is the afternoon a rider is proud of; "never fell in" is a
+ * boast and stays, any other count lives on the session page. Twin of `fallSegments` in
+ * ShareCardStory.swift. */
 function fallSegments(count) {
-  if (count === 0) return [{ text: cardWord("fellInNone"), role: "muted" }];
-  const line = PRESENTATION.card.fellIn;
-  const template = typeof line === "string" ? line
-    : (count === 1 ? (line.one ?? line.other) : line.other);
-  const halves = template.split("{falls}");
-  if (halves.length !== 2) return [{ text: template, role: "muted" }];
-  return [{ text: halves[0], role: "muted" }, { text: String(count), role: "fell" },
-          { text: halves[1], role: "muted" }].filter((s) => s.text);
+  return count === 0 ? [{ text: cardWord("fellInNone"), role: "muted" }] : [];
 }
 
 /**

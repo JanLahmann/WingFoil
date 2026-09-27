@@ -110,7 +110,7 @@ struct ReplayTitleCardView: View {
 ///
 /// **Why the highlight lines are gone.** The card used to print the grid and then two or
 /// three sentences under it, lifted out of the commentary: "Top speed — 13.47 kn over 2 s"
-/// under a max-2 s cell reading 13.47, "New streak — 8 dry jibes" under a streaks cell reading
+/// under a max-2 s cell reading 13.47, "8 in a row, dry" under a streaks cell reading
 /// 8. Two thirds of the closing card was the closing card again, in words. The one superlative
 /// the grid did *not* carry was the longest flight — so it became a cell, the lines went, and
 /// the grid came out square at nine. Engine 0.10.0 put CPH on the rate row beside JPH, which

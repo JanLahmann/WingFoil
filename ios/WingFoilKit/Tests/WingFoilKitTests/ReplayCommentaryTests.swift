@@ -53,16 +53,16 @@ import Testing
             // clean, and the first of them is a line the dry count cannot say.
             "First clean jibe!",
             // The 3rd and 5th dry jibes are also streak records, and a line that said "3 dry
-            // jibes · New streak · 3 dry jibes" would print the number twice.
-            "New streak · 3 dry jibes",
-            "New streak · 4 dry jibes",
+            // jibes · 3 in a row, dry" would print the number twice.
+            "3 in a row, dry",
+            "4 in a row, dry",
             "Top speed · 13.47 kn over 2 s",
             // Where a clean ordinal lands on a streak record they share the frame, strict
             // first: the run is over dry maneuvers, the count beside it is over ridden ones.
-            "3 clean jibes · New streak · 5 dry jibes",
-            "New streak · 6 dry jibes",
-            "5 clean jibes · New streak · 7 dry jibes",
-            "New streak · 8 dry jibes",
+            "3 clean jibes · 5 in a row, dry",
+            "6 in a row, dry",
+            "5 clean jibes · 7 in a row, dry",
+            "8 in a row, dry",
             // The swim at 467 is the jibe; the splash is its flight end ten seconds later.
             // It is also why nothing is said at 571: that tenth attempt was swum too, so the
             // dry count stops at eight and the session never reaches a tenth dry jibe.
@@ -198,6 +198,16 @@ import Testing
         let script = ReplayCommentary.make(analysis, timeZone: fixtureZone)
         #expect(script.map(\.kind) == [.sessionStart, .sessionEnd])
         #expect(script.last?.text == "Session end · 10:45 · 2.6 km")
+    }
+
+    /// Given the session's story, the replay closes on it — the line the session page opens
+    /// with — and on the tally without it.
+    @Test func theReplayClosesOnTheSessionsStory() throws {
+        let line = "8 dry jibes, 5 clean, your fastest 2 s this month."
+        let script = ReplayCommentary.make(try torbole(), timeZone: fixtureZone, story: line)
+        #expect(script.last?.kind == .sessionEnd)
+        #expect(script.last?.text == line)
+        #expect(ReplayCommentary.streakLine(7) == "7 in a row, dry")
     }
 
     /// No span, no session: a zero-length recording has no frame to put a caption in, and

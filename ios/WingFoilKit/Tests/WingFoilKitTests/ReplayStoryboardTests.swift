@@ -231,7 +231,7 @@ import Testing
         #expect(highlights.map(\.text) == [
             "Top speed · 13.47 kn over 2 s",
             // Eight, not the three/four/five/six/seven it passed on the way there.
-            "New streak · 8 dry jibes",
+            "8 in a row, dry",
             // Collapsed with the first takeoff at the same instant, exactly as the caption
             // read when the clip played it.
             "Flying! · Longest flight · 6:32",
@@ -247,7 +247,7 @@ import Testing
     @Test func theHighlightLimitTakesFromTheTop() throws {
         let milestones = try script()
         #expect(ReplayCommentary.highlights(milestones, limit: 2).map(\.text)
-                == ["Top speed · 13.47 kn over 2 s", "New streak · 8 dry jibes"])
+                == ["Top speed · 13.47 kn over 2 s", "8 in a row, dry"])
         #expect(ReplayCommentary.highlights(milestones, limit: 0).isEmpty)
     }
 }

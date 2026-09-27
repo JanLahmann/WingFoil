@@ -568,7 +568,7 @@ import Testing
     ///
     /// The outro used to print the eight-cell grid and then, underneath it, two or three
     /// sentences off the commentary — "Top speed · 13.47 kn over 2 s" over a max-2 s cell
-    /// saying 13.47, "New streak · 8 dry jibes" over a streaks cell saying 8. The lines are
+    /// saying 13.47, "8 in a row, dry" over a streaks cell saying 8. The lines are
     /// gone; the longest flight, which really was missing, is a ninth cell, and nine cells is
     /// a clean 3 × 3.
     @Test func theOutroGridIsTheBlockPlusTheLongestFlight() {

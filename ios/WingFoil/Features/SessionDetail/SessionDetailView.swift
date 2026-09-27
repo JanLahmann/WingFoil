@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import WingFoilKit
 
 /// One session, as a permanent verdict over a four-way switcher.
@@ -85,6 +86,8 @@ struct SessionDetailView: View {
     /// second and every one of those re-evaluates every view on this page.
     @State private var milestones: [ReplayMilestone] = []
     @State private var showShare = false
+    /// Bumped the first time a record-setting session opens (`SessionStore.takeRecordConfetti`).
+    @State private var confetti: Int?
     #if DEBUG && targetEnvironment(simulator)
     /// Screenshot hook only (`UI_FULLSCREEN_MAP=1`): `simctl` cannot tap the link.
     @State private var showFullScreenMap = false
@@ -94,6 +97,17 @@ struct SessionDetailView: View {
     private var shown: String { shownID ?? sessionID }
 
     private var row: SessionRow? { store.session(id: shown) }
+
+    /// **The session's story** against the rider's own library (`SessionStory`): the line over
+    /// the block, the chips on its record cells, the replay's last word and the caption's lead.
+    /// Kept, not computed in `body`: the page re-renders on every replay frame, and the story
+    /// reads the whole library.
+    @State private var story: SessionStory?
+
+    private func tellStory() {
+        story = row.flatMap { SessionStory.make(session: $0, history: store.sessions,
+                                                policy: store.speedRecordPolicy) }
+    }
 
     /// The older and newer session beside this one.
     struct Neighbours: Equatable {
@@ -134,6 +148,7 @@ struct SessionDetailView: View {
         flightFocus = nil
         chartZoom = nil
         milestones = []
+        story = nil
         selectedEffort = RecordWindowSelection.defaultKey
     }
 
@@ -165,7 +180,7 @@ struct SessionDetailView: View {
                 } else if let detail {
                     // Permanent, above the switcher, on every tab: the four rows that
                     // answer "was that a good session" (docs/app-ui-review.md §1.1 / §4).
-                    KeyMetricsView(metrics: detail.keyMetrics)
+                    KeyMetricsView(metrics: detail.keyMetrics, story: story)
                         .id("key")
                     // **Why this page's numbers are in nothing else.** One line, directly
                     // under the block it is about, so a rider who wonders where his session
@@ -354,13 +369,20 @@ struct SessionDetailView: View {
         }
         .sheet(isPresented: $showShare) {
             if let row {
-                ShareComposerView(row: row, detail: detail)
+                ShareComposerView(row: row, detail: detail, story: story)
             }
         }
         .sheet(isPresented: $renaming) {
             if let row { RenameSessionSheet(row: row, draft: $titleDraft) }
         }
         .task(id: shown) { await load() }
+        // A rename, an import or a Speed records change can move what the session holds.
+        .onChange(of: "\(store.libraryGeneration)|\(store.speedRecordPolicy.rawValue)") {
+            tellStory()
+        }
+        // The record, celebrated where it happened: once, the first time the session that
+        // set it opens after the import (the Records tab keeps its own burst too).
+        .overlay { ConfettiBurst(trigger: confetti) }
     }
 
     /// The preset every word and every hidden pump chip on this page reads from.
@@ -374,6 +396,7 @@ struct SessionDetailView: View {
         do {
             let loaded = try await store.detail(for: row)
             detail = loaded
+            tellStory()
             // Counted when the page has its analysis, not when it appears: a page that
             // opens on "could not load" is a session that did not open.
             Usage.record(.sessionOpened)
@@ -384,7 +407,12 @@ struct SessionDetailView: View {
             milestones = ReplayCommentary.make(loaded.analysis, span: loaded.timeRange,
                                                place: SessionDisplay.title(row),
                                                startedAt: row.startDate,
-                                               timeZone: row.displayZone)
+                                               timeZone: row.displayZone,
+                                               story: story?.line)
+            if store.takeRecordConfetti(for: row.id) {
+                confetti = (confetti ?? 0) + 1
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+            }
         } catch {
             Usage.failed(.sessionOpened, error: error)
             failure = "\(error)"

@@ -45,6 +45,10 @@ struct ShareCardView: View {
     /// of recomputing: SwiftUI's own arithmetic is the only copy of it that is certainly
     /// right, and a map framed against a second copy of the layout would drift a few points
     /// every time the stat block changed.
+    /// **"Best ever · clean jibes"** — the ribbon a card wears when its session holds a
+    /// record against the rider's own library (`SessionStory.cardBadge`). App only for now:
+    /// the web's card has no library to compare against yet. nil draws no ribbon.
+    var recordBadge: String?
     var onTrackFrame: ((CGRect) -> Void)?
 
     /// Points per exported pixel. The card is laid out at 360 pt wide and rendered at 3×.
@@ -280,6 +284,17 @@ struct ShareCardView: View {
                 .foregroundStyle(Brand.paper.opacity(0.72))
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
+            if let recordBadge {
+                Label(recordBadge, systemImage: "trophy.fill")
+                    .font(.system(size: 10.5, weight: .bold))
+                    .foregroundStyle(Brand.navy)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3)
+                    .background(Brand.green, in: .capsule)
+                    .padding(.top, 3)
+            }
             if let note = stats.note {
                 Text(note)
                     .font(.system(size: 10.5, weight: .medium))
@@ -449,7 +464,7 @@ struct ShareCardView: View {
         let box = thumbnail?.contentBox
         guard !extents.isEmpty || box != nil else { return false }
         let inner = size.height - 14 - 12
-        let headH: CGFloat = 42 + (stats.note == nil ? 0 : 14)
+        let headH: CGFloat = 42 + (stats.note == nil ? 0 : 14) + (recordBadge == nil ? 0 : 21)
         let ribY = 14 + inner - ShareCardView.qrSide - 8 - Self.ribbonHeight - ribbonNote(story)
         let barsY = ribY - 6 - barsHeight(story)
         let heroY = barsY - heroHeight(story) - (story.hero == nil ? 0 : 2)

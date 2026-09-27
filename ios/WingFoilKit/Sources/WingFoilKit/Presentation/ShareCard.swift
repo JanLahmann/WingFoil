@@ -234,7 +234,7 @@ public struct ShareCardStats: Sendable, Equatable {
     ///
     /// **Why the clip's card gets a cell the exported card does not.** The outro used to print
     /// the grid and then, underneath it, two or three highlight lines lifted out of the
-    /// commentary — "Top speed — 13.47 kn over 2 s", "New streak — 8 dry jibes". Two of the
+    /// commentary — "Top speed — 13.47 kn over 2 s", "8 in a row, dry". Two of the
     /// three were the grid again in a sentence: the max-2 s cell and the streaks cell say
     /// exactly those numbers, four centimetres higher up. The one highlight the grid did *not*
     /// carry was the longest flight, and a number is better in a cell than in a caption

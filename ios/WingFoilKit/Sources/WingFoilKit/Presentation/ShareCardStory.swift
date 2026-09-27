@@ -431,18 +431,16 @@ public extension ShareCardStats {
                          speedNote: speed == nil ? nil : speedNote, legend: legendWords)
         }
 
-        /// "fell in 25 times", with the number in the fell-in ink.
+        /// "never fell in", and nothing for any other count.
         static func fallSegments(_ count: Int) -> [Segment] {
-            if count == 0 { return [Segment(text: PresentationCopy.card("fellInNone"), role: "muted")] }
-            let template = PresentationCopy.card[ "fellIn" ]?.form(for: count) ?? ""
-            let halves = template.components(separatedBy: "{falls}")
-            guard halves.count == 2 else { return [Segment(text: template, role: "muted")] }
-            return [Segment(text: halves[0], role: "muted"),
-                    Segment(text: String(count), role: "fell"),
-                    Segment(text: halves[1], role: "muted")].filter { !$0.text.isEmpty }
+            // **The card never prints the falls** (UX review, 26 Sep 2026): the picture a
+            // rider posts is the afternoon he is proud of, and "fell in 6 times" beside his
+            // streak is the one line he would crop out. "never fell in" stays, because that
+            // is a boast; any other count is on the session page, where it helps. Twin of
+            // `fallSegments` in web/js/cardstats.js.
+            count == 0 ? [Segment(text: PresentationCopy.card("fellInNone"), role: "muted")] : []
         }
 
-        /// "13.21 kn" → ("13.21", "kn"): the hero draws the number big and the unit beside it.
         static func split(_ value: String) -> (String, String) {
             guard let space = value.lastIndex(of: " ") else { return (value, "") }
             return (String(value[..<space]), String(value[value.index(after: space)...]))
