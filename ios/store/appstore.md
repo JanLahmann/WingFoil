@@ -1,6 +1,7 @@
 # App Store metadata — CleanJibe for iPhone
 
-**The 1.0.1 listing, drafted for Jan's sign-off (26 September 2026).** ASC app
+**The 1.0.1 listing, drafted for Jan's sign-off (26 September 2026; description
+reworked 27 September, UX review fix 12).** ASC app
 `6800401377`, bundle `de.lahmann.wingfoil`, version **1.0.1**. The subtitle, promotional
 text, description, keywords and What's New blocks below are the **draft** in the team voice
 of `docs/voice.md`, written against the release column of `docs/channels.md`. They are not
@@ -99,10 +100,12 @@ every swim.", is retired everywhere. Then the promise's question, and two plain 
 
 ## Description
 
-4000-character limit. **3829 used.**
+4000-character limit. **3933 used.**
 
 ```
 Did you fly through that jibe? CleanJibe reads your session off the watch. It tells you your time on the foil, every flight, your speed records, and a verdict on every turn. Flew through, touchdown, or fell in.
+
+Nail a jibe and it gets a star. Ride with the free CleanJibe watch app on your Garmin. It buzzes each verdict on your wrist while you ride. Back on the beach, your phone shows you why. Your clean jibes, your dry streak and your best 2 s sit side by side. The share card shows them off.
 
 YOUR SESSION ON ONE PAGE
 
@@ -110,13 +113,11 @@ Open a session and the whole afternoon is there. Your track sits on the map with
 
 Every turn has a page of its own. You see your speed through the turn and where the foil came down. The page also says why the verdict came out the way it did.
 
-Clean jibes get a star. Clean means you flew through, held your speed, and stayed dry for 10 seconds after. Your clean jibes per hour sits beside your dry streak. Tacks get their own count.
+A jibe is clean when you flew through, held your speed, then had 10 quiet seconds. Tacks get their own count.
 
-Your nine speed records are drawn on the track and on the speed chart. They are best 2 s, best 10 s, 5 × 10 s, 100 m, 250 m and 500 m. Then come 1 NM, alpha 500 and best hour. Speeds read in knots or km/h, your choice.
+Nine speed records sit on your track and speed chart, from best 2 s to best hour, alpha 500 included. Speeds read in knots or km/h, your choice.
 
-Ride with the CleanJibe watch app on a Garmin and you also get your pump strokes and takeoff attempts.
-
-Watch the session again as a replay, with commentary as it plays. Save a short clip with your own music and post it. The share card shows off the sessions worth showing. It carries your track and your numbers, with the map behind them if you like.
+Watch the session again as a replay, with commentary as it plays. Save a short clip with your own music and post it. The share card carries your track and your numbers, with the map behind them if you like.
 
 YOUR SEASON
 
@@ -124,21 +125,21 @@ Records and Trends read every session you have ridden. Your all-time bests sit i
 
 Send a session to a friend. It opens on their phone as your session and stays out of their own records.
 
-HOW YOUR SESSIONS GET IN
+START WITH THE SESSIONS YOU HAVE
 
-Connect intervals.icu once in Settings, and every session arrives by itself. Garmin has no open API, so intervals.icu is the bridge. It is free.
+Bring in your old Garmin sessions first, recorded with any activity profile. Connect intervals.icu once in Settings, and your history comes in. Every new session then arrives by itself. Garmin has no open API, so intervals.icu is the bridge. It is free.
 
 You can also open a FIT file from Files, Mail or AirDrop, or share it to CleanJibe. A Garmin export ZIP brings in your whole history at once.
 
-Strava works too. Pick a session from your feed and it comes in. Strava keeps the track but not the watch's speed measurement. Falls are harder to tell from touchdowns, and the speed records count as uncertified. Strava lets a new app connect a limited number of riders.
+Strava works too. Pick a session from your feed and it comes in. Strava keeps the track but not the watch's measured speed. Falls are harder to tell from touchdowns, and your speed records are estimated.
 
 No session of your own yet? An example session from Lake Garda is built in. You can try every page before you connect anything.
 
-WHICH WATCH
+GET MUCH MORE WITH THE WATCH APP
 
-You get the most from the free CleanJibe watch app for Garmin. It is in open beta on the Connect IQ store. It records your wrist's movement, and that is where the pump strokes and takeoffs come from.
+You get much more from the free CleanJibe watch app for Garmin. It is in open beta on the Connect IQ store. It records your wrist's movement, which gives you your pump strokes and takeoff attempts.
 
-Any other recording with the watch's own speed works as well. Garmin's own Windsurf activity gives you everything except the pumping. A track with positions only still gives you flights, turns and uncertified speed records.
+Any other recording with the watch's measured speed works as well. Garmin's own Windsurf activity gives you everything except the pumping. A track with positions only still gives you flights and turns, and speed records estimated from positions.
 
 No iPhone at hand? The same analysis runs free in any browser at cleanjibe.org.
 
@@ -162,11 +163,13 @@ the Connect IQ listing and the library's empty state say — `docs/copy/phrases.
 `promise`, pinned to `WelcomeGuide.promise` by `CopyContractTests`. The store's voice puts
 its own paragraph around it; the sentence itself does not get a second wording.
 
-**The order is the voice's rule 2: the rider first, the mechanics after.** The first four
-sections are about the rider's session and season. *How your sessions get in*, *Which watch*
-and *How it works* are for the interested rider: what comes from the watch and what from the
-phone, and how it fits with Garmin, intervals.icu and Strava. Privacy and the way to reach
-us close it. Every sentence is register 1, one thought, at most 20 words, no dash, no
+**The order is the voice's rule 2: the rider first, the mechanics after.** The paragraph
+after the promise is the one line of feeling (UX review fix 12, Jan, 27 September 2026): the
+star, the buzz on the wrist and the why on the phone, the three numbers side by side, the
+card. Then the rider's session and season. *Start with the sessions you have*, *Get much
+more with the watch app* and *How it works* are for the interested rider: old sessions first
+through intervals.icu from any Garmin activity profile, then what the watch app adds. Privacy and the way to reach us
+close it. Every sentence is register 1, one thought, at most 20 words, no dash, no
 semicolon, no parenthesis; `docs/copy/check_voice.py` reads this block. The section heads
 are in capitals because the store field has no formatting of its own.
 
@@ -175,12 +178,16 @@ session page and its four tabs, turn pages, clean jibes, the nine GP3S records, 
 strokes and takeoffs for class a, replay and clips with music, the share card, Records and
 Trends with the spot and gear menus, sending a session to a friend, intervals.icu, FIT from
 Files, Mail, AirDrop and the share sheet, the Garmin export ZIP, Strava, the example
-session, the feedback mail. Nothing from the beta or dev rows, and
+session, the feedback mail. The buzz on the wrist is the Garmin CleanJibe watch app's,
+free on the Connect IQ store and working with the release, not an iPhone door. Nothing from the beta or dev rows, and
 `check_release_copy.py` holds that. *Windsurf* appears once, as Garmin's own activity
 profile, the recording source the checker exempts by name.
 
-**The Strava sentence** is `phrases.json` → `strava`, verbatim, with the Strava pair from
-docs/voice.md's import example before it. **The Connect IQ watch app is named as a beta**,
+**The fixed words** (27 September 2026): *clean* is flew through, held your speed, then 10
+quiet seconds, never *stayed dry*; speed is *measured* by the watch or *estimated* from
+positions; the team is *us*. The nine records are one sentence, not a list. **Strava's rider
+limit is out of the sales text**: it is a support note, and its home is the review notes, the
+app's Strava screen and `phrases.json` → `strava`. **The Connect IQ watch app is named as a beta**,
 because its public listing is one (docs/channels.md, "The watch — the same three streams").
 
 ## What's New in 1.0.1
