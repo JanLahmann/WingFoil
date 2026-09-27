@@ -45,7 +45,7 @@
     <string id="MetTakeoffs">Takeoffs (attempts&gt;made)</string>
     <string id="MetPumpsToTakeoff">Pumps to takeoff, last</string>
     <string id="MetTakeoffCost">Takeoff HR cost, last</string>
-    <string id="MetStreak">Dry run (now/best)</string>
+    <string id="MetStreak">Streak (now/best)</string>
     <string id="MetFoilDistPct">Foil distance %</string>
     <string id="MetJibes">Jibe count</string>
     <string id="MetTacks">Tack count</string>
