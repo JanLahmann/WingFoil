@@ -164,7 +164,7 @@ import Testing
         #expect(topic.section == .bringIn)
         let prose = (topic.body + topic.items.flatMap { [$0.term, $0.detail] })
             .joined(separator: " ").lowercased()
-        for phrase in ["uncertified", "pump strokes", "intervals.icu", "never writes",
+        for phrase in ["estimated", "pump strokes", "intervals.icu", "never writes",
                        "limited number of riders", "200 times",
                        "15 minutes", "support & ideas", "disconnect"] {
             #expect(prose.contains(phrase), "the Strava topic never mentions \(phrase)")
@@ -213,7 +213,7 @@ import Testing
         #expect(prose.contains("intervals.icu"))
         // FIT over GPX/TCX, and why.
         #expect(prose.contains("pick fit"))
-        #expect(prose.contains("uncertified"))
+        #expect(prose.contains("estimated"))
         // No vendor links (26 September 2026): each item carries its path, and a support
         // page goes stale and takes the rider out of the app.
         #expect(topic.links.isEmpty)

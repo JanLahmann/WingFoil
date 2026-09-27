@@ -94,11 +94,11 @@ struct TurnsAnalysisView: View {
 
     private var filters: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Picker("Maneuver", selection: $filter.type) {
+            Picker("Manoeuvre", selection: $filter.type) {
                 ForEach(TurnTypeFilter.allCases) { Text($0.label).tag($0) }
             }
             .pickerStyle(.segmented)
-            .accessibilityLabel("Maneuver type")
+            .accessibilityLabel("Manoeuvre type")
 
             Picker("Entry tack", selection: $filter.side) {
                 ForEach(TurnSideFilter.allCases) { Text($0.label).tag($0) }
@@ -286,7 +286,7 @@ struct TurnsAnalysisView: View {
                                    systemImage: "arrow.trianglehead.2.clockwise.rotate.90",
                                    description: Text("This session has none. "
                                                      + "Bear-aways and round-ups are course "
-                                                     + "changes, never maneuvers."))
+                                                     + "changes, never manoeuvres."))
                 .frame(maxWidth: .infinity, minHeight: 160)
         } else {
             LazyVStack(alignment: .leading, spacing: 0) {
@@ -315,8 +315,8 @@ struct TurnsAnalysisView: View {
             Text("Flew through / touchdown / fell in is the outcome. "
                  + "It says how the turn ended. "
                  + "Held is how much of your entry speed you kept through it, 0 to 100 %.\n\n"
-                 + "A clean jibe does both. "
-                 + "It flies all the way through and holds at least 70 % of its entry speed.")
+                 + "Clean: you flew through, held at least 70 % of your entry speed, "
+                 + "then 10 quiet seconds on the foil.")
             if rejected > 0 {
                 Text(String(rejected) + (rejected == 1 ? " course change is" : " course changes are")
                      + " left out here, as they are everywhere else. "

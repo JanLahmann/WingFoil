@@ -83,7 +83,7 @@ import Testing
         #expect(ShareCaption.line(title: "Torbole", dateLine: "30 August 2026",
                                   foilPct: 66.2, cleanJibes: 30)
                 == "Torbole · 30 August 2026 · 66 % on the foil · 30 clean jibes "
-                   + "— analysed with CleanJibe, free at cleanjibe.org")
+                   + "· analysed with CleanJibe, free at cleanjibe.org")
     }
 
     /// One jibe is a jibe. The twin of the web's `cleanPhrase`.
@@ -98,11 +98,11 @@ import Testing
     @Test func absentNumbersLeaveTheirPartsOut() {
         #expect(ShareCaption.line(title: "Torbole", dateLine: "30 August 2026",
                                   foilPct: nil, cleanJibes: nil)
-                == "Torbole · 30 August 2026 — analysed with CleanJibe, free at cleanjibe.org")
+                == "Torbole · 30 August 2026 · analysed with CleanJibe, free at cleanjibe.org")
         #expect(ShareCaption.line(title: nil, dateLine: "30 August 2026",
                                   foilPct: 66.2, cleanJibes: nil)
                 == "30 August 2026 · 66 % on the foil "
-                   + "— analysed with CleanJibe, free at cleanjibe.org")
+                   + "· analysed with CleanJibe, free at cleanjibe.org")
     }
 
     /// The fallback title is not a place, so it is not printed as one — the same rule
@@ -110,7 +110,7 @@ import Testing
     @Test func theUnnamedFallbackIsNotPrintedAsAPlace() {
         #expect(ShareCaption.line(title: ShareText.unnamedPlace, dateLine: "30 August 2026",
                                   foilPct: nil, cleanJibes: nil)
-                == "30 August 2026 — analysed with CleanJibe, free at cleanjibe.org")
+                == "30 August 2026 · analysed with CleanJibe, free at cleanjibe.org")
         #expect(ShareCaption.line(title: "   ", dateLine: "", foilPct: nil, cleanJibes: nil)
                 == "analysed with CleanJibe, free at cleanjibe.org")
     }

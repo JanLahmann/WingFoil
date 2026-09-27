@@ -60,9 +60,9 @@ for the app, the help catalogue and the website):
 | name | the door that brings it | one line on what you get |
 |---|---|---|
 | **Class A · Garmin watch app** | Full history, Single sessions | everything, the wrist included |
-| **Class B · any speed-certified file** | Full history, Single sessions, Apple Health | everything except pump strokes and takeoff attempts; speed records certify |
+| **Class B · any file with measured speed** | Full history, Single sessions, Apple Health | everything except pump strokes and takeoff attempts; speed records measured |
 | **Class B+ · Apple Watch app** | *no import at all* — named in the Apple Health footer, because that is where an Apple Watch owner is standing | everything class B gets, plus the wrist at 50 Hz |
-| **Class C · positions only** | Strava; the picker's GPX and TCX in the beta | the analysis, with speed records estimated from positions and marked uncertified |
+| **Class C · positions only** | Strava; the picker's GPX and TCX in the beta | the analysis, with speed records estimated from positions and marked so |
 
 The letters were kept out of the copy for months, deliberately — "class b" names a bucket in
 somebody else's taxonomy and answers nothing a rider asked. What changed on 14 September 2026

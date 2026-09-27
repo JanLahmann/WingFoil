@@ -67,7 +67,7 @@
                 "beta",
                 "dev"
               ],
-              "detail" : "Settings → Strava → Connect with Strava, then Import → Import from Strava…. Strava keeps your track but not your watch's speed, so records are uncertified.",
+              "detail" : "Settings → Strava → Connect with Strava, then Import → Import from Strava…. Strava keeps your track but not your watch's speed, so records are estimated.",
               "link" : "stravaImport",
               "term" : "Strava"
             },
@@ -104,7 +104,7 @@
           ],
           "body" : [
             "Every watch that records a GPS track works. A number your file cannot support is left blank, never guessed.",
-            "Two things set the rows apart. First, **measured speed**: your file holds the watch's own speed, so your speed records count. Without it, speed is estimated from positions and the records are marked uncertified.",
+            "Two things set the rows apart. First, **measured speed**: your file holds the watch's own speed, so your speed records count. Without it, speed is worked out from positions and the records are marked estimated.",
             "**Pump strokes and takeoff attempts** need a wrist accelerometer recorded during the session. Only the CleanJibe watch apps record one.",
             "Each row ends with the class the Import screen prints."
           ],
@@ -130,7 +130,7 @@
                 "beta",
                 "dev"
               ],
-              "detail" : "You get every verdict and flight, with measured speed records. Your old sessions come in through intervals.icu too. Class B · any speed-certified file.",
+              "detail" : "You get every verdict and flight, with measured speed records. Your old sessions come in through intervals.icu too. Class B · any file with measured speed.",
               "term" : "Garmin, with Garmin's own profile or another app"
             },
             {
@@ -139,7 +139,7 @@
                 "beta",
                 "dev"
               ],
-              "detail" : "Bring it in through Strava or intervals.icu. In the beta, Apple Health hands it over with measured speed. Class B · any speed-certified file.",
+              "detail" : "Bring it in through Strava or intervals.icu. In the beta, Apple Health hands it over with measured speed. Class B · any file with measured speed.",
               "term" : "Apple Watch, with Apple's Workout app"
             },
             {
@@ -267,7 +267,7 @@
             "Record a session with Apple's own Workout app and analyse it here. You need no Garmin, no account and no cable.",
             "Health has no wingfoil workout type. CleanJibe reads the one you picked as a wingfoil session, because you asked it to.",
             "Open Import → Apple Health, allow CleanJibe to read workouts, and pick the ones you want. After the first one, switch on \"Import new Health workouts automatically\". The next session is then waiting when you open the app.",
-            "Speed comes off the watch's own GPS receiver, so these speed records are certified. Nothing records your wrist accelerometer, so there are no pump strokes and no failed takeoff attempts."
+            "Speed comes off the watch's own GPS receiver, so these speed records are measured. Nothing records your wrist accelerometer, so there are no pump strokes and no failed takeoff attempts."
           ],
           "channels" : [
             "beta",
@@ -317,7 +317,7 @@
           "body" : [
             "A phone records a GPS track as well as most watches do. CleanJibe reads it the same way.",
             "The Import screen calls it Class C · positions only, because the speed is worked out from the positions.",
-            "Foil time, flights, every turn verdict and clean jibe, the wind axis. Speed records are estimated from positions and marked uncertified, and there are no pump strokes or takeoff attempts.",
+            "Foil time, flights, every turn verdict and clean jibe, the wind axis. Speed records are estimated from positions and marked so, and there are no pump strokes or takeoff attempts.",
             "Keep the phone dry, still and facing the sky. A waterproof pouch on the upper arm or high on the chest works.",
             "A pocket at hip height spends half the session underwater. Start the recording on the beach."
           ],
@@ -378,7 +378,7 @@
             "Your Garmin sessions come in by themselves, your old ones too. The easiest way is intervals.icu, because Garmin has no open API. You can also open a .fit by hand, from Files, Mail or a Garmin export ZIP.",
             "Nothing is uploaded, and nothing changes in either account. CleanJibe downloads the original recording of each watersport session and analyses it on your phone.",
             "Polar, Suunto and COROS work this way too. Their own apps sync to intervals.icu, and CleanJibe syncs from there.",
-            "The file your watch left there decides how much you get. A FIT gives you the full analysis. A GPX, or a TCX without speed, gives uncertified speed records."
+            "The file your watch left there decides how much you get. A FIT gives you the full analysis. A GPX, or a TCX without speed, gives estimated speed records."
           ],
           "channels" : [
             "release",
@@ -466,7 +466,7 @@
           "body" : [
             "CleanJibe lists your Strava sessions and imports the ones you pick. It only reads. It never writes, renames or posts to your account.",
             "A Strava session still shows foil time, flights, every turn verdict, the wind axis and the map.",
-            "Strava keeps your track but not your watch's own speed, so the speed records are marked uncertified. Without the watch's own speed, a fall can read as a touchdown. Your wrist was not recorded, so there are no pump strokes.",
+            "Strava keeps your track but not your watch's own speed, so the speed records are marked estimated. Without the watch's own speed, a fall can read as a touchdown. Your wrist was not recorded, so there are no pump strokes.",
             "If the same afternoon is also on intervals.icu, import it from there instead. That is the original file off your watch, so those records certify. Importing both is harmless, because the same session is never added twice."
           ],
           "channels" : [
@@ -556,7 +556,7 @@
             "Every watch app can export a recording as a file, and CleanJibe reads .fit files. Export the session as a FIT and pick CleanJibe from the share sheet.",
             "If it is not in the row, Save to Files and open it from there.",
             "If you are asked for a format, pick FIT. A FIT carries the watch's own speed, so its records certify.",
-            "A .gpx or a .tcx carries positions only, so its records are marked uncertified. Those two formats open in the CleanJibe beta.",
+            "A .gpx or a .tcx carries positions only, so its records are marked estimated. Those two formats open in the CleanJibe beta.",
             "Garmin Connect's phone app has no export at all. Garmin owners have two better ways in: intervals.icu, or connect.garmin.com on a computer."
           ],
           "channels" : [
@@ -804,7 +804,7 @@
                 "beta",
                 "dev"
               ],
-              "detail" : "Swims per hour. Nobody wants it high, and it counts every fall.",
+              "detail" : "How often you fell in, per hour. Every fall counts, in a turn or not.",
               "term" : "WPH"
             },
             {
@@ -1075,7 +1075,7 @@
             "Best 5×10 s and Alpha 500 are defined in What the numbers mean.",
             "All of them use the watch's Doppler speed, measured to the exact edge of each window. So a watch that records once a second scores the same as one that records four times. No slow stretch is thrown away.",
             "A window never spans a recording gap. Tap a record card to see where on the track and on the speed trace it happened.",
-            "A record certifies only when the recording holds the receiver's own speed channel. The rest are marked uncertified."
+            "A record counts as measured only when the recording holds the receiver's own speed channel. The rest are marked estimated."
           ],
           "channels" : [
             "release",
@@ -1149,7 +1149,7 @@
                 "dev"
               ],
               "detail" : "A recording with positions but no speed channel has its speed worked out from them, which reads high. Every GPX is one, and some converted exports. It is marked everywhere.",
-              "term" : "\"Uncertified\""
+              "term" : "\"Estimated\""
             }
           ],
           "related" : [
@@ -1165,10 +1165,10 @@
 
           ],
           "body" : [
-            "A verified record comes off a recording that carries your watch's own Doppler speed. An unverified one is worked out from positions, which reads high.",
-            "Only verified keeps unverified records out of your all-time table, your trends and your cards. The session that set one still shows it, marked.",
-            "Prefer verified is the default. A verified record wins its row, and an unverified one fills a row no verified record has reached.",
-            "Include unverified counts every record and marks the ones it could not verify. Settings → Speed records is where you choose."
+            "A measured record comes off a recording that carries your watch's own Doppler speed. An estimated one is worked out from positions, which reads high.",
+            "Only measured keeps estimated records out of your all-time table, your trends and your cards. The session that set one still shows it, marked.",
+            "Prefer measured is the default. A measured record wins its row, and an estimated one fills a row no measured record has reached.",
+            "Include estimated counts every record and marks the estimated ones. Settings → Speed records is where you choose."
           ],
           "channels" : [
             "release",
@@ -1189,7 +1189,7 @@
             "stravaImport"
           ],
           "summary" : "Choose whether a record from a track without measured speed counts.",
-          "title" : "Verified and unverified speed records"
+          "title" : "Measured and estimated speed records"
         },
         {
           "aliases" : [
@@ -1345,7 +1345,7 @@
 
           ],
           "body" : [
-            "This is the jibe you were working for. A **clean** jibe passes three gates: it flew through, held its speed, and stayed quiet for the 10 s after.",
+            "This is the jibe you were working for. A **clean** jibe passes three gates: you flew through, held your speed, then 10 quiet seconds on the foil.",
             "**Flew through** means you never lost the foil until you were flying again.",
             "Holding the speed means your slowest point stays at or above 70 % of your entry speed. You never drop below the foil exit speed.",
             "Staying quiet means the 10 s after the turn hold no touchdown or fall. They also hold no second or more off the foil, and no wrist under water.",
@@ -2127,7 +2127,7 @@
                 "beta",
                 "dev"
               ],
-              "detail" : "It also carries that session's date, spot, discipline, duration, source class, engine stamp and identifier, with its share card attached.",
+              "detail" : "It also carries that session's date, spot and length, what recorded it and which app version read it. Its share card is attached.",
               "term" : "From a session"
             },
             {

@@ -201,7 +201,7 @@ import Testing
 
         let strava = GettingStartedGuide.settingsStrava
         #expect(strava.contains("Strava"))
-        #expect(strava.contains("uncertified"), "the cost is said in the same breath")
+        #expect(strava.contains("estimated"), "the cost is said in the same breath")
 
         // The house voice: you and CleanJibe, never we. ("your" is fine — the spaces are
         // what make this a word check rather than a substring one.)

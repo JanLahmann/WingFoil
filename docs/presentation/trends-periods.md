@@ -131,7 +131,7 @@ hand-written test suites agreeing today is not two implementations that cannot d
 | 7 | `cph` | CPH · clean jibes per hour | clean jibes ÷ Σ `summary.timerTimeS` (T2) |
 | 8 | `turns` | turns | Σ counted turns |
 | 9 | `cleanJibeRate` | clean-jibe rate | Σ clean ÷ Σ jibes, ≥ 5 jibes |
-| 10 | `wph` | WPH · swims per hour | Σ fell-in flight ends ÷ Σ `summary.timerTimeS` (T2) |
+| 10 | `wph` | WPH · falls per hour | Σ fell-in flight ends ÷ Σ `summary.timerTimeS` (T2) |
 | 11 | `best2s` | best 2 s | max |
 | 12 | `best10s` | best 10 s | max |
 | 13 | `longestFlight` | longest flight | max |
@@ -173,7 +173,7 @@ hand-written test suites agreeing today is not two implementations that cannot d
 - **An entry the period cannot supply is omitted** — never a dash, never a zero. That is the
   block's half of "a missing value is absent, never 0", and it is also what lets the card
   leave a number out rather than print a made-up one. A measured zero is still a value and
-  prints as one (`0.0` swims per hour).
+  prints as one (`0.0` falls per hour).
 - The formatters are the key-metrics block's own (`KeyMetrics.duration` / `km` / `knots` /
   `rate`, and their Python twins), so a duration on a period card reads the way a duration
   reads on a session card.

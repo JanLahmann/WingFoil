@@ -107,7 +107,7 @@ public enum PeriodBlock {
         add(Key.cph, "CPH · clean jibes per hour", f.cph.map(KeyMetrics.rate))
         add(Key.turns, "turns", f.turns.map(count))
         add(Key.cleanJibeRate, "clean-jibe rate", f.cleanJibeRatePct.map(percent))
-        add(Key.wph, "WPH · swims per hour", f.wph.map(KeyMetrics.rate))
+        add(Key.wph, "WPH · falls per hour", f.wph.map(KeyMetrics.rate))
         add(Key.best2s, "best 2 s", f.best2sKn.map { KeyMetrics.knots($0) })
         add(Key.best10s, "best 10 s", f.best10sKn.map { KeyMetrics.knots($0) })
         add(Key.longestFlight, "longest flight", f.longestFlightS.map(KeyMetrics.duration))

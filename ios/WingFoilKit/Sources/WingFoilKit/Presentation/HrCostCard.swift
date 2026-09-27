@@ -308,7 +308,7 @@ public struct HrCostCard: Sendable, Equatable {
         let (key, label, noun, event, seconds, coverage) = kind == .takeoff
             ? ("takeoffRecovery", "Recovery after takeoff", "rise", "takeoff",
                s.medianTakeoffRecoveryS, s.takeoffRecoveryCoverage)
-            : ("swimRecovery", "Recovery after a swim", "swim", "swim",
+            : ("swimRecovery", "Recovery after a fall", "fall", "fall",
                s.medianSwimRecoveryS, s.swimRecoveryCoverage)
         guard let seconds else {
             // The denominator is the events that rose by at least `hrMinRise`. Zero of them

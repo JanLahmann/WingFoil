@@ -630,7 +630,7 @@ private struct WelcomeTrackMotif: View {
         // 6 min 40 s with four green marks on it.
         .accessibilityLabel("Almost seven minutes of a real session's track. "
                             + "Four jibes flown through, one touchdown, and one "
-                            + "fall with the swim that followed.")
+                            + "fall.")
     }
 
     /// The slice of SVG path data the motif uses — absolute `M x y`, `L x y`, `Q cx cy x y`

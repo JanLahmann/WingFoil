@@ -33,7 +33,7 @@ export const NOT_A_SESSION = {
 /** The three sentences the product says about itself (docs/copy/phrases.json). */
 export const PHRASES = {
   "promise": "Did you fly through that jibe? CleanJibe reads your session off the watch. It tells you your time on the foil, every flight, your speed records, and a verdict on every turn. Flew through, touchdown, or fell in.",
-  "callToAction": "analyze your wingfoil sessions free — cleanjibe.org",
+  "callToAction": "Analyse your wingfoil sessions free at cleanjibe.org.",
   "captionOffer": "analysed with CleanJibe, free at cleanjibe.org"
 };
 
@@ -102,8 +102,8 @@ export const GLOSSARY = [
     "id": "wph",
     "term": "WPH",
     "short": "WPH",
-    "expansion": "swims per hour",
-    "line": "Swims per hour. Nobody wants it high, and it counts every fall."
+    "expansion": "falls per hour",
+    "line": "How often you fell in, per hour. Every fall counts, in a turn or not."
   },
   {
     "id": "speedRecords",

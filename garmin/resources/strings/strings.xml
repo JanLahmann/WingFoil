@@ -28,11 +28,11 @@
     <string id="SetAccelLoggingNote">Your wrist motion is recorded, so the phone can count your pump strokes. The file gets about 20 times larger and can take several minutes to reach Garmin Connect. Leave it off for a fast transfer.</string>
     <string id="SetPumpDetection">Detect pumping + takeoffs</string>
     <string id="SetAlertTakeoff">Vibrate on pumped takeoff</string>
-    <string id="SetAlertPb">Vibrate on speed PB</string>
+    <string id="SetAlertPb">Vibrate on a new best speed</string>
     <string id="SetAlertFlight">Vibrate on longest flight</string>
     <string id="SetAlertTurn">Vibrate on turn outcome</string>
     <string id="SetAlertCleanJibe">Vibrate on clean jibe</string>
-    <string id="SetAlertCleanJibeNote">A clean jibe gets its own rising three-tick buzz. Clean: you flew through and held your speed. Off: every turn gets the plain outcome buzz.</string>
+    <string id="SetAlertCleanJibeNote">A clean jibe gets its own rising three-tick buzz. Clean: you flew through, held your speed, then 10 quiet seconds on the foil. Off: every turn gets the plain outcome buzz.</string>
     <string id="SetWindDir">Wind direction (deg from, -1 = unset)</string>
     <string id="SetAutoWind">Estimate wind on the watch</string>
     <string id="SetTurnHabit">I mostly do</string>
@@ -128,7 +128,7 @@
     <string id="FoilKeyTotalTight">tot</string>
     <string id="FoilKeyMax">max</string>
     <string id="MapWaiting">waiting for GPS</string>
-    <string id="NewPb">NEW PB</string>
+    <string id="NewPb">NEW BEST</string>
     <string id="StoryOnFoil">on foil %</string>
     <string id="StoryTopSpeed">top speed</string>
     <string id="Turns">turns</string>
@@ -191,7 +191,7 @@
     <string id="LblPumps">pumps</string>
     <string id="LblToFoil">to foil</string>
     <string id="LblHrCost">hr cost</string>
-    <string id="LblDryRun">dry run</string>
+    <string id="LblDryRun">streak</string>
     <string id="LblFoilDist">foil dist</string>
     <string id="CapNow">now</string>
     <string id="CapTimeOnFoil">time on foil</string>

@@ -86,7 +86,7 @@ import Testing
         #expect(!terms.contains(MetricGlossary.entry("alpha500").term))
         #expect(topic.body.joined(separator: " ").contains(MetricGlossary.entry("alpha500").term))
         #expect(topic.related.first == .numbers)
-        #expect(terms.last == "\"Uncertified\"", "the mark is the last item")
+        #expect(terms.last == "\"Estimated\"", "the mark is the last item")
         // Alfred, 18 September 2026: three apps, three units, no rule. The answer is a list
         // of where each switch is, and it sits with the numbers it applies to.
         #expect(terms.contains("Knots or km/h"))
@@ -97,7 +97,7 @@ import Testing
         #expect(terms.count == 7)
 
         // What a rider actually types. Each has to reach this one page.
-        for needle in ["2 s", "10 s", "500 m", "alpha", "nautical", "uncertified",
+        for needle in ["2 s", "10 s", "500 m", "alpha", "nautical", "estimated",
                        "doppler"] {
             #expect(HelpCatalog.search(needle).contains { $0.id == .speedRecords },
                     "searching \"\(needle)\" no longer finds Speed records")
@@ -384,7 +384,7 @@ import Testing
     /// the import to the footer he reads during it.
     @Test func theRecordingClassesAreNamedTheWayTheWebsiteNamesThem() {
         #expect(RecordingClass.a.name == "Class A · Garmin watch app")
-        #expect(RecordingClass.b.name == "Class B · any speed-certified file")
+        #expect(RecordingClass.b.name == "Class B · any file with measured speed")
         #expect(RecordingClass.bPlus.name == "Class B+ · Apple Watch app")
         #expect(RecordingClass.c.name == "Class C · positions only")
         for recording in RecordingClass.allCases {
@@ -682,11 +682,11 @@ import Testing
         #expect(Branding.appName == "CleanJibe")
         #expect(Branding.site == "cleanjibe.org")
         #expect(Branding.callToAction
-                == "analyze your wingfoil sessions free — cleanjibe.org")
+                == "Analyse your wingfoil sessions free at cleanjibe.org.")
         // The sport word stays lowercase; the brand never appears in the CTA.
         #expect(!Branding.callToAction.contains("WingFoil"))
         #expect(!Branding.callToAction.contains(Branding.appName))
-        #expect(Branding.callToAction.hasSuffix(Branding.site))
+        #expect(Branding.callToAction.hasSuffix(Branding.site + "."))
         // Nothing that leaves the phone still carries the old name.
         for line in [Branding.credit, Branding.callToAction, Branding.siteURL] {
             #expect(!line.contains("WingFoil"))
@@ -2403,7 +2403,7 @@ import Testing
         s.swimRecoveryCoverage = HrCoverage(valid: 0, total: 0)      // never rose at all
         let card = try #require(HrCostCard.make(analysis(s)))
         #expect(card.stats[2].caption == "HR never fell halfway back within 2 min")
-        #expect(card.stats[3].caption == "no swim raised HR enough to recover from")
+        #expect(card.stats[3].caption == "no fall raised HR enough to recover from")
     }
 
     /// The happy-path secondary numbers, including the one decimal the pumping/cruising
@@ -2418,7 +2418,7 @@ import Testing
         #expect(card.stats[2].value == "12 s")
         #expect(card.stats[2].caption == "halfway back · 14 of 15 rises")
         #expect(card.stats[3].value == "18 s")
-        #expect(card.stats[3].caption == "halfway back · 4 of 7 swims")
+        #expect(card.stats[3].caption == "halfway back · 4 of 7 falls")
         #expect(card.stats.prefix(3).allSatisfy { !$0.thin })
         // 4 of 7 is below `thinCoveragePct`: the number is real, and the reader is told not
         // to lean on it. This is that session's own figure.

@@ -130,7 +130,7 @@ enum SessionDisplay {
         // that states `TPX/Speed` is class (b) too, and it did not come off a Garmin.
         // What the class actually says is that the file measured its own speed.
         case "b": return "Measured speed channel — everything except pump and takeoff effort"
-        default: return "No speed channel in this file — speed records are uncertified"
+        default: return "No speed channel in this file — speed records are estimated"
         }
     }
 }

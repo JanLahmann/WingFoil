@@ -17,7 +17,7 @@ WHAT IS PINNED, and where it bites
     `promise`        the hero paragraph on / — the one sentence that also opens the
                      welcome screen and the App Store description
     `callToAction`   what web/js/cardstats.js builds as BRANDING.line. The JS COMPOSES it
-                     (`cta` + " — " + `site`), so the two parts are pinned and the
+                     (`cta` + " at " + `site` + "."), so the two parts are pinned and the
                      composition is re-done here rather than the sentence being looked for
     `captionOffer`   the tail of the share-card caption template in web/js/sharecard.js,
                      composed from the same two parts
@@ -324,15 +324,15 @@ def pin_branding(phrases: dict, report: Report):
             return
         parts[key] = match.group(1)
 
-    # BRANDING.line = `${BRANDING.cta} — ${BRANDING.site}` — the composition, read rather
+    # BRANDING.line = `${BRANDING.cta} at ${BRANDING.site}.` — the composition, read rather
     # than assumed, so a change of separator fails here and not in a rider's chat thread.
-    line = re.search(r"BRANDING\.line\s*=\s*`\$\{BRANDING\.cta\}(.*?)\$\{BRANDING\.site\}`",
+    line = re.search(r"BRANDING\.line\s*=\s*`\$\{BRANDING\.cta\}(.*?)\$\{BRANDING\.site\}([^`$]*)`",
                      cardstats)
     if not line:
         report.fail("web/js/cardstats.js", "phrases.callToAction",
                     "BRANDING.line is no longer `${BRANDING.cta}…${BRANDING.site}`")
         return
-    built = parts["cta"] + line.group(1) + parts["site"]
+    built = parts["cta"] + line.group(1) + parts["site"] + line.group(2)
     if built != phrases["callToAction"]:
         report.fail("web/js/cardstats.js", "phrases.callToAction",
                     "BRANDING.line composes %r" % built, built)

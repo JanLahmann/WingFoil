@@ -1555,7 +1555,7 @@ PERIOD_BLOCK = [
     ("cph", "CPH · clean jibes per hour", _f_rate),
     ("turns", "turns", _f_int),
     ("cleanJibeRate", "clean-jibe rate", _f_pct),
-    ("wph", "WPH · swims per hour", _f_rate),
+    ("wph", "WPH · falls per hour", _f_rate),
     ("best2s", "best 2 s", _f_kn),
     ("best10s", "best 10 s", _f_kn),
     ("longestFlight", "longest flight", _f_clock),

@@ -362,7 +362,7 @@ public enum HelpCatalog {
                 + "support is left blank, never guessed.",
                 "Two things set the rows apart. First, **measured speed**: your file holds "
                 + "the watch's own speed, so your speed records count. Without it, speed is "
-                + "estimated from positions and the records are marked uncertified.",
+                + "worked out from positions and the records are marked estimated.",
                 "**Pump strokes and takeoff attempts** need a wrist accelerometer recorded "
                 + "during the session. Only the CleanJibe watch apps record one.",
                 "Each row ends with the class the Import screen prints.",
@@ -468,7 +468,7 @@ public enum HelpCatalog {
                 + "workouts automatically\". The next session is then waiting when you open "
                 + "the app.",
                 "Speed comes off the watch's own GPS receiver, so these speed records are "
-                + "certified. Nothing records your wrist accelerometer, so there are no pump "
+                + "measured. Nothing records your wrist accelerometer, so there are no pump "
                 + "strokes and no failed takeoff attempts.",
             ],
             items: [
@@ -543,7 +543,7 @@ public enum HelpCatalog {
                 "Polar, Suunto and COROS work this way too. Their own apps sync to "
                 + "intervals.icu, and CleanJibe syncs from there.",
                 "The file your watch left there decides how much you get. A FIT gives you "
-                + "the full analysis. A GPX, or a TCX without speed, gives uncertified speed "
+                + "the full analysis. A GPX, or a TCX without speed, gives estimated speed "
                 + "records.",
             ],
             items: IcuSetupGuide.steps.map {
@@ -585,7 +585,7 @@ public enum HelpCatalog {
                 "A Strava session still shows foil time, flights, every turn verdict, the "
                 + "wind axis and the map.",
                 "Strava keeps your track but not your watch's own speed, so the speed "
-                + "records are marked uncertified. " + Copy.stravaFall + " Your wrist was "
+                + "records are marked estimated. " + Copy.stravaFall + " Your wrist was "
                 + "not recorded, so there are no pump strokes.",
                 "If the same afternoon is also on intervals.icu, import it from there "
                 + "instead. That is the original file off your watch, so those records "
@@ -641,7 +641,7 @@ public enum HelpCatalog {
                 "If you are asked for a format, pick FIT. A FIT carries the watch's own "
                 + "speed, so its records certify.",
                 "A .gpx or a .tcx carries positions only, so its records are marked "
-                + "uncertified. Those two formats open in the CleanJibe beta.",
+                + "estimated. Those two formats open in the CleanJibe beta.",
                 "Garmin Connect's phone app has no export at all. Garmin owners have two "
                 + "better ways in: intervals.icu, or connect.garmin.com on a computer.",
             ],
@@ -903,8 +903,8 @@ public enum HelpCatalog {
                 + "one that records four times. No slow stretch is thrown away.",
                 "A window never spans a recording gap. Tap a record card to see where on the "
                 + "track and on the speed trace it happened.",
-                "A record certifies only when the recording holds the receiver's own speed "
-                + "channel. The rest are marked uncertified.",
+                "A record counts as measured only when the recording holds the receiver's own "
+                + "speed channel. The rest are marked estimated.",
             ],
             items: [
                 .init(term: "Best 2 s",
@@ -938,7 +938,7 @@ public enum HelpCatalog {
                           + "shows windsurf in knots."),
                 // Last, because it is the one line that is about the recording rather than
                 // about a window — and the one a rider needs before he posts a number.
-                .init(term: "\"Uncertified\"",
+                .init(term: "\"Estimated\"",
                       detail: "A recording with positions but no speed channel has its "
                           + "speed worked out from them, which reads high. Every GPX is "
                           + "one, and some converted exports. It is marked everywhere."),
@@ -951,18 +951,18 @@ public enum HelpCatalog {
         // the two words mean, what each mode does, and where the setting is.
         HelpTopic(
             id: .verifiedRecords, section: .readNumbers, subsection: .records,
-            title: "Verified and unverified speed records",
+            title: "Measured and estimated speed records",
             summary: "Choose whether a record from a track without measured speed counts.",
             body: [
-                "A verified record comes off a recording that carries your watch's own "
-                + "Doppler speed. An unverified one is worked out from positions, which "
+                "A measured record comes off a recording that carries your watch's own "
+                + "Doppler speed. An estimated one is worked out from positions, which "
                 + "reads high.",
-                "Only verified keeps unverified records out of your all-time table, your "
+                "Only measured keeps estimated records out of your all-time table, your "
                 + "trends and your cards. The session that set one still shows it, marked.",
-                "Prefer verified is the default. A verified record wins its row, and an "
-                + "unverified one fills a row no verified record has reached.",
-                "Include unverified counts every record and marks the ones it could not "
-                + "verify. Settings \u{2192} Speed records is where you choose.",
+                "Prefer measured is the default. A measured record wins its row, and an "
+                + "estimated one fills a row no measured record has reached.",
+                "Include estimated counts every record and marks the estimated ones. "
+                + "Settings \u{2192} Speed records is where you choose.",
             ],
             related: [.speedRecords, .whichWatch, .stravaImport]),
 
@@ -1046,7 +1046,7 @@ public enum HelpCatalog {
                 + "straight back to riding.",
             body: [
                 "This is the jibe you were working for. A **clean** jibe passes three gates: "
-                + "it flew through, held its speed, and stayed quiet for the 10 s after.",
+                + "you flew through, held your speed, then 10 quiet seconds on the foil.",
                 "**Flew through** means you never lost the foil until you were flying again.",
                 "Holding the speed means your slowest point stays at or above 70 % of your "
                 + "entry speed. You never drop below the foil exit speed.",
@@ -1529,9 +1529,9 @@ public enum HelpCatalog {
                           + "thresholds, your phone, iOS and locale. The paired watch is "
                           + "there, with how many sessions came in each way."),
                 .init(term: "From a session",
-                      detail: "It also carries that session's date, spot, discipline, "
-                          + "duration, source class, engine stamp and identifier, with its "
-                          + "share card attached."),
+                      detail: "It also carries that session's date, spot and length, "
+                          + "what recorded it and which app version read it. Its share "
+                          + "card is attached."),
                 .init(term: "Read it before you send",
                       detail: "Every line is there to read and to edit. If this phone has no "
                           + "mail account, the app hands the same text to whatever you do "
@@ -1769,7 +1769,7 @@ public enum HelpCatalog {
     /// Case-insensitive search over title, summary, body and items.
     ///
     /// Item **terms** are matched as well as details, which is what keeps "2 s", "500 m",
-    /// "alpha" and "uncertified" finding the one *Speed records* page now that the windows
+    /// "alpha" and "estimated" finding the one *Speed records* page now that the windows
     /// are its items rather than seven topics of their own.
     ///
     /// `channel` resolves the topics the same way the index does, so a channel's search

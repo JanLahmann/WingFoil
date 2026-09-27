@@ -165,8 +165,8 @@ public enum GettingStartedGuide {
                           + "own while phone and watch are together. Give it a minute."),
                 .init(number: 4,
                       title: "What you get",
-                      detail: "Speed comes off the watch's own receiver, so the records "
-                          + "certify. The 50 Hz wrist gives pump strokes and takeoff "
+                      detail: "Speed comes off the watch's own receiver, so the records are "
+                          + "measured. The 50 Hz wrist gives pump strokes and takeoff "
                           + "attempts."),
             ]),
         GettingStartedRoute(
@@ -197,8 +197,8 @@ public enum GettingStartedGuide {
                           + "next session is waiting when you open the app."),
                 .init(number: 5,
                       title: "What you get",
-                      detail: "Speed comes off the watch's own receiver, so the records "
-                          + "certify. Nothing records your wrist, so there are no pump "
+                      detail: "Speed comes off the watch's own receiver, so the records are "
+                          + "measured. Nothing records your wrist, so there are no pump "
                           + "strokes or takeoff attempts."),
             ]),
         GettingStartedRoute(
@@ -240,7 +240,7 @@ public enum GettingStartedGuide {
             classID: "c",
             summary: "Settings → Strava → Connect with Strava, then Import → Import from "
                 + "Strava…. Strava keeps your track but not your watch's speed, so records "
-                + "are uncertified.",
+                + "are estimated.",
             steps: [
                 .init(number: 1,
                       title: "Connect once",
@@ -259,7 +259,7 @@ public enum GettingStartedGuide {
                 .init(number: 4,
                       title: "What it costs",
                       detail: "Strava hands over positions rather than the speed your watch "
-                          + "measured. These speed records are marked **uncertified**. There "
+                          + "measured. These speed records are marked **estimated**. There "
                           + "are no pump strokes."),
                 .init(number: 5,
                       title: "If connecting is refused",
@@ -345,7 +345,7 @@ public enum GettingStartedGuide {
     /// rest — what is read, what is never written, and the connection cap.
     public static let settingsStrava =
         "Any watch that syncs to Strava works, with no file to move. Strava keeps your track "
-            + "but not your watch's speed, so the records are uncertified."
+            + "but not your watch's speed, so the records are estimated."
 
     /// The routes and notes a build on `channel` may name, as the help topic's items —
     /// title as the term, summary as the detail.
