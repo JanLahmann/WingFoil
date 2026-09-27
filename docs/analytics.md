@@ -242,7 +242,7 @@ App Store Connect's crash counts (b) are the aggregate view of the same failures
 
 ### (d) One session, sent by the rider, from the Share page — beta
 
-Share → **Send this session to the developer** (21 September 2026, docs/channels.md, beta).
+Share → **Send this session to us** (21 September 2026, docs/channels.md, beta).
 It is **rider-initiated and per session**: nothing runs in the background, nothing is
 sampled, and no session leaves a phone that a rider did not open, write a note on, read the
 whole mail of and press Send for. There is no CleanJibe endpoint to receive one; the mail is

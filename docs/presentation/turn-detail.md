@@ -340,7 +340,7 @@ It is a ladder of specificity, first match wins, and the ordering is the contrac
 | 8 | `quietOffFoil` | `cleanBlockedBy == quiet_off_foil` | the turn was there, the seconds after it were not |
 | 9 | `quietSubmerged` | `cleanBlockedBy == quiet_submerged` | came through carrying it, wrist under just after |
 | 10 | `axisAfter` | `cleanBlockedBy == axis_after` | held the speed, did not come far enough past the axis |
-| 11 | `cleanAndFast` | `success && score ≥ 0.85` | clean, and barely slowed |
+| 11 | `cleanAndFast` | `success && score ≥ 0.85` | clean, and barely slowed; on a tack, which is never clean, "flew through and barely slowed" |
 | 12 | `cleanButSlow` | `flew_through && score < 0.7` | flew through, and it cost |
 | 13 | `slowedEarly` | low point before halfway | the speed went before the mid-point |
 | 14 | `slowedLate` | low point at or after halfway | carried it in, lost it on the way out |
@@ -365,6 +365,42 @@ and not half its duration. A jibe's halfway point is called the **downwind point
 **head-to-wind**, and an unnamed sweep's the **middle of the turn**. Rules 4/5 and 8/9 need it;
 where the window has too few usable bearings to say, no rule that depends on it may fire and
 the ladder falls through to `plain`.
+
+### The verdict, the tip and the doubt (27 Sep 2026, UX review #4–#6)
+
+**The verdict is the hero.** Under the drawing, large and in its outcome ink: *Clean* with the
+star, *Flew through*, *Touchdown*, *Fell in* (`TurnCoach.verdictWord`). The coach line sits
+directly under it, before the strip and the numbers, because it is the page's story. The
+outcome and clean chips left the chip row: the hero says the verdict, the chips say the facts
+beside it (why a flown jibe is not clean, pumped out, wrist under). A clean jibe coming on
+screen, on open or by a swipe, gets one short success haptic.
+
+**The title** is the turn counted among its own kind, *Jibe 2 of 5*; the caption under it is
+the session clock and the swipe position, *42:15 · turn 7 of 12*. "swipe for the next" went.
+
+**The tip.** A coach line on a turn that was not clean ends with one sentence to try next time,
+read off a fact the line already stated (`TurnCoach.Tip`, `TurnSliceTests`):
+
+| tip | when | says |
+|---|---|---|
+| `comeInFaster` | low point before halfway (touchdown coming in, slowed early, or a fall / wrist / pump-out / costly fly-through placed there) | jibe: *come in faster, or keep the wing powered through the downwind point*; else *come in with more speed* |
+| `powerUpOnExit` | low point at or after halfway | *power the wing up as soon as you are on the new tack* |
+| `steadyExit` | `fellInFast` | *stay low and steady on the way out* |
+| `rideItOut` | the quiet tail refused it | *stay on the foil for {turnCleanQuietS} s after the turn, and it counts as clean* |
+| `carryFurther` | `axisAfter` | *carry the turn further past the wind axis before you settle* |
+
+No tip on a clean jibe, on `cleanAndFast` or `plain`, and none where the halfway point cannot
+be placed. The web's `coachLine` has not taken the tips yet (app first).
+
+**"Not how I remember it?"** — a button under the numbers, in every channel, with the turn
+named for the rider: *Jibe 2 of 5 at 42:15. CleanJibe says: touchdown.* (`TurnDoubt.note`).
+Beta and dev open *Send this session to us* with that line starting the note and the scrubbed
+recording attached. The App Store build has no send sheet, so the same button opens the
+ordinary feedback mail with the line under *What happened* and no attachment.
+
+**The footnote** lost "Score is…" and the paragraph on the manoeuvre channel and the Doppler
+speed: the page prints *held 87 %*, never *score*, and the channel is a mechanic one tap away
+behind the `?` onto *Clean jibes*. The fact itself is "The strip" above.
 
 iOS: `TurnSlice` + `TurnCoach` + `TurnSpeedRamp` in the kit (pure, `TurnSliceTests` /
 `TurnSpeedRampTests` / `ManeuverSliceTests`), drawn by `TurnDetailView` / `TurnDetailMapView` /
