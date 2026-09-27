@@ -169,7 +169,7 @@
       </div>
       <div class="term">
         <dt>WPH</dt>
-        <dd>Swims per hour. Nobody wants it high, and it counts every fall. <span class="muted small" data-copy="aside">Shows on the phone, the share card and the website.</span></dd>
+        <dd>How often you fell in, per hour. Every fall counts, in a turn or not. <span class="muted small" data-copy="aside">Shows on the phone, the share card and the website.</span></dd>
       </div>
       <div class="term">
         <dt>Speed records</dt>
@@ -278,7 +278,7 @@
           </div>
           <div class="term">
             <dt><a href="#help-stravaImport">Strava</a></dt>
-            <dd>Settings &rarr; Strava &rarr; Connect with Strava, then Import &rarr; Import from Strava…. Strava keeps your track but not your watch&rsquo;s speed, so records are uncertified.</dd>
+            <dd>Settings &rarr; Strava &rarr; Connect with Strava, then Import &rarr; Import from Strava…. Strava keeps your track but not your watch&rsquo;s speed, so records are estimated.</dd>
           </div>
           <div class="term">
             <dt><a href="#help-exampleSession">No wind today?</a></dt>
@@ -304,15 +304,15 @@
         <dl class="terms">
           <div class="term">
             <dt>Garmin, with the CleanJibe watch app</dt>
-            <dd>Class A · Garmin watch app. Everything. Foil time, flights, every turn verdict and clean jibe, certified speed records, the wind axis. Pump strokes and takeoff attempts too.</dd>
+            <dd>Class A · Garmin watch app. Everything. Foil time, flights, every turn verdict and clean jibe, measured speed records, the wind axis. Pump strokes and takeoff attempts too.</dd>
           </div>
           <div class="term">
             <dt>Garmin, with Garmin&rsquo;s own profile or another app</dt>
-            <dd>Class B · any speed-certified file. Everything except pump strokes and takeoff attempts, which need a wrist accelerometer nothing else records. Speed records certify. Sessions come in through intervals.icu.</dd>
+            <dd>Class B · any file with measured speed. Everything except pump strokes and takeoff attempts, which need a wrist accelerometer nothing else records. Sessions come in through intervals.icu.</dd>
           </div>
           <div class="term">
             <dt>Apple Watch, with Apple&rsquo;s Workout app</dt>
-            <dd>Bring it in through Strava or intervals.icu. In the beta, Apple Health hands it over as Class B · any speed-certified file.</dd>
+            <dd>Bring it in through Strava or intervals.icu. In the beta, Apple Health hands it over as Class B · any file with measured speed.</dd>
           </div>
           <div class="term">
             <dt>Apple Watch, with the CleanJibe watch app</dt>
@@ -408,7 +408,7 @@
         <p class="what">Ride with a tracker app on a phone in a pouch. It comes in through Strava or as a file.</p>
         <p>A phone records a GPS track as well as most watches do. CleanJibe reads it the same way.</p>
         <p>The Import screen calls it Class C · positions only, because the speed is worked out from the positions.</p>
-        <p>Foil time, flights, every turn verdict and clean jibe, the wind axis. Speed records are estimated from positions and marked uncertified, and there are no pump strokes or takeoff attempts.</p>
+        <p>Foil time, flights, every turn verdict and clean jibe, the wind axis. Speed records are estimated from positions and marked so, and there are no pump strokes or takeoff attempts.</p>
         <p>Keep the phone dry, still and facing the sky. A waterproof pouch on the upper arm or high on the chest works.</p>
         <p>A pocket at hip height spends half the session underwater. Start the recording on the beach.</p>
         <dl class="terms">
@@ -720,22 +720,22 @@
             <dd>The watch app has its own switch, under Garmin Connect &rarr; CleanJibe &rarr; Settings. Garmin Connect follows its own. Strava shows windsurf in knots.</dd>
           </div>
           <div class="term">
-            <dt>&ldquo;Uncertified&rdquo;</dt>
+            <dt>&ldquo;Estimated&rdquo;</dt>
             <dd>A recording with positions but no speed channel has its speed worked out from them, which reads high. Every GPX is one, and some converted exports. It is marked everywhere.</dd>
           </div>
         </dl>
-        <p class="piece-foot" data-copy="related">Read next: <a href="#help-verifiedRecords">Verified and unverified speed records</a> · <a href="#help-whichWatch">Which watches work with CleanJibe</a></p>
+        <p class="piece-foot" data-copy="related">Read next: <a href="#help-verifiedRecords">Measured and estimated speed records</a> · <a href="#help-whichWatch">Which watches work with CleanJibe</a></p>
       </article>
 
       <article class="panel piece" id="help-verifiedRecords">
         <div class="piece-head">
-          <h3>Verified and unverified speed records</h3>
+          <h3>Measured and estimated speed records</h3>
         </div>
         <p class="what">Choose whether a record from a track without measured speed counts.</p>
-        <p>A verified record comes off a recording that carries your watch&rsquo;s own Doppler speed. An unverified one is worked out from positions, which reads high.</p>
-        <p>Only verified keeps unverified records out of your all-time table, your trends and your cards. The session that set one still shows it, marked.</p>
-        <p>Prefer verified is the default. A verified record wins its row, and an unverified one fills a row no verified record has reached.</p>
-        <p>Include unverified counts every record and marks the ones it could not verify. Settings &rarr; Speed records is where you choose.</p>
+        <p>A measured record comes off a recording that carries your watch&rsquo;s own Doppler speed. An estimated one is worked out from positions, which reads high.</p>
+        <p>Only measured keeps estimated records out of your all-time table, your trends and your cards. The session that set one still shows it, marked.</p>
+        <p>Prefer measured is the default. A measured record wins its row, and an estimated one fills a row no measured record has reached.</p>
+        <p>Include estimated counts every record and marks the estimated ones. Settings &rarr; Speed records is where you choose.</p>
         <p class="piece-foot" data-copy="related">Read next: <a href="#help-speedRecords">Speed records</a> · <a href="#help-whichWatch">Which watches work with CleanJibe</a> · <a href="#help-stravaImport">Import from Strava</a></p>
       </article>
 
@@ -1134,7 +1134,7 @@
           </div>
           <div class="term">
             <dt>From a session</dt>
-            <dd>It also carries that session&rsquo;s date, spot, discipline, duration, source class, engine stamp and identifier, with its share card attached.</dd>
+            <dd>It also carries that session&rsquo;s date, spot and length, what recorded it and which app version read it. Its share card is attached.</dd>
           </div>
           <div class="term">
             <dt>Read it before you send</dt>
@@ -1160,7 +1160,7 @@
         <p>We can only chase a wrong number on the recording that produced it. This puts the recording, your notes and the app&rsquo;s details into one mail.</p>
         <p>The file holds your track, your heart rate and your times. We use it only to improve the analysis, and we never publish it.</p>
         <p>You see the whole mail before it goes. Edit any line, delete any line, or close it and nothing is sent.</p>
-        <p>Open a session, tap Share, then Send this session to the developer.</p>
+        <p>Open a session, tap Share, then Send this session to us.</p>
         <p class="piece-foot" data-copy="related">Read next: <a href="#help-shareFit">Sending a session to a friend</a> · <a href="#help-divergence">When the watch and the phone show different numbers</a></p>
       </article>
 

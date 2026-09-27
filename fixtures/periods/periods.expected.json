@@ -1275,7 +1275,7 @@
         },
         {
           "key": "wph",
-          "label": "WPH · swims per hour",
+          "label": "WPH · falls per hour",
           "value": "3.8"
         },
         {
@@ -1401,7 +1401,7 @@
         },
         {
           "key": "wph",
-          "label": "WPH · swims per hour",
+          "label": "WPH · falls per hour",
           "value": "4.5"
         },
         {
@@ -1610,7 +1610,7 @@
         },
         {
           "key": "wph",
-          "label": "WPH · swims per hour",
+          "label": "WPH · falls per hour",
           "value": "6.7"
         },
         {
@@ -1734,7 +1734,7 @@
         },
         {
           "key": "wph",
-          "label": "WPH · swims per hour",
+          "label": "WPH · falls per hour",
           "value": "6.9"
         },
         {
@@ -1858,7 +1858,7 @@
         },
         {
           "key": "wph",
-          "label": "WPH · swims per hour",
+          "label": "WPH · falls per hour",
           "value": "9.0"
         },
         {
@@ -1969,7 +1969,7 @@
         },
         {
           "key": "wph",
-          "label": "WPH · swims per hour",
+          "label": "WPH · falls per hour",
           "value": "4.7"
         },
         {
@@ -2093,7 +2093,7 @@
         },
         {
           "key": "wph",
-          "label": "WPH · swims per hour",
+          "label": "WPH · falls per hour",
           "value": "4.8"
         },
         {
@@ -2310,7 +2310,7 @@
         },
         {
           "key": "wph",
-          "label": "WPH · swims per hour",
+          "label": "WPH · falls per hour",
           "value": "5.4"
         },
         {
@@ -2424,7 +2424,7 @@
         },
         {
           "key": "wph",
-          "label": "WPH · swims per hour",
+          "label": "WPH · falls per hour",
           "value": "4.1"
         },
         {
@@ -2550,7 +2550,7 @@
         },
         {
           "key": "wph",
-          "label": "WPH · swims per hour",
+          "label": "WPH · falls per hour",
           "value": "4.8"
         },
         {
@@ -2677,7 +2677,7 @@
         },
         {
           "key": "wph",
-          "label": "WPH · swims per hour",
+          "label": "WPH · falls per hour",
           "value": "3.5"
         },
         {

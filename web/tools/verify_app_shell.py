@@ -92,7 +92,7 @@ PAGE_IDS = ["page-sessions", "page-session", "page-records", "page-trends", "pag
 #: only to the markup.
 PORTED_SCREENS = [
     ("log-gear", "Gear", "ios/WingFoil/Features/Gear/SessionGearCard.swift",
-     "Add wings, boards and foils on the Gear tab to correlate sessions with what you rode.",
+     "Add your wings, boards and foils on the Gear tab. Then every session knows what you rode.",
      "ios/WingFoil/Features/Gear/SessionGearCard.swift"),
     ("log-divergence", "Watch vs phone",
      "ios/WingFoil/Features/SessionDetail/SessionLogView.swift",

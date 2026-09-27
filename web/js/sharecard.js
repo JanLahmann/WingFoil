@@ -1510,7 +1510,7 @@ function shareCaption(c) {
     const clean = c.stats?.find((e) => e.key === "cleanJibes");
     if (clean) parts.push(cleanPhrase(clean.value));
   }
-  return `${parts.join(" · ")} — analysed with ${BRANDING.name}, free at ${BRANDING.site}`;
+  return `${parts.join(" · ")} · analysed with ${BRANDING.name}, free at ${BRANDING.site}`;
 }
 
 /** "30 clean jibes", and "1 clean jibe" — the one place the count is worded. */

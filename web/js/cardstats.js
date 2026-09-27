@@ -43,7 +43,7 @@ export const BRANDING = {
   /** No scheme: a card is read, not clicked, and "https://" is four characters of noise. */
   site: "cleanjibe.org",
   /** The offer, in the fewest words that still say what happens if you go there. */
-  cta: "analyze your wingfoil sessions free",
+  cta: "Analyse your wingfoil sessions free",
   /** What the QR resolves to — the same address, as something a camera can open. */
   url: "https://cleanjibe.org",
 };
@@ -52,8 +52,8 @@ export const BRANDING = {
  *  footer since layout B v2. `Branding.tagline` in the kit. */
 BRANDING.tagline = "Your WingFoil session, measured.";
 
-/** "analyze your wingfoil sessions free — cleanjibe.org", built rather than repeated. */
-BRANDING.line = `${BRANDING.cta} — ${BRANDING.site}`;
+/** "Analyse your wingfoil sessions free at cleanjibe.org.", built rather than repeated. */
+BRANDING.line = `${BRANDING.cta} at ${BRANDING.site}.`;
 
 /* ---------------------------------------------------------------------- shapes */
 

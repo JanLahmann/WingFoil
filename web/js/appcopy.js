@@ -126,7 +126,7 @@ export const SHELL = {
       "Home-screen widgets and the watch complication.",
       "The session video: your afternoon as a film rather than a card.",
       "Grouping the library by month, year or spot, and filtering it.",
-      "Send a session to the developer from its Share page, with your notes on it.",
+      "Send a session to us from its Share page, with your notes on it.",
       "Planned: a live view on the Apple Watch. Foil state, flights, records and turn verdicts on the wrist, as the Garmin app shows them."
     ]
   }
@@ -236,7 +236,7 @@ export const GUIDE = {
       "id": "strava",
       "title": "Strava",
       "status": "any watch that syncs to Strava",
-      "summary": "Settings → Strava → Connect with Strava, then Import → Import from Strava…. Strava keeps your track but not your watch's speed, so records are uncertified.",
+      "summary": "Settings → Strava → Connect with Strava, then Import → Import from Strava…. Strava keeps your track but not your watch's speed, so records are estimated.",
       "href": "/start/#guide-strava"
     }
   ]
@@ -246,7 +246,7 @@ export const GUIDE = {
  *  (`GettingStartedGuide.settingsIcu` / `.settingsStrava`). */
 export const SETTINGS = {
   "intervalsIcu": "Garmin has no open API, so intervals.icu is the bridge. Connect your Garmin there once, and every session arrives here by itself. It is free.",
-  "strava": "Any watch that syncs to Strava works, with no file to move. Strava keeps your track but not your watch's speed, so the records are uncertified."
+  "strava": "Any watch that syncs to Strava works, with no file to move. Strava keeps your track but not your watch's speed, so the records are estimated."
 };
 
 /**
@@ -275,7 +275,7 @@ export const SETTINGS_SECTIONS = [
     "footer": [
       "Strava opens, you say yes, and CleanJibe can list your activities on the Import screen.",
       "CleanJibe only reads your Strava account. It never writes, renames or posts anything.",
-      "A session imported this way is analysed from your track alone, so its speed records are marked uncertified.",
+      "A session imported this way is analysed from your track alone, so its speed records are marked estimated.",
       "Strava lets a new app connect a limited number of riders. Connecting is refused while CleanJibe is full.",
       "That says nothing about your account."
     ],
@@ -313,9 +313,9 @@ export const SETTINGS_SECTIONS = [
     "title": "Speed records",
     "lead": "Choose whether records from tracks without measured speed count.",
     "footer": [
-      "Verified means your watch measured the speed with Doppler.",
-      "Unverified means CleanJibe worked it out from positions. That reads high.",
-      "Prefer verified fills a row with an unverified record only when no verified one exists."
+      "Measured means your watch measured the speed with Doppler.",
+      "Estimated means CleanJibe worked it out from positions. That reads high.",
+      "Prefer measured fills a row with an estimated record only when no measured one exists."
     ],
     "help": "verifiedRecords"
   },
@@ -951,7 +951,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Settings → Strava → Connect with Strava, then Import → Import from Strava…. Strava keeps your track but not your watch's speed, so records are uncertified.",
+              "detail": "Settings → Strava → Connect with Strava, then Import → Import from Strava…. Strava keeps your track but not your watch's speed, so records are estimated.",
               "link": "stravaImport",
               "term": "Strava"
             },
@@ -1003,7 +1003,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Class A · Garmin watch app. Everything. Foil time, flights, every turn verdict and clean jibe, certified speed records, the wind axis. Pump strokes and takeoff attempts too.",
+              "detail": "Class A · Garmin watch app. Everything. Foil time, flights, every turn verdict and clean jibe, measured speed records, the wind axis. Pump strokes and takeoff attempts too.",
               "term": "Garmin, with the CleanJibe watch app"
             },
             {
@@ -1012,7 +1012,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Class B · any speed-certified file. Everything except pump strokes and takeoff attempts, which need a wrist accelerometer nothing else records. Speed records certify. Sessions come in through intervals.icu.",
+              "detail": "Class B · any file with measured speed. Everything except pump strokes and takeoff attempts, which need a wrist accelerometer nothing else records. Sessions come in through intervals.icu.",
               "term": "Garmin, with Garmin's own profile or another app"
             },
             {
@@ -1021,7 +1021,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Bring it in through Strava or intervals.icu. In the beta, Apple Health hands it over as Class B · any speed-certified file.",
+              "detail": "Bring it in through Strava or intervals.icu. In the beta, Apple Health hands it over as Class B · any file with measured speed.",
               "term": "Apple Watch, with Apple's Workout app"
             },
             {
@@ -1189,7 +1189,7 @@ export const HELP = {
           "body": [
             "A phone records a GPS track as well as most watches do. CleanJibe reads it the same way.",
             "The Import screen calls it Class C · positions only, because the speed is worked out from the positions.",
-            "Foil time, flights, every turn verdict and clean jibe, the wind axis. Speed records are estimated from positions and marked uncertified, and there are no pump strokes or takeoff attempts.",
+            "Foil time, flights, every turn verdict and clean jibe, the wind axis. Speed records are estimated from positions and marked so, and there are no pump strokes or takeoff attempts.",
             "Keep the phone dry, still and facing the sky. A waterproof pouch on the upper arm or high on the chest works.",
             "A pocket at hip height spends half the session underwater. Start the recording on the beach."
           ],
@@ -1664,7 +1664,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Swims per hour. Nobody wants it high, and it counts every fall.",
+              "detail": "How often you fell in, per hour. Every fall counts, in a turn or not.",
               "term": "WPH"
             },
             {
@@ -2005,7 +2005,7 @@ export const HELP = {
                 "dev"
               ],
               "detail": "A recording with positions but no speed channel has its speed worked out from them, which reads high. Every GPX is one, and some converted exports. It is marked everywhere.",
-              "term": "\"Uncertified\""
+              "term": "\"Estimated\""
             }
           ],
           "related": [
@@ -2019,10 +2019,10 @@ export const HELP = {
         {
           "aliases": [],
           "body": [
-            "A verified record comes off a recording that carries your watch's own Doppler speed. An unverified one is worked out from positions, which reads high.",
-            "Only verified keeps unverified records out of your all-time table, your trends and your cards. The session that set one still shows it, marked.",
-            "Prefer verified is the default. A verified record wins its row, and an unverified one fills a row no verified record has reached.",
-            "Include unverified counts every record and marks the ones it could not verify. Settings → Speed records is where you choose."
+            "A measured record comes off a recording that carries your watch's own Doppler speed. An estimated one is worked out from positions, which reads high.",
+            "Only measured keeps estimated records out of your all-time table, your trends and your cards. The session that set one still shows it, marked.",
+            "Prefer measured is the default. A measured record wins its row, and an estimated one fills a row no measured record has reached.",
+            "Include estimated counts every record and marks the estimated ones. Settings → Speed records is where you choose."
           ],
           "channels": [
             "release",
@@ -2041,7 +2041,7 @@ export const HELP = {
             "stravaImport"
           ],
           "summary": "Choose whether a record from a track without measured speed counts.",
-          "title": "Verified and unverified speed records"
+          "title": "Measured and estimated speed records"
         },
         {
           "aliases": [],
@@ -2905,7 +2905,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "It also carries that session's date, spot, discipline, duration, source class, engine stamp and identifier, with its share card attached.",
+              "detail": "It also carries that session's date, spot and length, what recorded it and which app version read it. Its share card is attached.",
               "term": "From a session"
             },
             {
@@ -2950,7 +2950,7 @@ export const HELP = {
             "We can only chase a wrong number on the recording that produced it. This puts the recording, your notes and the app's details into one mail.",
             "The file holds your track, your heart rate and your times. We use it only to improve the analysis, and we never publish it.",
             "You see the whole mail before it goes. Edit any line, delete any line, or close it and nothing is sent.",
-            "Open a session, tap Share, then Send this session to the developer."
+            "Open a session, tap Share, then Send this session to us."
           ],
           "channels": [
             "beta",
