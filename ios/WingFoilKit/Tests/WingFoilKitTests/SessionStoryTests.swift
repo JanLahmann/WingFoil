@@ -175,7 +175,7 @@ import Testing
                                         dateLine: "30 August 2026", foilPct: 66,
                                         cleanJibes: 9)
         #expect(caption == "14 dry jibes, 9 clean. Torbole · 30 August 2026 · 66 % on the foil"
-                + " — " + ShareCaption.offer)
+                + " · " + ShareCaption.offer)
         #expect(ShareCaption.line(story: nil, title: "Torbole", dateLine: "30 August 2026",
                                   foilPct: 66, cleanJibes: 9)
                 == ShareCaption.line(title: "Torbole", dateLine: "30 August 2026",

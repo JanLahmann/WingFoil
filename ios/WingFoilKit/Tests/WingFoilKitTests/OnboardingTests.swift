@@ -141,7 +141,7 @@ import Testing
         #expect(topic.related.first == .appleWatchApp)
         #expect(HelpCatalog.topic(.appleWatchApp).items.contains { $0.term == "The wrist may go under" })
         for phrase in ["surfing", "water sports", "sailing", "import", "health",
-                       "certified", "accelerometer", "automatically"] {
+                       "measured", "accelerometer", "automatically"] {
             #expect(prose.contains(phrase), "the Apple Workout topic never mentions \(phrase)")
         }
         // The promise the permission prompt is about to make, made here first.
@@ -230,7 +230,7 @@ import Testing
             #expect(prose.contains(door), "the watch table never mentions \(door)")
         }
         // The two axes the table is actually about.
-        #expect(prose.contains("certified"))
+        #expect(prose.contains("measured"))
         #expect(prose.contains("accelerometer"))
         // Two Garmin rows, two Apple Watch rows, the other brands, Strava, the phone.
         #expect(topic.items.count == 7)
