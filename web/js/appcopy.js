@@ -126,7 +126,7 @@ export const SHELL = {
       "Home-screen widgets and the watch complication.",
       "The session video: your afternoon as a film rather than a card.",
       "Grouping the library by month, year or spot, and filtering it.",
-      "Send a session to the developer from its Share page, with your notes on it.",
+      "Send a session and its recording to us from its Share page or a turn, with your notes.",
       "Planned: a live view on the Apple Watch. Foil state, flights, records and turn verdicts on the wrist, as the Garmin app shows them."
     ]
   }
@@ -2950,7 +2950,7 @@ export const HELP = {
             "We can only chase a wrong number on the recording that produced it. This puts the recording, your notes and the app's details into one mail.",
             "The file holds your track, your heart rate and your times. We use it only to improve the analysis, and we never publish it.",
             "You see the whole mail before it goes. Edit any line, delete any line, or close it and nothing is sent.",
-            "Open a session, tap Share, then Send this session to the developer."
+            "Open a session, tap Share, then Send this session to us."
           ],
           "channels": [
             "beta",
