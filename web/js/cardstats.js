@@ -193,7 +193,7 @@ export const cardWord = (key, args = {}, count) =>
   ?? "";
 
 /** The numbers a card can be headlined with, in picker order. Clean jibes is the default.
- *  `sessions` is the period card's alone, and a period card never offers `tacks`. */
+ *  `sessions` is the period card's alone. */
 export const HEROES = {
   clean: { id: "clean", label: cardWord("optionClean") },
   max2s: { id: "max2s", label: cardWord("optionMax2s") },
@@ -202,8 +202,9 @@ export const HEROES = {
 };
 /** The session card's heroes, and the fallback order. */
 export const HERO_ORDER = ["clean", "max2s", "tacks"];
-/** The period card's heroes, and the fallback order. */
-export const PERIOD_HERO_ORDER = ["clean", "max2s", "sessions"];
+/** The period card's heroes, and the fallback order. `tacks` is offered where the period's
+ *  rows carry the tack ladder (schema 14) and there was a tack in it. */
+export const PERIOD_HERO_ORDER = ["clean", "max2s", "tacks", "sessions"];
 
 /** The flew / touchdown / fell words the bars' legend prints, from the glossary. */
 const legendWords = () => ["flewThrough", "touchdown", "fellIn"]
@@ -357,14 +358,30 @@ export function periodCardStats(period) {
 }
 
 /**
+ * **What a period card draws for one turn kind** (schema 14) — its bar, the caption beside
+ * it and, beside the jibe's (whose hero is the clean count), a hero of its own. Keyed by the
+ * kind `library.period_card` sums, in the order it sums them, so the card is driven by the
+ * kinds the stored rows count: a kind this table does not name draws nothing. The 360s are
+ * that case today — the detector is off and unvalidated, their slot is empty, and they get a
+ * row here (and words) only once they are counted. The twin of `ShareCardStats.periodKinds`.
+ */
+export const PERIOD_KINDS = {
+  jibe: { bar: "jibes", label: "barJibes", caption: "ofJibes", arg: "jibes", hero: null },
+  tack: { bar: "tacks", label: "barTacks", caption: "ofTacks", arg: "tacks", hero: "tacks" },
+};
+
+/**
  * **The period card's story** — layout B v2 for a trip, a month, a season or a range. The
  * twin of `ShareCardStats.Story.make(period:hero:)` in the kit; both are pinned against
  * fixtures/cards/period-stories.expected.json.
  *
- * Heroes: clean jibes → best 2 s → sessions. The one outcome bar is the jibe bar only when
- * every counted turn of the period was a jibe (`card.dryKind`), the turn bar otherwise —
- * a stored row carries no tack ladder to draw a tack bar from. With 0 clean jibes the clean
- * number and clean jibes / h are left out, as on the session card.
+ * Heroes: clean jibes → best 2 s → tacks → sessions. The bars are the session card's — the
+ * jibe bar, and the tack bar beside it where the period had a tack — drawn from the per-kind
+ * ladders the stored rows carry (`card.kinds`, schema 14); a period with no jibe in it draws
+ * the one turn bar, as a session does. A period one of whose rows carries no split
+ * (`card.kinds` null) keeps the old single bar: the jibe bar only when every counted turn
+ * was a jibe (`card.dryKind`), the turn bar otherwise. With 0 clean jibes the clean number
+ * and clean jibes / h are left out, as on the session card.
  */
 export function periodCardStory(period, wanted = "clean") {
   const block = Object.fromEntries((period?.block || []).map((e) => [e.key, e]));
@@ -372,10 +389,20 @@ export function periodCardStory(period, wanted = "clean") {
   const cleanN = Number(block.cleanJibes?.value);
   const clean = block.cleanJibes && cleanN > 0 ? cleanN : null;
   const speed = block.best2s || null;
+  const sum = (t) => t.flewThrough + t.touchdown + t.fellIn;
+
+  // The kinds this card draws a bar for: the named ones with a ladder and a turn in it, and
+  // only where the jibe ladder has one — otherwise the turn bar below already counts them.
+  const kinds = Array.isArray(card.kinds) ? card.kinds : null;
+  const jibeKind = kinds?.find((k) => k.kind === "jibe") || null;
+  const drawn = kinds && jibeKind && jibeKind.count > 0
+    ? kinds.filter((k) => PERIOD_KINDS[k.kind] && k.flewThrough !== null && k.count > 0)
+    : [];
 
   const heroOptions = [];
   if (clean !== null) heroOptions.push("clean");
   if (speed) heroOptions.push("max2s");
+  for (const k of drawn) if (PERIOD_KINDS[k.kind].hero) heroOptions.push(PERIOD_KINDS[k.kind].hero);
   if ((period?.sessions || 0) > 0) heroOptions.push("sessions");
   const kind = heroOptions.includes(wanted) ? wanted : (heroOptions[0] ?? null);
 
@@ -387,6 +414,15 @@ export function periodCardStory(period, wanted = "clean") {
   } else if (kind === "max2s") {
     const [value, unit] = splitUnit(speed.value);
     hero = { kind, value, unit, sub: cardWord("heroMax2s") };
+  } else if (kind === "tacks") {
+    const t = drawn.find((k) => k.kind === "tack");
+    const n = t.count, dry = String(t.flewThrough + t.touchdown);
+    const j = jibeKind.count;
+    hero = { kind, value: String(n), unit: cardWord("heroTacks", {}, n),
+             sub: j > 0
+               ? cardWord("heroTacksBeside",
+                          { dry, jibes: cardWord("jibeCount", { jibes: String(j) }, j) })
+               : cardWord("heroTacksDry", { dry }) };
   } else if (kind === "sessions") {
     const spots = block.spots?.value ?? "1";
     hero = { kind, value: String(period.sessions),
@@ -396,9 +432,26 @@ export function periodCardStory(period, wanted = "clean") {
 
   const bars = [];
   const o = card.outcomes;
-  const total = o ? o.flewThrough + o.touchdown + o.fellIn : 0;
-  if (o && total > 0) {
-    const isJibes = card.dryKind === "jibes";
+  const total = o ? sum(o) : 0;
+  if (drawn.length) {
+    for (const k of drawn) {
+      const words = PERIOD_KINDS[k.kind];
+      const mine = words.hero ? kind === words.hero : kind === "clean";
+      let right = mine ? null
+        : text(`presentation.caption.${words.caption}`,
+               { [words.arg]: String(k.count), _count: k.count });
+      let star = false;
+      // The clean clause is the jibe's own count, over the jibes this bar draws.
+      if (k.kind === "jibe" && kind !== "clean" && k.clean > 0) {
+        right = `${right ?? ""} · ${cardWord("barClean", { clean: String(k.clean) })}`;
+        star = true;
+      }
+      bars.push({ kind: words.bar, label: cardWord(words.label),
+                  flewThrough: k.flewThrough, touchdown: k.touchdown, fellIn: k.fellIn,
+                  right, star });
+    }
+  } else if (o && total > 0) {
+    const isJibes = !kinds && card.dryKind === "jibes";
     let right = isJibes
       ? (kind === "clean" ? null : ofJibes)
       : text("presentation.caption.ofTurns", { turns: String(total), _count: total });

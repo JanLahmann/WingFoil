@@ -302,19 +302,131 @@
           "text": " dry"
         }
       ]
+    },
+    "tacks": {
+      "bars": [
+        {
+          "fellIn": 32,
+          "flewThrough": 54,
+          "kind": "turns",
+          "label": "turns",
+          "right": "of 115 turns",
+          "star": false,
+          "touchdown": 29
+        }
+      ],
+      "dateLine": "31 July 2026 – 14 February 2027",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "43"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "clean",
+        "sub": "of 91 jibes",
+        "unit": "clean jibes",
+        "value": "45"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s",
+        "sessions"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "5.6"
+        },
+        {
+          "clean": false,
+          "key": "tph",
+          "label": "dry turns / h",
+          "value": "10.4"
+        },
+        {
+          "clean": false,
+          "key": "sessions",
+          "label": "sessions",
+          "value": "9"
+        },
+        {
+          "clean": false,
+          "key": "hours",
+          "label": "time on the water",
+          "value": "10.0 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "109.0 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "5"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "9"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
     }
   },
   "2026-07": {
     "clean": {
       "bars": [
         {
-          "fellIn": 3,
-          "flewThrough": 6,
-          "kind": "turns",
-          "label": "turns",
-          "right": "of 12 turns",
+          "fellIn": 1,
+          "flewThrough": 5,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
           "star": false,
-          "touchdown": 3
+          "touchdown": 2
+        },
+        {
+          "fellIn": 2,
+          "flewThrough": 1,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": "of 4 tacks",
+          "star": false,
+          "touchdown": 1
         }
       ],
       "dateLine": "31 July 2026",
@@ -341,6 +453,7 @@
       "heroOptions": [
         "clean",
         "max2s",
+        "tacks",
         "sessions"
       ],
       "legend": [
@@ -411,13 +524,22 @@
     "max2s": {
       "bars": [
         {
-          "fellIn": 3,
-          "flewThrough": 6,
-          "kind": "turns",
-          "label": "turns",
-          "right": "of 12 turns · 5 clean",
+          "fellIn": 1,
+          "flewThrough": 5,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 8 jibes · 5 clean",
           "star": true,
-          "touchdown": 3
+          "touchdown": 2
+        },
+        {
+          "fellIn": 2,
+          "flewThrough": 1,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": "of 4 tacks",
+          "star": false,
+          "touchdown": 1
         }
       ],
       "dateLine": "31 July 2026",
@@ -444,6 +566,7 @@
       "heroOptions": [
         "clean",
         "max2s",
+        "tacks",
         "sessions"
       ],
       "legend": [
@@ -514,13 +637,22 @@
     "sessions": {
       "bars": [
         {
-          "fellIn": 3,
-          "flewThrough": 6,
-          "kind": "turns",
-          "label": "turns",
-          "right": "of 12 turns · 5 clean",
+          "fellIn": 1,
+          "flewThrough": 5,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 8 jibes · 5 clean",
           "star": true,
-          "touchdown": 3
+          "touchdown": 2
+        },
+        {
+          "fellIn": 2,
+          "flewThrough": 1,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": "of 4 tacks",
+          "star": false,
+          "touchdown": 1
         }
       ],
       "dateLine": "31 July 2026",
@@ -547,6 +679,7 @@
       "heroOptions": [
         "clean",
         "max2s",
+        "tacks",
         "sessions"
       ],
       "legend": [
@@ -566,6 +699,119 @@
           "key": "tph",
           "label": "dry turns / h",
           "value": "10.8"
+        },
+        {
+          "clean": false,
+          "key": "hours",
+          "label": "time on the water",
+          "value": "1.0 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "12.0 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "3"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "6"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "tacks": {
+      "bars": [
+        {
+          "fellIn": 1,
+          "flewThrough": 5,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 8 jibes · 5 clean",
+          "star": true,
+          "touchdown": 2
+        },
+        {
+          "fellIn": 2,
+          "flewThrough": 1,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": null,
+          "star": false,
+          "touchdown": 1
+        }
+      ],
+      "dateLine": "31 July 2026",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "4"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "tacks",
+        "sub": "2 dry · beside 8 jibes",
+        "unit": "tacks",
+        "value": "4"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s",
+        "tacks",
+        "sessions"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "6.0"
+        },
+        {
+          "clean": false,
+          "key": "tph",
+          "label": "dry turns / h",
+          "value": "10.8"
+        },
+        {
+          "clean": false,
+          "key": "sessions",
+          "label": "sessions",
+          "value": "1"
         },
         {
           "clean": false,
@@ -613,13 +859,22 @@
     "clean": {
       "bars": [
         {
-          "fellIn": 18,
-          "flewThrough": 39,
-          "kind": "turns",
-          "label": "turns",
-          "right": "of 77 turns",
+          "fellIn": 11,
+          "flewThrough": 33,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
           "star": false,
-          "touchdown": 20
+          "touchdown": 15
+        },
+        {
+          "fellIn": 7,
+          "flewThrough": 6,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": "of 18 tacks",
+          "star": false,
+          "touchdown": 5
         }
       ],
       "dateLine": "1 – 9 August 2026",
@@ -646,6 +901,7 @@
       "heroOptions": [
         "clean",
         "max2s",
+        "tacks",
         "sessions"
       ],
       "legend": [
@@ -716,13 +972,22 @@
     "max2s": {
       "bars": [
         {
-          "fellIn": 18,
-          "flewThrough": 39,
-          "kind": "turns",
-          "label": "turns",
-          "right": "of 77 turns · 31 clean",
+          "fellIn": 11,
+          "flewThrough": 33,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 59 jibes · 31 clean",
           "star": true,
-          "touchdown": 20
+          "touchdown": 15
+        },
+        {
+          "fellIn": 7,
+          "flewThrough": 6,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": "of 18 tacks",
+          "star": false,
+          "touchdown": 5
         }
       ],
       "dateLine": "1 – 9 August 2026",
@@ -749,6 +1014,7 @@
       "heroOptions": [
         "clean",
         "max2s",
+        "tacks",
         "sessions"
       ],
       "legend": [
@@ -819,13 +1085,22 @@
     "sessions": {
       "bars": [
         {
-          "fellIn": 18,
-          "flewThrough": 39,
-          "kind": "turns",
-          "label": "turns",
-          "right": "of 77 turns · 31 clean",
+          "fellIn": 11,
+          "flewThrough": 33,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 59 jibes · 31 clean",
           "star": true,
-          "touchdown": 20
+          "touchdown": 15
+        },
+        {
+          "fellIn": 7,
+          "flewThrough": 6,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": "of 18 tacks",
+          "star": false,
+          "touchdown": 5
         }
       ],
       "dateLine": "1 – 9 August 2026",
@@ -852,6 +1127,7 @@
       "heroOptions": [
         "clean",
         "max2s",
+        "tacks",
         "sessions"
       ],
       "legend": [
@@ -871,6 +1147,119 @@
           "key": "tph",
           "label": "dry turns / h",
           "value": "12.0"
+        },
+        {
+          "clean": false,
+          "key": "hours",
+          "label": "time on the water",
+          "value": "6.0 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "69.0 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "5"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "9"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "tacks": {
+      "bars": [
+        {
+          "fellIn": 11,
+          "flewThrough": 33,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 59 jibes · 31 clean",
+          "star": true,
+          "touchdown": 15
+        },
+        {
+          "fellIn": 7,
+          "flewThrough": 6,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": null,
+          "star": false,
+          "touchdown": 5
+        }
+      ],
+      "dateLine": "1 – 9 August 2026",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "23"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "tacks",
+        "sub": "11 dry · beside 59 jibes",
+        "unit": "tacks",
+        "value": "18"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s",
+        "tacks",
+        "sessions"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "6.3"
+        },
+        {
+          "clean": false,
+          "key": "tph",
+          "label": "dry turns / h",
+          "value": "12.0"
+        },
+        {
+          "clean": false,
+          "key": "sessions",
+          "label": "sessions",
+          "value": "5"
         },
         {
           "clean": false,
@@ -1217,6 +1606,109 @@
           "text": " dry"
         }
       ]
+    },
+    "tacks": {
+      "bars": [
+        {
+          "fellIn": 3,
+          "flewThrough": 2,
+          "kind": "turns",
+          "label": "turns",
+          "right": "of 7 turns",
+          "star": false,
+          "touchdown": 2
+        }
+      ],
+      "dateLine": "1 September 2026",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "3"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "clean",
+        "sub": "of 5 jibes",
+        "unit": "clean jibes",
+        "value": "2"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s",
+        "sessions"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "6.0"
+        },
+        {
+          "clean": false,
+          "key": "tph",
+          "label": "dry turns / h",
+          "value": "12.0"
+        },
+        {
+          "clean": false,
+          "key": "sessions",
+          "label": "sessions",
+          "value": "1"
+        },
+        {
+          "clean": false,
+          "key": "hours",
+          "label": "time on the water",
+          "value": "0.5 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "5.0 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "1"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "2"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
     }
   },
   "2026-12": {
@@ -1522,6 +2014,109 @@
           "text": " dry"
         }
       ]
+    },
+    "tacks": {
+      "bars": [
+        {
+          "fellIn": 5,
+          "flewThrough": 4,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
+          "star": false,
+          "touchdown": 3
+        }
+      ],
+      "dateLine": "30 December 2026",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "clean",
+        "sub": "of 12 jibes",
+        "unit": "clean jibes",
+        "value": "4"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s",
+        "sessions"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "3.4"
+        },
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "6.0"
+        },
+        {
+          "clean": false,
+          "key": "sessions",
+          "label": "sessions",
+          "value": "1"
+        },
+        {
+          "clean": false,
+          "key": "hours",
+          "label": "time on the water",
+          "value": "1.5 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "14.0 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "2"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "5"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
     }
   },
   "2027": {
@@ -1649,6 +2244,55 @@
           "key": "cph",
           "label": "clean jibes / h",
           "value": "3.0"
+        },
+        {
+          "clean": false,
+          "key": "hours",
+          "label": "time on the water",
+          "value": "0.7 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "7.0 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": []
+    },
+    "tacks": {
+      "bars": [],
+      "dateLine": "10 May 2027",
+      "falls": [],
+      "hero": {
+        "kind": "clean",
+        "sub": "of 3 jibes",
+        "unit": "clean jibes",
+        "value": "2"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s",
+        "sessions"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "3.0"
+        },
+        {
+          "clean": false,
+          "key": "sessions",
+          "label": "sessions",
+          "value": "1"
         },
         {
           "clean": false,
@@ -1970,6 +2614,109 @@
           "text": " dry"
         }
       ]
+    },
+    "tacks": {
+      "bars": [
+        {
+          "fellIn": 3,
+          "flewThrough": 3,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
+          "star": false,
+          "touchdown": 1
+        }
+      ],
+      "dateLine": "14 February 2027",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "5"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "clean",
+        "sub": "of 7 jibes",
+        "unit": "clean jibes",
+        "value": "3"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s",
+        "sessions"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "4.0"
+        },
+        {
+          "clean": false,
+          "key": "jph",
+          "label": "dry jibes / h",
+          "value": "5.3"
+        },
+        {
+          "clean": false,
+          "key": "sessions",
+          "label": "sessions",
+          "value": "1"
+        },
+        {
+          "clean": false,
+          "key": "hours",
+          "label": "time on the water",
+          "value": "1.0 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "9.0 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "2"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "4"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
     }
   },
   "2027-05": {
@@ -2113,19 +2860,77 @@
       ],
       "speedNote": null,
       "streak": []
+    },
+    "tacks": {
+      "bars": [],
+      "dateLine": "10 May 2027",
+      "falls": [],
+      "hero": {
+        "kind": "clean",
+        "sub": "of 3 jibes",
+        "unit": "clean jibes",
+        "value": "2"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s",
+        "sessions"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "3.0"
+        },
+        {
+          "clean": false,
+          "key": "sessions",
+          "label": "sessions",
+          "value": "1"
+        },
+        {
+          "clean": false,
+          "key": "hours",
+          "label": "time on the water",
+          "value": "0.7 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "7.0 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": []
     }
   },
   "custom:2026-08-01:2026-08-04": {
     "clean": {
       "bars": [
         {
-          "fellIn": 13,
-          "flewThrough": 34,
-          "kind": "turns",
-          "label": "turns",
-          "right": "of 63 turns",
+          "fellIn": 8,
+          "flewThrough": 29,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
           "star": false,
-          "touchdown": 16
+          "touchdown": 12
+        },
+        {
+          "fellIn": 5,
+          "flewThrough": 5,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": "of 14 tacks",
+          "star": false,
+          "touchdown": 4
         }
       ],
       "dateLine": "1 – 4 August 2026",
@@ -2152,6 +2957,7 @@
       "heroOptions": [
         "clean",
         "max2s",
+        "tacks",
         "sessions"
       ],
       "legend": [
@@ -2222,13 +3028,22 @@
     "max2s": {
       "bars": [
         {
-          "fellIn": 13,
-          "flewThrough": 34,
-          "kind": "turns",
-          "label": "turns",
-          "right": "of 63 turns · 28 clean",
+          "fellIn": 8,
+          "flewThrough": 29,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 49 jibes · 28 clean",
           "star": true,
-          "touchdown": 16
+          "touchdown": 12
+        },
+        {
+          "fellIn": 5,
+          "flewThrough": 5,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": "of 14 tacks",
+          "star": false,
+          "touchdown": 4
         }
       ],
       "dateLine": "1 – 4 August 2026",
@@ -2255,6 +3070,7 @@
       "heroOptions": [
         "clean",
         "max2s",
+        "tacks",
         "sessions"
       ],
       "legend": [
@@ -2325,13 +3141,22 @@
     "sessions": {
       "bars": [
         {
-          "fellIn": 13,
-          "flewThrough": 34,
-          "kind": "turns",
-          "label": "turns",
-          "right": "of 63 turns · 28 clean",
+          "fellIn": 8,
+          "flewThrough": 29,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 49 jibes · 28 clean",
           "star": true,
-          "touchdown": 16
+          "touchdown": 12
+        },
+        {
+          "fellIn": 5,
+          "flewThrough": 5,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": "of 14 tacks",
+          "star": false,
+          "touchdown": 4
         }
       ],
       "dateLine": "1 – 4 August 2026",
@@ -2358,6 +3183,7 @@
       "heroOptions": [
         "clean",
         "max2s",
+        "tacks",
         "sessions"
       ],
       "legend": [
@@ -2418,6 +3244,119 @@
           "text": " dry"
         }
       ]
+    },
+    "tacks": {
+      "bars": [
+        {
+          "fellIn": 8,
+          "flewThrough": 29,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 49 jibes · 28 clean",
+          "star": true,
+          "touchdown": 12
+        },
+        {
+          "fellIn": 5,
+          "flewThrough": 5,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": null,
+          "star": false,
+          "touchdown": 4
+        }
+      ],
+      "dateLine": "1 – 4 August 2026",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "17"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "tacks",
+        "sub": "9 dry · beside 49 jibes",
+        "unit": "tacks",
+        "value": "14"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s",
+        "tacks",
+        "sessions"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "6.7"
+        },
+        {
+          "clean": false,
+          "key": "tph",
+          "label": "dry turns / h",
+          "value": "12.0"
+        },
+        {
+          "clean": false,
+          "key": "sessions",
+          "label": "sessions",
+          "value": "4"
+        },
+        {
+          "clean": false,
+          "key": "hours",
+          "label": "time on the water",
+          "value": "5.0 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "59.0 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "5"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "9"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
     }
   },
   "custom:2027-01-01:": {
@@ -2426,9 +3365,9 @@
         {
           "fellIn": 3,
           "flewThrough": 3,
-          "kind": "turns",
-          "label": "turns",
-          "right": "of 7 turns",
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
           "star": false,
           "touchdown": 1
         }
@@ -2529,9 +3468,9 @@
         {
           "fellIn": 3,
           "flewThrough": 3,
-          "kind": "turns",
-          "label": "turns",
-          "right": "of 7 turns · 5 clean",
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 7 jibes · 3 clean",
           "star": true,
           "touchdown": 1
         }
@@ -2632,9 +3571,9 @@
         {
           "fellIn": 3,
           "flewThrough": 3,
-          "kind": "turns",
-          "label": "turns",
-          "right": "of 7 turns · 5 clean",
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 7 jibes · 3 clean",
           "star": true,
           "touchdown": 1
         }
@@ -2723,19 +3662,131 @@
           "text": " dry"
         }
       ]
+    },
+    "tacks": {
+      "bars": [
+        {
+          "fellIn": 3,
+          "flewThrough": 3,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
+          "star": false,
+          "touchdown": 1
+        }
+      ],
+      "dateLine": "14 February – 10 May 2027",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "5"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "clean",
+        "sub": "of 10 jibes",
+        "unit": "clean jibes",
+        "value": "5"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s",
+        "sessions"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "3.5"
+        },
+        {
+          "clean": false,
+          "key": "tph",
+          "label": "dry turns / h",
+          "value": "5.3"
+        },
+        {
+          "clean": false,
+          "key": "sessions",
+          "label": "sessions",
+          "value": "2"
+        },
+        {
+          "clean": false,
+          "key": "hours",
+          "label": "time on the water",
+          "value": "1.7 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "16.0 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "2"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "4"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
     }
   },
   "custom::2026-07-31": {
     "clean": {
       "bars": [
         {
-          "fellIn": 3,
-          "flewThrough": 6,
-          "kind": "turns",
-          "label": "turns",
-          "right": "of 12 turns",
+          "fellIn": 1,
+          "flewThrough": 5,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
           "star": false,
-          "touchdown": 3
+          "touchdown": 2
+        },
+        {
+          "fellIn": 2,
+          "flewThrough": 1,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": "of 4 tacks",
+          "star": false,
+          "touchdown": 1
         }
       ],
       "dateLine": "31 July 2026",
@@ -2762,6 +3813,7 @@
       "heroOptions": [
         "clean",
         "max2s",
+        "tacks",
         "sessions"
       ],
       "legend": [
@@ -2832,13 +3884,22 @@
     "max2s": {
       "bars": [
         {
-          "fellIn": 3,
-          "flewThrough": 6,
-          "kind": "turns",
-          "label": "turns",
-          "right": "of 12 turns · 5 clean",
+          "fellIn": 1,
+          "flewThrough": 5,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 8 jibes · 5 clean",
           "star": true,
-          "touchdown": 3
+          "touchdown": 2
+        },
+        {
+          "fellIn": 2,
+          "flewThrough": 1,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": "of 4 tacks",
+          "star": false,
+          "touchdown": 1
         }
       ],
       "dateLine": "31 July 2026",
@@ -2865,6 +3926,7 @@
       "heroOptions": [
         "clean",
         "max2s",
+        "tacks",
         "sessions"
       ],
       "legend": [
@@ -2935,13 +3997,22 @@
     "sessions": {
       "bars": [
         {
-          "fellIn": 3,
-          "flewThrough": 6,
-          "kind": "turns",
-          "label": "turns",
-          "right": "of 12 turns · 5 clean",
+          "fellIn": 1,
+          "flewThrough": 5,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 8 jibes · 5 clean",
           "star": true,
-          "touchdown": 3
+          "touchdown": 2
+        },
+        {
+          "fellIn": 2,
+          "flewThrough": 1,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": "of 4 tacks",
+          "star": false,
+          "touchdown": 1
         }
       ],
       "dateLine": "31 July 2026",
@@ -2968,6 +4039,7 @@
       "heroOptions": [
         "clean",
         "max2s",
+        "tacks",
         "sessions"
       ],
       "legend": [
@@ -2987,6 +4059,119 @@
           "key": "tph",
           "label": "dry turns / h",
           "value": "10.8"
+        },
+        {
+          "clean": false,
+          "key": "hours",
+          "label": "time on the water",
+          "value": "1.0 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "12.0 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "3"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "6"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "tacks": {
+      "bars": [
+        {
+          "fellIn": 1,
+          "flewThrough": 5,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 8 jibes · 5 clean",
+          "star": true,
+          "touchdown": 2
+        },
+        {
+          "fellIn": 2,
+          "flewThrough": 1,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": null,
+          "star": false,
+          "touchdown": 1
+        }
+      ],
+      "dateLine": "31 July 2026",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "4"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "tacks",
+        "sub": "2 dry · beside 8 jibes",
+        "unit": "tacks",
+        "value": "4"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s",
+        "tacks",
+        "sessions"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "6.0"
+        },
+        {
+          "clean": false,
+          "key": "tph",
+          "label": "dry turns / h",
+          "value": "10.8"
+        },
+        {
+          "clean": false,
+          "key": "sessions",
+          "label": "sessions",
+          "value": "1"
         },
         {
           "clean": false,
@@ -3034,13 +4219,22 @@
     "clean": {
       "bars": [
         {
-          "fellIn": 10,
-          "flewThrough": 24,
-          "kind": "turns",
-          "label": "turns",
-          "right": "of 46 turns",
+          "fellIn": 5,
+          "flewThrough": 21,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
           "star": false,
-          "touchdown": 12
+          "touchdown": 8
+        },
+        {
+          "fellIn": 5,
+          "flewThrough": 3,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": "of 12 tacks",
+          "star": false,
+          "touchdown": 4
         }
       ],
       "dateLine": "31 July – 4 August 2026",
@@ -3067,6 +4261,7 @@
       "heroOptions": [
         "clean",
         "max2s",
+        "tacks",
         "sessions"
       ],
       "legend": [
@@ -3137,13 +4332,22 @@
     "max2s": {
       "bars": [
         {
-          "fellIn": 10,
-          "flewThrough": 24,
-          "kind": "turns",
-          "label": "turns",
-          "right": "of 46 turns · 20 clean",
+          "fellIn": 5,
+          "flewThrough": 21,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 34 jibes · 20 clean",
           "star": true,
-          "touchdown": 12
+          "touchdown": 8
+        },
+        {
+          "fellIn": 5,
+          "flewThrough": 3,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": "of 12 tacks",
+          "star": false,
+          "touchdown": 4
         }
       ],
       "dateLine": "31 July – 4 August 2026",
@@ -3170,6 +4374,7 @@
       "heroOptions": [
         "clean",
         "max2s",
+        "tacks",
         "sessions"
       ],
       "legend": [
@@ -3240,13 +4445,22 @@
     "sessions": {
       "bars": [
         {
-          "fellIn": 10,
-          "flewThrough": 24,
-          "kind": "turns",
-          "label": "turns",
-          "right": "of 46 turns · 20 clean",
+          "fellIn": 5,
+          "flewThrough": 21,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 34 jibes · 20 clean",
           "star": true,
-          "touchdown": 12
+          "touchdown": 8
+        },
+        {
+          "fellIn": 5,
+          "flewThrough": 3,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": "of 12 tacks",
+          "star": false,
+          "touchdown": 4
         }
       ],
       "dateLine": "31 July – 4 August 2026",
@@ -3273,6 +4487,7 @@
       "heroOptions": [
         "clean",
         "max2s",
+        "tacks",
         "sessions"
       ],
       "legend": [
@@ -3292,6 +4507,119 @@
           "key": "tph",
           "label": "dry turns / h",
           "value": "12.3"
+        },
+        {
+          "clean": false,
+          "key": "hours",
+          "label": "time on the water",
+          "value": "3.5 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "42.0 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "5"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "9"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "tacks": {
+      "bars": [
+        {
+          "fellIn": 5,
+          "flewThrough": 21,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 34 jibes · 20 clean",
+          "star": true,
+          "touchdown": 8
+        },
+        {
+          "fellIn": 5,
+          "flewThrough": 3,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": null,
+          "star": false,
+          "touchdown": 4
+        }
+      ],
+      "dateLine": "31 July – 4 August 2026",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "13"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "tacks",
+        "sub": "7 dry · beside 34 jibes",
+        "unit": "tacks",
+        "value": "12"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s",
+        "tacks",
+        "sessions"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "6.9"
+        },
+        {
+          "clean": false,
+          "key": "tph",
+          "label": "dry turns / h",
+          "value": "12.3"
+        },
+        {
+          "clean": false,
+          "key": "sessions",
+          "label": "sessions",
+          "value": "3"
         },
         {
           "clean": false,
@@ -3339,13 +4667,22 @@
     "clean": {
       "bars": [
         {
-          "fellIn": 6,
-          "flewThrough": 16,
-          "kind": "turns",
-          "label": "turns",
-          "right": "of 29 turns",
+          "fellIn": 4,
+          "flewThrough": 13,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": null,
           "star": false,
-          "touchdown": 7
+          "touchdown": 6
+        },
+        {
+          "fellIn": 2,
+          "flewThrough": 3,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": "of 6 tacks",
+          "star": false,
+          "touchdown": 1
         }
       ],
       "dateLine": "2 – 3 August 2026",
@@ -3372,6 +4709,7 @@
       "heroOptions": [
         "clean",
         "max2s",
+        "tacks",
         "sessions"
       ],
       "legend": [
@@ -3442,13 +4780,22 @@
     "max2s": {
       "bars": [
         {
-          "fellIn": 6,
-          "flewThrough": 16,
-          "kind": "turns",
-          "label": "turns",
-          "right": "of 29 turns · 13 clean",
+          "fellIn": 4,
+          "flewThrough": 13,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 23 jibes · 13 clean",
           "star": true,
-          "touchdown": 7
+          "touchdown": 6
+        },
+        {
+          "fellIn": 2,
+          "flewThrough": 3,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": "of 6 tacks",
+          "star": false,
+          "touchdown": 1
         }
       ],
       "dateLine": "2 – 3 August 2026",
@@ -3475,6 +4822,7 @@
       "heroOptions": [
         "clean",
         "max2s",
+        "tacks",
         "sessions"
       ],
       "legend": [
@@ -3545,13 +4893,22 @@
     "sessions": {
       "bars": [
         {
-          "fellIn": 6,
-          "flewThrough": 16,
-          "kind": "turns",
-          "label": "turns",
-          "right": "of 29 turns · 13 clean",
+          "fellIn": 4,
+          "flewThrough": 13,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 23 jibes · 13 clean",
           "star": true,
-          "touchdown": 7
+          "touchdown": 6
+        },
+        {
+          "fellIn": 2,
+          "flewThrough": 3,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": "of 6 tacks",
+          "star": false,
+          "touchdown": 1
         }
       ],
       "dateLine": "2 – 3 August 2026",
@@ -3578,6 +4935,7 @@
       "heroOptions": [
         "clean",
         "max2s",
+        "tacks",
         "sessions"
       ],
       "legend": [
@@ -3597,6 +4955,119 @@
           "key": "tph",
           "label": "dry turns / h",
           "value": "11.0"
+        },
+        {
+          "clean": false,
+          "key": "hours",
+          "label": "time on the water",
+          "value": "2.5 h"
+        },
+        {
+          "clean": false,
+          "key": "distance",
+          "label": "distance",
+          "value": "29.0 km"
+        }
+      ],
+      "speedNote": null,
+      "streak": [
+        {
+          "role": "muted",
+          "text": "best streak "
+        },
+        {
+          "role": "flew",
+          "text": "4"
+        },
+        {
+          "role": "muted",
+          "text": " flew"
+        },
+        {
+          "role": "muted",
+          "text": " · "
+        },
+        {
+          "role": "paper",
+          "text": "7"
+        },
+        {
+          "role": "muted",
+          "text": " dry"
+        }
+      ]
+    },
+    "tacks": {
+      "bars": [
+        {
+          "fellIn": 4,
+          "flewThrough": 13,
+          "kind": "jibes",
+          "label": "jibes",
+          "right": "of 23 jibes · 13 clean",
+          "star": true,
+          "touchdown": 6
+        },
+        {
+          "fellIn": 2,
+          "flewThrough": 3,
+          "kind": "tacks",
+          "label": "tacks",
+          "right": null,
+          "star": false,
+          "touchdown": 1
+        }
+      ],
+      "dateLine": "2 – 3 August 2026",
+      "falls": [
+        {
+          "role": "muted",
+          "text": "fell in "
+        },
+        {
+          "role": "fell",
+          "text": "8"
+        },
+        {
+          "role": "muted",
+          "text": " times"
+        }
+      ],
+      "hero": {
+        "kind": "tacks",
+        "sub": "4 dry · beside 23 jibes",
+        "unit": "tacks",
+        "value": "6"
+      },
+      "heroOptions": [
+        "clean",
+        "max2s",
+        "tacks",
+        "sessions"
+      ],
+      "legend": [
+        "flew through",
+        "touchdown",
+        "fell in"
+      ],
+      "ribbon": [
+        {
+          "clean": true,
+          "key": "cph",
+          "label": "clean jibes / h",
+          "value": "6.2"
+        },
+        {
+          "clean": false,
+          "key": "tph",
+          "label": "dry turns / h",
+          "value": "11.0"
+        },
+        {
+          "clean": false,
+          "key": "sessions",
+          "label": "sessions",
+          "value": "2"
         },
         {
           "clean": false,

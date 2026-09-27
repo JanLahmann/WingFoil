@@ -117,7 +117,7 @@ public struct AppDatabase: Sendable {
     /// database moves through all of them.
     public static let migrationNames = ["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9",
                                         "v10", "v11", "v12", "v13", "v14", "v15", "v16",
-                                        "v17", "v18"]
+                                        "v17", "v18", "v19"]
 
     /// The schema version this build writes — the `N` of the last `vN` migration.
     ///
@@ -528,7 +528,69 @@ public struct AppDatabase: Sendable {
                 t.add(column: "watchCrashes", .integer)
             }
         }
+
+        // v19: the outcome ladder **per turn kind** (docs/presentation/trends-periods.md,
+        // "The period card").
+        //
+        // v2 stored the ladder over every counted turn and, per kind, only the counts and the
+        // flew-through share — so a period card could draw a jibe bar only for a period with
+        // no tack in it, and a tack bar never. Four columns finish the two ladders
+        // (`jibesTouchdown`, `jibesFellIn`, `tacksTouchdown`, `tacksFellIn`; flew-through and
+        // the jibe's clean count were already here), and `threeSixties` is the slot for the
+        // experimental 360s, NULL while `detectThreeSixty` is off — which in this kit is
+        // always, because the kit does not port the detector.
+        //
+        // **No sweep.** Every analysed row already holds the answer in its `turn` child rows,
+        // which are the stored analysis's own turns, so `backfillTurnKinds` counts them in
+        // SQL, here, once — and only for a row whose child rows agree with the totals it
+        // carries. A row that does not (a provisional card-only row, one whose child rows
+        // are gone) stays NULL, is filled by `apply(_:)` the next time it is analysed, and
+        // until then keeps its period on the one turn bar. No row is touched otherwise.
+        migrator.registerMigration("v19") { db in
+            try db.alter(table: "session") { t in
+                t.add(column: "jibesTouchdown", .integer)
+                t.add(column: "jibesFellIn", .integer)
+                t.add(column: "tacksTouchdown", .integer)
+                t.add(column: "tacksFellIn", .integer)
+                t.add(column: "threeSixties", .integer)
+            }
+            try Self.backfillTurnKinds(db)
+        }
         return migrator
+    }
+
+    /// **The v19 back-fill**: the per-kind ladder, counted out of each row's stored `turn`
+    /// rows. Returns how many rows it filled.
+    ///
+    /// Idempotent — it looks only at rows whose four new columns are NULL — and it never
+    /// deletes, inserts or rewrites a row: an `UPDATE` of four columns or nothing. The guard is
+    /// the whole of its honesty: the child rows are counted only where they reproduce the
+    /// totals the row already carries (`jibes`, `tacks` and both flew-through counts), so a row
+    /// whose turns went missing or were written by a different analysis is left for
+    /// `apply(_:)` rather than given a ladder that does not add up to its own jibes.
+    @discardableResult
+    static func backfillTurnKinds(_ db: Database) throws -> Int {
+        func count(_ kind: String, _ outcome: String? = nil) -> String {
+            let clause = outcome.map { " AND outcome = '\($0)'" } ?? ""
+            return """
+                (SELECT COUNT(*) FROM turn WHERE turn.sessionId = session.id AND counted = 1
+                    AND type = '\(kind)'\(clause))
+                """
+        }
+        try db.execute(sql: """
+            UPDATE session
+               SET jibesTouchdown = \(count("jibe", "touchdown")),
+                   jibesFellIn = \(count("jibe", "fell_in")),
+                   tacksTouchdown = \(count("tack", "touchdown")),
+                   tacksFellIn = \(count("tack", "fell_in"))
+             WHERE jibesTouchdown IS NULL AND jibesFellIn IS NULL
+               AND tacksTouchdown IS NULL AND tacksFellIn IS NULL
+               AND isProvisional = 0
+               AND jibes = \(count("jibe")) AND tacks = \(count("tack"))
+               AND jibesFlewThrough = \(count("jibe", "flew_through"))
+               AND tacksFlewThrough = \(count("tack", "flew_through"))
+            """)
+        return db.changesCount
     }
 
     /// Fill `startUtcOffsetS` on every row that has none, from the session's own archived
@@ -943,6 +1005,20 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
     /// breadcrumb").
     public var watchCrashes: Int?
 
+    // MARK: schema v19
+    /// The rest of the two per-kind ladders (`summary.turns.jibeOutcomes` / `tackOutcomes`):
+    /// with `jibesFlewThrough` and `tacksFlewThrough` from v2 they are the jibe bar and the
+    /// tack bar a period card sums. nil on a row neither the v19 back-fill nor an analysis
+    /// has reached — read `turnKinds`, which answers nil for such a row as a whole.
+    public var jibesTouchdown: Int?
+    public var jibesFellIn: Int?
+    public var tacksTouchdown: Int?
+    public var tacksFellIn: Int?
+    /// Full rotations — the experimental 360s (docs/algorithms/turns.md, "360 spins"). nil
+    /// means the detector did not run, which is not "no 360s", and is every row today: the
+    /// detector is off and unvalidated, and the kit does not port it.
+    public var threeSixties: Int?
+
     // MARK: schema v12
     /// The engine's own **cleaned** session span in seconds (`summary.durationS`) — the
     /// denominator every per-hour rate divides by, and what a period's hours are summed
@@ -1134,6 +1210,25 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
         return Double(clean) / Double(jibes) * 100
     }
 
+    /// **The outcome ladder per turn kind** (schema v19), in `TurnKindTally.order` — the jibe
+    /// with its clean count, the tack, and a 360 entry only where the detector ran. nil,
+    /// never zeroes, on a row that does not carry the split yet.
+    public var turnKinds: [TurnKindTally]? {
+        guard let jibes, let tacks, let jibesFlewThrough, let jibesTouchdown, let jibesFellIn,
+              let tacksFlewThrough, let tacksTouchdown, let tacksFellIn,
+              jibesFlewThrough + jibesTouchdown + jibesFellIn == jibes,
+              tacksFlewThrough + tacksTouchdown + tacksFellIn == tacks else { return nil }
+        var out = [
+            TurnKindTally(kind: .jibe, flewThrough: jibesFlewThrough,
+                          touchdown: jibesTouchdown, fellIn: jibesFellIn,
+                          clean: jibesSuccessful),
+            TurnKindTally(kind: .tack, flewThrough: tacksFlewThrough,
+                          touchdown: tacksTouchdown, fellIn: tacksFellIn),
+        ]
+        if let threeSixties { out.append(TurnKindTally(kind: .threeSixty, count: threeSixties)) }
+        return out
+    }
+
     /// Port share of the counted turns, 50 % = symmetric. nil without sided turns.
     public var portSharePct: Double? {
         let sided = (turnsPort ?? 0) + (turnsStarboard ?? 0)
@@ -1193,6 +1288,12 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
         turnsFlewThrough = t.outcomes.flewThrough
         turnsTouchdown = t.outcomes.touchdown
         turnsFellIn = t.outcomes.fellIn
+        jibesTouchdown = t.jibeOutcomes.touchdown
+        jibesFellIn = t.jibeOutcomes.fellIn
+        tacksTouchdown = t.tackOutcomes.touchdown
+        tacksFellIn = t.tackOutcomes.fellIn
+        // The kit's engine has no 360 detector, so the slot stays what "nobody looked" is.
+        threeSixties = nil
         longestDryStreak = t.longestDryStreak
         longestFlewStreak = t.longestFlewStreak
         // Copied, never recomputed: the engine owns every per-hour rate and the denominator

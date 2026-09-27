@@ -262,6 +262,8 @@ def render(stem: str, doc: dict) -> str:
 #   a4         5 days after a3 — a second visit, alone, and therefore not a trip
 #   b1 b2      a second spot 12 km away: 3 km separates two beaches on one lake
 #   a5         starts 22:30 UTC on 31 August at +02:00 — a SEPTEMBER session
+#              and the one row with the ladder but no per-kind split (schema 14):
+#              its September and its season keep the one turn bar
 #   c1 c2      two winter afternoons 46 days apart: one season, no trip
 #   a6         no anchor fix, so it is placed by name; no swims, no streak, no 10 s
 #              record and only three jibes — a period built of it alone has to drop
@@ -287,6 +289,9 @@ PERIOD_SESSIONS = [
      "wetExits": 4, "best2sKn": 14.00, "best10sKn": 12.00,
      "jibesPerHour": 7.2, "turnsPerHour": 11.5,
      "tacks": 4, "outcomes": {"flewThrough": 6, "touchdown": 3, "fellIn": 3},
+     "byKind": {"jibe": {"flewThrough": 5, "touchdown": 2, "fellIn": 1, "clean": 5},
+                "tack": {"flewThrough": 1, "touchdown": 1, "fellIn": 2},
+                "threeSixty": None},
      "longestFlewStreak": 3, "sourceClass": "b"},
     {"id": "a2", "spot": "Nago Torbole", "startUtc": "2026-08-01T10:00:00Z",
      "utcOffsetS": 7200, "lat": 45.8762, "lon": 10.8712,
@@ -296,6 +301,9 @@ PERIOD_SESSIONS = [
      "wetExits": 7, "best2sKn": 15.50, "best10sKn": 13.20,
      "jibesPerHour": 10.8, "turnsPerHour": 14.4,
      "tacks": 6, "outcomes": {"flewThrough": 14, "touchdown": 7, "fellIn": 5},
+     "byKind": {"jibe": {"flewThrough": 12, "touchdown": 5, "fellIn": 3, "clean": 11},
+                "tack": {"flewThrough": 2, "touchdown": 2, "fellIn": 2},
+                "threeSixty": None},
      "longestFlewStreak": 5, "sourceClass": "b"},
     {"id": "a3", "spot": "Nago Torbole", "startUtc": "2026-08-04T10:00:00Z",
      "utcOffsetS": 7200, "lat": 45.8758, "lon": 10.8705,
@@ -305,6 +313,9 @@ PERIOD_SESSIONS = [
      "wetExits": 2, "best2sKn": 13.10, "best10sKn": 11.40,
      "jibesPerHour": 12.0, "turnsPerHour": 16.8,
      "tacks": 2, "outcomes": {"flewThrough": 4, "touchdown": 2, "fellIn": 2},
+     "byKind": {"jibe": {"flewThrough": 4, "touchdown": 1, "fellIn": 1, "clean": 4},
+                "tack": {"flewThrough": 0, "touchdown": 1, "fellIn": 1},
+                "threeSixty": None},
      "longestFlewStreak": 2, "sourceClass": "b"},
     {"id": "a4", "spot": "Nago Torbole", "startUtc": "2026-08-09T10:00:00Z",
      "utcOffsetS": 7200, "lat": 45.8759, "lon": 10.8709,
@@ -314,6 +325,9 @@ PERIOD_SESSIONS = [
      "wetExits": 6, "best2sKn": 12.80, "best10sKn": 10.90,
      "jibesPerHour": 8.0, "turnsPerHour": 12.0,
      "tacks": 4, "outcomes": {"flewThrough": 5, "touchdown": 4, "fellIn": 5},
+     "byKind": {"jibe": {"flewThrough": 4, "touchdown": 3, "fellIn": 3, "clean": 3},
+                "tack": {"flewThrough": 1, "touchdown": 1, "fellIn": 2},
+                "threeSixty": None},
      "longestFlewStreak": 2, "sourceClass": "b"},
     {"id": "b1", "spot": "Malcesine", "startUtc": "2026-08-02T12:00:00Z",
      "utcOffsetS": 7200, "lat": 45.7650, "lon": 10.8100,
@@ -323,6 +337,9 @@ PERIOD_SESSIONS = [
      "wetExits": 5, "best2sKn": 13.60, "best10sKn": 11.80,
      "jibesPerHour": 9.6, "turnsPerHour": 12.8,
      "tacks": 4, "outcomes": {"flewThrough": 9, "touchdown": 5, "fellIn": 4},
+     "byKind": {"jibe": {"flewThrough": 7, "touchdown": 4, "fellIn": 3, "clean": 7},
+                "tack": {"flewThrough": 2, "touchdown": 1, "fellIn": 1},
+                "threeSixty": None},
      "longestFlewStreak": 3, "sourceClass": "b"},
     {"id": "b2", "spot": "Malcesine", "startUtc": "2026-08-03T12:00:00Z",
      "utcOffsetS": 7200, "lat": 45.7655, "lon": 10.8105,
@@ -332,6 +349,9 @@ PERIOD_SESSIONS = [
      "wetExits": 3, "best2sKn": 14.40, "best10sKn": 12.60,
      "jibesPerHour": 8.4, "turnsPerHour": 10.8,
      "tacks": 2, "outcomes": {"flewThrough": 7, "touchdown": 2, "fellIn": 2},
+     "byKind": {"jibe": {"flewThrough": 6, "touchdown": 2, "fellIn": 1, "clean": 6},
+                "tack": {"flewThrough": 1, "touchdown": 0, "fellIn": 1},
+                "threeSixty": None},
      "longestFlewStreak": 4, "sourceClass": "b"},
     {"id": "a5", "spot": "Nago Torbole", "startUtc": "2026-08-31T22:30:00Z",
      "utcOffsetS": 7200, "lat": 45.8761, "lon": 10.8711,
@@ -341,6 +361,7 @@ PERIOD_SESSIONS = [
      "wetExits": 3, "best2sKn": 11.90, "best10sKn": 10.20,
      "jibesPerHour": 12.0, "turnsPerHour": 18.0,
      "tacks": 2, "outcomes": {"flewThrough": 2, "touchdown": 2, "fellIn": 3},
+     "byKind": None,
      "longestFlewStreak": 1, "sourceClass": "b"},
     {"id": "c1", "spot": "Rheinstetten", "startUtc": "2026-12-30T09:00:00Z",
      "utcOffsetS": 3600, "lat": 48.9700, "lon": 8.3200,
@@ -350,6 +371,9 @@ PERIOD_SESSIONS = [
      "wetExits": 8, "best2sKn": 12.20, "best10sKn": 10.60,
      "jibesPerHour": 8.6, "turnsPerHour": 11.1,
      "tacks": 0, "outcomes": {"flewThrough": 4, "touchdown": 3, "fellIn": 5},
+     "byKind": {"jibe": {"flewThrough": 4, "touchdown": 3, "fellIn": 5, "clean": 4},
+                "tack": {"flewThrough": 0, "touchdown": 0, "fellIn": 0},
+                "threeSixty": None},
      "longestFlewStreak": 2, "sourceClass": "b"},
     {"id": "c2", "spot": "Rheinstetten", "startUtc": "2027-02-14T09:00:00Z",
      "utcOffsetS": 3600, "lat": 48.9702, "lon": 8.3205,
@@ -359,6 +383,9 @@ PERIOD_SESSIONS = [
      "wetExits": 5, "best2sKn": 11.50, "best10sKn": 9.80,
      "jibesPerHour": 6.7, "turnsPerHour": 9.3,
      "tacks": 0, "outcomes": {"flewThrough": 3, "touchdown": 1, "fellIn": 3},
+     "byKind": {"jibe": {"flewThrough": 3, "touchdown": 1, "fellIn": 3, "clean": 3},
+                "tack": {"flewThrough": 0, "touchdown": 0, "fellIn": 0},
+                "threeSixty": None},
      "longestFlewStreak": 2, "sourceClass": "c"},
     {"id": "a6", "spot": "Nago Torbole", "startUtc": "2027-05-10T10:00:00Z",
      "utcOffsetS": 7200, "lat": None, "lon": None,
@@ -368,6 +395,7 @@ PERIOD_SESSIONS = [
      "wetExits": None, "best2sKn": 12.00, "best10sKn": None,
      "jibesPerHour": None, "turnsPerHour": None,
      "tacks": 1, "outcomes": None,
+     "byKind": None,
      "longestFlewStreak": None, "sourceClass": "b"},
 ]
 
@@ -422,6 +450,10 @@ def period_digest(s: dict) -> dict:
                   # before it — and the Rheinstetten winter is jibes only, which is what pins
                   # the jibe bar against the turn bar.
                   "tacks": s["tacks"], "outcomes": s["outcomes"],
+                  # The same ladder per turn kind (schema 14). `a5` carries the ladder and
+                  # not the split — the row the back-fill could not reach — which is what
+                  # pins the one turn bar for September and the 2026 season.
+                  "byKind": s["byKind"],
                   "longestFlewStreak": s["longestFlewStreak"]},
     }
 

@@ -343,7 +343,7 @@ def check_attribution() -> None:
         e.pop("schema")
     check("  a schema-1 library is unchanged", library.aggregate(old)["count"], 2)
     check("  digest stamps the current schema",
-          library.digest({"golden": {}, "meta": {}}, "x.fit")["schema"], 13)
+          library.digest({"golden": {}, "meta": {}}, "x.fit")["schema"], 14)
 
     # Schema 10 (engine 0.19.0): the fourth exclusion — a recording that is not a session
     # (docs/algorithms/not-a-session.md "Not a session"). The stored answer when the row carries one, the
@@ -538,6 +538,20 @@ def check_digest_fidelity() -> None:
     check("  turns.outcomes is absent, not zeroed, when the engine reported none",
           library.digest({"golden": {"summary": {"turns": {}}}}, "x.fit")["turns"]["outcomes"],
           None)
+    # Schema 14: the same ladder per turn kind, copied from the engine's two tallies, the
+    # jibe carrying its clean count — and a 360 slot that is null while the detector is off.
+    ladder = ("flewThrough", "touchdown", "fellIn")
+    by_kind = d["turns"]["byKind"]
+    check("  turns.byKind.jibe == golden jibeOutcomes + jibesSuccessful", by_kind["jibe"],
+          {**{k: s["turns"]["jibeOutcomes"][k] for k in ladder},
+           "clean": s["turns"]["jibesSuccessful"]})
+    check("  turns.byKind.tack == golden tackOutcomes", by_kind["tack"],
+          {k: s["turns"]["tackOutcomes"][k] for k in ladder})
+    check("  turns.byKind.threeSixty is empty while the detector is off",
+          by_kind["threeSixty"], None)
+    check("  the jibe ladder sums to the jibes, the tack ladder to the tacks",
+          (sum(by_kind["jibe"][k] for k in ladder), sum(by_kind["tack"][k] for k in ladder)),
+          (d["turns"]["jibes"], d["turns"]["tacks"]))
     check("  records.best2sKn == golden", d["records"]["best2sKn"], rec["best2sKn"])
     check("  records.alpha500Kn == golden", d["records"]["alpha500Kn"], rec["alpha500Kn"])
     check("  recordWindows.best2s == golden", d["recordWindows"]["best2sKn"],
@@ -998,6 +1012,31 @@ def check_periods(digests: list[dict]) -> None:
           block["wph"], f"{wet / (timer / 3600.0):.1f}")
     check("  best 2 s is the library's own record",
           block["best2s"], f"{max(d['records']['best2sKn'] for d in digests):.2f} kn")
+
+    # The period card's bars (schema 14): the per-kind ladders summed over the season, and
+    # the lazy back-fill's promise — a row stored without the split, re-digested from its
+    # stored document, gives the very card the fresh row does.
+    card = ps["seasons"][0]["card"]
+    kinds = {k["kind"]: k for k in card["kinds"]}
+    for kind, key in (("jibe", "jibes"), ("tack", "tacks")):
+        check(f"  the season's {kind} ladder is every session's, summed",
+              {k: kinds[kind][k] for k in ("flewThrough", "touchdown", "fellIn")},
+              {k: sum(d["turns"]["byKind"][kind][k] for d in digests)
+               for k in ("flewThrough", "touchdown", "fellIn")})
+        check(f"  …and counts the season's {key}", kinds[kind]["count"],
+              sum(d["turns"][key] for d in digests))
+    check("  the jibe bar's clean count is the season's clean jibes",
+          kinds["jibe"]["clean"], clean)
+    check("  no 360 entry while the detector is off", "threeSixty" in kinds, False)
+    stale = [{**d, "turns": {k: v for k, v in d["turns"].items() if k != "byKind"}}
+             for d in digests]
+    stale[0] = {**stale[0], "schema": 13}
+    check("  one row without the split and the season keeps the one turn bar",
+          library.aggregate(stale)["periods"]["seasons"][0]["card"]["kinds"], None)
+    refilled = [{**e, "turns": {**e["turns"], "byKind": d["turns"]["byKind"]}}
+                for e, d in zip(stale, digests)]
+    check("  …and once back-filled it is the fresh card again",
+          library.aggregate(refilled)["periods"]["seasons"][0]["card"], card)
 
     # The rider's own range, inclusive at both ends, over the same corpus.
     week = library.custom_period(digests, "2026-08-01", "2026-08-04")

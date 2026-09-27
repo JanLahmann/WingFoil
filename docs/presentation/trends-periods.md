@@ -191,8 +191,8 @@ Lean/Complete presets any more. What differs is only what is being described.
 | | session card | period card |
 |---|---|---|
 | numbers | the key-metrics block | the aggregate block, and `card` beside it (below) |
-| heroes | clean jibes → max 2 s → tacks | clean jibes → best 2 s → **sessions** ("12 sessions / at 3 spots") |
-| bars | jibes, and tacks where there were any | **one** bar: jibes when every counted turn was a jibe, turns otherwise |
+| heroes | clean jibes → max 2 s → tacks | clean jibes → best 2 s → tacks → **sessions** ("12 sessions / at 3 spots") |
+| bars | jibes, and tacks where there were any | the same, summed per kind; one turn bar only where a row carries no split |
 | ribbon | clean jibes / h · dry jibes or turns / h · max 2 s · duration · distance | clean jibes / h · dry jibes or turns / h · sessions · time on the water · distance |
 | date line | the session's day and start | the period's span |
 | title default | the session's name | the period's title |
@@ -201,15 +201,36 @@ Lean/Complete presets any more. What differs is only what is being described.
 | speed disclaimer | on a class-(c) source | never |
 
 - **The story beyond the block is `period.card`** (`library.period_card`, `PeriodCard` in the
-  kit): the outcome ladder summed over the rows that carry it, the jibes and tacks, the best
-  flew and dry streaks, every fall, and the dry rate — dry turns (or jibes) over the timer
-  hours of those same rows, one decimal. A stored row carries the ladder over *every*
-  counted turn, not one per kind, so the bar is the jibe bar only when the period had no
-  tack and every counted turn was a jibe (`dryKind`), and the turn bar otherwise — never a
-  tack bar invented out of a total.
+  kit): the outcome ladder summed over the rows that carry it, the same ladder **per turn
+  kind** (`kinds`), the jibes and tacks, the best flew and dry streaks, every fall, and the
+  dry rate — dry turns (or jibes) over the timer hours of those same rows, one decimal.
+- **A bar per turn kind** (26 Sep 2026). Every stored row carries the ladder per kind — the
+  jibe's with its clean count, the tack's, and a 360 slot that stays empty while
+  `detectThreeSixty` is off (digest schema 14 `turns.byKind`; GRDB v19, `SessionRow.turnKinds`,
+  `TurnKindTally`). So the period card draws what the session card draws: the jibe bar, the
+  tack bar beside it where the period had a tack, and **tacks** as a hero; a period with no
+  jibe draws the one turn bar, as a session does. The jibe bar's clean clause is the jibes'
+  own clean count. The bars and the tacks hero come from one table keyed by turn kind
+  (`PERIOD_KINDS` in cardstats.js, `Story.periodKinds` in the kit): a kind the rows count
+  and the table does not name draws nothing, which is where the 360s stay until the detector
+  is validated and they get words.
+  - **All or nothing per period.** One laddered row without the split — one the back-fill
+    could not reach — and the period keeps the old single bar over every counted turn: the
+    jibe bar only when every counted turn was a jibe (`dryKind`), the turn bar otherwise.
+    Never a jibe bar that leaves an afternoon out while the clean count beside it does not.
+  - **The back-fill.** iOS: the v19 migration counts each row's stored `turn` rows in SQL,
+    once, and only where they reproduce the jibes, tacks and flew-through counts the row
+    already carries; anything else stays NULL until `apply(_:)` re-derives it. A backup is
+    the database itself, migrated forward on restore, and iCloud sync never carries
+    analysis, so both carry the columns without a change. Web: `backfillDigests`
+    (js/library.js) re-digests every entry without `turns.byKind` from the analysis
+    document stored beside it before Records, Trends and Periods draw, and merges that one
+    field into the index; a document that cannot answer is written back as `null`, so it is
+    asked once.
 - **With 0 clean jibes the clean number and clean jibes / h are left out**, as on the session
-  card, and the hero falls back to the best 2 s, then the session count. Only the heroes the
-  period can carry are offered; the choice is the session card's one stored preference.
+  card, and the hero falls back to the best 2 s, then the tacks, then the session count.
+  Only the heroes the period can carry are offered; the choice is the session card's one
+  stored preference.
 - `Story.make(period:hero:)` (kit) and `periodCardStory` (web/js/cardstats.js) are pinned
   against `fixtures/cards/period-stories.expected.json`: card_parity.mjs dumps the
   browser's for every fixture period and hero, `verify_presentation.py` §5d re-derives the

@@ -22,7 +22,7 @@ import { listDuration, text } from "./presentation.js";
 import { esc, int, nf, pct, sessionDate, zonedFormat } from "./render.js";
 import { askRider } from "./rider.js";
 import {
-  getAnalysisJson, getFitBlob, listEntries, putSession, removeSession, usage,
+  getAnalysisJson, getFitBlob, listEntries, mergeEntries, putSession, removeSession, usage,
 } from "./store.js";
 import { track } from "./track.js";
 import { invalidateTrends } from "./trends.js";
@@ -117,6 +117,40 @@ export async function saveSession({ digest, analysisJson, fitBytes, example = fa
 const riderNames = (entries) =>
   [...new Set(entries.map((e) => e.rider).filter(Boolean))]
     .sort((a, b) => a.localeCompare(b));
+
+/**
+ * **The lazy back-fill** (digest schema 14): every stored entry that predates the per-kind
+ * turn ladder (`turns.byKind`) is re-digested from the analysis document saved beside it,
+ * and only that one field is merged back into the index — so the period card can draw a
+ * jibe bar and a tack bar over a library saved before the field existed.
+ *
+ * Nothing is re-analysed: the digest reads `summary.turns.jibeOutcomes` / `tackOutcomes`
+ * out of the stored document, which every engine that wrote one has carried. The marker is
+ * the key itself — a document that cannot answer is written back as `byKind: null`, so it is
+ * asked once and never again; an entry whose document cannot be *read* keeps the key absent
+ * and is tried on the next open. Either way the row stays, and the period it is in keeps the
+ * one turn bar (`library.period_card`). Runs before Records, Trends and Periods draw.
+ */
+export async function backfillDigests(entries) {
+  const stale = (entries || []).filter((e) => !Object.hasOwn(e.turns || {}, "byKind"));
+  if (!stale.length) return entries;
+  const updates = new Map();
+  for (const e of stale) {
+    try {
+      const json = await getAnalysisJson(e.id);
+      const fresh = await ask("digest", { json, name: e.fileName || "session.fit" });
+      updates.set(e.id, { turns: { ...(e.turns || {}), byKind: fresh?.turns?.byKind ?? null } });
+    } catch {
+      // No stored document, or a worker that could not read it: left for the next open.
+    }
+  }
+  if (!updates.size) return entries;
+  try {
+    return await mergeEntries(updates);
+  } catch {
+    return entries;
+  }
+}
 
 /* ------------------------------------------------------------------- the view */
 

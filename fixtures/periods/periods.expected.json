@@ -55,6 +55,20 @@
         "touchdown": 3,
         "fellIn": 3
       },
+      "byKind": {
+        "jibe": {
+          "flewThrough": 5,
+          "touchdown": 2,
+          "fellIn": 1,
+          "clean": 5
+        },
+        "tack": {
+          "flewThrough": 1,
+          "touchdown": 1,
+          "fellIn": 2
+        },
+        "threeSixty": null
+      },
       "longestFlewStreak": 3,
       "sourceClass": "b"
     },
@@ -87,6 +101,20 @@
         "flewThrough": 14,
         "touchdown": 7,
         "fellIn": 5
+      },
+      "byKind": {
+        "jibe": {
+          "flewThrough": 12,
+          "touchdown": 5,
+          "fellIn": 3,
+          "clean": 11
+        },
+        "tack": {
+          "flewThrough": 2,
+          "touchdown": 2,
+          "fellIn": 2
+        },
+        "threeSixty": null
       },
       "longestFlewStreak": 5,
       "sourceClass": "b"
@@ -121,6 +149,20 @@
         "touchdown": 2,
         "fellIn": 2
       },
+      "byKind": {
+        "jibe": {
+          "flewThrough": 4,
+          "touchdown": 1,
+          "fellIn": 1,
+          "clean": 4
+        },
+        "tack": {
+          "flewThrough": 0,
+          "touchdown": 1,
+          "fellIn": 1
+        },
+        "threeSixty": null
+      },
       "longestFlewStreak": 2,
       "sourceClass": "b"
     },
@@ -153,6 +195,20 @@
         "flewThrough": 5,
         "touchdown": 4,
         "fellIn": 5
+      },
+      "byKind": {
+        "jibe": {
+          "flewThrough": 4,
+          "touchdown": 3,
+          "fellIn": 3,
+          "clean": 3
+        },
+        "tack": {
+          "flewThrough": 1,
+          "touchdown": 1,
+          "fellIn": 2
+        },
+        "threeSixty": null
       },
       "longestFlewStreak": 2,
       "sourceClass": "b"
@@ -187,6 +243,20 @@
         "touchdown": 5,
         "fellIn": 4
       },
+      "byKind": {
+        "jibe": {
+          "flewThrough": 7,
+          "touchdown": 4,
+          "fellIn": 3,
+          "clean": 7
+        },
+        "tack": {
+          "flewThrough": 2,
+          "touchdown": 1,
+          "fellIn": 1
+        },
+        "threeSixty": null
+      },
       "longestFlewStreak": 3,
       "sourceClass": "b"
     },
@@ -219,6 +289,20 @@
         "flewThrough": 7,
         "touchdown": 2,
         "fellIn": 2
+      },
+      "byKind": {
+        "jibe": {
+          "flewThrough": 6,
+          "touchdown": 2,
+          "fellIn": 1,
+          "clean": 6
+        },
+        "tack": {
+          "flewThrough": 1,
+          "touchdown": 0,
+          "fellIn": 1
+        },
+        "threeSixty": null
       },
       "longestFlewStreak": 4,
       "sourceClass": "b"
@@ -253,6 +337,7 @@
         "touchdown": 2,
         "fellIn": 3
       },
+      "byKind": null,
       "longestFlewStreak": 1,
       "sourceClass": "b"
     },
@@ -285,6 +370,20 @@
         "flewThrough": 4,
         "touchdown": 3,
         "fellIn": 5
+      },
+      "byKind": {
+        "jibe": {
+          "flewThrough": 4,
+          "touchdown": 3,
+          "fellIn": 5,
+          "clean": 4
+        },
+        "tack": {
+          "flewThrough": 0,
+          "touchdown": 0,
+          "fellIn": 0
+        },
+        "threeSixty": null
       },
       "longestFlewStreak": 2,
       "sourceClass": "b"
@@ -319,6 +418,20 @@
         "touchdown": 1,
         "fellIn": 3
       },
+      "byKind": {
+        "jibe": {
+          "flewThrough": 3,
+          "touchdown": 1,
+          "fellIn": 3,
+          "clean": 3
+        },
+        "tack": {
+          "flewThrough": 0,
+          "touchdown": 0,
+          "fellIn": 0
+        },
+        "threeSixty": null
+      },
       "longestFlewStreak": 2,
       "sourceClass": "c"
     },
@@ -348,6 +461,7 @@
       "turnsPerHour": null,
       "tacks": 1,
       "outcomes": null,
+      "byKind": null,
       "longestFlewStreak": null,
       "sourceClass": "b"
     }
@@ -1196,6 +1310,24 @@
           "touchdown": 7,
           "fellIn": 6
         },
+        "kinds": [
+          {
+            "kind": "jibe",
+            "count": 23,
+            "flewThrough": 13,
+            "touchdown": 6,
+            "fellIn": 4,
+            "clean": 13
+          },
+          {
+            "kind": "tack",
+            "count": 6,
+            "flewThrough": 3,
+            "touchdown": 1,
+            "fellIn": 2,
+            "clean": null
+          }
+        ],
         "jibes": 23,
         "tacks": 6,
         "dryKind": "turns",
@@ -1304,6 +1436,24 @@
           "touchdown": 12,
           "fellIn": 10
         },
+        "kinds": [
+          {
+            "kind": "jibe",
+            "count": 34,
+            "flewThrough": 21,
+            "touchdown": 8,
+            "fellIn": 5,
+            "clean": 20
+          },
+          {
+            "kind": "tack",
+            "count": 12,
+            "flewThrough": 3,
+            "touchdown": 4,
+            "fellIn": 5,
+            "clean": null
+          }
+        ],
         "jibes": 34,
         "tacks": 12,
         "dryKind": "turns",
@@ -1388,6 +1538,7 @@
       ],
       "card": {
         "outcomes": null,
+        "kinds": null,
         "jibes": 3,
         "tacks": 1,
         "dryKind": null,
@@ -1494,6 +1645,24 @@
           "touchdown": 1,
           "fellIn": 3
         },
+        "kinds": [
+          {
+            "kind": "jibe",
+            "count": 7,
+            "flewThrough": 3,
+            "touchdown": 1,
+            "fellIn": 3,
+            "clean": 3
+          },
+          {
+            "kind": "tack",
+            "count": 0,
+            "flewThrough": 0,
+            "touchdown": 0,
+            "fellIn": 0,
+            "clean": null
+          }
+        ],
         "jibes": 7,
         "tacks": 0,
         "dryKind": "jibes",
@@ -1600,6 +1769,24 @@
           "touchdown": 3,
           "fellIn": 5
         },
+        "kinds": [
+          {
+            "kind": "jibe",
+            "count": 12,
+            "flewThrough": 4,
+            "touchdown": 3,
+            "fellIn": 5,
+            "clean": 4
+          },
+          {
+            "kind": "tack",
+            "count": 0,
+            "flewThrough": 0,
+            "touchdown": 0,
+            "fellIn": 0,
+            "clean": null
+          }
+        ],
         "jibes": 12,
         "tacks": 0,
         "dryKind": "jibes",
@@ -1706,6 +1893,7 @@
           "touchdown": 2,
           "fellIn": 3
         },
+        "kinds": null,
         "jibes": 5,
         "tacks": 2,
         "dryKind": "turns",
@@ -1816,6 +2004,24 @@
           "touchdown": 20,
           "fellIn": 18
         },
+        "kinds": [
+          {
+            "kind": "jibe",
+            "count": 59,
+            "flewThrough": 33,
+            "touchdown": 15,
+            "fellIn": 11,
+            "clean": 31
+          },
+          {
+            "kind": "tack",
+            "count": 18,
+            "flewThrough": 6,
+            "touchdown": 5,
+            "fellIn": 7,
+            "clean": null
+          }
+        ],
         "jibes": 59,
         "tacks": 18,
         "dryKind": "turns",
@@ -1922,6 +2128,24 @@
           "touchdown": 3,
           "fellIn": 3
         },
+        "kinds": [
+          {
+            "kind": "jibe",
+            "count": 8,
+            "flewThrough": 5,
+            "touchdown": 2,
+            "fellIn": 1,
+            "clean": 5
+          },
+          {
+            "kind": "tack",
+            "count": 4,
+            "flewThrough": 1,
+            "touchdown": 1,
+            "fellIn": 2,
+            "clean": null
+          }
+        ],
         "jibes": 8,
         "tacks": 4,
         "dryKind": "turns",
@@ -2006,6 +2230,7 @@
       ],
       "card": {
         "outcomes": null,
+        "kinds": null,
         "jibes": 3,
         "tacks": 1,
         "dryKind": null,
@@ -2120,6 +2345,7 @@
           "touchdown": 29,
           "fellIn": 32
         },
+        "kinds": null,
         "jibes": 91,
         "tacks": 24,
         "dryKind": "turns",
@@ -2233,6 +2459,24 @@
           "touchdown": 16,
           "fellIn": 13
         },
+        "kinds": [
+          {
+            "kind": "jibe",
+            "count": 49,
+            "flewThrough": 29,
+            "touchdown": 12,
+            "fellIn": 8,
+            "clean": 28
+          },
+          {
+            "kind": "tack",
+            "count": 14,
+            "flewThrough": 5,
+            "touchdown": 4,
+            "fellIn": 5,
+            "clean": null
+          }
+        ],
         "jibes": 49,
         "tacks": 14,
         "dryKind": "turns",
@@ -2341,6 +2585,24 @@
           "touchdown": 3,
           "fellIn": 3
         },
+        "kinds": [
+          {
+            "kind": "jibe",
+            "count": 8,
+            "flewThrough": 5,
+            "touchdown": 2,
+            "fellIn": 1,
+            "clean": 5
+          },
+          {
+            "kind": "tack",
+            "count": 4,
+            "flewThrough": 1,
+            "touchdown": 1,
+            "fellIn": 2,
+            "clean": null
+          }
+        ],
         "jibes": 8,
         "tacks": 4,
         "dryKind": "turns",
@@ -2450,6 +2712,24 @@
           "touchdown": 1,
           "fellIn": 3
         },
+        "kinds": [
+          {
+            "kind": "jibe",
+            "count": 7,
+            "flewThrough": 3,
+            "touchdown": 1,
+            "fellIn": 3,
+            "clean": 3
+          },
+          {
+            "kind": "tack",
+            "count": 0,
+            "flewThrough": 0,
+            "touchdown": 0,
+            "fellIn": 0,
+            "clean": null
+          }
+        ],
         "jibes": 10,
         "tacks": 1,
         "dryKind": "turns",

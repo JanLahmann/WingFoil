@@ -370,9 +370,15 @@ extension LibraryStore {
             flewThrough: laddered.reduce(0) { $0 + ($1.turnsFlewThrough ?? 0) },
             touchdown: laddered.reduce(0) { $0 + ($1.turnsTouchdown ?? 0) },
             fellIn: laddered.reduce(0) { $0 + ($1.turnsFellIn ?? 0) })
+        // The per-kind ladders (v19), all or nothing: a period one of whose laddered rows
+        // carries no split keeps the one turn bar, rather than a jibe bar that silently
+        // leaves that afternoon out while the clean count beside it does not.
+        let split = laddered.compactMap(\.turnKinds)
+        let kinds: [TurnKindTally]? = laddered.isEmpty || split.count != laddered.count
+            ? nil : TurnKindTally.sum(split)
         let jibes = sum { $0.jibes }
         let tacks = sum { $0.tacks }
-        var card = PeriodCard(outcomes: outcomes, jibes: jibes, tacks: tacks,
+        var card = PeriodCard(outcomes: outcomes, kinds: kinds, jibes: jibes, tacks: tacks,
                               flewStreak: rows.compactMap(\.longestFlewStreak).max(),
                               dryStreak: rows.compactMap(\.longestDryStreak).max(),
                               falls: sum { $0.wetExits })
