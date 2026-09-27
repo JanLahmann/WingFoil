@@ -354,12 +354,16 @@ extension View {
     /// tree when it asks: a `Menu` item is gone the moment it is tapped, and a sheet hung on
     /// it never presents. The modifier sits on a view that stays — the list, the form — and
     /// the item only has to bump the number.
+    ///
+    /// `note` is the answer to the mail's first question where the caller knows it — the
+    /// turn page's "Not how I remember it?" names the turn (`TurnDoubt.note`).
     func feedbackMail(on request: Binding<Int>, session: SessionRow? = nil,
                       card: @escaping () -> Data? = { nil },
                       subject: String? = nil,
+                      note: String? = nil,
                       stagesFallbackHook: Bool = false) -> some View {
         modifier(FeedbackMailPresenter(request: request, session: session, card: card,
-                                       subject: subject,
+                                       subject: subject, note: note,
                                        stagesFallbackHook: stagesFallbackHook))
     }
 }
@@ -416,6 +420,8 @@ private struct FeedbackMailPresenter: ViewModifier {
     /// See `FeedbackMailRow.subjectOverride`. The *body* is the same either way: every fact
     /// the phone knows is worth having on a feature request too.
     let subject: String?
+    /// See `feedbackMail(on:…note:)`.
+    let note: String?
     /// Exactly one presenter answers `UI_FEEDBACK=fallback` — the Settings row's. With a
     /// footer on every page there are five on screen at launch, and five would raise five
     /// sheets on top of each other.
@@ -438,9 +444,10 @@ private struct FeedbackMailPresenter: ViewModifier {
         let attachment: FeedbackMail.Attachment?
         let subjectOverride: String?
         var vote = MostWanted.Vote()
+        var note: String?
 
         var subject: String { subjectOverride ?? FeedbackReport.subject(facts) }
-        var body: String { FeedbackReport.body(facts, mostWanted: vote) }
+        var body: String { FeedbackReport.body(facts, mostWanted: vote, note: note) }
     }
 
     func body(content: Content) -> some View {
@@ -490,9 +497,11 @@ private struct FeedbackMailPresenter: ViewModifier {
             session.map { FeedbackMail.Attachment.card(png: data, sessionID: $0.id) }
         }
         let composed = Draft(facts: FeedbackMail.facts(store: store, session: session),
-                             attachment: attachment, subjectOverride: subject, vote: vote)
+                             attachment: attachment, subjectOverride: subject, vote: vote,
+                             note: note)
         guard MFMailComposeViewController.canSendMail() else {
-            guard let url = FeedbackReport.mailtoURL(composed.facts, mostWanted: vote) else {
+            guard let url = FeedbackReport.mailtoURL(composed.facts, mostWanted: vote,
+                                                     note: note) else {
                 fallback = composed
                 return
             }

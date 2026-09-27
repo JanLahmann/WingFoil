@@ -3,8 +3,10 @@ import MessageUI
 import SwiftUI
 import WingFoilKit
 
-/// **"Send this session to the developer"** — the Share page's third thing (Jan,
-/// 21 September 2026).
+/// **"Send this session to us"** — the Share page's third thing (Jan, 21 September 2026),
+/// and since 27 September 2026 also the turn page's "Not how I remember it?", which opens it
+/// with the turn already named in the note (`TurnDoubt.note`). Renamed from "…to the
+/// developer" the same day: voice rule 7, *we* is the team.
 ///
 /// The two doors beside it answer "send this to someone": a picture to look at, a recording
 /// to open. This one answers a different request — *this number is wrong* — and the only
@@ -31,10 +33,18 @@ struct SendToDeveloperSheet: View {
     @Environment(SessionStore.self) private var store
     @Environment(\.openURL) private var openURL
 
-    @State private var comment = ""
+    @State private var comment: String
     @State private var draft: Draft?
     @State private var fallback: Draft?
     @FocusState private var typing: Bool
+
+    /// `prefill` starts the note: the turn page writes which turn and what the app called
+    /// it, so the rider only adds what he remembers.
+    init(row: SessionRow, detail: SessionDetail? = nil, prefill: String = "") {
+        self.row = row
+        self.detail = detail
+        _comment = State(initialValue: prefill.isEmpty ? "" : prefill + "\n")
+    }
 
     /// The composed mail, held only while the composer is up.
     private struct Draft: Identifiable {
@@ -96,7 +106,7 @@ struct SendToDeveloperSheet: View {
                 .padding()
                 .readableColumn()
             }
-            .navigationTitle("Send to the developer")
+            .navigationTitle("Send this session to us")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -220,7 +230,7 @@ private struct SendToDeveloperFallbackSheet: View {
                 .padding()
                 .readableColumn()
             }
-            .navigationTitle("Send to the developer")
+            .navigationTitle("Send this session to us")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
