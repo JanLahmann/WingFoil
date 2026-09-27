@@ -50,7 +50,8 @@ public enum ChannelFeatures {
         "Home-screen widgets and the watch complication.",
         "The session video: your afternoon as a film rather than a card.",
         "Grouping the library by month, year or spot, and filtering it.",
-        "Send a session to the developer from its Share page, with your notes on it.",
+        "Send a session and its recording to us from its Share page or a turn, with "
+            + "your notes.",
         // Not a build, a plan (Jan, 19 Sep 2026: "mention it on the beta outlook explicitly").
         // The row says so in its first word, so the list stays honest about what installs.
         "Planned: a live view on the Apple Watch. Foil state, flights, records and turn "

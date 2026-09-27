@@ -108,8 +108,22 @@ public enum TurnCoach {
     /// because the analysis may not know — and a sentence must never print a count that is
     /// really an absence. It is also on the page: the "pumped out" chip carries the same
     /// words, which is what keeps the rule "never a number the page is not already showing".
+    ///
+    /// **The tip** (27 Sep 2026, Jan: "coach the next attempt"). Every line a turn that was
+    /// not clean gets ends with one plain thing to try next time (`tip(turn:slice:quietS:)`),
+    /// read off the same facts the sentence already used. `quietS` is the analysis'
+    /// `turnCleanQuietS`, the one number the quiet-tail tip names, and the footnote under
+    /// the page prints the same one.
     public static func line(turn: TurnRecord, slice: TurnSlice,
-                            pumpStrokes: Int? = nil) -> String {
+                            pumpStrokes: Int? = nil, quietS: Double? = nil) -> String {
+        let said = observation(turn: turn, slice: slice, pumpStrokes: pumpStrokes)
+        guard let tip = tip(turn: turn, slice: slice, quietS: quietS) else { return said }
+        return said + " " + tip
+    }
+
+    /// What happened, without the tip.
+    static func observation(turn: TurnRecord, slice: TurnSlice,
+                            pumpStrokes: Int?) -> String {
         let mid = midPointWord(turn.type)
         switch rule(turn: turn, slice: slice) {
         case .fellInFast:
@@ -162,7 +176,11 @@ public enum TurnCoach {
                 + "The board did not come far enough past the wind axis. "
                 + "This one is not clean."
         case .cleanAndFast:
-            return "Clean, and you barely slowed. You held " + pct(turn.score)
+            // "Clean" only where the engine said clean: a tack has no clean reading, and
+            // under the hero word "Flew through" the old line contradicted it (27 Sep 2026).
+            let head = turn.clean ? "Clean, and you barely slowed. "
+                : "You flew through and barely slowed. "
+            return head + "You held " + pct(turn.score)
                 + " of your entry speed all the way round."
         case .cleanButSlow:
             return "You flew all the way through, and it cost you speed. " + kn(turn.entryKn)
@@ -177,6 +195,93 @@ public enum TurnCoach {
             return kn(turn.entryKn) + " in, " + kn(turn.minKn) + " at the low point. You held "
                 + pct(turn.score) + " of your entry speed."
         }
+    }
+
+    // MARK: - The tip
+
+    /// **What to try next time**, as a table. Five tips, and each one is keyed to a fact
+    /// the coach line has already stated, so a tip can never claim more than the data does:
+    ///
+    /// | tip | when | the fact behind it |
+    /// |---|---|---|
+    /// | `comeInFaster` | the speed was gone before the mid-point | `lateMinimum == false` |
+    /// | `powerUpOnExit` | the speed went on the way out | `lateMinimum == true` |
+    /// | `steadyExit` | the speed held right round and it still ended in the water | `fellInFast` |
+    /// | `rideItOut` | the turn was clean and the seconds after it were not | the quiet tail |
+    /// | `carryFurther` | the board did not come far enough past the wind axis | `axisAfter` |
+    ///
+    /// No tip on a clean jibe, on `cleanAndFast` and on `plain`, and none where the tip needs
+    /// the halfway point and the window has no geometry to find it: "come in faster" under a
+    /// turn whose low point cannot be placed would be a guess.
+    public enum Tip: String, Sendable, Equatable, CaseIterable {
+        case comeInFaster
+        case powerUpOnExit
+        case steadyExit
+        case rideItOut
+        case carryFurther
+    }
+
+    /// Which tip the turn gets, or nil.
+    public static func tipKind(turn: TurnRecord, slice: TurnSlice) -> Tip? {
+        if turn.clean { return nil }
+        // Where the speed went, for the rungs whose sentence says so or could.
+        func byWhere() -> Tip? {
+            switch lateMinimum(slice) {
+            case .some(true): return .powerUpOnExit
+            case .some(false): return .comeInFaster
+            case .none: return nil
+            }
+        }
+        switch rule(turn: turn, slice: slice) {
+        case .fellInFast: return .steadyExit
+        case .fellIn, .wristUnder, .pumpedOut, .cleanButSlow: return byWhere()
+        case .touchdownOnExit, .slowedLate: return .powerUpOnExit
+        case .touchdownComingIn, .slowedEarly: return .comeInFaster
+        case .quietFlightEnd, .quietOffFoil, .quietSubmerged: return .rideItOut
+        case .axisAfter: return .carryFurther
+        case .cleanAndFast, .plain: return nil
+        }
+    }
+
+    /// The tip's sentence. One sentence, second person, "next time" in front so it reads as
+    /// an offer rather than a correction (docs/voice.md, register 1).
+    public static func tip(turn: TurnRecord, slice: TurnSlice,
+                           quietS: Double? = nil) -> String? {
+        tipKind(turn: turn, slice: slice).map { tipText($0, type: turn.type, quietS: quietS) }
+    }
+
+    /// The table's wording. `type` picks the jibe's words where the tip is about the wing
+    /// through dead downwind, which is a jibe's move and not a tack's.
+    public static func tipText(_ tip: Tip, type: String, quietS: Double? = nil) -> String {
+        switch tip {
+        case .comeInFaster:
+            return type == "jibe"
+                ? "Next time, come in faster, or keep the wing powered through the downwind "
+                    + "point."
+                : "Next time, come in with more speed."
+        case .powerUpOnExit:
+            return "Next time, power the wing up as soon as you are on the new tack."
+        case .steadyExit:
+            return "Next time, stay low and steady on the way out."
+        case .rideItOut:
+            let hold = quietS.flatMap { $0 > 0 ? String(Int($0)) + " s" : nil }
+                ?? "a few seconds"
+            return "Next time, stay on the foil for " + hold
+                + " after the turn, and it counts as clean."
+        case .carryFurther:
+            return "Next time, carry the turn further past the wind axis before you settle."
+        }
+    }
+
+    // MARK: - The verdict
+
+    /// **The verdict, as the page's hero** (27 Sep 2026): the one word a rider asks about a
+    /// turn, large under its drawing. "Clean" where the engine said clean, else the outcome
+    /// word with a capital, so the hero and the Turns list's outcome word are one word.
+    public static func verdictWord(_ turn: TurnRecord) -> String {
+        if turn.clean { return "Clean" }
+        let label = TurnOutcomeKind(turn.outcome).label
+        return label.prefix(1).uppercased() + label.dropFirst()
     }
 
     // MARK: - The one geometric question the ladder asks

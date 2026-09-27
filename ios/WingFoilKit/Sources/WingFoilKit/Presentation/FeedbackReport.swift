@@ -472,10 +472,14 @@ public enum FeedbackReport {
     /// "Report a problem with this session…" the app already knows which afternoon, so the
     /// date and the spot are written into the first of those two lines and the rider is
     /// asked one question fewer.
-    public static func body(_ facts: FeedbackFacts, mostWanted: MostWanted.Vote = .init())
-        -> String {
+    ///
+    /// `note` answers the first question for him where the app already knows it: the turn
+    /// page's "Not how I remember it?" writes which turn and what the app called it
+    /// (`TurnDoubt.note`), and the rider is left the second question, what he remembers.
+    public static func body(_ facts: FeedbackFacts, mostWanted: MostWanted.Vote = .init(),
+                            note: String? = nil) -> String {
         var out: [String] = []
-        out += prompt(Prompt.what)
+        out += prompt(Prompt.what, answer: note)
         out += prompt(Prompt.expected)
         out += prompt(Prompt.session, answer: facts.session.map(sessionAnswer))
         out += mostWanted.lines
@@ -524,11 +528,12 @@ public enum FeedbackReport {
     /// A body carrying any of them (and a rider typing "3 jibes & 2 tacks" carries one)
     /// would be cut short at that character, or arrive with a `+` read back as a space.
     public static func mailtoURL(_ facts: FeedbackFacts,
-                                 mostWanted: MostWanted.Vote = .init()) -> URL? {
+                                 mostWanted: MostWanted.Vote = .init(),
+                                 note: String? = nil) -> URL? {
         let allowed = CharacterSet.urlQueryAllowed
             .subtracting(CharacterSet(charactersIn: "&=+?"))
         guard let subject = subject(facts).addingPercentEncoding(withAllowedCharacters: allowed),
-              let body = body(facts, mostWanted: mostWanted)
+              let body = body(facts, mostWanted: mostWanted, note: note)
                 .addingPercentEncoding(withAllowedCharacters: allowed)
         else { return nil }
         var components = URLComponents()
@@ -849,5 +854,38 @@ public enum SessionAnalysisMail {
         components.path = FeedbackReport.recipient
         components.percentEncodedQuery = "subject=\(subject)&body=\(body)"
         return components.url
+    }
+}
+
+// MARK: - Doubting one turn
+
+/// **"Not how I remember it?"** — the turn page's door (27 Sep 2026, UX review #4).
+///
+/// The doubt arises on the turn page, and until this door the only place to voice it was the
+/// Share page, beta only, where the sheet asked the rider to type "a turn number or a time"
+/// the turn page already knew. The door is in every channel: the beta and dev builds open
+/// the send sheet with the recording, the App Store build opens the ordinary feedback mail.
+/// Both start from the same `note`, so the reader of either mail sees the same first line.
+public enum TurnDoubt {
+
+    /// The button on the turn page.
+    public static let button = "Not how I remember it?"
+
+    /// The line under the button, in the App Store build, where the mail has no recording.
+    public static let releaseHint = "Tell us what you saw. The mail names this turn for you."
+
+    /// The line under the button, where the send sheet carries the recording.
+    public static let betaHint = "Tell us what you saw. The recording goes with it."
+
+    /// "Jibe 2 of 5 at 42:15. CleanJibe says: touchdown." — which turn, when on the session
+    /// clock (the Turns list's own `mm:ss`), and the verdict, in the words the page printed.
+    ///
+    /// The ordinal counts turns of the same kind, like the page's title. The verdict is
+    /// after a colon rather than in the sentence because four verdicts do not all fit one
+    /// grammar: "reads as flew through" is not English.
+    public static func note(kind: String, ordinal: Int, count: Int, clock: String,
+                            verdict: String) -> String {
+        kind + " " + String(ordinal) + " of " + String(count) + " at " + clock + ". "
+            + Branding.appName + " says: " + verdict.lowercased() + "."
     }
 }

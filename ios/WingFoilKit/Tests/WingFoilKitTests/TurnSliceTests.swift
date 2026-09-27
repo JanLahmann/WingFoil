@@ -554,4 +554,83 @@ import Testing
         let quickCut = TurnSlice.make(samples: arc, turn: quick, windDirDeg: nil)
         #expect(TurnCoach.line(turn: quick, slice: quickCut).contains("91 %"))
     }
+
+    // MARK: - The tip (27 Sep 2026)
+
+    /// Every tip is keyed to a fact the coach line already stated, and a turn that was clean
+    /// or cannot be placed gets none.
+    @Test func everyTipComesFromAFactOnThePage() throws {
+        let arc = quarterCircle()
+        func tip(_ t: TurnRecord, samples: [TurnSlice.Sample]? = nil) -> TurnCoach.Tip? {
+            TurnCoach.tipKind(turn: t, slice: TurnSlice.make(
+                samples: samples ?? arc, turn: t, windDirDeg: nil))
+        }
+        // Where the speed went decides the two speed tips.
+        #expect(tip(try turn(minTs: 101, outcome: "touchdown")) == .comeInFaster)
+        #expect(tip(try turn(outcome: "touchdown")) == .powerUpOnExit)
+        #expect(tip(try turn(minTs: 101, score: 0.75)) == .comeInFaster)
+        #expect(tip(try turn(score: 0.75)) == .powerUpOnExit)
+        #expect(tip(try turn(minTs: 101, outcome: "fell_in")) == .comeInFaster)
+        #expect(tip(try turn(outcome: "touchdown", offFoilS: 4, pumped: true)) == .powerUpOnExit)
+        // The speed held and it still went in: the exit is the thing to work on.
+        #expect(tip(try turn(score: 0.92, success: true, outcome: "fell_in")) == .steadyExit)
+        // The quiet tail and the axis each have their own.
+        for reason in ["quiet_flight_end", "quiet_off_foil", "quiet_submerged"] {
+            #expect(tip(try turn(score: 0.92, success: true, cleanBlockedBy: reason))
+                    == .rideItOut)
+        }
+        #expect(tip(try turn(score: 0.92, success: true, cleanBlockedBy: "axis_after"))
+                == .carryFurther)
+
+        // No tip on a clean jibe, even one on a rung that would otherwise carry one.
+        let clean = try turn(score: 0.75, success: true)
+        #expect(clean.clean)
+        #expect(tip(clean) == nil)
+        #expect(tip(try turn(score: 0.9, success: true)) == nil)
+        // No tip where the low point cannot be placed: "come in faster" would be a guess.
+        #expect(tip(try turn(outcome: "fell_in"), samples: [TurnSlice.Sample]()) == nil)
+        #expect(tip(try turn(score: 0.75), samples: [TurnSlice.Sample]()) == nil)
+    }
+
+    /// The table's wording: one sentence each, in the coach's voice, and the jibe's words
+    /// only on a jibe.
+    @Test func theTipsAreOneCalmSentence() throws {
+        for kind in TurnCoach.Tip.allCases {
+            for type in ["jibe", "tack", "turn"] {
+                let text = TurnCoach.tipText(kind, type: type, quietS: 10)
+                #expect(text.hasPrefix("Next time, "))
+                #expect(text.hasSuffix("."))
+                #expect(text.filter { $0 == "." }.count == 1, "one sentence: \(text)")
+                #expect(!text.contains("!") && !text.lowercased().contains("should"))
+                #expect(text.split(separator: " ").count <= 20, "voice rule 1: \(text)")
+                if type != "jibe" { #expect(!text.contains("downwind")) }
+            }
+        }
+        #expect(TurnCoach.tipText(.rideItOut, type: "jibe", quietS: 10).contains("10 s"))
+        #expect(TurnCoach.tipText(.rideItOut, type: "jibe").contains("a few seconds"))
+
+        // The tip ends the line, after what happened.
+        let arc = quarterCircle()
+        let early = try turn(minTs: 101, outcome: "touchdown")
+        let line = TurnCoach.line(turn: early,
+                                  slice: TurnSlice.make(samples: arc, turn: early,
+                                                        windDirDeg: nil))
+        #expect(line.hasPrefix("The foil touched down before the downwind point."))
+        #expect(line.hasSuffix("keep the wing powered through the downwind point."))
+    }
+
+    /// The hero word: "Clean" on the engine's clean, else the outcome word with a capital.
+    @Test func theVerdictWordIsTheOutcomeOrClean() throws {
+        #expect(TurnCoach.verdictWord(try turn(score: 0.9, success: true)) == "Clean")
+        #expect(TurnCoach.verdictWord(try turn(score: 0.5)) == "Flew through")
+        #expect(TurnCoach.verdictWord(try turn(outcome: "touchdown")) == "Touchdown")
+        #expect(TurnCoach.verdictWord(try turn(outcome: "fell_in")) == "Fell in")
+        #expect(TurnCoach.verdictWord(try turn(type: "tack", score: 0.9, success: true))
+                == "Flew through", "a tack is never clean")
+        // …and its coach line does not say clean under that word either.
+        let tack = try turn(type: "tack", score: 0.9, success: true)
+        let tackLine = TurnCoach.line(turn: tack, slice: TurnSlice.make(
+            samples: quarterCircle(), turn: tack, windDirDeg: nil))
+        #expect(tackLine.hasPrefix("You flew through and barely slowed."))
+    }
 }
