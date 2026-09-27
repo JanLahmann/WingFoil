@@ -48,7 +48,7 @@ version it is stamped for.
 - [`presentation/layers-map-colour-type.md`](presentation/layers-map-colour-type.md) — Layers,
   map style, colour and glyph vocabulary, text size and theme.
 - [`presentation/key-metrics.md`](presentation/key-metrics.md) — the block that opens the
-  session.
+  session, and the story line and record chips over it.
 - [`presentation/session-time-video.md`](presentation/session-time-video.md) — the clock a
   session is drawn on, and the reel it is drawn on.
 - [`presentation/sections-tables.md`](presentation/sections-tables.md) — how a session

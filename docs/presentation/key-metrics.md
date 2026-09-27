@@ -169,3 +169,50 @@ actually chases, and they are kept beside the nine (`CleanJibeRecordKind`,
   null, and row 4 disappears — the general rule ("a missing value is absent, never 0")
   applied to the one place where a 0.0 would read as a verdict on the rider.
 
+
+## The session tells its story — and a record shows where it happened
+
+UX review of 26 September 2026, fixes 2 and 3 (Jan, 27 Sep): the page reported, it never
+celebrated. The Coach line voice.md promises for "the end of a session" existed nowhere, and
+a record was only celebrated on the Records tab, the next time the rider opened it.
+**App first**; the web's page, card and caption do not draw any of this yet.
+
+- **One Coach line over the block**, `SessionStory.make(session:history:now:policy:)` in
+  the kit, unit-tested in `SessionStoryTests`: *"14 dry jibes, 9 clean, your fastest 2 s this
+  month."* The tally first: dry jibes, then the clean ones. On a session with no jibes it is
+  the dry turns, then the flights and the minutes on the foil. **Falls are never named**: a
+  session where every jibe went in reads "12 jibes". Then the **one best true thing**. A first
+  clean jibe ever beats everything. After that comes an all-time best, then a season best,
+  then a month best. Inside one scope the order is clean jibes, then best 2 s, then the dry
+  streak. With nothing to celebrate the line is the plain tally. It stays at about 15 words.
+- **What "holds" means.** The session beats every other session of the rider's own in the
+  scope (`SessionStory.counts`: no example, no provisional card, no friend's session, no
+  non-session), with the Records table's rules: **the earlier afternoon keeps a tie**, and a
+  speed goes through the rider's Speed records setting (`SpeedRecordRule.eligible`) over the
+  session and its rivals together. **A scope with no rival holds nothing**, so the first
+  session of a library is the plain tally. The season is `PeriodRules` (1 April → 31 March),
+  the month and the season are the session's own local calendar (`LibraryStore.localDay`),
+  and `now` decides only "this month" against "that month". A *first clean jibe ever* needs
+  at least one earlier session with jibes, every one with a measured clean count of zero.
+- **The same line in three places**: over the block, as the share caption's lead
+  (`ShareCaption.line(story:…)`, which then drops its own clean count so the caption does
+  not say one number twice) and as the replay's closing caption (`ReplayCommentary.make(…,
+  story:)`). The web's caption is still the story-less one, byte for byte.
+- **The record on its cell.** A cell whose number is an all-time or season record wears a
+  chip, *Best ever* or *Season best* (`SessionStory.chip(forCell:)`). The kinds are clean
+  jibes, best 2 s, the dry streak (three or more), CPH (15-minute floor), alpha 500, 5×10 s,
+  distance and duration. A month best is said in the line only: a chip on every cell of a
+  good week is wallpaper.
+- **The card's ribbon.** A card whose session holds an all-time or season record wears
+  *Best ever · clean jibes* under its date (`SessionStory.cardBadge`, the widest one).
+- **The Records tab is badged** with the count of records the last imports beat, until the
+  rider opens it (`SessionStore.recordsBadge`). **The confetti fires the first time the
+  record-setting session opens** after the import (`takeRecordConfetti`), as well as on the
+  Records tab. Both are kept in defaults, so a relaunch does not forget them.
+- **The Records banner lost its definition line.** Under the burst it now says *"Your best
+  afternoon of clean jibes yet."* What clean means lives on the Turns tab and in the help.
+- **Streaks are said the way a rider says them**: the replay's *"7 in a row, dry"*
+  (`ReplayCommentary.streakLine`) replaced "New streak · 7 dry jibes".
+- **The card never prints the falls.** Its streak line keeps *never fell in*, because that
+  is a boast. Any other count is left off the picture a rider posts and stays on the session
+  page (`fallSegments`, kit and web alike, pinned by `fixtures/cards/*stories.expected.json`).

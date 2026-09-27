@@ -144,6 +144,11 @@ retired for rider text. It lives on in code comments and in `docs/`, where it be
 **End of a session (register 2, one of the four)**
 > *Eight jibes, six flew through, your best 2 s all season. Share the card.*
 
+The app says it since 27 September 2026, as `SessionStory` builds it: *"14 dry jibes, 9 clean,
+your fastest 2 s this month."* It sits over the key metrics, leads the share caption and
+closes the replay. The rules are in docs/presentation/key-metrics.md, "The session tells its
+story".
+
 ## What the checks hold
 
 - `HelpBudgetTests` — words per help summary, body and item (the budgets stay).
