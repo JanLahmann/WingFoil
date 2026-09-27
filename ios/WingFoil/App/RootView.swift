@@ -95,6 +95,9 @@ struct RootView: View {
             RecordsView()
                 .tag(Tab.records)
                 .tabItem { Label("Records", systemImage: "trophy") }
+                // The records the last import beat, until the rider opens the tab: the
+                // celebration waits on this tab, so the bar says it is there.
+                .badge(store.recordsBadge)
             TrendsView()
                 .tag(Tab.trends)
                 .tabItem { Label("Trends", systemImage: "chart.xyaxis.line") }
@@ -111,7 +114,9 @@ struct RootView: View {
         // there, not by the visit (`SessionStore.saveGear`).
         .onChange(of: selection) { _, tab in
             switch tab {
-            case .records: Usage.record(.records)
+            case .records:
+                Usage.record(.records)
+                store.clearRecordsBadge()
             case .trends: Usage.record(.trends)
             case .sessions, .gear: break
             }

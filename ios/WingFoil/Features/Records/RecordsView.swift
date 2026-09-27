@@ -186,8 +186,9 @@ struct RecordsView: View {
                 Text(best.headline)
                     .font(.subheadline.weight(.medium))
             }
-            Text("Your best afternoon of clean jibes. Clean: you flew all the way "
-                 + "through and held your speed.")
+            // No definition under the burst (UX review, 26 Sep 2026): the rulebook at the
+            // party. What clean means is one tap away, on the Turns tab and in the help.
+            Text("Your best afternoon of clean jibes yet.")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }

@@ -9,7 +9,7 @@ import WingFoilKit
 /// the map is 190 pt tall (`AdaptiveFigure`) and an overlay would be a third of it.
 ///
 /// **Why the ink is mostly neutral.** `docs/presentation.md` — the outcome ladder is a
-/// verdict scale and nothing else may borrow it. "10 jibes" and "New streak — 5 dry jibes"
+/// verdict scale and nothing else may borrow it. "10 jibes" and "5 in a row, dry"
 /// are *counts*, not verdicts, so they get the plain foreground; the lines that really are
 /// the thing a token names (a takeoff, a swim, the record window, a flight) use it. The
 /// clean-jibe line is the one addition: it is a verdict, and it wears the clean ink the map

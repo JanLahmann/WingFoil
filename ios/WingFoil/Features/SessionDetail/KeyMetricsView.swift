@@ -14,6 +14,10 @@ import WingFoilKit
 /// same order, on the web (`web/js/render.js`).
 struct KeyMetricsView: View {
     let metrics: KeyMetrics
+    /// **The session's story** (`SessionStory`): the Coach line over the block, and the
+    /// "Best ever" / "Season best" chip on each cell that holds a record. nil draws the block
+    /// as it always was.
+    var story: SessionStory?
 
     /// Three tiles to a row is a row at every ordinary text size and a row of ellipses at
     /// an accessibility one — "13.47 kn" set at 180 % does not fit a third of a phone at any
@@ -24,6 +28,14 @@ struct KeyMetricsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
+            // One line of energy, over the numbers it is made of (docs/voice.md, register 2,
+            // "the end of a session").
+            if let line = story?.line {
+                Text(line)
+                    .font(.headline)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityAddTraits(.isHeader)
+            }
             row {
                 ForEach(metrics.basics) { cell($0) }
             }
@@ -117,10 +129,11 @@ struct KeyMetricsView: View {
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+            recordChip(metric.key)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(metric.label), \(metric.value)")
+        .accessibilityLabel(spoken("\(metric.label), \(metric.value)", metric.key))
     }
 
     /// **The clean jibes**: the star and the number in the clean ink, never the ladder's
@@ -142,10 +155,11 @@ struct KeyMetricsView: View {
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+            recordChip(metric.key)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(metric.value) \(metric.label)")
+        .accessibilityLabel(spoken("\(metric.value) \(metric.label)", metric.key))
     }
 
     /// **A pair cell, each half in its own ink** — the streaks' "3 flew · 5 dry", where the
@@ -174,10 +188,32 @@ struct KeyMetricsView: View {
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+            recordChip(metric.key)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(metric.label), \(metric.value)")
+        .accessibilityLabel(spoken("\(metric.label), \(metric.value)", metric.key))
+    }
+
+    /// **The record, where it happened**: "Best ever" or "Season best" under the cell whose
+    /// number beat the rider's own history. Nothing on a cell that holds no record.
+    @ViewBuilder
+    private func recordChip(_ key: String) -> some View {
+        if let chip = story?.chip(forCell: key) {
+            Label(chip, systemImage: "trophy.fill")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(Brand.green)
+                .labelStyle(.titleAndIcon)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(Brand.green.opacity(0.14), in: .capsule)
+                .padding(.top, 2)
+        }
+    }
+
+    /// The cell's spoken label, with its record said after it.
+    private func spoken(_ base: String, _ key: String) -> String {
+        story?.chip(forCell: key).map { base + ", " + $0 } ?? base
     }
 
     /// A document `colourRole` as this surface's ink. Only the roles the block's cells

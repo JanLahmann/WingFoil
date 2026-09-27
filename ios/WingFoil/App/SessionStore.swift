@@ -196,6 +196,41 @@ final class SessionStore {
     /// What the Records screen watches to know a celebration arrived, whichever kind it is.
     var celebrationCount: Int { celebration.count + cleanJibeCelebration.count }
 
+    /// **Records where they happen** (UX review, 26 Sep 2026). The records the last imports
+    /// beat, counted on the Records tab's badge until the rider opens that tab. Kept in
+    /// defaults: a badge that a relaunch forgets was never there.
+    private(set) var recordsBadge: Int = UserDefaults.standard.integer(forKey: SessionStore.recordsBadgeKey)
+
+    /// The sessions that set a record and have not been opened since: the first time each one
+    /// opens, its page fires the confetti the Records tab used to keep to itself.
+    private var recordConfetti: Set<String> =
+        Set(UserDefaults.standard.stringArray(forKey: SessionStore.recordConfettiKey) ?? [])
+
+    private static let recordsBadgeKey = "recordsBadge.v1"
+    private static let recordConfettiKey = "recordConfetti.v1"
+
+    /// Called when the Records tab is opened.
+    func clearRecordsBadge() {
+        guard recordsBadge != 0 else { return }
+        recordsBadge = 0
+        UserDefaults.standard.set(0, forKey: Self.recordsBadgeKey)
+    }
+
+    /// True once per record-setting session: the first open after the import that beat it.
+    func takeRecordConfetti(for sessionID: String) -> Bool {
+        guard recordConfetti.remove(sessionID) != nil else { return false }
+        UserDefaults.standard.set(Array(recordConfetti), forKey: Self.recordConfettiKey)
+        return true
+    }
+
+    private func noteRecords(in sessionIDs: [String]) {
+        guard !sessionIDs.isEmpty else { return }
+        recordsBadge += sessionIDs.count
+        recordConfetti.formUnion(sessionIDs)
+        UserDefaults.standard.set(recordsBadge, forKey: Self.recordsBadgeKey)
+        UserDefaults.standard.set(Array(recordConfetti), forKey: Self.recordConfettiKey)
+    }
+
     /// Which map/chart overlay categories the legend chips are showing, **per map**
     /// (`MapLayerScope`: the ride track, the Turns map, the Takeoffs map).
     ///
@@ -594,6 +629,7 @@ final class SessionStore {
             let clean = PersonalBestDetector.cleanJibeImprovements(previous: previous,
                                                                    current: cleanJibes)
             if !clean.isEmpty { cleanJibeCelebration = clean }
+            noteRecords(in: found.map(\.sessionId) + clean.map(\.sessionId))
         }
         storePersonalBests(PersonalBestSnapshot(records: records, cleanJibes: cleanJibes))
     }
@@ -3778,6 +3814,8 @@ final class SessionStore {
         storage = StorageStats()
         celebration = []
         cleanJibeCelebration = []
+        recordsBadge = 0
+        recordConfetti = []
         importProgress = nil
         pendingImport = nil
         pendingReAdd = nil
