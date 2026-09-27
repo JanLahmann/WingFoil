@@ -13,20 +13,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "36"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 51 jibes",
@@ -115,20 +102,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "36"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "max2s",
         "sub": "top speed · best 2 s",
@@ -211,20 +185,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "36"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 51 jibes",
@@ -315,20 +276,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "16"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "max2s",
         "sub": "top speed · best 2 s",
@@ -404,20 +352,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "16"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "max2s",
         "sub": "top speed · best 2 s",
@@ -493,20 +428,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "16"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "max2s",
         "sub": "top speed · best 2 s",
@@ -584,20 +506,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "20"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 51 jibes",
@@ -686,20 +595,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "20"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "max2s",
         "sub": "top speed · best 2 s",
@@ -782,20 +678,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "20"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 51 jibes",
@@ -895,20 +778,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "23"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 38 jibes",
@@ -1007,20 +877,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "23"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "max2s",
         "sub": "top speed · best 2 s",
@@ -1113,20 +970,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "23"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "tacks",
         "sub": "0 dry · beside 38 jibes",
@@ -1227,20 +1071,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "29"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 52 jibes",
@@ -1339,20 +1170,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "29"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "max2s",
         "sub": "top speed · best 2 s",
@@ -1445,20 +1263,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "29"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "tacks",
         "sub": "0 dry · beside 52 jibes",
@@ -1550,20 +1355,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "11"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "max2s",
         "sub": "top speed · best 2 s",
@@ -1639,20 +1431,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "11"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "max2s",
         "sub": "top speed · best 2 s",
@@ -1728,20 +1507,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "11"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "max2s",
         "sub": "top speed · best 2 s",
@@ -1819,20 +1585,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "13"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 27 jibes",
@@ -1921,20 +1674,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "13"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "max2s",
         "sub": "top speed · best 2 s",
@@ -2017,20 +1757,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "13"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 27 jibes",
@@ -2121,20 +1848,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "22"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 63 jibes",
@@ -2223,20 +1937,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "22"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "max2s",
         "sub": "top speed · best 2 s",
@@ -2319,20 +2020,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "22"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 63 jibes",
@@ -2423,20 +2111,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "10"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 23 jibes",
@@ -2525,20 +2200,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "10"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "max2s",
         "sub": "top speed · best 2 s",
@@ -2621,20 +2283,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "10"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 23 jibes",
@@ -2734,20 +2383,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "23"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 69 jibes",
@@ -2846,20 +2482,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "23"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "max2s",
         "sub": "top speed · best 2 s",
@@ -2952,20 +2575,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "23"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "tacks",
         "sub": "0 dry · beside 69 jibes",
@@ -3057,20 +2667,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "14"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 32 jibes",
@@ -3159,20 +2756,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "14"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "max2s",
         "sub": "top speed · best 2 s",
@@ -3255,20 +2839,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "14"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 32 jibes",
@@ -3359,20 +2930,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "7"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 15 jibes",
@@ -3461,20 +3019,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "7"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "max2s",
         "sub": "top speed · best 2 s",
@@ -3557,20 +3102,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "7"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 15 jibes",
@@ -3670,20 +3202,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "16"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 31 jibes",
@@ -3782,20 +3301,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "16"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "max2s",
         "sub": "top speed · best 2 s",
@@ -3888,20 +3394,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "16"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "tacks",
         "sub": "0 dry · beside 31 jibes",
@@ -4002,20 +3495,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "25"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 56 jibes",
@@ -4114,20 +3594,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "25"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "max2s",
         "sub": "top speed · best 2 s",
@@ -4220,20 +3687,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "25"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "tacks",
         "sub": "0 dry · beside 56 jibes",
@@ -4325,20 +3779,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "2"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 10 jibes",
@@ -4427,20 +3868,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "2"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "max2s",
         "sub": "top speed · best 2 s",
@@ -4523,20 +3951,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "2"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 10 jibes",
@@ -4627,20 +4042,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "2"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 10 jibes",
@@ -4729,20 +4131,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "2"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "max2s",
         "sub": "top speed · best 2 s",
@@ -4825,20 +4214,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "2"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 10 jibes",
@@ -4929,20 +4305,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "2"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 10 jibes",
@@ -5031,20 +4394,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "2"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "max2s",
         "sub": "top speed · best 2 s",
@@ -5127,20 +4477,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "2"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 10 jibes",
@@ -5231,20 +4568,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "2"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 10 jibes",
@@ -5333,20 +4657,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "2"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "max2s",
         "sub": "top speed · best 2 s",
@@ -5429,20 +4740,7 @@
         }
       ],
       "dateLine": "",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "2"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 10 jibes",

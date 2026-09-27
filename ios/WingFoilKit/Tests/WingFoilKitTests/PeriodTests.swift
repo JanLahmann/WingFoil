@@ -491,7 +491,8 @@ import Testing
         #expect(clean.bars.first?.right == nil)
         #expect(clean.ribbon.first?.key == "cph")
         #expect(clean.streak.map(\.text).joined() == "best streak 4 flew · 9 dry")
-        #expect(clean.falls.map(\.text).joined() == "fell in 6 times")
+        // The card never prints a fall count; only "never fell in" is a boast.
+        #expect(clean.falls.isEmpty)
     }
 
     /// **The period card's story is the shared fixture**: for every period the analyzer makes

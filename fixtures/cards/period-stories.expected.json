@@ -13,20 +13,7 @@
         }
       ],
       "dateLine": "31 July 2026 – 14 February 2027",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "43"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 91 jibes",
@@ -116,20 +103,7 @@
         }
       ],
       "dateLine": "31 July 2026 – 14 February 2027",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "43"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "max2s",
         "sub": "top speed · best 2 s",
@@ -219,20 +193,7 @@
         }
       ],
       "dateLine": "31 July 2026 – 14 February 2027",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "43"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "sessions",
         "sub": "at 3 spots",
@@ -316,20 +277,7 @@
         }
       ],
       "dateLine": "31 July 2026 – 14 February 2027",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "43"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 91 jibes",
@@ -430,20 +378,7 @@
         }
       ],
       "dateLine": "31 July 2026",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "4"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 8 jibes",
@@ -543,20 +478,7 @@
         }
       ],
       "dateLine": "31 July 2026",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "4"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "max2s",
         "sub": "top speed · best 2 s",
@@ -656,20 +578,7 @@
         }
       ],
       "dateLine": "31 July 2026",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "4"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "sessions",
         "sub": "at one spot",
@@ -763,20 +672,7 @@
         }
       ],
       "dateLine": "31 July 2026",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "4"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "tacks",
         "sub": "2 dry · beside 8 jibes",
@@ -878,20 +774,7 @@
         }
       ],
       "dateLine": "1 – 9 August 2026",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "23"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 59 jibes",
@@ -991,20 +874,7 @@
         }
       ],
       "dateLine": "1 – 9 August 2026",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "23"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "max2s",
         "sub": "top speed · best 2 s",
@@ -1104,20 +974,7 @@
         }
       ],
       "dateLine": "1 – 9 August 2026",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "23"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "sessions",
         "sub": "at 2 spots",
@@ -1211,20 +1068,7 @@
         }
       ],
       "dateLine": "1 – 9 August 2026",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "23"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "tacks",
         "sub": "11 dry · beside 59 jibes",
@@ -1317,20 +1161,7 @@
         }
       ],
       "dateLine": "1 September 2026",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "3"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 5 jibes",
@@ -1420,20 +1251,7 @@
         }
       ],
       "dateLine": "1 September 2026",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "3"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "max2s",
         "sub": "top speed · best 2 s",
@@ -1523,20 +1341,7 @@
         }
       ],
       "dateLine": "1 September 2026",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "3"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "sessions",
         "sub": "at one spot",
@@ -1620,20 +1425,7 @@
         }
       ],
       "dateLine": "1 September 2026",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "3"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 5 jibes",
@@ -1725,20 +1517,7 @@
         }
       ],
       "dateLine": "30 December 2026",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "8"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 12 jibes",
@@ -1828,20 +1607,7 @@
         }
       ],
       "dateLine": "30 December 2026",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "8"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "max2s",
         "sub": "top speed · best 2 s",
@@ -1931,20 +1697,7 @@
         }
       ],
       "dateLine": "30 December 2026",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "8"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "sessions",
         "sub": "at one spot",
@@ -2028,20 +1781,7 @@
         }
       ],
       "dateLine": "30 December 2026",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "8"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 12 jibes",
@@ -2325,20 +2065,7 @@
         }
       ],
       "dateLine": "14 February 2027",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "5"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 7 jibes",
@@ -2428,20 +2155,7 @@
         }
       ],
       "dateLine": "14 February 2027",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "5"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "max2s",
         "sub": "top speed · best 2 s",
@@ -2531,20 +2245,7 @@
         }
       ],
       "dateLine": "14 February 2027",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "5"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "sessions",
         "sub": "at one spot",
@@ -2628,20 +2329,7 @@
         }
       ],
       "dateLine": "14 February 2027",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "5"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 7 jibes",
@@ -2934,20 +2622,7 @@
         }
       ],
       "dateLine": "1 – 4 August 2026",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "17"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 49 jibes",
@@ -3047,20 +2722,7 @@
         }
       ],
       "dateLine": "1 – 4 August 2026",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "17"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "max2s",
         "sub": "top speed · best 2 s",
@@ -3160,20 +2822,7 @@
         }
       ],
       "dateLine": "1 – 4 August 2026",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "17"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "sessions",
         "sub": "at 2 spots",
@@ -3267,20 +2916,7 @@
         }
       ],
       "dateLine": "1 – 4 August 2026",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "17"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "tacks",
         "sub": "9 dry · beside 49 jibes",
@@ -3373,20 +3009,7 @@
         }
       ],
       "dateLine": "14 February – 10 May 2027",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "5"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 10 jibes",
@@ -3476,20 +3099,7 @@
         }
       ],
       "dateLine": "14 February – 10 May 2027",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "5"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "max2s",
         "sub": "top speed · best 2 s",
@@ -3579,20 +3189,7 @@
         }
       ],
       "dateLine": "14 February – 10 May 2027",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "5"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "sessions",
         "sub": "at 2 spots",
@@ -3676,20 +3273,7 @@
         }
       ],
       "dateLine": "14 February – 10 May 2027",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "5"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 10 jibes",
@@ -3790,20 +3374,7 @@
         }
       ],
       "dateLine": "31 July 2026",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "4"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 8 jibes",
@@ -3903,20 +3474,7 @@
         }
       ],
       "dateLine": "31 July 2026",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "4"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "max2s",
         "sub": "top speed · best 2 s",
@@ -4016,20 +3574,7 @@
         }
       ],
       "dateLine": "31 July 2026",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "4"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "sessions",
         "sub": "at one spot",
@@ -4123,20 +3668,7 @@
         }
       ],
       "dateLine": "31 July 2026",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "4"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "tacks",
         "sub": "2 dry · beside 8 jibes",
@@ -4238,20 +3770,7 @@
         }
       ],
       "dateLine": "31 July – 4 August 2026",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "13"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 34 jibes",
@@ -4351,20 +3870,7 @@
         }
       ],
       "dateLine": "31 July – 4 August 2026",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "13"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "max2s",
         "sub": "top speed · best 2 s",
@@ -4464,20 +3970,7 @@
         }
       ],
       "dateLine": "31 July – 4 August 2026",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "13"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "sessions",
         "sub": "at one spot",
@@ -4571,20 +4064,7 @@
         }
       ],
       "dateLine": "31 July – 4 August 2026",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "13"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "tacks",
         "sub": "7 dry · beside 34 jibes",
@@ -4686,20 +4166,7 @@
         }
       ],
       "dateLine": "2 – 3 August 2026",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "8"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "clean",
         "sub": "of 23 jibes",
@@ -4799,20 +4266,7 @@
         }
       ],
       "dateLine": "2 – 3 August 2026",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "8"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "max2s",
         "sub": "top speed · best 2 s",
@@ -4912,20 +4366,7 @@
         }
       ],
       "dateLine": "2 – 3 August 2026",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "8"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "sessions",
         "sub": "at one spot",
@@ -5019,20 +4460,7 @@
         }
       ],
       "dateLine": "2 – 3 August 2026",
-      "falls": [
-        {
-          "role": "muted",
-          "text": "fell in "
-        },
-        {
-          "role": "fell",
-          "text": "8"
-        },
-        {
-          "role": "muted",
-          "text": " times"
-        }
-      ],
+      "falls": [],
       "hero": {
         "kind": "tacks",
         "sub": "4 dry · beside 23 jibes",
