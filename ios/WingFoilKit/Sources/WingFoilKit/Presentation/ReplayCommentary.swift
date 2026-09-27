@@ -44,7 +44,7 @@ public struct ReplayMilestone: Sendable, Equatable, Identifiable {
     public let t: Double
     /// The highest-ranked kind at this instant — what the caption's icon and ink read.
     public let kind: Kind
-    /// The whole line, ready to draw: "New streak · 5 dry jibes".
+    /// The whole line, ready to draw: "5 in a row, dry".
     public let text: String
 
     public init(id: String, t: Double, kind: Kind, text: String) {
@@ -109,11 +109,17 @@ public enum ReplayCommentary {
     /// filename is presentation the kit has no business owning (the same split
     /// `ShareCardStats.make` draws). Without them the opening line degrades to "Session
     /// start" rather than inventing a location.
+    ///
+    /// `story` is the session's Coach line (`SessionStory`), which the app builds from the
+    /// library the kit's analysis does not see. Given, the replay closes on it — the same
+    /// sentence the session page opens with and the share caption leads with — instead of
+    /// the plain tally `endLine` reads off the summary.
     public static func make(_ analysis: SessionAnalysis,
                             span: ClosedRange<Double>? = nil,
                             place: String? = nil,
                             startedAt: Date? = nil,
-                            timeZone: TimeZone) -> [ReplayMilestone] {
+                            timeZone: TimeZone,
+                            story: String? = nil) -> [ReplayMilestone] {
         var out: [ReplayMilestone] = []
         let clock = span ?? 0 ... max(analysis.summary.durationS, 0)
 
@@ -126,7 +132,7 @@ public enum ReplayCommentary {
                                        text: startLine(place: place, startedAt: startedAt,
                                                        timeZone: timeZone)))
             out.append(ReplayMilestone(id: "end", t: clock.upperBound, kind: .sessionEnd,
-                                       text: endLine(analysis.summary)))
+                                       text: story ?? endLine(analysis.summary)))
         }
 
         // MARK: the first takeoff
@@ -256,8 +262,8 @@ public enum ReplayCommentary {
     ///   `ts`, because that is the instant the map's marker, the beat bar's tick and the
     ///   callout all call "that jibe". A caption eight seconds adrift of the tick it belongs
     ///   to reads as a caption about something else.
-    /// * Only improvements are emitted, and only from `minStreak` up: "New streak — 1 dry
-    ///   jibe" on the first maneuver of the day is not news, and a line on every jibe is not
+    /// * Only improvements are emitted, and only from `minStreak` up: "1 in a row, dry" on
+    ///   the first maneuver of the day is not news, and a line on every jibe is not
     ///   commentary.
     private static func streakMilestones(_ analysis: SessionAnalysis) -> [ReplayMilestone] {
         /// One thing that happened to the rider, from either outcome channel.
@@ -298,13 +304,19 @@ public enum ReplayCommentary {
                 best = running
                 out.append(ReplayMilestone(
                     id: "streak-\(running)", t: event.mark, kind: .streak(running),
-                    text: "New streak · " + String(running)
-                        + (running == 1 ? " dry jibe" : " dry jibes")))
+                    // "7 in a row, dry" (UX review, 26 Sep 2026): the run said the way a
+                    // rider says it at the van, not as a label and a count.
+                    text: streakLine(running)))
             } else if event.fellIn {
                 running = 0
             }
         }
         return out
+    }
+
+    /// "7 in a row, dry". One home: the replay's caption and the clip's closing card.
+    public static func streakLine(_ count: Int) -> String {
+        String(count) + " in a row, dry"
     }
 
     // MARK: - Collisions

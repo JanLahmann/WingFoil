@@ -140,6 +140,25 @@ public enum ShareCaption {
         return facts.joined(separator: " · ") + " — " + offer
     }
 
+    /// **The session's story leads** (`SessionStory.line`): "14 dry jibes, 9 clean, your
+    /// fastest 2 s this month. Torbole · 30 August 2026 · 66 % on the foil — analysed with
+    /// CleanJibe, free at cleanjibe.org."
+    ///
+    /// The clean count leaves the facts because the story already says it, and a caption
+    /// that names one number twice reads as a template. The rest is `line` unchanged. The
+    /// web's `shareCaption` does not have the story yet (the app first, the web after), so
+    /// this is the one shape the two platforms do not share — a nil story gives `line`'s
+    /// byte-identical sentence.
+    public static func line(story: String?, title: String?, dateLine: String,
+                            foilPct: Double?, cleanJibes: Int?) -> String {
+        guard let story, !story.isEmpty else {
+            return line(title: title, dateLine: dateLine, foilPct: foilPct,
+                        cleanJibes: cleanJibes)
+        }
+        return story + " " + line(title: title, dateLine: dateLine, foilPct: foilPct,
+                                  cleanJibes: nil)
+    }
+
     /// The **subject** the share sheet offers where a subject exists at all — mail, and
     /// nothing else. The facts without the offer: a subject line is a name for the thing, and
     /// an invitation in it reads as an advertisement rather than as a message from a friend.

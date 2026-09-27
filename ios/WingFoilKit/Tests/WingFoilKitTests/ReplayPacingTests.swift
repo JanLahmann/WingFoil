@@ -57,7 +57,7 @@ import Testing
         for (index, n) in (3...17).enumerated() {
             out.append(ReplayMilestone(id: "streak-\(n)", t: 360 + Double(index) * 430,
                                        kind: .streak(n),
-                                       text: "New streak · \(n) dry jibes"))
+                                       text: "\(n) in a row, dry"))
         }
         return out.sorted { $0.t < $1.t }
     }
