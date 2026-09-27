@@ -238,21 +238,21 @@
       "term" : "TPH"
     },
     {
-      "expansion" : "swims per hour",
+      "expansion" : "falls per hour",
       "fit" : "",
       "id" : "wph",
       "labels" : [
         "WPH",
-        "WPH · swims per hour"
+        "WPH · falls per hour"
       ],
-      "line" : "Swims per hour. Nobody wants it high, and it counts every fall.",
+      "line" : "How often you fell in, per hour. Every fall counts, in a turn or not.",
       "places" : [
         "phonePage",
         "card",
         "web",
         "help"
       ],
-      "sentence" : "your swims per hour",
+      "sentence" : "how often you fell in per hour",
       "short" : "WPH",
       "surfaces" : [
         "ios",
@@ -441,7 +441,7 @@
         "web",
         "help"
       ],
-      "sentence" : "the jibes you did not swim out of",
+      "sentence" : "the jibes you stayed dry through",
       "short" : "dry",
       "surfaces" : [
         "ios",

@@ -17,7 +17,7 @@ the three gear groups' own shape:
   are gone: a centroid to four decimal places is a fact about the clusterer, not about the
   place;
 - **the section's own actions at its foot**, where every gear group keeps *Add wing*:
-  **Re-cluster spots** and **Look up names again**;
+  **Rebuild spots** and **Look up names again**;
 - **the footer** — tap to rename, a typed name survives a re-cluster, sessions within the
   cluster radius are one spot, names come from the map when the network allows.
 

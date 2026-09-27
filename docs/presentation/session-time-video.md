@@ -134,9 +134,9 @@ list *is* the rendered block.
 
 **The picture travels with one sentence** (`shareCaption` in web/js/sharecard.js and its twin
 `ShareCaption.line` in the kit, 14 September 2026 — **both platforms**): the card's own title,
-its date line, the foil share and the clean-jibe count, then “— analysed with CleanJibe, free
-at cleanjibe.org”. That is the one em dash either platform is allowed in a shared string; it
-separates the report from the offer, and everything inside the report is separated by “·”. It
+its date line, the foil share and the clean-jibe count, then “· analysed with CleanJibe, free
+at cleanjibe.org”. One separator, “·”, between the facts and before the offer; the em dash
+that used to hang the offer off the report went on 27 September 2026 (docs/voice.md, rule 4). It
 is passed as `text` and `url` beside the file on the web and as `ShareLink`'s `message:` on
 iOS, so a forwarded card carries what it is and where it came from in quotable words rather
 than only in 9.5 pt type in its footer — and so a notification, a reply quote or a screen
@@ -423,7 +423,7 @@ The same source class also has no accelerometer, so the pump and takeoff-effort 
 absent rather than zero, by the never-a-flattering-zero rule the goldens already follow
 (docs/testing.md).
 
-### Whether an uncertified record counts at all — Settings → Speed records
+### Whether an estimated record counts at all — Settings → Speed records
 
 Jan, 22 September 2026. Marking a record is one answer to "this speed came from positions";
 it is not the only reasonable one. A rider whose library is all Garmin FITs wants the one
@@ -431,11 +431,15 @@ Strava import kept out of his all-time table; a rider whose library is all Strav
 table at all. So the mark stays, and **whether the record enters the aggregate is a
 setting**, right under Units on both shells, with three choices and one wording:
 
+The rider's two words are *measured* and *estimated* since 27 September 2026 (they were
+*verified* / *unverified* here and *certified* / *uncertified* on the records); the stored
+setting keeps its raw values `onlyVerified`, `preferVerified`, `includeUnverified`.
+
 | choice | what stands |
 |---|---|
-| **Only verified** | an unverified record never enters the all-time table, the personal bests, the trends' best-2 s series, a card, the celebration or the watch snapshot. Its own session's page still shows it, marked |
-| **Prefer verified** — the default | per record kind, a verified record wins whenever one exists; an unverified record fills a row no verified record of that kind has reached, and it carries the mark |
-| **Include unverified** | every record stands, marked. What the app did before the setting |
+| **Only measured** | an estimated record never enters the all-time table, the personal bests, the trends' best-2 s series, a card, the celebration or the watch snapshot. Its own session's page still shows it, marked |
+| **Prefer measured** — the default | per record kind, a measured record wins whenever one exists; an estimated record fills a row no measured record of that kind has reached, and it carries the mark |
+| **Include estimated** | every record stands, marked. What the app did before the setting |
 
 **One rule, one function** (docs/review-checklist.md, pattern L). `SpeedRecordRule.eligible`
 in the kit takes the candidates of **one record kind** and returns the subset the policy lets
@@ -460,7 +464,7 @@ between them; the browser draws the same three as a segmented group with the sam
 (`SpeedRecordPolicy.summary`, `SPEED_RECORD_SUMMARY` in `web/js/appshell.js`). Under **Only
 verified** a table that empties says why rather than going blank (pattern G).
 
-### Send this session to the developer — the Share page's third thing (beta)
+### Send this session to us — the Share page's third thing (beta)
 
 Jan, 21 September 2026. The Card and FIT file segments answer one request, *send this to
 someone*; this answers another, *this number is wrong*, and the only way to chase that is on

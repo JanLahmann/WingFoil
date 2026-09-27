@@ -208,7 +208,7 @@ he could skip it. Each now has one footnote-sized line as its first row —
 `GettingStartedGuide.settingsIcu`, *"Garmin has no open API for a personal app, so
 intervals.icu is the free bridge: connect your Garmin there once and every session arrives
 here by itself."*, and `GettingStartedGuide.settingsStrava`, *"The route that needs no file:
-any watch that syncs to Strava. Positions only, so speed records are uncertified."* Both come
+any watch that syncs to Strava. Positions only, so speed records are estimated."* Both come
 from `docs/guide/getting-started.json`, so the switches and the Getting started guide say one
 thing; the longer intervals.icu version, which the help topic prints, is still
 `IcuSetupGuide.rationale`. The footers under each section are unchanged and carry the detail —
@@ -252,10 +252,10 @@ path the switch does, which is what puts the iOS permission sheet under the fing
 for it. `NewActivityPrompt.shouldAsk(… keyIsProven:)` holds the rule.
 
 **Speed records sits under Units**, because it is the other question about how a speed reads
-(22 September 2026). What it does is written out above, under "Whether an uncertified record
+(22 September 2026). What it does is written out above, under "Whether an estimated record
 counts at all"; what the section itself carries is a picker of three, the chosen mode's own
-line under it, and the footer's three register-1 sentences — what verified means, what
-unverified means, and what "prefer" does — with the `?` opening *Verified and unverified
+line under it, and the footer's three register-1 sentences — what measured means, what
+estimated means, and what "prefer" does — with the `?` opening *Measured and estimated
 speed records*. The browser draws the same section in the same place from
 `docs/copy/settings.json`.
 

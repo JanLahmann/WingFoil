@@ -17,7 +17,7 @@
   ],
   "appStoreName": "CleanJibe Wingfoil Analyzer",
   "appStoreSubtitle": "Flights, turns, speed records",
-  "callToAction": "analyze your wingfoil sessions free — cleanjibe.org",
+  "callToAction": "Analyse your wingfoil sessions free at cleanjibe.org.",
   "captionOffer": "analysed with CleanJibe, free at cleanjibe.org",
   "ciqListingTitle": "CleanJibe Wingfoil Tracker (Beta)",
   "headline": "Your WingFoil session, measured.",
@@ -54,7 +54,7 @@
     "preferred": {
       "clean": "flew through it, held its speed, and the ten seconds after it stayed quiet",
       "dry streak": "the run of turns without falling in",
-      "flew through": "kept the foil the whole way through the turn — no touchdown, no swim"
+      "flew through": "kept the foil the whole way through the turn, with no touchdown and no fall"
     }
   },
   "promise": "Did you fly through that jibe? CleanJibe reads your session off the watch. It tells you your time on the foil, every flight, your speed records, and a verdict on every turn. Flew through, touchdown, or fell in.",

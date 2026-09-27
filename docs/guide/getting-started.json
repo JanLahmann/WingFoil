@@ -127,7 +127,7 @@
         },
         {
           "title": "What you get",
-          "detail": "Speed comes off the watch's own receiver, so the records certify. The 50 Hz wrist gives pump strokes and takeoff attempts."
+          "detail": "Speed comes off the watch's own receiver, so the records are measured. The 50 Hz wrist gives pump strokes and takeoff attempts."
         }
       ]
     },
@@ -160,7 +160,7 @@
         },
         {
           "title": "What you get",
-          "detail": "Speed comes off the watch's own receiver, so the records certify. Nothing records your wrist, so there are no pump strokes or takeoff attempts."
+          "detail": "Speed comes off the watch's own receiver, so the records are measured. Nothing records your wrist, so there are no pump strokes or takeoff attempts."
         }
       ]
     },
@@ -208,7 +208,7 @@
         "dev"
       ],
       "class": "c",
-      "summary": "Settings → Strava → Connect with Strava, then Import → Import from Strava…. Strava keeps your track but not your watch's speed, so records are uncertified.",
+      "summary": "Settings → Strava → Connect with Strava, then Import → Import from Strava…. Strava keeps your track but not your watch's speed, so records are estimated.",
       "steps": [
         {
           "title": "Connect once",
@@ -224,7 +224,7 @@
         },
         {
           "title": "What it costs",
-          "detail": "Strava hands over positions rather than the speed your watch measured. These speed records are marked **uncertified**. There are no pump strokes."
+          "detail": "Strava hands over positions rather than the speed your watch measured. These speed records are marked **estimated**. There are no pump strokes."
         },
         {
           "title": "If connecting is refused",
@@ -280,7 +280,7 @@
         },
         {
           "title": "Say where it disagrees with you",
-          "detail": "A jibe you know you flew through, marked as a touchdown. A swim it never noticed, or a wind direction you did not sail in."
+          "detail": "A jibe you know you flew through, marked as a touchdown. A fall it never noticed, or a wind direction you did not sail in."
         },
         {
           "title": "Send it from the app",
@@ -300,7 +300,7 @@
   "settings": {
     "_note": "One sentence each, at the top of the matching Settings section. The app reads them from GettingStartedGuide, so the help and the switches say the same thing.",
     "intervalsIcu": "Garmin has no open API, so intervals.icu is the bridge. Connect your Garmin there once, and every session arrives here by itself. It is free.",
-    "strava": "Any watch that syncs to Strava works, with no file to move. Strava keeps your track but not your watch's speed, so the records are uncertified."
+    "strava": "Any watch that syncs to Strava works, with no file to move. Strava keeps your track but not your watch's speed, so the records are estimated."
   },
   "troubleshooting": {
     "surfaces": [

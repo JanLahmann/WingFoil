@@ -75,7 +75,7 @@ retired for rider text. It lives on in code comments and in `docs/`, where it be
     or a store text, or it was not a fact.
 
 11. **Wingfoiler words yes, IT words no.** A wingfoiler's insider word is welcome and is
-    taught once in the glossary: *uncertified record*, *alpha 500*, *dry streak*, *foil up*.
+    taught once in the glossary: *estimated record*, *alpha 500*, *dry streak*, *foil up*.
     An IT word never reaches a rider: *route*, *door*, *class (b)*, *pipeline*, *re-derive*,
     *digest*, *payload* stay in `docs/`. When in doubt: would another wingfoiler use the
     word on the beach?
