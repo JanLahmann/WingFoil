@@ -508,6 +508,18 @@ same ownership window to tell a `recovery` pump burst from a failed takeoff atte
 one accelerometer fixture attempts go 37 → 34, failed 14 → 11, unknown 1 → 0 and recovery
 0 → 4 (`test_pump_episodes_are_serialized_whole`).
 
+Engine 0.27.0 (ADR-037) moves **only turns that fell in**: the six tacks on five fixtures go
+(two become jibes, R4 and R5; four aborted tacks are refused, R1–R3), counted turns −4, turn
+falls −4, straight-line falls +3, course changes +2, and **clean jibes, JPH and CPH do not move
+on any fixture**. Every golden gains five `config` keys (`turnAbortAxisDeg`,
+`turnAbortLuffDeg`, `turnAbortLuffSpeedPct`, `turnAbortAfterTurnS`, `turnJoinGapS`). The rules
+are pinned synthetic in `test_turns.py` ("did he get there") and `AbortedTurnEvidenceTests` in
+the kit, one case per rule plus the habit switch; the calibration is Jan's own library, which
+is not in the repo (docs/algorithms/turns.md, "Did he get there"). The committed corpus holds
+no tack any more, so `test_presentation.py` builds its tack case (`with_tacks_golden`) from the
+2026-08-29 golden. The `pump_track` fix is pinned by a short synthetic stream in
+`test_pump.py`; the kit's `convolveSame` already returned the grid's length.
+
 Engine 0.26.0 (ADR-036) **moves no number**: no fixture's FIT sport is a land sport, so every
 analysis golden gains `summary.landSport: null` and the version, and every presentation golden
 the version. The rule is pinned synthetic — `test_a_land_sport_is_not_a_session_whatever_its_speeds`

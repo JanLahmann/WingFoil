@@ -14,6 +14,47 @@ apart is a history, not a contract. There are four:
 An Accepted entry may carry a clause saying what a later ADR narrowed or what has moved since.
 That is the point of the line: it says which half of an old paragraph is still load-bearing.
 
+## ADR-037 · A tack is a tack he tried: an aborted turn's name needs the evidence
+**Status: Accepted** (Jan, 28 September 2026; engine 0.27.0, release channel).
+
+Jan, 28 September 2026: *"Number seems too high; I think it should be 3 in total. All failed."*
+Over his whole library engine 0.26.0 counted 18 tacks (docs/proposals/2026-09-28-tack-count.md).
+Fourteen came from ADR-028's naming rule — an aborted sweep that crossed nothing takes the axis
+it was closing on — which made **any fall while heading up a tack**, 5° or 88° off the wind; two
+of those booked a jibe's swim a second time; two more were jibes the scan had split or named by
+the wrong crossing. He confirmed his three: 30 Aug ≈14:22, 3 Sep ≈15:21 and ≈15:29.
+
+Decision: **five rules, each its own parameter** (docs/algorithms/turns.md, "Did he get there").
+R1 `turnAbortAfterTurnS` — an aborted candidate turning the same way as the previous counted
+turn, inside that turn's outcome window (floor 3 s), is its tail and is dropped. R2
+`turnAbortAxisDeg` (30°) — an aborted turn named by the axis it was closing on needs a
+**flown** heading, a step between two flying samples, within 30° of that axis. R3
+`turnAbortLuffDeg`/`turnAbortLuffSpeedPct` (20° at 80 %) — and the luff has to begin at speed.
+R4 — a sweep through both axes is named by the first it crossed; the wind prior keeps the old
+reading, so no wind moves. R5 `turnJoinGapS` (2 s) — a crossing in the gap between two
+same-direction sweeps belongs to the second. R2 and R3 gate only the word the rider did not
+declare (`windDefaultTurnType`; `balanced` gates both), so a wingfoiler's aborted jibes are
+exactly what ADR-028 made them.
+
+The one departure from the proposal is **"flown"**. On the sweep's last heading R2 left five
+tacks, and the two that were not Jan's both reached the wind on a heading he did not ride: one
+after the wrist went under (1 Sep 17:09), one after the speed fell below `foilExitSpeed`
+(3 Sep 09:47). The engine's own `flying` mask already says which samples those are. Refused: a
+tighter angle (20° drops two of his three and keeps a crash), and gating aborted jibes on the
+default (15 of his 69 would go, and nothing says they are not jibes).
+
+Consequence: engine **0.27.0**, five config keys, no per-turn key. Jan's library: tacks 18 → 5
+(his three and two windsurf tacks), jibes 1561 → 1563, turn falls −11, clean and dry jibes
+unchanged, no wind moved. The 21 goldens: tacks 6 → 0, jibes +2, counted turns −4, turn falls
+−4, straight-line falls +3; **clean jibes, JPH and CPH unchanged on every fixture**. The
+committed corpus now holds no tack, so the presentation tests build their tack case from a
+golden. **Not verified**: the tester's 19 Sep 2026 attempt that ADR-028 was built for — its
+file was not readable in this round; R2 keeps it only if he flew to within 30° of the wind
+before the wrist went under. **Watch**: no aborted pass (unchanged divergence; the port now
+includes R1–R3), and R4/R5 are a new divergence row (turns.md, "Not ported yet"). Side fix in
+the same version: a pump stream shorter than its band-pass (the 31 Aug 2026 desk stubs) raised
+`IndexError` in the lab; it now analyses, as the kit always did.
+
 ## ADR-036 · A land sport is not a session, and a name rescues only a type that could be a watersport
 **Status: Accepted** (Jan, 28 September 2026; engine 0.26.0, release channel).
 

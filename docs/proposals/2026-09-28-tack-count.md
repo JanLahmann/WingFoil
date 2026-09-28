@@ -1,5 +1,11 @@
 # Tack count — Jan's library against his memory (28 Sep 2026)
 
+> **Applied in engine 0.27.0** (ADR-037, docs/algorithms/turns.md "Did he get there"). Jan
+> confirmed #1, #2 and #3 as his three and #4, #5 as not tacks. R2 is applied to the closest
+> *flown* heading (a step between two flying samples) rather than the last one, which is what
+> refuses #4 (wrist under) and #5 (below foil speed); R1–R5 otherwise as proposed. The
+> `pump_track` side finding is fixed in the same version.
+
 Jan, 28 Sep 2026: *"Validate tack count in my own corpus. Number seems too high; I think it
 should be 3 in total. All failed."*
 
@@ -7,7 +13,7 @@ should be 3 in total. All failed."*
 rule: the aborted-turn pass (engine 0.21.0) names a sweep that ended in a fall *by the axis it
 was closing on*. A jibing rider who heads up and falls gets a tack under that rule. Four smaller
 rules close the gap to **5 candidates in the wingfoil sessions**, and the three strongest of
-those are very likely Jan's three. Proposal below; nothing in the engine has changed yet.
+those are very likely Jan's three. Proposal below.
 
 ## Method
 
