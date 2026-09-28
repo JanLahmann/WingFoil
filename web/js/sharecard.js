@@ -339,18 +339,54 @@ function drawTrackStack(ctx, tracks, box, map = null) {
 
 /* ------------------------------------------------------------------ the collage
  *
- * The period card's third artwork (Jan, 28 Sep 2026): each session's own small track in a
+ * The period card's third artwork (Jan, 28 Sep 2026): the period's best sessions, each in a
  * cell of its own, fitted to itself, in the order they were ridden. The twin of
  * `TrackCollage` in the kit and of `collage_cells` in web/tools/make_presentation_goldens.py;
- * `verify_presentation.py` §5e holds this to fixtures/periods/outlines.expected.json.
+ * `verify_presentation.py` §5e holds the cell layout to
+ * fixtures/periods/outlines.expected.json (the ranking below has no fixture — it is the
+ * same pure comparison on both platforms, exercised by `TrackCollageTests` in the kit).
  */
 
 /** At most this many cells, and the gap between two — `TrackCollage.limit` / `.gap`. */
 export const COLLAGE_LIMIT = 12;
 const COLLAGE_GAP = 6;
 
-/** Which of a period's sessions the collage draws: the newest twelve, oldest first. */
-export const collagePick = (items) => items.slice(-COLLAGE_LIMIT);
+/** True if `a` outranks `b` on the period's ladder (Jan, 28 Sep 2026) — the twin of
+ *  `TrackCollage.outranks` in the kit: more clean jibes wins; a tie goes to the higher
+ *  best 2 s (a session with none ranks below one that has it); a tie there goes to
+ *  whichever was ridden more recently. `collagePick` and `collageBest` both read off this
+ *  one comparison, so the collage and "One session"'s default can never disagree. */
+function outranks(a, b) {
+  if (a.clean !== b.clean) return a.clean > b.clean;
+  if (a.best2s != null && b.best2s != null) {
+    if (a.best2s !== b.best2s) return a.best2s > b.best2s;
+  } else if (a.best2s == null) {
+    return false;
+  } else {
+    return true;
+  }
+  return a.start > b.start;
+}
+
+/** The period's best session by that ladder (`items.clean`, `.best2s`, `.start`) — what
+ *  "One session" seeds its default with. `null` only when `items` is empty. */
+export function collageBest(items) {
+  return items.reduce((best, item) => (best === null || outranks(item, best) ? item : best),
+                       null);
+}
+
+/** Which of a period's sessions the collage draws: the `COLLAGE_LIMIT` that rank best
+ *  (Jan, 28 Sep 2026 — most clean jibes, then the higher best 2 s, then the newest; a
+ *  session with no ladder at all ranks last), still oldest first — a contact sheet stays
+ *  chronological even when its frames were chosen for what they show. */
+export function collagePick(items) {
+  if (items.length <= COLLAGE_LIMIT) return items;
+  const order = items.map((_, i) => i)
+    .sort((i, j) => (outranks(items[i], items[j]) ? -1
+                     : outranks(items[j], items[i]) ? 1 : 0));
+  const kept = new Set(order.slice(0, COLLAGE_LIMIT));
+  return items.filter((_, i) => kept.has(i));
+}
 
 /**
  * The cells for `count` tracks inside `box`, row by row. The column count is the one that
@@ -1411,9 +1447,10 @@ export async function openPeriodCard(period, entries) {
   // outlines arrive when the documents do, which on a dozen sessions is a second or two.
   state.tracks = await loadTracks(period, entries);
   if (state.period !== period) return;
-  // "One session" opens on the newest: the afternoon a rider wants on a card is usually the
-  // one he just rode. The list is newest first for the same reason.
-  state.chosen = state.tracks.at(-1)?.id ?? null;
+  // "One session" opens on the period's best (Jan, 28 Sep 2026 — `collageBest`, the same
+  // ladder the collage ranks on). The list itself stays newest first: browsing for a
+  // particular afternoon is still easiest starting from the one just rode.
+  state.chosen = collageBest(state.tracks)?.id ?? null;
   const select = el("card-session");
   if (select) {
     select.innerHTML = [...state.tracks].reverse().map((t) =>
@@ -1446,12 +1483,22 @@ const chosenTrack = () => state.tracks.find((t) => t.id === state.chosen) || nul
  *  Each carries its own `geo` anchor, because a stack on a map is a dozen frames rather than
  *  one: the metres in `view.x`/`y` are relative to that session's own anchor sample, so the
  *  key back to the globe has to travel with the outline it belongs to. Null on a document
- *  analysed before the anchor existed, which simply keeps that session off the ground. */
+ *  analysed before the anchor existed, which simply keeps that session off the ground.
+ *
+ *  Each also carries the three fields the collage's ladder (`collagePick`, `collageBest`)
+ *  ranks on — `clean`, `best2s`, `start` — read off the *stored digest* rather than the
+ *  freshly-parsed analysis: `entries` is what the library already has for this id, and it
+ *  is the one place on the web that carries both `turns.jibesSuccessful` and
+ *  `records.best2sKn` without a second document read. It is the raw stored best 2 s, not
+ *  the Speed-records-policy-filtered one the phone can read off `store.speedRecordPolicy`
+ *  at this same call site (`PeriodShareView.rankedBest2s`) — doing that here would mean a
+ *  second, JS copy of `SpeedRecordRule`, which is exactly what that rule exists to prevent. */
 async function loadTracks(period, entries) {
-  const known = new Set((entries || []).map((e) => e.id));
+  const byId = new Map((entries || []).map((e) => [e.id, e]));
   const out = [];
   for (const id of period.sessionIds || []) {
-    if (!known.has(id)) continue;
+    const entry = byId.get(id);
+    if (!entry) continue;
     try {
       const json = await getAnalysisJson(id);
       if (!json) continue;
@@ -1461,7 +1508,10 @@ async function loadTracks(period, entries) {
       // recording and its date, the way the session card's sub-line names it.
       if (track) {
         out.push({ ...track, geo: result.view?.geo || null, id,
-                   label: `${cardTitle(result.file?.name)} · ${cardDateLine(result.meta)}` });
+                   label: `${cardTitle(result.file?.name)} · ${cardDateLine(result.meta)}`,
+                   clean: entry.turns?.jibesSuccessful ?? 0,
+                   best2s: entry.records?.best2sKn ?? null,
+                   start: entry.startEpoch ?? 0 });
       }
     } catch { /* one unreadable document is not a reason to refuse the card */ }
   }
