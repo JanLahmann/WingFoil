@@ -38,10 +38,16 @@
            .quantize(colors=256, method=Image.Quantize.FASTOCTREE) \
            .save('web/img/share-card.png', optimize=True)"
 
+    # 2x for the hero's srcset (--force-device-scale-factor=2, same window, saved as
+    # web/img/share-card@2x.png), and the Open Graph tile: the landscape card at 1120x630
+    # (--window-size=1120,630, URL hero_card.html?shape=landscape&w=1120&h=630), pasted at
+    # x=40 on a 1200x630 plate of its own edge colour, saved as web/img/og-card.png. Same
+    # FASTOCTREE quantize for all three.
+
     rm web/tools/hero_card.json        # generated, not committed
 
-  Then update the <img>'s alt text in web/index.html: it names every number on the card, and
-  an engine bump moves some of them.
+  Then update CARD_ALT in web/tools/make_home.py and run it: the alt text names every number
+  on the card, and an engine bump moves some of them.
 -->
 <html lang="en">
 <head>
@@ -60,10 +66,16 @@
 
   const result = await (await fetch("./hero_card.json")).json();
   // The one thing typed into the card. Everything else is what the analysis produced.
-  const content = cardContent(result, "complete", { title: "Nago Torbole Wingfoil" });
+  const content = cardContent(result, "clean", { title: "Nago Torbole Wingfoil" });
+  // `?shape=landscape&w=1120&h=630` draws the Open Graph tile's card (web/social-card.png);
+  // no query is the homepage hero, portrait at 440x550.
+  const query = new URLSearchParams(location.search);
+  const shape = query.get("shape") || "portrait";
   const canvas = document.createElement("canvas");
-  await drawCard(canvas, content, "portrait", { map: true });
+  await drawCard(canvas, content, shape, { map: true });
   const img = document.getElementById("out");
+  if (query.get("w")) img.style.width = query.get("w") + "px";
+  if (query.get("h")) img.style.height = query.get("h") + "px";
   await new Promise((resolve) => { img.onload = resolve; img.src = canvas.toDataURL("image/png"); });
   // A marker for a driver that waits on the title rather than on a virtual-time budget.
   document.title = "DONE";

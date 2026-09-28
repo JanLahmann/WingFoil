@@ -1,0 +1,188 @@
+/* CleanJibe — the front door (web/index.html only, since 28 September 2026).
+ *
+ * Loaded after tokens.css, style.css and home.css, and by no other page: every selector is
+ * `.fp-*` or scoped to `body.front`, so nothing here can move /start/, /help/ or the app.
+ * The words inside <main> are generated (web/tools/make_home.py); this file is the layout.
+ *
+ * Mobile first, because most riders open it on a phone at the beach: one column, the
+ * question and the first button inside the first screen, the card right under them. At
+ * 860 px the hero splits into copy and card, and the bands take two or three columns.
+ * Every colour is a token from style.css, so the light theme turns it with the rest.
+ */
+
+.front main { max-width: 1120px; padding-top: 18px; padding-bottom: 48px; }
+.front main [id] { scroll-margin-top: calc(var(--topbar-h, 64px) + 12px); }
+
+/* The brand is the way home. On this page it is not the page's heading, the question is. */
+.front .brand-name { font-size: 18px; font-weight: 650; letter-spacing: -0.01em; white-space: nowrap; }
+
+/* ------------------------------------------------------------------- the hero */
+
+.fp-hero {
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 26px;
+  align-items: center; padding: 6px 0 8px;
+}
+.fp-kicker {
+  font: 600 12px/1.4 var(--mono); letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--clean-text);
+}
+.fp-hero h1 {
+  margin-top: 10px;
+  font-size: clamp(34px, 9vw, 56px); line-height: 1.04; font-weight: 750;
+  letter-spacing: -0.025em; color: var(--ink);
+  text-wrap: balance;
+}
+.fp-lede {
+  margin-top: 14px; max-width: 34em;
+  font-size: 17px; line-height: 1.5; color: var(--ink-2);
+}
+
+/* The ladder: the three verdicts every turn gets, in their own inks. */
+.fp-ladder {
+  list-style: none; margin: 18px 0 0; padding: 0;
+  display: flex; flex-wrap: wrap; gap: 8px;
+}
+.fp-ladder li {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 12px 6px 10px; border-radius: 999px;
+  background: var(--surface-1); border: 1px solid var(--line-soft);
+  font-size: 14px; font-weight: 600; color: var(--ink);
+}
+.fp-mark {
+  flex: none; display: inline-block; width: 11px; height: 11px; border-radius: 50%;
+  background: var(--ink-3);
+}
+.fp-mark-flew  { background: var(--good); }
+.fp-mark-touch { background: var(--warn); }
+.fp-mark-fell  { background: var(--bad); }
+/* The clean star: the card's own glyph, in the clean-jibe ink. */
+.fp-mark-clean {
+  width: auto; height: auto; border-radius: 0; background: none;
+  color: var(--wf-clean-jibe); font-size: 15px; line-height: 1;
+}
+.fp-mark-clean::before { content: "\2605"; }
+
+.fp-cta { margin-top: 24px; display: flex; flex-wrap: wrap; gap: 10px; }
+.fp-cta .btn { font-size: 15.5px; padding: 13px 20px; min-height: 48px; border-radius: 10px; }
+.fp-note { margin-top: 12px; font-size: 13.5px; color: var(--ink-3); max-width: 36em; }
+
+/* The card: the product's real output, never wider than its 440 px so the QR stays 1:1
+   or sharper. The 2x file serves every phone screen. */
+.fp-card { margin: 0; justify-self: center; width: 100%; max-width: 440px; }
+.fp-card a { display: block; border-radius: 18px; }
+.fp-card a:focus-visible { outline: 2px solid var(--series-1); outline-offset: 4px; }
+.fp-card img {
+  display: block; width: 100%; height: auto; aspect-ratio: 440 / 550;
+  border-radius: 18px; border: 1px solid var(--line-soft);
+  box-shadow: 0 18px 40px var(--art-shadow-strong, #00000073);
+  background: var(--surface-2);
+}
+.fp-card figcaption {
+  margin-top: 10px; text-align: center; font-size: 13.5px; color: var(--ink-3);
+}
+
+/* ------------------------------------------------------------------- the bands */
+
+.fp-band { margin-top: 56px; }
+/* style.css sets h2 as a small uppercase eyebrow for the app's panels; a band on the front
+   door is a headline. */
+.fp-band h2 {
+  font-size: clamp(23px, 5.6vw, 30px); line-height: 1.15; font-weight: 720;
+  letter-spacing: -0.015em; text-transform: none; color: var(--ink);
+  text-wrap: balance;
+}
+.fp-section-lede {
+  margin-top: 8px; max-width: 40em; font-size: 16px; line-height: 1.5; color: var(--ink-2);
+}
+.fp-small { margin-top: 14px; font-size: 13.5px; color: var(--ink-3); max-width: 44em; }
+
+/* The term lists: a word in bold and one line under it, as the rows of one panel, which
+   keeps eight definitions to one phone screen and a half. */
+.fp-terms {
+  margin: 16px 0 0; display: grid;
+  background: var(--surface-1); border: 1px solid var(--line-soft); border-radius: 12px;
+  overflow: hidden;
+}
+.fp-term { padding: 12px 15px; border-top: 1px solid var(--line-soft); }
+.fp-term:first-child { border-top: 0; }
+.fp-term dt {
+  display: flex; align-items: center; gap: 9px;
+  font-size: 15.5px; font-weight: 650; color: var(--ink);
+}
+.fp-term dd { margin: 3px 0 0; font-size: 14.5px; line-height: 1.5; color: var(--ink-2); }
+.fp-term code { font-size: 0.95em; }
+
+.fp-get { display: grid; grid-template-columns: minmax(0, 1fr); gap: 40px; }
+
+.fp-actions { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 10px; }
+.fp-actions .btn { font-size: 14.5px; padding: 11px 16px; min-height: 44px; border-radius: 9px; }
+
+/* ---------------------------------------------------------------- the chooser */
+
+.fp-ways { margin-top: 18px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.fp-way {
+  display: flex; flex-direction: column;
+  background: var(--surface-1); border: 1px solid var(--line);
+  border-radius: 14px; padding: 18px;
+}
+.fp-way h3 { font-size: 18px; line-height: 1.25; color: var(--ink); }
+.fp-way h3 .tag { vertical-align: 2px; }
+.fp-way > p:first-of-type { margin-top: 6px; font-size: 14.5px; color: var(--ink-2); }
+.fp-apps {
+  list-style: none; margin: 12px 0 0; padding: 12px 0 0;
+  border-top: 1px solid var(--line-soft); display: grid; gap: 8px;
+  font-size: 13.5px; line-height: 1.45; color: var(--ink-3);
+}
+.fp-apps b { color: var(--ink); font-weight: 650; margin-right: 2px; }
+.fp-way .fp-actions { margin-top: auto; padding-top: 16px; }
+
+/* ---------------------------------------------------------------- trust */
+
+.fp-community {
+  margin-top: 18px; max-width: 40em;
+  font-size: 17px; line-height: 1.5; font-weight: 600; color: var(--ink);
+}
+
+/* ---------------------------------------------------------------- phones */
+
+@media (max-width: 560px) {
+  /* One thumb, one column of buttons: every action is the full width of the screen. */
+  .fp-cta .btn, .fp-actions .btn { flex: 1 1 100%; }
+  .fp-band { margin-top: 44px; }
+  .fp-hero { gap: 22px; }
+}
+@media (max-width: 380px) {
+  .front .brand .sub { display: none; }
+}
+
+/* ---------------------------------------------------------------- wide */
+
+@media (min-width: 620px) {
+  .fp-ways { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* The three-point bands turn into a row of cards once there is room for them. */
+  .fp-steps {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;
+    background: none; border: 0; border-radius: 0; overflow: visible;
+  }
+  .fp-steps .fp-term {
+    border: 1px solid var(--line-soft); border-radius: 12px; background: var(--surface-1);
+    padding: 15px 16px;
+  }
+}
+@media (min-width: 860px) {
+  .front main { padding-top: 34px; }
+  .fp-hero { grid-template-columns: minmax(0, 1fr) 420px; gap: 48px; }
+  .fp-card { max-width: 420px; }
+  .fp-get { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; }
+  .fp-band { margin-top: 72px; }
+}
+@media (min-width: 1040px) {
+  .fp-ways { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+/* A chooser card's buttons fill the card, so the four cards line up however their words
+   wrap, and on a phone every one is a full-width tap. */
+.fp-way .fp-actions .btn { flex: 1 1 100%; }
+/* The topbar's tagline is the hero's first line on this page; saying it twice in one
+   screen is once too many. */
+.front .brand .sub { display: none; }

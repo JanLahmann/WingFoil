@@ -63,43 +63,20 @@
        is in the footer, once, where a reader looks for it.
        ONE HEADER PER PRODUCT: /app/ has its own, the mark and the Menu button, and
        carries no site nav at all. -->
-<!-- sitenav:begin — COPIED VERBATIM ON ALL SEVEN READER PAGES. The only thing that differs
-     is which link carries `aria-current="page"`; web/tools/verify_links.py compares this
-     block byte for byte across /, /start/, /help/, /app/, /privacy/ and
-     /impressum/ with that one attribute stripped, so an edit here is an edit everywhere or
-     it is a failed check. The three redirect stubs — /learn/, /watches/ and /whats-new/ —
-     carry no nav, because they are on screen for a frame.
+<!-- sitenav:begin — COPIED VERBATIM ON ALL FIVE READER PAGES (/, /start/, /help/,
+     /privacy/, /impressum/); web/tools/verify_links.py compares this block byte for byte.
 
-     ONE PRODUCT, THREE SHELLS (Jan, 19 September 2026). The row was four destinations and
-     is two: *Get started* absorbed *Which watch*, and *Help* is the app's own help
-     catalogue, which is where *What it measures* went. Two links a stranger can hold in his
-     head, and one door beside them as what it is, a button.
+     THE WORDMARK AND ONE BUTTON (Jan, 28 September 2026, on a photo of the old header).
+     The row carried Get started, Help and Open the app. It is the mark, which links home,
+     and one button into the browser app. Get started and Help are reached from the
+     homepage, from the footer on every page, and from the app's own menu.
 
-     *GET THE BETA* CAME OUT ON 20 SEPTEMBER 2026. /invite/ folded into /start/ — the
-     install links are its first section, and the release notes are its last — so the nav
-     was offering a second door to a page *Get started* already is. /invite/ is a redirect,
-     because the address is in every TestFlight mail we have sent.
-
-     THE DOORS LIVE HERE, not in `.topbar-right` beside GitHub. They used to sit one row
-     above this one and say "Open the analyzer", which is a name for a tool rather than for
-     a product: it is *Open the app*, and it is the same sentence in the hero, in the footer
-     and in the store texts. One name per door.
-
-     The hrefs are ROOT-RELATIVE so one block can serve a page at the site root and a page a
-     directory down. The site is the root of cleanjibe.org, and of `python3 -m http.server`
-     run in web/, which is the same thing; verify_links.py resolves them.
-
-     The two links wear the section nav's furniture — the eyebrow's mono, uppercase,
-     --ink-3 — because they are navigation one level up. On a phone the row stays a row and
-     scrolls sideways if a font makes it not. -->
+     The button's words are the homepage chooser's browser button, "Try it in your
+     browser", from docs/copy/welcome.json. One wording for one door. It is a real
+     button: `a.btn` carries no underline (css/style.css). The href is ROOT-RELATIVE so
+     one block serves a page at the root and a page a directory down. -->
 <nav class="sitenav" aria-label="Site">
-  <ul>
-    <li><a href="/start/" aria-current="page">Get started</a></li>
-    <li><a href="/help/">Help</a></li>
-    <li class="doors">
-      <a class="btn primary" href="/app/" data-umami-event="app-cta-nav">Open the app</a>
-    </li>
-  </ul>
+  <a class="btn primary" href="/app/" data-umami-event="app-cta-nav">Try it in your browser</a>
 </nav>
 <!-- sitenav:end -->
 </header>

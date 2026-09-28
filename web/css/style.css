@@ -129,73 +129,19 @@ a.brand:focus-visible { outline: 2px solid var(--series-1); outline-offset: 3px;
 
 /* --------------------------------------------------------------- site nav
  *
- * The one row that says this is a site and not a page (Jan, 15 Sep 2026). It lives in the
- * topbar of all nine documents, in markup copied verbatim — see the `sitenav:begin` comment
- * in any of them, and the check in web/tools/verify_links.py.
+ * THE WORDMARK AND ONE BUTTON (Jan, 28 September 2026). The row under the brand carried
+ * Get started, Help and Open the app, in the eyebrow's mono, with the door as a pill; on a
+ * phone it was a second row of furniture over every page. It is now one button at the end
+ * of the brand's own row, into the browser app, and the pages it used to list are reached
+ * from the homepage and from the footer. Markup copied verbatim on the five reader pages
+ * (`sitenav:begin`), held identical by web/tools/verify_links.py.
  *
- * It is deliberately NOT a second button row: it wears the section nav's furniture — the
- * eyebrow's mono, uppercase, --ink-3 — because it is navigation furniture one level up from
- * the section nav, and the two CTAs above it must stay the only buttons in the bar. Every
- * colour here is a token, so the light theme at the foot of this file turns it with
- * everything else; the current page is marked twice over, in the accessibility tree with
- * `aria-current` and on screen with a 2 px rule in the link ink.
- *
- * On a phone the row stays a row: four short items fit one line of a 390 px screen in this
- * mono, and if a reader's font makes them not, the row scrolls sideways rather than wrapping
- * onto a topbar that is already two rows. No select: Jan's phone (15 Sep) showed a "Go to…"
- * above the section nav's "On this page…" and read them as two of the same thing.
+ * Every colour is a token or the primary button's own, so both themes turn it. The button
+ * never shrinks below its words; the brand gives way first, and under 380 px the brand
+ * keeps the mark and the name only.
  */
-.sitenav { flex: 1 1 100%; min-width: 0; order: 9; }
-.sitenav ul {
-  list-style: none; margin: 0; padding: 0;
-  display: flex; flex-wrap: wrap; gap: 0 18px;
-}
-.sitenav a:not(.btn) {
-  display: inline-block; padding: 2px 0; text-decoration: none;
-  font: 600 11px/1.5 var(--mono); letter-spacing: 0.07em; text-transform: uppercase;
-  color: var(--ink-3); border-bottom: 2px solid transparent;
-}
-.sitenav a:not(.btn):hover { color: var(--ink); }
-.sitenav a:focus-visible {
-  outline: 2px solid var(--series-1); outline-offset: 3px; border-radius: 3px;
-}
-.sitenav a:not(.btn)[aria-current="page"] {
-  color: var(--ink); border-bottom-color: var(--series-1);
-}
-/* THE TWO DOORS, at the end of the row (19 September 2026). They used to be `.btn`s in
- * `.topbar-right`, one row up, where "Open the analyzer" sat beside GitHub and read as a
- * third piece of furniture rather than as the way in. They are buttons still — `.btn`
- * styles them, and `:not(.btn)` above keeps the row's mono off them — and they push to the
- * end of the row so the two words a reader navigates by come first. */
-.sitenav .doors {
-  margin-inline-start: auto; display: flex; align-items: center; gap: 8px;
-}
-.sitenav .doors .btn { font-size: 12.5px; padding: 6px 12px; }
-/* Under 720 px the row scrolls sideways, and it bleeds to both screen edges so that the
-   scroll looks like a scroll rather than like a clipped box.
- *
- * THE END GUTTER IS THE LAST ITEM'S OWN PADDING (Jan, 16 September 2026: "What's new" sat
- * flush against the right edge of his phone). A scroll container's trailing `padding-inline`
- * is not part of its scrollable overflow in every engine — Safari drops it, which is exactly
- * where the photo came from — so the gutter cannot live on the `ul`. It lives on the last
- * `li`, where it is a box the layout has to make room for, and it is the same `--pad-x` the
- * topbar and `main` are padded with, so the row ends where every other line on the page
- * ends. `scroll-padding-inline` keeps a keyboard scroll from parking an item under either
- * edge. Padding on the `li` and not on the `a`: the link's 2 px underline marks the word. */
-@media (max-width: 720px) {
-  .sitenav ul {
-    flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
-    -webkit-overflow-scrolling: touch; margin: 0 calc(-1 * var(--pad-x, 16px));
-    padding: 0 0 0 var(--pad-x, 16px);
-    scroll-padding-inline: var(--pad-x, 16px);
-  }
-  .sitenav ul::-webkit-scrollbar { display: none; }
-  .sitenav li { flex: 0 0 auto; }
-  .sitenav li:last-child { padding-inline-end: var(--pad-x, 16px); }
-  /* `margin-inline-start: auto` has nothing to push against inside a scrolling row, so the
-     doors simply follow the two links and scroll with them. */
-  .sitenav .doors { margin-inline-start: 12px; }
-}
+.sitenav { flex: 0 0 auto; margin-inline-start: auto; display: flex; align-items: center; }
+.sitenav .btn { font-size: 13.5px; padding: 9px 14px; min-height: 38px; white-space: nowrap; }
 
 .chip {
   font: 600 11.5px/1 var(--mono); color: var(--ink-3);
@@ -257,6 +203,9 @@ button, .btn {
   -webkit-tap-highlight-color: transparent;
 }
 .btn { display: inline-flex; align-items: center; justify-content: center; }
+/* A link dressed as a button is a button: no underline in any state. The header's door was
+   a filled pill with an underlined label under it (Jan, 28 September 2026). */
+a.btn, a.btn:hover, a.btn:visited { text-decoration: none; }
 button.primary, .btn.primary { background: var(--series-1); color: #fff; }
 button.primary:hover, .btn.primary:hover { background: #2d76d0; }
 button.ghost, .btn.ghost { background: transparent; color: var(--ink-2); border-color: var(--line); }
