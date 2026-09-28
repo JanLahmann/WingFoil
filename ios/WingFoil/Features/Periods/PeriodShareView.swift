@@ -46,7 +46,8 @@ struct PeriodShareView: View {
 
     @State private var design = ShareCardDesign()
     @State private var tracks = PeriodCardTracks.all
-    /// The session "One session" draws. Seeded with the newest once the rows are in.
+    /// The session "One session" draws. Seeded with the period's best once the rows are in
+    /// (`TrackCollage.best`, Jan, 28 Sep 2026).
     @State private var chosenId: String?
     @State private var titleDraft = ""
     @State private var noteDraft = ""
@@ -68,6 +69,24 @@ struct PeriodShareView: View {
 
     private var chosen: TrackThumbnail? {
         chosenId.flatMap { outlines[$0] }
+    }
+
+    /// A row's best 2 s where it stands under the rider's speed-records setting — the same
+    /// number the Records table would show for this one session, which has no siblings to
+    /// be preferred over (`SpeedRecordRule.stands`). Both the collage and "One session"'s
+    /// seed break their tie on this.
+    private func rankedBest2s(_ row: SessionRow) -> Double? {
+        SpeedRecordRule.stands(verified: row.sourceClass != "c",
+                               policy: store.speedRecordPolicy) ? row.best2sKn : nil
+    }
+
+    /// The collage's own twelve (`TrackCollage.pick`): the best-ranked rows that have an
+    /// outline to draw, still oldest first.
+    private var collage: [TrackThumbnail] {
+        let withOutline = rows.filter { outlines[$0.id] != nil }
+        return TrackCollage.pick(withOutline, clean: { $0.jibesSuccessful ?? 0 },
+                                 best2s: rankedBest2s, start: \.startDate)
+            .compactMap { outlines[$0.id] }
     }
 
     /// What the chosen artwork can be put on the earth with, if anything.
@@ -156,7 +175,7 @@ struct PeriodShareView: View {
                                  photo: photo, map: map, onTrackFrame: report)
         case .collage:
             return ShareCardView(stats: stats, shape: design.shape,
-                                 collage: TrackCollage.pick(ordered), photo: photo,
+                                 collage: collage, photo: photo,
                                  onTrackFrame: report)
         }
     }
@@ -273,7 +292,10 @@ struct PeriodShareView: View {
             .map { ($1, $0) })
         rows = all.filter { wanted.contains($0.id) }
             .sorted { (order[$0.id] ?? 0) < (order[$1.id] ?? 0) }
-        if chosenId == nil { chosenId = rows.last?.id }
+        if chosenId == nil {
+            chosenId = TrackCollage.best(rows, clean: { $0.jibesSuccessful ?? 0 },
+                                         best2s: rankedBest2s, start: \.startDate)?.id
+        }
         for row in rows { thumbnails.request(row) }
         // Poll the cache rather than plumb a callback through: the store is `@Observable`
         // and this is a sheet that is open for seconds, not a list that scrolls.
