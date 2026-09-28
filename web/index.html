@@ -1,371 +1,308 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-GB">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>CleanJibe: wingfoil session analysis, free in your browser and on iPhone</title>
-<meta name="description" content="Drop a .fit, .gpx or .tcx file and see how much of the session you spent on the foil, how long each flight lasted, your speed records, and whether you flew through each jibe, touched down or fell in. Free, no account, nothing uploaded. Plus a Garmin watch app and an iPhone app.">
-<!-- Two theme colours, and `light dark` rather than `dark`: since 14 Sep 2026 the site
-     follows the reader's own system setting (css/style.css, "LIGHT THEME"). Nothing pins
-     `data-theme` on <html> any more — that attribute is what kept the preference from being
-     heard at all — and the dark palette is still the default for a browser that expresses
-     no preference. -->
+<!-- THE FRONT DOOR (rebuilt 28 September 2026). The one page of the site that is not a copy
+     of the app: it is written for a wingfoiler who has none of our apps yet, most often on
+     a phone at the beach. docs/proposals/2026-09-28-homepage.md has the structure and the
+     reasoning. Its words are the kit's WelcomeSections, the same list the app's What
+     CleanJibe does is drawn from, rendered into <main> by web/tools/make_home.py; the head,
+     the header and the footer are this file's own. -->
+<title>CleanJibe: did you fly through that jibe? Wingfoil session analysis</title>
+<meta name="description" content="CleanJibe reads your wingfoil session off the watch: time on the foil, every flight, speed records, and a verdict on every jibe. Flew through, touchdown or fell in. Free, no account, works with Garmin, Apple Watch, Strava and any .fit.">
+<link rel="canonical" href="https://cleanjibe.org/">
+<!-- Two theme colours and `light dark`: the site follows the reader's system setting
+     (css/style.css, "LIGHT THEME"); the dark palette is the default for a browser that
+     states no preference. -->
 <meta name="theme-color" content="#101010" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#f5f6f3" media="(prefers-color-scheme: light)">
 <meta name="color-scheme" content="light dark">
 
-<!-- The analyzer at /app/ is the installable PWA and owns the manifest; this page is a
-     plain document and deliberately does not link one, so "add to home screen" from here
-     cannot install a front door instead of the app. -->
+<!-- The analyzer at /app/ is the installable PWA and owns the manifest; this page is a plain
+     document and links none, so "add to home screen" from here installs nothing. -->
 <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 
-<!-- Same three-layer stylesheet stack as the analyzer, in the same order: generated
-     presentation tokens, then the app's aesthetic, then this page's own layout. The
-     homepage is a sibling of the app, not a separate design. -->
+<!-- The site's stack, then this page's own layout (css/front.css, loaded by nothing else).
+     home.css stays for the chrome the reader pages share. -->
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/home.css">
+<link rel="stylesheet" href="css/front.css">
+<link rel="preload" as="image" href="img/share-card.png" imagesrcset="img/share-card.png 1x, img/share-card@2x.png 2x">
 
-<!-- The share card. og:image must be an ABSOLUTE URL: the scrapers (Slack, WhatsApp,
-     iMessage, Mastodon, X) fetch the tag's value as-is and do not resolve it against the
-     page, so a relative path silently yields no preview. The tile itself is
-     social-card.png, 1200x630 — see web/tools/social_card.html for the source it is
-     rasterized from. -->
+<!-- The preview a link to this page unfurls into is THE CARD: the example session's own
+     share card in its landscape shape, drawn by js/sharecard.js through
+     web/tools/hero_card.html, on a 1200x630 tile. og:image must be an ABSOLUTE URL; the
+     scrapers do not resolve a relative one. -->
 <meta property="og:site_name" content="CleanJibe">
-<meta property="og:title" content="CleanJibe — wingfoil session analysis">
-<meta property="og:description" content="Drop a .fit file in your browser and get the session back: foil time, flights, speed records, and a verdict on every jibe. Free, no account, nothing uploaded.">
+<meta property="og:title" content="CleanJibe: did you fly through that jibe?">
+<meta property="og:description" content="Your wingfoil session, measured: foil time, every flight, speed records and a verdict on every jibe. Free, no account.">
 <meta property="og:type" content="website">
+<meta property="og:locale" content="en_GB">
 <meta property="og:url" content="https://cleanjibe.org/">
-<meta property="og:image" content="https://cleanjibe.org/social-card.png">
+<meta property="og:image" content="https://cleanjibe.org/img/og-card.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="CleanJibe — a wingfoil track with two flights drawn on the foil, a jibe flown through, a touchdown and a fall.">
+<meta property="og:image:alt" content="A CleanJibe share card of a real session on Lake Garda: the track over a map, 5 clean jibes of 10, 8 flew through and 2 fell in.">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="CleanJibe — wingfoil session analysis">
-<meta name="twitter:description" content="Drop a .fit file in your browser and get the session back: foil time, flights, speed records, and a verdict on every jibe. Free, no account, nothing uploaded.">
-<meta name="twitter:image" content="https://cleanjibe.org/social-card.png">
-<meta name="twitter:image:alt" content="CleanJibe — a wingfoil track with two flights drawn on the foil, a jibe flown through, a touchdown and a fall.">
+<meta name="twitter:title" content="CleanJibe: did you fly through that jibe?">
+<meta name="twitter:description" content="Your wingfoil session, measured: foil time, every flight, speed records and a verdict on every jibe. Free, no account.">
+<meta name="twitter:image" content="https://cleanjibe.org/img/og-card.png">
+<meta name="twitter:image:alt" content="A CleanJibe share card of a real session on Lake Garda: the track over a map, 5 clean jibes of 10, 8 flew through and 2 fell in.">
+<script type="application/ld+json">
+{"@context": "https://schema.org", "@type": "SoftwareApplication", "name": "CleanJibe",
+ "url": "https://cleanjibe.org/", "applicationCategory": "SportsApplication",
+ "operatingSystem": "iOS, Garmin Connect IQ, web browser",
+ "description": "Wingfoil session analysis: foil time, flights, speed records and a verdict on every jibe.",
+ "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"}}
+</script>
 
-<!-- Usage analytics: umami, cloud-hosted, cookieless. What it records is that a page was
-     opened, from roughly where and on roughly what — no cookie, no fingerprint, no
-     identifier that survives the visit, so there is nothing to consent to and nothing to
-     opt out of. It does NOT see a rider's session: the .fit file is read inside the
-     analyzer's own tab and still never leaves the device, which is why "the file is never
-     uploaded" is exactly as true after this line as before it. Said out loud in the footer
-     rather than buried here.
-
-     `data-domains` pins it to the production hostname, so a local `python3 -m http.server`
-     and every preview build stay silent — a developer's reload must never land in the
-     numbers. The website-id is shared with the fun-with-quantum family of sites (that Umami
-     Cloud plan is at its website limit); the dashboard separates them by hostname, so
-     cleanjibe.org still reads as its own site.
-
-     External and `defer`, and deliberately NOT in the service worker's precache: nothing on
-     any page calls into it, so an offline visit simply fails the request and renders
-     whole. -->
+<!-- Usage analytics: umami, cloud-hosted and cookieless. It records that a page was opened,
+     from roughly where and on roughly what, and nothing that survives the visit. It never
+     sees a session: a file is read inside the analyzer's tab and never leaves the device.
+     `data-domains` keeps local servers and previews silent. Said out loud in the footer. -->
 <script defer src="https://cloud.umami.is/script.js" data-website-id="97f347ac-e7ba-4be3-b26f-ab4b328bdbf2" data-domains="cleanjibe.org"></script>
 </head>
-<body class="home">
+<body class="home front">
 
 <header class="topbar">
-  <div class="brand">
+  <a class="brand" href="/" aria-current="page">
     <span class="mark" aria-hidden="true"></span>
     <div>
-      <h1>CleanJibe</h1>
+      <p class="brand-name">CleanJibe</p>
       <p class="sub">Your WingFoil session, measured.</p>
     </div>
-  </div>
-  <!-- NOTHING TO THE RIGHT OF THE BRAND. The repo link sat here, in a bar of its
-       own, on every page: a third piece of furniture over a row that already
-       carries two links and two doors (docs/web-design-review.md, finding 15). It
-       is in the footer, once, where a reader looks for it.
-       ONE HEADER PER PRODUCT: /app/ has its own, the mark and the Menu button, and
-       carries no site nav at all. -->
-<!-- sitenav:begin — COPIED VERBATIM ON ALL SEVEN READER PAGES. The only thing that differs
-     is which link carries `aria-current="page"`; web/tools/verify_links.py compares this
-     block byte for byte across /, /start/, /help/, /app/, /privacy/ and
-     /impressum/ with that one attribute stripped, so an edit here is an edit everywhere or
-     it is a failed check. The three redirect stubs — /learn/, /watches/ and /whats-new/ —
-     carry no nav, because they are on screen for a frame.
+  </a>
+<!-- sitenav:begin — COPIED VERBATIM ON ALL FIVE READER PAGES (/, /start/, /help/,
+     /privacy/, /impressum/); web/tools/verify_links.py compares this block byte for byte.
 
-     ONE PRODUCT, THREE SHELLS (Jan, 19 September 2026). The row was four destinations and
-     is two: *Get started* absorbed *Which watch*, and *Help* is the app's own help
-     catalogue, which is where *What it measures* went. Two links a stranger can hold in his
-     head, and one door beside them as what it is, a button.
+     THE WORDMARK AND ONE BUTTON (Jan, 28 September 2026, on a photo of the old header).
+     The row carried Get started, Help and Open the app. It is the mark, which links home,
+     and one button into the browser app. Get started and Help are reached from the
+     homepage, from the footer on every page, and from the app's own menu.
 
-     *GET THE BETA* CAME OUT ON 20 SEPTEMBER 2026. /invite/ folded into /start/ — the
-     install links are its first section, and the release notes are its last — so the nav
-     was offering a second door to a page *Get started* already is. /invite/ is a redirect,
-     because the address is in every TestFlight mail we have sent.
-
-     THE DOORS LIVE HERE, not in `.topbar-right` beside GitHub. They used to sit one row
-     above this one and say "Open the analyzer", which is a name for a tool rather than for
-     a product: it is *Open the app*, and it is the same sentence in the hero, in the footer
-     and in the store texts. One name per door.
-
-     The hrefs are ROOT-RELATIVE so one block can serve a page at the site root and a page a
-     directory down. The site is the root of cleanjibe.org, and of `python3 -m http.server`
-     run in web/, which is the same thing; verify_links.py resolves them.
-
-     The two links wear the section nav's furniture — the eyebrow's mono, uppercase,
-     --ink-3 — because they are navigation one level up. On a phone the row stays a row and
-     scrolls sideways if a font makes it not. -->
+     The button's words are the homepage chooser's browser button, "Try it in your
+     browser", from docs/copy/welcome.json. One wording for one door. It is a real
+     button: `a.btn` carries no underline (css/style.css). The href is ROOT-RELATIVE so
+     one block serves a page at the root and a page a directory down. -->
 <nav class="sitenav" aria-label="Site">
-  <ul>
-    <li><a href="/start/">Get started</a></li>
-    <li><a href="/help/">Help</a></li>
-    <li class="doors">
-      <a class="btn primary" href="/app/" data-umami-event="app-cta-nav">Open the app</a>
-    </li>
-  </ul>
+  <a class="btn primary" href="/app/" data-umami-event="app-cta-nav">Try it in your browser</a>
 </nav>
 <!-- sitenav:end -->
 </header>
 
-<!-- NO SECTION NAV HERE, and that is the decision rather than an oversight. This page is two
-     sections long and about 400 words; a table of contents is furniture for four screens
-     that no longer exist, and on a phone it sat between the topbar and the share card — the
-     one picture the whole page is built around. The rule, written down: a section nav is for
-     a page a reader scrolls through looking for their own question, and below about
-     700 words there is nothing to look for. /learn/, /watches/, /start/ and /privacy/ are
-     over that line and keep theirs. -->
-
 <main>
 
-  <!-- ------------------------------------------------------------------ hero -->
-  <!-- THE CARD COMES FIRST, in the markup and on a phone. Jan, 14 Sep 2026: *"move the share
-       card to the very top… even better if it has a picture or map background."* It has one
-       now — real OpenStreetMap tiles under a real session, composited by the analyzer's own
-       map switch — so the first thing a stranger meets is a picture of a place with a ride
-       drawn on it, and the prose is underneath, where prose belongs. Above 760 px the two
-       halves sit side by side and the copy takes the left column (`order` in css/home.css),
-       which is the reading order a wide screen wants; the source order is the phone's. -->
-  <section class="hero">
+<!-- home:begin -->
+  <!-- GENERATED by web/tools/make_home.py from docs/copy/welcome.json, the kit's
+       WelcomeSections: the same list the app's What CleanJibe does is drawn
+       from. Do not edit between the markers: change the kit, re-export, and
+       regenerate. `make_home.py --check` fails while this block is stale. -->
 
-    <!-- The bundled example session's own share card, exported through the analyzer's real
-         share dialog (portrait, complete, map background ON) at its full 1080x1350 and
-         reduced to 440. The only thing typed into it is the title; every number is what the
-         analysis produced. Anyone can make this one: "see an example session", then Share
-         card, then the map switch. Rendered headlessly through js/sharecard.js, so it is the
-         product's output rather than a screenshot of it.
-
-         THE TILES ARE BAKED IN. The picture is a static PNG, so a visitor to this page
-         fetches nothing from tile.openstreetmap.org — which is what keeps the privacy page's
-         sentence true: OSM is contacted only when a rider turns the map on inside the
-         analyzer. The credit the licence requires is drawn into the image itself, top right,
-         exactly as the composer draws it.
-
-         `loading="eager"` and `fetchpriority="high"`, because it is the largest-contentful
-         paint and deferring it would leave the hero a hole. `aspect-ratio` off the intrinsic
-         440x550 still reserves the box before the bytes land, so nothing reflows underneath.
-
-         It is never rendered WIDER than its 440 native pixels (420 at the top breakpoint),
-         and that cap is about the QR rather than about sharpness: the code is 33 modules
-         drawn one image pixel per module, so upscaling it past 1:1 is what makes a phone
-         camera hesitate. 420 keeps it decodable across a desk. -->
-    <figure class="hero-card" id="card">
-      <img src="img/share-card.png" width="440" height="550" loading="eager"
-           fetchpriority="high" decoding="async"
-           alt="What CleanJibe makes: a share card for the example session, titled Nago
-                Torbole Wingfoil, 30 August 2026, drawn over an OpenStreetMap picture of the
-                north end of Lake Garda. The whole track with every jibe marked, green where
-                it was flown through and red where it was not; then nine tiles - 10:45 min,
-                2.6 km, 7.83 kn average, 13.47 kn best 2 s, 8 flew and 0 touched down and 2
-                fell in of 10 jibes with 5 clean, best streaks 8 flew and 8 dry, 45.4 dry
-                jibes per hour, 28.3 clean jibes per hour, 11.3 swims per hour - and a footer
-                carrying the CleanJibe mark, the offer, and a QR code to cleanjibe.org.">
-      <!-- The card is the growth channel and the page showed a picture of one without ever
-           saying you can make one (ux-audit A3.3). One clause, under the picture it is
-           about, naming the control that draws it — "Share card", beside "Save to library"
-           on the analyzer's result head. -->
-      <figcaption>
-        <b>This is what comes out.</b> It is one real session, read in a browser, and
-        nothing left the device to make it. You can
-        <a href="app/#example" data-umami-event="example-card-note">make a card of this
-        one</a> too: open <strong>Share card</strong> and click twice.
-      </figcaption>
+  <section class="fp-hero" aria-labelledby="fp-title">
+    <div class="fp-hero-copy">
+      <p class="fp-kicker">Your WingFoil session, measured.</p>
+      <!-- The promise, split where it asks its question. The wrapper carries the pin, so
+           verify_copy.py still reads docs/copy/phrases.json's whole sentence. -->
+      <div data-copy="promise">
+        <h1 id="fp-title">Did you fly through that jibe?</h1>
+        <p class="fp-lede">CleanJibe reads your session off the watch. It tells you your time on the foil, every flight, your speed records, and a verdict on every turn. Flew through, touchdown, or fell in.</p>
+      </div>
+      <ul class="fp-ladder" aria-label="The three verdicts">
+        <li><span class="fp-mark fp-mark-flew" aria-hidden="true"></span>Flew through</li>
+        <li><span class="fp-mark fp-mark-touch" aria-hidden="true"></span>Touchdown</li>
+        <li><span class="fp-mark fp-mark-fell" aria-hidden="true"></span>Fell in</li>
+      </ul>
+      <p class="fp-cta">
+        <a class="btn primary fp-go" href="app/#example" data-umami-event="example-cta">Try the example session</a>
+        <a class="btn ghost" href="#way-in" data-umami-event="home-hero-chooser">Which way in is yours?</a>
+      </p>
+      <p class="fp-note">A real 10-minute session on Lake Garda. It is free and needs no account. The example opens right here in your browser.</p>
+    </div>
+    <figure class="fp-card">
+      <a href="app/#example" data-umami-event="example-card">
+        <img src="img/share-card.png" srcset="img/share-card.png 1x, img/share-card@2x.png 2x"
+             width="440" height="550" loading="eager" fetchpriority="high" decoding="async"
+             alt="A real CleanJibe share card: Nago Torbole Wingfoil, 30 August 2026 at 14:07, drawn over an OpenStreetMap map of the north end of Lake Garda. The whole track, with a green dot for every jibe flown through and a red one for each fall. A star and 5 clean jibes of 10. 8 flew through, no touchdown, 2 fell in, and a best streak of 8. 28.3 clean jibes per hour, 45.4 dry jibes per hour, 13.47 knots best 2 seconds, 10 minutes 45 and 2.6 km. The CleanJibe mark, cleanjibe.org and a QR code in the footer.">
+      </a>
+      <figcaption>Every session gives you a card like this to share.</figcaption>
     </figure>
-
-    <div class="hero-copy">
-    <!-- The hook is the free thing that works in ten seconds, not the architecture. A
-         stranger arrives holding (at most) a .fit file and one question; the headline asks
-         it back, and the doors answer it without an install, an account or a watch. -->
-    <!-- The mark at a size you can actually see it, beside the eyebrow rather than above
-         the headline: the topbar's 26 px tile is navigation furniture and reads as a
-         favicon, and this page had no brand presence of its own between it and the footer.
-         It sits on the eyebrow's line so it costs no vertical space in the fold, and it is
-         the same background-image rule as `.mark` (one artwork, one path, three sizes), so
-         it can never drift from the icon the installed app shows. Decorative: the wordmark
-         is three centimetres above it in the topbar and the H1 is under it, so an
-         alternative text here would only be read out twice. -->
-    <div class="hero-brand">
-      <span class="hero-mark" aria-hidden="true"></span>
-      <!-- The four items are held together with non-breaking spaces so the line can only
-           break at a "·". Sharing its row with an 84 px tile leaves this line too narrow to
-           fit at 1280, and left to itself it broke inside "OPEN SOURCE" — a list that
-           breaks mid-item reads as a mistake, one that breaks between items reads as a
-           list. -->
-      <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Free&nbsp;browser&nbsp;app · Garmin&nbsp;watch&nbsp;app · iPhone&nbsp;app · open&nbsp;source</p>
-    </div>
-    <!-- THE HEADLINE IS NOT THE LEDE'S FIRST SENTENCE ANY MORE (docs/web-design-review.md,
-         finding 16; pattern F, on the surface a stranger reads first). It was "Did you fly
-         through that jibe?", which is word for word how the promise under it opens — the
-         first two lines of the site said one thing twice. The promise is pinned copy
-         (`docs/copy/phrases.json`, held here by verify_copy.py) and it is also the welcome
-         screen's and the App Store's, so the half that moves is this one. Register 2, the
-         hero being one of its four places: three words, and the promise answers them. -->
-    <h1>Every jibe, judged.</h1>
-    <!-- THE PROMISE, and it is not this page's sentence to edit: docs/copy/phrases.json
-         `promise`, the kit's WelcomeGuide.promise, also the first line of the welcome
-         screen and of the App Store description. web/tools/verify_copy.py holds the three
-         together. -->
-    <p class="lede" data-copy="promise">
-      Did you fly through that jibe? CleanJibe reads your session off the watch. It tells you your time on the foil, every flight, your speed records, and a verdict on every turn. Flew through, touchdown, or fell in.
-    </p>
-
-    <!-- TWO EQUAL DOORS, because the page has two products to hand over. A stranger arrives
-         either wanting to try something in ten seconds or wanting the app on his phone, and
-         both are `.btn primary`: neither is the consolation prize.
-
-         The example is the THIRD control, and it is a control now rather than the third
-         clause of a note (ux-audit A3.1, change #1): it is the fastest wow in the product —
-         landing page to an analysed session in one click — and it was prose under two
-         buttons, which is where a stranger does not look. Ghost rather than primary,
-         because the two doors stay equal and one page may have only one loud row: a rider
-         who has a file wants the analyzer, and a rider who has none wants this. The note
-         above it lost the clause the button replaced, so the hero says less than it did. -->
-    <p class="cta">
-      <!-- The hero CTAs are the counted doors: umami's declarative form, so a blocked script
-           leaves an ordinary link behind. -->
-      <a class="btn primary" href="start/#apps" data-umami-event="beta-cta-hero">Get the beta</a>
-      <a class="btn primary" href="app/" data-umami-event="app-cta-hero">Open the app</a>
-      <!-- `#example` is a real route, not an anchor: js/app.js runs the bundled session on
-           arrival, so this button delivers the example rather than a drop target. -->
-      <a class="btn ghost" href="app/#example" data-umami-event="example-cta">See a real session</a>
-      <!-- `.cta` is a wrapping flex row: without a full-width basis the note would set
-           itself as a narrow ragged column beside the buttons at desktop widths. One
-           declaration, stated where it is needed, rather than a class in home.css for a
-           single span. -->
-      <span class="cta-note" style="flex-basis: 100%">
-        It is free and needs no account. It runs in your browser, and your file is never
-        uploaded.
-      </span>
-    </p>
-    <!-- The "Installed? Start here" line came out on 15 Sep 2026: the site nav's FIRST link
-         is "Get started", three centimetres above this paragraph on every page, and a
-         sentence that repeats a navigation row is a sentence the hero pays for twice. -->
-    </div>
-
   </section>
 
-  <!-- --------------------------------------------------------------- pieces -->
-  <!-- One line each. The screenshots and the full feature lists moved to /learn/ with the
-       rest of the long half: three names and what each one is FOR is the whole of what this
-       section owes a stranger, and the card above has already shown what any of them
-       produces. -->
-  <section class="home-section" id="pieces">
-    <h2>The three pieces</h2>
-    <p class="section-lede">
-      The watch records and shows your numbers live. The phone and the browser do the full
-      analysis afterwards. All three run the same engine, so a session means the same thing
-      wherever you read it.
-    </p>
+  <section class="fp-band fp-get" id="what-you-get">
+    <div class="fp-get-col">
+    <h2>What CleanJibe measures</h2>
+    <dl class="fp-terms">
+      <div class="fp-term">
+        <dt>On foil</dt>
+        <dd>How much of your session you spent flying rather than just moving.</dd>
+      </div>
+      <div class="fp-term">
+        <dt>Flights &amp; touchdowns</dt>
+        <dd>One takeoff starts a flight. A touchdown or a fall ends it. Both are counted.</dd>
+      </div>
+      <div class="fp-term">
+        <dt>Dry streak</dt>
+        <dd>How many jibes in a row you stayed out of the water, and the best run of the day.</dd>
+      </div>
+      <div class="fp-term">
+        <dt>Speed records</dt>
+        <dd>Your fastest 2 seconds, 10 seconds, 500 m and nautical mile. The speedsurfing world uses the same windows.</dd>
+      </div>
+    </dl>
+    </div>
+    <div class="fp-get-col">
+    <h2>Every turn, judged</h2>
+    <dl class="fp-terms fp-verdicts">
+      <div class="fp-term">
+        <dt><span class="fp-mark fp-mark-flew" aria-hidden="true"></span>Flew through</dt>
+        <dd>The turn kept the foil, from the sweep until you were flying again.</dd>
+      </div>
+      <div class="fp-term">
+        <dt><span class="fp-mark fp-mark-touch" aria-hidden="true"></span>Touchdown</dt>
+        <dd>The foil went in and you kept going. Dry, and not clean.</dd>
+      </div>
+      <div class="fp-term">
+        <dt><span class="fp-mark fp-mark-fell" aria-hidden="true"></span>Fell in</dt>
+        <dd>Every time you ended up in the water, in a turn or in a straight line.</dd>
+      </div>
+      <div class="fp-term">
+        <dt><span class="fp-mark fp-mark-clean" aria-hidden="true"></span>Clean</dt>
+        <dd>A jibe that flew through, held 70 % of its entry speed, and stayed quiet for 10 s.</dd>
+      </div>
+    </dl>
+    </div>
+  </section>
 
-    <div class="pieces">
-
-      <article class="panel piece">
-        <div class="piece-head">
-          <h3>CleanJibe for Garmin</h3>
-          <span class="status">open beta · Connect IQ</span>
-        </div>
-        <!-- The count is written by web/tools/make_devices.py out of garmin/manifest.xml. -->
-        <p class="what">Connect IQ watch app for <span data-copy="garmin-count">42</span> watches, fenix 8 down to vívoactive</p>
-        <ul>
-          <li>Foil time, every flight, a verdict on every jibe and your dry streak. Live on
-              the wrist, while you ride.</li>
+  <section class="fp-band" id="way-in" aria-labelledby="way-in-title">
+    <h2 id="way-in-title">Which way in is yours?</h2>
+    <p class="fp-section-lede">CleanJibe is a family of apps on one analysis engine.</p>
+    <div class="fp-ways">
+      <article class="fp-way" id="way-garminIphone">
+        <h3>A Garmin and an iPhone</h3>
+        <p>You get everything. Add the watch app for a verdict on your wrist after every jibe.</p>
+        <ul class="fp-apps">
+          <li><b>iPhone app</b> It reads every session from Garmin, Strava and other watches, judges every turn and keeps your library.</li>
+          <li><b>Garmin watch app</b> It records on your wrist, with live numbers and a summary when you save.</li>
         </ul>
-        <p class="piece-foot">
-          <a class="btn ghost" href="start/#apps" data-umami-event="beta-garmin">Get the beta</a>
-          <a class="btn ghost" href="start/#watches" data-umami-event="watches-piece">Which watch</a>
+        <p class="fp-actions">
+        <a class="btn primary" href="https://testflight.apple.com/join/nygqGGcn" rel="noopener" data-umami-event="home-way-garminIphone-iphone">Get the iPhone app</a>
+        <a class="btn ghost" href="https://apps.garmin.com/apps/e77867b5-e972-4eb2-be1b-90077cfac806" rel="noopener" data-umami-event="home-way-garminIphone-garmin">Put it on your watch</a>
         </p>
       </article>
-
-      <article class="panel piece">
-        <div class="piece-head">
-          <h3>CleanJibe for iPhone</h3>
-          <span class="status">open beta · TestFlight</span>
-        </div>
-        <p class="what">Your library, the replay and the season, on the phone in your pocket</p>
-        <!-- THE WAYS IN, IN THE ONE ORDER (docs/review-checklist.md, pattern J, and
-             docs/guide/getting-started.json, which is where the order is decided): Garmin,
-             the Apple Watch, any .fit, Strava. The Apple Watch was the one door this page
-             never named, and it is the one a reader without a Garmin is looking for. It
-             carries the pill because it is a beta door (docs/channels.md). -->
-        <p class="what">Sessions come from a Garmin, from the
-          <span data-copy="beta-door">Apple Watch</span><span class="tag beta">beta</span>,
-          from any <code>.fit</code>, or from Strava.</p>
-        <!-- The `beta` pill is written from docs/channels.md and from nowhere else. A feature
-             with no pill is in the App Store release; the clause it sits after is the half of
-             this line that is not. -->
-        <ul>
-          <li>Every session you have ever ridden, re-analyzed on the phone, with its records,
-              its trends and a share card. Your whole Garmin history comes in one export ZIP.</li>
-          <li>The beta adds <span data-copy="beta-door">GPX and TCX imports, the Apple Watch
-              recorder and the session video</span>.<span class="tag beta">beta</span></li>
+      <article class="fp-way" id="way-garminOnly">
+        <h3>A Garmin, no iPhone</h3>
+        <p>The browser app works on Android and on any computer. Your sessions stay in that browser.</p>
+        <ul class="fp-apps">
+          <li><b>Browser app</b> Most of the same analysis in a browser tab. Drop a file in or import from intervals.icu, with no account.</li>
+          <li><b>Garmin watch app</b> It records on your wrist, with live numbers and a summary when you save.</li>
         </ul>
-        <p class="piece-foot"><a class="btn ghost" href="start/#apps" data-umami-event="beta-testflight">Get the beta</a></p>
+        <p class="fp-actions">
+        <a class="btn primary" href="app/" data-umami-event="home-way-garminOnly-browser">Try it in your browser</a>
+        <a class="btn ghost" href="https://apps.garmin.com/apps/e77867b5-e972-4eb2-be1b-90077cfac806" rel="noopener" data-umami-event="home-way-garminOnly-garmin">Put it on your watch</a>
+        </p>
       </article>
-
-      <article class="panel piece">
-        <div class="piece-head">
-          <h3>CleanJibe in a browser</h3>
-          <span class="status live">live now</span>
-        </div>
-        <p class="what">Any browser, any phone, with nothing to install</p>
-        <ul>
-          <li>Drop a <code>.fit</code>, <code>.gpx</code> or <code>.tcx</code> in and the
-              whole session comes back. It stays in your own tab and is uploaded nowhere. On
-              Android it installs from Chrome's menu and joins the share sheet.</li>
+      <article class="fp-way" id="way-appleWatch" data-copy="beta-door">
+        <h3>An Apple Watch <span class="tag beta">Beta</span></h3>
+        <p>The watch app comes with the iPhone app. Apple's own Workout app works too, through Apple Health.</p>
+        <ul class="fp-apps">
+          <li><b>Apple Watch app</b> It records your session on the wrist. The analysis happens on the iPhone.</li>
         </ul>
-        <p class="piece-foot"><a class="btn primary" href="app/" data-umami-event="app-cta-panel">Open the app</a></p>
+        <p class="fp-actions">
+        <a class="btn primary" href="https://testflight.apple.com/join/nygqGGcn" rel="noopener" data-umami-event="home-way-appleWatch-iphone">Get the iPhone app</a>
+        </p>
       </article>
-
+      <article class="fp-way" id="way-otherWatch">
+        <h3>Another watch, or Strava</h3>
+        <p>Strava comes in on the iPhone. A <code>.fit</code> file works in both apps.</p>
+        <ul class="fp-apps">
+          <li><b>iPhone app</b> It reads every session from Garmin, Strava and other watches, judges every turn and keeps your library.</li>
+          <li><b>Browser app</b> Most of the same analysis in a browser tab. Drop a file in or import from intervals.icu, with no account.</li>
+        </ul>
+        <p class="fp-actions">
+        <a class="btn primary" href="https://testflight.apple.com/join/nygqGGcn" rel="noopener" data-umami-event="home-way-otherWatch-iphone">Get the iPhone app</a>
+        <a class="btn ghost" href="app/" data-umami-event="home-way-otherWatch-browser">Try it in your browser</a>
+        </p>
+      </article>
     </div>
+    <p class="fp-small">The iPhone app installs through Apple's TestFlight app. It is free, and there is no invite to wait for.</p>
+  </section>
 
-    <!-- The legend, once per page that carries a pill. It says which channel the word means
-         and nothing else; docs/channels.md is where the list itself is decided. -->
-    <p class="beta-legend">
-      <span class="tag beta">beta</span> in the public beta today, not yet in the App Store
-      release.
-    </p>
-
-    <!-- ONE LINE WHERE THE CLASS TABLE WAS. The four recording classes live on
-         /watches/#classes and nowhere else since 15 Sep 2026: that is the page the question
-         "will my watch work" is actually asked on, the four rows there are the same pinned
-         cells this page used to print, and web/tools/verify_copy.py's page map was edited in
-         the same change so a second copy fails rather than drifts. -->
-    <p class="note">
-      <strong>What you get back depends on what your file carries</strong>, not on the badge
-      on the strap. Which class your watch lands in is on
-      <a href="start/#watches" data-umami-event="home-classes">Which watch</a>.
-    </p>
-
-    <!-- ONE LINE WHERE THE TWO CHANNEL LISTS WERE. docs/channels.md decides them,
-         docs/copy/channels.json carries them, and /start/#coming is the one page that
-         prints them — one button away, read by somebody who has already decided. A dev list
-         on the front door is a promise to a stranger; the app keeps those rows behind
-         `#if BETA` for exactly that reason, and the site now matches. -->
-    <p class="note">
-      <strong>The App Store release is the steady half.</strong> Everything the beta has
-      today, and the ideas on the bench behind it, are on
-      <a href="start/#coming" data-umami-event="beta-cta-coming">Get started</a>.
-    </p>
-    <p class="piece-foot">
-      <a class="btn ghost" href="start/#coming" data-umami-event="beta-coming-button">See what is in the beta</a>
+  <section class="fp-band" id="old-sessions">
+    <h2>Bring in the sessions you already have</h2>
+    <p class="fp-section-lede">Your last season is already on your watch account. Connect it once and CleanJibe reads every session you rode.</p>
+    <dl class="fp-terms fp-steps">
+      <div class="fp-term">
+        <dt>Any Garmin profile</dt>
+        <dd>Windsurf, SUP, Kitesurf or Surfing all count. So does any activity you named wing or foil.</dd>
+      </div>
+      <div class="fp-term">
+        <dt>Through intervals.icu</dt>
+        <dd>Garmin has no open API, so the free intervals.icu is the bridge. Two years of sessions come across.</dd>
+      </div>
+      <div class="fp-term">
+        <dt>Or one file at a time</dt>
+        <dd>Drop a <code>.fit</code>, <code>.gpx</code> or <code>.tcx</code> into the browser app. It is read on your device and never uploaded.</dd>
+      </div>
+    </dl>
+    <p class="fp-actions">
+        <a class="btn ghost" href="start/#guide-garmin" data-umami-event="home-old-sessions-guideGarmin">Show me how</a>
     </p>
   </section>
 
+  <section class="fp-band" id="watch-app">
+    <h2>Get much more with the watch app</h2>
+    <p class="fp-section-lede">The free CleanJibe app for Garmin records a wingfoil session the way we read one.</p>
+    <dl class="fp-terms fp-steps">
+      <div class="fp-term">
+        <dt>Verdicts on your wrist</dt>
+        <dd>The watch buzzes after every jibe, so you know how it went before you look.</dd>
+      </div>
+      <div class="fp-term">
+        <dt>Pump strokes and takeoffs</dt>
+        <dd>It records your wrist as well, so every pump stroke and every takeoff attempt is counted.</dd>
+      </div>
+      <div class="fp-term">
+        <dt>Live on the water</dt>
+        <dd>Foil time, flights and your dry streak while you ride. A summary comes up when you save.</dd>
+      </div>
+    </dl>
+    <p class="fp-small">It runs on <span data-copy="garmin-count">42</span> Garmin watches, from the fenix 8 down to the vívoactive.</p>
+    <p class="fp-actions">
+        <a class="btn primary" href="https://apps.garmin.com/apps/e77867b5-e972-4eb2-be1b-90077cfac806" rel="noopener" data-umami-event="home-watch-app-garmin">Put it on your watch</a>
+        <a class="btn ghost" href="start/#watches" data-umami-event="home-watch-app-watches">Which watches</a>
+    </p>
+  </section>
+
+  <section class="fp-band fp-trust" id="we-ride-too">
+    <h2>We ride too</h2>
+    <dl class="fp-terms fp-steps">
+      <div class="fp-term">
+        <dt>No account</dt>
+        <dd>You sign up for nothing, here or in the apps.</dd>
+      </div>
+      <div class="fp-term">
+        <dt>No server</dt>
+        <dd>Your sessions stay on your phone or in your browser. We only see one if you send it to us.</dd>
+      </div>
+      <div class="fp-term">
+        <dt>Open source</dt>
+        <dd>The engine is on GitHub. Every threshold behind a verdict can be read there.</dd>
+      </div>
+      <div class="fp-term">
+        <dt>We read every mail</dt>
+        <dd>We build CleanJibe and we wingfoil. Tell us which verdict looked wrong, or what you want next.</dd>
+      </div>
+    </dl>
+    <p class="fp-community">CleanJibe is built with its riders. New features are chosen by demand and tested in the beta.</p>
+    <p class="fp-actions">
+        <a class="btn ghost" href="mailto:info@cleanjibe.org?subject=CleanJibe%20feedback&amp;body=What%20happened%2C%20or%20what%20you%20would%20like%3A%0A%0A%0AWhat%20you%20expected%20instead%3A%0A%0A%0AWhich%20session%2C%20its%20date%20and%20spot%2C%20if%20it%20is%20about%20one%3A%0A%0AYour%20watch%20and%20phone%20%28model%2C%20software%20version%29%3A%0A%0ACleanJibe%20version%20%28Settings%2C%20About%29%3A%0A%0AIdeas%20and%20wishes%20are%20as%20welcome%20as%20bugs.%20Attach%20a%20screenshot%20or%20the%20session%27s%20.fit%20file%20if%20you%20can.%0A" data-umami-event="home-trust-mail">Tell us what you want next</a>
+        <a class="btn ghost" href="https://github.com/JanLahmann/WingFoil" rel="noopener" data-umami-event="home-trust-github">Read the code</a>
+    </p>
+  </section>
+  <!-- home:end -->
 
 </main>
 

@@ -52,14 +52,15 @@ struct WelcomeView: View {
         ZStack {
             Brand.cardGradient.ignoresSafeArea()
             ScrollView {
+                // **The sections come from the kit, in the kit's order** (Jan, 28 Sep
+                // 2026): `WelcomeSections` is the one list this screen and the homepage
+                // are both drawn from, so the words they share cannot drift.
+                // `web/tools/make_home.py --check` fails when this file types a word a
+                // shared section owns.
                 VStack(spacing: isShort ? 20 : 28) {
-                    identity
-                    trackAndLegend
-                    example
-                    vocabulary
-                    getStarted
-                    family
-                    footer
+                    ForEach(WelcomeSections.app) { section in
+                        view(for: section)
+                    }
                 }
                 // 560 pt is about a long line of body text; without the cap the paragraph
                 // runs the full width of a landscape phone and reads like a licence.
@@ -116,6 +117,25 @@ struct WelcomeView: View {
             }
         }
         .feedbackMail(on: $supportRequest)
+    }
+
+    // MARK: - The sections
+
+    /// One section of the kit's list. The community sentence and the menu path are one
+    /// footer on this screen, so the footer is drawn at the first of them.
+    @ViewBuilder
+    private func view(for section: WelcomeSection) -> some View {
+        switch section.id {
+        case .identity: identity
+        case .legend: trackAndLegend
+        case .example: example
+        case .measures: vocabulary
+        case .getStarted: getStarted
+        case .family: family
+        case .community: footer
+        case .footerLinks: EmptyView()
+        case .hero, .verdicts, .chooser, .oldSessions, .watchApp, .trust: EmptyView()
+        }
     }
 
     // MARK: - Header
@@ -327,10 +347,10 @@ struct WelcomeView: View {
     /// The apps on one engine, each honest about what it does (`CleanJibeFamily`, F4).
     private var family: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(CleanJibeFamily.title)
+            Text(WelcomeSections.section(.family).title)
                 .font(.title3.weight(.semibold))
                 .accessibilityAddTraits(.isHeader)
-            Text(CleanJibeFamily.intro)
+            Text(WelcomeSections.section(.family).lede)
                 .font(.callout)
                 .foregroundStyle(Brand.paper.opacity(0.85))
                 .fixedSize(horizontal: false, vertical: true)
@@ -386,7 +406,7 @@ struct WelcomeView: View {
         #else
         let second = WelcomeGuide.footerRelease
         #endif
-        var text = AttributedString(FeedbackInvitation.community + " " + second)
+        var text = AttributedString(WelcomeSections.section(.community).lede + " " + second)
         func link(_ words: String, _ host: String) {
             guard let range = text.range(of: words, options: .backwards) else { return }
             text[range].link = URL(string: "\(Self.linkScheme)://\(host)")

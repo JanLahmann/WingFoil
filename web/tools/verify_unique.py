@@ -103,7 +103,11 @@ PAGES = [
 #: which is what the number below is for. Open, it is forty pages of reference, and that is
 #: the point of it.
 BUDGET = {
-    "index.html": 550,
+    # The front door grew from two sections to six on 28 September 2026 (the chooser, old
+    # sessions, the watch app, trust): it is the one page written for a rider who has no app
+    # yet, and every band answers a question he asks before he installs. The eight
+    # definitions and the family's four lines are docs/copy's and are counted anyway.
+    "index.html": 900,
     "start/index.html": 2200,
     "help/index.html": 900,
 }

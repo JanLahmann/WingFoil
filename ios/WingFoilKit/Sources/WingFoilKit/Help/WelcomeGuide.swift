@@ -48,10 +48,11 @@ public enum WelcomeGuide {
     /// One tight paragraph of what the app actually does, in the order the rider meets it:
     /// detection first (nothing else is possible without it), then the counts, then the
     /// verdicts, then the records, then the replay.
-    public static let lede =
-        "CleanJibe shows your time on the foil, every flight and every touchdown. Each jibe "
-        + "gets a verdict: flew through, touched down, or fell in. You see your dry streak "
-        + "and your fastest seconds. The replay comes with a commentary."
+    ///
+    /// **Since 28 September 2026 the words live in `WelcomeSections`**, the one list the
+    /// welcome screen and the homepage are both rendered from. Every constant below reads
+    /// its section, so the names the tests and the app already use keep working.
+    public static var lede: String { WelcomeSections.section(.identity).lede }
 
     /// The vocabulary, four lines of it. Enough that the words on the session page are
     /// already familiar; short enough that nobody skips the screen to escape it.
@@ -65,54 +66,49 @@ public enum WelcomeGuide {
     /// The dry streak used to read "how many you *carried* in a row", which is engine
     /// vocabulary the rider is never shown (CLAUDE.md); the glossary's line is the web's,
     /// and says the same thing in the words the product uses.
-    public static let highlights: [WelcomeHighlight] = [
-        "foilShare",
-        "flights",
-        "dryStreak",
-        // "GP3S" and "alpha 500" are GPS-speedsurfing terms, and this is the fourth line of
-        // the first screen a wingfoiler ever sees. The windows are named instead; the
-        // Records topic can teach the vocabulary later, to somebody who asked for it.
-        "speedRecords",
-    ].map {
-        let entry = MetricGlossary.entry($0)
-        return WelcomeHighlight(term: entry.term, detail: entry.line)
+    public static var highlights: [WelcomeHighlight] {
+        WelcomeSections.section(.measures).items.map {
+            WelcomeHighlight(term: $0.term, detail: $0.detail)
+        }
     }
 
     // MARK: - The page, top to bottom
 
     /// The three marks the track drawing carries, named under it. The same words and the
     /// same order as the turn ladder everywhere else: flew through, touchdown, fell in.
-    public static let legend: [WelcomeLegendItem] = [
-        WelcomeLegendItem(mark: .flew, label: "Flew through"),
-        WelcomeLegendItem(mark: .touchdown, label: "Touchdown"),
-        WelcomeLegendItem(mark: .fellIn, label: "Fell in"),
-    ]
+    public static var legend: [WelcomeLegendItem] {
+        WelcomeSections.section(.legend).items.compactMap { item in
+            WelcomeLegendItem.Mark(rawValue: item.id).map {
+                WelcomeLegendItem(mark: $0, label: item.term)
+            }
+        }
+    }
 
     /// The demo. First, and the prominent one: one tap fills every screen with a real
     /// session, before the rider has set anything up.
-    public static let tryExampleTitle = "Try the example session"
+    public static var tryExampleTitle: String { WelcomeSections.section(.example).title }
     /// One line under it (Jan, 24 September 2026). "Already analysed" and "you connect
     /// nothing first" are gone: the first is how every session arrives, the second answered
     /// a question nobody asked.
-    public static let tryExampleDetail = "A real 10-minute session on Lake Garda."
+    public static var tryExampleDetail: String { WelcomeSections.section(.example).lede }
 
     /// Under the small share card. Tapping the card opens the example session, which is
     /// where the rider can make one of his own.
-    public static let shareCardCaption = "Every session gives you a card like this to share."
+    public static var shareCardCaption: String { WelcomeSections.section(.example).note }
 
     /// The title over the four glossary lines.
-    public static let measuresTitle = "What CleanJibe measures"
+    public static var measuresTitle: String { WelcomeSections.section(.measures).title }
 
     /// The page's one way on, near the bottom: it opens Getting started. The X closes the
     /// screen; there is no "Later" any more (Jan, 24 September 2026), because the X already
     /// says it.
-    public static let getStartedTitle = "Get started"
+    public static var getStartedTitle: String { WelcomeSections.section(.getStarted).title }
 
     /// The footer's second sentence, after `FeedbackInvitation.community`. The app draws
     /// "Join the beta" and "Support & ideas" as links onto the Beta page and the mail.
-    public static let footerRelease = "Join the beta or send ideas via Menu → Support & ideas."
+    public static var footerRelease: String { WelcomeSections.section(.footerLinks).lede }
     /// The same in the beta and the dev build, where the reader is in the beta already.
-    public static let footerBeta = "Send ideas via Menu → Support & ideas."
+    public static var footerBeta: String { WelcomeSections.section(.footerLinks).note }
 }
 
 /// One mark of the track drawing, and its name.

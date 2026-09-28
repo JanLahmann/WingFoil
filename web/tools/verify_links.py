@@ -337,6 +337,19 @@ if make_help.main(["--check"]) != 0:
                   "(and regenerate docs/copy/help.json from the kit first if the "
                   "catalogue moved)")
 
+# And the front door, which is the kit's WelcomeSections rendered (Jan, 28 September 2026):
+# docs/copy/welcome.json is written by the kit's WelcomeSectionsExportTests, and the words the
+# homepage shares with the app's What CleanJibe does have that one home. The same check holds
+# the app side: WelcomeView.swift draws every shared section from the kit and types none of
+# its words.
+import make_home                                                         # noqa: E402
+
+if make_home.main(["--check"]) != 0:
+    errors.append("web/index.html or docs/web-parity/welcome-vs-homepage.md is stale, or "
+                  "WelcomeView.swift types a shared word — run `python3 web/tools/make_home.py` "
+                  "(and re-export docs/copy/welcome.json from the kit first if the sections "
+                  "moved)")
+
 # Same argument for the Garmin product count and the watch app's version: five pages print
 # them, garmin/manifest.xml decides them, and a page that says 39 products at 0.9.10 when
 # the tree ships 42 at 0.9.11 is a link to a watch that will not install.
