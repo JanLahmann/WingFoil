@@ -61,7 +61,9 @@ is going; the web page follows in its own round and still draws the bare codes.
   compare with.
 - **The season line** above the charts, `SeasonLine`: weeks on the water in a row (a week
   still under way with no session does not break the run), the best run this season, and
-  this month's clean jibes. Always over the season, whatever the range picker says.
+  this month's clean jibes. Over the season on every range but **All**, where the run is
+  counted over every week and the best is the all-time one, "your best run ever" (Jan,
+  28 Sep 2026). This month's clean jibes are the same on every range.
 - **Order**: On foil, Clean jibes, Best 2 s, Longest flight, Flew-through rate, the three
   rates, Sessions per week; Pumps to takeoff, Port / starboard and Flew through by entry
   tack fold under **More**, open or shut per device (`trendsShowMore`).

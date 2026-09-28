@@ -152,6 +152,7 @@ the phone showed. Both open with the build and the device.
 | Reading | Trends | `trends` | release |
 | Reading | Records | `records` | release |
 | Reading | Periods | `periods` | release |
+| Reading | Session story and record chips | `sessionStory` | beta |
 | Share | Share card | `shareCard` | release |
 | Share | Replay clip saved | `clipExported` | release |
 | Share | Session video | `videoExported` | beta |
@@ -246,6 +247,7 @@ c through GPX and TCX as well. The app's `sourceClass` column is the source of t
 | Session map, full-screen map, layers, map styles | release | |
 | Replay with commentary, scrub and zoom | release | |
 | Share card (session, period), QR back to the site | release | QR to grow to ~144 px |
+| The session story: the line over the key metrics, the *Best ever* / *Season best* chips, the card's record ribbon, the Records tab badge and the confetti the first time a record session opens | beta | Jan, 28 Sep 2026: beta first. One gate, `#if BETA` in the app target — `SessionDetailView.tellStory` tells no story in the release build, so the chips, the ribbon, the caption's lead and the replay's last word fall back to the facts, as before; the badge and the first-open burst are gated beside it. The kit (`SessionStory`) compiles everything. The release keeps the Records tab's own celebration. Counted as `sessionStory` (a page that opened with a story). Before release: **rule 1**, the usage report showing the story on real sessions from two riders, and no record chip Jan disputes |
 | Replay clips with the rider's own music | release | |
 | Session video export (the film) | beta | |
 | Send a session to a friend, sessions someone else rode | release | the scrubbed original FIT through the share sheet |
