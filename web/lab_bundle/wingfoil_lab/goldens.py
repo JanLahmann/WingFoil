@@ -411,7 +411,8 @@ def analyze(path: str | Path, filter_config: FilterConfig | None = None,
     # does -- so the two are simply run in the order the evidence flows.
     ends = classify_flight_ends(ct, fr, None, fecfg, pt,
                                 evidence=shared(fecfg.foil_exit_speed_kmh, fecfg.baro_drop_m))
-    turns = detect_turns(ct, fr, wind, tcfg, pt, evidence=ev, ends=ends)
+    turns = detect_turns(ct, fr, wind, tcfg, pt, evidence=ev, ends=ends,
+                         default_turn_type=wcfg.default_turn_type)
     assign_end_ownership(ends, turns)
     takeoffs = analyze_takeoffs(ct, fr, turns, tocfg, pt,
                                 evidence=shared(tocfg.foil_exit_speed_kmh, tocfg.baro_drop_m))
@@ -945,6 +946,15 @@ def _config_dict(a: Analysis) -> dict:
         # water needs before it is a turn the rider fell out of rather than a straight-line
         # fall. 0 switches the pass off.
         "turnAbortMinAngle": t.abort_min_angle_deg,
+        # Did he get there (engine 0.27.0, ADR-037): an aborted turn named by the axis it was
+        # closing on keeps the name only where a flown heading came this close to that axis
+        # and the luff began at speed; it is the tail of a same-way turn inside that turn's
+        # window; a crossing in a <= turnJoinGapS gap between two sweeps names the second.
+        "turnAbortAxisDeg": t.abort_axis_deg,
+        "turnAbortLuffDeg": t.abort_luff_deg,
+        "turnAbortLuffSpeedPct": t.abort_luff_speed_pct,
+        "turnAbortAfterTurnS": t.abort_after_turn_s,
+        "turnJoinGapS": t.join_gap_s,
         "turnClassifyMinAngle": t.classify_min_angle_deg,
         "turnAxisBeforeDeg": t.axis_before_deg,
         "turnAxisAfterDeg": t.axis_after_deg,

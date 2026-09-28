@@ -759,36 +759,26 @@
     "clean": {
       "bars": [
         {
-          "fellIn": 14,
+          "fellIn": 15,
           "flewThrough": 13,
           "kind": "jibes",
           "label": "jibes",
           "right": null,
           "star": false,
           "touchdown": 11
-        },
-        {
-          "fellIn": 1,
-          "flewThrough": 0,
-          "kind": "tacks",
-          "label": "tacks",
-          "right": "of 1 tack",
-          "star": false,
-          "touchdown": 0
         }
       ],
       "dateLine": "",
       "falls": [],
       "hero": {
         "kind": "clean",
-        "sub": "of 38 jibes",
+        "sub": "of 39 jibes",
         "unit": "clean jibes",
         "value": "7"
       },
       "heroOptions": [
         "clean",
-        "max2s",
-        "tacks"
+        "max2s"
       ],
       "legend": [
         "flew through",
@@ -804,8 +794,8 @@
         },
         {
           "clean": false,
-          "key": "tph",
-          "label": "dry turns / h",
+          "key": "jph",
+          "label": "dry jibes / h",
           "value": "11.4"
         },
         {
@@ -858,22 +848,13 @@
     "max2s": {
       "bars": [
         {
-          "fellIn": 14,
+          "fellIn": 15,
           "flewThrough": 13,
           "kind": "jibes",
           "label": "jibes",
-          "right": "of 38 jibes · 7 clean",
+          "right": "of 39 jibes · 7 clean",
           "star": true,
           "touchdown": 11
-        },
-        {
-          "fellIn": 1,
-          "flewThrough": 0,
-          "kind": "tacks",
-          "label": "tacks",
-          "right": "of 1 tack",
-          "star": false,
-          "touchdown": 0
         }
       ],
       "dateLine": "",
@@ -886,8 +867,7 @@
       },
       "heroOptions": [
         "clean",
-        "max2s",
-        "tacks"
+        "max2s"
       ],
       "legend": [
         "flew through",
@@ -903,8 +883,8 @@
         },
         {
           "clean": false,
-          "key": "tph",
-          "label": "dry turns / h",
+          "key": "jph",
+          "label": "dry jibes / h",
           "value": "11.4"
         },
         {
@@ -951,36 +931,26 @@
     "tacks": {
       "bars": [
         {
-          "fellIn": 14,
+          "fellIn": 15,
           "flewThrough": 13,
           "kind": "jibes",
           "label": "jibes",
-          "right": "of 38 jibes · 7 clean",
-          "star": true,
-          "touchdown": 11
-        },
-        {
-          "fellIn": 1,
-          "flewThrough": 0,
-          "kind": "tacks",
-          "label": "tacks",
           "right": null,
           "star": false,
-          "touchdown": 0
+          "touchdown": 11
         }
       ],
       "dateLine": "",
       "falls": [],
       "hero": {
-        "kind": "tacks",
-        "sub": "0 dry · beside 38 jibes",
-        "unit": "tack",
-        "value": "1"
+        "kind": "clean",
+        "sub": "of 39 jibes",
+        "unit": "clean jibes",
+        "value": "7"
       },
       "heroOptions": [
         "clean",
-        "max2s",
-        "tacks"
+        "max2s"
       ],
       "legend": [
         "flew through",
@@ -996,8 +966,8 @@
         },
         {
           "clean": false,
-          "key": "tph",
-          "label": "dry turns / h",
+          "key": "jph",
+          "label": "dry jibes / h",
           "value": "11.4"
         },
         {
@@ -1059,15 +1029,6 @@
           "right": null,
           "star": false,
           "touchdown": 15
-        },
-        {
-          "fellIn": 2,
-          "flewThrough": 0,
-          "kind": "tacks",
-          "label": "tacks",
-          "right": "of 2 tacks",
-          "star": false,
-          "touchdown": 0
         }
       ],
       "dateLine": "",
@@ -1080,8 +1041,7 @@
       },
       "heroOptions": [
         "clean",
-        "max2s",
-        "tacks"
+        "max2s"
       ],
       "legend": [
         "flew through",
@@ -1097,8 +1057,8 @@
         },
         {
           "clean": false,
-          "key": "tph",
-          "label": "dry turns / h",
+          "key": "jph",
+          "label": "dry jibes / h",
           "value": "18.9"
         },
         {
@@ -1158,15 +1118,6 @@
           "right": "of 52 jibes · 13 clean",
           "star": true,
           "touchdown": 15
-        },
-        {
-          "fellIn": 2,
-          "flewThrough": 0,
-          "kind": "tacks",
-          "label": "tacks",
-          "right": "of 2 tacks",
-          "star": false,
-          "touchdown": 0
         }
       ],
       "dateLine": "",
@@ -1179,8 +1130,7 @@
       },
       "heroOptions": [
         "clean",
-        "max2s",
-        "tacks"
+        "max2s"
       ],
       "legend": [
         "flew through",
@@ -1196,8 +1146,8 @@
         },
         {
           "clean": false,
-          "key": "tph",
-          "label": "dry turns / h",
+          "key": "jph",
+          "label": "dry jibes / h",
           "value": "18.9"
         },
         {
@@ -1248,32 +1198,22 @@
           "flewThrough": 21,
           "kind": "jibes",
           "label": "jibes",
-          "right": "of 52 jibes · 13 clean",
-          "star": true,
-          "touchdown": 15
-        },
-        {
-          "fellIn": 2,
-          "flewThrough": 0,
-          "kind": "tacks",
-          "label": "tacks",
           "right": null,
           "star": false,
-          "touchdown": 0
+          "touchdown": 15
         }
       ],
       "dateLine": "",
       "falls": [],
       "hero": {
-        "kind": "tacks",
-        "sub": "0 dry · beside 52 jibes",
-        "unit": "tacks",
-        "value": "2"
+        "kind": "clean",
+        "sub": "of 52 jibes",
+        "unit": "clean jibes",
+        "value": "13"
       },
       "heroOptions": [
         "clean",
-        "max2s",
-        "tacks"
+        "max2s"
       ],
       "legend": [
         "flew through",
@@ -1289,8 +1229,8 @@
         },
         {
           "clean": false,
-          "key": "tph",
-          "label": "dry turns / h",
+          "key": "jph",
+          "label": "dry jibes / h",
           "value": "18.9"
         },
         {
@@ -2371,15 +2311,6 @@
           "right": null,
           "star": false,
           "touchdown": 7
-        },
-        {
-          "fellIn": 1,
-          "flewThrough": 0,
-          "kind": "tacks",
-          "label": "tacks",
-          "right": "of 1 tack",
-          "star": false,
-          "touchdown": 0
         }
       ],
       "dateLine": "",
@@ -2392,8 +2323,7 @@
       },
       "heroOptions": [
         "clean",
-        "max2s",
-        "tacks"
+        "max2s"
       ],
       "legend": [
         "flew through",
@@ -2409,8 +2339,8 @@
         },
         {
           "clean": false,
-          "key": "tph",
-          "label": "dry turns / h",
+          "key": "jph",
+          "label": "dry jibes / h",
           "value": "21.9"
         },
         {
@@ -2470,15 +2400,6 @@
           "right": "of 69 jibes · 32 clean",
           "star": true,
           "touchdown": 7
-        },
-        {
-          "fellIn": 1,
-          "flewThrough": 0,
-          "kind": "tacks",
-          "label": "tacks",
-          "right": "of 1 tack",
-          "star": false,
-          "touchdown": 0
         }
       ],
       "dateLine": "",
@@ -2491,8 +2412,7 @@
       },
       "heroOptions": [
         "clean",
-        "max2s",
-        "tacks"
+        "max2s"
       ],
       "legend": [
         "flew through",
@@ -2508,8 +2428,8 @@
         },
         {
           "clean": false,
-          "key": "tph",
-          "label": "dry turns / h",
+          "key": "jph",
+          "label": "dry jibes / h",
           "value": "21.9"
         },
         {
@@ -2560,32 +2480,22 @@
           "flewThrough": 45,
           "kind": "jibes",
           "label": "jibes",
-          "right": "of 69 jibes · 32 clean",
-          "star": true,
-          "touchdown": 7
-        },
-        {
-          "fellIn": 1,
-          "flewThrough": 0,
-          "kind": "tacks",
-          "label": "tacks",
           "right": null,
           "star": false,
-          "touchdown": 0
+          "touchdown": 7
         }
       ],
       "dateLine": "",
       "falls": [],
       "hero": {
-        "kind": "tacks",
-        "sub": "0 dry · beside 69 jibes",
-        "unit": "tack",
-        "value": "1"
+        "kind": "clean",
+        "sub": "of 69 jibes",
+        "unit": "clean jibes",
+        "value": "32"
       },
       "heroOptions": [
         "clean",
-        "max2s",
-        "tacks"
+        "max2s"
       ],
       "legend": [
         "flew through",
@@ -2601,8 +2511,8 @@
         },
         {
           "clean": false,
-          "key": "tph",
-          "label": "dry turns / h",
+          "key": "jph",
+          "label": "dry jibes / h",
           "value": "21.9"
         },
         {
@@ -3190,15 +3100,6 @@
           "right": null,
           "star": false,
           "touchdown": 8
-        },
-        {
-          "fellIn": 1,
-          "flewThrough": 0,
-          "kind": "tacks",
-          "label": "tacks",
-          "right": "of 1 tack",
-          "star": false,
-          "touchdown": 0
         }
       ],
       "dateLine": "",
@@ -3211,8 +3112,7 @@
       },
       "heroOptions": [
         "clean",
-        "max2s",
-        "tacks"
+        "max2s"
       ],
       "legend": [
         "flew through",
@@ -3228,8 +3128,8 @@
         },
         {
           "clean": false,
-          "key": "tph",
-          "label": "dry turns / h",
+          "key": "jph",
+          "label": "dry jibes / h",
           "value": "16.7"
         },
         {
@@ -3289,15 +3189,6 @@
           "right": "of 31 jibes · 3 clean",
           "star": true,
           "touchdown": 8
-        },
-        {
-          "fellIn": 1,
-          "flewThrough": 0,
-          "kind": "tacks",
-          "label": "tacks",
-          "right": "of 1 tack",
-          "star": false,
-          "touchdown": 0
         }
       ],
       "dateLine": "",
@@ -3310,8 +3201,7 @@
       },
       "heroOptions": [
         "clean",
-        "max2s",
-        "tacks"
+        "max2s"
       ],
       "legend": [
         "flew through",
@@ -3327,8 +3217,8 @@
         },
         {
           "clean": false,
-          "key": "tph",
-          "label": "dry turns / h",
+          "key": "jph",
+          "label": "dry jibes / h",
           "value": "16.7"
         },
         {
@@ -3379,32 +3269,22 @@
           "flewThrough": 11,
           "kind": "jibes",
           "label": "jibes",
-          "right": "of 31 jibes · 3 clean",
-          "star": true,
-          "touchdown": 8
-        },
-        {
-          "fellIn": 1,
-          "flewThrough": 0,
-          "kind": "tacks",
-          "label": "tacks",
           "right": null,
           "star": false,
-          "touchdown": 0
+          "touchdown": 8
         }
       ],
       "dateLine": "",
       "falls": [],
       "hero": {
-        "kind": "tacks",
-        "sub": "0 dry · beside 31 jibes",
-        "unit": "tack",
-        "value": "1"
+        "kind": "clean",
+        "sub": "of 31 jibes",
+        "unit": "clean jibes",
+        "value": "3"
       },
       "heroOptions": [
         "clean",
-        "max2s",
-        "tacks"
+        "max2s"
       ],
       "legend": [
         "flew through",
@@ -3420,8 +3300,8 @@
         },
         {
           "clean": false,
-          "key": "tph",
-          "label": "dry turns / h",
+          "key": "jph",
+          "label": "dry jibes / h",
           "value": "16.7"
         },
         {
@@ -3476,36 +3356,26 @@
     "clean": {
       "bars": [
         {
-          "fellIn": 10,
+          "fellIn": 11,
           "flewThrough": 42,
           "kind": "jibes",
           "label": "jibes",
           "right": null,
           "star": false,
           "touchdown": 4
-        },
-        {
-          "fellIn": 1,
-          "flewThrough": 0,
-          "kind": "tacks",
-          "label": "tacks",
-          "right": "of 1 tack",
-          "star": false,
-          "touchdown": 0
         }
       ],
       "dateLine": "",
       "falls": [],
       "hero": {
         "kind": "clean",
-        "sub": "of 56 jibes",
+        "sub": "of 57 jibes",
         "unit": "clean jibes",
         "value": "25"
       },
       "heroOptions": [
         "clean",
-        "max2s",
-        "tacks"
+        "max2s"
       ],
       "legend": [
         "flew through",
@@ -3521,8 +3391,8 @@
         },
         {
           "clean": false,
-          "key": "tph",
-          "label": "dry turns / h",
+          "key": "jph",
+          "label": "dry jibes / h",
           "value": "24.5"
         },
         {
@@ -3575,22 +3445,13 @@
     "max2s": {
       "bars": [
         {
-          "fellIn": 10,
+          "fellIn": 11,
           "flewThrough": 42,
           "kind": "jibes",
           "label": "jibes",
-          "right": "of 56 jibes · 25 clean",
+          "right": "of 57 jibes · 25 clean",
           "star": true,
           "touchdown": 4
-        },
-        {
-          "fellIn": 1,
-          "flewThrough": 0,
-          "kind": "tacks",
-          "label": "tacks",
-          "right": "of 1 tack",
-          "star": false,
-          "touchdown": 0
         }
       ],
       "dateLine": "",
@@ -3603,8 +3464,7 @@
       },
       "heroOptions": [
         "clean",
-        "max2s",
-        "tacks"
+        "max2s"
       ],
       "legend": [
         "flew through",
@@ -3620,8 +3480,8 @@
         },
         {
           "clean": false,
-          "key": "tph",
-          "label": "dry turns / h",
+          "key": "jph",
+          "label": "dry jibes / h",
           "value": "24.5"
         },
         {
@@ -3668,36 +3528,26 @@
     "tacks": {
       "bars": [
         {
-          "fellIn": 10,
+          "fellIn": 11,
           "flewThrough": 42,
           "kind": "jibes",
           "label": "jibes",
-          "right": "of 56 jibes · 25 clean",
-          "star": true,
-          "touchdown": 4
-        },
-        {
-          "fellIn": 1,
-          "flewThrough": 0,
-          "kind": "tacks",
-          "label": "tacks",
           "right": null,
           "star": false,
-          "touchdown": 0
+          "touchdown": 4
         }
       ],
       "dateLine": "",
       "falls": [],
       "hero": {
-        "kind": "tacks",
-        "sub": "0 dry · beside 56 jibes",
-        "unit": "tack",
-        "value": "1"
+        "kind": "clean",
+        "sub": "of 57 jibes",
+        "unit": "clean jibes",
+        "value": "25"
       },
       "heroOptions": [
         "clean",
-        "max2s",
-        "tacks"
+        "max2s"
       ],
       "legend": [
         "flew through",
@@ -3713,8 +3563,8 @@
         },
         {
           "clean": false,
-          "key": "tph",
-          "label": "dry turns / h",
+          "key": "jph",
+          "label": "dry jibes / h",
           "value": "24.5"
         },
         {

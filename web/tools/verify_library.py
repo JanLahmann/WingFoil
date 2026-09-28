@@ -573,8 +573,10 @@ def check_digest_fidelity() -> None:
 
     # Known reference numbers for this session (web/README.md quotes the same ones).
     # 30 → 32 with engine 0.21.0: two attempted turns that ended in the water are counted
-    # as turns now (ADR-028); both were starboard entries, neither kept its speed.
-    check("  known: 32 counted turns", d["turns"]["counted"], 32)
+    # as turns now (ADR-028); both were starboard entries, neither kept its speed. 32 → 31
+    # with engine 0.27.0 (ADR-037): one of the two was a crash that rounded up 60° short of
+    # the wind, and an aborted tack now has to have reached the no-go zone.
+    check("  known: 31 counted turns", d["turns"]["counted"], 31)
     check("  known: 23 flights", d["flightCount"], 23)
     check("  known: 12.764 km", d["distanceKm"], 12.764)
     check("  known: spot name", d["spot"], "Nago Torbole Windsurfen")
@@ -594,12 +596,14 @@ def check_digest_fidelity() -> None:
     check("  hand-counted starboard successes", by["starboard"]["successes"],
           hand["starboard"][1])
     # Explicit, so a change to the counting rule cannot quietly re-baseline the test.
+    # Engine 0.27.0 (ADR-037): the starboard aborted tack at 08:32 is a crash that rounded up,
+    # 60 deg short of the wind, and is no longer a turn -- 18 -> 17 entries.
     check("  known: port 14 entries / 2 clean", (by["port"]["entries"], by["port"]["successes"]),
           (14, 2))
-    check("  known: starboard 18 entries / 2 clean",
-          (by["starboard"]["entries"], by["starboard"]["successes"]), (18, 2))
+    check("  known: starboard 17 entries / 2 clean",
+          (by["starboard"]["entries"], by["starboard"]["successes"]), (17, 2))
     check("  known: port clean 14.29 %", by["port"]["successPct"], 14.29)
-    check("  known: starboard clean 11.11 %", by["starboard"]["successPct"], 11.11)
+    check("  known: starboard clean 11.76 %", by["starboard"]["successPct"], 11.76)
     # The two sides must add up to the engine's own counted total.
     check("  sides sum to turnsCounted",
           by["port"]["entries"] + by["starboard"]["entries"] + by["unknown"]["entries"],
