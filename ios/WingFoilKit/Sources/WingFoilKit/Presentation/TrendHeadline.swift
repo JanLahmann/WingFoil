@@ -183,8 +183,9 @@ public enum TrendHeadline {
     static func percent(_ value: Double) -> String { String(format: "%.0f %%", value) }
 }
 
-/// **The season line at the top of Trends**: weeks on the water in a row, now and at best,
-/// and the clean jibes of this month. Built from the sessions-per-week buckets and the
+/// **The season line at the top of Trends**: weeks on the water in a row, now and at best
+/// (the season's best, or the all-time best on the All range), and the clean jibes of this
+/// month. Built from the sessions-per-week buckets and the
 /// month's own sessions; nil when there is nothing worth saying.
 public enum SeasonLine {
 
@@ -211,18 +212,31 @@ public enum SeasonLine {
         return best
     }
 
-    /// `weekCounts` oldest first, the last one the current week. `cleanJibesThisMonth` is
-    /// nil when no session this month could count them.
-    public static func text(weekCounts: [Int], cleanJibesThisMonth: Int?) -> String? {
+    /// Which weeks the best run is counted over, and so what the line calls it.
+    public enum Scope: Sendable {
+        /// The season's weeks: "your best run this season". Every range but All.
+        case season
+        /// Every week since the first session: "your best run ever". The All range
+        /// (Jan, 28 Sep 2026) — a rider looking at everything asks about everything.
+        case allTime
+
+        var phrase: String { self == .season ? "this season" : "ever" }
+    }
+
+    /// `weekCounts` oldest first, the last one the current week, over the weeks `scope`
+    /// names. `cleanJibesThisMonth` is nil when no session this month could count them.
+    public static func text(weekCounts: [Int], cleanJibesThisMonth: Int?,
+                            scope: Scope = .season) -> String? {
         let current = currentStreak(weekCounts)
         let best = bestStreak(weekCounts)
+        let phrase = scope.phrase
         var parts: [String] = []
         if current >= 2 {
             parts.append(String(current) + " weeks on the water in a row.")
-            parts.append(current >= best ? "That is your best run this season."
-                         : "Your best this season is " + String(best) + ".")
+            parts.append(current >= best ? "That is your best run " + phrase + "."
+                         : "Your best " + phrase + " is " + String(best) + ".")
         } else if best >= 2 {
-            parts.append("Your best run this season is " + String(best) + " weeks in a row.")
+            parts.append("Your best run " + phrase + " is " + String(best) + " weeks in a row.")
         }
         if let clean = cleanJibesThisMonth, clean > 0 {
             parts.append(String(clean) + (clean == 1 ? " clean jibe" : " clean jibes")

@@ -151,4 +151,20 @@ import Testing
                 == "Your best run this season is 3 weeks in a row.")
         #expect(SeasonLine.text(weekCounts: [1, 0, 1], cleanJibesThisMonth: 0) == nil)
     }
+
+    /// The All range counts the best run over every week, and says "ever".
+    @Test func allTimeText() {
+        #expect(SeasonLine.text(weekCounts: [1, 1, 0, 1, 1, 1], cleanJibesThisMonth: 40,
+                                scope: .allTime)
+                == "3 weeks on the water in a row. That is your best run ever. "
+                    + "40 clean jibes this month.")
+        #expect(SeasonLine.text(weekCounts: [1, 1, 1, 1, 1, 0, 0, 1, 1], cleanJibesThisMonth: nil,
+                                scope: .allTime)
+                == "2 weeks on the water in a row. Your best ever is 5.")
+        #expect(SeasonLine.text(weekCounts: [1, 1, 1, 0, 0, 1], cleanJibesThisMonth: 2,
+                                scope: .allTime)
+                == "Your best run ever is 3 weeks in a row. 2 clean jibes this month.")
+        #expect(SeasonLine.text(weekCounts: [1, 0, 1], cleanJibesThisMonth: nil,
+                                scope: .allTime) == nil)
+    }
 }

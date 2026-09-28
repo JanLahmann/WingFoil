@@ -76,6 +76,7 @@ extension UsageCounters {
         case trends
         case records
         case periods
+        case sessionStory
         // Share
         case shareCard
         case clipExported
@@ -114,7 +115,8 @@ extension UsageCounters {
             case .mapToWatch, .windToWatch, .chooseWatch, .appleWatchRecording: .watch
             case .sessionOpened, .reanalysis, .tuning, .windsurfMode, .turnDirection: .analysis
             case .turnPage, .flightEndPage, .replay, .recordReplay, .mapStyle, .fullScreenMap,
-                 .filters, .grouping, .sessionPaging, .trends, .records, .periods: .reading
+                 .filters, .grouping, .sessionPaging, .trends, .records, .periods,
+                 .sessionStory: .reading
             case .shareCard, .clipExported, .videoExported, .fitShare, .sendToDeveloper,
                  .periodShare: .share
             case .rename, .riderAssign, .gearSpots, .deleteSession, .restoreDeleted,
@@ -161,6 +163,7 @@ extension UsageCounters {
             case .trends: "Trends"
             case .records: "Records"
             case .periods: "Periods"
+            case .sessionStory: "Session story and record chips"
             case .shareCard: "Share card"
             case .clipExported: "Replay clip saved"
             case .videoExported: "Session video"
@@ -194,7 +197,8 @@ extension UsageCounters {
         public var channel: HelpChannel {
             switch self {
             case .importHealth, .healthAutoImport, .appleWatchRecording, .filters, .grouping,
-                 .videoExported, .sendToDeveloper, .startOver, .healthExport, .usageReport:
+                 .videoExported, .sendToDeveloper, .startOver, .healthExport, .usageReport,
+                 .sessionStory:
                 .beta
             case .watchTransfer, .mapToWatch, .windToWatch, .chooseWatch, .tuning,
                  .windsurfMode, .iCloudSync:
