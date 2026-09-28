@@ -199,7 +199,8 @@ struct SessionDetailView: View {
                         Text(NotASessionNote.line(
                             reason: detail.analysis.summary.notASessionReason,
                             durationS: detail.analysis.summary.durationS,
-                            distanceKm: detail.analysis.summary.distanceKm))
+                            distanceKm: detail.analysis.summary.distanceKm,
+                            sport: detail.analysis.summary.landSport))
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)

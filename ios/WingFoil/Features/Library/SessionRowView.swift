@@ -128,7 +128,7 @@ struct SessionRowView: View {
                 // provisional row already carries its own blue note above, and one row does
                 // not need two ways of saying "not yet".
                 if !row.isSession, !row.isProvisional {
-                    Text(NotASessionNote.tag)
+                    Text(NotASessionNote.tag(for: row.sessionVerdictReason))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
