@@ -288,14 +288,14 @@ struct ShareComposerView: View {
     private var sendToDeveloperRow: some View {
         VStack(alignment: .leading, spacing: 4) {
             Button { showSendToDeveloper = true } label: {
-                Label("Send this session to us",
+                Label(AppShellCopy.Share.sendToUs,
                       systemImage: "text.bubble.badge.clock")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
             .controlSize(.large)
 
-            Text("A number looks wrong? Send the recording with your notes.")
+            Text(AppShellCopy.Share.sendToUsLine)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .center)

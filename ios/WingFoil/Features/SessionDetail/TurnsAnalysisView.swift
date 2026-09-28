@@ -312,11 +312,14 @@ struct TurnsAnalysisView: View {
     private var footnote: some View {
         let rejected = detail.analysis.summary.turns.rejected
         return VStack(alignment: .leading, spacing: 3) {
-            Text("Flew through / touchdown / fell in is the outcome. "
-                 + "It says how the turn ended. "
-                 + "Held is how much of your entry speed you kept through it, 0 to 100 %.\n\n"
-                 + "Clean: you flew through, held at least 70 % of your entry speed, "
-                 + "then 10 quiet seconds on the foil.")
+            // The two numbers are this analysis' own, the way the browser's caption reads
+            // them: 70 % and 10 s at the published defaults.
+            let config = detail.analysis.config
+            Text(AppShellCopy.Turns.outcomeAndHeld + "\n\n"
+                 + AppShellCopy.fill(AppShellCopy.Turns.cleanRule,
+                                     ["pct": String(Int(config.turnSuccessPct.rounded())),
+                                      "quiet": String(Int((config.turnCleanQuietS ?? 10)
+                                                              .rounded()))]))
             if rejected > 0 {
                 Text(String(rejected) + (rejected == 1 ? " course change is" : " course changes are")
                      + " left out here, as they are everywhere else. "

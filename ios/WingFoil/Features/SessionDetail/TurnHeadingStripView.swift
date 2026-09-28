@@ -42,8 +42,7 @@ struct TurnHeadingStripView: View {
                 .font(.caption2.weight(.medium))
                 .foregroundStyle(.secondary)
             if angles.isEmpty {
-                Text("No usable bearings through this window. "
-                     + "The steps were shorter than the receiver's own scatter.")
+                Text(AppShellCopy.TurnPage.noBearings)
                     .font(.caption2)
                     .foregroundStyle(.readableSecondary)
                     .fixedSize(horizontal: false, vertical: true)

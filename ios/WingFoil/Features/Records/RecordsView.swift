@@ -109,10 +109,7 @@ struct RecordsView: View {
                     } header: {
                         Text("Session records")
                     } footer: {
-                        Text("These are your best afternoons rather than your best "
-                             + "windows, so nothing here is marked estimated. A poor "
-                             + "recording can get a speed wrong, but the jibe count and "
-                             + "the minutes are not about speed.")
+                        Text(AppShellCopy.Records.sessionRecordsFooter)
                     }
                 }
                 FeedbackFooter.section
@@ -219,19 +216,18 @@ struct RecordsView: View {
     /// wind that was never the problem (docs/review-checklist.md, pattern G).
     private var emptyMessage: String {
         if store.sessions.isEmpty {
-            return "Import or sync a session and its speed records appear here."
+            return AppShellCopy.Records.emptyLibrary
         }
         if store.hasOnlyExampleSessions { return ExampleOnlyNote.records }
         if store.speedRecordPolicy == .onlyVerified {
-            return "No measured speed record yet. These recordings worked their speed out "
-                + "from positions. Settings has the other two answers."
+            return AppShellCopy.Records.noMeasured
         }
-        return "No qualifying speed window under this filter."
+        return AppShellCopy.Records.noQualifying
     }
 
     private var emptyTitle: String {
         guard loaded else { return "Loading…" }
-        return store.hasOnlyExampleSessions ? ExampleOnlyNote.recordsTitle : "No records yet"
+        return store.hasOnlyExampleSessions ? ExampleOnlyNote.recordsTitle : AppShellCopy.Records.noRecords
     }
 
     private var recordsHeader: some View { RecordTableHeader() }
@@ -244,14 +240,11 @@ struct RecordsView: View {
         let certified = records.filter(\.certified).count
         // "Uncertified" is the rider's word for a class-(c) GP3S source: a recording with
         // no Doppler speed channel of its own. It is the badge the row already wears.
-        let head = "Doppler speed, GP3S windows. " + String(certified) + " of "
-            + String(records.count) + " have measured speed. "
-        let tail = "Measured speed comes from the watch's own speed channel. "
-            + "Speed estimated from positions is marked.\n\n"
-            + "The dot on a record's name says how fresh it is. "
-            + "Filled within a month. Hollow within the season. "
-            + "Faint when it is older than 6 months."
-        return head + tail
+        let head = AppShellCopy.fill(AppShellCopy.Records.speedHead,
+                                     ["certified": String(certified),
+                                      "count": String(records.count)])
+        return head + " " + AppShellCopy.Records.speedMeasured + "\n\n"
+            + AppShellCopy.Records.speedFreshness
     }
 
     private func title(of sessionID: String) -> String {

@@ -108,7 +108,7 @@ struct GearView: View {
     private var spotsSection: some View {
         Section {
             if visibleSpots.isEmpty {
-                Text("No spots yet")
+                Text(AppShellCopy.Gear.noSpots)
                     .foregroundStyle(.secondary)
                     .font(.footnote)
             } else {
@@ -139,10 +139,8 @@ struct GearView: View {
         } header: {
             Label { Text("Spots") } icon: { Image(systemName: "mappin.and.ellipse") }
         } footer: {
-            Text("Tap a spot to rename it. A name you type sticks through a re-cluster. "
-                 + "Sessions starting within " + String(Int(SpotClusterer.defaultRadiusM))
-                 + " m of each other are one spot. Names come from the map when the "
-                 + "network allows.")
+            Text(AppShellCopy.fill(AppShellCopy.Gear.spotsFooter,
+                                   ["radius": String(Int(SpotClusterer.defaultRadiusM))]))
         }
     }
 
@@ -268,19 +266,19 @@ private struct GearEditor: View {
                         ForEach(GearKind.allCases) { Text($0.label).tag($0) }
                     }
                 } footer: {
-                    Text("e.g. \"Duotone Unit 5 m\", \"Armstrong HA 925\".")
+                    Text(AppShellCopy.Gear.nameExample)
                 }
                 Section("Notes") {
-                    TextField("Size, year, anything worth remembering",
+                    TextField(AppShellCopy.Gear.notesPlaceholder,
                               text: Binding(get: { gear.notes ?? "" },
                                             set: { gear.notes = $0.isEmpty ? nil : $0 }),
                               axis: .vertical)
                         .lineLimit(2...4)
                 }
                 Section {
-                    Toggle("In the quiver", isOn: $gear.active)
+                    Toggle(AppShellCopy.Gear.inTheQuiver, isOn: $gear.active)
                 } footer: {
-                    Text("Turn off to retire it without losing its sessions.")
+                    Text(AppShellCopy.Gear.retire)
                 }
             }
             .navigationTitle(gear.name.isEmpty ? "New gear" : gear.name)

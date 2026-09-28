@@ -497,9 +497,9 @@ struct LibraryView: View {
     /// being wrong about him, and the way out is one button, not a hunt through the menu.
     private var noMatchState: some View {
         ContentUnavailableView {
-            Label("No session matches these filters", systemImage: "line.3.horizontal.decrease.circle")
+            Label(AppShellCopy.Library.noMatch, systemImage: "line.3.horizontal.decrease.circle")
         } description: {
-            Text("Nothing in the library answers to all of them at once.")
+            Text(AppShellCopy.Library.noMatchLine)
         } actions: {
             Button("Clear filters") { filter = LibraryListFilter() }
                 .buttonStyle(.borderedProminent)

@@ -333,11 +333,8 @@ private struct DivergenceDetailCard: View {
     }
 
     private var advice: String {
-        let base = "Trust the phone's numbers. It reads the whole session back afterwards. "
-            + "The watch has to work these out live on your wrist, as you ride. "
-            + "Nothing is wrong with your session."
+        let base = AppShellCopy.SessionLog.trustThePhone
         guard takeoffOnly else { return base }
-        return base + " Takeoff and pump counting is where the two differ most. "
-            + "Keep the watch app up to date to narrow the gap."
+        return base + " " + AppShellCopy.SessionLog.takeoffsDiffer
     }
 }

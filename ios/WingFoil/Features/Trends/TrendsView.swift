@@ -84,12 +84,11 @@ struct TrendsView: View {
                         // a filter really is set.
                         ContentUnavailableView(
                             store.hasOnlyExampleSessions
-                                ? ExampleOnlyNote.trendsTitle : "Nothing in this range",
+                                ? ExampleOnlyNote.trendsTitle : AppShellCopy.Trends.nothingInRange,
                             systemImage: "chart.xyaxis.line",
                             description: Text(store.hasOnlyExampleSessions
                                               ? ExampleOnlyNote.trends
-                                              : "Widen the range or clear the spot and "
-                                                + "gear filters."))
+                                              : AppShellCopy.Trends.widenTheRange))
                             .frame(maxWidth: .infinity, minHeight: 220)
                     } else {
                         summaryStrip
@@ -238,7 +237,7 @@ struct TrendsView: View {
         // then the weeks. Pumps and the two port/starboard charts fold under **More**.
         // Every chart carries a one-line headline out of `TrendHeadline`: this month against
         // the one before, and "your best month yet" when it is.
-        TrendChart(title: "On foil", unit: "%", points: points,
+        TrendChart(title: AppShellCopy.Trends.onFoil, unit: "%", points: points,
                    tone: DesignTokens.Phase.flying,
                    value: \.foilPct, domain: 0...100, headline: TrendHeadline.onFoil)
         // Clean jibes and the rates are **counts of maneuvers**, not ladder verdicts, so they
@@ -247,11 +246,10 @@ struct TrendsView: View {
         // series (the same misread app-ui-review.md §5.2 caught on the entry-tack chart).
         // A metric with no vocabulary of its own takes the app's own ink — which is what
         // the analyzer's `role: "primary"` means, and what the week chart below already does.
-        TrendChart(title: "Clean jibes", unit: "per session", points: points,
+        TrendChart(title: AppShellCopy.Trends.cleanJibes, unit: "per session", points: points,
                    tone: Color.accentColor,
                    value: { $0.cleanJibes.map(Double.init) },
-                   note: "Jibes that flew through, held at least 70 % of their entry "
-                       + "speed, then 10 quiet seconds on the foil.",
+                   note: AppShellCopy.Trends.cleanJibesNote,
                    headline: TrendHeadline.cleanJibes)
         // The one speed line on the page, in the rider's unit like every other speed in
         // both apps (Settings → Units). The series itself is converted, not just the
@@ -267,14 +265,14 @@ struct TrendsView: View {
         // rule drops out reads as "this session cannot report this", which is the honest
         // sentence: the recording did not measure a speed.
         let speedPoints = plottableSpeedIDs
-        TrendChart(title: "Best 2 s", unit: Fmt.knUnit, points: points,
+        TrendChart(title: AppShellCopy.Trends.best2s, unit: Fmt.knUnit, points: points,
                    tone: DesignTokens.Phase.flying,
                    value: { point in
                        guard speedPoints.contains(point.sessionId) else { return nil }
                        return point.best2sKn.map { Speed.value($0) }
                    },
                    uncertified: { !$0.certified },
-                   note: "Your quickest two seconds of the session.",
+                   note: AppShellCopy.Trends.best2sNote,
                    headline: TrendHeadline.best2s(unit: Fmt.knUnit))
             // The second screenshot anchor on this page, and the reason is the unit: this
             // is the only chart here that moves when a rider picks km/h, and it sits below
@@ -283,49 +281,47 @@ struct TrendsView: View {
             .id("best2s")
         // Foil time and longest flight are both *flight* facts and therefore the phase teal
         // (docs/presentation/layers-map-colour-type.md "Colour and glyph vocabulary").
-        TrendChart(title: "Longest flight", unit: "min", points: points,
+        TrendChart(title: AppShellCopy.Trends.longestFlight, unit: "min", points: points,
                    tone: DesignTokens.Phase.flying,
                    value: { $0.longestFlightS.map { $0 / 60 } },
                    headline: TrendHeadline.longestFlight)
         // **"Flew-through rate", over every counted turn** — the same metric and the same
         // title the analyzer's chart carries. The stricter reading is "Clean jibes" above.
-        TrendChart(title: "Flew-through rate", unit: "%", points: points,
+        TrendChart(title: AppShellCopy.Trends.flewThrough, unit: "%", points: points,
                    tone: DesignTokens.Outcome.flew,
                    value: \.flewThroughPct, domain: 0...100,
-                   note: "Turns that never lost the foil. Every counted turn, not "
-                       + "jibes alone.",
+                   note: AppShellCopy.Trends.flewThroughNote,
                    headline: TrendHeadline.flewThrough)
         // **Rates are additive**, and the titles spell the codes out (pattern H): a rider
         // who has not met "CPH" reads what it counts, and the code stays beside it for the
         // one who has. The analyzer's charts still carry the bare codes until the web round.
-        TrendChart(title: "Clean jibes an hour (CPH)", unit: "clean jibes / h",
+        TrendChart(title: AppShellCopy.Trends.cph, unit: "clean jibes / h",
                    points: points, tone: Color.accentColor,
                    value: \.cleanJibesPerHour,
                    headline: TrendHeadline.cleanJibesPerHour)
-        TrendChart(title: "Dry jibes an hour (JPH)", unit: "jibes / h", points: points,
+        TrendChart(title: AppShellCopy.Trends.jph, unit: "jibes / h", points: points,
                    tone: Color.accentColor,
                    value: \.jibesPerHour,
-                   note: "Jibes you sailed out of without falling in.",
+                   note: AppShellCopy.Trends.jphNote,
                    headline: TrendHeadline.jibesPerHour)
-        TrendChart(title: "Dry turns an hour (TPH)", unit: "turns / h", points: points,
+        TrendChart(title: AppShellCopy.Trends.tph, unit: "turns / h", points: points,
                    tone: Color.accentColor,
                    value: \.turnsPerHour,
-                   note: "Every counted turn you stayed dry through.",
+                   note: AppShellCopy.Trends.tphNote,
                    headline: TrendHeadline.turnsPerHour)
         weeklyChart
         DisclosureGroup(isExpanded: $showMore) {
             VStack(alignment: .leading, spacing: 18) {
-                TrendChart(title: "Pumps to takeoff", unit: "pumps", points: points,
+                TrendChart(title: AppShellCopy.Trends.pumps, unit: "pumps", points: points,
                            tone: DesignTokens.Effort.window,
                            value: \.avgPumpsToTakeoff,
-                           note: "Only sessions recorded with the CleanJibe watch app "
-                               + "count your pumps.",
+                           note: AppShellCopy.Trends.pumpsNote,
                            headline: TrendHeadline.pumpsToTakeoff)
                 // The port share is a side, so it takes the side ink.
-                TrendChart(title: "Port / starboard", unit: "% port", points: points,
+                TrendChart(title: AppShellCopy.Trends.portShare, unit: "% port", points: points,
                            tone: DesignTokens.Side.port,
                            value: \.portSharePct, domain: 0...100, reference: 50,
-                           note: "50 % is even. The gap is the side you avoid.",
+                           note: AppShellCopy.Trends.portShareNote,
                            headline: TrendHeadline.portShare)
                 sideSuccessChart
             }
@@ -383,13 +379,12 @@ struct TrendsView: View {
         let total = series.reduce(0) { $0 + $1.values.count }
         return VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline) {
-                Text("Flew through by entry tack").font(.subheadline.weight(.semibold))
+                Text(AppShellCopy.Trends.bySide).font(.subheadline.weight(.semibold))
                 Spacer()
                 Text("% flew through").font(.caption).foregroundStyle(.secondary)
             }
             if total == 0 {
-                Text("No session in this range has turns with a usable entry tack. "
-                     + "That needs a wind direction the app can trust.")
+                Text(AppShellCopy.Trends.bySideEmpty)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
@@ -424,8 +419,7 @@ struct TrendsView: View {
                                          values: line.values.map(\.value),
                                          format: { String(format: "%.0f %%", $0) })
                 }.joined(separator: ". "))
-                Text("Each line splits your turns by the tack you came in on. Course "
-                     + "changes do not count.")
+                Text(AppShellCopy.Trends.bySideNote)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
@@ -445,7 +439,7 @@ struct TrendsView: View {
     /// lands on the Monday the bucket is named after.
     private var weeklyChart: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Sessions per week").font(.subheadline.weight(.semibold))
+            Text(AppShellCopy.Trends.perWeek).font(.subheadline.weight(.semibold))
             Chart(weeks) { week in
                 BarMark(x: .value("Week", week.weekStart, unit: .weekOfYear),
                         y: .value("Sessions", week.count))
@@ -462,10 +456,12 @@ struct TrendsView: View {
                                                       "session", "sessions"))
             // Concise: the count. Extensive adds how a week is cut (Settings → How much
             // to say); the calendar rule itself is docs/presentation/trends-periods.md.
-            ExplainedFootnote(line: String(weeks.filter { $0.count > 0 }.count) + " of "
-                                  + String(weeks.count) + " weeks on the water.",
+            ExplainedFootnote(line: AppShellCopy.fill(
+                                  AppShellCopy.Trends.weeksOnTheWater,
+                                  ["ridden": String(weeks.filter { $0.count > 0 }.count),
+                                   "weeks": String(weeks.count)]),
                               topic: nil,
-                              more: ["A week runs Monday to Sunday, on your phone's clock."])
+                              more: [AppShellCopy.Trends.weekRuns])
             { _ in }
                 .font(.caption2)
                 .foregroundStyle(.secondary)
