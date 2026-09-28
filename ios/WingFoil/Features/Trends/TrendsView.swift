@@ -171,15 +171,19 @@ struct TrendsView: View {
         }
     }
 
-    /// Weeks in a row and this month's clean jibes, over the season (`SeasonLine`).
+    /// Weeks in a row and this month's clean jibes (`SeasonLine`): over the season on every
+    /// range but All, and over every week on All, where the best run is the all-time one
+    /// (Jan, 28 Sep 2026). `weeks` on All is already every week since the first session.
     private var seasonLine: String? {
         let calendar = Calendar.current
         let month = calendar.dateInterval(of: .month, for: Date())
         let thisMonth = seasonPoints.filter { month?.contains($0.date) ?? false }
         let counted = thisMonth.compactMap(\.cleanJibes)
-        return SeasonLine.text(weekCounts: seasonWeeks.map(\.count),
+        let allTime = range == .all
+        return SeasonLine.text(weekCounts: (allTime ? weeks : seasonWeeks).map(\.count),
                                cleanJibesThisMonth: counted.isEmpty ? nil
-                                   : counted.reduce(0, +))
+                                   : counted.reduce(0, +),
+                               scope: allTime ? .allTime : .season)
     }
 
     // MARK: - Headline numbers

@@ -96,8 +96,11 @@ struct RootView: View {
                 .tag(Tab.records)
                 .tabItem { Label("Records", systemImage: "trophy") }
                 // The records the last import beat, until the rider opens the tab: the
-                // celebration waits on this tab, so the bar says it is there.
+                // celebration waits on this tab, so the bar says it is there. Beta first
+                // (Jan, 28 Sep 2026): the release bar carries no badge.
+                #if BETA
                 .badge(store.recordsBadge)
+                #endif
             TrendsView()
                 .tag(Tab.trends)
                 .tabItem { Label("Trends", systemImage: "chart.xyaxis.line") }

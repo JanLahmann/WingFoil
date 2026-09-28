@@ -104,9 +104,18 @@ struct SessionDetailView: View {
     /// reads the whole library.
     @State private var story: SessionStory?
 
+    ///
+    /// **Beta first** (Jan, 28 Sep 2026; docs/channels.md, "Maps and sharing"): the release
+    /// build tells no story, so it keeps its previous page — no line over the block, no
+    /// record chips, no ribbon on the card, and the caption and the replay's last word fall
+    /// back to the facts (`ShareCaption.line`, `ReplayCommentary.endLine` on a nil story).
     private func tellStory() {
+        #if BETA
         story = row.flatMap { SessionStory.make(session: $0, history: store.sessions,
                                                 policy: store.speedRecordPolicy) }
+        #else
+        story = nil
+        #endif
     }
 
     /// The older and newer session beside this one.
@@ -409,10 +418,15 @@ struct SessionDetailView: View {
                                                startedAt: row.startDate,
                                                timeZone: row.displayZone,
                                                story: story?.line)
+            if story != nil { Usage.record(.sessionStory) }
+            #if BETA
+            // Beta first, with the story (28 Sep 2026): the release keeps the burst on the
+            // Records tab alone.
             if store.takeRecordConfetti(for: row.id) {
                 confetti = (confetti ?? 0) + 1
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
             }
+            #endif
         } catch {
             Usage.failed(.sessionOpened, error: error)
             failure = "\(error)"
