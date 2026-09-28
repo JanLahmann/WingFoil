@@ -151,8 +151,15 @@ app, any .fit, Strava, and the Garmin ZIP last.
    only on a narrow one. A phone needs the switcher; a laptop has the height.
 10. **The whole Garmin history stays the phone's job.** A tab reads a `.zip` only when it
     holds exactly one recording, and says so when it does not.
-11. **The store links live on one page, not on the home page.** `/invite/` holds the Connect
-    IQ link and the TestFlight link. One page to keep current when a channel moves.
+11. **The store links live on two pages: the homepage's chooser and /start/#apps.** Until
+    28 September 2026 they were on /start/ alone. The rebuilt homepage guides each rider to
+    the way in that fits his kit, and a guide that ends in "go to another page for the
+    link" loses the rider it just convinced, so each chooser card carries its buttons. The
+    two addresses live in `web/tools/make_home.py` (`ACTIONS`) and on /start/; a moved
+    channel is two edits. **The homepage is not a copy of the app** (Jan, 28 September
+    2026): it is written for a wingfoiler with no app yet. Its words are the kit's
+    `WelcomeSections`, the list the app's *What CleanJibe does* is drawn from too, and
+    `docs/web-parity/welcome-vs-homepage.md` lists what each door draws.
 12. **The ground under the track is Map or Plain, not Map or Satellite.** The phone has
     Apple's map and Apple's photography; the web draws OpenStreetMap, which has no satellite
     twin, so it offers the two states it actually has. It is off until the rider presses Map, because a background that

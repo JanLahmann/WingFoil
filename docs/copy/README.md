@@ -232,6 +232,24 @@ its twin fails on a line here that no document can reach — `turnKind`, `diverg
 `banner` excepted, none of which an analysis golden can reach; the kit's
 `everyIdTheDocumentCanEmitHasAHome` covers those against the resolver the phone calls.
 
+### `welcome.json`
+
+**Both front doors, in one ordered list** (Jan, 28 September 2026). Written by
+`WelcomeSectionsExportTests` (`COPY_WRITE=1 swift test --filter WelcomeSectionsExportTests`)
+out of the kit's `WelcomeSections`; the app's *What CleanJibe does* reads the kit, and
+`web/tools/make_home.py` renders `web/index.html` and
+`docs/web-parity/welcome-vs-homepage.md` from this file.
+
+```
+sections: [{ id, surfaces: app|web|both, kicker, title, lede, note,
+             items[{ id, term, detail, beta, apps[], actions[{id, title}] }],
+             actions[{id, title}] }]
+```
+
+A `both` section prints the same words on both doors. `make_home.py --check` fails when
+the homepage is stale and when `WelcomeView.swift` types a word a shared section owns.
+Actions are ids; each shell maps them to its own destinations.
+
 ### `help.json`
 
 **The app's whole help catalogue, and the one file here that is rendered rather than
