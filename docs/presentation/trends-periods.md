@@ -222,8 +222,8 @@ Lean/Complete presets any more. What differs is only what is being described.
 | ribbon | clean jibes / h · dry jibes or turns / h · max 2 s · duration · distance | clean jibes / h · dry jibes or turns / h · sessions · time on the water · distance |
 | date line | the session's day and start | the period's span |
 | title default | the session's name | the period's title |
-| artwork | the track outline | **the period's outlines, stacked** |
-| map background | optional, off by default | optional, off by default — **offered only where the period is one place** |
+| artwork | the track outline | **a choice of three**: every outline stacked, one session big, or a collage |
+| background | dark, map or a photo (iOS) | the same three (iOS) — the map **only where the artwork has one ground** |
 | speed disclaimer | on a class-(c) source | never |
 
 - **The story beyond the block is `period.card`** (`library.period_card`, `PeriodCard` in the
@@ -288,6 +288,29 @@ Lean/Complete presets any more. What differs is only what is being described.
       layout points, and every placed vertex. Uniform in both axes, an axis narrower than a
       centimetre imposes no limit, and a stack with no extent at all is placed at one point
       per metre rather than dividing by zero.
+- **Tracks: all sessions, one session, or a collage** (Jan, 28 Sep 2026). A segmented picker
+  under the naming fields, shown for a period of more than one afternoon.
+  - *All sessions* is the stack above, and the default.
+  - *One session* draws one afternoon of the period the way a session card draws it — its
+    outline filling the box, marks and all — picked from a list, newest first, opening on
+    the newest. The numbers stay the period's.
+  - *Collage* gives each afternoon a cell of its own, fitted to itself, row by row in the
+    order they were ridden, a faint tile under each and no marks: a contact sheet of the
+    season. At most **12**, the newest twelve (`TrackCollage.limit` / `.pick`). The column
+    count is the one that gives a track the largest square, ties to fewer columns, and a
+    part-filled last row is centred (`TrackCollage.cells`, `collageCells` in sharecard.js,
+    `collage_cells` in make_presentation_goldens.py), pinned by the `collage` block of
+    `fixtures/periods/outlines.expected.json` (`TrackCollageTests`, `verify_presentation.py`
+    §5e). On the square a collage always takes the full width under the title.
+  - The map follows the artwork: the stack keeps the one-ground rule below, one session has
+    the ground it was ridden on (its own snapshot, framed on its own track), the collage has
+    none.
+- **Backgrounds: dark, map or photo — one component on both cards (iOS).** The session
+  composer and the period composer share `ShareCardDesign` (ios/WingFoil/Features/Share/
+  ShareCardDesign.swift): the shape, the hero picker, a *Background* picker (Dark · Map ·
+  Photo — Photo opens the system photo picker, out of process, nothing stored), the live
+  preview that measures the track box, the render and the share button. The two sheets differ
+  only in their data. The web card has no photo background on either card.
 - **The map background is offered only when the period is one place.** A period has no single
   ground *in general*: its sessions may be 15 km apart, and the framing question ("which
   rectangle of the earth?") then has no answer a card can take for granted — the union
@@ -317,8 +340,12 @@ Lean/Complete presets any more. What differs is only what is being described.
     be. iOS takes one `MKMapSnapshotter` image for the whole period
     (`ShareCardMapper.makeStack`); the web composites one OSM tile grid (`buildStackMap`).
 - **Entry points**: the Periods screen on iOS (a share button on every period and on the
-  custom range), and the Periods section of the Records tab on the web (a "Share card"
-  button per period), both opening the composer the session card already uses.
+  custom range), and the Periods page on the web (a "Share this period" button per period),
+  both opening the composer the session card already uses. **And Trends itself** (28 Sep
+  2026): a Share button in the toolbar beside the Periods calendar (on the web, above the
+  totals) makes the card of the range the charts show — *Season* is the season Periods lists,
+  *4 w* and *All* (and the web's custom range) are ranges of the rider's own, under the same
+  spot and gear filter.
 - **The rider's title and caption are transient on both platforms** here, unlike the session
   card's on iOS: a period is not a row in the library, so there is nothing to rename. The web
   remembers them per period key in `localStorage`, the way it already does per session.

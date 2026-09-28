@@ -70,6 +70,21 @@ export function rangeKey() {
   return chosen === "custom" ? `custom:${from}:${to}` : chosen;
 }
 
+/**
+ * The chosen range as a period question (Jan, 28 Sep 2026): the Trends share button asks
+ * for the card of exactly what the charts show. `season` names the season Periods lists, so
+ * the card made from Trends is the one made from Periods; every other range is a span of
+ * `YYYY-MM-DD` days, either end open, which Python turns into a period of its own.
+ */
+export function rangeSpan() {
+  const today = iso(new Date());
+  if (chosen === "custom") return { season: null, from: from || null, to: to || null };
+  if (chosen === "all") return { season: null, from: null, to: null };
+  const first = since();
+  return { season: chosen === "season" && first ? first.slice(0, 4) : null,
+           from: first, to: today };
+}
+
 /** True while the charts are showing everything the library holds. */
 export const rangeIsAll = () => chosen === "all";
 

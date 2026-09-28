@@ -42,28 +42,10 @@ struct ShareComposerView: View {
     @Environment(SessionStore.self) private var store
 
     @State private var payload = Payload.card
-    @State private var shape = ShareCardStats.Shape.portrait
-    /// Which number the card is headlined with (layout B v2): clean jibes, the best 2 s or
-    /// the tacks. Seeded from the last card the rider exported (`ShareCardHeroStore`) and
-    /// written back on every tap — a preference, not a per-session choice.
-    @State private var hero = ShareCardHeroStore.load(from: .standard)
-    @State private var pickedItem: PhotosPickerItem?
-    @State private var photo: Image?
-    @State private var photoFailed = false
-    /// Whether the rider wants the ground under his track. Seeded from the last card he
-    /// exported (`ShareCardMapStore`) and written back on every tap — a preference, not a
-    /// per-session choice. Off until asked: it is the only part of making a card that talks
-    /// to a server.
-    @State private var wantsMap = ShareCardMapStore.load(from: .standard)
-    /// The snapshot and the track projected onto it, once it has arrived.
-    @State private var map: ShareCardMap?
-    /// Where the card's own layout put the track, reported by the preview. Zero until the
-    /// first layout pass, and the snapshot waits for it — see `ShareCardMap`.
-    @State private var trackBox: CGRect = .zero
-    @State private var rendered: Image?
-    /// The same picture, kept as the PNG source for the one thing that needs bytes rather
-    /// than a `SwiftUI.Image`: the feedback mail's attachment.
-    @State private var renderedImage: UIImage?
+    /// Shape, big number, background, photo, map and the rendered PNG — everything the card
+    /// composer shares with the period card's (`ShareCardDesign`). What stays here is the
+    /// session's own: its numbers, its outline, its ground, and a title that renames it.
+    @State private var design = ShareCardDesign()
     /// The beta's counter fires once per composer, not once per re-render (`render`).
     @State private var countedCard = false
     /// The session video's own sheet — the picker, the progress bar and the finished file
@@ -73,8 +55,6 @@ struct ShareComposerView: View {
     /// The analysis mail's own sheet, raised by the row under the switcher. BETA.
     @State private var showSendToDeveloper = false
     #endif
-    /// Width the sheet has for the preview; 0 until the first layout pass.
-    @State private var availableWidth: CGFloat = 0
     /// Off by default — see the type comment. Flipping it re-runs the scrub.
     @State private var includeAccelerometer = false
     @State private var fitFile: (url: URL, bytes: Int)?
@@ -106,7 +86,7 @@ struct ShareComposerView: View {
     /// analysis behind the sheet is still loading, which the card degrades for on its own.
     private var stats: ShareCardStats {
         ShareCardStats.make(row: row, title: displayTitle,
-                            metrics: metrics, hero: hero,
+                            metrics: metrics, hero: design.hero,
                             note: noteDraft,
                             // Settings → Speed records. A card is an all-time claim in a
                             // chat thread, so "Only verified" takes the record cell off a
@@ -133,10 +113,11 @@ struct ShareComposerView: View {
     }
 
     private var card: ShareCardView {
-        ShareCardView(stats: stats, shape: shape, thumbnail: thumbnail, photo: photo,
-                      map: photo == nil ? map : nil,
+        ShareCardView(stats: stats, shape: design.shape, thumbnail: thumbnail,
+                      photo: design.cardPhoto,
+                      map: design.cardPhoto == nil ? design.map : nil,
                       recordBadge: story?.cardBadge,
-                      onTrackFrame: { trackBox = $0 })
+                      onTrackFrame: { [design] in design.trackBox = $0 })
     }
 
 
@@ -183,7 +164,7 @@ struct ShareComposerView: View {
                     // with that card attached and the session's own stamp in the text.
                     FeedbackMailRow(title: FeedbackDoors.share,
                                     systemImage: "exclamationmark.bubble",
-                                    session: row, card: { renderedImage?.pngData() })
+                                    session: row, card: { design.renderedImage?.pngData() })
                         .font(.footnote)
                         .padding(.top, 4)
                 }
@@ -233,7 +214,6 @@ struct ShareComposerView: View {
             // work, but a card is a handful of shapes and some text — cheap enough to redo
             // on a shape flip rather than caching two of them.
             .task(id: renderKey) { render() }
-            .task(id: pickedItem) { await loadPhoto() }
             .task(id: mapKey) { await loadMap() }
             // The scrub is a full FIT rewrite, so it runs off the main actor and only for
             // the tab that needs it — opening the sheet on the card must not pay for it.
@@ -251,14 +231,14 @@ struct ShareComposerView: View {
                 if environment["UI_SHARE"] == "developer" { showSendToDeveloper = true }
                 #endif
                 if let raw = environment["UI_SHAPE"],
-                   let wanted = ShareCardStats.Shape(rawValue: raw) { shape = wanted }
+                   let wanted = ShareCardStats.Shape(rawValue: raw) { design.shape = wanted }
                 // `UI_HERO=clean|max2s|tacks` photographs another hero without writing
                 // the rider's stored choice, which a tap on the picker would.
                 if let raw = environment["UI_HERO"],
-                   let wanted = ShareCardStats.Hero(rawValue: raw) { hero = wanted }
+                   let wanted = ShareCardStats.Hero(rawValue: raw) { design.hero = wanted }
                 // `UI_MAP=1|0` photographs the card with and without the ground under it
-                // without writing the rider's stored choice, which a tap on the switch would.
-                if let raw = environment["UI_MAP"] { wantsMap = raw == "1" }
+                // without writing the rider's stored choice, which a tap on the picker would.
+                if let raw = environment["UI_MAP"] { design.background = raw == "1" ? .map : .dark }
                 // `UI_TITLE` / `UI_CAPTION` photograph a *named* session without renaming the
                 // rider's own: they seed the drafts and, by seeding `committed…` with the
                 // same values, guarantee no commit follows. `simctl` cannot type.
@@ -406,62 +386,20 @@ struct ShareComposerView: View {
 
     @ViewBuilder
     private var cardSection: some View {
-        cardPreview
+        ShareCardPreview(card: card, design: design)
             .padding(.top, 4)
 
-        Picker("Shape", selection: $shape) {
-            ForEach(ShareCardStats.Shape.allCases) { Text($0.label).tag($0) }
-        }
-        .pickerStyle(.segmented)
+        // Shape, the big number (layout B v2, Jan, 26 Sep 2026) and what is behind the
+        // numbers: the same three decisions the period card asks (`ShareCardDesignControls`).
+        // The map is offered only once the session's geometry is in memory — the sheet can
+        // open before the detail has loaded, and the segment appears a moment later.
+        ShareCardDesignControls(
+            design: design, story: stats.story, mapOffered: mapSource != nil,
+            mapNote: ShareCardDesignControls.mapNoteTrack)
 
-        // The big number (layout B v2, Jan, 26 Sep 2026) — it replaced Lean/Complete. Only
-        // the heroes this session can carry are offered: no clean jibes, no "Clean jibes";
-        // no tacks, no "Tacks". With one left there is nothing to choose, and no picker.
-        if let options = stats.story?.heroOptions, options.count > 1 {
-            // The binding writes the preference itself rather than an `onChange` on the
-            // state, so only a *tap* is remembered — the screenshot hook sets the same state
-            // and must not rewrite what the rider chose.
-            Picker(PresentationCopy.card("optionTitle"),
-                   selection: Binding(get: { stats.story?.hero?.kind ?? hero },
-                                      set: { chosen in
-                                          hero = chosen
-                                          ShareCardHeroStore.save(chosen, to: .standard)
-                                      })) {
-                ForEach(options) { Text($0.label).tag($0) }
-            }
-            .pickerStyle(.segmented)
-        }
-
-        mapToggle
-
-        photoControls
-
-        if let rendered {
-            ShareLink(item: rendered,
-                      subject: Text(cardSubject),
-                      message: Text(cardCaption),
-                      preview: SharePreview(stats.title, image: rendered)) {
-                Label("Share card", systemImage: "square.and.arrow.up")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            // Counted at the tap, which is the rider sharing a card that exists. What the
-            // share sheet does next is Apple's, and it reports nothing back. The variant is
-            // the shape, the preset and what is behind the numbers.
-            .simultaneousGesture(TapGesture().onEnded {
-                Usage.record(.shareCard, detail: cardVariant)
-            })
-        } else {
-            ProgressView().frame(maxWidth: .infinity, minHeight: 44)
-        }
-
-        Text("The card is rendered at " + String(Int(shape.size.width)) + " × "
-             + String(Int(shape.size.height))
-             + " px. " + Copy.straightToTheShareSheet)
-            .font(.caption2)
-            .foregroundStyle(.secondary)
-            .multilineTextAlignment(.center)
+        ShareCardExportRow(design: design, title: stats.title, subject: cardSubject,
+                           message: cardCaption,
+                           onShare: { Usage.record(.shareCard, detail: cardVariant) })
 
         // The other thing a rider makes to show somebody. It sits under the card rather
         // than beside it as a third `Payload` tab, because it is the same picture of the
@@ -596,12 +534,9 @@ struct ShareComposerView: View {
     }
 
     private var renderKey: String {
-        let background = photo == nil ? "plain" : "photo"
         let parts = [thumbnail == nil ? "0" : "1",
-                     metrics == nil ? "0" : "1",
-                     map == nil ? "0" : "1"].joined(separator: "|")
-        return shape.rawValue + "|" + hero.rawValue + "|" + background
-            + "|" + parts + "|" + store.speedRecordPolicy.rawValue
+                     metrics == nil ? "0" : "1"].joined(separator: "|")
+        return design.renderKey + "|" + parts + "|" + store.speedRecordPolicy.rawValue
             + "|" + displayTitle + "|" + noteDraft
     }
 
@@ -613,10 +548,10 @@ struct ShareComposerView: View {
     /// so a sub-point wobble as the sheet resizes would otherwise re-run the snapshotter for a
     /// framing no eye could tell from the last one.
     private var mapKey: String {
-        let wanted = String(wantsMap && photo == nil)
+        let wanted = String(design.wantsMap(offered: mapSource != nil))
         let source = mapSource == nil ? "0" : "1"
-        return wanted + "|" + shape.rawValue + "|" + store.mapStyle.rawValue
-            + "|" + source + "|" + String(describing: trackBox.integral)
+        return wanted + "|" + design.shape.rawValue + "|" + store.mapStyle.rawValue
+            + "|" + source + "|" + String(describing: design.trackBox.integral)
     }
 
     /// Which tab is showing (so the scrub is never paid for on the card), whether the
@@ -626,109 +561,10 @@ struct ShareComposerView: View {
         "\(payload.rawValue)|\(includeAccelerometer)|\(committedTitle)"
     }
 
-    /// The card at whatever size the sheet has room for.
-    ///
-    /// `ShareCardView` lays itself out at a *fixed* size — its export size over
-    /// `renderScale` — because that is what makes the exported pixels land exactly on the
-    /// shape's dimensions. A shape wider than the phone therefore has to be scaled down for
-    /// the preview rather than made flexible: a card that reflowed to fit the sheet would
-    /// not be the card that gets exported.
-    ///
-    /// The width is measured on the outer, full-width frame, so the measurement cannot
-    /// chase the scale it feeds.
-    private var cardPreview: some View {
-        let scale = availableWidth > 0 ? min(1, availableWidth / card.size.width) : 1
-        return card
-            .clipShape(.rect(cornerRadius: 18))
-            .shadow(radius: 10, y: 4)
-            .scaleEffect(scale)
-            .frame(width: card.size.width * scale, height: card.size.height * scale)
-            .frame(maxWidth: .infinity)
-            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { availableWidth = $0 }
-    }
-
-    /// The picker's label is built from a plain `String` captured *outside* the closure:
-    /// `PhotosPicker` takes a sendable label builder, and reading `photo` inside it would
-    /// be a main-actor access from a sendable context.
-    private var photoPicker: some View {
-        let title = photo == nil ? "Use a photo" : "Change photo"
-        return PhotosPicker(selection: $pickedItem, matching: .images,
-                            photoLibrary: .shared()) {
-            Label(title, systemImage: "photo")
-                .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(.bordered)
-    }
-
-    /// The map background's switch, and the sentence that has to sit under it.
-    ///
-    /// **Hidden outright when the session's geometry is not in memory**, rather than shown
-    /// greyed out: a switch that cannot be flipped is a question about a feature the rider
-    /// then has to go and find out about, and this one has nothing to explain — the sheet was
-    /// opened before the detail finished loading, and it appears a moment later.
-    ///
-    /// **Below the two pickers and above the photo**, because that is the order of the
-    /// decisions: what shape, how much detail, what is behind it. And the photo wins if there
-    /// is one — a rider who picked a shot of his own has already answered the background
-    /// question, and rendering a map underneath it would be work nobody can see.
-    @ViewBuilder
-    private var mapToggle: some View {
-        if mapSource != nil {
-            VStack(alignment: .leading, spacing: 4) {
-                Toggle(isOn: Binding(get: { wantsMap },
-                                     set: { wanted in
-                                         wantsMap = wanted
-                                         ShareCardMapStore.save(wanted, to: .standard)
-                                     })) {
-                    Text("Map background")
-                }
-                .disabled(photo != nil)
-
-                Text(photo == nil
-                     ? "Draws the track over the map, on the ground you picked for the "
-                       + "session map. Needs a connection. Without one the card comes out "
-                       + "plain."
-                     : "The photo you picked is the background. Remove it to use the map.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-    }
-
-    @ViewBuilder
-    private var photoControls: some View {
-        HStack(spacing: 12) {
-            photoPicker
-
-            if photo != nil {
-                Button(role: .destructive) {
-                    photo = nil
-                    pickedItem = nil
-                } label: {
-                    Label("Remove", systemImage: "xmark")
-                }
-                .buttonStyle(.bordered)
-            }
-        }
-        if photoFailed {
-            Text("That image could not be read.")
-                .font(.caption)
-                .foregroundStyle(.orange)
-        }
-    }
-
     // MARK: - Work
 
     private func render() {
-        let renderer = ImageRenderer(content: card)
-        renderer.scale = ShareCardView.renderScale
-        renderer.isOpaque = true
-        if let image = renderer.uiImage {
-            rendered = Image(uiImage: image)
-            renderedImage = image
-        } else if !countedCard {
+        if !design.render(card) && !countedCard {
             // A card that would not draw is the share card failing, once per visit.
             countedCard = true
             Usage.failed(.shareCard, reason: "card did not render")
@@ -736,10 +572,7 @@ struct ShareComposerView: View {
     }
 
     /// "portrait · lean · map": the share card's variant, as the usage report counts it.
-    private var cardVariant: String {
-        let ground = photo != nil ? "photo" : (map != nil ? "map" : "plain")
-        return shape.rawValue + " · " + hero.rawValue + " · " + ground
-    }
+    private var cardVariant: String { design.variant(mapOffered: mapSource != nil) }
 
     private func prepareFIT() async {
         guard payload == .fit else { return }
@@ -761,25 +594,16 @@ struct ShareComposerView: View {
     /// the rider asked for a background, not for a report on one, and the card he is looking
     /// at is still the card he can send.
     private func loadMap() async {
-        // `photo == nil` is not only a display rule: a rider whose background is a shot of
-        // his own must not pay for a snapshot nothing will ever show.
-        guard wantsMap, photo == nil, let source = mapSource, trackBox.width > 1 else {
-            map = nil
+        // Only while the map is the background: a rider whose background is a shot of his
+        // own must not pay for a snapshot nothing will ever show.
+        guard design.wantsMap(offered: mapSource != nil), let source = mapSource,
+              design.trackBox.width > 1 else {
+            design.map = nil
             return
         }
-        map = await ShareCardMapper.make(source: source, size: card.size,
-                                         trackBox: trackBox, style: store.mapStyle)
-    }
-
-    private func loadPhoto() async {
-        guard let pickedItem else { return }
-        photoFailed = false
-        guard let data = try? await pickedItem.loadTransferable(type: Data.self),
-              let image = UIImage(data: data) else {
-            photoFailed = true
-            return
-        }
-        photo = Image(uiImage: image)
+        design.map = await ShareCardMapper.make(source: source, size: card.size,
+                                                trackBox: design.trackBox,
+                                                style: store.mapStyle)
     }
 }
 

@@ -45,6 +45,7 @@ import {
   periodMapAvailable,
   saveCardChoice, saveCardText,
 } from "./cardstats.js";
+import { say } from "./appcopy.js";
 import { getAnalysisJson } from "./store.js";
 import { track } from "./track.js";
 import { indexAt, phaseRuns } from "./session.js";
@@ -333,6 +334,82 @@ function drawTrackStack(ctx, tracks, box, map = null) {
       ctx.stroke();
     }
   }
+  ctx.restore();
+}
+
+/* ------------------------------------------------------------------ the collage
+ *
+ * The period card's third artwork (Jan, 28 Sep 2026): each session's own small track in a
+ * cell of its own, fitted to itself, in the order they were ridden. The twin of
+ * `TrackCollage` in the kit and of `collage_cells` in web/tools/make_presentation_goldens.py;
+ * `verify_presentation.py` §5e holds this to fixtures/periods/outlines.expected.json.
+ */
+
+/** At most this many cells, and the gap between two — `TrackCollage.limit` / `.gap`. */
+export const COLLAGE_LIMIT = 12;
+const COLLAGE_GAP = 6;
+
+/** Which of a period's sessions the collage draws: the newest twelve, oldest first. */
+export const collagePick = (items) => items.slice(-COLLAGE_LIMIT);
+
+/**
+ * The cells for `count` tracks inside `box`, row by row. The column count is the one that
+ * gives a track the largest square (ties to fewer columns), and a last row that is not full
+ * is centred.
+ */
+export function collageCells(count, box) {
+  const n = Math.min(count, COLLAGE_LIMIT);
+  if (n <= 0) return [];
+  const size = (cols) => {
+    const rows = Math.ceil(n / cols);
+    return [(box.w - COLLAGE_GAP * (cols - 1)) / cols, (box.h - COLLAGE_GAP * (rows - 1)) / rows];
+  };
+  let cols = 1, best = -Infinity;
+  for (let candidate = 1; candidate <= n; candidate++) {
+    const side = Math.min(...size(candidate));
+    if (side > best + 1e-9) { best = side; cols = candidate; }
+  }
+  const [cw, ch] = size(cols);
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const row = Math.floor(i / cols), col = i % cols;
+    const inRow = Math.min(cols, n - row * cols);
+    const offset = (cols - inRow) * (cw + COLLAGE_GAP) / 2;
+    out.push({ x: box.x + offset + col * (cw + COLLAGE_GAP), y: box.y + row * (ch + COLLAGE_GAP),
+               w: cw, h: ch });
+  }
+  return out;
+}
+
+/** The collage: a faint tile per session and its track fitted to it. No marks — a dozen
+ *  tiles of dots would be confetti. The twin of `ShareCardView.collageGrid`. */
+function drawCollage(ctx, tracks, box) {
+  const cells = collageCells(tracks.length, box);
+  ctx.save();
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  cells.forEach((cell, i) => {
+    ctx.fillStyle = alpha(BRAND.paper, 0.06);
+    ctx.beginPath();
+    ctx.roundRect(cell.x, cell.y, cell.w, cell.h, 6);
+    ctx.fill();
+    const ext = runsExtent(tracks[i]);
+    if (!ext) return;
+    const place = placerFor(ext, cell).place;
+    for (const run of tracks[i].runs) {
+      if (run.pts.length < 2) continue;
+      ctx.beginPath();
+      const first = place(run.pts[0][0], run.pts[0][1]);
+      ctx.moveTo(first.x, first.y);
+      for (let k = 1; k < run.pts.length; k++) {
+        const p = place(run.pts[k][0], run.pts[k][1]);
+        ctx.lineTo(p.x, p.y);
+      }
+      ctx.strokeStyle = run.flying ? FLYING : OFF_FOIL;
+      ctx.lineWidth = run.flying ? 1.5 : 1.5 * 0.5;
+      ctx.stroke();
+    }
+  });
   ctx.restore();
 }
 
@@ -961,6 +1038,8 @@ const ribbonNote = (story) => (story.speedNote && story.ribbon.some((c) => c.key
 function largerBox(content, boxes) {
   const ext = content.track ? extent(content.track) : null;
   const stack = content.tracks?.length ? content.tracks : null;
+  // A collage is a grid, and a grid wants the full width under the title.
+  if (content.collage?.length) return boxes[boxes.length - 1];
   if (!ext && !stack) return boxes[0];
   let best = boxes[0], bestScale = -1;
   for (const b of boxes) {
@@ -982,7 +1061,8 @@ export function storyBoxes(content, shape, W, H) {
   const inner = { x: PAD_X, y: PAD_TOP, w: W - PAD_X * 2, h: H - PAD_TOP - PAD_BOTTOM };
   const footer = { y: inner.y + inner.h - QR_SIZE, h: QR_SIZE };
   // A period card has no single ride and a stack of them instead; the box is the same box.
-  const hasArt = Boolean(content.track) || Boolean(content.tracks?.length);
+  const hasArt = Boolean(content.track) || Boolean(content.tracks?.length)
+    || Boolean(content.collage?.length);
 
   if (isWide(shape)) {
     const colW = W * STORY_COLUMN;
@@ -1074,7 +1154,7 @@ export async function drawCard(canvas, content, shape, options = {}) {
   // reached at all, and everything below draws the card this file has always drawn. A period
   // takes the stack's framing (the union of its outlines) and a session its own.
   let map = null;
-  if (options.map && boxes.track) {
+  if (options.map && boxes.track && !content.collage?.length) {
     map = content.tracks?.length
       ? await buildStackMap(content.tracks, boxes.track, W, H, SCALE)
       : await buildMap(content, boxes.track, W, H, SCALE);
@@ -1099,6 +1179,8 @@ export async function drawCard(canvas, content, shape, options = {}) {
     if (place) drawTrack(ctx, content.track, place);
   } else if (content.tracks?.length && boxes.track) {
     drawTrackStack(ctx, content.tracks, boxes.track, map);
+  } else if (content.collage?.length && boxes.track) {
+    drawCollage(ctx, content.collage, boxes.track);
   }
 
   const titleInset = map && !wide ? creditWidth(ctx, family) + 8 : 0;
@@ -1142,7 +1224,10 @@ const state = { result: null, key: "", shape: "portrait", map: false, hero: "cle
                 title: "", note: "", blob: null, seq: 0,
                 // The second payload: a period, and the outlines of the sessions in it.
                 // Null for the session card, which is every card this composer used to make.
-                period: null, tracks: [] };
+                period: null, tracks: [],
+                // How a period card draws its afternoons (Jan, 28 Sep 2026): "all" stacked,
+                // "one" session big, or a "collage" — and, for one, which (`chosen`, an id).
+                tracksMode: "all", chosen: null };
 
 /** The offscreen canvas the PNG comes off. One per page: a 1920×1080 bitmap is 8 MB, and
  *  a phone that has just run an analysis does not need three of them. */
@@ -1181,6 +1266,15 @@ export function mountShareCard() {
   el("card-note-input").addEventListener("input", (ev) => {
     choose({ note: ev.target.value });
     syncNoteCount();
+  });
+  for (const b of dialog.querySelectorAll("[data-tracks]")) {
+    b.addEventListener("click", () => chooseTracks(b.dataset.tracks));
+  }
+  el("card-session")?.addEventListener("change", (ev) => {
+    state.chosen = ev.target.value;
+    state.map = loadCardChoice().map && mapAvailable(null);
+    syncChoices();
+    refresh();
   });
   el("card-download").addEventListener("click", download);
   el("card-share").addEventListener("click", share);
@@ -1287,6 +1381,8 @@ export async function openPeriodCard(period, entries) {
   state.result = null;
   state.period = period;
   state.tracks = [];
+  state.tracksMode = "all";
+  state.chosen = null;
   state.key = `period:${period.key}`;
   const saved = loadCardChoice();
   state.shape = saved.shape;
@@ -1314,8 +1410,35 @@ export async function openPeriodCard(period, entries) {
   // After the first draw, not before it: the dialog opens on the stats immediately and the
   // outlines arrive when the documents do, which on a dozen sessions is a second or two.
   state.tracks = await loadTracks(period, entries);
-  if (state.period === period) refresh();
+  if (state.period !== period) return;
+  // "One session" opens on the newest: the afternoon a rider wants on a card is usually the
+  // one he just rode. The list is newest first for the same reason.
+  state.chosen = state.tracks.at(-1)?.id ?? null;
+  const select = el("card-session");
+  if (select) {
+    select.innerHTML = [...state.tracks].reverse().map((t) =>
+      `<option value="${escAttr(t.id)}">${escAttr(t.label)}</option>`).join("");
+    if (state.chosen) select.value = state.chosen;
+  }
+  syncChoices();
+  refresh();
 }
+
+const escAttr = (v) => String(v ?? "").replace(/[&<>"]/g,
+  (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+/** A tap on the period card's Tracks picker. The map habit is honoured again wherever the new
+ *  artwork can carry a ground, and quietly dropped where it cannot (the collage). */
+function chooseTracks(mode) {
+  if (!state.period || !["all", "one", "collage"].includes(mode)) return;
+  state.tracksMode = mode;
+  state.map = loadCardChoice().map && mapAvailable(null);
+  syncChoices();
+  refresh();
+}
+
+/** The session "One session" draws, among the outlines that arrived. */
+const chosenTrack = () => state.tracks.find((t) => t.id === state.chosen) || null;
 
 /** The period's sessions as drawable outlines, oldest first, silently skipping any the
  *  library cannot hand back.
@@ -1334,7 +1457,12 @@ async function loadTracks(period, entries) {
       if (!json) continue;
       const result = JSON.parse(json);
       const track = buildTrack(result);
-      if (track) out.push({ ...track, geo: result.view?.geo || null });
+      // The id and a name for the "One session" list: the card's own title for that
+      // recording and its date, the way the session card's sub-line names it.
+      if (track) {
+        out.push({ ...track, geo: result.view?.geo || null, id,
+                   label: `${cardTitle(result.file?.name)} · ${cardDateLine(result.meta)}` });
+      }
     } catch { /* one unreadable document is not a reason to refuse the card */ }
   }
   return out;
@@ -1342,17 +1470,32 @@ async function loadTracks(period, entries) {
 
 /** Everything the card prints, for whichever payload the composer is holding. */
 function content() {
-  return state.period
-    ? periodCardContent(state.period, state.hero,
-                        { title: state.title, note: state.note }, state.tracks)
-    : cardContent(state.result, state.hero, { title: state.title, note: state.note });
+  const text = { title: state.title, note: state.note };
+  if (!state.period) return cardContent(state.result, state.hero, text);
+  const c = periodCardContent(state.period, state.hero, text,
+                              state.tracksMode === "all" ? state.tracks : []);
+  if (state.tracksMode === "one") {
+    // One afternoon drawn the way a session card draws it, marks and all, and with its own
+    // anchor, so the map can be framed on it.
+    const one = chosenTrack();
+    if (one) { c.track = one; c.geo = one.geo; }
+  } else if (state.tracksMode === "collage") {
+    c.collage = collagePick(state.tracks);
+  }
+  return c;
 }
 
 /** Whether the card on screen can carry a map at all. A session can when the document has a
  *  geographic anchor (`cardContent`'s `geo`); a period can when its afternoons share one spot
  *  cluster (`periodMapAvailable`). */
-const mapAvailable = (result) => (state.period ? periodMapAvailable(state.period)
-                                               : Boolean(result?.view?.geo));
+const mapAvailable = (result) => {
+  if (!state.period) return Boolean(result?.view?.geo);
+  // The stack keeps the one-ground rule; one session has the ground it was ridden on; a grid
+  // of afternoons has none.
+  if (state.tracksMode === "one") return Boolean(chosenTrack()?.geo);
+  if (state.tracksMode === "collage") return false;
+  return periodMapAvailable(state.period);
+};
 
 function choose(next) {
   Object.assign(state, next);
@@ -1378,6 +1521,19 @@ function syncChoices() {
   for (const b of dialog.querySelectorAll("[data-hero]")) {
     b.hidden = !story || !story.heroOptions.includes(b.dataset.hero);
     b.setAttribute("aria-pressed", String(b.dataset.hero === shown));
+  }
+  // The period card's Tracks picker: shown for a period of more than one afternoon, where the
+  // three would not be the same picture.
+  const tracksRow = el("card-tracks-row");
+  if (tracksRow) {
+    tracksRow.hidden = !state.period || (state.period.sessions || 0) < 2;
+    for (const b of dialog.querySelectorAll("[data-tracks]")) {
+      b.setAttribute("aria-pressed", String(b.dataset.tracks === state.tracksMode));
+    }
+    el("card-session-row").hidden = state.tracksMode !== "one";
+    const note = el("card-collage-note");
+    note.hidden = state.tracksMode !== "collage";
+    note.textContent = say("share.collageNote", { limit: COLLAGE_LIMIT });
   }
   const offered = mapAvailable(state.result);
   const box = el("card-map");
@@ -1464,7 +1620,7 @@ async function download() {
 function cardEventProps(how) {
   return { how, kind: state.period ? "period" : "session",
            shape: state.shape, map: !!state.map,
-           hero: state.hero };
+           hero: state.hero, ...(state.period ? { tracks: state.tracksMode } : {}) };
 }
 
 /** Feature-detected with a *file*, not with `navigator.share`: several browsers can share a

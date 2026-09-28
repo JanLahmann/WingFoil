@@ -35,6 +35,11 @@ struct ShareCardView: View {
     /// so all of them go down, faint, and the picture is the accumulation. Empty on a
     /// session card, which is every card this view drew before periods existed.
     var thumbnails: [TrackThumbnail] = []
+    /// The period card's **collage** (Jan, 28 Sep 2026): each session's own small track in a
+    /// cell of its own, fitted to itself, in the order they were ridden (`TrackCollage`). At
+    /// most `TrackCollage.limit` — the caller picks which (`TrackCollage.pick`). Drawn instead
+    /// of the stack, never with a map: a grid of afternoons has no one ground.
+    var collage: [TrackThumbnail] = []
     /// Rider-picked background. Without one the card uses the brand gradient.
     var photo: Image?
     /// The optional map background and the track already projected onto it
@@ -326,7 +331,13 @@ struct ShareCardView: View {
 
     @ViewBuilder
     private var track: some View {
-        if !thumbnails.isEmpty {
+        if !collage.isEmpty {
+            collageGrid
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .onGeometryChange(for: CGRect.self) {
+                    $0.frame(in: .named(Self.cardSpace))
+                } action: { onTrackFrame?($0) }
+        } else if !thumbnails.isEmpty {
             Group {
                 // With a ground under it the whole stack is drawn by `mapTrack` instead, in
                 // the map's own projection and over the whole card. The slot stays, at exactly
@@ -417,6 +428,40 @@ struct ShareCardView: View {
         .accessibilityHidden(true)
     }
 
+    /// The collage: one cell per session, row by row, the last row centred — the twin of
+    /// `drawCollage` in web/js/sharecard.js, placed by the kit's `TrackCollage.cells`.
+    ///
+    /// Each track is fitted to its own cell, so the grid is a contact sheet rather than a map:
+    /// a short afternoon is as legible as a long one. A faint tile under each keeps the grid
+    /// readable where a session drew almost nothing. No marks — a dozen tiles of dots would be
+    /// confetti, and the card's own numbers already say how the turns went.
+    private var collageGrid: some View {
+        GeometryReader { geo in
+            let cells = TrackCollage.cells(
+                count: collage.count,
+                in: TrackStack.Box(x: 0, y: 0, w: geo.size.width, h: geo.size.height))
+            ZStack(alignment: .topLeading) {
+                ForEach(Array(cells.enumerated()), id: \.offset) { index, cell in
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(Brand.paper.opacity(0.06))
+                        TrackOutlineView(thumbnail: collage[index],
+                                         flyingColor: flyingColor,
+                                         offFoilColor: offFoilColor,
+                                         lineWidth: 1.5,
+                                         offFoilScale: 0.5,
+                                         padding: 6,
+                                         fillsBox: true)
+                    }
+                    .frame(width: cell.w, height: cell.h)
+                    .offset(x: cell.x, y: cell.y)
+                }
+            }
+            .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
+        }
+        .accessibilityHidden(true)
+    }
+
     // MARK: - Layout B v2
 
     // The session card and the period card (Jan, 26 Sep 2026): header · track · hero · the
@@ -459,7 +504,8 @@ struct ShareCardView: View {
     /// draws it larger for this ride's own proportions (`largerBox` on the web). A period's
     /// stack is measured at its one shared scale (`TrackStack.placement`).
     private func squareTrackBeside(_ story: ShareCardStats.Story) -> Bool {
-        guard shape == .square else { return false }
+        // A collage is a grid, and a grid wants the full width under the title.
+        guard shape == .square, collage.isEmpty else { return false }
         let extents = thumbnails.compactMap(\.stackExtent)
         let box = thumbnail?.contentBox
         guard !extents.isEmpty || box != nil else { return false }

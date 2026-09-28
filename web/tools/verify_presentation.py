@@ -678,6 +678,16 @@ def check_outline_stack() -> None:
     check("  …and the longest is the one that fills the box",
           round(max(spans), 1), round(week["box"]["w"] - 2 * fresh["rule"]["inset"], 1))
 
+    # The collage (Jan, 28 Sep 2026): the grid of each session's own small track. The same
+    # fixture, its `collage` block; `TrackCollageTests` holds the kit to it.
+    cells = {case["name"]: case for case in (_CARD_DUMP[-1].get("collages") or [])}
+    check("  every collage case was measured in the browser", sorted(cells),
+          sorted(c["name"] for c in fresh["collage"]["cases"]))
+    for want in fresh["collage"]["cases"]:
+        have = cells.get(want["name"])
+        check(f"  collage {want['name']}: every cell where the fixture says",
+              have["cells"] if have else None, want["cells"])
+
 
 CARD_TEXT = TOOLS / "card_text.mjs"
 

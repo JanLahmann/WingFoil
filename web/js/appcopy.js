@@ -2023,6 +2023,15 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
+              "detail": "Sessions a friend sent you stay out of your records, trends and totals.",
+              "term": "A friend's session"
+            },
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
               "detail": "A recording with positions but no speed channel has its speed worked out from them, which reads high. Every GPX is one, and some converted exports. It is marked everywhere.",
               "term": "\"Estimated\""
             }
@@ -2584,7 +2593,8 @@ export const HELP = {
           "aliases": [],
           "body": [
             "Any session becomes a card. It holds the track, the numbers that matter, and where the analysis came from. Pick a shape and the big number: clean jibes, top speed or tacks. A photo of yours can go behind it.",
-            "Or turn on the map background and the track is drawn over the water you rode. That one needs a connection. Without one the card comes out plain.",
+            "Or pick the map as the background and the track is drawn over the water you rode. That one needs a connection. Without one the card comes out plain.",
+            "A trip, a month or a season makes a card too. Draw all its tracks on one another, one session big, or a collage of them.",
             "The card is made on your phone and goes nowhere until you send it."
           ],
           "channels": [
@@ -3262,8 +3272,17 @@ export const WORDS = {
     "detailTitle": "How much to say"
   },
   "share": {
+    "allSessions": "All sessions",
+    "background": "Background",
+    "collage": "Collage",
+    "collageNote": "The last {limit} sessions, each on its own, in the order you rode them.",
+    "dark": "Dark",
+    "map": "Map",
+    "oneSession": "One session",
+    "photo": "Photo",
     "sendToUs": "Send this session to us",
-    "sendToUsLine": "A number looks wrong? Send the recording with your notes."
+    "sendToUsLine": "A number looks wrong? Send the recording with your notes.",
+    "tracks": "Tracks"
   },
   "speedRecords": {
     "includeUnverified": "Include estimated",
@@ -3294,6 +3313,7 @@ export const WORDS = {
     "portShareNote": "50 % is even. The gap is the side you avoid.",
     "pumps": "Pumps to takeoff",
     "pumpsNote": "Only sessions recorded with the CleanJibe watch app count your pumps.",
+    "share": "Share card",
     "tph": "Dry turns an hour (TPH)",
     "tphNote": "Every counted turn you stayed dry through.",
     "weekRuns": "A week runs Monday to Sunday, on your phone's clock.",

@@ -23,7 +23,7 @@ import { filterBySpot, renderSpotChip } from "./spots.js";
 import { KNOTS, speedRecords, speedUnit, speedValue } from "./appsettings.js";
 // r3-w1: the range over the charts. It picks which afternoons the question is asked of and
 // answers nothing itself; Records stay all-time, which is what the sheet's footer promises.
-import { emptyRangeNote, rangeEntries, rangeKey } from "./daterange.js";
+import { emptyRangeNote, rangeEntries, rangeKey, rangeSpan } from "./daterange.js";
 import { sportCorrected } from "./cardstats.js";
 import { C, esc, figureWidth, hideTip, hms, int, isNarrow, nf, pct, pctDigits, showTip, svg,
          zonedFormat } from "./render.js";
@@ -216,7 +216,11 @@ function draw(agg, trendAgg = agg) {
     return;
   }
 
+  // The phone's Share button beside its Periods calendar (Jan, 28 Sep 2026): the range the
+  // charts show, as the period card Periods would make of it.
   trends.innerHTML = `
+    <div class="period-actions"><button class="ghost small-btn" type="button"
+      data-act="range-card">${esc(say("trends.share"))}</button></div>
     <div class="kv" id="trend-totals"></div>
     <h3 class="sub-head">Periods</h3>
     <p class="muted small">Trips, months and seasons, each with one block of numbers.</p>
@@ -460,9 +464,12 @@ export function showPeriodsPage() {
         Sessions</button></p>`;
     return;
   }
+  // The rate note under the range it is about, the way the phone's footer sits under its two
+  // dates (`PeriodsView.customSection`).
   host.innerHTML = `
-    <p class="muted small">${esc(say("periods.rangeRates"))}</p>
     <div id="period-custom"></div>
+    <p class="muted small">${esc(say("periods.bothDatesCount"))} ${
+      esc(say("periods.rangeRates"))}</p>
     <div id="period-groups"></div>`;
   renderCustomRange(el("period-custom"));
   renderPeriodRows(el("period-groups"), agg.periods || {});
@@ -797,6 +804,7 @@ function onClick(ev) {
     showRange(el("period-from").value, el("period-to").value);
     return;
   }
+  if (ev.target.closest("button[data-act=range-card]")) { openRangeCard(); return; }
   const card = ev.target.closest("button[data-act=period-card]");
   if (card) { hooks.openPeriodCard(findPeriod(card.dataset.key), entries); return; }
   // A period row opens the period's own page, the way the phone pushes one. The key goes
@@ -812,6 +820,21 @@ function onClick(ev) {
   const key = button.closest("tr")?.dataset.record;
   const record = (cache.data?.records || []).find((r) => r.key === key);
   if (record) hooks.openRecord(record);
+}
+
+/** The card of the range the charts show. The season is the one Periods lists; any other
+ *  range is asked of Python as a span, over the same digests the aggregate was given. */
+async function openRangeCard() {
+  const span = rangeSpan();
+  if (span.season) {
+    const season = (cache.data?.periods?.seasons || []).find((p) => p.key === span.season);
+    if (season) { hooks.openPeriodCard(season, entries); return; }
+  }
+  try {
+    const period = await ask("period", { digestsJson: JSON.stringify(entries),
+                                         start: span.from, end: span.to });
+    if (period?.sessions) hooks.openPeriodCard(period, entries);
+  } catch { /* the charts are on screen and still say what they say */ }
 }
 
 /** The period one button belongs to, by the key Python gave it. The custom range is not in

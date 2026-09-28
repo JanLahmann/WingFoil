@@ -588,6 +588,53 @@ def stack_place(placement: dict, x: float, y: float) -> list[float]:
             round(placement["boxCentreY"] - (y - placement["centreY"]) * placement["scale"], 6)]
 
 
+#: The collage (Jan, 28 Sep 2026): every session's own small track in a grid, at most
+#: `COLLAGE_LIMIT` of them, `COLLAGE_GAP` points apart — `TrackCollage` in the kit and
+#: `collageCells` in web/js/sharecard.js.
+COLLAGE_LIMIT = 12
+COLLAGE_GAP = 6.0
+
+#: A portrait card's track box, a square's, the wide card's column, and the counts that
+#: decide a grid: one, a part-filled last row, a full one, and more than the limit.
+COLLAGE_CASES = [
+    {"name": "one session", "count": 1, "box": STACK_BOX},
+    {"name": "five: a last row centred", "count": 5, "box": STACK_BOX},
+    {"name": "twelve in the wide card's box", "count": 12, "box": STACK_WIDE_BOX},
+    {"name": "a season of forty keeps twelve", "count": 40, "box": STACK_BOX},
+    {"name": "seven in a tall box", "count": 7,
+     "box": {"x": 16.0, "y": 60.0, "w": 180.0, "h": 320.0}},
+]
+
+
+def collage_cells(count: int, box: dict) -> list[list[float]]:
+    """The reference spelling of `TrackCollage.cells`: the column count that gives a track
+    the largest square (ties to fewer columns), row by row, a part-filled last row centred."""
+    n = min(count, COLLAGE_LIMIT)
+    if n <= 0:
+        return []
+
+    def size(cols: int) -> tuple[float, float]:
+        rows = -(-n // cols)
+        return ((box["w"] - COLLAGE_GAP * (cols - 1)) / cols,
+                (box["h"] - COLLAGE_GAP * (rows - 1)) / rows)
+
+    cols, best = 1, float("-inf")
+    for candidate in range(1, n + 1):
+        side = min(size(candidate))
+        if side > best + 1e-9:
+            best, cols = side, candidate
+    cw, ch = size(cols)
+    out = []
+    for i in range(n):
+        row, col = divmod(i, cols)
+        in_row = min(cols, n - row * cols)
+        offset = (cols - in_row) * (cw + COLLAGE_GAP) / 2
+        out.append([round(box["x"] + offset + col * (cw + COLLAGE_GAP), 6),
+                    round(box["y"] + row * (ch + COLLAGE_GAP), 6),
+                    round(cw, 6), round(ch, 6)])
+    return out
+
+
 def stack_facts() -> dict:
     cases = []
     for case in STACK_CASES:
@@ -605,7 +652,10 @@ def stack_facts() -> dict:
     return {"note": STACK_NOTE,
             "rule": {"inset": STACK_INSET, "flatAxisM": STACK_FLAT_AXIS_M,
                      "degenerateScale": STACK_DEGENERATE_SCALE},
-            "cases": cases}
+            "cases": cases,
+            "collage": {"rule": {"limit": COLLAGE_LIMIT, "gap": COLLAGE_GAP},
+                        "cases": [{**case, "cells": collage_cells(case["count"], case["box"])}
+                                  for case in COLLAGE_CASES]}}
 
 
 def goldens() -> list[Path]:

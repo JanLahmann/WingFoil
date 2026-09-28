@@ -123,8 +123,17 @@
       "detailTitle" : "How much to say"
     },
     "share" : {
+      "allSessions" : "All sessions",
+      "background" : "Background",
+      "collage" : "Collage",
+      "collageNote" : "The last {limit} sessions, each on its own, in the order you rode them.",
+      "dark" : "Dark",
+      "map" : "Map",
+      "oneSession" : "One session",
+      "photo" : "Photo",
       "sendToUs" : "Send this session to us",
-      "sendToUsLine" : "A number looks wrong? Send the recording with your notes."
+      "sendToUsLine" : "A number looks wrong? Send the recording with your notes.",
+      "tracks" : "Tracks"
     },
     "speedRecords" : {
       "includeUnverified" : "Include estimated",
@@ -155,6 +164,7 @@
       "portShareNote" : "50 % is even. The gap is the side you avoid.",
       "pumps" : "Pumps to takeoff",
       "pumpsNote" : "Only sessions recorded with the CleanJibe watch app count your pumps.",
+      "share" : "Share card",
       "tph" : "Dry turns an hour (TPH)",
       "tphNote" : "Every counted turn you stayed dry through.",
       "weekRuns" : "A week runs Monday to Sunday, on your phone's clock.",

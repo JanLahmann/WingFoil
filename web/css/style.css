@@ -764,8 +764,10 @@ button.ghost.danger:hover { background: #2a1414; border-color: #6b2626; color: #
 /* The sans face, not the mono the page gives text inputs by default: what goes in here is
    prose that will be set in the card's own rounded sans, and a monospaced preview of it
    reads as a filename. */
-.card-field input { width: 100%; font: 13.5px var(--sans); }
+.card-field input, .card-field select { width: 100%; font: 13.5px var(--sans); }
 #card-text-hint { color: var(--ink-3); }
+/* The period card's Tracks picker and what hangs off it: the session list, the collage line. */
+#card-tracks-row:not([hidden]) { display: grid; gap: 8px; }
 
 /* The map background's switch and the sentence that has to sit under it. It gets a plate of
    its own rather than a third row in the picker stack because it is not the same *kind* of

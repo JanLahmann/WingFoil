@@ -93,8 +93,12 @@ import Testing
         // Two unit lines since 20 September 2026: the phone has a switch of its own now
         // (Settings → Units), and the other three readers keep theirs.
         #expect(terms.contains("The other three readers"))
-        // The four windows the glossary does not define, the two unit lines and the mark.
-        #expect(terms.count == 7)
+        // Which sessions count lives here rather than on Records, Trends or Periods (Jan,
+        // 28 Sep 2026): a friend's session stays out of them.
+        #expect(terms.contains("A friend's session"))
+        // The four windows the glossary does not define, the two unit lines, the friend's
+        // session and the mark.
+        #expect(terms.count == 8)
 
         // What a rider actually types. Each has to reach this one page.
         for needle in ["2 s", "10 s", "500 m", "alpha", "nautical", "estimated",

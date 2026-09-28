@@ -1,24 +1,42 @@
 import SwiftUI
 import WingFoilKit
 
+/// How a period card draws its afternoons (Jan, 28 Sep 2026).
+enum PeriodCardTracks: String, CaseIterable, Identifiable {
+    /// Every outline on one another, at one scale (`TrackStack`) — the card this was first.
+    case all
+    /// One afternoon of the period, drawn big, like a session card.
+    case one
+    /// Each afternoon's own small track in a grid (`TrackCollage`).
+    case collage
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .all: AppShellCopy.Share.allSessions
+        case .one: AppShellCopy.Share.oneSession
+        case .collage: AppShellCopy.Share.collage
+        }
+    }
+}
+
 /// The **period card** composer — the session card's sheet, with a week on it.
 ///
-/// Everything here is the session composer's contract unchanged: three shapes, layout B v2
-/// with its hero picker, the rider's own title and one caption, an `ImageRenderer` at 3× and a `ShareLink` handing
-/// the PNG straight to the share sheet with nothing uploaded. What differs is what is being
-/// described, and therefore two things:
+/// Everything a card is designed with is the session composer's, shared rather than copied
+/// (`ShareCardDesign`): the three shapes, layout B v2 with its hero picker, the background —
+/// dark, map or a photo of the rider's — the live preview, an `ImageRenderer` at 3× and a
+/// `ShareLink` handing the PNG straight to the share sheet with nothing uploaded. What is the
+/// period's own:
 ///
 /// * the numbers are the aggregate block and its story facts (`ShareCardStats.make(period:)`),
 ///   not a session's key-metrics block, and the third hero is the session count;
-/// * the artwork is every session's outline stacked, because a period has no single ride and
-///   picking one would be picking a favourite;
-/// * the map background is offered only where the period **has** one ground — every afternoon
-///   inside a single 3 km cluster (`Period.mapGround`). A month split between two lakes has a
-///   union bounding box that is mostly the road between them, so the switch is not there at
-///   all rather than there and useless.
-///
-/// There is no photo picker and no FIT tab: a period is not a file, and a rider's own
-/// photograph is a picture of one afternoon.
+/// * the artwork is a choice of three (`PeriodCardTracks`): every outline stacked, one
+///   session drawn big, or a collage of them;
+/// * the map is offered where there is one ground to frame — the stack only where the period
+///   is one place (`Period.mapGround`: a month split between two lakes has a union box that is
+///   mostly the road between them), one session wherever it has a track, the collage never;
+/// * the title and the caption are for this card only: a period is not a row in the library.
 struct PeriodShareView: View {
     let period: Period
 
@@ -26,43 +44,65 @@ struct PeriodShareView: View {
     @Environment(SessionStore.self) private var store
     @Environment(ThumbnailStore.self) private var thumbnails
 
-    @State private var shape = ShareCardStats.Shape.portrait
-    /// The big number. Seeded from the last card the rider exported, and written back on a
-    /// tap — a preference about cards, not about this period, and the same one the session
-    /// card reads (`ShareCardHeroStore`). A hero this period cannot carry falls back.
-    @State private var hero = ShareCardHeroStore.load(from: .standard)
-    /// And so is the map switch: `wingfoil.shareCard.map.v1`, one habit per device, read and
-    /// written by both composers. Honoured only where this period can offer a ground.
-    @State private var wantsMap = ShareCardMapStore.load(from: .standard)
+    @State private var design = ShareCardDesign()
+    @State private var tracks = PeriodCardTracks.all
+    /// The session "One session" draws. Seeded with the newest once the rows are in.
+    @State private var chosenId: String?
     @State private var titleDraft = ""
     @State private var noteDraft = ""
-    @State private var outlines: [TrackThumbnail] = []
-    @State private var map: ShareCardMap?
-    /// The rectangle the layout gave the stack, measured from the live view — see
-    /// `ShareCardView.onTrackFrame`, and `ShareCardMap` for why it is measured rather than
-    /// recomputed.
-    @State private var trackBox: CGRect = .zero
-    @State private var rendered: Image?
-
-    /// Whether this period can carry a ground at all. Decided in the kit (`LibraryStore`) and
-    /// in the analyzer (`library._map_ground`) from the same rule, never here.
-    private var offersMap: Bool { period.mapGround }
+    /// The period's rows, oldest first, for the session picker's names.
+    @State private var rows: [SessionRow] = []
+    /// Every outline that has arrived, by session id.
+    @State private var outlines: [String: TrackThumbnail] = [:]
 
     private var stats: ShareCardStats {
-        ShareCardStats.make(period: period, hero: hero,
+        ShareCardStats.make(period: period, hero: design.hero,
                             title: SessionNaming.customTitle(titleDraft),
                             note: noteDraft)
     }
+
+    /// The outlines in the period's own order, oldest first.
+    private var ordered: [TrackThumbnail] {
+        period.sessionIds.compactMap { outlines[$0] }
+    }
+
+    private var chosen: TrackThumbnail? {
+        chosenId.flatMap { outlines[$0] }
+    }
+
+    /// What the chosen artwork can be put on the earth with, if anything.
+    private var mapSources: [ShareCardMapSource] {
+        switch tracks {
+        case .all:
+            period.mapGround ? ordered.compactMap(ShareCardMapSource.init(thumbnail:)) : []
+        case .one:
+            chosen.flatMap(ShareCardMapSource.init(thumbnail:)).map { [$0] } ?? []
+        case .collage:
+            []
+        }
+    }
+
+    private var mapOffered: Bool { !mapSources.isEmpty }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
-                    preview
+                    ShareCardPreview(card: card, design: design)
                     naming
-                    pickers
-                    mapToggle
-                    exportRow
+                    tracksPicker
+                    ShareCardDesignControls(
+                        design: design, story: stats.story, mapOffered: mapOffered,
+                        mapNote: tracks == .one ? ShareCardDesignControls.mapNoteTrack
+                                                : ShareCardDesignControls.mapNoteStack)
+                    ShareCardExportRow(design: design, title: stats.title,
+                                       subject: stats.title,
+                                       onShare: {
+                                           Usage.record(.periodShare,
+                                                        detail: design.variant(
+                                                            mapOffered: mapOffered)
+                                                            + " · " + tracks.rawValue)
+                                       })
                 }
                 .padding()
                 .readableColumn()
@@ -70,23 +110,29 @@ struct PeriodShareView: View {
             .navigationTitle("Share this period")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    HelpButton(topic: .shareCard, size: .body)
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
                 }
             }
             .task {
                 titleDraft = period.title
-                // `UI_SHAPE` / `UI_HERO` photograph another shape or hero without writing the
-                // rider's stored choice — the session composer's hooks, on this sheet.
+                // `UI_SHAPE` / `UI_HERO` / `UI_MAP` / `UI_TRACKS` photograph another card
+                // without writing the rider's stored choices — the session composer's hooks.
                 let environment = ProcessInfo.processInfo.environment
                 if let raw = environment["UI_SHAPE"],
-                   let wanted = ShareCardStats.Shape(rawValue: raw) { shape = wanted }
+                   let wanted = ShareCardStats.Shape(rawValue: raw) { design.shape = wanted }
                 if let raw = environment["UI_HERO"],
-                   let wanted = ShareCardStats.Hero(rawValue: raw) { hero = wanted }
+                   let wanted = ShareCardStats.Hero(rawValue: raw) { design.hero = wanted }
+                if let raw = environment["UI_MAP"] { design.background = raw == "1" ? .map : .dark }
+                if let raw = environment["UI_TRACKS"],
+                   let wanted = PeriodCardTracks(rawValue: raw) { tracks = wanted }
             }
             .task(id: period.key) { await loadOutlines() }
             .task(id: mapKey) { await loadMap() }
-            .task(id: renderKey) { render() }
+            .task(id: renderKey) { design.render(card) }
             // The session composer's trade, for the same reason: a card preview and an
             // export button do not fit the system's form sheet.
             .presentationSizing(.page)
@@ -98,20 +144,20 @@ struct PeriodShareView: View {
     /// Typed rather than `some View`, so `loadMap` can ask it for the size the snapshot has to
     /// fill — the same shape `ShareComposerView.card` is written in, and for the same reason.
     private var card: ShareCardView {
-        ShareCardView(stats: stats, shape: shape, thumbnails: outlines, map: map,
-                      onTrackFrame: { trackBox = $0 })
-    }
-
-    @ViewBuilder
-    private var preview: some View {
-        if let rendered {
-            rendered
-                .resizable()
-                .scaledToFit()
-                .frame(maxHeight: 300)
-                .clipShape(.rect(cornerRadius: 12))
-        } else {
-            ProgressView().frame(maxWidth: .infinity, minHeight: 200)
+        let photo = design.cardPhoto
+        let map = photo == nil && mapOffered ? design.map : nil
+        let report: (CGRect) -> Void = { [design] in design.trackBox = $0 }
+        switch tracks {
+        case .all:
+            return ShareCardView(stats: stats, shape: design.shape, thumbnails: ordered,
+                                 photo: photo, map: map, onTrackFrame: report)
+        case .one:
+            return ShareCardView(stats: stats, shape: design.shape, thumbnail: chosen,
+                                 photo: photo, map: map, onTrackFrame: report)
+        case .collage:
+            return ShareCardView(stats: stats, shape: design.shape,
+                                 collage: TrackCollage.pick(ordered), photo: photo,
+                                 onTrackFrame: report)
         }
     }
 
@@ -142,139 +188,102 @@ struct PeriodShareView: View {
         }
     }
 
+    /// All sessions, one session, or a collage — and, for one, which. Not offered for a period
+    /// of one afternoon, where the three would be the same picture.
     @ViewBuilder
-    private var pickers: some View {
-        Picker("Shape", selection: $shape) {
-            ForEach(ShareCardStats.Shape.allCases) { Text($0.label).tag($0) }
-        }
-        .pickerStyle(.segmented)
-
-        // The big number (layout B v2): only the heroes this period can carry are offered,
-        // and with one left there is nothing to choose. The binding writes the preference
-        // itself, so only a tap is remembered.
-        if let options = stats.story?.heroOptions, options.count > 1 {
-            Picker(PresentationCopy.card("optionTitle"),
-                   selection: Binding(get: { stats.story?.hero?.kind ?? hero },
-                                      set: { chosen in
-                                          hero = chosen
-                                          ShareCardHeroStore.save(chosen, to: .standard)
-                                      })) {
-                ForEach(options) { Text($0.label).tag($0) }
-            }
-            .pickerStyle(.segmented)
-        }
-    }
-
-    /// **Offered only where the period has a ground.** Not offered-and-inert: a switch that is
-    /// on and does nothing is worse than a switch that is not there, and "which rectangle of
-    /// the earth?" genuinely has no answer for a month spent at two lakes.
-    @ViewBuilder
-    private var mapToggle: some View {
-        if offersMap {
-            VStack(alignment: .leading, spacing: 4) {
-                Toggle(isOn: Binding(get: { wantsMap },
-                                     set: { wanted in
-                                         wantsMap = wanted
-                                         ShareCardMapStore.save(wanted, to: .standard)
-                                     })) {
-                    Text("Map background")
-                }
-                Text("Draws every outline over the map, on the ground you picked for the "
-                     + "session map. Needs a connection. Without one the card comes out "
-                     + "plain.")
-                    .font(.caption)
+    private var tracksPicker: some View {
+        if period.sessions > 1 {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(AppShellCopy.Share.tracks)
+                    .font(.footnote.weight(.semibold))
                     .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                Picker(AppShellCopy.Share.tracks, selection: $tracks) {
+                    ForEach(PeriodCardTracks.allCases) { Text($0.label).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                switch tracks {
+                case .one:
+                    Picker(AppShellCopy.Share.oneSession, selection: $chosenId) {
+                        // Newest first: the afternoon a rider wants on a card is usually
+                        // the one he just rode.
+                        ForEach(rows.reversed(), id: \.id) { row in
+                            Text(SessionDisplay.title(row) + " · "
+                                 + Fmt.shortDate(row.startDate, zone: row.displayZone))
+                                .tag(Optional(row.id))
+                        }
+                    }
+                    .pickerStyle(.menu)
+                case .collage:
+                    Text(AppShellCopy.fill(AppShellCopy.Share.collageNote,
+                                           ["limit": String(TrackCollage.limit)]))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                case .all:
+                    EmptyView()
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
-    @ViewBuilder
-    private var exportRow: some View {
-        if let rendered {
-            ShareLink(item: rendered,
-                      subject: Text(stats.title),
-                      preview: SharePreview(stats.title, image: rendered)) {
-                Label("Share card", systemImage: "square.and.arrow.up")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .simultaneousGesture(TapGesture().onEnded {
-                Usage.record(.periodShare, detail: shape.rawValue)
-            })
-        }
-        Text("Rendered at " + String(Int(shape.size.width)) + " × "
-             + String(Int(shape.size.height))
-             + " px. " + Copy.straightToTheShareSheet)
-            .font(.caption2)
-            .foregroundStyle(.secondary)
-            .multilineTextAlignment(.center)
-    }
-
     // MARK: - Work
 
     private var renderKey: String {
-        "\(shape.rawValue)|\(hero.rawValue)|\(titleDraft)|\(noteDraft)|\(outlines.count)"
-            + "|\(map == nil ? 0 : 1)"
+        [design.renderKey, titleDraft, noteDraft, String(outlines.count), tracks.rawValue,
+         chosenId ?? "-", String(mapOffered)].joined(separator: "|")
     }
 
-    /// Everything one snapshot depends on: whether it is wanted and offered, the aspect it has
-    /// to fill, the ground the rider chose for every other map in the app, how many outlines
-    /// have arrived, and the rectangle the layout gave them.
-    ///
-    /// The box is rounded to whole points on purpose: it is measured from a scaled preview, so
-    /// a sub-point wobble as the sheet resizes would otherwise re-run the snapshotter for a
-    /// framing no eye could tell from the last one.
+    /// Everything one snapshot depends on: whether it is wanted and offered, the artwork, the
+    /// aspect it has to fill, the ground the rider chose for every other map in the app, how
+    /// many outlines have arrived, and the rectangle the layout gave them — rounded to whole
+    /// points, because it is measured from a scaled preview.
     private var mapKey: String {
-        "\(wantsMap && offersMap)|\(shape.rawValue)|\(store.mapStyle.rawValue)"
-            + "|\(outlines.count)|\(trackBox.integral)"
+        [String(design.wantsMap(offered: mapOffered)), tracks.rawValue, chosenId ?? "-",
+         design.shape.rawValue, store.mapStyle.rawValue, String(outlines.count),
+         String(describing: design.trackBox.integral)].joined(separator: "|")
     }
 
-    /// One snapshot for the whole period, framed on the union of its outlines.
-    ///
-    /// Every failure — the switch off, no ground to offer, no outlines yet, a snapshotter that
-    /// could not reach Apple's servers — leaves `map` nil, which is the plain card. Nothing is
-    /// said about it: the rider asked for a background, not for a report on one.
+    /// One snapshot, framed on the union of the artwork's outlines. Every failure leaves the
+    /// map nil, which is the plain card — the rider asked for a background, not a report.
     private func loadMap() async {
-        guard wantsMap, offersMap, trackBox.width > 1 else {
-            map = nil
+        let sources = mapSources
+        guard design.wantsMap(offered: !sources.isEmpty), design.trackBox.width > 1 else {
+            design.map = nil
             return
         }
-        let sources = outlines.compactMap(ShareCardMapSource.init(thumbnail:))
-        guard !sources.isEmpty else {
-            map = nil
-            return
-        }
-        map = await ShareCardMapper.makeStack(sources: sources, size: card.size,
-                                              trackBox: trackBox, style: store.mapStyle)
-    }
-
-    private func render() {
-        let renderer = ImageRenderer(content: card)
-        renderer.scale = ShareCardView.renderScale
-        renderer.isOpaque = true
-        if let image = renderer.uiImage { rendered = Image(uiImage: image) }
+        design.map = tracks == .one
+            ? await ShareCardMapper.make(sources: sources, size: card.size,
+                                         trackBox: design.trackBox, style: store.mapStyle)
+            : await ShareCardMapper.makeStack(sources: sources, size: card.size,
+                                              trackBox: design.trackBox,
+                                              style: store.mapStyle)
     }
 
     /// The period's outlines, from the same cache the library rows read.
     ///
     /// A thumbnail costs one FIT parse and is kept for ever, so a period the rider has
     /// scrolled past is free; one he has not is a short wait while the sheet already shows its
-    /// numbers. A session whose thumbnail cannot be built is simply not in the stack — a card
+    /// numbers. A session whose thumbnail cannot be built is simply not on the card — a card
     /// with eleven of twelve afternoons on it is a card.
     private func loadOutlines() async {
-        let rows = (try? await store.library.sessions()) ?? []
+        let all = (try? await store.library.sessions()) ?? []
         let wanted = Set(period.sessionIds)
-        let mine = rows.filter { wanted.contains($0.id) }
-        for row in mine { thumbnails.request(row) }
+        let order = Dictionary(uniqueKeysWithValues: period.sessionIds.enumerated()
+            .map { ($1, $0) })
+        rows = all.filter { wanted.contains($0.id) }
+            .sorted { (order[$0.id] ?? 0) < (order[$1.id] ?? 0) }
+        if chosenId == nil { chosenId = rows.last?.id }
+        for row in rows { thumbnails.request(row) }
         // Poll the cache rather than plumb a callback through: the store is `@Observable`
         // and this is a sheet that is open for seconds, not a list that scrolls.
         for _ in 0..<40 {
-            let found = period.sessionIds.compactMap { thumbnails.thumbnail(for: $0) }
+            var found: [String: TrackThumbnail] = [:]
+            for id in period.sessionIds {
+                if let thumbnail = thumbnails.thumbnail(for: id) { found[id] = thumbnail }
+            }
             if found.count != outlines.count { outlines = found }
-            if found.count == mine.count { return }
+            if found.count == rows.count { return }
             try? await Task.sleep(nanoseconds: 250_000_000)
         }
     }

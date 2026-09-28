@@ -26,6 +26,8 @@ struct TrendsView: View {
     @AppStorage("trendsShowMore") private var showMore = false
     /// `UI_OPEN_PERIODS=1` pushes Periods for a screenshot — `simctl` cannot tap the button.
     @State private var openPeriods = false
+    /// The range on screen as a period, while its card composer is open.
+    @State private var sharing: Period?
 
     enum TrendRange: String, CaseIterable, Identifiable {
         case fourWeeks = "4 w"
@@ -131,6 +133,17 @@ struct TrendsView: View {
             // grouped instead of drawn one by one, and a rider looking at a chart of the last
             // four weeks is exactly the rider who wants the week at Garda summed up.
             .toolbar {
+                // **Share the range you are looking at** (Jan, 28 Sep 2026): the season, the
+                // last four weeks or everything, as the period card Periods would make of it.
+                // Beside the calendar, because it answers the same question with a picture.
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        Task { sharing = await rangePeriod() }
+                    } label: {
+                        Label(AppShellCopy.Trends.share, systemImage: "square.and.arrow.up")
+                    }
+                    .disabled(points.isEmpty)
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink {
                         PeriodsView()
@@ -144,8 +157,49 @@ struct TrendsView: View {
             .navigationDestination(isPresented: $openPeriods) { PeriodsView() }
             .task { openPeriods = ProcessInfo.processInfo.environment["UI_OPEN_PERIODS"] == "1" }
             #endif
+            .sheet(item: $sharing) { period in PeriodShareView(period: period) }
+            #if DEBUG && targetEnvironment(simulator)
+            // `UI_SHARE_RANGE=1` opens the range's card composer for a screenshot.
+            .onChange(of: points.isEmpty) {
+                guard !points.isEmpty, sharing == nil,
+                      ProcessInfo.processInfo.environment["UI_SHARE_RANGE"] == "1" else { return }
+                Task { sharing = await rangePeriod() }
+            }
+            #endif
             .refreshable { await reload() }
             .task(id: reloadKey) { await reload() }
+        }
+    }
+
+    /// The range on screen as a period, under the same spot and gear filter.
+    ///
+    /// **Season** is the season Periods lists — its title, its key, its block — so the card
+    /// made here and the one made there are the same card. **4 w** and **All** are ranges of
+    /// the rider's own (`periodBlock`), from four weeks ago or from the first session to today.
+    private func rangePeriod() async -> Period? {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        let now = Date()
+        let today = calendar.dateComponents([.year, .month, .day], from: now)
+        func key(_ c: DateComponents) -> String {
+            String(format: "%04d-%02d-%02d", c.year ?? 0, c.month ?? 0, c.day ?? 0)
+        }
+        switch range {
+        case .season:
+            let season = String(PeriodRules.seasonYear(year: today.year ?? 0,
+                                                       month: today.month ?? 0))
+            if let found = try? await store.library.periods(filter).seasons
+                .first(where: { $0.key == season }) {
+                return found
+            }
+            fallthrough
+        case .fourWeeks:
+            let since = range.since(now: now).map {
+                key(calendar.dateComponents([.year, .month, .day], from: $0))
+            }
+            return try? await store.library.periodBlock(filter, from: since, to: key(today))
+        case .all:
+            return try? await store.library.periodBlock(filter, from: nil, to: nil)
         }
     }
 

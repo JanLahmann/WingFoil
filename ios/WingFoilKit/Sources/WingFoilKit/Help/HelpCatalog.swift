@@ -938,6 +938,11 @@ public enum HelpCatalog {
                           + "shows windsurf in knots."),
                 // Last, because it is the one line that is about the recording rather than
                 // about a window — and the one a rider needs before he posts a number.
+                // Here rather than on Records, Trends or Periods (Jan, 28 Sep 2026): a rule
+                // about which sessions count is a question, not something every visit says.
+                .init(term: "A friend's session",
+                      detail: "Sessions a friend sent you stay out of your records, trends "
+                          + "and totals."),
                 .init(term: "\"Estimated\"",
                       detail: "A recording with positions but no speed channel has its "
                           + "speed worked out from them, which reads high. Every GPX is "
@@ -1273,9 +1278,11 @@ public enum HelpCatalog {
                 + "and where the analysis came from. Pick a shape and the big "
                 + "number: clean jibes, top speed or tacks. A photo of yours can go behind "
                 + "it.",
-                "Or turn on the map background and the track is drawn over the water you "
-                + "rode. That one needs a connection. Without one the card comes out "
+                "Or pick the map as the background and the track is drawn over the water "
+                + "you rode. That one needs a connection. Without one the card comes out "
                 + "plain.",
+                "A trip, a month or a season makes a card too. Draw all its tracks on one "
+                + "another, one session big, or a collage of them.",
                 "The card is made on your phone and goes nowhere until you send it.",
             ],
             image: HelpImage(asset: "help-share-composer",

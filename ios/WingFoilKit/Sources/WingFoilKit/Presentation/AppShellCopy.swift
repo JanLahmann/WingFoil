@@ -137,7 +137,27 @@ public enum AppShellCopy {
         public static let sendToUsLine =
             "A number looks wrong? Send the recording with your notes."
 
-        static let all: [String: String] = ["sendToUs": sendToUs, "sendToUsLine": sendToUsLine]
+        /// The card's background, on the session card and the period card alike
+        /// (`ShareCardDesignControls`): the dark card, the map under the track, a photo.
+        public static let background = "Background"
+        public static let dark = "Dark"
+        public static let map = "Map"
+        public static let photo = "Photo"
+        /// The period card's artwork (Jan, 28 Sep 2026): every track on one another, one
+        /// session drawn big, or each session's own small track in a grid.
+        public static let tracks = "Tracks"
+        public static let allSessions = "All sessions"
+        public static let oneSession = "One session"
+        public static let collage = "Collage"
+        public static let collageNote =
+            "The last {limit} sessions, each on its own, in the order you rode them."
+
+        static let all: [String: String] = [
+            "sendToUs": sendToUs, "sendToUsLine": sendToUsLine,
+            "background": background, "dark": dark, "map": map, "photo": photo,
+            "tracks": tracks, "allSessions": allSessions, "oneSession": oneSession,
+            "collage": collage, "collageNote": collageNote,
+        ]
     }
 
     /// `RiderPromptView`: whose session a new import is.
@@ -251,6 +271,8 @@ public enum AppShellCopy {
         public static let perWeek = "Sessions per week"
         public static let weeksOnTheWater = "{ridden} of {weeks} weeks on the water."
         public static let weekRuns = "A week runs Monday to Sunday, on your phone's clock."
+        /// The button beside Periods that makes a card of the range on screen.
+        public static let share = "Share card"
 
         static let all: [String: String] = [
             "nothingInRange": nothingInRange, "widenTheRange": widenTheRange,
@@ -261,6 +283,7 @@ public enum AppShellCopy {
             "pumpsNote": pumpsNote, "portShare": portShare, "portShareNote": portShareNote,
             "bySide": bySide, "bySideEmpty": bySideEmpty, "bySideNote": bySideNote,
             "perWeek": perWeek, "weeksOnTheWater": weeksOnTheWater, "weekRuns": weekRuns,
+            "share": share,
         ]
     }
 

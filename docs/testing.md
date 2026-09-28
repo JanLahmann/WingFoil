@@ -1176,7 +1176,9 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
 
    **A period card**: `UI_TAB=trends UI_OPEN_PERIODS=1 UI_SHARE_PERIOD=trip|month|season`
    pushes Periods and opens the first such period's composer; `UI_SHAPE` and `UI_HERO`
-   (`clean|max2s|sessions`) stage it without writing the stored choice. The library has to
+   (`clean|max2s|sessions`), `UI_MAP=1|0` and `UI_TRACKS=all|one|collage` stage it without
+   writing the stored choice; `UI_TAB=trends UI_SHARE_RANGE=1` opens the card of the range
+   Trends shows instead (the toolbar's Share button). The library has to
    be imported first (`UI_IMPORT_FIXTURES=1` runs on the Sessions tab, so launch once with it
    alone).
 

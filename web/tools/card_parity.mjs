@@ -31,7 +31,7 @@ const JS = new URL("../js/", import.meta.url);
 const { keyMetrics } = await import(new URL("render.js", JS).href);
 const { HERO_ORDER, PERIOD_HERO_ORDER, cardStats, cardStory, periodCardStats,
         periodCardStory, periodMapAvailable } = await import(new URL("cardstats.js", JS).href);
-const { stackPlacer, storyBoxes } = await import(new URL("sharecard.js", JS).href);
+const { collageCells, stackPlacer, storyBoxes } = await import(new URL("sharecard.js", JS).href);
 const { captionText } = await import(new URL("presentation.js", JS).href);
 
 /**
@@ -115,6 +115,13 @@ const stacks = outlines.cases.map((c) => {
   };
 });
 
+/* The **collage**, from the same fixture's `collage` block: where `collageCells` puts every
+ * cell of a grid for a count and a box. `TrackCollage.cells` in the kit reads the same file. */
+const collages = (outlines.collage?.cases || []).map((c) => ({
+  name: c.name,
+  cells: collageCells(c.count, c.box).map((b) => [b.x, b.y, b.w, b.h].map(round6)),
+}));
+
 /* The **session card**, from the presentation goldens: the browser draws the document and
  * nothing else now, so what is dumped is what it made of one. `file` is still the analysis
  * golden beside it, because that is what the verifier's own re-derivation reads. */
@@ -153,4 +160,5 @@ process.stdout.write(JSON.stringify({
   cards: out,
   periods,
   stacks,
+  collages,
 }));

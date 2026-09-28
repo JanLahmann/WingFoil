@@ -1232,6 +1232,20 @@
       <button type="button" class="seg-btn" data-hero="tacks" aria-pressed="false">Tacks</button>
       <button type="button" class="seg-btn" data-hero="sessions" aria-pressed="false" hidden>Sessions</button>
     </div>
+    <!-- The period card's artwork (Jan, 28 Sep 2026), the phone's `PeriodCardTracks`: every
+         outline stacked, one session drawn big, or a collage of them. Hidden for a session
+         card and for a period of one afternoon. js/sharecard.js fills the session list. -->
+    <div id="card-tracks-row" hidden>
+      <div class="seg" role="group" aria-label="Tracks">
+        <button type="button" class="seg-btn" data-tracks="all" aria-pressed="true" data-w="share.allSessions">All sessions</button>
+        <button type="button" class="seg-btn" data-tracks="one" aria-pressed="false" data-w="share.oneSession">One session</button>
+        <button type="button" class="seg-btn" data-tracks="collage" aria-pressed="false" data-w="share.collage">Collage</button>
+      </div>
+      <label class="card-field" id="card-session-row" hidden><span data-w="share.oneSession">One session</span>
+        <select id="card-session"></select>
+      </label>
+      <p class="muted small" id="card-collage-note" hidden></p>
+    </div>
     <!-- The map background. Off by default, and hidden outright for a recording with no
          geographic anchor — the only control on this dialog that reaches the network, which
          is why it says so on its own line rather than in the fine print at the bottom. -->
