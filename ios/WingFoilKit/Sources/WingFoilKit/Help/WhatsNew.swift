@@ -64,6 +64,34 @@ public enum WhatsNew {
     public static let entries: [WhatsNewEntry] = [
         WhatsNewEntry(
             version: "1.0.1",
+            build: 117,
+            channel: .beta,
+            date: "2026-09-28",
+            dateText: "28 September 2026",
+            title: "Share your season",
+            lines: [
+                "Share a whole season from Trends, with the new button at the top.",
+                "Season and trip cards take a photo or the map behind them, like a session card.",
+                "Pick the tracks: all sessions at once, your best session big, or a collage of your best twelve.",
+                "A run, a ride or a hike no longer turns up as a wingfoil session.",
+                "The home page at cleanjibe.org is new, and the browser app now uses the same words as the phone.",
+            ]),
+        WhatsNewEntry(
+            version: "1.0.1",
+            build: 116,
+            channel: .dev,
+            date: "2026-09-28",
+            dateText: "28 September 2026",
+            title: "Share your season",
+            lines: [
+                "Share a whole season from Trends, with the new button at the top.",
+                "Season and trip cards take a photo or the map behind them, like a session card.",
+                "Pick the tracks: all sessions at once, your best session big, or a collage of your best twelve.",
+                "A run, a ride or a hike no longer turns up as a wingfoil session.",
+                "The home page at cleanjibe.org is new, and the browser app now uses the same words as the phone.",
+            ]),
+        WhatsNewEntry(
+            version: "1.0.1",
             build: 115,
             channel: .beta,
             date: "2026-09-27",
