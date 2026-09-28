@@ -51,16 +51,89 @@ import Testing
         }
     }
 
-    /// The newest twelve, still oldest first — a season's collage is its latest afternoons in
-    /// the order they were ridden.
+    /// A trivial ranking (fixed clean count, no best 2 s) that reduces `pick` to "the
+    /// newest twelve" — the fixture-free cases exercise the tie-break chain on its own.
+    private struct Session {
+        let id: String
+        let clean: Int
+        let best2s: Double?
+        let start: Date
+    }
+
+    private static func pick(_ sessions: [Session]) -> [String] {
+        TrackCollage.pick(sessions, clean: \.clean, best2s: \.best2s, start: \.start)
+            .map(\.id)
+    }
+
+    /// Every session tied on the ladder: the newest twelve win, still oldest first — a
+    /// season's collage stays chronological even once the frames were chosen for merit.
     @Test func aLongPeriodKeepsItsNewestTwelveInOrder() {
-        let ids = (1...40).map { "s\($0)" }
-        let picked = TrackCollage.pick(ids)
+        let sessions = (1...40).map {
+            Session(id: "s\($0)", clean: 0, best2s: nil,
+                    start: Date(timeIntervalSince1970: Double($0)))
+        }
+        let picked = Self.pick(sessions)
         #expect(picked.count == TrackCollage.limit)
         #expect(picked.first == "s29")
         #expect(picked.last == "s40")
-        #expect(TrackCollage.pick(["a", "b"]) == ["a", "b"])
+
+        let two = [Session(id: "a", clean: 0, best2s: nil, start: Date(timeIntervalSince1970: 1)),
+                   Session(id: "b", clean: 0, best2s: nil, start: Date(timeIntervalSince1970: 2))]
+        #expect(Self.pick(two) == ["a", "b"])
         #expect(TrackCollage.cells(count: 0, in: TrackStack.Box(x: 0, y: 0, w: 10, h: 10))
                     .isEmpty)
+    }
+
+    /// The most clean jibes wins, whatever the date — the whole point of "best", not
+    /// "latest".
+    @Test func moreCleanJibesOutranksNewer() {
+        let sessions = [
+            Session(id: "a", clean: 10, best2s: nil, start: Date(timeIntervalSince1970: 1)),
+            Session(id: "b", clean: 3, best2s: nil, start: Date(timeIntervalSince1970: 2)),
+        ]
+        #expect(TrackCollage.best(sessions, clean: \.clean, best2s: \.best2s,
+                                  start: \.start)?.id == "a")
+    }
+
+    /// A tie in clean jibes goes to the higher best 2 s; a session with none ranks below
+    /// one that has it, whatever the count.
+    @Test func tiedCleanJibesGoToTheHigherBest2s() {
+        let sessions = [
+            Session(id: "a", clean: 5, best2s: 12.0, start: Date(timeIntervalSince1970: 1)),
+            Session(id: "b", clean: 5, best2s: 18.0, start: Date(timeIntervalSince1970: 2)),
+            Session(id: "c", clean: 5, best2s: nil, start: Date(timeIntervalSince1970: 3)),
+        ]
+        let best = TrackCollage.best(sessions, clean: \.clean, best2s: \.best2s, start: \.start)
+        #expect(best?.id == "b")
+    }
+
+    /// A session with no ladder at all — no clean jibes and no best 2 s — ranks last.
+    @Test func aSessionWithNoLadderRanksLast() {
+        let sessions = [
+            Session(id: "a", clean: 0, best2s: nil, start: Date(timeIntervalSince1970: 99)),
+            Session(id: "b", clean: 1, best2s: nil, start: Date(timeIntervalSince1970: 1)),
+        ]
+        #expect(TrackCollage.best(sessions, clean: \.clean, best2s: \.best2s,
+                                  start: \.start)?.id == "b")
+    }
+
+    /// `pick` keeps the best `limit`, still returned oldest first.
+    @Test func pickKeepsTheBestInDateOrder() {
+        var sessions = (1...20).map {
+            Session(id: "s\($0)", clean: 1, best2s: nil,
+                    start: Date(timeIntervalSince1970: Double($0)))
+        }
+        // The two weakest by date (oldest) are made the two strongest by clean jibes, so a
+        // pure "newest limit" pick would drop them and a ranked pick keeps them, still at
+        // the front — in date order.
+        sessions[0] = Session(id: "s1", clean: 99, best2s: nil,
+                              start: Date(timeIntervalSince1970: 1))
+        sessions[1] = Session(id: "s2", clean: 50, best2s: nil,
+                              start: Date(timeIntervalSince1970: 2))
+        let picked = Self.pick(sessions)
+        #expect(picked.count == TrackCollage.limit)
+        #expect(picked.first == "s1")
+        #expect(picked[1] == "s2")
+        #expect(picked == picked.sorted { Int($0.dropFirst())! < Int($1.dropFirst())! })
     }
 }
