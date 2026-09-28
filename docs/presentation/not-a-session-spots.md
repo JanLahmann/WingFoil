@@ -1,4 +1,4 @@
-> Part of `docs/presentation.md`. Engine 0.25.0.
+> Part of `docs/presentation.md`. Engine 0.26.0.
 
 ## Not a session — the recording that was never an afternoon
 
@@ -37,6 +37,20 @@ A provisional row's version of the same line is about the recording, not the rid
 
 > Your watch says this afternoon happened, but its recording has not arrived yet — so it is
 > not counted in totals, trends or records until it does.
+
+**A land sport has its own tag and its own line** (engine 0.26.0, docs/algorithms/not-a-session.md
+"A land sport is not a session"). A run or a ride *was* riding of a kind, so "No riding
+detected" would be wrong about it. The row reads **`Not a watersport`** instead, in the same
+place and the same colour, and the page says what the file was recorded as:
+
+> This was recorded as running, so it is not a session on the water. It is kept, and left
+> out of totals, trends and records.
+
+The sport is the FIT profile's own name with `_` read as `-` ("e-biking"); a file that somehow
+reaches the line without one reads "another sport". Ids: `verdicts.notASession.landTag` and
+`verdicts.notASession.lines.2` with `args.sport`, authored by `NotASessionNote` like the other
+two. The web row wears the same tag for a stored run saved by an older engine, from the
+digest's own `sport`, the day it leaves the totals.
 
 **What excludes it, in one place per platform.** `LibraryStore.clause` on the phone —
 alongside the example, the provisional row and a friend's session, the fourth of four — and

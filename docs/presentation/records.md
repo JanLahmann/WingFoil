@@ -1,4 +1,4 @@
-> Part of `docs/presentation.md`. Engine 0.25.0.
+> Part of `docs/presentation.md`. Engine 0.26.0.
 
 ## Record windows
 

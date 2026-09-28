@@ -1,4 +1,4 @@
-> Part of `docs/algorithms.md`. Engine 0.25.0.
+> Part of `docs/algorithms.md`. Engine 0.26.0.
 
 ## HR cost (phone) — what an attempt costs in heartbeats
 

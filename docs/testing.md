@@ -508,6 +508,14 @@ same ownership window to tell a `recovery` pump burst from a failed takeoff atte
 one accelerometer fixture attempts go 37 → 34, failed 14 → 11, unknown 1 → 0 and recovery
 0 → 4 (`test_pump_episodes_are_serialized_whole`).
 
+Engine 0.26.0 (ADR-036) **moves no number**: no fixture's FIT sport is a land sport, so every
+analysis golden gains `summary.landSport: null` and the version, and every presentation golden
+the version. The rule is pinned synthetic — `test_a_land_sport_is_not_a_session_whatever_its_speeds`
+and its walking/generic twin in `test_goldens.py`, `SessionVerdictTests` in the kit (including
+a 600 s run at marathon pace through `SessionSummarizer.analyze`), the web twin in
+`test_library.py` and `verify_library.py` — and the intervals.icu filter by
+`test_download_icu.py` and `IcuClientTests`, with both of Jan's activity names.
+
 Engine 0.25.0 (ADR-035) moves only the **flight-end** channel, and only two ways: 9 falls owned
 by an uncounted course change become straight-line falls, and 8 straight-line touchdowns whose
 first sub-floor sample came more than `turnOutcomeLookahead` after the exit become glide-outs

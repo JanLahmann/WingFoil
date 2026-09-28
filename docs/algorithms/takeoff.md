@@ -1,4 +1,4 @@
-> Part of `docs/algorithms.md`. Engine 0.25.0.
+> Part of `docs/algorithms.md`. Engine 0.26.0.
 
 ## Takeoff analysis (phone) — pumps-to-takeoff · attempts · in-flight pumping
 
