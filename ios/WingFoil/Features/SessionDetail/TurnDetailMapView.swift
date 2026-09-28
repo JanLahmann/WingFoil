@@ -152,8 +152,8 @@ struct TurnDetailMapView: View {
     ///
     /// **A tap, and deliberately not a drag.** The first version was a
     /// `DragGesture(minimumDistance: 0)`, so a finger run along the arc would keep picking.
-    /// Two things killed it on the simulator: both pages live inside a paging `TabView`, and a
-    /// zero-distance drag over the drawing both **swallowed the swipe to the next turn** and
+    /// Two things killed it on the simulator: both pages lived inside a paging `TabView` then,
+    /// and a zero-distance drag over the drawing both **swallowed the swipe to the next turn** and
     /// fired spuriously as the pager settled — the flight-end page opened with a playhead ring
     /// and a callout nobody had asked for. Scrubbing belongs to the strips, which are not
     /// inside a horizontal gesture; the drawing answers a tap.

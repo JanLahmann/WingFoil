@@ -57,8 +57,8 @@ final class DevWorkbench {
 
     private(set) var entries: [Key: Entry] = [:]
     /// The build in flight for a key, held so a **second** caller waits for it rather than
-    /// walking away empty. The turn sheet is a `TabView` that materialises the pages either
-    /// side of the one on screen, so three views ask for the same session within a frame of
+    /// walking away empty. The turn sheet was a `TabView` that materialised the pages either
+    /// side of the one on screen (its pager still draws the neighbour during a swipe), so three views ask for the same session within a frame of
     /// each other; a plain "already running, do nothing" guard left two of them with no
     /// context and no reason to ask again, and the panel sat on its spinner for ever.
     private var running: [Key: Task<Entry?, Never>] = [:]

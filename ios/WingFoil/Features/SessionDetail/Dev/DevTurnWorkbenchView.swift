@@ -58,8 +58,8 @@ struct DevTurnWorkbenchView: View {
 
     /// Re-runs `derive` when the session's channels land as well as when the turn changes.
     ///
-    /// Reading `workbench.entry` here is what registers the observation: the turn sheet is a
-    /// paging `TabView` that builds and tears down the pages either side of the one on screen,
+    /// Reading `workbench.entry` here is what registers the observation: the turn sheet was a
+    /// paging `TabView` that built and tore down the pages either side of the one on screen,
     /// so a `.task` waiting on the shared load is routinely cancelled halfway through and its
     /// page is left on the spinner for ever. Keyed on whether the entry exists, the page simply
     /// asks again the moment it does — and the second pass finds it cached and returns at once.
