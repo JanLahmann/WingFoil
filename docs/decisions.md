@@ -14,6 +14,38 @@ apart is a history, not a contract. There are four:
 An Accepted entry may carry a clause saying what a later ADR narrowed or what has moved since.
 That is the point of the line: it says which half of an old paragraph is still load-bearing.
 
+## ADR-036 · A land sport is not a session, and a name rescues only a type that could be a watersport
+**Status: Accepted** (Jan, 28 September 2026; engine 0.26.0, release channel).
+
+Jan's Berlin Marathon came in through intervals.icu on 28 September 2026 and was analysed as
+98 % on foil, 10.65 kn and 2 jibes; a run called "9 5 4 Supporting Robert" came in the same
+way. The intervals.icu filter rescued any activity whose name *contained* wing, foil,
+windsurf, kite, surf or sup, on any type, so "Supporting" was a SUP session and a Run was
+kept; and the engine had no view on a sport, while a runner's pace clears `foilEntrySpeed`.
+
+Decision, two halves. (1) **The filter**: the name rescue applies only to a type that could
+be a watersport — Walk (the CIQ mis-type), Workout, Other, WaterSport, no type, or one the
+list does not know — and never to Run, Ride, Hike, Swim or the other known land, gym and
+snow types; and it matches **whole words**, with the long stems (foil, wingfoil, windsurf,
+kitesurf…) taking any ending and the short words (wing, kite, surf, sup) only their own few.
+One rule in the kit (`WatersportName`), `lab/tools/download_icu.py` and `web/js/icu.js`. The
+Strava list keeps its any-type rescue, since the rider picks from it, and takes the
+whole-word match. (2) **The engine**: a recording whose FIT session sport is a land sport —
+running, cycling, mountaineering, hiking, e-biking, motorcycling, driving, by FIT enum — is
+not a session, reason `land_sport`, asked before the foil time, with the sport in
+`summary.landSport`. Refused: adding `walking`, `generic` or `training`, which is how the CIQ
+app and the Walk-typed imports file real sessions; a speed-profile detector for runs, which
+would be a threshold where a field already answers; and deleting or refusing the file, which
+the not-a-session rule never does.
+
+Consequences. The run stays in the library, visible and deletable, tagged "Not a watersport",
+and its page says "This was recorded as running…"; it is out of records, trends, periods and
+totals by the existing `isSession` clause. The phone re-analyses on the version bump; the
+web re-derives from the stored digest's `sport`. No golden changes a number: every one gains
+`summary.landSport: null` and the version. A Strava GPX named "Wingfoil" and typed Run is
+still offered, and its `<type>` is not a FIT sport, so it would still be analysed; that is
+the rider's own pick.
+
 ## ADR-035 · Only a counted turn owns a fall, and a touch is a touch only near the exit
 **Status: Accepted** (Jan, 25 September 2026; engine 0.25.0, release channel).
 

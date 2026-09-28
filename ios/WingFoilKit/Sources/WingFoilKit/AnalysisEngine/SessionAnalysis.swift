@@ -245,7 +245,15 @@ public enum AnalysisEngine {
     /// `glideOut`. Over the 21 goldens 9 falls move from "in a turn" to "in a straight line"
     /// and 8 straight-line touchdowns become glide-outs; turns, clean jibes, total falls and
     /// every rate stay where they were. No schema change.
-    public static let version = "0.25.0"
+    ///
+    /// 0.26.0 says **a land sport is not a session** (docs/algorithms/not-a-session.md "A land
+    /// sport is not a session", ADR-036). Jan's Berlin Marathon came in through intervals.icu
+    /// on 28 Sep 2026 and read 98 % on foil, 10.65 kn and 2 jibes: a run clears every flight
+    /// gate on speed alone. A recording whose FIT session sport is in
+    /// `SessionVerdict.landSports` is `land_sport` before its foil time is asked, with the
+    /// sport in `summary.landSport`. No fixture in the corpus is one; every golden moves by
+    /// the version and that one null key.
+    public static let version = "0.26.0"
 }
 
 /// **Is this recording a session?** — docs/algorithms/not-a-session.md "Not a session" (engine 0.19.0).
@@ -269,9 +277,32 @@ public enum SessionVerdict: Sendable {
     /// The distance floor, metres. Same conjunction, same reasoning.
     public static let maxDistanceM: Double = 200
 
+    /// **The land sports** (engine 0.26.0): FIT `sport` enum name → number, from the FIT
+    /// profile. A recording whose session sport is one of these is not a session, however
+    /// fast and however "on foil" it reads. Walking (11), generic (0) and training (10) are
+    /// deliberately absent — the CIQ app and the Walk-typed imports file real watersport
+    /// sessions under them — and so are the snow and skate sports, where a wing is still a
+    /// wing. Twin of `wingfoil_lab.goldens.LAND_SPORTS`.
+    public static let landSports: [String: Int] = [
+        "running": 1, "cycling": 2, "mountaineering": 16, "hiking": 17,
+        "e_biking": 21, "motorcycling": 22, "driving": 24,
+    ]
+
+    /// The FIT name of the land sport `sport` says — the profile's name in any case, or its
+    /// number as a string, the way the parser spells a sport it has no name for — else nil.
+    public static func landSport(_ sport: String?) -> String? {
+        guard let key = sport?.trimmingCharacters(in: .whitespaces).lowercased() else {
+            return nil
+        }
+        if landSports[key] != nil { return key }
+        return landSports.first { String($0.value) == key }?.key
+    }
+
     /// Why a recording is not a session — a code, never a sentence. The words live in
     /// presentation (`NotASessionNote`).
     public enum Reason: String, Sendable, Codable, CaseIterable {
+        /// The file says a land sport (``landSports``), engine 0.26.0. Asked first.
+        case landSport = "land_sport"
         /// No foil time, and shorter than ``maxDurationS``.
         case tooShort = "too_short"
         /// No foil time, and less than ``maxDistanceM`` covered.
@@ -283,8 +314,11 @@ public enum SessionVerdict: Sendable {
     }
 
     /// The verdict for one analyzed recording.
-    public static func of(foilTimeS: Double, durationS: Double,
-                          distanceM: Double) -> (isSession: Bool, reason: Reason?) {
+    public static func of(foilTimeS: Double, durationS: Double, distanceM: Double,
+                          sport: String? = nil) -> (isSession: Bool, reason: Reason?) {
+        // A land sport is asked before the foil time: a run clears the flight gates on
+        // speed, so its foil time answers nothing.
+        if landSport(sport) != nil { return (false, .landSport) }
         if foilTimeS > 0 { return (true, nil) }
         if durationS < maxDurationS { return (false, .tooShort) }
         if distanceM < maxDistanceM { return (false, .noDistance) }
@@ -1323,6 +1357,9 @@ public struct SessionSummary: Sendable, Codable, Equatable {
     public var isSession: Bool = true
     /// Why not, when not — a code, never a sentence; nil exactly when `isSession`.
     public var notASessionReason: SessionVerdict.Reason?
+    /// The land sport that decided (engine 0.26.0), as the FIT profile names it —
+    /// `"running"`, `"e_biking"`. Nil on every recording it did not decide.
+    public var landSport: String?
     public var foilTimeS: Double
     public var foilPct: Double
     public var flightCount: Int
@@ -1366,7 +1403,7 @@ public struct SessionSummary: Sendable, Codable, Equatable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case isSession, notASessionReason
+        case isSession, notASessionReason, landSport
         case foilTimeS, foilPct, flightCount, longestFlightS, maxFlightM, distanceKm
         case durationS, timerTimeS, avgSpeedKmh, turnsPerHour, jibesPerHour
         case cleanJibesPerHour, wetPerHour, windowRates, turns, flightEnds
@@ -1383,6 +1420,7 @@ public struct SessionSummary: Sendable, Codable, Equatable {
         isSession = try c.decodeIfPresent(Bool.self, forKey: .isSession) ?? true
         notASessionReason = try c.decodeIfPresent(SessionVerdict.Reason.self,
                                                   forKey: .notASessionReason)
+        landSport = try c.decodeIfPresent(String.self, forKey: .landSport)
         foilTimeS = try c.decode(Double.self, forKey: .foilTimeS)
         foilPct = try c.decode(Double.self, forKey: .foilPct)
         flightCount = try c.decode(Int.self, forKey: .flightCount)
@@ -1415,6 +1453,7 @@ public struct SessionSummary: Sendable, Codable, Equatable {
         var c = encoder.container(keyedBy: CodingKeys.self)
         try c.encode(isSession, forKey: .isSession)
         try c.encode(notASessionReason, forKey: .notASessionReason)   // explicit null
+        try c.encode(landSport, forKey: .landSport)                   // explicit null
         try c.encode(foilTimeS, forKey: .foilTimeS)
         try c.encode(foilPct, forKey: .foilPct)
         try c.encode(flightCount, forKey: .flightCount)
@@ -1658,9 +1697,12 @@ public enum SessionSummarizer {
         // Read off the summary's own three numbers, after the rates have filled `durationS`.
         let verdict = SessionVerdict.of(foilTimeS: summary.foilTimeS,
                                         durationS: summary.durationS,
-                                        distanceM: records.totalDistanceM)
+                                        distanceM: records.totalDistanceM,
+                                        sport: raw.capabilities.sport)
         summary.isSession = verdict.isSession
         summary.notASessionReason = verdict.reason
+        summary.landSport = verdict.reason == .landSport
+            ? SessionVerdict.landSport(raw.capabilities.sport) : nil
 
         var pumpsByFlight = [Int?](repeating: nil, count: segmentation.flights.count)
         for t in takeoffs.takeoffs where segmentation.flights.indices.contains(t.flightIndex) {

@@ -170,6 +170,31 @@ import ZIPFoundation
                 == "Basic " + Data("API_KEY:abc123".utf8).base64EncodedString())
     }
 
+    /// Jan, 28 Sep 2026: his Berlin Marathon and "9 5 4 Supporting Robert" came in as
+    /// wingfoil sessions. The name rescue now applies only to a type that could be a
+    /// watersport, and only to whole words. Twin of lab/tests/test_download_icu.py.
+    @Test(arguments: [
+        ("Windsurf", "Morning Run"), ("Walk", "Wingfoiling"), ("Walk", "Wing foil Torbole"),
+        ("Walk", "foiling at Garda"), ("Walk", "Wingfoilen am Gardasee"), ("Walk", "SUP"),
+        ("Walk", "SUP-Tour"), ("Walk", "wing_foil"), ("Walk", "FoilMotion session"),
+        ("Walk", "Kiten"), ("Workout", "Wingfoil Torbole"), (nil, "Windsurfen"),
+        ("", "kitesurfing"), ("SomeFutureType", "wingfoil"),
+    ] as [(String?, String?)])
+    func aWatersportIsKept(_ type: String?, _ name: String?) {
+        #expect(IcuClient.isWatersport(IcuActivity(id: "x", name: name, type: type)))
+    }
+
+    @Test(arguments: [
+        ("Run", "BMW BERLIN-MARATHON"), ("Run", "9 5 4 Supporting Robert"),
+        ("Walk", "9 5 4 Supporting Robert"), ("Walk", "super walk"),
+        ("Ride", "Ride to the wingfoil spot"), ("Hike", "Surf-Hütte hike"),
+        ("Swim", "SUP rescue practice"), ("EBikeRide", "kite shop"), ("TrailRun", "foil"),
+        ("Walk", "Evening walk"), (nil, nil),
+    ] as [(String?, String?)])
+    func everythingElseIsNot(_ type: String?, _ name: String?) {
+        #expect(!IcuClient.isWatersport(IcuActivity(id: "x", name: name, type: type)))
+    }
+
     @Test func decodesActivityListAndFiltersWatersports() async throws {
         let json = """
         [{"id":"i111","name":"Nago-Torbole Windsurfen","type":"Windsurf",

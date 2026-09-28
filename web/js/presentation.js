@@ -115,6 +115,7 @@ export function text(id, args = {}, form = FORM.term) {
     case "verdicts": {
       if (parts[1] !== "notASession") return null;
       if (parts[2] === "tag") return NOT_A_SESSION.tag;
+      if (parts[2] === "landTag") return NOT_A_SESSION.landTag;
       if (parts.length !== 4 || parts[2] !== "lines") return null;
       const index = Number(parts[3]);
       return NOT_A_SESSION.lines[index] ?? null;

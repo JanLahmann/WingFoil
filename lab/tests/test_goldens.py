@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from wingfoil_lab.goldens import (NOT_A_SESSION_MAX_DISTANCE_M, NOT_A_SESSION_MAX_DURATION_S,
+from wingfoil_lab.goldens import (LAND_SPORTS, NOT_A_SESSION_MAX_DISTANCE_M, NOT_A_SESSION_MAX_DURATION_S,
                                   RateConfig, _hr_json, analyze, build_golden, dry_jibe_times,
-                                  golden_path, load_golden, session_rates, session_verdict,
+                                  golden_path, land_sport, load_golden, session_rates, session_verdict,
                                   window_rates, write_golden)
 from wingfoil_lab.hrcost import HrAnalysis
 from wingfoil_lab.turns import TurnConfig
@@ -32,7 +32,7 @@ CAP_KEYS = {"hasDoppler", "hasDevFields", "hasWatchLaps", "hasAccel",
             "accelClockReconstructed", "hasHR", "sampleRateHz"}
 RECORD_KEYS = {"best2sKn", "best10sKn", "best5x10sKn", "best100mKn", "best250mKn",
                "best500mKn", "bestNmKn", "bestHourKn", "alpha500Kn", "windows"}
-SUMMARY_KEYS = {"isSession", "notASessionReason",
+SUMMARY_KEYS = {"isSession", "notASessionReason", "landSport",
                 "foilTimeS", "foilPct", "flightCount", "longestFlightS",
                 "maxFlightM", "distanceKm", "durationS", "timerTimeS", "avgSpeedKmh",
                 "turnsPerHour", "jibesPerHour", "cleanJibesPerHour", "wetPerHour",
@@ -80,7 +80,7 @@ def smoke_golden():
 def test_schema_shape(smoke_golden):
     g = smoke_golden
     assert list(g.keys()) == TOP_KEYS
-    assert g["engineVersion"] == "0.25.0"
+    assert g["engineVersion"] == "0.26.0"
     assert set(g["capabilities"].keys()) == CAP_KEYS
     assert set(g["records"].keys()) == RECORD_KEYS
     assert set(g["summary"].keys()) == SUMMARY_KEYS
@@ -513,6 +513,31 @@ def test_the_not_a_session_rule(foil_s, duration_s, distance_m, expected):
     assert session_verdict(foil_s, duration_s, distance_m) == expected
 
 
+@pytest.mark.parametrize("sport", ["running", "cycling", "hiking", "mountaineering",
+                                   "e_biking", "motorcycling", "driving", "Running", "1", "17"])
+def test_a_land_sport_is_not_a_session_whatever_its_speeds(sport):
+    """Engine 0.26.0: Jan's Berlin Marathon read 98 % on foil at 10.65 kn. A land sport is
+    asked before the foil time, so a run that clears every flight gate is still a run."""
+    assert session_verdict(12000.0, 12300.0, 42195.0, sport) == (False, "land_sport")
+
+
+@pytest.mark.parametrize("sport", [None, "walking", "generic", "training", "windsurfing",
+                                   "kitesurfing", "stand_up_paddleboarding", "11", "0", "43",
+                                   "alpine_skiing", "inline_skating"])
+def test_walking_generic_and_the_watersports_are_left_to_the_other_rules(sport):
+    """Walking, generic and training are how the CIQ app and the imports file real
+    watersport sessions, and a wing on skis or skates is still a wing: none of them is on
+    the list."""
+    assert session_verdict(1800.0, 3600.0, 12000.0, sport) == (True, None)
+    assert land_sport(sport) is None
+
+
+def test_the_land_sports_are_the_fit_profile_numbers():
+    assert LAND_SPORTS == {"running": 1, "cycling": 2, "mountaineering": 16, "hiking": 17,
+                           "e_biking": 21, "motorcycling": 22, "driving": 24}
+    assert land_sport("21") == "e_biking" and land_sport(" Cycling ") == "cycling"
+
+
 def test_every_corpus_golden_is_a_session():
     """The rule may not reach a single recording the project already calls a session.
 
@@ -526,6 +551,7 @@ def test_every_corpus_golden_is_a_session():
         summary = load_golden(path)["summary"]
         assert summary["isSession"] is True, path.name
         assert summary["notASessionReason"] is None, path.name
+        assert summary["landSport"] is None, path.name
 
 
 def test_the_smoke_fixture_would_fail_the_duration_floor_without_its_foil_time(smoke_golden):

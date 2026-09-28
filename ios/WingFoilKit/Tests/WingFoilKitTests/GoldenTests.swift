@@ -1061,7 +1061,7 @@ import Testing
         raw.capabilities.hasSpeed = true
         raw.capabilities.sampleRateHz = 1
         let analysis = SessionSummarizer.analyze(raw)
-        #expect(analysis.engineVersion == "0.25.0")
+        #expect(analysis.engineVersion == "0.26.0")
         #expect(analysis.flights.count == 1)
 
         let data = try JSONEncoder().encode(analysis)
@@ -1127,7 +1127,7 @@ import Testing
         #expect(windows["alpha500"] == nil, "no positions ⇒ no alpha ⇒ absent key")
 
         let summary = try #require(obj["summary"] as? [String: Any])
-        #expect(Set(summary.keys) == ["isSession", "notASessionReason",
+        #expect(Set(summary.keys) == ["isSession", "notASessionReason", "landSport",
                                       "foilTimeS", "foilPct", "flightCount",
                                       "longestFlightS", "maxFlightM", "distanceKm",
                                       "durationS", "timerTimeS", "avgSpeedKmh",

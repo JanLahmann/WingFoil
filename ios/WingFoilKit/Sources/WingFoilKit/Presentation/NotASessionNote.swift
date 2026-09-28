@@ -20,13 +20,31 @@ public enum NotASessionNote {
     /// engine to have been wrong.
     public static let tag = "No riding detected"
 
+    /// The row's tag for a land sport (engine 0.26.0): a run or a ride *was* riding of a
+    /// kind, so "No riding detected" would be wrong about it. Three words that say what the
+    /// recording is not, without a verdict on the rider.
+    public static let landTag = "Not a watersport"
+
+    /// The tag a row wears for its reason — the one call the row and the document share.
+    public static func tag(for reason: SessionVerdict.Reason?) -> String {
+        reason == .landSport ? landTag : tag
+    }
+
     /// The page's one line: why this recording is not counted, in a sentence.
     ///
     /// `durationS` and `distanceKm` are the row's own displayed numbers, so the line reads
     /// against the key-metrics block directly above it rather than quoting a third figure.
+    ///
+    /// `sport` is the land sport that decided (`summary.landSport`, a FIT profile name), read
+    /// only for ``SessionVerdict/Reason/landSport``.
     public static func line(reason: SessionVerdict.Reason?,
-                            durationS: Double?, distanceKm: Double?) -> String {
+                            durationS: Double?, distanceKm: Double?,
+                            sport: String? = nil) -> String {
         switch reason {
+        case .landSport:
+            return "This was recorded as " + sportWord(sport)
+                + ", so it is not a session on the water. It is kept, and left out of "
+                + "totals, trends and records."
         case .noRecording:
             return "Your watch says this afternoon happened, but its recording has not "
                 + "arrived yet. It is not counted in totals, trends or records until it "
@@ -37,6 +55,13 @@ public enum NotASessionNote {
                 + " covered. This looks like a recording rather than a session. It is "
                 + "kept, and left out of totals, trends and records."
         }
+    }
+
+    /// The FIT profile's sport name as a rider reads it: `e_biking` → "e-biking". A file
+    /// that somehow reaches here without one is "another sport", never an empty space.
+    static func sportWord(_ sport: String?) -> String {
+        guard let sport, !sport.isEmpty else { return "another sport" }
+        return sport.lowercased().replacingOccurrences(of: "_", with: "-")
     }
 
     /// `m:ss` under an hour, `h:mm:ss` over it — the session clock's own shape.

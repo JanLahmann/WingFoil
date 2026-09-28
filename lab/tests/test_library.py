@@ -769,6 +769,25 @@ def test_a_stored_row_is_read_when_it_can_answer_and_re_derived_when_it_cannot()
     assert library.entry_is_session({"id": "x"}) == (True, None)
 
 
+def test_a_land_sport_is_not_a_session_and_the_twin_list_is_the_engines():
+    """Engine 0.26.0: Jan's Berlin Marathon read 98 % on foil. The web's list is the
+    engine's, and a stored row's own `sport` decides even over an older engine's True."""
+    from wingfoil_lab.goldens import LAND_SPORTS
+    assert library.LAND_SPORTS == LAND_SPORTS
+    assert library.session_verdict(12000.0, 12300.0, 42195.0, "running") \
+        == (False, "land_sport")
+    assert library.session_verdict(1800.0, 3600.0, 12000.0, "walking") == (True, None)
+    marathon = entry("run", "2026-09-27", 1.0, sport="running", isSession=True,
+                     notASessionReason=None)
+    assert library.entry_is_session(marathon) == (False, "land_sport")
+    assert library.aggregate([entry("mine", "2026-08-01", 1.0), marathon])["count"] == 1
+    doc = {"golden": {"summary": {"isSession": True, "notASessionReason": None,
+                                  "foilTimeS": 12000.0}},
+           "meta": {"startUtc": "2026-09-27T07:15:00Z", "sport": "running"}}
+    d = library.digest(doc, "marathon.fit")
+    assert (d["isSession"], d["notASessionReason"]) == (False, "land_sport")
+
+
 def test_a_recording_that_is_not_a_session_counts_in_nothing():
     mine = entry("mine", "2026-08-01", 1.0)
     junk = entry("junk", "2026-08-02", 2.0, foilTimeS=0.0, rateDurationS=24.0,

@@ -318,6 +318,10 @@ struct StravaImportTests {
         // The rescue: any type at all, if the rider named it.
         #expect(StravaActivityFilter.matches(made("Ride", "Wingfoil Torbole"), types: defaults))
         #expect(StravaActivityFilter.matches(made("Hike", "SUP downwinder"), types: defaults))
+        // …in whole words (28 Sep 2026): "Supporting" is no SUP.
+        #expect(!StravaActivityFilter.matches(made("Run", "9 5 4 Supporting Robert"),
+                                              types: defaults))
+        #expect(!StravaActivityFilter.matches(made("Ride", "Super loop"), types: defaults))
         // Off by default, on when asked for.
         #expect(!StravaActivityFilter.matches(made("Sail", "Regatta"), types: defaults))
         #expect(StravaActivityFilter.matches(made("Sail", "Regatta"),

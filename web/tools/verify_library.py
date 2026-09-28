@@ -368,6 +368,17 @@ def check_attribution() -> None:
                           "x.fit")[k] for k in ("isSession", "notASessionReason")],
           [False, "too_short"])
 
+    # Engine 0.26.0: a land sport is not a session, whatever an older engine stamped — the
+    # row's own `sport` decides, so a run saved before the rule leaves the totals at once.
+    marathon = counted_entry("run", 12.0, sport="running", isSession=True,
+                             notASessionReason=None)
+    check("  a run is not a session", library.entry_is_session(marathon),
+          (False, "land_sport"))
+    check("  and it is out of the aggregate",
+          library.aggregate([counted_entry("mine", 12.0), marathon])["count"], 1)
+    check("  walking is left to the other rules",
+          library.entry_is_session(counted_entry("walk", 12.0, sport="walking")), (True, None))
+
     # Schema 3 (engine 0.8.2): the session's own UTC offset, and the local calendar date it
     # implies. `dateUtc` stays what it always was — the UTC day — so an entry written before
     # this existed still reads correctly; `dateLocal` is the day the *rider* had, and it is

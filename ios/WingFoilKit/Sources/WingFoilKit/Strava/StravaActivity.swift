@@ -214,15 +214,12 @@ public struct StravaActivity: Sendable, Codable, Identifiable, Equatable {
 /// * the **type** is one the rider switched on, or
 /// * the **name** says what it was — the rescue that catches the rider who files everything
 ///   under Workout and writes "Wingfoil Torbole" in the title. Same keyword set the
-///   intervals.icu sync uses (`IcuClient.nameKeywords`), so the two doors agree about what
-///   a watersport is called.
+///   intervals.icu sync uses (`WatersportName`), so the two doors agree about what a
+///   watersport is called. Whole words only.
 ///
 /// …and then, in both cases, the activity must actually have a recording behind it. That is
 /// not a preference: without positions there is nothing to analyse.
 public enum StravaActivityFilter {
-
-    /// Name keywords that rescue an activity filed under a type nobody selected.
-    public static let nameKeywords = ["wing", "foil", "windsurf", "kite", "surf", "sup"]
 
     public static func matches(_ activity: StravaActivity,
                                types: Set<StravaActivityType>) -> Bool {
@@ -231,7 +228,8 @@ public enum StravaActivityFilter {
            types.contains(type) {
             return true
         }
-        let name = (activity.name ?? "").lowercased()
-        return nameKeywords.contains { name.contains($0) }
+        // The same whole words the intervals.icu sync asks (`WatersportName`, 28 Sep 2026),
+        // so "Supporting" is no SUP. Any type, still: this list is one the rider picks from.
+        return WatersportName.matches(activity.name)
     }
 }

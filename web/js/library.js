@@ -154,6 +154,19 @@ export async function backfillDigests(entries) {
 
 /* ------------------------------------------------------------------- the view */
 
+/** The FIT land sports (engine 0.26.0) — `library.py`'s `LAND_SPORTS`, which the totals ask
+ *  through `entry_is_session`. Read here only so a run saved by an older engine wears its
+ *  tag on the row the same day it leaves the totals. */
+const LAND_SPORTS = new Set(["running", "cycling", "mountaineering", "hiking", "e_biking",
+                             "motorcycling", "driving", "1", "2", "16", "17", "21", "22", "24"]);
+
+/** Why a row is not a session, or null when it is one: `land_sport` for a stored land
+ *  sport whatever an older engine stamped, else the digest's own reason. */
+function notASession(e) {
+  if (LAND_SPORTS.has(String(e.sport ?? "").trim().toLowerCase())) return "land_sport";
+  return e.isSession === false ? (e.notASessionReason || "too_short") : null;
+}
+
 export async function refresh() {
   let entries;
   try {
@@ -303,8 +316,9 @@ function renderRows(entries) {
       <button class="lib-open" type="button" data-act="open">
         <span class="row-title">${esc(spotLabel(e))}${tags(e)}</span>
         <span class="row-when">${esc(shortDate(e))} · ${listDuration(e.rateDurationS ?? e.durationS)}</span>
-        ${e.isSession === false
-          ? `<span class="row-note">${esc(NOT_A_SESSION.tag)}</span>` : ""}
+        ${notASession(e)
+          ? `<span class="row-note">${esc(notASession(e) === "land_sport"
+              ? NOT_A_SESSION.landTag : NOT_A_SESSION.tag)}</span>` : ""}
         <span class="row-metrics">${ROW_TRIPLE.map((key) => ROW_METRICS[key]).map((m) =>
           `<span class="rm"><b>${m.value(e)}</b><i>${esc(m.label)}</i></span>`).join("")}</span>
         <span class="row-foot">${tally(e.turns?.outcomes)}

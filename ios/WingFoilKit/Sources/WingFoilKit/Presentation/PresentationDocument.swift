@@ -417,7 +417,7 @@ public enum PresentationDocument {
             "slots": .array(defaultRowMetrics.map(slot)),
             "offered": .array(offeredRowMetrics.map(PresentationValue.string)),
             "tally": t.turnsCounted > 0 ? ladder(t.outcomes) : .null,
-            "tagIds": .array(s.isSession ? [] : [.string("verdicts.notASession.tag")]),
+            "tagIds": .array(s.isSession ? [] : [.string(notASessionTagId(s.notASessionReason))]),
         ])
     }
 
@@ -673,19 +673,34 @@ public enum PresentationDocument {
                             "lineId": .null, "args": .object([:])])
         }
         let reason = s.notASessionReason
-        let noRecording = reason == .noRecording
-        let args: [String: PresentationValue] = noRecording ? [:] : [
-            "durationS": number(s.durationS, "durationS"),
-            "distanceKm": number(s.distanceKm, "distanceKm"),
-        ]
+        let lineId: String
+        let args: [String: PresentationValue]
+        switch reason {
+        case .noRecording:
+            lineId = "verdicts.notASession.lines.0"
+            args = [:]
+        case .landSport:
+            // The sport the file says, as the FIT profile names it (engine 0.26.0).
+            lineId = "verdicts.notASession.lines.2"
+            args = ["sport": s.landSport.map(PresentationValue.string) ?? .null]
+        case .tooShort, .noDistance, nil:
+            lineId = "verdicts.notASession.lines.1"
+            args = ["durationS": number(s.durationS, "durationS"),
+                    "distanceKm": number(s.distanceKm, "distanceKm")]
+        }
         return .object([
             "isSession": .bool(false),
             "reasonId": reason.map { PresentationValue.string($0.rawValue) } ?? .null,
-            "tagId": .string("verdicts.notASession.tag"),
-            "lineId": .string(noRecording ? "verdicts.notASession.lines.0"
-                                          : "verdicts.notASession.lines.1"),
+            "tagId": .string(notASessionTagId(reason)),
+            "lineId": .string(lineId),
             "args": .object(args),
         ])
+    }
+
+    /// The row's quiet tag, by reason: "Not a watersport" for a land sport (engine 0.26.0),
+    /// the original four words for everything else. Twin of the lab's `_not_a_session_tag`.
+    static func notASessionTagId(_ reason: SessionVerdict.Reason?) -> String {
+        reason == .landSport ? "verdicts.notASession.landTag" : "verdicts.notASession.tag"
     }
 }
 

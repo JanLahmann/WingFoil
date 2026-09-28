@@ -229,6 +229,8 @@ def copy_ids() -> set[str]:
     out |= {"tokens.layer." + layer["id"] for layer in TOKENS["layers"]}
     verdicts = json.loads((COPY / "verdicts.json").read_text(encoding="utf-8"))
     out.add("verdicts.notASession.tag")
+    if "landTag" in verdicts["notASession"]:
+        out.add("verdicts.notASession.landTag")
     out |= {f"verdicts.notASession.lines.{i}"
             for i, _ in enumerate(verdicts["notASession"]["lines"])}
 
@@ -383,6 +385,21 @@ def test_the_not_a_session_line_is_an_id_with_the_two_numbers_that_decided():
     golden["summary"]["notASessionReason"] = "no_recording"
     note = build_presentation(golden)["notASession"]
     assert note["lineId"] == "verdicts.notASession.lines.0" and note["args"] == {}
+
+
+def test_a_land_sport_is_told_by_its_own_line_and_tag():
+    """Engine 0.26.0: a run is "Not a watersport" on the row, and the page's line names the
+    sport the file says (docs/presentation/not-a-session-spots.md)."""
+    golden = json.loads(json.dumps(load(goldens()[0])))
+    golden["summary"].update(isSession=False, notASessionReason="land_sport",
+                             landSport="running")
+    doc = build_presentation(golden)
+    assert doc["notASession"] == {"args": {"sport": "running"},
+                                  "isSession": False,
+                                  "lineId": "verdicts.notASession.lines.2",
+                                  "reasonId": "land_sport",
+                                  "tagId": "verdicts.notASession.landTag"}
+    assert doc["row"]["tagIds"] == ["verdicts.notASession.landTag"]
 
 
 def test_an_unknown_policy_is_refused():

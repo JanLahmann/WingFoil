@@ -258,6 +258,15 @@ jibes 558 -> 565, tacks 2 -> 4, course changes 147 -> 140, turn `fell_in` 41 -> 
 straight-line falls 45 -> 44 -- **clean jibes stay at 161 and no rate numerator moves**, because
 the pass can only add a turn that fell in. `config.turnAbortMinAngle` and the per-turn `aborted`
 flag are the schema change.
+
+Engine 0.26.0 adds **the land sport** to "Not a session" (docs/algorithms/not-a-session.md "A land
+sport is not a session"). Jan, 28 Sep 2026: his Berlin Marathon came in through intervals.icu and
+read back 98 % on foil, 10.65 kn and 2 jibes. A recording whose FIT session sport is one of
+`LAND_SPORTS` -- running, cycling, mountaineering, hiking, e-biking, motorcycling, driving -- is
+not a session whatever its speeds say, with reason `land_sport` and the sport itself in
+`summary.landSport`. Walking, generic and training are *not* on the list: the CIQ app and the
+imports file watersport sessions under them. No fixture in the corpus is a land sport, so every
+golden moves by the version and one null key.
 """
 
 from __future__ import annotations
@@ -549,11 +558,42 @@ NOT_A_SESSION_MAX_DISTANCE_M = 200.0
 #: words live in presentation (docs/presentation/not-a-session-spots.md "Not a session"). `no_recording` is
 #: never produced here: it belongs to a library row that has a card and no recording yet,
 #: and this module only ever sees a recording that was analyzed.
-NOT_A_SESSION_REASONS = ("too_short", "no_distance", "no_recording")
+NOT_A_SESSION_REASONS = ("land_sport", "too_short", "no_distance", "no_recording")
+
+#: "Not a session" -- the land sports (engine 0.26.0, docs/algorithms/not-a-session.md "A land
+#: sport is not a session"): FIT `sport` enum name -> number, from the FIT profile. A recording
+#: whose session sport is one of these is not a session, however fast and however "on foil" it
+#: reads -- a marathon at 10.65 kn clears every flight gate. **Walking (11), generic (0) and
+#: training (10) are deliberately absent**: the CIQ app and the Walk-typed imports file real
+#: watersport sessions under them. Snow and skate sports are absent too -- a wing on skis or
+#: skates is still a wing -- and so is anything on the water.
+LAND_SPORTS = {
+    "running": 1,
+    "cycling": 2,
+    "mountaineering": 16,
+    "hiking": 17,
+    "e_biking": 21,
+    "motorcycling": 22,
+    "driving": 24,
+}
+_LAND_SPORT_BY_NUMBER = {str(n): name for name, n in LAND_SPORTS.items()}
+
+
+def land_sport(sport) -> str | None:
+    """The FIT name of the land sport a recording's session sport says, else None.
+
+    Accepts the profile's name (`"running"`, any case) or its number as a string (`"1"`, the
+    way a parser spells a sport it has no name for), and answers with the name either way."""
+    if sport is None:
+        return None
+    key = str(sport).strip().lower()
+    if key in LAND_SPORTS:
+        return key
+    return _LAND_SPORT_BY_NUMBER.get(key)
 
 
 def session_verdict(foil_time_s: float, duration_s: float,
-                    distance_m: float) -> tuple[bool, str | None]:
+                    distance_m: float, sport=None) -> tuple[bool, str | None]:
     """Is this recording a session? (docs/algorithms/not-a-session.md "Not a session", engine 0.19.0)
 
     Returns `(is_session, reason)`; `reason` is None exactly when `is_session` is True.
@@ -569,7 +609,13 @@ def session_verdict(foil_time_s: float, duration_s: float,
     The verdict is a *label*, never a deletion. A recording that fails it keeps its page,
     its map and its row; it is only kept out of the counts, trends, records, period and gear
     totals that describe riding (docs/presentation/not-a-session-spots.md "Not a session").
+
+    **A land sport is asked first** (engine 0.26.0): a recording whose FIT session sport is
+    in `LAND_SPORTS` is `land_sport` before its foil time is consulted, because a run or a
+    ride clears the flight gates on speed alone.
     """
+    if land_sport(sport) is not None:
+        return False, "land_sport"
     if foil_time_s > 0:
         return True, None
     if duration_s < NOT_A_SESSION_MAX_DURATION_S:
@@ -741,7 +787,7 @@ def build_golden(a: Analysis) -> dict:
                            a.rate_config)
     pumps = {k.flight_index: k.pumps_to_takeoff for k in a.takeoffs.takeoffs}
     is_session, not_a_session_reason = session_verdict(
-        fr.foil_time_s, rates.duration_s, rec.distance_m)
+        fr.foil_time_s, rates.duration_s, rec.distance_m, caps.sport)
     return {
         "engineVersion": ENGINE_VERSION,
         "config": _config_dict(a),
@@ -789,6 +835,10 @@ def build_golden(a: Analysis) -> dict:
             # `notASessionReason` is a code and never a sentence; null when `isSession`.
             "isSession": is_session,
             "notASessionReason": not_a_session_reason,
+            # The land sport that decided (engine 0.26.0), as the FIT profile names it --
+            # "running", "e_biking". Null on every recording it did not decide.
+            "landSport": (land_sport(caps.sport)
+                          if not_a_session_reason == "land_sport" else None),
             "foilTimeS": round(fr.foil_time_s, 1),
             "foilPct": round(fr.foil_pct, 2),
             "flightCount": fr.flight_count,

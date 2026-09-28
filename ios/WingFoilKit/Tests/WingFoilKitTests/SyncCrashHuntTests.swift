@@ -351,11 +351,12 @@ import ZIPFoundation
             return Data("[\(rows.joined(separator: ","))]".utf8)
         }
 
-        /// Sports a year of Garmin Connect actually holds. All 74 carry "Wingfoil" in the
-        /// name, so `isWatersport` keeps them whatever the type says — which is exactly how
-        /// a running activity slips the filter.
-        static let types = ["Windsurf", "Run", "Ride", "Kitesurf", "Walk", "Swim",
-                            "WeightTraining", "Sail", "Other"]
+        /// The types a watersport reaches intervals.icu under. All 74 carry "Wingfoil" in the
+        /// name, so `isWatersport` keeps the catch-alls (Walk, Workout, Other, WaterSport) by
+        /// name too. A Run or a Ride is no longer rescued by its name (28 Sep 2026), so they
+        /// are not in this list: the test is about strange payloads, not about the filter.
+        static let types = ["Windsurf", "Walk", "Kitesurf", "Workout", "Surfing",
+                            "WaterSport", "StandUpPaddling", "Sail", "Other"]
 
         func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
             let url = request.url!

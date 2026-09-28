@@ -6,7 +6,7 @@ Single source of truth for detection/metric parameters. Three implementations fo
 re-tuned in lab notebooks against the labeled fixture corpus; changed defaults are updated HERE
 first, with the tuning notebook referenced in the commit.
 
-`ENGINE_VERSION`: **0.25.0** (bump on any change that alters outputs; triggers phone re-analysis)
+`ENGINE_VERSION`: **0.26.0** (bump on any change that alters outputs; triggers phone re-analysis)
 
 This file is an index. Every threshold, clock and verdict lives in the topic files under
 `docs/algorithms/`; each one carries a one-line header naming this file and the engine
@@ -29,7 +29,7 @@ version it is stamped for.
 - [`algorithms/pumping.md`](algorithms/pumping.md) — pumping (accelerometer): the stream,
   session and in-flight stroke counts, turn outcome, submersions.
 - [`algorithms/not-a-session.md`](algorithms/not-a-session.md) — when a recording is not a
-  session at all.
+  session at all: the beach recording, the provisional card, and a land sport (a run, a ride).
 - [`algorithms/rates.md`](algorithms/rates.md) — session rates: duration, average speed,
   turns/jibes/clean-jibes/wet per hour, window rates.
 - [`algorithms/wind.md`](algorithms/wind.md) — wind axis estimation on the phone.

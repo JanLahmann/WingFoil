@@ -469,8 +469,10 @@ import Testing
     /// platform only.
     @Test func everyIdTheDocumentCanEmitHasAHome() throws {
         var ids: Set<String> = ["verdicts.notASession.tag",
+                                "verdicts.notASession.landTag",
                                 "verdicts.notASession.lines.0",
-                                "verdicts.notASession.lines.1"]
+                                "verdicts.notASession.lines.1",
+                                "verdicts.notASession.lines.2"]
         for group in ["label", "caption", "wristUnder", "divergence"] {
             let keys: [String]
             switch group {
@@ -552,11 +554,13 @@ import Testing
     /// where the row's own numbers go — the placeholders are the JSON's, not the kit's, so
     /// the check substitutes a known pair and compares the whole sentence.
     @Test func theNotASessionWordingMatchesItsJSON() throws {
-        let durationS = 95.0, distanceKm = 0.4
+        let durationS = 95.0, distanceKm = 0.4, sport = "running"
         let lines = [
             NotASessionNote.line(reason: .noRecording, durationS: nil, distanceKm: nil),
             NotASessionNote.line(reason: .tooShort, durationS: durationS,
                                  distanceKm: distanceKm),
+            NotASessionNote.line(reason: .landSport, durationS: nil, distanceKm: nil,
+                                 sport: sport),
         ]
         if Self.isWriting {
             let templated = [
@@ -566,9 +570,13 @@ import Testing
                                           with: "{duration}")
                     .replacingOccurrences(of: NotASessionNote.distance(distanceKm),
                                           with: "{distance}"),
+                lines[2].replacingOccurrences(of: NotASessionNote.sportWord(sport),
+                                              with: "{sport}"),
             ]
             try Self.write("verdicts.json", [
-                "notASession": ["tag": NotASessionNote.tag, "lines": templated],
+                "notASession": ["tag": NotASessionNote.tag,
+                                "landTag": NotASessionNote.landTag,
+                                "lines": templated],
             ])
             return
         }
@@ -576,12 +584,15 @@ import Testing
         let note = try #require(json["notASession"] as? [String: Any],
                                 "verdicts.json · notASession is missing")
         Self.same(NotASessionNote.tag, note["tag"], "verdicts.json", "notASession.tag")
+        Self.same(NotASessionNote.landTag, note["landTag"], "verdicts.json",
+                  "notASession.landTag")
         let templated = try #require(note["lines"] as? [String],
                                      "verdicts.json · notASession.lines is missing")
         let filled = templated.map {
             $0.replacingOccurrences(of: "{duration}", with: NotASessionNote.clock(durationS))
                 .replacingOccurrences(of: "{distance}",
                                       with: NotASessionNote.distance(distanceKm))
+                .replacingOccurrences(of: "{sport}", with: NotASessionNote.sportWord(sport))
         }
         Self.same(lines, filled, "verdicts.json", "notASession.lines")
     }

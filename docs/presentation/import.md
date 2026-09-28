@@ -1,4 +1,4 @@
-> Part of `docs/presentation.md`. Engine 0.25.0.
+> Part of `docs/presentation.md`. Engine 0.26.0.
 
 ## Import — the doors a session comes in by
 
@@ -107,7 +107,9 @@ same session is on intervals.icu, take it from there instead.*
 * **Which activities** — Strava has no wingfoil type, so the rider picks the set once
   (Windsurf, Kitesurf, Surf, Workout on; Sail and Stand-up paddling off, because for most
   people those buckets hold boats and flat water). Whatever is picked, an activity whose *name*
-  says wing, foil, kite, surf or SUP is offered too.
+  says wing, foil, kite, surf or SUP is offered too, as a whole word ("Supporting" is no
+  SUP, ADR-036). The intervals.icu sync asks the same words, and only of a type that could
+  be a watersport: never of a Run, a Ride or a Hike.
 * **Both ceilings are said out loud, and neither says the app is unfinished** (reworded
   14 September 2026). Strava answers **two hundred** requests every fifteen minutes — the real
   number, in the same words on the Import screen and in the help topic, which used to disagree

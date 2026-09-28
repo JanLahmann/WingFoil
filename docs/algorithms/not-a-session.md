@@ -1,4 +1,4 @@
-> Part of `docs/algorithms.md`. Engine 0.25.0.
+> Part of `docs/algorithms.md`. Engine 0.26.0.
 
 ## Not a session (phone/web, engine ≥ 0.19.0) — `summary.isSession` · `summary.notASessionReason`
 
@@ -13,13 +13,17 @@ gear totals, and in the Trends *on foil* line, which it dragged to zero at the r
 
 > A recording is **not a session** when `foilTimeS == 0` **and** (`durationS <
 > notASessionMaxDurationS` **or** `distanceM < notASessionMaxDistanceM`).
+>
+> Asked before it (engine ≥ 0.26.0): a recording whose FIT session sport is a **land sport**
+> is not a session, whatever its foil time says. See "A land sport is not a session" below.
 
 | param | default | units | notes |
 |---|---|---|---|
 | `notASessionMaxDurationS` | **120** | s | the duration floor. Only ever consulted for a recording with **no foil time at all** |
 | `notASessionMaxDistanceM` | **200** | m | the distance floor, over `records.distanceM`. Same conjunction |
 | `summary.isSession` | — | bool | true for every recording the rule does not catch |
-| `summary.notASessionReason` | — | code | `too_short` · `no_distance` · `no_recording`, else null. A **code**, never a sentence; the words are in docs/presentation/not-a-session-spots.md, "Not a session" |
+| `summary.notASessionReason` | — | code | `land_sport` · `too_short` · `no_distance` · `no_recording`, else null. A **code**, never a sentence; the words are in docs/presentation/not-a-session-spots.md, "Not a session" |
+| `summary.landSport` | — | string | engine ≥ 0.26.0: the land sport that decided, as the FIT profile names it (`running`, `e_biking`); null on every recording it did not decide |
 
 **Zero foil time is the conjunct that does the work, and the other two only qualify it.** That
 ordering is the whole design. A *skunked* afternoon — an hour of pumping in no wind, two
@@ -70,3 +74,62 @@ said so. GRDB **v16** adds the two columns and seeds them by re-deriving the sam
 totals at migration rather than whenever re-analysis reaches that row; digest **schema 10**
 does the same on the web (`library.py`, `entry_is_session`).
 
+## A land sport is not a session (engine ≥ 0.26.0) — `notASessionReason: land_sport`
+
+Jan, 28 September 2026: his **Berlin Marathon** came in through intervals.icu and was analysed
+as **98 % on foil, 10.65 kn, 2 jibes**, and a run named "9 5 4 Supporting Robert" likewise.
+Two things had to be wrong for that. The intervals.icu filter rescued any activity whose name
+*contained* "sup", on any type ("Supporting"), and the engine had no opinion about a sport: a
+runner at 5 min/km is at `foilEntrySpeed` (12 km/h) already, so most of a marathon reads as
+flight.
+
+**The rule.** A recording whose FIT `session.sport` is one of these is not a session, and the
+check runs **before** the foil-time conjunct above, because a run's foil time answers nothing:
+
+| FIT `sport` | enum | |
+|---|---|---|
+| `running` | 1 | road, trail, track and treadmill are its sub-sports |
+| `cycling` | 2 | road, mountain, gravel and indoor likewise |
+| `mountaineering` | 16 | |
+| `hiking` | 17 | |
+| `e_biking` | 21 | |
+| `motorcycling` | 22 | |
+| `driving` | 24 | the watch left running in the van, on the road |
+
+A parser that has no name for a sport reports its number, so `"1"` … `"24"` count too. The
+reason is `land_sport` and `summary.landSport` carries the name (null everywhere else).
+
+**What is deliberately not on the list.** `walking` (11), `generic` (0) and `training` (10):
+the CIQ app, FoilMotion and the Walk-typed imports file real watersport sessions under them,
+and `generic` is what the two app-recorded fixtures in the corpus say. The snow and skate
+sports, because a wing on skis or skates is still a wing. Every water sport. The list only
+ever *adds* a reason to stop counting, so a sport left off it is the old behaviour, never a
+lost session.
+
+**Which files say a sport.** FIT only, in practice: a TCX's `Activity/@Sport` is not read
+(docs/algorithms/imports.md), and a GPX from Strava carries Strava's own `<type>` spelling
+(`Run`), which is not a FIT name and is not matched. An Apple Watch session carries its
+HealthKit type, which is always a water one.
+
+**It is a label, like the other three.** The row stays in the list with its own tag, "Not a
+watersport", the page opens and says what the file was recorded as, and the recording is
+out of every number that describes riding by the same clause as before (`isSession = 0`).
+
+**The import filter, fixed at the same time** (ADR-036). The intervals.icu name rescue — the
+one that catches the CIQ recordings mis-typed as Walk — now applies only to a type that could
+be a watersport (Walk, Workout, Other, WaterSport, no type, or a type the list does not know)
+and never to Run, Ride, Hike, Swim or the other known land and gym types; and it matches
+**whole words**: "SUP", "wing foil", "foiling", "Wingfoilen" yes, "Supporting" and "super"
+no. Same rule in the kit (`WatersportName`, `IcuClient.isWatersport`), `lab/tools/download_icu.py`
+and `web/js/icu.js`. The Strava list keeps its any-type rescue, because the rider picks from
+it, but takes the whole-word match.
+
+**Stored libraries.** The phone re-analyses every row on the version bump
+(`SessionIngestor.reanalyzeStale()`, `engineVersion` is the staleness key), so a run already
+in the library gets `land_sport` on the next launch. The web re-derives from the stored
+digest's own `sport` (`library.entry_is_session`), so a run saved by an older engine leaves
+the totals the next time the library opens.
+
+**The corpus.** No fixture is a land sport (the 16 FIT files say `windsurfing` or `generic`, the
+GPX and the two TCX say nothing), so every golden moves by the version and one null key,
+`summary.landSport`. The watch computes no session verdict; nothing to port.
