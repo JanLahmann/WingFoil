@@ -782,6 +782,15 @@ of visible text between two blank lines of markup, and the page's own budget is
 `verify_unique.py`'s. The way under a budget is to **split, never to compress** — every cut
 fact keeps a home (docs/voice.md, rule 10).
 
+**No rider sentence typed into the browser app**: `python3 web/tools/check_web_literals.py`
+(in `make web-verify` and CI) reads `web/js/*.js` and `web/app/index.html` with
+`check_voice.py`'s sentence bar and fails any sentence that is not said through `say()` out
+of `docs/copy/app-words.json` (the kit's `AppShellCopy`, exported by
+`AppShellCopyExportTests`) or kept in `docs/web-parity/web-only.json` with its reason. It
+also fails a `say()` or `data-w` key the kit did not write, and an allow-list entry that
+matches nothing. `make_app_copy.py` writes the `data-w` text of the page; `--check` fails
+while it is stale.
+
 **One sentence, one home, inside the app**: `python3 docs/copy/check_duplicates.py` (pattern
 F) splits the kit's `Help/` and `Presentation/` and the app's `Features/` into sentences and
 fails on any of eight words or more with two homes. `docs/copy/duplicate-exemptions.json` is

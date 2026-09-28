@@ -1,0 +1,717 @@
+{
+  "_readme": [
+    "THE BROWSER APP'S OWN SENTENCES, EACH WITH THE REASON THE PHONE HAS NO TWIN FOR IT.",
+    "",
+    "web/tools/check_web_literals.py fails a rider sentence typed into web/js or web/app/index.html",
+    "unless an entry here keeps it: `path` is the file, `text` a substring of the sentence",
+    "(a value the code fills in reads as …), `reason` why it is the browser's own — a function the",
+    "web has and the phone does not, or a twin another verifier already pins. An entry that",
+    "matches nothing fails too, so a sentence that moves to the kit takes its entry with it.",
+    "",
+    "Everything else is said through say('group.key') out of docs/copy/app-words.json, which the",
+    "kit writes (AppShellCopy). docs/web-parity/words.md is the full inventory."
+  ],
+  "schema": "cleanjibe.web-only/1",
+  "entries": [
+    {
+      "path": "web/app/index.html",
+      "text": "Drop a wingfoil .fit file and get the session back",
+      "reason": "the page's own meta description and share-card alt text: the website's, not a screen's"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "Drop a .fit file and get the whole session",
+      "reason": "the page's own meta description and share-card alt text: the website's, not a screen's"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "a wingfoil track with two flights drawn on the foil",
+      "reason": "the page's own meta description and share-card alt text: the website's, not a screen's"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "A new version is ready.",
+      "reason": "the service worker's update bar: a browser tab updates itself, the App Store updates the phone"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "That shared file did not arrive.",
+      "reason": "the web share target: the phone's share sheet hands the file over directly"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "Or choose a file. It never leaves this tab.",
+      "reason": "the drop zone: a browser takes a file by drag and drop"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "10 real minutes on Lake Garda",
+      "reason": "pinned: verify_app_shell.py holds the ways-in rows to docs/copy/app-shell.json (waysIn, the web's half of the empty Sessions tab)"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "Paste your intervals.icu key in Settings.",
+      "reason": "pinned: verify_app_shell.py holds the ways-in rows to docs/copy/app-shell.json (waysIn, the web's half of the empty Sessions tab)"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "A browser cannot reach your watch.",
+      "reason": "pinned: verify_app_shell.py holds the ways-in rows to docs/copy/app-shell.json (waysIn, the web's half of the empty Sessions tab)"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "Apple Health is closed to a browser.",
+      "reason": "pinned: verify_app_shell.py holds the ways-in rows to docs/copy/app-shell.json (waysIn, the web's half of the empty Sessions tab)"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "Export the file. Then drop it here.",
+      "reason": "pinned: verify_app_shell.py holds the ways-in rows to docs/copy/app-shell.json (waysIn, the web's half of the empty Sessions tab)"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "Strava sign-in needs it.",
+      "reason": "pinned: verify_app_shell.py holds the ways-in rows to docs/copy/app-shell.json (waysIn, the web's half of the empty Sessions tab)"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": ".fit, .gpx and .tcx all work.",
+      "reason": "the analyzer's own card: the formats a dropped file may take"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "Your file never leaves this browser tab.",
+      "reason": "the analyzer's privacy line: the analysis runs in the tab"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "The engine downloads once, about 12 MB",
+      "reason": "the Pyodide engine download, which the phone does not have"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "The tab is working, not stuck.",
+      "reason": "the Pyodide engine's progress, which the phone does not have"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "Most often the file is not a FIT recording.",
+      "reason": "the analyzer's rejected-file help: the phone's pickers only offer files it reads"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "If the message below counts recordings",
+      "reason": "the analyzer's rejected-file help: the phone's pickers only offer files it reads"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "Make a card of this.",
+      "reason": "the browser's pointer to its Share button; the phone's Share is in the toolbar"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "The rest of the reference is in",
+      "reason": "the glossary fold's door to the Help page, a browser layout (step 2)"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "The shape of the track carries the outcome.",
+      "reason": "the browser's concise line beside a `?` (js/explain.js); the phone shows the `?` alone"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "Every flight, over the session. Drag to scrub.",
+      "reason": "the browser's concise line beside a `?` (js/explain.js); the phone shows the `?` alone"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "What the pumping cost in heartbeats is on the iPhone app.",
+      "reason": "points at a phone-only card (docs/screens.md)"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "Add your wings, boards and foils on the Gear tab.",
+      "reason": "pinned: verify_app_shell.py holds the data-empty sentence of a ported screen to the phone (PORTED_SCREENS)"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "Watch and phone agree.",
+      "reason": "pinned: verify_app_shell.py holds the data-empty sentence of a ported screen to the phone (PORTED_SCREENS)"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "No backup picked yet.",
+      "reason": "pinned: verify_app_shell.py holds the data-empty sentence of a ported screen to the phone (PORTED_SCREENS)"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "No deleted sessions yet.",
+      "reason": "pinned: verify_app_shell.py holds the data-empty sentence of a ported screen to the phone (PORTED_SCREENS)"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "The wind and the source of this recording are in the badges above.",
+      "reason": "the browser's Log tab lede; the phone's Log carries the badges in place"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "Every number on this page, as one JSON file.",
+      "reason": "the analysis JSON download, a browser door (docs/screens.md, deviation)"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "Your bests across the library",
+      "reason": "a page lede under the title: the phone's tab has a large title and no lede (step 2 decides)"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "Session by session, over the library.",
+      "reason": "a page lede under the title: the phone's tab has a large title and no lede (step 2 decides)"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "A trip, a month or a season",
+      "reason": "a page lede under the title: the phone's tab has a large title and no lede (step 2 decides)"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "Your spots and your gear. Both stay in this browser.",
+      "reason": "a page lede under the title: the phone's tab has a large title and no lede (step 2 decides)"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "Your accounts, your units and what this browser keeps.",
+      "reason": "a page lede under the title: the phone's tab has a large title and no lede (step 2 decides)"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "Your API key stays in this browser",
+      "reason": "where the key is kept: the phone keeps it in its keychain and says so in its own Settings"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "Strava is on the iPhone app. Signing in needs it.",
+      "reason": "a phone-only Settings section, said where it is (settings.json phoneOnly)"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "On the iPhone app.",
+      "reason": "a phone-only Settings section, said where it is (settings.json phoneOnly)"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "Delete everything on this site?",
+      "reason": "site data only a browser can wipe (docs/screens.md, deviation 18)"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "Drag to pan. Scroll or pinch to zoom. Escape closes.",
+      "reason": "the full-screen map's mouse and keyboard controls"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "The range narrows these charts only.",
+      "reason": "the browser's range narrows Trends' charts; the phone's range filter narrows its list"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "The file as it was recorded.",
+      "reason": "the browser shares the original .fit unscrubbed; the phone's copy is scrubbed and says so"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "It is the original from your watch",
+      "reason": "the browser shares the original .fit unscrubbed; the phone's copy is scrubbed and says so"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "Empty keeps the name read off the recording",
+      "reason": "the browser card composer's own title field (step 2 ports the phone's composer)"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "Draws the track over OpenStreetMap.",
+      "reason": "the browser card's map tiles come from OpenStreetMap; the phone's from Apple Maps"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "nothing leaves this device until you send it.",
+      "reason": "the browser card's download line"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "Free and open source. No server, no upload, no account.",
+      "reason": "the site footer every page of cleanjibe.org carries; verify_copy.py pins its feedback words to docs/copy/feedback.json"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "About CleanJibe · Get started",
+      "reason": "the site footer every page of cleanjibe.org carries; verify_copy.py pins its feedback words to docs/copy/feedback.json"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "Ideas and wishes are as welcome as bugs.",
+      "reason": "the site footer every page of cleanjibe.org carries; verify_copy.py pins its feedback words to docs/copy/feedback.json"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "We count page views and feature use with umami.",
+      "reason": "the website's analytics note (web/privacy)"
+    },
+    {
+      "path": "web/js/app.js",
+      "text": "is marked in orange on the track and on the speed strip.",
+      "reason": "the record-window highlight bar, a browser control"
+    },
+    {
+      "path": "web/js/app.js",
+      "text": "is not a .fit, .gpx, .tcx or .zip file.",
+      "reason": "a dropped file of the wrong type: the phone's pickers only offer files it reads"
+    },
+    {
+      "path": "web/js/app.js",
+      "text": "A .gpx or .tcx works too.",
+      "reason": "a dropped file of the wrong type: the phone's pickers only offer files it reads"
+    },
+    {
+      "path": "web/js/app.js",
+      "text": "Handed to your share sheet.",
+      "reason": "how the browser hands a recording over: the share sheet where there is one, else a mail link that cannot carry a file"
+    },
+    {
+      "path": "web/js/app.js",
+      "text": "The recording was downloaded and a mail opened.",
+      "reason": "how the browser hands a recording over: the share sheet where there is one, else a mail link that cannot carry a file"
+    },
+    {
+      "path": "web/js/app.js",
+      "text": "Cancelled. Nothing left this browser.",
+      "reason": "how the browser hands a recording over: the share sheet where there is one, else a mail link that cannot carry a file"
+    },
+    {
+      "path": "web/js/app.js",
+      "text": "flew through · … touchdown · … fell in",
+      "reason": "the fact sheet of the browser's mail, a strip of counts"
+    },
+    {
+      "path": "web/js/app.js",
+      "text": "This session has no recording in this browser.",
+      "reason": "browser storage: the tab may hold the analysis without its file"
+    },
+    {
+      "path": "web/js/appdb.js",
+      "text": "offers no IndexedDB",
+      "reason": "browser storage (IndexedDB / OPFS), which the phone does not have"
+    },
+    {
+      "path": "web/js/appshell.js",
+      "text": "The guide is on the iPhone app and on the website.",
+      "reason": "a fallback for a help catalogue missing from the bundle"
+    },
+    {
+      "path": "web/js/appshell.js",
+      "text": "Attach a screenshot or the session's .fit file if you can.",
+      "reason": "the browser's feedback mail: the phone attaches its own facts"
+    },
+    {
+      "path": "web/js/appshell.js",
+      "text": "The full reference is on the iPhone app.",
+      "reason": "shown only while the help export is a stub"
+    },
+    {
+      "path": "web/js/appshell.js",
+      "text": "A name is yours and stays in this browser.",
+      "reason": "the browser's gear is names only, kept in the tab (docs/screens.md, Gear & spots)"
+    },
+    {
+      "path": "web/js/backup.js",
+      "text": "That file is not a zip archive this browser can read.",
+      "reason": "the browser's own backup zip, read by the browser (the phone's backup is its own format)"
+    },
+    {
+      "path": "web/js/backup.js",
+      "text": "uses a compression this browser cannot read.",
+      "reason": "the browser's own backup zip, read by the browser (the phone's backup is its own format)"
+    },
+    {
+      "path": "web/js/backup.js",
+      "text": "This browser cannot unpack a zip.",
+      "reason": "the browser's own backup zip, read by the browser (the phone's backup is its own format)"
+    },
+    {
+      "path": "web/js/backup.js",
+      "text": "That zip holds no library index",
+      "reason": "the browser's own backup zip, read by the browser (the phone's backup is its own format)"
+    },
+    {
+      "path": "web/js/backup.js",
+      "text": "That backup holds no sessions.",
+      "reason": "the browser's own backup zip, read by the browser (the phone's backup is its own format)"
+    },
+    {
+      "path": "web/js/backup.js",
+      "text": "were already in your library.",
+      "reason": "the browser's own backup zip, read by the browser (the phone's backup is its own format)"
+    },
+    {
+      "path": "web/js/backup.js",
+      "text": "could not be read.",
+      "reason": "the browser's own backup zip, read by the browser (the phone's backup is its own format)"
+    },
+    {
+      "path": "web/js/deleted.js",
+      "text": "The file for that session is gone",
+      "reason": "the browser's Deleted sessions list reads a tombstoned recording back; the phone offers a re-add sheet on import instead"
+    },
+    {
+      "path": "web/js/deleted.js",
+      "text": "That recording could not be read again",
+      "reason": "the browser's Deleted sessions list reads a tombstoned recording back; the phone offers a re-add sheet on import instead"
+    },
+    {
+      "path": "web/js/deleted.js",
+      "text": "That session is already in your library, so nothing was added.",
+      "reason": "the browser's Deleted sessions list reads a tombstoned recording back; the phone offers a re-add sheet on import instead"
+    },
+    {
+      "path": "web/js/deleted.js",
+      "text": "is back in your library.",
+      "reason": "the browser's Deleted sessions list reads a tombstoned recording back; the phone offers a re-add sheet on import instead"
+    },
+    {
+      "path": "web/js/deleted.js",
+      "text": "The recording is removed from this browser",
+      "reason": "the browser's Deleted sessions list reads a tombstoned recording back; the phone offers a re-add sheet on import instead"
+    },
+    {
+      "path": "web/js/deleted.js",
+      "text": "Clear … deleted session…?",
+      "reason": "the browser's Deleted sessions list reads a tombstoned recording back; the phone offers a re-add sheet on import instead"
+    },
+    {
+      "path": "web/js/deleted.js",
+      "text": "Their recordings are removed from this browser",
+      "reason": "the browser's Deleted sessions list reads a tombstoned recording back; the phone offers a re-add sheet on import instead"
+    },
+    {
+      "path": "web/js/gear.js",
+      "text": "Your gear could not be read.",
+      "reason": "browser storage (IndexedDB / OPFS), which the phone does not have"
+    },
+    {
+      "path": "web/js/gear.js",
+      "text": "Your quiver stays in this browser.",
+      "reason": "the browser's gear is names only, kept in the tab (docs/screens.md, Gear & spots)"
+    },
+    {
+      "path": "web/js/gear.js",
+      "text": "session… · … km · … on foil",
+      "reason": "a strip of counts under a gear name"
+    },
+    {
+      "path": "web/js/gear.js",
+      "text": "Save this session to the library to name its gear.",
+      "reason": "the browser analyses a file without saving it; the phone always saves"
+    },
+    {
+      "path": "web/js/icu.js",
+      "text": "Key removed from this browser.",
+      "reason": "the browser's intervals.icu bridge: a key in the tab, a 120-day list, and the CORS wall the phone does not meet"
+    },
+    {
+      "path": "web/js/icu.js",
+      "text": "watersport activities found. Everything below is fetched",
+      "reason": "the browser's intervals.icu bridge: a key in the tab, a 120-day list, and the CORS wall the phone does not meet"
+    },
+    {
+      "path": "web/js/icu.js",
+      "text": "Download failed: HTTP",
+      "reason": "the browser's intervals.icu bridge: a key in the tab, a 120-day list, and the CORS wall the phone does not meet"
+    },
+    {
+      "path": "web/js/icu.js",
+      "text": "intervals.icu could not be reached from the browser.",
+      "reason": "the browser's intervals.icu bridge: a key in the tab, a 120-day list, and the CORS wall the phone does not meet"
+    },
+    {
+      "path": "web/js/icu.js",
+      "text": "This is almost certainly CORS.",
+      "reason": "the browser's intervals.icu bridge: a key in the tab, a 120-day list, and the CORS wall the phone does not meet"
+    },
+    {
+      "path": "web/js/icu.js",
+      "text": "Open the activity on intervals.icu.",
+      "reason": "the browser's intervals.icu bridge: a key in the tab, a 120-day list, and the CORS wall the phone does not meet"
+    },
+    {
+      "path": "web/js/icu.js",
+      "text": "Drop that file onto the drop zone",
+      "reason": "the browser's intervals.icu bridge: a key in the tab, a 120-day list, and the CORS wall the phone does not meet"
+    },
+    {
+      "path": "web/js/icu.js",
+      "text": "The original is what this engine needs.",
+      "reason": "the browser's intervals.icu bridge: a key in the tab, a 120-day list, and the CORS wall the phone does not meet"
+    },
+    {
+      "path": "web/js/icu.js",
+      "text": "A Polar, Suunto or Coros original",
+      "reason": "the browser's intervals.icu bridge: a key in the tab, a 120-day list, and the CORS wall the phone does not meet"
+    },
+    {
+      "path": "web/js/library.js",
+      "text": "Your library already has your watch's recording of",
+      "reason": "the browser asks before it replaces a stored copy; the phone's ingest decides alone (one afternoon, one session)"
+    },
+    {
+      "path": "web/js/library.js",
+      "text": "This copy has positions only",
+      "reason": "the browser asks before it replaces a stored copy; the phone's ingest decides alone (one afternoon, one session)"
+    },
+    {
+      "path": "web/js/library.js",
+      "text": "Your library has a positions-only copy of",
+      "reason": "the browser asks before it replaces a stored copy; the phone's ingest decides alone (one afternoon, one session)"
+    },
+    {
+      "path": "web/js/library.js",
+      "text": "Replace it with your watch's recording?",
+      "reason": "the browser asks before it replaces a stored copy; the phone's ingest decides alone (one afternoon, one session)"
+    },
+    {
+      "path": "web/js/library.js",
+      "text": "This looks like a session you already have.",
+      "reason": "the browser asks before it replaces a stored copy; the phone's ingest decides alone (one afternoon, one session)"
+    },
+    {
+      "path": "web/js/library.js",
+      "text": "Start differs by",
+      "reason": "the browser asks before it replaces a stored copy; the phone's ingest decides alone (one afternoon, one session)"
+    },
+    {
+      "path": "web/js/library.js",
+      "text": "Both are inside the 60 s rule",
+      "reason": "the browser asks before it replaces a stored copy; the phone's ingest decides alone (one afternoon, one session)"
+    },
+    {
+      "path": "web/js/library.js",
+      "text": "Replace the stored copy with this one?",
+      "reason": "the browser asks before it replaces a stored copy; the phone's ingest decides alone (one afternoon, one session)"
+    },
+    {
+      "path": "web/js/library.js",
+      "text": "Storage is unavailable in this browser context.",
+      "reason": "browser storage (IndexedDB / OPFS), which the phone does not have"
+    },
+    {
+      "path": "web/js/library.js",
+      "text": "Analysing files still works. Only saving does not.",
+      "reason": "browser storage (IndexedDB / OPFS), which the phone does not have"
+    },
+    {
+      "path": "web/js/library.js",
+      "text": "Nothing saved yet. Analyze a file and press Save to library.",
+      "reason": "the browser's library starts empty and saves on request (docs/screens.md, Sessions)"
+    },
+    {
+      "path": "web/js/library.js",
+      "text": "Example and a friend's name mean",
+      "reason": "the browser's badge legend under its library list; the phone's rows carry a tag"
+    },
+    {
+      "path": "web/js/library.js",
+      "text": "The session leaves your library, your records and your trends.",
+      "reason": "the browser confirms a delete; the phone's swipe needs none"
+    },
+    {
+      "path": "web/js/library.js",
+      "text": "The .fit and .json buttons in each row always work.",
+      "reason": "the browser's zip export and its per-row downloads"
+    },
+    {
+      "path": "web/js/render.js",
+      "text": "no timezone in this file, times shown on your own clock",
+      "reason": "pinned: web/tools/clock_note.mjs holds the clock note to the kit"
+    },
+    {
+      "path": "web/js/render.js",
+      "text": "The bundled demonstration session. Not your own data.",
+      "reason": "the example badge's title, a browser tooltip"
+    },
+    {
+      "path": "web/js/render.js",
+      "text": "The flight ends the map marks are listed below.",
+      "reason": "the browser's flights table caption (step 2 ports the phone's list)"
+    },
+    {
+      "path": "web/js/render.js",
+      "text": "No flight in this recording.",
+      "reason": "the browser's flights table caption (step 2 ports the phone's list)"
+    },
+    {
+      "path": "web/js/senddev.js",
+      "text": "Below is what the browser knows about this session and run.",
+      "reason": "the browser's fact sheet: the phone's names the phone and the build"
+    },
+    {
+      "path": "web/js/senddev.js",
+      "text": "Attach the file CleanJibe just downloaded.",
+      "reason": "how the browser hands a recording over: the share sheet where there is one, else a mail link that cannot carry a file"
+    },
+    {
+      "path": "web/js/session.js",
+      "text": "starts flight … · … · ended: …",
+      "reason": "a strip of facts in the map popover"
+    },
+    {
+      "path": "web/js/session.js",
+      "text": "No GPS positions in this file, so there is no track to draw.",
+      "reason": "a Doppler-only file on the browser's map; the phone's importers need positions"
+    },
+    {
+      "path": "web/js/session.js",
+      "text": "GPS track with event markers.",
+      "reason": "a screen-reader description of a browser figure; the phone's charts describe themselves"
+    },
+    {
+      "path": "web/js/session.js",
+      "text": "Speed over time. Drag to scrub",
+      "reason": "a screen-reader description of a browser figure; the phone's charts describe themselves"
+    },
+    {
+      "path": "web/js/session.js",
+      "text": "wheel, pinch or double-tap to zoom the time axis",
+      "reason": "the speed strip's mouse and wheel hint"
+    },
+    {
+      "path": "web/js/sharecard.js",
+      "text": "-apple-system, BlinkMacSystemFont",
+      "reason": "a CSS font stack, not a sentence"
+    },
+    {
+      "path": "web/js/sharecard.js",
+      "text": "analysed with …, free at …",
+      "reason": "pinned: verify_copy.py holds the caption to phrases.json captionOffer"
+    },
+    {
+      "path": "web/js/sharecard.js",
+      "text": "Caption copied. Paste it with the picture.",
+      "reason": "the browser copies the caption to the clipboard; the phone hands it to the share sheet"
+    },
+    {
+      "path": "web/js/spots.js",
+      "text": "No new names. The lookup needs a network.",
+      "reason": "the browser's name lookup status line"
+    },
+    {
+      "path": "web/js/store.js",
+      "text": "offers neither OPFS nor IndexedDB",
+      "reason": "browser storage (IndexedDB / OPFS), which the phone does not have"
+    },
+    {
+      "path": "web/js/store.js",
+      "text": "has an index entry but no stored analysis.",
+      "reason": "browser storage (IndexedDB / OPFS), which the phone does not have"
+    },
+    {
+      "path": "web/js/store.js",
+      "text": "has an index entry but no stored FIT.",
+      "reason": "browser storage (IndexedDB / OPFS), which the phone does not have"
+    },
+    {
+      "path": "web/js/trends.js",
+      "text": "Records and trends need the Python runtime.",
+      "reason": "the Pyodide engine, which the phone does not have"
+    },
+    {
+      "path": "web/js/trends.js",
+      "text": "Nothing here counts towards your records yet.",
+      "reason": "a library of friends' sessions: the phone's ExampleOnlyNote covers the example alone"
+    },
+    {
+      "path": "web/js/trends.js",
+      "text": "Trips, months and seasons, each with one block of numbers.",
+      "reason": "the browser's Periods door on Trends (step 2 ports the phone's row)"
+    },
+    {
+      "path": "web/js/trends.js",
+      "text": "Oldest first. Click a point to open that session.",
+      "reason": "the browser's chart hint"
+    },
+    {
+      "path": "web/js/trends.js",
+      "text": "That period is not in this library any more.",
+      "reason": "a period deep link (#/period/…) that outlived its sessions"
+    },
+    {
+      "path": "web/js/trends.js",
+      "text": "Weeks start on Monday, the ISO-8601 week.",
+      "reason": "how the browser's weeks are cut, each session in its own local time; the phone's run on the phone's clock"
+    },
+    {
+      "path": "web/js/turncards.js",
+      "text": "hidden by the chips",
+      "reason": "a strip of counts over the turn cards"
+    },
+    {
+      "path": "web/js/turnpage.js",
+      "text": "knots in, … at the low point after",
+      "reason": "a screen-reader description of a browser figure; the phone's charts describe themselves"
+    },
+    {
+      "path": "web/js/turnpage.js",
+      "text": "Speed through the flight end. … knots coming in.",
+      "reason": "a screen-reader description of a browser figure; the phone's charts describe themselves"
+    },
+    {
+      "path": "web/js/turnpage.js",
+      "text": "Speed through the turn. … knots coming in.",
+      "reason": "a screen-reader description of a browser figure; the phone's charts describe themselves"
+    },
+    {
+      "path": "web/js/turnpage.js",
+      "text": "not clean · touched down … s after",
+      "reason": "pinned: the notClean chip is TurnAnalytics.notCleanText's, word for word (short label, step 2 moves it)"
+    },
+    {
+      "path": "web/js/turnpage.js",
+      "text": "not clean · carried …° past the axis",
+      "reason": "pinned: the notClean chip is TurnAnalytics.notCleanText's, word for word (short label, step 2 moves it)"
+    },
+    {
+      "path": "web/js/turnpage.js",
+      "text": "so the browser holds every …th sample.",
+      "reason": "the browser's decimated view of a long recording"
+    },
+    {
+      "path": "web/js/turnpage.js",
+      "text": "It happened at ….",
+      "reason": "the browser's footnote lead; the phone prints the time in its title"
+    },
+    {
+      "path": "web/js/turnpage.js",
+      "text": "How to read this drawing.",
+      "reason": "the browser's footnote lead; the phone prints the time in its title"
+    },
+    {
+      "path": "web/js/viz.js",
+      "text": "pumped out below min foil speed, no sample off the foil",
+      "reason": "pinned: verify_presentation.py §6 (outcome_text.mjs) holds it to TurnAnalytics.outcomeText"
+    },
+    {
+      "path": "web/js/viz.js",
+      "text": "pumped out below …, no sample off the foil",
+      "reason": "pinned: verify_presentation.py §6 (outcome_text.mjs) holds it to TurnAnalytics.outcomeText"
+    },
+    {
+      "path": "web/js/viz.js",
+      "text": "M-2.4,2.6 L-2.4,-0.6",
+      "reason": "an SVG path, not a sentence"
+    },
+    {
+      "path": "web/js/worker.js",
+      "text": "Could not reach the Pyodide CDN",
+      "reason": "the Pyodide engine download, which the phone does not have"
+    }
+  ]
+}

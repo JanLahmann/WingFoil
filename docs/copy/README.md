@@ -1,11 +1,18 @@
 # One copy, many surfaces
 
-Eleven JSON files. Each holds rider-facing wording that more than one surface says, so that
+Twelve JSON files. Each holds rider-facing wording that more than one surface says, so that
 it is written **once** and the places that say it are held to it from **both sides**. Nine
 are small. `help.json` is the whole of the app's help catalogue, exported so that
 cleanjibe.org/help can render the reference work the phone renders rather than writing its
 own. `watch.json` is the eleventh and the newest: every word the wrist prints, which until
 22 September 2026 was the one rider surface this folder could not reach.
+
+`app-words.json` is the twelfth (28 September 2026): every other sentence the browser app
+shows and the phone authors — the turn coach, the turn and flight-end footnotes, Records,
+Trends, Periods, Spots, the gear sheet — written by `AppShellCopyExportTests` out of the
+kit's `AppShellCopy` and the constants it names. The browser says them through `say()` in
+`web/js/appcopy.js`, and `web/tools/check_web_literals.py` fails a rider sentence typed into
+web code instead (the inventory is `docs/web-parity/words.md`).
 
 The problem this folder exists for has a date and a time. Everything decided after
 14 September 2026 12:30 landed in `docs/`, in the kit and in the app, and never reached the
