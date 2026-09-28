@@ -28,6 +28,7 @@
  */
 
 import { track } from "./track.js";
+import { say } from "./appcopy.js";
 import { esc, hms, nf } from "./viz.js";
 
 /* ---------------------------------------------------------------- the clusterer */
@@ -345,8 +346,7 @@ export function renderSpots(host, entries, onChanged) {
   const spots = spotsFor(entries);
   if (!spots.length) {
     host.innerHTML = `<h3 class="sub-head">Spots</h3>
-      <p class="note">No spots yet. Spots appear once sessions with GPS are in the
-        library.</p>`;
+      <p class="note">${esc(say("gear.noSpots"))}. ${esc(say("gear.noSpotsLine"))}</p>`;
     return;
   }
   const anyAuto = spots.some((s) => s.auto && s.lat !== null);
@@ -368,9 +368,7 @@ export function renderSpots(host, entries, onChanged) {
         anyAuto ? "" : " disabled"}>Look up names again</button>
       <span class="muted small" id="spot-status" role="status"></span>
     </p>
-    <p class="muted small">Tap a spot to rename it. A name you type sticks through a
-      re-cluster. Sessions starting within ${SPOT_RADIUS_M} m of each other are one spot.
-      Names come from the map when the network allows.</p>`;
+    <p class="muted small">${esc(say("gear.spotsFooter", { radius: SPOT_RADIUS_M }))}</p>`;
 
   const status = host.querySelector("#spot-status");
   for (const button of host.querySelectorAll("[data-spot]")) {

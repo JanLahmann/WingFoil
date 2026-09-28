@@ -30,6 +30,7 @@ import {
 import { KNOTS, speed, speedNumber, speedUnit } from "./appsettings.js";
 import { lexicon } from "./lexicon.js";
 import { track } from "./track.js";
+import { say } from "./appcopy.js";
 import {
   C, OUTCOME_COLOR, OUTCOME_LABEL, clockAt, esc, figureWidth, nf, outcomeText, svg,
 } from "./viz.js";
@@ -282,8 +283,7 @@ function pageTitle(turn, end, g) {
 }
 
 const noGeometryLine = () => (open.kind === "turn"
-  ? "No GPS fixes through this turn. Numbers only."
-  : "No GPS fixes through this flight end. Numbers only.");
+  ? say("turnPage.noGeometry") : say("flightEndPage.noGeometry"));
 
 /** "Glided out", "touchdown", "fell in" — and never the turn ladder's "flew through", which
  *  is a verdict a flight end cannot earn. */
@@ -298,21 +298,18 @@ function endOutcomeLabel(outcome) {
 
 /* ------------------------------------------------------------------- controls */
 
-const NO_WIND_FOR_ORIENTATION =
-  "Wind up needs a wind direction. This session has none the engine trusts, and none set on "
-  + "the watch.";
+const NO_WIND_FOR_ORIENTATION = say("copy.noWindForOrientation");
 
 function controlsMarkup(figure, ghost) {
   const known = windKnown();
   const up = windUpOn();
-  const tail = open.kind === "turn"
-    ? " The turn is drawn north up." : " The track is drawn north up.";
+  const tail = " " + (open.kind === "turn"
+    ? say("turnPage.drawnNorthUp") : say("flightEndPage.drawnNorthUp"));
   const ghostRow = open.kind !== "turn" ? ""
     : (ghost && hasGeometry(ghost)
         ? `<label class="tp-switch"><input type="checkbox" id="turn-ghost"${
-            ghostOn() ? " checked" : ""}> <span>Compare with best clean jibe</span></label>`
-        : `<p class="muted small">Nothing to compare with. This session has no other jibe
-             that flew through the same way round.</p>`);
+            ghostOn() ? " checked" : ""}> <span>${esc(say("turnPage.compareWithBest"))}</span></label>`
+        : `<p class="muted small">${esc(say("turnPage.nothingToCompare"))}</p>`);
   return `<div class="tp-controls">
     <div class="seg" role="group" aria-label="Map orientation">
       <button type="button" class="seg-btn" data-orient="north"
@@ -945,8 +942,8 @@ function drawHeadingStrip() {
   if (!host) return;
   const title = angles.isTwa ? "Wind angle" : "Heading";
   if (angles.points.length < 2) {
-    host.innerHTML = `<p class="muted small">${esc(title)}. No usable bearings through this
-      window. The steps were shorter than the receiver's own scatter.</p>`;
+    host.innerHTML = `<p class="muted small">${esc(title)}. ${
+      esc(say("turnPage.noBearings"))}</p>`;
     return;
   }
   const domain = figure.timeDomain;
@@ -1095,8 +1092,8 @@ function endNumbers(end, figure) {
   if (end.pumped) chips.push(chip("pumped out", C.pump));
   if (end.submerged) chips.push(chip("wrist under", C.splash));
   const back = figure.speed.outKn === null
-    ? "Never back up to flying speed inside the window."
-    : `Back to flying speed ${nf(figure.speed.recoverRt, 0)} s after the end.`;
+    ? say("flightEndPage.neverBack")
+    : say("flightEndPage.backAfter", { time: `${nf(figure.speed.recoverRt, 0)} s` });
   const dash = (v) => (v === null || v === undefined ? "—" : speedNumber(v, 1));
   return `<div class="tp-numbers">
     <p class="tp-speeds"><b>${speedNumber(figure.speed.entryKn, 1)}</b> <span>in</span> →
@@ -1141,8 +1138,8 @@ function endOutcomeText(end) {
 /** "Through the axis · 87° before, 72° after" — the crossing, in integers. */
 function axisLine(turn) {
   if (!Number.isFinite(turn.axisBeforeDeg) || !Number.isFinite(turn.axisAfterDeg)) return null;
-  return `Through the axis · ${nf(turn.axisBeforeDeg, 0)}° before, `
-    + `${nf(turn.axisAfterDeg, 0)}° after`;
+  return say("copy.axisSweep",
+             { before: nf(turn.axisBeforeDeg, 0), after: nf(turn.axisAfterDeg, 0) });
 }
 
 /** Why this jibe has no star, where the answer is not already on the page. */
@@ -1203,9 +1200,9 @@ const SLOW_SCORE = 0.7;
 /** What a rider calls the middle of this turn. */
 function midPointWord(type) {
   switch (type) {
-    case "jibe": return "downwind point";
-    case "tack": return "head-to-wind";
-    default: return "middle of the turn";
+    case "jibe": return say("turnCoach.midJibe");
+    case "tack": return say("turnCoach.midTack");
+    default: return say("turnCoach.midOther");
   }
 }
 
@@ -1215,88 +1212,95 @@ const kn = (v) => speed(v, 1);
 const pctOf = (score) => `${scoreText(score)} %`;
 const secs = (v) => `${nf(v, 0)} s`;
 
-/**
- * One sentence under the numbers, in the coach's register: it says what happened, it never
- * invents a measurement, and it never blames.
- *
- * The ladder is the phone's, rung for rung (`TurnCoach.rule`): the outcome is asked first
- * and the score second, which is what keeps "clean and fast" honest.
- */
-function coachLine(turn, figure) {
-  const mid = midPointWord(turn.type);
+/** The rung, the phone's `TurnCoach.rule`, first match wins: the outcome is asked first
+ *  and the score second, which is what keeps "clean and fast" honest. */
+function coachRule(turn, lateMin) {
   const fast = turn.success && turn.score >= FAST_SCORE;
-  const lateMin = figure.midRotationRt === null || figure.midRotationRt === undefined
-    ? null : figure.speed.minRt >= figure.midRotationRt;
-
-  if (turn.outcome === "fell_in") {
-    return fast
-      ? `You held ${pctOf(turn.score)} of your entry speed right round. `
-        + "It still ended in the water."
-      : `This one ended in the water. ${kn(turn.entryKn)} coming in, `
-        + `${kn(turn.minKn)} at the low point.`;
-  }
-  if (turn.submerged) {
-    return "The barometer saw your wrist go under here. The foil was gone for a moment. "
-      + `${kn(turn.entryKn)} in, ${kn(turn.minKn)} at the low point.`;
-  }
-  if (turn.pumped) {
-    const strokes = pumpStrokes(turn);
-    const opener = strokes === null
-      ? "You pumped this one back out."
-      : `You pumped this one back out in ${strokesText(strokes)}.`;
-    return turn.offFoilS > 0
-      ? `${opener} ${secs(turn.offFoilS)} off the foil before it flew again.`
-      : `${opener} It was flying again straight away.`;
-  }
+  if (turn.outcome === "fell_in") return fast ? "fellInFast" : "fellIn";
+  if (turn.submerged) return "wristUnder";
+  if (turn.pumped) return "pumpedOut";
   if (turn.outcome === "touchdown") {
-    return lateMin === true
-      ? `The foil touched down on the way out. You held ${kn(turn.entryKn)} into the `
-        + `${mid} and lost it after.`
-      : `The foil touched down before the ${mid}. The speed was already at `
-        + `${kn(turn.minKn)} going in.`;
+    return lateMin === true ? "touchdownOnExit" : "touchdownComingIn";
   }
   switch (turn.cleanBlockedBy) {
-    case "quiet_flight_end":
-      return `You rode the turn itself and held ${pctOf(turn.score)} of your entry speed. `
-        + "The foil went a few seconds later, so this one is not clean.";
-    case "quiet_off_foil":
-      return "You rode the turn, then the foil dropped again on the way out. "
-        + "This one does not count as clean.";
-    case "quiet_submerged":
-      return `You held ${pctOf(turn.score)} of your entry speed through the turn. `
-        + "The barometer then saw your wrist go under. This one is not clean.";
-    case "axis_after":
-      return `You held ${pctOf(turn.score)} of your entry speed. `
-        + "The board did not come far enough past the wind axis. This one is not clean.";
+    case "quiet_flight_end": return "quietFlightEnd";
+    case "quiet_off_foil": return "quietOffFoil";
+    case "quiet_submerged": return "quietSubmerged";
+    case "axis_after": return "axisAfter";
     default: break;
   }
-  if (fast) {
-    return `Clean, and you barely slowed. You held ${pctOf(turn.score)} of your entry speed `
-      + "all the way round.";
+  if (fast) return "cleanAndFast";
+  if (turn.outcome === "flew_through" && turn.score < SLOW_SCORE) return "cleanButSlow";
+  if (lateMin === false) return "slowedEarly";
+  if (lateMin === true) return "slowedLate";
+  return "plain";
+}
+
+/** What to try next time, the phone's `TurnCoach.tipKind`: none on a clean jibe, and none
+ *  where the tip needs the halfway point and the window cannot place it. */
+function coachTip(turn, rule, lateMin, quietS) {
+  if (turn.clean) return null;
+  const byWhere = lateMin === true ? "powerUpOnExit"
+    : lateMin === false ? "comeInFaster" : null;
+  let tip = null;
+  switch (rule) {
+    case "fellInFast": tip = "steadyExit"; break;
+    case "fellIn": case "wristUnder": case "pumpedOut": case "cleanButSlow":
+      tip = byWhere; break;
+    case "touchdownOnExit": case "slowedLate": tip = "powerUpOnExit"; break;
+    case "touchdownComingIn": case "slowedEarly": tip = "comeInFaster"; break;
+    case "quietFlightEnd": case "quietOffFoil": case "quietSubmerged": tip = "rideItOut"; break;
+    case "axisAfter": tip = "carryFurther"; break;
+    default: tip = null;
   }
-  if (turn.outcome === "flew_through" && turn.score < SLOW_SCORE) {
-    return `You flew all the way through, and it cost you speed. ${kn(turn.entryKn)} in, `
-      + `${kn(turn.minKn)} at the low point.`;
+  if (tip === "comeInFaster" && turn.type === "jibe") return say("turnCoachTips.comeInFasterJibe");
+  if (tip === "rideItOut") {
+    const hold = quietS > 0 ? `${Math.trunc(quietS)} s` : say("turnCoachTips.rideItOutHold");
+    return say("turnCoachTips.rideItOut", { hold });
   }
-  if (lateMin === false) {
-    return `The speed went before the ${mid}. You were down to `
-      + `${kn(figure.speed.minKn)} with the turn still to come.`;
+  return tip ? say(`turnCoachTips.${tip}`) : null;
+}
+
+/**
+ * One sentence under the numbers, in the coach's register, then one thing to try next
+ * time — the phone's `TurnCoach.line`, rung for rung and word for word: the words are the
+ * kit's own table (`turnCoach` and `turnCoachTips` in docs/copy/app-words.json).
+ */
+function coachLine(turn, figure) {
+  const lateMin = figure.midRotationRt === null || figure.midRotationRt === undefined
+    ? null : figure.speed.minRt >= figure.midRotationRt;
+  const rule = coachRule(turn, lateMin);
+  const args = { score: pctOf(turn.score), entry: kn(turn.entryKn), low: kn(turn.minKn),
+                 mid: midPointWord(turn.type) };
+  let said;
+  if (rule === "pumpedOut") {
+    const strokes = pumpStrokes(turn);
+    const opener = strokes === null ? say("turnCoach.pumpedOut")
+      : say("turnCoach.pumpedOutIn", { strokes: strokesText(strokes) });
+    said = `${opener} ${turn.offFoilS > 0
+      ? say("turnCoach.offFoilThenFlew", { seconds: secs(turn.offFoilS) })
+      : say("turnCoach.flewStraightAway")}`;
+  } else if (rule === "cleanAndFast") {
+    said = say(turn.clean ? "turnCoach.cleanAndFast" : "turnCoach.flewAndFast", args);
+  } else if (rule === "slowedEarly" || rule === "slowedLate") {
+    said = say(`turnCoach.${rule}`, { ...args, low: kn(figure.speed.minKn) });
+  } else {
+    said = say(`turnCoach.${rule}`, args);
   }
-  if (lateMin === true) {
-    return `You held it into the ${mid}. The speed went on the way out, down to `
-      + `${kn(figure.speed.minKn)}.`;
-  }
-  return `${kn(turn.entryKn)} in, ${kn(turn.minKn)} at the low point. You held `
-    + `${pctOf(turn.score)} of your entry speed.`;
+  const tip = coachTip(turn, rule, lateMin, cfg(doc.golden.config, "turnCleanQuietS"));
+  return tip ? `${said} ${tip}` : said;
 }
 
 /* ------------------------------------------------------------------- footnote */
 
-const PATH_NUMBERS = "The numbers along the path are every five.";
-const NORTH_AND_WIND = "North and the wind are marked top right.";
-const outcomeWindowLine = (seconds) =>
-  `"Outcome" is the ${seconds} s the verdict is read from.`;
+const PATH_NUMBERS = say("copy.pathNumbers");
+const NORTH_AND_WIND = say("copy.northAndWind");
+const outcomeWindowLine = (seconds) => say("copy.outcomeWindow", { seconds });
 
+/** The footnote under the strips, paragraph for paragraph the phone's
+ *  (`TurnDetailView.footnote`, `FlightEndDetailView.footnote`). The score and the
+ *  manoeuvre-channel paragraphs left the turn page for its help topic on the phone
+ *  (UX review #9, 27 Sep 2026), and they left this one with it. */
 function footnote(turn, end, figure) {
   const config = doc.golden.config;
   const lead = Math.round(figure.padBeforeS);
@@ -1308,51 +1312,29 @@ function footnote(turn, end, figure) {
   const lines = [];
 
   if (turn) {
-    lines.push(`The drawing is ${lead} s before the sweep and ${run} s after it. `
-      + `Ticks are one second apart. ${PATH_NUMBERS}`);
-    lines.push("The line is coloured by speed on the ramp at the foot of the picture. "
-      + "Cold is a standstill, teal is the speed you came in at, hot is above it. "
-      + NORTH_AND_WIND);
-    lines.push("Tap the drawing for the reading at that sample. The strips follow it.");
-    lines.push("Score is how much of your entry speed you held through the turn.");
-    lines.push("Speed here is the manoeuvre channel the verdict was scored on, derived from "
-      + "position. The GPS Doppler speed the records use is smoothed through a turn. "
-      + "It would read lower at the low point.");
-    lines.push(`The bands under the strip are the engine's windows. "Entry" is the ${entryS} `
-      + `s before the sweep, where the entry speed is the maximum. "Sweep" is where the `
-      + `heading turned.`);
-    lines.push(`The low point is searched to ${minLagS} s past the sweep, so it can `
-      + `sit after "out".`);
-    lines.push(`${outcomeWindowLine(outcomeS)} `
-      + "The lighter band inside it ends where you were flying again.");
+    lines.push(`${say("turnPage.footDrawn", { before: lead, after: run })} `
+      + `${say("turnPage.footTicks")} ${PATH_NUMBERS}`);
+    lines.push(`${say("turnPage.footRamp")} ${NORTH_AND_WIND}`);
+    lines.push(say("turnPage.footTap"));
+    lines.push(`${say("turnPage.footEntryBand", { seconds: entryS })} `
+      + `${say("turnPage.footSweepBand", { seconds: minLagS })} `
+      + `${outcomeWindowLine(outcomeS)} ${say("turnPage.footLighterBand")}`);
     if (quietS > 0) {
-      lines.push(`A clean jibe also needs ${Math.round(quietS)} s after the sweep with no `
-        + "touchdown, fall or wrist under.");
+      lines.push(say("turnPage.footQuiet", { seconds: Math.round(quietS) }));
     }
     if (turn.axisTs !== null && turn.axisTs !== undefined) {
-      lines.push('The tick marked "axis" is the moment the board went through the wind axis. '
-        + "That is dead downwind on a jibe, head to wind on a tack. "
-        + "The turn is named after that crossing.");
+      lines.push(say("turnPage.footAxis"));
     }
   } else {
-    lines.push(`The drawing is ${lead} s before the end and ${run} s after it. `
-      + "The thick, coloured part is the flight. "
-      + `Everything past the dot is already off the foil. Ticks are one second apart. `
-      + `${PATH_NUMBERS} ${NORTH_AND_WIND}`);
-    lines.push(`The bands are the engine's windows. "Entry" is the ${entryS} s the flight `
-      + `was ending at. ${outcomeWindowLine(outcomeS)} `
-      + '"Evidence" is how much gap-free recording there actually was.');
-    lines.push('Only "low" is the engine\'s. It is the slowest sample of the off-foil run, '
-      + "placed where this window comes nearest it.");
-    lines.push('"In" is the fastest sample of the entry window. "Out" is where the speed came '
-      + "back to the engine's flying-again threshold. Both are read off the drawn line.");
-    lines.push("A flight end record holds no entry or exit speed of its own.");
-    lines.push("Speed here is the manoeuvre channel, derived from position. "
-      + "The GPS Doppler speed the records use is smoothed. It would read differently.");
-    if (end.borderline) {
-      lines.push('"Borderline" means the stop ran past the touchdown limit without reaching '
-        + "the fall one.");
-    }
+    lines.push(`${say("flightEndPage.footDrawn", { before: lead, after: run })} `
+      + `${say("flightEndPage.footMarks")} ${PATH_NUMBERS} ${NORTH_AND_WIND}`);
+    lines.push(`${say("flightEndPage.footEntryBand", { seconds: entryS })} `
+      + `${outcomeWindowLine(outcomeS)} ${say("flightEndPage.footEvidence")}`);
+    lines.push(say("flightEndPage.footLow"));
+    lines.push(say("flightEndPage.footInOut"));
+    lines.push(say("flightEndPage.footNoRecord"));
+    lines.push(say("flightEndPage.footChannel"));
+    if (end.borderline) lines.push(say("flightEndPage.footBorderline"));
   }
   if (doc.view && doc.view.stride > 1) {
     lines.push(`This recording is long, so the browser holds every ${doc.view.stride}th `

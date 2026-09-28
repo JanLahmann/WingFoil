@@ -21,6 +21,7 @@
  */
 
 import { speed, speedUnit, speedValue } from "./appsettings.js";
+import { say } from "./appcopy.js";
 import { renderSessionGear } from "./gear.js";
 import { text } from "./presentation.js";
 import { esc } from "./render.js";
@@ -81,14 +82,11 @@ const row = (line) => ({
  * is `DivergenceText.isTakeoffOnly` and is why a renamed column cannot change the sentence.
  */
 function advice(lines) {
-  const base = "Trust the phone's numbers. It reads the whole session back afterwards. "
-    + "The watch has to work these out live on your wrist, as you ride. "
-    + "Nothing is wrong with your session.";
+  const base = say("sessionLog.trustThePhone");
   const takeoffOnly = lines.length > 0 && lines.every(
     (l) => l.metricId === "takeoffs" || l.metricId === "takeoffAttempts");
   return takeoffOnly
-    ? base + " Takeoff and pump counting is where the two differ most. "
-      + "Keep the watch app up to date to narrow the gap."
+    ? `${base} ${say("sessionLog.takeoffsDiffer")}`
     : base;
 }
 

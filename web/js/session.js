@@ -46,6 +46,8 @@ import { TOKENS } from "./tokens.js";
 /* The Turns tab's tally. It reads the chips' own decision (`turnRowVisible`) rather than
    deriving a second one, so the cards, this block and the table cannot disagree. */
 import { renderTurnTally } from "./turncards.js";
+import { HELP } from "./appcopy.js";
+
 // r3-w2:begin — the ground under the track, and the door that opens it full screen
 import {
   fullMapDoor, fullMapHeight, fullMapOpen, groundToggle, groundUnder, onGroundButton,
@@ -54,6 +56,10 @@ import {
 // r3-w2:end
 
 const el = (id) => document.getElementById(id);
+
+/** The map legend's one line: the help topic's own summary (docs/copy/help.json). */
+const MAP_LEGEND_LINE = (HELP.sections || []).flatMap((section) => section.topics || [])
+  .find((topic) => topic.id === "mapLegend")?.summary || "";
 
 /* ------------------------------------------------------------------- the layers */
 
@@ -1907,21 +1913,12 @@ function drawChips() {
         : "");
   host.innerHTML = group("route") + group("marker") + group("kind")
     + (utilities ? `<span class="chip-group chip-utilities">${utilities}</span>` : "")
-    + `<p class="legend-note">Tap a chip to hide or show it on the map <em>and</em> in the
-      speed strip. Chevrons point the way you were riding.</p>
-      <p class="legend-note">J, T and A are the kinds of turn. Turn one off to see only the
-      others, here and in the turns list. An aborted turn is one you fell out of halfway
-      round.</p>
-      <p class="legend-note">Star = a clean jibe. You flew it through and carried your speed.
-      No touchdown and no fall in the seconds after.</p>
-      <p class="legend-note">Solid shape = manoeuvre outcome. Hollow square = straight-line
-      flight end, on the same colour ladder. Arrow = takeoff. Red u-turn = a failed
-      attempt.</p>
-      <p class="legend-note">A star answers to the clean jibe chip alone. Hide flew through and
-      the stars stay.</p>
-      <p class="legend-note">Tap either figure to move the playhead. Tap a mark or a flown
-      stretch of track to see which flight it belongs to. Zoomed in, a drag on the map pans
-      it.</p>`;
+    // **The legend is the phone's help topic, behind its `?`** (HelpCatalog `mapLegend`:
+    // "reference material belongs behind the `?` the rest of the page already uses",
+    // app-ui-review.md §1.2). Six grey paragraphs here were the browser's own second
+    // legend; the concise reading is now the topic's summary and the extensive one its
+    // body, both read from the catalogue by js/explain.js.
+    + `<p class="legend-note" data-explain="mapLegend">${esc(MAP_LEGEND_LINE)}</p>`;
 
   host.onclick = (ev) => {
     if (onZoomButton(ev)) return;

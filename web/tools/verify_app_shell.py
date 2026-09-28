@@ -90,6 +90,10 @@ PAGE_IDS = ["page-sessions", "page-session", "page-records", "page-trends", "pag
 #: of these screens are absent on the phone when they are empty (the gear card's note is
 #: shown, the divergence card is not), so the sentence is the browser's own and is held
 #: only to the markup.
+#: Where the phone's screen sentences are authored since 28 September 2026: the views read
+#: them from the kit's `AppShellCopy`, so an empty state is held to that file.
+APP_WORDS = "ios/WingFoilKit/Sources/WingFoilKit/Presentation/AppShellCopy.swift"
+
 PORTED_SCREENS = [
     ("log-gear", "Gear", "ios/WingFoil/Features/Gear/SessionGearCard.swift",
      "Add your wings, boards and foils on the Gear tab. Then every session knows what you rode.",
@@ -108,9 +112,9 @@ PORTED_SCREENS = [
     ("gear-dialog", "New gear", "ios/WingFoil/Features/Gear/GearView.swift", "", None),
     ("trends-range", "Custom range",
      "ios/WingFoil/Features/Library/LibraryFilterMenu.swift",
-     "Nothing in this range", "ios/WingFoil/Features/Trends/TrendsView.swift"),
+     "Nothing in this range", APP_WORDS),
     ("periods-body", "Periods", "ios/WingFoil/Features/Periods/PeriodsView.swift",
-     "No periods yet", "ios/WingFoil/Features/Periods/PeriodsView.swift"),
+     "No periods yet", APP_WORDS),
 ]
 
 #: A Swift string split over two literals is one authored sentence. Joining the halves

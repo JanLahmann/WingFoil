@@ -23,24 +23,25 @@
  *   * A browser with no `navigator.share` at all takes the same fallback.
  */
 
+import { say } from "./appcopy.js";
 import { getFitBlob } from "./store.js";
 
 /** Where a report goes. The kit's `FeedbackReport.recipient`, and the one address on the
  *  site (web/tools/verify_copy.py pins the footers that print it). */
 export const RECIPIENT = "info@cleanjibe.org";
 
-/** What the comment field asks. `SessionAnalysisMail.prompt` in the kit, word for word:
+/** What the comment field asks. `SessionAnalysisMail.prompt` in the kit, read from it:
  *  the two shells ask one question. */
-export const PROMPT = "What looks wrong? Which turns or times?";
+export const PROMPT = say("sessionMail.prompt");
 
-/** What the rider is agreeing to. `SessionAnalysisMail.consent` in the kit. */
-export const CONSENT =
-  "The file holds your track, your heart rate and your times. "
-  + "It is used only to improve the detection. It is never published.";
+/** What the rider is agreeing to: `SessionAnalysisMail.consent`'s first and last parts.
+ *  The middle one says the file is stripped of the watch serial and the rider profile,
+ *  which the phone does and this browser does not — it sends the original. */
+export const CONSENT = `${say("sessionMail.consentHolds")} ${say("sessionMail.consentUse")}`;
 
-/** "CleanJibe session 30 August 2026 — for analysis", the kit's subject. */
+/** "CleanJibe session 30 August 2026 · for analysis", the kit's subject. */
 export function subject(dateLine) {
-  return `CleanJibe session ${dateLine || ""} — for analysis`;
+  return say("sessionMail.subject", { date: dateLine || "" });
 }
 
 /**
@@ -53,7 +54,7 @@ export function subject(dateLine) {
  * it is about would be describing a different session as far as the reader is concerned.
  */
 export function body({ comment, facts, attached }) {
-  const lines = ["What looks wrong:", (comment || "").trim(), "", CONSENT, "",
+  const lines = [say("sessionMail.commentLabel"), (comment || "").trim(), "", CONSENT, "",
                  "-".repeat(40),
                  "Below is what the browser knows about this session and run. "
                  + "It helps analysis. Delete any line you would rather not send.", ""];
@@ -72,7 +73,7 @@ export function body({ comment, facts, attached }) {
   lines.push("Attached");
   lines.push("  " + (facts.file || "the recording"));
   lines.push(attached
-    ? "  The original recording, as it was imported."
+    ? `  ${say("sessionMail.originalAttached")}`
     : "  Attach the file CleanJibe just downloaded. A mail link cannot carry it.");
   lines.push("");
   lines.push("sent from CleanJibe");

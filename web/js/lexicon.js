@@ -19,6 +19,8 @@
  * `web_entry.analyze_bytes`, which is the engine's own statement about how it ran.
  */
 
+import { say } from "./appcopy.js";
+
 const WINGFOIL = {
   discipline: "wingfoil",
   experimental: false,
@@ -71,7 +73,4 @@ export function disciplineTitle(discipline) {
 
 /** The whole disclaimer, in the voice, byte for byte what the phone's footnote carries.
     The kit is the author: Presentation/DisciplineLexicon.swift, `experimentalNote`. */
-export const EXPERIMENTAL_NOTE =
-  "Experimental. Windsurf analysis is untested. Jibes and tacks work. "
-  + "Pumping is off and planing thresholds are provisional. "
-  + "Send feedback on what you see.";
+export const EXPERIMENTAL_NOTE = say("discipline.experimentalNote");

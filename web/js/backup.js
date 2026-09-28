@@ -21,6 +21,7 @@
  * the library keeps the analysis it has.
  */
 
+import { say } from "./appcopy.js";
 import { listTombstones } from "./deleted.js";
 import { ingest } from "./ingest.js";
 import { esc, zonedFormat } from "./render.js";
@@ -93,7 +94,7 @@ async function readZip(buffer) {
 
 /* ------------------------------------------------------------------- the offer */
 
-const say = (html) => {
+const show = (html) => {
   const host = el("restore-body");
   if (host) host.innerHTML = html;
 };
@@ -118,17 +119,17 @@ function taken(entries) {
  * stored digest — the archive carries the digests, so this costs no analysis at all.
  */
 async function offerRestore(file) {
-  say(`<p class="note">Opening ${esc(file.name)}…</p>`);
+  show(`<p class="note">Opening ${esc(file.name)}…</p>`);
   let members;
   try {
     members = await readZip(await file.arrayBuffer());
   } catch (err) {
-    say(`<p class="note">${esc(err.message)}</p>`);
+    show(`<p class="note">${esc(err.message)}</p>`);
     return;
   }
   const indexMember = members.find((m) => /(^|\/)index\.json$/.test(m.name));
   if (!indexMember) {
-    say(`<p class="note">That zip holds no library index, so it is not a CleanJibe
+    show(`<p class="note">That zip holds no library index, so it is not a CleanJibe
       backup. Download all on the Sessions tab writes the file this screen reads.</p>`);
     return;
   }
@@ -139,7 +140,7 @@ async function offerRestore(file) {
     stored = null;
   }
   if (!Array.isArray(stored) || !stored.length) {
-    say(`<p class="note">That backup holds no sessions.</p>`);
+    show(`<p class="note">That backup holds no sessions.</p>`);
     return;
   }
 
@@ -170,11 +171,11 @@ async function offerRestore(file) {
     ["Already in your library", String(already)],
   ];
   if (orphan) rows.push(["Without a recording", String(orphan)]);
-  say(`<p class="muted small">${esc(file.name)}</p>
+  show(`<p class="muted small">${esc(file.name)}</p>
     <div class="kv">${rows.map(([k, v]) =>
       `<div class="row"><span>${esc(k)}</span><span>${esc(v)}</span></div>`).join("")}</div>
-    <p class="muted small">Nothing is deleted or overwritten. Sessions you already have
-      keep their own analysis. Sessions you deleted after this backup stay deleted.</p>
+    <p class="muted small">${esc(say("backup.restoreKeeps"))} ${
+      esc(say("backup.restoreDeleted"))}</p>
     <p>
       <button class="primary small-btn" type="button" data-act="restore-go"${
         plan.length ? "" : " disabled"}>Restore ${esc(plural(plan.length, "session"))}</button>
@@ -220,7 +221,7 @@ async function runRestore() {
   const lines = [`${plural(added, "session")} restored.`];
   if (skipped) lines.push(`${skipped} were already in your library.`);
   if (failed.length) lines.push(`${plural(failed.length, "recording")} could not be read.`);
-  say(`<p class="note">${esc(lines.join(" "))}</p>`);
+  show(`<p class="note">${esc(lines.join(" "))}</p>`);
 }
 
 function reset() {
@@ -240,7 +241,7 @@ export function mountBackup(options = {}) {
   input.addEventListener("change", () => {
     const file = input.files?.[0];
     input.value = "";
-    if (file) offerRestore(file).catch((err) => say(`<p class="note">${esc(err.message)}</p>`));
+    if (file) offerRestore(file).catch((err) => show(`<p class="note">${esc(err.message)}</p>`));
   });
   host.addEventListener("click", (ev) => {
     const button = ev.target.closest("button[data-act]");

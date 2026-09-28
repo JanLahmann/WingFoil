@@ -53,6 +53,19 @@ WHAT IS IN IT
                  prefix and the door names. The footer's mail and the menu's Support row are
                  composed from them rather than typed.
 
+  ``WORDS``      docs/copy/app-words.json: every other sentence the browser app shows and
+                 the phone authors (``AppShellCopy`` and the kit constants its export test
+                 names, exported by ``AppShellCopyExportTests``), plus the recording
+                 classes' lines out of docs/copy/recording-classes.json. Read through
+                 ``say("group.key", {name: value})``, which fills the ``{name}``
+                 placeholders. ``web/tools/check_web_literals.py`` fails a key that is not
+                 here, and a rider sentence typed into web/js instead of said through it.
+
+THE PAGE. ``web/app/index.html`` carries the same words where the page is static: an
+element with ``data-w="group.key"`` has its text written from ``WORDS`` by this script, so
+the markup a verifier parses is the app's wording and nobody types it. ``--check`` fails
+while the page is stale, like the module.
+
 WHY THE TEXT IS HERE AND NOT IN THE PAGE: ``docs/copy/check_voice.py`` reads
 ``web/app/index.html`` as a rider surface and fails a hand-typed date or build number
 (``STALE``). What's New is nothing but dates and build numbers, so it is rendered from this
@@ -62,7 +75,9 @@ module at run time, where it is the generator's fact rather than an author's.
 from __future__ import annotations
 
 import argparse
+import html
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -71,6 +86,12 @@ REPO = WEB.parent
 COPY = REPO / "docs" / "copy"
 GUIDE = REPO / "docs" / "guide" / "getting-started.json"
 OUT = WEB / "js" / "appcopy.js"
+PAGE = WEB / "app" / "index.html"
+
+#: An element whose text is one of WORDS: `<p data-w="records.noMeasured" …>…</p>`. Its
+#: content is replaced whole, so a `data-w` element holds text and no markup of its own.
+DATA_W = re.compile(r'(<(?P<tag>[a-z][a-z0-9]*)\b[^>]*?\bdata-w="(?P<key>[\w.]+)"[^>]*>)'
+                    r'(?P<body>.*?)(</(?P=tag)>)', re.S)
 
 #: What /whats-new/ may print, and therefore what the app may. `make_whats_new.WEB_CHANNELS`
 #: is the author of this rule; it is repeated rather than imported so this generator stays a
@@ -220,6 +241,8 @@ def render() -> str:
     presentation_out = {key: value for key, value in presentation.items()
                         if key not in ("_readme", "schema")}
 
+    words = words_document()
+
     return HEADER + (
         "/** The four tabs, the six menu rows, the four session sub-tabs, the family\n"
         " *  section and the Beta page (docs/copy/app-shell.json). One order, one wording,\n"
@@ -268,10 +291,56 @@ def render() -> str:
         " * this, the glossary in ./copy.js and the token catalogue in ./tokens.js, which\n"
         " * are the four namespaces a `labelId` may use and there are no others.\n"
         " */\n"
-        "export const PRESENTATION = %s;\n"
+        "export const PRESENTATION = %s;\n\n"
+        "/**\n"
+        " * The app's screen sentences (docs/copy/app-words.json, written by the kit's\n"
+        " * `AppShellCopyExportTests` out of `AppShellCopy` and the constants it names).\n"
+        " * Read them through `say`, never by typing them: web/tools/check_web_literals.py\n"
+        " * fails a rider sentence written straight into web/js.\n"
+        " */\n"
+        "export const WORDS = %s;\n\n"
+        "/**\n"
+        " * One sentence out of `WORDS`, by `group.key`, with its `{name}` placeholders\n"
+        " * filled from `args` — `AppShellCopy.fill` on the phone. A key that is missing\n"
+        " * comes back as itself, which is loud on the page and caught by the check first.\n"
+        " */\n"
+        "export function say(key, args = {}) {\n"
+        "  const [group, name] = key.split(\".\");\n"
+        "  const template = (WORDS[group] || {})[name];\n"
+        "  if (template === undefined) return key;\n"
+        "  return template.replace(/\\{(\\w+)\\}/g,\n"
+        "    (whole, arg) => (arg in args ? String(args[arg]) : whole));\n"
+        "}\n"
         % (_js(shell_out), _js(ways_in), _js(guide_out), _js(settings),
            _js(settings_sections), _js(welcome),
-           _js(entries), _js(help_out), _js(feedback_out), _js(presentation_out)))
+           _js(entries), _js(help_out), _js(feedback_out), _js(presentation_out),
+           _js(words)))
+
+
+def words_document() -> dict:
+    """`WORDS`: the kit's export, plus the recording classes by id."""
+    exported = json.loads((COPY / "app-words.json").read_text(encoding="utf-8"))
+    words = dict(exported["groups"])
+    classes = json.loads((COPY / "recording-classes.json").read_text(encoding="utf-8"))
+    words["recordingClass"] = {entry["id"]: entry["line"] for entry in classes["classes"]}
+    return words
+
+
+def say(words: dict, key: str) -> str:
+    group, name = key.split(".", 1)
+    try:
+        return words[group][name]
+    except KeyError:
+        raise SystemExit("web/app/index.html: data-w=%r is not in docs/copy/app-words.json"
+                         % key) from None
+
+
+def render_page(text: str, words: dict) -> str:
+    """The page with every `data-w` element's text written from `WORDS`."""
+    def fill(match: re.Match) -> str:
+        return (match.group(1) + html.escape(say(words, match.group("key")), quote=False)
+                + match.group(5))
+    return DATA_W.sub(fill, text)
 
 
 def main(argv=None) -> int:
@@ -281,16 +350,26 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
 
     text = render()
+    page_now = PAGE.read_text(encoding="utf-8")
+    page = render_page(page_now, words_document())
     if args.check:
-        if not OUT.exists() or OUT.read_text(encoding="utf-8") != text:
+        stale = [path for path, want, have in
+                 ((OUT, text, OUT.read_text(encoding="utf-8") if OUT.exists() else None),
+                  (PAGE, page, page_now)) if want != have]
+        for path in stale:
             print("stale, run `python3 web/tools/make_app_copy.py`: %s"
-                  % OUT.relative_to(REPO), file=sys.stderr)
+                  % path.relative_to(REPO), file=sys.stderr)
+        if stale:
             return 1
-        print("js/appcopy.js: the shell, the ways in, the welcome, What's new and Help")
+        print("js/appcopy.js: the shell, the ways in, the welcome, What's new, Help and the "
+              "app's words; app/index.html's data-w text")
         return 0
 
     OUT.write_text(text, encoding="utf-8")
     print("wrote %s" % OUT.relative_to(REPO))
+    if page != page_now:
+        PAGE.write_text(page, encoding="utf-8")
+        print("wrote %s" % PAGE.relative_to(REPO))
     return 0
 
 

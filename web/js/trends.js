@@ -13,6 +13,7 @@
  */
 
 import { ask } from "./rpc.js";
+import { say } from "./appcopy.js";
 /* Periods is a page under Trends now, and one period is a page under that. js/appshell.js
    owns which page is on screen; it does not import this file, so this is not a cycle. */
 import { showPage } from "./appshell.js";
@@ -96,12 +97,14 @@ export async function showTrends(saved) {
     // the words the phone meets him with. A spot chip that filtered everything out is a
     // different absence, so it says a different thing.
     const filtered = saved.length > 0;
+    const noMatch = `<p class="note">${esc(say("library.noMatch"))}. ${
+      esc(say("library.noMatchLine"))}</p>`;
     el("records-body").innerHTML = filtered
-      ? `<p class="note">No session matches these filters.</p>`
-      : `<p class="note">Your records start with your first session.</p>${door}`;
+      ? noMatch
+      : `<p class="note">${esc(say("exampleOnly.recordsTitle"))}.</p>${door}`;
     el("trends-body").innerHTML = filtered
-      ? `<p class="note">No session matches these filters.</p>`
-      : `<p class="note">Your trends start with your first session.</p>${door}`;
+      ? noMatch
+      : `<p class="note">${esc(say("exampleOnly.trendsTitle"))}.</p>${door}`;
     return;
   }
   // r3-w1: the chosen range is part of what is memoised. The same library over two ranges
@@ -164,13 +167,20 @@ function draw(agg, trendAgg = agg) {
   // made only of those has no records to draw and must say why, rather than drawing a
   // chart of zero sessions. This file does not know the rule and must not learn it.
   if (!agg.count) {
-    const note = `<p class="note">Nothing here counts towards your records yet. The example
-      session and sessions a friend rode are kept out of them. Save one of your own and
-      these fill in.</p>
-      <p><button class="ghost small-btn" type="button" data-goto="sessions">Go to
+    // A library of the bundled example alone is the phone's `ExampleOnlyNote`, word for
+    // word. A friend's session is kept out too, and the phone has no sentence for a
+    // library made of those, so that one is the browser's own.
+    const onlyExample = entries.length > 0 && entries.every((e) => e.example);
+    const door = `<p><button class="ghost small-btn" type="button" data-goto="sessions">Go to
         Sessions</button></p>`;
-    records.innerHTML = note;
-    trends.innerHTML = note;
+    const note = (kind) => (onlyExample
+      ? `<p class="note"><strong>${esc(say(`exampleOnly.${kind}Title`))}</strong><br>${
+        esc(say(`exampleOnly.${kind}`))}</p>${door}`
+      : `<p class="note">Nothing here counts towards your records yet. The example
+      session and sessions a friend rode are kept out of them. Save one of your own and
+      these fill in.</p>${door}`);
+    records.innerHTML = note("records");
+    trends.innerHTML = note("trends");
     return;
   }
 
@@ -178,14 +188,12 @@ function draw(agg, trendAgg = agg) {
   // (ios/WingFoil/Features/Records/RecordsView.swift).
   records.innerHTML = `
     <h3 class="sub-head">Speed records</h3>
-    <p class="muted small">Each record links back to the session it was set in, and to the
-      exact window inside it. The provenance is in every analysis document under
-      <code>records.windows</code>.</p>
+    <p class="muted small">${esc(say("records.speedHead", {
+      certified: agg.records.filter((r) => r.certified !== false).length,
+      count: agg.records.length }))} ${esc(say("records.speedMeasured"))}</p>
     <div class="table-scroll"><table id="records-table"></table></div>
     <h3 class="sub-head">Session records</h3>
-    <p class="muted small">All-time bests that are not speeds, the afternoons themselves.
-      No certification applies here. A degraded recording can misreport a speed. Its jibe
-      count and its minutes stay true.</p>
+    <p class="muted small">${esc(say("records.sessionRecordsFooter"))}</p>
     <div class="table-scroll"><table id="session-records-table"></table></div>`;
   // r3-w1: the record tables are filled here, before the range can cut the page short.
   // They are all-time on both surfaces, so a range that holds nothing must not empty them.
@@ -204,7 +212,7 @@ function draw(agg, trendAgg = agg) {
   // is not empty, so the door out of it is the range itself rather than the Sessions tab.
   if (!trendAgg.count) {
     trends.innerHTML = `<p class="note">${esc(emptyRangeNote())}</p>
-      <p class="muted small">Widen the range.</p>`;
+      <p class="muted small">${esc(say("trends.widenTheRange"))}</p>`;
     return;
   }
 
@@ -227,7 +235,7 @@ function draw(agg, trendAgg = agg) {
     // The head carries the mark once when the chart holds a value no recording could
     // certify (`library._trends`), and the points that set it carry it again below — the
     // same word, and the same reason, the records table uses.
-    box.innerHTML = `<div class="trend-head"><h4>${esc(chart.label)}</h4>` +
+    box.innerHTML = `<div class="trend-head"><h4>${esc(chartTitle(chart))}</h4>` +
       (chart.unit ? `<span class="trend-unit">${esc(chartUnit(chart))}</span>` : "") +
       (chart.uncertified ? UNCERTIFIED : "") +
       `</div><div class="figure"></div>`;
@@ -274,13 +282,23 @@ const UNCERTIFIED = ' <span class="badge" title="This session carried no speed c
   + 'GPX, or another degraded source. Its speed was differentiated from positions, which is '
   + 'noisier and can read high, so this record cannot be certified.">uncertified</span>';
 
+/** The phone's chart title for an engine chart key (`TrendsView`, the rate codes spelled
+ *  out). A key the phone has no chart for keeps the engine's label. */
+const CHART_TITLE = {
+  foilPct: "onFoil", cleanJibes: "cleanJibes", best2s: "best2s",
+  longestFlight: "longestFlight", turnSuccess: "flewThrough", cph: "cph", jph: "jph",
+  tph: "tph", pumps: "pumps", turnSide: "bySide",
+};
+const chartTitle = (chart) => (CHART_TITLE[chart.key]
+  ? say(`trends.${CHART_TITLE[chart.key]}`) : chart.label);
+
+/** An empty Periods page, the phone's `ContentUnavailableView`: the title, then its line. */
+const periodsEmpty = () => `<p class="note"><strong>${esc(say("periods.empty"))}</strong><br>${
+  esc(say("periods.emptyLine"))}</p>`;
+
 /** Why the speed table is empty, in the reader's own terms. */
 function noRecordsNote(policy) {
-  if (policy === "onlyVerified") {
-    return "No verified speed record yet. Every session here worked its speed out from "
-      + "positions. Settings has the other two answers.";
-  }
-  return "No qualifying speed window yet.";
+  return policy === "onlyVerified" ? say("records.noMeasured") : say("records.noQualifying");
 }
 
 function renderRecords(table, records) {
@@ -373,11 +391,16 @@ function renderSessionRecords(table, records) {
  *  is the one thing a `<p>` can do that a Python constant cannot. */
 const GAP_DAYS = 3;
 
+/** The fewest sessions a trip holds, `library.TRIP_MIN_SESSIONS` (and the kit's
+ *  `PeriodRules.tripMinSessions`), for the same reason as the gap above. */
+const MIN_TRIP_SESSIONS = 2;
+
+/** The three groups, in the phone's words (`PeriodsView`). */
 const GROUPS = [
-  ["trips", "Trips", "Spells at one spot, close together in time."],
-  ["months", "Months", "Calendar months, on the day the rider had."],
-  ["seasons", "Seasons", "1 April to 31 March, so a February session counts "
-    + "towards the winter it belongs to."],
+  ["trips", say("periods.trips"),
+   say("periods.tripsNote", { days: GAP_DAYS, sessions: MIN_TRIP_SESSIONS })],
+  ["months", say("periods.months"), say("periods.monthsNote")],
+  ["seasons", say("periods.seasons"), say("periods.seasonsNote")],
 ];
 
 /** One period's block as the same `.kv` list the totals above use — the block is a list of
@@ -412,9 +435,7 @@ function renderPeriodRows(host, periods) {
       <p class="muted small">${esc(note)}</p>
       ${rows.map(periodRow).join("")}</div>`);
   }
-  host.innerHTML = parts.join("")
-    || `<p class="note">No periods yet. A session needs a recorded start before it can
-        belong to a month.</p>`;
+  host.innerHTML = parts.join("") || periodsEmpty();
 }
 
 /* ------------------------------------------------------------- the Periods page
@@ -434,16 +455,13 @@ export function showPeriodsPage() {
   if (!host) return;
   const agg = cache.ranged || cache.data;
   if (!agg) {
-    host.innerHTML = `<p class="note">Your periods start with your first session.</p>
+    host.innerHTML = `${periodsEmpty()}
       <p><button class="ghost small-btn" type="button" data-goto="sessions">Go to
         Sessions</button></p>`;
     return;
   }
   host.innerHTML = `
-    <p class="muted small">A trip is one spot with no gap wider than
-      ${esc(String(GAP_DAYS))} days and at least two sessions.</p>
-    <p class="muted small">Rates over a period divide the period's own totals. They are not
-      the average of the sessions' own.</p>
+    <p class="muted small">${esc(say("periods.rangeRates"))}</p>
     <div id="period-custom"></div>
     <div id="period-groups"></div>`;
   renderCustomRange(el("period-custom"));
@@ -531,7 +549,7 @@ async function showRange(from, to) {
       showPage("period", encodeURIComponent(period.key));
       return;
     }
-    out.innerHTML = `<p class="note">No session in that range.</p>`;
+    out.innerHTML = `<p class="note">${esc(say("periods.noSessionInRange"))}</p>`;
   } catch (err) {
     out.innerHTML = `<p class="note">Could not aggregate that range: ${esc(err.message)}</p>`;
   }
@@ -675,13 +693,15 @@ function drawWeeks(host, weeks) {
   if (!weeks.length) return;
   const box = document.createElement("div");
   box.className = "trend-chart";
-  box.innerHTML = `<div class="trend-head"><h4>Sessions per week</h4>` +
+  box.innerHTML = `<div class="trend-head"><h4>${esc(say("trends.perWeek"))}</h4>` +
     `<span class="trend-unit">sessions</span></div><div class="figure"></div>`;
   host.appendChild(box);
   const ridden = weeks.filter((w) => w.count > 0).length;
   const note = document.createElement("p");
   note.className = "muted small";
-  note.textContent = `${ridden} of ${weeks.length} weeks on the water. `
+  // The count is the phone's line. How a week is cut is the browser's own: the phone's
+  // week runs on the phone's clock, and this one on each session's local time.
+  note.textContent = `${say("trends.weeksOnTheWater", { ridden, weeks: weeks.length })} `
     + "Weeks start on Monday, the ISO-8601 week. "
     + "Each session counts in its own local time.";
   box.appendChild(note);
