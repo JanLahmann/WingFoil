@@ -7,8 +7,9 @@ Auth: personal API key (intervals.icu → Settings → Developer → API Key).
 Usage (from lab/):
     uv run python tools/download_icu.py --oldest 2025-08-01 [--dry-run]
 
-Fetches the activity list, keeps watersport sessions (type Windsurf, or names matching
-wing/foil/surf keywords — catches the Walk-typed FoilMotion/"Wingfoiling" recordings),
+Fetches the activity list, keeps watersport sessions (type Windsurf, or a name with wing/foil/
+surf/kite/SUP as a whole word on a type that could be a watersport — catches the Walk-typed
+FoilMotion/"Wingfoiling" recordings, never a Run called "Supporting Robert"),
 downloads each original file via GET /api/v1/activity/{id}/file, and writes
 fixtures/sessions/{windsurf-native|other-apps|ciq}/YYYY-MM-DD_<slug>_<source>.fit
 per the fixtures/README.md naming convention.
@@ -38,7 +39,35 @@ UA = {"User-Agent": "WingFoil-lab/0.1 (personal use)"}
 FIXTURES = Path(__file__).resolve().parents[2] / "fixtures" / "sessions"
 
 WATERSPORT_TYPES = {"Windsurf", "Kitesurf", "Sail", "Surfing", "StandUpPaddling"}
-NAME_RE = re.compile(r"wing|foil|windsurf|kite|surf|sup", re.IGNORECASE)
+
+#: The intervals.icu types a name never rescues (28 Sep 2026): every type icu knows that is
+#: neither a watersport above nor one of the catch-alls a watersport lands under by mistake
+#: -- Walk (the CIQ app's mis-type), Workout, Other, WaterSport. Jan's Berlin Marathon (Run)
+#: and "9 5 4 Supporting Robert" were rescued by a name before this list existed. A type
+#: icu adds later is unknown here, and so still rescuable. Twin of the kit's
+#: `WatersportName.nonWatersportTypes` and web/js/icu.js.
+NON_WATERSPORT_TYPES = {
+    "Ride", "VirtualRide", "EBikeRide", "EMountainBikeRide", "MountainBikeRide",
+    "GravelRide", "TrackRide", "Handcycle", "Velomobile",
+    "Run", "VirtualRun", "TrailRun", "Hike", "Wheelchair",
+    "Swim", "OpenWaterSwim", "Rowing", "VirtualRow", "Kayaking", "Canoeing",
+    "AlpineSki", "BackcountrySki", "NordicSki", "RollerSki", "VirtualSki", "Snowboard",
+    "Snowshoe", "IceSkate", "InlineSkate", "Skateboard",
+    "WeightTraining", "Yoga", "Pilates", "Crossfit", "Elliptical", "StairStepper",
+    "HighIntensityIntervalTraining", "RockClimbing", "Golf", "Soccer", "Tennis", "Squash",
+    "Badminton", "Racquetball", "Pickleball", "Padel", "TableTennis", "Rugby", "Hockey",
+}
+
+#: The name rescue, in **whole words** (28 Sep 2026): "SUP" yes, "Supporting" and "super"
+#: no. The long stems take any ending ("foiling", "Wingfoilen", "FoilMotion"); the short
+#: words only their own few ("wings", "kiten", "surfing"). A letter or digit on either side
+#: is what "not a whole word" means, so "wing_foil" and "SUP-Tour" match. Twin of the kit's
+#: `WatersportName.pattern` and web/js/icu.js.
+_W = r"[^\W_]"
+NAME_RE = re.compile(
+    rf"(?<!{_W})(?:(?:foil|wingfoil|wingsurf|windsurf|kitesurf|kitefoil|pumpfoil){_W}*"
+    rf"|wing(?:s|ing|er|en)?|kite(?:s|n|r|rs)?|kiting|surf(?:s|ing|er|ers|en)?|sup)(?!{_W})",
+    re.IGNORECASE)
 
 
 def auth(key: str):
@@ -56,8 +85,11 @@ def list_activities(key: str, oldest: str, newest: str) -> list[dict]:
 
 
 def is_watersport(a: dict) -> bool:
+    """A watersport type, or a name that says so on a type that could be one."""
     if a.get("type") in WATERSPORT_TYPES:
         return True
+    if a.get("type") in NON_WATERSPORT_TYPES:
+        return False
     return bool(NAME_RE.search(a.get("name") or ""))
 
 
