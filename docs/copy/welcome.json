@@ -1,0 +1,589 @@
+{
+  "_readme" : "GENERATED from WelcomeSections by `COPY_WRITE=1 swift test --filter WelcomeSectionsExportTests`. The kit is the author of both front doors: the app's What CleanJibe does reads the kit, and web/tools/make_home.py renders web/index.html and docs/web-parity/welcome-vs-homepage.md from this file. Do not edit by hand.",
+  "schema" : "cleanjibe.welcome/1",
+  "sections" : [
+    {
+      "actions" : [
+        {
+          "id" : "chooser",
+          "title" : "Which way in is yours?"
+        }
+      ],
+      "id" : "hero",
+      "items" : [
+
+      ],
+      "kicker" : "Your WingFoil session, measured.",
+      "lede" : "CleanJibe reads your session off the watch. It tells you your time on the foil, every flight, your speed records, and a verdict on every turn. Flew through, touchdown, or fell in.",
+      "note" : "It is free and needs no account. The example opens right here in your browser.",
+      "surfaces" : "web",
+      "title" : "Did you fly through that jibe?"
+    },
+    {
+      "actions" : [
+
+      ],
+      "id" : "identity",
+      "items" : [
+
+      ],
+      "kicker" : "",
+      "lede" : "CleanJibe shows your time on the foil, every flight and every touchdown. Each jibe gets a verdict: flew through, touched down, or fell in. You see your dry streak and your fastest seconds. The replay comes with a commentary.",
+      "note" : "",
+      "surfaces" : "app",
+      "title" : "Your WingFoil session, measured."
+    },
+    {
+      "actions" : [
+
+      ],
+      "id" : "legend",
+      "items" : [
+        {
+          "actions" : [
+
+          ],
+          "apps" : [
+
+          ],
+          "beta" : false,
+          "detail" : "",
+          "id" : "flew",
+          "term" : "Flew through"
+        },
+        {
+          "actions" : [
+
+          ],
+          "apps" : [
+
+          ],
+          "beta" : false,
+          "detail" : "",
+          "id" : "touchdown",
+          "term" : "Touchdown"
+        },
+        {
+          "actions" : [
+
+          ],
+          "apps" : [
+
+          ],
+          "beta" : false,
+          "detail" : "",
+          "id" : "fellIn",
+          "term" : "Fell in"
+        }
+      ],
+      "kicker" : "",
+      "lede" : "",
+      "note" : "",
+      "surfaces" : "both",
+      "title" : ""
+    },
+    {
+      "actions" : [
+
+      ],
+      "id" : "example",
+      "items" : [
+
+      ],
+      "kicker" : "",
+      "lede" : "A real 10-minute session on Lake Garda.",
+      "note" : "Every session gives you a card like this to share.",
+      "surfaces" : "both",
+      "title" : "Try the example session"
+    },
+    {
+      "actions" : [
+
+      ],
+      "id" : "measures",
+      "items" : [
+        {
+          "actions" : [
+
+          ],
+          "apps" : [
+
+          ],
+          "beta" : false,
+          "detail" : "How much of your session you spent flying rather than just moving.",
+          "id" : "foilShare",
+          "term" : "On foil"
+        },
+        {
+          "actions" : [
+
+          ],
+          "apps" : [
+
+          ],
+          "beta" : false,
+          "detail" : "One takeoff starts a flight. A touchdown or a fall ends it. Both are counted.",
+          "id" : "flights",
+          "term" : "Flights & touchdowns"
+        },
+        {
+          "actions" : [
+
+          ],
+          "apps" : [
+
+          ],
+          "beta" : false,
+          "detail" : "How many jibes in a row you stayed out of the water, and the best run of the day.",
+          "id" : "dryStreak",
+          "term" : "Dry streak"
+        },
+        {
+          "actions" : [
+
+          ],
+          "apps" : [
+
+          ],
+          "beta" : false,
+          "detail" : "Your fastest 2 seconds, 10 seconds, 500 m and nautical mile. The speedsurfing world uses the same windows.",
+          "id" : "speedRecords",
+          "term" : "Speed records"
+        }
+      ],
+      "kicker" : "",
+      "lede" : "",
+      "note" : "",
+      "surfaces" : "both",
+      "title" : "What CleanJibe measures"
+    },
+    {
+      "actions" : [
+
+      ],
+      "id" : "verdicts",
+      "items" : [
+        {
+          "actions" : [
+
+          ],
+          "apps" : [
+
+          ],
+          "beta" : false,
+          "detail" : "The turn kept the foil, from the sweep until you were flying again.",
+          "id" : "flewThrough",
+          "term" : "Flew through"
+        },
+        {
+          "actions" : [
+
+          ],
+          "apps" : [
+
+          ],
+          "beta" : false,
+          "detail" : "The foil went in and you kept going. Dry, and not clean.",
+          "id" : "touchdown",
+          "term" : "Touchdown"
+        },
+        {
+          "actions" : [
+
+          ],
+          "apps" : [
+
+          ],
+          "beta" : false,
+          "detail" : "Every time you ended up in the water, in a turn or in a straight line.",
+          "id" : "fellIn",
+          "term" : "Fell in"
+        },
+        {
+          "actions" : [
+
+          ],
+          "apps" : [
+
+          ],
+          "beta" : false,
+          "detail" : "A jibe that flew through, held 70 % of its entry speed, and stayed quiet for 10 s.",
+          "id" : "clean",
+          "term" : "Clean"
+        }
+      ],
+      "kicker" : "",
+      "lede" : "",
+      "note" : "",
+      "surfaces" : "web",
+      "title" : "Every turn, judged"
+    },
+    {
+      "actions" : [
+
+      ],
+      "id" : "getStarted",
+      "items" : [
+
+      ],
+      "kicker" : "",
+      "lede" : "",
+      "note" : "",
+      "surfaces" : "app",
+      "title" : "Get started"
+    },
+    {
+      "actions" : [
+
+      ],
+      "id" : "family",
+      "items" : [
+        {
+          "actions" : [
+
+          ],
+          "apps" : [
+
+          ],
+          "beta" : false,
+          "detail" : "It records on your wrist, with live numbers and a summary when you save.",
+          "id" : "garmin",
+          "term" : "Garmin watch app"
+        },
+        {
+          "actions" : [
+
+          ],
+          "apps" : [
+
+          ],
+          "beta" : false,
+          "detail" : "It reads every session from Garmin, Strava and other watches, judges every turn and keeps your library.",
+          "id" : "iphone",
+          "term" : "iPhone app"
+        },
+        {
+          "actions" : [
+
+          ],
+          "apps" : [
+
+          ],
+          "beta" : false,
+          "detail" : "Most of the same analysis in a browser tab. Drop a file in or import from intervals.icu, with no account.",
+          "id" : "browser",
+          "term" : "Browser app"
+        },
+        {
+          "actions" : [
+
+          ],
+          "apps" : [
+
+          ],
+          "beta" : true,
+          "detail" : "It records your session on the wrist. The analysis happens on the iPhone.",
+          "id" : "appleWatch",
+          "term" : "Apple Watch app"
+        }
+      ],
+      "kicker" : "",
+      "lede" : "CleanJibe is a family of apps on one analysis engine.",
+      "note" : "",
+      "surfaces" : "both",
+      "title" : "The CleanJibe family"
+    },
+    {
+      "actions" : [
+
+      ],
+      "id" : "chooser",
+      "items" : [
+        {
+          "actions" : [
+            {
+              "id" : "iphone",
+              "title" : "Get the iPhone app"
+            },
+            {
+              "id" : "garmin",
+              "title" : "Put it on your watch"
+            }
+          ],
+          "apps" : [
+            "iphone",
+            "garmin"
+          ],
+          "beta" : false,
+          "detail" : "You get everything. Add the watch app for a verdict on your wrist after every jibe.",
+          "id" : "garminIphone",
+          "term" : "A Garmin and an iPhone"
+        },
+        {
+          "actions" : [
+            {
+              "id" : "browser",
+              "title" : "Try it in your browser"
+            },
+            {
+              "id" : "garmin",
+              "title" : "Put it on your watch"
+            }
+          ],
+          "apps" : [
+            "browser",
+            "garmin"
+          ],
+          "beta" : false,
+          "detail" : "The browser app works on Android and on any computer. Your sessions stay in that browser.",
+          "id" : "garminOnly",
+          "term" : "A Garmin, no iPhone"
+        },
+        {
+          "actions" : [
+            {
+              "id" : "iphone",
+              "title" : "Get the iPhone app"
+            }
+          ],
+          "apps" : [
+            "appleWatch"
+          ],
+          "beta" : true,
+          "detail" : "The watch app comes with the iPhone app. Apple's own Workout app works too, through Apple Health.",
+          "id" : "appleWatch",
+          "term" : "An Apple Watch"
+        },
+        {
+          "actions" : [
+            {
+              "id" : "iphone",
+              "title" : "Get the iPhone app"
+            },
+            {
+              "id" : "browser",
+              "title" : "Try it in your browser"
+            }
+          ],
+          "apps" : [
+            "iphone",
+            "browser"
+          ],
+          "beta" : false,
+          "detail" : "Strava comes in on the iPhone. A .fit file works in both apps.",
+          "id" : "otherWatch",
+          "term" : "Another watch, or Strava"
+        }
+      ],
+      "kicker" : "",
+      "lede" : "",
+      "note" : "The iPhone app installs through Apple's TestFlight app. It is free, and there is no invite to wait for.",
+      "surfaces" : "web",
+      "title" : "Which way in is yours?"
+    },
+    {
+      "actions" : [
+        {
+          "id" : "guideGarmin",
+          "title" : "Show me how"
+        }
+      ],
+      "id" : "oldSessions",
+      "items" : [
+        {
+          "actions" : [
+
+          ],
+          "apps" : [
+
+          ],
+          "beta" : false,
+          "detail" : "Windsurf, SUP, Kitesurf or Surfing all count. So does any activity you named wing or foil.",
+          "id" : "profile",
+          "term" : "Any Garmin profile"
+        },
+        {
+          "actions" : [
+
+          ],
+          "apps" : [
+
+          ],
+          "beta" : false,
+          "detail" : "Garmin has no open API, so the free intervals.icu is the bridge. Two years of sessions come across.",
+          "id" : "icu",
+          "term" : "Through intervals.icu"
+        },
+        {
+          "actions" : [
+
+          ],
+          "apps" : [
+
+          ],
+          "beta" : false,
+          "detail" : "Drop a .fit, .gpx or .tcx into the browser app. It is read on your device and never uploaded.",
+          "id" : "file",
+          "term" : "Or one file at a time"
+        }
+      ],
+      "kicker" : "",
+      "lede" : "Your last season is already on your watch account. Connect it once and CleanJibe reads every session you rode.",
+      "note" : "",
+      "surfaces" : "web",
+      "title" : "Bring in the sessions you already have"
+    },
+    {
+      "actions" : [
+        {
+          "id" : "garmin",
+          "title" : "Put it on your watch"
+        },
+        {
+          "id" : "watches",
+          "title" : "Which watches"
+        }
+      ],
+      "id" : "watchApp",
+      "items" : [
+        {
+          "actions" : [
+
+          ],
+          "apps" : [
+
+          ],
+          "beta" : false,
+          "detail" : "The watch buzzes after every jibe, so you know how it went before you look.",
+          "id" : "wrist",
+          "term" : "Verdicts on your wrist"
+        },
+        {
+          "actions" : [
+
+          ],
+          "apps" : [
+
+          ],
+          "beta" : false,
+          "detail" : "It records your wrist as well, so every pump stroke and every takeoff attempt is counted.",
+          "id" : "pump",
+          "term" : "Pump strokes and takeoffs"
+        },
+        {
+          "actions" : [
+
+          ],
+          "apps" : [
+
+          ],
+          "beta" : false,
+          "detail" : "Foil time, flights and your dry streak while you ride. A summary comes up when you save.",
+          "id" : "live",
+          "term" : "Live on the water"
+        }
+      ],
+      "kicker" : "",
+      "lede" : "The free CleanJibe app for Garmin records a wingfoil session the way we read one.",
+      "note" : "It runs on {garmin-count} Garmin watches, from the fenix 8 down to the vívoactive.",
+      "surfaces" : "web",
+      "title" : "Get much more with the watch app"
+    },
+    {
+      "actions" : [
+        {
+          "id" : "mail",
+          "title" : "Tell us what you want next"
+        },
+        {
+          "id" : "github",
+          "title" : "Read the code"
+        }
+      ],
+      "id" : "trust",
+      "items" : [
+        {
+          "actions" : [
+
+          ],
+          "apps" : [
+
+          ],
+          "beta" : false,
+          "detail" : "You sign up for nothing, here or in the apps.",
+          "id" : "account",
+          "term" : "No account"
+        },
+        {
+          "actions" : [
+
+          ],
+          "apps" : [
+
+          ],
+          "beta" : false,
+          "detail" : "Your sessions stay on your phone or in your browser. We only see one if you send it to us.",
+          "id" : "server",
+          "term" : "No server"
+        },
+        {
+          "actions" : [
+
+          ],
+          "apps" : [
+
+          ],
+          "beta" : false,
+          "detail" : "The engine is on GitHub. Every threshold behind a verdict can be read there.",
+          "id" : "open",
+          "term" : "Open source"
+        },
+        {
+          "actions" : [
+
+          ],
+          "apps" : [
+
+          ],
+          "beta" : false,
+          "detail" : "We build CleanJibe and we wingfoil. Tell us which verdict looked wrong, or what you want next.",
+          "id" : "mail",
+          "term" : "We read every mail"
+        }
+      ],
+      "kicker" : "",
+      "lede" : "",
+      "note" : "",
+      "surfaces" : "web",
+      "title" : "We ride too"
+    },
+    {
+      "actions" : [
+
+      ],
+      "id" : "community",
+      "items" : [
+
+      ],
+      "kicker" : "",
+      "lede" : "CleanJibe is built with its riders. New features are chosen by demand and tested in the beta.",
+      "note" : "",
+      "surfaces" : "both",
+      "title" : ""
+    },
+    {
+      "actions" : [
+
+      ],
+      "id" : "footerLinks",
+      "items" : [
+
+      ],
+      "kicker" : "",
+      "lede" : "Join the beta or send ideas via Menu → Support & ideas.",
+      "note" : "Send ideas via Menu → Support & ideas.",
+      "surfaces" : "app",
+      "title" : ""
+    }
+  ]
+}
