@@ -35,23 +35,20 @@ struct PeriodsView: View {
 
             if loaded && periods.isEmpty {
                 ContentUnavailableView(
-                    "No periods yet", systemImage: "calendar",
-                    description: Text("A session needs a recorded start before it can belong "
-                                      + "to a month. Import one and the months, seasons and "
-                                      + "trips fill in."))
+                    AppShellCopy.Periods.empty, systemImage: "calendar",
+                    description: Text(AppShellCopy.Periods.emptyLine))
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color.clear)
             }
 
-            group("Trips", periods.trips,
-                  note: "Spells at one spot. A holiday the library noticed. No gap wider "
-                      + "than " + String(PeriodRules.tripGapDays) + " days, at least "
-                      + String(PeriodRules.tripMinSessions) + " sessions.")
-            group("Months", periods.months,
-                  note: "Calendar months, by the day you rode.")
-            group("Seasons", periods.seasons,
-                  note: "1 April to 31 March, so a February session counts towards the "
-                      + "winter it belongs to.")
+            group(AppShellCopy.Periods.trips, periods.trips,
+                  note: AppShellCopy.fill(AppShellCopy.Periods.tripsNote,
+                                          ["days": String(PeriodRules.tripGapDays),
+                                           "sessions": String(PeriodRules.tripMinSessions)]))
+            group(AppShellCopy.Periods.months, periods.months,
+                  note: AppShellCopy.Periods.monthsNote)
+            group(AppShellCopy.Periods.seasons, periods.seasons,
+                  note: AppShellCopy.Periods.seasonsNote)
         }
         .listStyle(.insetGrouped)
         .readableColumn()
@@ -117,7 +114,7 @@ struct PeriodsView: View {
                     Label("Share card", systemImage: "square.and.arrow.up")
                 }
             } else if loaded {
-                Text("No session in that range.")
+                Text(AppShellCopy.Periods.noSessionInRange)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -126,9 +123,8 @@ struct PeriodsView: View {
         } footer: {
             // Concise: one line. The arithmetic sits in the extensive reading
             // (Settings → How much to say), said once here and once on a period's page.
-            ExplainedFootnote(line: "Both dates count.", topic: nil,
-                              more: ["A rate over your range divides the range's own "
-                                     + "totals. It never averages the sessions' rates."])
+            ExplainedFootnote(line: AppShellCopy.Periods.bothDatesCount, topic: nil,
+                              more: [AppShellCopy.Periods.rangeRates])
             { _ in }
         }
         .onChange(of: from) { Task { await reloadCustom() } }
@@ -239,10 +235,9 @@ struct PeriodDetailView: View {
             } header: {
                 Text(period.dateLine)
             } footer: {
-                ExplainedFootnote(line: "Every rate here is over these afternoons' own hours.",
+                ExplainedFootnote(line: AppShellCopy.Periods.periodRates,
                                   topic: nil,
-                                  more: ["Clean jibes an hour is every clean jibe of the "
-                                         + "period over all its hours on the water."])
+                                  more: [AppShellCopy.Periods.periodRatesMore])
                 { _ in }
             }
             Section {

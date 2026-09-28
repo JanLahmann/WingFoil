@@ -338,7 +338,7 @@ private struct TurnDetailPage: View {
             .accessibilityLabel("Map orientation")
 
             if !windKnown {
-                Text(Copy.noWindForOrientation + " The turn is drawn north up.")
+                Text(Copy.noWindForOrientation + " " + AppShellCopy.TurnPage.drawnNorthUp)
                     .font(.caption2)
                     .foregroundStyle(.readableSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -350,11 +350,10 @@ private struct TurnDetailPage: View {
             #endif
 
             if ghost != nil {
-                Toggle("Compare with best clean jibe", isOn: $ghostEnabled)
+                Toggle(AppShellCopy.TurnPage.compareWithBest, isOn: $ghostEnabled)
                     .font(.subheadline)
             } else {
-                Text("Nothing to compare with. "
-                     + "This session has no other jibe that flew through the same way round.")
+                Text(AppShellCopy.TurnPage.nothingToCompare)
                     .font(.caption2)
                     .foregroundStyle(.readableSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -363,7 +362,7 @@ private struct TurnDetailPage: View {
     }
 
     private var noGeometryNote: some View {
-        Label("No GPS fixes through this turn. Numbers only.", systemImage: "location.slash")
+        Label(AppShellCopy.TurnPage.noGeometry, systemImage: "location.slash")
             .font(.caption)
             .foregroundStyle(.secondary)
     }
@@ -583,14 +582,12 @@ private struct TurnDetailPage: View {
             let run = Int(pads.afterS)
             // Built in two locals: one `+` chain long enough to carry the whole paragraph
             // is what the type checker gives up on inside a ViewBuilder.
-            let drawn = "The drawing is " + String(lead) + " s before the sweep and "
-                + String(run) + " s after it. "
-            let ticks = "Ticks are one second apart. " + Copy.pathNumbers + "\n\n"
-                + "The line is coloured by speed on the ramp at the foot of the picture. "
-                + "Cold is a standstill, teal is the speed you came in at, hot is above it. "
-                + Copy.northAndWind
+            let drawn = AppShellCopy.fill(AppShellCopy.TurnPage.footDrawn,
+                                          ["before": String(lead), "after": String(run)])
+            let ticks = " " + AppShellCopy.TurnPage.footTicks + " " + Copy.pathNumbers + "\n\n"
+                + AppShellCopy.TurnPage.footRamp + " " + Copy.northAndWind
             Text(drawn + ticks)
-            Text("Tap the drawing for the reading at that sample. The strips follow it.")
+            Text(AppShellCopy.TurnPage.footTap)
             // "Score is…" and the paragraph on the manoeuvre channel and the Doppler speed
             // went to the help (UX review #9, 27 Sep 2026): the page prints "held 87 %",
             // never "score", and which speed channel the verdict was scored on is a
@@ -600,27 +597,22 @@ private struct TurnDetailPage: View {
             // The windows are read off this analysis' own config echo, not `TurnConfig()`:
             // on a dev build with tuning on, the defaults are exactly what these are not.
             let windows = TurnDetailStripView.Windows(config: detail.analysis.config)
-            let entryBand = "The bands under the strip are the engine's windows. "
-                + "\"Entry\" is the " + String(Int(windows.entryS))
-                + " s before the sweep, where the entry speed is the maximum. "
-            let sweepBand = "\"Sweep\" is where the heading turned. "
-                + "The low point is searched to " + String(Int(windows.minLagS))
-                + " s past the sweep, so it can sit after \"out\". "
+            let entryBand = AppShellCopy.fill(AppShellCopy.TurnPage.footEntryBand,
+                                              ["seconds": String(Int(windows.entryS))]) + " "
+            let sweepBand = AppShellCopy.fill(AppShellCopy.TurnPage.footSweepBand,
+                                              ["seconds": String(Int(windows.minLagS))]) + " "
             let outcomeBand = Copy.outcomeWindow(seconds: Int(windows.outcomeS))
-                + " The lighter band inside it ends where you were flying again."
+                + " " + AppShellCopy.TurnPage.footLighterBand
             Text(entryBand + sweepBand + outcomeBand)
             // The quiet tail (engine 0.17.0). Said in the footnote whether or not the strip
             // could fit its rule mark in — at the default 10 s the mark lands past the
             // drawing's own run-out, and this sentence is then the only place the number is.
             if let quiet = detail.analysis.config.turnCleanQuietS, quiet > 0 {
-                Text("A clean jibe also needs " + String(Int(quiet))
-                     + " s after the sweep with no touchdown, fall or wrist under.")
+                Text(AppShellCopy.fill(AppShellCopy.TurnPage.footQuiet,
+                                       ["seconds": String(Int(quiet))]))
             }
             if turn.axisTs != nil {
-                Text("The tick marked \"axis\" is the moment the board went through the "
-                     + "wind axis. "
-                     + "That is dead downwind on a jibe, head to wind on a tack. "
-                     + "The turn is named after that crossing.")
+                Text(AppShellCopy.TurnPage.footAxis)
             }
             #if TUNING
             Text(thresholdLine)

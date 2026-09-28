@@ -99,7 +99,7 @@ export async function renderDeleted() {
     <div id="deleted-status" role="status"></div>`;
 }
 
-function say(text) {
+function tell(text) {
   const host = el("deleted-status");
   if (host) host.innerHTML = text ? `<p class="note">${esc(text)}</p>` : "";
 }
@@ -109,14 +109,14 @@ async function restore(id) {
   if (!stone) return;
   const file = await store.get(`${id}.fit`, null);
   if (!file) {
-    say("The file for that session is gone, so it cannot come back.");
+    tell("The file for that session is gone, so it cannot come back.");
     return;
   }
-  say("Reading that recording again…");
+  tell("Reading that recording again…");
   const outcome = await ingest(await file.arrayBuffer(), stone.fileName,
                               { rider: stone.rider, example: stone.example });
   if (outcome.status === "failed") {
-    say(`That recording could not be read again: ${outcome.message}`);
+    tell(`That recording could not be read again: ${outcome.message}`);
     return;
   }
   await forget(id);
@@ -125,7 +125,7 @@ async function restore(id) {
   // The tombstone earned its keep. The bare name and the outcome word: whether riders ever
   // undo a delete is the question that decides whether the recording is worth keeping.
   track("app-deleted-restored", { outcome: outcome.status });
-  say(outcome.status === "duplicate"
+  tell(outcome.status === "duplicate"
     ? "That session is already in your library, so nothing was added."
     : `${stone.title} is back in your library.`);
 }

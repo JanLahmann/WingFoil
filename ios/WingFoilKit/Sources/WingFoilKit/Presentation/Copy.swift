@@ -42,10 +42,12 @@ public enum Copy {
 
     /// The engine's outcome window, in the seconds this analysis actually used.
     public static func outcomeWindow(seconds: Int) -> String {
-        // Concatenated rather than interpolated: `check_voice.py` reads the literal, and an
-        // interpolation inside one reads to it as a parenthesis in a rider sentence.
-        "\"Outcome\" is the " + String(seconds) + " s the verdict is read from."
+        AppShellCopy.fill(outcomeWindowTemplate, ["seconds": String(seconds)])
     }
+
+    /// The same sentence as a template, which is how the browser reads it
+    /// (`docs/copy/app-words.json`, `copy.outcomeWindow`).
+    public static let outcomeWindowTemplate = "\"Outcome\" is the {seconds} s the verdict is read from."
 
     /// The axis crossing, as the dev trace and the turn page's tick both label it.
     /// A format string: the two angles are degrees before and after the crossing.

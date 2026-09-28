@@ -1,0 +1,219 @@
+{
+  "_readme" : "GENERATED from AppShellCopy and the kit constants it names by `COPY_WRITE=1 swift test --filter AppShellCopyExportTests`. The kit is the author; web/tools/make_app_copy.py writes WORDS in web/js/appcopy.js from this file. `{name}` is a value the screen fills in. Do not edit by hand.",
+  "groups" : {
+    "backup" : {
+      "restoreDeleted" : "Sessions you deleted after this backup stay deleted.",
+      "restoreFillsIn" : "Only details you never filled in are taken from the backup.",
+      "restoreKeeps" : "Nothing is deleted or overwritten. Sessions you already have keep their own analysis."
+    },
+    "copy" : {
+      "axisSweep" : "Through the axis · {before}° before, {after}° after",
+      "deleteAnyLine" : "Delete any line you would rather not send.",
+      "northAndWind" : "North and the wind are marked top right.",
+      "noWindForOrientation" : "Wind up needs a wind direction. This session has none the engine trusts, and none set on the watch.",
+      "outcomeWindow" : "\"Outcome\" is the {seconds} s the verdict is read from.",
+      "pathNumbers" : "The numbers along the path are every five."
+    },
+    "discipline" : {
+      "experimentalNote" : "Experimental. Windsurf analysis is untested. Jibes and tacks work. Pumping is off and planing thresholds are provisional. Send feedback on what you see."
+    },
+    "exampleOnly" : {
+      "records" : "The example session is on loan, not ridden, so it is kept out of your personal records on purpose. Import a .fit file, or connect intervals.icu in Settings, and your own bests appear here.",
+      "recordsTitle" : "Your records start with your first session",
+      "trends" : "The example session is on loan, not ridden, so it is kept out of your trends on purpose. Import a .fit file, or connect intervals.icu in Settings, and the charts fill as you ride.",
+      "trendsTitle" : "Your trends start with your first session"
+    },
+    "flightEndPage" : {
+      "backAfter" : "Back to flying speed {time} after the end.",
+      "drawnNorthUp" : "The track is drawn north up.",
+      "footBorderline" : "\"Borderline\" means the stop ran past the touchdown limit without reaching the fall one.",
+      "footChannel" : "Speed here is the manoeuvre channel, derived from position. The GPS Doppler speed the records use is smoothed. It would read differently.",
+      "footDrawn" : "The drawing is {before} s before the end and {after} s after it.",
+      "footEntryBand" : "The bands are the engine's windows. \"Entry\" is the {seconds} s the flight was ending at.",
+      "footEvidence" : "\"Evidence\" is how much gap-free recording there actually was.",
+      "footInOut" : "\"In\" is the fastest sample of the entry window. \"Out\" is where the speed came back to the engine's flying-again threshold.",
+      "footLow" : "Only \"low\" is the engine's. It is the slowest sample of the off-foil run, placed where this window comes nearest it.",
+      "footMarks" : "The thick, coloured part is the flight. Everything past the dot is already off the foil. Ticks are one second apart.",
+      "footNoRecord" : "Both are read off the drawn line. A flight end record holds no entry or exit speed of its own.",
+      "neverBack" : "Never back up to flying speed inside the window.",
+      "noGeometry" : "No GPS fixes through this flight end. Numbers only."
+    },
+    "gear" : {
+      "inTheQuiver" : "In the quiver",
+      "nameExample" : "e.g. \"Duotone Unit 5 m\", \"Armstrong HA 925\".",
+      "noSpots" : "No spots yet",
+      "noSpotsLine" : "Spots appear once sessions with GPS are in the library.",
+      "notesPlaceholder" : "Size, year, anything worth remembering",
+      "retire" : "Turn off to retire it without losing its sessions.",
+      "spotsFooter" : "Tap a spot to rename it. A name you type sticks through a re-cluster. Sessions starting within {radius} m of each other are one spot. Names come from the map when the network allows."
+    },
+    "icu" : {
+      "emptyFix" : "Connect Garmin in intervals.icu (Settings → device connections) — the back-fill takes a few minutes. If it is already connected, you may simply have no windsurf, wing, kite, surf or SUP activity there yet.",
+      "emptyMessage" : "intervals.icu accepted the key but has no watersport activities to hand over yet.",
+      "emptyTitle" : "Connected, but nothing came back",
+      "networkFix" : "Check your connection and sync again.",
+      "networkMessage" : "The request never got through — no network, or intervals.icu is unreachable right now. Nothing was lost and nothing was half-imported.",
+      "networkTitle" : "Could not reach intervals.icu",
+      "noKeyFix" : "Paste your personal API key: intervals.icu → Settings → Developer Settings.",
+      "noKeyMessage" : "CleanJibe has no intervals.icu key yet, so there is nothing to sync with.",
+      "noKeyTitle" : "No API key yet",
+      "serverFix" : "This is usually temporary. Try again in a few minutes.",
+      "serverMessage" : "intervals.icu answered with an error. That is its end, not yours.",
+      "serverMessageDetail" : "intervals.icu answered with an error ({detail}). That is its end, not yours.",
+      "serverTitle" : "intervals.icu had a problem",
+      "unauthorizedFix" : "Copy the key again from intervals.icu → Settings → Developer Settings and paste it fresh — a stray space at either end is enough to break it.",
+      "unauthorizedMessage" : "The key is wrong, or it was regenerated in intervals.icu after you pasted it here.",
+      "unauthorizedTitle" : "intervals.icu rejected the key",
+      "unknownFix" : "Try the sync again. If it keeps failing, check the key in Settings.",
+      "unknownMessage" : "Something unexpected came back.",
+      "unknownTitle" : "The sync did not finish"
+    },
+    "library" : {
+      "noMatch" : "No session matches these filters",
+      "noMatchLine" : "Nothing in the library answers to all of them at once."
+    },
+    "periods" : {
+      "bothDatesCount" : "Both dates count.",
+      "empty" : "No periods yet",
+      "emptyLine" : "A session needs a recorded start before it can belong to a month. Import one and the months, seasons and trips fill in.",
+      "months" : "Months",
+      "monthsNote" : "Calendar months, by the day you rode.",
+      "noSessionInRange" : "No session in that range.",
+      "periodRates" : "Every rate here is over these afternoons' own hours.",
+      "periodRatesMore" : "Clean jibes an hour is every clean jibe of the period over all its hours on the water.",
+      "rangeRates" : "A rate over your range divides the range's own totals. It never averages the sessions' rates.",
+      "seasons" : "Seasons",
+      "seasonsNote" : "1 April to 31 March, so a February session counts towards the winter it belongs to.",
+      "trips" : "Trips",
+      "tripsNote" : "Spells at one spot. A holiday the library noticed. No gap wider than {days} days, at least {sessions} sessions."
+    },
+    "records" : {
+      "emptyLibrary" : "Import or sync a session and its speed records appear here.",
+      "noMeasured" : "No measured speed record yet. These recordings worked their speed out from positions. Settings has the other two answers.",
+      "noQualifying" : "No qualifying speed window under this filter.",
+      "noRecords" : "No records yet",
+      "sessionRecordsFooter" : "These are your best afternoons rather than your best windows, so nothing here is marked estimated. A poor recording can get a speed wrong, but the jibe count and the minutes are not about speed.",
+      "speedFreshness" : "The dot on a record's name says how fresh it is. Filled within a month. Hollow within the season. Faint when it is older than 6 months.",
+      "speedHead" : "Doppler speed, GP3S windows. {certified} of {count} have measured speed.",
+      "speedMeasured" : "Measured speed comes from the watch's own speed channel. Speed estimated from positions is marked."
+    },
+    "rider" : {
+      "friendKeptOut" : "It stays out of your records, your trends and your gear totals.",
+      "friendKeptOutBeta" : "It stays out of your records, trends, gear totals and Apple Health.",
+      "friendShown" : "A friend's session is shown in full. You get the map, the chart, the replay, everything.",
+      "question" : "Whose session is this?"
+    },
+    "sessionLog" : {
+      "takeoffsDiffer" : "Takeoff and pump counting is where the two differ most. Keep the watch app up to date to narrow the gap.",
+      "trustThePhone" : "Trust the phone's numbers. It reads the whole session back afterwards. The watch has to work these out live on your wrist, as you ride. Nothing is wrong with your session."
+    },
+    "sessionMail" : {
+      "commentLabel" : "What looks wrong:",
+      "consentHolds" : "The file holds your track, your heart rate and your times.",
+      "consentStripped" : "It is stripped of your watch's serial number and profile.",
+      "consentUse" : "It is used only to improve the detection. It is never published.",
+      "originalAttached" : "The original recording, as it was imported.",
+      "prompt" : "What looks wrong? Which turns or times?",
+      "subject" : "CleanJibe session {date} · for analysis"
+    },
+    "settings" : {
+      "detailCaption" : "Concise keeps one line under every section. Extensive prints its help page under it.",
+      "detailConcise" : "Concise",
+      "detailExtensive" : "Extensive",
+      "detailTitle" : "How much to say"
+    },
+    "share" : {
+      "sendToUs" : "Send this session to us",
+      "sendToUsLine" : "A number looks wrong? Send the recording with your notes."
+    },
+    "speedRecords" : {
+      "includeUnverified" : "Include estimated",
+      "includeUnverifiedSummary" : "Every record counts. Estimated ones are marked.",
+      "onlyVerified" : "Only measured",
+      "onlyVerifiedSummary" : "Only records your watch measured. Nothing else counts.",
+      "preferVerified" : "Prefer measured",
+      "preferVerifiedSummary" : "A measured record wins. An estimated one fills an empty row, marked."
+    },
+    "trends" : {
+      "best2s" : "Best 2 s",
+      "best2sNote" : "Your quickest two seconds of the session.",
+      "bySide" : "Flew through by entry tack",
+      "bySideEmpty" : "No session in this range has turns with a usable entry tack. That needs a wind direction the app can trust.",
+      "bySideNote" : "Each line splits your turns by the tack you came in on. Course changes do not count.",
+      "cleanJibes" : "Clean jibes",
+      "cleanJibesNote" : "Jibes that flew through, held at least 70 % of their entry speed, then 10 quiet seconds on the foil.",
+      "cph" : "Clean jibes an hour (CPH)",
+      "flewThrough" : "Flew-through rate",
+      "flewThroughNote" : "Turns that never lost the foil. Every counted turn, not jibes alone.",
+      "jph" : "Dry jibes an hour (JPH)",
+      "jphNote" : "Jibes you sailed out of without falling in.",
+      "longestFlight" : "Longest flight",
+      "nothingInRange" : "Nothing in this range",
+      "onFoil" : "On foil",
+      "perWeek" : "Sessions per week",
+      "portShare" : "Port / starboard",
+      "portShareNote" : "50 % is even. The gap is the side you avoid.",
+      "pumps" : "Pumps to takeoff",
+      "pumpsNote" : "Only sessions recorded with the CleanJibe watch app count your pumps.",
+      "tph" : "Dry turns an hour (TPH)",
+      "tphNote" : "Every counted turn you stayed dry through.",
+      "weekRuns" : "A week runs Monday to Sunday, on your phone's clock.",
+      "weeksOnTheWater" : "{ridden} of {weeks} weeks on the water.",
+      "widenTheRange" : "Widen the range or clear the spot and gear filters."
+    },
+    "turnCoach" : {
+      "axisAfter" : "You held {score} of your entry speed. The board did not come far enough past the wind axis. This one is not clean.",
+      "cleanAndFast" : "Clean, and you barely slowed. You held {score} of your entry speed all the way round.",
+      "cleanButSlow" : "You flew all the way through, and it cost you speed. {entry} in, {low} at the low point.",
+      "fellIn" : "This one ended in the water. {entry} coming in, {low} at the low point.",
+      "fellInFast" : "You held {score} of your entry speed right round. It still ended in the water.",
+      "flewAndFast" : "You flew through and barely slowed. You held {score} of your entry speed all the way round.",
+      "flewStraightAway" : "It was flying again straight away.",
+      "midJibe" : "downwind point",
+      "midOther" : "middle of the turn",
+      "midTack" : "head-to-wind",
+      "offFoilThenFlew" : "{seconds} off the foil before it flew again.",
+      "plain" : "{entry} in, {low} at the low point. You held {score} of your entry speed.",
+      "pumpedOut" : "You pumped this one back out.",
+      "pumpedOutIn" : "You pumped this one back out in {strokes}.",
+      "quietFlightEnd" : "You rode the turn itself and held {score} of your entry speed. The foil went a few seconds later, so this one is not clean.",
+      "quietOffFoil" : "You rode the turn, then the foil dropped again on the way out. This one does not count as clean.",
+      "quietSubmerged" : "You held {score} of your entry speed through the turn. The barometer then saw your wrist go under. This one is not clean.",
+      "slowedEarly" : "The speed went before the {mid}. You were down to {low} with the turn still to come.",
+      "slowedLate" : "You held it into the {mid}. The speed went on the way out, down to {low}.",
+      "touchdownComingIn" : "The foil touched down before the {mid}. The speed was already at {low} going in.",
+      "touchdownOnExit" : "The foil touched down on the way out. You held {entry} into the {mid} and lost it after.",
+      "wristUnder" : "The barometer saw your wrist go under here. The foil was gone for a moment. {entry} in, {low} at the low point."
+    },
+    "turnCoachTips" : {
+      "carryFurther" : "Next time, carry the turn further past the wind axis before you settle.",
+      "comeInFaster" : "Next time, come in with more speed.",
+      "comeInFasterJibe" : "Next time, come in faster, or keep the wing powered through the downwind point.",
+      "powerUpOnExit" : "Next time, power the wing up as soon as you are on the new tack.",
+      "rideItOut" : "Next time, stay on the foil for {hold} after the turn, and it counts as clean.",
+      "rideItOutHold" : "a few seconds",
+      "steadyExit" : "Next time, stay low and steady on the way out."
+    },
+    "turnPage" : {
+      "compareWithBest" : "Compare with best clean jibe",
+      "drawnNorthUp" : "The turn is drawn north up.",
+      "footAxis" : "The tick marked \"axis\" is the moment the board went through the wind axis. That is dead downwind on a jibe, head to wind on a tack. The turn is named after that crossing.",
+      "footDrawn" : "The drawing is {before} s before the sweep and {after} s after it.",
+      "footEntryBand" : "The bands under the strip are the engine's windows. \"Entry\" is the {seconds} s before the sweep, where the entry speed is the maximum.",
+      "footLighterBand" : "The lighter band inside it ends where you were flying again.",
+      "footQuiet" : "A clean jibe also needs {seconds} s after the sweep with no touchdown, fall or wrist under.",
+      "footRamp" : "The line is coloured by speed on the ramp at the foot of the picture. Cold is a standstill, teal is the speed you came in at, hot is above it.",
+      "footSweepBand" : "\"Sweep\" is where the heading turned. The low point is searched to {seconds} s past the sweep, so it can sit after \"out\".",
+      "footTap" : "Tap the drawing for the reading at that sample. The strips follow it.",
+      "footTicks" : "Ticks are one second apart.",
+      "noBearings" : "No usable bearings through this window. The steps were shorter than the receiver's own scatter.",
+      "noGeometry" : "No GPS fixes through this turn. Numbers only.",
+      "nothingToCompare" : "Nothing to compare with. This session has no other jibe that flew through the same way round."
+    },
+    "turns" : {
+      "cleanRule" : "Clean: you flew through, held at least {pct} % of your entry speed, then {quiet} quiet seconds on the foil.",
+      "outcomeAndHeld" : "Flew through / touchdown / fell in is the outcome. It says how the turn ended. Held is how much of your entry speed you kept through it, 0 to 100 %."
+    }
+  },
+  "schema" : "cleanjibe.app-words/1"
+}

@@ -136,6 +136,8 @@ jobs:
         run: uv run --locked --project lab python docs/copy/check_voice.py
       - name: No sentence with two homes
         run: uv run --locked --project lab python docs/copy/check_duplicates.py
+      - name: No rider sentence typed into the browser app
+        run: uv run --locked --project lab python web/tools/check_web_literals.py
       - name: The release channel's copy
         run: uv run --locked --project lab python docs/copy/check_release_copy.py
       - name: The web bundle is not stale

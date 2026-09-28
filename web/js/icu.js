@@ -11,6 +11,7 @@
  * the user how to export the FIT by hand, which is the supported path.
  */
 
+import { say } from "./appcopy.js";
 import { track } from "./track.js";
 
 const BASE = "https://intervals.icu/api/v1";
@@ -77,20 +78,20 @@ export function mountIcu({ analyzeBuffer }) {
     localStorage.removeItem(LS_KEY);
     keyInput.value = "";
     el("icu-results").innerHTML = "";
-    say("Key removed from this browser.");
+    tell("Key removed from this browser.");
   });
 
   el("icu-list").addEventListener("click", async () => {
     const key = keyInput.value.trim();
     const athlete = athleteInput.value.trim() || "0";
-    if (!key) return say("Paste your intervals.icu API key first.", true);
+    if (!key) return tell(say("icu.noKeyFix"), true);
     localStorage.setItem(LS_KEY, key);
     localStorage.setItem(LS_ATHLETE, athlete);
     await listActivities(key, athlete, analyzeBuffer);
   });
 }
 
-function say(text, bad = false) {
+function tell(text, bad = false) {
   const node = el("icu-status");
   node.textContent = text;
   node.classList.toggle("bad", bad);
@@ -104,7 +105,7 @@ function isoDaysAgo(days) {
 }
 
 async function listActivities(key, athlete, analyzeBuffer) {
-  say("Contacting intervals.icu…");
+  tell("Contacting intervals.icu…");
   // The bridge, counted at both ends. The browser is expected to refuse this call outright
   // (no CORS headers on intervals.icu's API), and the pair of started/finished is the only
   // way to learn whether that expectation still holds for real readers. No key, no athlete
@@ -118,12 +119,12 @@ async function listActivities(key, athlete, analyzeBuffer) {
     const res = await fetch(url, { headers: { Authorization: authHeader(key) } });
     if (res.status === 401 || res.status === 403) {
       track("app-icu-sync-failed", { reason: "key" });
-      return say("intervals.icu rejected the key. That is HTTP 401 or 403. "
-                 + "Check it and try again.", true);
+      return tell(`${say("icu.unauthorizedMessage")} ${say("icu.unauthorizedFix")}`, true);
     }
     if (!res.ok) {
       track("app-icu-sync-failed", { reason: "http" });
-      return say(`intervals.icu returned HTTP ${res.status}.`, true);
+      return tell(`${say("icu.serverMessageDetail", { detail: `HTTP ${res.status}` })} ${
+        say("icu.serverFix")}`, true);
     }
     activities = await res.json();
   } catch (err) {
@@ -135,9 +136,9 @@ async function listActivities(key, athlete, analyzeBuffer) {
   // this bridge would actually carry is the number worth having, and the rest of a rider's
   // training year is none of a counter's business.
   track("app-icu-sync-finished", { activities: water.length });
-  if (!water.length) return say("No wing/foil/windsurf activities in the last 120 days.");
+  if (!water.length) return tell(`${say("icu.emptyMessage")} ${say("icu.emptyFix")}`);
 
-  say(`${water.length} watersport activities found. Everything below is fetched straight ` +
+  tell(`${water.length} watersport activities found. Everything below is fetched straight ` +
       `from intervals.icu to this tab.`);
   el("icu-results").innerHTML = `<div class="icu-list">${water.slice(0, 40).map((a) => `
     <div class="icu-row">
@@ -157,13 +158,13 @@ async function listActivities(key, athlete, analyzeBuffer) {
 }
 
 async function fetchAndAnalyze(key, id, name, analyzeBuffer) {
-  say(`Downloading the original file for “${name}”…`);
+  tell(`Downloading the original file for “${name}”…`);
   try {
     const res = await fetch(`${BASE}/activity/${encodeURIComponent(id)}/file`,
                             { headers: { Authorization: authHeader(key) } });
-    if (!res.ok) return say(`Download failed: HTTP ${res.status}.`, true);
+    if (!res.ok) return tell(`Download failed: HTTP ${res.status}.`, true);
     const buffer = await res.arrayBuffer();
-    say(`Loaded ${(buffer.byteLength / 1024).toFixed(0)} KB. Analysing locally.`);
+    tell(`Loaded ${(buffer.byteLength / 1024).toFixed(0)} KB. Analysing locally.`);
     // web_entry unwraps gzip/zip itself, so hand the bytes over untouched.
     analyzeBuffer(buffer, `${id}.fit`);
   } catch (err) {
@@ -176,7 +177,7 @@ function corsFallback(err) {
   // The reason word, never the browser's own message: that string is the engine's and can
   // carry a URL with an athlete id in it.
   track("app-icu-sync-failed", { reason: "blocked" });
-  say("intervals.icu could not be reached from the browser.", true);
+  tell("intervals.icu could not be reached from the browser.", true);
   el("icu-results").innerHTML = `
     <p class="note" style="margin-top:12px">
       This is almost certainly <strong>CORS</strong>. intervals.icu does not allow its API to

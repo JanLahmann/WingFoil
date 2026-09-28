@@ -188,7 +188,7 @@ private struct FlightEndDetailPage: View {
             .accessibilityLabel("Map orientation")
 
             if !windKnown {
-                Text(Copy.noWindForOrientation + " The track is drawn north up.")
+                Text(Copy.noWindForOrientation + " " + AppShellCopy.FlightEndPage.drawnNorthUp)
                     .font(.caption2)
                     .foregroundStyle(.readableSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -200,8 +200,7 @@ private struct FlightEndDetailPage: View {
     }
 
     private var noGeometryNote: some View {
-        Label("No GPS fixes through this flight end. Numbers only.",
-              systemImage: "location.slash")
+        Label(AppShellCopy.FlightEndPage.noGeometry, systemImage: "location.slash")
             .font(.caption)
             .foregroundStyle(.secondary)
     }
@@ -265,9 +264,9 @@ private struct FlightEndDetailPage: View {
             // page differs from the turn page in a way a reader could be misled by: on a
             // turn all three numbers are the engine's, and here only the middle one is.
             Text(slice.speed.outKn == nil
-                 ? "Never back up to flying speed inside the window."
-                 : "Back to flying speed " + secondsText(slice.speed.recoverRt)
-                    + " after the end.")
+                 ? AppShellCopy.FlightEndPage.neverBack
+                 : AppShellCopy.fill(AppShellCopy.FlightEndPage.backAfter,
+                                     ["time": secondsText(slice.speed.recoverRt)]))
                 .font(.subheadline.weight(.medium))
 
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), alignment: .leading),
@@ -365,34 +364,26 @@ private struct FlightEndDetailPage: View {
         VStack(alignment: .leading, spacing: 3) {
             // Built in locals: one `+` chain long enough to carry a whole paragraph is what
             // the type checker gives up on inside a ViewBuilder.
-            let drawn = "The drawing is " + String(Int(slice.padBeforeS))
-                + " s before the end and " + String(Int(slice.padAfterS)) + " s after it. "
-            let marks = "The thick, coloured part is the flight. "
-                + "Everything past the dot is already off the foil. "
-                + "Ticks are one second apart. "
+            let drawn = AppShellCopy.fill(AppShellCopy.FlightEndPage.footDrawn,
+                                          ["before": String(Int(slice.padBeforeS)),
+                                           "after": String(Int(slice.padAfterS))]) + " "
+            let marks = AppShellCopy.FlightEndPage.footMarks + " "
                 + Copy.pathNumbers + " " + Copy.northAndWind
             Text(drawn + marks)
-            let entryBand = "The bands are the engine's windows. \"Entry\" is the "
-                + String(Int(slice.windows.entryS)) + " s the flight was ending at. "
+            let entryBand = AppShellCopy.fill(AppShellCopy.FlightEndPage.footEntryBand,
+                                              ["seconds": String(Int(slice.windows.entryS))])
+                + " "
             let outcomeBand = Copy.outcomeWindow(seconds: Int(slice.windows.outcomeS))
-                + " \"Evidence\" is how much gap-free recording there actually was."
+                + " " + AppShellCopy.FlightEndPage.footEvidence
             Text(entryBand + outcomeBand)
             // The honest sentence about the three numbers, which is the one thing this page
             // has to say that the turn page does not.
-            Text("Only \"low\" is the engine's. "
-                 + "It is the slowest sample of the off-foil run, placed where this window "
-                 + "comes nearest it.\n\n"
-                 + "\"In\" is the fastest sample of the entry window. "
-                 + "\"Out\" is where the speed came back to the engine's flying-again "
-                 + "threshold.\n\n"
-                 + "Both are read off the drawn line. "
-                 + "A flight end record holds no entry or exit speed of its own.")
-            Text("Speed here is the manoeuvre channel, derived from position. "
-                 + "The GPS Doppler speed the records use is smoothed. "
-                 + "It would read differently.")
+            Text(AppShellCopy.FlightEndPage.footLow + "\n\n"
+                 + AppShellCopy.FlightEndPage.footInOut + "\n\n"
+                 + AppShellCopy.FlightEndPage.footNoRecord)
+            Text(AppShellCopy.FlightEndPage.footChannel)
             if end.borderline {
-                Text("\"Borderline\" means the stop ran past the touchdown limit without "
-                     + "reaching the fall one.")
+                Text(AppShellCopy.FlightEndPage.footBorderline)
             }
         }
         .font(.caption2)

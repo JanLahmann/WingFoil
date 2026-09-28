@@ -106,7 +106,7 @@ struct SendToDeveloperSheet: View {
                 .padding()
                 .readableColumn()
             }
-            .navigationTitle("Send this session to us")
+            .navigationTitle(AppShellCopy.Share.sendToUs)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -230,7 +230,7 @@ private struct SendToDeveloperFallbackSheet: View {
                 .padding()
                 .readableColumn()
             }
-            .navigationTitle("Send this session to us")
+            .navigationTitle(AppShellCopy.Share.sendToUs)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {

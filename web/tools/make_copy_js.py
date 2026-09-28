@@ -22,7 +22,8 @@ WHAT IS IN IT
                      them the way ``NotASessionNote.swift`` does.
   ``PHRASES``        phrases.json → ``promise``, ``callToAction``, ``captionOffer``. The
                      three sentences the product says about itself, available to any
-                     renderer on this side of the site.
+                     renderer on this side of the site. And ``tagline``, the line under
+                     the share card's footer (``Branding.tagline``).
   ``GLOSSARY``       glossary.json → every entry's ``id``, ``term`` and ``line``. The
                      analyzer's ``?`` beside the key-metrics block opens them (ux-audit
                      A3.2: the page printed ``On foil``, ``JPH``, ``CPH``, ``WPH`` and the
@@ -79,7 +80,8 @@ def render() -> str:
         return json.dumps(value, ensure_ascii=False, indent=indent)
 
     not_a_session = verdicts["notASession"]
-    picked = {key: phrases[key] for key in ("promise", "callToAction", "captionOffer")}
+    picked = {key: phrases[key]
+              for key in ("promise", "callToAction", "captionOffer", "tagline")}
     # Five keys, in the JSON's own order, and anything else on an entry is left behind.
     # `short` and `expansion` joined the three on 22 September 2026: the presentation
     # document names a glossary word by id and the *cell* picks which of its lengths to
@@ -105,7 +107,8 @@ def render() -> str:
         " * is that row's tag.\n"
         " */\n"
         "export const NOT_A_SESSION = %s;\n\n"
-        "/** The three sentences the product says about itself (docs/copy/phrases.json). */\n"
+        "/** The three sentences the product says about itself, and the card's tagline\n"
+        " *  (docs/copy/phrases.json). */\n"
         "export const PHRASES = %s;\n\n"
         "/**\n"
         " * The words the product is made of, one line each — the kit's `MetricGlossary`\n"

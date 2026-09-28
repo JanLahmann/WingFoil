@@ -34,7 +34,7 @@
  */
 
 import {
-  FEEDBACK, HELP, SETTINGS_SECTIONS, SHELL, WELCOME, WHATS_NEW,
+  FEEDBACK, HELP, SETTINGS_SECTIONS, SHELL, WELCOME, WHATS_NEW, say,
 } from "./appcopy.js";
 import {
   forgetSettings, gearFor, gearMap, markWelcomeSeen, onSettingsChange, setGearFor,
@@ -499,9 +499,9 @@ function markUnits() {
  *  (`SpeedRecordPolicy.summary` in the kit): three two-word labels cannot say when an
  *  unverified record counts, and that is the whole difference between them. */
 const SPEED_RECORD_SUMMARY = {
-  onlyVerified: "Only records your watch measured. Nothing else counts.",
-  preferVerified: "A measured record wins. An estimated one fills an empty row, marked.",
-  includeUnverified: "Every record counts. Estimated ones are marked.",
+  onlyVerified: say("speedRecords.onlyVerifiedSummary"),
+  preferVerified: say("speedRecords.preferVerifiedSummary"),
+  includeUnverified: say("speedRecords.includeUnverifiedSummary"),
 };
 
 function markSpeedRecords() {
@@ -751,7 +751,8 @@ async function renderGear() {
     // The phone's own sentence for this half of the tab (docs/screens.md, Gear & spots;
     // docs/web-design-review.md, finding 4). The wings half says "No wings yet" under it,
     // from js/gear.js, which is where the phone says it too.
-    host.innerHTML = `<p class="note">No spots yet. A session with GPS brings them.</p>
+    host.innerHTML = `<p class="note">${esc(say("gear.noSpots"))}. ${
+      esc(say("gear.noSpotsLine"))}</p>
       <p><button class="ghost small-btn" type="button" data-goto="sessions">Go to
         Sessions</button></p>`;
     // r3-w1: the quiver is not a fact about the library. A rider may put his wings in

@@ -135,12 +135,12 @@
          menu is the one piece of furniture that is on every tab (pattern M). Same control,
          same store, same switch — js/explain.js answers both. -->
     <div class="menu-detail">
-      <span class="menu-detail-label">How much to say</span>
+      <span class="menu-detail-label" data-w="settings.detailTitle">How much to say</span>
       <span class="seg" role="group" aria-label="How much to say">
         <button type="button" class="seg-btn" data-detail-set="concise"
-                aria-pressed="true">Concise</button>
+                aria-pressed="true" data-w="settings.detailConcise">Concise</button>
         <button type="button" class="seg-btn" data-detail-set="extensive"
-                aria-pressed="false">Extensive</button>
+                aria-pressed="false" data-w="settings.detailExtensive">Extensive</button>
       </span>
     </div>
     <!-- The build line as a footer, under a hairline, in the sheet's quietest ink: the
@@ -664,8 +664,7 @@
     <div class="panel-head">
       <div>
         <h1 class="page-title">Trends</h1>
-        <p class="muted small">Session by session, over the library. Computed in Python, in
-          the worker.</p>
+        <p class="muted small">Session by session, over the library.</p>
       </div>
     </div>
 <!-- r3-w1:begin the range over the charts, and the two dates behind it -->
@@ -772,15 +771,14 @@
          here to turn the prose up. Remembered in localStorage behind try/catch, which is
          the rule every stored preference on this site keeps. -->
     <div class="detail-switch">
-      <h2>How much to say</h2>
+      <h2 data-w="settings.detailTitle">How much to say</h2>
       <div class="seg" role="group" aria-label="How much to say">
         <button type="button" class="seg-btn" data-detail-set="concise"
-                aria-pressed="true">Concise</button>
+                aria-pressed="true" data-w="settings.detailConcise">Concise</button>
         <button type="button" class="seg-btn" data-detail-set="extensive"
-                aria-pressed="false">Extensive</button>
+                aria-pressed="false" data-w="settings.detailExtensive">Extensive</button>
       </div>
-      <p class="muted small">Concise keeps one line under every section. Extensive prints
-        its help page under it.</p>
+      <p class="muted small" data-w="settings.detailCaption">Concise keeps one line under every section. Extensive prints its help page under it.</p>
     </div>
   </section>
 
@@ -840,11 +838,11 @@
   <section class="panel" id="settings-speed-records" data-settings="speedRecords">
     <div class="seg" role="group" aria-label="Speed records">
       <button type="button" class="seg-btn" data-speed-records="onlyVerified"
-              aria-pressed="false">Only verified</button>
+              aria-pressed="false" data-w="speedRecords.onlyVerified">Only measured</button>
       <button type="button" class="seg-btn" data-speed-records="preferVerified"
-              aria-pressed="true">Prefer verified</button>
+              aria-pressed="true" data-w="speedRecords.preferVerified">Prefer measured</button>
       <button type="button" class="seg-btn" data-speed-records="includeUnverified"
-              aria-pressed="false">Include unverified</button>
+              aria-pressed="false" data-w="speedRecords.includeUnverified">Include estimated</button>
     </div>
     <p class="muted small" id="speed-records-summary"></p>
   </section>
@@ -1075,12 +1073,13 @@
       <button type="button" class="seg-btn" data-kind="board" aria-pressed="false">Board</button>
       <button type="button" class="seg-btn" data-kind="foil" aria-pressed="false">Foil</button>
     </div>
-    <p class="muted small">e.g. &ldquo;Duotone Unit 5 m&rdquo;, &ldquo;Armstrong HA 925&rdquo;.</p>
+    <p class="muted small" data-w="gear.nameExample">e.g. "Duotone Unit 5 m", "Armstrong HA 925".</p>
     <label class="ask-field">Notes
       <input id="gear-notes" type="text" placeholder="Size, year, anything worth remembering"
              autocomplete="off"></label>
-    <label class="ask-check"><input id="gear-active" type="checkbox" checked> In the quiver</label>
-    <p class="muted small">Turn it off to retire it without losing its sessions.</p>
+    <label class="ask-check"><input id="gear-active" type="checkbox" checked> <span
+      data-w="gear.inTheQuiver">In the quiver</span></label>
+    <p class="muted small" data-w="gear.retire">Turn off to retire it without losing its sessions.</p>
     <div class="ask-actions">
       <button type="button" class="ghost" id="gear-cancel">Cancel</button>
       <button type="button" class="primary" id="gear-save">Save</button>
@@ -1119,7 +1118,7 @@
      nothing is saved. Wiring: js/rider.js. -->
 <dialog id="rider-dialog" class="ask" aria-labelledby="rider-title">
   <form method="dialog" class="ask-form">
-    <h2 id="rider-title">Whose session is this?</h2>
+    <h2 id="rider-title" data-w="rider.question">Whose session is this?</h2>
     <p class="muted small" id="rider-file"></p>
     <div class="seg" role="group" aria-labelledby="rider-title">
       <button type="button" class="seg-btn" data-who="mine" aria-pressed="true">Mine</button>
@@ -1133,8 +1132,8 @@
       <!-- The names already in the library, so a second file from the same friend lands on
            the same spelling as the first. Filled by js/rider.js. -->
       <div class="rider-known" id="rider-known" hidden></div>
-      <p class="note">A friend's session is saved and shown in full, map and charts and
-        everything. It stays out of your records and trends.</p>
+      <p class="note"><span data-w="rider.friendShown">A friend's session is shown in full. You get the map, the chart, the replay, everything.</span>
+        <span data-w="rider.friendKeptOut">It stays out of your records, your trends and your gear totals.</span></p>
     </div>
     <div class="ask-actions">
       <button type="button" class="ghost" id="rider-cancel">Cancel</button>
@@ -1171,11 +1170,10 @@
         <button type="button" class="seg-btn" data-share="fit" aria-pressed="false">FIT file</button>
       </div>
       <details id="send-dev-fold">
-        <summary><span class="help-section-name">Send this session to us</span></summary>
-        <p class="muted small">A number looks wrong? Send the recording with your notes.</p>
+        <summary><span class="help-section-name" data-w="share.sendToUs">Send this session to us</span></summary>
+        <p class="muted small" data-w="share.sendToUsLine">A number looks wrong? Send the recording with your notes.</p>
         <label class="sr-only" for="send-dev-note">Your notes</label>
-        <textarea id="send-dev-note" rows="3"
-                  placeholder="What looks wrong? Which turns or times?"></textarea>
+        <textarea id="send-dev-note" rows="3"></textarea>
         <p class="muted small" id="send-dev-consent"></p>
         <p><button class="primary" id="send-dev-go" type="button">Send it to us</button></p>
         <p class="muted small" id="send-dev-status" role="status"></p>

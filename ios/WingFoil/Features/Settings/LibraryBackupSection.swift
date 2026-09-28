@@ -213,10 +213,9 @@ struct RestoreConfirmation: View {
                         .lineLimit(2)
                         .truncationMode(.middle)
                 } footer: {
-                    Text("Nothing is deleted or overwritten. Sessions you already have "
-                         + "keep their own analysis.\n\n"
-                         + "Only details you never filled in are taken from the backup. "
-                         + "Sessions you deleted after this backup stay deleted.")
+                    Text(AppShellCopy.Backup.restoreKeeps + "\n\n"
+                         + AppShellCopy.Backup.restoreFillsIn + " "
+                         + AppShellCopy.Backup.restoreDeleted)
                 }
 
                 Section {

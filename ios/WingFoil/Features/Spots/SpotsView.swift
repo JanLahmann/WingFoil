@@ -23,9 +23,8 @@ struct SpotsView: View {
     var body: some View {
         List {
             if spots.isEmpty {
-                ContentUnavailableView("No spots yet", systemImage: "mappin.slash",
-                                       description: Text("Spots appear once sessions with GPS "
-                                                         + "are in the library."))
+                ContentUnavailableView(AppShellCopy.Gear.noSpots, systemImage: "mappin.slash",
+                                       description: Text(AppShellCopy.Gear.noSpotsLine))
             } else {
                 Section {
                     ForEach(spots) { entry in

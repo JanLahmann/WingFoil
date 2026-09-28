@@ -18,6 +18,7 @@ import { speed, speedNumber, speedUnit } from "./appsettings.js";
 import { keyMetricEntries } from "./cardstats.js";
 import { hm, text } from "./presentation.js";
 import { GLOSSARY, NOT_A_SESSION } from "./copy.js";
+import { say } from "./appcopy.js";
 import { EXPERIMENTAL_NOTE, lexicon } from "./lexicon.js";
 import { applyTurnFilter, flightFacts, renderFigures } from "./session.js";
 /* r3-w3: the turn page and the flight-end page. One hook, one line below: the page reads
@@ -214,13 +215,9 @@ function renderSummary(result, isExample = false) {
   // about the rider rather than a note about the file. The title carries the detail.
   badges.push([{ a: "CleanJibe recording", b: "measured speed", c: "limited data" }[meta.sourceClass],
                meta.sourceClass === "a",
-               { a: "Recorded by the CleanJibe watch app. Every metric available.",
-                 b: "The recording carries its own speed channel. Everything but pump and "
-                    + "takeoff effort.",
-                 c: "A GPX, a TCX without a speed channel, or another source with none. "
-                    + "Speed records are estimated from positions and uncertified. "
-                    + "There is no pump data."
-               }[meta.sourceClass]]);
+               // The phone's own line for the class (`RecordingClass.line`,
+               // docs/copy/recording-classes.json), which the Import footers print.
+               say(`recordingClass.${meta.sourceClass}`)]);
   if (meta.sport) badges.push([meta.sport, false]);
   if (caps.hasAccel) badges.push(["accelerometer", false]);
   if (caps.hasWatchLaps) badges.push([`${meta.laps} laps`, false]);
@@ -496,18 +493,13 @@ function renderTurns(table, caption, result, meta) {
   // maneuver channel, and a minimum that never dropped below the foil exit speed
   // (docs/algorithms/turns.md, "Turn success").
   const cfg = g.config || {};
-  const threshold = cfg.turnSuccessPct === null || cfg.turnSuccessPct === undefined
-    ? null : `${nf(cfg.turnSuccessPct, 0)} %`;
-  const floor = cfg.foilExitSpeed === null || cfg.foilExitSpeed === undefined
-    ? "the foil exit speed" : `${nf(cfg.foilExitSpeed, 0)} km/h`;
-  // The quiet tail (engine 0.17.0), and stated the same way: from the document's own config,
-  // absent from a document written before it. A clean jibe is now three requirements, and a
-  // caption that named two of them would be the same half-rule the threshold literal was.
-  const quiet = cfg.turnCleanQuietS
-    ? `, and had no touchdown or fall in the ${nf(cfg.turnCleanQuietS, 0)} s after` : "";
-  const cleanRule = threshold === null
-    ? `flew through and held their speed${quiet}`
-    : `flew through, held ≥ ${threshold} of entry speed and never dropped below ${floor}${quiet}`;
+  // The quiet tail (engine 0.17.0), and stated the same way: from the document's own config.
+  // A clean jibe is three requirements, and a caption that named two of them would be the
+  // same half-rule the threshold literal was.
+  // The rule is the phone's footnote under its turns list, the three gates, with this
+  // analysis' own two numbers (`AppShellCopy.Turns.cleanRule`).
+  const cleanRule = say("turns.cleanRule", {
+    pct: nf(cfg.turnSuccessPct ?? 70, 0), quiet: nf(cfg.turnCleanQuietS ?? 10, 0) });
   const o = s.outcomes;
   // voice: skip — a strip of counts, one value per segment, in the spec register of
   // docs/voice.md. It is read as a table of numbers rather than as a sentence, so the
@@ -519,8 +511,8 @@ function renderTurns(table, caption, result, meta) {
     `${o.flewThrough} flew through, ` +
     `${pct(100 * o.flewThrough / (s.turnsCounted || 1))} of them · ` +
     `${o.touchdown} touchdown, ${o.fellIn} fell in · ` +
-    `${s.jibesSuccessful} clean jibes · clean: ${cleanRule} · ` +
-    `port/starboard ${s.port}/${s.starboard}`;
+    `${s.jibesSuccessful} clean jibes · ` +
+    `port/starboard ${s.port}/${s.starboard}. ${cleanRule}`;
 
   // `score` is a *number* — the share of the entry speed the turn held — and stays: it is
   // the evidence behind the verdict, not a verdict itself. The `carried` column beside it

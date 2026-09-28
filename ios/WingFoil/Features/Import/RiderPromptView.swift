@@ -66,14 +66,14 @@ struct RiderPicker: View {
         NavigationStack {
             Form {
                 Section {
-                    Picker("Whose session is this?", selection: $isFriend) {
+                    Picker(AppShellCopy.Rider.question, selection: $isFriend) {
                         Text("Mine").tag(false)
                         Text("A friend's").tag(true)
                     }
                     .pickerStyle(.segmented)
                     .labelsHidden()
                 } header: {
-                    Text("Whose session is this?")
+                    Text(AppShellCopy.Rider.question)
                 } footer: {
                     Text(context)
                         .lineLimit(3)
@@ -94,15 +94,11 @@ struct RiderPicker: View {
                         // this build's doors: the Health export is a BETA one
                         // (docs/channels.md), so the release must not name it.
                         #if BETA
-                        Text("A friend's session is shown in full. You get the map, the "
-                             + "chart, the replay, everything.\n\n"
-                             + "It stays out of your records, trends, gear totals and "
-                             + "Apple Health.")
+                        Text(AppShellCopy.Rider.friendShown + "\n\n"
+                             + AppShellCopy.Rider.friendKeptOutBeta)
                         #else
-                        Text("A friend's session is shown in full. You get the map, the "
-                             + "chart, the replay, everything.\n\n"
-                             + "It stays out of your records, your trends and your gear "
-                             + "totals.")
+                        Text(AppShellCopy.Rider.friendShown + "\n\n"
+                             + AppShellCopy.Rider.friendKeptOut)
                         #endif
                     }
                 }
@@ -111,7 +107,7 @@ struct RiderPicker: View {
             // both called "Import", and only one of them imports anything. The title is
             // the question the screen asks, which is also what the browser app already
             // calls it (docs/screens.md).
-            .navigationTitle("Whose session is this?")
+            .navigationTitle(AppShellCopy.Rider.question)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

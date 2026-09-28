@@ -34,11 +34,13 @@ export const NOT_A_SESSION = {
   "tag": "No riding detected"
 };
 
-/** The three sentences the product says about itself (docs/copy/phrases.json). */
+/** The three sentences the product says about itself, and the card's tagline
+ *  (docs/copy/phrases.json). */
 export const PHRASES = {
   "promise": "Did you fly through that jibe? CleanJibe reads your session off the watch. It tells you your time on the foil, every flight, your speed records, and a verdict on every turn. Flew through, touchdown, or fell in.",
   "callToAction": "Analyse your wingfoil sessions free at cleanjibe.org.",
-  "captionOffer": "analysed with CleanJibe, free at cleanjibe.org"
+  "captionOffer": "analysed with CleanJibe, free at cleanjibe.org",
+  "tagline": "Your WingFoil session, measured."
 };
 
 /**

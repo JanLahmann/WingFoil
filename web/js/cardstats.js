@@ -20,6 +20,7 @@
 
 import { FORM, cellCaption, cellLabel, cellValue, hm, text } from "./presentation.js";
 import { zonedFormat } from "./viz.js";
+import { PHRASES } from "./copy.js";
 
 /* -------------------------------------------------------------------- branding
  *
@@ -49,7 +50,7 @@ export const BRANDING = {
 
 /** The tagline (Jan, 23 Sep 2026) — the line under "CleanJibe · cleanjibe.org" in the card's
  *  footer since layout B v2. `Branding.tagline` in the kit. */
-BRANDING.tagline = "Your WingFoil session, measured.";
+BRANDING.tagline = PHRASES.tagline;
 
 /** "Analyse your wingfoil sessions free at cleanjibe.org.", built rather than repeated. */
 BRANDING.line = `${BRANDING.cta} at ${BRANDING.site}.`;

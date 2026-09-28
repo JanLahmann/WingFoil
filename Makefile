@@ -65,6 +65,7 @@ web-verify:
 	python3 docs/copy/check_release_copy.py
 	python3 docs/copy/check_voice.py
 	python3 docs/copy/check_duplicates.py
+	python3 web/tools/check_web_literals.py
 	python3 web/tools/verify_turn_figure.py
 
 # The browser runs lab/src/wingfoil_lab unchanged. This copies it and rewrites the two

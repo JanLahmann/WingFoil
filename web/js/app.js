@@ -18,7 +18,7 @@ import { CANCELLED, analyze as runAnalysis, cancel as cancelWorker, on, warmUp }
 import { mountSections, resetSections } from "./sections.js";
 import { mountShareCard, openPeriodCard, openShareCard } from "./sharecard.js";
 import { getFitBlob, listEntries } from "./store.js";
-import { CONSENT, send as sendToDeveloper } from "./senddev.js";
+import { CONSENT, PROMPT, send as sendToDeveloper } from "./senddev.js";
 import { track } from "./track.js";
 import { esc, hms, int, nf } from "./viz.js";
 import { invalidateTrends, mountTrends, redrawTrends, showPeriodPage, showPeriodsPage,
@@ -487,6 +487,7 @@ function wireDownload() {
  */
 function wireSendToDeveloper() {
   el("send-dev-consent").textContent = CONSENT;
+  el("send-dev-note").placeholder = PROMPT;
   el("send-dev-go").addEventListener("click", async () => {
     if (!state.last) return;
     const button = el("send-dev-go");
