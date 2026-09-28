@@ -375,14 +375,19 @@ function renderNotASession(g) {
     note.hidden = true;
     return;
   }
-  tag.textContent = NOT_A_SESSION.tag;
+  const land = s.notASessionReason === "land_sport";
+  tag.textContent = land ? NOT_A_SESSION.landTag : NOT_A_SESSION.tag;
   tag.hidden = false;
   // `no_recording` belongs to a library row with a card and no file yet, which this page
   // cannot reach — it only ever sees a file somebody handed it. The branch is here anyway
   // because the kit branches here, and a reason code the engine may send has to land
   // somewhere other than in the wrong sentence.
+  // A land sport (engine 0.26.0) names the sport the file says: "e_biking" reads "e-biking".
   note.textContent = s.notASessionReason === "no_recording"
     ? NOT_A_SESSION.lines[0]
+    : land
+    ? NOT_A_SESSION.lines[2].replace("{sport}",
+                                     String(s.landSport || "another sport").replace(/_/g, "-"))
     : NOT_A_SESSION.lines[1]
         .replace("{duration}", hms(s.durationS))
         .replace("{distance}", distanceNote(s.distanceKm));

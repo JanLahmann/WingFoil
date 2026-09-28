@@ -402,8 +402,15 @@ def _row(summary, turns, records, is_session):
     if turns.get("turnsCounted", 0) > 0:
         out["tally"] = _ladder(turns.get("outcomes", {}))
     if not is_session:
-        out["tagIds"] = ["verdicts.notASession.tag"]
+        out["tagIds"] = [_not_a_session_tag(summary.get("notASessionReason"))]
     return out
+
+
+def _not_a_session_tag(reason):
+    """The row's quiet tag: "Not a watersport" for a land sport (engine 0.26.0), the
+    original four words for everything else."""
+    return ("verdicts.notASession.landTag" if reason == "land_sport"
+            else "verdicts.notASession.tag")
 
 
 def _records(doc, records, policy):
@@ -641,13 +648,17 @@ def _not_a_session(summary):
         return {"isSession": True, "reasonId": None, "tagId": None, "lineId": None,
                 "args": {}}
     reason = summary.get("notASessionReason")
-    line = ("verdicts.notASession.lines.0" if reason == "no_recording"
-            else "verdicts.notASession.lines.1")
-    args = {}
-    if line.endswith(".1"):
+    if reason == "no_recording":
+        line, args = "verdicts.notASession.lines.0", {}
+    elif reason == "land_sport":
+        # The sport the file says, as the FIT profile names it; the words turn it into
+        # "running" or "e-biking" (engine 0.26.0).
+        line, args = "verdicts.notASession.lines.2", {"sport": summary.get("landSport")}
+    else:
+        line = "verdicts.notASession.lines.1"
         args = {"durationS": round_to(summary.get("durationS"), DECIMALS["durationS"]),
                 "distanceKm": round_to(summary.get("distanceKm"), DECIMALS["distanceKm"])}
-    return {"isSession": False, "reasonId": reason, "tagId": "verdicts.notASession.tag",
+    return {"isSession": False, "reasonId": reason, "tagId": _not_a_session_tag(reason),
             "lineId": line, "args": args}
 
 

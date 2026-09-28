@@ -126,6 +126,25 @@ LADDER_KINDS = ("jibe", "tack")
 NOT_A_SESSION_MAX_DURATION_S = 120.0
 NOT_A_SESSION_MAX_DISTANCE_M = 200.0
 
+# "Not a session" — the land sports (engine 0.26.0, docs/algorithms/not-a-session.md "A land
+# sport is not a session"): FIT sport name -> number. Twin of `wingfoil_lab.goldens.LAND_SPORTS`
+# (pinned by lab/tests/test_library.py). Walking, generic and training are absent on purpose.
+LAND_SPORTS = {
+    "running": 1, "cycling": 2, "mountaineering": 16, "hiking": 17,
+    "e_biking": 21, "motorcycling": 22, "driving": 24,
+}
+
+
+def land_sport(sport):
+    """The FIT name of the land sport `sport` says (a name, any case, or its number), else
+    None. Twin of `wingfoil_lab.goldens.land_sport`."""
+    if sport is None:
+        return None
+    key = str(sport).strip().lower()
+    if key in LAND_SPORTS:
+        return key
+    return next((name for name, n in LAND_SPORTS.items() if str(n) == key), None)
+
 # The project-wide "same session" rule, in one place: a session start within +/-60 s AND a
 # duration within +/-60 s of an existing entry is the same session recorded twice (watch
 # export vs intervals.icu re-encode, a re-download, a trimmed copy). Both bounds are
@@ -390,7 +409,7 @@ def _geo(doc) -> dict | None:
     return {"lat": round(lat, 6), "lon": round(lon, 6)}
 
 
-def session_verdict(foil_time_s, duration_s, distance_m) -> tuple:
+def session_verdict(foil_time_s, duration_s, distance_m, sport=None) -> tuple:
     """`(is_session, reason)` — docs/algorithms/not-a-session.md "Not a session", engine 0.19.0.
 
     The Python twin of `wingfoil_lab.goldens.session_verdict` and of the kit's
@@ -401,7 +420,11 @@ def session_verdict(foil_time_s, duration_s, distance_m) -> tuple:
 
     It lives here as well as in the engine because a library holds rows written by older
     engines, and a stored digest is all this module ever gets to see of them.
+
+    A land sport (engine 0.26.0) is asked first: a run clears every flight gate on speed.
     """
+    if land_sport(sport) is not None:
+        return False, "land_sport"
     foil = _num(foil_time_s) or 0.0
     if foil > 0:
         return True, None
@@ -419,8 +442,13 @@ def session_verdict(foil_time_s, duration_s, distance_m) -> tuple:
 _VERDICT_INPUTS = ("foilTimeS", "rateDurationS", "durationS", "distanceKm")
 
 
-def _doc_is_session(summ: dict) -> tuple:
-    """The verdict for one analysis document's `summary` block, engine-stamped or derived."""
+def _doc_is_session(summ: dict, sport=None) -> tuple:
+    """The verdict for one analysis document's `summary` block, engine-stamped or derived.
+
+    `sport` is the file's own (`meta.sport`): a land sport is not a session whatever an
+    engine before 0.26.0 stamped, because that engine never asked."""
+    if land_sport(sport) is not None:
+        return False, "land_sport"
     if summ.get("isSession") is not None:
         return bool(summ["isSession"]), summ.get("notASessionReason")
     if not any(summ.get(k) is not None for k in _VERDICT_INPUTS):
@@ -437,7 +465,13 @@ def entry_is_session(entry: dict) -> tuple:
     `durationS`) and `distanceKm`. This is the one metric in this module that is recomputed
     rather than read, and deliberately: the alternative is a library whose oldest junk never
     leaves its totals.
+
+    **A land sport wins over a stored answer** (engine 0.26.0): the row's own `sport` is
+    enough, so a run saved by an older engine leaves the totals on the next open rather
+    than whenever it is analysed again — the web's half of the phone's re-analysis.
     """
+    if land_sport(entry.get("sport")) is not None:
+        return False, "land_sport"
     if entry.get("isSession") is not None:
         return bool(entry["isSession"]), entry.get("notASessionReason")
     if not any(entry.get(k) is not None for k in _VERDICT_INPUTS):
@@ -501,8 +535,8 @@ def digest(doc, file_name: str | None = None) -> dict:
         # the document carries it — same rule as `cleanJibesPerHour` — and derived from the
         # summary's own numbers when it does not, so a document analyzed by an older engine
         # still gets the right answer without being re-run.
-        "isSession": _doc_is_session(summ)[0],
-        "notASessionReason": _doc_is_session(summ)[1],
+        "isSession": _doc_is_session(summ, meta.get("sport"))[0],
+        "notASessionReason": _doc_is_session(summ, meta.get("sport"))[1],
         "distanceKm": _num(summ.get("distanceKm")),
         "foilPct": _num(summ.get("foilPct")),
         "foilTimeS": _num(summ.get("foilTimeS")),

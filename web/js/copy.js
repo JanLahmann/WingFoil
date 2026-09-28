@@ -20,12 +20,16 @@
  * went-nowhere case, and carries `{duration}` (m:ss under an hour, h:mm:ss over
  * it) and `{distance}` (metres under a kilometre, otherwise one decimal of km) —
  * the row's own displayed numbers, so the line reads against the key metrics
- * directly above it.
+ * directly above it. `lines[2]` is the land-sport case (engine 0.26.0) and
+ * carries `{sport}`, the FIT profile's name with `_` read as `-`; `landTag`
+ * is that row's tag.
  */
 export const NOT_A_SESSION = {
+  "landTag": "Not a watersport",
   "lines": [
     "Your watch says this afternoon happened, but its recording has not arrived yet. It is not counted in totals, trends or records until it does.",
-    "No time on the foil, {duration} long and {distance} covered. This looks like a recording rather than a session. It is kept, and left out of totals, trends and records."
+    "No time on the foil, {duration} long and {distance} covered. This looks like a recording rather than a session. It is kept, and left out of totals, trends and records.",
+    "This was recorded as {sport}, so it is not a session on the water. It is kept, and left out of totals, trends and records."
   ],
   "tag": "No riding detected"
 };

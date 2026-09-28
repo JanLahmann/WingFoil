@@ -16,7 +16,33 @@ import { track } from "./track.js";
 const BASE = "https://intervals.icu/api/v1";
 const LS_KEY = "wingfoil.icu.key";
 const LS_ATHLETE = "wingfoil.icu.athlete";
-const WATERSPORTS = /wing|foil|windsurf|kite|surf|sup/i;
+// Which activities the bridge offers (28 Sep 2026) — the kit's `IcuClient.isWatersport` and
+// lab/tools/download_icu.py, one rule in three places. A watersport type always; otherwise a
+// name that says so **in a whole word** ("SUP" yes, "Supporting" no) on a type that could be
+// a watersport. Run, Ride, Hike, Swim and the rest are never rescued by a name: Jan's Berlin
+// Marathon and "9 5 4 Supporting Robert" were, before this.
+const WATERSPORT_TYPES = new Set(["Windsurf", "Kitesurf", "Sail", "Surfing", "StandUpPaddling"]);
+const NON_WATERSPORT_TYPES = new Set([
+  "Ride", "VirtualRide", "EBikeRide", "EMountainBikeRide", "MountainBikeRide",
+  "GravelRide", "TrackRide", "Handcycle", "Velomobile",
+  "Run", "VirtualRun", "TrailRun", "Hike", "Wheelchair",
+  "Swim", "OpenWaterSwim", "Rowing", "VirtualRow", "Kayaking", "Canoeing",
+  "AlpineSki", "BackcountrySki", "NordicSki", "RollerSki", "VirtualSki", "Snowboard",
+  "Snowshoe", "IceSkate", "InlineSkate", "Skateboard",
+  "WeightTraining", "Yoga", "Pilates", "Crossfit", "Elliptical", "StairStepper",
+  "HighIntensityIntervalTraining", "RockClimbing", "Golf", "Soccer", "Tennis", "Squash",
+  "Badminton", "Racquetball", "Pickleball", "Padel", "TableTennis", "Rugby", "Hockey",
+]);
+const WATERSPORT_NAME = new RegExp(
+  "(?<![\\p{L}\\p{N}])(?:(?:foil|wingfoil|wingsurf|windsurf|kitesurf|kitefoil|pumpfoil)"
+  + "[\\p{L}\\p{N}]*|wing(?:s|ing|er|en)?|kite(?:s|n|r|rs)?|kiting"
+  + "|surf(?:s|ing|er|ers|en)?|sup)(?![\\p{L}\\p{N}])", "iu");
+
+export function isWatersport(a) {
+  if (WATERSPORT_TYPES.has(a.type)) return true;
+  if (NON_WATERSPORT_TYPES.has(a.type)) return false;
+  return WATERSPORT_NAME.test(a.name || "");
+}
 
 const el = (id) => document.getElementById(id);
 // The same set `viz.esc` covers, apostrophe included — a second copy that escaped less
@@ -104,7 +130,7 @@ async function listActivities(key, athlete, analyzeBuffer) {
     return corsFallback(err);
   }
 
-  const water = activities.filter((a) => WATERSPORTS.test(`${a.type || ""} ${a.name || ""}`));
+  const water = activities.filter(isWatersport);
   // One count, and it is the watersport count rather than the whole list: how many sessions
   // this bridge would actually carry is the number worth having, and the rest of a rider's
   // training year is none of a counter's business.
