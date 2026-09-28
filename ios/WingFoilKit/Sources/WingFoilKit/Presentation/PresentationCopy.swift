@@ -241,15 +241,18 @@ public enum PresentationCopy {
         case "verdicts":
             guard parts.count >= 3, parts[1] == "notASession" else { return nil }
             if parts[2] == "tag" { return NotASessionNote.tag }
+            if parts[2] == "landTag" { return NotASessionNote.landTag }
             // The two lines are a *function* of the two numbers that decided, so the id
             // resolves by calling the one that writes them rather than by interpolating a
             // template — which is what keeps the page's sentence and the row's tag one
             // author (`NotASessionNote`).
             guard parts.count == 4, parts[2] == "lines", let index = Int(parts[3]),
-                  index == 0 || index == 1 else { return nil }
-            return NotASessionNote.line(reason: index == 0 ? .noRecording : .tooShort,
+                  (0...2).contains(index) else { return nil }
+            let reason: SessionVerdict.Reason = [.noRecording, .tooShort, .landSport][index]
+            return NotASessionNote.line(reason: reason,
                                         durationS: args["durationS"].flatMap(Double.init),
-                                        distanceKm: args["distanceKm"].flatMap(Double.init))
+                                        distanceKm: args["distanceKm"].flatMap(Double.init),
+                                        sport: args["sport"])
 
         default:
             return nil

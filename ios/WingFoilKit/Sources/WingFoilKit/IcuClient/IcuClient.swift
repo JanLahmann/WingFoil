@@ -135,6 +135,60 @@ public struct URLSessionTransport: IcuTransport {
     }
 }
 
+/// **The name rescue** — an activity whose name says it was on the water, filed under a type
+/// that does not (28 Sep 2026). Shared by the intervals.icu sync and the Strava filter, and
+/// the twin of `lab/tools/download_icu.py` and `web/js/icu.js`.
+///
+/// Jan's Berlin Marathon (a Run) and "9 5 4 Supporting Robert" came in as wingfoil sessions:
+/// the rescue matched "sup" *inside* "Supporting" and applied to every type. Two rules now:
+///
+/// * **the type could be a watersport.** Walk (the CIQ app's mis-type), Workout, Other,
+///   WaterSport, no type at all, or a type this list has never heard of. Every other type
+///   intervals.icu and Strava know — Run, Ride, Hike, Swim and the rest — is never rescued.
+/// * **the keyword is a whole word.** "SUP" yes, "Supporting" and "super" no. The long stems
+///   take any ending ("foiling", "Wingfoilen", "FoilMotion"); the short words only their own
+///   few ("wings", "kiten", "surfing"). A letter or digit on either side is what "not a
+///   whole word" means, so "wing_foil" and "SUP-Tour" match.
+public enum WatersportName {
+
+    /// The types a name never rescues. intervals.icu spells its types the way Strava does,
+    /// so the one list serves both doors.
+    public static let nonWatersportTypes: Set<String> = [
+        "Ride", "VirtualRide", "EBikeRide", "EMountainBikeRide", "MountainBikeRide",
+        "GravelRide", "TrackRide", "Handcycle", "Velomobile",
+        "Run", "VirtualRun", "TrailRun", "Hike", "Wheelchair",
+        "Swim", "OpenWaterSwim", "Rowing", "VirtualRow", "Kayaking", "Canoeing",
+        "AlpineSki", "BackcountrySki", "NordicSki", "RollerSki", "VirtualSki", "Snowboard",
+        "Snowshoe", "IceSkate", "InlineSkate", "Skateboard",
+        "WeightTraining", "Yoga", "Pilates", "Crossfit", "Elliptical", "StairStepper",
+        "HighIntensityIntervalTraining", "RockClimbing", "Golf", "Soccer", "Tennis", "Squash",
+        "Badminton", "Racquetball", "Pickleball", "Padel", "TableTennis", "Rugby", "Hockey",
+    ]
+
+    /// The whole-word pattern, case-insensitive. Byte for byte the lab's `NAME_RE` with
+    /// `[^\W_]` spelled `[\p{L}\p{N}]`.
+    public static let pattern =
+        "(?<![\\p{L}\\p{N}])(?:(?:foil|wingfoil|wingsurf|windsurf|kitesurf|kitefoil|pumpfoil)"
+        + "[\\p{L}\\p{N}]*|wing(?:s|ing|er|en)?|kite(?:s|n|r|rs)?|kiting"
+        + "|surf(?:s|ing|er|ers|en)?|sup)(?![\\p{L}\\p{N}])"
+
+    // `NSRegularExpression` is immutable and documented thread-safe.
+    nonisolated(unsafe) private static let regex = try! NSRegularExpression(
+        pattern: pattern, options: [.caseInsensitive])
+
+    /// Does the name say watersport, in a whole word?
+    public static func matches(_ name: String?) -> Bool {
+        guard let name, !name.isEmpty else { return false }
+        return regex.firstMatch(in: name, range: NSRange(name.startIndex..., in: name)) != nil
+    }
+
+    /// The rescue: a type that could be a watersport, and a name that says it was one.
+    public static func rescues(name: String?, type: String?) -> Bool {
+        if let type, nonWatersportTypes.contains(type) { return false }
+        return matches(name)
+    }
+}
+
 /// intervals.icu REST client (personal API key, HTTP Basic user `API_KEY`).
 /// Mirrors `lab/tools/download_icu.py`.
 public struct IcuClient: Sendable {
@@ -161,9 +215,6 @@ public struct IcuClient: Sendable {
     public static let watersportTypes: Set<String> = [
         "Windsurf", "Kitesurf", "Sail", "Surfing", "StandUpPaddling",
     ]
-    /// Name keywords that rescue the CIQ recordings mis-typed as Walk
-    /// (same keyword set as `download_icu.py`'s regex).
-    public static let nameKeywords = ["wing", "foil", "windsurf", "kite", "surf", "sup"]
 
     public static let defaultBaseURL = URL(string: "https://intervals.icu/api/v1")!
     static let userAgent = "CleanJibe-iOS/0.1 (personal use)"
@@ -179,10 +230,11 @@ public struct IcuClient: Sendable {
         self.transport = transport
     }
 
+    /// A watersport type, or a name that says so on a type that could be one
+    /// (`WatersportName`, 28 Sep 2026). Mirrors `download_icu.py`'s `is_watersport`.
     public static func isWatersport(_ activity: IcuActivity) -> Bool {
         if let type = activity.type, watersportTypes.contains(type) { return true }
-        let name = (activity.name ?? "").lowercased()
-        return nameKeywords.contains { name.contains($0) }
+        return WatersportName.rescues(name: activity.name, type: activity.type)
     }
 
     // MARK: - Endpoints
