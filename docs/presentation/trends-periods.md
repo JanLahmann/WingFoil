@@ -293,15 +293,28 @@ Lean/Complete presets any more. What differs is only what is being described.
   - *All sessions* is the stack above, and the default.
   - *One session* draws one afternoon of the period the way a session card draws it — its
     outline filling the box, marks and all — picked from a list, newest first, opening on
-    the newest. The numbers stay the period's.
+    the period's **best** (Jan, 28 Sep 2026 — see "Best", below). The numbers stay the
+    period's.
   - *Collage* gives each afternoon a cell of its own, fitted to itself, row by row in the
     order they were ridden, a faint tile under each and no marks: a contact sheet of the
-    season. At most **12**, the newest twelve (`TrackCollage.limit` / `.pick`). The column
-    count is the one that gives a track the largest square, ties to fewer columns, and a
-    part-filled last row is centred (`TrackCollage.cells`, `collageCells` in sharecard.js,
-    `collage_cells` in make_presentation_goldens.py), pinned by the `collage` block of
-    `fixtures/periods/outlines.expected.json` (`TrackCollageTests`, `verify_presentation.py`
-    §5e). On the square a collage always takes the full width under the title.
+    season. At most **12**, the **best** twelve (`TrackCollage.limit` / `.pick`), still in
+    date order. The column count is the one that gives a track the largest square, ties to
+    fewer columns, and a part-filled last row is centred (`TrackCollage.cells`,
+    `collageCells` in sharecard.js, `collage_cells` in make_presentation_goldens.py), pinned
+    by the `collage` block of `fixtures/periods/outlines.expected.json`
+    (`TrackCollageTests`, `verify_presentation.py` §5e — cell layout only; the ranking below
+    has no fixture, it is the same pure comparison on both platforms). On the square a
+    collage always takes the full width under the title.
+  - **Best** (Jan, 28 Sep 2026 — `TrackCollage.outranks`/`.pick`/`.best`, the twin
+    `outranks`/`collagePick`/`collageBest` in sharecard.js): most clean jibes; a tie goes to
+    the higher best 2 s — the phone reads it under the rider's Speed records setting where
+    that stands for a session with no siblings to be preferred over
+    (`SpeedRecordRule.stands`, `PeriodShareView.rankedBest2s`), the browser reads the
+    digest's own stored `records.best2sKn` (a second, JS copy of the policy would be a
+    second answer to a question `SpeedRecordRule` already owns); a tie there goes to
+    whichever afternoon was ridden more recently. A session with no ladder at all — no
+    clean jibes and no best 2 s — ranks last. Both the collage and "One session"'s default
+    read off this one ladder, so they never disagree about which afternoon was best.
   - The map follows the artwork: the stack keeps the one-ground rule below, one session has
     the ground it was ridden on (its own snapshot, framed on its own track), the collage has
     none.
