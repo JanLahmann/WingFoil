@@ -253,7 +253,16 @@ public enum AnalysisEngine {
     /// `SessionVerdict.landSports` is `land_sport` before its foil time is asked, with the
     /// sport in `summary.landSport`. No fixture in the corpus is one; every golden moves by
     /// the version and that one null key.
-    public static let version = "0.26.0"
+    ///
+    /// 0.27.0 counts **the tacks the rider tried** (docs/algorithms/turns.md "Did he get
+    /// there", ADR-037). Jan's library of 28 Sep 2026 counted 18 tacks where he had tried 3:
+    /// an aborted turn named by the axis it was closing on now needs a flown heading within
+    /// `turnAbortAxisDeg` of that axis and a luff begun at speed, the tail of a same-way turn
+    /// is that turn, a sweep through both axes is named by the first, and a crossing in a
+    /// ≤ 2 s gap between two sweeps names the second. Five new config keys. Over the 21
+    /// goldens tacks 6 → 0, jibes +2, turn falls −4; clean jibes, JPH and CPH do not move.
+    /// And a pump stream shorter than its band-pass analyses instead of crashing.
+    public static let version = "0.27.0"
 }
 
 /// **Is this recording a session?** — docs/algorithms/not-a-session.md "Not a session" (engine 0.19.0).
@@ -372,6 +381,16 @@ public struct AnalysisConfig: Sendable, Codable, Equatable {
     /// Optional so a stored `analysis.json` from before it still decodes; such a row
     /// re-derives on its version.
     public var turnAbortMinAngle: Double?
+    /// Did he get there (engine 0.27.0, ADR-037): the no-go zone an aborted turn named by the
+    /// axis it was closing on must have reached on a flown heading, the luff at speed, the
+    /// tail of a same-way turn, and the gap a crossing between two sweeps may fall in.
+    /// Optional so a stored `analysis.json` from before them still decodes; such a row
+    /// re-derives on its version.
+    public var turnAbortAxisDeg: Double?
+    public var turnAbortLuffDeg: Double?
+    public var turnAbortLuffSpeedPct: Double?
+    public var turnAbortAfterTurnS: Double?
+    public var turnJoinGapS: Double?
     /// The classification floor (engine 0.13.0). Optional only so a stored `analysis.json`
     /// from 0.12.0 still decodes; such a row re-derives on its version.
     public var turnClassifyMinAngle: Double?
@@ -460,6 +479,11 @@ public struct AnalysisConfig: Sendable, Codable, Equatable {
         uncertifiedShortWindowMax = records.uncertifiedShortWindowMax
         turnMinAngle = turn.minAngleDeg
         turnAbortMinAngle = turn.abortMinAngleDeg
+        turnAbortAxisDeg = turn.abortAxisDeg
+        turnAbortLuffDeg = turn.abortLuffDeg
+        turnAbortLuffSpeedPct = turn.abortLuffSpeedPct
+        turnAbortAfterTurnS = turn.abortAfterTurnS
+        turnJoinGapS = turn.joinGapS
         turnClassifyMinAngle = turn.classifyMinAngleDeg
         turnAxisBeforeDeg = turn.axisBeforeDeg
         turnAxisAfterDeg = turn.axisAfterDeg
@@ -1649,7 +1673,7 @@ public enum SessionSummarizer {
                                                 evidence: sharable ? evidence : nil)
         let turns = TurnDetector.detect(clean, flights: segmentation, wind: wind,
                                         config: turnConfig, pump: pump, evidence: evidence,
-                                        ends: ends)
+                                        ends: ends, defaultTurnType: windConfig.defaultTurnType)
         FlightEndClassifier.assignOwnership(&ends, turns: turns)
         let takeoffs = TakeoffAnalyzer.analyze(clean, flights: segmentation, turns: turns,
                                                config: takeoffConfig, pump: pump)

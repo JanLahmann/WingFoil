@@ -9,14 +9,24 @@ import Testing
 @Suite struct TurnKindStoreTests {
 
     /// A corpus FIT with jibes **and** tacks in it (52 and 2), so both ladders are exercised.
+    /// Since engine 0.27.0 (ADR-037) its two aborted tacks are crashes that rounded up and the
+    /// default reading has none, so it is read with the aborted-tack gates off — the 0.26.0
+    /// reading, which is still a row a library can hold.
     static let stem = "2026-08-03-0741_nago-torbole-windsurfen_native"
+
+    static var gatesOff: TurnConfig {
+        var config = TurnConfig()
+        config.abortAxisDeg = 0
+        config.abortLuffDeg = 0
+        return config
+    }
 
     static func analysis() throws -> (SessionAnalysis, Date, Double) {
         let url = try #require(findFixtureFIT(stem: stem), "fixture \(stem) is missing")
         let raw = try FitSessionParser.parse(data: Data(contentsOf: url))
         let start = try #require(raw.startDate)
         let span = try #require(raw.samples.last.map { $0.t - raw.samples[0].t })
-        return (try SessionSummarizer.analyze(raw), start, span)
+        return (try SessionSummarizer.analyze(raw, turnConfig: gatesOff), start, span)
     }
 
     /// A row the way a v18 build wrote it: the per-kind counts and flew-through shares, the

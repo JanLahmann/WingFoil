@@ -193,7 +193,10 @@ public enum PumpAnalyzer {
         x == 0 ? 1 : sin(.pi * x) / (.pi * x)
     }
 
-    /// np.convolve(a, taps, mode: "same") for len(a) ≥ len(taps), taps of odd length.
+    /// np.convolve(a, taps, mode: "same") for len(a) ≥ len(taps), taps of odd length — and
+    /// for a shorter `a` the centred `len(a)` of the full convolution, which is what the lab's
+    /// `_convolve_same` returns since engine 0.27.0 (numpy's own "same" is `len(taps)` long
+    /// there, and the lab raised on it).
     static func convolveSame(_ a: [Double], _ taps: [Double]) -> [Double] {
         let n = a.count, m = taps.count
         let offset = (m - 1) / 2

@@ -56,23 +56,22 @@ import Testing
         (Array(repeating: course, count: n), Array(repeating: 0.2, count: n))
     }
 
-    /// Broad reach on TWA +135, luffing up hard toward head-to-wind, in at TWA +60.
+    /// Beam reach on TWA +100, luffing up hard toward head-to-wind, in at TWA +20.
     ///
-    /// 75° of sweep: wide enough for `turnMinAngle`, so the main scan already sees it — and
-    /// files it as an uncounted round-up, because it is nowhere near the 90° classification
-    /// floor and it never crossed the wind. That is the tester's case of 19 September exactly.
+    /// 80° of sweep: wide enough for `turnMinAngle`, so the main scan already sees it — and
+    /// files it as an uncounted round-up, because it is short of the 90° classification floor
+    /// and it never crossed the wind. It began at speed and flew to within 20° of the wind
+    /// before the swim, so it is a tack attempt by engine 0.27.0's rules too (R2, R3).
     private func abortedTack() -> CleanTrack {
-        var course = Array(repeating: 135.0, count: 40)
+        var course = Array(repeating: 100.0, count: 40)
         var speed = Array(repeating: 6.0, count: 40)
-        for k in 0..<5 {
-            course.append(135 - 75 * Double(k) / 4)
-            speed.append(6 - 0.5 * Double(k))
-        }
+        course += (0..<5).map { 100 - 80 * Double($0) / 4 }
+        speed += [6.0, 5.8, 5.5, 5.0, 4.5]
         // One more sample still making way, so the last heading the *run* can read is the one
         // he was on when he went in: the COG element `k` is the step leaving sample `k`, and
         // the step off the last moving sample is not in the run.
-        course.append(60); speed.append(3)
-        let (c, s) = swim(60)
+        course.append(20); speed.append(3)
+        let (c, s) = swim(20)
         return track(course: course + c, speed: speed + s)
     }
 
@@ -100,7 +99,7 @@ import Testing
         #expect(turn.outcome == .fellIn)
         #expect(!turn.success)
         #expect(!turn.clean)
-        #expect(abs(abs(turn.netDeg) - 75) < 2)
+        #expect(abs(abs(turn.netDeg) - 80) < 2)
 
         let summary = TurnDetector.summarize(all)
         #expect(summary.tacks == 1)
