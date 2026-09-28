@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.26.0",
+  "engineVersion": "0.27.0",
   "config": {
     "foilEntrySpeed": 12.0,
     "entryHold": 2.0,
@@ -25,6 +25,11 @@
     "minSpeedFilter": null,
     "turnMinAngle": 60.0,
     "turnAbortMinAngle": 45.0,
+    "turnAbortAxisDeg": 30.0,
+    "turnAbortLuffDeg": 20.0,
+    "turnAbortLuffSpeedPct": 80.0,
+    "turnAbortAfterTurnS": 3.0,
+    "turnJoinGapS": 2.0,
     "turnClassifyMinAngle": 90.0,
     "turnAxisBeforeDeg": 0.0,
     "turnAxisAfterDeg": 0.0,
@@ -2669,40 +2674,6 @@
       "outcomeWindowS": 26.0
     },
     {
-      "ts": 5195.0,
-      "endTs": 5201.0,
-      "minTs": 5202.0,
-      "type": "tack",
-      "counted": true,
-      "entryKn": 9.016,
-      "minKn": 2.513,
-      "exitKn": 8.769,
-      "score": 0.2787,
-      "success": false,
-      "clean": false,
-      "cleanBlockedBy": null,
-      "side": "starboard",
-      "direction": "starboard",
-      "netDeg": 52.31,
-      "peakRateDegS": 49.81,
-      "twaInDeg": -127.17,
-      "twaOutDeg": -74.86,
-      "axisTs": null,
-      "axisBeforeDeg": null,
-      "axisAfterDeg": null,
-      "arcM": 30.65,
-      "radiusM": 33.57,
-      "outcome": "fell_in",
-      "outcomeReason": "submerged",
-      "aborted": true,
-      "borderline": false,
-      "offFoilS": 11.0,
-      "stoppedS": 6.0,
-      "pumped": false,
-      "submerged": true,
-      "outcomeWindowS": 12.0
-    },
-    {
       "ts": 5374.0,
       "endTs": 5380.0,
       "minTs": 5381.0,
@@ -4658,7 +4629,7 @@
       "submerged": true,
       "windowS": 4.0,
       "truncated": false,
-      "ownedByTurn": 89
+      "ownedByTurn": 88
     },
     {
       "flightIndex": 28,
@@ -4672,7 +4643,7 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": 90
+      "ownedByTurn": 89
     },
     {
       "flightIndex": 29,
@@ -4686,7 +4657,7 @@
       "submerged": true,
       "windowS": 12.0,
       "truncated": false,
-      "ownedByTurn": 94
+      "ownedByTurn": 93
     },
     {
       "flightIndex": 30,
@@ -4812,7 +4783,7 @@
       "submerged": false,
       "windowS": 15.0,
       "truncated": false,
-      "ownedByTurn": 112
+      "ownedByTurn": 111
     },
     {
       "flightIndex": 39,
@@ -4897,7 +4868,7 @@
       "endTs": 6080.0,
       "durationS": 0.0,
       "dropM": 42.36,
-      "turnIndex": 89,
+      "turnIndex": 88,
       "flightEndIndex": null
     },
     {
@@ -4905,7 +4876,7 @@
       "endTs": 6238.0,
       "durationS": 1.0,
       "dropM": 55.29,
-      "turnIndex": 90,
+      "turnIndex": 89,
       "flightEndIndex": null
     },
     {
@@ -4913,7 +4884,7 @@
       "endTs": 6501.0,
       "durationS": 5.0,
       "dropM": 109.72,
-      "turnIndex": 94,
+      "turnIndex": 93,
       "flightEndIndex": null
     },
     {
@@ -4945,7 +4916,7 @@
       "endTs": 8507.0,
       "durationS": 2.0,
       "dropM": 68.48,
-      "turnIndex": 113,
+      "turnIndex": 112,
       "flightEndIndex": null
     }
   ],
@@ -6520,7 +6491,7 @@
       },
       {
         "kind": "swim",
-        "index": 90,
+        "index": 89,
         "ts": 6237.0,
         "approximate": false,
         "strokes": null,
@@ -6610,7 +6581,7 @@
       },
       {
         "kind": "swim",
-        "index": 113,
+        "index": 112,
         "ts": 8503.0,
         "approximate": false,
         "strokes": null,
@@ -7487,30 +7458,30 @@
       ]
     },
     "turns": {
-      "tacks": 1,
+      "tacks": 0,
       "tacksSuccessful": 0,
       "jibes": 69,
       "jibesSuccessful": 32,
       "unclassified": 0,
-      "turnsCounted": 70,
+      "turnsCounted": 69,
       "turnsSuccessful": 39,
-      "successPct": 55.71,
+      "successPct": 56.52,
       "rejected": 44,
       "port": 36,
-      "starboard": 34,
+      "starboard": 33,
       "unknownSide": 0,
       "longestDryStreak": 9,
       "longestFlewStreak": 9,
       "outcomes": {
         "flewThrough": 45,
         "touchdown": 7,
-        "fellIn": 18,
+        "fellIn": 17,
         "borderline": 1
       },
       "tackOutcomes": {
         "flewThrough": 0,
         "touchdown": 0,
-        "fellIn": 1,
+        "fellIn": 0,
         "borderline": 0
       },
       "jibeOutcomes": {
@@ -7544,7 +7515,7 @@
       }
     },
     "outcomeSplit": {
-      "turnFalls": 18,
+      "turnFalls": 17,
       "straightFalls": 10,
       "turnTouchdowns": 7,
       "straightTouchdowns": 3,

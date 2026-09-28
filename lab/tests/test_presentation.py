@@ -269,10 +269,12 @@ def test_every_label_and_caption_is_an_id_that_exists_in_copy(documents):
 
 
 def branch_documents() -> list[dict]:
-    """The three branches no corpus fixture is, built here the way `card_parity.mjs`
-    builds its `allWetJibes` case: the wind axis that named no jibes, a wrist-under during
-    a turn the tally does not count, and one after a flight end that stopped for under a
-    second. Each is a real shape of the product and each owns a line of copy."""
+    """The branches no corpus fixture is, built here the way `card_parity.mjs` builds its
+    `allWetJibes` case: the wind axis that named no jibes, a wrist-under during a turn the
+    tally does not count, one after a flight end that stopped for under a second, and --
+    since engine 0.27.0 left the committed corpus without a single tack (ADR-037) -- a
+    session with tacks among its jibes. Each is a real shape of the product and each owns a
+    line of copy."""
     base = load(goldens()[0])
 
     no_jibes = json.loads(json.dumps(base))
@@ -289,13 +291,25 @@ def branch_documents() -> list[dict]:
         {"ts": 20.0, "durationS": 0.4, "turnIndex": None, "flightEndIndex": 0},
         {"ts": 30.0, "durationS": 4.0, "turnIndex": None, "flightEndIndex": None},
     ]
-    return [build_presentation(no_jibes), build_presentation(callouts)]
+    return [build_presentation(no_jibes), build_presentation(callouts),
+            build_presentation(with_tacks_golden())]
+
+
+def with_tacks_golden() -> dict:
+    """A jibe session with one tack that fell in, the shape Jan's 30 Aug 2026 afternoon has
+    and no committed fixture does since engine 0.27.0."""
+    g = json.loads(json.dumps(load(GOLDENS / "2026-08-29-1440_nago-torbole-windsurfen_ciq"
+                                             ".expected.json")))
+    turns = g["summary"]["turns"]
+    turns["tacks"] = 1
+    turns["tackOutcomes"] = {"flewThrough": 0, "touchdown": 0, "fellIn": 1, "borderline": 0}
+    return g
 
 
 def test_the_branches_no_corpus_fixture_is():
     """The fallback tally caption, and the two wrist-under callouts the corpus never
     produces. Asserted here so they are contract rather than dead code."""
-    no_jibes, callouts = branch_documents()
+    no_jibes, callouts, _ = branch_documents()
     tally = next(c for row in no_jibes["block"]["rows"] for c in row["cells"]
                  if c["key"] == "tally")
     # The fallback carries no clean clause: a session whose wind axis named no jibes has
@@ -412,8 +426,11 @@ def test_the_rate_row_is_cph_then_one_dry_turn_rate(documents):
     is among the counted turns, then WPH — never JPH and TPH side by side. And the clean
     jibes are a cell of their own at the head of the turns row, in the clean ink."""
     seen = set()
-    for stem, doc in documents.items():
-        golden = load(GOLDENS / (stem + ".expected.json"))
+    cases = [(stem, doc, load(GOLDENS / (stem + ".expected.json")))
+             for stem, doc in documents.items()]
+    tacked = with_tacks_golden()
+    cases.append(("with-tacks", build_presentation(tacked), tacked))
+    for stem, doc, golden in cases:
         turns = golden["summary"]["turns"]
         rows = {row["id"]: row for row in doc["block"]["rows"]}
         if "rates" in rows:

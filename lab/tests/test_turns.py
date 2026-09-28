@@ -4,6 +4,7 @@ Tracks are built by integrating a course profile at constant-ish speed, so the C
 detector recovers is the course that was written in and the expected turn is exact.
 """
 
+import dataclasses
 from pathlib import Path
 
 import numpy as np
@@ -17,8 +18,8 @@ from wingfoil_lab.pump import pump_track, pump_track_from_arrays
 from wingfoil_lab.turns import (BEAR_AWAY, COUNTED_TYPES, FELL_IN, FLEW_THROUGH, JIBE,
                                 OUTCOMES, REASON_OFF_FOIL, REASON_PUMPED_MARGINAL,
                                 REASON_STOP, REASON_SUBMERGED, ROUND_UP, TACK, THREE_SIXTY,
-                                TOUCHDOWN, UNCLASSIFIED, Turn, TurnConfig, detect_turns,
-                                streaks, summarize_turns)
+                                TOUCHDOWN, UNCLASSIFIED, Turn, TurnConfig, classify_sweep,
+                                detect_turns, streaks, summarize_turns)
 from wingfoil_lab.wind import WindEstimate, estimate_wind
 
 FIXTURES = Path(__file__).resolve().parents[2] / "fixtures"
@@ -1447,18 +1448,27 @@ def _swim(course, n=12):
 
 
 def _aborted_tack():
-    """Broad reach on TWA +135, luffing up hard toward head-to-wind, in at TWA +60.
+    """Beam reach on TWA +100, luffing up hard toward head-to-wind, in at TWA +20.
 
-    75 deg of sweep: wide enough for `turnMinAngle`, so the main scan already sees it --
-    and files it as an uncounted round-up, because it is nowhere near the 90 deg
-    classification floor and it never crossed the wind. That is the tester's case of
-    19 Sep 2026 exactly.
+    80 deg of sweep: wide enough for `turnMinAngle`, so the main scan already sees it --
+    and files it as an uncounted round-up, because it is short of the 90 deg classification
+    floor and it never crossed the wind. It began at speed and flew to within 20 deg of the
+    wind before the swim, so it is a tack attempt by engine 0.27.0's rules too (R2, R3).
     """
-    return _join(_leg(135.0, 40),
-                 _ramp(135.0, 60.0, 5, [6.0, 5.5, 5.0, 4.5, 4.0]),
+    return _join(_leg(100.0, 40),
+                 _ramp(100.0, 20.0, 5, [6.0, 5.8, 5.5, 5.0, 4.5]),
                  # One more sample still making way, so the last heading the *run* can read
                  # is the one he was on when he went in: the COG element `k` is the step
                  # leaving sample `k`, and the step off the last moving sample is not in it.
+                 _leg(20.0, 1, speed=3.0),
+                 _swim(20.0))
+
+
+def _luff_into_a_crash():
+    """Broad reach on TWA +135, rounding up to TWA +60 as he goes in -- the case 0.21.0 called
+    a tack and 0.27.0 does not: 60 deg off the wind is a luff, not a tack (ADR-037)."""
+    return _join(_leg(135.0, 40),
+                 _ramp(135.0, 60.0, 5, [6.0, 5.5, 5.0, 4.5, 4.0]),
                  _leg(60.0, 1, speed=3.0),
                  _swim(60.0))
 
@@ -1481,7 +1491,7 @@ def test_an_aborted_tack_is_a_tack_that_fell_in():
     assert turn.aborted and turn.counted and turn.kind == TACK
     assert turn.outcome == FELL_IN
     assert not turn.success and not turn.clean
-    assert abs(turn.net_deg) == pytest.approx(75.0, abs=2.0)
+    assert abs(turn.net_deg) == pytest.approx(80.0, abs=2.0)
     summary = summarize_turns(turns)
     assert (summary.tacks, summary.turns_counted, summary.rejected) == (1, 1, 0)
     assert summary.outcomes.fell_in == 1 and summary.outcomes.dry == 0
@@ -1531,3 +1541,115 @@ def test_an_aborted_turn_needs_the_fall_not_merely_the_sweep():
     turns = _detect(*rode_on)
     assert [t.kind for t in turns] == [ROUND_UP]
     assert not turns[0].counted and not turns[0].aborted
+
+
+# --- did he get there? The aborted turn's name needs evidence (engine 0.27.0, ADR-037) --
+
+#: The 0.27.0 gates off, so a test can ask what 0.21.0 through 0.26.0 said.
+GATES_OFF = TurnConfig(abort_axis_deg=0.0, abort_luff_deg=0.0)
+
+
+def test_r2_a_luff_that_stops_60_deg_off_the_wind_is_not_a_tack():
+    """Jan, 28 Sep 2026: 18 tacks counted, 3 tried. A fall while heading up is a tack only
+    where a flown heading reached the no-go zone (`turnAbortAxisDeg`, 30 deg)."""
+    turns = _detect(*_luff_into_a_crash())
+    assert [(t.kind, t.counted, t.aborted) for t in turns] == [(ROUND_UP, False, False)]
+    before = _detect(*_luff_into_a_crash(), config=GATES_OFF)
+    assert [(t.kind, t.aborted) for t in before] == [(TACK, True)]
+
+
+def _luff_then(speed_after):
+    """A luff from TWA +100 to +25 at speed, then two more steps toward the wind at
+    `speed_after` m/s before the swim."""
+    return _join(_leg(100.0, 40),
+                 _ramp(100.0, 25.0, 4, [6.0, 5.8, 5.5, 5.0]),
+                 _ramp(15.0, 10.0, 2, [speed_after] * 2),
+                 _swim(10.0))
+
+
+def test_r2_a_heading_read_below_foil_speed_is_not_one_he_flew():
+    """The step that reaches 25 deg off the wind ends on a sample at 2.1 m/s: above the COG
+    floor, below `foilExitSpeed`. That heading is the board rounding up in the water, and
+    the last one he flew is 50 deg off. At 3 m/s the same step is flown, and it is a tack."""
+    assert (TACK, True) not in [(t.kind, t.aborted) for t in _detect(*_luff_then(2.1))]
+    assert (TACK, True) in [(t.kind, t.aborted)
+                            for t in _detect(*_luff_then(2.1), config=GATES_OFF)]
+    assert (TACK, True) in [(t.kind, t.aborted) for t in _detect(*_luff_then(3.0))]
+
+
+def test_r3_a_crash_that_rounds_up_loses_the_speed_first():
+    """He gets to 20 deg off the wind, but the speed halved before the heading moved: no
+    step toward the wind begun at `turnAbortLuffSpeedPct` of the entry speed."""
+    course, speed = _join(_leg(100.0, 40),
+                          _ramp(100.0, 20.0, 5, [6.0, 3.4, 3.2, 3.0, 2.9]),
+                          _leg(20.0, 1, speed=2.8),
+                          _swim(20.0))
+    assert TACK not in [t.kind for t in _detect(course, speed)]
+    luff_off = TurnConfig(abort_luff_deg=0.0)
+    assert TACK in [t.kind for t in _detect(course, speed, config=luff_off)]
+
+
+def test_the_gate_follows_the_riders_declared_habit():
+    """`windDefaultTurnType`: a jibes rider's aborted tacks need the evidence, a tacks
+    rider's aborted jibes do, and `balanced` asks it of both."""
+    ct = _track(*_luff_into_a_crash())
+    fl = segment_flights(ct)
+    assert TACK in [t.kind for t in detect_turns(ct, fl, WIND_N, default_turn_type="tacks")]
+    assert TACK not in [t.kind for t in detect_turns(ct, fl, WIND_N,
+                                                     default_turn_type="balanced")]
+    # The aborted jibe stops 40 deg short of dead downwind.
+    ct = _track(*_aborted_jibe())
+    fl = segment_flights(ct)
+    assert [t.kind for t in detect_turns(ct, fl, WIND_N)] == [JIBE]
+    assert [t.kind for t in detect_turns(ct, fl, WIND_N, default_turn_type="balanced")] == []
+
+
+def test_r1_an_aborted_turn_right_after_a_same_way_jibe_is_that_jibe():
+    """A jibe he comes out of slowly and keeps rotating up into the wind until he falls:
+    one rotation, not a jibe and then a tack. The luff starts inside the jibe's outcome
+    window (`turnAbortAfterTurnS` is its floor), so the swim is the jibe's own."""
+    jibe = _join(_leg(90.0, 40),
+                 _ramp(90.0, 270.0, 7, [6.0, 5.8, 5.6, 5.5, 5.5, 5.6, 5.8]))
+    luff = _join(_leg(270.0, 5, speed=3.5),
+                 _ramp(270.0, 340.0, 4, [3.5, 3.5, 3.4, 3.3]),
+                 _leg(340.0, 1, speed=3.0),
+                 _swim(340.0))
+    turns = _detect(*_join(jibe, luff))
+    assert [t.kind for t in turns if t.counted] == [JIBE]
+    assert turns[0].outcome == FELL_IN and not any(t.aborted for t in turns)
+    # Without the jibe in front of it, the same luff is a tack attempt.
+    alone = _detect(*_join(_leg(270.0, 40, speed=3.5), luff))
+    assert [(t.kind, t.aborted) for t in alone if t.counted] == [(TACK, True)]
+
+
+def test_r4_a_sweep_through_both_axes_is_named_by_the_first():
+    """A jibe carried on round through the wind: downwind at 180 comes first, although the
+    sweep's middle sits nearer head-to-wind. The wind prior keeps the old reading."""
+    kind, *_ = classify_sweep(150.0, 440.0, 0.0)
+    assert kind == TACK                               # the middle, as the prior reads it
+    kind, *_ = classify_sweep(150.0, 440.0, 0.0, first_crossing=True)
+    assert kind == JIBE
+    kind, *_ = classify_sweep(440.0, 150.0, 0.0, first_crossing=True)
+    assert kind == TACK                               # the other way round, 360 comes first
+
+
+def test_r5_a_crossing_in_the_gap_between_two_sweeps_belongs_to_the_second():
+    """One rotation cut in two by the scan, the downwind crossing in the one step between
+    them (Jan's 2 Aug 2026 jibe, which came out a tack). The second sweep is extended back
+    to where the first ended, and named by the crossing it now holds."""
+    from wingfoil_lab.turns import _accepted_candidates, _build_turn, _join_split
+    course, speed = _join(_leg(70.0, 40), _ramp(70.0, 380.0, 8, [6.0] * 8),
+                          _leg(380.0, 40))
+    ct = _track(course, speed)
+    fl = segment_flights(ct)
+    cfg = TurnConfig()
+    (whole,) = _accepted_candidates(ct, fl, cfg)
+    u = whole.u
+    k = int(np.flatnonzero(u >= 180.0)[0])          # the step that crosses dead downwind
+    p = dataclasses.replace(whole, j=k - 1)
+    c = dataclasses.replace(whole, i=k)
+    assert _build_turn(c, WIND_N, cfg).kind == TACK   # 180 is not in its own span
+    joined = _join_split([p, c], WIND_N, cfg)
+    assert joined[0] is p and joined[1].i == p.j and joined[1].j == c.j
+    assert _build_turn(joined[1], WIND_N, cfg).kind == JIBE
+    assert _join_split([p, c], WIND_N, TurnConfig(join_gap_s=0.0))[1] is c

@@ -185,7 +185,7 @@ from .evidence import (KMH_TO_MPS, MPS_TO_KN, OffFoilEvidence, elapsed, longest_
 from .filters import CleanTrack, hybrid_speed, unwrapped_cog_deg
 from .flight import FlightResult
 from .pump import PumpTrack
-from .wind import WindEstimate
+from .wind import BALANCED, JIBES, TACKS, WindEstimate
 
 TACK = "tack"
 JIBE = "jibe"
@@ -263,6 +263,32 @@ class TurnConfig:
     #: at 0 the pass does not run at all. Jan, 20 Sep 2026: *"an attempted turn that ends in
     #: the water is a turn that fell in."* See `_abort_candidates` and ADR-028.
     abort_min_angle_deg: float = 45.0
+    #: turnAbortAxisDeg (engine 0.27.0), deg: **an aborted turn named by the axis it was
+    #: closing on must have got there**. An aborted sweep that crossed no axis keeps its tack
+    #: (or, on the rider's other side, jibe) name only if a heading it *flew* -- a step
+    #: between two flying samples, so not one read with the wrist under or the foil down --
+    #: came within this far of that axis. Otherwise it is dropped: the course change stays on
+    #: the map and the fall is a straight-line fall. Which side is gated follows the rider's
+    #: `windDefaultTurnType` (the word he did not declare needs the stronger evidence;
+    #: `balanced` gates both). 0 = off. Jan, 28 Sep 2026; ADR-037.
+    abort_axis_deg: float = 30.0
+    #: turnAbortLuffDeg / turnAbortLuffSpeedPct (engine 0.27.0): **the luff starts at
+    #: speed**. The same gated aborted turn also needs this many degrees of heading gained
+    #: toward that axis on a step begun at `abort_luff_speed_pct` % or more of its entry speed
+    #: (maneuver channel). A deliberate tack starts with a luff on the foil; a crash that
+    #: rounds up loses the speed first. 0 = off. ADR-037.
+    abort_luff_deg: float = 20.0
+    abort_luff_speed_pct: float = 80.0
+    #: turnAbortAfterTurnS (engine 0.27.0), s: **an aborted turn belongs to the turn before
+    #: it**. An aborted candidate turning the same way as the previous counted turn that
+    #: starts before that turn's end + max(its outcome window, this) is the tail of that turn
+    #: and is dropped -- the fall is the turn's own, or a straight-line fall. ADR-037.
+    abort_after_turn_s: float = 3.0
+    #: turnJoinGapS (engine 0.27.0), s: **a crossing between two sweeps belongs to the
+    #: second**. Two same-direction sweeps of one sailing run at most this far apart are one
+    #: rotation; where the wind axis is crossed in the gap between them, the second sweep is
+    #: extended back to where the first ended and named with it. 0 = off. ADR-037.
+    join_gap_s: float = 2.0
     #: turnCleanQuietS (engine 0.17.0): seconds after the sweep that must pass with no
     #: touchdown, no fall and no wrist under before a jibe may be called clean. Jan's rule,
     #: 7 Sep 2026: *"no touch down or fall within 10 s afterwards"* -- and only for a clean
@@ -553,6 +579,9 @@ class _Candidate:
     i: int
     j: int
     arc: tuple[float, float]         # (path length, chord) across the sweep
+    #: Offset of the sailing run inside the segment: COG element `k` is the step leaving
+    #: segment sample ``a + k`` (engine 0.27.0 reads the samples astride a step).
+    a: int = 0
 
     @property
     def start_t(self) -> float:
@@ -577,7 +606,8 @@ def detect_turns(clean: CleanTrack, flights: FlightResult,
                  config: TurnConfig | None = None,
                  pump: PumpTrack | None = None,
                  evidence: OffFoilEvidence | None = None,
-                 ends: Sequence["FlightEndLike"] = ()) -> list[Turn]:
+                 ends: Sequence["FlightEndLike"] = (),
+                 default_turn_type: str = JIBES) -> list[Turn]:
     """Detect, score and classify every turn in a cleaned track, in time order.
 
     `pump` is optional accelerometer evidence (class-(a) sources); without it the outcome
@@ -591,16 +621,23 @@ def detect_turns(clean: CleanTrack, flights: FlightResult,
     *ownership* pass that reads turns, which is why the pipeline classifies ends, detects
     turns with them, and assigns ownership last. Omitted, the quiet tail simply has no
     flight-end evidence to weigh -- the reading `streaks` already gives an omitted `ends`.
+
+    `default_turn_type` is the rider's declared habit (`WindConfig.default_turn_type`). It
+    decides which side of an aborted turn needs the stronger evidence (engine 0.27.0,
+    `turnAbortAxisDeg`): the word he did not declare.
     """
     cfg = config or TurnConfig()
-    cands = _accepted_candidates(clean, flights, cfg)
+    ev = evidence
+    if ev is None:
+        ev = off_foil_evidence(clean, flights, cfg.foil_exit_speed_kmh, cfg.baro_drop_m)
+    cands = _join_split(_accepted_candidates(clean, flights, cfg), wind, cfg)
     turns = [_build_turn(c, wind, cfg) for c in cands]
     # **The aborted turn** (engine 0.21.0). Scored with the same builder and judged by the
     # same ladder as every other sweep -- only the entry condition differs -- so the list is
     # merged *after* the outcomes are in: whether a sweep fell in is the ladder's answer,
     # never the scan's. See `_abort_candidates` and `_merge_aborted`.
-    aborted = [_build_turn(c, wind, cfg, aborted=True)
-               for c in _abort_candidates(clean, flights, cfg)]
+    abort_cands = _abort_candidates(clean, flights, cfg)
+    aborted = [_build_turn(c, wind, cfg, aborted=True) for c in abort_cands]
     if cfg.detect_three_sixty:
         # Purely additive, and only ever under the flag: the spin pass never removes or
         # renames a maneuver the main scan reported, so an overlapping tack/jibe stays
@@ -608,8 +645,13 @@ def detect_turns(clean: CleanTrack, flights: FlightResult,
         # open question the flag exists to keep out of the shipped document.
         turns = sorted(turns + detect_three_sixties(clean, wind, cfg),
                        key=lambda t: t.start_t)
-    _assign_outcomes(turns + aborted, clean, flights, cfg, pump, evidence, ends)
-    return _merge_aborted(turns, aborted)
+    _assign_outcomes(turns + aborted, clean, flights, cfg, pump, ev, ends)
+    # **Did he get there?** (engine 0.27.0, `turnAbortAxisDeg`, `turnAbortLuffDeg`). An
+    # aborted turn named by the axis it was closing on is kept only where the rider flew to
+    # within reach of that axis and began the luff at speed; see `_abort_reached_axis`.
+    kept = [t for c, t in zip(abort_cands, aborted)
+            if _abort_reached_axis(c, t, wind, ev, cfg, default_turn_type)]
+    return _merge_aborted(turns, kept, cfg)
 
 
 def turn_sweeps(clean: CleanTrack, flights: FlightResult,
@@ -656,7 +698,7 @@ def _scan(clean: CleanTrack, flights: FlightResult, cfg: TurnConfig):
                 arc = _arc(x, y, a + i, a + j + 1)
                 if not _carved(arc[0], float(u[j] - u[i]), cfg):
                     continue
-                yield _Candidate(seg=seg, t=t, tu=tu, u=u, rate=rate, i=i, j=j, arc=arc)
+                yield _Candidate(seg=seg, t=t, tu=tu, u=u, rate=rate, i=i, j=j, arc=arc, a=a)
 
 
 def _abort_candidates(clean: CleanTrack, flights: FlightResult,
@@ -714,14 +756,16 @@ def _abort_candidates(clean: CleanTrack, flights: FlightResult,
             arc = _arc(x, y, a + i, a + j + 1)
             if not _carved(arc[0], float(u[j] - u[i]), cfg):
                 continue
-            out.append(_Candidate(seg=seg, t=t, tu=tu, u=u, rate=rate, i=i, j=j, arc=arc))
+            out.append(_Candidate(seg=seg, t=t, tu=tu, u=u, rate=rate, i=i, j=j, arc=arc,
+                                  a=a))
     return out
 
 
-def _merge_aborted(turns: list[Turn], aborted: list[Turn]) -> list[Turn]:
+def _merge_aborted(turns: list[Turn], aborted: list[Turn],
+                   cfg: TurnConfig | None = None) -> list[Turn]:
     """Fold the aborted turns the ladder confirmed into the scan's list, in time order.
 
-    Three rules, and each of them is about not saying the same thing twice:
+    Four rules, and each of them is about not saying the same thing twice:
 
     * an aborted candidate the outcome ladder did **not** call `fell_in` is dropped. The
       whole claim is "he went in during this turn"; without the fall there is no claim, and
@@ -731,8 +775,14 @@ def _merge_aborted(turns: list[Turn], aborted: list[Turn]) -> list[Turn]:
       swim, exactly what `owned_by_turn` prevents on the flight-end side;
     * one that overlaps an uncounted **course change** replaces it. It is the same sweep,
       read the same way, with one more thing known about it: the rider did not come out of
-      it. A `three_sixty` is never replaced -- that pass is additive by construction.
+      it. A `three_sixty` is never replaced -- that pass is additive by construction;
+    * one that turns the same way as the **previous counted turn** and starts before that
+      turn's end + max(its outcome window, `turnAbortAfterTurnS`) is the tail of that turn
+      (engine 0.27.0, ADR-037). A jibe the rider comes out of and keeps rotating up into the
+      wind until he falls is one rotation, not a jibe and then a tack: where the jibe fell
+      in it already owns the swim, and where it did not, the swim is a straight-line fall.
     """
+    cfg = cfg or TurnConfig()
     out = list(turns)
     for turn in aborted:
         if turn.outcome != FELL_IN:
@@ -742,10 +792,115 @@ def _merge_aborted(turns: list[Turn], aborted: list[Turn]) -> list[Turn]:
                    and t.kind != THREE_SIXTY]
         if any(out[k].counted for k in overlap):
             continue
+        before = [t for t in out if t.counted and t.start_t < turn.start_t]
+        if before:
+            prev = max(before, key=lambda t: t.start_t)
+            tail = max(prev.outcome_window_s, cfg.abort_after_turn_s)
+            if prev.direction == turn.direction and turn.start_t <= prev.end_t + tail:
+                continue
         for k in reversed(overlap):
             del out[k]
         out.append(turn)
     return sorted(out, key=lambda t: t.start_t)
+
+
+def _abort_reached_axis(c: _Candidate, turn: Turn, wind: WindEstimate | None,
+                        ev: OffFoilEvidence | None, cfg: TurnConfig,
+                        default_turn_type: str = JIBES) -> bool:
+    """**Did the rider get to the axis the aborted turn is named after?** (engine 0.27.0)
+
+    Jan, 28 Sep 2026: his library counted 18 tacks where he had tried 3. Fourteen came from
+    the naming rule of 0.21.0 -- an aborted sweep that crossed nothing takes the axis it was
+    *closing on* -- which calls any fall while heading up a tack, whether the rider was 5 or
+    88 deg off the wind. So a sweep named that way keeps its name only on evidence that it
+    was that maneuver (docs/algorithms/turns.md, "Did he get there"):
+
+    * **R2, the no-go zone** (`turnAbortAxisDeg`, 30 deg): some step of the sweep flown
+      between two *flying* samples -- in a flight, above `foilExitSpeed`, wrist dry -- came
+      within that far of the axis. A wingfoiler cannot ride 30 deg off the wind, so a heading
+      that got there is past a luff; a heading read after the wrist went under, or at a speed
+      the foil no longer carries, is the board rounding up in the water.
+    * **R3, the luff at speed** (`turnAbortLuffDeg`, 20 deg at `turnAbortLuffSpeedPct`, 80 %):
+      that many degrees gained toward the axis on a step begun at 80 % of the entry speed.
+      A deliberate tack starts with a luff on the foil; when the speed goes first, it is a
+      crash that rounded up.
+
+    Only the side the rider did **not** declare is gated (`windDefaultTurnType`: a `jibes`
+    rider's aborted tacks, a `tacks` rider's aborted jibes; `balanced` gates both). A sweep
+    that did cross an axis is named by that crossing and is not asked; neither is a turn with
+    no usable wind. True keeps the turn.
+    """
+    if wind is None or not wind.usable or turn.kind not in (TACK, JIBE):
+        return True
+    gated = {JIBES: (TACK,), TACKS: (JIBE,), BALANCED: (TACK, JIBE)}.get(default_turn_type,
+                                                                         (TACK,))
+    if turn.kind not in gated:
+        return True
+    u, i, j, a = c.u, c.i, c.j, c.a
+    crossed, _, _, _ = classify_sweep(float(u[i]), float(u[j]), wind.dir_deg,
+                                      first_crossing=True)
+    if crossed in (TACK, JIBE):
+        return True
+    offset = 0.0 if turn.kind == TACK else 180.0
+    sense = 1.0 if u[j] >= u[i] else -1.0
+    t = c.t
+    if cfg.abort_axis_deg > 0:
+        if ev is None:
+            return False
+        idx = np.clip(np.searchsorted(ev.t, t), 0, len(ev.t) - 1)
+        flying = ev.flying[idx]
+        closest = math.inf
+        for k in range(i, j + 1):
+            if a + k + 1 >= len(t) or not (flying[a + k] and flying[a + k + 1]):
+                continue
+            twa = abs(_wrap180(float(u[k]) - wind.dir_deg - offset))
+            closest = min(closest, twa)
+        if closest > cfg.abort_axis_deg:
+            return False
+    if cfg.abort_luff_deg > 0:
+        man = hybrid_speed(c.seg)
+        floor = cfg.abort_luff_speed_pct / 100.0 * turn.entry_kn / MPS_TO_KN
+        gain = 0.0
+        for k in range(i, j + 1):
+            if man[a + k] >= floor:
+                gain = max(gain, sense * (float(u[k]) - float(u[i])))
+        if gain < cfg.abort_luff_deg:
+            return False
+    return True
+
+
+def _join_split(cands: list[_Candidate], wind: WindEstimate | None,
+                cfg: TurnConfig) -> list[_Candidate]:
+    """**A crossing in the gap between two sweeps belongs to the second** (engine 0.27.0).
+
+    The scan can cut one rotation into two same-direction sweeps -- on a 2 s Smart Recording
+    file the step between them is one sample -- and where the wind axis is crossed inside
+    that gap, neither sweep saw it: the first ends short of the axis, the second starts past
+    it and is named by whatever it crosses next (Jan's 2 Aug 2026 jibe came out a tack). So
+    when two sweeps of one sailing run turn the same way, lie at most `turnJoinGapS` apart,
+    and the axis is crossed between the first's last heading and the second's first, the
+    second is extended back to where the first ended. Nothing else is joined: two sweeps
+    with nothing between them keep exactly the spans they had, so no jibe count moves on a
+    pair that was already named right.
+    """
+    if cfg.join_gap_s <= 0 or wind is None or not wind.usable:
+        return cands
+    out = list(cands)
+    for n in range(1, len(out)):
+        p, c = out[n - 1], out[n]
+        if c.u is not p.u or (p.net_deg >= 0) != (c.net_deg >= 0):
+            continue
+        if not 0 <= c.start_t - p.end_t <= cfg.join_gap_s or c.i <= p.j:
+            continue
+        lo = _wrap180(float(p.u[p.j]) - wind.dir_deg)
+        hi = lo + float(c.u[c.i] - p.u[p.j])
+        if not _crossings(min(lo, hi), max(lo, hi)):
+            continue
+        x = c.seg["x"].to_numpy(float)
+        y = c.seg["y"].to_numpy(float)
+        out[n] = _Candidate(seg=c.seg, t=c.t, tu=c.tu, u=c.u, rate=c.rate, i=p.j, j=c.j,
+                            arc=_arc(x, y, c.a + p.j, c.a + c.j + 1), a=c.a)
+    return out
 
 
 def detect_three_sixties(clean: CleanTrack, wind: WindEstimate | None = None,
@@ -1357,8 +1512,8 @@ def _axis_measures(c: _Candidate, wind: WindEstimate | None, kind: str,
     crossed neither line, and an `UNCLASSIFIED` turn is one whose axis nobody knows. Both get
     the empty `_Axis`, whose three nans serialize as JSON nulls.
 
-    The crossing is the one `classify_sweep` named the turn after -- the multiple of 360 (a
-    tack) or 180 + a multiple of 360 (a jibe) nearest the sweep's middle in unwrapped TWA. TWA
+    The crossing is the one `classify_sweep` named the turn after -- the first multiple of 360
+    (a tack) or 180 + a multiple of 360 (a jibe) the sweep reached in unwrapped TWA. TWA
     is COG minus a constant, so that value maps straight onto a COG on the detector's own
     unwrapped array and everything below is measured there, in degrees, on the samples the
     sweep was detected from.
@@ -1369,7 +1524,11 @@ def _axis_measures(c: _Candidate, wind: WindEstimate | None, kind: str,
     twa_in = _wrap180(float(u[i]) - wind.dir_deg)
     twa_out = twa_in + (float(u[j]) - float(u[i]))
     lo, hi = min(twa_in, twa_out), max(twa_in, twa_out)
-    crossing = _nearest_crossing(lo, hi, 0.0 if kind == TACK else 180.0, 0.5 * (lo + hi))
+    # The first crossing of that axis in the sweep's own sense (engine 0.27.0): the one
+    # `classify_sweep(..., first_crossing=True)` named it by. Under a full turn there is only
+    # one, and this is the value the nearest-middle reading gave.
+    own = [180.0 * m for m in _crossings(lo, hi) if (m % 2 == 0) == (kind == TACK)]
+    crossing = (own[0] if twa_out >= twa_in else own[-1]) if own else None
     if crossing is None:
         # For a completed turn this is unreachable -- the kind *was* named by that crossing.
         # An **aborted** turn reaches it, and that is the honest answer for one: it was named
@@ -1462,7 +1621,8 @@ def _classify(cog_in: float, cog_out: float, wind: WindEstimate | None,
     if wind is None or not wind.usable:
         kind = BEAR_AWAY if below else UNCLASSIFIED
         return kind, "unknown", float("nan"), float("nan")
-    return classify_sweep(cog_in, cog_out, wind.dir_deg, classify_min_angle_deg)
+    return classify_sweep(cog_in, cog_out, wind.dir_deg, classify_min_angle_deg,
+                          first_crossing=True)
 
 
 def _classify_aborted(cog_in: float, cog_out: float,
@@ -1490,7 +1650,8 @@ def _classify_aborted(cog_in: float, cog_out: float,
     """
     if wind is None or not wind.usable:
         return UNCLASSIFIED, "unknown", float("nan"), float("nan")
-    kind, side, twa_in, twa_out = classify_sweep(cog_in, cog_out, wind.dir_deg)
+    kind, side, twa_in, twa_out = classify_sweep(cog_in, cog_out, wind.dir_deg,
+                                                 first_crossing=True)
     if kind in (TACK, JIBE):
         return kind, side, twa_in, twa_out
     # No crossing: the axis ahead, in the sweep's own sense of rotation.
@@ -1511,7 +1672,8 @@ def _degrees_ahead(twa: float, offset: float, sense: float) -> float:
 
 
 def classify_sweep(cog_in: float, cog_out: float, dir_deg: float,
-                   min_angle_deg: float = 0.0) -> tuple[str, str, float, float]:
+                   min_angle_deg: float = 0.0,
+                   first_crossing: bool = False) -> tuple[str, str, float, float]:
     """(kind, side, twa_in, twa_out) for one sweep against one candidate wind direction.
 
     The sweep is carried onto TWA unwrapped, so "crosses head-to-wind" is "passes a
@@ -1525,6 +1687,12 @@ def classify_sweep(cog_in: float, cog_out: float, dir_deg: float,
     into a dead-downwind one and so swaps tack and jibe. The prior calls it without a floor:
     it is asking which *way* the rider turns, over every sweep it can see, and narrowing its
     evidence to the wide ones would answer a different question.
+
+    `first_crossing` (engine 0.27.0, the turn's own name): a sweep that crosses both axes is
+    named by the one it reached **first**, in its own sense of rotation. A jibe the rider
+    carries on round through the wind as he crashes went through downwind first; the middle
+    of the sweep can sit nearer the tack. The prior keeps the old reading -- it is asking a
+    different question and moving it would move a wind.
     """
     twa_in = _wrap180(cog_in - dir_deg)
     twa_out = twa_in + (cog_out - cog_in)
@@ -1535,11 +1703,21 @@ def classify_sweep(cog_in: float, cog_out: float, dir_deg: float,
     side = "port" if twa_in > 0 else "starboard"
     if (head is None and down is None) or abs(cog_out - cog_in) < min_angle_deg:
         kind = BEAR_AWAY if abs(twa_out) > abs(twa_in) else ROUND_UP
+    elif first_crossing:
+        cross = _crossings(lo, hi)
+        first = cross[0] if twa_out >= twa_in else cross[-1]
+        kind = TACK if first % 2 == 0 else JIBE
     elif down is None or (head is not None and abs(head - mid) <= abs(down - mid)):
         kind = TACK
     else:
         kind = JIBE
     return kind, side, float(twa_in), float(_wrap180(twa_out))
+
+
+def _crossings(lo: float, hi: float) -> list[int]:
+    """Every m with ``180 m`` inside [lo, hi], ascending: even m is head to wind, odd m dead
+    downwind. The same closed interval `_nearest_crossing` reads."""
+    return list(range(math.ceil(lo / 180.0), math.floor(hi / 180.0) + 1))
 
 
 def _nearest_crossing(lo: float, hi: float, offset: float, mid: float) -> float | None:
