@@ -766,10 +766,16 @@ public enum SessionAnalysisMail {
     /// (`FitShareFilter`, `SessionStore.analysisAttachment(for:)`) — 22 September 2026,
     /// after the consent sentence said "your times" and meant it, while the attachment
     /// still carried the watch's own serial number.
-    public static let consent =
-        "The file holds your track, your heart rate and your times. "
-        + "It is stripped of your watch's serial number and profile. "
-        + "It is used only to improve the detection. It is never published."
+    public static let consent = consentHolds + " " + consentStripped + " " + consentUse
+
+    /// The consent's three parts. The browser sends the original file, unscrubbed, so it
+    /// says the first and the last and never the middle one (docs/screens.md).
+    public static let consentHolds = "The file holds your track, your heart rate and your times."
+    public static let consentStripped = "It is stripped of your watch's serial number and profile."
+    public static let consentUse = "It is used only to improve the detection. It is never published."
+
+    /// The line under the attached file's name, when it is the original recording.
+    public static let originalAttached = "The original recording, as it was imported."
 
     /// What is riding along, and why it is that file.
     public enum Attachment: Sendable, Equatable {
@@ -785,7 +791,7 @@ public enum SessionAnalysisMail {
         var lines: [String] {
             switch self {
             case .originalRecording(let filename):
-                [filename, "The original recording, as it was imported."]
+                [filename, SessionAnalysisMail.originalAttached]
             case .derivedTrack(let filename):
                 [filename,
                  "This session arrived without a recording of its own. "

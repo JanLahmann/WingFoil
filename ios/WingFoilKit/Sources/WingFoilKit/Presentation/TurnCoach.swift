@@ -121,79 +121,113 @@ public enum TurnCoach {
         return said + " " + tip
     }
 
+    /// **The wording, as templates** (28 September 2026): the browser's turn page reads the
+    /// same table out of `docs/copy/app-words.json` (`turnCoach`), so the two shells cannot
+    /// word one rung two ways. `{score}`, `{entry}`, `{low}`, `{mid}`, `{strokes}` and
+    /// `{seconds}` are filled by `observation` below with the page's own formats.
+    public static let lines: [String: String] = [
+        "fellInFast": "You held {score} of your entry speed right round. "
+            + "It still ended in the water.",
+        "fellIn": "This one ended in the water. {entry} coming in, {low} at the low point.",
+        "wristUnder": "The barometer saw your wrist go under here. "
+            + "The foil was gone for a moment. {entry} in, {low} at the low point.",
+        "pumpedOut": "You pumped this one back out.",
+        "pumpedOutIn": "You pumped this one back out in {strokes}.",
+        "offFoilThenFlew": "{seconds} off the foil before it flew again.",
+        "flewStraightAway": "It was flying again straight away.",
+        "touchdownOnExit": "The foil touched down on the way out. "
+            + "You held {entry} into the {mid} and lost it after.",
+        "touchdownComingIn": "The foil touched down before the {mid}. "
+            + "The speed was already at {low} going in.",
+        "quietFlightEnd": "You rode the turn itself and held {score} of your entry speed. "
+            + "The foil went a few seconds later, so this one is not clean.",
+        "quietOffFoil": "You rode the turn, then the foil dropped again on the way out. "
+            + "This one does not count as clean.",
+        "quietSubmerged": "You held {score} of your entry speed through the turn. "
+            + "The barometer then saw your wrist go under. This one is not clean.",
+        "axisAfter": "You held {score} of your entry speed. "
+            + "The board did not come far enough past the wind axis. This one is not clean.",
+        "cleanAndFast": "Clean, and you barely slowed. "
+            + "You held {score} of your entry speed all the way round.",
+        "flewAndFast": "You flew through and barely slowed. "
+            + "You held {score} of your entry speed all the way round.",
+        "cleanButSlow": "You flew all the way through, and it cost you speed. "
+            + "{entry} in, {low} at the low point.",
+        "slowedEarly": "The speed went before the {mid}. "
+            + "You were down to {low} with the turn still to come.",
+        "slowedLate": "You held it into the {mid}. The speed went on the way out, down to {low}.",
+        "plain": "{entry} in, {low} at the low point. You held {score} of your entry speed.",
+        "midJibe": "downwind point",
+        "midTack": "head-to-wind",
+        "midOther": "middle of the turn",
+    ]
+
+    /// The tips' wording, the same way (`turnCoachTips` in the export).
+    public static let tipLines: [String: String] = [
+        "comeInFasterJibe": "Next time, come in faster, or keep the wing powered through "
+            + "the downwind point.",
+        "comeInFaster": "Next time, come in with more speed.",
+        "powerUpOnExit": "Next time, power the wing up as soon as you are on the new tack.",
+        "steadyExit": "Next time, stay low and steady on the way out.",
+        "rideItOut": "Next time, stay on the foil for {hold} after the turn, "
+            + "and it counts as clean.",
+        "rideItOutHold": "a few seconds",
+        "carryFurther": "Next time, carry the turn further past the wind axis before you "
+            + "settle.",
+    ]
+
+    private static func say(_ key: String, _ args: [String: String] = [:]) -> String {
+        AppShellCopy.fill(lines[key] ?? key, args)
+    }
+
     /// What happened, without the tip.
     static func observation(turn: TurnRecord, slice: TurnSlice,
                             pumpStrokes: Int?) -> String {
-        let mid = midPointWord(turn.type)
+        let args = ["score": pct(turn.score), "entry": kn(turn.entryKn),
+                    "low": kn(turn.minKn), "mid": midPointWord(turn.type)]
         switch rule(turn: turn, slice: slice) {
         case .fellInFast:
             // The score and the outcome say opposite things, so the sentence says both.
-            return "You held " + pct(turn.score) + " of your entry speed right round. "
-                + "It still ended in the water."
+            return say("fellInFast", args)
         case .fellIn:
-            return "This one ended in the water. " + kn(turn.entryKn) + " coming in, "
-                + kn(turn.minKn) + " at the low point."
+            return say("fellIn", args)
         case .wristUnder:
-            return "The barometer saw your wrist go under here. "
-                + "The foil was gone for a moment. "
-                + kn(turn.entryKn) + " in, " + kn(turn.minKn) + " at the low point."
+            return say("wristUnder", args)
         case .pumpedOut:
-            let strokes = pumpStrokes.map { TurnAnalytics.strokesText($0) }
-            switch (strokes, turn.offFoilS > 0) {
-            case (let strokes?, true):
-                return "You pumped this one back out in " + strokes + ". "
-                    + seconds(turn.offFoilS) + " off the foil before it flew again."
-            case (let strokes?, false):
-                return "You pumped this one back out in " + strokes + ". "
-                    + "It was flying again straight away."
-            case (nil, true):
-                return "You pumped this one back out. " + seconds(turn.offFoilS)
-                    + " off the foil before it flew again."
-            case (nil, false):
-                return "You pumped this one back out. It was flying again straight away."
-            }
+            let opener = pumpStrokes.map {
+                say("pumpedOutIn", ["strokes": TurnAnalytics.strokesText($0)])
+            } ?? say("pumpedOut")
+            let after = turn.offFoilS > 0
+                ? say("offFoilThenFlew", ["seconds": seconds(turn.offFoilS)])
+                : say("flewStraightAway")
+            return opener + " " + after
         case .touchdownOnExit:
-            return "The foil touched down on the way out. You held " + kn(turn.entryKn)
-                + " into the " + mid + " and lost it after."
+            return say("touchdownOnExit", args)
         case .touchdownComingIn:
-            return "The foil touched down before the " + mid + ". The speed was already at "
-                + kn(turn.minKn) + " going in."
+            return say("touchdownComingIn", args)
         case .quietFlightEnd:
             // The turn itself was clean. The ten seconds after it were not (engine 0.17.0).
-            return "You rode the turn itself and held " + pct(turn.score)
-                + " of your entry speed. "
-                + "The foil went a few seconds later, so this one is not clean."
+            return say("quietFlightEnd", args)
         case .quietOffFoil:
             // The foil was lost for a second or more in the tail: too short to end a flight,
             // long enough that the jibe is not one he rode away from.
-            return "You rode the turn, then the foil dropped again on the way out. "
-                + "This one does not count as clean."
+            return say("quietOffFoil", args)
         case .quietSubmerged:
-            return "You held " + pct(turn.score) + " of your entry speed through the turn. "
-                + "The barometer then saw your wrist go under. This one is not clean."
+            return say("quietSubmerged", args)
         case .axisAfter:
-            return "You held " + pct(turn.score) + " of your entry speed. "
-                + "The board did not come far enough past the wind axis. "
-                + "This one is not clean."
+            return say("axisAfter", args)
         case .cleanAndFast:
             // "Clean" only where the engine said clean: a tack has no clean reading, and
             // under the hero word "Flew through" the old line contradicted it (27 Sep 2026).
-            let head = turn.clean ? "Clean, and you barely slowed. "
-                : "You flew through and barely slowed. "
-            return head + "You held " + pct(turn.score)
-                + " of your entry speed all the way round."
+            return say(turn.clean ? "cleanAndFast" : "flewAndFast", args)
         case .cleanButSlow:
-            return "You flew all the way through, and it cost you speed. " + kn(turn.entryKn)
-                + " in, " + kn(turn.minKn) + " at the low point."
+            return say("cleanButSlow", args)
         case .slowedEarly:
-            return "The speed went before the " + mid + ". You were down to "
-                + kn(slice.speed.minKn) + " with the turn still to come."
+            return say("slowedEarly", args.merging(["low": kn(slice.speed.minKn)]) { $1 })
         case .slowedLate:
-            return "You held it into the " + mid + ". The speed went on the way out, down to "
-                + kn(slice.speed.minKn) + "."
+            return say("slowedLate", args.merging(["low": kn(slice.speed.minKn)]) { $1 })
         case .plain:
-            return kn(turn.entryKn) + " in, " + kn(turn.minKn) + " at the low point. You held "
-                + pct(turn.score) + " of your entry speed."
+            return say("plain", args)
         }
     }
 
@@ -253,23 +287,20 @@ public enum TurnCoach {
     /// The table's wording. `type` picks the jibe's words where the tip is about the wing
     /// through dead downwind, which is a jibe's move and not a tack's.
     public static func tipText(_ tip: Tip, type: String, quietS: Double? = nil) -> String {
+        func line(_ key: String) -> String { tipLines[key] ?? key }
         switch tip {
         case .comeInFaster:
-            return type == "jibe"
-                ? "Next time, come in faster, or keep the wing powered through the downwind "
-                    + "point."
-                : "Next time, come in with more speed."
+            return line(type == "jibe" ? "comeInFasterJibe" : "comeInFaster")
         case .powerUpOnExit:
-            return "Next time, power the wing up as soon as you are on the new tack."
+            return line("powerUpOnExit")
         case .steadyExit:
-            return "Next time, stay low and steady on the way out."
+            return line("steadyExit")
         case .rideItOut:
             let hold = quietS.flatMap { $0 > 0 ? String(Int($0)) + " s" : nil }
-                ?? "a few seconds"
-            return "Next time, stay on the foil for " + hold
-                + " after the turn, and it counts as clean."
+                ?? line("rideItOutHold")
+            return AppShellCopy.fill(line("rideItOut"), ["hold": hold])
         case .carryFurther:
-            return "Next time, carry the turn further past the wind axis before you settle."
+            return line("carryFurther")
         }
     }
 
@@ -299,9 +330,9 @@ public enum TurnCoach {
     /// so it gets the plain words rather than a guess.
     static func midPointWord(_ type: String) -> String {
         switch type {
-        case "jibe": return "downwind point"
-        case "tack": return "head-to-wind"
-        default: return "middle of the turn"
+        case "jibe": return lines["midJibe"] ?? ""
+        case "tack": return lines["midTack"] ?? ""
+        default: return lines["midOther"] ?? ""
         }
     }
 
