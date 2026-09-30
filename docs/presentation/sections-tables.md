@@ -99,9 +99,12 @@ never had. The rule, on every card of the session page:
   takeoff run, *Pumps to takeoff* and *Takeoff run* go and the note says *The recording cut
   every takeoff run short, so none is measured.*
 - **A table cell keeps its dash**, because its column head names it and the row says why
-  beside it (the records table's *no qualifying run*, the attempt list's pumps column). The
-  key-metrics block's *5×10 s* and *alpha 500* are the presentation document's cells and are
-  left to a lab round.
+  beside it (the records table's *no qualifying run*, the attempt list's pumps column).
+- **A speed record the session did not set says why in the number's place**, in the
+  key-metrics block and the web's record tiles alike: *no unbroken 2 s of track*, *no
+  unbroken 10 s of track*, *no 500 m run that turned back to its start*. One reason per
+  record, the engine's own condition, out of the presentation document's caption
+  (`docs/presentation/document.md`, "The cell").
 
 ### The HR card's own title
 

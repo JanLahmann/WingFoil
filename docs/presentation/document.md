@@ -116,7 +116,12 @@ about, and a tree comparison would pass it.
   the card.
 - `value` — raw, or `null` where the session produced none. A missing value is **absent,
   never 0** (`docs/presentation/labels.md`, "Formatter rules"): the renderer draws the
-  em dash.
+  em dash. **The speed row's three record cells are the exception** (30 Sep 2026): a
+  record the session did not set — `null`, or the `0.0` an analysis golden writes for the
+  same absence — carries its reason as its only caption (`presentation.caption.noMax2s`,
+  `noBest5x10s`, `noAlpha500`, the engine's own condition per record), and the renderer
+  draws that caption where the number goes. The id is the whole test; no renderer
+  re-derives it (`KeyMetrics.metric`, `entry` in `web/js/cardstats.js`).
 - `captions` — zero or more. A list rather than an optional because a cell that grows a
   second qualifier should not change shape.
 - Two optional fields, and a cell has at most one of them:
