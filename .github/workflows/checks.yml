@@ -58,7 +58,7 @@ jobs:
     name: lab — pytest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v5
         with:
           version: ${{ env.UV_VERSION }}
@@ -92,7 +92,7 @@ jobs:
     env:
       XCODE_VERSION: "26.6"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Select Xcode
         run: |
           set -euo pipefail
@@ -122,7 +122,7 @@ jobs:
     name: web — verifiers and copy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v5
         with:
           version: ${{ env.UV_VERSION }}
@@ -152,7 +152,7 @@ jobs:
     name: repo — release check and the Makefile
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
