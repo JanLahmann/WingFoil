@@ -136,11 +136,11 @@ and never to Run, Ride, Hike, Swim or the other known land and gym types; and it
 **whole words**: "SUP", "wing foil", "foiling", "Wingfoilen" yes, "Supporting" and "super"
 no. Same rule in the kit (`WatersportName`, `IcuClient.isWatersport`), `lab/tools/download_icu.py`
 and `web/js/icu.js`. The Strava list keeps its any-type rescue, because the rider picks from
-it, but takes the whole-word match — and since 30 Sep 2026 (Jan) a **run, ride, hike or walk**
+it, but takes the whole-word match — and since 30 Sep 2026 (Jan) a **run, ride or hike**
 (`Run`, `TrailRun`, `VirtualRun`, `Ride`, `VirtualRide`, `EBikeRide`, `EMountainBikeRide`,
-`MountainBikeRide`, `GravelRide`, `Hike`, `Walk`; `StravaActivityFilter.landTypes`) is
+`MountainBikeRide`, `GravelRide`, `Hike`; `StravaActivityFilter.landTypes`) is
 offered only when its name holds a **wing or foil** word: "Wingfoil Torbole" typed Ride yes,
-"SUP downwinder" typed Hike or "Kite beach" typed Walk no. It is the same whole-word pattern,
+"SUP downwinder" typed Hike no. A walk keeps the any-word rescue, as on the intervals.icu path, where watch apps file real sessions as Walk: "Kite beach" typed Walk yes. It is the same whole-word pattern,
 narrowed to its words that contain "wing" or "foil" (`WatersportName.saysWingOrFoil`).
 The web has no Strava door.
 

@@ -92,9 +92,9 @@ snow sports join the list — `cross_country_skiing` 12, `alpine_skiing` 13, `sn
 `inline_skating` 30, `ice_skating` 33, `snowshoeing` 35, `snowmobiling` 36, every one the FIT
 profile has (skateboarding has no `sport`); the "a wing on skis is still a wing" refusal is
 withdrawn. Same reason `land_sport`, same tag "Not a watersport". (2) The Strava list no
-longer rescues a run, ride, hike or walk (`StravaActivityFilter.landTypes`) by any watersport
+longer rescues a run, ride or hike (`StravaActivityFilter.landTypes`) by any watersport
 word: only a wing or foil word does (`WatersportName.saysWingOrFoil`, the same pattern
-narrowed), so "SUP downwinder" typed Hike stays out. Other types keep the any-word rescue.
+narrowed), so "SUP downwinder" typed Hike stays out. Other types, a walk among them, keep the any-word rescue.
 No golden moves.
 
 ## ADR-035 · Only a counted turn owns a fall, and a touch is a touch only near the exit
