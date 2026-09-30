@@ -73,6 +73,7 @@
     }
   ],
   "forbiddenInRelease": [
+    "session story",
     "gpx",
     "tcx",
     "Apple Health",
