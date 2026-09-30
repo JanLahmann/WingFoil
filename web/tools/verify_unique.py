@@ -73,8 +73,8 @@ SMART = str.maketrans({"\u2019": "'", "\u2018": "'", "\u201c": '"', "\u201d": '"
 def flat(text: str) -> str:
     return verify_copy.flat(text).translate(SMART)
 
-#: The prose a reader reads. /app/ is the browser app (UI labels, not prose), /privacy/ and
-#: /impressum/ are legal text whose repetitions are deliberate, and /strava/callback/ and
+#: The prose a reader reads. /app/ is the browser app (UI labels, not prose), /privacy/ is
+#: legal text whose repetitions are deliberate, and /strava/callback/ and
 #: the three redirect stubs are on screen for a frame.
 #:
 #: **Four pages since 19 September 2026**, where there were six: /start/ absorbed /watches/,

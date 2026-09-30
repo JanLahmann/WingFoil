@@ -451,7 +451,6 @@ the screen. Counts: 50 app twin, same words, 45 web-only or reworded (step 2), 1
 | 1320 | About CleanJibe | web-only or reworded (step 2) |
 | 1323 | Open the app | web-only or reworded (step 2) |
 | 1324 | GitHub | web-only or reworded (step 2) |
-| 1326 | Impressum | web-only or reworded (step 2) |
 | 1331 | info@cleanjibe.org | app twin, same words |
 | 1336 | issue | web-only or reworded (step 2) |
 

@@ -120,7 +120,6 @@ PAGES = [
     "invite/index.html",
     "start/index.html",
     "privacy/index.html",
-    "impressum/index.html",
     "app/index.html",
     "strava/callback/index.html",
 ]

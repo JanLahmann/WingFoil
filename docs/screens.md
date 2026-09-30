@@ -102,9 +102,10 @@ aggregate, under the **All spots** chip, and Trends pushes **Periods**, which pu
 **Getting started**, **What's new**, **Join the beta**, and the two above. Five
 dialogs: the welcome, *Whose session is this?*, *New gear*, *Custom range*, the **Share**
 dialog with its two segments and its report row, and the turn page a card or a row opens.
-Two banners: a new version, and the install offer. Five reader pages carry the site nav
+Two banners: a new version, and the install offer. Four reader pages carry the site nav
 (*Get started · Help*, and *Open the app* as its one door) and the same footer with its
-prefilled feedback mail: `/`, `/start/`, `/help/`, `/privacy/` and `/impressum/`.
+prefilled feedback mail: `/`, `/start/`, `/help/` and `/privacy/`. There is no Impressum:
+CleanJibe is non-commercial and not a trader (Jan, 30 Sep 2026).
 `/strava/callback/` is a relay for the iPhone app and is in no nav, and `/learn/`,
 `/watches/`, `/whats-new/` and `/invite/` are redirect stubs into the four pages that took
 their content.

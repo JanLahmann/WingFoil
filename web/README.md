@@ -331,7 +331,7 @@ python3 docs/copy/check_voice.py          # PASS/FAIL per target, exit 1 on any 
 python3 docs/copy/check_voice.py --report # the numbers only, never fails
 ```
 
-`/privacy/` and `/impressum/` are legal text and are not targets. Two kinds of sentence keep
+`/privacy/` is legal text and is not a target. Two kinds of sentence keep
 an exemption in `docs/copy/voice-exemptions.json`, each with its `why`, printed on every run:
 a sentence **the kit owns** and the page only prints (the hero `promise`, two
 `recording-classes` cells, the Connect IQ listing title with its brackets), and the **dated
@@ -472,7 +472,7 @@ python3 -m http.server 8765
 ```
 
 > The site has one app and a family of documents around it. `/` is the project homepage;
-> `/start/`, `/help/`, `/invite/`, `/privacy/` and `/impressum/` are static
+> `/start/`, `/help/`, `/invite/` and `/privacy/` are static
 > HTML with one extra stylesheet and **no JavaScript file of their own** — the only script on
 > them is the twelve inline lines that measure the topbar and drive the section nav's select (see
 > *Site navigation*), and every one of those pages renders and navigates whole without it;
@@ -829,8 +829,8 @@ Navigation."* He was right. The topbar carried the brand and the two CTAs; every
 one page to another lived in prose or in the footer, and `/app/`'s footer named two
 destinations out of seven.
 
-There is now **one navigation row in the topbar of all seven reader documents** — `/`,
-`/start/`, `/help/`, `/invite/`, `/app/`, `/privacy/`, `/impressum/`.
+There is now **one navigation row in the topbar of all six reader documents** — `/`,
+`/start/`, `/help/`, `/invite/`, `/app/`, `/privacy/`.
 (`/strava/callback/` is excluded from this as from everything: it is self-contained, holds
 an authorization code and is on screen for a frame. So are the three redirect stubs.)
 
@@ -841,8 +841,9 @@ an authorization code and is on screen for a frame. So are the three redirect st
   destinations — *Which watch* went inside `/start/`, *What's new* inside `/invite/`, and
   *What it measures* became the app's own help catalogue at `/help/`. Two links are what a
   stranger can hold in his head, and a door is a button rather than a word.
-  **Privacy and Impressum are not on it** — they are read once, and the footer of
-  every page is where a reader goes looking for them.
+  **Privacy is not on it** — it is read once, and the footer of
+  every page is where a reader goes looking for it. There is no Impressum: CleanJibe is
+  non-commercial and not a trader (Jan, 30 Sep 2026).
 - ***Open the analyzer* became *Open the app*** in the same change. One name per door: the
   hero, the nav, the footer, the panel and the store texts all say it, and "analyzer" is a
   name for a tool rather than for a product.
@@ -883,10 +884,12 @@ brand block in the top left is already the way home on every page but `/`.
 
 **The footer is one block too**, between `<!-- sitefoot:begin -->` and
 `<!-- sitefoot:end -->`, compared byte for byte the same way. Every page in the site nav's
-order, then the two buttons as text links, then GitHub, then Privacy and Impressum — plus
+order, then the two buttons as text links, then GitHub, then Privacy — plus
 the one-line *Tell us* offer (`data-copy="feedback-invitation"`) and the umami line. Until
 15 September 2026 every footer named a different subset: `/privacy/` three pages,
-`/impressum/` one. The hrefs are root-relative for the same reason the site nav's are.
+`/impressum/` one; the Impressum itself came out on 30 September 2026 — CleanJibe is
+non-commercial and not a trader, so none is owed (Jan). The hrefs are root-relative for the
+same reason the site nav's are.
 
 **A section nav is for a page a reader scrolls through looking for their own question.**
 Below about 700 words there is nothing to look for. So: `/start/` and `/privacy/` have one;
@@ -957,7 +960,7 @@ Its box is still reserved by `aspect-ratio`.
 `/invite/` is not precached at all — it is a page you read once, at a desk, with a watch in
 your hand. `/start/` is out for the same reason and more so: it is read *while* doing the
 thing it describes, with a phone, a watch and a store app all wanting the network anyway.
-`/watches/`, `/whats-new/`, `/privacy/` and `/impressum/` are out on the same argument
+`/watches/`, `/whats-new/` and `/privacy/` are out on the same argument
 (`/learn/` is in, and only because the front page's one "read more" points at it), and
 `/whats-new/` additionally because it changes every few days. Nor is the umami script; see
 **Privacy** above.
@@ -1124,7 +1127,7 @@ groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 4
    behind one fold too. **Nothing inside
    `<!-- guide:begin --> … <!-- guide:end -->` is hand-edited**: change
    `docs/guide/getting-started.json` or `make_start.py`'s `html_card`, and regenerate. Every
-   internal link resolves — `../`, `../invite/`, `../app/`, `../privacy/`, `../impressum/` —
+   internal link resolves — `../`, `../invite/`, `../app/`, `../privacy/` —
    as do the two external ones (testflight.apple.com and the Connect IQ listing
    `e77867b5-…`). The mail link must open a composer with the **report template already in
    the body**: tap it on a phone rather than trusting the `%0A`s. The Garmin route's step 2
@@ -1150,8 +1153,7 @@ groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 4
    says so in one line. `tools/verify_unique.py` is the check that keeps it at one. Every internal link
    resolves: `../`, `../invite/`, `../invite/#feedback`, `../start/`,
    `../start/#guide-garmin`, `../start/#guide-appleWatchApp`, `../start/#guide-appleWorkoutApp`,
-   `../start/#guide-fit`, `../start/#guide-strava`, `../app/`, `../whats-new/`, `../privacy/`,
-   `../impressum/`.
+   `../start/#guide-fit`, `../start/#guide-strava`, `../app/`, `../whats-new/`, `../privacy/`.
 0a4. **What's new.** <http://127.0.0.1:8765/whats-new/>. One `.panel .piece` card per release,
    newest first, each with its date in the `.status` chip. **The three newest are open —
    iPhone 53, iPhone 51, watch app 0.9.10 — and everything older is inside one `<details>`**

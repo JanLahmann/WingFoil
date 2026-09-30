@@ -104,7 +104,7 @@ page. Each page's own doors:
 | `/help/` | `help-start` | does the help catalogue send anyone back to getting started |
 | `/invite/` | `invite-start`, `invite-testflight`, `invite-garmin-store`, `invite-feedback-github`, `invite-feedback-mail`, `whatsnew-garmin-store` | the TestFlight and Connect IQ joins, which are funnel 4's only real conversions |
 
-`/privacy/` and `/impressum/` carry the five shared ones and nothing of their own: they are
+`/privacy/` carries the five shared ones and nothing of its own: it is
 read once, before a decision, and a counter on a legal page answers no product question.
 
 ## `/app/` — the browser app, declarative (13)
