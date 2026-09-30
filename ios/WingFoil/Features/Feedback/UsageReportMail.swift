@@ -141,8 +141,12 @@ private struct UsageReportSheet: View {
                 }
 
                 Section {
-                    SegmentRow("Usage report", selection: $layout,
-                               options: UsageCounters.ReportLayout.allCases) { $0.label }
+                    Picker("Usage report", selection: $layout) {
+                        ForEach(UsageCounters.ReportLayout.allCases) {
+                            Text($0.label).tag($0)
+                        }
+                    }
+                    .pickerStyle(.segmented)
                 } footer: {
                     Text(UsageReportText.layoutFooter)
                 }

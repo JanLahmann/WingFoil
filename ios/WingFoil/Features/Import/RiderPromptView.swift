@@ -66,8 +66,12 @@ struct RiderPicker: View {
         NavigationStack {
             Form {
                 Section {
-                    SegmentRow(AppShellCopy.Rider.question, selection: $isFriend,
-                               options: [false, true]) { $0 ? "A friend's" : "Mine" }
+                    Picker(AppShellCopy.Rider.question, selection: $isFriend) {
+                        Text("Mine").tag(false)
+                        Text("A friend's").tag(true)
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
                 } header: {
                     Text(AppShellCopy.Rider.question)
                 } footer: {

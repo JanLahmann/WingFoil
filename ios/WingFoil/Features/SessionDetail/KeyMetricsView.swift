@@ -109,10 +109,7 @@ struct KeyMetricsView: View {
     @ViewBuilder
     private func row(count: Int = 3, @ViewBuilder _ content: () -> some View) -> some View {
         if typeSize.isAccessibilitySize || count > 3 {
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12,
-                                                         alignment: .topLeading),
-                                     count: 2),
-                      alignment: .leading, spacing: 12) { content() }
+            EagerGrid(columns: .count(2), alignment: .topLeading) { content() }
         } else {
             HStack(alignment: .top, spacing: 12) { content() }
         }

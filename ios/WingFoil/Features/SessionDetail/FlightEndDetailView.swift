@@ -190,8 +190,11 @@ private struct FlightEndDetailPage: View {
 
     private var controls: some View {
         VStack(alignment: .leading, spacing: 8) {
-            SegmentRow("Orientation", selection: $windUpPreferred,
-                       options: [false, true]) { $0 ? "Wind up" : "North up" }
+            Picker("Orientation", selection: $windUpPreferred) {
+                Text("North up").tag(false)
+                Text("Wind up").tag(true)
+            }
+            .pickerStyle(.segmented)
             .disabled(!windKnown)
             .accessibilityLabel("Map orientation")
 

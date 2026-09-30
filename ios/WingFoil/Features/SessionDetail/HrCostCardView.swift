@@ -30,10 +30,6 @@ struct HrCostCardView: View {
     /// card whose three lines of text all grow with the rider's setting.
     @ScaledMetric(relativeTo: .title3) private var cardMinimum: CGFloat = 150
 
-    private var columns: [GridItem] {
-        [GridItem(.adaptive(minimum: cardMinimum), spacing: 12)]
-    }
-
     var body: some View {
         if let card {
             VStack(alignment: .leading, spacing: 12) {
@@ -49,7 +45,7 @@ struct HrCostCardView: View {
                 if let warning = card.warning { patchyBanner(warning) }
                 headline(card)
                 if !card.bins.isEmpty { fatigue(card) }
-                LazyVGrid(columns: columns, spacing: 12) {
+                EagerGrid(columns: .adaptive(minimum: cardMinimum)) {
                     ForEach(card.stats) { stat in
                         // A missing stat has no number, so its reason takes the number's
                         // place (`StatCard` with a nil value) rather than sitting under a "—".

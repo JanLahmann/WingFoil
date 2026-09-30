@@ -260,13 +260,27 @@ final class MapFingerRecognizer: UIGestureRecognizer {
         return nil
     }
 
-    /// The map's own pans — on the map view and its drawing, never inside a mark's view.
+    /// The map's own pans — on the map view and its drawing, never inside a mark's view —
+    /// and its own press-and-hold, both to two fingers.
+    ///
+    /// **The press, too** (Jan, 30 Sep 2026, dev 124: "scroll in 124 does not work"). MapKit
+    /// carries a one-finger `UILongPressGestureRecognizer` of 0.2 s on its content view, no
+    /// taps first. A thumb that rests on the map a moment before it pulls the page down — the
+    /// way a rider starts a slow scroll back up — lets that press begin, and a press that has
+    /// begun keeps the touch: the page's pan never started and the page did not move at all
+    /// (`LongTurnsScrollUITests`). A flick never rested long enough, which is why the swipe
+    /// tests passed. Double-tap zoom and the one-handed zoom are taps first and are left alone.
     static func twoFingerPan(on map: MKMapView) {
         var stack: [UIView] = [map]
         while let view = stack.popLast() {
-            for case let pan as UIPanGestureRecognizer in view.gestureRecognizers ?? []
-            where pan.isEnabled && pan.minimumNumberOfTouches < 2 {
-                pan.minimumNumberOfTouches = 2
+            for recognizer in view.gestureRecognizers ?? [] where recognizer.isEnabled {
+                if let pan = recognizer as? UIPanGestureRecognizer,
+                   pan.minimumNumberOfTouches < 2 {
+                    pan.minimumNumberOfTouches = 2
+                } else if let press = recognizer as? UILongPressGestureRecognizer,
+                          press.numberOfTapsRequired == 0, press.numberOfTouchesRequired < 2 {
+                    press.numberOfTouchesRequired = 2
+                }
             }
             stack += view.subviews.filter { !($0 is MKAnnotationView) }
         }

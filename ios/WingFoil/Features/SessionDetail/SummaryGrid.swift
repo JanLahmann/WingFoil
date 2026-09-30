@@ -23,8 +23,9 @@ private struct CardGrid<Content: View>: View {
     @ViewBuilder var content: Content
 
     var body: some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: minimum), spacing: 12)],
-                  spacing: 12) { content }
+        // Eager, not a `LazyVGrid`: a lazy grid re-measured on the way back up moved the
+        // page under the thumb (`EagerGrid`).
+        EagerGrid(columns: .adaptive(minimum: minimum)) { content }
     }
 }
 
@@ -247,6 +248,8 @@ struct SessionRecordsTable: View {
 /// of scroll away (`app-ui-review.md` §2.1).
 struct SessionTurnsSection: View {
     let detail: SessionDetail
+    /// The two filters, whose controls are in the page's pinned bar (`SessionDetailView`).
+    @Binding var filter: TurnFilter
 
     private var summary: SessionSummary { detail.analysis.summary }
 
@@ -314,7 +317,7 @@ struct SessionTurnsSection: View {
                 }
                 if t.turnsCounted > 0 {
                     Divider()
-                    TurnsAnalysisView(detail: detail)
+                    TurnsAnalysisView(detail: detail, filter: $filter)
                 }
             }
         }

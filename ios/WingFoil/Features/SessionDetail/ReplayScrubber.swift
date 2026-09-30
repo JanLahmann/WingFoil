@@ -242,8 +242,10 @@ struct ReplayScrubber: View {
 
                 commentaryToggle
 
-                SegmentRow("Speed", selection: $rate,
-                           options: ReplayRate.allCases) { $0.label }
+                Picker("Speed", selection: $rate) {
+                    ForEach(ReplayRate.allCases) { Text($0.label).tag($0) }
+                }
+                .pickerStyle(.segmented)
                 // A floor rather than a width: three speed labels set at the rider's text
                 // size need more than 150 pt, and a segmented control that is too narrow
                 // truncates its own segments.

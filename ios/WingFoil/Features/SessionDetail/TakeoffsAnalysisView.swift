@@ -27,7 +27,9 @@ struct TakeoffsAnalysisView: View {
     /// and this map's own layer set.
     @Environment(SessionStore.self) private var store
 
-    @State private var filter = TakeoffOutcomeFilter.all
+    /// The outcome filter. Its control is in the session page's pinned bar, under the
+    /// switcher (`SessionDetailView.filterRows`), so the state is the page's.
+    @Binding var filter: TakeoffOutcomeFilter
     /// The attempt the reader pointed at, drawn larger on the map and banded in the list.
     /// Transient, like the record-window picker — it is a way of pointing, not a preference.
     @State private var focused: Int?
@@ -90,21 +92,20 @@ struct TakeoffsAnalysisView: View {
     /// here: did it get up. `Free` is deliberately last and deliberately inside `Success` —
     /// it narrows the successes to the ones the wind did, exactly as "clean" narrows the
     /// jibes that flew through.
+    ///
+    /// The segmented control itself is in the pinned bar (segmented controls live in the
+    /// fixed header, never in the scrolling content — docs/presentation/scrub-pairing.md);
+    /// the sentence about "Free" stays here, at the top of what it filters.
     private var chips: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            SegmentRow("Outcome", selection: $filter,
-                       options: TakeoffOutcomeFilter.allCases) { $0.label }
-            .accessibilityLabel("Attempt outcome")
-            // "Free" is a *how*, not a fourth bucket: a free takeoff sits inside the
-            // attempts that got up, beside the pumped ones, never beside them as a third
-            // outcome of its own.
-            Text("A free takeoff got up on the wind alone. "
-                 + "It is a takeoff too, counted with the rest.")
-                .font(.caption2)
-                .foregroundStyle(.readableSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .id("takeoffFilters")
+        // "Free" is a *how*, not a fourth bucket: a free takeoff sits inside the
+        // attempts that got up, beside the pumped ones, never beside them as a third
+        // outcome of its own.
+        Text("A free takeoff got up on the wind alone. "
+             + "It is a takeoff too, counted with the rest.")
+            .font(.caption2)
+            .foregroundStyle(.readableSecondary)
+            .fixedSize(horizontal: false, vertical: true)
+            .id("takeoffFilters")
     }
 
     // MARK: - Map

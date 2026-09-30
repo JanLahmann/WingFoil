@@ -30,7 +30,10 @@ struct TurnsAnalysisView: View {
     /// deliberately its own.
     @Environment(SessionStore.self) private var store
 
-    @State private var filter = TurnFilter()
+    /// The two filters. Their controls are in the session page's pinned bar, under the
+    /// switcher (`SessionDetailView.filterRows`), so the state is the page's; everything this
+    /// view draws obeys it.
+    @Binding var filter: TurnFilter
     /// The row the reader tapped, drawn larger on the map. Transient, like the record
     /// window picker — it is a way of pointing, not a preference.
     @State private var focused: Int?
@@ -54,6 +57,7 @@ struct TurnsAnalysisView: View {
         VStack(alignment: .leading, spacing: 16) {
             Text("All \(detail.analysis.summary.turns.turnsCounted) turns")
                 .font(.headline)
+                .accessibilityIdentifier("turnsHeading")
             filters
             tallyStrip
             #if TUNING
@@ -92,28 +96,20 @@ struct TurnsAnalysisView: View {
 
     // MARK: - Filters
 
+    /// The segmented controls themselves are in the pinned bar (segmented controls live in
+    /// the fixed header, never in the scrolling content — docs/presentation/scrub-pairing.md);
+    /// the sentence that explains the second of them stays here, at the top of what they
+    /// filter.
     private var filters: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Segment rows, not segmented Pickers: a thumb resting on a `UISegmentedControl`
-            // before it moves never scrolls the page (`SegmentRow`).
-            SegmentRow("Manoeuvre type", selection: $filter.type,
-                       options: TurnTypeFilter.allCases) { $0.label }
-                .accessibilityIdentifier("turnTypeFilter")
-
-            SegmentRow("Entry tack", selection: $filter.side,
-                       options: TurnSideFilter.allCases) { $0.label }
-                .accessibilityIdentifier("turnSideFilter")
-
-            // Said once, here, rather than trusted to the word "port": the rider's other
-            // mental model of a jibe is which way the board spun, and that is a different
-            // field of the same turn.
-            Text("Entry tack is the tack you came into the turn on. "
-                 + "It is not which way the board rotated.")
-                .font(.caption2)
-                .foregroundStyle(.readableSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .id("filters")
+        // Said once, here, rather than trusted to the word "port": the rider's other
+        // mental model of a jibe is which way the board spun, and that is a different
+        // field of the same turn.
+        Text("Entry tack is the tack you came into the turn on. "
+             + "It is not which way the board rotated.")
+            .font(.caption2)
+            .foregroundStyle(.readableSecondary)
+            .fixedSize(horizontal: false, vertical: true)
+            .id("filters")
     }
 
     // MARK: - Tally
@@ -307,7 +303,9 @@ struct TurnsAnalysisView: View {
     @ViewBuilder
     private var list: some View {
         if !items.isEmpty {
-            LazyVStack(alignment: .leading, spacing: 0) {
+            // Eager, not a `LazyVStack`: a hundred rows at most, and a lazy list re-measured
+            // on the way back up moved the page under the thumb (`EagerGrid`).
+            VStack(alignment: .leading, spacing: 0) {
                 ForEach(items) { item in
                     Button {
                         // The pin enlarge stays — it is what tells the reader which dot on

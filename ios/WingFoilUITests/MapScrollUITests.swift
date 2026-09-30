@@ -48,17 +48,12 @@ final class MapScrollUITests: XCTestCase {
 
     /// **Back to the top** (Jan, 30 Sep 2026, on 119: "Turns page still did not scroll up").
     /// Scroll the Turns tab well down in the gutter, then drag DOWN from the middle of the
-    /// screen — over the map, the list or the filter rows, wherever the thumb lands — and the
-    /// page must come back until the turn-type segments are on screen again.
+    /// screen — over the map or the list, wherever the thumb lands — and the page must come
+    /// back until the turns heading is where it started. The filter rows are in the pinned
+    /// bar and do not move, so the heading under them is what measures the scroll.
     func testTheTurnsTabScrollsBackToTheTop() {
-        let app = XCUIApplication()
-        app.launchEnvironment = ["UI_IMPORT_FIXTURES": "1", "UI_OPEN_SESSION": "latest",
-                                 "UI_OPEN_TURNS": "1"]
-        app.launch()
-        let segments = app.descendants(matching: .any)["turnTypeFilter"].firstMatch
-        XCTAssertTrue(segments.waitForExistence(timeout: 300), "no filter segments")
-        Thread.sleep(forTimeInterval: 5)
-        let top0 = segments.frame.minY
+        let (app, heading) = openTurns()
+        let top0 = heading.frame.minY
         let win = app.windows.firstMatch
         for _ in 0..<6 {
             win.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: 0.85))
@@ -66,60 +61,57 @@ final class MapScrollUITests: XCTestCase {
                     win.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: 0.2)))
         }
         Thread.sleep(forTimeInterval: 1)
-        XCTAssertLessThan(segments.frame.minY, top0 - 400, "the gutter swipes did not scroll down")
-        let down = segments.frame.minY
-        for _ in 0..<8 where segments.frame.minY < top0 - 5 {
+        XCTAssertLessThan(heading.frame.minY, top0 - 400, "the gutter swipes did not scroll down")
+        let down = heading.frame.minY
+        for _ in 0..<8 where heading.frame.minY < top0 - 5 {
             win.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35))
                 .press(forDuration: 0.05, thenDragTo:
                     win.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8)))
         }
         Thread.sleep(forTimeInterval: 1)
-        XCTAssertGreaterThan(segments.frame.minY, down + 300,
-                             "dragging down mid-screen did not bring the page back: \(down) → \(segments.frame.minY)")
+        XCTAssertGreaterThan(heading.frame.minY, down + 300,
+                             "dragging down mid-screen did not bring the page back: \(down) → \(heading.frame.minY)")
     }
 
-    /// **A segment row takes taps, never a vertical drag** (Jan, 30 Sep 2026, dev 120: "Scroll
-    /// back up on turns section still does not work … up struggles at exactly this
-    /// position"). Park the Turns tab with its section pinned under the switcher and the two
-    /// filter rows mid-screen, then drag DOWN starting ON a row — on the selected segment and
-    /// on an unselected one — and the page must come back up each time.
-    func testADragDownThatStartsOnAFilterRowScrollsThePage() {
-        continueAfterFailure = true   // every row and every thumb reports, not the first
-        let app = XCUIApplication()
-        app.launchEnvironment = ["UI_IMPORT_FIXTURES": "1", "UI_OPEN_SESSION": "latest",
-                                 "UI_OPEN_TURNS": "1"]
-        app.launch()
+    /// **The thumb that scrolls is on the content, never on a segmented control** (Jan, 30
+    /// Sep 2026, dev 120: "Scroll back up on turns section still does not work … up
+    /// struggles at exactly this position"). The filter rows live in the pinned bar under the
+    /// switcher now, so the position of Jan's screenshot — a quarter down the screen, just
+    /// under the switcher — is the content below the bar. Park the Turns tab there, then drag
+    /// DOWN from mid-screen, flicking and resting first, and the page must come back up each
+    /// time. (A long drag may bring the turn cards back and unpin the bar; that is the section
+    /// arriving, not the bar scrolling.) A tap on a segment still filters.
+    func testADragDownUnderThePinnedFiltersScrollsThePage() {
+        continueAfterFailure = true   // every start and every thumb reports, not the first
+        let (app, heading) = openTurns()
         let type = app.descendants(matching: .any)["turnTypeFilter"].firstMatch
         let side = app.descendants(matching: .any)["turnSideFilter"].firstMatch
-        XCTAssertTrue(type.waitForExistence(timeout: 300), "no turn-type filter")
-        Thread.sleep(forTimeInterval: 5)
         let win = app.windows.firstMatch
         let height = win.frame.height
-        // (row, where on it) — dx 0.17 is the selected "Both", 0.5 an unselected segment.
-        let cases: [(XCUIElement, CGFloat, String)] = [
-            (type, 0.17, "type row, selected segment"),
-            (type, 0.5, "type row, unselected segment"),
-            (side, 0.17, "side row, selected segment"),
-            (side, 0.5, "side row, unselected segment"),
-        ]
-        // A quick flick, and a thumb that rests on the row before it moves — the second is
-        // what a UIScrollView hands to a UIControl for good (`touchesShouldCancel(in:)`).
+        // Where the thumb lands: mid-screen, left and centre, higher and lower.
+        let starts: [(CGFloat, CGFloat)] = [(0.17, 0.4), (0.5, 0.4), (0.17, 0.55), (0.5, 0.55)]
+        // A quick flick, and a thumb that rests before it moves — the second is what a
+        // UIScrollView hands to a UIControl for good (`touchesShouldCancel(in:)`).
         let presses: [(TimeInterval, String)] = [(0.05, "quick"), (0.4, "resting")]
-        for (row, dx, where_) in cases {
+        // Where the bar sits once it is pinned: the first park, one screen into the list.
+        park(heading, at: 0.28, in: win, height: height)
+        let pinned = side.frame.maxY
+        for (dx, dy) in starts {
           for (hold, how) in presses {
-            let name = "\(where_), \(how)"
-            park(row: type, in: win, height: height)
-            let before = type.frame.minY
-            XCTAssertGreaterThan(before, height * 0.15, "\(name): the row is off the top")
-            XCTAssertLessThan(before, height * 0.6, "\(name): the row is not mid-screen")
-            row.coordinate(withNormalizedOffset: CGVector(dx: dx, dy: 0.5))
+            let name = "(\(dx), \(dy)), \(how)"
+            park(heading, at: 0.28, in: win, height: height)
+            let before = heading.frame.minY
+            let bar = side.frame.maxY
+            XCTAssertEqual(bar, pinned, accuracy: 2, "\(name): the bar is not pinned")
+            XCTAssertLessThan(bar, height * dy, "\(name): the filters are not above the thumb")
+            win.coordinate(withNormalizedOffset: CGVector(dx: dx, dy: dy))
                 .press(forDuration: hold, thenDragTo:
                     win.coordinate(withNormalizedOffset: CGVector(dx: dx, dy: 0.9)),
                        withVelocity: .default, thenHoldForDuration: 0.1)
             Thread.sleep(forTimeInterval: 1)
-            XCTAssertGreaterThan(type.frame.minY, before + 80,
-                                 "\(name): a drag down on the row did not scroll the page: "
-                                 + "\(before) → \(type.frame.minY)")
+            XCTAssertGreaterThan(heading.frame.minY, before + 80,
+                                 "\(name): a drag down mid-screen did not scroll the page: "
+                                 + "\(before) → \(heading.frame.minY)")
           }
         }
         // And a tap still picks a segment.
@@ -128,12 +120,66 @@ final class MapScrollUITests: XCTestCase {
         XCTAssertTrue(jibes.isSelected, "a tap on Jibes did not select it")
     }
 
-    /// Scroll with gutter drags until the turn-type row sits about a quarter down the
-    /// screen, just under the sticky switcher — the position of Jan's screenshot.
-    private func park(row: XCUIElement, in win: XCUIElement, height: CGFloat) {
-        let target = height * 0.28
+    /// **Segmented controls live in the pinned bar, and only on their tabs.** On Turns the bar
+    /// is the switcher and the two filter rows, and it stays put while the list scrolls under
+    /// it; on Ride it is the switcher alone. The bar's heights go to the log; with
+    /// `SEG_SHOT_DIR` set (as `TEST_RUNNER_SEG_SHOT_DIR`) the two screens are saved there.
+    func testTheFilterRowsArePinnedOnlyOnTheirTabs() {
+        let (app, heading) = openTurns()
+        let win = app.windows.firstMatch
+        let height = win.frame.height
+        let bar = app.descendants(matching: .any)["sessionPinnedBar"].firstMatch
+        XCTAssertTrue(bar.exists, "no pinned bar")
+        park(heading, at: 0.28, in: win, height: height)
+        let pinned = bar.frame
+        // On to the list: two more gutter drags, and the bar has not moved.
+        for _ in 0..<2 {
+            win.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: 0.8))
+                .press(forDuration: 0.05, thenDragTo:
+                    win.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: 0.35)))
+        }
+        Thread.sleep(forTimeInterval: 1.5)
+        XCTAssertEqual(bar.frame.minY, pinned.minY, accuracy: 2, "the bar scrolled away")
+        let turns = bar.frame.height
+        shoot(app, "turns")
+
+        bar.buttons["Ride"].tap()
+        Thread.sleep(forTimeInterval: 1.5)
+        XCTAssertFalse(app.descendants(matching: .any)["turnTypeFilter"].exists,
+                       "the turn filters are still up on Ride")
+        let ride = bar.frame.height
+        shoot(app, "ride")
+        print("PINNED BAR HEIGHT turns=\(turns) ride=\(ride) width=\(bar.frame.width)")
+        XCTAssertGreaterThan(turns, ride + 50, "the Turns bar does not carry its two rows")
+    }
+
+    /// Launches onto the latest session's Turns tab and waits for the heading of the turn
+    /// list, with the page settled.
+    private func openTurns() -> (XCUIApplication, XCUIElement) {
+        let app = XCUIApplication()
+        app.launchEnvironment = ["UI_IMPORT_FIXTURES": "1", "UI_OPEN_SESSION": "latest",
+                                 "UI_OPEN_TURNS": "1"]
+        app.launch()
+        let type = app.descendants(matching: .any)["turnTypeFilter"].firstMatch
+        XCTAssertTrue(type.waitForExistence(timeout: 300), "no turn-type filter")
+        let heading = app.descendants(matching: .any)["turnsHeading"].firstMatch
+        XCTAssertTrue(heading.waitForExistence(timeout: 30), "no turns heading")
+        Thread.sleep(forTimeInterval: 5)
+        return (app, heading)
+    }
+
+    private func shoot(_ app: XCUIApplication, _ name: String) {
+        guard let dir = ProcessInfo.processInfo.environment["SEG_SHOT_DIR"] else { return }
+        try? app.screenshot().pngRepresentation
+            .write(to: URL(fileURLWithPath: dir).appendingPathComponent("\(name).png"))
+    }
+
+    /// Scroll with gutter drags until `element` sits at `fraction` of the screen height.
+    private func park(_ element: XCUIElement, at fraction: CGFloat, in win: XCUIElement,
+                      height: CGFloat) {
+        let target = height * fraction
         for _ in 0..<12 {
-            let y = row.frame.minY
+            let y = element.frame.minY
             if abs(y - target) < 60 { break }
             let span = min(max(abs(y - target), 80), height * 0.5) / height
             let from = y > target ? 0.8 : 0.3

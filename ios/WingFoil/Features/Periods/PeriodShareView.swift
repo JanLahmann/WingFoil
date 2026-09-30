@@ -216,8 +216,10 @@ struct PeriodShareView: View {
                 Text(AppShellCopy.Share.tracks)
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(.readableSecondary)
-                SegmentRow(AppShellCopy.Share.tracks, selection: $tracks,
-                           options: PeriodCardTracks.allCases) { $0.label }
+                Picker(AppShellCopy.Share.tracks, selection: $tracks) {
+                    ForEach(PeriodCardTracks.allCases) { Text($0.label).tag($0) }
+                }
+                .pickerStyle(.segmented)
                 switch tracks {
                 case .one:
                     Picker(AppShellCopy.Share.oneSession, selection: $chosenId) {

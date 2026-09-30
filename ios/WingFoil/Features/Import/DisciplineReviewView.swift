@@ -112,11 +112,15 @@ struct DisciplineReviewView: View {
                     .foregroundStyle(.readableSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            SegmentRow("Analyse as", selection: Binding(
+            Picker("Analyse as", selection: Binding(
                 get: { row.analysisDiscipline },
                 set: { choice in
                     Task { await store.setReviewDiscipline(choice, for: row) }
-                }), options: Discipline.allCases) { $0.title }
+                })) {
+                    ForEach(Discipline.allCases, id: \.self) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
                 .disabled(store.isBusy)
         }
         .padding(.vertical, 4)

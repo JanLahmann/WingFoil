@@ -461,12 +461,15 @@ struct LibraryView: View {
     /// force is worth seeing without opening anything.
     private var groupControl: some View {
         HStack(spacing: 8) {
-            SegmentRow("Group by", selection: Binding(
+            Picker("Group by", selection: Binding(
                 get: { grouping },
                 set: {
                     groupByRaw = $0.rawValue
                     Usage.record(.grouping, detail: $0.rawValue)
-                }), options: LibraryGrouping.allCases) { $0.title }
+                })) {
+                ForEach(LibraryGrouping.allCases) { Text($0.title).tag($0) }
+            }
+            .pickerStyle(.segmented)
             BetaChip()
         }
         .listRowInsets(.init(top: 6, leading: 16, bottom: 6, trailing: 16))

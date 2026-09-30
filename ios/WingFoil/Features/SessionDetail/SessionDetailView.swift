@@ -69,6 +69,16 @@ struct SessionDetailView: View {
     /// enum, its words, the anchor mapping and the routing rule live in the kit
     /// (`SessionSection`) so they are testable.
     @State private var tab = SessionSection.ride
+    /// The Turns tab's two filters and the Flights tab's outcome filter. Held here, not in
+    /// the tab bodies, because the controls live in the pinned header while the tally, the
+    /// map and the list they filter live in the scroll below it (`filterRows`). Per session,
+    /// like everything else on the page: the next session opens unfiltered.
+    @State private var turnFilter = TurnFilter()
+    @State private var takeoffFilter = TakeoffOutcomeFilter.all
+    /// Where the pinned bar's place is in the page, and whether the scroll has gone past it
+    /// (`pinnedBar`).
+    @State private var barTop: CGFloat = .greatestFiniteMagnitude
+    @State private var barPinned = false
     /// Engine window key of the GP3S effort highlighted on the map and chart. Transient by
     /// design (`RecordWindowSelection`): every session opens on the 2 s peak.
     @State private var selectedEffort: String? = RecordWindowSelection.defaultKey
@@ -175,10 +185,14 @@ struct SessionDetailView: View {
     private var page: some View {
         ScrollView {
             ScrollViewReader { proxy in
-            // `pinnedViews` is what makes the switcher sticky: it stays under the nav bar
-            // while a tab's body scrolls past it, so changing subject never means scrolling
-            // back up to find the control that changes subject.
-            LazyVStack(alignment: .leading, spacing: 20, pinnedViews: [.sectionHeaders]) {
+            // **Eager, not a `LazyVStack`** (Jan, 30 Sep 2026, dev 124: "scroll in 124 does
+            // not work"). The page is a handful of blocks, and a lazy stack only estimates the
+            // ones off screen: on a long Turns tab its guess for the blocks above swung by
+            // 3 000 pt and the offset jumped with it, under the thumb, and the page would not
+            // come back up past the list (`LongTurnsScrollUITests`). Nothing inside it is
+            // lazy either (`EagerGrid`). The switcher still sticks — `pinnedBar`, drawn over
+            // the scroll once its place in the page has gone under the nav bar.
+            VStack(alignment: .leading, spacing: 20) {
                 header
                 if let row, row.isProvisional {
                     // A card from the watch, with no recording behind it yet. Not an error:
@@ -225,12 +239,16 @@ struct SessionDetailView: View {
                         tunedBanner(count)
                     }
                     #endif
-                    Section {
-                        VStack(alignment: .leading, spacing: 20) {
-                            body(of: tab, detail: detail)
-                        }
-                    } header: {
-                        switcher
+                    // The bar's place in the page. Invisible while its copy is pinned over the
+                    // scroll, so the page under it never moves when the pin takes over.
+                    pinnedBar(detail)
+                        .opacity(barPinned ? 0 : 1)
+                        .accessibilityHidden(barPinned)
+                        .onGeometryChange(for: CGFloat.self) { proxy in
+                            proxy.frame(in: .named(Self.pageSpace)).minY
+                        } action: { barTop = $0 }
+                    VStack(alignment: .leading, spacing: 20) {
+                        body(of: tab, detail: detail)
                     }
                 } else if let failure {
                     // The rider gets a sentence they can act on; the raw error text stays,
@@ -265,6 +283,7 @@ struct SessionDetailView: View {
             // six tiles in a row and orphan the seventh. The two figures buy their room
             // back in height instead (`figureHeight(… wide:)`).
             .readableColumn()
+            .coordinateSpace(name: Self.pageSpace)
             #if DEBUG && targetEnvironment(simulator)
             // Headless-driving hook (see LibraryView): `simctl launch` cannot scroll or
             // tap, so `UI_SCROLL_TO=<anchor>` parks the page on a card section for a
@@ -318,7 +337,26 @@ struct SessionDetailView: View {
             #endif
             }
         }
+        // The pin: once the top of the scroll has passed the bar's place in the page, the
+        // bar is drawn here, fixed under the nav bar and outside the scroll view — a drag on
+        // it is never a scroll, a tap on it always a choice.
+        .onScrollGeometryChange(for: Bool.self) { geometry in
+            geometry.contentOffset.y + geometry.contentInsets.top > barTop
+        } action: { _, pinned in
+            barPinned = pinned
+        }
+        .overlay(alignment: .top) {
+            if barPinned, let detail, row?.isProvisional != true {
+                pinnedBar(detail)
+                    .padding(.horizontal)
+                    .readableColumn()
+            }
+        }
     }
+
+    /// The page stack's own coordinate space: where the bar sits in the page, as against
+    /// how far the page has scrolled (`pinnedBar`).
+    private static let pageSpace = "sessionPage"
 
     var body: some View {
         // **The page slides; it does not swap** (Jan, Beta 75), and **time runs left to
@@ -510,29 +548,81 @@ struct SessionDetailView: View {
 
     // MARK: - The switcher and the four bodies
 
+    /// **The pinned bar: the switcher, and on Turns and Flights the tab's filters under it.**
+    ///
     /// Sticky, and full-bleed against the scroll behind it — a segmented control floating
     /// on a transparent strip over scrolling cards is unreadable the moment a card passes
     /// under it.
     ///
-    /// A `SegmentRow`, not a segmented `Picker`, although it is pinned: a pinned header is still
-    /// the scroll view's content, and at the top of the page it sits mid-screen under the
-    /// verdict, where a thumb resting on a `UISegmentedControl` would hold the page still.
-    private var switcher: some View {
-        // The tab's word in this session's discipline: a windsurfer does not take off, he
-        // gets planing (docs/presentation/labels.md, "Discipline lexicon"). Every other
-        // segment is the same word on either rig.
-        SegmentRow("Section", selection: $tab,
-                   options: SessionSection.allCases) { $0.label(discipline) }
+    /// Segmented controls live here, in the fixed bar, never in the scrolling content (Jan,
+    /// 30 Sep 2026; Apple's HIG). A `UISegmentedControl` is a `UIControl`, and a scroll view
+    /// never takes back a touch it has handed to one: a thumb that rested on a filter row in
+    /// the middle of the Turns list held the page still. In the bar the rows are a place to
+    /// tap, and the thumb that scrolls is on the content below
+    /// (docs/presentation/scrub-pairing.md, "Which finger is whose").
+    private func pinnedBar(_ detail: SessionDetail) -> some View {
+        VStack(spacing: 8) {
+            switcher
+            filterRows(detail)
+        }
         .padding(.vertical, 8)
-        .background(.bar)
+        // Its own height and no more: pinned, it sits right under the nav bar, which draws
+        // its own glass above it.
+        .background(.bar, ignoresSafeAreaEdges: [])
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("sessionPinnedBar")
+    }
+
+    private var switcher: some View {
+        Picker("Section", selection: $tab) {
+            // The tab's word in this session's discipline: a windsurfer does not take
+            // off, he gets planing (docs/presentation/labels.md, "Discipline lexicon"). Every
+            // other segment is the same word on either rig.
+            ForEach(SessionSection.allCases) { Text($0.label(discipline)).tag($0) }
+        }
+        .pickerStyle(.segmented)
         .accessibilityLabel("Session section")
+    }
+
+    /// The filters of the tab on screen, shown exactly when the tab body shows what they
+    /// filter: Turns' two rows over the turn list (`TurnsAnalysisView`), Flights' outcome
+    /// row over the attempts (`TakeoffsAnalysisView`, only where an attempt is a pumping
+    /// burst). Ride and Details have none, and the bar is the switcher alone.
+    @ViewBuilder
+    private func filterRows(_ detail: SessionDetail) -> some View {
+        switch tab {
+        case .turns where detail.analysis.summary.turns.turnsCounted > 0:
+            Picker("Manoeuvre", selection: $turnFilter.type) {
+                ForEach(TurnTypeFilter.allCases) { Text($0.label).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            .accessibilityLabel("Manoeuvre type")
+            .accessibilityIdentifier("turnTypeFilter")
+
+            Picker("Entry tack", selection: $turnFilter.side) {
+                ForEach(TurnSideFilter.allCases) { Text($0.label).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            .accessibilityLabel("Entry tack")
+            .accessibilityIdentifier("turnSideFilter")
+        case .takeoffs where !detail.takeoffMarks.isEmpty
+                && detail.row.analysisDiscipline.lexicon.pumping:
+            Picker("Outcome", selection: $takeoffFilter) {
+                ForEach(TakeoffOutcomeFilter.allCases) { Text($0.label).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            .accessibilityLabel("Attempt outcome")
+            .accessibilityIdentifier("takeoffOutcomeFilter")
+        default:
+            EmptyView()
+        }
     }
 
     @ViewBuilder
     private func body(of tab: SessionSection, detail: SessionDetail) -> some View {
         switch tab {
         case .ride: ride(detail)
-        case .turns: SessionTurnsSection(detail: detail)
+        case .turns: SessionTurnsSection(detail: detail, filter: $turnFilter)
         case .takeoffs: takeoffs(detail)
         case .log: SessionLogView(detail: detail, sessionID: shown)
         }
@@ -607,7 +697,7 @@ struct SessionDetailView: View {
         FlightsListView(detail: detail)
         if !detail.takeoffMarks.isEmpty {
             Divider()
-            TakeoffsAnalysisView(detail: detail)
+            TakeoffsAnalysisView(detail: detail, filter: $takeoffFilter)
         }
         HrCostCardView(detail: detail)
     }

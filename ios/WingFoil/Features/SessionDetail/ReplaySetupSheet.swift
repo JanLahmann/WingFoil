@@ -219,8 +219,10 @@ struct ReplaySetupSheet: View {
     private var lengthSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Length").font(.headline)
-            SegmentRow("Length", selection: $length,
-                       options: ReplayClipLength.allCases) { $0.label }
+            Picker("Length", selection: $length) {
+                ForEach(ReplayClipLength.allCases) { Text($0.label).tag($0) }
+            }
+            .pickerStyle(.segmented)
             Text(lengthNote)
                 .font(.caption)
                 .foregroundStyle(.readableSecondary)
@@ -251,8 +253,10 @@ struct ReplaySetupSheet: View {
     private var framingSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Shape").font(.headline)
-            SegmentRow("Shape", selection: $framing,
-                       options: ReplayFraming.allCases) { $0.label }
+            Picker("Shape", selection: $framing) {
+                ForEach(ReplayFraming.allCases) { Text($0.label).tag($0) }
+            }
+            .pickerStyle(.segmented)
             Text(framingNote)
                 .font(.caption)
                 .foregroundStyle(.readableSecondary)
