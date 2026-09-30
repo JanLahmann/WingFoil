@@ -53,8 +53,8 @@ public struct IcuProblem: Sendable, Equatable, Codable {
         case .unauthorized:
             "The key is wrong, or it was regenerated in intervals.icu after you pasted it here."
         case .network:
-            "The request never got through — no network, or intervals.icu is unreachable "
-            + "right now. Nothing was lost and nothing was half-imported."
+            "The request never got through. There is no network, or intervals.icu is "
+            + "unreachable right now. Nothing was lost and nothing was half-imported."
         case .server:
             "intervals.icu answered with an error"
             + (detail.map { " (\($0))" } ?? "") + ". That is its end, not yours."
@@ -72,7 +72,7 @@ public struct IcuProblem: Sendable, Equatable, Codable {
             "Paste your personal API key: intervals.icu → Settings → Developer Settings."
         case .unauthorized:
             "Copy the key again from intervals.icu → Settings → Developer Settings and "
-            + "paste it fresh — a stray space at either end is enough to break it."
+            + "paste it fresh. A stray space at either end is enough to break it."
         case .network:
             "Check your connection and sync again."
         case .server:
