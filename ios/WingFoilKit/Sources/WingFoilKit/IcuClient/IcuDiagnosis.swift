@@ -78,7 +78,7 @@ public struct IcuProblem: Sendable, Equatable, Codable {
         case .server:
             "This is usually temporary. Try again in a few minutes."
         case .empty:
-            "Connect Garmin in intervals.icu (Settings → device connections) — the back-fill "
+            "Connect Garmin in intervals.icu (Settings → device connections). The back-fill "
             + "takes a few minutes. If it is already connected, you may simply have no "
             + "windsurf, wing, kite, surf or SUP activity there yet."
         case .unknown:
