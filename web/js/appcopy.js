@@ -3243,7 +3243,7 @@ export const WORDS = {
     "spotsFooter": "Tap a spot to rename it. A name you type sticks through a re-cluster. Sessions starting within {radius} m of each other are one spot. Names come from the map when the network allows."
   },
   "icu": {
-    "emptyFix": "Connect Garmin in intervals.icu (Settings → device connections) — the back-fill takes a few minutes. If it is already connected, you may simply have no windsurf, wing, kite, surf or SUP activity there yet.",
+    "emptyFix": "Connect Garmin in intervals.icu (Settings → device connections). The back-fill takes a few minutes. If it is already connected, you may simply have no windsurf, wing, kite, surf or SUP activity there yet.",
     "emptyMessage": "intervals.icu accepted the key but has no watersport activities to hand over yet.",
     "emptyTitle": "Connected, but nothing came back",
     "networkFix": "Check your connection and sync again.",
