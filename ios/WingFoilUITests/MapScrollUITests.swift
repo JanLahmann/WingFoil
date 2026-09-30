@@ -22,6 +22,38 @@ final class MapScrollUITests: XCTestCase {
         assertSwipeUpScrolls(extra: ["UI_OPEN_TURNS": "1"])
     }
 
+    /// **Back to the top** (Jan, 30 Sep 2026, on 119: "Turns page still did not scroll up").
+    /// Scroll the Turns tab well down in the gutter, then drag DOWN from the middle of the
+    /// screen — over the map, the list or the filter rows, wherever the thumb lands — and the
+    /// page must come back until the turn-type segments are on screen again.
+    func testTheTurnsTabScrollsBackToTheTop() {
+        let app = XCUIApplication()
+        app.launchEnvironment = ["UI_IMPORT_FIXTURES": "1", "UI_OPEN_SESSION": "latest",
+                                 "UI_OPEN_TURNS": "1"]
+        app.launch()
+        let segments = app.segmentedControls.element(boundBy: 1)
+        XCTAssertTrue(segments.waitForExistence(timeout: 300), "no filter segments")
+        Thread.sleep(forTimeInterval: 5)
+        let top0 = segments.frame.minY
+        let win = app.windows.firstMatch
+        for _ in 0..<6 {
+            win.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: 0.85))
+                .press(forDuration: 0.05, thenDragTo:
+                    win.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: 0.2)))
+        }
+        Thread.sleep(forTimeInterval: 1)
+        XCTAssertLessThan(segments.frame.minY, top0 - 400, "the gutter swipes did not scroll down")
+        let down = segments.frame.minY
+        for _ in 0..<8 where segments.frame.minY < top0 - 5 {
+            win.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35))
+                .press(forDuration: 0.05, thenDragTo:
+                    win.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8)))
+        }
+        Thread.sleep(forTimeInterval: 1)
+        XCTAssertGreaterThan(segments.frame.minY, down + 300,
+                             "dragging down mid-screen did not bring the page back: \(down) → \(segments.frame.minY)")
+    }
+
     private func assertSwipeUpScrolls(extra: [String: String],
                                       file: StaticString = #filePath, line: UInt = #line) {
         let app = XCUIApplication()
