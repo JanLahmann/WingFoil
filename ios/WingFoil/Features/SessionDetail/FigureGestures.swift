@@ -149,6 +149,13 @@ final class ScrubRecognizer: UIGestureRecognizer {
 final class MapFingers: @unchecked Sendable {
     fileprivate(set) var down = 0
     var areTheMaps: Bool { down >= 2 }
+    /// Called once per touch when one finger that landed on the map has gone up or down far
+    /// enough for the page to scroll with it (`DragClaim.upDown`) — the drag a rider who
+    /// meant to move the map just lost to the page. `MapFingerHint` listens.
+    var onPageScroll: (@MainActor () -> Void)?
+    /// Called once the touch is over (the recogniser resets), so the hint's clock starts when
+    /// the rider can read it rather than while his thumb is still on it.
+    var onLift: (@MainActor () -> Void)?
 }
 
 /// Rule 4 in `ScrubPan`: the map under this view pans with two fingers, so one finger goes to
@@ -192,6 +199,9 @@ final class MapFingerRecognizer: UIGestureRecognizer {
     private let fingers: MapFingers
     /// The map already set to two fingers, so a touch does not walk its subviews again.
     private weak var adopted: MKMapView?
+    /// Where a lone finger landed, in the window — nil once a second one joins it, or once
+    /// the scroll it started has been reported.
+    private var landed: CGPoint?
 
     init(fingers: MapFingers) {
         self.fingers = fingers
@@ -199,11 +209,25 @@ final class MapFingerRecognizer: UIGestureRecognizer {
     }
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
+        landed = fingers.down == 0 && touches.count == 1
+            ? touches.first?.location(in: nil) : nil
         fingers.down += touches.count
         if let view = touches.first?.view, let map = Self.map(holding: view), map !== adopted {
             Self.twoFingerPan(on: map)
             adopted = map
         }
+    }
+
+    /// One finger, gone up or down the way the page scrolls: the page took this drag.
+    /// A flat one turns the page instead, and a tap never travels far enough.
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent) {
+        guard fingers.down == 1, let landed, let at = touches.first?.location(in: nil) else {
+            return
+        }
+        guard DragClaim.decide(dx: Double(at.x - landed.x), dy: Double(at.y - landed.y))
+                == .upDown else { return }
+        self.landed = nil
+        fingers.onPageScroll?()
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent) {
@@ -217,6 +241,9 @@ final class MapFingerRecognizer: UIGestureRecognizer {
     override func reset() {
         super.reset()
         fingers.down = 0
+        landed = nil
+        // However the touch ended, the hint's clock starts: it never stays up for good.
+        fingers.onLift?()
     }
 
     private func lift(_ touches: Set<UITouch>) {
@@ -251,7 +278,77 @@ extension View {
     /// move the map — and a drag with two on it never turns the page.
     func pageMap(_ fingers: MapFingers) -> some View {
         gesture(PageMapFingers(fingers: fingers))
+            .overlay(alignment: .bottom) { MapFingerHint(fingers: fingers) }
             .pagerExclusionZone(while: { fingers.areTheMaps })
+    }
+}
+
+/// **The map moves with two fingers — said on the map, the first few times it matters**
+/// (Jan, 30 Sep 2026: "We need to inform the user that the map needs two fingers to
+/// operate"). When one finger that started on an inline map scrolls the page, a capsule says
+/// so until `holdSeconds` after the finger lifts. At most `limit` times per install, counted in
+/// `AppStorage`; after that the help topic "Reading the map" is its home. Never under
+/// VoiceOver, whose own gestures are not these. It takes no touches.
+private struct MapFingerHint: View {
+    let fingers: MapFingers
+
+    static let limit = 3
+    static let holdSeconds = 1.5
+
+    @AppStorage("mapFingerHint.shown.v1") private var shown = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
+    @State private var visible = false
+    @State private var hiding: Task<Void, Never>?
+
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            if visible {
+                Text(Copy.twoFingerMap)
+                    .font(.footnote.weight(.semibold))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(.regularMaterial, in: Capsule())
+                    // Above the Maps logo and its "Legal" link, which have to stay readable.
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 36)
+                    .transition(.opacity)
+                    .accessibilityIdentifier("mapFingerHint")
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+        .allowsHitTesting(false)
+        .accessibilityElement(children: .contain)
+        .onAppear {
+            fingers.onPageScroll = { show() }
+            fingers.onLift = { hideLater() }
+        }
+        .onDisappear {
+            fingers.onPageScroll = nil
+            fingers.onLift = nil
+            hiding?.cancel()
+            visible = false
+        }
+    }
+
+    private func show() {
+        guard !visible, !voiceOver, shown < Self.limit else { return }
+        shown += 1
+        hiding?.cancel()
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { visible = true }
+    }
+
+    /// `holdSeconds` after the finger lifts, not after the hint came up: the drag that
+    /// raised it may still be going on.
+    private func hideLater() {
+        guard visible else { return }
+        hiding?.cancel()
+        hiding = Task {
+            try? await Task.sleep(for: .seconds(Self.holdSeconds))
+            guard !Task.isCancelled else { return }
+            withAnimation(reduceMotion ? nil : .easeIn(duration: 0.3)) { visible = false }
+        }
     }
 }
 
