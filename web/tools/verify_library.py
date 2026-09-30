@@ -376,6 +376,9 @@ def check_attribution() -> None:
           (False, "land_sport"))
     check("  and it is out of the aggregate",
           library.aggregate([counted_entry("mine", 12.0), marathon])["count"], 1)
+    check("  a snowboard day is not a session either (30 Sep 2026)",
+          library.entry_is_session(counted_entry("snow", 12.0, sport="snowboarding")),
+          (False, "land_sport"))
     check("  walking is left to the other rules",
           library.entry_is_session(counted_entry("walk", 12.0, sport="walking")), (True, None))
 
