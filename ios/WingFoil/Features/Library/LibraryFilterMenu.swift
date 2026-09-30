@@ -167,7 +167,7 @@ struct LibraryFilterChips: View {
                     Button("Clear all") { filter = LibraryListFilter() }
                         .font(.footnote)
                         .buttonStyle(.plain)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
                 }
             }
             .padding(.horizontal, 2)

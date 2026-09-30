@@ -40,7 +40,7 @@ struct TurnHeadingStripView: View {
         VStack(alignment: .leading, spacing: 2) {
             Text(angles.isTwa ? "Wind angle and rate of turn" : "Heading and rate of turn")
                 .font(.caption2.weight(.medium))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
             if angles.isEmpty {
                 Text(AppShellCopy.TurnPage.noBearings)
                     .font(.caption2)

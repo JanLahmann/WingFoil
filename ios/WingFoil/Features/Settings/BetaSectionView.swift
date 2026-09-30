@@ -107,7 +107,7 @@ struct BetaSectionView: View {
     private func note(_ line: String, more: [String] = []) -> some View {
         ExplainedFootnote(line: line, topic: nil, more: more) { _ in }
             .font(.caption)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(.readableSecondary)
     }
 
     /// **Start over.** Red, last, and behind an alert that names everything it takes —
@@ -208,7 +208,7 @@ struct ComingSoonPage: View {
             Section {
                 Text(Self.intro)
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
@@ -310,7 +310,7 @@ struct ComingSoonPage: View {
             Text(feature).font(.footnote)
         } icon: {
             Image(systemName: "circle.dashed")
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
         }
     }
 }

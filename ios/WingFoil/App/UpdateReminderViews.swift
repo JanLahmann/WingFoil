@@ -51,7 +51,7 @@ struct UpdateReminderBanner: View {
                 } label: {
                     Image(systemName: "xmark")
                         .font(.footnote.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
                         .padding(6)
                         .contentShape(.rect)
                 }
@@ -107,7 +107,7 @@ struct UpdateReminderScreen: View {
 
                     Text(UpdateReminderText.line(reminder.message))
                         .multilineTextAlignment(.center)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
                         .fixedSize(horizontal: false, vertical: true)
 
                     if let url = reminder.updateURL {
@@ -131,7 +131,7 @@ struct UpdateReminderScreen: View {
                          + "where they are.")
                         .font(.footnote)
                         .multilineTextAlignment(.center)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(24)
@@ -166,7 +166,7 @@ struct UpdateReminderSettingsRow: View {
 
             Text(status)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }

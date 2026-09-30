@@ -87,14 +87,14 @@ struct TuningLabelsView: View {
                 Text("Nothing labelled yet. Open a turn and tap I flew, I touched or I fell. "
                      + "The label stays on this phone. The analysis never reads it.")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
             } else {
                 HStack(alignment: .firstTextBaseline, spacing: 10) {
                     Text(score.agreedPct.map { String(format: "%.0f %%", $0) } ?? "—")
                         .font(.title2.weight(.semibold).monospacedDigit())
                     VStack(alignment: .leading, spacing: 1) {
                         Text("agree with the engine").font(.subheadline.weight(.medium))
-                        Text(score.caption).font(.caption2).foregroundStyle(.secondary)
+                        Text(score.caption).font(.caption2).foregroundStyle(.readableSecondary)
                     }
                     Spacer(minLength: 0)
                 }
@@ -141,7 +141,7 @@ struct TuningLabelsView: View {
                                 .font(.caption.monospacedDigit())
                                 .foregroundStyle(label.verdict == verdict
                                                  ? AnyShapeStyle(Color.accentColor)
-                                                 : AnyShapeStyle(.secondary))
+                                                 : AnyShapeStyle(.readableSecondary))
                         }
                         Text("\(score.labelled(label))")
                             .font(.caption.monospacedDigit())
@@ -167,7 +167,7 @@ struct TuningLabelsView: View {
             if score.disagreements.isEmpty {
                 Text("Every label agrees with the engine.")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
             } else {
                 ForEach(score.disagreements) { entry in
                     Button { Task { await open(entry) } } label: {
@@ -181,7 +181,7 @@ struct TuningLabelsView: View {
                             Text(type + ". You said " + said + ", the engine said "
                                  + entry.verdict.label)
                                 .font(.caption2)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(.readableSecondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)

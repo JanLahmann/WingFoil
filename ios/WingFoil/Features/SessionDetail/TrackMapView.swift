@@ -263,7 +263,7 @@ private struct TrackCalloutCard: View {
             }
             Text(callout.detail)
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
             // The line this whole feature is for. Absent — not blank — on a mark that is
             // not a flight boundary.
             if let pairing = callout.pairing {
@@ -340,7 +340,7 @@ struct FullScreenMapView: View {
                     Text("Map").font(.headline)
                     Text(SessionDisplay.title(detail.row))
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
                         .lineLimit(1)
                         .truncationMode(.middle)
                 }

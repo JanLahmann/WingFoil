@@ -50,7 +50,7 @@ struct FlightsListView: View {
                     Spacer()
                     Text("\(all.count)")
                         .font(.subheadline.monospacedDigit())
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
                 }
                 VStack(spacing: 0) {
                     headerRow
@@ -111,7 +111,7 @@ struct FlightsListView: View {
             HStack(spacing: 10) {
                 Text(Fmt.clock(flight.startTs))
                     .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
                     .scaledColumn(46, relativeTo: .caption)
                 VStack(alignment: .leading, spacing: 1) {
                     Text("Flight " + String(flight.number) + " · "
@@ -129,7 +129,7 @@ struct FlightsListView: View {
                     VStack(alignment: .leading, spacing: 0) {
                         Text(flight.outcome.rawValue)
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.readableSecondary)
                         if let turn = owningTurn(end) {
                             Text(turn)
                                 .font(.caption2)
@@ -184,7 +184,7 @@ enum FlightEndMark {
         switch outcome.colourRole {
         case "outcome.touchdown": DesignTokens.Outcome.touchdown
         case "outcome.fellIn": DesignTokens.Outcome.fellIn
-        default: .secondary
+        default: .readableSecondary
         }
     }
 }

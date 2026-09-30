@@ -565,7 +565,7 @@ struct LibraryView: View {
             // above it is a promise a stranger cannot check; this is what the app does.
             Text(WelcomeGuide.promise)
                 .font(.footnote)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
                 .fixedSize(horizontal: false, vertical: true)
             // Stacked rather than side by side: "What CleanJibe does" alone is most of a
             // phone's width at the default text size, and two of these on one line wrap
@@ -684,7 +684,7 @@ struct LibraryView: View {
                 .fixedSize(horizontal: false, vertical: true)
             Text(problem.fix)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
                 .fixedSize(horizontal: false, vertical: true)
             HelpTopicLink(problem.helpTopic, label: "What to check") {
                 sheet = .helpTopic(problem.helpTopic)
@@ -759,7 +759,7 @@ struct LibraryView: View {
                 if store.isBusy { ProgressView().controlSize(.small) }
                 Text(store.status ?? "Working…")
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
                     .lineLimit(2)
                 Spacer(minLength: 0)
             }
@@ -924,7 +924,7 @@ private struct WayInRow: View {
                     }
                     Text(line)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 0)
@@ -946,7 +946,7 @@ private struct BetaPill: View {
     var body: some View {
         Text("BETA")
             .font(.caption2.weight(.bold))
-            .foregroundStyle(.secondary)
+            .foregroundStyle(.readableSecondary)
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
             .background(Capsule().fill(Color.secondary.opacity(0.14)))

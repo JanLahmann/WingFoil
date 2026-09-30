@@ -212,7 +212,7 @@ struct ShareCardDesignControls: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(AppShellCopy.Share.background)
                 .font(.footnote.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
             Picker(AppShellCopy.Share.background,
                    selection: Binding(get: { design.effectiveBackground(mapOffered: mapOffered) },
                                       set: { design.choose($0) })) {
@@ -256,7 +256,7 @@ struct ShareCardDesignControls: View {
     private func note(_ text: String) -> some View {
         Text(text)
             .font(.caption)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(.readableSecondary)
             .fixedSize(horizontal: false, vertical: true)
     }
 }
@@ -294,7 +294,7 @@ struct ShareCardExportRow: View {
              + String(Int(design.shape.size.height))
              + " px. " + Copy.straightToTheShareSheet)
             .font(.caption2)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(.readableSecondary)
             .multilineTextAlignment(.center)
     }
 

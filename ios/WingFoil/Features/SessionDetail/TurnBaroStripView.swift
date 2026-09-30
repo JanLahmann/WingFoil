@@ -30,7 +30,7 @@ struct TurnBaroStripView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text("Barometer").font(.caption2.weight(.medium)).foregroundStyle(.secondary)
+            Text("Barometer").font(.caption2.weight(.medium)).foregroundStyle(.readableSecondary)
             if baro.hasBarometer {
                 chart
             } else {

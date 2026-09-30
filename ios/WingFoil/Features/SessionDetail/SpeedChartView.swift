@@ -78,7 +78,7 @@ struct SpeedChartView: View {
 
             if detail.speed.isEmpty {
                 Text("No speed channel in this recording.")
-                    .font(.footnote).foregroundStyle(.secondary)
+                    .font(.footnote).foregroundStyle(.readableSecondary)
             } else {
                 chart
                 if window.isZoomed { rangeBar }
@@ -96,7 +96,7 @@ struct SpeedChartView: View {
                     Spacer()
                 }
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

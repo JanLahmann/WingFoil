@@ -195,7 +195,7 @@ struct SessionRecordsTable: View {
                 // default size, and shrinks the type a little rather than wrap past it.
                 Text(Fmt.kn(value))
                     .font(.subheadline.weight(.semibold).monospacedDigit())
-                    .foregroundStyle(value == nil ? .secondary : .primary)
+                    .foregroundStyle(value == nil ? .readableSecondary : .primary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                     .scaledColumn(74, alignment: .trailing, relativeTo: .subheadline)
@@ -430,7 +430,7 @@ struct SessionTakeoffSection: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Failed attempts")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
                 Text("\(k.failedAttempts)")
                     .font(.title.weight(.semibold))
                     .monospacedDigit()
@@ -470,14 +470,14 @@ struct StatCard: View {
             HStack(spacing: 4) {
                 Text(title)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
-                if let help { HelpButton(topic: help, size: .caption2) }
+                    .foregroundStyle(.readableSecondary)
+                if let help { HelpButton(topic: help, size: .caption2, ink: .readableSecondary) }
                 Spacer(minLength: 0)
             }
             Text(value)
                 .font(.title3.weight(.semibold))
                 .monospacedDigit()
-                .foregroundStyle(dimmed ? .secondary : .primary)
+                .foregroundStyle(dimmed ? .readableSecondary : .primary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
             Text(caption)
@@ -536,7 +536,7 @@ struct BreakdownPart: Hashable {
     static func glideOut(_ n: Int) -> BreakdownPart {
         BreakdownPart(value: n, word: "glide-out",
                       symbol: FlightPairing.Outcome.glidedOut.symbolName,
-                      color: .secondary)
+                      color: .readableSecondary)
     }
 }
 
@@ -556,8 +556,8 @@ struct BreakdownCard: View {
             HStack(spacing: 4) {
                 Text(title)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
-                if let help { HelpButton(topic: help, size: .caption2) }
+                    .foregroundStyle(.readableSecondary)
+                if let help { HelpButton(topic: help, size: .caption2, ink: .readableSecondary) }
                 Spacer(minLength: 0)
             }
             if let value {

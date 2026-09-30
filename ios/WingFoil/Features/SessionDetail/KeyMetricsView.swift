@@ -127,7 +127,7 @@ struct KeyMetricsView: View {
             // this row read as one kind of thing.
             Text(metric.caption.map { metric.label + Self.captionSep + $0 } ?? metric.label)
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
                 .fixedSize(horizontal: false, vertical: true)
             recordChip(metric.key)
         }
@@ -153,7 +153,7 @@ struct KeyMetricsView: View {
             .foregroundStyle(EventMarkerStyle.cleanJibe)
             Text(metric.label)
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
                 .fixedSize(horizontal: false, vertical: true)
             recordChip(metric.key)
         }
@@ -186,7 +186,7 @@ struct KeyMetricsView: View {
             }
             Text(metric.label)
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
                 .fixedSize(horizontal: false, vertical: true)
             recordChip(metric.key)
         }
@@ -244,7 +244,7 @@ struct KeyMetricsView: View {
                          fellIn: tally.fellIn, font: .title2)
             Text(tally.label + Self.captionSep + tally.caption)
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

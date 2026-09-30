@@ -58,7 +58,7 @@ struct TurnWindowControl: View {
         HStack(spacing: 8) {
             Text(label)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
                 .scaledColumn(56, relativeTo: .caption)
             // Whole seconds: the window is a framing choice, and a tenth of a second of
             // lead-in is not a choice anybody is making.

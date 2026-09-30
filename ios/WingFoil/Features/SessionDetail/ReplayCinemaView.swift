@@ -480,7 +480,7 @@ struct ReplayCinemaView: View {
     private func chip(_ text: String) -> some View {
         Text(text)
             .font(.caption.weight(.semibold).monospacedDigit())
-            .foregroundStyle(.secondary)
+            .foregroundStyle(.readableSecondary)
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
             .background(.thinMaterial, in: .capsule)
@@ -511,7 +511,7 @@ struct ReplayCinemaView: View {
                 .contentTransition(.numericText(countsDown: true))
             Text("Recording starts when the count ends")
                 .font(.footnote)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
         }
         .padding(28)
         .background(.ultraThinMaterial, in: .rect(cornerRadius: 24))
@@ -944,7 +944,7 @@ private struct ReplayClipSheet: View {
                 Text(Fmt.duration(wallS) + " · " + Fmt.bytes(ReplayRecorder.size(of: url))
                      + " · " + url.lastPathComponent)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
 

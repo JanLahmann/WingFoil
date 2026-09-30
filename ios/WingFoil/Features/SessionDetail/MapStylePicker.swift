@@ -126,7 +126,7 @@ struct MapStyleChip: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(Capsule().fill(Color.secondary.opacity(0.14)))
-            .foregroundStyle(.secondary)
+            .foregroundStyle(.readableSecondary)
             .contentShape(.capsule)
         }
         .buttonStyle(.plain)

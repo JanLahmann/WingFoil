@@ -266,7 +266,7 @@ struct TrendsView: View {
     private func stat(_ value: String, _ label: String) -> some View {
         VStack(spacing: 2) {
             Text(value).font(.headline.monospacedDigit())
-            Text(label).font(.caption2).foregroundStyle(.secondary)
+            Text(label).font(.caption2).foregroundStyle(.readableSecondary)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
@@ -435,12 +435,12 @@ struct TrendsView: View {
             HStack(alignment: .firstTextBaseline) {
                 Text(AppShellCopy.Trends.bySide).font(.subheadline.weight(.semibold))
                 Spacer()
-                Text("% flew through").font(.caption).foregroundStyle(.secondary)
+                Text("% flew through").font(.caption).foregroundStyle(.readableSecondary)
             }
             if total == 0 {
                 Text(AppShellCopy.Trends.bySideEmpty)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
                     .frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
             } else {
                 Chart {
@@ -475,7 +475,7 @@ struct TrendsView: View {
                 }.joined(separator: ". "))
                 Text(AppShellCopy.Trends.bySideNote)
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
             }
         }
         .id("sideSuccess")
@@ -518,7 +518,7 @@ struct TrendsView: View {
                               more: [AppShellCopy.Trends.weekRuns])
             { _ in }
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
         }
         .padding(.top, 4)
     }
@@ -588,7 +588,7 @@ private struct TrendChart: View {
                 if let last = series.last {
                     Text(format(last.value) + " \(unit)")
                         .font(.caption.monospacedDigit())
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
                 }
             }
             if let headlineText {
@@ -599,7 +599,7 @@ private struct TrendChart: View {
             if series.isEmpty {
                 Text(note ?? "No session in this range can report this yet.")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
                     .frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
             } else {
                 chart
@@ -609,16 +609,16 @@ private struct TrendChart: View {
                     let tail = note.map { " · " + $0 } ?? ""
                     Text(missing + tail)
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
                 } else if let note {
-                    Text(note).font(.caption2).foregroundStyle(.secondary)
+                    Text(note).font(.caption2).foregroundStyle(.readableSecondary)
                 }
                 if uncertifiedCount > 0 {
                     Text(String(uncertifiedCount) + " of " + String(series.count)
                          + " had no speed channel. That speed came from positions and "
                          + "reads high, so it is marked estimated.")
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
                 }
             }
         }

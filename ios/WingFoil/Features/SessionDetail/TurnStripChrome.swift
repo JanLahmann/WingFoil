@@ -58,7 +58,7 @@ enum StripChrome {
 
     /// A caption in the speed strip's own voice — bigger than a band's word, because it names
     /// a *number* rather than a window.
-    static func caption(_ text: String, tint: Color = .secondary) -> some View {
+    static func caption(_ text: String, tint: Color = .readableSecondary) -> some View {
         Text(text)
             .font(.caption2.monospacedDigit())
             .foregroundStyle(tint)

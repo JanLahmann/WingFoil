@@ -108,7 +108,7 @@ private struct HelpIndexList: View {
                            index == 0 || group.topics[index - 1].subsection != sub {
                             Label(sub.title, systemImage: sub.symbol)
                                 .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(.readableSecondary)
                                 .textCase(.uppercase)
                                 .padding(.top, 4)
                                 .accessibilityAddTraits(.isHeader)
@@ -140,7 +140,7 @@ private struct HelpIndexList: View {
             Text(topic.title).font(.subheadline.weight(.semibold))
             Text(markdown: topic.summary)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
                 .multilineTextAlignment(.leading)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -212,7 +212,7 @@ struct HelpTopicSheet: View {
                     // of this bargain.
                     Text(markdown: topic.summary)
                         .font(.headline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
 
                     // Between the summary and the prose, because the topics that carry one
                     // describe a *screen*: the reader recognises the picture and then reads
@@ -236,7 +236,7 @@ struct HelpTopicSheet: View {
                                 .accessibilityLabel(image.caption)
                             Text(image.caption)
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(.readableSecondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }
@@ -270,7 +270,7 @@ struct HelpTopicSheet: View {
                                     }
                                     Text(markdown: item.detail)
                                         .font(.callout)
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(.readableSecondary)
                                         .fixedSize(horizontal: false, vertical: true)
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -358,7 +358,7 @@ struct HelpTopicSheet: View {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("See also")
                                 .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(.readableSecondary)
                             ForEach(related) { link in
                                 Button { next = link.id } label: {
                                     HStack(spacing: 6) {
@@ -453,9 +453,14 @@ extension EnvironmentValues {
 ///
 /// It takes a `HelpTopicID`, not a string, so a card cannot link to a topic that does not
 /// exist — the catalogue's completeness is then a compile-time property plus one test.
+///
+/// `ink` is the link ink by default. On a stat tile it is the readable secondary grey (Jan,
+/// 30 Sep 2026: "Make it grey"): a grid of tiles is a dozen `?`s, and a dozen green marks
+/// outshout the numbers they explain. Same glyph, size and hit area either way.
 struct HelpButton: View {
     let topic: HelpTopicID
     var size: Font = .caption
+    var ink: Color = .helpLink
 
     @State private var showing = false
 
@@ -463,7 +468,7 @@ struct HelpButton: View {
         Button { showing = true } label: {
             Image(systemName: "questionmark.circle")
                 .font(size)
-                .foregroundStyle(.helpLink)
+                .foregroundStyle(ink)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("What does " + HelpCatalog.topic(topic).title + " mean?")

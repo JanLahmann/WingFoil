@@ -187,7 +187,7 @@ private struct UsageReportFallbackSheet: View {
                     Text("No mail account is set up on this phone. "
                          + Copy.copyTheReportInstead)
                         .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
                         .fixedSize(horizontal: false, vertical: true)
 
                     Text(subject)
@@ -269,7 +269,7 @@ struct UsageAskCard: View {
                  + "used and whether they worked. You read it before you send it. "
                  + "A feature reaches the App Store once testers show it works.")
                 .font(.footnote)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
             HStack {

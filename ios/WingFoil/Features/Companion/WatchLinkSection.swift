@@ -18,7 +18,7 @@ struct WatchLinkSection: View {
         Section {
             LabeledContent("Watch") {
                 Text(state.headline)
-                    .foregroundStyle(state.canSend ? .green : .secondary)
+                    .foregroundStyle(state.canSend ? .green : .readableSecondary)
                     .multilineTextAlignment(.trailing)
             }
 

@@ -113,7 +113,7 @@ struct SessionRowView: View {
                     dateLine(weekday: false)
                 }
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
 
                 if let note = SessionDisplay.provisionalNote(row) {
                     Text(note)
@@ -130,7 +130,7 @@ struct SessionRowView: View {
                 if !row.isSession, !row.isProvisional {
                     Text(NotASessionNote.tag(for: row.sessionVerdictReason))
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
                 }
 
                 // **Three numbers, each under its own word** (Jan, Beta 75; pattern H).
@@ -154,7 +154,7 @@ struct SessionRowView: View {
                     }
                 }
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
                 // Three figures side by side under the date. They scale, and stop where
                 // three of them stop fitting a phone's width — the row above them and the
                 // title above that scale the whole way.
@@ -258,7 +258,7 @@ struct SessionRowView: View {
                 Image(systemName: choice.icon).imageScale(.small)
                     .foregroundStyle(choice.wearsCleanInk
                                      ? AnyShapeStyle(DesignTokens.Clean.jibe)
-                                     : AnyShapeStyle(.secondary))
+                                     : AnyShapeStyle(.readableSecondary))
                 Text(choice.format(row)).monospacedDigit().foregroundStyle(.primary)
             }
             Text(choice.label)

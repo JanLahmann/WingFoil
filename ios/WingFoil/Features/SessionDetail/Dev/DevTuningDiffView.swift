@@ -94,7 +94,7 @@ struct DevTuningDiffView: View {
                     .background(Capsule().fill(Color.secondary.opacity(0.16)))
                 Text(change.detail)
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
                 Spacer(minLength: 0)

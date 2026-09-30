@@ -71,7 +71,7 @@ struct FlightEndDetailSheet: View {
                         Text(title).font(.headline)
                         Text(subtitle)
                             .font(.caption2)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.readableSecondary)
                             .lineLimit(1)
                     }
                     .accessibilityElement(children: .combine)
@@ -213,7 +213,7 @@ private struct FlightEndDetailPage: View {
     private var noGeometryNote: some View {
         Label(AppShellCopy.FlightEndPage.noGeometry, systemImage: "location.slash")
             .font(.caption)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(.readableSecondary)
     }
 
     // MARK: - Strips
@@ -268,7 +268,7 @@ private struct FlightEndDetailPage: View {
                 speedStep(Fmt.knValue(slice.speed.lowKn, digits: 1), "low")
                 arrow
                 speedStep(Fmt.knValue(slice.speed.outKn, digits: 1), "out")
-                Text(Fmt.knUnit).font(.footnote).foregroundStyle(.secondary)
+                Text(Fmt.knUnit).font(.footnote).foregroundStyle(.readableSecondary)
                 Spacer(minLength: 0)
             }
             // Said here rather than only in the footnote, because it is the one place this
@@ -310,7 +310,7 @@ private struct FlightEndDetailPage: View {
 
             Text(FlightEndAnalytics.outcomeText(end))
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(12)
@@ -351,7 +351,7 @@ private struct FlightEndDetailPage: View {
             Image(systemName: symbol).font(.caption2).foregroundStyle(tint)
             Text(text).font(.caption2)
         }
-        .foregroundStyle(.secondary)
+        .foregroundStyle(.readableSecondary)
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .background(Capsule().fill(Color.secondary.opacity(0.14)))

@@ -168,7 +168,7 @@ struct TuningView: View {
                 Label("Every " + selected.title.lowercased()
                       + " threshold is at its preset default",
                       systemImage: "checkmark.seal")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
             } else {
                 TunedChip(count: overrides.changedCount)
                 Button("Reset all \(selected.title.lowercased())", role: .destructive) {
@@ -283,7 +283,7 @@ struct TuningView: View {
                 if spec.kind == .slider {
                     Text(spec.formatted(value))
                         .font(.subheadline.monospacedDigit())
-                        .foregroundStyle(overridden ? Color.accentColor : Color.secondary)
+                        .foregroundStyle(overridden ? Color.accentColor : Color.readableSecondary)
                 }
                 if overridden {
                     Button {
@@ -401,7 +401,7 @@ struct TunedChip: View {
         }
         .padding(.horizontal, 8).padding(.vertical, 3)
         .background(Color.secondary.opacity(0.16), in: .capsule)
-        .foregroundStyle(.secondary)
+        .foregroundStyle(.readableSecondary)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Analysed with " + String(count) + noun)
     }

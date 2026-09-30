@@ -218,7 +218,7 @@ private struct HealthWorkoutRow: View {
         Button(action: toggle) {
             HStack(spacing: 12) {
                 Image(systemName: symbol)
-                    .foregroundStyle(candidate.isAlreadyImported ? AnyShapeStyle(.secondary)
+                    .foregroundStyle(candidate.isAlreadyImported ? AnyShapeStyle(.readableSecondary)
                                                                 : AnyShapeStyle(Color.accentColor))
                     .scaledColumn(22, alignment: .center)
                 VStack(alignment: .leading, spacing: 3) {
@@ -231,13 +231,13 @@ private struct HealthWorkoutRow: View {
                     Text(candidate.type.label + " · " + Fmt.duration(candidate.durationS)
                          + " · " + candidate.sourceName)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
                 }
                 Spacer()
                 if candidate.isAlreadyImported {
                     Text("In your library")
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
                 }
             }
         }

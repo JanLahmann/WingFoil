@@ -116,7 +116,7 @@ struct PeriodsView: View {
             } else if loaded {
                 Text(AppShellCopy.Periods.noSessionInRange)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
             }
         } header: {
             Text("A range of your own")
@@ -158,7 +158,7 @@ struct PeriodsView: View {
                                  + (period.sessions == 1 ? "" : "s")
                                  + " · \(period.dateLine)")
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(.readableSecondary)
                         }
                     }
                 }
@@ -212,7 +212,7 @@ struct PeriodBlockView: View {
                         .minimumScaleFactor(0.7)
                     Text(entry.label)
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)

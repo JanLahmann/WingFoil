@@ -73,12 +73,12 @@ struct SpotsView: View {
                 if entry.spot.autoNamed {
                     Image(systemName: "wand.and.stars")
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
                 }
                 Spacer()
                 Text("\(entry.sessions)")
                     .font(.subheadline.monospacedDigit())
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
             }
             HStack(spacing: 6) {
                 Text(String(format: "%.4f, %.4f", entry.spot.lat, entry.spot.lon))
@@ -89,7 +89,7 @@ struct SpotsView: View {
                 }
             }
             .font(.caption)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(.readableSecondary)
         }
         .padding(.vertical, 2)
     }

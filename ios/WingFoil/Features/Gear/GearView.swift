@@ -38,7 +38,7 @@ struct GearView: View {
                             // under a "Wing" header reads as a missing thing rather than
                             // an empty shelf. All three kinds pluralise with an s.
                             Text("No \(kind.label.lowercased())s yet")
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(.readableSecondary)
                                 .font(.footnote)
                         } else {
                             ForEach(items) { entry in
@@ -109,7 +109,7 @@ struct GearView: View {
         Section {
             if visibleSpots.isEmpty {
                 Text(AppShellCopy.Gear.noSpots)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
                     .font(.footnote)
             } else {
                 ForEach(visibleSpots) { entry in
@@ -174,7 +174,7 @@ private struct SpotRowView: View {
                     // worth knowing before you decide whether to rename it.
                     Image(systemName: "wand.and.stars")
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
                 }
                 Spacer()
                 Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
@@ -196,7 +196,7 @@ private struct SpotRowView: View {
     private func stat(_ value: String, _ label: String) -> some View {
         VStack(alignment: .leading, spacing: 1) {
             Text(value).monospacedDigit().lineLimit(1).minimumScaleFactor(0.7)
-            Text(label).font(.caption2).foregroundStyle(.secondary)
+            Text(label).font(.caption2).foregroundStyle(.readableSecondary)
                 .lineLimit(1).minimumScaleFactor(0.7)
         }
     }
@@ -214,13 +214,13 @@ private struct GearRowView: View {
                         .font(.caption2)
                         .padding(.horizontal, 5).padding(.vertical, 2)
                         .background(Color.secondary.opacity(0.16), in: .capsule)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
                 }
                 Spacer()
                 Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
             }
             if let notes = entry.gear.notes, !notes.isEmpty {
-                Text(notes).font(.caption).foregroundStyle(.secondary)
+                Text(notes).font(.caption).foregroundStyle(.readableSecondary)
             }
             HStack(spacing: 14) {
                 stat("\(entry.sessions)", "sessions")
@@ -237,7 +237,7 @@ private struct GearRowView: View {
                 // `.current`: an aggregate over many sessions, which have no single zone
                 // between them. "How long since I rode this" is asked from here and now.
                 Text("Last used " + Fmt.shortDate(last, zone: .current))
-                    .font(.caption2).foregroundStyle(.secondary)
+                    .font(.caption2).foregroundStyle(.readableSecondary)
             }
         }
         .padding(.vertical, 3)
@@ -246,7 +246,7 @@ private struct GearRowView: View {
     private func stat(_ value: String, _ label: String) -> some View {
         VStack(alignment: .leading, spacing: 1) {
             Text(value).monospacedDigit().lineLimit(1).minimumScaleFactor(0.7)
-            Text(label).font(.caption2).foregroundStyle(.secondary)
+            Text(label).font(.caption2).foregroundStyle(.readableSecondary)
                 .lineLimit(1).minimumScaleFactor(0.7)
         }
     }

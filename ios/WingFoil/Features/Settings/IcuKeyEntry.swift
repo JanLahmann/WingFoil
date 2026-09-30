@@ -34,10 +34,10 @@ struct IcuKeyEntry: View {
 
             if showsPrivacyNote && !store.apiKeyIsInjected {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Image(systemName: "lock.fill").font(.caption2).foregroundStyle(.secondary)
+                    Image(systemName: "lock.fill").font(.caption2).foregroundStyle(.readableSecondary)
                     Text("Stored in this iPhone's Keychain, sent only to intervals.icu.")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                     HelpButton(topic: .privacy, size: .caption)
                 }
@@ -45,7 +45,7 @@ struct IcuKeyEntry: View {
             if store.apiKeyIsInjected {
                 Text("Using the ICU_API_KEY scheme environment variable. DEBUG build only.")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
             }
         }
         // A process that could not read the keychain at launch gets a second look when the
@@ -61,7 +61,7 @@ struct IcuKeyEntry: View {
         VStack(alignment: .leading, spacing: 10) {
             LabeledContent {
                 Text("••••••••")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
                     .accessibilityHidden(true)
             } label: {
                 Label("API key saved", systemImage: "key.fill")
@@ -157,7 +157,7 @@ struct IcuKeyEntry: View {
         case .failure(let problem):
             VStack(alignment: .leading, spacing: 6) {
                 line("xmark.octagon.fill", .red, "\(problem.title). \(problem.message)")
-                line("wrench.and.screwdriver.fill", .secondary, problem.fix)
+                line("wrench.and.screwdriver.fill", .readableSecondary, problem.fix)
             }
         case nil:
             EmptyView()
@@ -169,7 +169,7 @@ struct IcuKeyEntry: View {
             Image(systemName: symbol).font(.caption).foregroundStyle(tone)
             Text(text)
                 .font(.caption)
-                .foregroundStyle(tone == .secondary ? Color.secondary : .primary)
+                .foregroundStyle(tone == .readableSecondary ? Color.readableSecondary : .primary)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
         }

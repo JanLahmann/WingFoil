@@ -105,7 +105,7 @@ struct ReplayCommentaryBubble: View {
 
     private var ink: Color {
         switch milestone.kind {
-        case .sessionStart, .sessionEnd: .secondary
+        case .sessionStart, .sessionEnd: .readableSecondary
         case .firstTakeoff: DesignTokens.Effort.takeoff
         // A swim *is* a verdict on a flight end — the ladder's own red, the same one the
         // marker under it is drawn in.

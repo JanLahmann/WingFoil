@@ -87,7 +87,7 @@ struct TurnDetailSheet: View {
                         Text(title).font(.headline)
                         Text(subtitle)
                             .font(.caption2)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.readableSecondary)
                             .lineLimit(1)
                     }
                     .accessibilityElement(children: .combine)
@@ -377,7 +377,7 @@ private struct TurnDetailPage: View {
     private var noGeometryNote: some View {
         Label(AppShellCopy.TurnPage.noGeometry, systemImage: "location.slash")
             .font(.caption)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(.readableSecondary)
     }
 
     // MARK: - Numbers
@@ -395,7 +395,7 @@ private struct TurnDetailPage: View {
                 speedStep(Fmt.knValue(turn.exitKn, digits: 1), "out")
                 Text(Fmt.knUnit)
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
                 Spacer(minLength: 0)
             }
             Text("held " + TurnAnalytics.scoreText(turn.score) + " % of entry speed")
@@ -418,7 +418,7 @@ private struct TurnDetailPage: View {
             if let axis = Self.axisLine(turn) {
                 Text(axis)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
@@ -431,7 +431,7 @@ private struct TurnDetailPage: View {
                     // (engine 0.17.0). Without this the page said "flew through", said
                     // nothing else, and left the missing star looking like a bug. The star
                     // chip's own rule is untouched: it reads the engine's `clean` and only it.
-                    chip(reason, symbol: "star.slash", tint: .secondary)
+                    chip(reason, symbol: "star.slash", tint: .readableSecondary)
                 }
                 if turn.pumped {
                     // "pumped out · 7 strokes" where the analysis counted them. The count is
@@ -465,7 +465,7 @@ private struct TurnDetailPage: View {
             if let why = outcomeText(turn) {
                 Text(why)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -505,7 +505,7 @@ private struct TurnDetailPage: View {
             Image(systemName: symbol).font(.caption2).foregroundStyle(tint)
             Text(text).font(.caption2)
         }
-        .foregroundStyle(.secondary)
+        .foregroundStyle(.readableSecondary)
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .background(Capsule().fill(Color.secondary.opacity(0.14)))

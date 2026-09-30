@@ -259,7 +259,7 @@ struct TurnDetailStripView: View {
                         spacing: StripChrome.captionSpacing(row: row)) {
                 Text("\(label) \(Fmt.knValue(kn, digits: 1))")
                     .font(.caption2.monospacedDigit())
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
             }
         PointMark(x: .value("Seconds", rt), y: .value("Speed", Speed.value(kn)))
             .symbolSize(28)

@@ -133,7 +133,7 @@ struct TurnsAnalysisView: View {
                             + " " + filter.description
                          : "no " + filter.description + " in this session")
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
                     // The stricter verdict, under the looser one and never on the ladder's
                     // inks: "flew through" is how the turn ended, "clean" is whether the
                     // speed came through it. Same set of turns, two different questions.
@@ -171,7 +171,7 @@ struct TurnsAnalysisView: View {
             Text("\(count)").font(.caption.monospacedDigit().weight(.medium))
             Text(outcome.label).font(.caption2)
         }
-        .foregroundStyle(count == 0 ? AnyShapeStyle(.secondary) : AnyShapeStyle(.readableSecondary))
+        .foregroundStyle(count == 0 ? AnyShapeStyle(.readableSecondary) : AnyShapeStyle(.readableSecondary))
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .background(Capsule().fill(Color.secondary.opacity(count == 0 ? 0.06 : 0.14)))
@@ -341,7 +341,7 @@ private struct TurnRowView: View {
         HStack(spacing: 10) {
             Text(Fmt.clock(item.ts))
                 .font(.caption.monospacedDigit())
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
                 .scaledColumn(46, relativeTo: .caption)
             VStack(alignment: .leading, spacing: 1) {
                 Text("\(item.typeLabel) · \(item.sideLabel)")
@@ -359,7 +359,7 @@ private struct TurnRowView: View {
             VStack(alignment: .trailing, spacing: 0) {
                 Text(item.scoreText + " %")
                     .font(.subheadline.monospacedDigit())
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
                 Text("held")
                     .font(.caption2)
                     .foregroundStyle(.readableSecondary)

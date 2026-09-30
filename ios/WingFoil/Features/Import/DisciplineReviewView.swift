@@ -54,7 +54,7 @@ struct DisciplineReviewView: View {
                                     Spacer()
                                     if allOne == choice {
                                         Image(systemName: "checkmark")
-                                            .foregroundStyle(.secondary)
+                                            .foregroundStyle(.readableSecondary)
                                     }
                                 }
                             }
@@ -102,14 +102,14 @@ struct DisciplineReviewView: View {
                 .minimumScaleFactor(0.8)
             Text(subtitle(row))
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
             // The sport code, said out loud and never acted on. Without this line the app
             // looks wrong on exactly the sessions a rider is most likely to query — his watch
             // says windsurfing and CleanJibe says Wingfoil, and the disagreement is silent.
             if let hint = DisciplineReview.sportHint(row.sport) {
                 Label(hint, systemImage: "info.circle")
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Picker("Analyse as", selection: Binding(

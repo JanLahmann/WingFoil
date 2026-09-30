@@ -277,7 +277,7 @@ struct ShareComposerView: View {
 
             Text(AppShellCopy.Share.sendToUsLine)
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
                 .frame(maxWidth: .infinity, alignment: .center)
         }
         .sheet(isPresented: $showSendToDeveloper) {
@@ -326,7 +326,7 @@ struct ShareComposerView: View {
                 Text("Names the session. The list, the card, the clip and the shared file "
                      + "all follow.")
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
             }
 
             VStack(alignment: .leading, spacing: 4) {
@@ -343,7 +343,7 @@ struct ShareComposerView: View {
                 HStack(alignment: .firstTextBaseline) {
                     Text("One line on the card and on the clip's opening frame.")
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
                     Spacer(minLength: 8)
                     // Only once it is worth knowing. A counter under an empty field is a
                     // limit announced before anybody has approached it.
@@ -351,7 +351,7 @@ struct ShareComposerView: View {
                         Text("\(noteDraft.count)/\(SessionNaming.noteLimit)")
                             .font(.caption2.monospacedDigit())
                             .foregroundStyle(noteDraft.count >= SessionNaming.noteLimit
-                                             ? .orange : .secondary)
+                                             ? .orange : .readableSecondary)
                     }
                 }
             }
@@ -438,7 +438,7 @@ struct ShareComposerView: View {
                  + "It leaves out your rider profile too, so no name, no weight, no "
                  + "height. The original in your library is never touched.")
                 .font(.footnote)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -451,7 +451,7 @@ struct ShareComposerView: View {
                 Text("The 100 Hz stream is 95 % of the file and only needed to recount "
                      + "pump strokes. Off keeps the attachment small enough for a chat app.")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -483,7 +483,7 @@ struct ShareComposerView: View {
 
         Text(invitation)
             .font(.caption2)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(.readableSecondary)
             .multilineTextAlignment(.center)
     }
 

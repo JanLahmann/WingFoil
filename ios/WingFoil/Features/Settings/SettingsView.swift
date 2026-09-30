@@ -268,7 +268,7 @@ struct SettingsView: View {
         Section {
             Text(GettingStartedGuide.settingsIcu)
                 .font(.footnote)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
                 .fixedSize(horizontal: false, vertical: true)
             // Typing the key and proving it works is one action, and this is its one
             // home: the first-run card that embedded the same view went on dev 70, so
@@ -324,11 +324,11 @@ struct SettingsView: View {
         Section {
             Text(GettingStartedGuide.settingsStrava)
                 .font(.footnote)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
                 .fixedSize(horizontal: false, vertical: true)
             if !store.isStravaConfigured {
                 Text("Not available in this build")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
             } else if store.isStravaConnected {
                 LabeledContent("Connected",
                                value: store.stravaAthlete ?? "your Strava account")
@@ -485,7 +485,7 @@ struct SettingsView: View {
                     Text("Analyse sessions as windsurf foil or fin. Jibes and tacks work, "
                          + "and pumping is off. The planing speeds are still a guess.")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
@@ -623,7 +623,7 @@ struct SettingsView: View {
                 }
             Text(store.speedRecordPolicy.summary)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         } header: {
             Text(SettingsCopy.section("speedRecords").title)
@@ -664,7 +664,7 @@ struct SettingsView: View {
                     if !store.tuning.isEmpty {
                         Text("\(store.tuning.totalChangedCount) changed")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.readableSecondary)
                     }
                 }
             }

@@ -388,7 +388,7 @@ struct FeedbackFooter: View {
             // was telling him it was not for him.
             Label(FeedbackDoors.footer, systemImage: "envelope")
                 .font(.footnote)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
         }
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity)
@@ -602,7 +602,7 @@ private struct FeedbackFallbackSheet: View {
                 VStack(alignment: .leading, spacing: 14) {
                     Text(Copy.noMailAccount + " " + Copy.copyTheReportInstead)
                         .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
                         .fixedSize(horizontal: false, vertical: true)
 
                     Text(subject)
