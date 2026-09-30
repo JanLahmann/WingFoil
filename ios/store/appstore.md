@@ -380,7 +380,7 @@ behaviour to everyone except the rider holding it.
 
 ## Screenshots
 
-**1.0.1: `ios/store/screenshots/1.0.1/`, six 6.9-inch shots at 1320 × 2868, not yet taken.**
+**1.0.1: `ios/store/screenshots/1.0.1/`, six 6.9-inch shots at 1320 × 2868, taken 30 September 2026 (build 121 plus the records and hero fixes).**
 `shoot.sh` in that directory makes them in one run from the **release** scheme, in its own
 simulator, which it deletes afterwards. It was written on 26 September 2026 at night, when
 the Mac's screen was locked, and a locked screen hangs every `simctl launch`. The script
