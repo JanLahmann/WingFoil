@@ -13,8 +13,8 @@ import WingFoilKit
 ///
 /// It exists because the Turns map was written first and the Takeoffs map would have been a
 /// copy of it. Everything that is genuinely shared is here: the neutral route and its halo
-/// over photography, the direction chevrons and their camera bookkeeping, the pan/zoom
-/// interaction set, the figure height and corner, the caption line, and the legend. What is
+/// over photography, the direction chevrons and their camera bookkeeping, the two-finger
+/// pan/zoom interaction set, the figure height and corner, the caption line, and the legend. What is
 /// *not* here is the marks — those are the page's subject, and each page passes its own in.
 ///
 /// **The ground and the layers are the map's, the filter is the page's.** The style picker
@@ -42,6 +42,8 @@ struct FocusMapView<Marks: MapContent>: View {
     /// The chevrons for the camera as it stands — a function of the zoom and the view size,
     /// so it is rebuilt on every camera settle exactly as the session map does it.
     @State private var direction = DirectionField()
+    /// The fingers on the map, for the pager (`pageMap`).
+    @State private var fingers = MapFingers()
 
     private var visibility: MapLayerVisibility { store.mapLayers(for: scope) }
 
@@ -70,8 +72,9 @@ struct FocusMapView<Marks: MapContent>: View {
             .mapStyle(store.mapStyle.mapStyle)
             .figureHeight(regular: 240, compact: 180, wide: 330)
             .clipShape(.rect(cornerRadius: 14))
-            // A pan that starts on the map is the map's, never a page turn.
-            .pagerExclusionZone()
+            // One finger scrolls the page past the map, two move it (`pageMap`, rule 4 in
+            // `ScrubPan`); only a two-finger drag on it keeps the pager out.
+            .pageMap(fingers)
             .onMapCameraChange(frequency: .onEnd) { context in
                 direction.camera(moved: context, detail: detail)
             }

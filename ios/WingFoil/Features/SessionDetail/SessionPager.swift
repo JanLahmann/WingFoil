@@ -17,8 +17,8 @@ import WingFoilKit
 /// place, so the swap is not a movement at all. The neighbour is a stand-in because a real
 /// page is an analysis to load; the stand-in is the header the real page starts with.
 ///
-/// Three things never turn the page: a drag that starts on a map, a chart or the replay
-/// slider (`pagerExclusionZone`), a drag steeper than `SessionPaging.isHorizontal`, and a
+/// Three things never turn the page: a drag that starts on a chart or the replay slider, or
+/// with two fingers on a map (`pagerExclusionZone`, `pageMap`), a drag steeper than `SessionPaging.isHorizontal`, and a
 /// drag during a turn already running.
 struct SessionPager<Page: View, Preview: View>: View {
     /// The neighbours in time, nil at the ends of the list.

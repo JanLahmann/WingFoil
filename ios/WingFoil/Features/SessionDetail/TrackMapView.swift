@@ -9,8 +9,9 @@ import WingFoilKit
 /// **The inline map pans and zooms** (6 Sep 2026). It used to take no gestures at all so
 /// that a drag anywhere on the page scrolled it, which meant the one thing a rider wants to
 /// do with a two-kilometre track on a 260 pt figure — get closer to the corner he jibed at —
-/// cost a trip to the full-screen map and back. The trade is deliberate and known: a drag
-/// that starts on the map moves the map, and the page scrolls from anywhere else on it.
+/// cost a trip to the full-screen map and back. Since 30 Sep 2026 the map moves with **two**
+/// fingers and one finger scrolls the page from anywhere, the map included (Jan: "scroll up
+/// still struggles" — a third of the screen was a wall a scroll could not start on).
 /// Rotate and pitch stay off, because the drawing is a plan view of a plane of water and a
 /// tilted one answers nothing. "Open map full screen" stays where it was.
 ///
@@ -52,6 +53,8 @@ struct TrackMapView: View {
     /// the spacing is measured in screen points, so it is a function of the camera and has
     /// to be rebuilt when the camera moves (see `DirectionField`).
     @State private var direction = DirectionField()
+    /// The fingers on the map, for the pager (`pageMap`).
+    @State private var fingers = MapFingers()
 
     /// Where the camera is *now*, once the rider has moved it. The tap tolerances are metres
     /// per point, so they are a function of the visible span rather than of the span the map
@@ -72,9 +75,9 @@ struct TrackMapView: View {
                 .mapStyle(mapStyle.mapStyle)
                 .figureHeight(regular: 260, compact: 190, wide: 380)
                 .clipShape(.rect(cornerRadius: 14))
-                // A pan that starts on the map is the map's, however flat — never a page
-                // turn (`pagerExclusionZone`).
-                .pagerExclusionZone()
+                // One finger scrolls the page past the map, two move it (`pageMap`, rule 4
+                // in `ScrubPan`); only a two-finger drag on it keeps the pager out.
+                .pageMap(fingers)
                 .onMapCameraChange(frequency: .onEnd) { context in
                     visibleRegion = context.region
                     direction.camera(moved: context, detail: detail)

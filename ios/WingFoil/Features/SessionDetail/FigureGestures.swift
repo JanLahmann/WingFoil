@@ -1,3 +1,4 @@
+import MapKit
 import SwiftUI
 import UIKit
 import UIKit.UIGestureRecognizerSubclass
@@ -18,8 +19,8 @@ import WingFoilKit
 ///    points with a 45° line (25–28 Sep): a thumb leans sideways in its first few points,
 ///    so a scroll that began on a strip read as a scrub, the scrub kept the touch, and the
 ///    page stuck (Jan, 28 Sep 2026, on dev 114/116).
-/// 2. **A drag that starts on a figure never turns the page.** The map pans, the chart and
-///    the turn strips scrub, the replay slider slides; each marks itself
+/// 2. **A drag that starts on a figure never turns the page.** The chart and the turn
+///    strips scrub, the replay slider slides, a map moves under two fingers (rule 4); each marks itself
 ///    `.pagerExclusionZone()`, and the pager ignores any drag whose first touch
 ///    lands inside one. A rule about where the finger *started*, not a guess about what
 ///    it meant: a flat scrub on the chart is exactly the drag the pager used to steal.
@@ -29,6 +30,12 @@ import WingFoilKit
 ///    any drag whose first points lean sideways — a thumb's do — so the page would not move
 ///    (Jan, 28 Sep 2026). The pager is a drag beside the scroll, turns only on a clearly
 ///    sideways one, and keeps out of the strips by rule 2.
+/// 4. **On an inline map one finger is the page's, two are the map's** (Jan, 30 Sep 2026:
+///    "scroll up still struggles"). The Ride, Turns and Flights maps fill a third of the
+///    screen, and while the map owned every one-finger pan a scroll that started on it moved
+///    the map instead. `PageMapFingers` raises the map's own pan to two fingers, so one finger
+///    scrolls the page — or, flat enough, turns it — and two move and pinch the map; taps on
+///    it and on its marks are untouched. The full-screen maps keep one-finger panning.
 struct ScrubPan: UIGestureRecognizerRepresentable {
     /// The finger's position in the view's own space, on every move while it is scrubbing.
     var onChange: (CGPoint) -> Void
@@ -134,6 +141,120 @@ final class ScrubRecognizer: UIGestureRecognizer {
     private var scrubbing: Bool { state == .began || state == .changed }
 }
 
+// MARK: - Maps inside a scrolling page
+
+/// How many fingers are on one inline map right now — what the pager asks before it keeps
+/// its hands off it (rule 4: only a two-finger drag on the map is the map's).
+/// Main-thread only, like `PagerExclusions`.
+final class MapFingers: @unchecked Sendable {
+    fileprivate(set) var down = 0
+    var areTheMaps: Bool { down >= 2 }
+}
+
+/// Rule 4 in `ScrubPan`: the map under this view pans with two fingers, so one finger goes to
+/// the page's scroll view (and, flat enough, to the pager).
+///
+/// No private API and no guess about how SwiftUI's `Map` is built: on the first touch the
+/// recogniser walks up from the view the finger landed on to the `MKMapView` that holds it,
+/// and sets every enabled one-finger pan the map itself carries (not its marks') to need two.
+/// Pinch, double-tap zoom and every tap are other recognisers and keep working. It never
+/// recognises anything itself — it counts the fingers for the pager and fails when the last
+/// one lifts.
+struct PageMapFingers: UIGestureRecognizerRepresentable {
+    let fingers: MapFingers
+
+    func makeCoordinator(converter: CoordinateSpaceConverter) -> Coordinator {
+        Coordinator()
+    }
+
+    func makeUIGestureRecognizer(context: Context) -> MapFingerRecognizer {
+        let recognizer = MapFingerRecognizer(fingers: fingers)
+        recognizer.delegate = context.coordinator
+        recognizer.cancelsTouchesInView = false
+        recognizer.delaysTouchesBegan = false
+        recognizer.delaysTouchesEnded = false
+        return recognizer
+    }
+
+    @MainActor
+    final class Coordinator: NSObject, UIGestureRecognizerDelegate {
+        /// Beside everything: it only watches.
+        @objc(gestureRecognizer:shouldRecognizeSimultaneouslyWithGestureRecognizer:)
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                               shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer)
+            -> Bool {
+            true
+        }
+    }
+}
+
+final class MapFingerRecognizer: UIGestureRecognizer {
+    private let fingers: MapFingers
+    /// The map already set to two fingers, so a touch does not walk its subviews again.
+    private weak var adopted: MKMapView?
+
+    init(fingers: MapFingers) {
+        self.fingers = fingers
+        super.init(target: nil, action: nil)
+    }
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
+        fingers.down += touches.count
+        if let view = touches.first?.view, let map = Self.map(holding: view), map !== adopted {
+            Self.twoFingerPan(on: map)
+            adopted = map
+        }
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent) {
+        lift(touches)
+    }
+
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent) {
+        lift(touches)
+    }
+
+    override func reset() {
+        super.reset()
+        fingers.down = 0
+    }
+
+    private func lift(_ touches: Set<UITouch>) {
+        fingers.down = max(0, fingers.down - touches.count)
+        if fingers.down == 0 { state = .failed }
+    }
+
+    private static func map(holding view: UIView) -> MKMapView? {
+        var at: UIView? = view
+        while let candidate = at {
+            if let map = candidate as? MKMapView { return map }
+            at = candidate.superview
+        }
+        return nil
+    }
+
+    /// The map's own pans — on the map view and its drawing, never inside a mark's view.
+    static func twoFingerPan(on map: MKMapView) {
+        var stack: [UIView] = [map]
+        while let view = stack.popLast() {
+            for case let pan as UIPanGestureRecognizer in view.gestureRecognizers ?? []
+            where pan.isEnabled && pan.minimumNumberOfTouches < 2 {
+                pan.minimumNumberOfTouches = 2
+            }
+            stack += view.subviews.filter { !($0 is MKAnnotationView) }
+        }
+    }
+}
+
+extension View {
+    /// Rule 4 in `ScrubPan`, for an inline map: one finger scrolls or turns the page, two
+    /// move the map — and a drag with two on it never turns the page.
+    func pageMap(_ fingers: MapFingers) -> some View {
+        gesture(PageMapFingers(fingers: fingers))
+            .pagerExclusionZone(while: { fingers.areTheMaps })
+    }
+}
+
 // MARK: - Where the session pager keeps its hands off
 
 /// The rectangles, in the pager's coordinate space, that a page turn may not start in.
@@ -146,12 +267,14 @@ final class PagerExclusions: @unchecked Sendable {
     /// report its frame in the same space the pager's drag reports its start in.
     static let space = "sessionPager"
 
-    private var zones: [UUID: CGRect] = [:]
+    private var zones: [UUID: (frame: CGRect, active: () -> Bool)] = [:]
 
-    func set(_ id: UUID, _ frame: CGRect?) { zones[id] = frame }
+    func set(_ id: UUID, _ frame: CGRect?, while active: @escaping () -> Bool = { true }) {
+        zones[id] = frame.map { ($0, active) }
+    }
 
     func contains(_ point: CGPoint) -> Bool {
-        zones.values.contains { $0.contains(point) }
+        zones.values.contains { $0.frame.contains(point) && $0.active() }
     }
 }
 
@@ -164,13 +287,15 @@ extension EnvironmentValues {
 private struct PagerExclusionZone: ViewModifier {
     @Environment(\.pagerExclusions) private var exclusions
     @State private var id = UUID()
+    /// Asked when a drag starts inside the zone; the zone holds only while it says yes.
+    let active: () -> Bool
 
     func body(content: Content) -> some View {
         content
             .onGeometryChange(for: CGRect.self) { proxy in
                 proxy.frame(in: .named(PagerExclusions.space))
             } action: { frame in
-                exclusions?.set(id, frame)
+                exclusions?.set(id, frame, while: active)
             }
             .onDisappear { exclusions?.set(id, nil) }
     }
@@ -180,6 +305,12 @@ extension View {
     /// A drag that starts here belongs to this view and never turns the session page — see
     /// `ScrubPan`, rule 2. Harmless outside a pager.
     func pagerExclusionZone() -> some View {
-        modifier(PagerExclusionZone())
+        modifier(PagerExclusionZone(active: { true }))
+    }
+
+    /// The same, but only for a drag that starts while `active` says yes — an inline map's,
+    /// which is the map's only with two fingers on it (rule 4).
+    func pagerExclusionZone(while active: @escaping () -> Bool) -> some View {
+        modifier(PagerExclusionZone(active: active))
     }
 }

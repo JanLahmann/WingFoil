@@ -938,6 +938,27 @@ targets:
         TEST_HOST: "$(BUILT_PRODUCTS_DIR)/WingFoil.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/WingFoil"
         BUNDLE_LOADER: "$(TEST_HOST)"
 
+  # The app driven through its screens (XCUITest). Same host, same configuration and same
+  # scheme as `WingFoilTests`: `Dev Debug` on a simulator, where the `UI_*` staging hooks
+  # (docs/testing.md) compile — the tests pass them as launch environment instead of
+  # `SIMCTL_CHILD_…`. DEBUG only, like the unit tests.
+  WingFoilUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: WingFoilUITests
+    dependencies:
+      - target: WingFoil
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil.uitests
+        PRODUCT_NAME: WingFoilUITests
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: 685X8YLYSB
+        TEST_TARGET_NAME: WingFoil
+
 # THREE SCHEMES, ONE PER CHANNEL (docs/channels.md). There is deliberately no plain "WingFoil"
 # scheme any more: the name meant "the public build" through build 52 and now means the beta,
 # and a scheme that silently changed what it produces is how a beta reaches the App Store.
@@ -1007,6 +1028,7 @@ schemes:
       config: Dev Debug
       targets:
         - WingFoilTests
+        - WingFoilUITests
     profile:
       config: Dev Release
     analyze:
