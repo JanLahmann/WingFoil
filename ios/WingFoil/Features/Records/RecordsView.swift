@@ -29,6 +29,8 @@ struct RecordsView: View {
 
     /// Whether the speed table is still a table — see `RecordRowView`.
     @Environment(\.dynamicTypeSize) private var typeSize
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
 
     var body: some View {
         NavigationStack {
@@ -66,10 +68,11 @@ struct RecordsView: View {
                 }
                 if !records.isEmpty {
                     Section {
-                        // Absent, not empty, at an accessibility text size: the rows are no
-                        // longer columns there, so an empty list row with a separator would
-                        // be the only thing left of the header.
-                        if !typeSize.isAccessibilitySize {
+                        // Absent, not empty, where the rows stack (`RecordColumns.stacks`):
+                        // they are no longer columns there, so an empty list row with a
+                        // separator would be the only thing left of the header.
+                        if !RecordColumns.stacks(typeSize, horizontal: horizontalSizeClass,
+                                                 vertical: verticalSizeClass) {
                             recordsHeader
                                 .listRowInsets(EdgeInsets(top: 4, leading: 16,
                                                           bottom: 4, trailing: 16))
@@ -344,13 +347,28 @@ private struct SessionRecordRowView: View {
 /// any screen width, and on an iPad it did it with 300 pt of empty "when · where" beside it.
 /// The three fixed columns are the scannable part of the table, so on an iPad-sized window
 /// they get the room to print what they are rather than the room a 390 pt phone could spare.
+///
+/// On a phone the name column is 90 pt (30 Sep 2026): 66 pt still clipped `Best 5×10 s`,
+/// `Best 100 m`, `Best 1 NM`, `Best hour` and `Alpha 500` on a Pro Max, dot included. The
+/// delta gives back the 12 pt a `+1.27` never used, and "when · where" is the column that
+/// takes the squeeze: the date on one line, the spot under it, and only the spot truncates.
 private struct RecordColumns {
     let name: CGFloat
     let value: CGFloat
     let delta: CGFloat
 
-    static let phone = RecordColumns(name: 66, value: 58, delta: 56)
+    static let phone = RecordColumns(name: 90, value: 58, delta: 44)
     static let wide = RecordColumns(name: 112, value: 78, delta: 64)
+
+    /// **When the table stops being four columns.** At an accessibility size everywhere; on
+    /// a phone from `.xLarge` up as well, because there the three scaled columns leave
+    /// "when · where" too narrow for a date, and a clipped date is a bug. The header and
+    /// every row ask this one question, so they can never disagree.
+    static func stacks(_ typeSize: DynamicTypeSize, horizontal: UserInterfaceSizeClass?,
+                       vertical: UserInterfaceSizeClass?) -> Bool {
+        if typeSize.isAccessibilitySize { return true }
+        return typeSize > .large && !SizeClass.isWideScreen(horizontal, vertical)
+    }
 
     init(name: CGFloat, value: CGFloat, delta: CGFloat) {
         self.name = name
@@ -375,7 +393,8 @@ private struct RecordTableHeader: View {
 
     var body: some View {
         let columns = RecordColumns(horizontal: horizontalSizeClass, vertical: verticalSizeClass)
-        if !typeSize.isAccessibilitySize {
+        if !RecordColumns.stacks(typeSize, horizontal: horizontalSizeClass,
+                                 vertical: verticalSizeClass) {
             HStack(spacing: 10) {
                 Text("record").scaledColumn(columns.name, relativeTo: .subheadline)
                 Text(Fmt.knUnit)
@@ -426,7 +445,10 @@ private struct RecordRowView: View {
     /// already uses, for the same reason its own note gives.
     @Environment(\.dynamicTypeSize) private var typeSize
 
-    private var stacked: Bool { typeSize.isAccessibilitySize }
+    private var stacked: Bool {
+        RecordColumns.stacks(typeSize, horizontal: horizontalSizeClass,
+                             vertical: verticalSizeClass)
+    }
 
     var body: some View {
         let columns = RecordColumns(horizontal: horizontalSizeClass, vertical: verticalSizeClass)
@@ -509,13 +531,31 @@ private struct RecordRowView: View {
     }
 
     /// When and where the record was set — the fourth column, or the second line.
-    private var provenance: some View {
-        Text(Fmt.shortDate(best.achievedAt, zone: best.displayZone) + " · " + title)
+    ///
+    /// As a column it is two lines: the date, which must read in full, and the spot under
+    /// it, which is the one text in the row allowed to truncate. Stacked it is one sentence
+    /// that wraps.
+    @ViewBuilder private var provenance: some View {
+        let date = Fmt.shortDate(best.achievedAt, zone: best.displayZone)
+        if stacked {
+            Text(date + " · " + title)
+                .font(.caption)
+                .foregroundStyle(.readableSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(date)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                Text(title)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            }
             .font(.caption)
             .foregroundStyle(.readableSecondary)
-            .lineLimit(stacked ? 3 : 1)
-            .minimumScaleFactor(0.8)
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
     }
 
     private func badge(_ text: String, _ tint: Color) -> some View {
