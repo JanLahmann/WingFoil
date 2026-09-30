@@ -140,7 +140,12 @@
               "value": 8.261
             },
             {
-              "captions": [],
+              "captions": [
+                {
+                  "args": {},
+                  "id": "presentation.caption.noAlpha500"
+                }
+              ],
               "colourRole": "neutral",
               "key": "alpha500",
               "labelId": "presentation.label.alpha500",
