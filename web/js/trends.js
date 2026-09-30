@@ -225,7 +225,7 @@ function draw(agg, trendAgg = agg) {
     <h3 class="sub-head">Periods</h3>
     <p class="muted small">Trips, months and seasons, each with one block of numbers.</p>
     <p><button class="ghost small-btn" type="button" data-goto="periods"
-      data-umami-event="app-periods-opened">Open Periods</button></p>
+      data-umami-event="CleanJibe: app-periods-opened">Open Periods</button></p>
     <h3 class="sub-head">Session by session</h3>
     <p class="muted small">Oldest first. Click a point to open that session. A gap in a line
       is a session where the value could not be measured. It is not a zero.</p>

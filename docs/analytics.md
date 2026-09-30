@@ -47,6 +47,15 @@ seven files.
 | `app-way-` | one of the six recording classes in the analyzer's ways-in card |
 | `app-<object>-<verb>` | an action **inside** the browser app, fired from JavaScript |
 
+### The site prefix of 30 September 2026
+
+The umami website is shared with the Fun with Quantum family sites — the Hobby plan allows
+one website — and every event name there reads `<Site>: <what happened>`. So every name in
+this file reaches umami as **`CleanJibe: <name>`**: `track.js` adds the prefix for the JS
+events (call sites keep the bare name), the markup writes it out in each `data-umami-event`,
+and the install banner's longhand guard adds it too. The tables below list the bare names.
+The dashboard has a break on that date, like the one below.
+
 ### The renames of 19 September 2026
 
 Four JS events predate the scheme and were renamed with this change. The umami dashboard
