@@ -460,15 +460,18 @@ struct LibraryView: View {
     /// decided. A segmented control rather than a menu: four fixed answers, and the one in
     /// force is worth seeing without opening anything.
     private var groupControl: some View {
-        Picker("Group by", selection: Binding(
-            get: { grouping },
-            set: {
-                groupByRaw = $0.rawValue
-                Usage.record(.grouping, detail: $0.rawValue)
-            })) {
-            ForEach(LibraryGrouping.allCases) { Text($0.title).tag($0) }
+        HStack(spacing: 8) {
+            Picker("Group by", selection: Binding(
+                get: { grouping },
+                set: {
+                    groupByRaw = $0.rawValue
+                    Usage.record(.grouping, detail: $0.rawValue)
+                })) {
+                ForEach(LibraryGrouping.allCases) { Text($0.title).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            BetaChip()
         }
-        .pickerStyle(.segmented)
         .listRowInsets(.init(top: 6, leading: 16, bottom: 6, trailing: 16))
         .listRowSeparator(.hidden)
         .listRowBackground(Color.clear)
@@ -904,7 +907,7 @@ private struct WayInRow: View {
     /// the one *why* that changes what the rider does.
     let line: String
     /// Marks a door the App Store build does not have (docs/channels.md). Only a `#if
-    /// BETA` row ever passes true, so the pill can never appear in the release.
+    /// BETA` row ever passes true, and the chip (`BetaChip`) is compiled out of the release.
     var isBeta = false
     let action: () -> Void
 
@@ -920,7 +923,9 @@ private struct WayInRow: View {
                         Text(label)
                             .font(.subheadline.weight(.semibold))
                             .fixedSize(horizontal: false, vertical: true)
-                        if isBeta { BetaPill() }
+                        #if BETA
+                        if isBeta { BetaChip() }
+                        #endif
                     }
                     Text(line)
                         .font(.caption)
@@ -936,21 +941,6 @@ private struct WayInRow: View {
         }
         .buttonStyle(.plain)
         .multilineTextAlignment(.leading)
-    }
-}
-
-/// The one-word mark on a door the App Store build has not got. Small, grey and beside the
-/// label rather than in it: it says which build this is, and the rider holding a beta is
-/// not being sold anything.
-private struct BetaPill: View {
-    var body: some View {
-        Text("BETA")
-            .font(.caption2.weight(.bold))
-            .foregroundStyle(.readableSecondary)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
-            .background(Capsule().fill(Color.secondary.opacity(0.14)))
-            .accessibilityLabel("Beta")
     }
 }
 

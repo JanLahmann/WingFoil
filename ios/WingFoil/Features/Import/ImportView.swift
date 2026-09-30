@@ -187,7 +187,19 @@ struct ImportView: View {
                 StravaCompatibleMark()
             }
         } else {
+            #if BETA
+            // A door the App Store build has not got wears the Beta chip (`BetaChip`).
+            if door.channel != .release {
+                HStack(spacing: 6) {
+                    Text(door.sectionTitle)
+                    BetaChip()
+                }
+            } else {
+                Text(door.sectionTitle)
+            }
+            #else
             Text(door.sectionTitle)
+            #endif
         }
     }
 

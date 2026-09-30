@@ -275,10 +275,14 @@ struct ShareComposerView: View {
             .buttonStyle(.bordered)
             .controlSize(.large)
 
-            Text(AppShellCopy.Share.sendToUsLine)
-                .font(.caption2)
-                .foregroundStyle(.readableSecondary)
-                .frame(maxWidth: .infinity, alignment: .center)
+            HStack(spacing: 6) {
+                Text(AppShellCopy.Share.sendToUsLine)
+                    .font(.caption2)
+                    .foregroundStyle(.readableSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                BetaChip()
+            }
+            .frame(maxWidth: .infinity, alignment: .center)
         }
         .sheet(isPresented: $showSendToDeveloper) {
             SendToDeveloperSheet(row: row, detail: detail)
@@ -387,6 +391,13 @@ struct ShareComposerView: View {
     @ViewBuilder
     private var cardSection: some View {
         ShareCardPreview(card: card, design: design)
+            #if BETA
+            // The record ribbon is the session story's (a beta feature). The chip sits on
+            // the preview, never in the picture that is shared.
+            .overlay(alignment: .topTrailing) {
+                if story?.cardBadge != nil { BetaChip().padding(8) }
+            }
+            #endif
             .padding(.top, 4)
 
         // Shape, the big number (layout B v2, Jan, 26 Sep 2026) and what is behind the
@@ -418,6 +429,7 @@ struct ShareComposerView: View {
             }
             .buttonStyle(.bordered)
             .controlSize(.large)
+            .overlay(alignment: .trailing) { BetaChip().padding(.trailing, 12) }
             .sheet(isPresented: $showReel) {
                 ReelExportSheet(detail: detail, title: displayTitle)
             }

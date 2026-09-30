@@ -357,13 +357,17 @@ extension View {
     ///
     /// `note` is the answer to the mail's first question where the caller knows it — the
     /// turn page's "Not how I remember it?" names the turn (`TurnDoubt.note`).
+    ///
+    /// `focusIdea` opens the sheet with the cursor in *Your idea* — the Beta page's "What
+    /// should we test next?".
     func feedbackMail(on request: Binding<Int>, session: SessionRow? = nil,
                       card: @escaping () -> Data? = { nil },
                       subject: String? = nil,
                       note: String? = nil,
+                      focusIdea: Bool = false,
                       stagesFallbackHook: Bool = false) -> some View {
         modifier(FeedbackMailPresenter(request: request, session: session, card: card,
-                                       subject: subject, note: note,
+                                       subject: subject, note: note, focusIdea: focusIdea,
                                        stagesFallbackHook: stagesFallbackHook))
     }
 }
@@ -422,6 +426,8 @@ private struct FeedbackMailPresenter: ViewModifier {
     let subject: String?
     /// See `feedbackMail(on:…note:)`.
     let note: String?
+    /// See `feedbackMail(on:…focusIdea:)`.
+    let focusIdea: Bool
     /// Exactly one presenter answers `UI_FEEDBACK=fallback` — the Settings row's. With a
     /// footer on every page there are five on screen at launch, and five would raise five
     /// sheets on top of each other.
@@ -432,7 +438,8 @@ private struct FeedbackMailPresenter: ViewModifier {
 
     @State private var draft: Draft?
     @State private var fallback: Draft?
-    /// The "Most wanted" sheet, up before a general mail. Its answer waits in `vote` until
+    /// The feedback sheet (the beta features, the wishlist, the idea), up before a general
+    /// mail. Its answer waits in `vote` until
     /// the sheet has gone, because one view cannot present two sheets at once.
     @State private var askingWishes = false
     @State private var vote: MostWanted.Vote?
@@ -462,7 +469,7 @@ private struct FeedbackMailPresenter: ViewModifier {
                 vote = nil
                 compose(vote: answered)
             }) {
-                MostWantedSheet { vote = $0 }
+                FeedbackAskSheet(focusIdea: focusIdea) { vote = $0 }
             }
             .sheet(item: $draft) { draft in
                 MailComposeView(subject: draft.subject, messageBody: draft.body,
@@ -477,12 +484,19 @@ private struct FeedbackMailPresenter: ViewModifier {
             #if DEBUG && targetEnvironment(simulator)
             // `UI_FEEDBACK=fallback` opens the fallback sheet on launch: a simulator can never
             // send mail, and `simctl` cannot tap the row that would prove it.
+            // `UI_FEEDBACK=ask` raises the feedback sheet the same way, for its screenshot.
             .task {
-                guard stagesFallbackHook,
-                      ProcessInfo.processInfo.environment["UI_FEEDBACK"] == "fallback"
-                else { return }
-                fallback = Draft(facts: FeedbackMail.facts(store: store), attachment: nil,
-                                 subjectOverride: subject)
+                guard stagesFallbackHook else { return }
+                switch ProcessInfo.processInfo.environment["UI_FEEDBACK"] {
+                case "fallback":
+                    fallback = Draft(facts: FeedbackMail.facts(store: store), attachment: nil,
+                                     subjectOverride: subject)
+                case "ask":
+                    // After the library has settled, or the presentation is dropped.
+                    try? await Task.sleep(for: .seconds(3))
+                    askingWishes = true
+                default: break
+                }
             }
             #endif
     }
@@ -491,7 +505,8 @@ private struct FeedbackMailPresenter: ViewModifier {
         // Every feedback door ends here, so this is the one place the beta counts them.
         // The try is counted now and its answer when Mail says sent (`MailComposeView`).
         Usage.started(.feedbackMail)
-        if !vote.ticked.isEmpty { Usage.record(.mostWanted, times: vote.ticked.count) }
+        let ticks = vote.ticked.count + vote.checks.count
+        if ticks > 0 { Usage.record(.mostWanted, times: ticks) }
         let png = card()
         let attachment = png.flatMap { data in
             session.map { FeedbackMail.Attachment.card(png: data, sessionID: $0.id) }
@@ -514,56 +529,64 @@ private struct FeedbackMailPresenter: ViewModifier {
     }
 }
 
-/// **"Most wanted"** — the ticks and the free line, before a general feedback mail.
+/// **The feedback sheet** — what the rider can tell us in three taps, before a general
+/// feedback mail (Jan, 23 and 30 September 2026).
 ///
-/// The rows are the "Coming in a future release" rows this build shows
-/// (`MostWanted.offered(in:)`), so a rider is never asked about a feature his own Coming page
-/// does not name. Nothing ticked is a fine answer: *Write mail* is always enabled, and the
-/// mail then carries no Most wanted block at all.
-struct MostWantedSheet: View {
+/// * **Beta features** (beta and dev): every beta door this build has, each with *Works*
+///   and *Has a problem* (`MostWanted.checked(in:)`). How a tester proves a feature.
+/// * **Your wishlist**: what this build has not got (`MostWanted.offered(in:)`) — the rows
+///   of *Coming in a future release* in the release, the plan and the dev rows in the beta.
+/// * **Your idea**: one free line.
+///
+/// Nothing ticked is a fine answer: *Write mail* is always enabled, and the mail then
+/// carries no block at all.
+struct FeedbackAskSheet: View {
+    var focusIdea = false
     let onWrite: (MostWanted.Vote) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var ticked: Set<String> = []
+    @State private var checks: [String: MostWanted.Verdict] = [:]
     @State private var note = ""
+    @FocusState private var ideaFocused: Bool
 
     private let offered = MostWanted.offered(in: AppChannel.channel)
+    private let checked = MostWanted.checked(in: AppChannel.channel)
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section {
-                    ForEach(offered) { wish in
-                        Button {
-                            if ticked.contains(wish.id) {
-                                ticked.remove(wish.id)
-                            } else {
-                                ticked.insert(wish.id)
-                            }
-                        } label: {
-                            HStack {
-                                Text(wish.label)
-                                    .foregroundStyle(.primary)
-                                Spacer()
-                                if ticked.contains(wish.id) {
-                                    Image(systemName: "checkmark")
-                                        .foregroundStyle(.tint)
-                                        .fontWeight(.semibold)
-                                }
-                            }
-                            .contentShape(.rect)
+            ScrollViewReader { proxy in
+                Form {
+                    if !checked.isEmpty {
+                        Section {
+                            ForEach(checked) { wish in checkRow(wish) }
+                        } header: {
+                            Text(MostWanted.checkHeading)
+                        } footer: {
+                            Text(MostWanted.checkFooter)
                         }
-                        .accessibilityAddTraits(ticked.contains(wish.id) ? .isSelected : [])
                     }
-                } header: {
-                    Text(MostWanted.heading)
-                } footer: {
-                    Text(MostWanted.footer)
-                }
 
-                Section {
-                    TextField(MostWanted.notePrompt, text: $note, axis: .vertical)
-                        .lineLimit(1...4)
+                    Section {
+                        ForEach(offered) { wish in wishRow(wish) }
+                    } header: {
+                        Text(MostWanted.heading)
+                    } footer: {
+                        Text(MostWanted.footer)
+                    }
+
+                    Section {
+                        TextField(MostWanted.notePrompt, text: $note, axis: .vertical)
+                            .lineLimit(1...4)
+                            .focused($ideaFocused)
+                            .id("idea")
+                    }
+                }
+                .task {
+                    guard focusIdea else { return }
+                    try? await Task.sleep(for: .milliseconds(450))
+                    proxy.scrollTo("idea", anchor: .center)
+                    ideaFocused = true
                 }
             }
             .navigationTitle("Send feedback")
@@ -574,12 +597,64 @@ struct MostWantedSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Write mail") {
-                        onWrite(MostWanted.Vote(ticked: ticked, note: note))
+                        onWrite(MostWanted.Vote(ticked: ticked, checks: checks, note: note))
                         dismiss()
                     }
                 }
             }
         }
+    }
+
+    private func wishRow(_ wish: MostWanted.Wish) -> some View {
+        Button {
+            if ticked.contains(wish.id) {
+                ticked.remove(wish.id)
+            } else {
+                ticked.insert(wish.id)
+            }
+        } label: {
+            HStack {
+                Text(wish.label)
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer()
+                if ticked.contains(wish.id) {
+                    Image(systemName: "checkmark")
+                        .foregroundStyle(.tint)
+                        .fontWeight(.semibold)
+                }
+            }
+            .contentShape(.rect)
+        }
+        .accessibilityAddTraits(ticked.contains(wish.id) ? .isSelected : [])
+    }
+
+    /// The feature on its own line and the two answers under it, so a long name never
+    /// shares its width with two buttons (pattern N).
+    private func checkRow(_ wish: MostWanted.Wish) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(wish.label)
+                .fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 8) {
+                ForEach(MostWanted.Verdict.allCases, id: \.self) { verdict in
+                    let on = checks[wish.id] == verdict
+                    Button {
+                        checks[wish.id] = on ? nil : verdict
+                    } label: {
+                        Label(verdict.label,
+                              systemImage: verdict == .works
+                                ? "checkmark.circle" : "exclamationmark.triangle")
+                            .font(.subheadline.weight(on ? .semibold : .regular))
+                            .labelStyle(.titleAndIcon)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(on ? (verdict == .works ? Color.accentColor : .red) : .readableSecondary)
+                    .accessibilityAddTraits(on ? .isSelected : [])
+                }
+            }
+        }
+        .padding(.vertical, 2)
+        .accessibilityElement(children: .contain)
     }
 }
 

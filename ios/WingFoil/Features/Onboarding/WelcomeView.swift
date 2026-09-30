@@ -106,14 +106,8 @@ struct WelcomeView: View {
                     // Opened from the welcome, the door goes back to it.
                     .environment(\.openWelcome) { page = nil }
             case .beta:
+                // The page raises its own feedback sheet in the beta (`BetaView`).
                 BetaView()
-                    .environment(\.sendFeedback) {
-                        page = nil
-                        Task {
-                            try? await Task.sleep(for: .milliseconds(400))
-                            supportRequest += 1
-                        }
-                    }
             }
         }
         .feedbackMail(on: $supportRequest)
