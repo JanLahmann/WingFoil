@@ -62,3 +62,7 @@ fixtures/footage/**
 !fixtures/footage/*/align.json
 ios/Strava.xcconfig
 garmin/screenshots/tools/winfo
+
+# Raw recordings as they arrive (a tester's FIT, a Downloads copy), before
+# lab/tools/scrub_fit.py makes them committable. Unscrubbed: never tracked.
+fixtures/inbox/

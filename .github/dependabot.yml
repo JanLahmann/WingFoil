@@ -1,0 +1,11 @@
+# Update PRs for the actions CI runs and the kit's Swift packages (docs/security.md, F-10).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+  - package-ecosystem: swift
+    directory: /ios/WingFoilKit
+    schedule:
+      interval: monthly
