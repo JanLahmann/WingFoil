@@ -93,8 +93,8 @@ enum SessionDisplay {
     /// left to infer from a colour.
     static func riderNote(_ row: SessionRow) -> String? {
         row.rider.map {
-            "\($0)'s session, shared with you — kept out of your records, trends and gear "
-            + "totals."
+            "\($0)'s session, shared with you. It is kept out of your records, trends and "
+            + "gear totals."
         }
     }
 
