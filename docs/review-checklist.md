@@ -21,6 +21,7 @@ before reporting; a finding names the pattern letter. Two of the patterns are li
 | **K** | Footers explain the mechanism | A footer says what you get in one line; the how is a help link. | Every Settings and Import footer. |
 | **L** | Two taxonomies for one concept | One taxonomy per concept; an extra dimension is a column, never a new letter. | Routes vs classes; class B+ vs "live on the wrist". |
 | **M** | App-wide furniture on one tab | App-wide doors (menu, Settings, Help, feedback) sit on every tab in the same place. | The four tab roots share one toolbar item. |
+| **N** | Clipped text | Nothing a rider reads is cut off or ellipsed at default text size on the narrowest and the widest supported phone; at larger Dynamic Type it wraps or stacks, never clips (Jan, 30 Sep 2026: the Records names on a Pro Max). | Screenshot every table and tile row on iPhone 17 Pro and Pro Max at default and at `.xLarge`; any "…" in a name, label or number is a finding. Only a free-text field (a spot or session name) may truncate, and only at its tail. |
 
 How a round ends: the reply names the patterns of the round in one line each, the rule it
 becomes, and where it is enforced; the next work order puts the pattern fixes first so the

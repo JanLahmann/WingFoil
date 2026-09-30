@@ -13,7 +13,7 @@ before changing anything:
 - `docs/channels.md` — **which feature is in which channel** (release / beta / dev), and the
   four rules a feature meets before it moves up one. The website's "what is coming" list, the
   app's Beta section and the store texts are written from it, never the other way round.
-- `docs/review-checklist.md` — the patterns behind Jan's feedback (A–M); every review of a
+- `docs/review-checklist.md` — the patterns behind Jan's feedback (A–N); every review of a
   rider-facing surface runs it and names the pattern in its finding.
 - `docs/screens.md` — **the screen inventory**: every iOS screen with its empty state, its
   doors and its channel, beside what the web and the watch do with it, plus the web's
