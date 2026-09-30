@@ -45,7 +45,7 @@ launch 120 UI_RESET=1 UI_IMPORT_FIXTURES=1 UI_LOAD_EXAMPLE=1
 
 launch 20 UI_WELCOME=1;                                              shot 01-welcome.png
 launch 25 UI_OPEN_SESSION=latest;                                    shot 02-session.png
-launch 25 UI_OPEN_SESSION=latest UI_OPEN_TURNS=1;                    shot 03-turns.png
+launch 30 UI_OPEN_SESSION=latest UI_OPEN_TURNS=1 UI_SCROLL_TO=turnList; shot 03-turns.png
 launch 25 UI_OPEN_SESSION=latest UI_OPEN_TURNS=1 UI_OPEN_TURN=3;     shot 04-turn.png
 launch 20 UI_TAB=records;                                            shot 05-records.png
 launch 30 UI_OPEN_SESSION=latest UI_SHEET=share UI_MAP=1 UI_STATS=complete

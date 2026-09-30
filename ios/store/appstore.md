@@ -391,7 +391,7 @@ refuses to start while the screen is locked. Run it from the repo root on an unl
 |---|---|---|---|
 | 1 | `01-welcome.png` | the welcome screen, the tagline under the wordmark | `UI_WELCOME=1` |
 | 2 | `02-session.png` | the session page: the track, the key numbers | `UI_OPEN_SESSION=latest` |
-| 3 | `03-turns.png` | the Turns tab: every verdict, clean jibes, the dry streak | `+ UI_OPEN_TURNS=1` |
+| 3 | `03-turns.png` | the Turns tab's list: every turn with its verdict | `+ UI_OPEN_TURNS=1 UI_SCROLL_TO=turnList` |
 | 4 | `04-turn.png` | one turn's page, the speed through the turn and the why-line | `+ UI_OPEN_TURN=3` |
 | 5 | `05-records.png` | the Records tab across the fixture corpus | `UI_TAB=records` |
 | 6 | `06-share-card.png` | the share card with the map behind the track | `UI_SHEET=share UI_MAP=1 UI_STATS=complete` |
