@@ -107,6 +107,24 @@ caption and the list move together. The legend chooses *what is drawn about them
 to failures and hiding the pumping runs are different intentions; neither control may imply
 the other.
 
+**The caption under the Turns and Takeoffs maps counts what the map draws** (Jan, 30 Sep 2026,
+build 119). Filtered to tacks on a session with none, the Turns map said *"Nothing to mark.
+Widen the filters."* over a map of wrist-under diamonds. The diamonds are right to be there —
+they are unfiltered by standing decision (§ "Wrist under" above: an episode belongs to the
+afternoon) — so the caption is what moved. `FocusMapCaption` in the kit reads every layer the
+map draws, in three cases:
+
+1. the page's own marks are drawn: *3 turns marked · tap a row below to open it.* — counted
+   after the layer chips, so a hidden verdict is not "marked";
+2. the filter kept marks but the chips hide all of them: *The layers below hide every turn in
+   this filter.* — "widen the filters" would send the rider to the wrong control;
+3. the filter kept nothing: say what is still drawn — *The diamonds mark each time your wrist
+   went under.*, *The grey dots are course changes.* — and only with nothing drawn at all
+   *Nothing to mark. Widen the filters.*
+
+The Takeoffs map reads the same three cases over its attempts and diamonds. The web has no
+caption under its map; its filtered map is the Ride map, whose legend tally already counts.
+
 ### The Takeoffs map
 
 The Takeoffs section's map is the Turns map's sibling — the same frame, the same legend, the

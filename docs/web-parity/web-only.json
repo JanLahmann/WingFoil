@@ -14,6 +14,11 @@
   "schema": "cleanjibe.web-only/1",
   "entries": [
     {
+      "path": "web/js/turncards.js",
+      "text": "No turn in this session matches these chips.",
+      "reason": "the tally's empty state under the browser's kind chips; the phone filters with two segments and says TurnFilter.emptySentence (\"No tacks in this session.\") instead"
+    },
+    {
       "path": "web/app/index.html",
       "text": "Drop a wingfoil .fit file and get the session back",
       "reason": "the page's own meta description and share-card alt text: the website's, not a screen's"

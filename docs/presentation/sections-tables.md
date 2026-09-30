@@ -79,6 +79,30 @@ therefore on every section.
   phone. A tab that is quietly half of what its name promises is worse than one that admits
   the half it has.
 
+### No dash as a heading
+
+Jan, 30 Sep 2026, on build 119 (Turns tab, filter Tacks, a session with none): the tally
+card read **"—" · flew through · no tacks in this session** over three chips of zero. A dash
+where the number goes is a heading made of a dash, and three zeros are a verdict the rider
+never had. The rule, on every card of the session page:
+
+- **A card with no number says why in one sentence, in the number's place.** The Turns tally
+  becomes `TurnFilter.emptySentence` — *No tacks in this session.*, *No jibes entered on
+  starboard in this session.* — with no share and no chips, and the turn list under the map
+  says nothing more (the course-change line is the footnote's). The web's tally does the same
+  under its kind chips: *No turn in this session matches these chips.*
+- **A tile whose number is missing puts its reason where the number goes** (`StatCard` with
+  a nil value): the HR card's four stats (*no stroke counts on this source*) and its headline
+  (`HrCostCard.noTakeoffCost`, *None of your takeoffs had a usable heart rate.*).
+- **A tile that can never have a number on this recording is left out**, with one note under
+  the grid, as the accelerometer tiles already were (F12a): when the recording cut every
+  takeoff run, *Pumps to takeoff* and *Takeoff run* go and the note says *The recording cut
+  every takeoff run short, so none is measured.*
+- **A table cell keeps its dash**, because its column head names it and the row says why
+  beside it (the records table's *no qualifying run*, the attempt list's pumps column). The
+  key-metrics block's *5×10 s* and *alpha 500* are the presentation document's cells and are
+  left to a lab round.
+
 ### The HR card's own title
 
 The card under the takeoff content is headed **"What pumping cost"**, not "Effort — what

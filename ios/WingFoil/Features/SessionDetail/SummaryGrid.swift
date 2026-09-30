@@ -350,7 +350,7 @@ struct SessionTakeoffSection: View {
                     if !words.pumping {
                         StatCard(title: "Planing starts", value: "\(k.takeoffSuccesses)",
                                  caption: "one per planing run", help: .takeoffAttempts)
-                        runCard(k, title: "Run to planing")
+                        if let avg = k.avgTakeoffS { runCard(k, avg: avg, title: "Run to planing") }
                     } else {
                         // **One card for takeoffs and attempts** (Jan, F12b). "Takeoffs 19 of
                         // 19 attempts" and "Attempts 19 · all got up" were one fact twice,
@@ -365,15 +365,19 @@ struct SessionTakeoffSection: View {
                                             ?? "")
                                      : "one starts every flight",
                                  help: .takeoffAttempts)
-                        if hasAccel {
+                        // **No dash as a heading** (30 Sep 2026): a run the recording cut
+                        // has no pump count and no time, so with no whole run the two cards
+                        // are left out and the note under the grid says why.
+                        if hasAccel, let avg = k.avgPumpsToTakeoff {
                             StatCard(title: "Pumps to takeoff",
-                                     value: k.avgPumpsToTakeoff.map { String(format: "%.1f", $0) }
-                                         ?? "—",
-                                     caption: "median \(k.medianPumpsToTakeoff.map { String(format: "%.0f", $0) } ?? "—")"
+                                     value: String(format: "%.1f", avg),
+                                     caption: "median "
+                                         + (k.medianPumpsToTakeoff.map { String(format: "%.0f", $0) }
+                                            ?? String(format: "%.0f", avg))
                                          + " · \(k.freeTakeoffs) free",
-                                     dimmed: k.avgPumpsToTakeoff == nil, help: .pumpsToTakeoff)
+                                     help: .pumpsToTakeoff)
                         }
-                        runCard(k, title: "Takeoff run")
+                        if let avg = k.avgTakeoffS { runCard(k, avg: avg, title: "Takeoff run") }
                         if hasAccel, let strokes = k.totalPumpStrokes {
                             StatCard(title: "Pump strokes", value: "\(strokes)",
                                      caption: "\(k.inFlightPumpStrokes ?? 0) in flight · "
@@ -385,6 +389,14 @@ struct SessionTakeoffSection: View {
                 // **One small note instead of a row of dashes** (Jan, F12a). Every card that
                 // needs the wrist accelerometer is left out on a recording that has none;
                 // a "—" under "Pumps to takeoff" read as a measurement that failed.
+                if k.avgTakeoffS == nil {
+                    Label("The recording cut every "
+                          + (words.pumping ? "takeoff run" : "run to planing")
+                          + " short, so none is measured.", systemImage: "scissors")
+                        .font(.caption2)
+                        .foregroundStyle(.readableSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 if words.pumping, !hasAccel {
                     Label("No accelerometer in this recording, so pumps and failed "
                           + "attempts are not counted.", systemImage: "sensor.tag.radiowaves.forward")
@@ -399,14 +411,13 @@ struct SessionTakeoffSection: View {
     private var hasAccel: Bool { detail.analysis.capabilities.hasAccel }
 
     /// How long the run to foil (or to planing) took, and how many runs that is over.
-    private func runCard(_ k: TakeoffSummary, title: String) -> some View {
+    private func runCard(_ k: TakeoffSummary, avg: Double, title: String) -> some View {
         StatCard(title: title,
-                 value: k.avgTakeoffS.map { String(format: "%.1f s", $0) } ?? "—",
+                 value: String(format: "%.1f s", avg),
                  caption: k.runsTruncated > 0
                      ? String(k.runsJudged) + " judged · "
                          + String(k.runsTruncated) + " not in the record"
-                     : "average over " + String(k.runsJudged) + " runs",
-                 dimmed: k.avgTakeoffS == nil)
+                     : "average over " + String(k.runsJudged) + " runs")
     }
 
     /// **The headline of this tab is what did not work.**
@@ -454,7 +465,9 @@ struct SessionTakeoffSection: View {
 
 struct StatCard: View {
     let title: String
-    let value: String
+    /// nil when there is no number: the caption, which then says why, takes its place. A
+    /// bare "—" in the number's slot read as a heading made of a dash (30 Sep 2026).
+    let value: String?
     var caption: String = " "
     var dimmed = false
     var highlighted = false
@@ -474,20 +487,27 @@ struct StatCard: View {
                 if let help { HelpButton(topic: help, size: .caption2, ink: .readableSecondary) }
                 Spacer(minLength: 0)
             }
-            Text(value)
-                .font(.title3.weight(.semibold))
-                .monospacedDigit()
-                .foregroundStyle(dimmed ? .readableSecondary : .primary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
-            Text(caption)
-                .font(.caption2)
-                .foregroundStyle(captionColor ?? Color.readableSecondary)
-                .minimumScaleFactor(0.8)
-                // No line limit: the card is as tall as its caption needs, and the grid row
-                // takes the tallest card. Two lines was a ceiling measured at the default
-                // text size and a truncation at every size above it.
-                .fixedSize(horizontal: false, vertical: true)
+            if let value {
+                Text(value)
+                    .font(.title3.weight(.semibold))
+                    .monospacedDigit()
+                    .foregroundStyle(dimmed ? .readableSecondary : .primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                Text(caption)
+                    .font(.caption2)
+                    .foregroundStyle(captionColor ?? Color.readableSecondary)
+                    .minimumScaleFactor(0.8)
+                    // No line limit: the card is as tall as its caption needs, and the grid
+                    // row takes the tallest card. Two lines was a ceiling measured at the
+                    // default text size and a truncation at every size above it.
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                Text(caption)
+                    .font(.subheadline)
+                    .foregroundStyle(.readableSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)

@@ -952,6 +952,7 @@ details.help-section[open] > summary { border-bottom: 1px solid var(--line-soft)
 .tt-words { display: flex; flex-direction: column; gap: 1px; }
 .tt-label { font-weight: 600; font-size: 13px; }
 .tt-sub, .tt-clean { color: var(--ink-3); font-size: 12px; }
+.tt-empty { margin: 0; color: var(--ink-3); font-size: 13px; }
 .tt-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .tt-chip { display: inline-flex; align-items: center; gap: 5px; }
 .tt-n { font-variant-numeric: tabular-nums; font-size: 12px; color: var(--ink-2); }

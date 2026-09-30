@@ -120,7 +120,30 @@ struct TurnsAnalysisView: View {
 
     // MARK: - Tally
 
+    /// The filtered tally, or — when the filter keeps nothing — one plain sentence.
+    ///
+    /// **No dash as a heading** (Jan, 30 Sep 2026, build 119): with no tacks the card used to
+    /// set "—" where the share goes, "flew through" beside it and three zero chips under it.
+    /// A rider who never tacked has no flew-through share, so the card says the one true
+    /// thing instead (`TurnFilter.emptySentence`), and the list under the map stays empty
+    /// rather than saying it a second time.
+    @ViewBuilder
     private var tallyStrip: some View {
+        if tally.total == 0 {
+            Text(filter.emptySentence)
+                .font(.subheadline)
+                .foregroundStyle(.readableSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.secondary.opacity(0.10), in: .rect(cornerRadius: 12))
+                .id("tally")
+        } else {
+            filledTally
+        }
+    }
+
+    private var filledTally: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline, spacing: 10) {
                 Text(Fmt.pct(tally.flewThroughPct))
@@ -128,16 +151,14 @@ struct TurnsAnalysisView: View {
                 VStack(alignment: .leading, spacing: 1) {
                     Text("flew through")
                         .font(.subheadline.weight(.medium))
-                    Text(tally.total > 0
-                         ? String(tally.flewThrough) + " of " + String(tally.total)
-                            + " " + filter.description
-                         : "no " + filter.description + " in this session")
+                    Text(String(tally.flewThrough) + " of " + String(tally.total)
+                         + " " + filter.description)
                         .font(.caption2)
                         .foregroundStyle(.readableSecondary)
                     // The stricter verdict, under the looser one and never on the ladder's
                     // inks: "flew through" is how the turn ended, "clean" is whether the
                     // speed came through it. Same set of turns, two different questions.
-                    if tally.total > 0 {
+                    if tally.jibes > 0 {
                         Text(tally.cleanCaption)
                             .font(.caption2)
                             .foregroundStyle(.readableSecondary)
@@ -156,7 +177,7 @@ struct TurnsAnalysisView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.secondary.opacity(0.10), in: .rect(cornerRadius: 12))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(tally.total > 0
+        .accessibilityLabel(tally.jibes > 0
                             ? "\(filter.description): \(tally.caption), \(tally.cleanCaption)"
                             : "\(filter.description): \(tally.caption)")
         .id("tally")
@@ -254,11 +275,15 @@ struct TurnsAnalysisView: View {
         .id("turnsMap")
     }
 
+    /// Counted from what the map draws — the pins the layer chips allow, and the
+    /// session-wide wrist-under and course-change marks beside them — so it cannot say
+    /// "nothing to mark" over a map of diamonds (`FocusMapCaption`, 30 Sep 2026).
     private var caption: String {
-        pins.isEmpty
-            ? "Nothing to mark. Widen the filters."
-            : String(pins.count) + (pins.count == 1 ? " turn" : " turns")
-                + " marked · tap a row below to open it."
+        FocusMapCaption.turns(
+            drawn: drawnPins.count, kept: pins.count,
+            wristUnder: visibility.isVisible(.splash) ? detail.splashMarks.count : 0,
+            courseChanges: visibility.isVisible(.courseChange)
+                ? detail.courseChangeMarkers.count : 0)
     }
 
     private var visibility: MapLayerVisibility { store.mapLayers(for: .turns) }
@@ -279,16 +304,11 @@ struct TurnsAnalysisView: View {
 
     // MARK: - List
 
+    /// The rows, and nothing when the filter keeps none: the tally card above already says
+    /// "No tacks in this session.", and the course-change line is the footnote's.
     @ViewBuilder
     private var list: some View {
-        if items.isEmpty {
-            ContentUnavailableView("No \(filter.description)",
-                                   systemImage: "arrow.trianglehead.2.clockwise.rotate.90",
-                                   description: Text("This session has none. "
-                                                     + "Bear-aways and round-ups are course "
-                                                     + "changes, never manoeuvres."))
-                .frame(maxWidth: .infinity, minHeight: 160)
-        } else {
+        if !items.isEmpty {
             LazyVStack(alignment: .leading, spacing: 0) {
                 ForEach(items) { item in
                     Button {
