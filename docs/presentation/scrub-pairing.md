@@ -32,6 +32,17 @@
   Reduce Motion, never under VoiceOver, never for a tap or a page turn, and it takes no
   touches. The lasting home of the fact is the help topic "Reading the map", whose sentence
   names the iPhone app because the site's maps keep one-finger panning.
+- **A segment row takes taps, never a vertical drag** (iOS, 30 Sep 2026, Jan on dev 120:
+  "scroll back up on turns section still does not work"). A finger that starts on a row of
+  segments — the tab switcher, the Turns and Flights filters, every choice in Settings, the
+  share and replay sheets — and goes up or down scrolls the page; a tap picks the segment. A
+  native `UISegmentedControl` could not keep that promise: a scroll view never takes back a
+  touch a `UIControl` has held past its content delay (≈ 150 ms), so a thumb that rested on
+  the row before it moved held the page still. Every segmented choice in the app is therefore
+  `SegmentRow` — the native look (capsule track, lighter thumb), plain SwiftUI buttons, and a
+  segmented `Picker` as its accessibility representation, so VoiceOver reads it as the native
+  control. No `.pickerStyle(.segmented)` in the app target; `MapScrollUITests` drags down from
+  a resting thumb on each Turns filter row, on the selected segment and an unselected one.
 - Zoom state is transient per session view — but it survives a section change, which is not
   a new session view (see "Sections" above). On iOS that means the window is owned by
   `SessionDetailView`, not by the chart.
