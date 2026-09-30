@@ -117,7 +117,8 @@ build) the heading and barometer strips' rules are one instant, whichever surfac
 touched. That is the app's one-playhead rule ("Scrub and zoom"), and the drawing was the last
 place it did not hold. The callout therefore appears for a scrub as well as for a tap: two
 fingers asking the same question deserve the same answer. It is a **tap** and not a drag,
-which the first version was: both detail pages live in a paging `TabView`, and a
+which the first version was: both detail pages lived in a paging `TabView` then (the session
+page's pager since 28 Sep 2026, "Scrub and zoom"), and a
 zero-distance drag over the drawing swallowed the swipe to the next turn *and* fired as the
 pager settled, opening a page with a playhead nobody had asked for.
 

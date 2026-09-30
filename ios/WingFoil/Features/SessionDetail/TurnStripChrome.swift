@@ -122,14 +122,15 @@ enum StripChrome {
                 Rectangle()
                     .fill(.clear)
                     .contentShape(.rect)
-                    // A tap places the playhead; a drag scrubs once it has moved more
-                    // across than down (`ScrubPan`). The scroll view has to be able to start
-                    // on a vertical finger — the strips are a third of the turn page, and
-                    // stacked in the dev build they were a wall the page could not be
-                    // scrolled past (Jan, 25 Sep 2026). A SwiftUI drag, simultaneous or not,
-                    // took the touch before it knew which way it was going; the UIKit pan
-                    // fails at once on a vertical finger, and a sideways one is the scrub's
-                    // alone, so it no longer swipes the sheet to the next turn either.
+                    // A tap places the playhead; a drag scrubs once it has shown itself
+                    // clearly more across than down (`ScrubPan`, `DragClaim`). The scroll
+                    // view has to be able to start on a vertical finger — the strips are a
+                    // third of the turn page, and stacked in the dev build they were a wall
+                    // the page could not be scrolled past (Jan, 25 Sep 2026), and a thumb
+                    // that leaned sideways first still stuck it (28 Sep). A SwiftUI drag,
+                    // simultaneous or not, took the touch before it knew which way it was
+                    // going; the UIKit recogniser lets go of anything but a flat drag, and a
+                    // flat one is the scrub's alone, so it never swipes the sheet either.
                     .onTapGesture { location in
                         guard let rt: Double = proxy.value(atX: location.x - frame.origin.x)
                         else { return }
@@ -142,6 +143,9 @@ enum StripChrome {
                         playheadRt.wrappedValue =
                             min(max(rt, domain.lowerBound), domain.upperBound)
                     })
+                    // A drag that starts on a strip is the strip's: it never turns the sheet
+                    // to the next turn (`SessionPager`, rule 2 in `ScrubPan`).
+                    .pagerExclusionZone()
             }
         }
     }

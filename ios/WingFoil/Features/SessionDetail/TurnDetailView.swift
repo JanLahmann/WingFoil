@@ -32,6 +32,8 @@ struct TurnDetailSheet: View {
     /// onto one — and the success haptic follows it. A counter rather than the selection so
     /// swiping between two clean jibes taps twice and a touchdown never taps.
     @State private var cheers = 0
+    /// The pager's ‹ › request; the sheet has no buttons for it, so it stays nil.
+    @State private var pageRequest: SessionPaging.Step?
 
     init(detail: SessionDetail, start: Int) {
         self.detail = detail
@@ -49,15 +51,26 @@ struct TurnDetailSheet: View {
         indices.firstIndex(of: selection).map { $0 + 1 }
     }
 
+    /// The turn `step` places away in the swipe set, as the pager's id; nil at either end.
+    private func neighbour(_ step: Int) -> String? {
+        guard let at = indices.firstIndex(of: selection),
+              indices.indices.contains(at + step) else { return nil }
+        return String(indices[at + step])
+    }
+
     var body: some View {
         NavigationStack {
-            TabView(selection: $selection) {
-                ForEach(indices, id: \.self) { index in
-                    TurnDetailPage(detail: detail, index: index)
-                        .tag(index)
-                }
-            }
-            .tabViewStyle(.page(indexDisplayMode: .never))
+            // The session page's pager, not a page-style `TabView` (Jan, 28 Sep 2026: "scrolling
+            // gets stuck"). The `TabView` is a paging scroll view around the page's own, and
+            // a vertical scroll view inside a horizontal one gives the touch up on any drag
+            // whose first points lean sideways — which a thumb's do — so the page would not
+            // move. `SessionPager` is a drag beside the scroll, not a scroll view around it,
+            // and it turns only on a clearly sideways drag (`SessionPaging.isHorizontal`).
+            SessionPager(older: neighbour(-1), newer: neighbour(+1),
+                         request: $pageRequest,
+                         onTurn: { id in if let index = Int(id) { selection = index } },
+                         page: TurnDetailPage(detail: detail, index: selection).id(selection),
+                         preview: { id in TurnDetailPage(detail: detail, index: Int(id) ?? selection) })
             // One per visit to the turn page, not one per swipe: the question the beta has
             // is whether the page is reached at all.
             .task { Usage.record(.turnPage) }

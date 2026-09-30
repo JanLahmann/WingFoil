@@ -8,13 +8,19 @@
   scrubber; web: wheel/pinch). While zoomed: scrubbing works within the window, a reset
   affordance is visible, the window's place in the session is indicated, and markers and
   shading outside the visible domain are not drawn.
-- **Which finger is whose** (iOS, 25 Sep 2026). On every chart and strip a tap places the
-  playhead and a *sideways* drag scrubs; an up-or-down finger scrolls the page past it
-  (`ScrubPan`, a UIKit pan that fails at once on a vertical finger and that the scroll
-  view, a paging `TabView` and a sheet's dismiss all wait for). So the turn and flight-end
-  pages scroll to their foot from anywhere, and a scrub on a strip never swipes to the next
-  turn. On the session page a drag that starts on the map, the chart or the replay slider
-  belongs to it and never turns the page (`pagerExclusionZone`).
+- **Which finger is whose** (iOS, 25 Sep 2026; 28 Sep). On every chart and strip a tap
+  places the playhead and a *sideways* drag scrubs; an up-or-down finger scrolls the page
+  past it (`ScrubPan`, a UIKit recogniser that the scroll view and a sheet's dismiss wait
+  for). It makes its call after 20 pt of travel and scrubs only a drag at least 1.5× as wide
+  as tall (`DragClaim`, in the kit); anything else is the page's. The turn and flight-end
+  sheets page between turns with the session page's pager (`SessionPager`,
+  `SessionPaging.isHorizontal`), not a page-style `TabView`: a vertical scroll view inside a
+  paging one lets go of any drag whose first points lean sideways, and a thumb's do, so the
+  page stuck (Jan, 28 Sep 2026: "scrolling gets stuck … trying to scroll up again"). So the
+  turn and flight-end pages scroll to their foot from anywhere, and a drag that starts on a
+  strip is the strip's and never turns to the next turn. On the session page a drag that
+  starts on the map, the chart or the replay slider belongs to it and never turns the page
+  (`pagerExclusionZone`, which the strips carry too).
 - Zoom state is transient per session view — but it survives a section change, which is not
   a new session view (see "Sections" above). On iOS that means the window is owned by
   `SessionDetailView`, not by the chart.

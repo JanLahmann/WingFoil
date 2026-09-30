@@ -32,6 +32,8 @@ struct FlightEndDetailSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var selection: Int
+    /// The pager's ‹ › request; the sheet has no buttons for it, so it stays nil.
+    @State private var pageRequest: SessionPaging.Step?
 
     init(detail: SessionDetail, start: Int) {
         self.detail = detail
@@ -43,15 +45,24 @@ struct FlightEndDetailSheet: View {
 
     private var position: Int? { indices.firstIndex(of: selection).map { $0 + 1 } }
 
+    /// The flight end `step` places away in the swipe set, as the pager's id; nil at the ends.
+    private func neighbour(_ step: Int) -> String? {
+        guard let at = indices.firstIndex(of: selection),
+              indices.indices.contains(at + step) else { return nil }
+        return String(indices[at + step])
+    }
+
     var body: some View {
         NavigationStack {
-            TabView(selection: $selection) {
-                ForEach(indices, id: \.self) { index in
-                    FlightEndDetailPage(detail: detail, index: index)
-                        .tag(index)
-                }
-            }
-            .tabViewStyle(.page(indexDisplayMode: .never))
+            // The session page's pager, for the reason the turn sheet gives: a paging
+            // `TabView` around the page's scroll view stuck it on a thumb that leaned first.
+            SessionPager(older: neighbour(-1), newer: neighbour(+1),
+                         request: $pageRequest,
+                         onTurn: { id in if let index = Int(id) { selection = index } },
+                         page: FlightEndDetailPage(detail: detail, index: selection).id(selection),
+                         preview: { id in
+                             FlightEndDetailPage(detail: detail, index: Int(id) ?? selection)
+                         })
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
