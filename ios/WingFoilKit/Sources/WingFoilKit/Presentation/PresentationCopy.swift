@@ -101,7 +101,7 @@ public enum PresentationCopy {
         "ofTurns": Line("of {turns} turns"),
         // Why a speed cell has no number, drawn where the number goes (30 Sep 2026). The
         // engine's own condition per record, `PresentationDocument.recordMissingCaptions`.
-        "noAlpha500": Line("no 500 m run that turned back to its start"),
+        "noAlpha500": Line("no 500 m out-and-back"),
         "noBest5x10s": Line("no unbroken 10 s of track"),
         "noMax2s": Line("no unbroken 2 s of track"),
     ]
