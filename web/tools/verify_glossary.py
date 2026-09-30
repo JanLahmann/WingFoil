@@ -127,8 +127,14 @@ COPY_GROUPS = [
 
 #: What `cardstats.js` hangs a cell's qualifier off. A caption is not a name: "of 55 jibes"
 #: and "4 in a turn · 21 in a straight line" qualify the number, they do not call it
-#: anything. Kept in step with `CAPTION_SEP` in js/cardstats.js and `KeyMetricsView`.
-CAPTION_SEP = " — "
+#: anything. A comma since 30 Sep 2026 (docs/voice.md rule 4: no em dash in rider text);
+#: `main` holds `CAPTION_SEP` in js/cardstats.js and `captionSep` in `KeyMetricsView` to it.
+CAPTION_SEP = ", "
+SEPARATOR_SITES = [
+    (os.path.join(ROOT, "js", "cardstats.js"), r'export const CAPTION_SEP = "([^"]*)";'),
+    (os.path.join(REPO, "ios", "WingFoil", "Features", "SessionDetail", "KeyMetricsView.swift"),
+     r'private static let captionSep = "([^"]*)"'),
+]
 
 #: The six speed records the watch-vs-phone table can name come from
 #: `tokens.recordWindow.<id>` (design/tokens.json), not from the copy file — there is one
@@ -255,6 +261,12 @@ def main(argv=None) -> int:
         for label in found:
             checked += 1
             seen.append((path, label, where, known(label, glossary)))
+    for path, pattern in SEPARATOR_SITES:
+        found = re.search(pattern, open(path, encoding="utf-8").read())
+        if not found or found.group(1) != CAPTION_SEP:
+            problems.append("%s: the label-caption separator is %r, not %r"
+                            % (os.path.relpath(path, REPO),
+                               found.group(1) if found else None, CAPTION_SEP))
     for path, label, where in EXTRA:
         checked += 1
         seen.append((path, label, where, known(label, glossary)))
