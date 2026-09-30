@@ -48,17 +48,24 @@ public struct KeyMetrics: Sendable, Equatable {
         /// Empty on every single-valued cell; `value` still spells the whole pair, so a
         /// renderer that ignores the parts prints the truth in one colour.
         public let parts: [Part]
+        /// **Why there is no number** — "no unbroken 10 s of track" — on a speed cell whose
+        /// record the session did not set (30 Sep 2026). The view draws it where the number
+        /// goes: a bare "—" there read as a heading made of a dash. nil on every cell that
+        /// has a number; `value` still spells the dash for a renderer that ignores this.
+        public let missing: String?
 
         public var id: String { key }
 
         public init(key: String, label: String, value: String, caption: String? = nil,
-                    colourRole: String = "neutral", parts: [Part] = []) {
+                    colourRole: String = "neutral", parts: [Part] = [],
+                    missing: String? = nil) {
             self.key = key
             self.label = label
             self.value = value
             self.caption = caption
             self.colourRole = colourRole
             self.parts = parts
+            self.missing = missing
         }
     }
 
@@ -248,14 +255,20 @@ public struct KeyMetrics: Sendable, Equatable {
     static func metric(_ cell: PresentationValue) -> Metric {
         let key = cell["key"]?.stringValue ?? ""
         let labelID = cell["labelId"]?.stringValue ?? ""
-        let caption = (cell["captions"]?.arrayValue ?? []).first
-            .flatMap(PresentationCopy.captionText)
+        let first = (cell["captions"]?.arrayValue ?? []).first
+        let caption = first.flatMap(PresentationCopy.captionText)
+        // The document emits a record's missing-reason caption only on a record the session
+        // did not set, so the id is the whole test: nothing is re-derived here.
+        let isMissing = first?["id"]?.stringValue.map { id in
+            PresentationDocument.recordMissingCaptions.values.contains(id)
+        } ?? false
         return Metric(key: key,
                       label: PresentationCopy.text(labelID, glossary: glossaryForm(key)) ?? "",
-                      value: value(cell),
-                      caption: caption,
+                      value: isMissing ? "—" : value(cell),
+                      caption: isMissing ? nil : caption,
                       colourRole: cell["colourRole"]?.stringValue ?? "neutral",
-                      parts: parts(cell))
+                      parts: parts(cell),
+                      missing: isMissing ? caption : nil)
     }
 
     /// A pair cell's halves, each in its own ink. Empty on a single-valued cell.

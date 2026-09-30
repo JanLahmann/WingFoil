@@ -192,6 +192,29 @@ public enum PresentationDocument {
         return .object(out)
     }
 
+    /// **Why a speed cell has no number** — the caption a record the session did not set
+    /// carries, and the renderer draws where the number goes (Jan, 30 Sep 2026). Each names
+    /// the engine's own condition (`GP3SCalculator`): the 2 s and 10 s windows need that
+    /// long a stretch of track with no GPS gap; 5×10 s averages however many disjoint 10 s
+    /// windows exist, so it is missing exactly when no 10 s window is; alpha 500 needs a
+    /// 250–500 m run that turned back to within 50 m of its start. Twin of the lab's
+    /// `RECORD_MISSING_CAPTIONS`.
+    static let recordMissingCaptions: [String: String] = [
+        "max2s": "presentation.caption.noMax2s",
+        "best5x10s": "presentation.caption.noBest5x10s",
+        "alpha500": "presentation.caption.noAlpha500",
+    ]
+
+    /// One cell of the speed row. nil — or the `0.0` an analysis golden writes for the
+    /// same absence — is a record not set, and the cell carries its reason. Twin of the
+    /// lab's `_record_cell`.
+    static func recordCell(_ key: String, _ kn: Double?) -> PresentationValue {
+        let missing = !((kn ?? 0) > 0)
+        return cell(key, "presentation.label." + key, value: number(kn, "speedKn"),
+                    unitKind: "speedKn",
+                    captions: missing ? [caption(recordMissingCaptions[key] ?? "")] : [])
+    }
+
     static func caption(_ id: String, _ args: [String: PresentationValue] = [:])
     -> PresentationValue {
         .object(["id": .string(id), "args": .object(args)])
@@ -236,12 +259,9 @@ public enum PresentationDocument {
         // Row 2 names the WINDOW, not the peak. The two composites beside it are
         // block-only: the card is the block minus them, because a card carries one speed.
         rows.append(.object(["id": .string("speed"), "cells": .array([
-            cell("max2s", "presentation.label.max2s",
-                 value: number(records.best2sKn, "speedKn"), unitKind: "speedKn"),
-            cell("best5x10s", "presentation.label.best5x10s",
-                 value: number(records.best5x10sKn, "speedKn"), unitKind: "speedKn"),
-            cell("alpha500", "presentation.label.alpha500",
-                 value: number(records.alpha500Kn, "speedKn"), unitKind: "speedKn"),
+            recordCell("max2s", records.best2sKn),
+            recordCell("best5x10s", records.best5x10sKn),
+            recordCell("alpha500", records.alpha500Kn),
         ])]))
 
         var turnCells: [PresentationValue] = []
