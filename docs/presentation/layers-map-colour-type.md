@@ -515,7 +515,7 @@ which is the one thing it may not do. Everything on it is repeated on the Welcom
 which scales without a ceiling.
 
 **Columns grow with the type** (`scaledColumn(_:relativeTo:)`, a `@ScaledMetric` frame): a
-92 pt record-name column pinned to `.subheadline` grows in step with the `.subheadline`
+90 pt record-name column pinned to `.subheadline` grows in step with the `.subheadline`
 inside it, so the table stays a table instead of truncating the very name the width was
 chosen to hold. Card grids scale their `.adaptive` minimum the same way, so a two-up grid
 falls to one column of full-width cards exactly when two stop fitting. **Label-and-value
@@ -524,10 +524,13 @@ card's rows put the value under the label instead of beside it, and the key-metr
 two to a line instead of three.
 
 **And two surfaces give the table up rather than shrink it.** Scaled columns hold to about
-`.accessibility2` and no further, so past the accessibility threshold the **all-time records
+`.accessibility2` and no further, so past the accessibility threshold, and on a phone from
+`.xLarge` up where the scaled columns leave a date no room, the **all-time records
 row** stops being four columns: the name takes the width it needs, the value keeps the right
 edge, and the delta leads a second line with "when · where" behind it — the header
-disappears with the columns it named, because a heading over nothing is worse than none.
+disappears with the columns it named, because a heading over nothing is worse than none. As a
+column, "when · where" is two lines, the date and the spot under it, and only the spot may
+truncate.
 The **spot/gear filter bar** on Records and Trends becomes a horizontal scroller for the same
 reason: "All spots" truncated to "All s…" is a filter that no longer says what it filters.
 

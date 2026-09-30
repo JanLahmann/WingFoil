@@ -467,8 +467,9 @@ still a phone):
   of "Pairing" is about the shared playhead and the shared tap, not about a scroll — which is
   why the compact heights exist for the one screen where it *is* about the fold, a phone on
   its side.
-* **The speed table's fixed columns widen** (`RecordColumns`): 66 / 58 / 56 pt on a phone,
-  112 / 78 / 64 on an iPad. The three fixed columns are what makes the table scannable, and at
+* **The speed table's fixed columns widen** (`RecordColumns`): 90 / 58 / 44 pt on a phone
+  (66 / 58 / 56 until 30 Sep 2026, which clipped five record names on a Pro Max), 112 / 78 /
+  64 on an iPad. The three fixed columns are what makes the table scannable, and at
   the phone's widths `Best 5×10 s` printed as `Best 5×…` with 300 pt of empty "when · where"
   beside it.
 * **Sheets are pages, not form sheets** (`.presentationSizing(.page)`). A `.large` detent is a
