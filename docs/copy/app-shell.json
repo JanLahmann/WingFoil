@@ -32,7 +32,10 @@
     "",
     "`beta` is the Beta page, the release's wording of the kit's BetaGuide (the web is not in",
     "the beta), with the public TestFlight link the release carries. `webJoin` is the one line",
-    "that is the browser's own: the beta it joins is the iPhone app's."
+    "that is the browser's own: the beta it joins is the iPhone app's. `community` is the",
+    "one sentence of the community message (BetaGuide.community). `whatsNewBeta` is the ask",
+    "the app's What's new ends on in the beta; ios/tools/testflight_publish.py ends the",
+    "TestFlight notes on it."
   ],
   "schema": "cleanjibe.app-shell/1",
   "tabs": [
@@ -130,12 +133,12 @@
   },
   "beta": {
     "joinTitle": "Join the beta",
-    "whatItIs": "The beta is the next CleanJibe, a few weeks early. New features are ridden there first, by riders who want them sooner.",
+    "community": "CleanJibe is built with its riders. New features land in the beta first, and move to the App Store once testers have proven them.",
     "inItNowTitle": "In the beta right now",
     "howToJoinTitle": "How to join",
     "joinButton": "Open TestFlight",
-    "feedbackTitle": "How to give feedback",
     "joinURL": "https://testflight.apple.com/join/nygqGGcn",
+    "whatsNewBeta": "Tried it? Tell us in Menu → Support & ideas. Every mail shapes the next build.",
     "webJoin": "The beta is the iPhone app's. Open the link on your iPhone, and TestFlight installs it."
   }
 }

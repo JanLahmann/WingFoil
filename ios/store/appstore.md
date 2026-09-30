@@ -100,7 +100,7 @@ every swim.", is retired everywhere. Then the promise's question, and two plain 
 
 ## Description
 
-4000-character limit. **1278 used.**
+4000-character limit. **1432 used.**
 
 ```
 Did you fly through that jibe? CleanJibe reads your session off the watch. It tells you your time on the foil, every flight, your speed records, and a verdict on every turn. Flew through, touchdown, or fell in.
@@ -121,8 +121,14 @@ The free CleanJibe watch app for Garmin buzzes each verdict on your wrist while 
 
 YOUR SESSIONS STAY ON YOUR PHONE
 
-There is no account, no CleanJibe server and no tracking. The engine is open source. Tell us what you saw at info@cleanjibe.org.
+There is no account, no CleanJibe server and no tracking. The engine is open source.
+
+BUILT WITH ITS RIDERS
+
+CleanJibe is built with its riders. New features land in the beta first, and move to the App Store once testers have proven them. Tell us what you saw at info@cleanjibe.org.
 ```
+
+**Built with its riders** (Jan, 30 September 2026): the last section is the community sentence, `BetaGuide.community`, word for word, and the mail address. The promotional text stays as it is: 153 of 170 characters are used and the sentence is 129, so it does not fit.
 
 **Cut to a third on 30 September 2026** (Jan: "way too long. We need to be much more concise"): one paragraph per section, the turn page, replay, Strava caveats, other recordings and the privacy detail left to the app and cleanjibe.org/privacy. The notes below still hold for what stayed.
 

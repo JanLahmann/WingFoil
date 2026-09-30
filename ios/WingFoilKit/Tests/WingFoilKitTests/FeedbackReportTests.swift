@@ -54,8 +54,12 @@ import Testing
     /// answer, one of air — asserted by index, because a field that quietly lost its blank
     /// line would still read fine in a diff and badly in a mail client.
     @Test func theBodyOpensWithThreeLabelledBlanks() {
-        let lines = FeedbackReport.body(facts()).split(separator: "\n",
-                                                       omittingEmptySubsequences: false)
+        let all = FeedbackReport.body(facts()).split(separator: "\n",
+                                                     omittingEmptySubsequences: false)
+        // One line of why, and a line of air, before the first question (30 Sep 2026).
+        #expect(all[0] == Substring(FeedbackReport.opening))
+        #expect(all[1] == "")
+        let lines = Array(all.dropFirst(2))
         #expect(lines[0] == "What happened, or what you would like:")
         #expect(lines[1] == "")
         #expect(lines[2] == "")
@@ -98,8 +102,8 @@ import Testing
             id: "A1B2C3", date: "30 August 2026", spot: "Torbole",
             discipline: "Wingfoil", duration: "1:42:11", sourceClass: "a",
             engineStamp: nil)
-        let lines = FeedbackReport.body(facts(session: session))
-            .split(separator: "\n", omittingEmptySubsequences: false)
+        let lines = Array(FeedbackReport.body(facts(session: session))
+            .split(separator: "\n", omittingEmptySubsequences: false).dropFirst(2))
         #expect(lines[6] == "Which session, its date and spot, if it is about one:")
         #expect(lines[7] == "30 August 2026 · Torbole")
         #expect(lines[8] == "")
@@ -110,8 +114,8 @@ import Testing
         let session = FeedbackFacts.Session(
             id: "A1B2C3", date: "30 August 2026", spot: nil, discipline: nil,
             duration: "1:42:11", sourceClass: "c", engineStamp: nil)
-        let lines = FeedbackReport.body(facts(session: session))
-            .split(separator: "\n", omittingEmptySubsequences: false)
+        let lines = Array(FeedbackReport.body(facts(session: session))
+            .split(separator: "\n", omittingEmptySubsequences: false).dropFirst(2))
         #expect(lines[7] == "30 August 2026")
     }
 
@@ -406,8 +410,8 @@ import Testing
     /// the second.
     @Test func theFeedbackBodyCarriesTheNoteUnderTheFirstQuestion() {
         let note = "Tack 1 of 3 at 3:07. CleanJibe says: fell in."
-        let lines = FeedbackReport.body(facts(), note: note)
-            .split(separator: "\n", omittingEmptySubsequences: false)
+        let lines = Array(FeedbackReport.body(facts(), note: note)
+            .split(separator: "\n", omittingEmptySubsequences: false).dropFirst(2))
         #expect(lines[0] == Substring(FeedbackReport.Prompt.what))
         #expect(lines[1] == Substring(note))
         #expect(lines[3] == Substring(FeedbackReport.Prompt.expected))

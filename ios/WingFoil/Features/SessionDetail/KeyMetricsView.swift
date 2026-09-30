@@ -31,10 +31,18 @@ struct KeyMetricsView: View {
             // One line of energy, over the numbers it is made of (docs/voice.md, register 2,
             // "the end of a session").
             if let line = story?.line {
-                Text(line)
-                    .font(.headline)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityAddTraits(.isHeader)
+                // The story is a beta feature, and its chip says so (`BetaChip`); the
+                // record chips on the cells below belong to the same story.
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(line)
+                        .font(.headline)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityAddTraits(.isHeader)
+                    #if BETA
+                    Spacer(minLength: 0)
+                    BetaChip()
+                    #endif
+                }
             }
             row {
                 ForEach(metrics.basics) { cell($0) }

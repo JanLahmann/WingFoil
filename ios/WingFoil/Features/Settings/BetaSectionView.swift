@@ -296,13 +296,10 @@ struct ComingSoonPage: View {
         + "Ride it and report on it. Each one moves into the App Store app once it has "
         + "held up."
     #else
+    // The community message on top (Jan, 30 September 2026), then what the list is.
     private static let intro =
-        "These functions come in a future release. Preview them now in the public "
-        + "beta.\n\n"
-        + "CleanJibe grows in the open. Everything in this app is finished and ridden "
-        + "with.\n\n"
-        + "A feature that is still proving itself is ridden in the beta first, then "
-        + "arrives here."
+        BetaGuide.community + "\n\n"
+        + "These features come in a future release. Ride them now in the public beta."
     #endif
 
     private func row(_ feature: String) -> some View {

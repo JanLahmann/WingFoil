@@ -704,7 +704,10 @@ struct SettingsView: View {
                 get: { store.healthWriteEnabled },
                 set: { store.healthWriteEnabled = $0 }))
         } header: {
-            Text("Apple Health")
+            HStack(spacing: 6) {
+                Text("Apple Health")
+                BetaChip()
+            }
         } footer: {
             settingFooter(HealthSwitch.write)
         }

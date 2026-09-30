@@ -42,6 +42,10 @@
       "text": "Grouping the library by month, year or spot, and filtering it."
     },
     {
+      "id": "sessionStory",
+      "text": "The session story: one line over your numbers, and a chip on each record you beat."
+    },
+    {
       "id": "sendToDeveloper",
       "text": "Send a session and its recording to us from its Share page or a turn, with your notes."
     },

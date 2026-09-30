@@ -122,14 +122,19 @@ three doors, because they are where the rider starts next time. Its **invitation
 once**: `FeedbackInvitation.sentence` opened the summary *and* the first paragraph, one line
 under the other, and it now stays in the summary, which is the line the index shows.
 
-**Most wanted** (Jan, 23 Sep 2026). A general feedback door — the menu, the page footers,
-*Request a feature* — opens a short sheet before the mail: the rows of "Coming in a future
-release" as ticks (`MostWanted.offered(in:)`: the beta rows in the release, the dev rows as
-well in beta and dev, so a rider is never offered a row his own Coming page lacks), one free
-line, *Something else you want*, and **Write mail**, enabled with nothing ticked. The ticks
-travel above the rule under the fixed heading **Most wanted**, one line each ending in the
-row's `channels.json` id (`✓ Apple Health, both ways · appleHealth`), so replies are tallied
-by a search; an empty vote leaves no block. *Report a problem with this session…* goes
+**The feedback sheet** (Jan, 23 Sep 2026; reshaped 30 Sep 2026). A general feedback door —
+the menu, the page footers, *Request a feature*, the Beta page's two buttons — opens a short
+sheet before the mail. In the beta and dev build it opens on **Beta features**: every beta
+door the build has, each with *Works* and *Has a problem* (`MostWanted.checked(in:)`). Then
+**Your wishlist** (*Most wanted* until 30 Sep, Jan): what the build has not got as ticks
+(`MostWanted.offered(in:)`: the beta rows in the release, the planned row and the dev rows in
+beta and dev). Then one free line, *Your idea*, and **Write mail**, enabled with nothing
+ticked. The Beta page's *What should we test next?* opens the sheet with the cursor in
+*Your idea*. Both blocks travel above the rule, one line each ending in the row's
+`channels.json` id (`✗ The session video · has a problem · sessionVideo`,
+`✓ Apple Health, both ways · appleHealth`), so replies are tallied by a search; an empty
+vote leaves no block. The mail opens on *Your mail shows us what riders use and need. We
+read every one.* (`FeedbackReport.opening`). *Report a problem with this session…* goes
 straight to the mail: a wish list in front of a bug report is in the way.
 
 ### The beta's usage report

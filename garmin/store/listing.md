@@ -71,6 +71,10 @@ What changed and why:
   0.9.19 ships.
 * Every sentence is register 1, at most 20 words, with no dash, semicolon or parenthesis.
   `docs/copy/check_voice.py` reads this block.
+* **Not yet pasted: one sentence more, 1174 characters** (Jan, 30 September 2026). *CleanJibe is built
+  with its riders.* opens the beta's own reason under THIS IS THE BETA, the community message
+  every other surface says (`BetaGuide.community`). The form still shows the 1138-character text
+  until Jan pastes this one.
 * **2831 characters, cut to 1138 on 30 September 2026** (Jan: "make this way more concise"): one paragraph per theme, the accelerometer and recording detail left to cleanjibe.org/start. The form rejects `<` and `>`, and there are none.
 
 ```
@@ -78,7 +82,7 @@ Did you fly through that jibe? CleanJibe on your Garmin tells you while you ride
 
 THIS IS THE BETA
 
-It is free and open to anyone, with no key and no account. New versions come here first. Tell us what looks wrong at cleanjibe.org/invite.
+It is free and open to anyone, with no key and no account. CleanJibe is built with its riders. New versions come here first. Tell us what looks wrong at cleanjibe.org/invite.
 
 ON THE WATER
 

@@ -367,29 +367,62 @@ import Testing
         for key in old { #expect(UsageCounters.Feature(rawValue: key) != nil, "\(key)") }
     }
 
-    // MARK: - Most wanted
+    // MARK: - The wishlist and the beta features
 
-    @Test func theReleaseOffersOnlyTheBetaRows() {
+    @Test func theReleaseWishesForTheBetaRowsAndChecksNone() {
         #expect(MostWanted.offered(in: .release).allSatisfy { $0.channel == .beta })
-        #expect(MostWanted.offered(in: .beta).count == MostWanted.all.count)
+        #expect(MostWanted.checked(in: .release).isEmpty)
+    }
+
+    /// A tester is not asked to wish for what he holds: the beta's wishlist is the plan and
+    /// the dev rows, and every beta row he has is a works / has a problem row instead.
+    @Test func theBetaChecksWhatItHasAndWishesForTheRest() {
+        for channel in [HelpChannel.beta, .dev] {
+            let offered = MostWanted.offered(in: channel)
+            let checked = MostWanted.checked(in: channel)
+            #expect(offered.allSatisfy { $0.planned || $0.channel == .dev })
+            #expect(checked.allSatisfy { $0.channel == .beta && !$0.planned })
+            #expect(Set(offered.map(\.id)).isDisjoint(with: checked.map(\.id)))
+            #expect(offered.count + checked.count == MostWanted.all.count)
+        }
+        #expect(MostWanted.offered(in: .beta).contains { $0.id == "appleWatchLive" })
     }
 
     @Test func theVoteIsOneTalliableLinePerTick() {
         let vote = MostWanted.Vote(ticked: ["tuning", "appleHealth"], note: " dark mode ")
-        #expect(vote.lines == ["Most wanted",
+        #expect(vote.lines == ["Your wishlist",
                                "  ✓ Apple Health, both ways · appleHealth",
                                "  ✓ The tuning page · tuning",
-                               "  Also: dark mode",
+                               "  Your idea: dark mode",
                                ""])
         #expect(MostWanted.Vote().lines.isEmpty)
     }
 
+    @Test func theBetaFeaturesTravelAboveTheWishlist() {
+        let vote = MostWanted.Vote(ticked: ["garminLink"],
+                                   checks: ["sessionVideo": .problem, "appleWatchApp": .works])
+        #expect(vote.lines == ["Beta features",
+                               "  ✓ The Apple Watch app · works · appleWatchApp",
+                               "  ✗ The session video · has a problem · sessionVideo",
+                               "",
+                               "Your wishlist",
+                               "  ✓ The Garmin link · garminLink",
+                               ""])
+        #expect(MostWanted.Vote(checks: ["grouping": .works]).lines
+                == ["Beta features", "  ✓ Grouping and filters · works · grouping", ""])
+    }
+
     @Test func theFeedbackMailCarriesTheVoteAboveTheRule() {
         let body = FeedbackReport.body(facts, mostWanted: .init(ticked: ["gpxTcx"]))
-        let vote = try? #require(body.range(of: "Most wanted\n  ✓ GPX and TCX files · gpxTcx"))
+        let vote = try? #require(body.range(of: "Your wishlist\n  ✓ GPX and TCX files · gpxTcx"))
         let rule = body.range(of: FeedbackReport.Separator.rule)
         #expect(vote != nil && rule != nil && vote!.lowerBound < rule!.lowerBound)
-        #expect(!FeedbackReport.body(facts).contains("Most wanted"))
+        #expect(!FeedbackReport.body(facts).contains("Your wishlist"))
+    }
+
+    @Test func theFeedbackMailOpensWithWhyItMatters() {
+        let body = FeedbackReport.body(facts)
+        #expect(body.hasPrefix(FeedbackReport.opening + "\n\n" + FeedbackReport.Prompt.what))
     }
 
     // MARK: - The ask

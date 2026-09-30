@@ -51,13 +51,17 @@ def app_id(app):
     return os.environ.get(DEV_APP_ID_ENV, "").strip() or APP_DEV
 
 # The frame around the notes, which is the same in every build and is therefore not a release
-# note: the door for a tester who has just joined, and the one for a tester with something to
-# say. The notes themselves come from docs/copy/whats-new.json.
-NOTES_SOURCE = pathlib.Path(__file__).resolve().parents[2] / "docs" / "copy" / "whats-new.json"
-INTRO = ("New here? cleanjibe.org/start — the routes from your watch to the app, and where to "
-         "send feedback.")
-OUTRO = ("Ideas and wishes are as welcome as bugs: Menu → Support & ideas in the app, or "
-         "info@cleanjibe.org.")
+# note: the community sentence, the door for a tester who has just joined, and the ask the
+# app's What's new ends on. The notes come from docs/copy/whats-new.json; the two kit sentences
+# from docs/copy/app-shell.json → beta (`BetaGuide.community`, `BetaGuide.whatsNewBeta`,
+# pinned to the kit by web/tools/verify_app_shell.py), so the tester reads the words the app
+# says (Jan, 30 September 2026).
+COPY_DIR = pathlib.Path(__file__).resolve().parents[2] / "docs" / "copy"
+NOTES_SOURCE = COPY_DIR / "whats-new.json"
+_BETA = json.loads((COPY_DIR / "app-shell.json").read_text(encoding="utf-8"))["beta"]
+INTRO = (_BETA["community"] + "\n\n"
+         "New here? cleanjibe.org/start shows how your sessions get from the watch to the app.")
+OUTRO = _BETA["whatsNewBeta"] + " Or write to info@cleanjibe.org."
 
 
 def notes_channel(app, internal):

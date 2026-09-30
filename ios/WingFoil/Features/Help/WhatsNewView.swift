@@ -24,6 +24,10 @@ private struct WhatsNewList: View {
     /// open — the same rule the Help index follows for topics.
     private var entries: [WhatsNewEntry] { WhatsNew.entries(for: AppChannel.channel) }
 
+    /// The closing ask's tap: the feedback sheet in the beta, the Beta page in the release.
+    @State private var feedbackRequest = 0
+    @State private var showingBeta = false
+
     var body: some View {
         List {
             ForEach(entries) { entry in
@@ -36,16 +40,38 @@ private struct WhatsNewList: View {
                             .font(.callout)
                             .fixedSize(horizontal: false, vertical: true)
                     }
+                    if entry.id == entries.first?.id { closingAsk }
                 } header: {
                     header(entry)
                 }
             }
         }
         .listStyle(.insetGrouped)
+        .feedbackMail(on: $feedbackRequest)
+        .sheet(isPresented: $showingBeta) { BetaView() }
         .overlay {
             if entries.isEmpty { ContentUnavailableView("Nothing yet", systemImage: "sparkles") }
         }
         .readableColumn()
+    }
+
+    /// **The newest notes' last line is the kit's, not the entry's**
+    /// (`BetaGuide.whatsNewClosing`, Jan, 30 September 2026): every build ends on the same
+    /// ask. It is a button, because the line names a door (pattern B): the feedback sheet
+    /// in the beta and the dev build, the Beta page in the release.
+    private var closingAsk: some View {
+        Button {
+            if AppChannel.channel == .release {
+                showingBeta = true
+            } else {
+                feedbackRequest += 1
+            }
+        } label: {
+            Text(BetaGuide.whatsNewClosing(for: AppChannel.channel))
+                .font(.callout.weight(.semibold))
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 
     /// The product and its number, then the day and the version, then what the build was

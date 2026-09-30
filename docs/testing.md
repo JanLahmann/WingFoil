@@ -1320,6 +1320,9 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    the report in full, with the copy button. It is the only one of the three routes a
    simulator can photograph: `MFMailComposeViewController` refuses to appear where no mail
    account exists, and `simctl` cannot tap the row in any case.
+   `UI_FEEDBACK=ask` raises the **feedback sheet** from the same composer instead: *Beta
+   features* with their works / has a problem ticks (beta and dev), *Your wishlist* and
+   *Your idea* (30 Sep 2026).
    In the share sheet (`UI_SHEET=share`), `UI_SHARE=fit` flips to the recording tab,
    `UI_SHAPE=portrait|square|landscape` picks the aspect and `UI_HERO=clean|max2s|tacks` picks
    the card's big number (layout B v2; it replaced `UI_STATS`, which went with Lean/Complete)
