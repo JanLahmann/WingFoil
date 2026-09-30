@@ -105,12 +105,19 @@ export function renderTurnTally(host, result, visible) {
   const all = strip.filter((e) => e.counted).length;
   if (!all) { host.innerHTML = ""; host.hidden = true; return; }
   host.hidden = false;
+  // No dash as a heading (Jan, 30 Sep 2026, the phone's `TurnFilter.emptySentence`): when
+  // the chips keep no turn there is no flew-through share to print, so the block is one
+  // sentence instead of "—", "flew through" and three chips of zero.
+  if (!total) {
+    host.innerHTML = `<p class="tt-empty">No turn in this session matches these chips.</p>`;
+    return;
+  }
 
   const count = (id) => kept.filter((e) => e.outcomeId === id).length;
   const jibes = kept.filter((e) => (g.turns[e.index] || {}).type === "jibe").length;
   const clean = kept.filter((e) => e.clean).length;
   const flew = count("flewThrough");
-  const share = total ? pct(100 * flew / total) : "—";
+  const share = pct(100 * flew / total);
   const of = total === all
     ? `${flew} of ${total} counted turns`
     : `${flew} of ${total} turns, ${all - total} hidden by the chips`;
@@ -124,7 +131,7 @@ export function renderTurnTally(host, result, visible) {
       <span class="tt-pct">${esc(share)}</span>
       <span class="tt-words">
         <span class="tt-label">flew through</span>
-        <span class="tt-sub">${esc(total ? of : "nothing matches these chips")}</span>
+        <span class="tt-sub">${esc(of)}</span>
         ${jibes ? `<span class="tt-clean">${clean} of ${jibes} clean</span>` : ""}
       </span>
     </div>
