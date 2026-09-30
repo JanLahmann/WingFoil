@@ -165,9 +165,23 @@ def pump_track_from_arrays(t: np.ndarray, mag: np.ndarray,
     # Empty bins (sensor gaps) are held at the mean so the FIR does not ring on them; the
     # filtered value there is discarded via `valid` anyway.
     binned = np.where(valid, total / np.maximum(count, 1), level)
-    band = np.convolve(binned - level, _bandpass_taps(cfg), mode="same")
+    band = _convolve_same(binned - level, _bandpass_taps(cfg))
     band[~valid] = 0.0
     return PumpTrack(t=grid, band=band, valid=valid, config=cfg)
+
+
+def _convolve_same(a: np.ndarray, taps: np.ndarray) -> np.ndarray:
+    """``np.convolve(a, taps, "same")`` that is always ``len(a)`` long, taps of odd length.
+
+    numpy's "same" returns ``max(len(a), len(taps))`` samples, so a stream shorter than the
+    filter (a 2 s stub at 25 Hz is 51 bins against 51+ taps) came back longer than its own
+    `valid` mask and the next line raised (engine 0.27.0). The centred slice of the full
+    convolution is the same numbers wherever the stream is the longer one, and is exactly
+    the kit's `PumpAnalyzer.convolveSame` for any length.
+    """
+    full = np.convolve(a, taps, mode="full")
+    off = (len(taps) - 1) // 2
+    return full[off:off + len(a)]
 
 
 def _bandpass_taps(cfg: PumpConfig) -> np.ndarray:

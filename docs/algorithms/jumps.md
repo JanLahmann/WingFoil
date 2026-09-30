@@ -1,4 +1,4 @@
-> Part of `docs/algorithms.md`. Engine 0.26.0.
+> Part of `docs/algorithms.md`. Engine 0.27.0.
 
 ## Jumps (theoretical, uncalibrated)
 

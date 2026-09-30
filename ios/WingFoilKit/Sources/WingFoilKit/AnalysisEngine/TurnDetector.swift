@@ -38,6 +38,26 @@ public struct TurnConfig: Sendable, Equatable {
     /// 0 the pass does not run at all. Jan, 20 Sep 2026: *"an attempted turn that ends in the
     /// water is a turn that fell in."* See `abortCandidates` and ADR-028.
     public var abortMinAngleDeg: Double = 45.0
+    /// turnAbortAxisDeg (engine 0.27.0), deg: **an aborted turn named by the axis it was
+    /// closing on must have got there**. It keeps its tack (or, on the rider's other side,
+    /// jibe) name only if a heading it *flew* — a step between two flying samples — came
+    /// within this far of that axis; otherwise it is dropped and the fall is a straight-line
+    /// fall. The gated side follows `windDefaultTurnType` (`balanced` gates both). 0 = off.
+    /// Mirrors `abort_axis_deg` in the lab; ADR-037.
+    public var abortAxisDeg: Double = 30.0
+    /// turnAbortLuffDeg / turnAbortLuffSpeedPct (engine 0.27.0): **the luff starts at speed**
+    /// — this many degrees gained toward that axis on a step begun at this percentage of the
+    /// entry speed (maneuver channel). 0 = off. ADR-037.
+    public var abortLuffDeg: Double = 20.0
+    public var abortLuffSpeedPct: Double = 80.0
+    /// turnAbortAfterTurnS (engine 0.27.0), s: an aborted candidate turning the same way as the
+    /// previous counted turn that starts before that turn's end + max(its outcome window,
+    /// this) is the tail of that turn and is dropped. ADR-037.
+    public var abortAfterTurnS: Double = 3.0
+    /// turnJoinGapS (engine 0.27.0), s: two same-direction sweeps of one sailing run at most
+    /// this far apart, with the wind axis crossed in the gap between them — the second is
+    /// extended back to where the first ended. 0 = off. ADR-037.
+    public var joinGapS: Double = 2.0
     /// turnCleanQuietS (engine 0.17.0): seconds after the sweep that must pass with no
     /// touchdown, no fall and no wrist under before a jibe may be called clean. Jan's rule,
     /// 7 Sep 2026: *"no touch down or fall within 10 s afterwards"* — and only for a clean
@@ -348,6 +368,13 @@ public enum TurnDetector {
         let tu: [Double], u: [Double], rate: [Double]
         let i: Int, j: Int
         let arc: (Double, Double)
+        /// The segment's projected track and the sailing run's offset in it: COG element `k`
+        /// is the step leaving segment sample `a + k` (engine 0.27.0 reads both ends).
+        var x: [Double] = [], y: [Double] = []
+        var a: Int = 0
+        /// Which sailing run the sweep was read on, so two sweeps can be told to be one
+        /// rotation (the lab compares the arrays by identity).
+        var run: Int = 0
 
         var startT: Double { tu[i] }
         var endT: Double { tu[j] }
@@ -369,21 +396,109 @@ public enum TurnDetector {
                               wind: WindEstimate? = nil, config: TurnConfig = TurnConfig(),
                               pump: PumpTrack? = nil,
                               evidence: OffFoilEvidence? = nil,
-                              ends: [FlightEnd] = []) -> [Turn] {
-        let scanned = acceptedCandidates(track, flights: flights, config: config).map {
-            build($0, wind: wind, config: config)
-        }
+                              ends: [FlightEnd] = [],
+                              defaultTurnType: DefaultTurnType = .jibes) -> [Turn] {
+        let ev = evidence ?? Evidence.build(track, flights: flights,
+                                            exitSpeedKmh: config.foilExitSpeedKmh,
+                                            baroDropM: config.baroDropM)
+        let joined = joinSplit(acceptedCandidates(track, flights: flights, config: config),
+                               wind: wind, config: config)
+        let scanned = joined.map { build($0, wind: wind, config: config) }
         // **The aborted turn** (engine 0.21.0). Scored with the same builder and judged by
         // the same ladder as every other sweep — only the entry condition differs — so the
         // two lists are merged *after* the outcomes are in: whether a sweep fell in is the
         // ladder's answer, never the scan's. See `abortCandidates` and `mergeAborted`.
-        let attempted = abortCandidates(track, flights: flights, config: config).map {
-            build($0, wind: wind, config: config, aborted: true)
-        }
+        let abortCands = abortCandidates(track, flights: flights, config: config)
+        let attempted = abortCands.map { build($0, wind: wind, config: config, aborted: true) }
         var all = scanned + attempted
         assignOutcomes(&all, track: track, flights: flights, config: config, pump: pump,
-                       evidence: evidence, ends: ends)
-        return mergeAborted(Array(all[..<scanned.count]), Array(all[scanned.count...]))
+                       evidence: ev, ends: ends)
+        // **Did he get there?** (engine 0.27.0): an aborted turn named by the axis it was
+        // closing on is kept only where the rider flew to within reach of that axis and
+        // began the luff at speed. See `abortReachedAxis`.
+        let judged = Array(all[scanned.count...])
+        let kept = zip(abortCands, judged).filter {
+            abortReachedAxis($0.0, $0.1, wind: wind, ev: ev, config: config,
+                             defaultTurnType: defaultTurnType)
+        }.map(\.1)
+        return mergeAborted(Array(all[..<scanned.count]), kept, config: config)
+    }
+
+    /// **Did the rider get to the axis the aborted turn is named after?** (engine 0.27.0)
+    ///
+    /// Jan, 28 Sep 2026: his library counted 18 tacks where he had tried 3, fourteen of them
+    /// from the 0.21.0 naming rule — an aborted sweep that crossed nothing takes the axis it
+    /// was closing on, whether the rider was 5° or 88° off the wind. So a sweep named that way
+    /// keeps its name only on evidence: **R2**, some step flown between two flying samples came
+    /// within `abortAxisDeg` of the axis; **R3**, `abortLuffDeg` gained toward it on a step
+    /// begun at `abortLuffSpeedPct` % of the entry speed. Only the side the rider did not
+    /// declare is gated (`balanced` gates both); a sweep that crossed an axis is not asked,
+    /// nor is a turn with no usable wind. True keeps the turn. Mirrors `_abort_reached_axis`
+    /// in `lab/src/wingfoil_lab/turns.py`.
+    static func abortReachedAxis(_ c: Candidate, _ turn: Turn, wind: WindEstimate?,
+                                 ev: OffFoilEvidence?, config: TurnConfig,
+                                 defaultTurnType: DefaultTurnType = .jibes) -> Bool {
+        guard let wind, wind.usable, turn.kind == .tack || turn.kind == .jibe else { return true }
+        let gated: [TurnKind]
+        switch defaultTurnType {
+        case .jibes: gated = [.tack]
+        case .tacks: gated = [.jibe]
+        case .balanced: gated = [.tack, .jibe]
+        }
+        guard gated.contains(turn.kind) else { return true }
+        let u = c.u, i = c.i, j = c.j, a = c.a, t = c.t
+        let crossed = classifySweep(cogIn: u[i], cogOut: u[j], dirDeg: wind.dirDeg,
+                                    firstCrossing: true).kind
+        if crossed == .tack || crossed == .jibe { return true }
+        let offset: Double = turn.kind == .tack ? 0 : 180
+        let sense: Double = u[j] >= u[i] ? 1 : -1
+        if config.abortAxisDeg > 0 {
+            guard let ev, ev.count > 0 else { return false }
+            func flying(_ s: Int) -> Bool {
+                ev.flying[min(max(searchSortedLeft(ev.t, t[s]), 0), ev.count - 1)]
+            }
+            var closest = Double.infinity
+            for k in i...j where a + k + 1 < t.count && flying(a + k) && flying(a + k + 1) {
+                closest = min(closest, abs(WindEstimator.wrap180(u[k] - wind.dirDeg - offset)))
+            }
+            if closest > config.abortAxisDeg { return false }
+        }
+        if config.abortLuffDeg > 0 {
+            let floor = config.abortLuffSpeedPct / 100 * turn.entryKn / mpsToKn
+            var gain = 0.0
+            for k in i...j where c.man[a + k] >= floor { gain = max(gain, sense * (u[k] - u[i])) }
+            if gain < config.abortLuffDeg { return false }
+        }
+        return true
+    }
+
+    /// **A crossing in the gap between two sweeps belongs to the second** (engine 0.27.0).
+    ///
+    /// The scan can cut one rotation into two same-direction sweeps — on a 2 s Smart
+    /// Recording file the step between them is one sample — and where the wind axis is
+    /// crossed inside that gap neither sweep saw it (Jan's 2 Aug 2026 jibe came out a tack).
+    /// So when two sweeps of one sailing run turn the same way, lie at most `joinGapS` apart
+    /// and the axis is crossed between the first's last heading and the second's first, the
+    /// second is extended back to where the first ended. Nothing else is joined. Mirrors
+    /// `_join_split` in `lab/src/wingfoil_lab/turns.py`.
+    static func joinSplit(_ cands: [Candidate], wind: WindEstimate?,
+                          config: TurnConfig) -> [Candidate] {
+        guard config.joinGapS > 0, let wind, wind.usable, cands.count > 1 else { return cands }
+        var out = cands
+        for n in 1..<out.count {
+            let p = out[n - 1], c = out[n]
+            guard c.run == p.run, (p.netDeg >= 0) == (c.netDeg >= 0) else { continue }
+            let gap = c.startT - p.endT
+            guard gap >= 0, gap <= config.joinGapS, c.i > p.j else { continue }
+            let lo = WindEstimator.wrap180(p.u[p.j] - wind.dirDeg)
+            let hi = lo + (c.u[c.i] - p.u[p.j])
+            guard !crossings(lo: min(lo, hi), hi: max(lo, hi)).isEmpty else { continue }
+            out[n] = Candidate(t: c.t, man: c.man, dop: c.dop, tu: c.tu, u: c.u, rate: c.rate,
+                               i: p.j, j: c.j,
+                               arc: arcAndChord(c.x, c.y, lo: c.a + p.j, hi: c.a + c.j + 1),
+                               x: c.x, y: c.y, a: c.a, run: c.run)
+        }
+        return out
     }
 
     /// **The turns the rider did not finish** (engine 0.21.0, `turnAbortMinAngle`).
@@ -438,7 +553,7 @@ public enum TurnDetector {
                 let arc = arcAndChord(x, y, lo: a + i, hi: a + j + 1)
                 guard carved(arcM: arc.0, netDeg: u[j] - u[i], config) else { continue }
                 out.append(Candidate(t: t, man: man, dop: v, tu: tu, u: u, rate: rate,
-                                     i: i, j: j, arc: arc))
+                                     i: i, j: j, arc: arc, x: x, y: y, a: a))
             }
         }
         return out
@@ -456,14 +571,27 @@ public enum TurnDetector {
     ///   swim, exactly what `ownedByTurn` prevents on the flight-end side;
     /// * one that overlaps an uncounted **course change** replaces it. It is the same sweep,
     ///   read the same way, with one more thing known about it: the rider did not come out of
-    ///   it. Mirrors `_merge_aborted` in `lab/src/wingfoil_lab/turns.py`.
-    static func mergeAborted(_ turns: [Turn], _ aborted: [Turn]) -> [Turn] {
+    ///   it;
+    /// * one that turns the same way as the **previous counted turn** and starts before that
+    ///   turn's end + max(its outcome window, `abortAfterTurnS`) is the tail of that turn
+    ///   (engine 0.27.0, ADR-037): one rotation, not a jibe and then a tack.
+    /// Mirrors `_merge_aborted` in `lab/src/wingfoil_lab/turns.py`.
+    static func mergeAborted(_ turns: [Turn], _ aborted: [Turn],
+                             config: TurnConfig = TurnConfig()) -> [Turn] {
         var out = turns
         for turn in aborted where turn.outcome == .fellIn {
             let overlap = out.indices.filter {
                 turn.startT <= out[$0].endT && out[$0].startT <= turn.endT
             }
             if overlap.contains(where: { out[$0].counted }) { continue }
+            var prev: Turn?
+            for t in out where t.counted && t.startT < turn.startT {
+                if prev == nil || t.startT > prev!.startT { prev = t }
+            }
+            if let prev, prev.direction == turn.direction,
+               turn.startT <= prev.endT + max(prev.outcomeWindowS, config.abortAfterTurnS) {
+                continue
+            }
             for k in overlap.reversed() { out.remove(at: k) }
             out.append(turn)
         }
@@ -493,6 +621,7 @@ public enum TurnDetector {
     static func acceptedCandidates(_ track: CleanTrack, flights: FlightSegmentation,
                                    config: TurnConfig) -> [Candidate] {
         var cands: [Candidate] = []
+        var run = 0
         for seg in track.segments where seg.count >= 3 {
             let t = seg.map { track.samples[$0].t }
             let x = seg.map { track.samples[$0].x ?? .nan }
@@ -502,6 +631,7 @@ public enum TurnDetector {
             guard x.contains(where: { !$0.isNaN }) else { continue }
 
             for (a, b) in sailingRuns(v.map { $0 >= config.minCogSpeedMps }) {
+                run += 1
                 let u = GP3SCalculator.unwrappedBearings(x: Array(x[a...b]), y: Array(y[a...b]))
                 guard !u.isEmpty else { continue }
                 let tu = Array(t[a..<(a + u.count)])
@@ -512,7 +642,8 @@ public enum TurnDetector {
                     let arc = arcAndChord(x, y, lo: a + i, hi: a + j + 1)
                     guard carved(arcM: arc.0, netDeg: u[j] - u[i], config) else { continue }
                     cands.append(Candidate(t: t, man: man, dop: v, tu: tu, u: u, rate: rate,
-                                           i: i, j: j, arc: arc))
+                                           i: i, j: j, arc: arc, x: x, y: y, a: a,
+                                           run: run))
                 }
             }
         }
@@ -860,8 +991,8 @@ public enum TurnDetector {
     /// that crossed neither line, and an unclassified turn is one whose axis nobody knows.
     /// Both get the empty `Axis`, whose NaNs become JSON nulls in `TurnRecord`.
     ///
-    /// The crossing is the one `classifySweep` named the turn after — the multiple of 360 (a
-    /// tack) or 180 + a multiple of 360 (a jibe) nearest the sweep's middle in unwrapped TWA.
+    /// The crossing is the one `classifySweep` named the turn after — the first multiple of 360
+    /// (a tack) or 180 + a multiple of 360 (a jibe) the sweep reached in unwrapped TWA.
     /// TWA is COG minus a constant, so that value maps straight onto a COG on the detector's
     /// own unwrapped array, and everything below is measured there, on the samples the sweep
     /// was detected from. Mirrors `_axis_measures` in `lab/src/wingfoil_lab/turns.py`.
@@ -872,15 +1003,17 @@ public enum TurnDetector {
         let twaIn = WindEstimator.wrap180(u[i] - wind.dirDeg)
         let twaOut = twaIn + (u[j] - u[i])
         let lo = min(twaIn, twaOut), hi = max(twaIn, twaOut)
-        guard let crossing = nearestCrossing(lo: lo, hi: hi,
-                                             offset: kind == .tack ? 0 : 180,
-                                             mid: 0.5 * (lo + hi)) else {
+        // The first crossing of that axis in the sweep's own sense (engine 0.27.0): the one
+        // `classifySweep(..., firstCrossing: true)` named it by.
+        let own = crossings(lo: lo, hi: hi).filter { $0.isMultiple(of: 2) == (kind == .tack) }
+        guard let m = twaOut >= twaIn ? own.first : own.last else {
             // For a completed turn this is unreachable — the kind *was* named by that
             // crossing. An **aborted** turn reaches it, and that is the honest answer for
             // one: it was named by the axis it was going through (`classifyAborted`) and
             // never got there, so there is no instant, no before and no after to publish.
             return Axis()
         }
+        let crossing = 180 * Double(m)
         let before = abs(twaIn - crossing)
         if before < config.axisBeforeDeg {
             return Axis(courseChange: abs(twaOut) > abs(twaIn) ? .bearAway : .roundUp)
@@ -965,7 +1098,7 @@ public enum TurnDetector {
             return (below ? .bearAway : .unclassified, "unknown", .nan, .nan)
         }
         return classifySweep(cogIn: cogIn, cogOut: cogOut, dirDeg: wind.dirDeg,
-                             minAngleDeg: minAngleDeg)
+                             minAngleDeg: minAngleDeg, firstCrossing: true)
     }
 
     /// (kind, side, twaIn, twaOut) for a sweep the rider **did not finish** (engine 0.21.0).
@@ -992,7 +1125,8 @@ public enum TurnDetector {
     static func classifyAborted(cogIn: Double, cogOut: Double, wind: WindEstimate?)
     -> (kind: TurnKind, side: String, twaIn: Double, twaOut: Double) {
         guard let wind, wind.usable else { return (.unclassified, "unknown", .nan, .nan) }
-        let k = classifySweep(cogIn: cogIn, cogOut: cogOut, dirDeg: wind.dirDeg)
+        let k = classifySweep(cogIn: cogIn, cogOut: cogOut, dirDeg: wind.dirDeg,
+                              firstCrossing: true)
         if k.kind == .tack || k.kind == .jibe { return k }
         // No crossing: the axis ahead, in the sweep's own sense of rotation.
         let twaEnd = WindEstimator.wrap180(cogIn - wind.dirDeg) + (cogOut - cogIn)
@@ -1024,8 +1158,12 @@ public enum TurnDetector {
     /// crossing into a dead-downwind one and so swapping tack and jibe. The prior calls it
     /// without a floor: it is asking which *way* the rider turns, over every sweep it can
     /// see, and narrowing its evidence to the wide ones would answer a different question.
+    ///
+    /// `firstCrossing` (engine 0.27.0, the turn's own name): a sweep that crosses both axes is
+    /// named by the one it reached **first**, in its own sense of rotation. The prior keeps
+    /// the old reading — moving it would move a wind.
     static func classifySweep(cogIn: Double, cogOut: Double, dirDeg: Double,
-                              minAngleDeg: Double = 0)
+                              minAngleDeg: Double = 0, firstCrossing: Bool = false)
     -> (kind: TurnKind, side: String, twaIn: Double, twaOut: Double) {
         let twaIn = WindEstimator.wrap180(cogIn - dirDeg)
         let twaOut = twaIn + (cogOut - cogIn)
@@ -1037,12 +1175,23 @@ public enum TurnDetector {
         let kind: TurnKind
         if (head == nil && down == nil) || abs(cogOut - cogIn) < minAngleDeg {
             kind = abs(twaOut) > abs(twaIn) ? .bearAway : .roundUp
+        } else if firstCrossing {
+            let cross = crossings(lo: lo, hi: hi)
+            let first = twaOut >= twaIn ? cross.first! : cross.last!
+            kind = first.isMultiple(of: 2) ? .tack : .jibe
         } else if down == nil || (head != nil && abs(head! - mid) <= abs(down! - mid)) {
             kind = .tack
         } else {
             kind = .jibe
         }
         return (kind, side, twaIn, WindEstimator.wrap180(twaOut))
+    }
+
+    /// Every m with `180 m` inside [lo, hi], ascending: even m is head to wind, odd m dead
+    /// downwind. The same closed interval `nearestCrossing` reads. Mirrors `_crossings`.
+    static func crossings(lo: Double, hi: Double) -> [Int] {
+        let first = Int((lo / 180).rounded(.up)), last = Int((hi / 180).rounded(.down))
+        return first <= last ? Array(first...last) : []
     }
 
     /// The value `offset + 360k` inside [lo, hi] closest to `mid`, if any.

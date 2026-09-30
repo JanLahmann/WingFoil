@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.26.0",
+  "engineVersion": "0.27.0",
   "config": {
     "foilEntrySpeed": 12.0,
     "entryHold": 2.0,
@@ -25,6 +25,11 @@
     "minSpeedFilter": null,
     "turnMinAngle": 60.0,
     "turnAbortMinAngle": 45.0,
+    "turnAbortAxisDeg": 30.0,
+    "turnAbortLuffDeg": 20.0,
+    "turnAbortLuffSpeedPct": 80.0,
+    "turnAbortAfterTurnS": 3.0,
+    "turnJoinGapS": 2.0,
     "turnClassifyMinAngle": 90.0,
     "turnAxisBeforeDeg": 0.0,
     "turnAxisAfterDeg": 0.0,
@@ -2636,7 +2641,7 @@
       "ts": 5305.0,
       "endTs": 5313.0,
       "minTs": 5315.0,
-      "type": "tack",
+      "type": "jibe",
       "counted": true,
       "entryKn": 11.924,
       "minKn": 3.711,
@@ -2651,9 +2656,9 @@
       "peakRateDegS": 69.68,
       "twaInDeg": 141.94,
       "twaOutDeg": 75.22,
-      "axisTs": 5311.84,
-      "axisBeforeDeg": 218.06,
-      "axisAfterDeg": 75.22,
+      "axisTs": 5306.12,
+      "axisBeforeDeg": 38.06,
+      "axisAfterDeg": 255.22,
       "arcM": 34.15,
       "radiusM": 6.67,
       "outcome": "fell_in",
@@ -6956,9 +6961,9 @@
       ]
     },
     "turns": {
-      "tacks": 1,
+      "tacks": 0,
       "tacksSuccessful": 0,
-      "jibes": 56,
+      "jibes": 57,
       "jibesSuccessful": 25,
       "unclassified": 0,
       "turnsCounted": 57,
@@ -6979,13 +6984,13 @@
       "tackOutcomes": {
         "flewThrough": 0,
         "touchdown": 0,
-        "fellIn": 1,
+        "fellIn": 0,
         "borderline": 0
       },
       "jibeOutcomes": {
         "flewThrough": 42,
         "touchdown": 4,
-        "fellIn": 10,
+        "fellIn": 11,
         "borderline": 0
       }
     },

@@ -80,7 +80,7 @@ def smoke_golden():
 def test_schema_shape(smoke_golden):
     g = smoke_golden
     assert list(g.keys()) == TOP_KEYS
-    assert g["engineVersion"] == "0.26.0"
+    assert g["engineVersion"] == "0.27.0"
     assert set(g["capabilities"].keys()) == CAP_KEYS
     assert set(g["records"].keys()) == RECORD_KEYS
     assert set(g["summary"].keys()) == SUMMARY_KEYS
@@ -248,13 +248,16 @@ def test_jibes_per_hour_counts_only_the_jibes_he_sailed_out_of():
     which is the guarantee that pass was built to keep. Engine 0.24.0 moved four more of its
     jibes from `touchdown` to `fell_in` (6 -> 10): the rider never got going again and coasted
     to a standstill past the old 12 s cap, so the fall each of them ended in is now the
-    jibe's own and JPH reads 24.5 (ADR-032).
+    jibe's own and JPH reads 24.5 (ADR-032). Engine 0.27.0 names one more of them a jibe
+    (57/11): a sweep through downwind and on through the wind as he crashed had been named
+    by the crossing nearest its middle, a tack; it is named by the first now (ADR-037). A
+    jibe that fell in, so JPH still reads 24.5.
     """
     a = analyze(CIQ_LONG)
     g = build_golden(a)
     s = g["summary"]
     jibes, fell = s["turns"]["jibes"], s["turns"]["jibeOutcomes"]["fellIn"]
-    assert (jibes, fell) == (56, 10)
+    assert (jibes, fell) == (57, 11)
 
     # The per-turn list and the tally agree on what "dry" means -- flew-through and
     # touchdown alike, because pumping back up out of a touchdown is a jibe he made.

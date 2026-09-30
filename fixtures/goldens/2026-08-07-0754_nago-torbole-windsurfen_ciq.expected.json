@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.26.0",
+  "engineVersion": "0.27.0",
   "config": {
     "foilEntrySpeed": 12.0,
     "entryHold": 2.0,
@@ -25,6 +25,11 @@
     "minSpeedFilter": null,
     "turnMinAngle": 60.0,
     "turnAbortMinAngle": 45.0,
+    "turnAbortAxisDeg": 30.0,
+    "turnAbortLuffDeg": 20.0,
+    "turnAbortLuffSpeedPct": 80.0,
+    "turnAbortAfterTurnS": 3.0,
+    "turnJoinGapS": 2.0,
     "turnClassifyMinAngle": 90.0,
     "turnAxisBeforeDeg": 0.0,
     "turnAxisAfterDeg": 0.0,
@@ -574,8 +579,8 @@
       "ts": 2295.0,
       "endTs": 2298.0,
       "minTs": 2300.0,
-      "type": "tack",
-      "counted": true,
+      "type": "round_up",
+      "counted": false,
       "entryKn": 10.124,
       "minKn": 2.486,
       "exitKn": 4.649,
@@ -596,7 +601,7 @@
       "radiusM": 9.39,
       "outcome": "fell_in",
       "outcomeReason": "stop",
-      "aborted": true,
+      "aborted": false,
       "borderline": false,
       "offFoilS": 31.0,
       "stoppedS": 28.0,
@@ -1614,7 +1619,7 @@
       "submerged": false,
       "windowS": 30.0,
       "truncated": false,
-      "ownedByTurn": 9
+      "ownedByTurn": null
     },
     {
       "flightIndex": 9,
@@ -4101,30 +4106,30 @@
       ]
     },
     "turns": {
-      "tacks": 1,
+      "tacks": 0,
       "tacksSuccessful": 0,
       "jibes": 31,
       "jibesSuccessful": 3,
       "unclassified": 0,
-      "turnsCounted": 32,
+      "turnsCounted": 31,
       "turnsSuccessful": 4,
-      "successPct": 12.5,
-      "rejected": 4,
+      "successPct": 12.9,
+      "rejected": 5,
       "port": 14,
-      "starboard": 18,
+      "starboard": 17,
       "unknownSide": 0,
       "longestDryStreak": 4,
       "longestFlewStreak": 3,
       "outcomes": {
         "flewThrough": 11,
         "touchdown": 8,
-        "fellIn": 13,
+        "fellIn": 12,
         "borderline": 0
       },
       "tackOutcomes": {
         "flewThrough": 0,
         "touchdown": 0,
-        "fellIn": 1,
+        "fellIn": 0,
         "borderline": 0
       },
       "jibeOutcomes": {
@@ -4145,21 +4150,21 @@
       "straight": {
         "glideOut": 0,
         "touchdown": 1,
-        "fellIn": 4,
+        "fellIn": 5,
         "unknown": 0,
         "borderline": 0
       },
       "inTurn": {
         "glideOut": 0,
         "touchdown": 4,
-        "fellIn": 12,
+        "fellIn": 11,
         "unknown": 2,
         "borderline": 1
       }
     },
     "outcomeSplit": {
-      "turnFalls": 13,
-      "straightFalls": 4,
+      "turnFalls": 12,
+      "straightFalls": 5,
       "turnTouchdowns": 8,
       "straightTouchdowns": 1,
       "glideOuts": 0,

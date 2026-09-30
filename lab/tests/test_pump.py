@@ -149,3 +149,26 @@ def test_an_unsorted_stream_is_sorted_rather_than_mis_binned():
     straight = pump_track_from_arrays(t, mag)
     assert shuffled is not None and straight is not None
     assert np.allclose(shuffled.band, straight.band)
+
+
+@pytest.mark.parametrize("seconds", [1.0, 1.96, 2.0, 2.04])
+def test_a_stream_shorter_than_the_filter_analyses_rather_than_crashing(seconds):
+    """Engine 0.27.0: two 31 Aug 2026 desk stubs raised IndexError here. numpy's "same"
+    convolution is max(len(a), len(taps)) long, so a stream shorter than the band-pass
+    (2 s at 25 Hz against a 2 s filter span) came back longer than its own `valid` mask.
+    A short file is a short answer, not a crash -- and the band is the grid's length."""
+    t = np.arange(0.0, seconds, 1.0 / 25.0)
+    mag = 1.0 + 0.3 * np.sin(2 * np.pi * 1.2 * t)
+    track = pump_track_from_arrays(t, mag)
+    assert track is not None
+    assert len(track.band) == len(track.t) == len(track.valid)
+    assert np.all(np.isfinite(track.band))
+
+
+def test_the_same_convolution_is_numpys_wherever_the_stream_is_the_longer():
+    """The fix changes no number on a real session: the centred slice of the full
+    convolution is exactly numpy's "same" once the stream outgrows the filter."""
+    from wingfoil_lab.pump import _bandpass_taps, _convolve_same
+    taps = _bandpass_taps(PumpConfig())
+    a = np.random.default_rng(7).normal(size=400)
+    assert np.array_equal(_convolve_same(a, taps), np.convolve(a, taps, mode="same"))
