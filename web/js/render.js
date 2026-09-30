@@ -97,7 +97,11 @@ export function keyMetrics(doc) {
     // streaks — draws each half in its own ink, flew in the ladder's green (F8f).
     const ink = (role) => ({ "outcome.flew": "flew", "outcome.touchdown": "touchdown",
                              "outcome.fellIn": "fell", "clean.jibe": "clean" }[role] || "");
-    const v = e.tally
+    const v = e.missing
+      // A record not set says why in the number's place (30 Sep 2026, "No dash as a
+      // heading"); `e.value` still spells the dash for the card.
+      ? `<span class="why">${esc(e.missing)}</span>`
+      : e.tally
       ? `<span class="tally"><span class="flew">${int(e.tally.flewThrough)}</span>` +
         `<i>·</i><span class="touchdown">${int(e.tally.touchdown)}</span>` +
         `<i>·</i><span class="fell">${int(e.tally.fellIn)}</span></span>`
@@ -174,6 +178,17 @@ const recordKn = (doc, key) =>
   (doc?.records?.kinds || []).find((k) => k.key === key)?.value ?? null;
 
 const recordLabel = (key) => text(`tokens.recordWindow.${key}`) ?? key;
+
+/** A record's tile: its number, or — where the session did not set it (`achieved` false)
+ *  — the reason in the number's place, from the caption the block's cell carries. */
+const recordAchieved = (doc, key) =>
+  (doc?.records?.kinds || []).find((k) => k.key === key)?.achieved === true;
+
+function recordTile(doc, key, reasonId, note) {
+  return recordAchieved(doc, key)
+    ? { k: recordLabel(key), v: speedNumber(recordKn(doc, key)), unit: speedUnit(), n: note }
+    : { k: recordLabel(key), why: text(`presentation.caption.${reasonId}`) ?? "", n: note };
+}
 
 function renderSummary(result, isExample = false) {
   const g = result.golden, meta = result.meta, caps = g.capabilities;
@@ -273,12 +288,13 @@ function renderSummary(result, isExample = false) {
     // The tiles carry their unit in a `<small>` of their own, so the number comes through
     // `speedNumber` and the word through `speedUnit` — one formatter, whichever half of it
     // a cell needs (js/appsettings.js; `Speed` in the kit).
-    { k: recordLabel("best2s"), v: speedNumber(recordKn(doc, "best2s")), unit: speedUnit(),
-      n: `10 s ${speed(recordKn(doc, "best10s"))}` },
-    { k: recordLabel("best5x10s"), v: speedNumber(recordKn(doc, "best5x10s")),
-      unit: speedUnit(), n: `1 NM ${speed(recordKn(doc, "bestNm"))}` },
-    { k: recordLabel("alpha500"), v: speedNumber(recordKn(doc, "alpha500")),
-      unit: speedUnit(), n: `250 m ${speed(recordKn(doc, "best250m"))}` },
+    //
+    // A record the session did not set says why where the number goes — the block's own
+    // caption for it, `presentation.caption.no*` — rather than "—", or the "0.00" an
+    // analysis golden's `0.0` used to print here (30 Sep 2026, "No dash as a heading").
+    recordTile(doc, "best2s", "noMax2s", `10 s ${speed(recordKn(doc, "best10s"))}`),
+    recordTile(doc, "best5x10s", "noBest5x10s", `1 NM ${speed(recordKn(doc, "bestNm"))}`),
+    recordTile(doc, "alpha500", "noAlpha500", `250 m ${speed(recordKn(doc, "best250m"))}`),
     { k: "Jibes", v: int(t.jibes),
       html: t.jibes ? breakdown([fig("clean star", t.jibesSuccessful, "clean")]
                                 .concat(ladder(t.jibeOutcomes))) : "",
@@ -298,7 +314,8 @@ function renderSummary(result, isExample = false) {
   el("tiles").innerHTML = tiles.map((t) => `
     <div class="tile">
       <div class="k">${esc(t.k)}</div>
-      <div class="v">${esc(t.v)}${t.unit ? `<small>${esc(t.unit)}</small>` : ""}</div>
+      ${t.why ? `<div class="v why">${esc(t.why)}</div>`
+              : `<div class="v">${esc(t.v)}${t.unit ? `<small>${esc(t.unit)}</small>` : ""}</div>`}
       ${t.html ? `<div class="b">${t.html}</div>` : ""}
       <div class="n">${esc(t.n || "")}</div>
     </div>`).join("");

@@ -177,6 +177,26 @@ import Testing
         }
     }
 
+    /// **A record the session did not set says why, where the number goes** (30 Sep 2026,
+    /// docs/presentation/sections-tables.md, "No dash as a heading"). The smoke fixture has
+    /// no alpha 500; a track with no GPS at all sets none of the three. The reason is the
+    /// engine's own condition per record, and a record that was set carries none.
+    @Test func aRecordNotSetSaysWhyInTheNumbersPlace() throws {
+        let smoke = KeyMetrics.make(block: try Self.document("smoke-60s")["block"] ?? .null)
+        let alpha = try #require(smoke.speedExtras.first { $0.key == "alpha500" })
+        #expect(alpha.missing == "no 500 m run that turned back to its start")
+        #expect(alpha.value == "—")
+        #expect(alpha.caption == nil)
+        #expect(smoke.maxSpeed.missing == nil)
+        #expect(smoke.speedExtras.first { $0.key == "best5x10s" }?.missing == nil)
+
+        let none = KeyMetrics.make(summary: try Self.analysis("smoke-60s").summary,
+                                   records: GP3SRecords())
+        #expect(none.maxSpeed.missing == "no unbroken 2 s of track")
+        #expect(none.speedExtras.map(\.missing)
+                == ["no unbroken 10 s of track", "no 500 m run that turned back to its start"])
+    }
+
     /// A tile is its block cell, word for word. A card that reworded one would be a second
     /// vocabulary, which is the defect `ShareCardStats` was written to stop.
     @Test func everyTileIsItsBlockCellVerbatim() throws {

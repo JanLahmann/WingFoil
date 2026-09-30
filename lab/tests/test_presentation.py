@@ -291,8 +291,13 @@ def branch_documents() -> list[dict]:
         {"ts": 20.0, "durationS": 0.4, "turnIndex": None, "flightEndIndex": 0},
         {"ts": 30.0, "durationS": 4.0, "turnIndex": None, "flightEndIndex": None},
     ]
+    # A recording with no unbroken 10 s of track sets none of the speed row's three
+    # records; the golden writes that absence as 0.0 (`goldens.py`), the kit as nil.
+    no_records = json.loads(json.dumps(base))
+    for key in ("best2sKn", "best10sKn", "best5x10sKn", "alpha500Kn"):
+        no_records["records"][key] = 0.0
     return [build_presentation(no_jibes), build_presentation(callouts),
-            build_presentation(with_tacks_golden())]
+            build_presentation(with_tacks_golden()), build_presentation(no_records)]
 
 
 def with_tacks_golden() -> dict:
@@ -309,7 +314,7 @@ def with_tacks_golden() -> dict:
 def test_the_branches_no_corpus_fixture_is():
     """The fallback tally caption, and the two wrist-under callouts the corpus never
     produces. Asserted here so they are contract rather than dead code."""
-    no_jibes, callouts, _ = branch_documents()
+    no_jibes, callouts, _, no_records = branch_documents()
     tally = next(c for row in no_jibes["block"]["rows"] for c in row["cells"]
                  if c["key"] == "tally")
     # The fallback carries no clean clause: a session whose wind axis named no jibes has
@@ -324,6 +329,13 @@ def test_the_branches_no_corpus_fixture_is():
     assert callouts["splash"]["marks"][1]["title"]["id"] \
         == "presentation.wristUnder.title"
     assert callouts["splash"]["marks"][0]["during"]["args"] == {"turnId": "bearAway"}
+
+    # A record not set carries its own reason, and its value is left as it was.
+    speed = next(r for r in no_records["block"]["rows"] if r["id"] == "speed")["cells"]
+    assert [(c["key"], [x["id"] for x in c["captions"]], c["value"]) for c in speed] == [
+        ("max2s", ["presentation.caption.noMax2s"], 0.0),
+        ("best5x10s", ["presentation.caption.noBest5x10s"], 0.0),
+        ("alpha500", ["presentation.caption.noAlpha500"], 0.0)]
 
 
 def test_the_copy_file_carries_no_id_the_document_cannot_reach(documents):

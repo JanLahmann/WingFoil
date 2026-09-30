@@ -115,11 +115,22 @@ struct KeyMetricsView: View {
     private func cell(_ metric: KeyMetrics.Metric,
                       font: Font = .title2.weight(.semibold)) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(metric.value)
-                .font(font)
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
+            // **A record the session did not set says why, where the number goes** — "no
+            // unbroken 10 s of track" — rather than a "—" that reads as a heading made of a
+            // dash (docs/presentation/sections-tables.md, "No dash as a heading"). The
+            // `StatCard` nil-value path's type: a line of body, not a number.
+            if let why = metric.missing {
+                Text(why)
+                    .font(.subheadline)
+                    .foregroundStyle(.readableSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                Text(metric.value)
+                    .font(font)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+            }
             // No line limit: a label that needs four lines at the rider's text size gets
             // four. The row is `.top`-aligned, so a taller tile pushes nothing sideways.
             // The label, and the qualifier under it where the cell has one — the falls
@@ -133,7 +144,8 @@ struct KeyMetricsView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(spoken("\(metric.label), \(metric.value)", metric.key))
+        .accessibilityLabel(spoken("\(metric.label), \(metric.missing ?? metric.value)",
+                                   metric.key))
     }
 
     /// **The clean jibes**: the star and the number in the clean ink, never the ladder's
