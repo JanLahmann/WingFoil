@@ -223,13 +223,14 @@ public struct StravaActivity: Sendable, Codable, Identifiable, Equatable {
 /// not a preference: without positions there is nothing to analyse.
 public enum StravaActivityFilter {
 
-    /// Strava's run, ride, hike and walk types: skipped unless the name says wing or foil
-    /// (``WatersportName/saysWingOrFoil(_:)``), 30 Sep 2026.
+    /// Strava's run, ride and hike types: skipped unless the name says wing or foil
+    /// (``WatersportName/saysWingOrFoil(_:)``), 30 Sep 2026. A walk keeps the any-word
+    /// rescue, as on the intervals.icu path, where watch apps mis-type sessions as Walk.
     public static let landTypes: Set<String> = [
         "Run", "TrailRun", "VirtualRun",
         "Ride", "VirtualRide", "EBikeRide", "EMountainBikeRide", "MountainBikeRide",
         "GravelRide",
-        "Hike", "Walk",
+        "Hike",
     ]
 
     public static func matches(_ activity: StravaActivity,

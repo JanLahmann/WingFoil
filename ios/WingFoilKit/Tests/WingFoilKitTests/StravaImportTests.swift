@@ -318,9 +318,9 @@ struct StravaImportTests {
         // The rescue: any type, if the rider named it…
         #expect(StravaActivityFilter.matches(made("Ride", "Wingfoil Torbole"), types: defaults))
         #expect(StravaActivityFilter.matches(made("Swim", "SUP downwinder"), types: defaults))
-        // …but a run, a ride, a hike or a walk only by a wing or foil word (30 Sep 2026).
+        // …but a run, a ride or a hike only by a wing or foil word; a walk by any (30 Sep 2026).
         #expect(!StravaActivityFilter.matches(made("Hike", "SUP downwinder"), types: defaults))
-        #expect(!StravaActivityFilter.matches(made("Walk", "Kite beach"), types: defaults))
+        #expect(StravaActivityFilter.matches(made("Walk", "Kite beach"), types: defaults))
         #expect(!StravaActivityFilter.matches(made("TrailRun", "Surf check"), types: defaults))
         #expect(!StravaActivityFilter.matches(made("Run", "Windsurf spot run"), types: defaults))
         #expect(StravaActivityFilter.matches(made("Walk", "Foiling Silvaplana"), types: defaults))
