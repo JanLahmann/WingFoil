@@ -74,50 +74,26 @@ What changed and why:
   0.9.19 ships.
 * Every sentence is register 1, at most 20 words, with no dash, semicolon or parenthesis.
   `docs/copy/check_voice.py` reads this block.
-* **2831 characters.** The form rejects `<` and `>`, and there are none.
+* **2831 characters, cut to 1138 on 30 September 2026** (Jan: "make this way more concise"): one paragraph per theme, the accelerometer and recording detail left to cleanjibe.org/start. The form rejects `<` and `>`, and there are none.
 
 ```
 Did you fly through that jibe? CleanJibe on your Garmin tells you while you ride. It knows when you are up on the foil, counts every flight, and gives every turn its verdict. Flew through, touchdown, or fell in.
 
 THIS IS THE BETA
 
-This listing is the CleanJibe beta. It is free and open to anyone, with no key and no account. New versions come here first, so a threshold can still move between them. Tell us what looks wrong at cleanjibe.org/invite, or with Contact Developer on this page.
-
-NEW TO IT?
-
-cleanjibe.org/start walks you through a 20-minute test on land. Record a few minutes, bring the file onto your phone, and see what you should see. The page also says where to send what you find.
+It is free and open to anyone, with no key and no account. New versions come here first. Tell us what looks wrong at cleanjibe.org/invite.
 
 ON THE WATER
 
-The watch knows when your board is up on the foil. It counts every flight and every touchdown while you ride.
+A buzz and a flash give you each turn's verdict at once. Tacks and jibes are counted apart, with your dry streak beside them. Your best 2 s and 10 s show live, and a new personal best buzzes. The watch estimates the wind by itself, and counts your pump strokes and takeoff attempts.
 
-Every turn gets its verdict as you make it: clean, flew through, touchdown or fell in. A buzz and a flash on the glass tell you at once.
+Eight pages show speed, session, records, turns, the map and your time on the foil. Large text gives you five big screens instead.
 
-Your tacks and jibes are counted apart, each with how many you flew through. Your dry streak shows how many turns in a row you stayed dry.
+AFTERWARDS
 
-Your best 2 s and best 10 s show live, and the watch buzzes on a new personal best.
+The watch saves a Windsurf activity with a lap for every flight. Drop the FIT file into cleanjibe.org for the full analysis, free, with no upload. On an iPhone, CleanJibe Wingfoil Analyzer is open on TestFlight at testflight.apple.com/join/nygqGGcn.
 
-After a few minutes of riding, the watch works out the wind direction by itself. A ~ marks the estimate, and the wind menu always overrides it.
-
-Your pump strokes and takeoff attempts come from your wrist's movement.
-
-YOUR PAGES
-
-Eight pages show your speed, your session, records, turns, and tacks and jibes. Then come the map with your trail, your time on the foil and the clock. Switches in the app's settings hide the pages you never read. Large text swaps them for five big screens, one number each. After you save, a full summary waits for you.
-
-HOW IT RECORDS
-
-The watch records a Windsurf activity with a lap for every flight. Your session no longer shows up in Garmin Connect as a walk. GPS records every second, multiband where your watch has it, and auto-pause is built in.
-
-Raw accelerometer logging is off by default. Switch it on only for deep analysis on the phone. It makes the file about 20 times larger, and the transfer after saving takes minutes.
-
-AFTERWARDS, IN ANY BROWSER
-
-Open cleanjibe.org and drop in the FIT file. The same analysis runs right in your browser, free, with no upload and no account. You get the track, every flight and every turn with its verdict. Your speed records, the wind axis and a share card are there too. Keep a library there and it builds your all-time records and season trends. It works on an Android phone too, and it also reads Garmin's own Windsurf activity and GPX files.
-
-ON AN IPHONE
-
-CleanJibe Wingfoil Analyzer gives you maps, turn pages, replay, records and trends. It is on its way to the App Store. Until then, its beta is open on TestFlight at testflight.apple.com/join/nygqGGcn.
+New to it? cleanjibe.org/start walks you through a 20-minute test on land.
 ```
 
 ### What's New (live text)

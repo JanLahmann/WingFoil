@@ -100,63 +100,31 @@ every swim.", is retired everywhere. Then the promise's question, and two plain 
 
 ## Description
 
-4000-character limit. **3933 used.**
+4000-character limit. **1278 used.**
 
 ```
 Did you fly through that jibe? CleanJibe reads your session off the watch. It tells you your time on the foil, every flight, your speed records, and a verdict on every turn. Flew through, touchdown, or fell in.
 
-Nail a jibe and it gets a star. Ride with the free CleanJibe watch app on your Garmin. It buzzes each verdict on your wrist while you ride. Back on the beach, your phone shows you why. Your clean jibes, your dry streak and your best 2 s sit side by side. The share card shows them off.
+Nail a jibe and it gets a star. Your clean jibes, your dry streak and your best 2 s sit side by side. The share card shows them off.
 
-YOUR SESSION ON ONE PAGE
+YOUR SESSION AND YOUR SEASON
 
-Open a session and the whole afternoon is there. Your track sits on the map with every flight, every turn and every takeoff marked. Tap a mark to see the numbers behind it.
-
-Every turn has a page of its own. You see your speed through the turn and where the foil came down. The page also says why the verdict came out the way it did.
-
-A jibe is clean when you flew through, held your speed, then had 10 quiet seconds. Tacks get their own count.
-
-Nine speed records sit on your track and speed chart, from best 2 s to best hour, alpha 500 included. Speeds read in knots or km/h, your choice.
-
-Watch the session again as a replay, with commentary as it plays. Save a short clip with your own music and post it. The share card carries your track and your numbers, with the map behind them if you like.
-
-YOUR SEASON
-
-Records and Trends read every session you have ridden. Your all-time bests sit in one table, and you can narrow it to one spot or one piece of gear. Trends draw your foil time, your longest flight and your jibes per hour across the months.
-
-Send a session to a friend. It opens on their phone as your session and stays out of their own records.
+Your track sits on the map with every flight and every turn marked. Every turn has its own page that says why it got its verdict. Nine speed records run from best 2 s to best hour, in knots or km/h. Records and Trends follow you across the season.
 
 START WITH THE SESSIONS YOU HAVE
 
-Bring in your old Garmin sessions first, recorded with any activity profile. Connect intervals.icu once in Settings, and your history comes in. Every new session then arrives by itself. Garmin has no open API, so intervals.icu is the bridge. It is free.
+Connect intervals.icu once and your Garmin history comes in. New sessions then arrive by themselves. You can also open a FIT file, a Garmin export ZIP or a Strava session. An example session is built in, so you can try every page first.
 
-You can also open a FIT file from Files, Mail or AirDrop, or share it to CleanJibe. A Garmin export ZIP brings in your whole history at once.
+GET MORE WITH THE WATCH APP
 
-Strava works too. Pick a session from your feed and it comes in. Strava keeps the track but not the watch's measured speed. Falls are harder to tell from touchdowns, and your speed records are estimated.
-
-No session of your own yet? An example session from Lake Garda is built in. You can try every page before you connect anything.
-
-GET MUCH MORE WITH THE WATCH APP
-
-You get much more from the free CleanJibe watch app for Garmin. It is in open beta on the Connect IQ store. It records your wrist's movement, which gives you your pump strokes and takeoff attempts.
-
-Any other recording with the watch's measured speed works as well. Garmin's own Windsurf activity gives you everything except the pumping. A track with positions only still gives you flights and turns, and speed records estimated from positions.
-
-No iPhone at hand? The same analysis runs free in any browser at cleanjibe.org.
-
-HOW IT WORKS
-
-The watch records the session and your phone does the analysis. Every threshold behind a verdict is published, and the whole engine is open source at github.com/JanLahmann/WingFoil. If a jibe got the wrong verdict, you can read why and tell us.
+The free CleanJibe watch app for Garmin buzzes each verdict on your wrist while you ride. It also counts your pump strokes and takeoff attempts. It is in open beta on the Connect IQ store.
 
 YOUR SESSIONS STAY ON YOUR PHONE
 
-There is no account and no CleanJibe server. Your sessions are never uploaded. There is no advertising, no analytics and no tracking.
-
-The app never asks for your location. Every coordinate it shows was already in your file. It talks to intervals.icu and Strava only if you connect them, each with your own login. Apple draws the map and looks up the name of each new spot from one rounded coordinate. The full policy is at cleanjibe.org/privacy.
-
-TELL US WHAT YOU SAW
-
-We are wingfoilers too, and we read every mail. Menu → Support & ideas opens a mail to us with your app details already in it. Or write to info@cleanjibe.org.
+There is no account, no CleanJibe server and no tracking. The engine is open source. Tell us what you saw at info@cleanjibe.org.
 ```
+
+**Cut to a third on 30 September 2026** (Jan: "way too long. We need to be much more concise"): one paragraph per section, the turn page, replay, Strava caveats, other recordings and the privacy detail left to the app and cleanjibe.org/privacy. The notes below still hold for what stayed.
 
 The opening sentence is the product's one promise, and it is the same sentence the homepage,
 the Connect IQ listing and the library's empty state say — `docs/copy/phrases.json` →
@@ -192,33 +160,22 @@ because its public listing is one (docs/channels.md, "The watch — the same thr
 
 ## What's New in 1.0.1
 
-4000-character limit. **1423 used.** Register 1, one line per change, release doors only.
+4000-character limit. **623 used.** Register 1, one line per key feature, release doors only.
+
+Jan, 30 September 2026: *"what's new" basically is a list of our key features, as the app is new to the store.* The change list from betas 93 to 111 is retired here; it lives on in `docs/copy/whats-new.json` and the app.
 
 ```
-This is the first CleanJibe on the App Store. Riders in the beta rode it all summer, and their sessions shaped it.
+This is the first CleanJibe on the App Store. Here is what it does for you.
 
-YOUR TURNS AND FALLS
-A jibe you never got going again after counts as a fall, not a touchdown.
-A touchdown only counts when you slow down right after coming off the foil.
-Falls are read from the dunk itself. A watch that resets its height after a swim no longer turns your afternoon into falls.
-Sessions recorded with Garmin's own activity show the full distance, as Garmin Connect does.
-Tacks have their own count beside the jibes, on the session page and on the share card.
-Clean jibes have their own tile with the star.
-
-YOUR PAGES
-Takeoffs and flight endings share one Flights tab.
-Swipe left or right for the next or previous session.
-Settings → Session list picks the three numbers each row shows.
-Settings → Units puts every speed in knots or km/h, on the charts and on the card too.
-Settings → Speed records decides whether records from a track without the watch's speed count.
-Trends draw your jibes per hour, your turns per hour and your best 2 s.
-The map offers Map or Satellite, and your track reads clearly on both.
-VoiceOver reads every number with its word. Large text no longer breaks the list.
-
-TELL US
-The feedback mail has a list to tick. Tell us what you want most.
-Menu → Join the beta shows what we are testing next.
-Settings → About → Licences lists the open-source parts we build on.
+Every turn gets a verdict. Flew through, touchdown, or fell in.
+Clean jibes get a star, and tacks have their own count.
+You see every flight, your time on the foil and nine speed records.
+Your track sits on the map with every turn marked and explained.
+Records and Trends follow your whole season.
+The share card shows off your track and your numbers.
+Bring in your Garmin history through intervals.icu, a FIT file, a Garmin ZIP or Strava.
+Every speed reads in knots or km/h.
+Your sessions stay on your phone. There is no account and no tracking.
 ```
 
 **ASC may not offer this field.** 1.0.0 never went on sale, so 1.0.1 is the app's first
@@ -231,10 +188,10 @@ release has a list at all: the beta riders' summer is what it lists.
 ## Keywords
 
 100-character limit, comma-separated, **no spaces after commas** (a space costs a character
-and buys nothing). **99 used, 15 terms.**
+and buys nothing). **85 used, 13 terms.** Jan, 30 September 2026: kitefoil and pump removed.
 
 ```
-wing,foil,gybe,tack,hydrofoil,windsurf,kitefoil,foiling,knots,gps,downwind,pump,watersport,fit,surf
+wing,foil,gybe,tack,hydrofoil,windsurf,foiling,knots,gps,downwind,watersport,fit,surf
 ```
 
 Reasoning, since this is the field that is hardest to second-guess later:
@@ -245,9 +202,8 @@ Reasoning, since this is the field that is hardest to second-guess later:
   words, and the store is not known to split them, so `foil` is a keyword of its own now
   (it was assumed covered by *Wingfoil* until 26 September 2026), and *jibe* moved into the
   subtitle for the same reason.
-* **`gps`, `pump` and `tack`** are what a rider types looking for a speed or a
-  foiling-technique tool: GPS speedsurfing records, pump strokes on the takeoff, tacks
-  counted apart from jibes. `session` left to make room; it matched every sport there is.
+* **`gps` and `tack`** are what a rider types looking for a speed or a
+  foiling-technique tool: GPS speedsurfing records, tacks counted apart from jibes. `session` left to make room; it matched every sport there is.
 * **`wing` earns its place twice over.** Apple combines keywords into phrases, so `wing` +
   the name's `wingfoil` covers *"wing foil"* as two words — which is how a large part of the
   sport spells it, and which the one-word app name misses.
@@ -260,7 +216,7 @@ Reasoning, since this is the field that is hardest to second-guess later:
 * **`fit`** is there for *".fit file"*, which is what a Garmin owner types when they are
   looking for something to open one with. It will draw some irrelevant fitness traffic;
   that is an acceptable price for the searches it does catch.
-* **`hydrofoil`, `kitefoil`, `foiling`, `downwind`, `surf`, `watersport`** are the adjacent
+* **`hydrofoil`, `foiling`, `downwind`, `surf`, `watersport`** are the adjacent
   sports whose riders record the same kind of session and are served by the same analysis.
 * Not included, deliberately: competitor and brand names (against Apple guidelines), and
   plurals (Apple handles them).
@@ -323,32 +279,27 @@ Answer every questionnaire item **None / No**. The result is **4+**.
 
 ## Review notes for Apple
 
-The live "Notes" field of App Review Information.
+The live "Notes" field of App Review Information. **1749 characters** (was 3616; halved at Jan's ask, 30 September 2026).
 
 ```
-CleanJibe analyses wingfoil sessions recorded by a GPS sports watch. It reads the .fit activity file and works out, on the device, how much of the session was spent flying on the hydrofoil, how long each flight lasted, the rider's speed records, and for every turn whether the rider flew through it, touched down, or fell in.
+CleanJibe analyses wingfoil sessions recorded by a GPS sports watch. It reads the .fit file and works out, on the device, every flight, the speed records and a verdict on every turn.
 
-NO ACCOUNT AND NO LOGIN. There is nothing to sign up for and no demo credentials are needed. There is no server component of any kind.
+NO ACCOUNT, NO LOGIN, NO SERVER. No demo credentials are needed.
 
-HOW TO REVIEW WITHOUT ANY HARDWARE. A complete real session is bundled, so every feature can be exercised on a simulator or a plain iPhone with no watch and no files:
-1. Launch the app. The welcome screen offers "Try the example session" - tap it. (If the welcome screen has been dismissed, the same button is on the empty Sessions tab, and under Menu > What CleanJibe does.)
-2. The session opens on its summary: the numbers, the track on the map, the speed chart with the record markers, the replay with its scrubber.
-3. The Turns section lists every turn's verdict; tapping one opens the turn page with the track and speed through the turn.
-4. The share icon (top right) opens the share card composer - portrait, square or landscape, an optional map background - and the "Send to a friend" option.
-5. "Record replay" saves a short clip of the replay to Photos (the app asks for add-only Photos access at that moment; in the Simulator the clip is empty by design).
-6. Records, Trends and Gear fill from imported sessions; the bundled example is deliberately excluded from personal records, so with only the example those tabs show their empty state. Import the attached session (next paragraph) and Records fills; Trends needs sessions across more than one month.
+REVIEW WITHOUT HARDWARE. A real session is bundled.
+1. Launch the app and tap "Try the example session" on the welcome screen. The same button is on the empty Sessions tab.
+2. The session page shows the numbers, the track on the map, the speed chart and the replay.
+3. Turns lists every turn's verdict. Tap one to open its turn page.
+4. The share icon (top right) opens the share card and "Send to a friend".
+Records and Trends leave the example out on purpose. Unzip the attached .fit and open it from Files, Mail or AirDrop, and Records fills.
 
-IMPORTING A FILE. The attached zip holds a real .fit session (the same one that is bundled as the example). Unzip it, then open the .fit from Files, Mail or AirDrop, or share it to CleanJibe; the app reads it and shows the same pages as the example.
+OPTIONAL SERVICES. intervals.icu takes the user's own API key and only downloads their own files. Strava connects by OAuth with read scope. Strava caps a new app at ten riders, so a refused connection is that cap, not a defect. Neither is needed for review.
 
-THIRD-PARTY SERVICES ARE OPTIONAL. Settings offers a field for an intervals.icu API key (an independent training-analysis service; the key is the user's own and the app only downloads that user's own activity files) and a "Connect with Strava" button (OAuth in the system browser, read scope; the user picks their own activities to import). Strava caps a new app at ten connected riders until it has reviewed the app, which Strava only does once the cap is reached; if your test connection is refused as "full", that is Strava's cap, not a defect, and the app says so. Both are inert until the user sets them up and nothing is uploaded to either. Reviewing these paths is not necessary; the bundled example and the attached file cover everything.
+PERMISSIONS. Photos, add-only, when saving a replay clip. Notifications, only for the optional background check for new intervals.icu activities. The app never requests location. All GPS comes from the imported files. No Health, no Bluetooth.
 
-PERMISSIONS. Photos, add-only, only when saving a recorded replay clip. Notifications, only if the user enables the optional background check for new intervals.icu activities. The app never requests location: all GPS shown comes from inside the imported files. No Health, no Bluetooth.
+"COMING IN A FUTURE RELEASE" in Settings lists features that are in our public TestFlight beta and not in this release (GPX/TCX files, Apple Health, an Apple Watch app, home-screen widgets, video export, grouping and filtering of the library). This release is complete on its own.
 
-THE "COMING IN A FUTURE RELEASE" SECTION in Settings lists features that are in our public TestFlight beta and not in this release (GPX/TCX files, Apple Health, an Apple Watch app, home-screen widgets, video export, grouping and filtering of the library). It links to the TestFlight public link. This release is complete on its own; the section only tells the user where those features are being tested.
-
-The bundled example is one of the developer's own sessions, stripped of all identifying data before shipping. The app is open source: github.com/JanLahmann/WingFoil.
-
-Questions: info@cleanjibe.org
+The bundled example is the developer's own session, stripped of identifying data. The app is open source: github.com/JanLahmann/WingFoil. Questions: info@cleanjibe.org
 ```
 
 **These notes may name the beta doors, and must.** They exist to explain a section the
