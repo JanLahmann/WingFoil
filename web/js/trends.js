@@ -282,8 +282,8 @@ function renderTotals(host, t) {
  *  the receiver, and a differentiated speed is noisier and can read high. The record is
  *  still shown — it is still the rider's afternoon — and it is shown marked, because an
  *  all-time best is exactly where an unverifiable number does the most damage. */
-const UNCERTIFIED = ' <span class="badge" title="This session carried no speed channel — a '
-  + 'GPX, or another degraded source. Its speed was differentiated from positions, which is '
+const UNCERTIFIED = ' <span class="badge" title="This session had no speed channel, a '
+  + 'GPX or another degraded source. Its speed was differentiated from positions, which is '
   + 'noisier and can read high, so this record cannot be certified.">uncertified</span>';
 
 /** The phone's chart title for an engine chart key (`TrendsView`, the rate codes spelled
@@ -662,7 +662,7 @@ function drawChart(host, chart, sessions) {
       const html = `<b>${esc(sessionLabel(s, s.id))}</b><br>${esc(localDate(s))}<br>` +
                    `${esc(chart.label)} · ${esc(line.label)}: ` +
                    `<b>${nf(p.v, 2)}</b> ${esc(chartUnit(chart))}` +
-                   (open ? "<br>uncertified — speed from positions" : "");
+                   (open ? "<br>uncertified, speed from positions" : "");
       dot.addEventListener("pointerenter", (ev) => showTip(ev, html));
       dot.addEventListener("pointermove", (ev) => showTip(ev, html));
       dot.addEventListener("pointerleave", hideTip);
