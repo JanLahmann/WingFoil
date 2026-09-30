@@ -96,7 +96,7 @@ export { hm };
  *   key     the document cell's own `key` — stable, and the same key names the same fact
  *           in the block and on the card
  *   label   exactly the words printed under the number on the page. A cell with something
- *           to qualify carries its caption after an em-dash separator (`CAPTION_SEP`) — the
+ *           to qualify carries its caption after a comma separator (`CAPTION_SEP`) — the
  *           two tallies' "of 55 jibes" and "of 14 tacks", and the falls cell's split; the
  *           card splits there to get two lines, which is layout, not content. iOS holds the
  *           two halves in two fields (`KeyMetrics.Metric.caption`) and joins them with the
@@ -165,10 +165,11 @@ export const RECORD_MISSING = new Set(["presentation.caption.noMax2s",
                                        "presentation.caption.noBest5x10s",
                                        "presentation.caption.noAlpha500"]);
 
-/** The em-dash the tally's label uses to hang its caption off the words. The card splits
- *  the label here to get the two lines iOS lays out as `label` + `caption`; nothing else
- *  in the block contains it, which is what makes the split safe. */
-export const CAPTION_SEP = " — ";
+/** The comma a cell's label hangs its caption off: "flew · touch · fell, of 10 jibes". An
+ *  em dash until 30 Sep 2026, which docs/voice.md rule 4 forbids in rider text. The same
+ *  string as `captionSep` in the app's `KeyMetricsView`; verify_glossary.py holds the two
+ *  to each other. */
+export const CAPTION_SEP = ", ";
 
 /**
  * The card's stat list: the block's tiles. Nothing else.

@@ -294,7 +294,10 @@ the document must never try to make it:
   (`Speed`, `Fmt`, `viz.js`), reading the rider's Settings.
 - **The words.** The document names an id; `docs/copy` holds the sentence and the renderer
   interpolates the arguments, including plurals ("of 1 tack") and the discipline lexicon
-  (`planing` for `flying`).
+  (`planing` for `flying`). A cell's label and its caption join on one line with a comma,
+  never a dash: "flew · touch · fell, of 10 jibes", "fell in, 2 in a turn · 0 in a straight
+  line" (30 Sep 2026, docs/voice.md rule 4). `captionSep` in `KeyMetricsView` and
+  `CAPTION_SEP` in `web/js/cardstats.js` spell it; `verify_glossary.py` holds them together.
 - **Layout.** Grid, column count, wrapping, which cells share a row at which width, the
   two-column fallback iOS takes at accessibility sizes, the web's `auto-fit`.
 - **Type and Dynamic Type.** Sizes, weights, truncation, the accessibility-size reflow. A
