@@ -17,9 +17,9 @@ sentences that can fail to arrive. So the strings are inlined here, generated, a
 
 WHAT IS IN IT
 
-  ``NOT_A_SESSION``  verdicts.json → ``notASession``: the tag and the two lines, with
-                     ``{duration}`` and ``{distance}`` left in place. js/render.js fills
-                     them the way ``NotASessionNote.swift`` does.
+  ``NOT_A_SESSION``  verdicts.json → ``notASession``: the tag and the four lines, with
+                     ``{duration}``, ``{distance}`` and ``{sport}`` left in place.
+                     js/render.js fills them the way ``NotASessionNote.swift`` does.
   ``PHRASES``        phrases.json → ``promise``, ``callToAction``, ``captionOffer``. The
                      three sentences the product says about itself, available to any
                      renderer on this side of the site. And ``tagline``, the line under
@@ -104,7 +104,10 @@ def render() -> str:
         " * the row's own displayed numbers, so the line reads against the key metrics\n"
         " * directly above it. `lines[2]` is the land-sport case (engine 0.26.0) and\n"
         " * carries `{sport}`, the FIT profile's name with `_` read as `-`; `landTag`\n"
-        " * is that row's tag.\n"
+        " * is that row's tag. `lines[3]` is the snow-sport case (30 Sep 2026, ADR-036\n"
+        " * amendment) — alpine or cross-country skiing, snowboarding, snowshoeing or\n"
+        " * snowmobiling, `render.js`'s `SNOW_SPORTS` — and says why in the way a snow-wing\n"
+        " * afternoon is not just the wrong sport: there is no foil to read on snow at all.\n"
         " */\n"
         "export const NOT_A_SESSION = %s;\n\n"
         "/** The three sentences the product says about itself, and the card's tagline\n"

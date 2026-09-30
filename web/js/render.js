@@ -346,6 +346,14 @@ function distanceNote(km) {
   return value < 1 ? `${Math.round(value * 1000)} m` : `${value.toFixed(1)} km`;
 }
 
+/** The five snow sports among `library.js`'s `LAND_SPORTS` (30 Sep 2026, ADR-036
+ *  amendment): they keep the land-sport tag, but `renderNotASession` below gives the page
+ *  its own line — there is no foil to read on snow at all, not just the wrong sport.
+ *  Skate sports (inline and ice skating) keep the generic line. Twin of
+ *  `NotASessionNote.snowSports`. */
+const SNOW_SPORTS = new Set(["cross_country_skiing", "alpine_skiing", "snowboarding",
+                             "snowshoeing", "snowmobiling"]);
+
 /**
  * **This recording is not a session** — the tag on the title and the one line under it.
  *
@@ -373,6 +381,7 @@ function renderNotASession(g) {
     return;
   }
   const land = s.notASessionReason === "land_sport";
+  const snow = land && SNOW_SPORTS.has(String(s.landSport || "").trim().toLowerCase());
   tag.textContent = land ? NOT_A_SESSION.landTag : NOT_A_SESSION.tag;
   tag.hidden = false;
   // `no_recording` belongs to a library row with a card and no file yet, which this page
@@ -380,11 +389,13 @@ function renderNotASession(g) {
   // because the kit branches here, and a reason code the engine may send has to land
   // somewhere other than in the wrong sentence.
   // A land sport (engine 0.26.0) names the sport the file says: "e_biking" reads "e-biking".
+  // A snow sport (30 Sep 2026, ADR-036 amendment) gets its own line, lines[3]: the tag
+  // still reads "Not a watersport", but the page says there is no foil to read at all.
   note.textContent = s.notASessionReason === "no_recording"
     ? NOT_A_SESSION.lines[0]
     : land
-    ? NOT_A_SESSION.lines[2].replace("{sport}",
-                                     String(s.landSport || "another sport").replace(/_/g, "-"))
+    ? NOT_A_SESSION.lines[snow ? 3 : 2].replace(
+        "{sport}", String(s.landSport || "another sport").replace(/_/g, "-"))
     : NOT_A_SESSION.lines[1]
         .replace("{duration}", hms(s.durationS))
         .replace("{distance}", distanceNote(s.distanceKm));

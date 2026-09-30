@@ -122,6 +122,50 @@ struct SessionVerdictTests {
                 == true)
     }
 
+    /// **A snow sport gets its own line** (30 Sep 2026, ADR-036 amendment). Jan: "CleanJibe
+    /// reads foiling on water. A snow-wing day has no foil to read." The tag stays "Not a
+    /// watersport" — a snow-wing afternoon is still not one — but the page says why in a way
+    /// "wrong sport" alone does not: there is no foil to read at all.
+    @Test func aSnowSportIsToldThereIsNoFoilToRead() throws {
+        var raw = RawTrack()
+        raw.capabilities.sport = "alpine_skiing"
+        raw.capabilities.hasSpeed = true
+        raw.capabilities.sampleRateHz = 1
+        let epoch = Date(timeIntervalSince1970: 1_790_000_000)
+        for t in stride(from: 0.0, through: 600, by: 1) {
+            var s = RecordSample(t: t, timestamp: epoch.addingTimeInterval(t))
+            s.speedMps = 8.0
+            raw.samples.append(s)
+        }
+        let summary = SessionSummarizer.analyze(raw).summary
+        #expect(!summary.isSession)
+        #expect(summary.notASessionReason == .landSport)
+        #expect(summary.landSport == "alpine_skiing")
+        #expect(NotASessionNote.tag(for: .landSport) == "Not a watersport")
+
+        for snow in ["alpine_skiing", "cross_country_skiing", "snowboarding",
+                     "snowshoeing", "snowmobiling"] {
+            #expect(NotASessionNote.isSnowSport(snow))
+        }
+        for other in ["running", "inline_skating", "ice_skating", nil] as [String?] {
+            #expect(!NotASessionNote.isSnowSport(other))
+        }
+
+        let line = NotASessionNote.line(reason: .landSport, durationS: nil, distanceKm: nil,
+                                        sport: "alpine_skiing")
+        #expect(line.contains("recorded as alpine-skiing"))
+        #expect(line.contains("no foil to read"))
+        #expect(line.contains("kept"))
+        // No engine vocabulary anywhere near the rider.
+        for word in ["isSession", "foilTimeS", "success", "carried", "invalid", "deleted"] {
+            #expect(!line.localizedCaseInsensitiveContains(word), "\(word) reached the rider")
+        }
+
+        #expect(PresentationCopy.text("verdicts.notASession.lines.3",
+                                      args: ["sport": "alpine_skiing"])?
+                    .contains("no foil to read") == true)
+    }
+
     /// The rule may not reach a single recording the project already calls a session —
     /// including the 60 s smoke fixture, which is *inside* the duration floor (59.0 s against
     /// 120) and is a session on its 30 s of foil time alone.

@@ -129,6 +129,14 @@ HealthKit type, which is always a water one.
 watersport", the page opens and says what the file was recorded as, and the recording is
 out of every number that describes riding by the same clause as before (`isSession = 0`).
 
+**A snow sport gets its own line** (30 Sep 2026, ADR-036 amendment). The row's tag stays "Not
+a watersport" for all fourteen land sports, skate included, but the page's line is not the
+generic one for the five snow sports (`alpine_skiing`, `cross_country_skiing`,
+`snowboarding`, `snowshoeing`, `snowmobiling`): "Not a watersport" undersells why, since a
+wing on skis is not just the wrong sport, it has no foil at all. Jan: "CleanJibe reads
+foiling on water. A snow-wing day has no foil to read." `NotASessionNote.snowSports` names
+the five; `verdicts.notASession.lines.3` is the sentence, docs/copy/verdicts.json.
+
 **The import filter, fixed at the same time** (ADR-036). The intervals.icu name rescue — the
 one that catches the CIQ recordings mis-typed as Walk — now applies only to a type that could
 be a watersport (Walk, Workout, Other, WaterSport, no type, or a type the list does not know)
