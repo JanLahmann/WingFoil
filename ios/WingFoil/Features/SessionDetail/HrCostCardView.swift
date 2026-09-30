@@ -51,8 +51,10 @@ struct HrCostCardView: View {
                 if !card.bins.isEmpty { fatigue(card) }
                 LazyVGrid(columns: columns, spacing: 12) {
                     ForEach(card.stats) { stat in
-                        StatCard(title: stat.label, value: stat.value, caption: stat.caption,
-                                 dimmed: stat.missing,
+                        // A missing stat has no number, so its reason takes the number's
+                        // place (`StatCard` with a nil value) rather than sitting under a "—".
+                        StatCard(title: stat.label, value: stat.missing ? nil : stat.value,
+                                 caption: stat.caption,
                                  // Orange marks a number that exists but rests on too few
                                  // measurable attempts — distinct from dimmed, which means
                                  // there is no number at all.
@@ -91,14 +93,21 @@ struct HrCostCardView: View {
             Text("Takeoff cost")
                 .font(.caption)
                 .foregroundStyle(.readableSecondary)
-            Text(card.headlineValue)
-                .font(.title.weight(.semibold))
-                .monospacedDigit()
-                .foregroundStyle(card.headlineMissing ? .readableSecondary : .primary)
-            Text(card.headlineCaption)
-                .font(.caption2)
-                .foregroundStyle(.readableSecondary)
-                .fixedSize(horizontal: false, vertical: true)
+            // No dash as a heading: with no number the card says why in one sentence.
+            if card.headlineMissing {
+                Text(HrCostCard.noTakeoffCost)
+                    .font(.subheadline)
+                    .foregroundStyle(.readableSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                Text(card.headlineValue)
+                    .font(.title.weight(.semibold))
+                    .monospacedDigit()
+                Text(card.headlineCaption)
+                    .font(.caption2)
+                    .foregroundStyle(.readableSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)

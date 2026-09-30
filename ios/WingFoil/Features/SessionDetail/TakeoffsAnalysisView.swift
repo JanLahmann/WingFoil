@@ -160,11 +160,15 @@ struct TakeoffsAnalysisView: View {
         .id("takeoffsMap")
     }
 
+    /// Counted from what the map draws, as on the Turns map (`FocusMapCaption`, 30 Sep
+    /// 2026): the attempts the takeoff chip allows, and the session-wide wrist-under
+    /// diamonds when the filter kept none.
     private var caption: String {
-        if attempts.isEmpty { return "Nothing to mark. Widen the filter." }
-        let noun = words.pumping ? filter.description : "planing starts"
-        return String(attempts.count) + " " + noun
-            + " marked · tap a pin or a row to point at one."
+        FocusMapCaption.takeoffs(
+            drawn: visibility.isVisible(.takeoff) ? attempts.count : 0,
+            kept: attempts.count,
+            noun: words.pumping ? filter.description : "planing starts",
+            wristUnder: visibility.isVisible(.splash) ? detail.splashMarks.count : 0)
     }
 
     // MARK: - List
