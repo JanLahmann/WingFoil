@@ -3067,7 +3067,7 @@ export const PRESENTATION = {
   },
   "caption": {
     "fallsSplit": "{inTurn} in a turn · {straight} in a straight line",
-    "noAlpha500": "no 500 m run that turned back to its start",
+    "noAlpha500": "no 500 m out-and-back",
     "noBest5x10s": "no unbroken 10 s of track",
     "noMax2s": "no unbroken 2 s of track",
     "ofJibes": {

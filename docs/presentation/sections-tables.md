@@ -102,7 +102,7 @@ never had. The rule, on every card of the session page:
   beside it (the records table's *no qualifying run*, the attempt list's pumps column).
 - **A speed record the session did not set says why in the number's place**, in the
   key-metrics block and the web's record tiles alike: *no unbroken 2 s of track*, *no
-  unbroken 10 s of track*, *no 500 m run that turned back to its start*. One reason per
+  unbroken 10 s of track*, *no 500 m out-and-back*. One reason per
   record, the engine's own condition, out of the presentation document's caption
   (`docs/presentation/document.md`, "The cell").
 
