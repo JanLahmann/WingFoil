@@ -216,11 +216,11 @@ function showHighlightNote(highlight) {
   if (!highlight) return;
   const many = highlight.windows.length > 1 ? ` (${highlight.windows.length} windows)` : "";
   const value = highlight.value === undefined ? ""
-    : ` — ${highlight.value} ${highlight.unit ?? ""}`.trimEnd();
+    : `, ${highlight.value} ${highlight.unit ?? ""}`.trimEnd();
   // `label` and `value` are the engine's own words today, so this is uniformity rather
   // than a live hole — but "this one is safe because of where it came from" is the
   // reasoning that has to be re-checked on every change, and `esc` is the one that does not.
-  note.innerHTML = `Showing <strong>${esc(highlight.label)}</strong>${esc(value)}${many} — the window
+  note.innerHTML = `Showing <strong>${esc(highlight.label)}</strong>${esc(value)}${many}. The window
     is marked in orange on the track and on the speed strip.
     <button class="ghost small-btn" id="clear-highlight" type="button">Clear</button>`;
   el("clear-highlight").addEventListener("click", () => {

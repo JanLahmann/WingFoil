@@ -389,7 +389,7 @@ function buildModel(result) {
       kinds: kindsOf(entry), ti: m.i,
       t: m.t, x: m.x, y: m.y, kn: m.kn, style: turnStyle({ ...m, clean }), n: m.n,
       title: `#${m.n} ${m.kind}${m.counted ? "" : " (not counted)"}`,
-      tip: `<b>#${m.n} ${clockAt(meta, m.t)}</b> — ${esc(m.kind)}<br>` +
+      tip: `<b>#${m.n} ${clockAt(meta, m.t)}</b> · ${esc(m.kind)}<br>` +
            `${OUTCOME_LABEL[m.outcome] || m.outcome} · ${speedNumber(turn.entryKn, 1)} → ` +
            `${speed(turn.minKn, 1)} (${nf(turn.score * 100, 0)} %)`,
       rows: [
@@ -439,13 +439,13 @@ function buildModel(result) {
       kn: e.kn ?? traceKn(v, e.t), style: endStyle(e), n: null,
       pairing: flight ? pairEnd(flight) : null,
       title: `Flight ${e.flightIndex + 1} ends · straight line`,
-      tip: `<b>${clockAt(meta, e.t)}</b> — flight ${e.flightIndex + 1} ends<br>` +
+      tip: `<b>${clockAt(meta, e.t)}</b> · flight ${e.flightIndex + 1} ends<br>` +
            `${OUTCOME_LABEL[e.outcome]} · straight line (no manoeuvre)`,
       rows: [
         ["time", time(e.t)],
         ["outcome", `${OUTCOME_LABEL[e.outcome] || e.outcome}` +
                     (end?.borderline ? " (borderline)" : "")],
-        ["channel", "straight-line — no turn explains it"],
+        ["channel", "straight-line, no turn explains it"],
         // The off-foil run is followed to `turnOutcomeWindow` (60 s) and no further, so a
         // value there is a ceiling (engine 0.25.0) — the turn page's "1 min+".
         ["stopped", `${nf(end?.stoppedS, 1)} s · off foil ` +
@@ -478,7 +478,7 @@ function buildModel(result) {
                color: C.takeoff }, n: null,
       pairing: flight ? pairTakeoff(flight) : null,
       title: k.free ? "Free takeoff" : "Takeoff",
-      tip: `<b>${clockAt(meta, k.startTs)}</b> — ${k.free ? "free takeoff" : "takeoff"}<br>` +
+      tip: `<b>${clockAt(meta, k.startTs)}</b> · ${k.free ? "free takeoff" : "takeoff"}<br>` +
            `up at ${speed(k.entryKn, 1)}` +
            (k.pumps === null ? "" : ` · ${k.pumps} stroke${k.pumps === 1 ? "" : "s"}`) +
            (k.truncated ? "" : ` · ${nf(k.timeToFoilS, 0)} s run`),
@@ -493,7 +493,7 @@ function buildModel(result) {
       style: { shape: TOKENS.glyphs.takeoffFailed.webShape, color: C.failedTakeoff }, n: null,
       pairing: pairFailed(ep.strokes),
       title: "Failed attempt",
-      tip: `<b>${clockAt(meta, ep.startTs)}</b> — failed attempt<br>` +
+      tip: `<b>${clockAt(meta, ep.startTs)}</b> · failed attempt<br>` +
            `${ep.strokes} stroke${ep.strokes === 1 ? "" : "s"}, no flight`,
       rows: [
         ["time", time(ep.startTs)],
@@ -519,7 +519,7 @@ function buildModel(result) {
       layer: "splash", t: mark.ts, x: p.x, y: p.y, kn: traceKn(v, mark.ts),
       style: { shape: TOKENS.glyphs.splash.webShape, color: C.splash }, n: null,
       title,
-      tip: `<b>${clockAt(meta, mark.ts)}</b> — ${title.toLowerCase()}<br>${esc(during)}`,
+      tip: `<b>${clockAt(meta, mark.ts)}</b> · ${title.toLowerCase()}<br>${esc(during)}`,
       rows: [["time", time(mark.ts)], ["evidence", "barometer saw the wrist go under"],
              ["under for", `${nf(mark.durationS, 0)} s`],
              ["during", during]],
@@ -1263,7 +1263,7 @@ function drawStrip() {
       const x0 = X(span.t0), x1 = Math.max(X(span.t1), x0 + 1.5);
       const band = svg("rect", { x: x0, y: T, width: x1 - x0, height: plotH, fill: C.pump,
                                  opacity: 0.3, "data-band": "pumping" }, plot);
-      tipTarget(band, `<b>${clockAt(model.meta, span.t0)}</b> — pumping<br>` +
+      tipTarget(band, `<b>${clockAt(model.meta, span.t0)}</b> · pumping<br>` +
                       `${span.strokes} stroke${span.strokes === 1 ? "" : "s"} · ` +
                       `${nf(span.t1 - span.t0, 1)} s · ${esc(span.outcome)}`);
     }
@@ -2003,8 +2003,8 @@ function drawStripLegend() {
   const host = el("strip-legend");
   const v = state.model.v;
   const items = [
-    `<span class="item">${lineSwatch(C.series)}Doppler — drives the flight state</span>`,
-    `<span class="item">${lineSwatch(C.tint)}positional — scores the turns</span>`,
+    `<span class="item">${lineSwatch(C.series)}Doppler, drives the flight state</span>`,
+    `<span class="item">${lineSwatch(C.tint)}positional, scores the turns</span>`,
   ];
   if (visible("flying")) {
     items.push(`<span class="item">${bandSwatch(C.foil)}flight (on foil)</span>`);

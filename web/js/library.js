@@ -354,12 +354,12 @@ function renderRows(entries) {
 function tags(e) {
   const out = [];
   if (e.example) {
-    out.push(`<span class="lib-tag example" title="The bundled demonstration session — ` +
+    out.push(`<span class="lib-tag example" title="The bundled demonstration session, ` +
              `not counted in your records or trends">Example</span>`);
   }
   if (e.rider) {
     out.push(`<span class="lib-tag rider" title="${esc(e.rider)}'s session, shared with ` +
-             `you — not counted in your records or trends">${esc(e.rider)}</span>`);
+             `you, not counted in your records or trends">${esc(e.rider)}</span>`);
   }
   return out.join("");
 }
