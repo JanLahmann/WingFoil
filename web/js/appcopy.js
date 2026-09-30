@@ -387,6 +387,17 @@ export const WELCOME = {
 export const WHATS_NEW = [
   {
     "version": "1.0.1",
+    "build": 127,
+    "channel": "beta",
+    "date": "2026-09-30",
+    "title": "Scrolls both ways",
+    "lines": [
+      "The session page scrolls back up smoothly, however long the turn list is.",
+      "On Turns and Flights, the filters stay at the top while you scroll."
+    ]
+  },
+  {
+    "version": "1.0.1",
     "build": 125,
     "channel": "beta",
     "date": "2026-09-30",

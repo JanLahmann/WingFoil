@@ -64,6 +64,17 @@ public enum WhatsNew {
     public static let entries: [WhatsNewEntry] = [
         WhatsNewEntry(
             version: "1.0.1",
+            build: 127,
+            channel: .beta,
+            date: "2026-09-30",
+            dateText: "30 September 2026",
+            title: "Scrolls both ways",
+            lines: [
+                "The session page scrolls back up smoothly, however long the turn list is.",
+                "On Turns and Flights, the filters stay at the top while you scroll.",
+            ]),
+        WhatsNewEntry(
+            version: "1.0.1",
             build: 125,
             channel: .beta,
             date: "2026-09-30",
