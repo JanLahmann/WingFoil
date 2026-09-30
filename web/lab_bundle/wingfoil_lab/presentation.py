@@ -234,12 +234,9 @@ def _block(doc, summary, turns, records):
     # Row 2 names the WINDOW, not the peak. The two composites beside it are block-only:
     # the card is the block minus them, because a card carries one speed.
     rows.append({"id": "speed", "cells": [
-        _cell("max2s", "presentation.label.max2s",
-              value=records.get("best2sKn"), unit_kind="speedKn"),
-        _cell("best5x10s", "presentation.label.best5x10s",
-              value=records.get("best5x10sKn"), unit_kind="speedKn"),
-        _cell("alpha500", "presentation.label.alpha500",
-              value=records.get("alpha500Kn"), unit_kind="speedKn"),
+        _record_cell("max2s", records.get("best2sKn")),
+        _record_cell("best5x10s", records.get("best5x10sKn")),
+        _record_cell("alpha500", records.get("alpha500Kn")),
     ]})
 
     turn_cells = []
@@ -282,6 +279,29 @@ def _block(doc, summary, turns, records):
         rows.append({"id": "rates", "cells": rates})
 
     return {"rows": rows}
+
+
+#: **Why a speed cell has no number**, one caption per cell (Jan, 30 Sep 2026: a "—" where
+#: the number goes is a heading made of a dash). Each names the engine's own condition in
+#: `gp3s.records`, not a generic "not enough data": the 2 s and the 10 s windows need that
+#: long a stretch of track with no GPS gap in it — and 5×10 s is the mean of however many
+#: disjoint 10 s windows exist, one to five, so it is missing exactly when no 10 s window
+#: is — and alpha 500 needs a 250–500 m run that turned at least 90° and ended within 50 m
+#: of its start. The value itself is untouched (`null`, or the analysis golden's `0.0`).
+RECORD_MISSING_CAPTIONS = {
+    "max2s": "presentation.caption.noMax2s",
+    "best5x10s": "presentation.caption.noBest5x10s",
+    "alpha500": "presentation.caption.noAlpha500",
+}
+
+
+def _record_cell(key, value):
+    """One cell of the speed row. A record the session did not set — `null`, or the `0.0`
+    the analysis golden writes for the same absence (`_records`' `achieved` test) —
+    carries its reason as its caption, and the renderer draws it where the number goes."""
+    missing = value is None or not value > 0
+    return _cell(key, "presentation.label." + key, value=value, unit_kind="speedKn",
+                 captions=[_caption(RECORD_MISSING_CAPTIONS[key])] if missing else None)
 
 
 def _tally_cell(turns):

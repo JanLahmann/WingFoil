@@ -124,10 +124,15 @@ export function keyMetricEntries(doc) {
  *  gets the largest type, and which two never reach a card. */
 function entry(cell, row) {
   const caption = cellCaption(cell);
+  // A record the session did not set carries its reason as its caption, and the block
+  // draws it where the number goes (30 Sep 2026, "No dash as a heading"). The document
+  // emits these ids only then, so the id is the whole test. Twin of `KeyMetrics.metric`.
+  const missing = RECORD_MISSING.has(cell.captions?.[0]?.id) ? caption : null;
   return {
     key: cell.key,
-    label: cellLabel(cell) + (caption ? CAPTION_SEP + caption : ""),
+    label: cellLabel(cell) + (caption && !missing ? CAPTION_SEP + caption : ""),
     value: cellValue(cell),
+    ...(missing ? { missing } : {}),
     ...(cell.tally ? { tally: cell.tally } : {}),
     // The ink the value wears where it is not the body's — the clean jibes' own (25 Sep
     // 2026) — and a pair cell's halves, each in its own (the streaks: flew in the ladder's
@@ -153,6 +158,12 @@ function entry(cell, row) {
 /** The two cells `card.tiles` drops. Held here rather than re-derived from the tiles so
  *  the block can be drawn from `block` alone. */
 const BLOCK_ONLY = new Set(["best5x10s", "alpha500"]);
+
+/** The captions a speed cell carries when its record was not set — the lab's
+ *  `RECORD_MISSING_CAPTIONS`, the kit's `PresentationDocument.recordMissingCaptions`. */
+export const RECORD_MISSING = new Set(["presentation.caption.noMax2s",
+                                       "presentation.caption.noBest5x10s",
+                                       "presentation.caption.noAlpha500"]);
 
 /** The em-dash the tally's label uses to hang its caption off the words. The card splits
  *  the label here to get the two lines iOS lays out as `label` + `caption`; nothing else
