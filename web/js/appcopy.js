@@ -386,6 +386,18 @@ export const WELCOME = {
 export const WHATS_NEW = [
   {
     "version": "1.0.1",
+    "build": 123,
+    "channel": "beta",
+    "date": "2026-09-30",
+    "title": "Every name in full",
+    "lines": [
+      "The map tells you once or twice to use two fingers.",
+      "Every record name reads in full on the Records tab, even on the widest iPhone.",
+      "The session's numbers read with commas, not dashes."
+    ]
+  },
+  {
+    "version": "1.0.1",
     "build": 121,
     "channel": "beta",
     "date": "2026-09-30",
