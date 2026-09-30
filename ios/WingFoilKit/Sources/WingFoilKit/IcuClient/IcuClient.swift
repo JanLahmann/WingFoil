@@ -187,6 +187,20 @@ public enum WatersportName {
         if let type, nonWatersportTypes.contains(type) { return false }
         return matches(name)
     }
+
+    /// **Does the name say wing or foil**, in a whole word? The same pattern as ``matches``,
+    /// narrowed to its wing and foil words — "wing", "wings", "foiling", "Wingfoil",
+    /// "kitefoil", "pumpfoil", "wingsurf" — and not "kite", "surf", "SUP" or "windsurf".
+    /// The Strava list's rescue for a run, a ride, a hike or a walk (30 Sep 2026).
+    public static func saysWingOrFoil(_ name: String?) -> Bool {
+        guard let name, !name.isEmpty else { return false }
+        let range = NSRange(name.startIndex..., in: name)
+        return regex.matches(in: name, range: range).contains { match in
+            guard let r = Range(match.range, in: name) else { return false }
+            let word = name[r].lowercased()
+            return word.contains("wing") || word.contains("foil")
+        }
+    }
 }
 
 /// intervals.icu REST client (personal API key, HTTP Basic user `API_KEY`).

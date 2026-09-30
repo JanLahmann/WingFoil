@@ -58,7 +58,9 @@ struct SessionVerdictTests {
     /// **A land sport is not a session** (engine 0.26.0). Jan's Berlin Marathon read 98 % on
     /// foil at 10.65 kn: the sport is asked before the foil time.
     @Test(arguments: ["running", "cycling", "hiking", "mountaineering", "e_biking",
-                      "motorcycling", "driving", "Running", "1", "17"])
+                      "motorcycling", "driving", "Running", "1", "17", "alpine_skiing",
+                      "cross_country_skiing", "snowboarding", "snowshoeing", "snowmobiling",
+                      "inline_skating", "ice_skating", "13", "30"])
     func aLandSportIsNotASessionWhateverItsSpeeds(_ sport: String) {
         let verdict = SessionVerdict.of(foilTimeS: 12000, durationS: 12300,
                                         distanceM: 42195, sport: sport)
@@ -67,10 +69,10 @@ struct SessionVerdictTests {
     }
 
     /// Walking, generic and training are how the CIQ app and the imports file real
-    /// watersport sessions; a wing on skis or skates is still a wing.
+    /// watersport sessions; nothing on the water is on the list.
     @Test(arguments: [nil, "walking", "generic", "training", "windsurfing", "kitesurfing",
-                      "stand_up_paddleboarding", "11", "0", "43", "alpine_skiing",
-                      "inline_skating"] as [String?])
+                      "stand_up_paddleboarding", "11", "0", "43", "38", "surfing",
+                      "wakeboarding"] as [String?])
     func walkingGenericAndTheWatersportsAreLeftToTheOtherRules(_ sport: String?) {
         let verdict = SessionVerdict.of(foilTimeS: 1800, durationS: 3600, distanceM: 12000,
                                         sport: sport)
@@ -80,9 +82,14 @@ struct SessionVerdictTests {
 
     /// The list is the FIT profile's numbers, and the lab's (`LAND_SPORTS`).
     @Test func theLandSportsAreTheFitProfileNumbers() {
-        #expect(SessionVerdict.landSports == ["running": 1, "cycling": 2, "mountaineering": 16,
-                                              "hiking": 17, "e_biking": 21,
-                                              "motorcycling": 22, "driving": 24])
+        #expect(SessionVerdict.landSports == [
+            "running": 1, "cycling": 2, "cross_country_skiing": 12, "alpine_skiing": 13,
+            "snowboarding": 14, "mountaineering": 16, "hiking": 17, "e_biking": 21,
+            "motorcycling": 22, "driving": 24, "inline_skating": 30, "ice_skating": 33,
+            "snowshoeing": 35, "snowmobiling": 36,
+        ])
+        #expect(SessionVerdict.landSport("14") == "snowboarding")
+        #expect(SessionVerdict.landSport("33") == "ice_skating")
         #expect(SessionVerdict.landSport("21") == "e_biking")
         #expect(SessionVerdict.landSport(" Cycling ") == "cycling")
     }
