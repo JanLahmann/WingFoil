@@ -60,10 +60,8 @@ struct TrendsView: View {
             ScrollView {
                 ScrollViewReader { proxy in
                 VStack(alignment: .leading, spacing: 18) {
-                    Picker("Range", selection: $range) {
-                        ForEach(TrendRange.allCases) { Text($0.rawValue).tag($0) }
-                    }
-                    .pickerStyle(.segmented)
+                    SegmentRow("Range", selection: $range,
+                               options: TrendRange.allCases) { $0.rawValue }
 
                     LibraryFilterBar(filter: $filter)
 

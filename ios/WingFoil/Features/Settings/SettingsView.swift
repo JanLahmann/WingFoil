@@ -245,10 +245,8 @@ struct SettingsView: View {
     /// explanation. Concise by default. The words are the browser app's.
     private var detailSection: some View {
         Section {
-            Picker(SettingsCopy.detailTitle, selection: $detail) {
-                ForEach(ExplainDetail.allCases) { Text($0.label).tag($0) }
-            }
-            .pickerStyle(.segmented)
+            SegmentRow(SettingsCopy.detailTitle, selection: $detail,
+                       options: ExplainDetail.allCases) { $0.label }
         } header: {
             Text(SettingsCopy.detailTitle)
         } footer: {
@@ -583,15 +581,12 @@ struct SettingsView: View {
     /// Right under Analysis, and above the list whose numbers it decides how to print.
     private var unitsSection: some View {
         Section {
-            Picker(SettingsCopy.section("units").title, selection: Binding(
+            SegmentRow(SettingsCopy.section("units").title, selection: Binding(
                 get: { store.speedUnit },
                 set: {
                     store.speedUnit = $0
                     Usage.record(.units, detail: $0.rawValue)
-                })) {
-                    ForEach(SpeedUnit.allCases) { Text($0.label).tag($0) }
-                }
-                .pickerStyle(.segmented)
+                }), options: SpeedUnit.allCases) { $0.label }
         } header: {
             Text(SettingsCopy.section("units").title)
         } footer: {

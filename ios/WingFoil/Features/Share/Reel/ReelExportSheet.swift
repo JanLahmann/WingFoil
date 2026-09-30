@@ -28,12 +28,8 @@ struct ReelExportSheet: View {
         NavigationStack {
             Form {
                 Section {
-                    Picker("Length", selection: $length) {
-                        ForEach(ReelPlan.Length.allCases) { choice in
-                            Text(choice.label).tag(choice)
-                        }
-                    }
-                    .pickerStyle(.segmented)
+                    SegmentRow("Length", selection: $length,
+                               options: ReelPlan.Length.allCases) { $0.label }
                     .disabled(isBusy)
                 } header: {
                     Text("Length")

@@ -135,10 +135,8 @@ struct ShareComposerView: View {
                 VStack(spacing: 18) {
                     naming
 
-                    Picker("Share", selection: $payload) {
-                        ForEach(Payload.allCases) { Text($0.label).tag($0) }
-                    }
-                    .pickerStyle(.segmented)
+                    SegmentRow("Share", selection: $payload,
+                               options: Payload.allCases) { $0.label }
 
                     // **The third thing this page can do**, under the switcher rather than
                     // inside it (Jan, 21 Sep 2026). The Card/FIT segments answer one

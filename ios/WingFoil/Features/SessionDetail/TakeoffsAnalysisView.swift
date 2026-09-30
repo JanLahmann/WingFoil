@@ -92,10 +92,8 @@ struct TakeoffsAnalysisView: View {
     /// jibes that flew through.
     private var chips: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Picker("Outcome", selection: $filter) {
-                ForEach(TakeoffOutcomeFilter.allCases) { Text($0.label).tag($0) }
-            }
-            .pickerStyle(.segmented)
+            SegmentRow("Outcome", selection: $filter,
+                       options: TakeoffOutcomeFilter.allCases) { $0.label }
             .accessibilityLabel("Attempt outcome")
             // "Free" is a *how*, not a fourth bucket: a free takeoff sits inside the
             // attempts that got up, beside the pumped ones, never beside them as a third

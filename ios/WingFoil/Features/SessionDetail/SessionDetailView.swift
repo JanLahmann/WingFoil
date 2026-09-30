@@ -513,14 +513,16 @@ struct SessionDetailView: View {
     /// Sticky, and full-bleed against the scroll behind it — a segmented control floating
     /// on a transparent strip over scrolling cards is unreadable the moment a card passes
     /// under it.
+    ///
+    /// A `SegmentRow`, not a segmented `Picker`, although it is pinned: a pinned header is still
+    /// the scroll view's content, and at the top of the page it sits mid-screen under the
+    /// verdict, where a thumb resting on a `UISegmentedControl` would hold the page still.
     private var switcher: some View {
-        Picker("Section", selection: $tab) {
-            // The tab's word in this session's discipline: a windsurfer does not take
-            // off, he gets planing (docs/presentation/labels.md, "Discipline lexicon"). Every
-            // other segment is the same word on either rig.
-            ForEach(SessionSection.allCases) { Text($0.label(discipline)).tag($0) }
-        }
-        .pickerStyle(.segmented)
+        // The tab's word in this session's discipline: a windsurfer does not take off, he
+        // gets planing (docs/presentation/labels.md, "Discipline lexicon"). Every other
+        // segment is the same word on either rig.
+        SegmentRow("Section", selection: $tab,
+                   options: SessionSection.allCases) { $0.label(discipline) }
         .padding(.vertical, 8)
         .background(.bar)
         .accessibilityLabel("Session section")

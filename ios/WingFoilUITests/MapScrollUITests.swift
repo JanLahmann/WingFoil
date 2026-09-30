@@ -55,7 +55,7 @@ final class MapScrollUITests: XCTestCase {
         app.launchEnvironment = ["UI_IMPORT_FIXTURES": "1", "UI_OPEN_SESSION": "latest",
                                  "UI_OPEN_TURNS": "1"]
         app.launch()
-        let segments = app.segmentedControls.element(boundBy: 1)
+        let segments = app.descendants(matching: .any)["turnTypeFilter"].firstMatch
         XCTAssertTrue(segments.waitForExistence(timeout: 300), "no filter segments")
         Thread.sleep(forTimeInterval: 5)
         let top0 = segments.frame.minY
@@ -76,6 +76,74 @@ final class MapScrollUITests: XCTestCase {
         Thread.sleep(forTimeInterval: 1)
         XCTAssertGreaterThan(segments.frame.minY, down + 300,
                              "dragging down mid-screen did not bring the page back: \(down) → \(segments.frame.minY)")
+    }
+
+    /// **A segment row takes taps, never a vertical drag** (Jan, 30 Sep 2026, dev 120: "Scroll
+    /// back up on turns section still does not work … up struggles at exactly this
+    /// position"). Park the Turns tab with its section pinned under the switcher and the two
+    /// filter rows mid-screen, then drag DOWN starting ON a row — on the selected segment and
+    /// on an unselected one — and the page must come back up each time.
+    func testADragDownThatStartsOnAFilterRowScrollsThePage() {
+        continueAfterFailure = true   // every row and every thumb reports, not the first
+        let app = XCUIApplication()
+        app.launchEnvironment = ["UI_IMPORT_FIXTURES": "1", "UI_OPEN_SESSION": "latest",
+                                 "UI_OPEN_TURNS": "1"]
+        app.launch()
+        let type = app.descendants(matching: .any)["turnTypeFilter"].firstMatch
+        let side = app.descendants(matching: .any)["turnSideFilter"].firstMatch
+        XCTAssertTrue(type.waitForExistence(timeout: 300), "no turn-type filter")
+        Thread.sleep(forTimeInterval: 5)
+        let win = app.windows.firstMatch
+        let height = win.frame.height
+        // (row, where on it) — dx 0.17 is the selected "Both", 0.5 an unselected segment.
+        let cases: [(XCUIElement, CGFloat, String)] = [
+            (type, 0.17, "type row, selected segment"),
+            (type, 0.5, "type row, unselected segment"),
+            (side, 0.17, "side row, selected segment"),
+            (side, 0.5, "side row, unselected segment"),
+        ]
+        // A quick flick, and a thumb that rests on the row before it moves — the second is
+        // what a UIScrollView hands to a UIControl for good (`touchesShouldCancel(in:)`).
+        let presses: [(TimeInterval, String)] = [(0.05, "quick"), (0.4, "resting")]
+        for (row, dx, where_) in cases {
+          for (hold, how) in presses {
+            let name = "\(where_), \(how)"
+            park(row: type, in: win, height: height)
+            let before = type.frame.minY
+            XCTAssertGreaterThan(before, height * 0.15, "\(name): the row is off the top")
+            XCTAssertLessThan(before, height * 0.6, "\(name): the row is not mid-screen")
+            row.coordinate(withNormalizedOffset: CGVector(dx: dx, dy: 0.5))
+                .press(forDuration: hold, thenDragTo:
+                    win.coordinate(withNormalizedOffset: CGVector(dx: dx, dy: 0.9)),
+                       withVelocity: .default, thenHoldForDuration: 0.1)
+            Thread.sleep(forTimeInterval: 1)
+            XCTAssertGreaterThan(type.frame.minY, before + 80,
+                                 "\(name): a drag down on the row did not scroll the page: "
+                                 + "\(before) → \(type.frame.minY)")
+          }
+        }
+        // And a tap still picks a segment.
+        let jibes = type.buttons["Jibes"]
+        jibes.tap()
+        XCTAssertTrue(jibes.isSelected, "a tap on Jibes did not select it")
+    }
+
+    /// Scroll with gutter drags until the turn-type row sits about a quarter down the
+    /// screen, just under the sticky switcher — the position of Jan's screenshot.
+    private func park(row: XCUIElement, in win: XCUIElement, height: CGFloat) {
+        let target = height * 0.28
+        for _ in 0..<12 {
+            let y = row.frame.minY
+            if abs(y - target) < 60 { break }
+            let span = min(max(abs(y - target), 80), height * 0.5) / height
+            let from = y > target ? 0.8 : 0.3
+            let to = y > target ? from - span : from + span
+            win.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: from))
+                .press(forDuration: 0.3, thenDragTo:
+                    win.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: to)),
+                       withVelocity: .slow, thenHoldForDuration: 0.3)
+            Thread.sleep(forTimeInterval: 0.8)
+        }
     }
 
     private func assertSwipeUpScrolls(extra: [String: String],

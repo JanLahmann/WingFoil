@@ -94,17 +94,15 @@ struct TurnsAnalysisView: View {
 
     private var filters: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Picker("Manoeuvre", selection: $filter.type) {
-                ForEach(TurnTypeFilter.allCases) { Text($0.label).tag($0) }
-            }
-            .pickerStyle(.segmented)
-            .accessibilityLabel("Manoeuvre type")
+            // Segment rows, not segmented Pickers: a thumb resting on a `UISegmentedControl`
+            // before it moves never scrolls the page (`SegmentRow`).
+            SegmentRow("Manoeuvre type", selection: $filter.type,
+                       options: TurnTypeFilter.allCases) { $0.label }
+                .accessibilityIdentifier("turnTypeFilter")
 
-            Picker("Entry tack", selection: $filter.side) {
-                ForEach(TurnSideFilter.allCases) { Text($0.label).tag($0) }
-            }
-            .pickerStyle(.segmented)
-            .accessibilityLabel("Entry tack")
+            SegmentRow("Entry tack", selection: $filter.side,
+                       options: TurnSideFilter.allCases) { $0.label }
+                .accessibilityIdentifier("turnSideFilter")
 
             // Said once, here, rather than trusted to the word "port": the rider's other
             // mental model of a jibe is which way the board spun, and that is a different

@@ -128,10 +128,8 @@ struct TuningView: View {
     /// windsurf preset does not ask are disabled rather than removed.
     private var disciplineSection: some View {
         Section {
-            Picker("Tuning for", selection: $selected) {
-                ForEach(Discipline.allCases, id: \.self) { Text($0.title).tag($0) }
-            }
-            .pickerStyle(.segmented)
+            SegmentRow("Tuning for", selection: $selected,
+                       options: Discipline.allCases) { $0.title }
             .accessibilityLabel("Tuning for")
         } header: {
             Text("Tuning for")

@@ -180,19 +180,15 @@ struct ShareCardDesignControls: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Picker("Shape", selection: $design.shape) {
-                ForEach(ShareCardStats.Shape.allCases) { Text($0.label).tag($0) }
-            }
-            .pickerStyle(.segmented)
+            SegmentRow("Shape", selection: $design.shape,
+                       options: ShareCardStats.Shape.allCases) { $0.label }
 
             // The binding writes the preference itself, so only a *tap* is remembered.
             if let options = story?.heroOptions, options.count > 1 {
-                Picker(PresentationCopy.card("optionTitle"),
-                       selection: Binding(get: { story?.hero?.kind ?? design.hero },
-                                          set: { design.chooseHero($0) })) {
-                    ForEach(options) { Text($0.label).tag($0) }
-                }
-                .pickerStyle(.segmented)
+                SegmentRow(PresentationCopy.card("optionTitle"),
+                           selection: Binding(get: { story?.hero?.kind ?? design.hero },
+                                              set: { design.chooseHero($0) }),
+                           options: options) { $0.label }
             }
 
             backgroundPicker
@@ -213,12 +209,10 @@ struct ShareCardDesignControls: View {
             Text(AppShellCopy.Share.background)
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(.readableSecondary)
-            Picker(AppShellCopy.Share.background,
-                   selection: Binding(get: { design.effectiveBackground(mapOffered: mapOffered) },
-                                      set: { design.choose($0) })) {
-                ForEach(offered) { Text($0.label).tag($0) }
-            }
-            .pickerStyle(.segmented)
+            SegmentRow(AppShellCopy.Share.background,
+                       selection: Binding(get: { design.effectiveBackground(mapOffered: mapOffered) },
+                                          set: { design.choose($0) }),
+                       options: offered) { $0.label }
 
             switch design.effectiveBackground(mapOffered: mapOffered) {
             case .map:

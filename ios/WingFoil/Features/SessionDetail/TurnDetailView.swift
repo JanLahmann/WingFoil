@@ -342,11 +342,8 @@ private struct TurnDetailPage: View {
 
     private var controls: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Picker("Orientation", selection: $windUpPreferred) {
-                Text("North up").tag(false)
-                Text("Wind up").tag(true)
-            }
-            .pickerStyle(.segmented)
+            SegmentRow("Orientation", selection: $windUpPreferred,
+                       options: [false, true]) { $0 ? "Wind up" : "North up" }
             .disabled(!windKnown)
             .accessibilityLabel("Map orientation")
 

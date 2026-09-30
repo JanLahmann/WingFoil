@@ -234,7 +234,7 @@ private struct DisciplineCard: View {
                 HelpButton(topic: .windsurf, size: .footnote)
                 Spacer()
             }
-            Picker("Analyse as", selection: Binding(
+            SegmentRow("Analyse as", selection: Binding(
                 get: { current },
                 set: { choice in
                     guard choice != current else { return }
@@ -243,10 +243,7 @@ private struct DisciplineCard: View {
                         await store.setDiscipline(choice, for: detail.row)
                         pending = nil
                     }
-                })) {
-                    ForEach(Discipline.allCases, id: \.self) { Text($0.title).tag($0) }
-                }
-                .pickerStyle(.segmented)
+                }), options: Discipline.allCases) { $0.title }
                 .accessibilityLabel("Analysis discipline")
             Text(DisciplineLexicon.experimentalNote)
                 .font(.caption2)
