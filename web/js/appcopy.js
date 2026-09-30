@@ -112,12 +112,12 @@ export const SHELL = {
   },
   "beta": {
     "joinTitle": "Join the beta",
-    "whatItIs": "The beta is the next CleanJibe, a few weeks early. New features are ridden there first, by riders who want them sooner.",
+    "community": "CleanJibe is built with its riders. New features land in the beta first, and move to the App Store once testers have proven them.",
     "inItNowTitle": "In the beta right now",
     "howToJoinTitle": "How to join",
     "joinButton": "Open TestFlight",
-    "feedbackTitle": "How to give feedback",
     "joinURL": "https://testflight.apple.com/join/nygqGGcn",
+    "whatsNewBeta": "Tried it? Tell us in Menu → Support & ideas. Every mail shapes the next build.",
     "webJoin": "The beta is the iPhone app's. Open the link on your iPhone, and TestFlight installs it.",
     "features": [
       ".gpx and .tcx files, so a session exported from a Polar, a Suunto or a COROS opens straight from Files.",
@@ -126,6 +126,7 @@ export const SHELL = {
       "Home-screen widgets and the watch complication.",
       "The session video: your afternoon as a film rather than a card.",
       "Grouping the library by month, year or spot, and filtering it.",
+      "The session story: one line over your numbers, and a chip on each record you beat.",
       "Send a session and its recording to us from its Share page or a turn, with your notes.",
       "Planned: a live view on the Apple Watch. Foil state, flights, records and turn verdicts on the wrist, as the Garmin app shows them."
     ]

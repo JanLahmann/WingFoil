@@ -159,8 +159,9 @@ function familyHtml() {
 
 /**
  * **The Beta page** — the release's wording of the kit's `BetaGuide`, with the public
- * TestFlight link. The beta is the iPhone app's, so the one line of its own this page has
- * (`webJoin`) says so; the list is docs/copy/channels.json's beta rows.
+ * TestFlight link: the community sentence, the way in, the list. The beta is the iPhone
+ * app's, so the one line of its own this page has (`webJoin`) says so; the list is
+ * docs/copy/channels.json's beta rows.
  */
 function renderBeta() {
   const host = el("beta-body");
@@ -168,17 +169,14 @@ function renderBeta() {
   if (!host || !beta) return;
   el("beta-title").textContent = beta.joinTitle;
   host.innerHTML = `
-    <p>${esc(beta.whatItIs)}</p>
+    <p>${esc(beta.community)}</p>
     <h3 class="sub-head">${esc(beta.howToJoinTitle)}</h3>
     <p class="muted small">${esc(beta.webJoin)}</p>
     <p><a class="btn primary" href="${esc(beta.joinURL)}" rel="noopener">${
       esc(beta.joinButton)}</a></p>
     <h3 class="sub-head">${esc(beta.inItNowTitle)}</h3>
     <ul class="beta-features">${(beta.features || []).map((f) =>
-      `<li class="small">${esc(f)}</li>`).join("")}</ul>
-    <h3 class="sub-head">${esc(beta.feedbackTitle)}</h3>
-    <p class="muted small">${esc(FEEDBACK.invitation)}</p>
-    <p><a href="${esc(feedbackMail())}">${esc(FEEDBACK.doors.app.split("→").pop().trim())}</a></p>`;
+      `<li class="small">${esc(f)}</li>`).join("")}</ul>`;
 }
 
 /**

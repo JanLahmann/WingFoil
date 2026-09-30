@@ -278,8 +278,10 @@ def ios_beta() -> dict:
     constants = _swift_constants(BETA_GUIDE.read_text(encoding="utf-8"))
     link = re.search(r'static let testFlight = URL\(string: "([^"]*)"\)',
                      CHANNEL_LINK.read_text(encoding="utf-8"))
-    keys = ("joinTitle", "whatItIs", "inItNowTitle", "howToJoinTitle", "joinButton",
-            "feedbackTitle")
+    # `whatsNewBeta` is not the web's to print: it is carried for the TestFlight notes
+    # (ios/tools/testflight_publish.py), which end on the same ask the app's What's new does.
+    keys = ("joinTitle", "community", "inItNowTitle", "howToJoinTitle", "joinButton",
+            "whatsNewBeta")
     # `howToJoin` is the phone's ("in place of this app"); the browser says its own line,
     # `webJoin`, because the beta it joins is the iPhone app's.
     return {key: constants.get(key, "") for key in keys} | {
