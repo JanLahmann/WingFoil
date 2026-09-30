@@ -50,8 +50,8 @@ Four doors, in the order a report is likely to use them:
 
 | door | who reaches it | what it carries | reaches us how |
 |---|---|---|---|
-| **Support & ideas mail** (`info@cleanjibe.org`) | every channel, `FeedbackDoors.menuRow` | device, build, channel, engine version, library shape, the Most-wanted ticks, the Recent crashes block, and — from a session's share sheet — that session's own facts and an attached recording | an ordinary mail, in whichever inbox reads that address |
-| **TestFlight feedback** (`FeedbackDoors.testflight`, Apple's own "Send Beta Feedback") | beta and dev testers only, from a screenshot taken inside the build | the screenshot, the tester's sentence, and Apple's own device/OS metadata — no MetricKit digest, no Most-wanted block | App Store Connect → TestFlight → the build → Feedback |
+| **Support & ideas mail** (`info@cleanjibe.org`) | every channel, `FeedbackDoors.menuRow` | device, build, channel, engine version, library shape, the beta features' works / has a problem ticks (beta and dev), the wishlist ticks and the free *Your idea* line, the Recent crashes block, and — from a session's share sheet — that session's own facts and an attached recording | an ordinary mail, in whichever inbox reads that address |
+| **TestFlight feedback** (`FeedbackDoors.testflight`, Apple's own "Send Beta Feedback") | beta and dev testers only, from a screenshot taken inside the build | the screenshot, the tester's sentence, and Apple's own device/OS metadata — no MetricKit digest, no wishlist block | App Store Connect → TestFlight → the build → Feedback |
 | **GitHub issues** (`github.com/JanLahmann/WingFoil/issues`) | anybody who reads the public repo; not linked from inside the app | a title and, per the repo rule, as little else as the reporter chooses (CLAUDE.md: "the repo is public: GitHub issues stay terse") | the repo's own notifications |
 | **Garmin Connect IQ store reviews** | Garmin watch owners, on the store listing | a star rating and sometimes a sentence, in Garmin's own console, with no reply channel back to the reviewer except a developer response Garmin publishes alongside it | Connect IQ Developer Portal → the app's listing → Reviews |
 
@@ -80,7 +80,7 @@ by Jan at any time:
 ## From a report to a backlog entry
 
 1. **Read it against the four rules** (`docs/channels.md`, "Four rules for 'proven'") if it
-   is a feature ask, or reproduce it if it is a fault. A Most-wanted tick is a vote, not a
+   is a feature ask, or reproduce it if it is a fault. A wishlist tick is a vote, not a
    report on its own — tally it, do not file it.
 2. **File the public issue first, terse.** One line, no diagnostics, no rider's name, no
    session details, no device model beyond what the title needs — `gh issue list` above shows
@@ -108,13 +108,13 @@ the way the feedback mail itself is a template and not a form letter.
 > Thanks — got it, and I can see build \<n> and \<device> in what you sent. I'll try to
 > reproduce this and let you know what I find.
 
-**Acknowledging a feature idea** (a Most-wanted tick, a mail, or an issue):
+**Acknowledging a feature idea** (a wishlist tick, a mail, or an issue):
 
-> Thanks for the idea. CleanJibe is built with its riders, so this goes on the list — new
-> features are chosen by demand and tested in the beta first.
+> Thanks for the idea, it goes on the list. CleanJibe is built with its riders. New features
+> land in the beta first, and move to the App Store once testers have proven them.
 
-(the second sentence is `FeedbackInvitation.community`, already the one wording for this on
-the footer and the Beta page — a reply that said it differently would be a fourth spelling of
+(the last two sentences are `BetaGuide.community`, already the one wording for this on the
+footer, the Beta page, *Coming in a future release* and the TestFlight notes — a reply that said it differently would be a fourth spelling of
 a sentence `docs/presentation.md` already pins to one.)
 
 **Closing a fixed bug:**
