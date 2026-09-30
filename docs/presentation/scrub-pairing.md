@@ -25,24 +25,40 @@
   Ride, Turns and Flights maps one finger scrolls the page — and, clearly sideways, turns it
   like anywhere else — while two fingers pan and pinch the map and only a two-finger drag keeps
   the pager out (`pageMap`); taps and marks are untouched, and the full-screen and replay maps
-  still pan with one. The first three times per install that one finger which started on such
+  still pan with one. MapKit's own one-finger press-and-hold (0.2 s) goes to two fingers with
+  the pan: a thumb that rested on the map before it pulled the page down let that press begin,
+  and a press that has begun keeps the touch, so the page did not move at all (Jan, 30 Sep
+  2026, dev 124; `LongTurnsScrollUITests`). The first three times per install that one finger which started on such
   a map scrolls the page (`DragClaim` says up-or-down), a capsule on the map says *Use two
   fingers to move the map* above the Maps logo until 1.5 s after the finger lifts
   (`MapFingerHint`, `Copy.twoFingerMap`): no fade under
   Reduce Motion, never under VoiceOver, never for a tap or a page turn, and it takes no
   touches. The lasting home of the fact is the help topic "Reading the map", whose sentence
   names the iPhone app because the site's maps keep one-finger panning.
-- **A segment row takes taps, never a vertical drag** (iOS, 30 Sep 2026, Jan on dev 120:
-  "scroll back up on turns section still does not work"). A finger that starts on a row of
-  segments — the tab switcher, the Turns and Flights filters, every choice in Settings, the
-  share and replay sheets — and goes up or down scrolls the page; a tap picks the segment. A
-  native `UISegmentedControl` could not keep that promise: a scroll view never takes back a
-  touch a `UIControl` has held past its content delay (≈ 150 ms), so a thumb that rested on
-  the row before it moved held the page still. Every segmented choice in the app is therefore
-  `SegmentRow` — the native look (capsule track, lighter thumb), plain SwiftUI buttons, and a
-  segmented `Picker` as its accessibility representation, so VoiceOver reads it as the native
-  control. No `.pickerStyle(.segmented)` in the app target; `MapScrollUITests` drags down from
-  a resting thumb on each Turns filter row, on the selected segment and an unselected one.
+- **Segmented controls live in the fixed header, never in the scrolling content** (Apple
+  HIG; iOS, Jan, 30 Sep 2026, after dev 120: "scroll back up on turns section still does not
+  work"). The native control is used everywhere — `.pickerStyle(.segmented)`, no look-alike.
+  On the session page the pinned bar carries the Ride / Turns / Flights / Details switcher
+  and, on Turns and on Flights only, that tab's filter rows under it (entry type and entry
+  tack; attempt outcome); the sentence that explains a filter stays at the top of the
+  content it filters. The reason: a `UISegmentedControl` is a `UIControl`, and a
+  `UIScrollView` never takes back a touch a `UIControl` has held past its content delay
+  (≈ 150 ms, `touchesShouldCancel(in:)` is false for every control), so a thumb that rested
+  on a filter row in the middle of the list held the page still. In the bar a row is a place
+  to tap, and the thumb that scrolls lands on the content below it. `MapScrollUITests`
+  parks the Turns list under the bar and drags down from mid-screen, flicking and resting
+  first, with the bar pinned. The bar sits in its place in the page under the verdict and,
+  once the page has scrolled past that place, is drawn fixed under the nav bar, outside the
+  scroll view.
+- **The session page is laid out in full, never lazily** (iOS, Jan, 30 Sep 2026, dev 124:
+  "scroll in 124 does not work"). It is a bounded document — a few card blocks, one map, at
+  most a hundred turn rows — so its stack is a `VStack` and its grids are `EagerGrid`, with no
+  `LazyVStack` or `LazyVGrid` anywhere in it. A lazy container forgets what scrolled off,
+  rebuilds it from an estimated height on the way back and moves the offset by the difference,
+  under the finger: on a long Turns tab the page snapped back 256 pt on every pull at the
+  place where "Turns & losses" comes back into view, and the page stack's own estimate swung
+  by 3 000 pt. `LongTurnsScrollUITests` takes the longest fixture session deep into its list
+  and back up to the cards.
 - Zoom state is transient per session view — but it survives a section change, which is not
   a new session view (see "Sections" above). On iOS that means the window is owned by
   `SessionDetailView`, not by the chart.

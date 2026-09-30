@@ -11,7 +11,7 @@ the other four (`app-ui-review.md` §3.1, §7.2).
 | section | holds |
 |---|---|
 | **`ride`** *(default)* | the map, its legend, the speed chart, the replay scrubber, the foil tiles and the speed-records table — one instrument, one section |
-| **`turns`** | the turn cards, then the two filters, the outcome tally, the maneuver map and the turn list |
+| **`turns`** | the turn cards, then the two filters (on iOS in the pinned bar, under the switcher), the outcome tally, the maneuver map and the turn list |
 | **`takeoffs`** | the failed-attempt headline and the takeoff & pumping tiles, then the attempt map and list, then the HR card ("What pumping cost") |
 | **`log`** | the gear card, the wind detail, the recording's provenance, and the watch-vs-phone table |
 

@@ -1565,6 +1565,13 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    - `MapScrollUITests` — **one finger on an inline map scrolls the page** (Ride, and Turns
      via `UI_OPEN_TURNS=1`): a swipe up that starts and ends on the map must lift the map's
      frame by more than 60 pt (docs/presentation/scrub-pairing.md, "Which finger is whose").
+     It also parks the Turns list under the pinned bar (switcher + filter rows) and drags down
+     from mid-screen, flicking and resting first; checks the bar is 125 pt with its rows on
+     Turns and the switcher alone on Ride; and drags the Turns tab back to its top.
+   - `LongTurnsScrollUITests` — **a long Turns tab scrolls back up** (`UI_OPEN_SESSION=foilmotion`,
+     the fixture with the most turns, 69): a thumb resting on the map before it pulls down
+     moves the page, and a trip seven screens into the list comes back to "Turns & losses"
+     one drag at a time (scrub-pairing.md, "The session page is laid out in full").
 
 3. **Monkey C units (Toybox.Test)** — the core suite lives in the `WingFoilCore` barrel
    (`garmin/barrel/WingFoilCore/tests/`) and is therefore compiled into **both** consumers'
