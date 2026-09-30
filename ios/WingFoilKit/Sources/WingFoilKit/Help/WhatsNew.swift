@@ -64,6 +64,19 @@ public enum WhatsNew {
     public static let entries: [WhatsNewEntry] = [
         WhatsNewEntry(
             version: "1.0.1",
+            build: 125,
+            channel: .beta,
+            date: "2026-09-30",
+            dateText: "30 September 2026",
+            title: "Built with its riders",
+            lines: [
+                "The Beta page asks how the new features work for you, and what we should test next.",
+                "A small Beta mark sits on every feature that is still being tried.",
+                "The feedback mail has your wishlist and a line for your own idea.",
+                "Scrolling back up works again when your thumb starts on a filter row.",
+            ]),
+        WhatsNewEntry(
+            version: "1.0.1",
             build: 123,
             channel: .beta,
             date: "2026-09-30",
