@@ -187,7 +187,7 @@ extension UsageCounters {
             case .healthExport: "Apple Health export"
             case .feedbackMail: "Feedback mail"
             case .usageReport: "Usage report"
-            case .mostWanted: "Most-wanted ticks"
+            case .mostWanted: "Wishlist ticks"
             }
         }
 

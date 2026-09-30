@@ -338,13 +338,11 @@ public enum FeedbackInvitation {
     public static let welcomeSentence =
         "Ideas and wishes are as welcome as bugs · Menu → Support & ideas"
 
-    /// **CleanJibe is built with its riders** (Jan, 24–25 September 2026, F2j and F5c): the
-    /// one wording of the community message. What CleanJibe does opens its footer with it,
-    /// and the Beta page says it once more; the "most wanted" ticks in the mail are where
-    /// it is going.
-    public static let community =
-        "CleanJibe is built with its riders. New features are chosen by demand and tested "
-        + "in the beta."
+    /// **CleanJibe is built with its riders** (Jan, 24–25 September 2026, F2j and F5c;
+    /// reworded 30 September 2026): the one wording of the community message, which is
+    /// `BetaGuide.community`. What CleanJibe does opens its footer with it, and the Beta
+    /// page leads with it; the wishlist ticks in the mail are where it is going.
+    public static var community: String { BetaGuide.community }
 }
 
 /// **The doors to that mail, each named exactly as the rider finds it.**
@@ -435,6 +433,11 @@ public enum FeedbackReport {
     ///
     /// The first one is deliberately **two questions in one line**: a rider with a feature
     /// wish must not have to decide whether the form is for him. See `FeedbackInvitation`.
+    /// **The mail's first line** (Jan, 30 September 2026): why the mail matters, before
+    /// the first question. A rider who knows it is read writes the second sentence too.
+    public static let opening =
+        "Your mail shows us what riders use and need. We read every one."
+
     public enum Prompt {
         public static let what = "What happened, or what you would like:"
         public static let expected = "What you expected instead:"
@@ -478,7 +481,7 @@ public enum FeedbackReport {
     /// (`TurnDoubt.note`), and the rider is left the second question, what he remembers.
     public static func body(_ facts: FeedbackFacts, mostWanted: MostWanted.Vote = .init(),
                             note: String? = nil) -> String {
-        var out: [String] = []
+        var out: [String] = [opening, ""]
         out += prompt(Prompt.what, answer: note)
         out += prompt(Prompt.expected)
         out += prompt(Prompt.session, answer: facts.session.map(sessionAnswer))

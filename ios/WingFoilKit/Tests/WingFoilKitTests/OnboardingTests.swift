@@ -532,6 +532,22 @@ import Testing
         #expect(AppMenuRow.help.title(in: .beta) == AppMenuRow.help.title)
     }
 
+    /// What's new ends on one ask per channel, and each names a menu row that exists in it:
+    /// the mail in the beta, the Beta page in the release (pattern B, a door that is there).
+    @Test func whatsNewEndsOnADoorThatExists() {
+        #expect(BetaGuide.whatsNewClosing(for: .beta).contains(FeedbackDoors.app))
+        #expect(BetaGuide.whatsNewClosing(for: .dev) == BetaGuide.whatsNewBeta)
+        #expect(BetaGuide.whatsNewClosing(for: .release)
+                .contains("Menu → " + AppMenuRow.beta.title(in: .release)))
+    }
+
+    /// One sentence of the community message, said by the welcome's footer and the Beta
+    /// page alike.
+    @Test func theCommunitySentenceHasOneHome() {
+        #expect(FeedbackInvitation.community == BetaGuide.community)
+        #expect(BetaGuide.community.hasPrefix("CleanJibe is built with its riders."))
+    }
+
     // MARK: - When it is allowed to say it
 
     @Test func aFreshInstallIsWelcomed() {

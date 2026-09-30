@@ -50,6 +50,10 @@ public enum ChannelFeatures {
         "Home-screen widgets and the watch complication.",
         "The session video: your afternoon as a film rather than a card.",
         "Grouping the library by month, year or spot, and filtering it.",
+        // Beta since 28 Sep 2026 (docs/channels.md, "The session story"); on this list
+        // since 30 Sep, because its Beta chips open the page this list is on.
+        "The session story: one line over your numbers, and a chip on each record you "
+            + "beat.",
         "Send a session and its recording to us from its Share page or a turn, with "
             + "your notes.",
         // Not a build, a plan (Jan, 19 Sep 2026: "mention it on the beta outlook explicitly").
