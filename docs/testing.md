@@ -1554,6 +1554,15 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
      and the mail. The `UI_TEXT_SIZE` ladder is pinned here too, being the one part of that
      hook that can be read without a launch.
 
+   **The app driven through its screens — `WingFoilUITests`** (XCUITest, `ios/WingFoilUITests`,
+   same scheme and configuration). The staging hooks above go in as `launchEnvironment`
+   rather than `SIMCTL_CHILD_…`, and a test can do what `simctl` cannot: swipe.
+   `-only-testing:WingFoilUITests` runs it alone; the first launch pays the fixture import.
+
+   - `MapScrollUITests` — **one finger on an inline map scrolls the page** (Ride, and Turns
+     via `UI_OPEN_TURNS=1`): a swipe up that starts and ends on the map must lift the map's
+     frame by more than 60 pt (docs/presentation/scrub-pairing.md, "Which finger is whose").
+
 3. **Monkey C units (Toybox.Test)** — the core suite lives in the `WingFoilCore` barrel
    (`garmin/barrel/WingFoilCore/tests/`) and is therefore compiled into **both** consumers'
    `--unit-test` builds: `bin/WingFoilTests.prg` (device app) and `bin/WingFoilFieldTests.prg`

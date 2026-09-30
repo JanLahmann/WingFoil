@@ -19,8 +19,13 @@
   page stuck (Jan, 28 Sep 2026: "scrolling gets stuck … trying to scroll up again"). So the
   turn and flight-end pages scroll to their foot from anywhere, and a drag that starts on a
   strip is the strip's and never turns to the next turn. On the session page a drag that
-  starts on the map, the chart or the replay slider belongs to it and never turns the page
+  starts on the chart or the replay slider belongs to it and never turns the page
   (`pagerExclusionZone`, which the strips carry too).
+- **On an inline map one finger is the page's, two are the map's** (iOS, 30 Sep 2026). On the
+  Ride, Turns and Flights maps one finger scrolls the page — and, clearly sideways, turns it
+  like anywhere else — while two fingers pan and pinch the map and only a two-finger drag keeps
+  the pager out (`pageMap`); taps and marks are untouched, and the full-screen and replay maps
+  still pan with one.
 - Zoom state is transient per session view — but it survives a section change, which is not
   a new session view (see "Sections" above). On iOS that means the window is owned by
   `SessionDetailView`, not by the chart.
