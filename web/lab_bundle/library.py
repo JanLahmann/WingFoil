@@ -128,10 +128,13 @@ NOT_A_SESSION_MAX_DISTANCE_M = 200.0
 
 # "Not a session" — the land sports (engine 0.26.0, docs/algorithms/not-a-session.md "A land
 # sport is not a session"): FIT sport name -> number. Twin of `wingfoil_lab.goldens.LAND_SPORTS`
-# (pinned by lab/tests/test_library.py). Walking, generic and training are absent on purpose.
+# (pinned by lab/tests/test_library.py). Walking, generic and training are absent on purpose;
+# the skate and snow sports joined on 30 Sep 2026 (Jan).
 LAND_SPORTS = {
-    "running": 1, "cycling": 2, "mountaineering": 16, "hiking": 17,
-    "e_biking": 21, "motorcycling": 22, "driving": 24,
+    "running": 1, "cycling": 2, "cross_country_skiing": 12, "alpine_skiing": 13,
+    "snowboarding": 14, "mountaineering": 16, "hiking": 17, "e_biking": 21,
+    "motorcycling": 22, "driving": 24, "inline_skating": 30, "ice_skating": 33,
+    "snowshoeing": 35, "snowmobiling": 36,
 }
 
 

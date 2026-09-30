@@ -215,11 +215,22 @@ public struct StravaActivity: Sendable, Codable, Identifiable, Equatable {
 /// * the **name** says what it was — the rescue that catches the rider who files everything
 ///   under Workout and writes "Wingfoil Torbole" in the title. Same keyword set the
 ///   intervals.icu sync uses (`WatersportName`), so the two doors agree about what a
-///   watersport is called. Whole words only.
+///   watersport is called. Whole words only. On a run, a ride, a hike or a walk
+///   (``landTypes``) only a wing or foil word rescues (Jan, 30 Sep 2026): "SUP downwinder"
+///   typed Hike stays out, "Wingfoil Torbole" typed Ride is offered.
 ///
 /// …and then, in both cases, the activity must actually have a recording behind it. That is
 /// not a preference: without positions there is nothing to analyse.
 public enum StravaActivityFilter {
+
+    /// Strava's run, ride, hike and walk types: skipped unless the name says wing or foil
+    /// (``WatersportName/saysWingOrFoil(_:)``), 30 Sep 2026.
+    public static let landTypes: Set<String> = [
+        "Run", "TrailRun", "VirtualRun",
+        "Ride", "VirtualRide", "EBikeRide", "EMountainBikeRide", "MountainBikeRide",
+        "GravelRide",
+        "Hike", "Walk",
+    ]
 
     public static func matches(_ activity: StravaActivity,
                                types: Set<StravaActivityType>) -> Bool {
@@ -228,8 +239,12 @@ public enum StravaActivityFilter {
            types.contains(type) {
             return true
         }
+        // A run, a ride, a hike or a walk: only a wing or foil word rescues it.
+        if let raw = activity.sportType, landTypes.contains(raw) {
+            return WatersportName.saysWingOrFoil(activity.name)
+        }
         // The same whole words the intervals.icu sync asks (`WatersportName`, 28 Sep 2026),
-        // so "Supporting" is no SUP. Any type, still: this list is one the rider picks from.
+        // so "Supporting" is no SUP. Any other type: this list is one the rider picks from.
         return WatersportName.matches(activity.name)
     }
 }

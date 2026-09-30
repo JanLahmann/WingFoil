@@ -87,6 +87,16 @@ web re-derives from the stored digest's `sport`. No golden changes a number: eve
 still offered, and its `<type>` is not a FIT sport, so it would still be analysed; that is
 the rider's own pick.
 
+**Amended 30 Sep 2026** (Jan, inside engine 0.27.0, no version of its own). (1) The skate and
+snow sports join the list — `cross_country_skiing` 12, `alpine_skiing` 13, `snowboarding` 14,
+`inline_skating` 30, `ice_skating` 33, `snowshoeing` 35, `snowmobiling` 36, every one the FIT
+profile has (skateboarding has no `sport`); the "a wing on skis is still a wing" refusal is
+withdrawn. Same reason `land_sport`, same tag "Not a watersport". (2) The Strava list no
+longer rescues a run, ride, hike or walk (`StravaActivityFilter.landTypes`) by any watersport
+word: only a wing or foil word does (`WatersportName.saysWingOrFoil`, the same pattern
+narrowed), so "SUP downwinder" typed Hike stays out. Other types keep the any-word rescue.
+No golden moves.
+
 ## ADR-035 · Only a counted turn owns a fall, and a touch is a touch only near the exit
 **Status: Accepted** (Jan, 25 September 2026; engine 0.25.0, release channel).
 

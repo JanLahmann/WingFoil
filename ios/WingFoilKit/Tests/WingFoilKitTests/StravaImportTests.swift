@@ -315,9 +315,19 @@ struct StravaImportTests {
         #expect(StravaActivityFilter.matches(made("Windsurf", "Lunch session"), types: defaults))
         #expect(StravaActivityFilter.matches(made("Workout", "Morning"), types: defaults))
         #expect(!StravaActivityFilter.matches(made("Ride", "Commute"), types: defaults))
-        // The rescue: any type at all, if the rider named it.
+        // The rescue: any type, if the rider named it…
         #expect(StravaActivityFilter.matches(made("Ride", "Wingfoil Torbole"), types: defaults))
-        #expect(StravaActivityFilter.matches(made("Hike", "SUP downwinder"), types: defaults))
+        #expect(StravaActivityFilter.matches(made("Swim", "SUP downwinder"), types: defaults))
+        // …but a run, a ride, a hike or a walk only by a wing or foil word (30 Sep 2026).
+        #expect(!StravaActivityFilter.matches(made("Hike", "SUP downwinder"), types: defaults))
+        #expect(!StravaActivityFilter.matches(made("Walk", "Kite beach"), types: defaults))
+        #expect(!StravaActivityFilter.matches(made("TrailRun", "Surf check"), types: defaults))
+        #expect(!StravaActivityFilter.matches(made("Run", "Windsurf spot run"), types: defaults))
+        #expect(StravaActivityFilter.matches(made("Walk", "Foiling Silvaplana"), types: defaults))
+        #expect(StravaActivityFilter.matches(made("EBikeRide", "wing session"), types: defaults))
+        #expect(StravaActivityFilter.matches(made("Run", "Kitefoil"), types: defaults))
+        #expect(!StravaActivityFilter.matches(made("Run", "Wingate loop"), types: defaults))
+        #expect(!StravaActivityFilter.matches(made("VirtualRide", "Zwift"), types: defaults))
         // …in whole words (28 Sep 2026): "Supporting" is no SUP.
         #expect(!StravaActivityFilter.matches(made("Run", "9 5 4 Supporting Robert"),
                                               types: defaults))

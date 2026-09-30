@@ -266,7 +266,9 @@ read back 98 % on foil, 10.65 kn and 2 jibes. A recording whose FIT session spor
 not a session whatever its speeds say, with reason `land_sport` and the sport itself in
 `summary.landSport`. Walking, generic and training are *not* on the list: the CIQ app and the
 imports file watersport sessions under them. No fixture in the corpus is a land sport, so every
-golden moves by the version and one null key.
+golden moves by the version and one null key. Inside 0.27.0 (Jan, 30 Sep 2026) the list widens
+to the skate and snow sports -- inline and ice skating, alpine and cross-country skiing,
+snowboarding, snowshoeing, snowmobiling; still no fixture is one.
 """
 
 from __future__ import annotations
@@ -566,16 +568,26 @@ NOT_A_SESSION_REASONS = ("land_sport", "too_short", "no_distance", "no_recording
 #: whose session sport is one of these is not a session, however fast and however "on foil" it
 #: reads -- a marathon at 10.65 kn clears every flight gate. **Walking (11), generic (0) and
 #: training (10) are deliberately absent**: the CIQ app and the Walk-typed imports file real
-#: watersport sessions under them. Snow and skate sports are absent too -- a wing on skis or
-#: skates is still a wing -- and so is anything on the water.
+#: watersport sessions under them, and so is anything on the water. **The skate and snow
+#: sports joined on 30 Sep 2026** (Jan): inline and ice skating, alpine and cross-country
+#: skiing, snowboarding, snowshoeing and snowmobiling -- every snow or skate sport the FIT
+#: profile has (skateboarding has no `sport` of its own; backcountry, resort and skate skiing
+#: are `sub_sport`s of the skiing sports, so the sport already decides them).
 LAND_SPORTS = {
     "running": 1,
     "cycling": 2,
+    "cross_country_skiing": 12,
+    "alpine_skiing": 13,
+    "snowboarding": 14,
     "mountaineering": 16,
     "hiking": 17,
     "e_biking": 21,
     "motorcycling": 22,
     "driving": 24,
+    "inline_skating": 30,
+    "ice_skating": 33,
+    "snowshoeing": 35,
+    "snowmobiling": 36,
 }
 _LAND_SPORT_BY_NUMBER = {str(n): name for name, n in LAND_SPORTS.items()}
 

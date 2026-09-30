@@ -290,11 +290,14 @@ public enum SessionVerdict: Sendable {
     /// profile. A recording whose session sport is one of these is not a session, however
     /// fast and however "on foil" it reads. Walking (11), generic (0) and training (10) are
     /// deliberately absent — the CIQ app and the Walk-typed imports file real watersport
-    /// sessions under them — and so are the snow and skate sports, where a wing is still a
-    /// wing. Twin of `wingfoil_lab.goldens.LAND_SPORTS`.
+    /// sessions under them — and so is anything on the water. The skate and snow sports
+    /// joined on 30 Sep 2026 (Jan): every one the FIT profile has (skateboarding has no
+    /// `sport` of its own). Twin of `wingfoil_lab.goldens.LAND_SPORTS`.
     public static let landSports: [String: Int] = [
-        "running": 1, "cycling": 2, "mountaineering": 16, "hiking": 17,
-        "e_biking": 21, "motorcycling": 22, "driving": 24,
+        "running": 1, "cycling": 2, "cross_country_skiing": 12, "alpine_skiing": 13,
+        "snowboarding": 14, "mountaineering": 16, "hiking": 17, "e_biking": 21,
+        "motorcycling": 22, "driving": 24, "inline_skating": 30, "ice_skating": 33,
+        "snowshoeing": 35, "snowmobiling": 36,
     ]
 
     /// The FIT name of the land sport `sport` says — the profile's name in any case, or its

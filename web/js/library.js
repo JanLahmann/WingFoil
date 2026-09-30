@@ -157,8 +157,12 @@ export async function backfillDigests(entries) {
 /** The FIT land sports (engine 0.26.0) — `library.py`'s `LAND_SPORTS`, which the totals ask
  *  through `entry_is_session`. Read here only so a run saved by an older engine wears its
  *  tag on the row the same day it leaves the totals. */
-const LAND_SPORTS = new Set(["running", "cycling", "mountaineering", "hiking", "e_biking",
-                             "motorcycling", "driving", "1", "2", "16", "17", "21", "22", "24"]);
+const LAND_SPORTS = new Set(["running", "cycling", "cross_country_skiing", "alpine_skiing",
+                             "snowboarding", "mountaineering", "hiking", "e_biking",
+                             "motorcycling", "driving", "inline_skating", "ice_skating",
+                             "snowshoeing", "snowmobiling",
+                             "1", "2", "12", "13", "14", "16", "17", "21", "22", "24",
+                             "30", "33", "35", "36"]);
 
 /** Why a row is not a session, or null when it is one: `land_sport` for a stored land
  *  sport whatever an older engine stamped, else the digest's own reason. */

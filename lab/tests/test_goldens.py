@@ -517,7 +517,10 @@ def test_the_not_a_session_rule(foil_s, duration_s, distance_m, expected):
 
 
 @pytest.mark.parametrize("sport", ["running", "cycling", "hiking", "mountaineering",
-                                   "e_biking", "motorcycling", "driving", "Running", "1", "17"])
+                                   "e_biking", "motorcycling", "driving", "Running", "1", "17",
+                                   "alpine_skiing", "cross_country_skiing", "snowboarding",
+                                   "snowshoeing", "snowmobiling", "inline_skating",
+                                   "ice_skating", "13", "30"])
 def test_a_land_sport_is_not_a_session_whatever_its_speeds(sport):
     """Engine 0.26.0: Jan's Berlin Marathon read 98 % on foil at 10.65 kn. A land sport is
     asked before the foil time, so a run that clears every flight gate is still a run."""
@@ -526,18 +529,21 @@ def test_a_land_sport_is_not_a_session_whatever_its_speeds(sport):
 
 @pytest.mark.parametrize("sport", [None, "walking", "generic", "training", "windsurfing",
                                    "kitesurfing", "stand_up_paddleboarding", "11", "0", "43",
-                                   "alpine_skiing", "inline_skating"])
+                                   "38", "surfing", "wakeboarding"])
 def test_walking_generic_and_the_watersports_are_left_to_the_other_rules(sport):
     """Walking, generic and training are how the CIQ app and the imports file real
-    watersport sessions, and a wing on skis or skates is still a wing: none of them is on
-    the list."""
+    watersport sessions, and nothing on the water is on the list."""
     assert session_verdict(1800.0, 3600.0, 12000.0, sport) == (True, None)
     assert land_sport(sport) is None
 
 
 def test_the_land_sports_are_the_fit_profile_numbers():
-    assert LAND_SPORTS == {"running": 1, "cycling": 2, "mountaineering": 16, "hiking": 17,
-                           "e_biking": 21, "motorcycling": 22, "driving": 24}
+    assert LAND_SPORTS == {"running": 1, "cycling": 2, "cross_country_skiing": 12,
+                           "alpine_skiing": 13, "snowboarding": 14, "mountaineering": 16,
+                           "hiking": 17, "e_biking": 21, "motorcycling": 22, "driving": 24,
+                           "inline_skating": 30, "ice_skating": 33, "snowshoeing": 35,
+                           "snowmobiling": 36}
+    assert land_sport("14") == "snowboarding" and land_sport("33") == "ice_skating"
     assert land_sport("21") == "e_biking" and land_sport(" Cycling ") == "cycling"
 
 
