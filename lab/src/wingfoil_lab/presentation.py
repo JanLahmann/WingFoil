@@ -413,6 +413,14 @@ def _not_a_session_tag(reason):
             else "verdicts.notASession.tag")
 
 
+#: The five snow sports among `wingfoil_lab.goldens.LAND_SPORTS` (30 Sep 2026, ADR-036
+#: amendment): they keep the land-sport tag, but the page's line names the real reason —
+#: there is no foil to read on snow at all, not just the wrong sport. Skate sports (inline
+#: and ice skating) keep the generic line. Twin of `NotASessionNote.snowSports`.
+SNOW_SPORTS = frozenset({"cross_country_skiing", "alpine_skiing", "snowboarding",
+                          "snowshoeing", "snowmobiling"})
+
+
 def _records(doc, records, policy):
     """The nine kinds: value, window provenance, whether it was verified, and whether the
     rider's policy lets it stand.
@@ -652,8 +660,13 @@ def _not_a_session(summary):
         line, args = "verdicts.notASession.lines.0", {}
     elif reason == "land_sport":
         # The sport the file says, as the FIT profile names it; the words turn it into
-        # "running" or "e-biking" (engine 0.26.0).
-        line, args = "verdicts.notASession.lines.2", {"sport": summary.get("landSport")}
+        # "running" or "e-biking" (engine 0.26.0). A snow sport gets its own line
+        # (30 Sep 2026, ADR-036 amendment): "Not a watersport" alone does not say there is
+        # no foil to read at all.
+        land_sport = summary.get("landSport")
+        snow = str(land_sport or "").strip().lower() in SNOW_SPORTS
+        line = "verdicts.notASession.lines.3" if snow else "verdicts.notASession.lines.2"
+        args = {"sport": land_sport}
     else:
         line = "verdicts.notASession.lines.1"
         args = {"durationS": round_to(summary.get("durationS"), DECIMALS["durationS"]),

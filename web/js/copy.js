@@ -22,14 +22,18 @@
  * the row's own displayed numbers, so the line reads against the key metrics
  * directly above it. `lines[2]` is the land-sport case (engine 0.26.0) and
  * carries `{sport}`, the FIT profile's name with `_` read as `-`; `landTag`
- * is that row's tag.
+ * is that row's tag. `lines[3]` is the snow-sport case (30 Sep 2026, ADR-036
+ * amendment) — alpine or cross-country skiing, snowboarding, snowshoeing or
+ * snowmobiling, `render.js`'s `SNOW_SPORTS` — and says why in the way a snow-wing
+ * afternoon is not just the wrong sport: there is no foil to read on snow at all.
  */
 export const NOT_A_SESSION = {
   "landTag": "Not a watersport",
   "lines": [
     "Your watch says this afternoon happened, but its recording has not arrived yet. It is not counted in totals, trends or records until it does.",
     "No time on the foil, {duration} long and {distance} covered. This looks like a recording rather than a session. It is kept, and left out of totals, trends and records.",
-    "This was recorded as {sport}, so it is not a session on the water. It is kept, and left out of totals, trends and records."
+    "This was recorded as {sport}, so it is not a session on the water. It is kept, and left out of totals, trends and records.",
+    "This was recorded as {sport}. CleanJibe reads foiling on water, and snow has no foil to read. It is kept, and left out of totals, trends and records."
   ],
   "tag": "No riding detected"
 };

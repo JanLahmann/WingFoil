@@ -416,6 +416,26 @@ def test_a_land_sport_is_told_by_its_own_line_and_tag():
     assert doc["row"]["tagIds"] == ["verdicts.notASession.landTag"]
 
 
+def test_a_snow_sport_is_told_there_is_no_foil_to_read():
+    """30 Sep 2026, ADR-036 amendment: a snow sport keeps the land-sport tag, but the page's
+    line is its own (lines.3), not the generic land-sport one (lines.2)."""
+    golden = json.loads(json.dumps(load(goldens()[0])))
+    golden["summary"].update(isSession=False, notASessionReason="land_sport",
+                             landSport="alpine_skiing")
+    doc = build_presentation(golden)
+    assert doc["notASession"] == {"args": {"sport": "alpine_skiing"},
+                                  "isSession": False,
+                                  "lineId": "verdicts.notASession.lines.3",
+                                  "reasonId": "land_sport",
+                                  "tagId": "verdicts.notASession.landTag"}
+    assert doc["row"]["tagIds"] == ["verdicts.notASession.landTag"]
+
+    # A skate sport is a land sport too, but keeps the generic line.
+    golden["summary"]["landSport"] = "ice_skating"
+    doc = build_presentation(golden)
+    assert doc["notASession"]["lineId"] == "verdicts.notASession.lines.2"
+
+
 def test_an_unknown_policy_is_refused():
     with pytest.raises(ValueError):
         build_presentation(load(goldens()[0]), policy="whateverTheRiderTyped")

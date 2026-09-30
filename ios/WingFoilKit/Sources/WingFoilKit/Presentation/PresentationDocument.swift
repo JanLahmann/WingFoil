@@ -680,8 +680,11 @@ public enum PresentationDocument {
             lineId = "verdicts.notASession.lines.0"
             args = [:]
         case .landSport:
-            // The sport the file says, as the FIT profile names it (engine 0.26.0).
-            lineId = "verdicts.notASession.lines.2"
+            // The sport the file says, as the FIT profile names it (engine 0.26.0). A
+            // snow sport gets its own line (30 Sep 2026, ADR-036 amendment): there is no
+            // foil to read on snow at all, which "Not a watersport" alone does not say.
+            lineId = NotASessionNote.isSnowSport(s.landSport)
+                ? "verdicts.notASession.lines.3" : "verdicts.notASession.lines.2"
             args = ["sport": s.landSport.map(PresentationValue.string) ?? .null]
         case .tooShort, .noDistance, nil:
             lineId = "verdicts.notASession.lines.1"

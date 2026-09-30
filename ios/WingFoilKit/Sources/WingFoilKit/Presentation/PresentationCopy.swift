@@ -247,8 +247,13 @@ public enum PresentationCopy {
             // template — which is what keeps the page's sentence and the row's tag one
             // author (`NotASessionNote`).
             guard parts.count == 4, parts[2] == "lines", let index = Int(parts[3]),
-                  (0...2).contains(index) else { return nil }
-            let reason: SessionVerdict.Reason = [.noRecording, .tooShort, .landSport][index]
+                  (0...3).contains(index) else { return nil }
+            // Indices 2 and 3 are both the land-sport reason: `NotASessionNote.line`
+            // itself picks the snow sentence from `args["sport"]`, so which index
+            // resolved here changes nothing about the text — it only lets the document
+            // (`PresentationDocument.notASessionSection`) point at the right one.
+            let reason: SessionVerdict.Reason =
+                [.noRecording, .tooShort, .landSport, .landSport][index]
             return NotASessionNote.line(reason: reason,
                                         durationS: args["durationS"].flatMap(Double.init),
                                         distanceKm: args["distanceKm"].flatMap(Double.init),

@@ -25,6 +25,23 @@ public enum NotASessionNote {
     /// recording is not, without a verdict on the rider.
     public static let landTag = "Not a watersport"
 
+    /// The five snow sports among ``SessionVerdict/landSports`` (30 Sep 2026, ADR-036
+    /// amendment, Jan: "CleanJibe reads foiling on water. A snow-wing day has no foil to
+    /// read."). They keep ``landTag`` — a snow-wing afternoon is still not a watersport —
+    /// but the page's line names the reason a rider actually asked: not "wrong sport", but
+    /// "no foil at all". Skate sports (inline and ice skating) and every other land sport
+    /// keep the generic line below.
+    public static let snowSports: Set<String> = [
+        "cross_country_skiing", "alpine_skiing", "snowboarding", "snowshoeing",
+        "snowmobiling",
+    ]
+
+    /// Is `sport` (a FIT profile name, any case) one of ``snowSports``?
+    public static func isSnowSport(_ sport: String?) -> Bool {
+        guard let sport else { return false }
+        return snowSports.contains(sport.trimmingCharacters(in: .whitespaces).lowercased())
+    }
+
     /// The tag a row wears for its reason — the one call the row and the document share.
     public static func tag(for reason: SessionVerdict.Reason?) -> String {
         reason == .landSport ? landTag : tag
@@ -42,6 +59,11 @@ public enum NotASessionNote {
                             sport: String? = nil) -> String {
         switch reason {
         case .landSport:
+            if isSnowSport(sport) {
+                return "This was recorded as " + sportWord(sport)
+                    + ". CleanJibe reads foiling on water, and snow has no foil to read. "
+                    + "It is kept, and left out of totals, trends and records."
+            }
             return "This was recorded as " + sportWord(sport)
                 + ", so it is not a session on the water. It is kept, and left out of "
                 + "totals, trends and records."
