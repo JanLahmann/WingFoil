@@ -153,7 +153,7 @@ struct SessionVerdictTests {
 
         let line = NotASessionNote.line(reason: .landSport, durationS: nil, distanceKm: nil,
                                         sport: "alpine_skiing")
-        #expect(line.contains("recorded as alpine-skiing"))
+        #expect(!line.contains("recorded as"))   // the shorter line, Jan 30 Sep 2026
         #expect(line.contains("no foil to read"))
         #expect(line.contains("kept"))
         // No engine vocabulary anywhere near the rider.

@@ -60,8 +60,8 @@ public enum NotASessionNote {
         switch reason {
         case .landSport:
             if isSnowSport(sport) {
-                return "This was recorded as " + sportWord(sport)
-                    + ". CleanJibe reads foiling on water, and snow has no foil to read. "
+                // Jan, 30 Sep 2026: the shorter line, without the sport's name.
+                return "CleanJibe reads foiling on water, and snow has no foil to read. "
                     + "It is kept, and left out of totals, trends and records."
             }
             return "This was recorded as " + sportWord(sport)
