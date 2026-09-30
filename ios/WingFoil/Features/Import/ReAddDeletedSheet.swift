@@ -96,7 +96,7 @@ struct ReAddDeletedSheet: View {
                     Text(Fmt.date(stone.startDate, zone: .current)
                          + " · " + Fmt.duration(stone.durationS))
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
                 }
                 Spacer(minLength: 0)
             }

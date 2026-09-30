@@ -225,7 +225,7 @@ struct ReplaySetupSheet: View {
             .pickerStyle(.segmented)
             Text(lengthNote)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -259,7 +259,7 @@ struct ReplaySetupSheet: View {
             .pickerStyle(.segmented)
             Text(framingNote)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -329,7 +329,7 @@ struct ReplaySetupSheet: View {
                      + "Music can be any file the phone can open. "
                      + "Take one from Files, from iCloud Drive, or from another app.")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
@@ -342,7 +342,7 @@ struct ReplaySetupSheet: View {
 
             Text("Use music you have the rights to share.")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
         }
     }
 
@@ -357,7 +357,7 @@ struct ReplaySetupSheet: View {
                     .truncationMode(.middle)
                 Text(musicNote(track))
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
             }
             Spacer(minLength: 0)
             Button("Remove") {
@@ -436,7 +436,7 @@ struct ReplaySetupSheet: View {
                      + "before the closing card. Up to "
                      + String(ReplayPhotoLoader.maxCount) + ".")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
@@ -479,7 +479,7 @@ struct ReplaySetupSheet: View {
                             .clipShape(.rect(cornerRadius: 10))
                         Text(placement(of: photo))
                             .font(.caption2)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.readableSecondary)
                             .monospacedDigit()
                     }
                 }
@@ -501,7 +501,7 @@ struct ReplaySetupSheet: View {
     private var placementNote: some View {
         Text(placementSummary)
             .font(.caption)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(.readableSecondary)
     }
 
     private var placementSummary: String {
@@ -537,7 +537,7 @@ struct ReplaySetupSheet: View {
         Label("The title and caption on the opening card come from the Share screen.",
               systemImage: "textformat")
             .font(.caption)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(.readableSecondary)
             .fixedSize(horizontal: false, vertical: true)
     }
 
@@ -550,7 +550,7 @@ struct ReplaySetupSheet: View {
              : Copy.screenRecordingUnavailable
                + " The replay plays full screen without being recorded.")
             .font(.caption)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(.readableSecondary)
             .fixedSize(horizontal: false, vertical: true)
     }
 

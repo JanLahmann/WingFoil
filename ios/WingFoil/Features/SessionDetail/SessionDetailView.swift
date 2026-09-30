@@ -202,7 +202,7 @@ struct SessionDetailView: View {
                             distanceKm: detail.analysis.summary.distanceKm,
                             sport: detail.analysis.summary.landSport))
                             .font(.footnote)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.readableSecondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     // Below the verdict now, not above it. It is a provenance footnote
@@ -458,7 +458,7 @@ struct SessionDetailView: View {
                              fellIn: row.turnsFellIn ?? 0)
                 Text(Fmt.km(row.distanceKm))
                     .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
             }
             ContentUnavailableView {
                 Label("From your watch", systemImage: "antenna.radiowaves.left.and.right")
@@ -480,7 +480,7 @@ struct SessionDetailView: View {
                 .font(.title3.weight(.semibold).monospacedDigit())
             Text(label)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
         }
     }
 
@@ -706,7 +706,7 @@ struct SessionDetailView: View {
         if let source = SessionProvenance.line(importSource: row.importSource) {
             Text(source)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
                 .lineLimit(2)
         }
     }
@@ -741,14 +741,14 @@ struct SessionDetailView: View {
     private func tunedBanner(_ count: Int) -> some View {
         HStack(spacing: 8) {
             Image(systemName: "slider.horizontal.3")
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
             let noun = count == 1 ? " tuned threshold · " : " tuned thresholds · "
             Text("Analysed with " + String(count) + noun + "Settings → Tuning")
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
         }
         .font(.caption)
-        .foregroundStyle(.secondary)
+        .foregroundStyle(.readableSecondary)
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.secondary.opacity(0.10), in: .rect(cornerRadius: 10))
@@ -772,13 +772,13 @@ struct SessionDetailView: View {
     private var estimatedClockNote: some View {
         HStack(spacing: 6) {
             Image(systemName: "clock.badge.questionmark")
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
             Text("Times estimated from the track's position. "
                  + "This recording has no time zone.")
                 .fixedSize(horizontal: false, vertical: true)
         }
         .font(.caption)
-        .foregroundStyle(.secondary)
+        .foregroundStyle(.readableSecondary)
     }
 
     /// Said once, at the top, where the reader starts: this page is a demonstration.
@@ -790,7 +790,7 @@ struct SessionDetailView: View {
             Text("Bundled demo session. " + ExampleSession.place
                  + ". Not counted in your records or trends.")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
                 .fixedSize(horizontal: false, vertical: true)
             HelpButton(topic: .exampleSession, size: .caption2)
         }
@@ -807,7 +807,7 @@ struct SessionDetailView: View {
                 RiderBadge(name: rider, font: .caption)
                 Text(note)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -817,7 +817,7 @@ struct SessionDetailView: View {
         Label("This recording has no GPS positions. Chart and records only.",
               systemImage: "location.slash")
             .font(.footnote)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(.readableSecondary)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -838,11 +838,11 @@ private struct WindRow: View {
             HStack(spacing: 6) {
                 Image(systemName: "wind")
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
                 Text(text)
                     .font(.caption)
                     .foregroundStyle(isLow ? AnyShapeStyle(Color.orange)
-                                           : AnyShapeStyle(.secondary))
+                                           : AnyShapeStyle(.readableSecondary))
                     .fixedSize(horizontal: false, vertical: true)
                 HelpButton(topic: .windAxis, size: .caption2)
             }

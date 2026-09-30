@@ -90,11 +90,11 @@ struct HrCostCardView: View {
         VStack(alignment: .leading, spacing: 4) {
             Text("Takeoff cost")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
             Text(card.headlineValue)
                 .font(.title.weight(.semibold))
                 .monospacedDigit()
-                .foregroundStyle(card.headlineMissing ? .secondary : .primary)
+                .foregroundStyle(card.headlineMissing ? .readableSecondary : .primary)
             Text(card.headlineCaption)
                 .font(.caption2)
                 .foregroundStyle(.readableSecondary)
@@ -157,7 +157,7 @@ struct HrCostCardView: View {
             if let note = card.baselineNote {
                 Text(note)
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }

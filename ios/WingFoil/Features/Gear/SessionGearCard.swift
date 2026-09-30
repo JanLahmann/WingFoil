@@ -23,7 +23,7 @@ struct SessionGearCard: View {
                 if let spot = store.session(id: sessionID).flatMap({ store.spot(id: $0.spotId) }) {
                     Label(spot.name, systemImage: "mappin.and.ellipse")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
                 }
             }
             ForEach(GearKind.allCases) { kind in
@@ -43,7 +43,7 @@ struct SessionGearCard: View {
                 Text("Add your wings, boards and foils on the Gear tab. Then every session "
                      + "knows what you rode.")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
             }
         }
         .padding()
@@ -71,13 +71,13 @@ struct SessionGearCard: View {
         } label: {
             HStack {
                 Text(assigned[kind]?.name ?? "Not set")
-                    .foregroundStyle(assigned[kind] == nil ? .secondary : .primary)
+                    .foregroundStyle(assigned[kind] == nil ? .readableSecondary : .primary)
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
                 Spacer()
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
             }
         }
     }

@@ -165,7 +165,7 @@ struct ImportView: View {
     }
 
     private func unavailable(_ line: String) -> some View {
-        Text(line).foregroundStyle(.secondary)
+        Text(line).foregroundStyle(.readableSecondary)
     }
 
     /// The way to the topic that answers *how*, by that topic's own title so the row says
@@ -242,7 +242,7 @@ private struct SetUpInSettingsRow: View {
         if let open {
             Button { open() } label: { label }
         } else {
-            label.foregroundStyle(.secondary)
+            label.foregroundStyle(.readableSecondary)
         }
     }
 
@@ -268,10 +268,10 @@ private struct ProgressCard: View {
             HStack(spacing: 0) {
                 counter("\(progress.processed)", "found", .primary)
                 counter("\(progress.imported)", "imported", .green)
-                counter("\(progress.duplicates)", "duplicates", .secondary)
-                counter("\(progress.skipped)", "skipped", .secondary)
+                counter("\(progress.duplicates)", "duplicates", .readableSecondary)
+                counter("\(progress.skipped)", "skipped", .readableSecondary)
                 counter("\(progress.failed.count)", "failed",
-                        progress.failed.isEmpty ? .secondary : .orange)
+                        progress.failed.isEmpty ? .readableSecondary : .orange)
             }
         }
         .padding(.vertical, 4)
@@ -280,7 +280,7 @@ private struct ProgressCard: View {
     private func counter(_ value: String, _ label: String, _ tone: Color) -> some View {
         VStack(spacing: 2) {
             Text(value).font(.headline.monospacedDigit()).foregroundStyle(tone)
-            Text(label).font(.caption2).foregroundStyle(.secondary)
+            Text(label).font(.caption2).foregroundStyle(.readableSecondary)
         }
         .frame(maxWidth: .infinity)
     }
@@ -299,11 +299,11 @@ private struct ImportLogRowView: View {
                 Spacer()
                 // `.current` deliberately: an import is something that happened to this phone.
                 Text(Fmt.shortDate(entry.startedAt, zone: .current))
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.caption).foregroundStyle(.readableSecondary)
             }
             Text(summary)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
             if let detail = entry.detail {
                 Text(detail)
                     .font(.caption2)

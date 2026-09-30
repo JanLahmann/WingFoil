@@ -121,7 +121,7 @@ struct MapLegendView: View {
             }
         }
         .font(.caption2)
-        .foregroundStyle(.secondary)
+        .foregroundStyle(.readableSecondary)
     }
 
     // MARK: - Rows
@@ -154,12 +154,12 @@ struct MapLegendView: View {
                 Text("·")
                 Text(hidden > 0 ? "\(hidden) hidden" : "all shown")
                     .foregroundStyle(hidden > 0 ? AnyShapeStyle(Color.accentColor)
-                                                : AnyShapeStyle(.secondary))
+                                                : AnyShapeStyle(.readableSecondary))
             }
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .foregroundStyle(.secondary)
+        .foregroundStyle(.readableSecondary)
         .accessibilityLabel("Map layers")
         .accessibilityValue(hidden > 0 ? "\(hidden) hidden" : "all shown")
         .accessibilityHint(expanded ? "Hides the layer chips" : "Shows the layer chips")

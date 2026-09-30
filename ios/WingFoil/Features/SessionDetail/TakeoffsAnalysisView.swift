@@ -260,23 +260,25 @@ private struct AttemptRowView: View {
         HStack(spacing: 10) {
             Text(Fmt.clock(mark.t))
                 .font(.caption.monospacedDigit())
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
                 .scaledColumn(46, relativeTo: .caption)
             if pumping {
                 Text(mark.pumps.map(String.init) ?? "—")
                     .font(.subheadline.monospacedDigit())
-                    .foregroundStyle(mark.pumps == nil ? .tertiary : .secondary)
+                    .foregroundStyle(mark.pumps == nil ? AnyShapeStyle(.tertiary)
+                                     : AnyShapeStyle(.readableSecondary))
                     .scaledColumn(52, alignment: .trailing, relativeTo: .subheadline)
             }
             Text(mark.timeToFoilS.map { String(format: "%.0f s", $0) } ?? "—")
                 .font(.subheadline.monospacedDigit())
-                .foregroundStyle(mark.timeToFoilS == nil ? .tertiary : .secondary)
+                .foregroundStyle(mark.timeToFoilS == nil ? AnyShapeStyle(.tertiary)
+                                 : AnyShapeStyle(.readableSecondary))
                 .scaledColumn(56, alignment: .trailing, relativeTo: .subheadline)
             HStack(spacing: 5) {
                 EventMarkerStyle.takeoffMark(mark, size: 11)
                 Text(mark.attemptKind.label)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }

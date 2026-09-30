@@ -71,7 +71,7 @@ struct SendToDeveloperSheet: View {
                         Text("Say what you saw and where. A turn number or a time is "
                              + "enough.")
                             .font(.caption2)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.readableSecondary)
                     }
 
                     // The consent sentence, above the button and not in a footnote: the
@@ -82,7 +82,7 @@ struct SendToDeveloperSheet: View {
                             .font(.subheadline.weight(.semibold))
                         Text(SessionAnalysisMail.consent)
                             .font(.footnote)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.readableSecondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -99,7 +99,7 @@ struct SendToDeveloperSheet: View {
                     Text("You see the whole mail before it goes. Nothing is sent until you "
                          + "tap Send.")
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
                         .frame(maxWidth: .infinity)
                         .multilineTextAlignment(.center)
                 }
@@ -195,13 +195,13 @@ private struct SendToDeveloperFallbackSheet: View {
                 VStack(alignment: .leading, spacing: 14) {
                     Text(Copy.noMailAccount + " " + Copy.copyTheReportInstead)
                         .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
                         .fixedSize(horizontal: false, vertical: true)
 
                     Text("Share the recording separately. The Share page's FIT file tab "
                          + "sends it.")
                         .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
                         .fixedSize(horizontal: false, vertical: true)
 
                     Text(subject)

@@ -47,7 +47,7 @@ struct LibraryNewerThanAppView: View {
                 Text("Install the newer build again, or restore a backup made with this "
                      + "version.")
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
                     .fixedSize(horizontal: false, vertical: true)
 
                 if let progress = store.restoreProgress {
@@ -57,7 +57,7 @@ struct LibraryNewerThanAppView: View {
                         Text("Restoring session \(min(progress.done + 1, progress.total)) "
                              + "of \(progress.total)…")
                             .font(.footnote)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.readableSecondary)
                     }
                 } else {
                     buttons
@@ -75,7 +75,7 @@ struct LibraryNewerThanAppView: View {
                      + "the newer build will find them exactly where it left them.")
                     .font(.footnote)
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(24)
@@ -120,7 +120,7 @@ struct LibraryNewerThanAppView: View {
                  + "this one from the backup file you pick.")
                 .font(.caption)
                 .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }

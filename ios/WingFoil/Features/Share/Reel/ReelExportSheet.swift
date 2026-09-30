@@ -66,7 +66,7 @@ struct ReelExportSheet: View {
                                  ? "Taking the map…"
                                  : "Drawing " + String(Int(progress * 100)) + " %")
                                 .font(.footnote)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(.readableSecondary)
                                 .monospacedDigit()
                         }
                         Button(role: .destructive) { cancel() } label: {

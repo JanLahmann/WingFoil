@@ -57,7 +57,7 @@ private struct WhatsNewList: View {
                 .foregroundStyle(.primary)
             Text(subtitle(entry))
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
             Text(markdown: entry.title)
                 .font(.callout.weight(.medium))
                 .foregroundStyle(.primary)

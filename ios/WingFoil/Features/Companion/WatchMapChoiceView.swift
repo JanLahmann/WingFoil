@@ -63,7 +63,7 @@ struct WatchMapChoiceView: View {
                 if locationRefused {
                     Text("Location is off for CleanJibe in iPhone Settings")
                         .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
                 }
             } header: {
                 Text("Now")
@@ -98,7 +98,7 @@ struct WatchMapChoiceView: View {
                     if let caption {
                         Text(caption)
                             .font(.footnote)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.readableSecondary)
                     }
                 }
                 Spacer()

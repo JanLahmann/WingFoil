@@ -122,7 +122,7 @@ struct DevTurnWorkbenchView: View {
                      : "disagrees. The engine said "
                         + TurnOutcomeKind(turn.outcome).label)
                     .font(.caption2)
-                    .foregroundStyle(agrees ? .secondary : Color.orange)
+                    .foregroundStyle(agrees ? .readableSecondary : Color.orange)
             } else {
                 Text("What actually happened, in your words. Scored against the engine in "
                      + "Settings → Tuning → Labels. Never read by the analysis.")
@@ -176,7 +176,7 @@ struct DevTurnWorkbenchView: View {
                 Text(step.title).font(.caption.weight(.medium))
                 Text(step.detail)
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
                     .fixedSize(horizontal: false, vertical: true)
                 switch step.note {
                 case .disagrees(let derived, let record):
@@ -266,7 +266,7 @@ struct DevTurnWorkbenchView: View {
             Text(tuned).font(.caption.monospacedDigit())
             Text(base)
                 .font(.caption.monospacedDigit())
-                .foregroundStyle(tuned == base ? AnyShapeStyle(.secondary)
+                .foregroundStyle(tuned == base ? AnyShapeStyle(.readableSecondary)
                                  : AnyShapeStyle(Color.orange))
         }
     }
@@ -354,7 +354,7 @@ struct DevTurnWorkbenchView: View {
             cell(row.band.label, width: 52)
         }
         .font(.caption2.monospacedDigit())
-        .foregroundStyle(.secondary)
+        .foregroundStyle(.readableSecondary)
         .padding(.vertical, 1)
         .background(Self.tint(row.band))
     }

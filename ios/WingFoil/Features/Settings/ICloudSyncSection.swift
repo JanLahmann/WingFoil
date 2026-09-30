@@ -51,7 +51,7 @@ struct ICloudSyncSection: View {
         } else if store.syncUnavailable {
             Text("Sign in to iCloud and turn on iCloud Drive.")
                 .font(.footnote)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         if !store.syncRunning, let trouble = store.syncTroubles[.iCloud], trouble.isShown {
@@ -74,7 +74,7 @@ struct ICloudSyncSection: View {
             }
             LabeledContent("Pending") {
                 Text(String(plan.pending))
-                    .foregroundStyle(plan.pending > 0 ? .orange : .secondary)
+                    .foregroundStyle(plan.pending > 0 ? .orange : .readableSecondary)
             }
         }
     }

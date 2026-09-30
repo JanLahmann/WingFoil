@@ -203,7 +203,7 @@ struct PeriodShareView: View {
             Text("The title and the caption are for this card only. A period has no "
                  + "record in the library to rename.")
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
         }
     }
 
@@ -215,7 +215,7 @@ struct PeriodShareView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(AppShellCopy.Share.tracks)
                     .font(.footnote.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
                 Picker(AppShellCopy.Share.tracks, selection: $tracks) {
                     ForEach(PeriodCardTracks.allCases) { Text($0.label).tag($0) }
                 }
@@ -236,7 +236,7 @@ struct PeriodShareView: View {
                     Text(AppShellCopy.fill(AppShellCopy.Share.collageNote,
                                            ["limit": String(TrackCollage.limit)]))
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 case .all:
                     EmptyView()

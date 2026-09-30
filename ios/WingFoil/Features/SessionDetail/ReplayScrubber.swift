@@ -179,7 +179,7 @@ struct ReplayScrubber: View {
     private func field(_ value: String, _ unit: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 3) {
             Text(value)
-            Text(unit).font(.caption2.weight(.regular)).foregroundStyle(.secondary)
+            Text(unit).font(.caption2.weight(.regular)).foregroundStyle(.readableSecondary)
         }
     }
 
@@ -191,7 +191,7 @@ struct ReplayScrubber: View {
                 .padding(.horizontal, 8).padding(.vertical, 3)
                 .background((moment.flying ? Color.teal : Color.secondary).opacity(0.18),
                             in: .capsule)
-                .foregroundStyle(moment.flying ? Color.teal : Color.secondary)
+                .foregroundStyle(moment.flying ? Color.teal : Color.readableSecondary)
         }
     }
 

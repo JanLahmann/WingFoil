@@ -37,14 +37,14 @@ struct StartOverRelaunchView: View {
                      + "not be opened without a restart, so CleanJibe is waiting rather "
                      + "than working from one it cannot keep.")
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
                     .fixedSize(horizontal: false, vertical: true)
 
                 Text("Swipe up to close CleanJibe, then open it again. The next launch is a "
                      + "first launch.")
                     .font(.footnote)
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.top, 8)
             }

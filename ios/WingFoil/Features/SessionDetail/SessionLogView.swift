@@ -162,7 +162,7 @@ private struct RecordingCard: View {
             Text(SessionDisplay.sourceClassNote(detail.row.sourceClass,
                                                 importSource: detail.row.importSource))
                 .font(.footnote)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
                 .fixedSize(horizontal: false, vertical: true)
             VStack(alignment: .leading, spacing: 3) {
                 Text(provenance)
@@ -250,7 +250,7 @@ private struct DisciplineCard: View {
                 .accessibilityLabel("Analysis discipline")
             Text(DisciplineLexicon.experimentalNote)
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding()

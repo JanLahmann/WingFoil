@@ -187,7 +187,7 @@ struct RecordsView: View {
             // party. What clean means is one tap away, on the Turns tab and in the help.
             Text("Your best afternoon of clean jibes yet.")
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -298,7 +298,7 @@ private struct SessionRecordRowView: View {
             }
             Text(provenance)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
                 .lineLimit(large ? 3 : 1)
                 .minimumScaleFactor(large ? 1 : 0.8)
             if let note = best.kind.caption {
@@ -512,7 +512,7 @@ private struct RecordRowView: View {
     private var provenance: some View {
         Text(Fmt.shortDate(best.achievedAt, zone: best.displayZone) + " · " + title)
             .font(.caption)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(.readableSecondary)
             .lineLimit(stacked ? 3 : 1)
             .minimumScaleFactor(0.8)
             .frame(maxWidth: .infinity, alignment: .leading)

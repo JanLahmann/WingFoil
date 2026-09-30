@@ -74,12 +74,12 @@ struct LibraryBackupSection: View {
         if let estimate = store.backupEstimate, estimate.sessionCount > 0 {
             LabeledContent("Backup size") {
                 Text("about \(Fmt.bytes(estimate.totalBytes))")
-                    .foregroundStyle(estimate.isLarge ? .orange : .secondary)
+                    .foregroundStyle(estimate.isLarge ? .orange : .readableSecondary)
             }
             if let warning = estimate.warning {
                 Text(warning)
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.readableSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -124,7 +124,7 @@ struct LibraryBackupSection: View {
             Text(counts
                  + " The file is temporary. Save it somewhere before you leave Settings.")
                 .font(.footnote)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
                 .fixedSize(horizontal: false, vertical: true)
             Button("Discard the file") { store.discardBackup() }
         } else {
@@ -153,7 +153,7 @@ struct LibraryBackupSection: View {
                 if let current = progress.current {
                     Text(current)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
                         .lineLimit(1)
                         .truncationMode(.middle)
                 }

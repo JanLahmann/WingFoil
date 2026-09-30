@@ -65,7 +65,7 @@ struct LicencesView: View {
                         Text("Connect IQ Mobile SDK")
                         Text("Garmin's watch link, dev and beta only")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.readableSecondary)
                     }
                 }
             }
@@ -102,10 +102,10 @@ struct LicencesView: View {
                     Text(name)
                     Text(summary)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
                     Text(creditLine)
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
                 }
             }
         }

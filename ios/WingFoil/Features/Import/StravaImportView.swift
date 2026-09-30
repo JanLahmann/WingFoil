@@ -77,7 +77,7 @@ struct StravaImportView: View {
     private var unconfiguredSection: some View {
         Section {
             Label("No Strava application configured", systemImage: "exclamationmark.triangle")
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
         } header: {
             Text("Strava")
         } footer: {
@@ -152,7 +152,7 @@ struct StravaImportView: View {
     private var narrowScopeSection: some View {
         Section {
             Label("Private activities are not shared", systemImage: "eye.slash")
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.readableSecondary)
         } footer: {
             Text("When you approved CleanJibe you left out permission to read activities "
                  + "you have marked \"Only you\". Those are missing from the list "
@@ -310,7 +310,7 @@ private struct StravaActivityRow: View {
             HStack(spacing: 12) {
                 Image(systemName: symbol)
                     .foregroundStyle(candidate.isAlreadyImported
-                                     ? AnyShapeStyle(.secondary)
+                                     ? AnyShapeStyle(.readableSecondary)
                                      : AnyShapeStyle(Color.accentColor))
                     .scaledColumn(22, alignment: .center)
                 VStack(alignment: .leading, spacing: 3) {
@@ -320,13 +320,13 @@ private struct StravaActivityRow: View {
                         .minimumScaleFactor(0.8)
                     Text(subtitle)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
                 }
                 Spacer()
                 if candidate.isAlreadyImported {
                     Text("In your library")
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.readableSecondary)
                 }
             }
         }
