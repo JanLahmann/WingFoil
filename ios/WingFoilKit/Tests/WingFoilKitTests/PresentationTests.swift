@@ -2715,6 +2715,38 @@ import Testing
         // Nothing to be clean out of, so the strict line is absent rather than "0 of 0".
         #expect((noTacks.clean, noTacks.jibes) == (0, 0))
         #expect(noTacks.cleanCaption == "")
+        // The card says it in one sentence instead of a "—" over zero chips (30 Sep 2026).
+        #expect(TurnFilter(type: .tacks).emptySentence == "No tacks in this session.")
+        #expect(TurnFilter(type: .jibes, side: .starboard).emptySentence
+                == "No jibes entered on starboard in this session.")
+        #expect(TurnFilter(side: .port).emptySentence
+                == "No turns entered on port in this session.")
+    }
+
+    /// The caption under the Turns and Takeoffs maps counts what the map draws, so it
+    /// cannot say "nothing to mark" over a map of wrist-under diamonds (Jan, build 119).
+    @Test func theMapCaptionCountsWhatTheMapDraws() {
+        #expect(FocusMapCaption.turns(drawn: 3, kept: 3, wristUnder: 9, courseChanges: 0)
+                == "3 turns marked · tap a row below to open it.")
+        #expect(FocusMapCaption.turns(drawn: 1, kept: 2, wristUnder: 0, courseChanges: 0)
+                == "1 turn marked · tap a row below to open it.")
+        // The filter kept turns and the layer chips hide them: the filters are not the fix.
+        #expect(FocusMapCaption.turns(drawn: 0, kept: 4, wristUnder: 0, courseChanges: 0)
+                == "The layers below hide every turn in this filter.")
+        // No tacks, but the session-wide diamonds are on the map: say what they are.
+        #expect(FocusMapCaption.turns(drawn: 0, kept: 0, wristUnder: 12, courseChanges: 0)
+                == "The diamonds mark each time your wrist went under.")
+        #expect(FocusMapCaption.turns(drawn: 0, kept: 0, wristUnder: 0, courseChanges: 2)
+                == "The grey dots are course changes.")
+        #expect(FocusMapCaption.turns(drawn: 0, kept: 0, wristUnder: 0, courseChanges: 0)
+                == "Nothing to mark. Widen the filters.")
+        #expect(FocusMapCaption.takeoffs(drawn: 0, kept: 0, noun: "free takeoffs",
+                                         wristUnder: 5)
+                == "The diamonds mark each time your wrist went under.")
+        #expect(FocusMapCaption.takeoffs(drawn: 0, kept: 6, noun: "attempts", wristUnder: 5)
+                == "The layers below hide every mark in this filter.")
+        #expect(FocusMapCaption.takeoffs(drawn: 0, kept: 0, noun: "attempts", wristUnder: 0)
+                == "Nothing to mark. Widen the filter.")
     }
 
     /// The row is the whole formatting contract: the view prints no number itself.

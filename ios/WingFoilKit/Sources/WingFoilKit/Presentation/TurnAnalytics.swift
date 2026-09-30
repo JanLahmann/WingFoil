@@ -102,6 +102,15 @@ public struct TurnFilter: Sendable, Equatable, Codable {
                 + "\(side == .port ? "port" : "starboard")"
         }
     }
+
+    /// **The tally card's whole content when nothing survives the filter** (Jan, 30 Sep
+    /// 2026, on build 119): "No tacks in this session." It replaced a card that set a bare
+    /// "—" where the share goes, "flew through" beside it and three chips of zero under it —
+    /// a heading made of a dash, and a verdict the rider never had.
+    public var emptySentence: String {
+        let text = "no " + description + " in this session."
+        return text.prefix(1).uppercased() + text.dropFirst()
+    }
 }
 
 // MARK: - Rows

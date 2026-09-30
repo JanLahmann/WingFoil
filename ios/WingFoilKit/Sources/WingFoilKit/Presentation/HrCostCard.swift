@@ -110,6 +110,9 @@ public struct HrCostCard: Sendable, Equatable {
     /// "median takeoff cost · 23 of 23 takeoffs".
     public let headlineCaption: String
     public let headlineMissing: Bool
+    /// **What the headline says when it has no number** (30 Sep 2026): one sentence in the
+    /// number's place, never a bare "—" over "median takeoff cost".
+    public static let noTakeoffCost = "None of your takeoffs had a usable heart rate."
     /// Set when the aggregates rest on so little usable HR that the reader should not lean
     /// on them. Shown as a banner *above* the numbers, not as a footnote below them.
     public let warning: String?
