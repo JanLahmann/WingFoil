@@ -436,6 +436,7 @@ carries words is `HelpTopicLink`: the `?` circle and the topic's title (or the s
 label) in `.helpLink`, the same `?` a session tile's `HelpButton` draws. The web twins are
 `--ink-3` (dark lifted to #a3a399, 6.2 : 1 on `--surface-2`), `--help-link`
 (#2ee6a8 / #00704e) and `.explain-link` beside `.explain-q` in js/explain.js.
+The system `.secondary` is retired in the app (30 Sep 2026): every word and meaningful symbol is `.readableSecondary`, and a stat tile's `?` wears it too rather than the link ink; `SecondaryInkLintTests` fails on a new bare `.secondary` outside fills, outlines and an allow-list of chart rules and map tracks.
 
 **A text field the app draws is drawn by the app, not borrowed.** `.textFieldStyle(.roundedBorder)`
 fills itself with `systemBackground` — pure black in dark mode — and the intervals.icu key
