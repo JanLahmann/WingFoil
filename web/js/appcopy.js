@@ -386,6 +386,19 @@ export const WELCOME = {
 export const WHATS_NEW = [
   {
     "version": "1.0.1",
+    "build": 121,
+    "channel": "beta",
+    "date": "2026-09-30",
+    "title": "One finger scrolls",
+    "lines": [
+      "One finger on a map now scrolls the page. Two fingers move and zoom the map.",
+      "A filter with no turns says so in one sentence, and the map says what its marks are.",
+      "A speed record you did not set tells you why, instead of showing a dash.",
+      "A ski or snowboard day tells you why it is not a session."
+    ]
+  },
+  {
+    "version": "1.0.1",
     "build": 119,
     "channel": "beta",
     "date": "2026-09-30",
