@@ -922,7 +922,8 @@
           "body" : [
             "Every chip under the map is a switch. Tap one to hide that kind of mark on the map and in the speed chart at once.",
             "A hidden chip stays in place, struck through, and \"show all\" brings everything back. A chip this session has nothing for cannot be switched. The three rows are the track, the marks on it, and the map's own controls.",
-            "Tap the track to move the replay playhead. Tap a mark, or a flown stretch, for its own facts."
+            "Tap the track to move the replay playhead. Tap a mark, or a flown stretch, for its own facts.",
+            "In the iPhone app, one finger on the map scrolls the page. Use two fingers to move or zoom the map."
           ],
           "channels" : [
             "release",

@@ -25,7 +25,13 @@
   Ride, Turns and Flights maps one finger scrolls the page — and, clearly sideways, turns it
   like anywhere else — while two fingers pan and pinch the map and only a two-finger drag keeps
   the pager out (`pageMap`); taps and marks are untouched, and the full-screen and replay maps
-  still pan with one.
+  still pan with one. The first three times per install that one finger which started on such
+  a map scrolls the page (`DragClaim` says up-or-down), a capsule on the map says *Use two
+  fingers to move the map* above the Maps logo until 1.5 s after the finger lifts
+  (`MapFingerHint`, `Copy.twoFingerMap`): no fade under
+  Reduce Motion, never under VoiceOver, never for a tap or a page turn, and it takes no
+  touches. The lasting home of the fact is the help topic "Reading the map", whose sentence
+  names the iPhone app because the site's maps keep one-finger panning.
 - Zoom state is transient per session view — but it survives a section change, which is not
   a new session view (see "Sections" above). On iOS that means the window is owned by
   `SessionDetailView`, not by the chart.
