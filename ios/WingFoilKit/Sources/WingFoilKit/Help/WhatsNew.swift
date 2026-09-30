@@ -64,6 +64,21 @@ public enum WhatsNew {
     public static let entries: [WhatsNewEntry] = [
         WhatsNewEntry(
             version: "1.0.1",
+            build: 119,
+            channel: .beta,
+            date: "2026-09-30",
+            dateText: "30 September 2026",
+            title: "Tacks you really made",
+            lines: [
+                "A fall only counts as a tack when you got close to the wind first.",
+                "A fall right after a jibe belongs to that jibe, not to a second turn.",
+                "Scrolling up on a turn's page no longer gets stuck.",
+                "Grey text reads more clearly in sunlight, and the help mark on a tile is quieter.",
+                "Ski, snowboard and skate days no longer turn up as sessions.",
+                "From Strava, a run, a ride or a hike comes in only when its name says wing or foil.",
+            ]),
+        WhatsNewEntry(
+            version: "1.0.1",
             build: 117,
             channel: .beta,
             date: "2026-09-28",
