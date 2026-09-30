@@ -135,7 +135,7 @@ generic one for the five snow sports (`alpine_skiing`, `cross_country_skiing`,
 `snowboarding`, `snowshoeing`, `snowmobiling`): "Not a watersport" undersells why, since a
 wing on skis is not just the wrong sport, it has no foil at all. Jan: "CleanJibe reads
 foiling on water. A snow-wing day has no foil to read." `NotASessionNote.snowSports` names
-the five; `verdicts.notASession.lines.3` is the sentence, docs/copy/verdicts.json.
+the five; `verdicts.notASession.lines.3` is the sentence, docs/copy/verdicts.json. It leaves out the sport's name, unlike the other land line: Jan chose the shorter one.
 
 **The import filter, fixed at the same time** (ADR-036). The intervals.icu name rescue — the
 one that catches the CIQ recordings mis-typed as Walk — now applies only to a type that could

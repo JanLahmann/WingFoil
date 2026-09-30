@@ -33,7 +33,7 @@ export const NOT_A_SESSION = {
     "Your watch says this afternoon happened, but its recording has not arrived yet. It is not counted in totals, trends or records until it does.",
     "No time on the foil, {duration} long and {distance} covered. This looks like a recording rather than a session. It is kept, and left out of totals, trends and records.",
     "This was recorded as {sport}, so it is not a session on the water. It is kept, and left out of totals, trends and records.",
-    "This was recorded as {sport}. CleanJibe reads foiling on water, and snow has no foil to read. It is kept, and left out of totals, trends and records."
+    "CleanJibe reads foiling on water, and snow has no foil to read. It is kept, and left out of totals, trends and records."
   ],
   "tag": "No riding detected"
 };
