@@ -812,6 +812,10 @@ public enum HelpCatalog {
                 + "map's own controls.",
                 "Tap the track to move the replay playhead. Tap a mark, or a flown "
                 + "stretch, for its own facts.",
+                // iPhone only: the browser's maps still move with one finger, and this topic is
+                // printed there too, so the sentence names the iPhone app.
+                "In the iPhone app, one finger on the map scrolls the page. Use two fingers to "
+                + "move or zoom the map.",
             ],
             items: [
                 .init(term: "The track",

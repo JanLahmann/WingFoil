@@ -53,6 +53,13 @@ public enum Copy {
     /// A format string: the two angles are degrees before and after the crossing.
     public static let axisSweepFormat = "Through the axis · %.0f° before, %.0f° after"
 
+    // MARK: - The inline maps
+
+    /// The capsule on the Ride, Turns and Flights maps when a one-finger drag that started
+    /// on them scrolled the page instead (rule 4 in the app's `ScrubPan`, Jan 30 Sep 2026).
+    /// Phone only: the browser's maps still move with one finger, so it is not exported.
+    public static let twoFingerMap = "Use two fingers to move the map"
+
     // MARK: - Sharing an image
 
     /// What happens to a rendered card. Said under every preview, because "share" is the
