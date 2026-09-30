@@ -19,7 +19,15 @@
  * NAMES. Kebab-case, `app-<object>-<verb>` inside the browser app, so one umami dashboard
  * reads as one product. The site's doors keep their own declarative `data-umami-event`
  * names in the markup; nothing here touches those.
+ *
+ * SITE PREFIX. The umami website is shared with the Fun with Quantum family sites (the
+ * Hobby plan allows one), and every event there reads `<Site>: <name>`. So `track` sends
+ * `CleanJibe: app-file-analyzed`; call sites keep the bare kebab name, and the markup's
+ * declarative names carry the same prefix written out.
  */
+
+/** What every event name starts with in the shared umami dashboard. */
+const SITE_PREFIX = "CleanJibe: ";
 
 /** The longest a property value may be. A format is 3 characters and a page name is 8; a
  *  value past this is something nobody meant to send. */
@@ -72,8 +80,8 @@ export function track(name, props = null) {
   if (!umami || typeof umami.track !== "function") return;
   try {
     const data = scrub(props);
-    if (data) umami.track(name, data);
-    else umami.track(name);
+    if (data) umami.track(SITE_PREFIX + name, data);
+    else umami.track(SITE_PREFIX + name);
   } catch {
     /* A blocked, half-loaded or stubbed counter is not a reason for anything to stop. */
   }

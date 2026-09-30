@@ -124,7 +124,7 @@ def inline(text: str, count: str) -> str:
 def button(action: dict, primary: bool, where: str) -> str:
     href = ACTIONS[action["id"]]
     external = href.startswith("http")
-    return ('<a class="btn %s" href="%s"%s data-umami-event="home-%s-%s">%s</a>'
+    return ('<a class="btn %s" href="%s"%s data-umami-event="CleanJibe: home-%s-%s">%s</a>'
             % ("primary" if primary else "ghost", href,
                ' rel="noopener"' if external else "", where, action["id"],
                esc(action["title"])))
@@ -170,13 +170,13 @@ def render_hero(hero: dict, legend: dict, example: dict) -> str:
 {ladder}
       </ul>
       <p class="fp-cta">
-        <a class="btn primary fp-go" href="{ACTIONS["example"]}" data-umami-event="example-cta">{esc(example["title"])}</a>
-        <a class="btn ghost" href="{ACTIONS[chooser["id"]]}" data-umami-event="home-hero-chooser">{esc(chooser["title"])}</a>
+        <a class="btn primary fp-go" href="{ACTIONS["example"]}" data-umami-event="CleanJibe: example-cta">{esc(example["title"])}</a>
+        <a class="btn ghost" href="{ACTIONS[chooser["id"]]}" data-umami-event="CleanJibe: home-hero-chooser">{esc(chooser["title"])}</a>
       </p>
       <p class="fp-note">{esc(example["lede"])} {esc(hero["note"])}</p>
     </div>
     <figure class="fp-card">
-      <a href="{ACTIONS["example"]}" data-umami-event="example-card">
+      <a href="{ACTIONS["example"]}" data-umami-event="CleanJibe: example-card">
         <img src="img/share-card.png" srcset="img/share-card.png 1x, img/share-card@2x.png 2x"
              width="440" height="550" loading="eager" fetchpriority="high" decoding="async"
              alt="{attr(CARD_ALT)}">
