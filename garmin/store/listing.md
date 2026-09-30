@@ -54,10 +54,7 @@ text — the whole description was rewritten for the open beta.
 
 ### Description (live text)
 
-**Draft ahead of the store, 26 September 2026, for Jan's sign-off.** The block below is
-the rewrite in the team voice of `docs/voice.md`, and it is *not* on the store yet. It goes
-into the Connect IQ form by hand at the next upload, and this note goes the day it does.
-The text it replaces, which the store shows today, is in git at `2c12c1c`, this file.
+**Live since 30 September 2026** (pasted into the Connect IQ form, public listing e77867b5). Written 26 September as a draft, cut to 1138 characters on 30 September at Jan's ask. The text it replaced is in git at `2c12c1c`, this file.
 
 What changed and why:
 
