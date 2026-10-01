@@ -22,7 +22,8 @@
 | `turnMinArc` | 12 | m | **spatial gate**: path length travelled across the COG sweep |
 | `turnMinRadius` | 6 | m | **spatial gate**: effective radius = arc ÷ swept angle in radians |
 | `turnPositionalMinSweepS` | **3** | s | **a jump is not a turn** (engine ≥ 0.28.0, ADR-038), **positions-only tracks only** (class c: a GPX, a Strava copy). A sweep shorter than this, start to end after the trim, is dropped before it is scored, from the main scan and the aborted pass alike. Class (a)/(b) are never asked. 0 = off |
-| `turnPositionalSpikePct` | **150** | % | of the turn's `entryKn`, **positions-only tracks only** (engine ≥ 0.28.0). A recovery that closed the outcome window is set aside when a sample between the speed minimum and the close reached this, **and** the speed drops below `turnStopSpeedFloor` within `turnOutcomeWindow` of the close with no gap between: the window is searched again from that standstill. 0 = off |
+| `turnPositionalSpikePct` | **150** | % | of the turn's `entryKn`, **positions-only tracks only** (engine ≥ 0.28.0). A recovery that closed the outcome window is set aside when a sample between the speed minimum and the close reached this, **and** the speed drops below `turnStopSpeedFloor` within `turnOutcomeWindow` of the close with no gap between: the window is searched again from that standstill. The same share also asks **the sweep itself** (1 Oct 2026, "A turn has to be seen turning"): a sweep with a sample at or above it, after which the rider stands still within `turnOutcomeWindow` with no gap between, is dropped before it is scored. 0 = off (both) |
+| `turnPositionalMaxStepDeg` | **150** | deg | **a turn has to be seen turning** (engine ≥ 0.28.0, ADR-038 amended), **positions-only tracks only**. A sweep in which the heading swings this far or further in **one step** between consecutive fixes is dropped before it is scored, from the main scan and the aborted pass alike: the track doubled back between two fixes and nothing in between saw the rider turn. 0 = off |
 | `turnContinueRate` | 5 | deg/s | edge trim: shrink the detected span to the actually-turning part |
 | `entrySpeedWindow` | 3 | s | entry speed = max over window before turn start |
 | `minSpeedLag` | 2 | s | minimum searched to `turnEnd + lag` (the collapse of a botched turn lands just past the COG sweep) |
@@ -32,6 +33,7 @@
 | `turnFallStop` | 5 | s | stop longer than this ⇒ fell in |
 | `turnOutcomeLookahead` | 12 | s | **cap** on the tail past the COG sweep the outcome is judged over. A stalling foil bleeds from foiling speed to a standstill in roughly 10 s, so a shorter cap (the 5 s this started at) systematically misses the mush-out and scores it a fly-through |
 | `turnOutcomeLookaheadNotRecovered` | **30** | s | the **same tail, for a rider who never got going again** (engine ≥ 0.24.0, ADR-032). The 12 s cap above is sized for a foil that *stalls*: bleed off from foiling speed and you are at a standstill inside it. A learner who mushes slowly out of a jibe is still making way at 12 s and coasts to a stop a little after it — on the tester's fenix corpus the median is **exactly 12 s**, at the cap — so the turn read `touchdown` and the stop it ended in was booked all over again by the other channel. While the rider has **not recovered** the tail follows him this far instead, and `turnOutcomeWindow` follows it. Measured: for a touchdown turn whose rider never recovered before stopping, the stop begins within 30 s in **78 of 85** corpus cases (17 of 17 on the tester's); the seven beyond it start at 33–93 s, which is drift and then a stop, not the turn's fall. Recovery still closes the tail wherever it happens, and a gap still ends it. Set it equal to `turnOutcomeLookahead` to switch the rule off — the goldens are then byte-identical to 0.23.0's |
+| `turnRecordingEndS` | **30** | s | **a recording that ends in the water ends in a fall** (engine ≥ 0.28.0, every class). A turn that came off the foil is `fell_in` (reason `stop`) when the track's **last sample** lies within this of the sweep's end, the rider is below `turnStopSpeedFloor` on it, and he never recovered in between (`turnRecoverPct` held for `turnRecoverHold`; a recording gap breaks a hold but does not end the search). It answers the one case the ladder could not: a gap — a smart-recording pause, the wrist under — cut the window short of `turnFallStop`, and then the file ended. 0 = off |
 | `turnRecoverPct` | 70 | % | of entry speed: back above this ⇒ flying again ⇒ the turn is over and its window closes early. Floored at `foilEntrySpeed` — nothing below that is flying, however slowly the turn was entered |
 | `turnRecoverHold` | 2 | s | recovery must hold this long, same both-ends-qualify convention as flight `entryHold` |
 | `turnPumpedOutIsTouchdown` | **on** | switch | the **pump rung's gate** (engine ≥ 0.18.0). With it set, a turn that never left the foil is still a `touchdown` when the accelerometer heard a burst in the window *and* a sample fell below `turnPumpedMarginalSpeed` (step 3 above). Off, the rung is refused whatever that speed says. The two are separate on purpose: this is whether the question is asked, the speed below is what it asks. This is the one parameter the tuning page draws as a **switch** rather than a slider (docs/presentation/channels-tuning.md, "Tuning") |
@@ -378,7 +380,74 @@ counted turns and no tack. The FIT itself never asks either rule.
 
 The one positions-only tack left flying through (2026-06-05 72:30, entry 7.5 kn, peak
 12.1 kn, no standstill after) is not on the FIT either; nothing in its speed says it was not
-ridden, so it stays.
+ridden, so it stayed — until the next rule.
+
+#### A turn has to be seen turning (1 Oct 2026, ADR-038 amended)
+
+Jan, the same day: *he has never completed a tack.* His wing tack attempts, all of which fell
+in, are five on the FIT engine (2025-08-10 94:04, 2026-04-04 1:06, 2026-08-30 1:39,
+2026-09-03 28:23 and 36:35; the two "windsurf" ones are wingfoil sessions on Garmin's windsurf
+profile). The Strava copies still counted nine tacks, seven of them ones the FIT never saw:
+
+| session | t | Strava copy | what the track holds | FIT |
+|---|---|---|---|---|
+| 05-27 15:19 | 58:23 | tack, fell in, 181° in 4 s | three fixes in the sweep (smart recording); one step swings **166°** and covers 61 m in 1 s; entry 14.2 kn and the speed never drops (min 14.2, exit 22.3) | 1.5 kn: in the water |
+| 06-03 13:48 | 60:37 | tack, touchdown, 176° in 3 s | **two** fixes, one step of **176°** over a 3 s gap, 36 m; entry 5.3 kn | 3.2 kn |
+| 06-05 12:24 | 72:30 | tack, flew through, 171° in 7 s | two fixes, one step of **171°** over a 7 s gap, 66 m | a jibe 15 s earlier, then nothing |
+| 08-06 13:59 | 50:19 | tack, fell in, 172° in 7 s | one step of **172°**, 45 m, then a 7 s recording gap and a filled run | gap |
+| 08-30 14:20 | 58:28 | aborted tack, fell in, 89° in 3 s | starts on two filled records (Strava's straight line across a fix-less run); the next fixes read 5.9, 10.4, 10.8 kn, **166 %** of entry, then 1 kn for a minute | 2.4, 0.0, 2.8 kn |
+| 09-02 14:57 | 52:06 | tack, fell in, 225° in 5 s | the sweep begins inside nine filled records and turns across their end: one step of **167°**, then 17.3 kn (**212 %**) and a standstill | 1.8, 0.5 kn |
+| 09-03 14:53 | 14:31 | tack, touchdown, 205° in 8 s | every fix real, 1 Hz; 17° of real turning, then one step of **169°** as he fell (7.6 m), 11.3 kn | 7.0 → 0.8 kn: a fall after a jibe |
+
+**The shared signature is that nothing saw him turn.** Six of the seven swing 166–176° in a
+single step between two fixes — a fix thrown sideways as he fell, a fix held through a
+fix-less record, or the seconds-long gap of a smart recording — and the seventh is a burst of
+positional "speed" inside the sweep followed by a standstill. Of the 1 516 turns the
+positions-only copies share with the FIT the widest single step is **136°** (a 4 s
+smart-recording step, 2026-07-31 30:00, a jibe on both copies); the widest phantom tack step is
+166°. And no shared turn's sweep reaches 150 % of its entry before a standstill (the highest,
+2026-06-03 40:11, a jibe that fell in on both copies, 140 %). A rule about filled records themselves was tried and refused: Strava
+does not mark them, and telling an interpolated run from straight sailing at 1e-6° precision
+found as many real fixes as filled ones (236 true, 257 false at speed).
+
+So two more rules, class (c) only: **`turnPositionalMaxStepDeg` (150°)** — a sweep with one
+step that wide is not a turn; and **`turnPositionalSpikePct` asks the sweep too** — a sweep whose
+own speed reaches 150 % of entry before a standstill inside `turnOutcomeWindow` is a jump.
+Both drop the sweep before it is scored; the fall, if there was one, is then the straight-line
+fall the flight-end ladder already reads.
+
+| | FIT | Strava copy, first 0.28.0 | Strava copy, 0.28.0 |
+|---|---|---|---|
+| counted turns | 1 568 | 1 558 | **1 539** |
+| jibes | 1 563 | 1 549 | **1 537** |
+| flew through | 817 | 781 | **780** |
+| tacks (flew through) | 5 (0) | 9 (1) | **2 (0)** |
+| fly-throughs both copies agree on | — | 762 | **761** |
+
+Nineteen turns go, **none of them a turn the FIT has**: seventeen by the step rule (seven of
+them by the burst as well), two by the burst alone (2026-05-25 58:34, 08-30 58:28), among them every tack in the table above
+and the three phantom fly-throughs rule 2 had turned into falls. The 762 → 761 is the 06-05
+72:30 tack, which the 10 s matcher had paired with the FIT's jibe fifteen seconds earlier;
+counted kind for kind the agreed fly-throughs are 761 before and after. The Strava copies'
+two tacks are the FIT's 3 Sep pair, both `fell_in`. The FIT never asks either rule, and no
+committed golden moves beyond the version and the config keys.
+
+#### A recording that ends in the water ends in a fall (1 Oct 2026)
+
+Jan's 10 Aug 2025 tack at 94:04 read `touchdown` (entry 9.6 kn, min 3.7, reason `off_foil`).
+It was his last maneuver of the day and he fell in. The watch (smart recording) logged 5.0,
+7.8, 4.6, 4.6 kn after the sweep, then nothing for **18 s**, then 1.9 and 1.2 kn and the end
+of the file. The ladder closes the window at a recording gap, so the stop it needed past
+`turnFallStop` was on the far side of one, two samples long, and then there was no more track.
+
+**`turnRecordingEndS` (30 s)**, every class: a turn that came off the foil, after which the
+rider never recovered and the recording ends within 30 s of the sweep with him below
+`turnStopSpeedFloor` on its last sample, fell in (reason `stop`). A gap in between breaks a
+recovery hold and does not stop the search: the claim is that he never got going again before
+the file ended, which a gap does not contradict. Across the 60 FITs and their Strava copies
+**exactly one verdict moves**, that tack, `touchdown → fell_in`; its session's touchdowns go
+19 → 18 and falls 24 → 25. The FIT engine now reads Jan's five wing tack attempts, and only
+those, all `fell_in`.
 
 ### Glossary — four words that are not synonyms
 
@@ -825,6 +894,13 @@ the wrong lesson about the two implementations.
 Each of these is a rule the watch **could** share. None is a thing a live detector cannot know,
 so each carries a reason and a note on what it would cost, and the phone recompute is what the
 rider sees until then.
+
+- **A recording that ends in the water ends in a fall** (engine 0.28.0, `turnRecordingEndS`).
+  On the phone a turn the rider never recovered from, with the file ending within 30 s and him
+  standing still, is `fell_in`. The watch judges the window live and does not resolve an open
+  one when the activity is stopped. **Not ported** for the same reason as the gap below: a
+  verdict fired from the stop path is a round of its own. The two class (c) rules of ADR-038
+  are not divergences: the watch records its own Doppler and never reads a positions-only track.
 
 - **A gap ends the tail on the phone; it freezes the window on the watch.** `outcome_tail`
   closes at a recording gap and reports *not* not-recovered — the samples the far side of a

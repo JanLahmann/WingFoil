@@ -44,6 +44,27 @@ same day, a separate gap closed in the kit: the iCloud library sync (dev) now le
 folder replace a Strava copy here, and a FIT here replace a GPX in the folder (F-6 across
 devices, docs/algorithms/imports.md).
 
+**Amended the same day** (Jan, 1 October 2026: *he has never completed a tack*; his five wing
+tack attempts all fell in). The Strava copies still counted nine tacks, seven the FIT never
+saw. Six of those swing 166–176° in **one step** between two fixes, the seventh is a burst of
+positional speed inside the sweep and then a standstill. Two more class (c) rules, before
+scoring: `turnPositionalMaxStepDeg` (150°) — a sweep with one step that wide is not a turn (the
+widest step of any turn both copies share is 136°); and `turnPositionalSpikePct` now asks the
+sweep as well as the recovery. Refused: a rule on Strava's filled records themselves — Strava
+does not mark them, and an "equal steps" detector found as many real fixes as filled ones.
+Strava copies: counted turns 1 558 → 1 539, jibes −12, tacks 9 → 2 (the FIT's 3 Sep pair), no
+tack flies through; **no turn the FIT has moves** (761 agreed fly-throughs kind for kind, before
+and after). And one rule on every class, `turnRecordingEndS` (30 s): a turn that came off the
+foil, after which the rider never recovered and the file ends within 30 s with him standing
+still, fell in — Jan's 10 Aug 2025 tack at 94:04, his last of the day, read `touchdown` because
+an 18 s smart-recording pause cut the window short. It is the one verdict that moves on the 60
+FITs and their copies. Folded into 0.28.0, which had not shipped; four config keys in all, and
+still no committed golden moves beyond them. **Watch**: `turnRecordingEndS` is not ported
+(docs/algorithms/turns.md, "Not ported yet"). In the kit the same day: the intervals.icu sync no
+longer skips an activity whose id sits on a positions-only row that is not intervals.icu's own
+recording, so a Strava copy a sync before 26 Sep stamped with the id is replaced by the FIT on
+the next pull (docs/algorithms/imports.md).
+
 ## ADR-037 · A tack is a tack he tried: an aborted turn's name needs the evidence
 **Status: Accepted** (Jan, 28 September 2026; engine 0.27.0, release channel).
 

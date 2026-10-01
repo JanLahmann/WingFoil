@@ -234,6 +234,18 @@ the other device's next pull upgrades its row. A GPX never replaces anything in 
 direction (`LibrarySyncTests.aFitInTheFolderReplacesAStravaCopyHere`,
 `aStravaCopyInTheFolderGivesWayToTheFit`).
 
+**And the sync that never fetched the FIT** (Jan, 1 Oct 2026: intervals.icu connected in his
+dev app, and his 4 Sep 07:58 session still the Strava copy). Before F-6 (26 Sep) a FIT arriving
+after Strava's copy of the same afternoon was a plain duplicate: it merged its provenance and
+**stamped its intervals.icu id on the Strava row**. The sync skips every id the library holds
+before it downloads anything, so that FIT was never fetched again and the replace could never
+happen. Now an id held by a positions-only row whose recording is not intervals.icu's own (its
+archived name is not the sync's `<id>_<name>_icu.fit`) does not count as held: the next pull
+downloads the FIT and it replaces the row in place, with the rider's edits; the pull after that
+downloads nothing. A row whose recording *is* intervals.icu's, with or without speed, stays
+skipped (`IcuAfterStravaTests`). The background poller is unchanged: it already files the
+afternoon as held, and the manual pull heals it.
+
 The other takeovers are unchanged: a provisional card gives way to its FIT, and a row the
 direct stream brought in alone gives way to the FIT of the same afternoon (ADR-013). A Garmin
 ZIP still brings back a session the rider deleted (F-7, kept as is): tombstones are asked by
