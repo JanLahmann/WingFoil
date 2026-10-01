@@ -70,22 +70,32 @@ public struct NewActivityNotice: Sendable, Equatable, Identifiable {
 /// does none of this thinking.
 public enum NewActivityWatch {
 
-    /// A session already in the library, reduced to the three fields the dedupe key reads.
-    /// A value type rather than `SessionRow` so the rule is testable without a database.
+    /// A session already in the library, reduced to the three fields the dedupe key reads,
+    /// and whether it is a copy the FIT should replace (`heals`). A value type rather than
+    /// `SessionRow` so the rule is testable without a database.
     public struct KnownSession: Sendable, Equatable {
         public var icuActivityId: String?
         public var startDate: Date
         public var durationS: Double
+        /// A positions-only row (class c) whose recording is not intervals.icu's own — a
+        /// Strava copy or a GPX, which the FIT of the same afternoon replaces (F-6).
+        public var positionsOnly: Bool
 
-        public init(icuActivityId: String?, startDate: Date, durationS: Double) {
+        public init(icuActivityId: String?, startDate: Date, durationS: Double,
+                    positionsOnly: Bool = false) {
             self.icuActivityId = icuActivityId
             self.startDate = startDate
             self.durationS = durationS
+            self.positionsOnly = positionsOnly
         }
 
         public init(_ row: SessionRow) {
+            let own = row.icuActivityId.map {
+                IcuSyncService.isOwnFilename(row.originalFilename, activityID: $0)
+            } ?? false
             self.init(icuActivityId: row.icuActivityId, startDate: row.startDate,
-                      durationS: row.durationS)
+                      durationS: row.durationS,
+                      positionsOnly: row.sourceClass == "c" && !own && !row.isProvisional)
         }
     }
 
@@ -161,6 +171,47 @@ public enum NewActivityWatch {
         mark.lastStartDate = [mark.lastStartDate, newest].compactMap { $0 }.max() ?? now
 
         return Decision(notices: fresh.map(notice(for:)), mark: mark, seeding: seeding)
+    }
+
+    /// At most this many FITs fetched per wake to replace a positions-only copy: each is a
+    /// download and an analysis inside the few seconds iOS grants, and the next wake does
+    /// the rest.
+    public static let healLimit = 3
+
+    /// **The afternoons a wake fetches to heal** (Jan, 1 Oct 2026: the background poller,
+    /// not only a manual pull, replaces a Strava copy with intervals.icu's FIT). An activity
+    /// the library holds, but only as a positions-only copy: the row carrying its id, or —
+    /// when none does — every row matching its start the way `isInLibrary` matches, and all
+    /// of them positions-only. A tombstone matching it is never positions-only, so a deleted
+    /// session is never fetched. An id in `checked` with the fingerprint intervals.icu
+    /// reports now is an upload already found positions-only at the source
+    /// (`SessionIngestor.icuPositionsOnlyAtSource`) and is left alone until it changes.
+    /// Newest first, at most `limit`. Nothing here is announced: the session is not new.
+    public static func heals(activities: [IcuActivity], library: [KnownSession],
+                             checked: [String: String] = [:],
+                             toleranceS: TimeInterval = 60,
+                             limit: Int = healLimit) -> [IcuActivity] {
+        let wanted = activities.filter { activity in
+            guard IcuClient.isWatersport(activity), let start = activity.startDate else {
+                return false
+            }
+            if checked[activity.id] == activity.sourceFingerprint { return false }
+            var matches = library.filter { $0.icuActivityId == activity.id }
+            if matches.isEmpty {
+                matches = library.filter { known in
+                    guard abs(known.startDate.timeIntervalSince(start)) <= toleranceS else {
+                        return false
+                    }
+                    guard let moving = activity.movingTimeS else { return true }
+                    return Double(moving) <= known.durationS + toleranceS
+                }
+            }
+            return !matches.isEmpty && matches.allSatisfy(\.positionsOnly)
+        }
+        let newestFirst = wanted.sorted {
+            ($0.startDate ?? .distantPast) > ($1.startDate ?? .distantPast)
+        }
+        return Array(newestFirst.prefix(limit))
     }
 
     /// The library's dedupe key (plan §3.3, `SessionIngestor.duplicate`) asked of an

@@ -172,8 +172,8 @@ import Testing
         }
         #expect(columns.isSuperset(of: ["longestDryStreak", "longestFlewStreak"]))
         #expect(stale == harness.v1Ids.count)
-        #expect(AppDatabase.migrationNames.last == "v19")
-        #expect(AppDatabase.schemaVersion == 19)
+        #expect(AppDatabase.migrationNames.last == "v20")
+        #expect(AppDatabase.schemaVersion == 20)
 
         _ = try await harness.ingestor.reanalyzeStale()
         for session in try await harness.ingestor.allSessions() {

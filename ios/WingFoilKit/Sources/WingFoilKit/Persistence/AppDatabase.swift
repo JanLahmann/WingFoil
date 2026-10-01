@@ -117,7 +117,7 @@ public struct AppDatabase: Sendable {
     /// database moves through all of them.
     public static let migrationNames = ["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9",
                                         "v10", "v11", "v12", "v13", "v14", "v15", "v16",
-                                        "v17", "v18", "v19"]
+                                        "v17", "v18", "v19", "v20"]
 
     /// The schema version this build writes — the `N` of the last `vN` migration.
     ///
@@ -555,6 +555,26 @@ public struct AppDatabase: Sendable {
                 t.add(column: "threeSixties", .integer)
             }
             try Self.backfillTurnKinds(db)
+        }
+
+        // v20: **an intervals.icu upload found positions-only at the source** (Jan, 1 Oct
+        // 2026; docs/algorithms/imports.md, "And the sync that never fetched the FIT").
+        //
+        // A Strava copy carrying an intervals.icu id is fetched again so the FIT behind it can
+        // replace it. When the upload behind that id is itself a GPX, or a FIT without
+        // Doppler, it cannot replace anything, and without a memory every pull would download
+        // it again. One row per id, with the activity's `sourceFingerprint` (file type and the
+        // date the file reached intervals.icu) as it was when it was checked: the sync skips
+        // the id while the fingerprint is unchanged and checks it once more when it moves.
+        //
+        // A cache, not a fact about a session: no sweep, nothing back-filled, and an empty
+        // table costs one download per such afternoon.
+        migrator.registerMigration("v20") { db in
+            try db.create(table: "icu_positions_only_source") { t in
+                t.column("icuActivityId", .text).primaryKey()
+                t.column("fingerprint", .text).notNull()
+                t.column("checkedAt", .datetime).notNull()
+            }
         }
         return migrator
     }

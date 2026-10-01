@@ -17,6 +17,11 @@ public struct IcuActivity: Sendable, Codable, Identifiable, Equatable {
     public var timezone: String?
     public var movingTimeS: Int?
     public var distanceM: Double?
+    /// The kind of file behind the activity ("fit", "gpx", …), and when that file reached
+    /// intervals.icu. Together they say whether the upload is still the one this app last
+    /// looked at (`sourceFingerprint`).
+    public var fileType: String?
+    public var icuSyncDate: String?
 
     enum CodingKeys: String, CodingKey {
         case id, name, type, timezone
@@ -24,12 +29,15 @@ public struct IcuActivity: Sendable, Codable, Identifiable, Equatable {
         case startDateUtc = "start_date"
         case movingTimeS = "moving_time"
         case distanceM = "distance"
+        case fileType = "file_type"
+        case icuSyncDate = "icu_sync_date"
     }
 
     public init(id: String, name: String? = nil, type: String? = nil,
                 startDateLocal: String? = nil, startDateUtc: String? = nil,
                 timezone: String? = nil,
-                movingTimeS: Int? = nil, distanceM: Double? = nil) {
+                movingTimeS: Int? = nil, distanceM: Double? = nil,
+                fileType: String? = nil, icuSyncDate: String? = nil) {
         self.id = id
         self.name = name
         self.type = type
@@ -38,6 +46,17 @@ public struct IcuActivity: Sendable, Codable, Identifiable, Equatable {
         self.timezone = timezone
         self.movingTimeS = movingTimeS
         self.distanceM = distanceM
+        self.fileType = fileType
+        self.icuSyncDate = icuSyncDate
+    }
+
+    /// **Which upload this is** — the file type and the date the file reached intervals.icu.
+    /// A file found positions-only at the source is remembered against this value and not
+    /// fetched again until it changes (`SessionIngestor.icuPositionsOnlyAtSource`): the
+    /// rider replacing the GPX with the watch's FIT moves both. An account that reports
+    /// neither still fingerprints, as "-|-", so the file is fetched once and not on every pull.
+    public var sourceFingerprint: String {
+        "\(fileType ?? "-")|\(icuSyncDate ?? "-")"
     }
 
     public init(from decoder: any Decoder) throws {
@@ -55,6 +74,8 @@ public struct IcuActivity: Sendable, Codable, Identifiable, Equatable {
         timezone = try c.decodeIfPresent(String.self, forKey: .timezone)
         movingTimeS = try c.decodeIfPresent(Int.self, forKey: .movingTimeS)
         distanceM = try c.decodeIfPresent(Double.self, forKey: .distanceM)
+        fileType = try c.decodeIfPresent(String.self, forKey: .fileType)
+        icuSyncDate = try c.decodeIfPresent(String.self, forKey: .icuSyncDate)
     }
 
     /// **When this activity happened** — a real instant, from `start_date`.
