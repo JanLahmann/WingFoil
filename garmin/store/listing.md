@@ -99,7 +99,7 @@ New to it? cleanjibe.org/start walks you through a 20-minute test on land.
 
 ### What's New (live text)
 
-**0.9.20 packaged 1 October 2026** (the paragraph on top; upload pending). **0.9.19 uploaded 23 September 2026** (public listing, pending approval, Internal 26). The live field holds three paragraphs (0.9.19, 0.9.18, 0.9.17 — the 0.9.18 paragraph is the release-notes entry's lines joined, then the two below). Text of 0.9.17 as submitted on 21 September:
+**0.9.20 uploaded 1 October 2026** (public listing, pending approval; 0.9.20-dev1 on the private listing). **0.9.19 uploaded 23 September 2026** (public listing, pending approval, Internal 26). The live field holds three paragraphs (0.9.19, 0.9.18, 0.9.17 — the 0.9.18 paragraph is the release-notes entry's lines joined, then the two below). Text of 0.9.17 as submitted on 21 September:
 
 ```
 0.9.20: A tack you fall out of counts. A turn you go in halfway through now shows on your wrist as a fall, named a tack or a jibe by the same rules as the phone. A session that ends with you in the water ends with a fall, and a late brush of the water after a flight no longer breaks your flew streak.
