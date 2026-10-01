@@ -1,4 +1,4 @@
-> Part of `docs/algorithms.md`. Engine 0.27.0.
+> Part of `docs/algorithms.md`. Engine 0.28.0.
 
 ## Divergence check (phone, source class (a) only)
 

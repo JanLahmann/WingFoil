@@ -14,6 +14,36 @@ apart is a history, not a contract. There are four:
 An Accepted entry may carry a clause saying what a later ADR narrowed or what has moved since.
 That is the point of the line: it says which half of an old paragraph is still load-bearing.
 
+## ADR-038 · A jump is not a turn: two class (c) rules for a GPS fix thrown sideways
+**Status: Accepted** (Jan, 1 October 2026; engine 0.28.0, release channel).
+
+Jan, 1 October 2026, on dev 126: his 4 Sep 07:58 session came in through Strava and showed a
+tack that flew through at 53:52. He has never flown through a tack; the watch's FIT of the same
+morning has none, and three real tacks across his 60 intervals.icu files, all `fell_in`. On the
+Strava copy a fix-less record (the wrist under water) is filled with the fix before it, and the
+next fix lands metres away: a 150° heading flip in one second, then two samples of
+differentiated "speed" that close the outcome window as a recovery while he stands in the water.
+
+Decision: **two rules, positions-only tracks only, each its own parameter**
+(docs/algorithms/turns.md, "A jump is not a turn"). `turnPositionalMinSweepS` (3 s) — a sweep
+shorter than this is dropped before it is scored; no real turn on either copy of the corpus is
+shorter. `turnPositionalSpikePct` (150 %) — a recovery that reached this share of the entry
+speed and is followed by a standstill inside `turnOutcomeWindow` is set aside, and the window is
+searched again from the standstill. Both were chosen on the 60 FITs of Jan's intervals.icu export
+read twice, as FIT and as Strava serves them (`strava_vs_icu.py`, which now fills fix-less records
+the way Strava does). Refused: a spike rule without the standstill (35 real fly-throughs stop
+within 12 s, and real exits reach 153 % of entry), and either rule on class (a)/(b), where the
+Doppler does not jump with the fix and nothing in the corpus needs it.
+
+Consequence: engine **0.28.0**, two config keys. On the Strava copies: counted turns 1 562 →
+1 558, fly-throughs 787 → 781, tacks 12 → 9; **no turn the FIT also has changes its verdict**
+(762 agreed fly-throughs before and after). No committed golden moves beyond the version and
+the two keys. Jan's 4 Sep Strava copy: 67 → 66 turns, no tack. **Watch**: not ported, and not a
+divergence — the watch records its own Doppler and never analyses a positions-only track. The
+same day, a separate gap closed in the kit: the iCloud library sync (dev) now lets a FIT in the
+folder replace a Strava copy here, and a FIT here replace a GPX in the folder (F-6 across
+devices, docs/algorithms/imports.md).
+
 ## ADR-037 · A tack is a tack he tried: an aborted turn's name needs the evidence
 **Status: Accepted** (Jan, 28 September 2026; engine 0.27.0, release channel).
 
