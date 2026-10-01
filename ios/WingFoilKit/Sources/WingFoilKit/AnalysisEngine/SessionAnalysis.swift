@@ -262,7 +262,14 @@ public enum AnalysisEngine {
     /// ≤ 2 s gap between two sweeps names the second. Five new config keys. Over the 21
     /// goldens tacks 6 → 0, jibes +2, turn falls −4; clean jibes, JPH and CPH do not move.
     /// And a pump stream shorter than its band-pass analyses instead of crashing.
-    public static let version = "0.27.0"
+    ///
+    /// 0.28.0 stops **a GPS jump from reading as a turn** on a positions-only track (ADR-038).
+    /// Jan's 4 Sep 07:58 session through Strava showed a tack that flew through where his
+    /// FIT has none: a fix-less record Strava filled, then a fix metres away. On class (c) a
+    /// sweep shorter than `turnPositionalMinSweepS` is not a turn, and a recovery reaching
+    /// `turnPositionalSpikePct` of entry and then standing still is set aside. Two config
+    /// keys; no committed golden moves beyond them.
+    public static let version = "0.28.0"
 }
 
 /// **Is this recording a session?** — docs/algorithms/not-a-session.md "Not a session" (engine 0.19.0).
@@ -394,6 +401,10 @@ public struct AnalysisConfig: Sendable, Codable, Equatable {
     public var turnAbortLuffSpeedPct: Double?
     public var turnAbortAfterTurnS: Double?
     public var turnJoinGapS: Double?
+    /// A jump is not a turn (engine 0.28.0, ADR-038), positions-only tracks only. Optional so
+    /// a stored `analysis.json` from before them still decodes; such a row re-derives.
+    public var turnPositionalMinSweepS: Double?
+    public var turnPositionalSpikePct: Double?
     /// The classification floor (engine 0.13.0). Optional only so a stored `analysis.json`
     /// from 0.12.0 still decodes; such a row re-derives on its version.
     public var turnClassifyMinAngle: Double?
@@ -487,6 +498,8 @@ public struct AnalysisConfig: Sendable, Codable, Equatable {
         turnAbortLuffSpeedPct = turn.abortLuffSpeedPct
         turnAbortAfterTurnS = turn.abortAfterTurnS
         turnJoinGapS = turn.joinGapS
+        turnPositionalMinSweepS = turn.positionalMinSweepS
+        turnPositionalSpikePct = turn.positionalSpikePct
         turnClassifyMinAngle = turn.classifyMinAngleDeg
         turnAxisBeforeDeg = turn.axisBeforeDeg
         turnAxisAfterDeg = turn.axisAfterDeg

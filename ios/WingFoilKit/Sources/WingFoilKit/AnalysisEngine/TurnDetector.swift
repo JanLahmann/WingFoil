@@ -21,6 +21,18 @@ public struct TurnConfig: Sendable, Equatable {
     public var minArcM: Double = 12.0
     /// turnMinRadius: arc ÷ |net angle| in radians.
     public var minRadiusM: Double = 6.0
+    /// turnPositionalMinSweepS (engine 0.28.0), s: **a heading flip made of one jump is not a
+    /// turn**. On a positions-only track (class c: a GPX, a Strava copy) one fix thrown
+    /// metres sideways turns the COG through 150° in one or two steps; no real turn in the
+    /// corpus sweeps in under 3 s. Such a sweep is dropped before it is scored, on class (c)
+    /// only (`CleanTrack.positionsOnly`). 0 = off. Mirrors `positional_min_sweep_s`; ADR-038.
+    public var positionalMinSweepS: Double = 3.0
+    /// turnPositionalSpikePct (engine 0.28.0), % of entry speed: **a recovery made of a jump
+    /// is not a recovery**. On class (c), a recovery whose samples reach this share of the
+    /// entry speed and after which the rider stands still (`turnStopSpeedFloor`) within
+    /// `turnOutcomeWindow` is set aside, and the window is searched again from that
+    /// standstill. 0 = off. Mirrors `positional_spike_pct`; ADR-038.
+    public var positionalSpikePct: Double = 150.0
     /// turnAxisBeforeDeg (engine 0.15.0): how far the sweep must start *from* the axis it
     /// crosses before it may be a tack or a jibe. 0 = off, and at 0 no verdict moves. Below
     /// it the sweep is filed as the same uncounted course change `classifyMinAngleDeg`
@@ -526,6 +538,7 @@ public enum TurnDetector {
     static func abortCandidates(_ track: CleanTrack, flights: FlightSegmentation,
                                 config: TurnConfig) -> [Candidate] {
         guard config.abortMinAngleDeg > 0 else { return [] }
+        let minSweep = minSweepS(track, config)
         var out: [Candidate] = []
         for seg in track.segments where seg.count >= 3 {
             let t = seg.map { track.samples[$0].t }
@@ -549,6 +562,7 @@ public enum TurnDetector {
                 var peak = 0.0
                 for r in i..<j { peak = max(peak, abs(rate[r])) }
                 guard peak >= config.peakRateDegS else { continue }
+                guard tu[j] - tu[i] >= minSweep else { continue }
                 guard onFoil(tu[i], tu[j], flights: flights, config: config) else { continue }
                 let arc = arcAndChord(x, y, lo: a + i, hi: a + j + 1)
                 guard carved(arcM: arc.0, netDeg: u[j] - u[i], config) else { continue }
@@ -617,11 +631,18 @@ public enum TurnDetector {
         acceptedCandidates(track, flights: flights, config: config).map { ($0.cogIn, $0.cogOut) }
     }
 
+    /// The shortest sweep this track may report: `turnPositionalMinSweepS` on class (c),
+    /// nothing elsewhere (engine 0.28.0, ADR-038). Mirrors `_min_sweep_s`.
+    static func minSweepS(_ track: CleanTrack, _ config: TurnConfig) -> Double {
+        track.positionsOnly ? config.positionalMinSweepS : 0
+    }
+
     /// Every sweep that survives detection, in time order with overlaps resolved.
     static func acceptedCandidates(_ track: CleanTrack, flights: FlightSegmentation,
                                    config: TurnConfig) -> [Candidate] {
         var cands: [Candidate] = []
         var run = 0
+        let minSweep = minSweepS(track, config)
         for seg in track.segments where seg.count >= 3 {
             let t = seg.map { track.samples[$0].t }
             let x = seg.map { track.samples[$0].x ?? .nan }
@@ -638,6 +659,7 @@ public enum TurnDetector {
                 let rate = rates(tu, u)
                 for pair in suppress(candidates(tu, u, rate, config)) {
                     let (i, j) = trim(pair.0, pair.1, rate: rate, u: u, config: config)
+                    guard tu[j] - tu[i] >= minSweep else { continue }
                     guard onFoil(tu[i], tu[j], flights: flights, config: config) else { continue }
                     let arc = arcAndChord(x, y, lo: a + i, hi: a + j + 1)
                     guard carved(arcM: arc.0, netDeg: u[j] - u[i], config) else { continue }
@@ -1224,7 +1246,8 @@ public enum TurnDetector {
             return
         }
         for i in turns.indices {
-            outcome(&turns[i], ev: ev, config: config, pump: pump)
+            outcome(&turns[i], ev: ev, config: config, pump: pump,
+                    positionsOnly: track.positionsOnly)
             (turns[i].clean, turns[i].cleanBlockedBy) =
                 cleanVerdict(turns[i], ev: ev, config: config, ends: ends)
         }
@@ -1327,9 +1350,10 @@ public enum TurnDetector {
     /// `outcomeReason` names the rung that decided the verdict and is nil on a fly-through.
     /// Mirrors `_outcome` in `lab/src/wingfoil_lab/turns.py`.
     static func outcome(_ turn: inout Turn, ev: OffFoilEvidence, config: TurnConfig,
-                        pump: PumpTrack?) {
+                        pump: PumpTrack?, positionsOnly: Bool = false) {
         let t = ev.t
-        let (hi, notRecovered) = windowEnd(turn, ev: ev, config: config)
+        let (hi, notRecovered) = windowEnd(turn, ev: ev, config: config,
+                                           positionsOnly: positionsOnly)
         // The span the off-foil run may be followed over: `turnOutcomeWindow` as always, and
         // the longer not-recovered tail when that is what the window itself ran to, so the
         // stop a mush-out ends in is measured by the turn that caused it (ADR-032).
@@ -1392,16 +1416,52 @@ public enum TurnDetector {
     /// recovery, at a recording gap, or at `turnOutcomeLookahead` — and since engine 0.24.0
     /// at `turnOutcomeLookaheadNotRecovered` instead when none of the three closed it by
     /// then (ADR-032).
-    static func windowEnd(_ turn: Turn, ev: OffFoilEvidence,
-                          config: TurnConfig) -> (Int, Bool) {
+    ///
+    /// On a positions-only track (engine 0.28.0, `turnPositionalSpikePct`, ADR-038) a
+    /// recovery made of a jump — followed by a standstill — is set aside and the window is
+    /// searched again from that standstill (`spikeStandstill`).
+    static func windowEnd(_ turn: Turn, ev: OffFoilEvidence, config: TurnConfig,
+                          positionsOnly: Bool = false) -> (Int, Bool) {
         let lo = min(searchSortedLeft(ev.t, turn.startT), ev.count - 1)
         let thr = max(config.recoverPct / 100 * turn.entryKn / mpsToKn,
                       config.foilEntrySpeedKmh * kmhToMps)
-        return Evidence.outcomeTail(t: ev.t, gap: ev.gap, doppler: ev.doppler, lo: lo,
-                                    fromT: turn.endT, afterT: turn.minT, thrMps: thr,
-                                    holdS: config.recoverHoldS,
-                                    lookaheadS: config.outcomeLookaheadS,
-                                    notRecoveredS: config.outcomeLookaheadNotRecoveredS)
+        func tail(after afterT: Double) -> (Int, Bool) {
+            Evidence.outcomeTail(t: ev.t, gap: ev.gap, doppler: ev.doppler, lo: lo,
+                                 fromT: turn.endT, afterT: afterT, thrMps: thr,
+                                 holdS: config.recoverHoldS,
+                                 lookaheadS: config.outcomeLookaheadS,
+                                 notRecoveredS: config.outcomeLookaheadNotRecoveredS)
+        }
+        let first = tail(after: turn.minT)
+        guard positionsOnly, !first.1,
+              let stand = spikeStandstill(turn, ev: ev, config: config, hi: first.0) else {
+            return first
+        }
+        return tail(after: ev.t[stand])
+    }
+
+    /// The standstill that unmasks a jump-made recovery, or nil (engine 0.28.0, ADR-038).
+    /// The recovery that closed the window at `hi` is set aside when a sample between the
+    /// speed minimum and `hi` reached `turnPositionalSpikePct` of the entry speed **and** the
+    /// speed then drops below `turnStopSpeedFloor` within `turnOutcomeWindow` of `hi`, with no
+    /// recording gap between. Mirrors `_spike_standstill` in `lab/.../turns.py`.
+    static func spikeStandstill(_ turn: Turn, ev: OffFoilEvidence, config: TurnConfig,
+                                hi: Int) -> Int? {
+        guard config.positionalSpikePct > 0 else { return nil }
+        let t = ev.t
+        let spike = config.positionalSpikePct / 100 * turn.entryKn / mpsToKn
+        let from = searchSortedRight(t, turn.minT)
+        guard from <= hi, (from...hi).contains(where: { ev.doppler[$0] >= spike }) else {
+            return nil
+        }
+        let until = t[hi] + config.outcomeWindowS
+        var k = hi + 1
+        while k < ev.count {
+            if t[k] > until || ev.gap[k] { return nil }
+            if ev.speed[k] < config.stopSpeedFloorMps { return k }
+            k += 1
+        }
+        return nil
     }
 }
 

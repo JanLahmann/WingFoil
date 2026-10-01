@@ -70,13 +70,23 @@ DEFAULT_FITS = [
 # ---------------------------------------------------------------- the Strava view
 
 
-def strava_gpx(fit: Path, out_dir: Path, decimals: int = 6, ele: bool = True) -> Path:
+def strava_gpx(fit: Path, out_dir: Path, decimals: int = 6, ele: bool = True,
+               fill: bool = True) -> Path:
     """The FIT as a Strava export would carry it: positions, elevation, a clock — no speed.
 
     `decimals` is Strava's stored precision (six), applied by rewriting the `lat`/`lon`
     attributes of the GPX `to_gpx` already writes at seven.
+
+    `fill` (default since 1 Oct 2026): **Strava serves a position for every record**, the
+    ones the watch logged without a fix included. Activity 20030090545 (2026-09-04 07:58,
+    the twin of the icu FIT) returns 5 975 points for 5 975 records, 143 of them fix-less:
+    a one-record hole carries the fix before it, a longer one is interpolated in a straight
+    line, and every real fix agrees with the FIT's to 0.04 m (median). So the record is
+    never a gap on the Strava copy, which is where the phantom tack of that session came
+    from; `fill=False` is the pre-1-Oct arm, which dropped the hole and read it as a gap.
     """
-    text = to_gpx(fit, name=fit.stem, creator="strava_vs_icu (synthetic Strava export)")
+    text = (filled_gpx(fit) if fill else
+            to_gpx(fit, name=fit.stem, creator="strava_vs_icu (synthetic Strava export)"))
     if decimals != 7:
         import re
 
@@ -87,9 +97,47 @@ def strava_gpx(fit: Path, out_dir: Path, decimals: int = 6, ele: bool = True) ->
     if not ele:
         import re as _re
         text = _re.sub(r"\s*<ele>[^<]*</ele>", "", text)
-    out = out_dir / f"{fit.stem}.strava{'' if ele else '.noele'}.gpx"
+    out = out_dir / f"{fit.stem}.strava{'' if ele else '.noele'}{'' if fill else '.holes'}.gpx"
     out.write_text(text, encoding="utf-8")
     return out
+
+
+def filled_gpx(fit: Path) -> str:
+    """Every record as a `trkpt`, fix-less ones filled the way Strava fills them.
+
+    One fix-less record holds the fix before it; a longer run is interpolated linearly
+    between the fixes either side (`limit_area="inside"`: nothing is invented before the
+    first fix or after the last).
+    """
+    from wingfoil_lab.parse import parse_fit
+
+    df = parse_fit(fit).records
+    if "lat" not in df or df["lat"].isna().all():
+        raise SystemExit(f"{fit.name}: no GPS fixes to convert")
+    lat, lon = df["lat"].astype(float), df["lon"].astype(float)
+    hole = lat.isna()
+    run_id = (hole != hole.shift()).cumsum()
+    run_len = hole.groupby(run_id).transform("sum")
+    single = hole & (run_len == 1)
+    lat_i = lat.interpolate(limit_area="inside")
+    lon_i = lon.interpolate(limit_area="inside")
+    lat_i[single] = lat.ffill()[single]
+    lon_i[single] = lon.ffill()[single]
+    ele = df["enhanced_altitude"] if "enhanced_altitude" in df else df.get("altitude")
+    ele = ele.astype(float).interpolate(limit_area="inside") if ele is not None else None
+    lines = ['<?xml version="1.0" encoding="UTF-8"?>',
+             '<gpx version="1.1" creator="strava_vs_icu (synthetic Strava export, filled)" '
+             'xmlns="http://www.topografix.com/GPX/1/1">',
+             f"<trk><name>{fit.stem}</name><trkseg>"]
+    for i, ts in enumerate(df["timestamp"]):
+        la, lo = lat_i.iloc[i], lon_i.iloc[i]
+        if la != la or lo != lo:
+            continue
+        e = "" if ele is None or ele.iloc[i] != ele.iloc[i] else f"<ele>{ele.iloc[i]:.2f}</ele>"
+        stamp = ts.tz_convert("UTC").strftime("%Y-%m-%dT%H:%M:%SZ")
+        lines.append(f'<trkpt lat="{la:.7f}" lon="{lo:.7f}">{e}<time>{stamp}</time></trkpt>')
+    lines += ["</trkseg></trk>", "</gpx>", ""]
+    return "\n".join(lines)
 
 
 def run(path: Path, variant: str) -> Analysis:
@@ -185,6 +233,8 @@ def main(argv=None) -> int:
     ap.add_argument("--turns", action="store_true", help="per-turn diff table")
     ap.add_argument("--decimals", type=int, default=6,
                     help="position precision of the Strava view (default 6, Strava's own)")
+    ap.add_argument("--holes", action="store_true",
+                    help="drop fix-less records instead of filling them as Strava does")
     args = ap.parse_args(argv)
 
     fits = args.fit or [REPO / p for p in DEFAULT_FITS]
@@ -196,8 +246,8 @@ def main(argv=None) -> int:
     for fit in fits:
         icu = run(Path(fit), "icu")
         t0 = float(icu.clean.records["t"].iloc[0])
-        gpx = strava_gpx(Path(fit), tmp, args.decimals)
-        bare = strava_gpx(Path(fit), tmp, args.decimals, ele=False)
+        gpx = strava_gpx(Path(fit), tmp, args.decimals, fill=not args.holes)
+        bare = strava_gpx(Path(fit), tmp, args.decimals, ele=False, fill=not args.holes)
         name = Path(fit).stem[:34]
         for arm, a in [("icu", icu)] + [(v, run(bare if v == "noele" else gpx, v))
                                         for v in args.variants]:

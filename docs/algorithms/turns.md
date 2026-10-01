@@ -1,4 +1,4 @@
-> Part of `docs/algorithms.md`. Engine 0.27.0.
+> Part of `docs/algorithms.md`. Engine 0.28.0.
 
 ## Turn detection & classification
 
@@ -21,6 +21,8 @@
 | `turnCogSpeedFloor` | 2.0 | m/s | COG geometry read only from steps above this (same COAPS caveat as wind); a capsize below it otherwise reads as a multi-turn spin |
 | `turnMinArc` | 12 | m | **spatial gate**: path length travelled across the COG sweep |
 | `turnMinRadius` | 6 | m | **spatial gate**: effective radius = arc ÷ swept angle in radians |
+| `turnPositionalMinSweepS` | **3** | s | **a jump is not a turn** (engine ≥ 0.28.0, ADR-038), **positions-only tracks only** (class c: a GPX, a Strava copy). A sweep shorter than this, start to end after the trim, is dropped before it is scored, from the main scan and the aborted pass alike. Class (a)/(b) are never asked. 0 = off |
+| `turnPositionalSpikePct` | **150** | % | of the turn's `entryKn`, **positions-only tracks only** (engine ≥ 0.28.0). A recovery that closed the outcome window is set aside when a sample between the speed minimum and the close reached this, **and** the speed drops below `turnStopSpeedFloor` within `turnOutcomeWindow` of the close with no gap between: the window is searched again from that standstill. 0 = off |
 | `turnContinueRate` | 5 | deg/s | edge trim: shrink the detected span to the actually-turning part |
 | `entrySpeedWindow` | 3 | s | entry speed = max over window before turn start |
 | `minSpeedLag` | 2 | s | minimum searched to `turnEnd + lag` (the collapse of a botched turn lands just past the COG sweep) |
@@ -322,6 +324,61 @@ numerator reads one. TPH moves only where a tack went.
 `submerged`) — is not in the corpus, and the file could not be read in this round. R2 keeps
 it only if a heading he flew *before the wrist went under* came within 30° of the wind. Run
 that file before this ships to the tester.
+
+### A jump is not a turn — positions-only tracks (engine ≥ 0.28.0, ADR-038)
+
+Jan, 1 October 2026, on dev 126: his session of 4 Sep 07:58 came in through **Strava**
+(activity 20030090545, positions only) and showed *Tack 1 of 1, 53:52, flew through*, entry
+9.6 kn, low 5.1 kn. He tried three or four tacks in his life and fell in on every one. The
+watch's own FIT of that morning (intervals.icu) has 66 counted turns and no tack; at 53:51 he
+fell in after a jibe that flew through.
+
+**What happened on the Strava copy.** The watch logged one record with no fix as he went
+under (53:52). Strava serves a point for **every** record: a single fix-less record carries the
+fix before it, a longer run is interpolated in a straight line, and every real fix agrees with
+the FIT's to 0.04 m (median; 5 975 points for 5 975 records, 143 of them fix-less). So the
+record is not a gap on the Strava copy, and the next two fixes landed 5 m north-west of the
+held one and then 14 m east of that: the COG flipped 150° in **one second** and the speed differentiated
+from those positions read 10 kn, 7.7 kn — enough to pass `turnRecoverHold` and close the
+outcome window two seconds after the "sweep" as a recovery. The standstill after it (0.3 kn
+for a minute) was outside the window. The FIT never saw it: its Doppler does not jump with the
+fix, and the fix-less record is a gap there.
+
+**Two rules, class (c) only**, each its own parameter:
+
+1. **`turnPositionalMinSweepS` (3 s)** — a sweep shorter than this is not a turn. None of the
+   1 568 counted turns on Jan's 60 intervals.icu FITs sweeps in under 3 s, nor any of the
+   1 522 their positions-only copies share with them (the shortest real turns, six of them, take
+   exactly 3 s and fell in). The four positions-only sweeps of 1–2 s in that corpus are all
+   ones the FIT never saw — including the 4 Sep tack.
+2. **`turnPositionalSpikePct` (150 %)** — a recovery made of a jump is not a recovery. Of the
+   762 turns both copies call a fly-through, the 35 that come to a standstill within the
+   window peak at 127 % of entry at most; the four phantom fly-throughs the rule catches —
+   none of them a turn on the FIT — peak at 157–243 % and stop within 12 s. The window is
+   searched again from the standstill, so a rider who really did get going again is still found
+   recovering, and the ladder then reads the stop as it reads any other.
+
+**The measurement** (`lab/tools/strava_vs_icu.py`, which since 1 Oct 2026 fills fix-less
+records the way Strava does; `--holes` is the old arm): the 60 FITs of Jan's intervals.icu
+export, 50 with fixes, read twice.
+
+| | FIT | Strava copy, 0.27.0 | Strava copy, 0.28.0 |
+|---|---|---|---|
+| counted turns | 1 568 | 1 562 | **1 558** |
+| flew through | 817 | 787 | **781** |
+| tacks (flew through) | 6 (0) | 12 (4) | **9 (1)** |
+| fly-throughs both copies agree on | — | 762 | **762** |
+
+Eight turns move, all on turns the FIT does not have: four dropped by rule 1 (2026-05-25 54:59,
+06-04 31:41, 06-13 104:06, 09-04 53:52), four `flew_through → fell_in` by rule 2 (05-25 58:34,
+05-27 58:23, 06-13 46:04, 07-31 56:54). **No turn the FIT has changes its verdict**, and no
+committed golden moves beyond the version and the two config keys (the corpus's class (c)
+fixtures, the 30 Aug GPX and TCX, have no jump). The real Strava copy of 4 Sep now reads 66
+counted turns and no tack. The FIT itself never asks either rule.
+
+The one positions-only tack left flying through (2026-06-05 72:30, entry 7.5 kn, peak
+12.1 kn, no standstill after) is not on the FIT either; nothing in its speed says it was not
+ridden, so it stays.
 
 ### Glossary — four words that are not synonyms
 

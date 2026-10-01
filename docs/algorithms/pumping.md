@@ -1,4 +1,4 @@
-> Part of `docs/algorithms.md`. Engine 0.27.0.
+> Part of `docs/algorithms.md`. Engine 0.28.0.
 
 ## Pumping (accelerometer)
 
@@ -451,6 +451,13 @@ at least a second, the longest stop reads **4.96 s** on `min(Doppler, positional
 two channels' jitter is independent and the minimum bridges each one's dropouts, exactly as
 step 4 claims; with one channel there is nothing to bridge, and `turnFallStop` (5 s) sits in
 the middle of the 3.2 → 5.0 s gap.
+
+**The synthetic arm fills fix-less records since 1 Oct 2026.** The real Strava copy of
+4 Sep 2026 (activity 20030090545) serves a point for every record the watch logged, fix-less
+ones included — the fix before for a single hole, a straight line across a longer one — where
+the arm above dropped them and read a gap. The tables here were measured on the dropping arm
+(`--holes`); the filled one is what turned a GPS jump into a phantom tack, and is measured in
+docs/algorithms/turns.md, "A jump is not a turn".
 
 Three candidate causes were tested and are **not** it: the spike filter (`max_accel_1hz = inf`
 leaves every verdict unchanged), the sampling (1 Hz, gap-free, confirmed against Strava), and

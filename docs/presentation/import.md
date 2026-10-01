@@ -1,4 +1,4 @@
-> Part of `docs/presentation.md`. Engine 0.27.0.
+> Part of `docs/presentation.md`. Engine 0.28.0.
 
 ## Import — the doors a session comes in by
 

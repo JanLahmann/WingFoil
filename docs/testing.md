@@ -508,6 +508,16 @@ same ownership window to tell a `recovery` pump burst from a failed takeoff atte
 one accelerometer fixture attempts go 37 → 34, failed 14 → 11, unknown 1 → 0 and recovery
 0 → 4 (`test_pump_episodes_are_serialized_whole`).
 
+Engine 0.28.0 (ADR-038) moves **no committed golden** beyond the version and two `config`
+keys (`turnPositionalMinSweepS`, `turnPositionalSpikePct`): both rules ask only of a
+positions-only track, and the corpus's two class (c) fixtures (the 30 Aug GPX and no-speed TCX)
+hold no jump. They are pinned synthetic in `test_turns.py` ("a jump is not a turn") and
+`PositionalJumpTests` in the kit — each case read as class (b) too, where nothing may move —
+plus Jan's own 4 Sep copy as Strava serves it (`test_the_strava_copy_of_4_sep_has_no_phantom_tack`,
+which skips where `fixtures/footage/` is absent). The calibration is
+`lab/tools/strava_vs_icu.py` over Jan's intervals.icu export (docs/algorithms/turns.md, "A jump
+is not a turn").
+
 Engine 0.27.0 (ADR-037) moves **only turns that fell in**: the six tacks on five fixtures go
 (two become jibes, R4 and R5; four aborted tacks are refused, R1–R3), counted turns −4, turn
 falls −4, straight-line falls +3, course changes +2, and **clean jibes, JPH and CPH do not move

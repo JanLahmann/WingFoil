@@ -216,10 +216,22 @@ public struct LibrarySyncEngine: Sendable {
     /// is keyed by whichever device wrote it first; here it is found by the library's own
     /// ±60 s dedupe key, the same way a backup's restore finds the row a zip describes
     /// (ADR-015). Nothing renumbers a row that already exists.
+    ///
+    /// **The richer copy wins here too** (F-6, Jan 1 Oct 2026). A row this library holds only
+    /// as a positions-only copy — Strava's, a GPX — gives way to the folder's recording with
+    /// speed when the other device has one: it goes through the front door, which replaces
+    /// the weaker row in place exactly as an intervals.icu FIT does (`SessionIngestor.yields`).
+    /// Without this, the ±60 s match above returned the Strava row and the FIT beside it in
+    /// iCloud Drive was never read.
     private func land(_ meta: SyncedSessionMeta,
                       report: inout Report) async throws -> SessionRow? {
-        if let existing = try await ingestor.session(id: meta.id) { return existing }
+        if let existing = try await ingestor.session(id: meta.id) {
+            return try await upgraded(existing, from: meta, report: &report) ?? existing
+        }
         if let known = try await duplicate(of: meta) {
+            if let better = try await upgraded(known, from: meta, report: &report) {
+                return better
+            }
             report.duplicates += 1
             return known
         }
@@ -248,6 +260,23 @@ public struct LibrarySyncEngine: Sendable {
         }
     }
 
+    /// The folder's recording, ingested over a positions-only row of the same afternoon, or
+    /// nil when there is nothing better to read. Only a row of class (c) asks, and only a
+    /// folder whose recording is not itself a GPX (a GPX never carries speed); whether the
+    /// folder's copy really is richer — a TCX may state no speed either — is the front
+    /// door's answer, not this one's.
+    private func upgraded(_ row: SessionRow, from meta: SyncedSessionMeta,
+                          report: inout Report) async throws -> SessionRow? {
+        guard row.sourceClass == "c",
+              let url = container.originalURL(for: meta.id),
+              url.pathExtension.lowercased() != TrackFormat.gpx.fileExtension,
+              let data = container.data(at: url) else { return nil }
+        guard case .replaced(let better, _) = try await ingestor.ingest(
+            fitData: data, filename: url.lastPathComponent, source: .file) else { return nil }
+        report.downloaded += 1
+        return better
+    }
+
     // MARK: Push
 
     /// Everything this library knows that the folder does not.
@@ -270,8 +299,16 @@ public struct LibrarySyncEngine: Sendable {
                                toleranceS: toleranceS) != nil { continue }
             let folderID = folders.first { matches($0.value, row) }?.key ?? row.id
             do {
-                if container.originalURL(for: folderID) == nil,
+                let held = container.originalURL(for: folderID)
+                // The richer copy wins in the folder too (F-6): a GPX there gives way to this
+                // device's recording with speed, so the other device's pull upgrades its row.
+                let weakerThere = held.map {
+                    $0.pathExtension.lowercased() == TrackFormat.gpx.fileExtension
+                        && row.sourceClass != "c"
+                } ?? false
+                if held == nil || weakerThere,
                    let data = try? ingestor.archive.originalData(for: row.id) {
+                    if weakerThere { container.removeOriginal(for: folderID) }
                     try container.writeOriginal(data, id: folderID)
                     report.uploaded += 1
                 }

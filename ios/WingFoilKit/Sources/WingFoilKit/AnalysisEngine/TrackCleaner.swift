@@ -10,6 +10,7 @@ public enum TrackCleaner {
     public static func clean(_ raw: RawTrack, config: FilterConfig = FilterConfig()) -> CleanTrack {
         var track = CleanTrack()
         track.config = config
+        track.positionsOnly = raw.capabilities.sourceClass == "c"
 
         // Row hygiene: speed is mandatory (the pipeline runs on the Doppler channel);
         // position is mandatory only when the source has any. Dropped rows become
