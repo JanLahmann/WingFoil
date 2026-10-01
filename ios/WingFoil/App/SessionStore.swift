@@ -1188,6 +1188,13 @@ final class SessionStore {
             }
         }
         await runImport(payloads, source: .fixtures)
+        // `UI_FIXTURE_COPIES=6` turns the fifteen fixtures into a library of Jan's size
+        // (~100 rows) for the list's scroll test (`LibraryScrollUITests`).
+        if let raw = ProcessInfo.processInfo.environment["UI_FIXTURE_COPIES"],
+           let copies = Int(raw), copies > 0 {
+            _ = try? await ingestor.stageCopies(copies)
+            await load()
+        }
         #endif
     }
     #endif
