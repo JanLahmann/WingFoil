@@ -278,7 +278,11 @@ metres away -- a 150 deg heading flip in one second, then two samples of "speed"
 outcome window as a recovery. Two rules, both class (c) only: a sweep shorter than
 `turnPositionalMinSweepS` (3 s) is not a turn, and a recovery reaching `turnPositionalSpikePct`
 (150 %) of the entry speed after which the rider stands still within the outcome window is set
-aside. Class (a)/(b) goldens move by the version and two config keys.
+aside. The same day, after Jan said he has never completed a tack: on class (c) a sweep with
+one step of `turnPositionalMaxStepDeg` (150 deg) or more is not a turn, nor is a sweep whose own
+speed reaches `turnPositionalSpikePct` before a standstill; and on every class a turn after
+which the recording ends within `turnRecordingEndS` (30 s), the rider stopped and never flying
+again, fell in (his 10 Aug 2025 tack, which read touchdown).
 """
 
 from __future__ import annotations
@@ -982,6 +986,11 @@ def _config_dict(a: Analysis) -> dict:
         # turnPositionalSpikePct of the entry speed and then standing still is set aside.
         "turnPositionalMinSweepS": t.positional_min_sweep_s,
         "turnPositionalSpikePct": t.positional_spike_pct,
+        # ...and a sweep with one step of turnPositionalMaxStepDeg or more is not a turn (the
+        # track doubled back between two fixes); a turn whose recording ends within
+        # turnRecordingEndS with the rider stopped and never flying again fell in.
+        "turnPositionalMaxStepDeg": t.positional_max_step_deg,
+        "turnRecordingEndS": t.recording_end_s,
         "turnClassifyMinAngle": t.classify_min_angle_deg,
         "turnAxisBeforeDeg": t.axis_before_deg,
         "turnAxisAfterDeg": t.axis_after_deg,
