@@ -1206,6 +1206,19 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    be imported first (`UI_IMPORT_FIXTURES=1` runs on the Sessions tab, so launch once with it
    alone).
 
+   **The Sessions list's first scroll** (`LibraryScrollUITests`, Jan 1 Oct 2026, dev 126:
+   "hakelig"). `UI_FIXTURE_COPIES=6` copies every imported fixture six times, a week apart
+   each (`SessionIngestor.stageCopies`), so the list holds Jan's ~100 rows. `UI_HITCH_METER=1`
+   makes the app scroll its own list top to bottom at 1 800 pt/s once the library holds
+   `UI_HITCH_MIN_ROWS` rows and has stopped changing (plus `UI_HITCH_DELAY` s), and report
+   Apple's hitch time ratio — ms of hitch per second of scrolling — on an invisible label,
+   with a Darwin notification when done (`ScrollHitchMeter`). The app drives the scroll
+   because an XCUITest swipe snapshots the accessibility tree on the main thread between
+   gestures, which the meter would count as the list's. The test runs it fresh (reset +
+   import) and on a relaunch, with and without the map backdrop, and fails over 250 ms/s — a
+   simulator regression guard (850–980 before the 1 Oct 2026 fix, 60–110 after), not
+   Apple's 5 ms/s for a phone.
+
    **A screenshot in km/h** needs no hook of its own. Settings → Units is a tap `simctl`
    cannot make, but the choice is an ordinary stored default, so passing it as a launch
    argument puts it in the argument domain and `SessionStore.init` reads it exactly as it
