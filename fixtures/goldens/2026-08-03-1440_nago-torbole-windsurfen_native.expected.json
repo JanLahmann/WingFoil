@@ -32,6 +32,8 @@
     "turnJoinGapS": 2.0,
     "turnPositionalMinSweepS": 3.0,
     "turnPositionalSpikePct": 150.0,
+    "turnPositionalMaxStepDeg": 150.0,
+    "turnRecordingEndS": 30.0,
     "turnClassifyMinAngle": 90.0,
     "turnAxisBeforeDeg": 0.0,
     "turnAxisAfterDeg": 0.0,

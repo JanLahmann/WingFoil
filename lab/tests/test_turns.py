@@ -1737,3 +1737,64 @@ def test_the_strava_copy_of_4_sep_has_no_phantom_tack(tmp_path):
     assert not [t for t in counted if t.kind == TACK]
     assert not [t for t in counted if abs(t.min_t - t0 - 3232) < 10]
     assert len(counted) == 66
+
+
+# --- a turn has to be seen turning (engine 0.28.0, ADR-038, amended 1 Oct 2026) -------
+#
+# Jan has never completed a tack; the positions-only copies of his 60 intervals.icu FITs
+# counted nine. Six swing 166-176 deg in ONE step between two fixes; one more is a burst of
+# positional "speed" inside the sweep and then a standstill.
+
+def _one_step_flip():
+    """A reach, then a 200 deg sweep whose middle step -- a fix thrown 20 m -- swings 170."""
+    return _join(_leg(100.0, 40), ([110.0, 120.0, 290.0, 300.0], [6.0, 6.0, 20.0, 6.0]),
+                 _leg(300.0, 40))
+
+
+def test_a_sweep_that_flips_in_one_step_on_a_positions_only_track_is_not_a_turn():
+    course, speed = _one_step_flip()
+    assert [t.kind for t in _detect(course, speed) if t.counted] == [JIBE]   # class (b)
+    assert [t for t in _detect_c(course, speed) if t.counted] == []
+    off = dataclasses.replace(TurnConfig(), positional_max_step_deg=0.0)
+    assert [t.kind for t in _detect_c(course, speed, off) if t.counted] == [JIBE]
+
+
+def test_a_sweep_made_of_a_burst_and_then_a_standstill_is_not_a_turn():
+    """The speed inside the sweep reaches 170 % of entry, then 20 s standing still."""
+    course, speed = _join(_leg(90.0, 40),
+                          _ramp(90.0, 270.0, 6, [6.0, 6.0, 10.0, 10.0, 6.0, 5.0]),
+                          ([270.0] * 20, [0.3] * 20),
+                          _leg(270.0, 40))
+    assert [t.kind for t in _detect(course, speed) if t.counted] == [JIBE]   # class (b)
+    assert [t for t in _detect_c(course, speed) if t.counted] == []
+    off = dataclasses.replace(TurnConfig(), positional_spike_pct=0.0)
+    assert [t.kind for t in _detect_c(course, speed, off) if t.counted] == [JIBE]
+
+
+def _ends_in_water(tail_speed=0.6):
+    """A jibe that comes off the foil, two slow samples, an 18 s pause in the recording,
+    then two samples at `tail_speed` and the end of the file (Jan's 10 Aug 2025 tack)."""
+    course, speed = _join(_leg(90.0, 40),
+                          _ramp(90.0, 270.0, 7, [6.0, 5.5, 5.0, 4.0, 3.0, 2.5, 2.0]),
+                          ([270.0] * 2, [1.5, 1.5]),
+                          ([270.0] * 2, [tail_speed, tail_speed]))
+    t = np.arange(len(course), dtype=float)
+    t[-2:] += 18.0
+    return course, speed, t
+
+
+def test_a_recording_that_ends_in_the_water_after_a_turn_ends_in_a_fall():
+    course, speed, t = _ends_in_water()
+    ct = _track(course, speed, t=t)
+    off = dataclasses.replace(TurnConfig(), recording_end_s=0.0)
+    (before,) = detect_turns(ct, segment_flights(ct), WIND_N, off)
+    assert before.outcome == TOUCHDOWN
+    (turn,) = detect_turns(ct, segment_flights(ct), WIND_N)
+    assert turn.kind == JIBE and turn.outcome == FELL_IN
+
+
+def test_a_recording_that_ends_while_he_is_still_moving_keeps_the_touchdown():
+    course, speed, t = _ends_in_water(tail_speed=1.5)
+    ct = _track(course, speed, t=t)
+    (turn,) = detect_turns(ct, segment_flights(ct), WIND_N)
+    assert turn.outcome == TOUCHDOWN
