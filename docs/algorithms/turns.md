@@ -889,18 +889,44 @@ the wrong lesson about the two implementations.
   *more* jibes clean than the phone does — the Doppler-only limit in the first group,
   inherited by the stricter metric, and not a second rule.
 
+#### Ported in watch 0.9.20 (1 Oct 2026)
+
+- **The aborted turn** (engine 0.21.0, ADR-028) **with R1–R3** (engine 0.27.0, ADR-037). The
+  tick a sailing run ends below `turnCogSpeedFloor` with the detector idle, `TurnDetector`
+  reads its ring back from the last heading: the widest net change inside `turnMaxDuration`,
+  the main scan's peak-rate, carve and on-foil gates, the angle lowered to
+  `turnAbortMinAngle` (45°). The ordinary outcome window judges it and it **counts only as a
+  fall**; a candidate that recovers or touches down is dropped and the loss is the
+  straight-line end. Named by the first axis crossed in its own sense, else by the axis ahead
+  (`abortKind`, the phone's `classify_aborted`); no axis, a counted `turn`. R2 is the closest
+  heading flown between two flying ticks, R3 the best gain on a tick at 80 % of entry, both
+  asked only for the side the rider did not declare (`windDefaultTurnType`). **R1 is
+  structural on the wrist**: the detector does not scan while a turn's window is open and the
+  ring restarts at its verdict, so the aborted tail of the turn before is either that turn's
+  own fall (window still open) or too short to be a candidate. The turn log marks an aborted
+  record (bit 4) and keeps its flown range and gain beside it (32 records, 7 bytes), so
+  `rebuildWindSplit` names it again and asks R2/R3 again under every new axis; one that fails
+  under the new axis stays a generic turn in `turnCount`, as a finished sweep that becomes a
+  course change does. An aborted turn writes only the `fell` record marker, no kind marker,
+  and is not fed to AutoWind: it never crossed the axis the estimator is learning.
+- **A recording that ends in the water ends in a fall** (engine 0.28.0, `turnRecordingEndS`).
+  `SessionController.finishSave` calls `TurnDetector.finish()` before the session fields are
+  written: a window still open, the rider never recovered, off the foil and below the stop
+  floor at the stop, is resolved as a fall. Nothing buzzes at save.
+- **The early touch** (engine 0.25.0, ADR-035). `_flightEndTick` sets `_endTouched` only
+  while `_clockS - _endStartS <= LOOKAHEAD_S` (12 s), so a slog that brushes the floor later
+  is a glide-out on the wrist as on the phone. Test `aLateBrushOfTheFloorIsAGlideOut`.
+- Tests: `turnAbortedTackThatFellIsCounted`, `turnAbortedLuffShortOfTheWindIsNotATack` (the
+  tester's 19 Sep geometry), `turnAbortedCandidateThatRecoversIsDropped`,
+  `turnAbortedIsRenamedByTheRebuild`, `turnAbortedTailOfTheTurnBeforeIsDropped`,
+  `turnOpenAtSaveInTheWaterIsAFall`. 143/143 on fenix847mm (dev); the release and beta suites
+  on fenix5xplus and fr255 pass too.
+
 #### Not ported yet, and why
 
 Each of these is a rule the watch **could** share. None is a thing a live detector cannot know,
 so each carries a reason and a note on what it would cost, and the phone recompute is what the
 rider sees until then.
-
-- **A recording that ends in the water ends in a fall** (engine 0.28.0, `turnRecordingEndS`).
-  On the phone a turn the rider never recovered from, with the file ending within 30 s and him
-  standing still, is `fell_in`. The watch judges the window live and does not resolve an open
-  one when the activity is stopped. **Not ported** for the same reason as the gap below: a
-  verdict fired from the stop path is a round of its own. The two class (c) rules of ADR-038
-  are not divergences: the watch records its own Doppler and never reads a positions-only track.
 
 - **A gap ends the tail on the phone; it freezes the window on the watch.** `outcome_tail`
   closes at a recording gap and reports *not* not-recovered — the samples the far side of a
@@ -929,22 +955,6 @@ rider sees until then.
   the only reason this is a silence rather than a divergence: move either on the phone and the
   wrist and the page will disagree about which jibes were clean, exactly as they do for every
   other tuned threshold. **Not ported** for that reason — a gate nobody has opened.
-- **No aborted turn** (engine 0.21.0). The watch has no pass for a sweep that ended in the
-  water: its detector only ever opens a candidate that clears `turnMinAngle`, and a fall
-  halfway through a tack therefore still reaches the wrist as nothing at all. **What it should
-  do**, when it is ported: keep the live candidate's sweep when the rotation stops because the
-  *speed* died rather than because the rate fell below `turnContinueRate`, and if its net change
-  clears `turnAbortMinAngle` (45°), let the existing `_resolve` ladder judge it — the watch's
-  submerged-or-stop rung is already the rung that matters here, and its first answer is the
-  fall. Name it by the axis ahead of the last heading in the sweep's own sense (the phone's
-  `classifyAborted`), since the watch's `classifySweep` needs a crossing it will not have; with
-  no axis yet it is a counted `turn`. Until then the wrist under-counts turns and falls on a
-  session with aborted maneuvers in it. Two of the 32 counted turns on the 2026-08-07 golden
-  are aborted, which is the size of it. **The 0.27.0 gates go with it** (ADR-037): R1–R3 only
-  ever remove an aborted turn, so a port that ships the pass without them over-counts tacks
-  exactly as the phone did through 0.26.0. Port R2 as the closest heading flown between two
-  flying ticks, R3 as the best gain on a tick at 80 % of entry, R1 as a check against the last
-  resolved turn's direction and window.
 - **Both-axis sweeps and split sweeps are named the 0.26.0 way on the wrist** (engine 0.27.0,
   R4 and R5, ADR-037). `classifySweep` in `TurnDetector.mc` still names a sweep that crosses
   both axes by the crossing nearest its middle, and nothing joins two sweeps across a gap. On
@@ -958,16 +968,6 @@ rider sees until then.
   towards no tally and breaks no streak, and a fall after one still arrives as an unowned
   flight end. Since engine 0.25.0 that is the phone's rule too (only a counted turn owns a
   flight end, ADR-035), so on ownership the two now agree.
-- **A flight end's touchdown is any sub-floor sample in its 30 s window on the watch; on the
-  phone the first one must come within `turnOutcomeLookahead` (12 s) of the exit** (engine
-  0.25.0, ADR-035). `TurnDetector._flightEndTick` sets `_endTouched` on every tick below
-  `STOP_FLOOR_MPS` until `FLIGHT_END_WINDOW_S`, so a slog that brushes the floor between 12 s
-  and 30 s breaks the wrist's flew-through streak while the phone reads a glide-out and keeps
-  it. **Not ported** in the engine round (no garmin/ source in it). The port is one condition:
-  set `_endTouched` only while `_clockS - _endStartS <= LOOKAHEAD_S`. The watch keeps no
-  flight-end tally, so the streak is the only number that can differ, and only in the watch's
-  stricter direction.
-
 #### Not about the detector
 
 The rate that left the wrist, and the parked data field (ADR-020).
