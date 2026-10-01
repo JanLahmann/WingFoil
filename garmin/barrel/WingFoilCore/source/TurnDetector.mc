@@ -81,6 +81,99 @@ function sweepCrossing(lo as Float, hi as Float, offset as Float, mid as Float) 
     return best;
 }
 
+// ---- THE ABORTED TURN'S NAME, AND ITS TWO WIND QUESTIONS (watch 0.9.20) ----
+//
+// Module scope for the reason `classifySweep` is: the detector asks them when the turn
+// happens and `rebuildWindSplit` asks them again under every new axis, and the two must never
+// drift. The thresholds are the phone's `turnAbortAxisDeg` (R2) and `turnAbortLuffDeg` (R3).
+const ABORT_AXIS_DEG = 30.0;
+const ABORT_LUFF_DEG = 20.0;
+
+function posMod360(x as Float) as Float {
+    return x - 360.0 * Math.floor(x / 360.0);
+}
+
+// The axis the sweep crossed FIRST in its own sense of rotation (engine 0.27.0's
+// `first_crossing`), or KIND_NONE when it crossed neither. No classification floor: an
+// aborted turn's angle says when the rider fell, not what he meant.
+function abortCrossedKind(uIn as Float, uOut as Float, windDeg as Number) as Number {
+    if (windDeg < 0) {
+        return TurnDetector.KIND_NONE;
+    }
+    var twaIn = wrapDeg180(uIn - windDeg.toFloat());
+    var twaOut = twaIn + (uOut - uIn);
+    var m = 0;
+    if (twaOut >= twaIn) {
+        m = Math.ceil(twaIn / 180.0).toNumber();
+        if (m * 180.0 > twaOut) {
+            return TurnDetector.KIND_NONE;
+        }
+    } else {
+        m = Math.floor(twaIn / 180.0).toNumber();
+        if (m * 180.0 < twaOut) {
+            return TurnDetector.KIND_NONE;
+        }
+    }
+    return m % 2 == 0 ? TurnDetector.KIND_TACK : TurnDetector.KIND_JIBE;
+}
+
+// An aborted turn is named by the axis it crossed, or else by the axis its rotation was
+// closing on (`_classify_aborted`): a rider luffing up from a broad reach who goes in short
+// of the wind was tacking. No axis, no name: a generic turn.
+function abortKind(uIn as Float, uOut as Float, windDeg as Number) as Number {
+    if (windDeg < 0) {
+        return TurnDetector.KIND_TURN;
+    }
+    var crossed = abortCrossedKind(uIn, uOut, windDeg);
+    if (crossed != TurnDetector.KIND_NONE) {
+        return crossed;
+    }
+    var twaEnd = wrapDeg180(uIn - windDeg.toFloat()) + (uOut - uIn);
+    var sense = uOut >= uIn ? 1.0 : -1.0;
+    var toHead = posMod360((0.0 - twaEnd) * sense);
+    var toDown = posMod360((180.0 - twaEnd) * sense);
+    return toHead <= toDown ? TurnDetector.KIND_TACK : TurnDetector.KIND_JIBE;
+}
+
+// R2 and R3 (engine 0.27.0, `_abort_reached_axis`). Only an aborted sweep that crossed
+// nothing, named for the side the rider did NOT declare, is asked: did he FLY to within
+// ABORT_AXIS_DEG of that axis, and gain ABORT_LUFF_DEG of heading toward it at speed? `lo`
+// and `hi` are the flown heading range and `gain` the heading gained at speed, both relative
+// to the entry heading, so the question can be asked again under any later axis.
+function abortPasses(kind as Number, uIn as Float, uOut as Float, windDeg as Number,
+        turnType as Number, flown as Boolean, lo as Float, hi as Float,
+        gain as Float) as Boolean {
+    if (kind != TurnDetector.KIND_TACK && kind != TurnDetector.KIND_JIBE) {
+        return true;
+    }
+    if (abortCrossedKind(uIn, uOut, windDeg) != TurnDetector.KIND_NONE) {
+        return true;
+    }
+    var gated = turnType == TURN_TYPE_BALANCED
+        || (turnType == TURN_TYPE_TACKS ? kind == TurnDetector.KIND_JIBE
+                                        : kind == TurnDetector.KIND_TACK);
+    if (!gated) {
+        return true;
+    }
+    if (!flown) {
+        return false;
+    }
+    var offset = kind == TurnDetector.KIND_TACK ? 0.0 : 180.0;
+    var twaIn = wrapDeg180(uIn - windDeg.toFloat());
+    var a = twaIn + lo;
+    var b = twaIn + hi;
+    var closest = 0.0;
+    if (sweepCrossing(a, b, offset, 0.5 * (a + b)) == SWEEP_NO_CROSS) {
+        var da = wrapDeg180(a - offset).abs();
+        var db = wrapDeg180(b - offset).abs();
+        closest = da < db ? da : db;
+    }
+    if (closest > ABORT_AXIS_DEG) {
+        return false;
+    }
+    return gain >= ABORT_LUFF_DEG;
+}
+
 // Live turn detection + outcome classification (docs/algorithms/turns.md "Turn detection &
 // classification" / "Turn outcome"). Watch approximation of lab/src/wingfoil_lab/turns.py:
 // one forward pass, bounded work per tick, zero allocation after initialize().
@@ -196,6 +289,38 @@ class TurnDetector {
     // `evidence.outcome_tail` the turns do — a rider who ventilates on a straight reach and
     // coasts to a stop at 20 s is a swim on both sides now, not a glide-out on the wrist.
     const FLIGHT_END_WINDOW_S = LOOKAHEAD_NOT_RECOVERED_S;
+
+    // ---- THE ABORTED TURN (engine 0.21.0 / 0.27.0, ADR-028 and ADR-037; watch 0.9.20) ----
+    //
+    // Jan, 20 Sep 2026: "an attempted turn that ends in the water is a turn that fell in." The
+    // main scan wants MIN_ANGLE_DEG inside MAX_DURATION_S, and a rider who goes in halfway
+    // round never gets there: the COG is read only above COG_SPEED_FLOOR, so the sailing run
+    // ENDS AT THE FALL and what is left of the maneuver is the part he rode. Every one of Jan's
+    // five wingfoil tack attempts was such a turn, and until 0.9.20 the wrist saw none of
+    // them. So, the tick a sailing run ends below the COG floor with the detector idle, the
+    // ring is read backwards from its last heading, exactly as `_abort_candidates` does on the
+    // phone: the widest net change within MAX_DURATION_S, with the main scan's peak-rate,
+    // carve and on-foil gates and only the angle lowered to ABORT_MIN_ANGLE_DEG. The
+    // candidate is judged by the ordinary outcome window and COUNTED ONLY IF IT FELL IN
+    // (`_merge_aborted`); a candidate that recovered or merely touched down is dropped and the
+    // loss is the straight-line one it would have been. Never successful, never clean.
+    const ABORT_MIN_ANGLE_DEG = 45.0;   // turnAbortMinAngle
+    // R2 (turnAbortAxisDeg, ABORT_AXIS_DEG at module scope): an aborted sweep that crossed NO
+    // axis and is named by the axis it was closing on must have been FLOWN to within 30 deg
+    // of it. R3 (turnAbortLuffDeg / turnAbortLuffSpeedPct): ...and gained 20 deg of heading
+    // toward it while still at this share of the entry speed. A tack starts with a luff on the foil;
+    // a crash that rounds up loses the speed first. R2 and R3 gate only the side the rider did
+    // NOT declare (`defaultTurnType`): a jibes rider's aborted tacks, a tacks rider's jibes.
+    const ABORT_LUFF_SPEED_PCT = 0.80;
+    // R1 (turnAbortAfterTurnS): an aborted candidate turning the same way as the previous
+    // counted turn, starting before that turn's end + max(its outcome window, this), is the
+    // tail of that turn and is dropped.
+    const ABORT_AFTER_TURN_S = 3.0;
+    // What a rebuild needs to re-judge an aborted turn under a NEW axis (R2 and R3 are
+    // questions about the wind): the flown heading range and the gain at speed, both relative
+    // to the entry heading. One record per aborted turn, 7 bytes, beside the turn log.
+    const ABORT_MAX = 32;
+    const ABORT_STRIDE = 7;
 
     // 8 s sweep cap + 3 s entry window + margin, at 1 Hz
     const HIST = 14;
@@ -315,10 +440,35 @@ class TurnDetector {
     var lapTurnCount as Number = 0;
     var lapBestScorePct as Number = 0;
 
+    // The rider's declared habit (AppSettings.windDefaultTurnType), set live by MetricsEngine
+    // the way AutoWind's is: it decides which side of an aborted turn R2 and R3 gate.
+    var defaultTurnType as Number = TURN_TYPE_JIBES;
+    // Aborted turns counted (all of them fell in by definition). Inside `turnCount` and
+    // `fellCount`; published on its own for the tests and the summary.
+    var abortedCount as Number = 0;
+
     hidden var _tArr as Array<Float>;
     hidden var _uArr as Array<Float>;
     hidden var _dArr as Array<Float>;
     hidden var _vArr as Array<Float>;
+    // Was the board flying at each ring sample? R2 asks for the closest FLOWN heading.
+    hidden var _fArr as Array<Boolean>;
+
+    // The open aborted candidate, and the previous counted turn R1 compares it with.
+    hidden var _aborted as Boolean = false;
+    hidden var _abortKind as Number = KIND_NONE;
+    hidden var _abortLo as Float = 0.0;     // flown heading range, relative to the entry
+    hidden var _abortHi as Float = 0.0;
+    hidden var _abortFlown as Boolean = false;
+    hidden var _abortGain as Float = 0.0;   // heading gained in the sweep's sense at speed
+    hidden var _slowSeen as Boolean = false;
+    hidden var _prevEndT as Float = -1000.0;
+    hidden var _prevDir as Number = 0;
+    hidden var _prevWinS as Float = 0.0;
+    // The recording ended in the water (engine 0.28.0, turnRecordingEndS): set by `finish`.
+    hidden var _endFell as Boolean = false;
+    hidden var _abortLog as ByteArray;
+    hidden var _abortN as Number = 0;
     hidden var _idx as Number = 0;        // newest slot
     hidden var _count as Number = 0;
 
@@ -425,12 +575,15 @@ class TurnDetector {
         _uArr = new Array<Float>[HIST];
         _dArr = new Array<Float>[HIST];
         _vArr = new Array<Float>[HIST];
+        _fArr = new Array<Boolean>[HIST];
         for (var i = 0; i < HIST; i++) {
             _tArr[i] = 0.0;
             _uArr[i] = 0.0;
             _dArr[i] = 0.0;
             _vArr[i] = 0.0;
+            _fArr[i] = false;
         }
+        _abortLog = new [ABORT_MAX * ABORT_STRIDE]b;
         // 2 KB, allocated once. A ByteArray and not an Array<Number>: this is the only
         // structure here whose size is a session's length, and four Numbers a turn would be
         // four times the bytes and a boxed read on every rebuild.
@@ -453,6 +606,13 @@ class TurnDetector {
         // state machine is doing, including the next sweep.
         var settled = _quietTick(dt, speedMps, flying, submerged);
 
+        // THE ABORTED TURN: the sailing run ends here, below the COG floor, with nothing being
+        // judged. Before `_unwrap` forgets the ring, ask whether it was still turning.
+        if (state == ST_IDLE && _haveCog && _count >= 2 && speedMps < COG_SPEED_FLOOR) {
+            // On success the state is ST_OUTCOME and `_outcomeTick` below collects this
+            // tick's evidence, so nothing is tracked twice.
+            _abortScan(flying);
+        }
         var u = _unwrap(cogDeg, speedMps);
         var event = EVENT_NONE;
         if (state == ST_IDLE) {
@@ -571,12 +731,13 @@ class TurnDetector {
         return _u;
     }
 
-    hidden function _push(u as Float, speedMps as Float) as Void {
+    hidden function _push(u as Float, speedMps as Float, flying as Boolean) as Void {
         _idx = (_idx + 1) % HIST;
         _tArr[_idx] = _clockS;
         _uArr[_idx] = u;
         _dArr[_idx] = _distM;
         _vArr[_idx] = speedMps;
+        _fArr[_idx] = flying;
         if (_count < HIST) {
             _count++;
         }
@@ -584,7 +745,7 @@ class TurnDetector {
 
     // Backwards scan of the ring: widest qualifying sweep ending at this sample.
     hidden function _scan(u as Float, speedMps as Float, flying as Boolean) as Number {
-        _push(u, speedMps);
+        _push(u, speedMps, flying);
         if (!flying && _clockS - _lastFlyingS > CONTEXT_AFTER_S) {
             return EVENT_NONE;      // turns while swimming don't count (turnContext)
         }
@@ -658,13 +819,210 @@ class TurnDetector {
             k = (k - 1 + HIST) % HIST;
         }
 
+        _resetEvidence();
+        _count = 0;
+        state = ST_SWEEP;
+    }
+
+    hidden function _resetEvidence() as Void {
         _stopRun = 0.0;
         _stopMax = 0.0;
         _lostFoil = false;
         _wet = false;
         _recoverHeld = 0.0;
+        _slowSeen = false;
+        _endFell = false;
+    }
+
+    // ---- the aborted turn ----
+
+    // Read the ring backwards from its LAST heading (the newest slot: the run ends on this
+    // tick, below the COG floor, so nothing newer will come). Opens an outcome window on a
+    // candidate and returns true; the window's verdict decides whether it counts.
+    hidden function _abortScan(flyingNow as Boolean) as Boolean {
+        var j = _idx;
+        var tj = _tArr[j];
+        var uj = _uArr[j];
+        var i = -1;
+        var best = 0.0;
+        var k = j;
+        for (var back = 1; back < _count; back++) {
+            k = (k - 1 + HIST) % HIST;
+            if (tj - _tArr[k] > MAX_DURATION_S) {
+                break;
+            }
+            var n = (uj - _uArr[k]).abs();
+            if (n > best) {
+                best = n;
+                i = k;
+            }
+        }
+        if (i < 0 || best < ABORT_MIN_ANGLE_DEG) {
+            return false;
+        }
+        // the main scan's gates, unchanged: a peak-rate step, the carve, and the foil
+        var peak = 0.0;
+        var onFoil = _fArr[i];
+        k = j;
+        while (k != i) {
+            var p = (k - 1 + HIST) % HIST;
+            var step = _tArr[k] - _tArr[p];
+            if (step > 0.0) {
+                var r = ((_uArr[k] - _uArr[p]) / step).abs();
+                if (r > peak) {
+                    peak = r;
+                }
+            }
+            if (_fArr[k]) {
+                onFoil = true;
+            }
+            k = p;
+        }
+        if (peak < PEAK_RATE_DEG_S) {
+            return false;
+        }
+        if (!onFoil && _tArr[i] - _lastFlyingS > CONTEXT_AFTER_S) {
+            return false;
+        }
+        var arc = _dArr[j] - _dArr[i];
+        if (arc < MIN_ARC_M || arc / (best * DEG2RAD) < MIN_RADIUS_M) {
+            return false;
+        }
+        var ui = _uArr[i];
+        var dir = uj >= ui ? 1 : -1;
+        // R1: the tail of the turn before, turning the same way
+        var tail = _prevWinS > ABORT_AFTER_TURN_S ? _prevWinS : ABORT_AFTER_TURN_S;
+        if (_prevDir == dir && _tArr[i] <= _prevEndT + tail) {
+            return false;
+        }
+        // entry speed, the same max-over-the-entry-window `_openSweep` takes
+        var entry = _vArr[i];
+        var older = _count - 1 - ((j - i + HIST) % HIST);    // valid slots before the entry
+        k = i;
+        for (var back = 0; back < older; back++) {
+            k = (k - 1 + HIST) % HIST;
+            if (_tArr[i] - _tArr[k] > ENTRY_WINDOW_S) {
+                break;
+            }
+            if (_vArr[k] > entry) {
+                entry = _vArr[k];
+            }
+        }
+        // R2/R3 evidence, forward from the entry: the flown heading range and the gain at
+        // speed. A heading is FLOWN when the board flew at it and at the next sample.
+        var lo = 0.0;
+        var hi = 0.0;
+        var flown = false;
+        var gain = 0.0;
+        var minV = _vArr[i];
+        var floor = ABORT_LUFF_SPEED_PCT * entry;
+        k = i;
+        while (true) {
+            var rel = _uArr[k] - ui;
+            if (_vArr[k] < minV) {
+                minV = _vArr[k];
+            }
+            if (_vArr[k] >= floor && dir * rel > gain) {
+                gain = dir * rel;
+            }
+            var nextFlying = k == j ? flyingNow : _fArr[(k + 1) % HIST];
+            if (_fArr[k] && nextFlying) {
+                if (!flown || rel < lo) { lo = rel; }
+                if (!flown || rel > hi) { hi = rel; }
+                flown = true;
+            }
+            if (k == j) {
+                break;
+            }
+            k = (k + 1) % HIST;
+        }
+        var wind = _cfg.windDirection;
+        var kind = abortKind(ui, uj, wind);
+        if (!abortPasses(kind, ui, uj, wind, defaultTurnType, flown, lo, hi, gain)) {
+            return false;   // the course change stays on the map; the fall is a straight one
+        }
+        _startT = _tArr[i];
+        _startU = ui;
+        _endT = tj;
+        _endU = uj;
+        _entrySpeed = entry;
+        _minSpeed = minV;
+        _resetEvidence();
+        _aborted = true;
+        _abortKind = kind;
+        _abortLo = lo;
+        _abortHi = hi;
+        _abortFlown = flown;
+        _abortGain = gain;
+        _endOpen = false;       // the turn owns this loss, not the straight-line channel
         _count = 0;
-        state = ST_SWEEP;
+        state = ST_OUTCOME;
+        return true;
+    }
+
+    // An aborted candidate's verdict. Counted only as a fall; anything else is dropped and
+    // the loss is the straight-line end it would otherwise have been.
+    hidden function _resolveAborted() as Number {
+        _aborted = false;
+        state = ST_IDLE;
+        _count = 0;
+        if (!(_wet || _stopMax > FALL_STOP_S || _endFell)) {
+            if (_slowSeen) {
+                flewStreak = 0;     // a touchdown on a straight line: the strict run ends
+            }
+            return EVENT_NONE;
+        }
+        var kind = _abortKind;
+        lastKind = kind;
+        turnCount++;
+        lapTurnCount++;
+        abortedCount++;
+        fellCount++;
+        if (kind == KIND_TACK) {
+            tackCount++;
+            tackFellCount++;
+        } else if (kind == KIND_JIBE) {
+            jibeCount++;
+            jibeFellCount++;
+        }
+        countEntrySide(_startU);
+        dryStreak = 0;
+        flewStreak = 0;
+        var pct = 0;
+        if (_entrySpeed > 0.0) {
+            pct = (_minSpeed / _entrySpeed * 100.0).toNumber();
+            if (pct > 100) { pct = 100; } else if (pct < 0) { pct = 0; }
+        }
+        lastOutcome = OUTCOME_FELL;
+        lastScorePct = pct;     // reported, never a best: an aborted turn is never successful
+        lastCleanJibe = false;
+        _logTurn(_startU, _endU - _startU, OUTCOME_FELL, false, true);
+        _abortLogAdd(_logN - 1, _abortFlown, _abortLo, _abortHi, _abortGain);
+        _notePrev();
+        return EVENT_FELL;
+    }
+
+    // R1's memory: the counted turn just resolved.
+    hidden function _notePrev() as Void {
+        _prevEndT = _endT;
+        _prevDir = _endU >= _startU ? 1 : -1;
+        _prevWinS = _clockS - _endT;
+    }
+
+    // THE RECORDING ENDS IN THE WATER (engine 0.28.0, `turnRecordingEndS`; watch 0.9.20).
+    // Called once by SessionController before the FIT session fields are written. A turn
+    // window still open — the rider came off the foil, never recovered, and is below the stop
+    // floor as the activity stops — is a fall: the file ends with him in the water. The 10 Aug
+    // 2025 tack read `touchdown` on the phone until 0.28.0 for exactly this reason. Returns the
+    // event so a caller can log it; nothing buzzes at save.
+    function finish() as Number {
+        if (state != ST_OUTCOME) {
+            return EVENT_NONE;
+        }
+        if (_recoverHeld < RECOVER_HOLD_S && _lostFoil && _lastSpeed < STOP_FLOOR_MPS) {
+            _endFell = true;
+        }
+        return _resolve();
     }
 
     // Follow the rotation while it is still turning, so classification sees the whole sweep.
@@ -763,6 +1121,9 @@ class TurnDetector {
         if (speedMps <= _cfg.foilExitMps || submerged) {
             _lostFoil = true;
         }
+        if (speedMps < STOP_FLOOR_MPS) {
+            _slowSeen = true;
+        }
         // both-ends-qualify convention, same clock flight segmentation uses
         if (speedMps < STOP_FLOOR_MPS && _lastSpeed < STOP_FLOOR_MPS) {
             _stopRun += dt;
@@ -805,7 +1166,12 @@ class TurnDetector {
             _endWet = true;
         }
         if (speedMps < STOP_FLOOR_MPS) {
-            _endTouched = true;
+            // THE EARLY TOUCH (engine 0.25.0, ADR-035; watch 0.9.20): a landing counts only
+            // within `turnOutcomeLookahead` of the exit. A slog that brushes the floor 20 s
+            // later is a glide-out on the phone, and now on the wrist too.
+            if (_clockS - _endStartS <= LOOKAHEAD_S) {
+                _endTouched = true;
+            }
             // both-ends-qualify, the same clock flight segmentation and `_track` use
             if (_lastSpeed < STOP_FLOOR_MPS) {
                 _endStopRun += dt;
@@ -843,8 +1209,11 @@ class TurnDetector {
     }
 
     hidden function _resolve() as Number {
+        if (_aborted) {
+            return _resolveAborted();
+        }
         var outcome = OUTCOME_FLEW;
-        if (_wet || _stopMax > FALL_STOP_S) {
+        if (_wet || _stopMax > FALL_STOP_S || _endFell) {
             outcome = OUTCOME_FELL;
             fellCount++;
             // the same split the flew branch takes, off the same `lastKind` (0.9.18)
@@ -912,7 +1281,8 @@ class TurnDetector {
         // clean-eligible bit as false and `_quietTick` sets it when the tail runs out — the
         // record is the newest one until the next turn resolves, and the watch does not
         // detect during an outcome window, so "the newest record" is unambiguous.
-        _logTurn(lastEntryU, lastNetDeg, outcome, false);
+        _logTurn(lastEntryU, lastNetDeg, outcome, false, false);
+        _notePrev();
         if (pct >= SUCCESS_PCT && _minSpeed > _cfg.foilExitMps) {
             successCount++;
             // ...and a successful turn that also FLEW THROUGH is clean-eligible (engine
@@ -964,7 +1334,7 @@ class TurnDetector {
     // are both known for the first time. `clean` is CLEAN-ELIGIBLE and not "this was a clean
     // jibe": see the log's header for why the kind is deliberately not baked in.
     hidden function _logTurn(entryU as Float, netDeg as Float, outcome as Number,
-            clean as Boolean) as Void {
+            clean as Boolean, aborted as Boolean) as Void {
         if (_logN >= TURN_LOG_MAX) {
             _dropOldest();
         }
@@ -980,7 +1350,8 @@ class TurnDetector {
         var enc = net + 32768;
         var at = _logN * TURN_LOG_STRIDE;
         _log[at] = entry & 0xFF;
-        _log[at + 1] = ((entry >> 8) & 0x01) | ((outcome & 0x03) << 1) | (clean ? 0x08 : 0);
+        _log[at + 1] = ((entry >> 8) & 0x01) | ((outcome & 0x03) << 1) | (clean ? 0x08 : 0)
+            | (aborted ? 0x10 : 0);
         _log[at + 2] = (enc >> 8) & 0xFF;
         _log[at + 3] = enc & 0xFF;
         _logN++;
@@ -994,6 +1365,97 @@ class TurnDetector {
             _log[i - TURN_LOG_STRIDE] = _log[i];
         }
         _logN = TURN_LOG_MAX - 1;
+        // the aborted records point at log indices: record 0 is gone, the rest move down
+        var w = 0;
+        for (var r = 0; r < _abortN; r++) {
+            var idx = _abortIdx(r);
+            if (idx == 0) {
+                continue;
+            }
+            for (var b = 0; b < ABORT_STRIDE; b++) {
+                _abortLog[w * ABORT_STRIDE + b] = _abortLog[r * ABORT_STRIDE + b];
+            }
+            _abortLog[w * ABORT_STRIDE] = ((idx - 1) >> 8) & 0xFF;
+            _abortLog[w * ABORT_STRIDE + 1] = (idx - 1) & 0xFF;
+            w++;
+        }
+        _abortN = w;
+    }
+
+    // ---- the aborted records (watch 0.9.20) ----
+    //
+    //   b0-1 log index, big-endian
+    //   b2-3 flown range low, degrees relative to the entry, +32768
+    //   b4-5 flown range high, the same
+    //   b6   bit 7 = a heading was flown at all; bits 0-6 = gain at speed, 0..127 degrees
+    //
+    // The cap drops the OLDEST aborted record; its turn then keeps the name its sweep gives
+    // under any axis, unasked — after 32 aborted turns in one session that is the least of
+    // anyone's worries.
+    hidden function _abortLogAdd(logIdx as Number, flown as Boolean, lo as Float, hi as Float,
+            gain as Float) as Void {
+        if (_abortN >= ABORT_MAX) {
+            for (var i = ABORT_STRIDE; i < ABORT_MAX * ABORT_STRIDE; i++) {
+                _abortLog[i - ABORT_STRIDE] = _abortLog[i];
+            }
+            _abortN = ABORT_MAX - 1;
+        }
+        var at = _abortN * ABORT_STRIDE;
+        var l = _clamp16(lo) + 32768;
+        var h = _clamp16(hi) + 32768;
+        var g = gain.toNumber();
+        if (g < 0) { g = 0; } else if (g > 127) { g = 127; }
+        _abortLog[at] = (logIdx >> 8) & 0xFF;
+        _abortLog[at + 1] = logIdx & 0xFF;
+        _abortLog[at + 2] = (l >> 8) & 0xFF;
+        _abortLog[at + 3] = l & 0xFF;
+        _abortLog[at + 4] = (h >> 8) & 0xFF;
+        _abortLog[at + 5] = h & 0xFF;
+        _abortLog[at + 6] = (flown ? 0x80 : 0) | g;
+        _abortN++;
+    }
+
+    hidden function _clamp16(v as Float) as Number {
+        var n = v.toNumber();
+        if (n < -32768) { return -32768; }
+        if (n > 32767) { return 32767; }
+        return n;
+    }
+
+    hidden function _abortIdx(r as Number) as Number {
+        var at = r * ABORT_STRIDE;
+        return (_abortLog[at] << 8) | _abortLog[at + 1];
+    }
+
+    function logAborted(i as Number) as Boolean {
+        return (_log[i * TURN_LOG_STRIDE + 1] & 0x10) != 0;
+    }
+
+    // Record `i`'s kind under `wind`: the ordinary classifier for a finished sweep; for an
+    // aborted one its own name, gated by R2/R3 against THIS axis (KIND_REJECT when it fails —
+    // a course change under this axis, which stays a generic turn in `turnCount`).
+    hidden function _kindAt(i as Number, wind as Number) as Number {
+        var uIn = logEntryDeg(i);
+        var uOut = uIn + logNetDeg(i);
+        if (!logAborted(i)) {
+            return classifySweep(uIn, uOut, wind);
+        }
+        var kind = abortKind(uIn, uOut, wind);
+        for (var r = 0; r < _abortN; r++) {
+            if (_abortIdx(r) != i) {
+                continue;
+            }
+            var at = r * ABORT_STRIDE;
+            var lo = (((_abortLog[at + 2] << 8) | _abortLog[at + 3]) - 32768).toFloat();
+            var hi = (((_abortLog[at + 4] << 8) | _abortLog[at + 5]) - 32768).toFloat();
+            var flown = (_abortLog[at + 6] & 0x80) != 0;
+            var gain = (_abortLog[at + 6] & 0x7F).toFloat();
+            if (!abortPasses(kind, uIn, uOut, wind, defaultTurnType, flown, lo, hi, gain)) {
+                return KIND_REJECT;
+            }
+            break;
+        }
+        return kind;
     }
 
     // Record `i`'s entry bearing, as the float `classifySweep` wants.
@@ -1024,7 +1486,7 @@ class TurnDetector {
     // Add record `i`'s contribution to the frozen base, typed against `wind`.
     hidden function _foldIntoBase(i as Number, wind as Number) as Void {
         var uIn = logEntryDeg(i);
-        var kind = classifySweep(uIn, uIn + logNetDeg(i), wind);
+        var kind = _kindAt(i, wind);
         var o = logOutcome(i);
         if (kind == KIND_TACK) {
             _baseTack++;
@@ -1080,7 +1542,7 @@ class TurnDetector {
         starboardEntryCount = _baseStbd;
         for (var i = 0; i < _logN; i++) {
             var uIn = logEntryDeg(i);
-            var kind = classifySweep(uIn, uIn + logNetDeg(i), wind);
+            var kind = _kindAt(i, wind);
             if (kind != KIND_TACK && kind != KIND_JIBE) {
                 continue;       // a course change under this axis: it stays a generic turn
             }

@@ -367,6 +367,10 @@ class SessionController {
             _session.stop();
         }
         _stopAccel();
+        // A turn still being judged as the activity stops, with the rider never recovered
+        // and below the stop floor, ended in the water (engine 0.28.0, watch 0.9.20): resolve
+        // it now so the session fields count the fall.
+        engine.turns.finish();
         if (_fit != null) {
             _fit.updateSession(engine.detector, engine.records, engine.timerS, engine.turns,
                 engine.pump);

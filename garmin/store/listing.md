@@ -99,9 +99,11 @@ New to it? cleanjibe.org/start walks you through a 20-minute test on land.
 
 ### What's New (live text)
 
-**0.9.19 uploaded 23 September 2026** (public listing, pending approval, Internal 26). The live field holds three paragraphs (0.9.19, 0.9.18, 0.9.17 — the 0.9.18 paragraph is the release-notes entry's lines joined, then the two below). Text of 0.9.17 as submitted on 21 September:
+**0.9.20 packaged 1 October 2026** (the paragraph on top; upload pending). **0.9.19 uploaded 23 September 2026** (public listing, pending approval, Internal 26). The live field holds three paragraphs (0.9.19, 0.9.18, 0.9.17 — the 0.9.18 paragraph is the release-notes entry's lines joined, then the two below). Text of 0.9.17 as submitted on 21 September:
 
 ```
+0.9.20: A tack you fall out of counts. A turn you go in halfway through now shows on your wrist as a fall, named a tack or a jibe by the same rules as the phone. A session that ends with you in the water ends with a fall, and a late brush of the water after a flight no longer breaks your flew streak.
+
 0.9.17: Tacks and jibes, counted apart. A Tacks and jibes page after Turns: each count, with how many of them flew through. In the large-text set too, one screen each. And the dunk read right: a watch that settles at a new height after a swim no longer reads the rest of the session as falls.
 
 0.9.16: Large text. Settings → Data screens → Large text gives five screens with one big number and its word: speed, foil share, turns, time, best 2 s. The page editor leaves the store build; the standard screens stay as they were. After a save, the flights page is the same foil table you saw while riding. The live verdict is called Speed kept now, the word the phone uses for the same number.
@@ -150,13 +152,9 @@ Read against the 0.9.19 UI (`Read`, frame by frame — no simulator run, no new 
 
 ### Next watch build
 
-- **Port the phone's early-touch rule (engine 0.25.0, ADR-035).** The watch currently calls
-  any sub-floor sample anywhere in a flight end's 30 s window a touchdown; the phone only
-  counts one landing within `turnOutcomeLookahead` (12 s) of the exit, so a slog that brushes
-  the floor between 12 s and 30 s reads as a glide-out on the phone and a broken flew-through
-  streak on the wrist (`docs/algorithms/turns.md`, "Not ported yet"). The port is one
-  condition in `TurnDetector._flightEndTick`: set `_endTouched` only while `_clockS -
-  _endStartS <= LOOKAHEAD_S`. Not done here — a line for the next watch build, not code.
+Nothing queued. 0.9.20 (1 Oct 2026) ported the aborted turn with R1–R3, the fall at the end of
+a recording and the early-touch rule (`docs/algorithms/turns.md`, "Ported in watch 0.9.20");
+the divergences left are listed under "Not ported yet".
 
 ---
 
