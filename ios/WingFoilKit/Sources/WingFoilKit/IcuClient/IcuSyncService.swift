@@ -65,11 +65,15 @@ public struct IcuSyncService: Sendable {
 
         // Ids held by the recording they name; a Strava copy carrying one is fetched again
         // so the FIT can replace it (`SessionIngestor.icuActivityIdsHeld`, F-6).
-        let known = try await ingestor.icuActivityIdsHeld()
+        let held = try await ingestor.icuActivityIdsHeld()
+        // …and an id whose upload was found positions-only at the source, while intervals.icu
+        // reports the same upload: fetched once, not on every pull (Jan, 1 Oct 2026).
+        let stamped = try await ingestor.icuActivityIds()
+        let checked = try await ingestor.icuPositionsOnlyAtSource()
         // Read once for the whole run: the matcher is pure and the list is a handful of rows.
         let tombstones = try await ingestor.library.tombstones()
         for (index, activity) in watersports.enumerated() {
-            if known.contains(activity.id) {
+            if Self.isKnown(activity, held: held, stamped: stamped, checked: checked) {
                 summary.alreadyKnown += 1
                 continue
             }
@@ -87,8 +91,11 @@ public struct IcuSyncService: Sendable {
             progress?("Downloading \(index + 1)/\(watersports.count): \(label)")
             do {
                 let fit = try await client.originalRecording(activityID: activity.id)
-                switch try await ingestor.ingest(fitData: fit, filename: Self.filename(for: activity),
-                                                 source: .icu, icuActivityId: activity.id) {
+                let outcome = try await ingestor.ingest(fitData: fit,
+                                                        filename: Self.filename(for: activity),
+                                                        source: .icu, icuActivityId: activity.id)
+                try? await ingestor.noteIcuSource(activity, outcome: outcome)
+                switch outcome {
                 case .imported: summary.imported += 1
                 case .duplicate: summary.duplicates += 1
                 case .replaced(_, let weaker): summary.replaced.append(weaker)
@@ -132,9 +139,22 @@ public struct IcuSyncService: Sendable {
             return .skipped(reason: "previously deleted")
         }
         let fit = try await client.originalRecording(activityID: activity.id)
-        return try await ingestor.ingest(fitData: fit, filename: Self.filename(for: activity),
-                                         source: .icu, icuActivityId: activity.id,
-                                         utcOffsetS: activity.utcOffsetS)
+        let outcome = try await ingestor.ingest(fitData: fit, filename: Self.filename(for: activity),
+                                                source: .icu, icuActivityId: activity.id,
+                                                utcOffsetS: activity.utcOffsetS)
+        try? await ingestor.noteIcuSource(activity, outcome: outcome)
+        return outcome
+    }
+
+    /// **Whether the sync may skip `activity` before the download.** Held by the recording its
+    /// id names (`SessionIngestor.icuActivityIdsHeld`), or stamped on a row and found
+    /// positions-only at the source with the same fingerprint intervals.icu reports now
+    /// (`SessionIngestor.icuPositionsOnlyAtSource`). The second half needs the stamp: a row
+    /// deleted since, or a library restored without it, is not skipped on an old memory.
+    static func isKnown(_ activity: IcuActivity, held: Set<String>, stamped: Set<String>,
+                        checked: [String: String]) -> Bool {
+        if held.contains(activity.id) { return true }
+        return stamped.contains(activity.id) && checked[activity.id] == activity.sourceFingerprint
     }
 
     /// Default window: two years back. A personal library is small, so a full re-list is

@@ -243,8 +243,28 @@ happen. Now an id held by a positions-only row whose recording is not intervals.
 archived name is not the sync's `<id>_<name>_icu.fit`) does not count as held: the next pull
 downloads the FIT and it replaces the row in place, with the rider's edits; the pull after that
 downloads nothing. A row whose recording *is* intervals.icu's, with or without speed, stays
-skipped (`IcuAfterStravaTests`). The background poller is unchanged: it already files the
-afternoon as held, and the manual pull heals it.
+skipped (`IcuAfterStravaTests`).
+
+**The background poller heals too** (Jan, 1 Oct 2026). A wake lists its window
+(`NewActivityWatch.windowStart`, four days at least, ninety at most) and, beside the new
+sessions it announces, fetches the FIT of every afternoon the library holds only as a
+positions-only copy: the row carrying the activity's id, or, when none does, every row
+matching its start as the dedupe key matches it, all of them class c and none intervals.icu's
+own recording. A tombstone matching it is never such a copy, so a deleted session is never
+fetched. Newest first, at most three a wake (`NewActivityWatch.heals`, `healLimit`); nothing
+is announced, because the session is not new, and the FIT replaces the row in place as above.
+An afternoon older than the window heals on the next manual pull.
+
+**A positions-only upload is fetched once** (Jan, 1 Oct 2026). When the file behind the
+intervals.icu id is itself positions-only (a GPX, a FIT without Doppler) it cannot replace
+the copy: it lands as a duplicate on the class-c row and stamps its id there. The outcome is
+remembered per id, with the activity's fingerprint as intervals.icu lists it (`file_type` and
+`icu_sync_date`, `IcuActivity.sourceFingerprint`), in the GRDB v20 table
+`icu_positions_only_source`. The manual pull and the poller skip such an id while a row still
+carries it and the fingerprint is unchanged; when it moves (the rider replaced the upload on
+intervals.icu) the file is fetched once more, and a FIT with speed then heals the row. Any
+other outcome of a fetch clears the id. A library restored without the stamp, or a row
+deleted since, is not skipped on the old memory.
 
 The other takeovers are unchanged: a provisional card gives way to its FIT, and a row the
 direct stream brought in alone gives way to the FIT of the same afternoon (ADR-013). A Garmin

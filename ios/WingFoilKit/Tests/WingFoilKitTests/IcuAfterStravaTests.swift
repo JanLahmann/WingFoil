@@ -20,25 +20,35 @@ import Testing
 struct IcuAfterStravaTests {
 
     /// Serves one activity list and the FIT behind it, and counts the downloads.
+    /// The activity and its file can change between pulls, as an upload replaced on
+    /// intervals.icu does.
     final class OneAfternoon: IcuTransport, @unchecked Sendable {
-        let list: Data
-        let fit: Data
         private let lock = NSLock()
+        private var _list: Data
+        private var _fit: Data
         private var _downloads = 0
         var downloads: Int { lock.withLock { _downloads } }
 
         init(activity: IcuActivity, fit: Data) throws {
-            list = try JSONEncoder().encode([activity])
-            self.fit = fit
+            _list = try JSONEncoder().encode([activity])
+            _fit = fit
+        }
+
+        /// What intervals.icu lists and serves from the next request on.
+        func replace(activity: IcuActivity, fit: Data) throws {
+            let list = try JSONEncoder().encode([activity])
+            lock.withLock { _list = list; _fit = fit }
         }
 
         func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
             let url = request.url!
             let ok = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil,
                                      headerFields: nil)!
-            if url.path.hasSuffix("/activities") { return (list, ok) }
-            lock.withLock { _downloads += 1 }
-            return (fit, ok)
+            if url.path.hasSuffix("/activities") { return (lock.withLock { _list }, ok) }
+            return lock.withLock {
+                _downloads += 1
+                return (_fit, ok)
+            }
         }
     }
 
@@ -178,5 +188,129 @@ struct IcuAfterStravaTests {
         let summary = try await sync(ingestor, transport)
         #expect(summary.alreadyKnown == 1)
         #expect(transport.downloads == 0)
+    }
+
+    // MARK: - The background poller heals too, and a positions-only source is asked once
+
+    private func service(_ ingestor: SessionIngestor, _ transport: OneAfternoon) -> IcuSyncService {
+        IcuSyncService(client: IcuClient(apiKey: "k", transport: transport), ingestor: ingestor)
+    }
+
+    /// What the poller would heal on this wake, asked exactly as `ActivityNotifier` asks it.
+    private func backgroundHeals(_ ingestor: SessionIngestor, _ activity: IcuActivity) async throws
+            -> [String] {
+        let library = try await ingestor.allSessions().map(NewActivityWatch.KnownSession.init)
+        let checked = try await ingestor.icuPositionsOnlyAtSource()
+        return NewActivityWatch.heals(activities: [activity], library: library,
+                                      checked: checked).map(\.id)
+    }
+
+    /// **The background poll heals the stamped Strava row** (Jan, 1 Oct 2026: "yes"). The
+    /// poller does not announce the afternoon — the library has it — but it fetches the FIT
+    /// and the FIT replaces the row in place, the rider's name kept. The next wake fetches
+    /// nothing.
+    @Test func theBackgroundPollHealsTheStampedStravaRow() async throws {
+        let (ingestor, root) = try makeIngestor()
+        defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
+        let (_, fit, copy) = try StravaImportTests.thirteenJune()
+        let strava = try await importStrava(ingestor, copy)
+        _ = try await ingestor.note(strava, source: .icu, icuActivityId: Self.icuID)
+        try await ingestor.library.renameSession(id: strava.id, to: "Van day")
+        let activity = try Self.activity(for: fit)
+
+        let library = try await ingestor.allSessions().map(NewActivityWatch.KnownSession.init)
+        let decision = NewActivityWatch.evaluate(
+            activities: [activity], library: library,
+            mark: NewActivityMark(lastStartDate: Date(), announcedIds: []))
+        #expect(decision.notices.isEmpty, "not new: the library holds the afternoon")
+        #expect(try await backgroundHeals(ingestor, activity) == [Self.icuID])
+
+        let transport = try OneAfternoon(activity: activity, fit: fit)
+        guard case .replaced(let row, _) = try await service(ingestor, transport)
+            .fetchOne(activity) else {
+            Issue.record("expected the FIT to replace the Strava copy")
+            return
+        }
+        #expect(row.id == strava.id)
+        try await expectTheFit(ingestor, id: strava.id)
+        #expect(try await ingestor.session(id: strava.id)?.customTitle == "Van day")
+        #expect(try await backgroundHeals(ingestor, activity).isEmpty)
+    }
+
+    /// A Strava copy that never met the FIT carries no id; the poller matches it by its
+    /// start, as `isInLibrary` does, and heals it the same way.
+    @Test func theBackgroundPollHealsAnUnstampedStravaCopy() async throws {
+        let (ingestor, root) = try makeIngestor()
+        defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
+        let (_, fit, copy) = try StravaImportTests.thirteenJune()
+        let strava = try await importStrava(ingestor, copy)
+        #expect(strava.icuActivityId == nil)
+        let activity = try Self.activity(for: fit)
+        #expect(try await backgroundHeals(ingestor, activity) == [Self.icuID])
+
+        let transport = try OneAfternoon(activity: activity, fit: fit)
+        guard case .replaced = try await service(ingestor, transport).fetchOne(activity) else {
+            Issue.record("expected the FIT to replace the Strava copy")
+            return
+        }
+        try await expectTheFit(ingestor, id: strava.id)
+        #expect(try await backgroundHeals(ingestor, activity).isEmpty)
+    }
+
+    /// **A positions-only file at intervals.icu is fetched once** (Jan, 1 Oct 2026: "no, we
+    /// should avoid that"). The upload behind the activity is itself a GPX: it cannot replace
+    /// the Strava copy, so the first pull remembers the outcome and no pull after it, manual
+    /// or background, downloads it again.
+    @Test func aPositionsOnlyIcuFileIsFetchedOnceAcrossPulls() async throws {
+        let (ingestor, root) = try makeIngestor()
+        defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
+        let (_, fit, copy) = try StravaImportTests.thirteenJune()
+        let strava = try await importStrava(ingestor, copy)
+        _ = try await ingestor.note(strava, source: .icu, icuActivityId: Self.icuID)
+        var activity = try Self.activity(for: fit)
+        activity.fileType = "gpx"
+        activity.icuSyncDate = "2026-06-13T18:40:00Z"
+        let transport = try OneAfternoon(activity: activity, fit: copy.gpx)
+
+        let first = try await sync(ingestor, transport)
+        #expect(first.duplicates == 1 && first.replaced.isEmpty)
+        #expect(transport.downloads == 1)
+        for _ in 0..<3 {
+            let again = try await sync(ingestor, transport)
+            #expect(again.alreadyKnown == 1)
+        }
+        #expect(try await backgroundHeals(ingestor, activity).isEmpty)
+        #expect(transport.downloads == 1)
+        let row = try #require(try await ingestor.allSessions().first)
+        #expect(row.id == strava.id && row.sourceClass == "c")
+    }
+
+    /// …and checked again once intervals.icu says the activity changed: the rider replaced
+    /// the GPX with the watch's FIT, the activity's file type and sync date move, and the
+    /// next pull fetches it and heals the row.
+    @Test func anIcuActivityUpdatedLaterIsCheckedAgain() async throws {
+        let (ingestor, root) = try makeIngestor()
+        defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
+        let (_, fit, copy) = try StravaImportTests.thirteenJune()
+        let strava = try await importStrava(ingestor, copy)
+        _ = try await ingestor.note(strava, source: .icu, icuActivityId: Self.icuID)
+        var activity = try Self.activity(for: fit)
+        activity.fileType = "gpx"
+        activity.icuSyncDate = "2026-06-13T18:40:00Z"
+        let transport = try OneAfternoon(activity: activity, fit: copy.gpx)
+        _ = try await sync(ingestor, transport)
+        #expect(transport.downloads == 1)
+
+        activity.fileType = "fit"
+        activity.icuSyncDate = "2026-06-14T09:12:00Z"
+        try transport.replace(activity: activity, fit: fit)
+        #expect(try await backgroundHeals(ingestor, activity) == [Self.icuID])
+        let healed = try await sync(ingestor, transport)
+        #expect(healed.replaced.map(\.id) == [strava.id])
+        #expect(transport.downloads == 2)
+        try await expectTheFit(ingestor, id: strava.id)
+
+        _ = try await sync(ingestor, transport)
+        #expect(transport.downloads == 2)
     }
 }

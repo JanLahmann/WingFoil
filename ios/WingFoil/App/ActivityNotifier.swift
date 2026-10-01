@@ -141,8 +141,8 @@ final class ActivityNotifier: NSObject {
         let mark = Self.loadMark()
         let now = Date()
 
-        guard let (decision, activities) = await list(key: key, mark: mark, now: now,
-                                                      ingestor: ingestor) else {
+        guard let (decision, activities, heals) = await list(key: key, mark: mark, now: now,
+                                                             ingestor: ingestor) else {
             Usage.failed(.icuBackground, reason: "intervals.icu did not answer")
             return false
         }
@@ -151,6 +151,12 @@ final class ActivityNotifier: NSObject {
         store.lastCheckAt = Date()
         for notice in decision.notices { await post(notice) }
         Self.save(decision.mark)
+        // An afternoon the library holds only as a Strava copy or a GPX: the FIT behind it
+        // replaces the row in place, the rider's edits kept (F-6, Jan 1 Oct 2026). Not
+        // announced — the session is not new — and after the notices, which are.
+        if await heal(heals, key: key, ingestor: ingestor) > 0 {
+            UserDefaults.standard.set(true, forKey: Self.pendingImportKey)
+        }
         guard !decision.notices.isEmpty, !Task.isCancelled else { return true }
 
         // Best effort from here on. Whatever lands is a session already analysed by the
@@ -175,7 +181,7 @@ final class ActivityNotifier: NSObject {
     /// the expiration handler's cancellation reaches it.
     private nonisolated func list(key: String, mark: NewActivityMark, now: Date,
                                   ingestor: SessionIngestor)
-    async -> (NewActivityWatch.Decision, [IcuActivity])? {
+    async -> (NewActivityWatch.Decision, [IcuActivity], [IcuActivity])? {
         let client = IcuClient(apiKey: key)
         do {
             let activities = try await client.activities(
@@ -189,7 +195,10 @@ final class ActivityNotifier: NSObject {
             library += try await ingestor.library.tombstones().map(\.asKnownSession)
             let decision = NewActivityWatch.evaluate(activities: activities, library: library,
                                                      mark: mark, now: now)
-            return (decision, activities)
+            let heals = NewActivityWatch.heals(
+                activities: activities, library: library,
+                checked: try await ingestor.icuPositionsOnlyAtSource())
+            return (decision, activities, heals)
         } catch {
             return nil
         }
@@ -211,6 +220,22 @@ final class ActivityNotifier: NSObject {
             }
         }
         return imported
+    }
+
+    /// Fetches the FIT behind each positions-only copy `NewActivityWatch.heals` named,
+    /// newest first, stopping the moment iOS takes the time back. Returns how many rows the
+    /// FIT replaced; an upload that is itself positions-only is remembered by the fetch and
+    /// not asked for again (`SessionIngestor.icuPositionsOnlyAtSource`).
+    private nonisolated func heal(_ activities: [IcuActivity], key: String,
+                                  ingestor: SessionIngestor) async -> Int {
+        guard !activities.isEmpty else { return 0 }
+        let service = IcuSyncService(client: IcuClient(apiKey: key), ingestor: ingestor)
+        var replaced = 0
+        for activity in activities {
+            guard !Task.isCancelled else { break }
+            if case .replaced? = try? await service.fetchOne(activity) { replaced += 1 }
+        }
+        return replaced
     }
 
     private func post(_ notice: NewActivityNotice) async {

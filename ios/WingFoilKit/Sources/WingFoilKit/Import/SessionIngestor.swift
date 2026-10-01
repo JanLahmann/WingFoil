@@ -824,6 +824,48 @@ public struct SessionIngestor: Sendable {
         return held
     }
 
+    /// **The intervals.icu uploads found positions-only at the source**, by id, each with the
+    /// activity's `sourceFingerprint` as it was when its file was fetched (GRDB v20, Jan
+    /// 1 Oct 2026). The sync skips such an id while the fingerprint is unchanged and while a
+    /// row still holds it.
+    public func icuPositionsOnlyAtSource() async throws -> [String: String] {
+        try await database.writer.read { db in
+            var out: [String: String] = [:]
+            for row in try Row.fetchAll(db, sql: """
+                SELECT icuActivityId, fingerprint FROM icu_positions_only_source
+                """) {
+                out[row["icuActivityId"]] = row["fingerprint"]
+            }
+            return out
+        }
+    }
+
+    /// Writes down what fetching `activity`'s file came to: a `.duplicate` that left the id
+    /// on a positions-only row not intervals.icu's own is the upload that cannot heal it, and
+    /// is remembered against the activity's fingerprint; any other outcome forgets the id.
+    func noteIcuSource(_ activity: IcuActivity, outcome: IngestOutcome) async throws {
+        let positionsOnly: Bool
+        if case .duplicate(let row) = outcome {
+            positionsOnly = row.sourceClass == "c"
+                && !IcuSyncService.isOwnFilename(row.originalFilename, activityID: activity.id)
+        } else {
+            positionsOnly = false
+        }
+        let fingerprint = activity.sourceFingerprint
+        try await database.writer.write { db in
+            if positionsOnly {
+                try db.execute(sql: """
+                    INSERT OR REPLACE INTO icu_positions_only_source
+                        (icuActivityId, fingerprint, checkedAt) VALUES (?, ?, ?)
+                    """, arguments: [activity.id, fingerprint, Date()])
+            } else {
+                try db.execute(sql: """
+                    DELETE FROM icu_positions_only_source WHERE icuActivityId = ?
+                    """, arguments: [activity.id])
+            }
+        }
+    }
+
     /// Removes a session and remembers that it was removed.
     ///
     /// **The tombstone is the point** (`SessionTombstoneRow`). Without it the next
