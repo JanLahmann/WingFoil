@@ -210,7 +210,7 @@ Everything else in the backlog is code. These are not.
    Strava offers no PKCE. He is the one who can rotate it in the Strava dashboard, watch the
    athlete cap for abuse, and decide whether that is acceptable — it probably is, at this
    size, once it is written down rather than assumed.
-3. **Turn on the repository settings that code cannot** — branch protection on `main` (the
+3. **Turn on the repository settings that code cannot** (all three done by 1 Oct 2026) — branch protection on `main` (the
    engineering audit already notes it is unprotected), the Dependabot config if he wants the
    PRs (F-10), and a `SECURITY.md` with a contact address, because a public repo with no
    reporting route gets its bugs reported in public.
