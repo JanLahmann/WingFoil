@@ -267,8 +267,12 @@ public enum AnalysisEngine {
     /// Jan's 4 Sep 07:58 session through Strava showed a tack that flew through where his
     /// FIT has none: a fix-less record Strava filled, then a fix metres away. On class (c) a
     /// sweep shorter than `turnPositionalMinSweepS` is not a turn, and a recovery reaching
-    /// `turnPositionalSpikePct` of entry and then standing still is set aside. Two config
-    /// keys; no committed golden moves beyond them.
+    /// `turnPositionalSpikePct` of entry and then standing still is set aside. The same day,
+    /// after Jan said he has never completed a tack: on class (c) a sweep with one step of
+    /// `turnPositionalMaxStepDeg` or more, or whose own speed spikes before a standstill, is
+    /// not a turn; and on every class a turn after which the recording ends within
+    /// `turnRecordingEndS`, the rider stopped and never recovered, fell in. Four config keys;
+    /// no committed golden moves beyond them.
     public static let version = "0.28.0"
 }
 
@@ -405,6 +409,8 @@ public struct AnalysisConfig: Sendable, Codable, Equatable {
     /// a stored `analysis.json` from before them still decodes; such a row re-derives.
     public var turnPositionalMinSweepS: Double?
     public var turnPositionalSpikePct: Double?
+    public var turnPositionalMaxStepDeg: Double?
+    public var turnRecordingEndS: Double?
     /// The classification floor (engine 0.13.0). Optional only so a stored `analysis.json`
     /// from 0.12.0 still decodes; such a row re-derives on its version.
     public var turnClassifyMinAngle: Double?
@@ -500,6 +506,8 @@ public struct AnalysisConfig: Sendable, Codable, Equatable {
         turnJoinGapS = turn.joinGapS
         turnPositionalMinSweepS = turn.positionalMinSweepS
         turnPositionalSpikePct = turn.positionalSpikePct
+        turnPositionalMaxStepDeg = turn.positionalMaxStepDeg
+        turnRecordingEndS = turn.recordingEndS
         turnClassifyMinAngle = turn.classifyMinAngleDeg
         turnAxisBeforeDeg = turn.axisBeforeDeg
         turnAxisAfterDeg = turn.axisAfterDeg

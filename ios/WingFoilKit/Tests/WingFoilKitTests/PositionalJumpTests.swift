@@ -17,30 +17,39 @@ import Testing
 
     /// A `CleanTrack` sailed along the given per-second course at the given speeds (the Swift
     /// twin of the lab's `_track`), read as positions-only when asked.
-    private func track(course: [Double], speed: [Double], positionsOnly: Bool) -> CleanTrack {
+    private func track(course: [Double], speed: [Double], positionsOnly: Bool,
+                       t times: [Double]? = nil) -> CleanTrack {
         var out = CleanTrack()
         var x = 0.0, y = 0.0, dist = 0.0
+        let ts = times ?? course.indices.map(Double.init)
+        var cuts: [Int] = [0]
         for (i, deg) in course.enumerated() {
             let v = speed[i]
-            out.samples.append(CleanSample(t: Double(i), dt: i == 0 ? 0 : 1, gapBefore: false,
+            let dtBefore = i == 0 ? 0 : ts[i] - ts[i - 1]
+            let gap = dtBefore > 3
+            if gap { cuts.append(i) }
+            out.samples.append(CleanSample(t: ts[i], dt: dtBefore, gapBefore: gap,
                                            x: x, y: y, dopplerMps: v, positionalMps: v,
                                            cumDistM: dist, altM: nil))
-            x += sin(deg * .pi / 180) * v
-            y += cos(deg * .pi / 180) * v
-            dist += v
+            // Like the lab's `_track`: each sample moves on for the interval that follows it.
+            let dtAfter = i + 1 < ts.count ? ts[i + 1] - ts[i] : 1
+            x += sin(deg * .pi / 180) * v * dtAfter
+            y += cos(deg * .pi / 180) * v * dtAfter
+            dist += v * dtAfter
         }
-        out.segments = [0..<out.samples.count]
+        cuts.append(out.samples.count)
+        out.segments = zip(cuts, cuts.dropFirst()).map { $0.0..<$0.1 }
         out.medianDtS = 1
         out.gapThresholdS = 3
         out.spanS = out.samples.last.map { $0.t - (out.samples.first?.t ?? 0) } ?? 0
-        out.timerTimeS = Double(course.count - 1)
+        out.timerTimeS = (ts.last ?? 0) - (ts.first ?? 0)
         out.positionsOnly = positionsOnly
         return out
     }
 
     private func counted(_ course: [Double], _ speed: [Double], positionsOnly: Bool,
-                         config: TurnConfig = TurnConfig()) -> [Turn] {
-        let clean = track(course: course, speed: speed, positionsOnly: positionsOnly)
+                         config: TurnConfig = TurnConfig(), t: [Double]? = nil) -> [Turn] {
+        let clean = track(course: course, speed: speed, positionsOnly: positionsOnly, t: t)
         return TurnDetector.detect(clean, flights: FlightSegmenter.segment(clean), wind: wind,
                                    config: config).filter(\.counted)
     }
@@ -115,5 +124,62 @@ import Testing
         #expect(TrackCleaner.clean(raw).positionsOnly)
         raw.capabilities.hasSpeed = true
         #expect(!TrackCleaner.clean(raw).positionsOnly)
+    }
+
+    // MARK: - A turn has to be seen turning (ADR-038, amended 1 Oct 2026)
+
+    /// A reach, then a 200° sweep whose middle step — a fix thrown 20 m — swings 170°.
+    private var oneStepFlip: ([Double], [Double]) {
+        join(leg(100, 40), ([110, 120, 290, 300], [6, 6, 20, 6]), leg(300, 40))
+    }
+
+    @Test func aSweepThatFlipsInOneStepOnAPositionsOnlyTrackIsNotATurn() {
+        let (course, speed) = oneStepFlip
+        #expect(counted(course, speed, positionsOnly: false).map(\.kind) == [.jibe])
+        #expect(counted(course, speed, positionsOnly: true).isEmpty)
+        var off = TurnConfig()
+        off.positionalMaxStepDeg = 0
+        #expect(counted(course, speed, positionsOnly: true, config: off).map(\.kind) == [.jibe])
+    }
+
+    /// The speed inside the sweep reaches 170 % of entry, then 20 s standing still.
+    @Test func aSweepMadeOfABurstAndThenAStandstillIsNotATurn() {
+        let (course, speed) = join(leg(90, 40),
+                                   ((0..<6).map { 90 + 36 * Double($0) }, [6, 6, 10, 10, 6, 5]),
+                                   leg(270, 20, 0.3), leg(270, 40))
+        #expect(counted(course, speed, positionsOnly: false).map(\.kind) == [.jibe])
+        #expect(counted(course, speed, positionsOnly: true).isEmpty)
+        var off = TurnConfig()
+        off.positionalSpikePct = 0
+        #expect(counted(course, speed, positionsOnly: true, config: off).map(\.kind) == [.jibe])
+    }
+
+    /// A jibe that comes off the foil, two slow samples, an 18 s pause in the recording, then
+    /// two samples at `tail` m/s and the end of the file (Jan's 10 Aug 2025 tack).
+    private func endsInWater(tail: Double) -> ([Double], [Double], [Double]) {
+        let (course, speed) = join(leg(90, 40),
+                                   ((0..<7).map { 90 + 30 * Double($0) },
+                                    [6, 5.5, 5, 4, 3, 2.5, 2]),
+                                   leg(270, 2, 1.5), leg(270, 2, tail))
+        var t = course.indices.map(Double.init)
+        t[t.count - 2] += 18
+        t[t.count - 1] += 18
+        return (course, speed, t)
+    }
+
+    @Test func aRecordingThatEndsInTheWaterAfterATurnEndsInAFall() {
+        let (course, speed, t) = endsInWater(tail: 0.6)
+        var off = TurnConfig()
+        off.recordingEndS = 0
+        let before = counted(course, speed, positionsOnly: false, config: off, t: t)
+        #expect(before.map(\.outcome) == [.touchdown])
+        let turns = counted(course, speed, positionsOnly: false, t: t)
+        #expect(turns.map(\.kind) == [.jibe])
+        #expect(turns.map(\.outcome) == [.fellIn])
+    }
+
+    @Test func aRecordingThatEndsWhileHeIsStillMovingKeepsTheTouchdown() {
+        let (course, speed, t) = endsInWater(tail: 1.5)
+        #expect(counted(course, speed, positionsOnly: false, t: t).map(\.outcome) == [.touchdown])
     }
 }
