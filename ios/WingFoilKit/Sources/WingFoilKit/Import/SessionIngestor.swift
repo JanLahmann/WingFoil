@@ -763,6 +763,35 @@ public struct SessionIngestor: Sendable {
         return Set(ids)
     }
 
+    /// **The intervals.icu ids the sync may skip** — every id the library holds, except one
+    /// sitting on a positions-only row (class c) whose recording is not intervals.icu's own
+    /// (F-6, Jan 1 Oct 2026). Such a row is a Strava copy or a GPX that a sync before 26 Sep
+    /// met as a plain duplicate of the FIT and stamped with the activity's id; skipping it
+    /// before the download meant the FIT never came back, and the weaker copy stayed for
+    /// good. Leaving it out lets the next sync fetch the FIT, which replaces the row in place.
+    /// A row whose recording came from intervals.icu (its archived name is the sync's own,
+    /// `IcuSyncService.filename`) stays skipped even without speed: downloading it again
+    /// would only bring back the same file.
+    public func icuActivityIdsHeld() async throws -> Set<String> {
+        let rows = try await database.writer.read { db in
+            try Row.fetchAll(db, sql: """
+                SELECT icuActivityId, sourceClass, originalFilename FROM session
+                WHERE icuActivityId IS NOT NULL
+                """)
+        }
+        var held = Set<String>()
+        for row in rows {
+            let id: String = row["icuActivityId"]
+            let sourceClass: String = row["sourceClass"]
+            let filename: String? = row["originalFilename"]
+            if sourceClass == "c", !IcuSyncService.isOwnFilename(filename, activityID: id) {
+                continue
+            }
+            held.insert(id)
+        }
+        return held
+    }
+
     /// Removes a session and remembers that it was removed.
     ///
     /// **The tombstone is the point** (`SessionTombstoneRow`). Without it the next

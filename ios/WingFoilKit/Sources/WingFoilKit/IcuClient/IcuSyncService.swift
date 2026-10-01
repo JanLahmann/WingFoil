@@ -63,7 +63,9 @@ public struct IcuSyncService: Sendable {
         let watersports = all.filter(IcuClient.isWatersport)
         summary.watersports = watersports.count
 
-        let known = try await ingestor.icuActivityIds()
+        // Ids held by the recording they name; a Strava copy carrying one is fetched again
+        // so the FIT can replace it (`SessionIngestor.icuActivityIdsHeld`, F-6).
+        let known = try await ingestor.icuActivityIdsHeld()
         // Read once for the whole run: the matcher is pure and the list is a handful of rows.
         let tombstones = try await ingestor.library.tombstones()
         for (index, activity) in watersports.enumerated() {
@@ -146,5 +148,12 @@ public struct IcuSyncService: Sendable {
     /// The slug keeps the activity's **own capitalisation** (`SessionNaming.activityNameSlug`).
     static func filename(for activity: IcuActivity) -> String {
         "\(activity.id)_\(SessionNaming.activityNameSlug(activity.name))_icu.fit"
+    }
+
+    /// Whether `filename` is one `filename(for:)` wrote for this activity: the row's
+    /// recording is intervals.icu's own.
+    static func isOwnFilename(_ filename: String?, activityID: String) -> Bool {
+        guard let filename else { return false }
+        return filename.hasPrefix("\(activityID)_") && filename.hasSuffix("_icu.fit")
     }
 }
