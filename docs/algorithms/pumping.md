@@ -618,7 +618,10 @@ the table above's non-turn rows. It touches nothing else: no counter, no event, 
 A GPS gap closes the window unjudged rather than calling it a fall, on the same principle that
 drops an unjudgeable takeoff effort. Falls owned by a bear-away arrive through this path
 too — a rejected sweep leaves the state machine idle, so the swim after one is an unowned
-flight end, which is exactly the classification the merged rule wants.
+flight end, which is exactly the classification the merged rule wants. A flight that ends
+*inside* a sweep or an aborted candidate opens its window as usual and holds the verdict until
+the turn is decided (watch 0.9.21): kept when it is a bear-away or a dropped candidate, thrown
+away when the turn is counted, because only a counted turn owns (ADR-035).
 
 Two drifts from the engine, both in the conservative direction and both from having only live
 evidence:

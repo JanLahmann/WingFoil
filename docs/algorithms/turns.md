@@ -922,6 +922,47 @@ the wrong lesson about the two implementations.
   `turnOpenAtSaveInTheWaterIsAFall`. 143/143 on fenix847mm (dev); the release and beta suites
   on fenix5xplus and fr255 pass too.
 
+#### Ported in watch 0.9.21 (8 Oct 2026)
+
+- **R4, the turn's own name is its first crossing** (engine 0.27.0, ADR-037). `classifyTurn`
+  names a sweep that crosses both axes by the one it reached first in its own sense of
+  rotation, which is `abortCrossedKind`'s arithmetic; `_classify` and the rebuild's
+  `_kindAt` use it. `classifySweep` keeps the middle reading for AutoWind's prior, as the
+  phone's prior keeps it, so no wind moves.
+- **R5, a crossing in the gap belongs to the second sweep** (`turnJoinGapS` 2 s). The last
+  sweep that closed, counted or a course change, leaves its end clock, heading and sense
+  behind for as long as its sailing run lasts. A sweep that opens turning the same way at
+  most 2 s later, with the axis crossed between the two, starts again where the first ended:
+  its entry speed, score window and recovery search all start there, read off a 16-sample
+  speed history that runs every tick. The duration cap still runs from the sweep's own start.
+  AutoWind and the turn log get the sweep's own geometry; the log keeps the gap beside it
+  (16 records, 4 bytes) for every turn that had such a neighbour, joined or not, so
+  `rebuildWindSplit` joins it under exactly the axes whose crossing sits in the gap. On the
+  corpus that is the 2026-08-02 08:48 jibe, and R4 the 2026-08-29 16:08 jibe: both read as
+  tacks on the wrist until now.
+- **Recovery is searched from the speed minimum** (`after_t = min_t`, `evidence.recovery_end`),
+  not from the sweep end, and **held at both ends**: a sample at the threshold counts only
+  when its predecessor did too, so `turnRecoverHold` 2 s is three samples at 1 Hz. The second
+  half was an unlisted divergence: the wrist closed the window one sample early, and a rider
+  with two seconds of speed between a touch and a swim read `touchdown` there and `fell_in`
+  on the phone. The minimum is the earliest one over `[start, end + minSpeedLag]`, start
+  included. Recovery can therefore be found inside the sweep; the evidence at that sample is
+  what the turn is judged on, and the verdict waits until the minimum is final at
+  `end + minSpeedLag`, because a later minimum moves the search on.
+- **Only a counted turn owns a flight end** (ADR-035), now in every state. A flight end that
+  starts inside a sweep, or inside an aborted candidate, is judged as usual while the
+  question is open, and its verdict waits: thrown away when the turn is counted, kept as a
+  straight-line end when the sweep is a bear-away or the candidate is dropped. Until now a
+  swim inside a bear-away was never judged, because the flight ended while the sweep was
+  open and nothing was watching. This replaces the aborted candidate's `_slowSeen` stand-in
+  for the same rule.
+- Tests: `turnThroughBothAxesIsNamedByTheFirstCrossing`, `turnSplitAcrossTheWindIsJoined`,
+  `turnRecoveryIsSearchedFromTheSpeedMinimum`, `aRecoveryIsHeldAtBothEnds`,
+  `aSwimInsideABearAwayEndsTheRun`. Two older tests drew a sweep at a flat speed, whose
+  minimum is its first sample; under the phone's rule such a sweep recovers before it ends,
+  so they now dip at the exit, as a real jibe does. 148/148 on fenix847mm (dev), 138/138 for
+  the release and beta suites on fr255 and fenix5xplus.
+
 #### Not ported yet, and why
 
 Each of these is a rule the watch **could** share. None is a thing a live detector cannot know,
@@ -936,11 +977,6 @@ rider sees until then.
   an event, a buzz and a FIT marker fired from the one path that today only forgets things; it
   is a round of its own, and the longer not-recovered window is what makes it worth doing.
   `TurnDetector.onGap` already settles the clean tail exactly this way, so the shape exists.
-- **Recovery is searched from the sweep end**, not from the speed minimum (`after_t = min_t` on
-  the phone), and the entry speed is the max over `entrySpeedWindow` of the *Doppler* history.
-  **Not ported**: it costs one more float (the clock of `_minSpeed`) and it only matters for a
-  turn entered so slowly that the entry speed itself already clears `turnRecoverPct` — the
-  window then closes on its first sample. Small, cheap, and nobody has seen it on a fixture.
 - **No pump corroboration** (step 3 of the ladder, engine 0.18.0; corrected 9 Sep 2026 — an
   earlier version of this list claimed the watch "keeps the old rule at the old speed", and it
   does not and never did). `TurnDetector._resolve` has three rungs — submerged-or-stop → fell
@@ -955,19 +991,7 @@ rider sees until then.
   the only reason this is a silence rather than a divergence: move either on the phone and the
   wrist and the page will disagree about which jibes were clean, exactly as they do for every
   other tuned threshold. **Not ported** for that reason — a gate nobody has opened.
-- **Both-axis sweeps and split sweeps are named the 0.26.0 way on the wrist** (engine 0.27.0,
-  R4 and R5, ADR-037). `classifySweep` in `TurnDetector.mc` still names a sweep that crosses
-  both axes by the crossing nearest its middle, and nothing joins two sweeps across a gap. On
-  the corpus that is two turns: the 2026-08-29 golden's 16:08 jibe and the 2026-08-02 golden's
-  08:48 jibe read as tacks on the watch. **Not ported** (no garmin/ source in the engine round).
-  R4 is a few lines in `classifySweep` — keep the prior's call on the old reading, as the phone
-  does; R5 needs the previous sweep's last heading kept for 2 s after it closes.
-- **Bear-aways are dropped, not carried.** They increment a `rejected` counter and are not
-  given an outcome, so the watch has no equivalent of the lab's bear-away outcome window.
-  **Not ported** because nothing on the wrist reads that outcome: a rejected sweep counts
-  towards no tally and breaks no streak, and a fall after one still arrives as an unowned
-  flight end. Since engine 0.25.0 that is the phone's rule too (only a counted turn owns a
-  flight end, ADR-035), so on ownership the two now agree.
+
 #### Not about the detector
 
 The rate that left the wrist, and the parked data field (ADR-020).

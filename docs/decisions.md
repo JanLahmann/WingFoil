@@ -102,7 +102,7 @@ committed corpus now holds no tack, so the presentation tests build their tack c
 golden. **Not verified**: the tester's 19 Sep 2026 attempt that ADR-028 was built for — its
 file was not readable in this round; R2 keeps it only if he flew to within 30° of the wind
 before the wrist went under. **Watch**: no aborted pass (unchanged divergence; the port now
-includes R1–R3), and R4/R5 are a new divergence row (turns.md, "Not ported yet"). Side fix in
+includes R1–R3), and R4/R5 are a new divergence row (turns.md, "Not ported yet"). *Amended 8 Oct 2026*: R1–R3 reached the wrist in 0.9.20 and R4/R5 in 0.9.21 (turns.md, "Ported in watch 0.9.21"). Side fix in
 the same version: a pump stream shorter than its band-pass (the 31 Aug 2026 desk stubs) raised
 `IndexError` in the lab; it now analyses, as the kit always did.
 
@@ -178,7 +178,7 @@ touchdowns become glide-outs (pumping.md "What 0.25.0 did to the corpus"). Turns
 streaks and every rate are unchanged; the falls tile keeps its total and changes its split;
 `outcomeSplit.falls` rises 268 → 277 because the 9 were in neither half before. The watch
 already treated a fall after a dropped bear-away as an unowned flight end; its flight-end
-touchdown still takes any dip in its 30 s window, written down in turns.md "Not ported yet".
+touchdown still takes any dip in its 30 s window, written down in turns.md "Not ported yet". *Amended 8 Oct 2026*: the early touch was ported in watch 0.9.20, and in 0.9.21 a swim that starts inside a bear-away is a straight-line fall on the wrist too; until then it went unjudged when the flight ended while the sweep was still open.
 Out of scope and still open: 12 corpus ends are `fell_in` inside a counted turn whose own ladder
 said `touchdown` or `flew_through` — a verdict disagreement between the two windows, its own
 round.
