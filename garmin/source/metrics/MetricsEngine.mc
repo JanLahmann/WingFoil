@@ -183,6 +183,9 @@ class MetricsEngine {
         var cog = _cogDeg(info);
         var flightEvent = detector.tick(dt, speedMps, distDelta);
         var pbEvents = records.tick(speedMps);
+        // The rider's declared habit decides which side of an ABORTED turn needs the
+        // stronger evidence (R2/R3, watch 0.9.20). Read live, as AutoWind's is below.
+        turns.defaultTurnType = AppSettings.windDefaultTurnType;
         var turnEvent = turns.tick(dt, cog, speedMps, distDelta,
             detector.state == FlightDetector.STATE_ON, submerged);
 

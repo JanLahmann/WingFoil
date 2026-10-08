@@ -105,6 +105,12 @@ public struct CleanTrack: Sendable {
     public var droppedNaN = 0
     public var droppedSpike = 0
     public var config = FilterConfig()
+    /// **The track's speed was differentiated from its positions** — source class (c): a
+    /// GPX, a Strava copy, a TCX that states no speed (engine 0.28.0). The two turn rules of
+    /// ADR-038 (`TurnConfig.positionalMinSweepS`, `positionalSpikePct`) ask only of such a
+    /// track. Set by `TrackCleaner.clean` from `RawTrack.capabilities.sourceClass`; a track
+    /// built by hand is class (b), as the lab's `clean_from_arrays` is.
+    public var positionsOnly = false
 
     public init() {}
 

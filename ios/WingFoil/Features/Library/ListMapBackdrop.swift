@@ -116,7 +116,9 @@ enum ListMapBackdrop {
         guard let data = try? Data(contentsOf: fileURL(id: id, style: style)) else {
             return nil
         }
-        return UIImage(data: data)
+        // Decoded here, on the reader's thread: `UIImage(data:)` alone defers the PNG decode
+        // to the first frame that draws it, which is the main thread, mid-scroll.
+        return UIImage(data: data)?.preparingForDisplay()
     }
 
     static func write(_ image: UIImage, id: String, style: MapStyleChoice) {

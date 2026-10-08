@@ -269,6 +269,20 @@ imports file watersport sessions under them. No fixture in the corpus is a land 
 golden moves by the version and one null key. Inside 0.27.0 (Jan, 30 Sep 2026) the list widens
 to the skate and snow sports -- inline and ice skating, alpine and cross-country skiing,
 snowboarding, snowshoeing, snowmobiling; still no fixture is one.
+
+Engine 0.28.0 (Jan, 1 Oct 2026; ADR-038) stops **a GPS jump from reading as a turn** on a
+positions-only track (class (c): a GPX, a Strava copy). His 4 Sep 07:58 session through Strava
+showed a tack that "flew through" at 53:52 where the watch's own FIT has none: he fell in, the
+watch logged a fix-less record, Strava filled it with the fix before, and the next fix landed
+metres away -- a 150 deg heading flip in one second, then two samples of "speed" that closed the
+outcome window as a recovery. Two rules, both class (c) only: a sweep shorter than
+`turnPositionalMinSweepS` (3 s) is not a turn, and a recovery reaching `turnPositionalSpikePct`
+(150 %) of the entry speed after which the rider stands still within the outcome window is set
+aside. The same day, after Jan said he has never completed a tack: on class (c) a sweep with
+one step of `turnPositionalMaxStepDeg` (150 deg) or more is not a turn, nor is a sweep whose own
+speed reaches `turnPositionalSpikePct` before a standstill; and on every class a turn after
+which the recording ends within `turnRecordingEndS` (30 s), the rider stopped and never flying
+again, fell in (his 10 Aug 2025 tack, which read touchdown).
 """
 
 from __future__ import annotations
@@ -967,6 +981,16 @@ def _config_dict(a: Analysis) -> dict:
         "turnAbortLuffSpeedPct": t.abort_luff_speed_pct,
         "turnAbortAfterTurnS": t.abort_after_turn_s,
         "turnJoinGapS": t.join_gap_s,
+        # A jump is not a turn (engine 0.28.0, ADR-038), positions-only tracks only: a sweep
+        # shorter than turnPositionalMinSweepS is dropped, and a recovery reaching
+        # turnPositionalSpikePct of the entry speed and then standing still is set aside.
+        "turnPositionalMinSweepS": t.positional_min_sweep_s,
+        "turnPositionalSpikePct": t.positional_spike_pct,
+        # ...and a sweep with one step of turnPositionalMaxStepDeg or more is not a turn (the
+        # track doubled back between two fixes); a turn whose recording ends within
+        # turnRecordingEndS with the rider stopped and never flying again fell in.
+        "turnPositionalMaxStepDeg": t.positional_max_step_deg,
+        "turnRecordingEndS": t.recording_end_s,
         "turnClassifyMinAngle": t.classify_min_angle_deg,
         "turnAxisBeforeDeg": t.axis_before_deg,
         "turnAxisAfterDeg": t.axis_after_deg,

@@ -1653,3 +1653,148 @@ def test_r5_a_crossing_in_the_gap_between_two_sweeps_belongs_to_the_second():
     assert joined[0] is p and joined[1].i == p.j and joined[1].j == c.j
     assert _build_turn(joined[1], WIND_N, cfg).kind == JIBE
     assert _join_split([p, c], WIND_N, TurnConfig(join_gap_s=0.0))[1] is c
+
+
+# --- a jump is not a turn (engine 0.28.0, ADR-038) -------------------------------------
+#
+# Jan, 1 Oct 2026: his 4 Sep 07:58 session through Strava showed a tack that flew through
+# where the watch's FIT has none. On a positions-only track one fix thrown sideways is a
+# heading flip and a burst of speed; both rules ask only of class (c).
+
+def _positional(ct):
+    """The same arrays read as a positions-only (class c) track."""
+    ct.capabilities = dataclasses.replace(ct.capabilities, has_speed=False)
+    assert ct.capabilities.source_class == "c"
+    return ct
+
+
+def _detect_c(course, speed, config=None):
+    ct = _positional(_track(course, speed))
+    return detect_turns(ct, segment_flights(ct), WIND_N, config)
+
+
+def _jump(n_after=40):
+    """A beam reach, then the heading flipped 150 deg in two fast samples (a fix jump)."""
+    return _join(_leg(90.0, 40), ([180.0, 240.0], [8.0, 8.0]), _leg(240.0, n_after))
+
+
+def test_a_two_second_flip_on_a_positions_only_track_is_not_a_turn():
+    course, speed = _jump()
+    assert [t.kind for t in _detect(course, speed) if t.counted] == [JIBE]   # class (b)
+    assert [t for t in _detect_c(course, speed) if t.counted] == []
+    off = dataclasses.replace(TurnConfig(), positional_min_sweep_s=0.0)
+    assert [t.kind for t in _detect_c(course, speed, off) if t.counted] == [JIBE]
+
+
+def test_a_real_jibe_on_a_positions_only_track_is_still_a_jibe():
+    course, speed = _clean_jibe()
+    turn = _detect_c(course, speed)[0]
+    assert turn.kind == JIBE and turn.outcome == FLEW_THROUGH
+
+
+def _spike_then_stand():
+    """A 5 s jibe, a three-sample burst at 170 % of entry, then 20 s standing still."""
+    return _join(_leg(90.0, 40),
+                 _ramp(90.0, 270.0, 6, np.linspace(6.0, 5.0, 6)),
+                 ([270.0] * 3, [10.0] * 3),
+                 ([270.0] * 20, [0.3] * 20),
+                 _leg(270.0, 40))
+
+
+def test_a_recovery_made_of_a_jump_and_then_a_standstill_is_a_fall():
+    course, speed = _spike_then_stand()
+    assert _detect(course, speed)[0].outcome == FLEW_THROUGH                # class (b)
+    turn = _detect_c(course, speed)[0]
+    assert turn.kind == JIBE
+    assert turn.outcome == FELL_IN
+    off = dataclasses.replace(TurnConfig(), positional_spike_pct=0.0)
+    assert _detect_c(course, speed, off)[0].outcome == FLEW_THROUGH
+
+
+def test_a_positions_only_recovery_at_cruising_speed_still_closes_the_window():
+    """Powered out at entry speed and a stop a minute later: the spike rule never asks."""
+    course, speed = _join(_leg(90.0, 40),
+                          _ramp(90.0, 270.0, 7, np.linspace(6.0, 5.0, 7)),
+                          _leg(270.0, 60),
+                          ([270.0] * 20, [0.3] * 20),
+                          _leg(270.0, 20))
+    turn = _detect_c(course, speed)[0]
+    assert turn.outcome == FLEW_THROUGH
+    assert turn.outcome_window_s < 5.0
+
+
+@pytest.mark.skipif(not JIBE50_SESSION.exists(),
+                    reason="raw 4 Sep recording lives under fixtures/footage, not committed")
+def test_the_strava_copy_of_4_sep_has_no_phantom_tack(tmp_path):
+    """Jan's own case: the 4 Sep FIT as Strava serves it (fix-less records filled)."""
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
+    from strava_vs_icu import run, strava_gpx
+
+    a = run(strava_gpx(JIBE50_SESSION, tmp_path), "strava")
+    counted = [t for t in a.turns if t.counted]
+    t0 = float(a.clean.records["t"].iloc[0])
+    assert not [t for t in counted if t.kind == TACK]
+    assert not [t for t in counted if abs(t.min_t - t0 - 3232) < 10]
+    assert len(counted) == 66
+
+
+# --- a turn has to be seen turning (engine 0.28.0, ADR-038, amended 1 Oct 2026) -------
+#
+# Jan has never completed a tack; the positions-only copies of his 60 intervals.icu FITs
+# counted nine. Six swing 166-176 deg in ONE step between two fixes; one more is a burst of
+# positional "speed" inside the sweep and then a standstill.
+
+def _one_step_flip():
+    """A reach, then a 200 deg sweep whose middle step -- a fix thrown 20 m -- swings 170."""
+    return _join(_leg(100.0, 40), ([110.0, 120.0, 290.0, 300.0], [6.0, 6.0, 20.0, 6.0]),
+                 _leg(300.0, 40))
+
+
+def test_a_sweep_that_flips_in_one_step_on_a_positions_only_track_is_not_a_turn():
+    course, speed = _one_step_flip()
+    assert [t.kind for t in _detect(course, speed) if t.counted] == [JIBE]   # class (b)
+    assert [t for t in _detect_c(course, speed) if t.counted] == []
+    off = dataclasses.replace(TurnConfig(), positional_max_step_deg=0.0)
+    assert [t.kind for t in _detect_c(course, speed, off) if t.counted] == [JIBE]
+
+
+def test_a_sweep_made_of_a_burst_and_then_a_standstill_is_not_a_turn():
+    """The speed inside the sweep reaches 170 % of entry, then 20 s standing still."""
+    course, speed = _join(_leg(90.0, 40),
+                          _ramp(90.0, 270.0, 6, [6.0, 6.0, 10.0, 10.0, 6.0, 5.0]),
+                          ([270.0] * 20, [0.3] * 20),
+                          _leg(270.0, 40))
+    assert [t.kind for t in _detect(course, speed) if t.counted] == [JIBE]   # class (b)
+    assert [t for t in _detect_c(course, speed) if t.counted] == []
+    off = dataclasses.replace(TurnConfig(), positional_spike_pct=0.0)
+    assert [t.kind for t in _detect_c(course, speed, off) if t.counted] == [JIBE]
+
+
+def _ends_in_water(tail_speed=0.6):
+    """A jibe that comes off the foil, two slow samples, an 18 s pause in the recording,
+    then two samples at `tail_speed` and the end of the file (Jan's 10 Aug 2025 tack)."""
+    course, speed = _join(_leg(90.0, 40),
+                          _ramp(90.0, 270.0, 7, [6.0, 5.5, 5.0, 4.0, 3.0, 2.5, 2.0]),
+                          ([270.0] * 2, [1.5, 1.5]),
+                          ([270.0] * 2, [tail_speed, tail_speed]))
+    t = np.arange(len(course), dtype=float)
+    t[-2:] += 18.0
+    return course, speed, t
+
+
+def test_a_recording_that_ends_in_the_water_after_a_turn_ends_in_a_fall():
+    course, speed, t = _ends_in_water()
+    ct = _track(course, speed, t=t)
+    off = dataclasses.replace(TurnConfig(), recording_end_s=0.0)
+    (before,) = detect_turns(ct, segment_flights(ct), WIND_N, off)
+    assert before.outcome == TOUCHDOWN
+    (turn,) = detect_turns(ct, segment_flights(ct), WIND_N)
+    assert turn.kind == JIBE and turn.outcome == FELL_IN
+
+
+def test_a_recording_that_ends_while_he_is_still_moving_keeps_the_touchdown():
+    course, speed, t = _ends_in_water(tail_speed=1.5)
+    ct = _track(course, speed, t=t)
+    (turn,) = detect_turns(ct, segment_flights(ct), WIND_N)
+    assert turn.outcome == TOUCHDOWN

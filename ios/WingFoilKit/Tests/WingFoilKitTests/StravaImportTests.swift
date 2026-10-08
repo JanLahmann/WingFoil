@@ -461,7 +461,7 @@ struct StravaImportTests {
     /// Strava's copy of a FIT, built from the FIT's own fixes the way Strava serves them
     /// back: positions on an elapsed clock and nothing else. Also returns the two spans the
     /// dedupe key compares — every record for the FIT, the fixes alone for Strava.
-    private static func stravaCopy(of fit: Data, upTo limit: Double = .infinity) throws
+    static func stravaCopy(of fit: Data, upTo limit: Double = .infinity) throws
             -> (gpx: Data, activity: StravaActivity, fitSpanS: Double, fixSpanS: Double) {
         let track = try FitSessionParser.parse(data: fit)
         let start = try #require(track.startDate)
@@ -532,7 +532,7 @@ struct StravaImportTests {
     /// The first FIT in the corpus, 13 June 2026 at Rheinstetten: 43 minutes of records with
     /// no position after its last fix (the watch left running in the van). Record span
     /// 10 338 s, fix span 7 742 s — the pair release round A found as F-5.
-    private static func thirteenJune() throws -> (url: URL, fit: Data,
+    static func thirteenJune() throws -> (url: URL, fit: Data,
             copy: (gpx: Data, activity: StravaActivity, fitSpanS: Double, fixSpanS: Double)) {
         let url = try #require(findFixtureFIT(stem: "2026-06-13-1558_rheinstetten-windsurfen_native"))
         let fit = try Data(contentsOf: url)

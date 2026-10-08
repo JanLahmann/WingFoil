@@ -1649,4 +1649,160 @@ function anUnjudgeableFlightEndDoesNotBreakAStreak(logger as Test.Logger) as Boo
     return true;
 }
 
+// ---- THE ABORTED TURN (engine 0.21.0 / 0.27.0, watch 0.9.20) ----
+//
+// Jan, 1 Oct 2026: five wingfoil tack attempts, every one fell in, and the wrist saw none of
+// them — a rider who goes in halfway round never reaches the main scan's 60 deg. The run ends
+// at the fall, below the COG floor, and the ring is read back from its last heading. Wind
+// from 0 deg throughout; the rider luffs up from a reach toward it, 18 deg/s for 3 s.
+
+// A luff of three 18 deg steps from `cog`, then `crash` seconds at 0.3 m/s off the foil.
+function runAbortedLuff(d as TurnDetector, cog as Float, crash as Number) as Number {
+    runStraight(d, 5, cog, 8.0);
+    runSweep(d, cog, -18.0, 3, 8.0);
+    return runTail(d, crash, cog - 54.0, 0.3, false, false);
+}
+
+(:test)
+function turnAbortedTackThatFellIsCounted(logger as Test.Logger) as Boolean {
+    var cfg = coreDefaults();
+    cfg.setWindDirection(0);
+    var d = new TurnDetector(cfg);
+    // 60 -> 6 deg off the wind: he got within 6 deg, flew to 24 deg, gained 54 at speed
+    var ev = runAbortedLuff(d, 60.0, 12);
+    Test.assertMessage(ev == TurnDetector.EVENT_FELL, "the attempt fell in, event " + ev.toString());
+    Test.assertMessage(d.turnCount == 1 && d.abortedCount == 1, "one aborted turn, got "
+        + d.turnCount.toString() + " / " + d.abortedCount.toString());
+    Test.assertMessage(d.tackCount == 1 && d.tackFellCount == 1, "named a tack, fell in");
+    Test.assertMessage(d.fellCount == 1 && d.successCount == 0 && d.cleanJibeCount == 0,
+        "a fall, never successful, never clean");
+    Test.assertMessage(d.lastKind == TurnDetector.KIND_TACK, "lastKind is the tack");
+    Test.assertMessage(d.dryStreak == 0, "he swam");
+    return true;
+}
+
+// The tester's 19 Sep turn: from 110 deg off the wind he turned to 56 and fell. He never flew
+// closer than 74 deg, so R2 refuses the tack (a jibes rider's undeclared side): no turn, and
+// the fall is the straight-line one.
+(:test)
+function turnAbortedLuffShortOfTheWindIsNotATack(logger as Test.Logger) as Boolean {
+    var cfg = coreDefaults();
+    cfg.setWindDirection(0);
+    var d = new TurnDetector(cfg);
+    runAbortedLuff(d, 110.0, 12);
+    Test.assertMessage(d.turnCount == 0 && d.tackCount == 0 && d.abortedCount == 0,
+        "R2 refuses it, got " + d.turnCount.toString() + " turns");
+    Test.assertMessage(d.dryStreak == 0, "the straight-line channel still saw the swim");
+    return true;
+}
+
+// A candidate that gets going again is not a turn: only a fall counts (`_merge_aborted`).
+(:test)
+function turnAbortedCandidateThatRecoversIsDropped(logger as Test.Logger) as Boolean {
+    var cfg = coreDefaults();
+    cfg.setWindDirection(0);
+    var d = new TurnDetector(cfg);
+    runAbortedLuff(d, 60.0, 1);
+    runStraight(d, 6, 6.0, 8.0);
+    Test.assertMessage(d.turnCount == 0 && d.abortedCount == 0 && d.fellCount == 0,
+        "dropped, got " + d.turnCount.toString() + " turns");
+    Test.assertMessage(d.state == TurnDetector.ST_IDLE, "the window closed");
+    return true;
+}
+
+// No wind at the time: counted as a generic fall. The axis arrives later and the rebuild
+// names it a tack, asking R2/R3 again under that axis.
+(:test)
+function turnAbortedIsRenamedByTheRebuild(logger as Test.Logger) as Boolean {
+    var cfg = coreDefaults();
+    var d = new TurnDetector(cfg);
+    runAbortedLuff(d, 60.0, 12);
+    Test.assertMessage(d.turnCount == 1 && d.lastKind == TurnDetector.KIND_TURN,
+        "a generic fall without a wind");
+    cfg.setWindDirection(0);
+    d.rebuildWindSplit();
+    Test.assertMessage(d.tackCount == 1 && d.tackFellCount == 1,
+        "the rebuild names it a tack, got " + d.tackCount.toString());
+    // ...and the luff that never got near the wind stays a generic turn under the same axis
+    var cfg2 = coreDefaults();
+    var d2 = new TurnDetector(cfg2);
+    runAbortedLuff(d2, 110.0, 12);
+    Test.assertMessage(d2.turnCount == 1, "counted generic without a wind");
+    cfg2.setWindDirection(0);
+    d2.rebuildWindSplit();
+    Test.assertMessage(d2.tackCount == 0 && d2.jibeCount == 0 && d2.turnCount == 1,
+        "R2 refuses the name under the new axis; the turn stays");
+    return true;
+}
+
+// R1 on the wrist: a rider who comes out of a turn and keeps rotating the same way until he
+// falls. He got going again, so the turn flew through and its window closed; the phone drops
+// the aborted tail by time (`turnAbortAfterTurnS`), and the watch never sees it at all — the
+// ring starts again at the verdict, too short for a candidate. Both say: the turn flew, the
+// swim is a straight-line one.
+(:test)
+function turnAbortedTailOfTheTurnBeforeIsDropped(logger as Test.Logger) as Boolean {
+    var cfg = coreDefaults();
+    var d = new TurnDetector(cfg);
+    runStraight(d, 5, 90.0, 8.0);
+    runSweep(d, 90.0, -30.0, 6, 8.0);           // a 180 deg turn, port-wise
+    runStraight(d, 1, -90.0, 8.0);              // the sweep closes; the window opens
+    runSweep(d, -90.0, -18.0, 3, 8.0);          // keeps rotating, still at speed...
+    runTail(d, 12, -144.0, 0.3, false, false);  // ...and goes in
+    Test.assertMessage(d.turnCount == 1 && d.abortedCount == 0 && d.flewCount == 1,
+        "one turn that flew, no aborted tail, got " + d.turnCount.toString() + " / "
+        + d.abortedCount.toString() + " / " + d.flewCount.toString());
+    Test.assertMessage(d.dryStreak == 0, "the swim still ends the dry run");
+    return true;
+}
+
+// THE RECORDING ENDS IN THE WATER (engine 0.28.0): a turn still open at save, the rider
+// never recovered and below the stop floor, is a fall.
+(:test)
+function turnOpenAtSaveInTheWaterIsAFall(logger as Test.Logger) as Boolean {
+    var d = new TurnDetector(coreDefaults());
+    runStraight(d, 5, 90.0, 8.0);
+    runSweep(d, 90.0, 30.0, 6, 8.0);
+    runTail(d, 4, 270.0, 0.2, false, false);    // 3 s stopped: not yet a fall by the clock
+    Test.assertMessage(d.state == TurnDetector.ST_OUTCOME, "still being judged");
+    var ev = d.finish();
+    Test.assertMessage(ev == TurnDetector.EVENT_FELL, "a fall at save, event " + ev.toString());
+    Test.assertMessage(d.fellCount == 1 && d.touchdownCount == 0, "booked as a fall");
+    // ...and one still making way is not
+    var d2 = new TurnDetector(coreDefaults());
+    runStraight(d2, 5, 90.0, 8.0);
+    runSweep(d2, 90.0, 30.0, 6, 8.0);
+    runTail(d2, 4, 270.0, 1.6, false, false);
+    d2.finish();
+    Test.assertMessage(d2.fellCount == 0 && d2.touchdownCount == 1,
+        "moving at save: a touchdown, got fell " + d2.fellCount.toString());
+    return true;
+}
+
+// THE EARLY TOUCH (engine 0.25.0, ADR-035): a flight end that brushes the stop floor only
+// after `turnOutcomeLookahead` is a glide-out, and the strict run survives it; the same brush
+// inside the lookahead is a touchdown and ends it.
+function flewThenEnd(brushAt as Number) as TurnDetector {
+    var d = new TurnDetector(coreDefaults());
+    runStraight(d, 5, 90.0, 8.0);
+    runSweep(d, 90.0, 30.0, 6, 8.0);
+    runStraight(d, 12, 270.0, 8.0);             // flew through, and the quiet tail ran out
+    runTail(d, brushAt, 270.0, 1.8, false, false);  // off the foil, still making way
+    runTail(d, 1, 270.0, 0.8, false, false);    // one brush of the floor
+    runTail(d, 35, 270.0, 1.8, false, false);
+    return d;
+}
+
+(:test)
+function aLateBrushOfTheFloorIsAGlideOut(logger as Test.Logger) as Boolean {
+    var late = flewThenEnd(15);
+    Test.assertMessage(late.flewCount == 1 && late.flewStreak == 1,
+        "a brush at 16 s keeps the strict run, got " + late.flewStreak.toString());
+    var early = flewThenEnd(4);
+    Test.assertMessage(early.flewStreak == 0 && early.dryStreak == 1,
+        "a brush at 5 s is a touchdown, got flew " + early.flewStreak.toString()
+        + " dry " + early.dryStreak.toString());
+    return true;
+}
+
 }

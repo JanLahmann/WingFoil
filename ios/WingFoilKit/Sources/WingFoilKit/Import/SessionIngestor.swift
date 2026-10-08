@@ -739,6 +739,38 @@ public struct SessionIngestor: Sendable {
         try await database.writer.read { db in try SessionRow.fetchOne(db, key: id) }
     }
 
+    /// **A library the size of a rider's, from fifteen fixtures** — the simulator staging
+    /// hook `UI_FIXTURE_COPIES` (docs/testing.md) and nothing else calls it. Every session
+    /// row is copied `copies` times, each copy a week further back, with its archive folder
+    /// (original, analysis, thumbnail) copied beside it, so the list has as many rows to
+    /// scroll as Jan's (~100) and every one of them costs what a real row costs. Only the
+    /// index row is copied, not the flight/turn tables: the list reads nothing else.
+    @discardableResult
+    public func stageCopies(_ copies: Int) async throws -> Int {
+        guard copies > 0 else { return 0 }
+        let originals = try await allSessions().filter { !$0.id.contains("-copy-") }
+        var made: [SessionRow] = []
+        for row in originals {
+            for k in 1...copies {
+                var copy = row
+                copy.id = row.id + "-copy-\(k)"
+                copy.startDate = row.startDate.addingTimeInterval(-Double(k) * 7 * 86_400)
+                copy.icuActivityId = nil
+                let from = archive.directory(for: row.id)
+                let to = archive.directory(for: copy.id)
+                if !FileManager.default.fileExists(atPath: to.path) {
+                    try? FileManager.default.copyItem(at: from, to: to)
+                }
+                made.append(copy)
+            }
+        }
+        let rows = made
+        try await database.writer.write { db in
+            for copy in rows { try copy.save(db) }
+        }
+        return rows.count
+    }
+
     /// Would a recording of this shape land on a session the library already holds?
     ///
     /// THE dedupe rule, asked *before* the bytes exist. The Apple Health import is the caller:
@@ -761,6 +793,77 @@ public struct SessionIngestor: Sendable {
             try String.fetchAll(db, sql: "SELECT icuActivityId FROM session WHERE icuActivityId IS NOT NULL")
         }
         return Set(ids)
+    }
+
+    /// **The intervals.icu ids the sync may skip** — every id the library holds, except one
+    /// sitting on a positions-only row (class c) whose recording is not intervals.icu's own
+    /// (F-6, Jan 1 Oct 2026). Such a row is a Strava copy or a GPX that a sync before 26 Sep
+    /// met as a plain duplicate of the FIT and stamped with the activity's id; skipping it
+    /// before the download meant the FIT never came back, and the weaker copy stayed for
+    /// good. Leaving it out lets the next sync fetch the FIT, which replaces the row in place.
+    /// A row whose recording came from intervals.icu (its archived name is the sync's own,
+    /// `IcuSyncService.filename`) stays skipped even without speed: downloading it again
+    /// would only bring back the same file.
+    public func icuActivityIdsHeld() async throws -> Set<String> {
+        let rows = try await database.writer.read { db in
+            try Row.fetchAll(db, sql: """
+                SELECT icuActivityId, sourceClass, originalFilename FROM session
+                WHERE icuActivityId IS NOT NULL
+                """)
+        }
+        var held = Set<String>()
+        for row in rows {
+            let id: String = row["icuActivityId"]
+            let sourceClass: String = row["sourceClass"]
+            let filename: String? = row["originalFilename"]
+            if sourceClass == "c", !IcuSyncService.isOwnFilename(filename, activityID: id) {
+                continue
+            }
+            held.insert(id)
+        }
+        return held
+    }
+
+    /// **The intervals.icu uploads found positions-only at the source**, by id, each with the
+    /// activity's `sourceFingerprint` as it was when its file was fetched (GRDB v20, Jan
+    /// 1 Oct 2026). The sync skips such an id while the fingerprint is unchanged and while a
+    /// row still holds it.
+    public func icuPositionsOnlyAtSource() async throws -> [String: String] {
+        try await database.writer.read { db in
+            var out: [String: String] = [:]
+            for row in try Row.fetchAll(db, sql: """
+                SELECT icuActivityId, fingerprint FROM icu_positions_only_source
+                """) {
+                out[row["icuActivityId"]] = row["fingerprint"]
+            }
+            return out
+        }
+    }
+
+    /// Writes down what fetching `activity`'s file came to: a `.duplicate` that left the id
+    /// on a positions-only row not intervals.icu's own is the upload that cannot heal it, and
+    /// is remembered against the activity's fingerprint; any other outcome forgets the id.
+    func noteIcuSource(_ activity: IcuActivity, outcome: IngestOutcome) async throws {
+        let positionsOnly: Bool
+        if case .duplicate(let row) = outcome {
+            positionsOnly = row.sourceClass == "c"
+                && !IcuSyncService.isOwnFilename(row.originalFilename, activityID: activity.id)
+        } else {
+            positionsOnly = false
+        }
+        let fingerprint = activity.sourceFingerprint
+        try await database.writer.write { db in
+            if positionsOnly {
+                try db.execute(sql: """
+                    INSERT OR REPLACE INTO icu_positions_only_source
+                        (icuActivityId, fingerprint, checkedAt) VALUES (?, ?, ?)
+                    """, arguments: [activity.id, fingerprint, Date()])
+            } else {
+                try db.execute(sql: """
+                    DELETE FROM icu_positions_only_source WHERE icuActivityId = ?
+                    """, arguments: [activity.id])
+            }
+        }
     }
 
     /// Removes a session and remembers that it was removed.

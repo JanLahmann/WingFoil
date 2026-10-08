@@ -438,6 +438,101 @@ import Testing
         #expect(doubled.pending == 1)
     }
 
+    // MARK: - The richer copy wins (F-6 across devices, Jan 1 Oct 2026)
+
+    /// Fixture 0 as Strava serves it: positions and a clock, no speed — the same mapper the
+    /// Strava sync uses, so the row it lands as is class (c).
+    private func stravaCopy(into device: Device) async throws -> SessionRow {
+        let (fit, _) = try fixture(0)
+        let track = try FitSessionParser.parse(data: fit)
+        let start = try #require(track.startDate)
+        let t0 = try #require(track.samples.first?.t)
+        let fixes = track.samples.filter { $0.lat != nil && $0.lon != nil }
+        let firstFix = try #require(fixes.first?.t)
+        let lastFix = try #require(fixes.last?.t)
+        let activity = StravaActivity(
+            id: "15550002", name: "Morning Wingfoil", sportType: "Windsurf",
+            startDateUtc: ISO8601DateFormatter().string(
+                from: start.addingTimeInterval(firstFix - t0)),
+            utcOffsetS: 7200, elapsedTimeS: Int(lastFix - firstFix))
+        let gpx = try StravaImport.gpx(
+            activity: activity,
+            streams: StravaStreams(time: .init(data: fixes.map { $0.t - firstFix }),
+                                   latlng: .init(data: fixes.map { [$0.lat!, $0.lon!] })),
+            producer: "test")
+        guard case .imported(let row) = try await device.ingestor.ingest(
+            fitData: gpx, filename: StravaImport.filename(for: activity), source: .strava,
+            utcOffsetS: 7200) else {
+            Issue.record("the Strava copy did not import")
+            throw CancellationError()
+        }
+        #expect(row.sourceClass == "c")
+        return row
+    }
+
+    /// The other device holds the FIT, this one only Strava's copy: the pull reads the FIT
+    /// and the row is replaced in place, its rider's name kept.
+    @Test func aFitInTheFolderReplacesAStravaCopyHere() async throws {
+        let container = try makeContainer()
+        let phone = try makeDevice("phone")
+        let pad = try makeDevice("pad")
+        defer {
+            try? FileManager.default.removeItem(at: container.root)
+            try? FileManager.default.removeItem(at: phone.home)
+            try? FileManager.default.removeItem(at: pad.home)
+        }
+        try await ingest(0, into: pad)
+        let strava = try await stravaCopy(into: phone)
+        try await phone.store.renameSession(id: strava.id, to: "Nago morning")
+
+        try await engine(pad, container).sync()
+        let back = try await engine(phone, container).pull()
+        #expect(back.downloaded == 1)
+        #expect(back.duplicates == 0)
+        let rows = try await phone.ingestor.allSessions()
+        #expect(rows.count == 1)
+        #expect(rows.first?.id == strava.id)
+        #expect(rows.first?.sourceClass != "c")
+        #expect(rows.first?.customTitle == "Nago morning")
+        #expect(phone.ingestor.archive.originalFormat(for: strava.id) == .fit)
+
+        // Settled: the next pass on either side changes nothing and adds no session.
+        try await engine(phone, container).sync()
+        try await engine(pad, container).sync()
+        #expect(try await phone.ingestor.allSessions().count == 1)
+        #expect(try await pad.ingestor.allSessions().count == 1)
+    }
+
+    /// The Strava copy reached the folder first: the device with the FIT puts it there in the
+    /// GPX's place, and the first device's next pull takes it.
+    @Test func aStravaCopyInTheFolderGivesWayToTheFit() async throws {
+        let container = try makeContainer()
+        let phone = try makeDevice("phone")
+        let pad = try makeDevice("pad")
+        defer {
+            try? FileManager.default.removeItem(at: container.root)
+            try? FileManager.default.removeItem(at: phone.home)
+            try? FileManager.default.removeItem(at: pad.home)
+        }
+        let strava = try await stravaCopy(into: phone)
+        try await engine(phone, container).sync()
+        #expect(container.originalURL(for: strava.id)?.pathExtension == "gpx")
+
+        try await ingest(0, into: pad)
+        let pushed = try await engine(pad, container).sync()
+        #expect(pushed.uploaded == 1)
+        #expect(container.originalURL(for: strava.id)?.pathExtension == "fit")
+        // The pad's own row stays the FIT; the folder's GPX was never read over it.
+        #expect(try await pad.ingestor.allSessions().first?.sourceClass != "c")
+
+        try await engine(phone, container).sync()
+        let rows = try await phone.ingestor.allSessions()
+        #expect(rows.count == 1)
+        #expect(rows.first?.id == strava.id)
+        #expect(rows.first?.sourceClass != "c")
+        #expect(container.sessionIDs() == [strava.id])
+    }
+
     @Test func theContainerIdentifierFollowsTheChannel() {
         #expect(LibrarySyncLayout.containerIdentifier(bundleID: "de.lahmann.wingfoil")
                 == LibrarySyncLayout.releaseContainer)

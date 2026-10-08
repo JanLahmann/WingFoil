@@ -437,10 +437,16 @@ public enum TurnTraceBuilder {
     static func outcomeReasonPhrase(_ record: TurnRecord, config: TurnConfig) -> String {
         switch TurnOutcomeKind(record.outcome) {
         case .fellIn:
-            return record.submerged
-                ? "The wrist went under. That is a fall whatever the stop measured"
-                : String(format: "The stop ran %.0f s, past the %.1f s a fall starts at",
-                         record.stoppedS, config.fallStopS)
+            if record.submerged {
+                return "The wrist went under. That is a fall whatever the stop measured"
+            }
+            if record.stoppedS > config.fallStopS {
+                return String(format: "The stop ran %.0f s, past the %.1f s a fall starts at",
+                              record.stoppedS, config.fallStopS)
+            }
+            // turnRecordingEndS (engine 0.28.0): the recording stopped with him in the water.
+            return String(format: "The recording ended within %.0f s, with you standing "
+                          + "still and never flying again", config.recordingEndS)
         case .touchdown:
             if record.offFoilS == 0, record.pumped {
                 return "You never left the foil. The speed went marginal and you pumped a "

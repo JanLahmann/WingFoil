@@ -387,6 +387,19 @@ export const WELCOME = {
 export const WHATS_NEW = [
   {
     "version": "1.0.1",
+    "build": 129,
+    "channel": "beta",
+    "date": "2026-10-01",
+    "title": "The watch file wins",
+    "lines": [
+      "A Strava copy no longer invents a tack out of a GPS jump while you are in the water.",
+      "A turn that ends your session in the water counts as a fall.",
+      "Your watch's recording from intervals.icu replaces a Strava copy, in the background too.",
+      "The session list scrolls smoothly from the first swipe."
+    ]
+  },
+  {
+    "version": "1.0.1",
     "build": 127,
     "channel": "beta",
     "date": "2026-09-30",

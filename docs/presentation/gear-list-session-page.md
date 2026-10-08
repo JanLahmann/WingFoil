@@ -1,4 +1,4 @@
-> Part of `docs/presentation.md`. Engine 0.27.0.
+> Part of `docs/presentation.md`. Engine 0.28.0.
 
 ## Gear & spots — one page of named things
 
@@ -237,6 +237,31 @@ in** — the tile's shorter side less one inset on both edges — widened to the
 and centred on the track's bounding box (`TrackTileRegion`, pinned by `TrackTileRegionTests`).
 There is one inset constant (`ListMapBackdrop.inset`) and the row hands it to the outline
 view: it was two numbers, so the map was computed for a 40 pt square under a line drawn in a
-34 pt one, and the track sat off towards an edge of a map of somewhere slightly else. The app-wide menu (What CleanJibe does · Getting started ·
+34 pt one, and the track sat off towards an edge of a map of somewhere slightly else.
+
+**The first scroll meets rows that are already drawn** (Jan, 1 Oct 2026, dev 126: "hakelig
+when scrolling for the first time"). Three costs, each paid once per row on the first pass:
+
+- *Layout.* The row's two columns and its column of words are two small `Layout`s
+  (`SessionRowLayout`, `SessionRowColumnLayout`) that size each child once per width, where
+  the `HStack`/`VStack` they replace probed every child several times and asked each for its
+  alignment — a full layout of three nested `ViewThatFits`. The separator's start is stated
+  (`listRowSeparatorLeading`, under the title, where List put it) rather than found by
+  laying the row out again.
+- *Redraws.* Each session's drawing data is its own observable (`ThumbnailEntry`), so one
+  outline landing redraws one row; it was one dictionary every row read, and each landing
+  re-evaluated every row on screen (~10 bodies per row on a first scroll, now 1).
+- *Drawing.* The outline and the sparkline are drawn once into two bitmaps off the main
+  thread (`TrackTileArt`, the same strokes, inks, widths and fit), and the row shows the
+  images; the two `Canvas` surfaces were most of what was left. The `Canvas` views stay as
+  the fallback for the moment before a picture exists, and on the share card.
+
+Whenever the library loads, `ThumbnailStore.warm` reads every cached outline (and, with the
+map on, every cached picture, decoded off the main thread) in one background pass, draws
+the tiles, and publishes them at once; the sessions that have none — a fresh import, every
+session after a re-analysis — are built in the background, newest first, instead of when
+they scroll into view. A row that appears before its outline still asks for it and jumps
+the queue. Map snapshots run two at a time. The row draws exactly what it drew before;
+`LibraryScrollUITests` guards the hitch ratio (docs/testing.md). The app-wide menu (What CleanJibe does · Getting started ·
 Settings · Help · Support & ideas) is one `AppMenuButton` on all four tab roots (pattern M).
 

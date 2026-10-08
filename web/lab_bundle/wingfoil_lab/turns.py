@@ -246,6 +246,41 @@ class TurnConfig:
     min_cog_speed_mps: float = 2.0        # lab-added: COG != heading below this (COAPS)
     min_arc_m: float = 12.0               # turnMinArc: path travelled across the sweep
     min_radius_m: float = 6.0             # turnMinRadius: arc / |net angle| (rad)
+    #: turnPositionalMinSweepS (engine 0.28.0), s: **a heading flip made of one jump is not a
+    #: turn**. On a positions-only track (class c: a GPX, a Strava copy) the COG is the
+    #: direction between consecutive fixes, so one fix thrown metres sideways -- the watch
+    #: surfacing after a fall, a held position followed by a catch-up -- turns the heading
+    #: through 150 deg in one or two steps. None of the 1 568 counted turns on Jan's 60
+    #: intervals.icu FITs sweeps in under 3 s, nor any of the 1 522 their positions-only
+    #: copies share with them; the four positions-only sweeps shorter than that are all ones
+    #: the FIT never saw. Such a sweep is dropped before it
+    #: is scored, like one that carved no arc. Class (a)/(b) are never asked: their Doppler
+    #: does not jump with the fix. 0 = off. Jan, 1 Oct 2026; ADR-038.
+    positional_min_sweep_s: float = 3.0
+    #: turnPositionalSpikePct (engine 0.28.0), % of entry speed: **a recovery made of a jump
+    #: is not a recovery**. On a positions-only track a fix thrown sideways reads as a burst
+    #: of speed, and two such samples close the outcome window as "flying again" (the
+    #: `turnRecoverHold` test) while the rider is in the water. So on class (c) a recovery
+    #: whose samples reach this share of the turn's entry speed, and after which the rider
+    #: stands still (`turnStopSpeedFloor`) within `turnOutcomeWindow`, is set aside: the
+    #: window is searched again from that standstill. Of the 762 turns both copies call a
+    #: fly-through, the 35 that stop within the window peak at 127 % of entry at most; the
+    #: four phantoms the rule catches reach 157-243 %.
+    #: Class (a)/(b) are never asked. 0 = off. Jan, 1 Oct 2026; ADR-038.
+    positional_spike_pct: float = 150.0
+    #: turnPositionalMaxStepDeg (engine 0.28.0), deg: **a turn has to be seen turning**. On
+    #: a positions-only track a sweep in which the heading swings this far or further in ONE
+    #: step between consecutive fixes is not a turn: the track doubled back between two fixes,
+    #: and nothing in between saw the rider turn -- a fix thrown sideways as he fell, a fix
+    #: held through a fix-less record, the gap of a sparse ("smart") recording. Of the 1 516
+    #: turns the positions-only copies of Jan's 60 intervals.icu FITs share with the FIT, the
+    #: widest single step is 136 deg (a 4 s smart-recording step); the six phantom tacks of
+    #: those copies swing 166-176 deg in one step. The same share of the entry speed
+    #: (`turnPositionalSpikePct`) also asks the sweep itself: a sweep whose speed reaches it
+    #: and after which the rider stands still within `turnOutcomeWindow` is a jump, not a
+    #: turn. Both drop the sweep before it is scored; class (a)/(b) are never asked. 0 = off.
+    #: Jan, 1 Oct 2026 (he has never completed a tack); ADR-038.
+    positional_max_step_deg: float = 150.0
     #: turnAxisBeforeDeg (engine 0.15.0): how far the sweep must start *from* the axis it
     #: crosses before it is allowed to be a tack or a jibe. 0 = off, and at 0 no verdict
     #: anywhere moves. Below it the sweep is filed as the same uncounted course change the
@@ -315,6 +350,15 @@ class TurnConfig:
     #: powered out of is judged over exactly the seconds it always was. Set it equal to
     #: `outcome_lookahead_s` to switch the rule off.
     outcome_lookahead_not_recovered_s: float = 30.0
+    #: turnRecordingEndS (engine 0.28.0), seconds: **a recording that ends in the water ends
+    #: in a fall**. A turn that came off the foil, after which the rider never flies again and
+    #: the recording stops within this many seconds of the sweep's end with him standing
+    #: still (`turnStopSpeedFloor`) on its last sample, fell in -- even where a recording gap
+    #: (a smart-recording pause, the wrist under water) cut the outcome window short of the
+    #: `turnFallStop` the ladder would otherwise have measured. Jan's 10 Aug 2025 tack at
+    #: 94:04, his last maneuver of the day, read `touchdown`: an 18 s pause in the recording,
+    #: two samples at 1 kn and the end of the file. 0 = off. Jan, 1 Oct 2026; ADR-038.
+    recording_end_s: float = 30.0
     recover_pct: float = 70.0             # turnRecoverPct: of entry speed = flying again
     recover_hold_s: float = 2.0           # turnRecoverHold: held this long = turn is over
     outcome_window_s: float = 12.0        # turnOutcomeWindow: = lookahead (engine 0.13.0)
@@ -632,12 +676,20 @@ def detect_turns(clean: CleanTrack, flights: FlightResult,
         ev = off_foil_evidence(clean, flights, cfg.foil_exit_speed_kmh, cfg.baro_drop_m)
     cands = _join_split(_accepted_candidates(clean, flights, cfg), wind, cfg)
     turns = [_build_turn(c, wind, cfg) for c in cands]
+    positional = clean.capabilities.source_class == "c"
+    if positional:
+        # A sweep made of a jump (engine 0.28.0, ADR-038): dropped before it is judged.
+        turns = [t for t in turns if not _sweep_jump(t, ev, cfg)]
     # **The aborted turn** (engine 0.21.0). Scored with the same builder and judged by the
     # same ladder as every other sweep -- only the entry condition differs -- so the list is
     # merged *after* the outcomes are in: whether a sweep fell in is the ladder's answer,
     # never the scan's. See `_abort_candidates` and `_merge_aborted`.
     abort_cands = _abort_candidates(clean, flights, cfg)
     aborted = [_build_turn(c, wind, cfg, aborted=True) for c in abort_cands]
+    if positional:
+        keep = [not _sweep_jump(t, ev, cfg) for t in aborted]
+        abort_cands = [c for c, k in zip(abort_cands, keep) if k]
+        aborted = [t for t, k in zip(aborted, keep) if k]
     if cfg.detect_three_sixty:
         # Purely additive, and only ever under the flag: the spin pass never removes or
         # renames a maneuver the main scan reported, so an overlapping tack/jibe stays
@@ -679,8 +731,53 @@ def _accepted_candidates(clean: CleanTrack, flights: FlightResult,
     return _drop_overlaps(cands)
 
 
+def _min_sweep_s(clean: CleanTrack, cfg: TurnConfig) -> float:
+    """The shortest sweep this track may report: `turnPositionalMinSweepS` on class (c)."""
+    return cfg.positional_min_sweep_s if clean.capabilities.source_class == "c" else 0.0
+
+
+def _max_step_deg(clean: CleanTrack, cfg: TurnConfig) -> float:
+    """The widest one-step heading swing a sweep may hold: `turnPositionalMaxStepDeg` on
+    class (c), unlimited elsewhere (0 = off)."""
+    if clean.capabilities.source_class != "c" or cfg.positional_max_step_deg <= 0:
+        return math.inf
+    return cfg.positional_max_step_deg
+
+
+def _one_step_flip(u: np.ndarray, i: int, j: int, max_step: float) -> bool:
+    """True when one step of the sweep u[i..j] swings the heading `max_step` or more."""
+    return j > i and float(np.max(np.abs(np.diff(u[i:j + 1])))) >= max_step
+
+
+def _sweep_jump(turn: Turn, ev: OffFoilEvidence | None, cfg: TurnConfig) -> bool:
+    """**A sweep made of a jump** (engine 0.28.0, positions-only tracks, ADR-038).
+
+    True when a sample inside the sweep reached `turnPositionalSpikePct` of the turn's entry
+    speed and the rider then stands still (`turnStopSpeedFloor`) within `turnOutcomeWindow`
+    of the sweep's end, without a recording gap in between: the positional "speed" of a fix
+    thrown sideways as he fell, not a turn he rode.
+    """
+    if ev is None or cfg.positional_spike_pct <= 0 or not turn.entry_kn > 0:
+        return False
+    t = ev.t
+    spike = cfg.positional_spike_pct / 100.0 * turn.entry_kn / MPS_TO_KN
+    inside = (t >= turn.start_t) & (t <= turn.end_t)
+    if not (ev.doppler[inside] >= spike).any():
+        return False
+    k0 = int(np.searchsorted(t, turn.end_t, "right"))
+    until = turn.end_t + cfg.outcome_window_s
+    for k in range(k0, len(t)):
+        if t[k] > until or ev.gap[k]:
+            return False
+        if ev.speed[k] < cfg.stop_speed_floor_mps:
+            return True
+    return False
+
+
 def _scan(clean: CleanTrack, flights: FlightResult, cfg: TurnConfig):
     """Yield every candidate sweep that passes the on-foil and carve gates, as detected."""
+    min_sweep = _min_sweep_s(clean, cfg)
+    max_step = _max_step_deg(clean, cfg)
     for seg in clean.segments():
         if len(seg) < 3 or seg["x"].isna().all():
             continue
@@ -693,6 +790,8 @@ def _scan(clean: CleanTrack, flights: FlightResult, cfg: TurnConfig):
             rate = _rates(tu, u)
             for i, j in _suppress(_candidates(tu, u, rate, cfg)):
                 i, j = _trim(i, j, rate, u, cfg)
+                if tu[j] - tu[i] < min_sweep or _one_step_flip(u, i, j, max_step):
+                    continue
                 if not _on_foil(tu[i], tu[j], flights, cfg):
                     continue
                 arc = _arc(x, y, a + i, a + j + 1)
@@ -728,6 +827,8 @@ def _abort_candidates(clean: CleanTrack, flights: FlightResult,
     """
     if cfg.abort_min_angle_deg <= 0:
         return []
+    min_sweep = _min_sweep_s(clean, cfg)
+    max_step = _max_step_deg(clean, cfg)
     out: list[_Candidate] = []
     for seg in clean.segments():
         if len(seg) < 3 or seg["x"].isna().all():
@@ -750,6 +851,8 @@ def _abort_candidates(clean: CleanTrack, flights: FlightResult,
             if abs(u[j] - u[i]) < cfg.abort_min_angle_deg:
                 continue
             if np.max(np.abs(rate[i:j])) < cfg.peak_rate_deg_s:
+                continue
+            if tu[j] - tu[i] < min_sweep or _one_step_flip(u, i, j, max_step):
                 continue
             if not _on_foil(tu[i], tu[j], flights, cfg):
                 continue
@@ -1154,14 +1257,15 @@ def _assign_outcomes(turns: list[Turn], clean: CleanTrack, flights: FlightResult
     if ev is None:
         ev = off_foil_evidence(clean, flights, cfg.foil_exit_speed_kmh, cfg.baro_drop_m)
     if ev is not None:
+        positional = clean.capabilities.source_class == "c"
         for turn in turns:
-            _outcome(turn, ev, cfg, pump)
+            _outcome(turn, ev, cfg, pump, positional)
     for turn in turns:
         turn.clean, turn.clean_blocked_by = clean_verdict(turn, ev, cfg, ends)
 
 
 def _outcome(turn: Turn, ev: OffFoilEvidence, cfg: TurnConfig,
-             pump: PumpTrack | None = None) -> None:
+             pump: PumpTrack | None = None, positional: bool = False) -> None:
     """Three-way outcome for one turn (see the module docstring), and the reason for it.
 
     The loss of foil is looked for from the turn start to the end of the turn's *outcome
@@ -1172,7 +1276,7 @@ def _outcome(turn: Turn, ev: OffFoilEvidence, cfg: TurnConfig,
     It is set on the same branch that sets `outcome`, so the two can never disagree.
     """
     t = ev.t
-    hi, not_recovered = _window_end(turn, ev, cfg)
+    hi, not_recovered = _window_end(turn, ev, cfg, positional)
     # The span the off-foil run may be followed over: `turnOutcomeWindow` as always, and
     # the longer not-recovered tail when that is what the window itself ran to, so the
     # stop a mush-out ends in is measured by the turn that caused it (ADR-032).
@@ -1203,7 +1307,8 @@ def _outcome(turn: Turn, ev: OffFoilEvidence, cfg: TurnConfig,
     b, end = off_foil_run(t, ev.flying, a, turn.end_t + window_cap)
     turn.off_foil_s = elapsed(t, ev.gap, a, end)
     turn.stopped_s = longest_stop(t, ev.gap, ev.speed, a, b, cfg.stop_speed_floor_mps)
-    if turn.submerged or turn.stopped_s > cfg.fall_stop_s:
+    if (turn.submerged or turn.stopped_s > cfg.fall_stop_s
+            or _ended_in_water(turn, ev, cfg)):
         turn.outcome, turn.borderline = FELL_IN, False
         # The wrist wins the wording when it is what decided: the mask is proof of a swim
         # wherever it appears, and it is tested first above, so a submerged fall is named
@@ -1217,7 +1322,46 @@ def _outcome(turn: Turn, ev: OffFoilEvidence, cfg: TurnConfig,
         turn.outcome_reason = REASON_STOP if turn.borderline else REASON_OFF_FOIL
 
 
-def _window_end(turn: Turn, ev: OffFoilEvidence, cfg: TurnConfig) -> tuple[int, bool]:
+def _ended_in_water(turn: Turn, ev: OffFoilEvidence, cfg: TurnConfig) -> bool:
+    """**The recording ended in the water** (engine 0.28.0, `turnRecordingEndS`).
+
+    Asked only of a turn that came off the foil. True when the last sample of the track
+    lies within `turnRecordingEndS` of the sweep's end, the rider stands still on it
+    (`turnStopSpeedFloor`), and he never *recovered* in between -- the ladder's own test,
+    `turnRecoverPct` of entry (floored at `foilEntrySpeed`) held for `turnRecoverHold`.
+    Recording gaps in between do not stop the search, they only break a hold: the claim is
+    that he never got going again before the recording stopped, which a gap does not
+    contradict.
+    """
+    if cfg.recording_end_s <= 0:
+        return False
+    t = ev.t
+    last = len(t) - 1
+    if float(t[last]) - turn.end_t > cfg.recording_end_s:
+        return False
+    if not ev.speed[last] < cfg.stop_speed_floor_mps:
+        return False
+    thr = _recover_thr(turn, cfg)
+    held, prev = 0.0, -1
+    for k in range(int(np.searchsorted(t, turn.min_t, "right")), len(t)):
+        if ev.doppler[k] < thr:
+            held, prev = 0.0, -1
+            continue
+        held = held + (t[k] - t[prev]) if prev == k - 1 and not ev.gap[k] else 0.0
+        prev = k
+        if held >= cfg.recover_hold_s:
+            return False
+    return True
+
+
+def _recover_thr(turn: Turn, cfg: TurnConfig) -> float:
+    """m/s a rider must hold to be flying again after this turn (`turnRecoverPct`)."""
+    return max(cfg.recover_pct / 100.0 * turn.entry_kn / MPS_TO_KN,
+               cfg.foil_entry_speed_kmh * KMH_TO_MPS)
+
+
+def _window_end(turn: Turn, ev: OffFoilEvidence, cfg: TurnConfig,
+                positional: bool = False) -> tuple[int, bool]:
     """(last sample index the turn is judged over, *the rider never recovered*).
 
     Recovery is `evidence.outcome_tail` measured against `turnRecoverPct` of the *turn's*
@@ -1228,11 +1372,45 @@ def _window_end(turn: Turn, ev: OffFoilEvidence, cfg: TurnConfig) -> tuple[int, 
     instead when none of the three closed it by then (ADR-032).
     """
     lo = min(int(np.searchsorted(ev.t, turn.start_t, "left")), len(ev.t) - 1)
-    thr = max(cfg.recover_pct / 100.0 * turn.entry_kn / MPS_TO_KN,
-              cfg.foil_entry_speed_kmh * KMH_TO_MPS)
-    return outcome_tail(ev.t, ev.gap, ev.doppler, lo, turn.end_t, turn.min_t,
-                        thr, cfg.recover_hold_s, cfg.outcome_lookahead_s,
-                        cfg.outcome_lookahead_not_recovered_s)
+    thr = _recover_thr(turn, cfg)
+    hi, not_recovered = outcome_tail(ev.t, ev.gap, ev.doppler, lo, turn.end_t, turn.min_t,
+                                     thr, cfg.recover_hold_s, cfg.outcome_lookahead_s,
+                                     cfg.outcome_lookahead_not_recovered_s)
+    if positional and not not_recovered:
+        stand = _spike_standstill(turn, ev, cfg, hi)
+        if stand is not None:
+            hi, not_recovered = outcome_tail(
+                ev.t, ev.gap, ev.doppler, lo, turn.end_t, float(ev.t[stand]), thr,
+                cfg.recover_hold_s, cfg.outcome_lookahead_s,
+                cfg.outcome_lookahead_not_recovered_s)
+    return hi, not_recovered
+
+
+def _spike_standstill(turn: Turn, ev: OffFoilEvidence, cfg: TurnConfig,
+                      hi: int) -> int | None:
+    """The standstill that unmasks a jump-made recovery, or None (engine 0.28.0).
+
+    Positions-only tracks only (`turnPositionalSpikePct`, ADR-038). The recovery that closed
+    the window at `hi` is set aside when a sample between the speed minimum and `hi` reached
+    `turnPositionalSpikePct` of the entry speed **and** the speed then drops below
+    `turnStopSpeedFloor` within `turnOutcomeWindow` of `hi`, without a recording gap in
+    between. Returns the index of that first stopped sample: the window is searched again
+    from there, so a rider who really got going after the swim is still found recovering.
+    """
+    if cfg.positional_spike_pct <= 0:
+        return None
+    t = ev.t
+    spike = cfg.positional_spike_pct / 100.0 * turn.entry_kn / MPS_TO_KN
+    seen = (t > turn.min_t) & (t <= t[hi])
+    if not (ev.doppler[seen] >= spike).any():
+        return None
+    until = t[hi] + cfg.outcome_window_s
+    for k in range(hi + 1, len(t)):
+        if t[k] > until or ev.gap[k]:
+            return None
+        if ev.speed[k] < cfg.stop_speed_floor_mps:
+            return k
+    return None
 
 
 def _quiet_blocked(turn: Turn, ev: OffFoilEvidence, cfg: TurnConfig,
