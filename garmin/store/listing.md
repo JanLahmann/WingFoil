@@ -18,7 +18,7 @@ open beta, English only.
 ## Watch app — `CleanJibe Wingfoil Tracker (Beta)`
 
 * Store page: <https://apps.garmin.com/apps/e77867b5-e972-4eb2-be1b-90077cfac806>
-* Type: device app · Version **0.9.19** on the store, **42** products (uploaded 23 Sep 2026, Internal 26; 0.9.18 on 22 Sep, Internal 25; 0.9.17 on 21 Sep, Internal 24; 0.9.16 the same day, Internal 23; 0.9.15 on 20 Sep, Internal 22; 0.9.13 on 17 Sep, Internal 21; 0.9.12 the same day; 0.9.11 on 15 Sep; web/tools/make_devices.py reads this line, keep its shape) · first submitted 2026-08-12, 0.9.4 released 2026-09-01
+* Type: device app · Version **0.9.20** on the store, **42** products (uploaded 1 Oct 2026, Internal 27; 0.9.19 on 23 Sep, Internal 26; 0.9.18 on 22 Sep, Internal 25; 0.9.17 on 21 Sep, Internal 24; 0.9.16 the same day, Internal 23; 0.9.15 on 20 Sep, Internal 22; 0.9.13 on 17 Sep, Internal 21; 0.9.12 the same day; 0.9.11 on 15 Sep; web/tools/make_devices.py reads this line, keep its shape) · first submitted 2026-08-12, 0.9.4 released 2026-09-01
 * Permissions: Fit, SensorLogging, Communications, Positioning, FitContributor, Sensor
 * Devices (`garmin/manifest-beta.xml`, identical to the release and dev manifests; the count and
   the family grouping are generated into `docs/copy/garmin-devices.json`): 42 products at 0.9.11,
@@ -152,9 +152,14 @@ Read against the 0.9.19 UI (`Read`, frame by frame — no simulator run, no new 
 
 ### Next watch build
 
-Nothing queued. 0.9.20 (1 Oct 2026) ported the aborted turn with R1–R3, the fall at the end of
-a recording and the early-touch rule (`docs/algorithms/turns.md`, "Ported in watch 0.9.20");
-the divergences left are listed under "Not ported yet".
+**0.9.21, built and tested, not uploaded** (8 Oct 2026): R4 and R5 naming, the recovery search
+from the speed minimum, and a swim inside a bear-away judged as a straight-line fall
+(`docs/algorithms/turns.md`, "Ported in watch 0.9.21"). Draft What's New paragraph, to go on
+top of the 0.9.20 one:
+
+0.9.21: Your wrist names turns the way the phone does. A jibe you carry on round through the wind is a jibe. A turn split by one slow second is one turn. A swim during a bear-away now ends your dry streak.
+
+The divergences left are listed under "Not ported yet".
 
 ---
 
