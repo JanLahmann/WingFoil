@@ -615,7 +615,10 @@ function perKindOutcomesAddUpToTheKind(logger as Test.Logger) as Boolean {
 function turnSubmersionForcesFellIn(logger as Test.Logger) as Boolean {
     var d = new TurnDetector(coreDefaults());
     runStraight(d, 5, 90.0, 8.0);
-    runSweep(d, 90.0, 30.0, 6, 8.0);
+    // the exit is the slowest sample, as in a real jibe: recovery is searched after the speed
+    // minimum (0.9.21), and a flat sweep would have recovered before it ended
+    runSweep(d, 90.0, 30.0, 5, 8.0);
+    d.tick(1.0, 270.0, 6.0, 6.0, true, false);
     // speed says he kept moving, the barometer says the wrist went under: fell in outright
     var ev = TurnDetector.EVENT_NONE;
     for (var i = 0; i < 8; i++) {
@@ -1108,7 +1111,8 @@ function cleanJibesAreSuccessfulJibesAndNothingElse(logger as Test.Logger) as Bo
     // fell in" wearing a star.
     var x = new TurnDetector(cfg);
     runStraight(x, 5, 120.0, 8.0);
-    runSweep(x, 120.0, 30.0, 4, 8.0);
+    runSweep(x, 120.0, 30.0, 3, 8.0);
+    x.tick(1.0, 240.0, 7.0, 7.0, true, false);  // the exit dip: the minimum, as in a real jibe
     runStraight(x, 2, 240.0, 8.0);
     runStraight(x, 4, 240.0, 1.0);              // off the foil, still making way
     runStraight(x, 8, 240.0, 8.0);              // and back up: a touchdown, not a fall
@@ -1802,6 +1806,150 @@ function aLateBrushOfTheFloorIsAGlideOut(logger as Test.Logger) as Boolean {
     Test.assertMessage(early.flewStreak == 0 && early.dryStreak == 1,
         "a brush at 5 s is a touchdown, got flew " + early.flewStreak.toString()
         + " dry " + early.dryStreak.toString());
+    return true;
+}
+
+// ---- THE WATCH CATCH-UP (engine 0.27.0 R4 and R5, the recovery search, ADR-035; watch 0.9.21) ----
+
+// R4: a sweep that crosses both axes is named by the one it reached FIRST. From a broad reach
+// at 150 deg (wind from 0) the rider jibes through 180 and carries on round to 395, through
+// the wind: the middle of the sweep sits nearer the tack, the first crossing is the jibe.
+// AutoWind's prior keeps the middle reading.
+(:test)
+function turnThroughBothAxesIsNamedByTheFirstCrossing(logger as Test.Logger) as Boolean {
+    Test.assertMessage(classifySweep(150.0, 395.0, 0) == TurnDetector.KIND_TACK,
+        "the prior's reading is the middle one");
+    Test.assertMessage(classifyTurn(150.0, 395.0, 0) == TurnDetector.KIND_JIBE,
+        "the turn's own name is the first crossing");
+    Test.assertMessage(classifyTurn(395.0, 150.0, 0) == TurnDetector.KIND_TACK,
+        "the other way round, the wind comes first");
+    Test.assertMessage(classifyTurn(150.0, 210.0, 0) == TurnDetector.KIND_REJECT,
+        "the 90 deg floor still comes first");
+    var cfg = coreDefaults();
+    cfg.setWindDirection(0);
+    var d = new TurnDetector(cfg);
+    runStraight(d, 5, 150.0, 8.0);
+    runSweep(d, 150.0, 35.0, 7, 8.0);
+    runStraight(d, 6, 395.0, 8.0);
+    Test.assertMessage(d.turnCount == 1 && d.jibeCount == 1 && d.tackCount == 0,
+        "one jibe, got " + d.jibeCount.toString() + " jibes, " + d.tackCount.toString()
+        + " tacks");
+    d.rebuildWindSplit();
+    Test.assertMessage(d.jibeCount == 1 && d.tackCount == 0, "the rebuild names it the same");
+    return true;
+}
+
+// R5: a 72 deg course change ends at 172 deg (wind from 0), one slow step crosses dead
+// downwind, and the rotation carries on at 30 deg/s two seconds later. On its own the second
+// sweep (206 -> 356) crosses nothing and is a course change; joined back to 172 it is a jibe.
+function runSplitJibe(d as TurnDetector) as Void {
+    runStraight(d, 5, 100.0, 8.0);
+    runSweep(d, 100.0, 18.0, 4, 8.0);           // 100 -> 172: a course change
+    runStraight(d, 1, 176.0, 8.0);              // the slow step: the sweep closes
+    runSweep(d, 176.0, 30.0, 6, 8.0);           // 206 -> 356
+    runStraight(d, 6, 356.0, 8.0);
+}
+
+(:test)
+function turnSplitAcrossTheWindIsJoined(logger as Test.Logger) as Boolean {
+    var cfg = coreDefaults();
+    cfg.setWindDirection(0);
+    var d = new TurnDetector(cfg);
+    runSplitJibe(d);
+    Test.assertMessage(d.rejectedCount == 1, "the first sweep is a course change, got "
+        + d.rejectedCount.toString());
+    Test.assertMessage(d.turnCount == 1 && d.jibeCount == 1 && d.flewCount == 1,
+        "the second is a jibe that flew, got " + d.turnCount.toString() + " turns, "
+        + d.jibeCount.toString() + " jibes");
+    Test.assertMessage(d.lastNetDeg > 140.0 && d.lastNetDeg < 160.0,
+        "AutoWind is told the sweep's own rotation, got " + d.lastNetDeg.toString());
+    // ...and with no wind at the time, the rebuild joins it under the axis that arrives
+    var cfg2 = coreDefaults();
+    var d2 = new TurnDetector(cfg2);
+    runSplitJibe(d2);
+    Test.assertMessage(d2.turnCount == 1 && d2.lastKind == TurnDetector.KIND_TURN,
+        "a generic turn without a wind");
+    cfg2.setWindDirection(0);
+    d2.rebuildWindSplit();
+    Test.assertMessage(d2.jibeCount == 1, "the rebuild joins it: a jibe, got "
+        + d2.jibeCount.toString());
+    // ...and under an axis the gap does not cross, nothing is joined
+    cfg2.setWindDirection(90);
+    d2.rebuildWindSplit();
+    Test.assertMessage(d2.jibeCount == 1 && d2.tackCount == 0,
+        "206 -> 356 crosses 270 under a wind from 90: its own jibe, got "
+        + d2.jibeCount.toString());
+    return true;
+}
+
+// The recovery search starts at the speed MINIMUM (the phone's `recovery_end`). A dip to 5 m/s
+// early in the sweep, back to 8 for the rest of it: he recovered inside the sweep, and that is
+// where the turn is judged. A splash of the wrist a second after the sweep, at full speed, is
+// no longer this turn's — it was its fall when the search began at the sweep end.
+(:test)
+function turnRecoveryIsSearchedFromTheSpeedMinimum(logger as Test.Logger) as Boolean {
+    var d = new TurnDetector(coreDefaults());
+    runStraight(d, 5, 90.0, 8.0);
+    var speeds = [8.0, 5.0, 8.0, 8.0, 8.0, 8.0];
+    for (var i = 0; i < 6; i++) {
+        d.tick(1.0, 90.0 + 30.0 * (i + 1), speeds[i], speeds[i], true, false);
+    }
+    d.tick(1.0, 270.0, 8.0, 8.0, true, true);   // the splash, still flying
+    var ev = runStraight(d, 4, 270.0, 8.0);
+    Test.assertMessage(d.turnCount == 1 && d.fellCount == 0,
+        "the splash after the recovery is not the turn's fall, fell "
+        + d.fellCount.toString());
+    Test.assertMessage(ev == TurnDetector.EVENT_FLEW || d.flewCount == 1,
+        "flew through, event " + ev.toString());
+    Test.assertMessage(d.lastScorePct == 62, "scored on the dip, got "
+        + d.lastScorePct.toString());
+    return true;
+}
+
+// A recovery is HELD at both ends: two samples at speed are one second of it, not two. He
+// comes out of the jibe, touches, gets two seconds of speed and goes back down for good: a
+// fall on the phone, and now on the wrist (the window used to close on the second sample
+// and call it a touchdown).
+(:test)
+function aRecoveryIsHeldAtBothEnds(logger as Test.Logger) as Boolean {
+    var d = new TurnDetector(coreDefaults());
+    runStraight(d, 5, 90.0, 8.0);
+    runSweep(d, 90.0, 30.0, 6, 8.0);
+    runTail(d, 1, 270.0, 0.5, false, false);
+    runTail(d, 2, 270.0, 8.0, true, false);
+    var ev = runTail(d, 10, 270.0, 0.2, false, false);
+    Test.assertMessage(ev == TurnDetector.EVENT_FELL && d.fellCount == 1
+        && d.touchdownCount == 0, "a fall, got fell " + d.fellCount.toString()
+        + " touch " + d.touchdownCount.toString());
+    // three samples at speed are the hold: the turn is judged there, a touchdown
+    var d2 = new TurnDetector(coreDefaults());
+    runStraight(d2, 5, 90.0, 8.0);
+    runSweep(d2, 90.0, 30.0, 6, 8.0);
+    runTail(d2, 1, 270.0, 0.5, false, false);
+    runTail(d2, 3, 270.0, 8.0, true, false);
+    Test.assertMessage(d2.touchdownCount == 1 && d2.state == TurnDetector.ST_IDLE,
+        "recovered on the third: a touchdown, got " + d2.touchdownCount.toString());
+    return true;
+}
+
+// ADR-035 on the wrist: only a COUNTED turn owns a flight end. He bears away 72 deg, comes off
+// the foil on the way round and swims. The sweep is a course change, so the swim is a
+// straight-line fall and ends the dry run; it used to vanish, because the flight ended while
+// the sweep was still open and nothing was watching.
+(:test)
+function aSwimInsideABearAwayEndsTheRun(logger as Test.Logger) as Boolean {
+    var d = new TurnDetector(coreDefaults());
+    streakFlyThrough(d, 280.0);                 // ends heading 100
+    Test.assertEqual(d.dryStreak, 1);
+    runStraight(d, 5, 100.0, 8.0);
+    d.tick(1.0, 130.0, 8.0, 8.0, true, false);
+    d.tick(1.0, 160.0, 8.0, 8.0, true, false);   // the sweep opens here
+    d.tick(1.0, 175.0, 5.0, 5.0, false, false);  // off the foil inside it
+    runTail(d, 10, 175.0, 0.2, false, false);
+    Test.assertMessage(d.rejectedCount == 1 && d.turnCount == 1,
+        "a course change, not a turn, got " + d.turnCount.toString());
+    Test.assertMessage(d.dryStreak == 0, "the swim ends the dry run, got "
+        + d.dryStreak.toString());
     return true;
 }
 

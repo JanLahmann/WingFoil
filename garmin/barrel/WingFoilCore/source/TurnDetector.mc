@@ -66,6 +66,38 @@ function classifySweep(uIn as Float, uOut as Float, windDeg as Number) as Number
         ? TurnDetector.KIND_TACK : TurnDetector.KIND_JIBE;
 }
 
+// THE TURN'S OWN NAME (engine 0.27.0, R4; watch 0.9.21). The same rule as `classifySweep`
+// except for a sweep that crosses BOTH axes: it is named by the one it reached FIRST in its
+// own sense of rotation, the phone's `classify_sweep(..., first_crossing=True)`. A jibe the
+// rider carries on round through the wind as he crashes went through downwind first, and the
+// middle of the sweep can sit nearer the tack. `classifySweep` keeps the middle reading,
+// because AutoWind's prior asks a different question with it and moving it would move a wind.
+// The first crossing is `abortCrossedKind`'s arithmetic, which already answered it for the
+// aborted turn.
+function classifyTurn(uIn as Float, uOut as Float, windDeg as Number) as Number {
+    if ((uOut - uIn).abs() < CLASSIFY_MIN_ANGLE_DEG) {
+        return TurnDetector.KIND_REJECT;
+    }
+    if (windDeg < 0) {
+        return TurnDetector.KIND_TURN;
+    }
+    var k = abortCrossedKind(uIn, uOut, windDeg);
+    return k == TurnDetector.KIND_NONE ? TurnDetector.KIND_REJECT : k;
+}
+
+// R5's question (engine 0.27.0, `_join_split`): does the heading change from `uA` to `uB`, the
+// gap between two sweeps, pass either end of the wind axis?
+function joinCrosses(uA as Float, uB as Float, windDeg as Number) as Boolean {
+    if (windDeg < 0) {
+        return false;
+    }
+    var a = wrapDeg180(uA - windDeg.toFloat());
+    var b = a + (uB - uA);
+    var lo = a < b ? a : b;
+    var hi = a < b ? b : a;
+    return Math.ceil(lo / 180.0).toNumber() * 180.0 <= hi;
+}
+
 // The value offset + 360k inside [lo, hi] closest to mid, or SWEEP_NO_CROSS when the sweep
 // never passes that axis end.
 function sweepCrossing(lo as Float, hi as Float, offset as Float, mid as Float) as Float {
@@ -322,8 +354,22 @@ class TurnDetector {
     const ABORT_MAX = 32;
     const ABORT_STRIDE = 7;
 
+    // R5 (turnJoinGapS, engine 0.27.0; watch 0.9.21): two same-direction sweeps of one sailing
+    // run at most this far apart, with the wind axis crossed in the gap between the first's
+    // last heading and the second's first, are one rotation. The second is extended back to
+    // where the first ended and named with it. Nothing else is joined.
+    const JOIN_GAP_S = 2.0;
+    // A join is a question about the wind, so a rebuild asks it again under every new axis:
+    // one record per turn that had a same-direction sweep that close before it, 4 bytes.
+    const JOIN_MAX = 16;
+    const JOIN_STRIDE = 4;
+
     // 8 s sweep cap + 3 s entry window + margin, at 1 Hz
     const HIST = 14;
+    // The speed history the score, the entry speed and the recovery search read (0.9.21): every
+    // tick, whatever the state machine is doing, so a sweep joined back across the gap (R5)
+    // still finds the speeds it now starts at. 8 s sweep + 2 s gap + 3 s entry + margin.
+    const SPEED_HIST = 16;
 
     var state as Number = ST_IDLE;
 
@@ -414,10 +460,10 @@ class TurnDetector {
     // counted turns ever INCREMENT; straight-line ends can only break. That asymmetry is the
     // whole rule: what the number counts is maneuvers, what ends it is swims.
     //
-    // Rejected sweeps — bear-aways and round-ups — still increment nothing, and they need no
-    // special case for the falls either: a rejected sweep leaves the state machine idle, so a
-    // fall after one arrives as an unowned flight end and breaks the run through exactly the
-    // path above. Counting a course change as a maneuver would make a streak depend on how
+    // Rejected sweeps — bear-aways and round-ups — still increment nothing. A fall after one
+    // arrives as an unowned flight end and breaks the run through exactly the path above, and
+    // since 0.9.21 so does one that starts INSIDE it: the end's verdict waits for the sweep,
+    // and only a counted turn owns it (`_claimEnd` / `_ownEnd` / `_releaseEnd`, ADR-035). Counting a course change as a maneuver would make a streak depend on how
     // far the rider bore away between two jibes, which is not what the number claims.
     var dryStreak as Number = 0;          // current run, live on the main screen
     var bestDryStreak as Number = 0;      // session best of the same
@@ -461,7 +507,6 @@ class TurnDetector {
     hidden var _abortHi as Float = 0.0;
     hidden var _abortFlown as Boolean = false;
     hidden var _abortGain as Float = 0.0;   // heading gained in the sweep's sense at speed
-    hidden var _slowSeen as Boolean = false;
     hidden var _prevEndT as Float = -1000.0;
     hidden var _prevDir as Number = 0;
     hidden var _prevWinS as Float = 0.0;
@@ -469,6 +514,25 @@ class TurnDetector {
     hidden var _endFell as Boolean = false;
     hidden var _abortLog as ByteArray;
     hidden var _abortN as Number = 0;
+    // R5's memory: the last sweep that closed, while its sailing run lasts.
+    hidden var _joinOk as Boolean = false;
+    hidden var _joinT as Float = 0.0;
+    hidden var _joinU as Float = 0.0;
+    hidden var _joinDir as Number = 0;
+    // The open sweep: its own start (`_startU` is the joined one), the clock its duration cap
+    // runs from, and whether it had a sweep close enough before it to be joined (and the
+    // heading change across that gap) so the log can ask again under a later axis.
+    hidden var _ownStartU as Float = 0.0;
+    hidden var _capT as Float = 0.0;
+    hidden var _gapOk as Boolean = false;
+    hidden var _gapDeg as Float = 0.0;
+    hidden var _joinLog as ByteArray;
+    hidden var _joinN as Number = 0;
+    // the always-on speed history
+    hidden var _sT as Array<Float>;
+    hidden var _sV as Array<Float>;
+    hidden var _sIdx as Number = 0;
+    hidden var _sCount as Number = 0;
     hidden var _idx as Number = 0;        // newest slot
     hidden var _count as Number = 0;
 
@@ -488,11 +552,22 @@ class TurnDetector {
     hidden var _endU as Float = 0.0;
     hidden var _entrySpeed as Float = 0.0;
     hidden var _minSpeed as Float = 0.0;
+    hidden var _minT as Float = 0.0;      // the clock of the speed minimum: recovery is searched after it
     hidden var _stopRun as Float = 0.0;
     hidden var _stopMax as Float = 0.0;
     hidden var _lostFoil as Boolean = false;
     hidden var _wet as Boolean = false;
     hidden var _recoverHeld as Float = 0.0;
+    // THE RECOVERY SEARCH (0.9.21, the phone's `recovery_end`). Recovery is searched from the
+    // speed MINIMUM, not from the sweep end, and held with the both-ends convention: a sample
+    // at the threshold whose predecessor was too. Where it is found is where the phone stops
+    // judging, so the evidence at that moment is kept: the minimum is not final until
+    // MIN_SPEED_LAG_S past the sweep, and a later one moves the search on.
+    hidden var _recLast as Boolean = false;
+    hidden var _recovered as Boolean = false;
+    hidden var _recLost as Boolean = false;
+    hidden var _recWet as Boolean = false;
+    hidden var _recStopMax as Float = 0.0;
     // the quiet tail: when it ends, and the off-foil spell inside it (both-ends convention)
     hidden var _cleanPendingUntil as Float = 0.0;
     hidden var _quietOffRun as Float = 0.0;
@@ -564,6 +639,13 @@ class TurnDetector {
     hidden var _endStopRun as Float = 0.0;
     hidden var _endStopMax as Float = 0.0;
     hidden var _endTouched as Boolean = false;
+    // An end that a sweep or an aborted candidate may yet own (0.9.21). Only a COUNTED turn
+    // owns a flight end (ADR-035): one inside a sweep that turns out a bear-away, or an
+    // aborted candidate that is dropped, is the straight-line end it would have been. So it is
+    // judged as usual while the question is open, and its verdict waits (`_endDue`) for the
+    // answer: kept when the turn is not counted, thrown away when it is.
+    hidden var _endProvisional as Boolean = false;
+    hidden var _endDue as Boolean = false;
 
     // Thresholds live in an injected Config (see FlightDetector) — read live every tick, so
     // a wind axis set mid-session classifies every turn detected from then on.
@@ -584,6 +666,13 @@ class TurnDetector {
             _fArr[i] = false;
         }
         _abortLog = new [ABORT_MAX * ABORT_STRIDE]b;
+        _joinLog = new [JOIN_MAX * JOIN_STRIDE]b;
+        _sT = new Array<Float>[SPEED_HIST];
+        _sV = new Array<Float>[SPEED_HIST];
+        for (var i = 0; i < SPEED_HIST; i++) {
+            _sT[i] = 0.0;
+            _sV[i] = 0.0;
+        }
         // 2 KB, allocated once. A ByteArray and not an Array<Number>: this is the only
         // structure here whose size is a session's length, and four Numbers a turn would be
         // four times the bytes and a boxed read on every rebuild.
@@ -598,6 +687,12 @@ class TurnDetector {
         _distM += distDelta;
         if (flying) {
             _lastFlyingS = _clockS;
+        }
+        _sIdx = (_sIdx + 1) % SPEED_HIST;
+        _sT[_sIdx] = _clockS;
+        _sV[_sIdx] = speedMps;
+        if (_sCount < SPEED_HIST) {
+            _sCount++;
         }
         // Before the state machine, and on every tick whatever state it is in: the edge this
         // watches for is the one the state machine does not see.
@@ -682,12 +777,21 @@ class TurnDetector {
     // GPS gap / pause: heading continuity and the detection window are both broken.
     function onGap() as Void {
         _haveCog = false;
+        _joinOk = false;
+        _sCount = 0;            // the phone's arrays end at a gap too
         if (state == ST_IDLE) {
             _count = 0;
+        }
+        // a hold never bridges a hole
+        if (!_recovered) {
+            _recoverHeld = 0.0;
+            _recLast = false;
         }
         // An unjudgeable end is dropped, not called a fall: a GPS gap is missing evidence,
         // and "he might have swum" must never break a run the rider actually kept.
         _endOpen = false;
+        _endProvisional = false;
+        _endDue = false;
         // Same for the quiet tail: the phone's window stops at a gap and calls what it saw,
         // and what it saw was nothing against the star. Settled on the next tick.
         if (cleanPending) {
@@ -711,6 +815,7 @@ class TurnDetector {
     hidden function _unwrap(cogDeg as Float?, speedMps as Float) as Float? {
         if (cogDeg == null || speedMps < COG_SPEED_FLOOR) {
             _haveCog = false;
+            _joinOk = false;    // R5 joins two sweeps of one sailing run only
             if (state == ST_IDLE) {
                 _count = 0;
             }
@@ -794,34 +899,129 @@ class TurnDetector {
     hidden function _openSweep(slot as Number, u as Float, speedMps as Float) as Void {
         _startT = _tArr[slot];
         _startU = _uArr[slot];
+        _ownStartU = _startU;
+        _capT = _startT;
         _endT = _clockS;
         _endU = u;
 
-        // entry speed: max over the ENTRY_WINDOW_S before the sweep start
-        _entrySpeed = _vArr[slot];
-        var k = slot;
-        for (var back = 0; back < _count; back++) {
-            k = (k - 1 + HIST) % HIST;
-            if (_startT - _tArr[k] > ENTRY_WINDOW_S) {
-                break;
+        // R5: a sweep that closed at most JOIN_GAP_S before this one started, turning the
+        // same way in the same sailing run. When the axis was crossed in the gap, neither
+        // sweep saw it: this one starts again where the other ended.
+        _gapOk = false;
+        _gapDeg = 0.0;
+        var dir = u >= _startU ? 1 : -1;
+        if (_joinOk && _joinDir == dir && _startT > _joinT
+                && _startT - _joinT <= JOIN_GAP_S) {
+            _gapOk = true;
+            _gapDeg = _startU - _joinU;
+            if (joinCrosses(_joinU, _startU, _cfg.windDirection)) {
+                _startT = _joinT;
+                _startU = _joinU;
             }
-            if (_vArr[k] > _entrySpeed) {
-                _entrySpeed = _vArr[k];
-            }
-        }
-        // minimum so far: the samples already swept
-        _minSpeed = speedMps;
-        k = _idx;
-        while (k != slot) {
-            if (_vArr[k] < _minSpeed) {
-                _minSpeed = _vArr[k];
-            }
-            k = (k - 1 + HIST) % HIST;
         }
 
         _resetEvidence();
+        // Entry speed: max over the ENTRY_WINDOW_S before the start. The minimum: over the
+        // sweep so far, the start included, its EARLIEST sample on a tie (`np.argmin`), since
+        // recovery is searched after it. Both off the speed history, which reaches back past
+        // a join.
+        _entrySpeed = 0.0;
+        _minSpeed = speedMps + 1.0;     // this sample is in the history: the loop finds it
+        _minT = _clockS;
+        var oldest = (_sIdx - _sCount + 1 + SPEED_HIST) % SPEED_HIST;
+        var k = oldest;
+        for (var n = 0; n < _sCount; n++) {
+            var t = _sT[k];
+            if (t >= _startT - ENTRY_WINDOW_S && t <= _startT && _sV[k] > _entrySpeed) {
+                _entrySpeed = _sV[k];
+            }
+            if (t >= _startT && _sV[k] < _minSpeed) {
+                _minSpeed = _sV[k];
+                _minT = t;
+            }
+            k = (k + 1) % SPEED_HIST;
+        }
+        _replayRecovery(_clockS);
+
         _count = 0;
         state = ST_SWEEP;
+        _claimEnd();
+    }
+
+    // The recovery search over the samples already behind us, from the speed minimum up to
+    // and including `untilT`, so a turn opened late finds a recovery the phone would have.
+    hidden function _replayRecovery(untilT as Float) as Void {
+        var k = (_sIdx - _sCount + 1 + SPEED_HIST) % SPEED_HIST;
+        var prevT = -1.0;
+        for (var n = 0; n < _sCount; n++) {
+            var t = _sT[k];
+            if (t > _minT && t <= untilT) {
+                _recoverStep(prevT >= 0.0 ? t - prevT : 0.0, _sV[k], false);
+            }
+            prevT = t;
+            k = (k + 1) % SPEED_HIST;
+        }
+    }
+
+    // One sample of the recovery search. `newMin` is a sample that just became the speed
+    // minimum: the search starts again after it, whatever it had found.
+    hidden function _recoverStep(dt as Float, speedMps as Float, newMin as Boolean) as Void {
+        if (newMin) {
+            _recovered = false;
+            _recoverHeld = 0.0;
+            _recLast = false;
+            return;
+        }
+        if (_recovered) {
+            return;
+        }
+        var thr = RECOVER_PCT * _entrySpeed;
+        if (thr < _cfg.foilEntryMps) {
+            thr = _cfg.foilEntryMps;     // nothing below foil entry is flying
+        }
+        if (speedMps < thr) {
+            _recoverHeld = 0.0;
+            _recLast = false;
+            return;
+        }
+        _recoverHeld = _recLast ? _recoverHeld + dt : 0.0;
+        _recLast = true;
+        if (_recoverHeld >= RECOVER_HOLD_S) {
+            _recovered = true;
+            _recLost = _lostFoil;
+            _recWet = _wet;
+            _recStopMax = _stopMax;
+        }
+    }
+
+    // A turn has opened: a flight end that began at or after its start is the turn's to own,
+    // if it is counted. Until it is known, the end keeps collecting and its verdict waits.
+    hidden function _claimEnd() as Void {
+        if (_endOpen && _endStartS >= _startT) {
+            _endProvisional = true;
+        }
+    }
+
+    // The turn was counted: the end is its own, and the straight-line channel forgets it.
+    hidden function _ownEnd() as Void {
+        if (_endProvisional) {
+            _endOpen = false;
+            _endProvisional = false;
+            _endDue = false;
+        }
+    }
+
+    // The turn was not counted: the end is a straight-line one after all, judged now if its
+    // evidence was already in.
+    hidden function _releaseEnd() as Void {
+        if (!_endProvisional) {
+            return;
+        }
+        _endProvisional = false;
+        if (_endDue) {
+            _endDue = false;
+            _closeFlightEnd();
+        }
     }
 
     hidden function _resetEvidence() as Void {
@@ -830,7 +1030,8 @@ class TurnDetector {
         _lostFoil = false;
         _wet = false;
         _recoverHeld = 0.0;
-        _slowSeen = false;
+        _recLast = false;
+        _recovered = false;
         _endFell = false;
     }
 
@@ -915,12 +1116,14 @@ class TurnDetector {
         var flown = false;
         var gain = 0.0;
         var minV = _vArr[i];
+        var minT = _tArr[i];
         var floor = ABORT_LUFF_SPEED_PCT * entry;
         k = i;
         while (true) {
             var rel = _uArr[k] - ui;
             if (_vArr[k] < minV) {
                 minV = _vArr[k];
+                minT = _tArr[k];
             }
             if (_vArr[k] >= floor && dir * rel > gain) {
                 gain = dir * rel;
@@ -947,16 +1150,20 @@ class TurnDetector {
         _endU = uj;
         _entrySpeed = entry;
         _minSpeed = minV;
+        _minT = minT;
+        _gapOk = false;
         _resetEvidence();
+        // this tick is tracked by `_outcomeTick` below, so the replay stops at the last one
+        _replayRecovery(tj);
         _aborted = true;
         _abortKind = kind;
         _abortLo = lo;
         _abortHi = hi;
         _abortFlown = flown;
         _abortGain = gain;
-        _endOpen = false;       // the turn owns this loss, not the straight-line channel
         _count = 0;
         state = ST_OUTCOME;
+        _claimEnd();            // the turn owns this loss if it counts, and only then
         return true;
     }
 
@@ -967,11 +1174,10 @@ class TurnDetector {
         state = ST_IDLE;
         _count = 0;
         if (!(_wet || _stopMax > FALL_STOP_S || _endFell)) {
-            if (_slowSeen) {
-                flewStreak = 0;     // a touchdown on a straight line: the strict run ends
-            }
+            _releaseEnd();          // the loss is a straight-line one, judged as such
             return EVENT_NONE;
         }
+        _ownEnd();
         var kind = _abortKind;
         lastKind = kind;
         turnCount++;
@@ -1019,7 +1225,7 @@ class TurnDetector {
         if (state != ST_OUTCOME) {
             return EVENT_NONE;
         }
-        if (_recoverHeld < RECOVER_HOLD_S && _lostFoil && _lastSpeed < STOP_FLOOR_MPS) {
+        if (!_recovered && _lostFoil && _lastSpeed < STOP_FLOOR_MPS) {
             _endFell = true;
         }
         return _resolve();
@@ -1032,22 +1238,32 @@ class TurnDetector {
         if (u != null) {
             var step = _clockS - _endT;
             var rate = step > 0.0 ? ((u as Float) - _endU) / step : 0.0;
-            if (rate.abs() >= CONTINUE_RATE_DEG_S && _clockS - _startT <= MAX_DURATION_S) {
+            // the cap runs from the sweep's own start: a join (R5) adds the gap, not a limit
+            if (rate.abs() >= CONTINUE_RATE_DEG_S && _clockS - _capT <= MAX_DURATION_S) {
                 _endU = u as Float;
                 _endT = _clockS;
                 return EVENT_NONE;
             }
         }
-        // Published before the verdict, so the geometry is fresh whatever the verdict is.
-        lastEntryU = _startU;
-        lastNetDeg = _endU - _startU;
+        // Published before the verdict, so the geometry is fresh whatever the verdict is. The
+        // sweep's OWN geometry: it is what AutoWind learns from (the phone's wind never sees a
+        // join) and what the log keeps, with the gap beside it (`_joinLogAdd`).
+        lastEntryU = _ownStartU;
+        lastNetDeg = _endU - _ownStartU;
+        // R5's memory, for a sweep that starts within JOIN_GAP_S of this one's end
+        _joinOk = _haveCog;     // a sweep the sailing run ended has nothing to join
+        _joinT = _endT;
+        _joinU = _endU;
+        _joinDir = _endU >= _ownStartU ? 1 : -1;
         var kind = _classify(_startU, _endU);
         if (kind == KIND_REJECT) {
             rejectedCount++;        // bear-away / round-up: real course change, not a maneuver
             state = ST_IDLE;
             _count = 0;
+            _releaseEnd();          // a fall inside it is a straight-line one (ADR-035)
             return EVENT_NONE;
         }
+        _ownEnd();
         lastKind = kind;
         turnCount++;
         lapTurnCount++;
@@ -1064,14 +1280,12 @@ class TurnDetector {
     hidden function _outcomeTick(dt as Float, speedMps as Float,
             submerged as Boolean) as Number {
         _track(dt, speedMps, submerged);
-        var thr = RECOVER_PCT * _entrySpeed;
-        if (thr < _cfg.foilEntryMps) {
-            thr = _cfg.foilEntryMps;     // nothing below foil entry is flying
-        }
-        if (speedMps >= thr) {
-            _recoverHeld += dt;
-        } else {
-            _recoverHeld = 0.0;
+        // RECOVERY closes the window, judged on the evidence at the sample it was found
+        // (0.9.21). It may have been found inside the sweep, after an early minimum, which is
+        // where the phone stops judging too; it is only final once the minimum is, at
+        // MIN_SPEED_LAG_S past the sweep.
+        if (_recovered && _clockS >= _endT + MIN_SPEED_LAG_S) {
+            return _resolve();
         }
         // THE VERDICT LANDS AT THE STOP (Jan, 22 September 2026). The 30 s tail is there so a
         // slow mush-out is still the turn's fall; it is NOT a delay the rider should feel. Once
@@ -1085,15 +1299,12 @@ class TurnDetector {
         // The score is untouched: it closes at `_endT + MIN_SPEED_LAG_S` (2 s), and a stop
         // spell cannot exceed 5 s before `_endT + 6 s` — the sweep itself is above
         // COG_SPEED_FLOOR throughout, so `_stopMax` is 0 when the window opens.
-        if (_stopMax > FALL_STOP_S) {
+        if (_stopMax > FALL_STOP_S && !_recovered) {
             return _resolve();
         }
-        // The cap is the NOT-RECOVERED one (0.9.19). Recovery is tested first and on every
-        // tick, so a rider who gets going again closes the window exactly where 0.9.18 closed
-        // it; only a rider who never does is followed the further 18 s, which is the whole of
-        // ADR-032. One compare, no state: "he has not recovered" is precisely "this branch is
-        // still being taken".
-        if (_recoverHeld < RECOVER_HOLD_S && _clockS < _endT + LOOKAHEAD_NOT_RECOVERED_S) {
+        // The cap is the NOT-RECOVERED one (0.9.19): only a rider who never gets going again
+        // is followed this far, which is the whole of ADR-032.
+        if (_clockS < _endT + LOOKAHEAD_NOT_RECOVERED_S) {
             return EVENT_NONE;
         }
         return _resolve();
@@ -1113,16 +1324,16 @@ class TurnDetector {
         if (submerged) {
             _wet = true;
         }
+        var newMin = false;
         if (state != ST_OUTCOME || _clockS <= _endT + MIN_SPEED_LAG_S) {
             if (speedMps < _minSpeed) {
                 _minSpeed = speedMps;
+                _minT = _clockS;
+                newMin = true;
             }
         }
         if (speedMps <= _cfg.foilExitMps || submerged) {
             _lostFoil = true;
-        }
-        if (speedMps < STOP_FLOOR_MPS) {
-            _slowSeen = true;
         }
         // both-ends-qualify convention, same clock flight segmentation uses
         if (speedMps < STOP_FLOOR_MPS && _lastSpeed < STOP_FLOOR_MPS) {
@@ -1133,6 +1344,8 @@ class TurnDetector {
         } else {
             _stopRun = 0.0;
         }
+        // after this sample's evidence: the phone's window includes the recovery sample
+        _recoverStep(dt, speedMps, newMin);
     }
 
     // The straight-line half of the streak rule (docs/algorithms/pumping.md "Turn streaks", watch
@@ -1150,8 +1363,12 @@ class TurnDetector {
     // rider stayed dry through a swim it never looked at.
     hidden function _flightEndTick(dt as Float, speedMps as Float, flying as Boolean,
             submerged as Boolean) as Void {
-        if (_wasFlying && !flying && !_endOpen && state == ST_IDLE) {
+        // Opened while idle, and also inside a sweep or an aborted candidate, which may turn
+        // out not to be a counted turn (0.9.21); a counted turn's open window owns it outright.
+        if (_wasFlying && !flying && !_endOpen && (state != ST_OUTCOME || _aborted)) {
             _endOpen = true;
+            _endProvisional = state != ST_IDLE;
+            _endDue = false;
             _endStartS = _clockS;
             _endWet = false;
             _endStopRun = 0.0;
@@ -1159,7 +1376,7 @@ class TurnDetector {
             _endTouched = false;
         }
         _wasFlying = flying;
-        if (!_endOpen) {
+        if (!_endOpen || _endDue) {
             return;
         }
         if (submerged) {
@@ -1191,7 +1408,11 @@ class TurnDetector {
         // verdict on a turn's fall.
         if (flying || _endStopMax > FALL_STOP_S
                 || _clockS - _endStartS >= FLIGHT_END_WINDOW_S) {
-            _closeFlightEnd();
+            if (_endProvisional) {
+                _endDue = true;     // the evidence is in; whose it is, is not yet
+            } else {
+                _closeFlightEnd();
+            }
         }
     }
 
@@ -1209,6 +1430,12 @@ class TurnDetector {
     }
 
     hidden function _resolve() as Number {
+        // judged on the evidence at the recovery, where the phone's window ends
+        if (_recovered) {
+            _lostFoil = _recLost;
+            _wet = _recWet;
+            _stopMax = _recStopMax;
+        }
         if (_aborted) {
             return _resolveAborted();
         }
@@ -1282,6 +1509,9 @@ class TurnDetector {
         // record is the newest one until the next turn resolves, and the watch does not
         // detect during an outcome window, so "the newest record" is unambiguous.
         _logTurn(lastEntryU, lastNetDeg, outcome, false, false);
+        if (_gapOk) {
+            _joinLogAdd(_logN - 1, _gapDeg);
+        }
         _notePrev();
         if (pct >= SUCCESS_PCT && _minSpeed > _cfg.foilExitMps) {
             successCount++;
@@ -1325,7 +1555,7 @@ class TurnDetector {
     // The arithmetic lives at module scope (`classifySweep`) because AutoWind's default-turn-
     // type prior has to name the same sweeps under the other axis end; one rule, two callers.
     hidden function _classify(uIn as Float, uOut as Float) as Number {
-        return classifySweep(uIn, uOut, _cfg.windDirection);
+        return classifyTurn(uIn, uOut, _cfg.windDirection);
     }
 
     // ---- the turn log: write, read, and the rebuild it exists for (0.9.18) ----
@@ -1380,6 +1610,72 @@ class TurnDetector {
             w++;
         }
         _abortN = w;
+        w = 0;
+        for (var r = 0; r < _joinN; r++) {
+            var idx = _joinIdx(r);
+            if (idx == 0) {
+                continue;
+            }
+            for (var b = 0; b < JOIN_STRIDE; b++) {
+                _joinLog[w * JOIN_STRIDE + b] = _joinLog[r * JOIN_STRIDE + b];
+            }
+            _joinLog[w * JOIN_STRIDE] = ((idx - 1) >> 8) & 0xFF;
+            _joinLog[w * JOIN_STRIDE + 1] = (idx - 1) & 0xFF;
+            w++;
+        }
+        _joinN = w;
+    }
+
+    // ---- the join records (watch 0.9.21) ----
+    //
+    //   b0-1 log index, big-endian
+    //   b2-3 the heading change across the gap before the sweep, whole degrees, +32768
+    //
+    // Written for every logged turn whose sweep had a same-direction sweep close within
+    // JOIN_GAP_S before it in the same sailing run, joined or not: whether the gap crossed the
+    // axis depends on the axis. Appended in log order, so the index only grows. The cap drops
+    // the oldest; its turn is then named by its own sweep.
+    hidden function _joinLogAdd(logIdx as Number, gap as Float) as Void {
+        if (_joinN >= JOIN_MAX) {
+            for (var i = JOIN_STRIDE; i < JOIN_MAX * JOIN_STRIDE; i++) {
+                _joinLog[i - JOIN_STRIDE] = _joinLog[i];
+            }
+            _joinN = JOIN_MAX - 1;
+        }
+        var at = _joinN * JOIN_STRIDE;
+        var g = _clamp16(gap) + 32768;
+        _joinLog[at] = (logIdx >> 8) & 0xFF;
+        _joinLog[at + 1] = logIdx & 0xFF;
+        _joinLog[at + 2] = (g >> 8) & 0xFF;
+        _joinLog[at + 3] = g & 0xFF;
+        _joinN++;
+    }
+
+    hidden function _joinIdx(r as Number) as Number {
+        var at = r * JOIN_STRIDE;
+        return (_joinLog[at] << 8) | _joinLog[at + 1];
+    }
+
+    // How far record `i`'s start moves back under `wind` (R5): the gap's heading change when
+    // the gap crossed this axis, else 0.
+    hidden function _joinGapAt(i as Number, wind as Number) as Float {
+        if (wind < 0) {
+            return 0.0;
+        }
+        for (var r = 0; r < _joinN; r++) {
+            var idx = _joinIdx(r);
+            if (idx > i) {
+                break;
+            }
+            if (idx < i) {
+                continue;
+            }
+            var at = r * JOIN_STRIDE;
+            var gap = (((_joinLog[at + 2] << 8) | _joinLog[at + 3]) - 32768).toFloat();
+            var uIn = logEntryDeg(i);
+            return joinCrosses(uIn - gap, uIn, wind) ? gap : 0.0;
+        }
+        return 0.0;
     }
 
     // ---- the aborted records (watch 0.9.20) ----
@@ -1438,7 +1734,7 @@ class TurnDetector {
         var uIn = logEntryDeg(i);
         var uOut = uIn + logNetDeg(i);
         if (!logAborted(i)) {
-            return classifySweep(uIn, uOut, wind);
+            return classifyTurn(uIn - _joinGapAt(i, wind), uOut, wind);
         }
         var kind = abortKind(uIn, uOut, wind);
         for (var r = 0; r < _abortN; r++) {
@@ -1485,7 +1781,7 @@ class TurnDetector {
 
     // Add record `i`'s contribution to the frozen base, typed against `wind`.
     hidden function _foldIntoBase(i as Number, wind as Number) as Void {
-        var uIn = logEntryDeg(i);
+        var uIn = logEntryDeg(i) - _joinGapAt(i, wind);
         var kind = _kindAt(i, wind);
         var o = logOutcome(i);
         if (kind == KIND_TACK) {
@@ -1541,7 +1837,7 @@ class TurnDetector {
         portEntryCount = _basePort;
         starboardEntryCount = _baseStbd;
         for (var i = 0; i < _logN; i++) {
-            var uIn = logEntryDeg(i);
+            var uIn = logEntryDeg(i) - _joinGapAt(i, wind);
             var kind = _kindAt(i, wind);
             if (kind != KIND_TACK && kind != KIND_JIBE) {
                 continue;       // a course change under this axis: it stays a generic turn
