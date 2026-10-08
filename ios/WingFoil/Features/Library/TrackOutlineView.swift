@@ -81,7 +81,7 @@ struct TrackOutlineView: View {
 
     /// Where the unit box lands in the view, as an origin and one uniform scale. Uniform
     /// because a track stretched to fill both axes is a different-shaped session.
-    static func fit(_ thumbnail: TrackThumbnail, in box: CGRect,
+    nonisolated static func fit(_ thumbnail: TrackThumbnail, in box: CGRect,
                     fillsBox: Bool) -> (originX: Double, originY: Double, scale: Double) {
         // The square the normalization produced, inscribed and centred — the behaviour
         // every caller had before `fillsBox`, and still the fallback for a track with no

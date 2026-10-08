@@ -1,4 +1,4 @@
-> Part of `docs/algorithms.md`. Engine 0.27.0.
+> Part of `docs/algorithms.md`. Engine 0.28.0.
 
 ## Recordings the importer refuses (phone)
 
@@ -194,8 +194,9 @@ the library matches before either is asked.
 what the library row prints) *and* on its **fix span** (first GPS fix to last). The durations
 match when any span of one is within 60 s of any span of the other. A watch left running in
 the van records on without a position: the 13 June 2026 FIT spans 10 338 s of records and
-7 742 s of fixes, and Strava's copy of it, which drops every point with no position, spans
-7 742 s and starts 8 s later. The record span alone called those two sessions.
+7 742 s of fixes, and Strava's copy of it, which drops every point with no position at its
+ends, spans 7 742 s and starts 8 s later. (Inside the track Strava fills a record with no
+position instead: see docs/algorithms/turns.md, "A jump is not a turn".) The record span alone called those two sessions.
 
 **Two starts a side.** The start is compared the same way: the **record start** (the first
 record) *and* the **first-fix start** (the first record with a position), any of one within
@@ -223,6 +224,47 @@ recordings*). **Never the other way**: a recording without speed never replaces 
 it, whichever door it came through, the direct stream included; it merges its provenance and
 nothing else. Two copies of the same class keep the first. The web asks before a replace, as
 it always has, and does not offer the replace a positions-only copy would be.
+
+**Across devices too** (iCloud library sync, dev; Jan, 1 Oct 2026). The same rule holds when
+the two copies sit on two devices. A pull that finds the folder's recording matches a
+positions-only row here no longer stops at "already held": if the folder's recording is not
+a GPX, it goes through the front door, and the front door replaces the row in place as above.
+A push whose folder still holds a GPX writes this device's recording with speed over it, so
+the other device's next pull upgrades its row. A GPX never replaces anything in either
+direction (`LibrarySyncTests.aFitInTheFolderReplacesAStravaCopyHere`,
+`aStravaCopyInTheFolderGivesWayToTheFit`).
+
+**And the sync that never fetched the FIT** (Jan, 1 Oct 2026: intervals.icu connected in his
+dev app, and his 4 Sep 07:58 session still the Strava copy). Before F-6 (26 Sep) a FIT arriving
+after Strava's copy of the same afternoon was a plain duplicate: it merged its provenance and
+**stamped its intervals.icu id on the Strava row**. The sync skips every id the library holds
+before it downloads anything, so that FIT was never fetched again and the replace could never
+happen. Now an id held by a positions-only row whose recording is not intervals.icu's own (its
+archived name is not the sync's `<id>_<name>_icu.fit`) does not count as held: the next pull
+downloads the FIT and it replaces the row in place, with the rider's edits; the pull after that
+downloads nothing. A row whose recording *is* intervals.icu's, with or without speed, stays
+skipped (`IcuAfterStravaTests`).
+
+**The background poller heals too** (Jan, 1 Oct 2026). A wake lists its window
+(`NewActivityWatch.windowStart`, four days at least, ninety at most) and, beside the new
+sessions it announces, fetches the FIT of every afternoon the library holds only as a
+positions-only copy: the row carrying the activity's id, or, when none does, every row
+matching its start as the dedupe key matches it, all of them class c and none intervals.icu's
+own recording. A tombstone matching it is never such a copy, so a deleted session is never
+fetched. Newest first, at most three a wake (`NewActivityWatch.heals`, `healLimit`); nothing
+is announced, because the session is not new, and the FIT replaces the row in place as above.
+An afternoon older than the window heals on the next manual pull.
+
+**A positions-only upload is fetched once** (Jan, 1 Oct 2026). When the file behind the
+intervals.icu id is itself positions-only (a GPX, a FIT without Doppler) it cannot replace
+the copy: it lands as a duplicate on the class-c row and stamps its id there. The outcome is
+remembered per id, with the activity's fingerprint as intervals.icu lists it (`file_type` and
+`icu_sync_date`, `IcuActivity.sourceFingerprint`), in the GRDB v20 table
+`icu_positions_only_source`. The manual pull and the poller skip such an id while a row still
+carries it and the fingerprint is unchanged; when it moves (the rider replaced the upload on
+intervals.icu) the file is fetched once more, and a FIT with speed then heals the row. Any
+other outcome of a fetch clears the id. A library restored without the stamp, or a row
+deleted since, is not skipped on the old memory.
 
 The other takeovers are unchanged: a provisional card gives way to its FIT, and a row the
 direct stream brought in alone gives way to the FIT of the same afternoon (ADR-013). A Garmin

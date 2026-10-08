@@ -508,6 +508,18 @@ same ownership window to tell a `recovery` pump burst from a failed takeoff atte
 one accelerometer fixture attempts go 37 → 34, failed 14 → 11, unknown 1 → 0 and recovery
 0 → 4 (`test_pump_episodes_are_serialized_whole`).
 
+Engine 0.28.0 (ADR-038, amended the same day) moves **no committed golden** beyond the version
+and four `config` keys (`turnPositionalMinSweepS`, `turnPositionalSpikePct`,
+`turnPositionalMaxStepDeg`, `turnRecordingEndS`): the three positional rules ask only of a
+positions-only track, and the corpus's two class (c) fixtures (the 30 Aug GPX and no-speed TCX)
+hold no jump; the recording-end rule moves one turn on Jan's intervals.icu export (10 Aug 2025)
+and none in the committed corpus. They are pinned synthetic in `test_turns.py` ("a jump is not a turn") and
+`PositionalJumpTests` in the kit — each case read as class (b) too, where nothing may move —
+plus Jan's own 4 Sep copy as Strava serves it (`test_the_strava_copy_of_4_sep_has_no_phantom_tack`,
+which skips where `fixtures/footage/` is absent). The calibration is
+`lab/tools/strava_vs_icu.py` over Jan's intervals.icu export (docs/algorithms/turns.md, "A jump
+is not a turn").
+
 Engine 0.27.0 (ADR-037) moves **only turns that fell in**: the six tacks on five fixtures go
 (two become jibes, R4 and R5; four aborted tacks are refused, R1–R3), counted turns −4, turn
 falls −4, straight-line falls +3, course changes +2, and **clean jibes, JPH and CPH do not move
@@ -1193,6 +1205,19 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    Trends shows instead (the toolbar's Share button). The library has to
    be imported first (`UI_IMPORT_FIXTURES=1` runs on the Sessions tab, so launch once with it
    alone).
+
+   **The Sessions list's first scroll** (`LibraryScrollUITests`, Jan 1 Oct 2026, dev 126:
+   "hakelig"). `UI_FIXTURE_COPIES=6` copies every imported fixture six times, a week apart
+   each (`SessionIngestor.stageCopies`), so the list holds Jan's ~100 rows. `UI_HITCH_METER=1`
+   makes the app scroll its own list top to bottom at 1 800 pt/s once the library holds
+   `UI_HITCH_MIN_ROWS` rows and has stopped changing (plus `UI_HITCH_DELAY` s), and report
+   Apple's hitch time ratio — ms of hitch per second of scrolling — on an invisible label,
+   with a Darwin notification when done (`ScrollHitchMeter`). The app drives the scroll
+   because an XCUITest swipe snapshots the accessibility tree on the main thread between
+   gestures, which the meter would count as the list's. The test runs it fresh (reset +
+   import) and on a relaunch, with and without the map backdrop, and fails over 250 ms/s — a
+   simulator regression guard (850–980 before the 1 Oct 2026 fix, 60–110 after), not
+   Apple's 5 ms/s for a phone.
 
    **A screenshot in km/h** needs no hook of its own. Settings → Units is a tap `simctl`
    cannot make, but the choice is an ordinary stored default, so passing it as a launch

@@ -38,6 +38,27 @@ struct LibraryView: View {
     /// screen a rider is already on: `ImportView.importableTypes` is the one list of what
     /// this channel can read, so the row can never offer a file the binary cannot open.
     @State private var showFileImporter = false
+    #if DEBUG && targetEnvironment(simulator)
+    @State private var hitchMeter = ScrollHitchMeter()
+    #endif
+    @Environment(\.displayScale) private var displayScale
+    /// For the tiles' inks (`TileInks`): resolved here, in the list's own environment.
+    @Environment(\.self) private var environment
+
+    /// What a new warming pass is owed to: a reloaded library, the map switched on or
+    /// restyled, or a new appearance for the tiles to be drawn in.
+    private struct WarmKey: Equatable {
+        var generation: Int
+        var count: Int
+        var backdrop: MapStyleChoice?
+        var inks: TileInks
+    }
+
+    private var warmKey: WarmKey {
+        WarmKey(generation: store.libraryGeneration, count: store.sessions.count,
+                backdrop: store.listMapBackdrop ? store.mapStyle : nil,
+                inks: TileInks(in: environment, scale: displayScale))
+    }
     /// Bumped by the menu's Support item; `feedbackMail(on:)` on the list does the rest.
     @State private var supportRequest = 0
     #if BETA
@@ -137,6 +158,31 @@ struct LibraryView: View {
                 }
             }
             .listStyle(.insetGrouped)
+            #if DEBUG && targetEnvironment(simulator)
+            // `UI_HITCH_METER=1`: the scroll test's own benchmark (`ScrollHitchMeter`). It
+            // waits for the library to hold `UI_HITCH_MIN_ROWS` rows and to stop changing,
+            // then `UI_HITCH_DELAY` seconds more, and scrolls the list once.
+            .task {
+                guard ScrollHitchMeter.isWanted else { return }
+                let env = ProcessInfo.processInfo.environment
+                let minRows = Int(env["UI_HITCH_MIN_ROWS"] ?? "") ?? 1
+                let delay = Double(env["UI_HITCH_DELAY"] ?? "") ?? 5
+                var quiet = 0
+                var lastCount = -1
+                while quiet < 3 {
+                    try? await Task.sleep(for: .seconds(1))
+                    let settled = store.hasLoadedLibrary && !store.isBusy
+                        && store.sessions.count >= minRows && store.sessions.count == lastCount
+                    lastCount = store.sessions.count
+                    quiet = settled ? quiet + 1 : 0
+                }
+                try? await Task.sleep(for: .seconds(delay))
+                hitchMeter.run()
+            }
+            .overlay(alignment: .bottomLeading) {
+                if ScrollHitchMeter.isWanted { ScrollHitchMeterLabel(meter: hitchMeter) }
+            }
+            #endif
             // A session row is a thumbnail, a title, a date and five numbers; stretched over
             // an iPad it puts the sport badge a hand's width from the name it belongs to.
             // The list keeps its own card shape and sits in the middle of the window.
@@ -374,6 +420,15 @@ struct LibraryView: View {
             .onChange(of: store.sessions.count) { openRequestedSession() }
             #endif
             .task(id: visibleIDs) { store.visibleSessionIDs = visibleIDs }
+            // Every row's outline, drawn (and its map, when it is on), into memory before the first
+            // scroll, and the missing ones built in the background — re-asked whenever the
+            // library reloads, which is after every import and every re-analysis
+            // (`ThumbnailStore.warm`). A row that is already warm costs nothing.
+            .task(id: warmKey) {
+                let key = warmKey
+                store.thumbnails.warm(store.sessions, inks: key.inks, backdrop: key.backdrop,
+                                      scale: displayScale)
+            }
             .safeAreaInset(edge: .bottom) { statusBar }
             .animation(.easeInOut(duration: 0.25), value: store.status)
             .animation(.easeInOut(duration: 0.25), value: store.isBusy)

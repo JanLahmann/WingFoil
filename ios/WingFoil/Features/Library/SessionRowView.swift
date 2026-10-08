@@ -13,6 +13,10 @@ struct SessionRowView: View {
     @Environment(SessionStore.self) private var store
 
     private var thumbnail: TrackThumbnail? { thumbnails.thumbnail(for: row.id) }
+    /// The same outline and sparkline as finished pictures, drawn off the main thread
+    /// (`TrackTileArt`); nil for the moment before they are, when the `Canvas` views below
+    /// draw the very same strokes.
+    private var art: TileArt? { thumbnails.art(for: row.id) }
 
     /// The map under the outline, when the rider has asked for one (Settings → Session
     /// list) and MapKit has answered. Nil is the ordinary case and draws what the row has
@@ -53,10 +57,10 @@ struct SessionRowView: View {
     var body: some View {
         let layout = typeSize.isAccessibilitySize
             ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
-            : AnyLayout(HStackLayout(alignment: .top, spacing: 12))
+            : AnyLayout(SessionRowLayout(spacing: Self.previewSpacing))
         layout {
             preview
-            VStack(alignment: .leading, spacing: 6) {
+            SessionRowColumnLayout(spacing: 6) {
                 HStack(alignment: .firstTextBaseline) {
                     Text(SessionDisplay.title(row))
                         .font(.headline)
@@ -177,6 +181,14 @@ struct SessionRowView: View {
             }
         }
         .padding(.vertical, 4)
+        // Where the separator starts: under the title, as List would work it out for itself
+        // — but said, so the list does not lay the whole row out a second time to find the
+        // first `Text` in it every time a row appears (the hitch of Jan's dev 126 report).
+        .alignmentGuide(.listRowSeparatorLeading) { d in
+            typeSize.isAccessibilitySize
+                ? d[.leading]
+                : d[.leading] + ListMapBackdrop.size.width + Self.previewSpacing
+        }
         .task { thumbnails.request(row) }
         // After the outline, never instead of it: the snapshot is drawn to the box the
         // outline was fitted into, so there is nothing to line it up with until the
@@ -186,6 +198,9 @@ struct SessionRowView: View {
             thumbnails.requestBackdrop(row, style: store.mapStyle, scale: displayScale)
         }
     }
+
+    /// Between the track tile and the words.
+    static let previewSpacing: CGFloat = 12
 
     /// "Wed 17 Sep, 14:05 · 58 min", or without the weekday. The shorter one may shrink to
     /// 80 % rather than wrap — the last answer `ViewThatFits` has.
@@ -220,7 +235,11 @@ struct SessionRowView: View {
                     // the line is a picture of the square this inset leaves, and two insets
                     // that drift apart draw the map at a different scale from the track on
                     // top of it (Jan, Beta 75).
-                    TrackOutlineView(thumbnail: thumbnail, padding: ListMapBackdrop.inset)
+                    if let outline = art?.outline {
+                        Image(uiImage: outline)
+                    } else {
+                        TrackOutlineView(thumbnail: thumbnail, padding: ListMapBackdrop.inset)
+                    }
                 } else {
                     Image(systemName: thumbnail == nil ? "map" : "location.slash")
                         .font(.caption)
@@ -232,8 +251,15 @@ struct SessionRowView: View {
             .clipShape(.rect(cornerRadius: 8))
 
             if let thumbnail, thumbnail.speed.count >= 2 {
-                SpeedSparklineView(values: thumbnail.speed)
-                    .frame(width: 62, height: 14)
+                Group {
+                    if let sparkline = art?.sparkline {
+                        Image(uiImage: sparkline)
+                    } else {
+                        SpeedSparklineView(values: thumbnail.speed)
+                    }
+                }
+                .frame(width: TrackTileArt.sparklineSize.width,
+                       height: TrackTileArt.sparklineSize.height)
             } else {
                 Color.clear.frame(width: 62, height: 14)
             }
@@ -268,5 +294,114 @@ struct SessionRowView: View {
         .fixedSize()
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(choice.label + " " + choice.format(row))
+    }
+}
+
+/// **The row's two columns, measured once.** What `HStack(alignment: .top, spacing: 12)` drew —
+/// the fixed tile, then the words in all the width that is left, top-aligned — without
+/// the stack's habit of sizing each child several times over to find out which one is
+/// flexible. The words are three `ViewThatFits` deep, and every extra proposal the stack
+/// made multiplied through all of them: on a list's first scroll, each new row cost tens of
+/// milliseconds of layout on the main thread (Jan, dev 126, "hakelig").
+struct SessionRowLayout: Layout {
+    var spacing: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews,
+                      cache: inout ()) -> CGSize {
+        guard subviews.count == 2 else { return .zero }
+        let tile = subviews[0].sizeThatFits(.unspecified)
+        let words = subviews[1].sizeThatFits(wordsProposal(proposal, tile: tile))
+        return CGSize(width: proposal.width ?? (tile.width + spacing + words.width),
+                      height: max(tile.height, words.height))
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews,
+                       cache: inout ()) {
+        guard subviews.count == 2 else { return }
+        let tile = subviews[0].sizeThatFits(.unspecified)
+        subviews[0].place(at: bounds.origin, anchor: .topLeading,
+                          proposal: ProposedViewSize(tile))
+        subviews[1].place(at: CGPoint(x: bounds.minX + tile.width + spacing, y: bounds.minY),
+                          anchor: .topLeading,
+                          proposal: ProposedViewSize(width: bounds.width - tile.width - spacing,
+                                                     height: nil))
+    }
+
+
+    /// No guides to pass up: nothing in the row sets one, and asking the children is a
+    /// full layout of each.
+    /// The default spacing, said rather than asked of every child.
+    func spacing(subviews: Subviews, cache: inout ()) -> ViewSpacing { ViewSpacing() }
+
+    func explicitAlignment(of guide: HorizontalAlignment, in bounds: CGRect,
+                           proposal: ProposedViewSize, subviews: Subviews,
+                           cache: inout ()) -> CGFloat? { nil }
+
+    func explicitAlignment(of guide: VerticalAlignment, in bounds: CGRect,
+                           proposal: ProposedViewSize, subviews: Subviews,
+                           cache: inout ()) -> CGFloat? { nil }
+
+    private func wordsProposal(_ proposal: ProposedViewSize, tile: CGSize) -> ProposedViewSize {
+        ProposedViewSize(width: proposal.width.map { max($0 - tile.width - spacing, 0) },
+                         height: nil)
+    }
+}
+
+/// **The words, one under another, measured once each.** What `VStack(alignment: .leading,
+/// spacing: 6)` drew, for children that carry no alignment guide of their own — which none
+/// of the row's do. A `VStack` asks every child where its leading edge is, and a child that
+/// is an `HStack` answers by laying out everything in it, `ViewThatFits` and all; this
+/// column only asks each child its size, once per width.
+struct SessionRowColumnLayout: Layout {
+    var spacing: CGFloat
+
+    struct Cache {
+        var width: CGFloat?
+        var sizes: [CGSize] = []
+    }
+
+    func makeCache(subviews: Subviews) -> Cache { Cache() }
+
+    func updateCache(_ cache: inout Cache, subviews: Subviews) { cache = Cache() }
+
+    private func sizes(_ width: CGFloat?, _ subviews: Subviews, _ cache: inout Cache) -> [CGSize] {
+        if cache.width == width, cache.sizes.count == subviews.count { return cache.sizes }
+        let proposal = ProposedViewSize(width: width, height: nil)
+        cache.sizes = subviews.map { $0.sizeThatFits(proposal) }
+        cache.width = width
+        return cache.sizes
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews,
+                      cache: inout Cache) -> CGSize {
+        let all = sizes(proposal.width, subviews, &cache)
+        guard !all.isEmpty else { return .zero }
+        return CGSize(width: all.map(\.width).max() ?? 0,
+                      height: all.map(\.height).reduce(0, +)
+                        + spacing * CGFloat(all.count - 1))
+    }
+
+    /// No guides to pass up: nothing in the row sets one, and asking the children is a
+    /// full layout of each.
+    /// The default spacing, said rather than asked of every child.
+    func spacing(subviews: Subviews, cache: inout Cache) -> ViewSpacing { ViewSpacing() }
+
+    func explicitAlignment(of guide: HorizontalAlignment, in bounds: CGRect,
+                           proposal: ProposedViewSize, subviews: Subviews,
+                           cache: inout Cache) -> CGFloat? { nil }
+
+    func explicitAlignment(of guide: VerticalAlignment, in bounds: CGRect,
+                           proposal: ProposedViewSize, subviews: Subviews,
+                           cache: inout Cache) -> CGFloat? { nil }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews,
+                       cache: inout Cache) {
+        let all = sizes(proposal.width, subviews, &cache)
+        var y = bounds.minY
+        for (subview, size) in zip(subviews, all) {
+            subview.place(at: CGPoint(x: bounds.minX, y: y), anchor: .topLeading,
+                          proposal: ProposedViewSize(width: proposal.width, height: size.height))
+            y += size.height + spacing
+        }
     }
 }
