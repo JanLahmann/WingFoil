@@ -110,7 +110,7 @@ tag-ios:
 
 tag-garmin:
 	@git diff --quiet && git diff --cached --quiet || { echo "refusing: the tree is dirty"; exit 1; }
-	@v=$$(grep -m1 -o 'version="[0-9][^"]*"' garmin/manifest.xml | cut -d'"' -f2); \
+	@v=$$(grep -m1 -o 'entry="WingfoilApp" version="[0-9][^"]*"' garmin/manifest.xml | cut -d'"' -f4); \
 	 python3 tools/check_release.py >/dev/null && \
 	 git tag -a "garmin/$$v" -m "watch app $$v" && echo "tagged garmin/$$v (not pushed)"
 
