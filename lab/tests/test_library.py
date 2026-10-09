@@ -295,27 +295,79 @@ def test_the_clean_jibe_series_are_per_session_and_hole_tolerant():
     old.pop("cleanJibesPerHour")
     charts = {c["key"]: c for c in library.aggregate([good, old])["trends"]["charts"]}
     assert [c for c in charts] == ["foilPct", "longestFlight", "turnSuccess", "cleanJibes",
-                                   "cph", "jph", "tph", "best2s", "pumps", "turnSide"]
+                                   "cph", "tph", "best2s", "pumps", "turnSide"]
     assert [p["v"] for p in charts["cleanJibes"]["lines"][0]["points"]] == [5.0, None]
     assert [p["v"] for p in charts["cph"]["lines"][0]["points"]] == [5.0, None]
 
 
-def test_the_three_rates_are_drawn_side_by_side_and_read_the_engine():
-    """**Rates are additive.** CPH keeps its line and JPH and TPH get one each, in that
-    order, each reading its own engine field rather than dividing a count for itself."""
+def test_cph_then_one_dry_turn_rate_each_reading_the_engine():
+    """**CPH, then ONE dry-turn rate** (rider review I20, 9 Oct 2026): JPH while no session
+    in the range has a tack, TPH once one does — on a jibes-only library the two were one
+    line drawn twice. Each reads its own engine field rather than dividing a count."""
     a = entry("a", "2026-08-03", 1000.0, jibesPerHour=25.1, turnsPerHour=30.4,
               cleanJibesPerHour=12.8)
-    # A library saved before schema 11 carries neither rate — a hole in two lines, not a
-    # pair of zeroes, because the dry numerators were never stored to divide with.
+    # A library saved before schema 11 carries neither rate — a hole in the line, not a
+    # zero, because the dry numerators were never stored to divide with.
     old = entry("old", "2026-08-10", 2000.0)
     old.pop("jibesPerHour")
     old.pop("turnsPerHour")
     charts = {c["key"]: c for c in library.aggregate([a, old])["trends"]["charts"]}
     assert charts["cph"]["unit"] == "clean jibes / h"
-    assert charts["jph"]["unit"] == "jibes / h"
+    assert "jph" not in charts                         # `entry` carries 4 tacks
     assert charts["tph"]["unit"] == "turns / h"
-    assert [p["v"] for p in charts["jph"]["lines"][0]["points"]] == [25.1, None]
     assert [p["v"] for p in charts["tph"]["lines"][0]["points"]] == [30.4, None]
+
+    jibes_only = [entry("jo", "2026-08-03", 1000.0, jibesPerHour=25.1, turnsPerHour=30.4,
+                        cleanJibesPerHour=12.8, turns={"tacks": 0})]
+    charts = {c["key"]: c for c in library.aggregate(jibes_only)["trends"]["charts"]}
+    assert "tph" not in charts
+    assert charts["jph"]["unit"] == "jibes / h"
+    assert [p["v"] for p in charts["jph"]["lines"][0]["points"]] == [25.1]
+    keys = [c["key"] for c in library.aggregate(jibes_only)["trends"]["charts"]]
+    assert keys.index("jph") == keys.index("cph") + 1
+
+
+def test_the_rate_floor_is_one_number_on_both_sides():
+    """Jan, 9 Oct 2026: 20 minutes of timer time, the same constant as the session page."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+    from wingfoil_lab import presentation
+    assert library.RATE_MIN_TIMER_S == presentation.RATE_MIN_TIMER_S == 20 * 60
+
+
+def test_a_short_session_holds_no_rate_point_and_no_rate_record():
+    """A ten-minute paddle with five clean jibes is 30 an hour. It keeps its clean-jibe
+    *count* — on the chart and in the records — and loses every rate: no CPH, JPH or TPH
+    point, no "Best CPH". Exactly 20 minutes on the timer holds one. The floor reads timer
+    time, so a long elapsed span with a short timer is still short."""
+    short = entry("short", "2026-08-03", 1000.0, durationS=7200.0, timerTimeS=600.0,
+                  cleanJibesPerHour=30.0, jibesPerHour=40.0, turnsPerHour=42.0,
+                  turns={"jibesSuccessful": 9})
+    edge = entry("edge", "2026-08-10", 2000.0, durationS=1200.0, timerTimeS=1200.0,
+                 cleanJibesPerHour=6.0, jibesPerHour=9.0, turnsPerHour=11.0)
+    agg = library.aggregate([short, edge])
+    charts = {c["key"]: c for c in agg["trends"]["charts"]}
+    for key in ("cph", "tph"):
+        assert [p["v"] for p in charts[key]["lines"][0]["points"]] \
+            == [None, {"cph": 6.0, "tph": 11.0}[key]], key
+    assert [p["v"] for p in charts["cleanJibes"]["lines"][0]["points"]] == [9.0, 5.0]
+    rows = {r["key"]: r for r in agg["sessionRecords"]}
+    assert (rows["bestCph"]["id"], rows["bestCph"]["value"]) == ("edge", 6.0)
+    assert rows["mostCleanJibes"]["id"] == "short"
+    assert rows["bestCph"]["caption"] == ("Clean jibes per hour on the timer. "
+                                          "Sessions of at least 20 minutes.")
+
+
+def test_a_period_needs_twenty_minutes_on_its_own_timer_for_a_rate():
+    """The floor over a period's Σ timer time: one ten-minute paddle holds no CPH or WPH,
+    two of them make 20 minutes and do. The count never takes the floor."""
+    def paddle(ident, epoch):
+        return entry(ident, "2026-08-03", epoch, durationS=600.0, timerTimeS=600.0,
+                     wetExits=2)
+    one = library._period_facts([paddle("p1", 1000.0)], spots=1)
+    assert one["cph"] is None and one["wph"] is None and one["cleanJibes"] == 5.0
+    two = library._period_facts([paddle("p1", 1000.0), paddle("p2", 5000.0)], spots=1)
+    assert two["cph"] == pytest.approx(10 * 3.0) and two["wph"] == pytest.approx(4 * 3.0)
+    assert library.period_card([paddle("p1", 1000.0)])["dryRate"] is None
 
 
 def test_the_best_2s_series_is_knots_and_marks_what_it_cannot_certify():

@@ -45,7 +45,7 @@
         {
           "clean": false,
           "key": "max2s",
-          "label": "max 2 s",
+          "label": "best 2 s",
           "value": "13.72 kn"
         },
         {
@@ -105,7 +105,7 @@
       "falls": [],
       "hero": {
         "kind": "max2s",
-        "sub": "top speed · best 2 s",
+        "sub": "best 2 s",
         "unit": "kn",
         "value": "13.72"
       },
@@ -217,7 +217,7 @@
         {
           "clean": false,
           "key": "max2s",
-          "label": "max 2 s",
+          "label": "best 2 s",
           "value": "13.72 kn"
         },
         {
@@ -279,7 +279,7 @@
       "falls": [],
       "hero": {
         "kind": "max2s",
-        "sub": "top speed · best 2 s",
+        "sub": "best 2 s",
         "unit": "kn",
         "value": "12.95"
       },
@@ -355,7 +355,7 @@
       "falls": [],
       "hero": {
         "kind": "max2s",
-        "sub": "top speed · best 2 s",
+        "sub": "best 2 s",
         "unit": "kn",
         "value": "12.95"
       },
@@ -431,7 +431,7 @@
       "falls": [],
       "hero": {
         "kind": "max2s",
-        "sub": "top speed · best 2 s",
+        "sub": "best 2 s",
         "unit": "kn",
         "value": "12.95"
       },
@@ -538,7 +538,7 @@
         {
           "clean": false,
           "key": "max2s",
-          "label": "max 2 s",
+          "label": "best 2 s",
           "value": "14.99 kn"
         },
         {
@@ -598,7 +598,7 @@
       "falls": [],
       "hero": {
         "kind": "max2s",
-        "sub": "top speed · best 2 s",
+        "sub": "best 2 s",
         "unit": "kn",
         "value": "14.99"
       },
@@ -710,7 +710,7 @@
         {
           "clean": false,
           "key": "max2s",
-          "label": "max 2 s",
+          "label": "best 2 s",
           "value": "14.99 kn"
         },
         {
@@ -801,7 +801,7 @@
         {
           "clean": false,
           "key": "max2s",
-          "label": "max 2 s",
+          "label": "best 2 s",
           "value": "13.19 kn"
         },
         {
@@ -861,7 +861,7 @@
       "falls": [],
       "hero": {
         "kind": "max2s",
-        "sub": "top speed · best 2 s",
+        "sub": "best 2 s",
         "unit": "kn",
         "value": "13.19"
       },
@@ -973,7 +973,7 @@
         {
           "clean": false,
           "key": "max2s",
-          "label": "max 2 s",
+          "label": "best 2 s",
           "value": "13.19 kn"
         },
         {
@@ -1064,7 +1064,7 @@
         {
           "clean": false,
           "key": "max2s",
-          "label": "max 2 s",
+          "label": "best 2 s",
           "value": "14.36 kn"
         },
         {
@@ -1124,7 +1124,7 @@
       "falls": [],
       "hero": {
         "kind": "max2s",
-        "sub": "top speed · best 2 s",
+        "sub": "best 2 s",
         "unit": "kn",
         "value": "14.36"
       },
@@ -1236,7 +1236,7 @@
         {
           "clean": false,
           "key": "max2s",
-          "label": "max 2 s",
+          "label": "best 2 s",
           "value": "14.36 kn"
         },
         {
@@ -1298,7 +1298,7 @@
       "falls": [],
       "hero": {
         "kind": "max2s",
-        "sub": "top speed · best 2 s",
+        "sub": "best 2 s",
         "unit": "kn",
         "value": "12.60"
       },
@@ -1374,7 +1374,7 @@
       "falls": [],
       "hero": {
         "kind": "max2s",
-        "sub": "top speed · best 2 s",
+        "sub": "best 2 s",
         "unit": "kn",
         "value": "12.60"
       },
@@ -1450,7 +1450,7 @@
       "falls": [],
       "hero": {
         "kind": "max2s",
-        "sub": "top speed · best 2 s",
+        "sub": "best 2 s",
         "unit": "kn",
         "value": "12.60"
       },
@@ -1557,7 +1557,7 @@
         {
           "clean": false,
           "key": "max2s",
-          "label": "max 2 s",
+          "label": "best 2 s",
           "value": "11.95 kn"
         },
         {
@@ -1617,7 +1617,7 @@
       "falls": [],
       "hero": {
         "kind": "max2s",
-        "sub": "top speed · best 2 s",
+        "sub": "best 2 s",
         "unit": "kn",
         "value": "11.95"
       },
@@ -1729,7 +1729,7 @@
         {
           "clean": false,
           "key": "max2s",
-          "label": "max 2 s",
+          "label": "best 2 s",
           "value": "11.95 kn"
         },
         {
@@ -1820,7 +1820,7 @@
         {
           "clean": false,
           "key": "max2s",
-          "label": "max 2 s",
+          "label": "best 2 s",
           "value": "12.45 kn"
         },
         {
@@ -1880,7 +1880,7 @@
       "falls": [],
       "hero": {
         "kind": "max2s",
-        "sub": "top speed · best 2 s",
+        "sub": "best 2 s",
         "unit": "kn",
         "value": "12.45"
       },
@@ -1992,7 +1992,7 @@
         {
           "clean": false,
           "key": "max2s",
-          "label": "max 2 s",
+          "label": "best 2 s",
           "value": "12.45 kn"
         },
         {
@@ -2083,7 +2083,7 @@
         {
           "clean": false,
           "key": "max2s",
-          "label": "max 2 s",
+          "label": "best 2 s",
           "value": "12.23 kn"
         },
         {
@@ -2143,7 +2143,7 @@
       "falls": [],
       "hero": {
         "kind": "max2s",
-        "sub": "top speed · best 2 s",
+        "sub": "best 2 s",
         "unit": "kn",
         "value": "12.23"
       },
@@ -2255,7 +2255,7 @@
         {
           "clean": false,
           "key": "max2s",
-          "label": "max 2 s",
+          "label": "best 2 s",
           "value": "12.23 kn"
         },
         {
@@ -2346,7 +2346,7 @@
         {
           "clean": false,
           "key": "max2s",
-          "label": "max 2 s",
+          "label": "best 2 s",
           "value": "14.21 kn"
         },
         {
@@ -2406,7 +2406,7 @@
       "falls": [],
       "hero": {
         "kind": "max2s",
-        "sub": "top speed · best 2 s",
+        "sub": "best 2 s",
         "unit": "kn",
         "value": "14.21"
       },
@@ -2518,7 +2518,7 @@
         {
           "clean": false,
           "key": "max2s",
-          "label": "max 2 s",
+          "label": "best 2 s",
           "value": "14.21 kn"
         },
         {
@@ -2609,7 +2609,7 @@
         {
           "clean": false,
           "key": "max2s",
-          "label": "max 2 s",
+          "label": "best 2 s",
           "value": "13.51 kn"
         },
         {
@@ -2669,7 +2669,7 @@
       "falls": [],
       "hero": {
         "kind": "max2s",
-        "sub": "top speed · best 2 s",
+        "sub": "best 2 s",
         "unit": "kn",
         "value": "13.51"
       },
@@ -2781,7 +2781,7 @@
         {
           "clean": false,
           "key": "max2s",
-          "label": "max 2 s",
+          "label": "best 2 s",
           "value": "13.51 kn"
         },
         {
@@ -2872,7 +2872,7 @@
         {
           "clean": false,
           "key": "max2s",
-          "label": "max 2 s",
+          "label": "best 2 s",
           "value": "13.89 kn"
         },
         {
@@ -2932,7 +2932,7 @@
       "falls": [],
       "hero": {
         "kind": "max2s",
-        "sub": "top speed · best 2 s",
+        "sub": "best 2 s",
         "unit": "kn",
         "value": "13.89"
       },
@@ -3044,7 +3044,7 @@
         {
           "clean": false,
           "key": "max2s",
-          "label": "max 2 s",
+          "label": "best 2 s",
           "value": "13.89 kn"
         },
         {
@@ -3135,7 +3135,7 @@
         {
           "clean": false,
           "key": "max2s",
-          "label": "max 2 s",
+          "label": "best 2 s",
           "value": "11.36 kn"
         },
         {
@@ -3195,7 +3195,7 @@
       "falls": [],
       "hero": {
         "kind": "max2s",
-        "sub": "top speed · best 2 s",
+        "sub": "best 2 s",
         "unit": "kn",
         "value": "11.36"
       },
@@ -3307,7 +3307,7 @@
         {
           "clean": false,
           "key": "max2s",
-          "label": "max 2 s",
+          "label": "best 2 s",
           "value": "11.36 kn"
         },
         {
@@ -3398,7 +3398,7 @@
         {
           "clean": false,
           "key": "max2s",
-          "label": "max 2 s",
+          "label": "best 2 s",
           "value": "13.21 kn"
         },
         {
@@ -3458,7 +3458,7 @@
       "falls": [],
       "hero": {
         "kind": "max2s",
-        "sub": "top speed · best 2 s",
+        "sub": "best 2 s",
         "unit": "kn",
         "value": "13.21"
       },
@@ -3570,7 +3570,7 @@
         {
           "clean": false,
           "key": "max2s",
-          "label": "max 2 s",
+          "label": "best 2 s",
           "value": "13.21 kn"
         },
         {
@@ -3647,21 +3647,9 @@
       ],
       "ribbon": [
         {
-          "clean": true,
-          "key": "cph",
-          "label": "clean jibes / h",
-          "value": "28.1"
-        },
-        {
-          "clean": false,
-          "key": "jph",
-          "label": "dry jibes / h",
-          "value": "45.0"
-        },
-        {
           "clean": false,
           "key": "max2s",
-          "label": "max 2 s",
+          "label": "best 2 s",
           "value": "13.65 kn"
         },
         {
@@ -3721,7 +3709,7 @@
       "falls": [],
       "hero": {
         "kind": "max2s",
-        "sub": "top speed · best 2 s",
+        "sub": "best 2 s",
         "unit": "kn",
         "value": "13.65"
       },
@@ -3735,18 +3723,6 @@
         "fell in"
       ],
       "ribbon": [
-        {
-          "clean": true,
-          "key": "cph",
-          "label": "clean jibes / h",
-          "value": "28.1"
-        },
-        {
-          "clean": false,
-          "key": "jph",
-          "label": "dry jibes / h",
-          "value": "45.0"
-        },
         {
           "clean": false,
           "key": "duration",
@@ -3819,21 +3795,9 @@
       ],
       "ribbon": [
         {
-          "clean": true,
-          "key": "cph",
-          "label": "clean jibes / h",
-          "value": "28.1"
-        },
-        {
-          "clean": false,
-          "key": "jph",
-          "label": "dry jibes / h",
-          "value": "45.0"
-        },
-        {
           "clean": false,
           "key": "max2s",
-          "label": "max 2 s",
+          "label": "best 2 s",
           "value": "13.65 kn"
         },
         {
@@ -3910,21 +3874,9 @@
       ],
       "ribbon": [
         {
-          "clean": true,
-          "key": "cph",
-          "label": "clean jibes / h",
-          "value": "28.1"
-        },
-        {
-          "clean": false,
-          "key": "jph",
-          "label": "dry jibes / h",
-          "value": "45.0"
-        },
-        {
           "clean": false,
           "key": "max2s",
-          "label": "max 2 s",
+          "label": "best 2 s",
           "value": "13.65 kn"
         },
         {
@@ -3984,7 +3936,7 @@
       "falls": [],
       "hero": {
         "kind": "max2s",
-        "sub": "top speed · best 2 s",
+        "sub": "best 2 s",
         "unit": "kn",
         "value": "13.65"
       },
@@ -3998,18 +3950,6 @@
         "fell in"
       ],
       "ribbon": [
-        {
-          "clean": true,
-          "key": "cph",
-          "label": "clean jibes / h",
-          "value": "28.1"
-        },
-        {
-          "clean": false,
-          "key": "jph",
-          "label": "dry jibes / h",
-          "value": "45.0"
-        },
         {
           "clean": false,
           "key": "duration",
@@ -4082,21 +4022,9 @@
       ],
       "ribbon": [
         {
-          "clean": true,
-          "key": "cph",
-          "label": "clean jibes / h",
-          "value": "28.1"
-        },
-        {
-          "clean": false,
-          "key": "jph",
-          "label": "dry jibes / h",
-          "value": "45.0"
-        },
-        {
           "clean": false,
           "key": "max2s",
-          "label": "max 2 s",
+          "label": "best 2 s",
           "value": "13.65 kn"
         },
         {
@@ -4173,21 +4101,9 @@
       ],
       "ribbon": [
         {
-          "clean": true,
-          "key": "cph",
-          "label": "clean jibes / h",
-          "value": "28.3"
-        },
-        {
-          "clean": false,
-          "key": "jph",
-          "label": "dry jibes / h",
-          "value": "45.4"
-        },
-        {
           "clean": false,
           "key": "max2s",
-          "label": "max 2 s",
+          "label": "best 2 s",
           "value": "13.47 kn"
         },
         {
@@ -4247,7 +4163,7 @@
       "falls": [],
       "hero": {
         "kind": "max2s",
-        "sub": "top speed · best 2 s",
+        "sub": "best 2 s",
         "unit": "kn",
         "value": "13.47"
       },
@@ -4261,18 +4177,6 @@
         "fell in"
       ],
       "ribbon": [
-        {
-          "clean": true,
-          "key": "cph",
-          "label": "clean jibes / h",
-          "value": "28.3"
-        },
-        {
-          "clean": false,
-          "key": "jph",
-          "label": "dry jibes / h",
-          "value": "45.4"
-        },
         {
           "clean": false,
           "key": "duration",
@@ -4345,21 +4249,9 @@
       ],
       "ribbon": [
         {
-          "clean": true,
-          "key": "cph",
-          "label": "clean jibes / h",
-          "value": "28.3"
-        },
-        {
-          "clean": false,
-          "key": "jph",
-          "label": "dry jibes / h",
-          "value": "45.4"
-        },
-        {
           "clean": false,
           "key": "max2s",
-          "label": "max 2 s",
+          "label": "best 2 s",
           "value": "13.47 kn"
         },
         {
@@ -4436,21 +4328,9 @@
       ],
       "ribbon": [
         {
-          "clean": true,
-          "key": "cph",
-          "label": "clean jibes / h",
-          "value": "28.3"
-        },
-        {
-          "clean": false,
-          "key": "jph",
-          "label": "dry jibes / h",
-          "value": "45.4"
-        },
-        {
           "clean": false,
           "key": "max2s",
-          "label": "max 2 s",
+          "label": "best 2 s",
           "value": "13.47 kn"
         },
         {
@@ -4510,7 +4390,7 @@
       "falls": [],
       "hero": {
         "kind": "max2s",
-        "sub": "top speed · best 2 s",
+        "sub": "best 2 s",
         "unit": "kn",
         "value": "13.47"
       },
@@ -4524,18 +4404,6 @@
         "fell in"
       ],
       "ribbon": [
-        {
-          "clean": true,
-          "key": "cph",
-          "label": "clean jibes / h",
-          "value": "28.3"
-        },
-        {
-          "clean": false,
-          "key": "jph",
-          "label": "dry jibes / h",
-          "value": "45.4"
-        },
         {
           "clean": false,
           "key": "duration",
@@ -4608,21 +4476,9 @@
       ],
       "ribbon": [
         {
-          "clean": true,
-          "key": "cph",
-          "label": "clean jibes / h",
-          "value": "28.3"
-        },
-        {
-          "clean": false,
-          "key": "jph",
-          "label": "dry jibes / h",
-          "value": "45.4"
-        },
-        {
           "clean": false,
           "key": "max2s",
-          "label": "max 2 s",
+          "label": "best 2 s",
           "value": "13.47 kn"
         },
         {
@@ -4679,7 +4535,7 @@
       ],
       "hero": {
         "kind": "max2s",
-        "sub": "top speed · best 2 s",
+        "sub": "best 2 s",
         "unit": "kn",
         "value": "11.88"
       },
@@ -4692,12 +4548,6 @@
         "fell in"
       ],
       "ribbon": [
-        {
-          "clean": false,
-          "key": "jph",
-          "label": "dry jibes / h",
-          "value": "0.0"
-        },
         {
           "clean": false,
           "key": "duration",
@@ -4725,7 +4575,7 @@
       ],
       "hero": {
         "kind": "max2s",
-        "sub": "top speed · best 2 s",
+        "sub": "best 2 s",
         "unit": "kn",
         "value": "11.88"
       },
@@ -4738,12 +4588,6 @@
         "fell in"
       ],
       "ribbon": [
-        {
-          "clean": false,
-          "key": "jph",
-          "label": "dry jibes / h",
-          "value": "0.0"
-        },
         {
           "clean": false,
           "key": "duration",
@@ -4771,7 +4615,7 @@
       ],
       "hero": {
         "kind": "max2s",
-        "sub": "top speed · best 2 s",
+        "sub": "best 2 s",
         "unit": "kn",
         "value": "11.88"
       },
@@ -4784,12 +4628,6 @@
         "fell in"
       ],
       "ribbon": [
-        {
-          "clean": false,
-          "key": "jph",
-          "label": "dry jibes / h",
-          "value": "0.0"
-        },
         {
           "clean": false,
           "key": "duration",

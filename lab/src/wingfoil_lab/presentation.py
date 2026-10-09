@@ -30,6 +30,9 @@ from __future__ import annotations
 
 __all__ = [
     "PRESENTATION_VERSION",
+    "RATE_MIN_TIMER_S",
+    "RATE_MISSING_CAPTION",
+    "rate_holds",
     "RECORD_KINDS",
     "DEFAULT_RECORD_WINDOW",
     "DEFAULT_ROW_METRICS",
@@ -294,6 +297,20 @@ RECORD_MISSING_CAPTIONS = {
     "alpha500": "presentation.caption.noAlpha500",
 }
 
+#: **A rate needs 20 minutes on the timer behind it** (Jan, 9 Oct 2026; rider review I12;
+#: docs/algorithms/rates.md, "Too short for a rate"). A ten-minute paddle with five clean
+#: jibes read 28.1 an hour. Under the floor every rate cell is null and carries
+#: `RATE_MISSING_CAPTION` where the number goes; the engine's `summary.*PerHour` stay as
+#: they are. The clock is timer time, the one every rate divides by. Twins: the kit's
+#: `RateFloor.minTimerS`, the analyzer's `library.RATE_MIN_TIMER_S`.
+RATE_MIN_TIMER_S = 20 * 60
+RATE_MISSING_CAPTION = "presentation.caption.tooShortForRate"
+
+
+def rate_holds(timer_s) -> bool:
+    """Does this much timer time hold a rate? `>=`: exactly 20 minutes does."""
+    return timer_s is not None and timer_s >= RATE_MIN_TIMER_S
+
 
 def _record_cell(key, value):
     """One cell of the speed row. A record the session did not set — `null`, or the `0.0`
@@ -367,18 +384,31 @@ def _rate_cells(summary, turns):
     """
     if summary.get("wetPerHour") is None:
         return []
+    # **Too short for a rate** (Jan, 9 Oct 2026): under `RATE_MIN_TIMER_S` of timer time the
+    # same cells are emitted with a null value and `RATE_MISSING_CAPTION`, which the
+    # renderers draw where the number goes. The cell choice still follows the counts.
+    rated = rate_holds(summary.get("timerTimeS") or 0.0)
+    why = None if rated else [_caption(RATE_MISSING_CAPTION)]
+
+    def rate(value):
+        return value if rated else None
+
     jibes = turns.get("jibes", 0)
     tph = summary.get("turnsPerHour") or 0.0
     out = []
     if jibes > 0 or not tph > 0:
         out.append(_cell("cph", "glossary.cph",
-                         value=summary.get("cleanJibesPerHour") or 0.0, unit_kind="rate"))
+                         value=rate(summary.get("cleanJibesPerHour") or 0.0),
+                         unit_kind="rate", captions=why))
     if turns.get("tacks", 0) > 0 or (jibes <= 0 and tph > 0):
-        out.append(_cell("tph", "glossary.tph", value=tph, unit_kind="rate"))
+        out.append(_cell("tph", "glossary.tph", value=rate(tph), unit_kind="rate",
+                         captions=why))
     else:
-        out.append(_cell("jph", "glossary.jph", value=summary.get("jibesPerHour") or 0.0,
-                         unit_kind="rate"))
-    out.append(_cell("wph", "glossary.wph", value=summary["wetPerHour"], unit_kind="rate"))
+        out.append(_cell("jph", "glossary.jph",
+                         value=rate(summary.get("jibesPerHour") or 0.0), unit_kind="rate",
+                         captions=why))
+    out.append(_cell("wph", "glossary.wph", value=rate(summary["wetPerHour"]),
+                     unit_kind="rate", captions=why))
     return out
 
 

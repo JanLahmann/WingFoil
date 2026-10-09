@@ -806,73 +806,6 @@
         "uncertified": false
       },
       {
-        "key": "jph",
-        "label": "JPH",
-        "unit": "jibes / h",
-        "lines": [
-          {
-            "key": "jph",
-            "label": "JPH",
-            "role": "primary",
-            "points": [
-              {
-                "i": 0,
-                "id": "a1",
-                "v": 7.2
-              },
-              {
-                "i": 1,
-                "id": "a2",
-                "v": 10.8
-              },
-              {
-                "i": 2,
-                "id": "b1",
-                "v": 9.6
-              },
-              {
-                "i": 3,
-                "id": "b2",
-                "v": 8.4
-              },
-              {
-                "i": 4,
-                "id": "a3",
-                "v": 12.0
-              },
-              {
-                "i": 5,
-                "id": "a4",
-                "v": 8.0
-              },
-              {
-                "i": 6,
-                "id": "a5",
-                "v": 12.0
-              },
-              {
-                "i": 7,
-                "id": "c1",
-                "v": 8.6
-              },
-              {
-                "i": 8,
-                "id": "c2",
-                "v": 6.7
-              },
-              {
-                "i": 9,
-                "id": "a6",
-                "v": null
-              }
-            ]
-          }
-        ],
-        "yMax": 12.5,
-        "yStep": 2.5,
-        "uncertified": false
-      },
-      {
         "key": "tph",
         "label": "TPH",
         "unit": "turns / h",
@@ -1275,7 +1208,7 @@
         },
         {
           "key": "wph",
-          "label": "WPH · falls per hour",
+          "label": "falls / h",
           "value": "3.8"
         },
         {
@@ -1401,7 +1334,7 @@
         },
         {
           "key": "wph",
-          "label": "WPH · falls per hour",
+          "label": "falls / h",
           "value": "4.5"
         },
         {
@@ -1610,7 +1543,7 @@
         },
         {
           "key": "wph",
-          "label": "WPH · falls per hour",
+          "label": "falls / h",
           "value": "6.7"
         },
         {
@@ -1734,7 +1667,7 @@
         },
         {
           "key": "wph",
-          "label": "WPH · falls per hour",
+          "label": "falls / h",
           "value": "6.9"
         },
         {
@@ -1858,7 +1791,7 @@
         },
         {
           "key": "wph",
-          "label": "WPH · falls per hour",
+          "label": "falls / h",
           "value": "9.0"
         },
         {
@@ -1969,7 +1902,7 @@
         },
         {
           "key": "wph",
-          "label": "WPH · falls per hour",
+          "label": "falls / h",
           "value": "4.7"
         },
         {
@@ -2093,7 +2026,7 @@
         },
         {
           "key": "wph",
-          "label": "WPH · falls per hour",
+          "label": "falls / h",
           "value": "4.8"
         },
         {
@@ -2310,7 +2243,7 @@
         },
         {
           "key": "wph",
-          "label": "WPH · falls per hour",
+          "label": "falls / h",
           "value": "5.4"
         },
         {
@@ -2424,7 +2357,7 @@
         },
         {
           "key": "wph",
-          "label": "WPH · falls per hour",
+          "label": "falls / h",
           "value": "4.1"
         },
         {
@@ -2550,7 +2483,7 @@
         },
         {
           "key": "wph",
-          "label": "WPH · falls per hour",
+          "label": "falls / h",
           "value": "4.8"
         },
         {
@@ -2677,7 +2610,7 @@
         },
         {
           "key": "wph",
-          "label": "WPH · falls per hour",
+          "label": "falls / h",
           "value": "3.5"
         },
         {

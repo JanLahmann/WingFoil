@@ -17,7 +17,8 @@ import pytest
 
 from wingfoil_lab.presentation import (DEFAULT_RECORD_WINDOW, DEFAULT_ROW_METRICS,
                                        FORBIDDEN_CARD_KEYS,
-                                       PRESENTATION_VERSION, RECORD_KINDS,
+                                       PRESENTATION_VERSION, RATE_MIN_TIMER_S,
+                                       RATE_MISSING_CAPTION, RECORD_KINDS,
                                        SPEED_RECORD_POLICIES, build_presentation,
                                        document_json, round_to, sorted_tree)
 
@@ -487,3 +488,52 @@ def test_the_rate_row_is_cph_then_one_dry_turn_rate(documents):
         else:
             assert "cleanJibes" not in turn_keys, stem
     assert ("cph", "tph", "wph") in seen and ("cph", "jph", "wph") in seen
+
+
+def test_a_session_under_twenty_minutes_shows_no_rate(documents):
+    """Jan, 9 Oct 2026 (rider review I12): under 20 minutes of **timer** time every rate
+    cell is null and carries "too short for a rate" where the number goes. The cells are
+    the same ones the counts choose, so the row still names the session's rates. The
+    engine's own `summary.*PerHour` are untouched: the arithmetic is right, the reading of
+    it waits for an afternoon long enough to mean one."""
+    assert RATE_MIN_TIMER_S == 20 * 60
+    short = long_ = 0
+    for stem, doc in documents.items():
+        golden = load(GOLDENS / (stem + ".expected.json"))
+        summary = golden["summary"]
+        rows = {row["id"]: row for row in doc["block"]["rows"]}
+        if summary.get("wetPerHour") is None:
+            assert "rates" not in rows, stem
+            continue
+        cells = rows["rates"]["cells"]
+        if summary["timerTimeS"] < RATE_MIN_TIMER_S:
+            short += 1
+            assert summary["cleanJibesPerHour"] is not None, stem   # the engine kept it
+            for cell in cells:
+                assert cell["value"] is None, (stem, cell["key"])
+                assert [c["id"] for c in cell["captions"]] == [RATE_MISSING_CAPTION], stem
+            # The card is the block's cells, so it carries the reason too.
+            tiles = {t["key"]: t for t in doc["card"]["tiles"]}
+            assert all(tiles[c["key"]]["value"] is None for c in cells), stem
+        else:
+            long_ += 1
+            assert all(cell["value"] is not None and not cell["captions"]
+                       for cell in cells), stem
+    # The ten-minute Torbole paddle of the review is in the corpus, four ways.
+    assert short >= 4 and long_ >= 10
+
+
+def test_the_rate_floor_is_inclusive_and_reads_timer_time():
+    """Exactly 20 minutes on the timer holds a rate; a long elapsed span does not rescue
+    a short timer, because the timer is the hour the rate divides by."""
+    golden = load(GOLDENS / "2026-08-30-1407_nago-torbole.expected.json")
+
+    def cph_cell(timer_s):
+        g = json.loads(json.dumps(golden))
+        g["summary"]["timerTimeS"] = timer_s
+        g["summary"]["durationS"] = 7200.0
+        rows = {r["id"]: r for r in build_presentation(g)["block"]["rows"]}
+        return rows["rates"]["cells"][0]
+
+    assert cph_cell(RATE_MIN_TIMER_S)["value"] == golden["summary"]["cleanJibesPerHour"]
+    assert cph_cell(RATE_MIN_TIMER_S - 1)["value"] is None

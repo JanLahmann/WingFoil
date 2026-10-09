@@ -226,28 +226,43 @@
         {
           "cells": [
             {
-              "captions": [],
+              "captions": [
+                {
+                  "args": {},
+                  "id": "presentation.caption.tooShortForRate"
+                }
+              ],
               "colourRole": "neutral",
               "key": "cph",
               "labelId": "glossary.cph",
               "unitKind": "rate",
-              "value": 28.3
+              "value": null
             },
             {
-              "captions": [],
+              "captions": [
+                {
+                  "args": {},
+                  "id": "presentation.caption.tooShortForRate"
+                }
+              ],
               "colourRole": "neutral",
               "key": "jph",
               "labelId": "glossary.jph",
               "unitKind": "rate",
-              "value": 45.4
+              "value": null
             },
             {
-              "captions": [],
+              "captions": [
+                {
+                  "args": {},
+                  "id": "presentation.caption.tooShortForRate"
+                }
+              ],
               "colourRole": "neutral",
               "key": "wph",
               "labelId": "glossary.wph",
               "unitKind": "rate",
-              "value": 11.3
+              "value": null
             }
           ],
           "id": "rates"
@@ -361,28 +376,43 @@
           "value": null
         },
         {
-          "captions": [],
+          "captions": [
+            {
+              "args": {},
+              "id": "presentation.caption.tooShortForRate"
+            }
+          ],
           "colourRole": "neutral",
           "key": "cph",
           "labelId": "glossary.cph",
           "unitKind": "rate",
-          "value": 28.3
+          "value": null
         },
         {
-          "captions": [],
+          "captions": [
+            {
+              "args": {},
+              "id": "presentation.caption.tooShortForRate"
+            }
+          ],
           "colourRole": "neutral",
           "key": "jph",
           "labelId": "glossary.jph",
           "unitKind": "rate",
-          "value": 45.4
+          "value": null
         },
         {
-          "captions": [],
+          "captions": [
+            {
+              "args": {},
+              "id": "presentation.caption.tooShortForRate"
+            }
+          ],
           "colourRole": "neutral",
           "key": "wph",
           "labelId": "glossary.wph",
           "unitKind": "rate",
-          "value": 11.3
+          "value": null
         }
       ]
     },
