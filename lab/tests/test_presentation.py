@@ -492,10 +492,10 @@ def test_the_rate_row_is_cph_then_one_dry_turn_rate(documents):
 
 def test_a_session_under_twenty_minutes_shows_no_rate(documents):
     """Jan, 9 Oct 2026 (rider review I12): under 20 minutes of **timer** time every rate
-    cell is null and carries "too short for a rate" where the number goes. The cells are
-    the same ones the counts choose, so the row still names the session's rates. The
-    engine's own `summary.*PerHour` are untouched: the arithmetic is right, the reading of
-    it waits for an afternoon long enough to mean one."""
+    cell is null ("—") and the row says "too short for a rate" **once**, as its `note`,
+    not in every cell. The cells are the same ones the counts choose, so the row still
+    names the session's rates. The engine's own `summary.*PerHour` are untouched: the
+    arithmetic is right, the reading of it waits for an afternoon long enough to mean one."""
     assert RATE_MIN_TIMER_S == 20 * 60
     short = long_ = 0
     for stem, doc in documents.items():
@@ -509,14 +509,16 @@ def test_a_session_under_twenty_minutes_shows_no_rate(documents):
         if summary["timerTimeS"] < RATE_MIN_TIMER_S:
             short += 1
             assert summary["cleanJibesPerHour"] is not None, stem   # the engine kept it
+            assert rows["rates"]["note"] == {"id": RATE_MISSING_CAPTION, "args": {}}, stem
             for cell in cells:
                 assert cell["value"] is None, (stem, cell["key"])
-                assert [c["id"] for c in cell["captions"]] == [RATE_MISSING_CAPTION], stem
+                assert cell["captions"] == [], (stem, cell["key"])  # said once, by the row
             # The card is the block's cells, so it carries the reason too.
             tiles = {t["key"]: t for t in doc["card"]["tiles"]}
             assert all(tiles[c["key"]]["value"] is None for c in cells), stem
         else:
             long_ += 1
+            assert "note" not in rows["rates"], stem
             assert all(cell["value"] is not None and not cell["captions"]
                        for cell in cells), stem
     # The ten-minute Torbole paddle of the review is in the corpus, four ways.
@@ -537,3 +539,28 @@ def test_the_rate_floor_is_inclusive_and_reads_timer_time():
 
     assert cph_cell(RATE_MIN_TIMER_S)["value"] == golden["summary"]["cleanJibesPerHour"]
     assert cph_cell(RATE_MIN_TIMER_S - 1)["value"] is None
+
+
+def test_the_bundled_example_is_exempt_from_the_rate_floor():
+    """Jan, 9 Oct 2026: the example session (the ten-minute Torbole paddle, 640 s on the
+    timer) shows its rates on the page and the card. It is a tour of the app, and it stays
+    out of records and trends whatever it shows. A real session of the same length keeps
+    the floor; the exemption is the caller's word, never inferred from the recording."""
+    golden = load(GOLDENS / "2026-08-30-1407_nago-torbole.expected.json")
+    assert golden["summary"]["timerTimeS"] < RATE_MIN_TIMER_S
+
+    def rates(doc):
+        return {r["id"]: r for r in doc["block"]["rows"]}["rates"]
+
+    real = build_presentation(golden)
+    example = build_presentation(golden, rate_floor_exempt=True)
+    assert rates(real)["note"]["id"] == RATE_MISSING_CAPTION
+    assert "note" not in rates(example)
+    by_key = {c["key"]: c for c in rates(example)["cells"]}
+    assert by_key["cph"]["value"] == round(golden["summary"]["cleanJibesPerHour"], 1)
+    assert all(c["value"] is not None and c["captions"] == [] for c in by_key.values())
+    # The card is the block's cells, so the example's card carries the numbers too.
+    tiles = {t["key"]: t for t in example["card"]["tiles"]}
+    assert all(tiles[k]["value"] == by_key[k]["value"] for k in by_key)
+    # Same cells either way: the exemption moves values, never the choice of rates.
+    assert [c["key"] for c in rates(real)["cells"]] == list(by_key)
