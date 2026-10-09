@@ -2383,7 +2383,8 @@ export const HELP = {
             "**JPH** counts your dry jibes: flew through or touchdown. Falling in more often never raises it.",
             "Once a session has a tack, **TPH** takes its place and counts your dry turns.",
             "**falls / h** counts every fall, in a turn or not.",
-            "Under 20 minutes on the timer, a session shows no rate. Five clean jibes in ten minutes would read as 30 an hour. Trends and records leave it out too."
+            "Under 20 minutes on the timer, a session shows no rate. Five clean jibes in ten minutes would read as 30 an hour. Trends and records leave it out too.",
+            "The example session keeps its rates, so you can see them before your own."
           ],
           "channels": [
             "release",
