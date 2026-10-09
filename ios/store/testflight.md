@@ -4,12 +4,7 @@ Source of truth for the App Store Connect beta metadata. This file **mirrors** w
 ASC (app `6800401377`, bundle `de.lahmann.wingfoil`); edit here first, then push the same text
 to ASC so the two never drift.
 
-Last synced to ASC: 2026-09-01 — beta app description (en-US), build 12 / 0.10.0 "What to Test".
-
-> **The beta app description below was rewritten on 9 October 2026 and is NOT in ASC yet.**
-> Jan pushes it (rider review S4: "This says Garmin .fit files. I have an iPhone and Strava.
-> Is this for me?"). Until he does, a tester reads the 1 September text, which names Garmin
-> files only. When it is pushed, change the line above to the day and the field.
+Last synced to ASC: 2026-10-09 — beta app description (en-US), pushed through the API and read back identical. "What to Test" is per build (below).
 
 > **This file is the TestFlight half only.** Since 2026-09-02 the public App Store listing
 > has its own source of truth in **`ios/store/appstore.md`** — app name, subtitle,
