@@ -36,12 +36,11 @@
     <!-- Feature 5 (UI polish): cell glyphs carry the metric family; this keeps or drops the
          word beside them. -->
     <property id="showLabels" type="boolean">true</property>
-    <!-- Phase 5: BLE summary card to the paired iPhone app after a save. -->
-    <property id="phonePush" type="boolean">false</property>
+    <!-- `phonePush` lives in resources-dev/base/settings/ since 0.9.22 (rider review W11). -->
 
     <!-- 0.9.16: the page SET (AppSettings.pageSet, PageModel.PAGE_SET_*).
          0 standard — the eight shipped screens (seven until 0.9.17).
-         1 large — seven screens, one giant number and its word on each, for a rider who
+         1 large — five screens (seven until 0.9.18), one giant number and its word on each, for a rider who
          cannot read four numbers on a wet glass at 25 kn. Mirror of PageModel's constants;
          change both together. It is in EVERY stream: the per-page editor below it moved to
          resources-dev/base/settings/ in the same round. -->

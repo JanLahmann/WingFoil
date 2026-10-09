@@ -1,5 +1,6 @@
 import Toybox.Application;
 import Toybox.Application.Properties;
+import Toybox.Application.Storage;
 import Toybox.Lang;
 import WingFoilCore;
 
@@ -135,7 +136,7 @@ module AppSettings {
         autoPause = _bool("autoPause", false);
         autoPauseDelayS = _clamped("autoPauseDelayS", 5.0, 2.0, 60.0).toNumber();
         showLabels = _bool("showLabels", true);
-        phonePush = _bool("phonePush", false);
+        phonePush = readPhonePush();
         pageSet = _num("pageSet", PageModel.PAGE_SET_STANDARD.toFloat()).toNumber();
         if (pageSet != PageModel.PAGE_SET_LARGE) {
             pageSet = PageModel.PAGE_SET_STANDARD;
@@ -157,6 +158,10 @@ module AppSettings {
         if (cfg.windManual >= 0) {
             windEverSet = true;
         }
+        // A bearing in the property is one the rider gave since the last save (the watch's
+        // menu, the phone, Garmin Connect), so it stands and nothing is asked. Without one,
+        // the last session's hand-set wind is the question the start page puts.
+        windOffer = cfg.windManual >= 0 ? -1 : lastHandWind();
         autoWind = _bool("autoWind", true);
         // Likewise: a turn habit of 7 is not "balanced" (which switches the prior OFF), it is
         // a store nobody wrote on purpose. It takes the default habit.
@@ -173,12 +178,93 @@ module AppSettings {
     // Normalizes and persists the wind axis. Anything outside 0-359 means "unset".
     // Only turns detected from here on are classified — no retro pass on the watch.
     function storeWindDirection(deg as Number) as Void {
+        windOffer = -1;              // a pick, here or from the phone, answers the question
         cfg.setWindDirection(deg);
         if (cfg.windManual >= 0) {
             windEverSet = true;      // sticky: clearing the axis does not unclassify the past
         }
         try {
             Properties.setValue("windDirDeg", cfg.windManual);
+        } catch (e) {
+        }
+    }
+
+    // ---- a wind set by hand lives one session (rider review W4, 0.9.22) ----
+    // "At a new spot the watch still uses Saturday's wind and calls my jibes tacks." Until
+    // 0.9.22 `windDirDeg` was written once and read at every start for ever. Now the save
+    // retires it: the property goes back to unset, the bearing moves to `STORE_WIND_LAST`
+    // (Storage, not a Garmin Connect row), and the next start page asks *Same wind?* once.
+    // Yes stores it again for that session; No, BACK, or START before the question is up
+    // leave the axis to auto-wind. The summary after the save still reads the session's
+    // own axis: `cfg` is not touched here, only what the next session will start from.
+    const STORE_WIND_LAST = "windLast";
+
+    // The bearing the start page asks about, -1 when there is no question.
+    var windOffer as Number = -1;
+
+    // At save (and at discard: a session thrown away is still a session that ended). Called
+    // after the FIT's session fields are written, which read `cfg.windManual`.
+    function retireHandWind() as Void {
+        var deg = cfg.windManual;
+        try {
+            if (deg >= 0) {
+                Storage.setValue(STORE_WIND_LAST, deg);
+            } else {
+                Storage.deleteValue(STORE_WIND_LAST);   // last time had no hand-set wind
+            }
+        } catch (e) {
+        }
+        if (deg < 0) {
+            windOffer = -1;
+            return;
+        }
+        try {
+            Properties.setValue("windDirDeg", -1);
+        } catch (e) {
+        }
+        windOffer = deg;
+    }
+
+    // The last saved session's hand-set bearing, or -1. Storage is a store like Properties:
+    // anything that is not a bearing is no bearing.
+    function lastHandWind() as Number {
+        try {
+            var v = Storage.getValue(STORE_WIND_LAST);
+            if (v instanceof Lang.Number) {
+                var deg = v as Number;
+                if (deg >= 0 && deg <= 359) {
+                    return deg;
+                }
+            }
+        } catch (e) {
+        }
+        return -1;
+    }
+
+    // The start page is about to ask. Until it is answered the session has no hand-set
+    // bearing, so the row behind the question reads what START would get: auto-wind.
+    function openWindOffer() as Number {
+        if (windOffer >= 0 && cfg.windManual >= 0) {
+            cfg.setWindDirection(-1);
+        }
+        return windOffer;
+    }
+
+    // Yes: the same bearing, stored like any pick and retired again at this session's save.
+    // No: nothing set, and the question is not asked again.
+    function answerWindOffer(keep as Boolean) as Void {
+        var deg = windOffer;
+        windOffer = -1;
+        if (deg < 0) {
+            return;
+        }
+        if (keep) {
+            storeWindDirection(deg);
+            return;
+        }
+        cfg.setWindDirection(-1);
+        try {
+            Storage.deleteValue(STORE_WIND_LAST);
         } catch (e) {
         }
     }
@@ -281,5 +367,18 @@ module AppSettings {
     (:notdev)
     function readMapAfterSave() as Boolean {
         return false;                              // no map experiment outside the dev stream
+    }
+
+    // The summary card and the direct transfer behind it (rider review W11, 0.9.22). Their
+    // receiver is the dev iPhone app only, so a release or beta watch has no switch for them
+    // and never sends: the property and the row live in resources-dev/base.
+    (:dev)
+    function readPhonePush() as Boolean {
+        return _bool("phonePush", false);
+    }
+
+    (:notdev)
+    function readPhonePush() as Boolean {
+        return false;                              // nothing on a release or beta phone listens
     }
 }

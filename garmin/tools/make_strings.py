@@ -41,6 +41,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -218,6 +219,28 @@ def problems(entries: list) -> list:
     return found
 
 
+#: The page model the Garmin Connect prompt counts (rider review W9, 9 Oct 2026: the prompt
+#: said "seven" large-text screens for three releases after the set became five).
+PAGE_MODEL = REPO / "garmin" / "source" / "ui" / "PageModel.mc"
+NUMBER_WORDS = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six",
+                7: "seven", 8: "eight", 9: "nine", 10: "ten"}
+
+
+def page_count_problems(entries: list) -> list:
+    """The page-set prompt names the number of large-text screens `PageModel.BIG_PAGES` has."""
+    note = next((e for e in entries if e.get("id") == "SetPageSetNote"), None)
+    match = re.search(r"const BIG_PAGES = (\d+);", PAGE_MODEL.read_text(encoding="utf-8"))
+    if note is None or match is None:
+        return ["SetPageSetNote or PageModel.BIG_PAGES is gone; the count check has "
+                "nothing to compare"]
+    want = "Large text shows %s screens" % NUMBER_WORDS.get(int(match.group(1)),
+                                                           match.group(1))
+    if want not in note["text"]:
+        return ["SetPageSetNote: says %r, PageModel.BIG_PAGES is %s, so it should say %r"
+                % (note["text"][:60], match.group(1), want)]
+    return []
+
+
 def files(copy: dict) -> list:
     entries = copy["strings"]
     base = [e for e in entries if e.get("stream", "base") == "base"]
@@ -234,7 +257,7 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
 
     copy = load_copy()
-    found = problems(copy["strings"])
+    found = problems(copy["strings"]) + page_count_problems(copy["strings"])
     if found:
         print("docs/copy/watch.json does not hold together:", file=sys.stderr)
         for problem in found:

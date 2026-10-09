@@ -16,6 +16,7 @@ import WingFoilCore;
 // So: each channel keeps its own 5 s window, which is what "don't repeat yourself" was ever
 // meant to say, and a 1 s global floor keeps two different alerts from overlapping into
 // mush. Total vibes stay bounded — at most one per second, at most one per channel per five.
+// The one exception is the recording's own state, pause and resume (`pauseState`, below).
 module AlertManager {
     const DEBOUNCE_MS = 5000;
     // Nothing buzzes within this of anything else, whatever channel it is on: two profiles
@@ -138,6 +139,39 @@ module AlertManager {
     // The call site is `(:dev)`, so no other stream ever reaches it.
     function phoneStreamWhole() as Void {
         _fire(CH_PHONE, [new Attention.VibeProfile(75, 180)]);
+    }
+
+    // ---- the recording's own state (rider review W1, 9 Oct 2026) ----
+    //
+    // Pause and resume buzz, and a pressed pause buzzes again every two minutes
+    // (PauseReminder). One family, two endings: both open on the same long pulse — "the
+    // recording changed" — and the tail says which way. PAUSE is a second long pulse,
+    // "looong, looong"; RESUME is two quick ticks, "looong, ti-tik". No other alert on the
+    // wrist has two long pulses or a long pulse first, so neither can be read as a verdict.
+    //
+    // As [strength, ms] pairs rather than VibeProfiles, so the suite can read the shapes.
+    const PAUSE_VIBE = [100, 500, 0, 250, 100, 500];
+    const RESUME_VIBE = [100, 500, 0, 150, 100, 100, 0, 100, 100, 100];
+
+    // NOT on a debounced channel, and not behind the global floor either. Every other alert
+    // may be dropped when it lands too close to another; this one may not, because it states
+    // what the watch is doing NOW. A rider who presses START twice inside a second must feel
+    // the second press, or his wrist told him "paused" about a session that is recording.
+    // A new vibrate() replaces the one playing, which is exactly right here. Behind no
+    // toggle, like `autoWindLocked`: it is the safety net under the one-press pause.
+    function pauseState(paused as Boolean) as Void {
+        _lastAnyMs = System.getTimer();
+        if (Attention has :vibrate) {
+            Attention.vibrate(profilesOf(paused ? PAUSE_VIBE : RESUME_VIBE));
+        }
+    }
+
+    function profilesOf(pairs as Array<Number>) as Array<Attention.VibeProfile> {
+        var out = [] as Array<Attention.VibeProfile>;
+        for (var i = 0; i + 1 < pairs.size(); i += 2) {
+            out.add(new Attention.VibeProfile(pairs[i], pairs[i + 1]));
+        }
+        return out;
     }
 
     // A turn resolved — the ONE entry point SessionController uses, because a turn has one

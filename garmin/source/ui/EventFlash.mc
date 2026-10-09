@@ -23,6 +23,8 @@ import WingFoilCore;
 //   a pumped takeoff     ring only, 0.7 s        frequent, so no word and no afterglow
 //   a new longest flight full flash, the duration
 //   a speed PB           stays PbFlash's         (effort orange, the value)
+//   pause / resume       PAUSED / RECORDING      full flash, the banner's yellow / white;
+//                                                no afterglow — the banner IS the pause's
 //
 // NOT here on purpose: straight-line flight ends (the Timeline page shows them), interval
 // alerts and the wind lock. Frequent things flashing would turn the glass into noise.
@@ -56,7 +58,12 @@ module EventFlash {
         EV_CLEAN = 4,
         EV_STREAK = 5,
         EV_TAKEOFF = 6,
-        EV_LONGEST = 7
+        EV_LONGEST = 7,
+        // 0.9.22 (rider review W1): the recording's own state. Never in the afterglow — while
+        // paused the banner says it for as long as it is true, and "recording" is the normal
+        // case the page itself shows.
+        EV_PAUSED = 8,
+        EV_RESUMED = 9
     }
 
     // The flash being drawn.
@@ -101,6 +108,11 @@ module EventFlash {
         _start(EV_LONGEST, TurnDetector.KIND_NONE, seconds);
     }
 
+    // Pause or resume, pressed or automatic, and the two-minute reminder (PauseReminder).
+    function firePauseState(paused as Boolean) as Void {
+        _start(paused ? EV_PAUSED : EV_RESUMED, TurnDetector.KIND_NONE, 0);
+    }
+
     // Which dry-streak counts are worth a flash: 5, then every ten. Pure, so it is testable.
     function dryMilestone(dry as Number) as Boolean {
         return dry == 5 || (dry >= 10 && dry % 10 == 0);
@@ -114,7 +126,7 @@ module EventFlash {
         turnKind = tKind;
         value = v;
         frame = 0;
-        if (k != EV_TAKEOFF) {
+        if (k != EV_TAKEOFF && k != EV_PAUSED && k != EV_RESUMED) {
             lastKind = k;
             lastTurnKind = tKind;
             lastValue = v;
@@ -190,6 +202,13 @@ module EventFlash {
             return Ink.ladderFellIn();
         } else if (k == EV_CLEAN) {
             return Ink.cleanJibe();
+        } else if (k == EV_PAUSED) {
+            // the PAUSED banner's own yellow, so the flash and the banner it leaves behind
+            // are one colour
+            return Graphics.COLOR_YELLOW;
+        } else if (k == EV_RESUMED) {
+            // white, the page's own ink: resuming is the return to normal, not an event
+            return Graphics.COLOR_WHITE;
         }
         return Ink.phaseFlying();
     }
@@ -216,6 +235,10 @@ module EventFlash {
             return v.toString() + Words.FLASH_DRY;
         } else if (k == EV_LONGEST) {
             return Words.FLASH_LONGEST;
+        } else if (k == EV_PAUSED) {
+            return Words.PAUSED_TEXT;
+        } else if (k == EV_RESUMED) {
+            return Words.FLASH_RECORDING;
         }
         return "";
     }

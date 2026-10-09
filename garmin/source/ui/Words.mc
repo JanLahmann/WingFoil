@@ -28,6 +28,10 @@ module Words {
     var START_HINT_LONG as String = "";
     var START_WIND_UNSET as String = "";
     var START_WIND_PREFIX as String = "";
+    var START_WIND_AUTO as String = "";
+    var WIND_ASK as String = "";
+    var WIND_ASK_YES as String = "";
+    var WIND_ASK_NO as String = "";
     var START_GPS_GOOD as String = "";
     var START_GPS_READY as String = "";
     var START_GPS_WEAK as String = "";
@@ -74,6 +78,7 @@ module Words {
     var LBL_TACKS as String = "";
     var SUM_SAVED as String = "";
     var SUM_NOT_SAVED as String = "";
+    var SUM_AFTER_SYNC as String = "";
     var SUM_HERO_ON_FOIL as String = "";
     var SUM_HERO_FOIL as String = "";
     var SUM_HERO_OF as String = "";
@@ -103,6 +108,7 @@ module Words {
     var FLASH_JIBE as String = "";
     var FLASH_TACK as String = "";
     var FLASH_TURN as String = "";
+    var FLASH_RECORDING as String = "";
     var LBL_FOIL_PCT as String = "";
     var LBL_FLIGHTS as String = "";
     var LBL_FLIGHT as String = "";
@@ -134,6 +140,10 @@ module Words {
         START_HINT_LONG = WatchUi.loadResource(Rez.Strings.StartHintLong) as String;
         START_WIND_UNSET = WatchUi.loadResource(Rez.Strings.StartWindUnset) as String;
         START_WIND_PREFIX = (WatchUi.loadResource(Rez.Strings.StartWindPrefix) as String) + " ";
+        START_WIND_AUTO = WatchUi.loadResource(Rez.Strings.StartWindAuto) as String;
+        WIND_ASK = WatchUi.loadResource(Rez.Strings.WindAsk) as String;
+        WIND_ASK_YES = WatchUi.loadResource(Rez.Strings.WindAskYes) as String;
+        WIND_ASK_NO = WatchUi.loadResource(Rez.Strings.WindAskNo) as String;
         START_GPS_GOOD = WatchUi.loadResource(Rez.Strings.StartGpsGood) as String;
         START_GPS_READY = WatchUi.loadResource(Rez.Strings.StartGpsReady) as String;
         START_GPS_WEAK = WatchUi.loadResource(Rez.Strings.StartGpsWeak) as String;
@@ -180,6 +190,7 @@ module Words {
         LBL_TACKS = KINDS_TACKS;
         SUM_SAVED = WatchUi.loadResource(Rez.Strings.SumSaved) as String;
         SUM_NOT_SAVED = WatchUi.loadResource(Rez.Strings.SumNotSaved) as String;
+        SUM_AFTER_SYNC = WatchUi.loadResource(Rez.Strings.SumAfterSync) as String;
         SUM_HERO_ON_FOIL = WatchUi.loadResource(Rez.Strings.SumHeroOnFoil) as String;
         SUM_HERO_FOIL = " " + (WatchUi.loadResource(Rez.Strings.SumHeroFoil) as String);
         SUM_HERO_OF = (WatchUi.loadResource(Rez.Strings.SumHeroOf) as String) + " ";
@@ -209,6 +220,7 @@ module Words {
         FLASH_JIBE = WatchUi.loadResource(Rez.Strings.FlashJibe) as String;
         FLASH_TACK = WatchUi.loadResource(Rez.Strings.FlashTack) as String;
         FLASH_TURN = WatchUi.loadResource(Rez.Strings.FlashTurn) as String;
+        FLASH_RECORDING = WatchUi.loadResource(Rez.Strings.FlashRecording) as String;
         LBL_FOIL_PCT = WatchUi.loadResource(Rez.Strings.LblFoilPct) as String;
         LBL_FLIGHTS = WatchUi.loadResource(Rez.Strings.LblFlights) as String;
         LBL_FLIGHT = WatchUi.loadResource(Rez.Strings.LblFlight) as String;

@@ -6,6 +6,13 @@
          fenix 8 three releases running; this trial runs it only after the session is saved. -->
     <property id="mapAfterSave" type="boolean">false</property>
 
+    <!-- Phase 5: BLE summary card to the paired iPhone app after a save, and the direct
+         transfer that rides on it. Dev only since 0.9.22 (rider review W11, "I turned it on
+         and nothing ever arrived"): the phone half, Settings → Garmin watch, is in the dev
+         iPhone app only, so on a release or beta watch the switch promised a card nothing
+         received. AppSettings.readPhonePush is (:notdev) false there. -->
+    <property id="phonePush" type="boolean">false</property>
+
     <!-- The per-page data-screen editor's properties (dev only since 0.9.16).
          They lived in resources/settings/properties.xml until this round. A release or beta
          build has neither these rows nor the code that reads them: PageModel._store is

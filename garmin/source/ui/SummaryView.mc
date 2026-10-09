@@ -255,12 +255,39 @@ class SummaryView extends WatchUi.View {
             Ink.phaseFlying(), true);
         // The pill and the phone line are drawn as a PAIR: with a line to show, the pill
         // moves up one eyebrow line so the two together end where the pill alone used to,
-        // and nothing else on the page moves. Without one, this is the shipped screen.
-        var slot = phoneLineSlot(dc);
+        // and nothing else on the page moves. Without one (NOT SAVED, or a glass whose arc
+        // cannot hold the line), this is the screen that shipped until rider review W8.
+        var line = savedLine(getApp().controller.lastSaveOk);
+        var slot = phoneLineSlot(dc, line);
         drawSavedPill(dc, pillY(dc, slot == PHONE_LINE_TOP));
         if (slot != PHONE_LINE_NONE) {
-            drawPhoneLine(dc, slot == PHONE_LINE_TOP ? phoneLineY(dc) : phoneLineLowY(dc));
+            drawPhoneLine(dc, slot == PHONE_LINE_TOP ? phoneLineY(dc) : phoneLineLowY(dc),
+                line as String);
         }
+    }
+
+    // ---- the line under SAVED ----
+    // Rider review W8 (9 Oct 2026): "Is it on my phone now?" SAVED said what the watch had
+    // done and nothing about what happens next, so the eyebrow band under it now says where
+    // the session goes: "next: CleanJibe" (Words.SUM_AFTER_SYNC). The dev stream's transfer progress keeps
+    // the band while it has something to say ("phone 4/13", "phone ok"), because there the
+    // answer IS the progress. NOT SAVED gets nothing: there is no session to sync.
+    static function savedLine(saveOk as Boolean) as String? {
+        var progress = DirectSend.statusLine();
+        if (progress != null) {
+            return progress;
+        }
+        return saveOk ? Words.SUM_AFTER_SYNC : null;
+    }
+
+    // Does `text` fit the glass at ink centre `y`? The verdict page paints the foil-% arc,
+    // so the chord is the arc's own (`fitRadius(dc, false, true)`), the yardstick every row
+    // on this page is held to. "phone 4/13" fits everywhere; the sentence is longer, and on
+    // a glass whose top arc is too short for it the line is dropped, never shrunk.
+    static function savedLineFits(dc as Dc, text as String, y as Number) as Boolean {
+        var w = dc.getTextWidthInPixels(text, Graphics.FONT_XTINY);
+        return w <= RecordingView.rowBudget(RecordingView.fitRadius(dc, false, true),
+            y - dc.getHeight() / 2, RecordingView.inkH(dc, Graphics.FONT_XTINY));
     }
 
     // ---- the direct transfer's progress (0.9.16, dev stream) ----
@@ -279,19 +306,15 @@ class SummaryView extends WatchUi.View {
     // digits: the giant is the page, and on the fenix 5 Plus family (whose hero block starts
     // 16 px higher than elsewhere, 0.9.13) that is a real collision and not a theoretical
     // one. A progress line worth overprinting the session's verdict for does not exist.
-    hidden function drawPhoneLine(dc as Dc, y as Number) as Void {
-        var line = DirectSend.statusLine();
-        if (line == null) {
-            return;
-        }
+    hidden function drawPhoneLine(dc as Dc, y as Number, line as String) as Void {
         dc.setColor(Ink.dim(), Graphics.COLOR_TRANSPARENT);
         dc.drawText(dc.getWidth() / 2, y, Graphics.FONT_XTINY, line, CV);
     }
 
     // Where the phone line goes — and the answer moves the pill, so it has to be one
-    // question asked once. `DirectSend.statusLine` is a `(:notdev)` null outside the dev
-    // stream, so this is NONE there by construction and the page is byte for byte the one
-    // that shipped.
+    // question asked once. Until rider review W8 the line was the dev stream's transfer
+    // progress alone, so it was NONE in the other two by construction; now every stream has
+    // a line after a good save (`savedLine`).
     //
     // TOP is the shape Jan asked for: the pill lifts one eyebrow line and the status line
     // takes the band it vacated, so the pair ends where the pill alone used to. LOW is the
@@ -304,15 +327,21 @@ class SummaryView extends WatchUi.View {
     // NONE when neither holds it. The bottom band is not free on a wide glass: the pill
     // itself lived there until 0.9.13 and on a 454 px screen it landed 6 px above the
     // verdict's second sub-row, which is why that slot is guarded here rather than assumed.
-    static function phoneLineSlot(dc as Dc) as Number {
-        if (DirectSend.statusLine() == null) {
+    //
+    // Since rider review W8 the line is also the after-save hint in every stream, so the
+    // slot asks its WIDTH too: a slot that is free but whose chord is shorter than the
+    // sentence is no slot.
+    static function phoneLineSlot(dc as Dc, line as String?) as Number {
+        if (line == null) {
             return PHONE_LINE_NONE;
         }
         var hT = dc.getFontHeight(Graphics.FONT_XTINY);
-        if (phoneLineY(dc) + hT / 2 < verdictDigitTop(dc) && pillY(dc, true) - hT / 2 >= 0) {
+        if (phoneLineY(dc) + hT / 2 < verdictDigitTop(dc) && pillY(dc, true) - hT / 2 >= 0
+                && savedLineFits(dc, line, phoneLineY(dc))) {
             return PHONE_LINE_TOP;
         }
         return phoneLineLowY(dc) - hT / 2 > heroBlockBottom(dc)
+                && savedLineFits(dc, line, phoneLineLowY(dc))
             ? PHONE_LINE_LOW : PHONE_LINE_NONE;
     }
 

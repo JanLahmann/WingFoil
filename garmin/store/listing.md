@@ -75,6 +75,11 @@ What changed and why:
   with its riders.* opens the beta's own reason under THIS IS THE BETA, the community message
   every other surface says (`BetaGuide.community`). The form still shows the 1138-character text
   until Jan pastes this one.
+* **Not yet pasted either: AFTERWARDS says the way that works from a phone** (rider review W3,
+  9 October 2026). It used to say *Drop the FIT file into cleanjibe.org*, and Garmin Connect's
+  phone app gives a rider no file. It now names intervals.icu first and the computer export
+  second, 1389 characters with the sentence above and the laps line (W15). The form still shows the old paragraph
+  until Jan pastes this text.
 * **2831 characters, cut to 1138 on 30 September 2026** (Jan: "make this way more concise"): one paragraph per theme, the accelerometer and recording detail left to cleanjibe.org/start. The form rejects `<` and `>`, and there are none.
 
 ```
@@ -92,7 +97,7 @@ Eight pages show speed, session, records, turns, the map and your time on the fo
 
 AFTERWARDS
 
-The watch saves a Windsurf activity with a lap for every flight. Drop the FIT file into cleanjibe.org for the full analysis, free, with no upload. On an iPhone, CleanJibe Wingfoil Analyzer is open on TestFlight at testflight.apple.com/join/nygqGGcn.
+The watch saves a Windsurf activity with a lap for every flight and one for every stretch off the foil. Connect intervals.icu once, and every session reaches CleanJibe by itself, on the iPhone or at cleanjibe.org. Garmin Connect's phone app cannot export a file. On a computer, export it at connect.garmin.com and drop it on cleanjibe.org, free, with no upload. On an iPhone, CleanJibe Wingfoil Analyzer is open on TestFlight at testflight.apple.com/join/nygqGGcn.
 
 New to it? cleanjibe.org/start walks you through a 20-minute test on land.
 ```
@@ -158,6 +163,18 @@ from the speed minimum, and a swim inside a bear-away judged as a straight-line 
 top of the 0.9.20 one:
 
 0.9.21: Your wrist names turns the way the phone does. A jibe you carry on round through the wind is a jibe. A turn split by one slow second is one turn. A swim during a bear-away now ends your dry streak.
+
+**0.9.22, not uploaded** (manifests at 0.9.22, 9 October 2026): the watch says when it stops
+counting (rider review W1, W13: the pause buzz, the two-minute reminder, the PAUSED flash, the
+broken state ring; docs/presentation/watch.md, "When the watch stops counting"), and a wind set
+by hand lives one session (W4, W5: retired at save, *Same wind?* on the next start page,
+*wind auto* in white; docs/algorithms/wind.md, "A wind set by hand lives one session"). Both
+reach riders through the beta listing first (docs/channels.md, "The watch"). Also in 0.9.22, and
+no What's New line because it takes a row away rather than adding one: *Send summary to phone
+app* is dev only (rider review W11), and the Data screens prompt counts five large-text screens
+(W9). Draft What's New paragraph, to go on top of the 0.9.21 one:
+
+0.9.22: Your wrist tells you when it stops counting. A pause buzzes, and buzzes again every two minutes until you resume. The ring breaks when the GPS drops. A wind you set by hand now lasts one session, and the next start asks Same wind? While the watch estimates the wind itself, the start page says wind auto.
 
 The divergences left are listed under "Not ported yet".
 

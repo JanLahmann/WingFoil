@@ -1313,13 +1313,27 @@ function startPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
         StartView.gpsColor(Position.QUALITY_NOT_AVAILABLE) != Graphics.COLOR_GREEN,
         "no fix must not read as ready");
 
-    // and the wind row says the axis when there is one, the way to set one when there is not
+    // and the wind row says the axis when there is one; with none, `wind auto` in white while
+    // the watch works it out, and the way to set one, in amber, only with auto-wind off
+    // (rider review W5, 0.9.22)
     var before = AppSettings.cfg.windManual;
     var wasSet = AppSettings.windEverSet;
+    var wasAutoOn = AppSettings.autoWind;
+    var wasAuto = AppSettings.cfg.windAuto;
+    AppSettings.cfg.setAutoWind(-1);
     AppSettings.storeWindDirection(-1);
+    AppSettings.autoWind = true;
+    Test.assertEqual(StartView.windText(), Words.START_WIND_AUTO);
+    Test.assertEqual(StartView.windText(), "wind auto");
+    Test.assertEqual(StartView.windColor(), Graphics.COLOR_WHITE);
+    AppSettings.autoWind = false;
     Test.assertEqual(StartView.windText(), Words.START_WIND_UNSET);
+    Test.assertEqual(StartView.windColor(), Graphics.COLOR_YELLOW);
     AppSettings.storeWindDirection(22);
     Test.assertEqual(StartView.windText(), "wind 22° NNE");
+    Test.assertEqual(StartView.windColor(), Graphics.COLOR_WHITE);
+    AppSettings.autoWind = wasAutoOn;
+    AppSettings.cfg.setAutoWind(wasAuto);
     AppSettings.storeWindDirection(before);
     AppSettings.windEverSet = wasSet;
 
@@ -2529,6 +2543,31 @@ function everyLayoutRendersHeadless(logger as Test.Logger) as Boolean {
     view.onUpdate(dc);
     c.state = was;
     PbFlash.stop();
+
+    // 0.9.22: the pause and resume flashes, and the broken grey ring of a lost GPS, on the
+    // two layouts that draw the state ring (MAIN and the hero above, which carries the arc)
+    var vis = AppSettings.visualAlerts;
+    AppSettings.visualAlerts = true;
+    c.state = SessionController.STATE_PAUSED;
+    EventFlash.firePauseState(true);
+    view.onUpdate(dc);
+    c.state = was;
+    EventFlash.firePauseState(false);
+    view.onUpdate(dc);
+    EventFlash.stop();
+    var clock = e.clockMsOverride;
+    e.clockMsOverride = 500000;
+    c.gpsLoss.arm(500000 - c.gpsLoss.GRACE_MS);
+    c.state = SessionController.STATE_RECORDING;
+    Test.assertMessage(c.gpsLost(), "the render case must draw the broken ring");
+    view.onUpdate(dc);
+    PageModel.build({});
+    PageNav.index = 0;
+    view.onUpdate(dc);
+    c.gpsLoss.disarm();
+    c.state = was;
+    e.clockMsOverride = clock;
+    AppSettings.visualAlerts = vis;
     PageModel.build({});
 
     // an empty session must render too — zero history, no records, no turns
@@ -3129,6 +3168,154 @@ function pausedBannerStaysInsideTheRings(logger as Test.Logger) as Boolean {
     logger.debug("paused banner " + w.toString() + "x" + h.toString() + " at y "
         + RecordingView.pausedBannerY(dc, w, rings[1]).toString()
         + " for the ring radius " + rings[1].toString());
+    return true;
+}
+
+// ---- The watch says when it stops counting (rider review W1, W13; 0.9.22) ----
+
+// "I bumped START with the wing handle. The rest of the session has no turns." A pressed
+// pause buzzes again every two minutes, once per window, from the moment it began.
+(:test)
+function pauseReminderBuzzesEveryTwoMinutes(logger as Test.Logger) as Boolean {
+    var r = new PauseReminder();
+    Test.assertMessage(!r.due(1000000), "a reminder that was never started buzzed");
+    r.start(100000);
+    var buzzes = 0;
+    var first = -1;
+    // ten minutes of pause at 1 Hz
+    for (var t = 101000; t <= 700000; t += 1000) {
+        if (r.due(t)) {
+            buzzes++;
+            if (first < 0) {
+                first = t;
+            }
+        }
+    }
+    Test.assertEqual(first, 100000 + r.EVERY_MS);
+    Test.assertEqual(buzzes, 5);
+    // a gap with no samples (a watch that slept): one buzz, not a catch-up burst
+    r.start(0);
+    Test.assertMessage(r.due(600000), "the first sample after a long gap must remind");
+    Test.assertMessage(!r.due(601000), "a long gap caught up with a second buzz");
+    // a clock that ran backwards restarts the window instead of buzzing
+    Test.assertMessage(!r.due(500000), "a backwards clock buzzed");
+    Test.assertMessage(!r.due(500000 + r.EVERY_MS - 1000), "early after the restart");
+    Test.assertMessage(r.due(500000 + r.EVERY_MS), "the restarted window must still remind");
+    // resume ends it
+    r.stop();
+    Test.assertMessage(!r.due(5000000), "a stopped reminder buzzed");
+    Test.assertMessage(!r.running(), "stopped");
+    return true;
+}
+
+// "The watch counted 12 turns, the phone 19, and nothing told me the GPS dropped." Five
+// seconds below usable greys the state ring; the first usable fix restores it.
+(:test)
+function gpsLossGreysTheRingAfterFiveSeconds(logger as Test.Logger) as Boolean {
+    var g = new GpsLoss();
+    Test.assertMessage(!g.lost(1000000), "an unarmed watch reported a loss");
+    g.arm(100000);
+    g.onFix(101000, true);
+    for (var t = 102000; t < 101000 + g.GRACE_MS; t += 1000) {
+        g.onFix(t, false);
+        Test.assertMessage(!g.lost(t), "greyed early, at " + (t - 101000).toString() + " ms");
+    }
+    g.onFix(101000 + g.GRACE_MS, false);
+    Test.assertMessage(g.lost(101000 + g.GRACE_MS), "five seconds without a usable fix");
+    // no callbacks at all is a loss too: the window is time, not a count of bad fixes
+    Test.assertMessage(g.lost(200000), "a silent receiver must read as lost");
+    g.onFix(200000, true);
+    Test.assertMessage(!g.lost(200000), "the first usable fix restores the ring");
+    // one poor fix under a wave never greys it
+    g.onFix(201000, false);
+    g.onFix(202000, true);
+    Test.assertMessage(!g.lost(202000 + g.GRACE_MS - 1), "a single poor fix greyed the ring");
+    g.disarm();
+    Test.assertMessage(!g.lost(9000000), "save or discard must disarm it");
+
+    // the ring's four looks, and their order: paused beats a lost fix beats the phase
+    Test.assertEqual(RecordingView.ringLook(false, false, false), RecordingView.RING_OFF);
+    Test.assertEqual(RecordingView.ringLook(false, false, true), RecordingView.RING_FLYING);
+    Test.assertEqual(RecordingView.ringLook(false, true, true), RecordingView.RING_NO_GPS);
+    Test.assertEqual(RecordingView.ringLook(true, true, true), RecordingView.RING_PAUSED);
+    Test.assertEqual(RecordingView.ringLook(true, false, false), RecordingView.RING_PAUSED);
+
+    // through the controller's own door: the same QUALITY_USABLE line the engine's gap uses
+    var c = fuzzController();
+    c.gpsLoss.arm(100000);
+    var poor = fuzzFix(Position.QUALITY_POOR, 9.0, 0.6, 3.0, 45.8710d, 10.8712d);
+    var t = 100000;
+    for (var i = 0; i < 5; i++) {
+        t += 1000;
+        c.engine.clockMsOverride = t;
+        c.onPosition(poor);
+    }
+    Test.assertMessage(c.gpsLost(), "five poor fixes while recording must grey the ring");
+    t += 1000;
+    c.engine.clockMsOverride = t;
+    c.onPosition(fuzzGoodFix());
+    Test.assertMessage(!c.gpsLost(), "a good fix must restore it");
+    t += 10000;
+    c.engine.clockMsOverride = t;
+    c.state = SessionController.STATE_PAUSED;
+    Test.assertMessage(!c.gpsLost(), "a paused ring is the pause's, not the GPS's");
+    return true;
+}
+
+// Pause and resume buzz on their own shapes: one family (the same long opening pulse), two
+// endings, and neither one a rhythm any other alert uses.
+(:test)
+function pauseAndResumeBuzzOnTheirOwnShapes(logger as Test.Logger) as Boolean {
+    Words.load();
+    var p = AlertManager.PAUSE_VIBE;
+    var r = AlertManager.RESUME_VIBE;
+    Test.assertMessage(p.size() % 2 == 0 && r.size() % 2 == 0, "pairs of strength and ms");
+    Test.assertMessage(p[0] == r[0] && p[1] == r[1], "both open on the same long pulse");
+    Test.assertMessage(p[1] >= 400, "the opening pulse must be long");
+    // pause: a second long pulse; resume: short ticks after it
+    Test.assertMessage(p[p.size() - 1] >= 400, "the pause ends long");
+    Test.assertMessage(r[r.size() - 1] <= 150, "the resume ends on a quick tick");
+    Test.assertMessage(!p.toString().equals(r.toString()), "pause and resume are one buzz");
+    Test.assertEqual(AlertManager.profilesOf(p).size(), p.size() / 2);
+    Test.assertMessage(AlertManager.profilesOf(r).size() <= 8, "vibrate takes eight at most");
+
+    // never debounced: a pause inside the global floor of a turn verdict still plays, and the
+    // live path does not crash on the simulator's motor
+    AlertManager.reset();
+    AlertManager.turnOutcome(TurnDetector.OUTCOME_FLEW);
+    AlertManager.pauseState(true);
+    AlertManager.pauseState(false);
+    AlertManager.reset();
+
+    // the flash: PAUSED in the banner's yellow, RECORDING in white, and neither one takes the
+    // afterglow from the last verdict
+    var vis = AppSettings.visualAlerts;
+    AppSettings.visualAlerts = true;
+    EventFlash.clearAll();
+    EventFlash.fireTurn(TurnDetector.OUTCOME_FLEW, false, TurnDetector.KIND_JIBE);
+    EventFlash.firePauseState(true);
+    Test.assertEqual(EventFlash.kind, EventFlash.EV_PAUSED);
+    Test.assertEqual(EventFlash.word(EventFlash.kind, 0), Words.PAUSED_TEXT);
+    Test.assertEqual(EventFlash.baseColor(EventFlash.EV_PAUSED), Graphics.COLOR_YELLOW);
+    Test.assertEqual(EventFlash.frames(), EventFlash.FRAMES_FULL);
+    EventFlash.firePauseState(false);
+    Test.assertEqual(EventFlash.kind, EventFlash.EV_RESUMED);
+    Test.assertEqual(EventFlash.word(EventFlash.kind, 0), "RECORDING");
+    Test.assertEqual(EventFlash.lastKind, EventFlash.EV_FLEW);
+    EventFlash.clearAll();
+    AppSettings.visualAlerts = vis;
+
+    // the reminder goes off through the controller while a pressed pause lasts, and the
+    // fuzz controller (no Session behind it) keeps every call null-safe
+    var c = fuzzController();
+    c.state = SessionController.STATE_PAUSED;
+    c.pauseReminder.start(100000);
+    c.engine.clockMsOverride = 100000 + c.pauseReminder.EVERY_MS;
+    c.onPosition(fuzzGoodFix());
+    Test.assertMessage(c.pauseReminder.running(), "a reminder stops only at the resume");
+    Test.assertMessage(!c.pauseReminder.due(100000 + c.pauseReminder.EVERY_MS),
+        "the controller did not consume the reminder");
+    EventFlash.clearAll();
     return true;
 }
 
@@ -3831,6 +4018,97 @@ function manualWindAlwaysBeatsTheEstimate(logger as Test.Logger) as Boolean {
     AppSettings.windEverSet = wasSet;
     AppSettings.autoWindEverSet = wasAuto;
     logger.debug("precedence: manual > auto > unset, estimates marked \"~\"");
+    return true;
+}
+
+// A wind set by hand lives one session (rider review W4, 0.9.22): "At a new spot the watch
+// still uses Saturday's wind and calls my jibes tacks." The save retires it, the next start
+// page asks *Same wind?* once, Yes keeps it for that session and anything else leaves the axis
+// to auto-wind.
+(:test)
+function handSetWindLivesOneSession(logger as Test.Logger) as Boolean {
+    var before = AppSettings.cfg.windManual;
+    var wasSet = AppSettings.windEverSet;
+    var wasAuto = AppSettings.cfg.windAuto;
+    var wasLast = Storage.getValue(AppSettings.STORE_WIND_LAST);
+    AppSettings.cfg.setAutoWind(-1);
+
+    // The save: the property is unset, the bearing remembered, and the session that just
+    // ended still reads its own axis (the summary pages, the FIT written before it).
+    AppSettings.storeWindDirection(225);
+    AppSettings.retireHandWind();
+    Test.assertEqual(Properties.getValue("windDirDeg"), -1);
+    Test.assertEqual(AppSettings.cfg.windManual, 225);
+    Test.assertEqual(AppSettings.lastHandWind(), 225);
+    Test.assertEqual(AppSettings.windOffer, 225);
+
+    // An app restart finds the question too, not the bearing.
+    AppSettings.load();
+    Test.assertEqual(AppSettings.cfg.windManual, -1);
+    Test.assertEqual(AppSettings.windOffer, 225);
+
+    // The question is up: the row behind it reads what START would get.
+    AppSettings.cfg.setWindDirection(225);       // as it is in the same run after a save
+    Test.assertEqual(AppSettings.openWindOffer(), 225);
+    Test.assertEqual(AppSettings.cfg.windDirection, -1);
+    var menu = WindAsk.build(225);
+    Test.assertEqual(menu.getItem(0).getId(), :keep);
+    Test.assertEqual(menu.getItem(0).getSubLabel(), "225° SW");
+    Test.assertEqual(menu.getItem(1).getId(), :auto);
+
+    // Yes: the same wind, for this session, and stored the way any pick is.
+    AppSettings.answerWindOffer(true);
+    Test.assertEqual(AppSettings.cfg.windManual, 225);
+    Test.assertEqual(Properties.getValue("windDirDeg"), 225);
+    Test.assertEqual(AppSettings.windOffer, -1);
+    Test.assertEqual(AppSettings.openWindOffer(), -1);
+
+    // ...and retired again at that session's save. No: nothing set, never asked again.
+    AppSettings.retireHandWind();
+    Test.assertEqual(AppSettings.openWindOffer(), 225);
+    AppSettings.answerWindOffer(false);
+    Test.assertEqual(AppSettings.cfg.windManual, -1);
+    Test.assertEqual(AppSettings.lastHandWind(), -1);
+    AppSettings.load();
+    Test.assertEqual(AppSettings.windOffer, -1);
+
+    // A pick made before answering (the wind menu, the phone) answers the question.
+    AppSettings.storeWindDirection(90);
+    AppSettings.retireHandWind();
+    Test.assertEqual(AppSettings.windOffer, 90);
+    AppSettings.storeWindDirection(45);
+    Test.assertEqual(AppSettings.windOffer, -1);
+    Test.assertEqual(AppSettings.cfg.windManual, 45);
+
+    // A session with no hand-set wind leaves nothing to ask about next time.
+    AppSettings.storeWindDirection(-1);
+    AppSettings.retireHandWind();
+    Test.assertEqual(AppSettings.windOffer, -1);
+    Test.assertEqual(AppSettings.lastHandWind(), -1);
+
+    // A bearing the rider gave in Garmin Connect since the save stands, unasked.
+    Storage.setValue(AppSettings.STORE_WIND_LAST, 270);
+    Properties.setValue("windDirDeg", 180);
+    AppSettings.load();
+    Test.assertEqual(AppSettings.cfg.windManual, 180);
+    Test.assertEqual(AppSettings.windOffer, -1);
+
+    // Storage is a store: anything that is not a bearing is no question.
+    Storage.setValue(AppSettings.STORE_WIND_LAST, 400);
+    Test.assertEqual(AppSettings.lastHandWind(), -1);
+    Storage.setValue(AppSettings.STORE_WIND_LAST, "SW");
+    Test.assertEqual(AppSettings.lastHandWind(), -1);
+
+    if (wasLast == null) {
+        Storage.deleteValue(AppSettings.STORE_WIND_LAST);
+    } else {
+        Storage.setValue(AppSettings.STORE_WIND_LAST, wasLast as Number);
+    }
+    AppSettings.windOffer = -1;
+    AppSettings.cfg.setAutoWind(wasAuto);
+    AppSettings.storeWindDirection(before);
+    AppSettings.windEverSet = wasSet;
+    logger.debug("hand-set wind: retired at save, asked once, kept only on Yes");
     return true;
 }
 
@@ -6292,6 +6570,23 @@ function phoneProgressLineNeverTouchesWhatMatters(logger as Test.Logger) as Bool
     logger.debug("saved: pill " + SummaryView.savedY(dc).toString() + " -> " + pill.toString()
         + ", phone line " + line.toString() + ", digits "
         + SummaryView.verdictDigitTop(dc).toString() + (drawn ? " (drawn)" : " (dropped)"));
+
+    // the after-save hint (rider review W8): every stream has a line under a good SAVED now,
+    // so the slot asks the line's WIDTH as well as its band. A slot it returns must hold the
+    // sentence at that depth, and NOT SAVED (no line) is the page with no line at all.
+    var syncLine = SummaryView.savedLine(true);
+    Test.assertMessage(syncLine != null, "a good save has a line under SAVED");
+    Test.assertMessage(SummaryView.savedLine(false) == null, "NOT SAVED has no line");
+    Test.assertEqual(SummaryView.phoneLineSlot(dc, null), PHONE_LINE_NONE);
+    var syncSlot = SummaryView.phoneLineSlot(dc, syncLine);
+    if (syncSlot != PHONE_LINE_NONE) {
+        var hy = syncSlot == PHONE_LINE_TOP ? line : low;
+        Test.assertMessage(SummaryView.savedLineFits(dc, syncLine as String, hy),
+            "the after-sync line was placed where the arc cannot hold it");
+    }
+    logger.debug("after-sync line \"" + syncLine + "\" " + dc.getTextWidthInPixels(syncLine as String,
+        Graphics.FONT_XTINY).toString() + " px: "
+        + (syncSlot == PHONE_LINE_TOP ? "top" : syncSlot == PHONE_LINE_LOW ? "low" : "dropped"));
 
     // the start screen: below the hint row, inside the glass, and it does NOT eat into the
     // quarter of the glass the four-line stack is required to leave empty

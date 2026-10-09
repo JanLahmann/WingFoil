@@ -221,6 +221,27 @@ module Glyphs {
         dc.setPenWidth(1);
     }
 
+    // The recording's state on the pause and resume flash (0.9.22): the two bars and the
+    // triangle every player and every Garmin activity uses, in whatever colour the caller
+    // set, inside the same s x s box.
+    function drawPause(dc as Dc, x as Number, y as Number, s as Number) as Void {
+        var h = s / 2;
+        var bar = s / 3;
+        dc.fillRectangle(x - h + s / 12, y - h, bar, s);
+        dc.fillRectangle(x + h - s / 12 - bar, y - h, bar, s);
+    }
+
+    function drawPlay(dc as Dc, x as Number, y as Number, s as Number) as Void {
+        var h = s / 2;
+        _tri[0][0] = x - h + s / 8;
+        _tri[0][1] = y - h;
+        _tri[1][0] = x + h;
+        _tri[1][1] = y;
+        _tri[2][0] = x - h + s / 8;
+        _tri[2][1] = y + h;
+        dc.fillPolygon(_tri as Array<Graphics.Point2D>);
+    }
+
     // A filled five-point star inside the same s x s box every other glyph honours, in
     // whatever colour the caller has already set. Public because the Turns page draws the
     // mark on its own (beside a count) rather than as a row's outcome symbol.

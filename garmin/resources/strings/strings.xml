@@ -39,7 +39,6 @@
     <string id="TurnHabitJibes">Jibes</string>
     <string id="TurnHabitTacks">Tacks</string>
     <string id="TurnHabitBalanced">About the same</string>
-    <string id="SetPhonePush">Send summary to phone app</string>
     <string id="SetAutoPause">Auto-pause when stopped</string>
     <string id="SetAutoPauseDelay">Auto-pause delay (s)</string>
     <string id="SetVisualAlerts">Show alerts on screen</string>
@@ -86,7 +85,7 @@
     <!-- 0.9.16: the page SET. The only page control a release or beta watch has; the per-page
         editor's strings moved to resources-dev/base/strings/ with its settings. -->
     <string id="SetPageSet">Data screens</string>
-    <string id="SetPageSetNote">Standard shows eight screens with several numbers each. Large text shows seven screens with one big number and its word. Pick large text if the standard screens are hard to read on the water.</string>
+    <string id="SetPageSetNote">Standard shows eight screens with several numbers each. Large text shows five screens with one big number and its word. Pick large text if the standard screens are hard to read on the water.</string>
     <string id="PageSetStandard">Standard</string>
     <string id="PageSetLarge">Large text</string>
     <string id="SetShowFoil">Show the Foil page</string>
@@ -106,6 +105,19 @@
     <string id="StartHintLong">START records · BACK saves</string>
     <string id="StartWindUnset">set wind · hold MENU</string>
     <string id="StartWindPrefix">wind</string>
+
+    <!-- Auto-wind is on by default and works the axis out on the water, so a start page without
+        a bearing is not missing anything. `set wind · hold MENU` stays for the rider who turned
+        auto-wind off. -->
+    <string id="StartWindAuto">wind auto</string>
+
+    <!-- A wind set by hand lives one session: it is cleared at save, and the next start page
+        asks once. No or BACK leaves the axis to auto-wind, and so does START pressed before the
+        question is up. The menu opens on No, so a rider who presses through it at a new spot
+        does not keep the old spot's wind. -->
+    <string id="WindAsk">Same wind?</string>
+    <string id="WindAskYes">Yes</string>
+    <string id="WindAskNo">No</string>
     <string id="StartGpsGood">GPS good</string>
     <string id="StartGpsReady">GPS ready</string>
     <string id="StartGpsWeak">GPS weak</string>
@@ -147,6 +159,7 @@
     <string id="Tacks">tacks</string>
     <string id="SumSaved">SAVED</string>
     <string id="SumNotSaved">NOT SAVED</string>
+    <string id="SumAfterSync">next: CleanJibe</string>
     <string id="SumHeroOnFoil">on foil</string>
     <string id="SumHeroFoil">foil</string>
     <string id="SumHeroOf">of</string>
@@ -174,6 +187,7 @@
     <string id="FlashJibe">JIBE</string>
     <string id="FlashTack">TACK</string>
     <string id="FlashTurn">TURN</string>
+    <string id="FlashRecording">RECORDING</string>
 
     <!-- ALIGNED 22 Sep 2026: was `foil %`. `gridAndCellsPagesFitRoundDisplay` passes it beside
         `foil`, the foil-time cell's label on the same page — the two read apart (`foil` / `on

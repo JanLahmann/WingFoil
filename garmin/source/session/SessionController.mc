@@ -22,6 +22,10 @@ class SessionController {
     var state as Number = STATE_IDLE;
     var engine as MetricsEngine;
     var autoPause as AutoPause;
+    // 0.9.22, rider review W1 and W13: the pause that buzzes every two minutes, and the
+    // GPS loss the state ring shows.
+    var pauseReminder as PauseReminder;
+    var gpsLoss as GpsLoss;
 
     // The phone-card dedupe key (see PhoneLink's KEY_START/KEY_DUR comment). These two are
     // the only session-identity numbers the watch owns, and they must keep meaning exactly
@@ -47,6 +51,21 @@ class SessionController {
     function initialize() {
         engine = new MetricsEngine();
         autoPause = new AutoPause();
+        pauseReminder = new PauseReminder();
+        gpsLoss = new GpsLoss();
+    }
+
+    // The controller's clock: the engine's test seam when the suite set one, the watch's
+    // timer otherwise, so the reminder and the GPS-loss window run on the suite's clock too.
+    hidden function _nowMs() as Number {
+        var o = engine.clockMsOverride;
+        return o != null ? o as Number : System.getTimer();
+    }
+
+    // Is the GPS the reason nothing is being counted? While recording only: a paused ring
+    // is the pause's, and before the start the start page says GPS in words.
+    function gpsLost() as Boolean {
+        return state == STATE_RECORDING && gpsLoss.lost(_nowMs());
     }
 
     // ---- GPS ----
@@ -90,6 +109,11 @@ class SessionController {
         if (info == null) {
             return;
         }
+        // The same test MetricsEngine.tick's gap branch applies, so the ring greys exactly
+        // when the detectors are being starved, not on some other notion of a weak fix.
+        var acc = info.accuracy;
+        gpsLoss.onFix(_nowMs(), acc instanceof Lang.Number
+            && (acc as Number) >= Position.QUALITY_USABLE);
         if (state == STATE_RECORDING) {
             var events = engine.tick(info);
             var flightEvent = events & 0x0F;
@@ -177,6 +201,10 @@ class SessionController {
             PhoneLink.pollLink();
         }
         _autoPauseTick();
+        if (state == STATE_PAUSED && pauseReminder.due(_nowMs())) {
+            AlertManager.pauseState(true);
+            EventFlash.firePauseState(true);
+        }
         WatchUi.requestUpdate();
     }
 
@@ -197,15 +225,36 @@ class SessionController {
         }
         var ev = autoPause.tick(dt, engine.speedMps, state == STATE_RECORDING);
         if (ev == AutoPause.EV_PAUSE) {
-            _session.stop();
-            state = STATE_PAUSED;
+            _pause(false);
         } else if (ev == AutoPause.EV_RESUME) {
-            _session.start();
-            state = STATE_RECORDING;
-            // A pause is a hole in the pressure stream (MetricsEngine.restartBaseline): the
-            // ambient level on the other side of it is a new fact, not a dunk.
-            engine.restartBaseline();
+            _resume();
         }
+    }
+
+    // The one way into a pause and the one way out, pressed or automatic, so every pause
+    // buzzes and flashes the same (rider review W1). `pressed` starts the two-minute
+    // reminder: an auto-pause resumes itself when the board moves, so it is never reminded.
+    hidden function _pause(pressed as Boolean) as Void {
+        (_session as ActivityRecording.Session).stop();
+        state = STATE_PAUSED;
+        AlertManager.pauseState(true);
+        EventFlash.firePauseState(true);
+        if (pressed) {
+            pauseReminder.start(_nowMs());
+        } else {
+            pauseReminder.stop();
+        }
+    }
+
+    hidden function _resume() as Void {
+        (_session as ActivityRecording.Session).start();
+        state = STATE_RECORDING;
+        pauseReminder.stop();
+        // A pause is a hole in the pressure stream (MetricsEngine.restartBaseline): the
+        // ambient level on the other side of it is a new fact, not a dunk.
+        engine.restartBaseline();
+        AlertManager.pauseState(false);
+        EventFlash.firePauseState(false);
     }
 
     // Optional time/distance interval buzz. Both are "0 = off"; the mark counters start at -1
@@ -263,6 +312,8 @@ class SessionController {
         DirectSend.begin(startEpochS, AppSettings.cfg.windDirection);
         elapsedS = 0;
         state = STATE_RECORDING;
+        pauseReminder.stop();
+        gpsLoss.arm(_nowMs());
         _startAccel();
         return true;
     }
@@ -348,12 +399,9 @@ class SessionController {
         }
         autoPause.reset();   // the rider is driving now; don't undo their pause
         if (state == STATE_RECORDING) {
-            _session.stop();
-            state = STATE_PAUSED;
+            _pause(true);
         } else if (state == STATE_PAUSED) {
-            _session.start();
-            state = STATE_RECORDING;
-            engine.restartBaseline();
+            _resume();
         }
     }
 
@@ -363,6 +411,8 @@ class SessionController {
         }
         PbFlash.stop();
         EventFlash.clearAll();
+        pauseReminder.stop();
+        gpsLoss.disarm();
         if (state == STATE_RECORDING) {
             _session.stop();
         }
@@ -388,6 +438,9 @@ class SessionController {
         DirectSend.finish();
         var ok = _session.save();
         lastSaveOk = ok;
+        // The rider's bearing was this session's. The FIT has it (field 39, written above);
+        // the next start page asks before it is used again (rider review W4, 0.9.22).
+        AppSettings.retireHandWind();
         state = STATE_SAVED;
         _session = null;
         // The instant card. Runs after save() so the numbers it carries are the ones that went
@@ -430,6 +483,8 @@ class SessionController {
         DirectSend.discard();
         PbFlash.stop();
         EventFlash.clearAll();
+        pauseReminder.stop();
+        gpsLoss.disarm();
         _stopAccel();
         if (_session != null) {
             if (state == STATE_RECORDING) {
@@ -437,6 +492,7 @@ class SessionController {
             }
             _session.discard();
             _session = null;
+            AppSettings.retireHandWind();
         }
         state = STATE_IDLE;
     }

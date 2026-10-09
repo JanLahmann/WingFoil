@@ -591,6 +591,10 @@ class RecordingView extends WatchUi.View {
             Glyphs.drawOutcome(dc, o, cx, gy, s, Graphics.COLOR_BLACK);
         } else if (k == EventFlash.EV_CLEAN) {
             Glyphs.drawStar(dc, cx, gy, s);
+        } else if (k == EventFlash.EV_PAUSED) {
+            Glyphs.drawPause(dc, cx, gy, s * 2 / 3);
+        } else if (k == EventFlash.EV_RESUMED) {
+            Glyphs.drawPlay(dc, cx, gy, s * 2 / 3);
         } else {
             // a streak count or a duration: digits are the glyph
             var v = k == EventFlash.EV_STREAK ? EventFlash.value.toString()
@@ -948,12 +952,57 @@ class RecordingView extends WatchUi.View {
     // steps inside when the page also carries the foil-% arc, so the bezel holds exactly one
     // ring at a time. Teal rather than green — the ring is a PHASE, and green on this app is
     // the outcome ladder's "flew through" (docs/presentation.md).
+    //
+    // Two more looks since 0.9.22 (rider review W1, W13), both saying "nothing is being
+    // counted right now": the PAUSED banner's yellow, whole, while the session is paused; and
+    // grey in BROKEN segments once the GPS has been below usable for five seconds (GpsLoss).
+    // Broken and not merely grey, because off-foil is already the dim grey — colour alone
+    // would change nothing on the water, where the rider is off the foil half the time.
+    // Paused wins over a lost fix: nothing is counted either way, and the pause is the one
+    // the rider can undo with a press.
+    enum {
+        RING_OFF = 0,
+        RING_FLYING = 1,
+        RING_PAUSED = 2,
+        RING_NO_GPS = 3
+    }
+
+    // Pure, for the suite: which of the four the ring draws.
+    static function ringLook(paused as Boolean, gpsLost as Boolean,
+            flying as Boolean) as Number {
+        if (paused) {
+            return RING_PAUSED;
+        } else if (gpsLost) {
+            return RING_NO_GPS;
+        }
+        return flying ? RING_FLYING : RING_OFF;
+    }
+
+    // Twelve 18 deg segments, 12 deg gaps, the first centred on 12 o'clock.
+    const NO_GPS_SEGMENTS = 12;
+    const NO_GPS_ARC_DEG = 18;
+
     hidden function drawStateRing(dc as Dc, c as SessionController, foilArc as Boolean) as Void {
         var cx = dc.getWidth() / 2;
-        var flying = c.engine.detector.state == FlightDetector.STATE_ON;
+        var cy = dc.getHeight() / 2;
+        var r = cx - ringInset(dc, foilArc);
+        var look = ringLook(c.state == SessionController.STATE_PAUSED, c.gpsLost(),
+            c.engine.detector.state == FlightDetector.STATE_ON);
         dc.setPenWidth(ringPen(dc, foilArc));
-        dc.setColor(flying ? Ink.phaseFlying() : Ink.dim(), Graphics.COLOR_TRANSPARENT);
-        dc.drawCircle(cx, dc.getHeight() / 2, cx - ringInset(dc, foilArc));
+        if (look == RING_NO_GPS) {
+            dc.setColor(Ink.dim(), Graphics.COLOR_TRANSPARENT);
+            var step = 360 / NO_GPS_SEGMENTS;
+            for (var k = 0; k < NO_GPS_SEGMENTS; k++) {
+                var a = 90 + NO_GPS_ARC_DEG / 2 - k * step;
+                dc.drawArc(cx, cy, r, Graphics.ARC_CLOCKWISE, (a + 360) % 360,
+                    (a - NO_GPS_ARC_DEG + 360) % 360);
+            }
+        } else {
+            dc.setColor(look == RING_PAUSED ? Graphics.COLOR_YELLOW
+                : (look == RING_FLYING ? Ink.phaseFlying() : Ink.dim()),
+                Graphics.COLOR_TRANSPARENT);
+            dc.drawCircle(cx, cy, r);
+        }
         dc.setPenWidth(1);
     }
 

@@ -6,6 +6,11 @@
      is inside the contract too". -->
 <strings>
 
+    <!-- Dev stream only since 0.9.22 (rider review W11): the phone half, Settings → Garmin
+        watch, is in the dev iPhone app only, so on a release or beta watch the switch sent a
+        card nothing received. It moves with the Garmin link (docs/channels.md, Watches). -->
+    <string id="SetPhonePush">Send summary to phone app</string>
+
     <!-- Dev stream only (monkey-dev.jungle); merged on top of resources/strings/strings.xml. -->
     <string id="SetMapAfterSave">Map after save (experimental)</string>
     <string id="SetMapAfterSaveNote">After you save a session, START on the summary's track page opens the watch's own map under your track. Experimental: the map view has crashed the app during recording on the fenix 8, so it is only offered once the session is saved — if it crashes, the session is already safe.</string>
@@ -35,8 +40,8 @@
     <string id="MetDistance">Distance</string>
     <string id="MetTimer">Session timer</string>
     <string id="MetHr">Heart rate</string>
-    <string id="MetBest2s">Best 2s</string>
-    <string id="MetBest10s">Best 10s</string>
+    <string id="MetBest2s">Best 2 s</string>
+    <string id="MetBest10s">Best 10 s</string>
     <string id="MetTurns">Turn count</string>
     <string id="MetTurnScore">Last turn score</string>
     <string id="MetClock">Time of day</string>

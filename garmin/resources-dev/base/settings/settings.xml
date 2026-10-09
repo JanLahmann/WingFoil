@@ -5,6 +5,10 @@
              prompt="@Strings.SetMapAfterSaveNote">
         <settingConfig type="boolean"/>
     </setting>
+    <!-- Dev only since 0.9.22 (rider review W11): its receiver is the dev iPhone app. -->
+    <setting propertyKey="@Properties.phonePush" title="@Strings.SetPhonePush">
+        <settingConfig type="boolean"/>
+    </setting>
 
     <!-- The per-page data-screen EDITOR (dev only since 0.9.16).
          Seven configurable screens, each a layout plus five metric slots, plus the switch

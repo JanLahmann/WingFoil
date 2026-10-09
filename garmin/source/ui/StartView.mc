@@ -35,6 +35,13 @@ const START_BODY_FONT = 2;
 // omits both counts (docs/fit-schema.md) — an omission the rider can only fix BEFORE he is
 // on the water, which is why the reminder lives on this screen and says HOW.
 //
+// Since 0.9.22 (rider review W5) the reminder is only for the rider who switched auto-wind
+// off. With it on — the default — the watch works the axis out on the water, so the row says
+// `wind auto` in white rather than nagging for a bearing nothing needs.
+//
+// And a wind set by hand lives one session (W4): the save retires it, and the next start
+// page asks *Same wind?* once (`WindAsk`), opened on No.
+//
 // "hold MENU" is the literal binding: StartDelegate.onMenu() pushes the same WindMenu the
 // session menu opens, and MENU on every fenix in the manifest is a long press of the UP
 // button. Naming a button the rider cannot find would be worse than no reminder at all.
@@ -50,6 +57,8 @@ class StartView extends WatchUi.View {
 
     function onShow() as Void {
         CrashBreadcrumb.view(CrashBreadcrumb.V_START);
+        // The row behind the question reads what START would get until it is answered.
+        AppSettings.openWindOffer();
         _timer = new Timer.Timer();
         _timer.start(method(:onTick), 1000, true);
     }
@@ -65,6 +74,15 @@ class StartView extends WatchUi.View {
     }
 
     function onTick() as Void {
+        // The same-wind question, from the first tick rather than from onShow: a view pushed
+        // while the stack is still settling is the shape that stranded riders on CIQ 3.3
+        // (RecordingDelegate, the discard question). onHide stops this timer while it is up,
+        // and the answer clears the offer, so it is asked once.
+        var deg = AppSettings.openWindOffer();
+        if (deg >= 0) {
+            WatchUi.pushView(WindAsk.build(deg), new WindAskDelegate(), WatchUi.SLIDE_UP);
+            return;
+        }
         WatchUi.requestUpdate();
     }
 
@@ -145,12 +163,28 @@ class StartView extends WatchUi.View {
     // between a number the rider gave and one the app inferred, and it is carried once, on the
     // bearing, rather than twice (`windMark` rather than `windLabel`, which folds it into the
     // compass point for the call sites that print only that).
+    //
+    // No axis yet: `wind auto` while auto-wind is on (0.9.22, W5), the way to set one only when
+    // the rider turned it off.
     static function windText() as String {
         var deg = AppSettings.cfg.windDirection;
-        return deg < 0
-            ? Words.START_WIND_UNSET
-            : Words.START_WIND_PREFIX + AppSettings.cfg.windMark() + deg.toString() + "° "
-                + AppSettings.cfg.compassLabel();
+        if (deg < 0) {
+            return AppSettings.autoWind ? Words.START_WIND_AUTO : Words.START_WIND_UNSET;
+        }
+        return Words.START_WIND_PREFIX + AppSettings.cfg.windMark() + bearingText(deg);
+    }
+
+    // Amber only for the reminder: it is not an error — the app records perfectly well
+    // without an axis — but with auto-wind off it is the one thing that cannot be fixed
+    // afterwards, so it should catch the eye before START does. `wind auto` is a state, white.
+    static function windColor() as Number {
+        return AppSettings.cfg.windDirection < 0 && !AppSettings.autoWind
+            ? Graphics.COLOR_YELLOW : Graphics.COLOR_WHITE;
+    }
+
+    // "225° SW": degrees and the 16-point name, the start row's form and the question's.
+    static function bearingText(deg as Number) as String {
+        return deg.toString() + "° " + AppSettings.COMPASS[((deg + 11.25) / 22.5).toNumber() % 16];
     }
 
     function onUpdate(dc as Dc) as Void {
@@ -182,12 +216,9 @@ class StartView extends WatchUi.View {
         drawRow(dc, cx, cy, radius, rowY(cy, hTitle, hState, hBody, 1), START_STATE_FONT,
             gpsText(q));
 
-        // The wind axis, or how to set one. Amber when unset: it is not an error — the app
-        // records perfectly well without it — but it is the one thing that cannot be fixed
-        // afterwards, so it should catch the eye before START does.
+        // The wind axis, `wind auto`, or how to set one (windColor).
         var wind = windText();
-        dc.setColor(AppSettings.cfg.windDirection < 0
-            ? Graphics.COLOR_YELLOW : Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        dc.setColor(windColor(), Graphics.COLOR_TRANSPARENT);
         drawRow(dc, cx, cy, radius, rowY(cy, hTitle, hState, hBody, 2), START_BODY_FONT, wind);
 
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
@@ -253,6 +284,7 @@ class StartDelegate extends WatchUi.BehaviorDelegate {
 
     function onSelect() as Boolean {
         var app = getApp();
+        AppSettings.answerWindOffer(false);   // START before the question is up: auto-wind
         if (app.controller.startSession()) {
             PageNav.reset();
             PageNav.show();
@@ -276,5 +308,37 @@ class StartDelegate extends WatchUi.BehaviorDelegate {
 
     function onBack() as Boolean {
         System.exit();
+    }
+}
+
+// The same-wind question (rider review W4, 0.9.22). A Menu2, not a WatchUi.Confirmation, for
+// the reason the discard question is one: on a fenix 5 Plus the firmware pops a Confirmation
+// after onResponse and takes a view of ours with it. It opens on No (`:focus`), so a rider who
+// presses straight through it at a new spot does not keep the old spot's wind. One pop, onto
+// StartView, which is the bottom of the stack.
+module WindAsk {
+    function build(deg as Number) as WatchUi.Menu2 {
+        var menu = new WatchUi.Menu2({:title => Words.WIND_ASK, :focus => 1});
+        menu.addItem(new WatchUi.MenuItem(Words.WIND_ASK_YES, StartView.bearingText(deg),
+            :keep, null));
+        menu.addItem(new WatchUi.MenuItem(Words.WIND_ASK_NO,
+            AppSettings.autoWind ? Words.START_WIND_AUTO : null, :auto, null));
+        return menu;
+    }
+}
+
+class WindAskDelegate extends WatchUi.Menu2InputDelegate {
+    function initialize() {
+        Menu2InputDelegate.initialize();
+    }
+
+    function onSelect(item as WatchUi.MenuItem) as Void {
+        AppSettings.answerWindOffer(item.getId() == :keep);
+        WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
+    }
+
+    function onBack() as Void {
+        AppSettings.answerWindOffer(false);
+        WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
     }
 }
