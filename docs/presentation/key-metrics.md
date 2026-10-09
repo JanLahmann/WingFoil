@@ -12,7 +12,7 @@ screens below a map, ten legend chips and three paragraphs of legend documentati
 | 1 | duration (`10:45 min` / `1:57 h`) · distance · average speed |
 | 2 | the best 2 s record, labelled **"best 2 s"** (it was "max 2 s" until 9 Oct 2026), in the largest type · beside it **5×10 s** and **alpha 500** at the ordinary size (since 6 Sep 2026). A record the session did not set says **why, where the number goes** (30 Sep 2026): *no unbroken 2 s of track*, *no unbroken 10 s of track* (5×10 s averages however many disjoint 10 s windows exist, so it is missing exactly when no 10 s window is), *no 500 m out-and-back*. The cell's caption carries it (`presentation.caption.noMax2s` / `noBest5x10s` / `noAlpha500`), and the value is left as it was. These two are **block-only**: the share card is the block *minus* them — one speed on a card, the one a rider quotes; the Records page owns the set. The web renders them with the `extra` class, which is how `card_parity.mjs` tells them apart |
 | 3 | **the clean jibes, in a cell of their own** with the star in the clean ink (25 Sep 2026) · the jibe tally on the ladder's inks, captioned "of N jibes" · **the tack tally beside it** where the session had tacks (22 Sep 2026) · every fall of the afternoon · the two turn streaks, the flew half in the ladder's green |
-| 4 | **CPH first, then one dry-turn rate — JPH on a jibes-only session, TPH once tacks exist — then falls / h** (Jan, 25 Sep 2026; `docs/algorithms/rates.md` "Session rates"), one decimal. **Under 20 minutes of timer time (`timerTimeS < 1200.0` s) every cell reads *"too short for a rate"* where its number goes** (Jan, 9 Oct 2026; `presentation.caption.tooShortForRate`, "Too short for a rate" below) |
+| 4 | **CPH first, then one dry-turn rate — JPH on a jibes-only session, TPH once tacks exist — then falls / h** (Jan, 25 Sep 2026; `docs/algorithms/rates.md` "Session rates"), one decimal. **Under 20 minutes of timer time (`timerTimeS < 1200.0` s) every cell reads "—" and the row says *"too short for a rate"* once, under it** (Jan, 9 Oct 2026; `presentation.caption.tooShortForRate`, "Too short for a rate" below). The bundled example is exempt |
 
 The rules, which are the only thing the two implementations can disagree about:
 
@@ -177,15 +177,23 @@ actually chases, and they are kept beside the nine (`CleanJibeRecordKind`,
 - **Too short for a rate: under 20 minutes on the timer** (Jan, 9 Oct 2026; rider review I12,
   *"a ten-minute paddle shows 28 clean jibes an hour"*). `timerTimeS < 1200.0` s — the clock
   every rate divides by, `>=` holds — keeps row 4 and its cells (the same CPH · JPH or TPH ·
-  falls / h the counts choose) and sets each `value` to null with the caption
-  `presentation.caption.tooShortForRate`, **"too short for a rate"**. Both renderers draw that
-  caption where the number goes, as they do a record's missing reason
-  (`PresentationDocument.missingCaptions`, `cardstats.js` `RECORD_MISSING`), and the value
-  string is "—". The engine's `summary.*PerHour` are untouched — the floor is a reading rule
+  falls / h the counts choose) and sets each `value` to null, which every renderer prints
+  "—", with **no** caption on the cell. The reason is said **once for the row** (Jan, 9 Oct
+  2026: the caption three times over read as noise): the rates row carries
+  `note: presentation.caption.tooShortForRate`, **"too short for a rate"**, drawn under the
+  row in the body's secondary ink — iOS `KeyMetrics.ratesNote` in `KeyMetricsView`, web
+  `.key-note` in `render.js` `keyMetrics`. The row has no `note` when the rates hold. The
+  engine's `summary.*PerHour` are untouched — the floor is a reading rule
   (docs/algorithms/rates.md, "Too short for a rate"). The **share card's ribbon leaves the
   rates out** below the floor: a card has no room for the sentence, and "—" on a picture is a
   number with no answer. The four 2026-08-30 Torbole fixtures (635–640 s) and the 60 s smoke
   fixture are the corpus's cases, pinned in `fixtures/presentation/`.
+- **The bundled example is exempt from the floor** (Jan, 9 Oct 2026). The example is the
+  ten-minute Torbole paddle, but it is a tour, not the rider's afternoon: its row 4 and its
+  card's ribbon show CPH · JPH · falls / h with no note, on the iPhone and the web. It stays
+  out of records and trends as before. The document is told by its caller
+  (`rate_floor_exempt` / `rateFloorExempt: row.isExample` / the web's `example`), never
+  infers it from the recording; docs/algorithms/rates.md has the plumbing.
 - **WPH is written "falls / h"** (Jan, 9 Oct 2026; rider review X1, *"what is the W in
   WPH?"*). The glossary's `term` for `wph` is `falls / h` with no expansion; the acronym
   survives as `short`, for a place too tight for the words, and as the id.

@@ -121,10 +121,10 @@ about, and a tree comparison would pass it.
   same absence — carries its reason as its only caption (`presentation.caption.noMax2s`,
   `noBest5x10s`, `noAlpha500`, the engine's own condition per record), and the renderer
   draws that caption where the number goes. The id is the whole test; no renderer
-  re-derives it (`KeyMetrics.metric`, `entry` in `web/js/cardstats.js`). **The rate row's
-  cells are the second** (9 Oct 2026): under 20 minutes of timer time each is `null` with
-  `presentation.caption.tooShortForRate` (docs/algorithms/rates.md, "Too short for a rate");
-  the set of such ids is `PresentationDocument.missingCaptions` and `RECORD_MISSING`.
+  re-derives it (`KeyMetrics.metric`, `entry` in `web/js/cardstats.js`); the set of such ids
+  is `PresentationDocument.missingCaptions` and `RECORD_MISSING`. **The rate row is not
+  one of these** (9 Oct 2026): under 20 minutes of timer time each rate cell is `null`
+  ("—") with no caption, and the row says why once, as its `note` (below).
 - `captions` — zero or more. A list rather than an optional because a cell that grows a
   second qualifier should not change shape.
 - Two optional fields, and a cell has at most one of them:
@@ -141,7 +141,10 @@ about, and a tree comparison would pass it.
 
 `{"rows": [{"id": …, "cells": […]}]}`, in reading order: `basics`, `speed`, `turns`,
 `rates`. **A row with no cells is absent**, which is how row 4 disappears on a recording
-with no hour to divide by. Every gate is `docs/presentation/key-metrics.md`'s and nothing
+with no hour to divide by. A row may carry one `note` — a caption drawn once under the row:
+only `rates` has one today, `presentation.caption.tooShortForRate` under the 20-minute floor,
+absent when the rates hold and on the bundled example (`rate_floor_exempt`;
+docs/algorithms/rates.md, "Too short for a rate"). Every gate is `docs/presentation/key-metrics.md`'s and nothing
 here re-derives a number.
 
 | row | cells | notes |

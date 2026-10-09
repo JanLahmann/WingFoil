@@ -127,7 +127,7 @@ What it does, and what it leaves alone:
 | where | under the floor | implemented in |
 |---|---|---|
 | the engine's `summary.*PerHour`, `windowRates` | **unchanged** — the arithmetic is right; no engine output moved and no version bump | — |
-| session key metrics, row 4 | the same cells the counts choose (CPH · JPH or TPH · falls / h), each `value: null` with caption `presentation.caption.tooShortForRate` (*"too short for a rate"*), drawn where the number goes | lab `presentation._rate_cells`, kit `PresentationDocument.rateCells` |
+| session key metrics, row 4 | the same cells the counts choose (CPH · JPH or TPH · falls / h), each `value: null` ("—", no caption), and the row carries **one** `note`, `presentation.caption.tooShortForRate` (*"too short for a rate"*), drawn once under the row (Jan, 9 Oct 2026: not the caption three times) | lab `presentation._block` / `_rate_cells`, kit `PresentationDocument.blockSection` / `rateCells` |
 | share card ribbon | the rate tiles are left out (no room for the sentence) | kit `ShareCardStats.Story`, web `cardstats.js` |
 | Trends (CPH and the one dry-turn line) | no point for that session — a gap, like any session that cannot report a number | kit `TrendPoint.init`, web `library._rated` |
 | records: Best CPH, the widget's best JPH, the CPH celebration | the session cannot hold them; the *count* records take no floor | kit `SessionRecordKind.bestCph`, `PersonalBestDetector.cleanJibeBests`, `WidgetSnapshot.value`; web `library._cph_record` |
@@ -142,6 +142,18 @@ not hold a rate the session's own page refuses to print, and the page reads the 
 
 On the corpus it bites on the four 2026-08-30 Torbole fixtures (635–640 s) and the 60 s
 smoke fixture; every other session is over 2400 s and reads exactly as before.
+
+**The bundled example is exempt** (Jan, 9 Oct 2026). It is that same ten-minute Torbole
+paddle (635 s on the timer), and it is a tour of the app rather than the rider's afternoon:
+on the iPhone and the web it shows its rates in row 4 and on its share card, with no note.
+It stays out of records and trends as before (`isExample` / the web's `example`), so the
+exemption reaches no number that compares afternoons. The analysis cannot know where a
+recording came from, so the caller says: lab `build_presentation(rate_floor_exempt=True)`,
+kit `PresentationDocument.build(rateFloorExempt: row.isExample)`, web
+`web_entry.analyze_bytes(example=True)` — which stamps `example: true` on the analysis
+document so a re-derived presentation (`presentation_json`) agrees — from the page's
+example door and `web/tools/make_example.py`. A real import of the same file clears
+`isExample` and the floor applies again.
 
 **The watch is not under this rule.** The device app prints no rate since 0.9.18 (the CPH row
 left the Turns page); the parked data field (ADR-020) keeps its CPH with a 60 s floor — see
