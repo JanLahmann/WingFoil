@@ -384,7 +384,7 @@ def check_card() -> None:
 
     # The block the page renders and the card's tiles, over every fixture, as one
     # comparison: the block minus its two block-only speeds, which is what `card.tiles` is.
-    # A cell with a `missing` reason — a record not set, a rate under the floor — is drawn
+    # A cell with a `missing` reason — a record not set — is drawn
     # with that reason where the number goes, so that is the value the block prints.
     check("  the card's tiles == the rendered block, every fixture",
           [[{"label": e["label"], "value": e.get("missing") or e["value"]}
@@ -430,8 +430,8 @@ def _story_rule(document: dict, wanted: str) -> dict:
                      "star": counted and kind != "clean" and clean > 0})
     if "tacks" in tiles:
         bars.append({"kind": "tacks", "right": kind != "tacks", "star": False})
-    # A rate under the floor is a null tile carrying "too short for a rate"; the ribbon
-    # has no room for the sentence and goes without the rate (9 Oct 2026).
+    # A rate under the floor is a null tile (the row says "too short for a rate" once, as
+    # its note); the ribbon has no room for the sentence and goes without it (9 Oct 2026).
     def rated(key):
         return key in tiles and tiles[key].get("value") is not None
 

@@ -64,6 +64,17 @@ def main() -> int:
               {"onlyVerified", "preferVerified", "includeUnverified"},
               "example analysis: one presentation per Speed records choice is missing")
         check(bool(pre.get("digest")), "example analysis: no library digest")
+        # The example is exempt from the 20-minute rate floor (Jan, 9 Oct 2026): every
+        # presentation it ships shows its rates, with no "too short for a rate" note, and
+        # the document says it is the example so a re-derived presentation agrees.
+        check((pre.get("document") or {}).get("example") is True,
+              "example analysis: the document is not marked as the example")
+        for policy, doc in (pre.get("presentations") or {}).items():
+            rates = [r for r in (doc.get("block") or {}).get("rows", [])
+                     if r.get("id") == "rates"]
+            check(len(rates) == 1 and "note" not in rates[0]
+                  and all(c.get("value") is not None for c in rates[0].get("cells", [])),
+                  f"example analysis ({policy}): the rates are not shown (rate-floor exemption)")
     for path in ("example/ExampleSession.fit", "example/ExampleSession.analysis.json"):
         check(f'"{path}"' in sw, f"sw.js does not precache {path}")
     check(const(app, "EXAMPLE_NAME") == make_example.NAME,

@@ -85,7 +85,7 @@ async function fetchJson(url) {
  *  takes (ADR-033). It travels with the analysis because the document is built in the same
  *  Python call: one pass over the golden rather than a second round trip, and the result
  *  the UI gets back already carries every fact its renderers need. */
-async function analyze(id, name, buffer, policy) {
+async function analyze(id, name, buffer, policy, example = false) {
   if (!booting) booting = boot();
   await booting;
 
@@ -95,7 +95,7 @@ async function analyze(id, name, buffer, policy) {
   try {
     // web_entry does parse + analyze in one Python call; the two UI steps bracket it.
     status("analyze", "active", `${(bytes.length / 1024).toFixed(0)} KB`);
-    json = entry.analyze_json(bytes, name, policy || "preferVerified");
+    json = entry.analyze_json(bytes, name, policy || "preferVerified", example === true);
   } finally {
     status("parse", "done", "");
   }
@@ -140,7 +140,7 @@ self.onmessage = async (ev) => {
         await ready();
         break;
       case "analyze":
-        await analyze(msg.id, msg.name, msg.buffer, msg.policy);
+        await analyze(msg.id, msg.name, msg.buffer, msg.policy, msg.example);
         break;
       // The one door for a session stored before the document existed. A session analysed
       // since carries its own inside the analysis JSON and never comes through here, which

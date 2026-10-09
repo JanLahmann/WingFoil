@@ -87,7 +87,7 @@ def _sniff(raw: bytes) -> str | None:
 
 
 def analyze_bytes(data, name: str = "session.fit",
-                  policy: str = DEFAULT_SPEED_RECORD_POLICY) -> dict:
+                  policy: str = DEFAULT_SPEED_RECORD_POLICY, example: bool = False) -> dict:
     """Recording bytes -> the full result document (plain Python dict).
 
     FIT, GPX (engine 0.9.0), TCX, or a zip holding exactly one of them. Which it is comes
@@ -99,6 +99,11 @@ def analyze_bytes(data, name: str = "session.fit",
     (ADR-033). It is **not** the speed unit: the document carries raw knots and a
     `unitKind`, which is what lets one document serve a rider reading knots and a rider
     reading km/h.
+
+    `example` is true for the bundled example session alone, said by the caller (the page's
+    "try the example" door, `make_example.py`). It is kept in the document as `example` so
+    a re-derived presentation (`presentation_json`) reads it too: the example is exempt from
+    the 20-minute rate floor (Jan, 9 Oct 2026; `build_presentation(rate_floor_exempt=)`).
     """
     raw = _as_bytes(data)
     inner = None
@@ -128,6 +133,7 @@ def analyze_bytes(data, name: str = "session.fit",
             a = analyze(path, discipline=disc)
         golden = build_golden(a)
         meta = _meta(a, disc)
+        example = example is True
         return {
             "schema": SCHEMA,
             "engineVersion": ENGINE_VERSION,
@@ -141,8 +147,12 @@ def analyze_bytes(data, name: str = "session.fit",
             # It travels *inside* the analysis document rather than beside it so a session
             # re-opened from the library redraws with no Pyodide and no network, which is
             # the promise `openStoredSession` makes.
-            "presentation": presentation(golden, meta, policy),
+            "presentation": presentation(golden, meta, policy, example=example),
             "view": _view(a),
+            # The bundled example, as the caller said (never inferred from the bytes): the
+            # one session the rate floor exempts. Written only when true, so every other
+            # document is byte for byte what it was.
+            **({"example": True} if example else {}),
         }
     finally:
         for f in os.listdir(tmpdir):
@@ -151,9 +161,9 @@ def analyze_bytes(data, name: str = "session.fit",
 
 
 def analyze_json(data, name: str = "session.fit",
-                 policy: str = DEFAULT_SPEED_RECORD_POLICY) -> str:
+                 policy: str = DEFAULT_SPEED_RECORD_POLICY, example: bool = False) -> str:
     """Same as `analyze_bytes`, serialized — the shape the worker posts to the UI."""
-    return json.dumps(analyze_bytes(data, name, policy), allow_nan=False)
+    return json.dumps(analyze_bytes(data, name, policy, example=example), allow_nan=False)
 
 
 # -------------------------------------------------------------- the presentation document
@@ -234,18 +244,20 @@ def divergence_lines(golden: dict, watch: dict | None) -> list[dict]:
 
 
 def presentation(golden: dict, meta: dict | None = None,
-                 policy: str = DEFAULT_SPEED_RECORD_POLICY) -> dict:
+                 policy: str = DEFAULT_SPEED_RECORD_POLICY, example: bool = False) -> dict:
     """The presentation document for one analysis, with the banner's lines in it.
 
     `build_presentation` is the lab's and is authoritative; the only thing added here is
     the `divergence` argument, which an analysis cannot know because the watch's own
-    summary is not part of it.
+    summary is not part of it — and `example`, which exempts the bundled example from the
+    20-minute rate floor (Jan, 9 Oct 2026).
     """
     if policy not in SPEED_RECORD_POLICIES:
         policy = DEFAULT_SPEED_RECORD_POLICY
     watch = (meta or {}).get("watch")
     return build_presentation(golden, policy=policy,
-                              divergence=divergence_lines(golden, watch))
+                              divergence=divergence_lines(golden, watch),
+                              rate_floor_exempt=example is True)
 
 
 def presentation_json(result_json: str,
@@ -257,7 +269,8 @@ def presentation_json(result_json: str,
     comes through here.
     """
     result = json.loads(result_json)
-    return json.dumps(presentation(result.get("golden", {}), result.get("meta"), policy),
+    return json.dumps(presentation(result.get("golden", {}), result.get("meta"), policy,
+                                   example=result.get("example") is True),
                       allow_nan=False)
 
 

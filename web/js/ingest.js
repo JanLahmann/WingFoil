@@ -35,7 +35,7 @@ export async function ingest(bytes, name, { rider = null, example = false } = {}
   let digest;
   let analysisJson;
   try {
-    const msg = await analyze(source, name, speedRecords());
+    const msg = await analyze(source, name, speedRecords(), example);
     analysisJson = msg.json;
     digest = JSON.parse(msg.digestJson);
   } catch (err) {

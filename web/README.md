@@ -1241,9 +1241,10 @@ groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 4
    four badges — `accel` included, because this example ships whole. Key metrics read
    `0:10 · 2.6 km · 7.71 kn`, `13.47 kn` under **max 2 s**, `8 · 0 · 2`
    (of 10 jibes · 5 clean) on the ladder's colours beside `8 flew · 8 dry`, then
-   *too short for a rate* under **CPH**, **JPH** and **falls / h**: 640 s on the timer is
-   under the 20-minute floor (docs/algorithms/rates.md, "Too short for a rate"), and the
-   share card's ribbon carries no rate.
+   **CPH**, **JPH** and **falls / h** with their numbers: 640 s on the timer is under the
+   20-minute floor, but the bundled example is exempt (docs/algorithms/rates.md, "Too short
+   for a rate"), so its share card's ribbon carries CPH and JPH too. Your own file of the
+   same length reads "—" in each rate with *too short for a rate* once under the row.
 4. **Check the numbers** against the golden above: 23 flights, 60 % on foil, 12.76 km,
    Turns 30, Outcomes 9/9/12, wind 36°, best 2 s 11.36 kn. Badges: `wingfoil`,
    `CIQ dev fields`, `accel`, `HR`.

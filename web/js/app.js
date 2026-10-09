@@ -300,7 +300,8 @@ export async function analyzeFile(file, { isExample = false, source = "drop" } =
   // get there); this copy is what "Save to library" writes back out.
   const keep = buffer.slice(0);
   try {
-    const msg = await runAnalysis(buffer, name, speedRecords());
+    // `isExample` exempts the bundled example from the 20-minute rate floor (9 Oct 2026).
+    const msg = await runAnalysis(buffer, name, speedRecords(), isExample);
     state.busy = false;
     showResult(JSON.parse(msg.json),
                { digest: JSON.parse(msg.digestJson), bytes: keep, isExample });

@@ -112,8 +112,9 @@ function send(payload, transfer = []) {
  *  `policy` is Settings → Speed records, and it is here rather than inside the worker
  *  because the worker has no `localStorage`: the presentation document is built in the
  *  same Python call and takes it as its one rider input (ADR-033). */
-export function analyze(buffer, name, policy = null) {
-  return send({ type: "analyze", name, buffer, policy }, [buffer]);
+export function analyze(buffer, name, policy = null, example = false) {
+  // `example`: the bundled example session, the one the rate floor exempts (9 Oct 2026).
+  return send({ type: "analyze", name, buffer, policy, example: example === true }, [buffer]);
 }
 
 /** A Python call that answers with JSON — `digest`, `dedupe`, `aggregate`. */

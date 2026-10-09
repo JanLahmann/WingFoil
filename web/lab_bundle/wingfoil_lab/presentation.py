@@ -206,7 +206,7 @@ def _drawn_flight_ends(doc):
 # ------------------------------------------------------------------ the sections
 
 
-def _block(doc, summary, turns, records):
+def _block(doc, summary, turns, records, rate_floor_exempt=False):
     """The key-metrics block — `docs/presentation/key-metrics.md`, four rows.
 
     Every gate here is that file's, and nothing is re-derived: the tally falls back to
@@ -277,9 +277,14 @@ def _block(doc, summary, turns, records):
     if turn_cells:
         rows.append({"id": "turns", "cells": turn_cells})
 
-    rates = _rate_cells(summary, turns)
+    rates = _rate_cells(summary, turns, rate_floor_exempt)
     if rates:
-        rows.append({"id": "rates", "cells": rates})
+        row = {"id": "rates", "cells": rates}
+        # **One note for the row** (Jan, 9 Oct 2026): under the floor each cell reads "—"
+        # and the reason is said once, under the row, rather than in every cell.
+        if not (rate_floor_exempt or rate_holds(summary.get("timerTimeS") or 0.0)):
+            row["note"] = _caption(RATE_MISSING_CAPTION)
+        rows.append(row)
 
     return {"rows": rows}
 
@@ -299,9 +304,12 @@ RECORD_MISSING_CAPTIONS = {
 
 #: **A rate needs 20 minutes on the timer behind it** (Jan, 9 Oct 2026; rider review I12;
 #: docs/algorithms/rates.md, "Too short for a rate"). A ten-minute paddle with five clean
-#: jibes read 28.1 an hour. Under the floor every rate cell is null and carries
-#: `RATE_MISSING_CAPTION` where the number goes; the engine's `summary.*PerHour` stay as
-#: they are. The clock is timer time, the one every rate divides by. Twins: the kit's
+#: jibes read 28.1 an hour. Under the floor every rate cell is null ("—") and the rates row
+#: carries `RATE_MISSING_CAPTION` once, as its `note` (Jan, 9 Oct 2026: one sentence for the
+#: row, not the same caption three times); the engine's `summary.*PerHour` stay as they
+#: are. The clock is timer time, the one every rate divides by. **The bundled example is
+#: exempt** (`rate_floor_exempt`): it is a tour of the app, not the rider's afternoon, so it
+#: shows its rates — and it is out of records and trends anyway. Twins: the kit's
 #: `RateFloor.minTimerS`, the analyzer's `library.RATE_MIN_TIMER_S`.
 RATE_MIN_TIMER_S = 20 * 60
 RATE_MISSING_CAPTION = "presentation.caption.tooShortForRate"
@@ -372,7 +380,7 @@ def _falls_cell(summary):
                                     straight=ends.get("straight", {}).get("fellIn", 0))])
 
 
-def _rate_cells(summary, turns):
+def _rate_cells(summary, turns, rate_floor_exempt=False):
     """Row 4. Empty where there is no hour to divide by.
 
     **CPH first, then ONE dry-turn rate, then WPH** (Jan, 25 Sep 2026 — it supersedes
@@ -385,10 +393,10 @@ def _rate_cells(summary, turns):
     if summary.get("wetPerHour") is None:
         return []
     # **Too short for a rate** (Jan, 9 Oct 2026): under `RATE_MIN_TIMER_S` of timer time the
-    # same cells are emitted with a null value and `RATE_MISSING_CAPTION`, which the
-    # renderers draw where the number goes. The cell choice still follows the counts.
-    rated = rate_holds(summary.get("timerTimeS") or 0.0)
-    why = None if rated else [_caption(RATE_MISSING_CAPTION)]
+    # same cells are emitted with a null value and no caption; the reason is the row's one
+    # `note` (`_block`). The cell choice still follows the counts. The bundled example is
+    # exempt and keeps its numbers.
+    rated = rate_floor_exempt or rate_holds(summary.get("timerTimeS") or 0.0)
 
     def rate(value):
         return value if rated else None
@@ -399,16 +407,14 @@ def _rate_cells(summary, turns):
     if jibes > 0 or not tph > 0:
         out.append(_cell("cph", "glossary.cph",
                          value=rate(summary.get("cleanJibesPerHour") or 0.0),
-                         unit_kind="rate", captions=why))
+                         unit_kind="rate"))
     if turns.get("tacks", 0) > 0 or (jibes <= 0 and tph > 0):
-        out.append(_cell("tph", "glossary.tph", value=rate(tph), unit_kind="rate",
-                         captions=why))
+        out.append(_cell("tph", "glossary.tph", value=rate(tph), unit_kind="rate"))
     else:
         out.append(_cell("jph", "glossary.jph",
-                         value=rate(summary.get("jibesPerHour") or 0.0), unit_kind="rate",
-                         captions=why))
+                         value=rate(summary.get("jibesPerHour") or 0.0), unit_kind="rate"))
     out.append(_cell("wph", "glossary.wph", value=rate(summary["wetPerHour"]),
-                     unit_kind="rate", captions=why))
+                     unit_kind="rate"))
     return out
 
 
@@ -734,7 +740,8 @@ def _divergence(lines):
 # --------------------------------------------------------------------- the door
 
 
-def build_presentation(golden, *, policy=DEFAULT_SPEED_RECORD_POLICY, divergence=None):
+def build_presentation(golden, *, policy=DEFAULT_SPEED_RECORD_POLICY, divergence=None,
+                       rate_floor_exempt=False):
     """Every presentation fact of one session, once.
 
     - `golden`: an analysis document in the golden schema (docs/testing.md).
@@ -743,6 +750,9 @@ def build_presentation(golden, *, policy=DEFAULT_SPEED_RECORD_POLICY, divergence
       carries raw values and a `unitKind`.
     - `divergence`: the banner's lines, when a watch summary was paired; the analysis
       cannot know them.
+    - `rate_floor_exempt`: true for the bundled example session only (Jan, 9 Oct 2026). It
+      shows its rates although it is under `RATE_MIN_TIMER_S`; the analysis cannot know
+      where a recording came from, so the caller says.
 
     Deterministic: sorted keys, fixed rounding, no clock and no locale.
     """
@@ -752,7 +762,7 @@ def build_presentation(golden, *, policy=DEFAULT_SPEED_RECORD_POLICY, divergence
     turns = summary.get("turns", {})
     records = golden.get("records", {})
     markers = _markers(golden)
-    block = _block(golden, summary, turns, records)
+    block = _block(golden, summary, turns, records, rate_floor_exempt)
     record_block = _records(golden, records, policy)
 
     return sorted_tree({

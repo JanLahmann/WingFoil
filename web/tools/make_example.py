@@ -107,11 +107,12 @@ def build() -> str:
                                            SPEED_RECORD_POLICIES)
 
     raw = FIT.read_bytes()
-    doc = web_entry.analyze_bytes(raw, NAME, DEFAULT_SPEED_RECORD_POLICY)
+    # `example=True`: the one session the 20-minute rate floor exempts (Jan, 9 Oct 2026).
+    doc = web_entry.analyze_bytes(raw, NAME, DEFAULT_SPEED_RECORD_POLICY, example=True)
     # Round-tripped through the worker's own serialization, so the page parses exactly
     # what `analyze_json` would have posted.
     doc = json.loads(json.dumps(doc, allow_nan=False))
-    presentations = {p: web_entry.presentation(doc["golden"], doc["meta"], p)
+    presentations = {p: web_entry.presentation(doc["golden"], doc["meta"], p, example=True)
                      for p in SPEED_RECORD_POLICIES}
     payload = {
         "note": NOTE,

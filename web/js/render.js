@@ -16,7 +16,7 @@
 
 import { speed, speedNumber, speedUnit } from "./appsettings.js";
 import { keyMetricEntries } from "./cardstats.js";
-import { hm, text } from "./presentation.js";
+import { captionText, hm, text } from "./presentation.js";
 import { GLOSSARY, NOT_A_SESSION } from "./copy.js";
 import { say } from "./appcopy.js";
 import { EXPERIMENTAL_NOTE, lexicon } from "./lexicon.js";
@@ -125,8 +125,14 @@ export function keyMetrics(doc) {
   for (const e of keyMetricEntries(doc)) {
     (rows[e.row] || (rows[e.row] = [])).push(e);
   }
-  return rows.filter(Boolean)
-    .map((cells) => `<div class="key-row">${cells.map(cell).join("")}</div>`).join("");
+  // **One note for a row** (Jan, 9 Oct 2026): the rates row under the 20-minute floor reads
+  // "—" in each cell and says "too short for a rate" once, under the row. The document
+  // carries it as the row's `note`; the phone's `KeyMetrics.ratesNote` is the same line.
+  const notes = (doc?.block?.rows || []).map((row) => (row.note ? captionText(row.note) : null));
+  return rows.map((cells, index) => (cells
+    ? `<div class="key-row">${cells.map(cell).join("")}</div>` +
+      (notes[index] ? `<p class="key-note">${esc(notes[index])}</p>` : "")
+    : "")).join("");
 }
 
 /* -------------------------------------------------------------------- header */

@@ -160,14 +160,12 @@ function entry(cell, row) {
 const BLOCK_ONLY = new Set(["best5x10s", "alpha500"]);
 
 /** The captions that stand in place of a value: a speed cell whose record was not set —
- *  the lab's `RECORD_MISSING_CAPTIONS`, the kit's `PresentationDocument.recordMissingCaptions`
- *  — and a rate cell under the rate floor (`PresentationDocument.missingCaptions`). */
+ *  the lab's `RECORD_MISSING_CAPTIONS`, the kit's `PresentationDocument.recordMissingCaptions`.
+ *  A rate under the 20-minute floor is not one of them: its cells read "—" and the row says
+ *  why once, as its `note` (Jan, 9 Oct 2026; `keyMetrics` in js/render.js draws it). */
 export const RECORD_MISSING = new Set(["presentation.caption.noMax2s",
                                        "presentation.caption.noBest5x10s",
-                                       "presentation.caption.noAlpha500",
-                                       // A rate under 20 minutes on the timer (9 Oct
-                                       // 2026): the lab's `RATE_MISSING_CAPTION`.
-                                       "presentation.caption.tooShortForRate"]);
+                                       "presentation.caption.noAlpha500"]);
 
 /** The comma a cell's label hangs its caption off: "flew · touch · fell, of 10 jibes". An
  *  em dash until 30 Sep 2026, which docs/voice.md rule 4 forbids in rider text. The same
@@ -319,9 +317,10 @@ export function cardStory(doc, wanted = "clean", { dateLine = "", speedNote = nu
   const falls = Number.isInteger(fallsN) ? fallSegments(fallsN) : [];
 
   const ribbon = [];
-  // A rate under the floor carries "too short for a rate" instead of a number (the kit's
-  // `RateFloor`). The card has no room for the sentence, so the ribbon goes without it.
-  const rated = (key) => (by[key] && !by[key].missing ? by[key] : null);
+  // A rate under the floor is a null tile (the kit's `RateFloor`; the page says "too short
+  // for a rate" once under the row). "—" on a picture is a number with no answer, so the
+  // ribbon goes without it. The bundled example is exempt and keeps its rates.
+  const rated = (key) => (by[key] && tiles[key]?.value != null ? by[key] : null);
   if (clean !== null && rated("cph")) {
     ribbon.push({ key: "cph", label: cardWord("rateCph"), value: by.cph.value, clean: true });
   }
