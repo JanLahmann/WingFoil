@@ -579,7 +579,7 @@ struct ShareCardView: View {
         }
     }
 
-    /// ★ 25 clean jibes / of 56 jibes — or 13.21 kn / top speed · best 2 s, or 3 tacks.
+    /// ★ 25 clean jibes / of 56 jibes — or 13.21 kn / best 2 s, or 3 tacks.
     private func storyHero(_ story: ShareCardStats.Story) -> some View {
         let hero = story.hero!
         return HStack(alignment: .center, spacing: 8) {

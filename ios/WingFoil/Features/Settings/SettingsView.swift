@@ -361,6 +361,9 @@ struct SettingsView: View {
                     Task { await store.connectStrava(anchor: StravaConsent.anchor()) }
                 }
                 .disabled(store.isReadingStrava)
+                // Refused for the cap: the way in that still works, under the button that
+                // was refused (rider review I5).
+                StravaFullFix()
             }
         } header: {
             Text("Strava")

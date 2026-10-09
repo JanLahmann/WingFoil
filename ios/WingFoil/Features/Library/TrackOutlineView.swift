@@ -190,6 +190,10 @@ struct OutcomeTally: View {
 
     var total: Int { flewThrough + touchdown + fellIn }
 
+    /// The ladder's own words, the key-metrics caption's "flew · touchdown · fell in"
+    /// (rider review I23, 9 Oct 2026: "touch" and "fell" were a third spelling of it).
+    private var touchdownWord: String { touchdown == 1 ? "touchdown" : "touchdowns" }
+
     var body: some View {
         if total > 0 {
             // One line while it fits, and one pair to a line once it does not — never a
@@ -198,14 +202,14 @@ struct OutcomeTally: View {
                 HStack(spacing: 3) {
                     part(flewThrough, EventMarkerStyle.color(.flew), "flew")
                     separator
-                    part(touchdown, EventMarkerStyle.color(.touchdown), "touch")
+                    part(touchdown, EventMarkerStyle.color(.touchdown), touchdownWord)
                     separator
-                    part(fellIn, EventMarkerStyle.color(.fell), "fell")
+                    part(fellIn, EventMarkerStyle.color(.fell), "fell in")
                 }
                 VStack(alignment: .leading, spacing: 1) {
                     part(flewThrough, EventMarkerStyle.color(.flew), "flew")
-                    part(touchdown, EventMarkerStyle.color(.touchdown), "touch")
-                    part(fellIn, EventMarkerStyle.color(.fell), "fell")
+                    part(touchdown, EventMarkerStyle.color(.touchdown), touchdownWord)
+                    part(fellIn, EventMarkerStyle.color(.fell), "fell in")
                 }
             }
             .font(font.weight(.semibold).monospacedDigit())

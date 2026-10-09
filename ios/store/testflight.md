@@ -6,6 +6,11 @@ to ASC so the two never drift.
 
 Last synced to ASC: 2026-09-01 — beta app description (en-US), build 12 / 0.10.0 "What to Test".
 
+> **The beta app description below was rewritten on 9 October 2026 and is NOT in ASC yet.**
+> Jan pushes it (rider review S4: "This says Garmin .fit files. I have an iPhone and Strava.
+> Is this for me?"). Until he does, a tester reads the 1 September text, which names Garmin
+> files only. When it is pushed, change the line above to the day and the field.
+
 > **This file is the TestFlight half only.** Since 2026-09-02 the public App Store listing
 > has its own source of truth in **`ios/store/appstore.md`** — app name, subtitle,
 > promotional text, description, keywords, URLs, category, age rating, review notes and the
@@ -19,42 +24,58 @@ Last synced to ASC: 2026-09-01 — beta app description (en-US), build 12 / 0.10
 ## Beta app description
 
 Shown to a tester before they install. ASC field: `betaAppLocalizations.description` (en-US).
+4000-character limit.
 
 ```
-CleanJibe turns a wingfoil session into the numbers you actually argue about at the beach: how much of it you spent on the foil, how long each flight lasted, your speed records, and — for every turn — whether you flew through it, touched down, or fell in.
+Did you fly through that jibe? CleanJibe reads your session off the watch. It tells you your time on the foil, every flight, your speed records, and a verdict on every turn. Flew through, touchdown, or fell in.
 
-The app imports the .fit file your Garmin recorded, re-analyses it on the phone, and keeps every session in one library with your all-time records and season trends. You get the full track on a map, a replay you can scrub through with commentary as it plays (and record as a video to post), the turn-by-turn forensics behind every verdict, and a share card for the sessions worth showing.
+Nail a jibe and it gets a star. Your clean jibes, your dry streak and your best 2 s sit side by side. The share card shows them off.
 
-It works with the CleanJibe Connect IQ watch app and with Garmin's own Windsurf profile. Pump strokes and takeoff effort need the CleanJibe watch app, because only it records the wrist accelerometer; everything else works from either. Sessions arrive on their own if you sync Garmin to intervals.icu, or you can open a .fit file a friend sent you — those are kept out of your own records.
+BRING THE WATCH YOU ALREADY HAVE
 
-An example session is bundled, so you can see the whole app before importing anything. Nothing is uploaded: the analysis runs on your phone.
+On a Garmin, connect intervals.icu once and your history comes in. New sessions then arrive by themselves. On an Apple Watch, record with the CleanJibe Apple Watch app, which comes with this beta. Or record a Surfing workout in Apple's Workout app and import it from Apple Health.
 
-No watch app and no iPhone? The same analysis runs free in any browser at cleanjibe.org.
+Any watch that syncs to Strava works through Strava. Strava keeps your track but not your watch's speed, so those records are estimated. Any other watch works through its FIT file, opened from Files, Mail or AirDrop. An example session is built in, so you can try every page first.
+
+GET MORE WITH THE WATCH APPS
+
+The free CleanJibe watch app for Garmin buzzes each verdict on your wrist while you ride. The CleanJibe Apple Watch app records your wrist and hands the session to the phone. Both count your pump strokes and takeoff attempts.
+
+WHAT TO TEST
+
+Ride one ordinary session. Open it, go to Turns, and read each verdict against what you remember. Where it disagrees with you, tell us in Menu → Support & ideas. cleanjibe.org/beta says what to look for.
+
+YOUR SESSIONS STAY ON YOUR PHONE
+
+There is no account, no CleanJibe server and no tracking. The engine is open source. No iPhone at hand? The same analysis runs free in any browser at cleanjibe.org.
+
+BUILT WITH ITS RIDERS
+
+CleanJibe is built with its riders. New features land in the beta first, and move to the App Store once testers have proven them.
 ```
+
+**The App Store description's voice, on purpose** (9 October 2026). The first two paragraphs
+are `ios/store/appstore.md`'s, word for word: a tester who later meets the store listing
+reads the same promise. What differs is what the beta has. The Apple Watch app and Apple
+Health are beta doors (docs/channels.md), so they are named here and not on the store, and
+the ways in follow the one order (pattern J): Garmin, Apple Watch, Strava, any FIT. The
+Strava sentence says what a Strava session costs, because the rider who asked the question
+above is the one who will read it. The *What to test* section is cleanjibe.org/beta's hero
+in four sentences, and the last section is `BetaGuide.community`, word for word. No other
+platform is named (App Store guideline 2.3.10): the browser is "any browser".
 
 ## What to Test
 
-Per-build text. ASC field: `betaBuildLocalizations.whatsNew` (en-US). Currently set on build 12.
+Per-build text. ASC field: `betaBuildLocalizations.whatsNew` (en-US).
 
-```
-Please try, in this order:
-
-1. Open the app and look at the bundled example session first — everything works without importing anything.
-
-2. Import one of your own sessions. Either connect intervals.icu in Settings (paste your personal API key) or share a .fit file into the app from Files or Mail.
-
-3. Check the verdicts against what you remember: open a session, look at the turn list, and tell me where "flew through / touched down / fell in" disagrees with what actually happened. This is the single most useful feedback — the thresholds are tuned against real sessions and yours is one I do not have.
-
-4. Scrub the replay and record a clip. Does the commentary match what the track is doing?
-
-5. Make a share card and send it to yourself. Is anything on it wrong or missing?
-
-6. Records and trends: after two or three sessions, do the all-time records look right?
-
-Known limits: iPhone only; no Android app (use cleanjibe.org in a browser instead). .gpx files are not supported. Pump strokes and takeoff effort only appear for sessions recorded with the CleanJibe watch app.
-
-Report anything to jan@lahmann-online.de or as a GitHub issue at github.com/JanLahmann/WingFoil.
-```
+**Not written here any more.** `ios/tools/testflight_publish.py` composes it for every build
+it attaches: `BetaGuide.community` and a line pointing a new tester at cleanjibe.org/start,
+then the newest entry of the build's channel in `docs/copy/whats-new.json`, then
+`BetaGuide.whatsNewBeta` and the mail address. The same JSON writes cleanjibe.org/whats-new
+and the app's own What's new screen, so the three cannot disagree about one build.
+`testflight_publish.py --print-notes` shows the text without sending it. The build 12 text
+that stood here until 9 October 2026 promised things that stopped being true (no .gpx, iPhone
+only, a personal mail address), which is why a hand-kept copy of a per-build field is gone.
 
 ## App Store subtitle candidates
 

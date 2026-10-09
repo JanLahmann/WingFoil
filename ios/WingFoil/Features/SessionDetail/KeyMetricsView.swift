@@ -249,7 +249,8 @@ struct KeyMetricsView: View {
     /// `OutcomeTally` the library row draws, one type size up because here it is a
     /// headline rather than a row detail.
     ///
-    /// The ", " between a pinned label and its caption: "flew · touch · fell, of 10 jibes",
+    /// The ", " between a pinned label and its caption:
+    /// "flew · touchdown · fell in, of 10 jibes",
     /// "fell in, 2 in a turn · 0 in a straight line". It was an em dash until 30 Sep 2026,
     /// which docs/voice.md rule 4 forbids in rider text. `CAPTION_SEP` in
     /// `web/js/cardstats.js` is the same string, and `web/tools/verify_glossary.py` holds
@@ -266,7 +267,8 @@ struct KeyMetricsView: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        // One element: "42 flew through, 3 touchdowns, 5 fell in, flew · touch · fell, of 50 jibes",
+        // One element: "42 flew through, 3 touchdowns, 5 fell in, flew · touchdown · fell in,
+        // of 50 jibes",
         // rather than the tally and its caption as two stops that each mean half a thing.
         .accessibilityElement(children: .combine)
     }

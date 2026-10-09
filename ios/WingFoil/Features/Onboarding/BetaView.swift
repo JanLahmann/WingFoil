@@ -17,6 +17,7 @@ import WingFoilKit
 /// every door onto it has them.
 struct BetaView: View {
     @Environment(\.dismiss) private var dismiss
+    @State private var helpTopic: HelpTopicID?
 
     #if BETA
     @State private var howItWorks = 0
@@ -81,6 +82,25 @@ struct BetaView: View {
                     Text(BetaGuide.inItNowTitle)
                 }
 
+                // **Going back** (rider review I6, Jan 9 Oct 2026: "back up first"). In the
+                // release and the beta: the release reads it before joining, the beta when
+                // it wants out. Not in dev, a second app beside the App Store one with its
+                // own library, so there is nothing to go back to. The `?` opens the backup
+                // topic, which says how.
+                #if !DEV
+                Section {
+                    ForEach(BetaGuide.goingBack, id: \.self) { line in
+                        Text(line).font(.callout)
+                    }
+                    HelpTopicLink(.libraryBackup, label: BetaGuide.backupHelpLabel,
+                                  style: .row) {
+                        helpTopic = .libraryBackup
+                    }
+                    .sheet(item: $helpTopic) { HelpTopicSheet(id: $0) }
+                } header: {
+                    Text(BetaGuide.goingBackTitle)
+                }
+                #endif
             }
             .readableColumn()
             .navigationTitle(BetaGuide.title(for: AppChannel.channel))

@@ -382,9 +382,14 @@ private struct TurnRowView: View {
             }
             .lineLimit(1)
             .fixedSize()
-            Image(systemName: item.outcome.symbolName)
+            // **The clean star, as the map pin draws it** (rider review I3, 9 Oct 2026: "It
+            // says 5 clean jibes, but the list shows 8 green ticks."). It replaces the tick
+            // in the clean ink, the rule `TurnOutcomeStyle.pin` and the turn page's hero
+            // follow, so the list counts the same stars as the map and the tally's caption.
+            Image(systemName: item.clean ? DesignTokens.Glyph.cleanJibe : item.outcome.symbolName)
                 .font(.footnote)
-                .foregroundStyle(TurnOutcomeStyle.color(item.outcome))
+                .foregroundStyle(item.clean ? DesignTokens.Clean.jibe
+                                            : TurnOutcomeStyle.color(item.outcome))
                 .scaledColumn(18, alignment: .center, relativeTo: .footnote)
         }
         .padding(.horizontal, 12)

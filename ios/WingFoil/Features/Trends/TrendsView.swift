@@ -84,14 +84,22 @@ struct TrendsView: View {
                         // range and no filter reaches it. `ExampleOnlyNote` says that in
                         // the rider's words; the filter sentence stays for the case where
                         // a filter really is set.
-                        ContentUnavailableView(
-                            store.hasOnlyExampleSessions
-                                ? ExampleOnlyNote.trendsTitle : AppShellCopy.Trends.nothingInRange,
-                            systemImage: "chart.xyaxis.line",
-                            description: Text(store.hasOnlyExampleSessions
-                                              ? ExampleOnlyNote.trends
-                                              : AppShellCopy.Trends.widenTheRange))
-                            .frame(maxWidth: .infinity, minHeight: 220)
+                        //
+                        // The example-only line names two doors, and since 9 Oct 2026 the
+                        // screen offers them (rider review I1, `ExampleOnlyDoors`).
+                        ContentUnavailableView {
+                            Label(store.hasOnlyExampleSessions
+                                      ? ExampleOnlyNote.trendsTitle
+                                      : AppShellCopy.Trends.nothingInRange,
+                                  systemImage: "chart.xyaxis.line")
+                        } description: {
+                            Text(store.hasOnlyExampleSessions
+                                     ? ExampleOnlyNote.trends
+                                     : AppShellCopy.Trends.widenTheRange)
+                        } actions: {
+                            if store.hasOnlyExampleSessions { ExampleOnlyDoors() }
+                        }
+                        .frame(maxWidth: .infinity, minHeight: 220)
                     } else {
                         summaryStrip
                         if let line = seasonLine {
@@ -353,16 +361,24 @@ struct TrendsView: View {
                    points: points, tone: Color.accentColor,
                    value: \.cleanJibesPerHour,
                    headline: TrendHeadline.cleanJibesPerHour)
-        TrendChart(title: AppShellCopy.Trends.jph, unit: "jibes / h", points: points,
-                   tone: Color.accentColor,
-                   value: \.jibesPerHour,
-                   note: AppShellCopy.Trends.jphNote,
-                   headline: TrendHeadline.jibesPerHour)
-        TrendChart(title: AppShellCopy.Trends.tph, unit: "turns / h", points: points,
-                   tone: Color.accentColor,
-                   value: \.turnsPerHour,
-                   note: AppShellCopy.Trends.tphNote,
-                   headline: TrendHeadline.turnsPerHour)
+        // **CPH, then ONE dry-turn rate** (rider review I20, 9 Oct 2026): JPH while no
+        // session in the range has a tack, TPH once one does — the session page's rule over
+        // a range. On a jibes-only library the two were one line drawn twice. Every rate
+        // point skips a session under 20 minutes on the timer (`RateFloor`).
+        switch TrendPoint.dryTurnRate(points) {
+        case .jph:
+            TrendChart(title: AppShellCopy.Trends.jph, unit: "jibes / h", points: points,
+                       tone: Color.accentColor,
+                       value: \.jibesPerHour,
+                       note: AppShellCopy.Trends.jphNote,
+                       headline: TrendHeadline.jibesPerHour)
+        case .tph:
+            TrendChart(title: AppShellCopy.Trends.tph, unit: "turns / h", points: points,
+                       tone: Color.accentColor,
+                       value: \.turnsPerHour,
+                       note: AppShellCopy.Trends.tphNote,
+                       headline: TrendHeadline.turnsPerHour)
+        }
         weeklyChart
         DisclosureGroup(isExpanded: $showMore) {
             VStack(alignment: .leading, spacing: 18) {

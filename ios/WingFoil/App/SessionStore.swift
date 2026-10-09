@@ -2852,10 +2852,13 @@ final class SessionStore {
 
     // MARK: - Onboarding
 
-    /// What an empty library should offer: the four-step setup, the cause of the last
-    /// failure, or nothing at all. The decision itself is a pure function in the kit.
+    /// What an empty library should offer: the ways in, the cause of the last failure, or
+    /// nothing at all. The decision itself is a pure function in the kit. **The example
+    /// does not count** (Jan, 9 Oct 2026; rider review I1): a rider who tried it first
+    /// still has no way in, so the card stays above it until a session of his own arrives.
     var onboardingState: IcuOnboardingState {
         IcuOnboarding.state(sessionCount: sessions.count,
+                            exampleCount: sessions.filter(\.isExample).count,
                             hasKey: !apiKey.isEmpty,
                             lastProblem: lastSyncProblem)
     }
@@ -3493,9 +3496,13 @@ final class SessionStore {
             refreshStravaConnection()
             Usage.failed(.stravaConnected, error: error)
             // He is waiting on this exact tap, so a cause he can act on is a modal. A dead
-            // connection is not: the Strava section says it, in place.
-            if reportSync(error, from: .strava, riderAsked: true) != .transient {
-                errorMessage = Self.stravaMessage(for: error)
+            // connection is not: the Strava section says it, in place. Nor is the cap on
+            // riders: both screens that connect show it under the button, with the file
+            // door and the mail beside it (`StravaFullFix`, rider review I5), and a modal
+            // with only OK on top of that fix would be the wall it replaced.
+            switch reportSync(error, from: .strava, riderAsked: true) {
+            case .transient, .stravaFull: break
+            default: errorMessage = Self.stravaMessage(for: error)
             }
         }
     }

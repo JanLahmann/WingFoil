@@ -227,7 +227,10 @@ struct ComingSoonPage: View {
                      + "ships.\n\n"
                      + "CleanJibe's beta reads and writes the same library as this app. "
                      + "Every session, spot and piece of gear comes with you.\n\n"
-                     + "Go back to the App Store version whenever you like.")
+                     // Rider review I6: "whenever you like" met the newer-library screen.
+                     // The Beta page's own first step, from the kit; the way back is on
+                     // that page.
+                     + BetaGuide.backupFirst)
             }
             #endif
 

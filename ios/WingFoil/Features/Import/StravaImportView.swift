@@ -100,6 +100,7 @@ struct StravaImportView: View {
                 Task { await store.connectStrava(anchor: StravaConsent.anchor()) }
             }
             .disabled(store.isReadingStrava)
+            StravaFullFix()
         } header: {
             Text("Already on Strava?")
         } footer: {

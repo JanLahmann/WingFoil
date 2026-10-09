@@ -209,6 +209,9 @@ struct RecordsView: View {
             Label(emptyTitle, systemImage: "trophy")
         } description: {
             Text(emptyMessage)
+        } actions: {
+            // The line names two doors; these are them (rider review I1).
+            if loaded && store.hasOnlyExampleSessions { ExampleOnlyDoors() }
         }
     }
 

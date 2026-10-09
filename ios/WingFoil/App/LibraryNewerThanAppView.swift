@@ -26,6 +26,7 @@ struct LibraryNewerThanAppView: View {
     let refusal: LibraryNewerThanApp
 
     @State private var showRestorePicker = false
+    @State private var helpTopic: HelpTopicID?
 
     /// The hero glyph, in points rather than a text style because no text style is 44 pt —
     /// `@ScaledMetric` pins it to `.largeTitle` so it still grows with the rider's setting.
@@ -44,8 +45,7 @@ struct LibraryNewerThanAppView: View {
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Text("Install the newer build again, or restore a backup made with this "
-                     + "version.")
+                Text(Self.wayBack)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.readableSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -94,6 +94,16 @@ struct LibraryNewerThanAppView: View {
         }
     }
 
+    /// The release meets this screen after the beta (same bundle id); a beta or dev build
+    /// meets it after a newer build of its own (rider review I6).
+    private static var wayBack: String {
+        #if BETA
+        "Install the newer build again, or restore a backup made with this version."
+        #else
+        "Open the beta again, or restore a backup made with this version."
+        #endif
+    }
+
     @ViewBuilder
     private var buttons: some View {
         VStack(spacing: 12) {
@@ -122,6 +132,23 @@ struct LibraryNewerThanAppView: View {
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.readableSecondary)
                 .fixedSize(horizontal: false, vertical: true)
+
+            // **Back up first** (rider review I6, Jan 9 Oct 2026). A rider who wants the
+            // App Store version for good goes back to the beta once, backs up there, and
+            // the first App Store update that has caught up opens that file. The `?` opens
+            // the backup topic, which carries the same way back as its last item.
+            // Release only: in the beta and dev builds the newer library is their own.
+            #if !BETA
+            Text(BetaGuide.leavingTheBeta)
+                .font(.footnote)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 8)
+            #endif
+            HelpTopicLink(.libraryBackup, label: BetaGuide.backupHelpLabel) {
+                helpTopic = .libraryBackup
+            }
+            .sheet(item: $helpTopic) { HelpTopicSheet(id: $0) }
         }
     }
 

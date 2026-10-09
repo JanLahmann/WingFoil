@@ -113,6 +113,10 @@ private struct AppMenuHost: ViewModifier {
                 sheet = nil
                 Task { await store.loadExampleSession() }
             }
+            // The example-only empty states' *Import a file* (`ExampleOnlyDoors`): the
+            // same Import sheet the Sessions tab opens. Nothing is up when it is tapped,
+            // so no wait.
+            .environment(\.openImport) { sheet = .importer }
             // Getting started → What CleanJibe does: the menu row's own door, raised by
             // RootView once this sheet has finished closing.
             .environment(\.openWelcome) {
@@ -123,6 +127,41 @@ private struct AppMenuHost: ViewModifier {
             .onChange(of: sheet != nil) { _, presenting in
                 store.isPresentingSheet = presenting
             }
+    }
+}
+
+/// **The two doors under *Your records start with your first session* and *Your trends
+/// start with your first session*** (Jan, 9 Oct 2026; rider review I1). The sentence names
+/// them — import a .fit file, or connect intervals.icu in Settings — and the screen used to
+/// offer neither, so a rider who had only tried the example had to find the menu. The
+/// words are the kit's (`ExampleOnlyNote`), the actions the host's: Import and Settings,
+/// the same sheets the Sessions tab opens. A host that hands no action down draws no
+/// button, rather than a button that does nothing.
+struct ExampleOnlyDoors: View {
+    @Environment(\.openImport) private var openImport
+    @Environment(\.openIcuSettings) private var openSettings
+
+    var body: some View {
+        if let openImport {
+            Button(ExampleOnlyNote.importButton) { openImport() }
+                .buttonStyle(.borderedProminent)
+        }
+        if let openSettings {
+            Button(ExampleOnlyNote.connectButton) { openSettings() }
+        }
+    }
+}
+
+/// "Open the Import sheet", handed down by a tab root that owns one (`appMenuHost`). Nil
+/// anywhere else.
+private struct OpenImportKey: EnvironmentKey {
+    static let defaultValue: (@MainActor () -> Void)? = nil
+}
+
+extension EnvironmentValues {
+    var openImport: (@MainActor () -> Void)? {
+        get { self[OpenImportKey.self] }
+        set { self[OpenImportKey.self] = newValue }
     }
 }
 

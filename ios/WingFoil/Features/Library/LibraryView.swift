@@ -104,6 +104,19 @@ struct LibraryView: View {
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
                 } else {
+                    // **The example is not a way in** (Jan, 9 Oct 2026; rider review I1:
+                    // *"I tried the example, and now I can't see how to get my own sessions
+                    // in"*). A library of the example alone keeps the ways-in card above
+                    // its one row until a session of the rider's own arrives — the kit's
+                    // `IcuOnboarding` does not count the example. No *What CleanJibe does*
+                    // row here: the example it offers is already in the list.
+                    if showsWaysInAboveList {
+                        waysInCard
+                            .id("setup")
+                            .listRowInsets(.init(top: 8, leading: 16, bottom: 8, trailing: 16))
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                    }
                     if let banner = store.disciplineBanner {
                         disciplineBannerRow(banner)
                             .listRowInsets(.init(top: 6, leading: 16, bottom: 6, trailing: 16))
@@ -602,6 +615,15 @@ struct LibraryView: View {
                     .buttonStyle(.borderedProminent)
                 Button("Sync intervals.icu") { Task { await store.syncFromIntervals() } }
             }
+        }
+    }
+
+    /// A library that holds only the example, with no way in set up yet or one that
+    /// failed: the same two states that draw the card on an empty library.
+    private var showsWaysInAboveList: Bool {
+        switch store.onboardingState {
+        case .setup, .problem: true
+        case .waiting, .ready: false
         }
     }
 

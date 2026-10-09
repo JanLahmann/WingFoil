@@ -258,6 +258,11 @@ struct SessionTurnsSection: View {
         let split = summary.outcomeSplit
         if t.turnsCounted > 0 || t.rejected > 0 || summary.flightEnds.all.total > 0 {
             VStack(alignment: .leading, spacing: 20) {
+                #if BETA
+                // **Next session** (rider review I2, 9 Oct 2026), beta and dev first: the
+                // commonest tip and port against starboard, above the cards it sums up.
+                if t.turnsCounted > 0 { NextSessionCard(detail: detail) }
+                #endif
                 cardSection("Turns & losses", anchor: "turns", help: .turnOutcomes) {
                     // **Each kind of turn with its whole breakdown, in numbers** (Jan, 25
                     // Sep 2026, F9a/b). The ladder's counts were a caption of words under
@@ -544,13 +549,15 @@ struct BreakdownPart: Hashable {
                        symbol: TurnOutcomeKind.flewThrough.symbolName,
                        color: TurnOutcomeStyle.color(.flewThrough)),
          touchdown(counts.touchdown),
-         BreakdownPart(value: counts.fellIn, word: "fell",
+         BreakdownPart(value: counts.fellIn, word: "fell in",
                        symbol: TurnOutcomeKind.fellIn.symbolName,
                        color: TurnOutcomeStyle.color(.fellIn))]
     }
 
+    /// "touchdown", the ladder's own word (rider review I23, 9 Oct 2026; it was "touch").
     static func touchdown(_ n: Int) -> BreakdownPart {
-        BreakdownPart(value: n, word: "touch", symbol: TurnOutcomeKind.touchdown.symbolName,
+        BreakdownPart(value: n, word: n == 1 ? "touchdown" : "touchdowns",
+                      symbol: TurnOutcomeKind.touchdown.symbolName,
                       color: TurnOutcomeStyle.color(.touchdown))
     }
 
