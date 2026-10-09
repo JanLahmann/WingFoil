@@ -248,6 +248,14 @@ const RING_PEN = 10;
 const RING_INSET_NESTED = 16;
 const RING_PEN_NESTED = 6;
 
+// The lost-GPS ring on a page that draws no state ring and no foil-% arc (0.9.22, Jan's
+// 9 Oct note: every recording page says the fix went). It hugs the glass's own edge, as thin
+// as still reads, because every pixel of it is a pixel of radius taken from pages whose whole
+// trade is digit height — the Clock page's THAI_HOT "23:59" and the large-text giants sit
+// within a few pixels of the bezel. A page with the arc draws it in the arc's band instead.
+const EDGE_INSET = 0;
+const EDGE_PEN = 4;
+
 // Safety margin inside the glass, in pixels, used by every fit. 2 px is deliberately tight:
 // the shipped Clock page puts "23:59" in FONT_NUMBER_THAI_HOT within a few pixels of the
 // bezel and it reads well, so anything more forgiving would shrink screens that are fine.
@@ -468,6 +476,12 @@ const MAP_KM_GAP = GLYPH_GAP;
 // lives in static helpers the layout tests measure against the round glass.
 class RecordingView extends WatchUi.View {
 
+    // True once this instance paints the RECORDING pages (onUpdate), false on the summary's
+    // painter, which borrows the Records, Turns, Tacks & jibes and Timeline bodies. A ringless
+    // recording page keeps the bezel band clear for the lost-GPS ring (bodyRadius); the
+    // summary draws no ring and keeps its old radius.
+    hidden var _recording as Boolean = false;
+
     function initialize() {
         // Page construction is where the words are loaded (docs/copy/watch.json): one
         // `WatchUi.loadResource` each, once, never inside `onUpdate`. The guard inside
@@ -498,8 +512,9 @@ class RecordingView extends WatchUi.View {
         // the one number the rider glances at without reading.
         var foilArc = PageModel.pageDrawsFoilArc(i);
         var layout = PageModel.layoutAt(i);
+        _recording = true;
         // Pages that paint the flight-state ring, and therefore have less room for text.
-        var ring = layout == PageModel.LAYOUT_HERO || layout == PageModel.LAYOUT_MAIN;
+        var ring = layoutHasStateRing(layout);
         if (layout == PageModel.LAYOUT_MAIN) {
             drawMainPage(dc, c, i, foilArc);
         } else if (layout == PageModel.LAYOUT_HERO) {
@@ -527,9 +542,14 @@ class RecordingView extends WatchUi.View {
         } else {
             // a property the firmware handed us out of range — fall back to something readable
             drawHeroPage(dc, c, i, foilArc);
-            ring = true;
         }
-        if (foilArc) {
+        // The state ring, every page through this one call (0.9.22, W13 on every page): the
+        // whole ring on MAIN and the hero pages, the broken lost-GPS ring in the bezel band
+        // on every other one. Where that band carries the foil-% arc, the broken ring takes
+        // it for as long as the fix is gone — the bezel holds one ring at a time, and the
+        // page shows the same foil % as a number anyway.
+        var bandTaken = drawStateRing(dc, c, ring, foilArc);
+        if (foilArc && !bandTaken) {
             drawFoilBezel(dc, c);
         }
         // The celebration paints over the page, so it goes on before the PAUSED banner and
@@ -541,7 +561,7 @@ class RecordingView extends WatchUi.View {
         // The event flash paints over the PB flash if the two ever coincide: a verdict is
         // the newer fact. The takeoff variant is a ring and leaves the page readable.
         if (EventFlash.active()) {
-            drawEventFlash(dc, fitRadius(dc, ring, foilArc));
+            drawEventFlash(dc, bodyRadius(dc, ring, foilArc));
         }
         // MAIN says PAUSED in its own top row — it is the only layout whose first row sits
         // where the banner wants to be, and a state word beats the time of day. Every other
@@ -549,13 +569,13 @@ class RecordingView extends WatchUi.View {
         // the map used to be skipped while paused (PageNav), and drawing it ourselves is what
         // gave the banner back.
         if (c.state == SessionController.STATE_PAUSED && layout != PageModel.LAYOUT_MAIN) {
-            drawPausedBanner(dc, fitRadius(dc, ring, foilArc));
+            drawPausedBanner(dc, bodyRadius(dc, ring, foilArc));
         } else if (layout != PageModel.LAYOUT_MAIN && !EventFlash.active()
                 && EventFlash.stripActive(System.getTimer())) {
             // The afterglow: the last verdict, where the banner would be. MAIN carries it in
             // its own top row, as it carries PAUSED. Never under a running flash, and never
             // instead of PAUSED — a paused session is the more urgent fact.
-            drawEventStrip(dc, fitRadius(dc, ring, foilArc));
+            drawEventStrip(dc, bodyRadius(dc, ring, foilArc));
         }
     }
 
@@ -982,13 +1002,78 @@ class RecordingView extends WatchUi.View {
     const NO_GPS_SEGMENTS = 12;
     const NO_GPS_ARC_DEG = 18;
 
-    hidden function drawStateRing(dc as Dc, c as SessionController, foilArc as Boolean) as Void {
+    // Which layouts draw the whole state ring: MAIN and the hero pages, and any layout id the
+    // firmware hands us out of range, because onUpdate falls back to a hero page for it.
+    // Every other page — Records, Turns, Tacks & jibes, Clock, Timeline, the map, the grids,
+    // the foil table and the five large-text pages — draws only the ring's lost-GPS form, in
+    // the bezel band.
+    static function layoutHasStateRing(layout as Number) as Boolean {
+        return layout == PageModel.LAYOUT_HERO || layout == PageModel.LAYOUT_MAIN
+            || !(layout == PageModel.LAYOUT_BIG || layout == PageModel.LAYOUT_FOIL
+                || layout == PageModel.LAYOUT_GRID4 || layout == PageModel.LAYOUT_CELLS2
+                || layout == PageModel.LAYOUT_RECORDS || layout == PageModel.LAYOUT_TURNS
+                || layout == PageModel.LAYOUT_KINDS || layout == PageModel.LAYOUT_TIMELINE
+                || layout == PageModel.LAYOUT_CLOCK || layout == PageModel.LAYOUT_MAP);
+    }
+
+    // The radius a recording page's content fits in. A ring page keeps the state ring's
+    // (fitRadius with the ring); every other page keeps the bezel band clear — the band the
+    // foil-% arc already used — so the lost-GPS ring can appear there without moving a row
+    // when the fix goes. It costs a ringless page the arc's 11 px of radius on a 454 px glass
+    // and 5 px on a 240 px one, not the 10–16 px the whole ring would.
+    static function bodyRadius(dc as Dc, ring as Boolean, foilArc as Boolean) as Number {
+        if (ring || foilArc) {
+            return fitRadius(dc, ring, foilArc);
+        }
+        var r = dc.getWidth() / 2 - edgeInset(dc) - edgePen(dc) - FIT_MARGIN;
+        var f = fitRadius(dc, false, false);
+        return r < f ? r : f;
+    }
+
+    static function edgeInset(dc as Dc) as Number {
+        return EDGE_INSET == 0 ? 0 : scaled(dc, EDGE_INSET);
+    }
+
+    static function edgePen(dc as Dc) as Number {
+        var p = scaled(dc, EDGE_PEN);
+        return p < 2 ? 2 : p;
+    }
+
+    // Where the ring is drawn: [radius of the pen's centre line, pen]. The state ring's own
+    // geometry on a ring page (nested inside the arc when the page has one); the foil-% arc's
+    // band on every other page. Shared with the layout test, which asserts the band clears
+    // the page's bodyRadius and stays on the glass.
+    static function stateRingGeom(dc as Dc, ring as Boolean, foilArc as Boolean)
+            as Array<Number> {
         var cx = dc.getWidth() / 2;
-        var cy = dc.getHeight() / 2;
-        var r = cx - ringInset(dc, foilArc);
+        if (ring) {
+            return [cx - ringInset(dc, foilArc), ringPen(dc, foilArc)];
+        }
+        if (foilArc) {
+            var pen = bezelPen(dc);
+            return [cx - bezelInset(dc) - pen / 2, pen];
+        }
+        // (pen + 1) / 2, not pen / 2: an odd pen centred on cx - pen / 2 puts its last pixel
+        // one column past the glass
+        var e = edgePen(dc);
+        return [cx - edgeInset(dc) - (e + 1) / 2, e];
+    }
+
+    // The one helper every recording page's ring goes through. Returns true when it drew the
+    // lost-GPS ring in the bezel band, so the caller leaves the foil-% arc out this frame.
+    hidden function drawStateRing(dc as Dc, c as SessionController, ring as Boolean,
+            foilArc as Boolean) as Boolean {
         var look = ringLook(c.state == SessionController.STATE_PAUSED, c.gpsLost(),
             c.engine.detector.state == FlightDetector.STATE_ON);
-        dc.setPenWidth(ringPen(dc, foilArc));
+        // a ringless page shows only the lost fix: its pause is the banner's
+        if (!ring && look != RING_NO_GPS) {
+            return false;
+        }
+        var cx = dc.getWidth() / 2;
+        var cy = dc.getHeight() / 2;
+        var g = stateRingGeom(dc, ring, foilArc);
+        var r = g[0];
+        dc.setPenWidth(g[1]);
         if (look == RING_NO_GPS) {
             dc.setColor(Ink.dim(), Graphics.COLOR_TRANSPARENT);
             var step = 360 / NO_GPS_SEGMENTS;
@@ -1004,6 +1089,7 @@ class RecordingView extends WatchUi.View {
             dc.drawCircle(cx, cy, r);
         }
         dc.setPenWidth(1);
+        return !ring;
     }
 
     // ---- MAIN: the default page 1 ----
@@ -1049,7 +1135,6 @@ class RecordingView extends WatchUi.View {
         var hD = stripBandH(dc);
         var hK = dc.getFontHeight(Graphics.FONT_MEDIUM);
 
-        drawStateRing(dc, c, foilArc);
 
         // row 0 — time of day, or PAUSED. This is the one layout whose top row sits exactly
         // where the pause banner wants to be, so it carries the state itself: a paused
@@ -1285,7 +1370,6 @@ class RecordingView extends WatchUi.View {
         var hL = dc.getFontHeight(Graphics.FONT_LARGE);
         var hM = dc.getFontHeight(Graphics.FONT_MEDIUM);
 
-        drawStateRing(dc, c, foilArc);
 
         // sub-rows compact upward, so leaving slot 2 empty does not leave a hole
         var sub1 = PageModel.slotAt(page, 1);
@@ -1358,7 +1442,7 @@ class RecordingView extends WatchUi.View {
             foilArc as Boolean) as Void {
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
-        var radius = fitRadius(dc, false, foilArc);
+        var radius = bodyRadius(dc, false, foilArc);
         var id = bigId(page);
         // The three TURN screens carry a row between the giant and the word: the session's
         // own ladder on the turns screen, the kind's on the two kind screens. A count of
@@ -1613,7 +1697,7 @@ class RecordingView extends WatchUi.View {
         var d = c.engine.detector;
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
-        var radius = fitRadius(dc, false, foilArc);
+        var radius = bodyRadius(dc, false, foilArc);
         var hT = dc.getFontHeight(Graphics.FONT_XTINY);
         var hV = dc.getFontHeight(Graphics.FONT_LARGE);
         var half = foilTableHalf(dc, radius, cy, hT, hV);
@@ -1804,7 +1888,7 @@ class RecordingView extends WatchUi.View {
             foilArc as Boolean) as Void {
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
-        var radius = fitRadius(dc, false, foilArc);
+        var radius = bodyRadius(dc, false, foilArc);
         var hT = dc.getFontHeight(Graphics.FONT_XTINY);
         var hL = dc.getFontHeight(Graphics.FONT_LARGE);
 
@@ -2047,7 +2131,7 @@ class RecordingView extends WatchUi.View {
         var cy = dc.getHeight() / 2;
         var hT = dc.getFontHeight(Graphics.FONT_XTINY);
         var hV = dc.getFontHeight(Graphics.FONT_NUMBER_MILD);
-        drawCellRow(dc, c, cx, cy, fitRadius(dc, false, foilArc), cells2RowY(cy, hT, hV),
+        drawCellRow(dc, c, cx, cy, bodyRadius(dc, false, foilArc), cells2RowY(cy, hT, hV),
             PageModel.slotAt(page, 0), PageModel.slotAt(page, 1), true);
     }
 
@@ -2154,7 +2238,7 @@ class RecordingView extends WatchUi.View {
         var r = c.engine.records;
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
-        var radius = fitRadius(dc, false, false);
+        var radius = fitRadius(dc, false, _recording);
         var ink = inkH(dc, Graphics.FONT_NUMBER_HOT);
         var hHot = ink;
         var hT = dc.getFontHeight(Graphics.FONT_XTINY);
@@ -2224,7 +2308,7 @@ class RecordingView extends WatchUi.View {
         var t = c.engine.turns;
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
-        var radius = fitRadius(dc, false, false);
+        var radius = fitRadius(dc, false, _recording);
         var hT = dc.getFontHeight(Graphics.FONT_XTINY);
         var hG = inkH(dc, Graphics.FONT_NUMBER_MEDIUM);
         var hD = stripBandH(dc);
@@ -2280,7 +2364,7 @@ class RecordingView extends WatchUi.View {
         var t = c.engine.turns;
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
-        var radius = fitRadius(dc, false, false);
+        var radius = fitRadius(dc, false, _recording);
         var hT = dc.getFontHeight(Graphics.FONT_XTINY);
         var hG = inkH(dc, Graphics.FONT_NUMBER_MEDIUM);
         // The header row exists only where the axis does not (0.9.18): with an axis the four
@@ -2817,7 +2901,7 @@ class RecordingView extends WatchUi.View {
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
         var hT = dc.getFontHeight(Graphics.FONT_XTINY);
-        var radius = cx - TL_MARGIN;
+        var radius = timelineRadius(dc, _recording);
         var strip = stripH(dc);
         var spark = sparkH(dc);
 
@@ -2948,6 +3032,20 @@ class RecordingView extends WatchUi.View {
         return bandH(dc, TL_SPARK_H);
     }
 
+    // The Timeline page's chord: its own TL_MARGIN, and on the recording page also clear of
+    // the bezel band the lost-GPS ring takes (bodyRadius). The summary's story page draws no
+    // ring and keeps TL_MARGIN alone.
+    static function timelineRadius(dc as Dc, recording as Boolean) as Number {
+        var r = dc.getWidth() / 2 - TL_MARGIN;
+        if (recording) {
+            var b = bodyRadius(dc, false, false);
+            if (b < r) {
+                r = b;
+            }
+        }
+        return r;
+    }
+
     // Timeline rows: 0 foil label · 1 strip TOP · 2 speed label · 3 sparkline TOP ·
     // 4 dot-row centre · 5 turns label. Stacked from font heights + the band heights, so
     // the bands can never collide on any variant.
@@ -3005,7 +3103,7 @@ class RecordingView extends WatchUi.View {
         var e = c.engine;
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
-        var radius = fitRadius(dc, false, foilArc);
+        var radius = bodyRadius(dc, false, foilArc);
         var box = mapBox(dc, radius);
         // The phone-rendered ground, when the rider is inside a snapshot the phone sent
         // (docs/watch-map-snapshot.md): the snapshot's box becomes the frame and the trail is
@@ -3105,7 +3203,7 @@ class RecordingView extends WatchUi.View {
             foilArc as Boolean) as Void {
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
-        var radius = fitRadius(dc, false, foilArc);
+        var radius = bodyRadius(dc, false, foilArc);
         var hN = inkH(dc, Graphics.FONT_NUMBER_THAI_HOT);
         var id = PageModel.slotAt(page, 0);
         var labelled = clockCellNeedsLabel(id);

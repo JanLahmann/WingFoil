@@ -303,7 +303,9 @@ Four rules make it bigger rather than merely emptier:
   and the suite asserts it never falls below FONT_SMALL, the readability floor.
 - **no rings.** A flight ring costs 10–16 px of every radius, about 7 % of the digits on a
   240 px glass, and this set's whole trade is radius for digit height. Only the foil page
-  keeps its arc, because the arc *is* the number the page already shows.
+  keeps its arc, because the arc *is* the number the page already shows. The one ring the
+  set does draw is the thin broken one of a lost GPS fix, at the glass's edge (*When the watch
+  stops counting*, below).
 
 There is deliberately no map, no timeline and no table in the large set: a page you have to
 read is not a page this set is for. And there is no editor for it — the five pages are a
@@ -549,16 +551,33 @@ fix under a wave never flickers it; time since the last usable fix rather than a
 ones, so a receiver that stops calling back altogether reads as lost too, from the page's next
 redraw — the position callback is what asks for one (`GpsLoss`). The ring
 says it only while recording: a paused ring is the pause's yellow, which wins, and before the
-start the start page says *GPS weak* in words. Pages without the state ring (Records, Turns,
-the map and the rest) show nothing for it; the default first page, Main, has the ring. The
-**large-text page set has no state ring at all**, so a rider on it is not told of a lost fix
-yet — open, and Jan's to decide: a ring on the big pages, or the small GPS mark the review
-offered as the other way.
+start the start page says *GPS weak* in words.
+
+**Every recording page shows it** (Jan, 9 October 2026: a rider who leaves any page up must see
+that the fix went). Main and the hero pages break their own state ring. Every other page —
+Records, Turns, Tacks & jibes, Clock, Timeline, the map, the grids, the foil table and all five
+large-text pages — draws the broken ring at the **bezel edge**, through the same one helper
+(`RecordingView.drawStateRing`; which pages have the whole ring is `layoutHasStateRing`):
+
+- **No foil-% arc on the page:** a thin ring hugging the glass's own edge, 4 px on a 454 px
+  glass and 2 px on the 240–260 px ones (`EDGE_PEN`, scaled, never under 2). The band is kept
+  clear of content on these pages at all times (`bodyRadius`), so nothing moves when the fix
+  goes — and it is kept thin because every pixel of it is radius taken from pages whose whole
+  trade is digit height: the Clock page's *23:59* in the largest number font sits within
+  7 px of the bezel on a fenix 8 47 mm, and the 4 px ring is what it can give without dropping
+  a rung. The large-text set keeps its rule of no state ring; this is the lost fix only.
+- **With the foil-% arc:** the broken ring takes the arc's band and the arc is left out for as
+  long as the fix is gone — the bezel holds one ring at a time, and the page shows the same
+  foil % as a number anyway. The first usable fix brings the arc back.
+- A ringless page shows only the lost fix. Its pause stays the banner's job, as before.
 
 Both are in every stream's code from 0.9.22 and reach riders through the beta listing first
 (docs/channels.md, "The watch"). Tests: `pauseReminderBuzzesEveryTwoMinutes`,
-`gpsLossGreysTheRingAfterFiveSeconds`, `pauseAndResumeBuzzOnTheirOwnShapes`, and the
-rendering of both flashes and the broken ring in `everyLayoutRendersHeadless`.
+`gpsLossGreysTheRingAfterFiveSeconds`, `pauseAndResumeBuzzOnTheirOwnShapes`,
+`gpsRingFitsEveryRecordingPage` (the ring's band on the glass and clear of each page's content
+radius, every layout with and without the arc, the shipped and the large-text set, per device),
+and the rendering of both flashes and the broken ring on every layout in
+`everyLayoutRendersHeadless`.
 
 ## The start page's wind row and *Same wind?* (rider review W4, W5; 0.9.22)
 

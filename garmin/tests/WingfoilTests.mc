@@ -190,7 +190,7 @@ function turnsPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     var dc = testDc();
     var cy = screenPx() / 2;
     var radius = screenPx() / 2.0 - BEZEL;
-    var pageR = RecordingView.fitRadius(dc, false, false);
+    var pageR = RecordingView.bodyRadius(dc, false, false);
 
     var hT = dc.getFontHeight(Graphics.FONT_XTINY);
     // the ladder row's band is its INK height since 0.9.2 — the leading around a pinned font
@@ -567,7 +567,7 @@ function gridAndCellsPagesFitRoundDisplay(logger as Test.Logger) as Boolean {
             // if it does, the page is carrying more than the circle holds and the answer is
             // fewer cells, not smaller digits.
             var plainCol = RecordingView.cellColumns(
-                RecordingView.fitRadius(dc, false, false), yv - cy, inkL);
+                RecordingView.bodyRadius(dc, false, false), yv - cy, inkL);
             var plainF = RecordingView.fitFont(dc, TEXT_FONTS, 0, v, 2 * plainCol[1]);
             Test.assertMessage(
                 dc.getFontHeight(plainF) >= dc.getFontHeight(Graphics.FONT_MEDIUM),
@@ -971,7 +971,7 @@ function foilPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
 function clockPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     var dc = testDc();
     var cy = screenPx() / 2;
-    var radius = RecordingView.fitRadius(dc, false, false);
+    var radius = RecordingView.bodyRadius(dc, false, false);
     var limit = radius.toFloat();
     var inkN = RecordingView.inkH(dc, Graphics.FONT_NUMBER_THAI_HOT);
     var hN = inkN;                                  // the giant's band IS its ink now
@@ -1079,7 +1079,7 @@ function clockPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
 function mapOdometerAndWindMarkAreBigEnoughToRead(logger as Test.Logger) as Boolean {
     var dc = testDc();
     var cy = screenPx() / 2;
-    var radius = RecordingView.fitRadius(dc, false, false);
+    var radius = RecordingView.bodyRadius(dc, false, false);
     var limit = radius.toFloat();
     var box = RecordingView.mapBox(dc, radius);
     var y = RecordingView.mapCaptionY(dc, box);
@@ -1133,7 +1133,7 @@ function timelinePageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     var dc = testDc();
     var cx = screenPx() / 2;
     var cy = screenPx() / 2;
-    var radius = screenPx() / 2 - TL_MARGIN;
+    var radius = RecordingView.timelineRadius(dc, true);
     var limit = screenPx() / 2.0 - BEZEL;
     var hT = dc.getFontHeight(Graphics.FONT_XTINY);
 
@@ -2564,6 +2564,26 @@ function everyLayoutRendersHeadless(logger as Test.Logger) as Boolean {
     PageModel.build({});
     PageNav.index = 0;
     view.onUpdate(dc);
+    // ...and on every other page since Jan's 9 Oct note: each layout on its own, the shipped
+    // set and the five large-text pages, the broken ring in the bezel band (over the foil
+    // arc's band where the page has one)
+    for (var i = 0; i < layouts.size(); i++) {
+        PageModel.build({"pg1Layout" => layouts[i], "pg1s1" => PageModel.M_FOIL_PCT,
+            "pg2Layout" => layouts[i], "pg2s1" => PageModel.M_SPEED,
+            "pg3Layout" => 0, "pg4Layout" => 0, "pg5Layout" => 0,
+            "pg6Layout" => 0, "pg7Layout" => 0, "pg8Layout" => 0});
+        for (var p = 0; p < PageModel.count(); p++) {
+            PageNav.index = p;
+            view.onUpdate(dc);
+        }
+    }
+    PageModel.buildLarge();
+    for (var p = 0; p < PageModel.count(); p++) {
+        PageNav.index = p;
+        view.onUpdate(dc);
+    }
+    PageModel.build({});
+    PageNav.index = 0;
     c.gpsLoss.disarm();
     c.state = was;
     e.clockMsOverride = clock;
@@ -2887,7 +2907,7 @@ function phoneLinkWindPushValidatesHard(logger as Test.Logger) as Boolean {
 function recordsPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     var dc = testDc();
     var cy = screenPx() / 2;
-    var radius = RecordingView.fitRadius(dc, false, false);
+    var radius = RecordingView.bodyRadius(dc, false, false);
     var limit = radius.toFloat();
     // the numbers' band is their INK height since 0.9.2: two NUMBER_HOT line boxes and two
     // labels came to 93 % of the glass, a fifth of it leading, and the bottom number was
@@ -3259,6 +3279,82 @@ function gpsLossGreysTheRingAfterFiveSeconds(logger as Test.Logger) as Boolean {
     c.engine.clockMsOverride = t;
     c.state = SessionController.STATE_PAUSED;
     Test.assertMessage(!c.gpsLost(), "a paused ring is the pause's, not the GPS's");
+    return true;
+}
+
+// The lost-GPS ring on EVERY recording page (Jan, 9 Oct 2026): a rider who leaves any page
+// up must see that the fix went. For each page of the shipped set, the large-text set and
+// every layout on its own, with and without the foil-% arc: the ring's band (stateRingGeom)
+// lies on the glass, clears the radius the page's content is fitted to (bodyRadius) by the
+// FIT_MARGIN every fit respects, and — where the page has the arc — either nests inside it
+// (a ring page) or IS the arc's band (every other page, which hands the band over while the
+// fix is gone). Run per device, so the fenix 5 Plus family's 240 px glass is measured too.
+function ringClearsPage(dc as Graphics.Dc, layout as Number, arc as Boolean,
+        what as String) as Void {
+    var cx = dc.getWidth() / 2;
+    var ring = RecordingView.layoutHasStateRing(layout);
+    var g = RecordingView.stateRingGeom(dc, ring, arc);
+    var pen = g[1];
+    var inner = g[0] - pen / 2;
+    var outer = g[0] - pen / 2 + pen - 1;
+    var body = RecordingView.bodyRadius(dc, ring, arc);
+    Test.assertMessage(pen >= 2, what + ": the ring is " + pen.toString() + " px, too thin to see");
+    Test.assertMessage(outer <= cx - 1, what + ": the ring runs off the glass");
+    Test.assertMessage(inner - body >= FIT_MARGIN, what + ": the ring at " + inner.toString()
+        + " reaches the content radius " + body.toString());
+    if (arc) {
+        var bp = RecordingView.bezelPen(dc);
+        var arcInner = cx - RecordingView.bezelInset(dc) - bp;
+        if (ring) {
+            Test.assertMessage(outer < arcInner, what + ": the ring overlaps the foil arc");
+        } else {
+            Test.assertMessage(inner >= arcInner && outer <= cx - RecordingView.bezelInset(dc),
+                what + ": the broken ring is not drawn in the foil arc's band");
+        }
+    }
+}
+
+(:test)
+function gpsRingFitsEveryRecordingPage(logger as Test.Logger) as Boolean {
+    var dc = testDc();
+    // every layout on its own, both ways round
+    var layouts = [PageModel.LAYOUT_MAIN, PageModel.LAYOUT_HERO, PageModel.LAYOUT_BIG,
+        PageModel.LAYOUT_GRID4, PageModel.LAYOUT_CELLS2, PageModel.LAYOUT_RECORDS,
+        PageModel.LAYOUT_TURNS, PageModel.LAYOUT_CLOCK, PageModel.LAYOUT_TIMELINE,
+        PageModel.LAYOUT_FOIL, PageModel.LAYOUT_MAP, PageModel.LAYOUT_KINDS];
+    for (var i = 0; i < layouts.size(); i++) {
+        ringClearsPage(dc, layouts[i], false, "layout " + layouts[i].toString());
+        ringClearsPage(dc, layouts[i], true, "layout " + layouts[i].toString() + " + arc");
+    }
+    // only MAIN and HERO draw the whole ring; the rest the broken one in the bezel band
+    Test.assertMessage(RecordingView.layoutHasStateRing(PageModel.LAYOUT_MAIN)
+        && RecordingView.layoutHasStateRing(PageModel.LAYOUT_HERO), "main and hero ring");
+    for (var i = 2; i < layouts.size(); i++) {
+        Test.assertMessage(!RecordingView.layoutHasStateRing(layouts[i]),
+            "layout " + layouts[i].toString() + " must not draw the whole ring");
+    }
+    // the Timeline page keeps its own margin and the ring's, whichever is tighter
+    Test.assertMessage(RecordingView.timelineRadius(dc, true)
+        <= RecordingView.bodyRadius(dc, false, false), "the timeline reaches the ring");
+    // the shipped set and the large-text set, page by page, as the renderer sees them
+    var sets = 0;
+    for (var set = 0; set < 2; set++) {
+        if (set == 0) {
+            PageModel.build({});
+        } else {
+            PageModel.buildLarge();
+        }
+        for (var p = 0; p < PageModel.count(); p++) {
+            ringClearsPage(dc, PageModel.layoutAt(p), PageModel.pageDrawsFoilArc(p),
+                (set == 0 ? "page " : "large page ") + p.toString());
+            sets++;
+        }
+    }
+    PageModel.build({});
+    logger.debug("gps ring clears " + sets.toString() + " pages; ring band "
+        + RecordingView.stateRingGeom(dc, false, false).toString() + ", body radius "
+        + RecordingView.bodyRadius(dc, false, false).toString() + " on "
+        + dc.getWidth().toString() + " px");
     return true;
 }
 
@@ -4192,7 +4288,7 @@ function mapPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     Words.load();
     var dc = testDc();
     var cy = screenPx() / 2;
-    var radius = RecordingView.fitRadius(dc, false, false);
+    var radius = RecordingView.bodyRadius(dc, false, false);
     var limit = radius.toFloat();
     var box = RecordingView.mapBox(dc, radius);
 
@@ -5812,7 +5908,7 @@ function kindsPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     Words.load();
     var dc = testDc();
     var cy = screenPx() / 2;
-    var pageR = RecordingView.fitRadius(dc, false, false);
+    var pageR = RecordingView.bodyRadius(dc, false, false);
     var limit = pageR.toFloat();
     var hT = dc.getFontHeight(Graphics.FONT_XTINY);
     var hG = RecordingView.inkH(dc, Graphics.FONT_NUMBER_MEDIUM);
@@ -5994,7 +6090,7 @@ function largePagesFitRoundDisplay(logger as Test.Logger) as Boolean {
         var id = PageModel.BIG_SLOT[i];
         var row = RecordingView.bigHasRow(id);
         var arc = id == PageModel.M_FOIL_PCT;
-        var radius = RecordingView.fitRadius(dc, false, arc);
+        var radius = RecordingView.bodyRadius(dc, false, arc);
         var limit = radius.toFloat();
         var band = row ? hK : 0;
         var v = PageModel.worstValue(id);
@@ -6658,7 +6754,7 @@ function standardPagesTextHeadroom(logger as Test.Logger) as Boolean {
 
     // RECORDS: the two labels over the two numbers, pinned at FONT_XTINY
     var hHot = RecordingView.inkH(dc, Graphics.FONT_NUMBER_HOT);
-    radius = RecordingView.fitRadius(dc, false, false);
+    radius = RecordingView.bodyRadius(dc, false, false);
     y = RecordingView.recordsRowY(cy, hHot, hT, 2);
     wide = RecordingView.rowBudget(radius, y - cy, RecordingView.inkH(dc, up));
     fits = dc.getTextWidthInPixels("best 10s km/h", up) <= wide;
