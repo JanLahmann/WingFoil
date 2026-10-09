@@ -71,15 +71,13 @@ What changed and why:
   0.9.19 ships.
 * Every sentence is register 1, at most 20 words, with no dash, semicolon or parenthesis.
   `docs/copy/check_voice.py` reads this block.
-* **Not yet pasted: one sentence more, 1174 characters** (Jan, 30 September 2026). *CleanJibe is built
+* **Pasted: one sentence more, 1174 characters** (Jan, 30 September 2026). *CleanJibe is built
   with its riders.* opens the beta's own reason under THIS IS THE BETA, the community message
-  every other surface says (`BetaGuide.community`). The form still shows the 1138-character text
-  until Jan pastes this one.
-* **Not yet pasted either: AFTERWARDS says the way that works from a phone** (rider review W3,
+  every other surface says (`BetaGuide.community`).
+* **Pasted 9 October 2026 with 0.9.22: AFTERWARDS says the way that works from a phone** (rider review W3,
   9 October 2026). It used to say *Drop the FIT file into cleanjibe.org*, and Garmin Connect's
   phone app gives a rider no file. It now names intervals.icu first and the computer export
-  second, 1389 characters with the sentence above and the laps line (W15). The form still shows the old paragraph
-  until Jan pastes this text.
+  second, 1389 characters with the sentence above and the laps line (W15).
 * **2831 characters, cut to 1138 on 30 September 2026** (Jan: "make this way more concise"): one paragraph per theme, the accelerometer and recording detail left to cleanjibe.org/start. The form rejects `<` and `>`, and there are none.
 
 ```
@@ -164,7 +162,7 @@ top of the 0.9.20 one:
 
 0.9.21: Your wrist names turns the way the phone does. A jibe you carry on round through the wind is a jibe. A turn split by one slow second is one turn. A swim during a bear-away now ends your dry streak.
 
-**0.9.22, not uploaded** (manifests at 0.9.22, 9 October 2026): the watch says when it stops
+**0.9.22 uploaded 9 October 2026** (public listing, Internal 29, with the new Description; 0.9.22-dev1 on the private listing, Internal 44): the watch says when it stops
 counting (rider review W1, W13: the pause buzz, the two-minute reminder, the PAUSED flash, the
 broken state ring, on every recording page; docs/presentation/watch.md, "When the watch stops counting"), and a wind set
 by hand lives one session (W4, W5: retired at save, *Same wind?* on the next start page,
