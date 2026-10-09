@@ -65,12 +65,13 @@ PAGES = [
     "help/index.html",
     "invite/index.html",
     "start/index.html",
+    "beta/index.html",
+    "whats-new/index.html",
     "privacy/index.html",
     "app/index.html",
     "strava/callback/index.html",
     "learn/index.html",
     "watches/index.html",
-    "whats-new/index.html",
 ]
 
 #: The three addresses that moved. Everything a reader-facing page owes — the nav, the
@@ -79,12 +80,13 @@ PAGES = [
 REDIRECTS = {
     "learn/index.html",
     "watches/index.html",
-    "whats-new/index.html",
-    # /invite/ joined them on 20 September 2026: the
-    # install links are /start/#apps and the release notes are /start/#whats-new. The
+    # /invite/ joined them on 20 September 2026: the install links are /start/#apps. The
     # address stays because it is in every TestFlight mail we have sent, and in the
     # iPhone app's own "Coming in a future release" screen.
     "invite/index.html",
+    # /whats-new/ was one until 9 October 2026 and is a page again: /start/ split into
+    # /start/ (install, first session), /beta/ (what to test, tell us, what is coming)
+    # and /whats-new/ (the release notes), one job each (rider review S9).
 }
 
 SKIP = re.compile(r"^(https?:|mailto:|tel:|data:|javascript:|cleanjibe:|//)", re.I)
@@ -312,17 +314,18 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import make_start                                                        # noqa: E402
 
 if make_start.main(["--check"]) != 0:
-    errors.append("web/start/index.html or GettingStartedGuide.swift is stale — "
+    errors.append("web/start/index.html, web/beta/index.html or GettingStartedGuide.swift "
+                  "is stale — "
                   "run `python3 web/tools/make_start.py`")
 
-# The release notes are the same kind of generated half, on /start/: the cards, the
+# The release notes are the same kind of generated half, on /whats-new/: the cards, the
 # app's What's new screen and the TestFlight "What to Test" text are three renderings of
 # docs/copy/whats-new.json, and a page that has drifted from it is the changelog disagreeing
 # with the app the reader just installed.
 import make_whats_new                                                    # noqa: E402
 
 if make_whats_new.main(["--check"]) != 0:
-    errors.append("the release-note cards on web/start/ or WhatsNew.swift are stale — "
+    errors.append("the release-note cards on web/whats-new/ or WhatsNew.swift are stale — "
                   "run `python3 web/tools/make_whats_new.py`")
 
 # And /help/, which is the app's own help catalogue rendered: docs/copy/help.json is written

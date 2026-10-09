@@ -83,6 +83,8 @@ def flat(text: str) -> str:
 PAGES = [
     "index.html",
     "start/index.html",
+    "beta/index.html",
+    "whats-new/index.html",
     "help/index.html",
 ]
 
@@ -108,7 +110,14 @@ BUDGET = {
     # yet, and every band answers a question he asks before he installs. The eight
     # definitions and the family's four lines are docs/copy's and are counted anyway.
     "index.html": 900,
-    "start/index.html": 2200,
+    # /start/ split in three on 9 October 2026 (rider review S9): it installs and gets the
+    # first session in, /beta/ is the tester's half and /whats-new/ the release notes. The
+    # three together are the old page's 2200 and a little over, because the third app
+    # gained a panel and every way in a browser line (S10), and the Garmin watches are
+    # listed by name (S8).
+    "start/index.html": 1800,
+    "beta/index.html": 750,
+    "whats-new/index.html": 320,
     "help/index.html": 900,
 }
 SLACK = 1.10

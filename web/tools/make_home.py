@@ -82,7 +82,7 @@ ACTIONS = {
     "garmin": CONNECT_IQ,
     "chooser": "#way-in",
     "guideGarmin": "start/#guide-garmin",
-    "watches": "start/#watches",
+    "watches": "start/#garmin-list",  # the watches by name (rider review S8)
     "mail": MAIL,
     "github": GITHUB,
 }

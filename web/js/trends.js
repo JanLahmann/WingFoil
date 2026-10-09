@@ -173,9 +173,17 @@ function draw(agg, trendAgg = agg) {
     const onlyExample = entries.length > 0 && entries.every((e) => e.example);
     const door = `<p><button class="ghost small-btn" type="button" data-goto="sessions">Go to
         Sessions</button></p>`;
+    // The two doors the example-only line names, as the phone's `ExampleOnlyDoors` offers
+    // them (rider review I1, 9 Oct 2026). *Import a file* is a real `<label for="file">`,
+    // the ways-in card's own picker, so it opens where scripted clicks are refused; the
+    // intervals.icu key is kept in Settings, as on the phone.
+    const exampleDoors = `<p class="doors"><label class="btn primary small-btn" for="file">${
+      esc(say("exampleOnly.importButton"))}</label>
+      <button class="ghost small-btn" type="button" data-goto="settings">${
+      esc(say("exampleOnly.connectButton"))}</button></p>`;
     const note = (kind) => (onlyExample
       ? `<p class="note"><strong>${esc(say(`exampleOnly.${kind}Title`))}</strong><br>${
-        esc(say(`exampleOnly.${kind}`))}</p>${door}`
+        esc(say(`exampleOnly.${kind}`))}</p>${exampleDoors}`
       : `<p class="note">Nothing here counts towards your records yet. The example
       session and sessions a friend rode are kept out of them. Save one of your own and
       these fill in.</p>${door}`);

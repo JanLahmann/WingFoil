@@ -63,7 +63,9 @@ export const C = {
 // channel was a straight line rather than a maneuver (docs/presentation.md).
 export const OUTCOME_COLOR = { flew_through: C.good, touchdown: C.warn, fell_in: C.bad,
                                glide_out: C.good, unknown: C.ink3 };
-export const OUTCOME_LABEL = { flew_through: "flew through", touchdown: "touched down",
+// The verdict as a noun, the phone's `TurnOutcomeKind.label` and `FlightEndSlice.outcomeLabel`
+// (rider review I23, 9 Oct 2026: it was "touched down" here, "touchdown" on the phone).
+export const OUTCOME_LABEL = { flew_through: "flew through", touchdown: "touchdown",
                                fell_in: "fell in", glide_out: "glided out",
                                unknown: "no evidence" };
 

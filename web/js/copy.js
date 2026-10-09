@@ -105,14 +105,14 @@ export const GLOSSARY = [
     "id": "tph",
     "term": "TPH",
     "short": "TPH",
-    "expansion": "turns per hour",
+    "expansion": "dry turns per hour",
     "line": "Dry turns per hour, tacks and jibes together. It takes the place of JPH once a session has tacks in it."
   },
   {
     "id": "wph",
-    "term": "WPH",
+    "term": "falls / h",
     "short": "WPH",
-    "expansion": "falls per hour",
+    "expansion": "",
     "line": "How often you fell in, per hour. Every fall counts, in a turn or not."
   },
   {

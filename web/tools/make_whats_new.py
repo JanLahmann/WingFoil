@@ -24,14 +24,14 @@ Outputs:
 1. ``ios/WingFoilKit/Sources/WingFoilKit/Help/WhatsNew.swift`` — static data in the kit, the
    way ``GettingStartedGuide`` is. The app's *What's new* screen (Help, and Settings →
    About) renders it, filtered by the channel the app hands in.
-2. The block of ``web/invite/index.html`` between ``<!-- whats-new:begin -->`` and
+2. The block of ``web/whats-new/index.html`` between ``<!-- whats-new:begin -->`` and
    ``<!-- whats-new:end -->`` — the release cards in the page's own markup
    (``article.panel.piece``), the three newest open and everything older inside one
-   ``<details>`` fold. It lived on ``web/whats-new/index.html`` until 19 September 2026,
-   when /invite/ absorbed that page and /whats-new/ became a redirect to
-   ``/invite/#whats-new``: a changelog is read by somebody who has the app or is deciding
-   to get it, and both of those readers are already on the beta page. The head, the hero,
-   the section lede, the closing note and the footer are the page's own.
+   ``<details>`` fold. The page went round the site: its own until 19 September 2026, the
+   foot of /invite/ for a day, the foot of /start/ from the 20th, and its own again since
+   9 October 2026, because the install page ended on thirty builds of release notes (rider
+   review S9). /start/#whats-new forwards here. The head, the hero, the section lede, the
+   closing note and the footer are the page's own.
 
 Third renderer, outside this file: ``ios/tools/testflight_publish.py`` reads the same JSON
 for the *What to Test* text of the build it is attaching.
@@ -39,10 +39,10 @@ for the *What to Test* text of the build it is attaching.
 **Dates are allowed in these sentences**, and nowhere else in the app: a release note that
 does not say when it shipped is not a release note. They are written *by this generator*
 from the source's ISO dates rather than typed, which is the condition
-``docs/copy/check_voice.py`` puts on a dated surface. /invite/ carries that ``dated``
-Target flag now, and the block is wrapped in ``data-copy="whats-new"`` so the checker
-strips it the way it strips a generated span: the rest of the beta page is still held to
-the stale-fact rule, and only the release notes are excused from it.
+``docs/copy/check_voice.py`` puts on a dated surface. /whats-new/ carries that ``dated``
+Target flag, and the block is wrapped in ``data-copy="whats-new"`` so the checker strips
+it the way it strips a generated span: the rest of the page is still held to the
+stale-fact rule, and only the release notes are excused from it.
 
 The word rules of docs/voice.md register 1 are enforced here, on the source, so a long or
 dashed sentence fails at the generator rather than in a lint run on generated output: a
@@ -67,11 +67,9 @@ REPO = WEB.parent
 SOURCE = REPO / "docs" / "copy" / "whats-new.json"
 SWIFT_OUT = (REPO / "ios" / "WingFoilKit" / "Sources" / "WingFoilKit" / "Help"
              / "WhatsNew.swift")
-#: /whats-new/ became /invite/#whats-new on 19 September 2026, and /invite/ itself
-#: folded into /start/ on the 20th. The cards are the foot of Get started now: a
-#: reader of release notes either has the app or is deciding to get it, and both are
-#: one scroll from the install links at the top of that page.
-PAGE = WEB / "start" / "index.html"
+#: /whats-new/ is a page of its own again since 9 October 2026 (rider review S9): the
+#: install page is for installing, and a reader of release notes has the app already.
+PAGE = WEB / "whats-new" / "index.html"
 
 BEGIN = "<!-- whats-new:begin -->"
 END = "<!-- whats-new:end -->"

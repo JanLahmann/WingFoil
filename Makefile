@@ -67,6 +67,7 @@ web-verify:
 	python3 docs/copy/check_duplicates.py
 	python3 web/tools/check_web_literals.py
 	python3 web/tools/verify_turn_figure.py
+	python3 web/tools/verify_first_run.py
 
 # The browser runs lab/src/wingfoil_lab unchanged. This copies it and rewrites the two
 # manifests. Run it in the same change as any engine edit, or web-verify fails.

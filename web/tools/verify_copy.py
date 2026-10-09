@@ -23,6 +23,8 @@ WHAT IS PINNED, and where it bites
                      composed from the same two parts
     `strava`         present on /help/, /start/ and /privacy/ …
     `stravaForbidden`… and none of those five phrases anywhere under web/**.html
+    `watchWind`      on /help/ and /start/: where the watch app's tacks and jibes get their
+                     wind (Copy.watchWind, rider review S15)
     `ciqListingTitle` every <span data-copy="ciq-title">
     `appStoreName` / `appStoreSubtitle`
                      NOT PINNED: the site never names the App Store app. Nothing on any
@@ -110,15 +112,18 @@ COPY = REPO / "docs" / "copy"
 sys.path.insert(0, str(COPY))
 import check_release_copy as release                                     # noqa: E402
 
-#: The pages that carry copy. The three retired addresses — /learn/, /watches/ and
-#: /whats-new/ — are **redirect stubs** since 19 September 2026 and are deliberately not
-#: here: a page that is on screen for a frame pins nothing, and a pin that fired on one
-#: would have to be kept in step with a page nobody reads.
+#: The pages that carry copy. The two retired addresses — /learn/ and /watches/ — are
+#: **redirect stubs** since 19 September 2026 and are deliberately not here: a page that is
+#: on screen for a frame pins nothing, and a pin that fired on one would have to be kept in
+#: step with a page nobody reads. /whats-new/ was the third until 9 October 2026, when it
+#: became a page again (rider review S9).
 PAGES = [
     "index.html",
     "help/index.html",
     "invite/index.html",
     "start/index.html",
+    "beta/index.html",
+    "whats-new/index.html",
     "privacy/index.html",
     "app/index.html",
     "strava/callback/index.html",
@@ -375,6 +380,17 @@ def pin_strava(site: Site, phrases: dict, report: Report):
                     nearest(site.text["start/index.html"], fall))
     else:
         report.ok("phrases.stravaFall → web/start/index.html")
+    # where the watch app's tacks and jibes get their wind (rider review S15): the help's
+    # Garmin Connect item, rendered from the kit, and /start/'s watch-app card, typed
+    wind = phrases["watchWind"]
+    missing = [page for page in ("help/index.html", "start/index.html")
+               if wind not in site.text[page]]
+    for page in missing:
+        report.fail("web/" + page, "phrases.watchWind",
+                    "the watch's wind sentence is not on this page",
+                    nearest(site.text[page], wind))
+    if not missing:
+        report.ok("phrases.watchWind → web/help/index.html, web/start/index.html")
 
     hits = 0
     for page in PAGES:
@@ -503,10 +519,11 @@ def pin_channels(site: Site, channels: dict, report: Report):
     # ONE HOME, and the page map is the written form of it. The two lists left the front
     # door on 15 September 2026 (a dev list on a page a stranger meets is a promise to a
     # stranger; the app keeps those rows behind `#if BETA` for the same reason), and
-    # /start/#coming is the only page that prints them since /invite/
-    # folded into it on the 20th — and a second copy anywhere now
+    # /start/#coming printed them from /invite/'s fold on the 20th until 9 October 2026,
+    # and /beta/#coming is the only page that prints them since (rider review S9: the
+    # roadmap is the tester's, not the installer's) — and a second copy anywhere now
     # fails this check rather than quietly drifting out of step with the first.
-    pages = ["start/index.html"]
+    pages = ["beta/index.html"]
     for page in pages:
         for node in marked(site.tree[page], "channels-title"):
             got = text_of(node)
@@ -516,7 +533,7 @@ def pin_channels(site: Site, channels: dict, report: Report):
         if not marked(site.tree[page], "channels-title"):
             report.fail("web/" + page, "channels.sectionTitle",
                         'no heading marked data-copy="channels-title"')
-    report.ok('channels.sectionTitle → "%s" on /start/' % channels["sectionTitle"])
+    report.ok('channels.sectionTitle → "%s" on /beta/' % channels["sectionTitle"])
 
     for kind in ("beta", "dev"):
         rows = [row["text"] for row in channels[kind]]
@@ -544,7 +561,7 @@ def pin_channels(site: Site, channels: dict, report: Report):
                 if got != want:
                     report.fail("web/%s:%d" % (page, node.line), "channels." + kind,
                                 "row is not the JSON's sentence", got)
-        report.ok("channels.%s → %d rows, in order, on /start/" % (kind, len(rows)))
+        report.ok("channels.%s → %d rows, in order, on /beta/" % (kind, len(rows)))
 
     pin_forbidden_doors(site, channels, report)
 
@@ -641,32 +658,38 @@ def pin_classes(site: Site, classes: dict, report: Report):
                   "page's own order" % page)
 
     # The second table on that page ("What you ride with…") keeps its own shape and its
-    # own columns; what it may not do is invent a class. Its Class cells — the ones the table
-    # itself labels `data-th="Class"` — must each open one of the four names.
-    letters = {row["name"].split(" · ")[0] for row in rows}
+    # own columns; what it may not do is invent a kind of recording. Its "You get" cells —
+    # the ones the table itself labels `data-th="You get"` — must each open with one of the
+    # four names, in any case ("Measured speed with a FIT, positions only with a GPX").
+    names_lower = sorted((row["name"].lower() for row in rows), key=len, reverse=True)
     page = "start/index.html"
     cells = [n for n in descendants(site.tree[page])
-             if n.tag == "td" and n.attrs.get("data-th") == "Class"]
-    # A cell may name two classes ("Class B with a FIT, Class C with a GPX"); what it may
-    # not do is name a class that is not one of the four, or none at all.
-    named = re.compile(r"Class [A-Z]\+?(?![\w+])")
-    unknown, silent = set(), []
-    for cell in cells:
-        spelled = named.findall(text_of(cell))
-        if not spelled:
-            silent.append(text_of(cell))
-        unknown |= set(spelled) - letters
+             if n.tag == "td" and n.attrs.get("data-th") == "You get"]
+    silent = [text_of(cell) for cell in cells
+              if not any(text_of(cell).lower().startswith(name) for name in names_lower)]
     if not cells:
         report.fail("web/" + page, "recording-classes.name",
-                    'the "What you ride with" table has no <td data-th="Class"> cells')
-    elif unknown or silent:
+                    'the "What you ride with" table has no <td data-th="You get"> cells')
+    elif silent:
         report.fail("web/" + page, "recording-classes.name",
-                    "a Class cell names %s"
-                    % (", ".join(sorted(unknown)) if unknown
-                       else "no class at all: " + "; ".join(silent)))
+                    "a You get cell opens with none of the four names: " + "; ".join(silent))
     else:
-        report.ok("recording-classes → the %d Class cells of the second table name "
-                  "only %s" % (len(cells), ", ".join(sorted(letters))))
+        report.ok("recording-classes → the %d You get cells of the second table open with "
+                  "one of the four names" % len(cells))
+
+    # NO CLASS LETTER ON A RIDER PAGE (rider review X9 and I7, 9 October 2026). The letters
+    # a/b/c are the engine's (`sourceClass`); a rider reads what he gets. "Class B · any
+    # file with measured speed" made him ask which class he was.
+    letter = re.compile(r"\bclass [abc]\b\+?", re.IGNORECASE)
+    for page in ("start/index.html", "help/index.html", "index.html"):
+        if page not in site.tree:
+            continue
+        hits = sorted({m.group(0) for m in letter.finditer(text_of(site.tree[page]))})
+        if hits:
+            report.fail("web/" + page, "recording-classes.name",
+                        "the page still prints a class letter: " + ", ".join(hits))
+        else:
+            report.ok("recording-classes → web/%s prints no class letter" % page)
 
 
 def pin_glossary(site: Site, glossary: dict, report: Report):

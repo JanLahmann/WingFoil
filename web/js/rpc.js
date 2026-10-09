@@ -67,7 +67,7 @@ function route(msg) {
   }
 }
 
-/** Warm the runtime: the ~12 MB download dominates the first analysis. */
+/** Warm the runtime: the ~14 MB download dominates the first analysis. */
 export function warmUp() {
   ensure().postMessage({ type: "init" });
 }
@@ -88,7 +88,7 @@ export const CANCELLED = "cancelled";
  * OPFS on the main thread. Nothing is half-written when it dies.
  *
  * The cost is the runtime: the replacement worker re-boots Pyodide from scratch. That is
- * a cache read rather than a 12 MB download (the service worker and the HTTP cache both
+ * a cache read rather than a 14 MB download (the service worker and the HTTP cache both
  * hold it), so it is seconds, not minutes — and the caller is told to say so.
  */
 export function cancel() {

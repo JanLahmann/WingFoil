@@ -513,7 +513,8 @@ def check_digest_fidelity() -> None:
     # in a second place — and a second place is where two answers come from.
     check("  cleanJibesPerHour == golden", d["cleanJibesPerHour"], s["cleanJibesPerHour"])
     # Schema 11: the two rates beside it, on the same terms. Rates are additive — the
-    # trends page draws all three — and all three are read, never divided for (`_jph`).
+    # trends page draws CPH and one of these two — and all three are read, never divided
+    # for (`_jph`).
     check("  jibesPerHour == golden", d["jibesPerHour"], s["jibesPerHour"])
     check("  turnsPerHour == golden", d["turnsPerHour"], s["turnsPerHour"])
     # Schema 7: the three facts a *period* needs and a session row never carried.
@@ -739,26 +740,26 @@ def check_session_records(digests: list[dict]) -> None:
           round(100.0 * 4 / library.MIN_JIBES_FOR_RATE, 1))
 
     # CPH is the engine's own rate (0.10.0), and the winner is the session that maximises
-    # it — not the one with the most clean jibes — **among the sessions long enough to hold
-    # the record**. The floor is one rate window (15 min): one clean jibe in a four-minute
-    # evening is fifteen an hour, and a personal best a rider can set by going home early is
-    # not one. The phone's celebration has applied it since 0.10.0 and this table did not,
-    # so the two could name different afternoons under one label.
+    # it — not the one with the most clean jibes — **among the sessions that hold a rate**:
+    # 20 minutes on the timer, `library.RATE_MIN_TIMER_S` (Jan, 9 Oct 2026). One clean jibe
+    # in a four-minute evening is fifteen an hour, and a personal best a rider can set by
+    # going home early is not one. The session page prints "too short for a rate" under the
+    # same floor, so no record may hold one either.
     eligible = [d for d in digests
-                if library._rate_duration_s(d) >= library.CPH_MIN_DURATION_S]
+                if library._timer_s(d) >= library.RATE_MIN_TIMER_S]
     cph = max((d["cleanJibesPerHour"], d["id"]) for d in eligible)
     check("  CPH is the engine's summary.cleanJibesPerHour", rows["bestCph"]["value"],
           round(cph[0], 2))
     check("  CPH names the session that maximises it", rows["bestCph"]["id"], cph[1])
     # The floor is load-bearing on this corpus, not a formality: the highest CPH of all
-    # belongs to a session under fifteen minutes, and it must not hold the record.
+    # belongs to a session under twenty minutes, and it must not hold the record.
     short = max((d["cleanJibesPerHour"], d["id"]) for d in digests)
     check("  the corpus's highest CPH is set by a session under the floor",
           short[1] != cph[1], True)
     check("  and that session does not hold the record", rows["bestCph"]["id"] != short[1],
           True)
     check("  the row states the floor", rows["bestCph"]["caption"],
-          "Clean jibes per hour of session time. Sessions of at least 15 minutes.")
+          "Clean jibes per hour on the timer. Sessions of at least 20 minutes.")
     # …and it is **not** the division the library used to do for itself, which is why the
     # switch was worth making rather than a rename. The engine divides by its own *cleaned*
     # session span — the denominator every per-hour rate in this project shares
@@ -813,9 +814,14 @@ def check_trends(digests: list[dict]) -> None:
     check("  sessions are oldest first",
           [s["startUtc"] for s in tr["sessions"]],
           sorted(s["startUtc"] for s in tr["sessions"]))
-    check("  ten charts", [c["key"] for c in tr["charts"]],
-          ["foilPct", "longestFlight", "turnSuccess", "cleanJibes", "cph", "jph", "tph",
+    # CPH, then ONE dry-turn rate (rider review I20): TPH once a session in the range has a
+    # tack, JPH otherwise — never the two side by side.
+    dry_key = library.dry_turn_rate_key(digests)
+    check("  nine charts, one dry-turn rate", [c["key"] for c in tr["charts"]],
+          ["foilPct", "longestFlight", "turnSuccess", "cleanJibes", "cph", dry_key,
            "best2s", "pumps", "turnSide"])
+    check("  the dry-turn rate is TPH exactly when a session has a tack", dry_key,
+          "tph" if any((d["turns"].get("tacks") or 0) > 0 for d in digests) else "jph")
     for c in tr["charts"]:
         for line in c["lines"]:
             check(f"  {c['key']}/{line['key']}: one point per session", len(line["points"]), n)
@@ -860,22 +866,28 @@ def check_trends(digests: list[dict]) -> None:
           library.aggregate([])["totals"]["sessions"], 0)
     check("  empty library has no records", library.aggregate([])["records"], [])
     check("  single-session library still charts",
-          len(library.aggregate([digests[0]])["trends"]["charts"]), 10)
+          len(library.aggregate([digests[0]])["trends"]["charts"]), 9)
 
-    # The CPH series reads the same engine field the CPH record does, session by session.
+    # The CPH series reads the same engine field the CPH record does, session by session —
+    # and drops every session under 20 minutes on the timer (`RATE_MIN_TIMER_S`).
+    def rated(d, field):
+        if d.get(field) is None or library._timer_s(d) < library.RATE_MIN_TIMER_S:
+            return None
+        return round(d[field], 3)
+
+    check("  the corpus has sessions under the rate floor",
+          any(library._timer_s(d) < library.RATE_MIN_TIMER_S for d in ordered), True)
     cph = next(c for c in tr["charts"] if c["key"] == "cph")["lines"][0]
-    check("  cph == the engine's summary.cleanJibesPerHour",
+    check("  cph == the engine's summary.cleanJibesPerHour, floor applied",
           [p["v"] for p in cph["points"]],
-          [None if d["cleanJibesPerHour"] is None else round(d["cleanJibesPerHour"], 3)
-           for d in ordered])
+          [rated(d, "cleanJibesPerHour") for d in ordered])
 
-    # **Rates are additive**: the two rates beside CPH read the engine's own fields, the
-    # same way CPH does, and are null (never 0) on a row that predates schema 11.
-    for key, field in (("jph", "jibesPerHour"), ("tph", "turnsPerHour")):
-        line = next(c for c in tr["charts"] if c["key"] == key)["lines"][0]
-        check(f"  {key} == the engine's summary.{field}",
-              [p["v"] for p in line["points"]],
-              [None if d.get(field) is None else round(d[field], 3) for d in ordered])
+    # **Rates are additive**: the dry-turn rate beside CPH reads the engine's own field, the
+    # same way CPH does, and is null (never 0) on a row that predates schema 11.
+    field = {"jph": "jibesPerHour", "tph": "turnsPerHour"}[dry_key]
+    line = next(c for c in tr["charts"] if c["key"] == dry_key)["lines"][0]
+    check(f"  {dry_key} == the engine's summary.{field}, floor applied",
+          [p["v"] for p in line["points"]], [rated(d, field) for d in ordered])
     # A row written before schema 11 carries neither rate, and there is no honest way to
     # divide for it: the point is a gap, never a zero (`_jph`).
     check("  a pre-schema-11 row has no JPH and no TPH",

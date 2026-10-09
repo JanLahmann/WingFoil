@@ -13,6 +13,9 @@ Three things can break without a browser noticing:
 3. **The TCX class rule.** A TCX certifies its speed records only when the file states one
    (`Extensions/TPX/Speed`). The two fixtures differ by exactly that element, and
    `meta.certified` is what the card and the library read off the browser's document.
+4. **The pre-analysed example** (rider review X4). `web/example/ExampleSession.analysis.json`
+   is what "Try the example" draws without Pyodide; it must be exactly what
+   `web/tools/make_example.py` writes from the engine as it stands.
 
 Run it from the repo root (or anywhere — paths are resolved from this file):
 
@@ -123,8 +126,19 @@ def check_tcx_class_rule() -> str:
     return "OK  tcx class rule: TPX/Speed -> b/certified, no TPX/Speed -> c/uncertified"
 
 
+def check_example() -> str:
+    """The shipped example analysis == a fresh run of the engine over the example FIT."""
+    sys.path.insert(0, str(WEB / "tools"))
+    import make_example
+    if make_example.OUT.read_text() != make_example.build():
+        raise SystemExit("FAIL: web/example/ExampleSession.analysis.json is stale. "
+                         "Run web/tools/bundle_lab.py (or make_example.py)")
+    return f"OK  example analysis: current, engine {make_example.engine_version()}"
+
+
 def main() -> int:
-    for check in (check_golden, check_position_less_track, check_tcx_class_rule):
+    for check in (check_golden, check_position_less_track, check_tcx_class_rule,
+                  check_example):
         print(check())
     return 0
 

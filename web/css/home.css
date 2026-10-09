@@ -459,6 +459,16 @@ h3 .tag.beta, td .tag.beta, dt .tag.beta, li .tag.beta { vertical-align: 2px; }
    card whose title says what you hold. Two ladders, so two labels — and the pill is a link
    to the table that explains the four, because a letter on its own answers nothing. */
 .piece-class { margin: 0; }
+/* A route's one warning (getting-started.json `notice`), above the fold beside the pill. */
+.piece-note { margin: 10px 0 0; }
+/* What the browser app does with a way in (getting-started.json `browser`, rider review S10):
+   one line above the fold, after the warning if there is one. */
+.piece-browser { margin: 10px 0 0; }
+/* The Garmin watches by family (make_devices.py, rider review S8): the models of one family
+   run on as one line, a middle dot between two. */
+.device-models { list-style: none; margin: 0; padding: 0; }
+.device-models li { display: inline; }
+.device-models li + li::before { content: " · "; }
 .tag.class-pill {
   margin-left: 0; text-decoration: none; display: inline-block;
   text-transform: none; letter-spacing: 0.02em;

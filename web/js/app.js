@@ -47,6 +47,12 @@ const state = {
   // The Log tab's gear card hangs an assignment on it, and there is nothing to hang one
   // on until the session has been saved.
   sessionId: null,
+  // The engine the worker reported on `ready`, or null before it has. The pre-analysed
+  // example is drawn only when it was stamped by this engine (or before the worker knows).
+  engineVersion: null,
+  // Bumped by every example tap and by Cancel, so an example fetch that lands after a
+  // Cancel puts nothing on screen.
+  exampleRun: 0,
 };
 
 /* The four tabs and the pages behind the menu are js/appshell.js's; this file moves bytes
@@ -58,6 +64,7 @@ on("status", (msg) => setStep(msg.step, msg.state, msg.detail));
 
 on("ready", (msg) => {
   state.booted = true;
+  state.engineVersion = msg.engineVersion;
   const chip = el("engine-chip");
   chip.hidden = false;
   chip.textContent = `engine ${msg.engineVersion} · pyodide ${msg.pyodideVersion}`;
@@ -161,6 +168,7 @@ function wireCancel() {
     button.disabled = true;
     button.textContent = "Cancelling…";
     cancelWorker();
+    state.exampleRun += 1;
     state.busy = false;
     state.booted = false;
     el("engine-chip").hidden = true;
@@ -285,18 +293,7 @@ export async function analyzeFile(file, { isExample = false, source = "drop" } =
     return;
   }
   state.busy = true;
-  el("error").hidden = true;
-  el("results").hidden = true;
-  // The session view is being torn down: drop the previous document's playhead, zoom,
-  // chip states and popover with it, and let its sample arrays go before the next FIT
-  // arrives — on a phone the two documents would otherwise be in memory at once.
-  resetSession();
-  el("progress").hidden = false;
-  resetSteps();
-  startClock();
-  // The progress card lives on Sessions, where the file was dropped. The reader watches it
-  // there and is moved to the session page only when there is a session to show.
-  showPage("sessions");
+  showProgress();
 
   const buffer = await file.arrayBuffer();
   // The worker takes ownership of `buffer` (transferred, so a 6 MB FIT is not copied to
@@ -322,6 +319,23 @@ export async function analyzeFile(file, { isExample = false, source = "drop" } =
     if (err.message === CANCELLED) return;
     fail(err.message);
   }
+}
+
+/** Put the progress card up, over a torn-down session view. The first thing a tap on a
+ *  file or on the example does, so the page answers before a byte has moved. */
+function showProgress() {
+  el("error").hidden = true;
+  el("results").hidden = true;
+  // The session view is being torn down: drop the previous document's playhead, zoom,
+  // chip states and popover with it, and let its sample arrays go before the next FIT
+  // arrives — on a phone the two documents would otherwise be in memory at once.
+  resetSession();
+  el("progress").hidden = false;
+  resetSteps();
+  startClock();
+  // The progress card lives on Sessions, where the file was dropped. The reader watches it
+  // there and is moved to the session page only when there is a session to show.
+  showPage("sessions");
 }
 
 /** Analyze a FIT another module (icu.js) already downloaded. */
@@ -416,9 +430,20 @@ function wireDropzone() {
  * stream included — so the demo shows the stroke counts and the failed attempts a
  * stripped file could only report as unknown.
  *
- * It goes through `analyzeFile`, so it is the ordinary path with an ordinary File: nothing
- * about the example is special-cased in the ANALYSIS, and what a visitor sees is what
- * their own file will do.
+ * **It is shown pre-analysed** (rider review X4, 9 Oct 2026). Running it through the engine
+ * in the tab meant a first visitor waited out the whole ~14 MB runtime before seeing a
+ * number, which is the drop-off the two counters below were placed to measure. The
+ * recording never changes, so `web/tools/make_example.py` works it out at build time with
+ * the worker's own two calls (`analyze_bytes`, `digest`) and ships the answer beside it as
+ * `example/ExampleSession.analysis.json`, stamped with the engine and regenerated with
+ * every bundle. The page draws that at once while the runtime keeps loading behind it
+ * (`warmUp` at boot) for the rider's own file. Nothing about the example is special-cased
+ * in the ANALYSIS: the document is the one the worker would have posted, with the
+ * presentation for the rider's own Settings → Speed records choice.
+ *
+ * The live path is still here and is taken whenever the shipped answer cannot be trusted:
+ * the file is missing or unreadable, it does not describe this recording, or the worker has
+ * already reported an engine other than the one that stamped it.
  *
  * The one thing that is special-cased is what happens if it is saved. Somebody else's
  * afternoon in the library would otherwise set the visitor's all-time records and bend
@@ -433,29 +458,76 @@ function wireDropzone() {
 const exampleTriggers = () =>
   [...document.querySelectorAll("#try-example, .drop-peek [data-example]")];
 
+/** The name the example is analysed under. web/tools/make_example.py uses the same one, so
+ *  the shipped digest names the file the way a live run would. */
+const EXAMPLE_NAME = "example-nago-torbole-2026-08-30.fit";
+
+/** The shipped analysis of the example, as fetched, or null. Asked for beside the
+ *  recording rather than after it, so the two downloads overlap. */
+async function fetchExampleAnalysis() {
+  try {
+    const res = await fetch(new URL("../example/ExampleSession.analysis.json",
+                                    import.meta.url));
+    return res.ok ? await res.json() : null;
+  } catch {
+    return null;
+  }
+}
+
+/** That analysis ready to draw, or null when it cannot be trusted. `fitBytes` ties it to
+ *  the recording that came down beside it. */
+function exampleAnalysis(pre, fitBytes) {
+  try {
+    const doc = pre?.document;
+    if (!doc || !pre.digest || pre.fitBytes !== fitBytes) return null;
+    if (doc.engineVersion !== pre.engineVersion) return null;
+    if (state.engineVersion && state.engineVersion !== pre.engineVersion) return null;
+    doc.presentation = pre.presentations?.[speedRecords()] ?? doc.presentation;
+    return { doc, digest: pre.digest };
+  } catch {
+    return null;
+  }
+}
+
 async function runExample() {
   if (state.busy) return;
+  const run = ++state.exampleRun;
   const buttons = exampleTriggers();
   for (const b of buttons) b.disabled = true;
-  // The PRESS, counted where it happens; the finished analysis is counted again in
-  // `analyzeFile` as `source: "example"`. Two events rather than one because the gap
-  // between them is the whole question: a visitor who taps the example and never sees a
-  // report waited out a 12 MB runtime download and left.
+  // The PRESS, counted where it happens; the report reaching the screen is counted again
+  // as `app-file-analyzed` with `source: "example"`. Two events rather than one because the
+  // gap between them is the whole question: a visitor who taps the example and never sees
+  // a report left before it arrived.
   track("app-example-loaded");
+  // The answer to the tap, before anything is fetched (rider review S18): the links went
+  // grey and nothing else moved while the recording came down.
+  state.busy = true;
+  showProgress();
   try {
     // Resolved against this module, not against the document: the page lives at /app/
     // while the example (like css/, icons/ and lab_bundle/) stays at the site root,
     // shared with the homepage. js/worker.js reaches lab_bundle/ the same way.
-    const url = new URL("../example/ExampleSession.fit", import.meta.url);
-    const res = await fetch(url);
+    const shipped = fetchExampleAnalysis();
+    const res = await fetch(new URL("../example/ExampleSession.fit", import.meta.url));
     if (!res.ok) throw new Error(`example/ExampleSession.fit: HTTP ${res.status}`);
-    await analyzeFile(new File([await res.arrayBuffer()],
-                               "example-nago-torbole-2026-08-30.fit"),
-                      { isExample: true, source: "example" });
+    const bytes = await res.arrayBuffer();
+    const pre = exampleAnalysis(await shipped, bytes.byteLength);
+    if (run !== state.exampleRun) return;                 // Cancel was pressed meanwhile
+    state.busy = false;
+    if (pre) {
+      showResult(pre.doc, { digest: pre.digest, bytes, isExample: true });
+      track("app-file-analyzed", { format: "fit", source: "example" });
+      return;
+    }
+    await analyzeFile(new File([bytes], EXAMPLE_NAME), { isExample: true, source: "example" });
   } catch (err) {
+    // A run that Cancel (or a later tap) has replaced owns neither the page nor the flag.
+    if (run !== state.exampleRun) return;
+    state.busy = false;
     fail(`Could not load the example session: ${err.message}`);
   } finally {
-    for (const b of buttons) b.disabled = false;
+    // Re-enabled unless a later tap is running and holds them.
+    if (run === state.exampleRun || !state.busy) for (const b of buttons) b.disabled = false;
   }
 }
 
@@ -861,24 +933,28 @@ mountTrends({
 });
 // The library lists and stores; opening comes back through `openStored` so there is one
 // code path for "a document is on screen", whether it arrived by drop or from disk.
+// `/app/#example` runs the bundled session on arrival. The homepage's second CTA points
+// here, and a link that promised an example and delivered a drop target would be the
+// worst version of this page's first impression. Read BEFORE the shell mounts, which
+// normalizes the hash to `#/sessions` on its way past, and before the library mounts,
+// whose first count decides whether the welcome opens.
+const openExampleOnLoad = location.hash === "#example";
 mountLibrary({
   onOpen: (id) => openStored(id, null, "library"),
   // The count on the Sessions tab, and which half of that tab is on screen — the ways-in
   // card or the list. js/appshell.js owns both, because they are one fact.
-  setCount: (n) => {
-    setSessionCount(n);
-    // Once per browser, and never in front of somebody who already has sessions. The
-    // library arriving is what settles that, which is why the offer is made from here and
-    // not at boot — the same reason `RootView` waits on `libraryGeneration`.
-    offerWelcome(n);
+  setCount: (n, own = n) => {
+    setSessionCount(n, own);
+    // Once per browser, and never in front of somebody who already has sessions of his
+    // own. The library arriving is what settles that, which is why the offer is made from
+    // here and not at boot — the same reason `RootView` waits on `libraryGeneration`.
+    // **Never on top of a session either** (rider review S3, 9 Oct 2026): `#example`, an
+    // analysis running, or a document on screen means the reader has already taken a way
+    // on, and a dialog repeating the homepage over it reads as the example failing. The
+    // offer is spent then, as a tap on the dialog's own example would spend it.
+    offerWelcome(own, { sessionOnScreen: openExampleOnLoad || state.busy || !!state.last });
   },
 });
-
-// `/app/#example` runs the bundled session on arrival. The homepage's second CTA points
-// here, and a link that promised an example and delivered a drop target would be the
-// worst version of this page's first impression. Read BEFORE the shell mounts, which
-// normalizes the hash to `#/sessions` on its way past.
-const openExampleOnLoad = location.hash === "#example";
 // `?shared=1` is the service worker saying "Android handed us a file". Read BEFORE the
 // shell mounts for the same reason as the hash above, and cleared from the address bar
 // straight away: a reload of this URL with the slot already emptied would otherwise look

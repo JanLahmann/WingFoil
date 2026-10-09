@@ -568,6 +568,31 @@ async function renderStorage() {
     rows.push(["Saved in", await storageLabel()]);
   } catch { /* storage is unavailable; the row is simply not there */ }
   el("storage-rows").innerHTML = kvHtml(rows);
+  renderSafariNote();
+}
+
+/**
+ * Safari's seven days, said where the copy is made (rider review X3, 9 Oct 2026).
+ *
+ * Safari may delete everything a site stored after seven days of use without a visit, and
+ * `navigator.storage.persist()` (js/store.js, `keepData`) is not promised to lift that for a
+ * tab. So Safari in a tab gets one line under the figures: the rule, and Download all. On
+ * an iPhone or iPad it adds the Home Screen, whose app is not cleared. An installed app,
+ * Chrome, Firefox and the other browsers on iOS do not see it: the line names Safari, and
+ * it would be wrong for them.
+ */
+function renderSafariNote() {
+  const note = el("safari-note");
+  if (!note) return;
+  const ua = navigator.userAgent;
+  const safari = /Safari\//.test(ua)
+    && !/Chrome|Chromium|CriOS|FxiOS|EdgiOS|Edg\/|OPR|OPiOS|Android|GSA\//.test(ua);
+  const installed = navigator.standalone === true
+    || matchMedia("(display-mode: standalone)").matches;
+  note.hidden = !safari || installed;
+  const touch = /iPad|iPhone|iPod/.test(ua)
+    || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  el("safari-note-home").hidden = !touch;
 }
 
 /** js/app.js hands the worker's `ready` on, so About can print what is actually running
@@ -829,23 +854,31 @@ export function mountShell(options = {}) {
 
 /** The count beside the Sessions tab, and which half of the Sessions tab is on screen: the
  *  ways-in card, or the list. Both are one fact, so they move together. */
-export function setSessionCount(n) {
+export function setSessionCount(n, own = n) {
   const chip = document.querySelector('.tabbar button[data-tab="sessions"] .count');
   if (chip) {
     chip.textContent = n ? String(n) : "";
     chip.hidden = !n;
   }
   // The ways-in card is the empty state, and it is also the drop target, so it never goes
-  // away entirely — it shrinks to the drop row. css/app.css does the shrinking.
-  el("dropzone").classList.toggle("compact", n > 0);
+  // away entirely — it shrinks to the drop row. css/app.css does the shrinking. **Only a
+  // session of the reader's own shrinks it** (Jan, 9 Oct 2026; rider review I1): the
+  // example is not a way in, and a reader who tried it first still needs the rows.
+  el("dropzone").classList.toggle("compact", own > 0);
   // "Where this lives" is Settings -> Your data now, so the Sessions tab has one thing to
   // say about its own library and says it in the count line (Jan, 20 September 2026).
 }
 
-/** Open the welcome once per browser, on a genuinely empty library. A reader with sessions
- *  has been through the front door already, whatever the flag says — the same evidence the
- *  phone's `WelcomePrompt` trusts. */
-export function offerWelcome(sessionCount) {
+/** Open the welcome once per browser, on a library with none of the reader's own sessions
+ *  in it. A reader with sessions has been through the front door already, whatever the
+ *  flag says — the same evidence the phone's `WelcomePrompt` trusts, which does not count
+ *  the example either. A session on screen, or on its way there, spends the offer instead
+ *  of opening it on top (rider review S3). */
+export function offerWelcome(sessionCount, { sessionOnScreen = false } = {}) {
   if (welcomeSeen() || sessionCount > 0) return;
+  if (sessionOnScreen) {
+    markWelcomeSeen();
+    return;
+  }
   openWelcome();
 }

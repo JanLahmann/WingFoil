@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The Garmin product list has one source: the three Connect IQ manifests.
 
-    python3 web/tools/make_devices.py            # write the JSON, rewrite the web spans
+    python3 web/tools/make_devices.py            # write the JSON, the list, the web spans
     python3 web/tools/make_devices.py --check    # exit 1 if the JSON or a page is stale
 
 Source: ``garmin/manifest.xml`` and its ``-beta`` / ``-dev`` twins. All three ship the same
@@ -32,6 +32,17 @@ the same way it runs ``make_start.py --check``.
 Note on ``tactix / quatix``: those watches have **no product id of their own** — Garmin
 ships them under the fenix 7X, fenix 7 Pro and epix 2 ids (see the manifest's own comments),
 so the family is declared and empty on purpose rather than missing.
+
+THE WATCHES BY NAME, since 9 October 2026 (rider review S8: "The store says my fenix 6 is not
+compatible, and the site never says what to do then"). /start/#watches printed the count and
+sent the reader to the store; it prints every watch by family now, between
+``<!-- devices:begin -->`` and ``<!-- devices:end -->``, and ends on what to do when yours is
+not there. The names are ``MODELS`` and ``ALSO`` below — Garmin's own device names out of the
+Connect IQ SDK's ``compiler.json``, in this site's spelling — and the JSON carries them as
+``models``. A product id in the manifests with no name here fails the run, so a watch added
+to the jungles cannot reach the store without reaching the page. ``ALSO`` is the watches that
+install under another one's id (a quatix 7 is a fenix 7 to the store), listed in their own
+family, because a rider looks for the name on his wrist.
 
 Stdlib only, on purpose: it runs with plain ``python3`` beside ``verify_links.py``.
 """
@@ -75,6 +86,79 @@ FAMILIES = [
     ("Instinct 3 AMOLED", ("instinct3amoled",)),
     ("tactix / quatix", ("tactix", "quatix")),
 ]
+
+# Every product id, by the name a rider knows it by: Garmin's device name from the Connect IQ
+# SDK (`Devices/<id>/compiler.json` → displayName), trademarks dropped, "fēnix" spelled the
+# way this site spells it, and no brackets (docs/voice.md, rule 4). The order inside a family
+# is the order of this table.
+MODELS = {
+    "fenix843mm": "fenix 8 43 mm",
+    "fenix847mm": "fenix 8 47 mm and 51 mm",
+    "fenix8solar47mm": "fenix 8 Solar 47 mm",
+    "fenix8solar51mm": "fenix 8 Solar 51 mm",
+    "fenix8pro47mm": "fenix 8 Pro 47 mm and 51 mm, and fenix 8 MicroLED",
+    "fenix7": "fenix 7",
+    "fenix7s": "fenix 7S",
+    "fenix7x": "fenix 7X",
+    "fenix7pro": "fenix 7 Pro",
+    "fenix7spro": "fenix 7S Pro",
+    "fenix7xpro": "fenix 7X Pro",
+    "fenix7pronowifi": "fenix 7 Pro Solar without Wi-Fi",
+    "fenix7xpronowifi": "fenix 7X Pro Solar without Wi-Fi",
+    "fenix5plus": "fenix 5 Plus",
+    "fenix5splus": "fenix 5S Plus",
+    "fenix5xplus": "fenix 5X Plus",
+    "epix2": "epix Gen 2",
+    "epix2pro42mm": "epix Pro Gen 2 42 mm",
+    "epix2pro47mm": "epix Pro Gen 2 47 mm",
+    "epix2pro51mm": "epix Pro Gen 2 51 mm",
+    "fr255": "Forerunner 255",
+    "fr265": "Forerunner 265",
+    "fr57042mm": "Forerunner 570 42 mm",
+    "fr57047mm": "Forerunner 570 47 mm",
+    "fr955": "Forerunner 955 and 955 Solar",
+    "fr965": "Forerunner 965",
+    "fr970": "Forerunner 970",
+    "marq2": "MARQ Gen 2 Athlete, Adventurer, Captain, Golfer, Carbon and Commander",
+    "marq2aviator": "MARQ Gen 2 Aviator",
+    "enduro3": "Enduro 3",
+    "d2mach1": "D2 Mach 1",
+    "d2mach2": "D2 Mach 2",
+    "descentmk343mm": "Descent Mk3 43 mm and Mk3i 43 mm",
+    "venu2": "Venu 2",
+    "venu2s": "Venu 2S",
+    "venu2plus": "Venu 2 Plus",
+    "venu3": "Venu 3",
+    "venu3s": "Venu 3S",
+    "vivoactive5": "vívoactive 5",
+    "vivoactive6": "vívoactive 6",
+    "instinct3amoled45mm": "Instinct 3 AMOLED 45 mm",
+    "instinct3amoled50mm": "Instinct 3 AMOLED 50 mm",
+}
+
+# The watches that install under another one's product id, as the SDK's displayName lists
+# them: (family, name). They are the same binary on the same hardware, so they are on the
+# list — under the name on the rider's wrist, in the family he would look in.
+ALSO = {
+    "fenix847mm": [("tactix / quatix", "tactix 8 47 mm and 51 mm"),
+                   ("tactix / quatix", "quatix 8 47 mm and 51 mm")],
+    "fenix8solar51mm": [("tactix / quatix", "tactix 8 Solar 51 mm")],
+    "fenix8pro47mm": [("tactix / quatix", "quatix 8 Pro 47 mm and 51 mm")],
+    "fenix7": [("tactix / quatix", "quatix 7")],
+    "fenix7x": [("tactix / quatix", "tactix 7"), ("tactix / quatix", "quatix 7X Solar"),
+                ("Enduro", "Enduro 2")],
+    "epix2": [("tactix / quatix", "quatix 7 Sapphire")],
+    "epix2pro47mm": [("tactix / quatix", "quatix 7 Pro")],
+    "epix2pro51mm": [("tactix / quatix", "tactix 7 AMOLED"), ("D2", "D2 Mach 1 Pro")],
+}
+
+# The list on /start/#watches, between these two markers, and what the reader does when his
+# watch is not on it (Jan, 9 Oct 2026: the stock profile still gets every verdict).
+LIST_PAGE = "start/index.html"
+LIST_BEGIN = "<!-- devices:begin -->"
+LIST_END = "<!-- devices:end -->"
+NOT_LISTED = ("Not on the list? Ride with Garmin's Windsurf profile. "
+              "You still get every verdict.")
 
 # The pages that print the number or the version, and which of the two each one owes.
 # A page listed for a kind must carry at least one span of it, and every span it carries
@@ -151,6 +235,11 @@ def build():
                     MANIFESTS[0].relative_to(REPO), version, min_api))
 
     families, other = group(ids)
+    unnamed = sorted(pid for pid in ids if pid not in MODELS)
+    if unnamed:
+        raise SystemExit("product ids with no name in make_devices.py MODELS: "
+                         + ", ".join(unnamed)
+                         + " — take the displayName from the SDK's Devices/<id>/compiler.json")
     if other:
         print("UNGROUPED product ids (add a family in make_devices.py FAMILIES): "
               + ", ".join(other), file=sys.stderr)
@@ -162,10 +251,71 @@ def build():
         "store": {"version": store[0], "count": store[1]},
         "products": sorted(ids),
         "families": families,
+        "models": models(ids),
     }
     if other:
         doc["families"]["other"] = other
     return doc
+
+
+def models(ids):
+    """{family: [model names]} — every product by its name, plus the ones that share its id."""
+    present = set(ids)
+    out = dict((name, []) for name, _ in FAMILIES)
+    families, _ = group(ids)
+    family_of = dict((pid, fam) for fam, pids in families.items() for pid in pids)
+    for pid, name in MODELS.items():
+        if pid in present:
+            out[family_of.get(pid, "other")].append(name)
+    for pid, extra in ALSO.items():
+        if pid in present:
+            for fam, name in extra:
+                out[fam].append(name)
+    return dict((fam, names) for fam, names in out.items() if names)
+
+
+def html_text(text):
+    return (text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+            .replace("'", "&rsquo;").replace("í", "&iacute;"))
+
+
+def render_list(doc):
+    """The block on /start/#watches: a term per family, its watches, and the way round."""
+    lines = [
+        LIST_BEGIN,
+        "    <!-- GENERATED by web/tools/make_devices.py from garmin/manifest*.xml, through",
+        "         docs/copy/garmin-devices.json `models`. Do not edit between the markers:",
+        "         regenerate, and `make_devices.py --check` fails while it is stale. The list is",
+        "         the tree's, which is the store's whenever the two counts agree. -->",
+        '    <h3 id="garmin-list">The Garmin watches, by family</h3>',
+        '    <dl class="terms device-list">',
+    ]
+    for family, names in doc["models"].items():
+        lines += [
+            '      <div class="term">',
+            "        <dt>%s</dt>" % html_text(family),
+            # One <li> a watch, and the list marked `garmin-models`: a model name is a
+            # name, not a sentence, so docs/copy/check_voice.py skips it the way it skips
+            # the generated count and version spans.
+            '        <dd><ul class="device-models" data-copy="garmin-models">%s</ul></dd>'
+            % "".join("<li>%s</li>" % html_text(n) for n in names),
+            "      </div>",
+        ]
+    lines += [
+        "    </dl>",
+        '    <p class="note"><strong>%s</strong> <a href="#guide-garmin">The Garmin card</a> '
+        "shows how.</p>" % html_text(NOT_LISTED),
+        "    " + LIST_END,
+    ]
+    return "\n".join(lines)
+
+
+def splice_list(src, block):
+    start, end = src.find(LIST_BEGIN), src.find(LIST_END)
+    if start < 0 or end < 0:
+        raise SystemExit("web/%s: the %s / %s markers are not both there"
+                         % (LIST_PAGE, LIST_BEGIN, LIST_END))
+    return src[:start] + block + src[end + len(LIST_END):]
 
 
 def render(doc):
@@ -213,6 +363,10 @@ def main(argv=None):
     for page, owes in PAGES.items():
         src = (WEB / page).read_text(encoding="utf-8")
         stale += page_problems(page, src, owes, count, version)
+    list_src = (WEB / LIST_PAGE).read_text(encoding="utf-8")
+    if splice_list(list_src, render_list(doc)) != list_src:
+        stale.append("web/%s: the Garmin list between %s and %s is stale"
+                     % (LIST_PAGE, LIST_BEGIN, LIST_END))
 
     if args.check:
         if stale:
@@ -233,6 +387,8 @@ def main(argv=None):
         path = WEB / page
         src = path.read_text(encoding="utf-8")
         new = rewrite(src, count, version)
+        if page == LIST_PAGE:
+            new = splice_list(new, render_list(doc))
         if new != src:
             path.write_text(new, encoding="utf-8")
             touched.append("web/" + page)

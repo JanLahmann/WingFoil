@@ -142,6 +142,8 @@ jobs:
         run: uv run --locked --project lab python docs/copy/check_release_copy.py
       - name: The web bundle is not stale
         run: uv run --locked --project lab python web/tools/bundle_lab.py --check
+      - name: The first run (pre-analysed example, runtime cache, persist, Safari line)
+        run: uv run --locked --project lab python web/tools/verify_first_run.py
 
   # ------------------------------------------------------------------------------ the repo
   # The two checks that are about the repository rather than about one implementation: the

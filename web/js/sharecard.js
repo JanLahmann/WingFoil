@@ -961,7 +961,7 @@ function put(ctx, s, x, y, size, weight, color, family, align = "left") {
   return ctx.measureText(s).width;
 }
 
-/** The hero: ★ 25 clean jibes / of 56 jibes, 13.21 kn / top speed · best 2 s, or 3 tacks. */
+/** The hero: ★ 25 clean jibes / of 56 jibes, 13.21 kn / best 2 s, or 3 tacks. */
 function drawHero(ctx, story, x, y, w, family) {
   const h = story.hero;
   if (!h) return;

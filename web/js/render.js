@@ -228,7 +228,9 @@ function renderSummary(result, isExample = false) {
   // something degraded) and their internal names were on the page verbatim — "CIQ dev
   // fields" names a Garmin SDK concept, and "degraded source" sounds like an accusation
   // about the rider rather than a note about the file. The title carries the detail.
-  badges.push([{ a: "CleanJibe recording", b: "measured speed", c: "limited data" }[meta.sourceClass],
+  // "positions only", not "limited data": the name `RecordingClass.c` gives it on the
+  // phone's Import screen and on /start/ (rider review X9, 9 Oct 2026).
+  badges.push([{ a: "CleanJibe recording", b: "measured speed", c: "positions only" }[meta.sourceClass],
                meta.sourceClass === "a",
                // The phone's own line for the class (`RecordingClass.line`,
                // docs/copy/recording-classes.json), which the Import footers print.
@@ -268,8 +270,12 @@ function renderSummary(result, isExample = false) {
   const t = s.turns, sp = s.outcomeSplit;
   const fig = (cls, n, word, mark = "") =>
     `<span class="${cls}">${mark}${int(n)} <small>${esc(word)}</small></span>`;
-  const ladder = (o) => [fig("flew", o.flewThrough, "flew"), fig("touchdown", o.touchdown, "touch"),
-                         fig("fell", o.fellIn, "fell")];
+  // The ladder's own three words, the key-metrics caption's "flew · touchdown · fell in"
+  // (rider review I23, 9 Oct 2026: it was "touch" and "fell" here, a third spelling).
+  const touchdowns = (n) => (n === 1 ? "touchdown" : "touchdowns");
+  const ladder = (o) => [fig("flew", o.flewThrough, "flew"),
+                         fig("touchdown", o.touchdown, touchdowns(o.touchdown)),
+                         fig("fell", o.fellIn, "fell in")];
   const breakdown = (parts) => `<span class="tally">${parts.join("<i>·</i>")}</span>`;
   const tiles = [
     // **One clock.** The engine's cleaned span (`summary.durationS`), in the block's own
@@ -305,7 +311,8 @@ function renderSummary(result, isExample = false) {
     // **Touchdowns and glide-outs on one tile** (Jan, F9e): both a flight that ended
     // without a swim. The glide-out wears its own neutral ring, never the flew colour.
     { k: "Touchdowns · glide-outs", v: "",
-      html: breakdown([fig("touchdown", sp.turnTouchdowns + sp.straightTouchdowns, "touch"),
+      html: breakdown([fig("touchdown", sp.turnTouchdowns + sp.straightTouchdowns,
+                           touchdowns(sp.turnTouchdowns + sp.straightTouchdowns)),
                        fig("glide ring", sp.glideOuts, "glide-out")]),
       n: `${int(sp.turnTouchdowns)} in turns · ${int(sp.straightTouchdowns)} straight-line` +
          (sp.unknownEnds ? ` · ${int(sp.unknownEnds)} ${sp.unknownEnds === 1 ? "end" : "ends"} cut by the recording` : "") },

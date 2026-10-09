@@ -1,15 +1,19 @@
 /* Service worker: make a revisit work with no network at all.
  *
- * Two caches, on purpose:
+ * Three caches, on purpose:
  *
  *   SHELL    the app itself — HTML, CSS, JS, icons, and every file under lab_bundle/.
  *            Precached at install, replaced wholesale when VERSION changes. The
  *            lab_bundle list is read from lab_bundle/FILES.json (the same list the worker
  *            mounts), so adding a lab module never needs an edit here.
- *   RUNTIME  the Pyodide CDN, the PyPI wheel and the map tiles — ~12 MB that never changes
- *            for a pinned Pyodide version, plus whatever ground the rider has asked to see.
- *            Cached the first time they are fetched, then served from cache. This is what
- *            makes the app work offline.
+ *   RUNTIME  the Pyodide CDN and the PyPI wheel — ~14 MB on the wire that never changes for
+ *            a pinned Pyodide and fitdecode. Cached the first time they are fetched, then
+ *            served from cache. This is what makes the app work offline. **Keyed to those
+ *            two pins, not to VERSION** (rider review X5, 9 Oct 2026): it used to carry the
+ *            site version, so every deploy threw the 14 MB away and the next visit
+ *            downloaded it again under a note that said it downloads once.
+ *   TILES    the OpenStreetMap tiles the rider has asked to see. Keyed to VERSION, as the
+ *            runtime cache used to be, so a deploy still bounds how stale a beach can get.
  *
  * Privacy: this file never adds a request. It only stores responses the page was already
  * making, and only from the Pyodide CDN, PyPI, the OpenStreetMap tile layer and this site's
@@ -21,12 +25,20 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v116";     // v116: engine 0.28.0 — on a positions-only track (a GPX, a Strava copy) a heading flip made of one GPS jump is not a turn, and a burst of speed followed by standing still is not flying through; v115: no Impressum — CleanJibe is non-commercial and not a trader, so none is owed (Jan, 30 Sep 2026); the page is gone and every footer's last link is Privacy; v114: the browser's rider text joins nothing with an em dash any more (Jan, 30 Sep 2026) — the map tooltips, the takeoff rows, the strip legend, the highlight note, the library tags and the trends badges all read with a comma or a middle dot instead, and check_web_literals.py fails a new one; v113: engine 0.27.0 — a tack is a tack he tried: a fall while heading up counts only where he flew to within 30° of the wind with the luff begun at speed, the tail of a jibe is that jibe, a sweep through both axes takes the first, and a short file analyses instead of crashing; v112: the period card's "One session" opens on the period's best afternoon and the collage draws its best twelve — most clean jibes, then the higher best 2 s, then the newest — rather than simply the newest; v111: a card of the range Trends shows, from a Share button beside Periods; the period card draws all its sessions, one session big, or a collage of up to 12, and one session can sit on its own map; the range note sits under the range on Periods; v110: the front door is rebuilt from the kit's welcome sections — the promise and the real share card, what you get, which way in is yours, your old sessions, the watch app, we ride too — and every reader page's header is the wordmark and one button, Try it in your browser; v109: every rider sentence of the browser app is the iPhone app's own, said out of docs/copy/app-words.json — the turn coach with its tips, the turn and flight-end footnotes, the map legend behind its ?, Records, Trends with the rates spelled out, Periods, Spots, the gear sheet, the rider question, Speed records as measured and estimated; v108: engine 0.26.0 — a run, a ride or a hike is not a session: the page says what the file was recorded as and the row reads "Not a watersport"; the intervals.icu panel rescues a name only on a type that could be a watersport, and only in whole words; v107: the period card draws a jibe bar and a tack bar and offers tacks as its hero; a library saved before it is read again from its stored sessions; v106: the period card is layout B v2 too — the tracks larger, a hero number (clean jibes, top speed or sessions), the outcome bar summed, the best streak, the rates in words, and no Lean/Complete; the landscape no longer runs past the footer; v105: a touchdown or a fall ends a flight, in the Flights help; Getting started opens What CleanJibe does; v104: the share card is layout B v2 — the hero number (clean jibes, top speed or tacks), the jibe and tack outcome bars, the best streak, the rates in words, the start time beside the date, a larger track, and CleanJibe · cleanjibe.org above the tagline; v103: Help in seven sections in the order a rider meets them, "Read the numbers" sub-headed, 47 topics merged to 41 with the old links still landing, "see also" at most three; Settings with the list in one section after Units and Deleted sessions with the library; v102: engine 0.25.0 — only a counted turn owns a fall, so a fall inside a bear-away or round-up is a straight-line fall; a touchdown is a dip within 12 s of the exit, a slog that brushes the floor later is a glide-out; a capped off-foil time reads "1 min+"; v101: the session list spells a session under an hour as "58 min" and keeps the date line on one line; v100: the session page reads for a rider — the clean jibes in a cell of their own with the star, CPH first and one dry-turn rate (TPH once tacks exist), the Jibes and Tacks tiles show their whole breakdown in colour, touchdowns and glide-outs share a tile, the takeoffs and the flight ends are one Flights tab with a row per flight, no dashes for a missing accelerometer, the turn score says it is speed held, wind confidence only when it is low; v99: What CleanJibe does carries the family, Get started and the example as its two ways on, the menu trades the family row for Join the beta, and Getting started no longer sends the rider to /start; v98: Settings opens on a row of chips that jump to each section, and every help page is read again in the team voice; v97: a link to a help topic is the ? with its title beside it, in one help ink on both themes, and the dark secondary ink reads at arm's length (6.2:1); v96: one careful read of every rider sentence against docs/voice.md — the footers, the hero note and the figcaption become sentences, the site tagline stops being a fragment, the guide says "ways in" instead of routes, and the engine works your sessions out again rather than re-deriving them; v95: the browser app mirrors the phone page for page — a card per turn with the tally the chips move, Periods and one period as pages under Trends, the phone's fourteen Settings sections in the phone's order, Getting started and the release notes in the app, the Share dialog with Card, FIT file and the report row, and The CleanJibe family; v94: average speed reads from distance and timer time rather than a km/h figure rounded before the knot conversion; the falls tile's caption gets a second line at four columns instead of shrinking past reading; v93: the session page draws the presentation document the engine emits — one block, one card, one set of marks, one callout, and the legend chips count what the afternoon held rather than what the map could draw; v92: Settings gains "Speed records" and a session can be sent to the developer from its Share page; v91: engine 0.24.0 — a fall the turn caused is the turn's fall: a rider who never gets going again is followed for 30 s, so the mush-out is the jibe's own swim instead of a touchdown with the same fall booked twice beside it; v89: tacks have their own cell on the session block and on the share card, beside the jibes; a help topic for the watch update that does not arrive; the release notes for beta 101 and dev 100; v88: best hour opens its window on the map and chart, like the other eight records; v87: engine 0.23.0 — a Smart Recording cadence is not a hole, an opposed pair of reaches still has a wind, an accelerometer batch without a clock is timed from file order; v85: jibes, tacks and aborted turns each have a legend chip on the session page; v84: the falls cell on the block, the card and the row, every label a glossary term, every speed through the unit setting; v83: concise mode with ? links, the structured help, settings in the phone's order with your data, get started carries the apps and the release notes, /invite/ redirects; v82: the menu button sits top right; v81: download all sits under the list, the file input takes any file so iphone files offers .fit and .gpx; v80: the paragraph rule reaches the pages and the rider sentences the scripts write; v79: the umami events and the fixed import in appshell.js; v78: the log tab, deleted sessions, the turn and flight-end pages, spots, the trend lines, the design-review fixes (v77: the Ride tab's map background and the full-screen map (v75: two links and two doors in the site nav, /help/ from the app's help catalogue, /watches/ and /whats-new/ absorbed (v74: release notes for builds 76 and 77 (v73: v73: the apple watch live view is on the beta outlook as a plan (v72: v72: the Strava fall sentence on /start and /watches, the what's-new cards from one source (v71: v71: the store version reads 0.9.13 (v70: v67: Apple Watch comes right after Garmin wherever watches are listed; the routes lose their letters and gain a class pill; the /start/ folds say "Show the N steps"; the site nav keeps its right gutter on a phone (v65: every rider sentence on the site is in the voice of docs/voice.md (v60: the site is cut in half — the front door keeps the card and two links, /start/ folds its routes, "How it works" becomes "What it measures", one footer everywhere; v59: the example session is a button, the analyzer gains a glossary and a feedback door; v58: the copy contract on the pages)))
+const VERSION = "v118";     // v118: Get started has one job, installing and the first session: the three apps each have a panel, every way in says what the browser app does with it, and the Garmin watches are listed by family; what to test, where to send it and what is coming are /beta/, and the release notes are /whats-new/ again; v117: the example session opens at once, from an analysis worked out at build time, while the engine loads behind it; the engine download survives a deploy (its cache is keyed to the Pyodide and fitdecode pins); after the first session of your own is saved the page asks the browser to keep its data, and Your data says what Safari clears after seven days; v116: engine 0.28.0 — on a positions-only track (a GPX, a Strava copy) a heading flip made of one GPS jump is not a turn, and a burst of speed followed by standing still is not flying through; v115: no Impressum — CleanJibe is non-commercial and not a trader, so none is owed (Jan, 30 Sep 2026); the page is gone and every footer's last link is Privacy; v114: the browser's rider text joins nothing with an em dash any more (Jan, 30 Sep 2026) — the map tooltips, the takeoff rows, the strip legend, the highlight note, the library tags and the trends badges all read with a comma or a middle dot instead, and check_web_literals.py fails a new one; v113: engine 0.27.0 — a tack is a tack he tried: a fall while heading up counts only where he flew to within 30° of the wind with the luff begun at speed, the tail of a jibe is that jibe, a sweep through both axes takes the first, and a short file analyses instead of crashing; v112: the period card's "One session" opens on the period's best afternoon and the collage draws its best twelve — most clean jibes, then the higher best 2 s, then the newest — rather than simply the newest; v111: a card of the range Trends shows, from a Share button beside Periods; the period card draws all its sessions, one session big, or a collage of up to 12, and one session can sit on its own map; the range note sits under the range on Periods; v110: the front door is rebuilt from the kit's welcome sections — the promise and the real share card, what you get, which way in is yours, your old sessions, the watch app, we ride too — and every reader page's header is the wordmark and one button, Try it in your browser; v109: every rider sentence of the browser app is the iPhone app's own, said out of docs/copy/app-words.json — the turn coach with its tips, the turn and flight-end footnotes, the map legend behind its ?, Records, Trends with the rates spelled out, Periods, Spots, the gear sheet, the rider question, Speed records as measured and estimated; v108: engine 0.26.0 — a run, a ride or a hike is not a session: the page says what the file was recorded as and the row reads "Not a watersport"; the intervals.icu panel rescues a name only on a type that could be a watersport, and only in whole words; v107: the period card draws a jibe bar and a tack bar and offers tacks as its hero; a library saved before it is read again from its stored sessions; v106: the period card is layout B v2 too — the tracks larger, a hero number (clean jibes, top speed or sessions), the outcome bar summed, the best streak, the rates in words, and no Lean/Complete; the landscape no longer runs past the footer; v105: a touchdown or a fall ends a flight, in the Flights help; Getting started opens What CleanJibe does; v104: the share card is layout B v2 — the hero number (clean jibes, top speed or tacks), the jibe and tack outcome bars, the best streak, the rates in words, the start time beside the date, a larger track, and CleanJibe · cleanjibe.org above the tagline; v103: Help in seven sections in the order a rider meets them, "Read the numbers" sub-headed, 47 topics merged to 41 with the old links still landing, "see also" at most three; Settings with the list in one section after Units and Deleted sessions with the library; v102: engine 0.25.0 — only a counted turn owns a fall, so a fall inside a bear-away or round-up is a straight-line fall; a touchdown is a dip within 12 s of the exit, a slog that brushes the floor later is a glide-out; a capped off-foil time reads "1 min+"; v101: the session list spells a session under an hour as "58 min" and keeps the date line on one line; v100: the session page reads for a rider — the clean jibes in a cell of their own with the star, CPH first and one dry-turn rate (TPH once tacks exist), the Jibes and Tacks tiles show their whole breakdown in colour, touchdowns and glide-outs share a tile, the takeoffs and the flight ends are one Flights tab with a row per flight, no dashes for a missing accelerometer, the turn score says it is speed held, wind confidence only when it is low; v99: What CleanJibe does carries the family, Get started and the example as its two ways on, the menu trades the family row for Join the beta, and Getting started no longer sends the rider to /start; v98: Settings opens on a row of chips that jump to each section, and every help page is read again in the team voice; v97: a link to a help topic is the ? with its title beside it, in one help ink on both themes, and the dark secondary ink reads at arm's length (6.2:1); v96: one careful read of every rider sentence against docs/voice.md — the footers, the hero note and the figcaption become sentences, the site tagline stops being a fragment, the guide says "ways in" instead of routes, and the engine works your sessions out again rather than re-deriving them; v95: the browser app mirrors the phone page for page — a card per turn with the tally the chips move, Periods and one period as pages under Trends, the phone's fourteen Settings sections in the phone's order, Getting started and the release notes in the app, the Share dialog with Card, FIT file and the report row, and The CleanJibe family; v94: average speed reads from distance and timer time rather than a km/h figure rounded before the knot conversion; the falls tile's caption gets a second line at four columns instead of shrinking past reading; v93: the session page draws the presentation document the engine emits — one block, one card, one set of marks, one callout, and the legend chips count what the afternoon held rather than what the map could draw; v92: Settings gains "Speed records" and a session can be sent to the developer from its Share page; v91: engine 0.24.0 — a fall the turn caused is the turn's fall: a rider who never gets going again is followed for 30 s, so the mush-out is the jibe's own swim instead of a touchdown with the same fall booked twice beside it; v89: tacks have their own cell on the session block and on the share card, beside the jibes; a help topic for the watch update that does not arrive; the release notes for beta 101 and dev 100; v88: best hour opens its window on the map and chart, like the other eight records; v87: engine 0.23.0 — a Smart Recording cadence is not a hole, an opposed pair of reaches still has a wind, an accelerometer batch without a clock is timed from file order; v85: jibes, tacks and aborted turns each have a legend chip on the session page; v84: the falls cell on the block, the card and the row, every label a glossary term, every speed through the unit setting; v83: concise mode with ? links, the structured help, settings in the phone's order with your data, get started carries the apps and the release notes, /invite/ redirects; v82: the menu button sits top right; v81: download all sits under the list, the file input takes any file so iphone files offers .fit and .gpx; v80: the paragraph rule reaches the pages and the rider sentences the scripts write; v79: the umami events and the fixed import in appshell.js; v78: the log tab, deleted sessions, the turn and flight-end pages, spots, the trend lines, the design-review fixes (v77: the Ride tab's map background and the full-screen map (v75: two links and two doors in the site nav, /help/ from the app's help catalogue, /watches/ and /whats-new/ absorbed (v74: release notes for builds 76 and 77 (v73: v73: the apple watch live view is on the beta outlook as a plan (v72: v72: the Strava fall sentence on /start and /watches, the what's-new cards from one source (v71: v71: the store version reads 0.9.13 (v70: v67: Apple Watch comes right after Garmin wherever watches are listed; the routes lose their letters and gain a class pill; the /start/ folds say "Show the N steps"; the site nav keeps its right gutter on a phone (v65: every rider sentence on the site is in the voice of docs/voice.md (v60: the site is cut in half — the front door keeps the card and two links, /start/ folds its routes, "How it works" becomes "What it measures", one footer everywhere; v59: the example session is a button, the analyzer gains a glossary and a feedback door; v58: the copy contract on the pages)))
 // The cache *names* keep the historical prefix on purpose: the activate handler below
 // deletes every cache starting with it, so renaming the prefix would strand every v1–v13
 // cache on every device that ever visited, forever. Nobody sees these strings.
 const SHELL = `wingfoil-shell-${VERSION}`;
-const RUNTIME = `wingfoil-runtime-${VERSION}`;
+/** The two pins the runtime cache is keyed to. They are js/worker.js's `PYODIDE_VERSION`
+ *  and `FITDECODE`, spelled again because a worker script cannot import the page's module,
+ *  and web/tools/verify_first_run.py fails when the two spellings disagree. A new Pyodide
+ *  is a new cache name, and `activate` then deletes the old one, so the runtime is
+ *  downloaded again exactly when it changed. */
+const PYODIDE_VERSION = "0.28.3";
+const FITDECODE_VERSION = "0.11.0";
+const RUNTIME = `wingfoil-runtime-pyodide-${PYODIDE_VERSION}-fitdecode-${FITDECODE_VERSION}`;
+const TILES = `wingfoil-tiles-${VERSION}`;
 
 /** The analyzer's directory, relative to this worker's root scope. See APP_SHELL. */
 const APP_DIR = "app/";
@@ -178,6 +190,9 @@ const APP_SHELL = [
   // the one who opened the installed app on a train. It is the same file the iOS app
   // ships; see docs/testing.md "The bundled example session".
   "example/ExampleSession.fit",
+  // What "Try the example" draws without waiting for Pyodide (rider review X4): the same
+  // recording, analysed at build time by web/tools/make_example.py. 90 KB, 16 KB gzipped.
+  "example/ExampleSession.analysis.json",
   "lab_bundle/FILES.json",
   "lab_bundle/MANIFEST.json",
 ];
@@ -214,13 +229,16 @@ const NEVER_CACHE = [
  *
  * Nothing is requested that the page was not requesting anyway: the map is off until the
  * rider presses Map, and with it off no tile URL ever reaches this worker. Staleness is
- * bounded by VERSION — `activate` deletes every cache but the current one, so a bump throws
- * the tiles away with everything else.
+ * bounded by VERSION — the tiles have a cache of their own named after it, and `activate`
+ * deletes every cache but the current ones, so a bump throws the tiles away. The runtime
+ * is kept: its name changes only with the Pyodide or fitdecode pin.
  */
 const RUNTIME_HOSTS = [
   "cdn.jsdelivr.net",
   "files.pythonhosted.org",
   "pypi.org",
+];
+const TILE_HOSTS = [
   "tile.openstreetmap.org",
 ];
 
@@ -246,13 +264,48 @@ self.addEventListener("activate", (event) => {
     // SHARE_CACHE is version-less on purpose: a file parked by the old worker seconds before
     // an update must still be there for the page that was opened to fetch it. It is kept,
     // not deleted, and the page empties it as soon as it has read it.
-    const keep = new Set([SHELL, RUNTIME, SHARE_CACHE]);
+    // RUNTIME survives a deploy (rider review X5): only a cache of an older Pyodide or
+    // fitdecode pin, an older shell and older tiles go.
+    const keep = new Set([SHELL, RUNTIME, TILES, SHARE_CACHE]);
+    await adoptRuntime();
     await Promise.all((await caches.keys())
       .filter((k) => k.startsWith("wingfoil-") && !keep.has(k))
       .map((k) => caches.delete(k)));
     await self.clients.claim();
   })());
 });
+
+/**
+ * Carry the pinned runtime over from a cache of the old naming, once.
+ *
+ * Until v117 the runtime cache was `wingfoil-runtime-<VERSION>`, so every rider who has the
+ * app today holds the 14 MB under a name `activate` is about to delete. The files are the
+ * same pinned ones, so they are copied into the new cache before the old one goes, and the
+ * fix for X5 does not cost each of them one last download. Only the pinned Pyodide and the
+ * fitdecode wheel are taken, never the tiles: those were bounded by the version, and still
+ * are. Nothing is fetched. A failure leaves the cache to fill on first use, as it always
+ * could.
+ */
+async function adoptRuntime() {
+  try {
+    const target = await caches.open(RUNTIME);
+    if ((await target.keys()).length) return;
+    const pyodidePath = `/pyodide/v${PYODIDE_VERSION}/`;
+    for (const name of await caches.keys()) {
+      if (!name.startsWith("wingfoil-runtime-") || name === RUNTIME) continue;
+      const old = await caches.open(name);
+      for (const req of await old.keys()) {
+        const url = new URL(req.url);
+        const pinned = url.hostname === "cdn.jsdelivr.net"
+          ? url.pathname.startsWith(pyodidePath)
+          : RUNTIME_HOSTS.includes(url.hostname) && url.pathname.includes("fitdecode");
+        if (!pinned) continue;
+        const res = await old.match(req);
+        if (res) await target.put(req, res);
+      }
+    }
+  } catch { /* the runtime cache fills on first use instead */ }
+}
 
 // The page asks for the swap explicitly, from the "update available" banner.
 self.addEventListener("message", (event) => {
@@ -272,6 +325,10 @@ self.addEventListener("fetch", (event) => {
 
   if (RUNTIME_HOSTS.includes(url.hostname)) {
     event.respondWith(cacheFirst(req, RUNTIME));
+    return;
+  }
+  if (TILE_HOSTS.includes(url.hostname)) {
+    event.respondWith(cacheFirst(req, TILES));
     return;
   }
   // Everything else third-party is passed straight through, never stored: intervals.icu
@@ -322,8 +379,9 @@ async function stashShared(request) {
 
 /**
  * The Pyodide runtime and the wheel: pinned versions at immutable URLs, so once we have
- * a copy there is no reason to ask again. This is the whole offline story — ~12 MB that
- * would otherwise have to come down the wire on every cold start.
+ * a copy there is no reason to ask again. This is the whole offline story — ~14 MB that
+ * would otherwise have to come down the wire on every cold start. The map tiles use it too,
+ * into their own cache.
  */
 async function cacheFirst(request, cacheName) {
   const cache = await caches.open(cacheName);

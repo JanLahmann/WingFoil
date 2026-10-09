@@ -958,30 +958,39 @@ def _cph(d: dict):
     return clean * 3600.0 / duration
 
 
-#: A session must last one rate window to hold the **CPH record**.
+#: **A rate needs 20 minutes on the timer behind it** (Jan, 9 Oct 2026; rider review I12;
+#: docs/algorithms/rates.md, "Too short for a rate"). A ten-minute paddle with five clean
+#: jibes read 28.1 an hour. Under the floor a session holds no point on a rate trend and no
+#: rate record, and the session page prints "too short for a rate" in place of each rate.
+#: The clock is timer time (`_timer_s`), the one every rate divides by. A period applies it
+#: to its own Σ timer time. Twins: the lab's `presentation.RATE_MIN_TIMER_S` (asserted equal
+#: by lab/tests/test_library.py) and the kit's `RateFloor.minTimerS`.
 #:
-#: The rolling window's "never a flattering peak" rule (docs/algorithms.md) applied to a
-#: session: one clean jibe in a four-minute evening sail is fifteen an hour, and a personal
-#: best a rider can set by going home early is not one. `presentation.md` has stated the
-#: floor as a flat rule since 0.10.0 and the phone's *celebration* has always applied it
-#: (`CleanJibeBest.cphMinDurationS`) — but neither records **table** did, so the table and
-#: the confetti could name two different afternoons under one label. The *count* takes no
-#: floor: nine clean jibes are nine clean jibes however long it took.
-CPH_MIN_DURATION_S = 15 * 60
+#: It replaced the CPH record's own floor, one rate window (15 min) of *elapsed* time, which
+#: the phone's celebration had applied since 0.10.0 and both records tables since 7 Sep 2026.
+#: The *count* takes no floor: nine clean jibes are nine clean jibes however long it took.
+RATE_MIN_TIMER_S = 20 * 60
+
+
+def _rate_holds(seconds) -> bool:
+    """Does this much timer time hold a rate? `>=`: exactly 20 minutes does."""
+    return seconds is not None and seconds >= RATE_MIN_TIMER_S
+
+
+def _rated(pick):
+    """`pick`, but only for a session with enough timer time to hold a rate."""
+    def gated(d: dict):
+        return pick(d) if _rate_holds(_timer_s(d)) else None
+    return gated
 
 
 def _cph_record(d: dict):
-    """`_cph`, but only for a session long enough to hold the record.
+    """`_cph`, but only for a session that holds a rate (`RATE_MIN_TIMER_S`).
 
-    The floor is a **length**, not a denominator, so it is measured on T1
-    (`_rate_duration_s`) like every other duration a rider is shown: "sessions of at least
-    15 minutes" means the afternoon lasted a quarter of an hour, not that the recorder ran
-    for one. The rate it gates is still divided by timer time.
+    The floor is on the clock the rate divides by, so the records table can never hold a
+    rate the session's own page refuses to print.
     """
-    seconds = _rate_duration_s(d)
-    if seconds is None or seconds < CPH_MIN_DURATION_S:
-        return None
-    return _cph(d)
+    return _rated(_cph)(d)
 
 
 def _clean_jibe_rate(d: dict):
@@ -1024,8 +1033,8 @@ SESSION_RECORD_KINDS = [
      lambda d: _num(d.get("foilPct")), None),
     ("mostCleanJibes", "Most clean jibes", "", 0, _clean_jibes, None),
     ("bestCph", "Best CPH", "/h", 2, _cph_record,
-     f"Clean jibes per hour of session time. Sessions of at least "
-     f"{int(CPH_MIN_DURATION_S // 60)} minutes."),
+     f"Clean jibes per hour on the timer. Sessions of at least "
+     f"{int(RATE_MIN_TIMER_S // 60)} minutes."),
     ("bestCleanJibeRate", "Best clean-jibe rate", "%", 1, _clean_jibe_rate,
      f"Sessions with at least {MIN_JIBES_FOR_RATE} jibes."),
     ("longestDryStreak", "Longest dry streak", "", 0,
@@ -1267,21 +1276,16 @@ def _charts(ds: list, policy: str = DEFAULT_SPEED_RECORD_POLICY) -> list:
         {"key": "cleanJibes", "label": "Clean jibes", "unit": "per session",
          "lines": [{"key": "cleanJibes", "label": "clean jibes", "role": "primary",
                     "points": _points(ds, _clean_jibes)}]},
+        # Every rate line drops the sessions under `RATE_MIN_TIMER_S` (9 Oct 2026): a
+        # ten-minute paddle's 28 clean jibes an hour is a spike the afternoon never earned.
         {"key": "cph", "label": "CPH", "unit": "clean jibes / h",
          "lines": [{"key": "cph", "label": "CPH", "role": "primary",
-                    "points": _points(ds, _cph)}]},
-        # **Rates are additive.** CPH is the celebration number and it keeps the front
-        # screen, but it is one of three and the other two answer questions of their own:
-        # JPH is "did I get away with them", TPH is "how busy was the afternoon". They sit
-        # beside CPH rather than replacing it, in the order a rider reads them
-        # (docs/algorithms/rates.md "Session rates"), and iOS draws the same three under the same
-        # three names.
-        {"key": "jph", "label": "JPH", "unit": "jibes / h",
-         "lines": [{"key": "jph", "label": "JPH", "role": "primary",
-                    "points": _points(ds, _jph)}]},
-        {"key": "tph", "label": "TPH", "unit": "turns / h",
-         "lines": [{"key": "tph", "label": "TPH", "role": "primary",
-                    "points": _points(ds, _tph)}]},
+                    "points": _points(ds, _rated(_cph))}]},
+        # **CPH, then ONE dry-turn rate** — the session page's rule over a range (Jan, 25
+        # Sep 2026; rider review I20, 9 Oct 2026): JPH while no session in the range has a
+        # tack, TPH once one does. On a jibes-only library the two were the same line drawn
+        # twice. `dry_turn_rate_key` is the choice; iOS makes it in `TrendPoint.dryTurnRate`.
+        _dry_turn_chart(ds),
         # The one speed series on the page, in knots like every other speed in both apps.
         # `certify` marks the points a class-(c) recording set: the value is drawn, and it
         # is drawn marked, exactly as the records table marks an all-time best it cannot
@@ -1305,6 +1309,28 @@ def _charts(ds: list, policy: str = DEFAULT_SPEED_RECORD_POLICY) -> list:
               "points": _points(ds, lambda d: _side_pct(d, "starboard"))},
          ]},
     ]
+
+
+def dry_turn_rate_key(ds: list) -> str:
+    """`"tph"` once any session in `ds` has a counted tack, else `"jph"`.
+
+    The range's twin of the session page's rule (docs/presentation/key-metrics.md): a
+    tacking rider's jibe rate leaves part of his afternoons out, and on a jibes-only library
+    TPH and JPH are one number twice. iOS: `TrendPoint.dryTurnRate(_:)`.
+    """
+    tacks = any((_count((d.get("turns") or {}).get("tacks")) or 0) > 0 for d in ds)
+    return "tph" if tacks else "jph"
+
+
+def _dry_turn_chart(ds: list) -> dict:
+    """The one dry-turn rate chart `dry_turn_rate_key` picks, rate floor applied."""
+    if dry_turn_rate_key(ds) == "tph":
+        return {"key": "tph", "label": "TPH", "unit": "turns / h",
+                "lines": [{"key": "tph", "label": "TPH", "role": "primary",
+                           "points": _points(ds, _rated(_tph))}]}
+    return {"key": "jph", "label": "JPH", "unit": "jibes / h",
+            "lines": [{"key": "jph", "label": "JPH", "role": "primary",
+                       "points": _points(ds, _rated(_jph))}]}
 
 
 def _on_water_s(d: dict):
@@ -1592,7 +1618,7 @@ PERIOD_BLOCK = [
     ("cph", "CPH · clean jibes per hour", _f_rate),
     ("turns", "turns", _f_int),
     ("cleanJibeRate", "clean-jibe rate", _f_pct),
-    ("wph", "WPH · falls per hour", _f_rate),
+    ("wph", "falls / h", _f_rate),
     ("best2s", "best 2 s", _f_kn),
     ("best10s", "best 10 s", _f_kn),
     ("longestFlight", "longest flight", _f_clock),
@@ -1640,7 +1666,9 @@ def _period_facts(ds: list, spots: int) -> dict:
     # rather than a reuse of `hours`: the one line that blurred them is the bug this pair
     # replaces.
     timer_s = _sum(ds, _timer_s) or 0.0
-    rate_hours = timer_s / 3600.0 if timer_s > 0 else None
+    # The rate floor, over the period's own total (9 Oct 2026): a month holding one
+    # ten-minute paddle has no rate to print, a month of ten of them has 100 minutes.
+    rate_hours = timer_s / 3600.0 if _rate_holds(timer_s) else None
     clean = _sum(ds, _clean_jibes)
     jibes = _sum(ds, lambda d: _count((d.get("turns") or {}).get("jibes")))
     wet = _sum(ds, lambda d: _count(d.get("wetExits")))
@@ -1739,7 +1767,7 @@ def period_card(ds: list) -> dict:
     # to the denominator either.
     laddered = [d for d in ds if isinstance((d.get("turns") or {}).get("outcomes"), dict)]
     timer_s = _sum(laddered, _timer_s) or 0.0
-    rate_hours = timer_s / 3600.0 if timer_s > 0 else None
+    rate_hours = timer_s / 3600.0 if _rate_holds(timer_s) else None   # the rate floor
     dry_kind = None
     dry_rate = None
     if outcomes is not None:

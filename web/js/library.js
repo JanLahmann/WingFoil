@@ -185,7 +185,9 @@ export async function refresh() {
     hooks.setCount(0);
     return [];
   }
-  hooks.setCount(entries.length);
+  // The second count is the rider's own: the bundled example is not a way in, so the
+  // ways-in card stays whole beside it (Jan, 9 Oct 2026; rider review I1).
+  hooks.setCount(entries.length, entries.filter((e) => !e.example).length);
   el("lib-export").disabled = entries.length === 0;
   await renderSub(entries);
   renderRows(entries);
@@ -377,12 +379,14 @@ function tally(o) {
   if (!o) return '<span class="dim">—</span>';
   // **With its words** (Jan, Beta 75; pattern H). "9 · 9 · 12" is the ladder in three
   // colours and nothing else, and a colour is not a word. The three words are the phone's
-  // own (`OutcomeTally`): flew, touch, fell.
+  // own (`OutcomeTally`): flew, touchdown, fell in — the key-metrics caption's ladder
+  // (rider review I23, 9 Oct 2026; "touch" and "fell" until then).
   const part = (value, ink, word) =>
     `<span class="${ink}">${int(value)}<i>${word}</i></span>`;
+  const touchdowns = o.touchdown === 1 ? "touchdown" : "touchdowns";
   return `<span class="tally">${part(o.flewThrough, "flew", "flew")}<b>·</b>` +
-         `${part(o.touchdown, "touchdown", "touch")}<b>·</b>` +
-         `${part(o.fellIn, "fell", "fell")}</span>`;
+         `${part(o.touchdown, "touchdown", touchdowns)}<b>·</b>` +
+         `${part(o.fellIn, "fell", "fell in")}</span>`;
 }
 
 /* ------------------------------------------------------------------- actions */

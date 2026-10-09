@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""The getting-started guide has one source; this writes both copies of it.
+"""The getting-started guide has one source; this writes the three copies of it.
 
-    python3 web/tools/make_start.py            # write both outputs
-    python3 web/tools/make_start.py --check    # exit 1 if either is stale
+    python3 web/tools/make_start.py            # write the three outputs
+    python3 web/tools/make_start.py --check    # exit 1 if any of them is stale
 
 Source: ``docs/guide/getting-started.json`` — the framing, the routes in order with their
-channels and their steps, the two extras, the line that names the web page, the two
-Settings sentences, and the web-only troubleshooting and report lists.
+channels, their steps and their browser lines, the two extras, the two Settings sentences,
+and the web-only troubleshooting and report lists.
 
 Outputs:
 
@@ -15,10 +15,16 @@ Outputs:
    body and its ``items:`` from it, and Settings reads the two sentences from it, so a
    wording is written in one file and rendered in three places.
 2. The block of ``web/start/index.html`` between ``<!-- guide:begin -->`` and
-   ``<!-- guide:end -->`` — the route cards, the troubleshooting list and the report
-   checklist, in the page's own markup (``article.panel.piece`` with an ``ol.steps-flow``
-   inside, ``dl.terms`` for the two lists). The head, the hero, the hand-written sections
-   around the block and the footer are not touched.
+   ``<!-- guide:end -->`` — the route cards with their browser lines, the dry run and the
+   troubleshooting list, in the page's own markup (``article.panel.piece`` with an
+   ``ol.steps-flow`` inside, ``dl.terms`` for the list). The head, the hero, the
+   hand-written sections around the block and the footer are not touched.
+3. The block of ``web/beta/index.html`` between the same two markers — *What to test* (the
+   extras whose ``webPage`` is ``beta``) and the report checklist. /start/ did five jobs
+   until 9 October 2026 (rider review S9: "I wanted to install. I got a tester brief, a bug
+   form, a roadmap and 30 builds of release notes"); it installs and gets the first session
+   in now, and the tester's half is /beta/. The markers are the same on both pages so that
+   ``verify_copy.py`` and ``verify_unique.py`` treat both blocks as this file's output.
 
 It also enforces the word budgets ``HelpBudgetTests`` enforces on the Swift side — 30 words
 for a summary, a step, a troubleshooting answer or a report line, 45 for the framing — so
@@ -47,6 +53,8 @@ CLASSES = REPO / "docs" / "copy" / "recording-classes.json"
 SWIFT_OUT = (REPO / "ios" / "WingFoilKit" / "Sources" / "WingFoilKit" / "Help"
              / "GettingStartedGuide.swift")
 PAGE = WEB / "start" / "index.html"
+#: The tester's half of the guide: what to test and what a good report says.
+BETA_PAGE = WEB / "beta" / "index.html"
 
 BEGIN = "<!-- guide:begin -->"
 END = "<!-- guide:end -->"
@@ -78,14 +86,15 @@ def budget(problems: list[str], where: str, text: str, limit: int) -> None:
 
 
 def class_names() -> dict[str, str]:
-    """``{"bPlus": "Class B+"}`` — the kit's own name for each class, cut at the ``·``.
+    """``{"bPlus": "Measured speed and the wrist"}`` — the kit's own name for each class.
 
-    ``docs/copy/recording-classes.json`` writes every name as *the letter and the thing*
-    ("Class B+ · Apple Watch app"). A route card already says the thing, in its own title,
-    so the pill prints the letter half and links to the table that carries the rest.
+    ``docs/copy/recording-classes.json`` names every class by what the rider gets, with no
+    letter (rider review X9, 9 Oct 2026; it was "Class B+ · Apple Watch app", and the pill
+    printed the letter half). The pill reads "You get measured speed" and links to the
+    table that says the rest.
     """
     rows = json.loads(CLASSES.read_text(encoding="utf-8"))["classes"]
-    return {row["id"]: row["name"].split(" · ")[0] for row in rows}
+    return {row["id"]: row["name"] for row in rows}
 
 
 def check_budgets(doc: dict) -> list[str]:
@@ -100,6 +109,12 @@ def check_budgets(doc: dict) -> list[str]:
     for entry in doc["routes"] + doc["extras"]:
         where = entry["id"]
         budget(problems, f"{where}.summary", entry["summary"], SUMMARY_BUDGET)
+        if entry.get("notice"):
+            budget(problems, f"{where}.notice", entry["notice"], SUMMARY_BUDGET)
+        if entry.get("browser"):
+            budget(problems, f"{where}.browser", entry["browser"], SUMMARY_BUDGET)
+        if entry.get("webPage", "start") not in ("start", "beta"):
+            problems.append(f"{where}.webPage: {entry['webPage']!r} is not start or beta")
         for i, step in enumerate(entry["steps"], 1):
             budget(problems, f"{where}.step {i}", step["detail"], STEP_BUDGET)
     for key in ("intervalsIcu", "strava"):
@@ -109,6 +124,12 @@ def check_budgets(doc: dict) -> list[str]:
     for group in ("troubleshooting", "report"):
         for entry in doc[group]["entries"]:
             budget(problems, f"{group}: {entry['term']}", entry["detail"], SUMMARY_BUDGET)
+
+    # Every way in says what the browser app does with it (rider review S10): a card
+    # without the line is a route that names two of the three apps.
+    for route in doc["routes"]:
+        if not route.get("browser"):
+            problems.append(f"{route['id']}.browser: every way in needs a browser line")
 
     ids = [e["id"] for e in doc["routes"] + doc["extras"]]
     if len(ids) != len(set(ids)):
@@ -259,9 +280,10 @@ public struct GettingStartedRoute: Sendable, Equatable, Identifiable {
 /// The app used to say "the same guide, on the web" about a page that had been written
 /// separately and said different things (Jan, 15 September 2026). It is the same guide
 /// now: `docs/guide/getting-started.json` holds the framing, the routes, the steps and the
-/// two Settings sentences, and `web/tools/make_start.py` writes this file and the block of
-/// `web/start/index.html` from it. `--check` fails while either is stale, and
-/// `GettingStartedGuideTests` fails if the help topic stops matching this data.
+/// two Settings sentences, and `web/tools/make_start.py` writes this file and the generated
+/// blocks of `web/start/index.html` and `web/beta/index.html` from it. `--check` fails while
+/// any of the three is stale, and `GettingStartedGuideTests` fails if the help topic stops
+/// matching this data.
 public enum GettingStartedGuide {
 '''
 
@@ -388,6 +410,18 @@ def html_card(entry: dict, names: dict[str, str], *, open_: bool = False) -> lis
             '      <p class="piece-class"><a class="tag class-pill" '
             f'href="#watches">You get {short[0].lower()}{short[1:]}</a></p>',
         ]
+    # A route's one warning, above the fold: a reader choosing a route has to see it before
+    # he takes it (rider review S5, 9 Oct 2026). Web only, see the source's _readme.
+    if entry.get("notice"):
+        lines += [f'      <p class="note piece-note">{html_text(entry["notice"])}</p>']
+    # What the third app does with this way in (rider review S10, 9 Oct 2026). The steps
+    # under the fold are the iPhone's; this line is the browser's, above it.
+    if entry.get("browser"):
+        lines += [
+            '      <p class="note piece-browser"><strong><a href="/app/" '
+            'data-umami-event="CleanJibe: start-route-browser">In the browser app</a>.'
+            f'</strong> {html_text(entry["browser"])}</p>',
+        ]
     steps = len(entry["steps"])
     lines += [
         "      <details open>" if open_ else "      <details>",
@@ -421,17 +455,25 @@ def html_terms(entries: list[dict]) -> list[str]:
     return lines
 
 
+HEADER = [
+    "  <!-- GENERATED by web/tools/make_start.py from docs/guide/getting-started.json —",
+    "       the same file the app's Getting started topic is built from, which is what",
+    '       "the same guide, with every step, on the web" means. Do not edit between the',
+    "       markers: regenerate, and `make_start.py --check` fails while it is stale.",
+    "       The head, the hero, the hand-written sections around this block and the",
+    "       footer are the page's own. -->",
+    "",
+]
+
+
+def extras_for(doc: dict, page: str) -> list[dict]:
+    return [e for e in doc["extras"] if e.get("webPage", "start") == page]
+
+
 def render_html(doc: dict) -> str:
+    """/start/'s block: the ways in, the dry run, and what to do when one does not work."""
     sections = doc["sections"]
-    lines = [
-        BEGIN,
-        "  <!-- GENERATED by web/tools/make_start.py from docs/guide/getting-started.json —",
-        "       the same file the app's Getting started topic is built from, which is what",
-        '       "the same guide, with every step, on the web" means. Do not edit between the',
-        "       markers: regenerate, and `make_start.py --check` fails while it is stale.",
-        "       The head, the hero, the hand-written sections around this block and the",
-        "       footer are the page's own. -->",
-        "",
+    lines = [BEGIN] + HEADER + [
         '  <section class="home-section" id="routes">',
         f'    <h2>{html_text(sections["routes"]["title"])}</h2>',
         f'    <p class="section-lede">{html_text(doc["framing"])}</p>',
@@ -445,7 +487,7 @@ def render_html(doc: dict) -> str:
     names = class_names()
     for index, route in enumerate(doc["routes"]):
         lines += html_card(route, names, open_=index == 0)
-    for extra in doc["extras"]:
+    for extra in extras_for(doc, "start"):
         lines += html_card(extra, names)
     lines += ["  </section>", ""]
 
@@ -461,7 +503,23 @@ def render_html(doc: dict) -> str:
         f'{html_text(sections["troubleshooting"]["lede"])}</summary>',
     ]
     lines += ["  " + line for line in html_terms(doc["troubleshooting"]["entries"])]
-    lines += ["    </details>", "  </section>", ""]
+    lines += ["    </details>", "  </section>", "", END]
+    return "\n".join(lines)
+
+
+def render_beta_html(doc: dict) -> str:
+    """/beta/'s block: what to test, open, and the checklist a good report follows."""
+    sections = doc["sections"]
+    names = class_names()
+    lines = [BEGIN] + HEADER + [
+        '  <section class="home-section" id="test">',
+        f'    <h2>{html_text(sections["test"]["title"])}</h2>',
+        f'    <p class="section-lede">{html_text(sections["test"]["lede"])}</p>',
+        "",
+    ]
+    for extra in extras_for(doc, "beta"):
+        lines += html_card(extra, names, open_=True)
+    lines += ["  </section>", ""]
 
     lines += [
         '  <section class="home-section" id="report">',
@@ -473,11 +531,11 @@ def render_html(doc: dict) -> str:
     return "\n".join(lines)
 
 
-def splice(page: str, block: str) -> str:
+def splice(page: str, block: str, where: Path = PAGE) -> str:
     start = page.find(BEGIN)
     end = page.find(END)
     if start < 0 or end < 0:
-        raise SystemExit(f"{PAGE}: the {BEGIN} / {END} markers are not both there")
+        raise SystemExit(f"{where}: the {BEGIN} / {END} markers are not both there")
     return page[:start] + block + page[end + len(END):]
 
 
@@ -499,13 +557,18 @@ def main(argv=None) -> int:
         return 1
 
     swift = render_swift(doc)
-    page = splice(PAGE.read_text(encoding="utf-8"), render_html(doc))
+    pages = {
+        PAGE: splice(PAGE.read_text(encoding="utf-8"), render_html(doc), PAGE),
+        BETA_PAGE: splice(BETA_PAGE.read_text(encoding="utf-8"), render_beta_html(doc),
+                          BETA_PAGE),
+    }
 
     stale = []
     if not SWIFT_OUT.exists() or SWIFT_OUT.read_text(encoding="utf-8") != swift:
         stale.append(SWIFT_OUT)
-    if PAGE.read_text(encoding="utf-8") != page:
-        stale.append(PAGE)
+    for path, text in pages.items():
+        if path.read_text(encoding="utf-8") != text:
+            stale.append(path)
 
     if args.check:
         if stale:
@@ -513,14 +576,17 @@ def main(argv=None) -> int:
             for path in stale:
                 print(f"  {path.relative_to(REPO)}", file=sys.stderr)
             return 1
-        print("getting-started guide: both outputs match docs/guide/getting-started.json")
+        print("getting-started guide: all three outputs match "
+              "docs/guide/getting-started.json")
         return 0
 
     SWIFT_OUT.write_text(swift, encoding="utf-8")
-    PAGE.write_text(page, encoding="utf-8")
+    for path, text in pages.items():
+        path.write_text(text, encoding="utf-8")
     routes = len(doc["routes"])
     notes = len(doc["extras"])
-    print(f"wrote {SWIFT_OUT.relative_to(REPO)} and {PAGE.relative_to(REPO)} "
+    print(f"wrote {SWIFT_OUT.relative_to(REPO)}, {PAGE.relative_to(REPO)} and "
+          f"{BETA_PAGE.relative_to(REPO)} "
           f"({routes} routes, {notes} notes, "
           f"{len(doc['troubleshooting']['entries'])} troubleshooting, "
           f"{len(doc['report']['entries'])} report lines)")

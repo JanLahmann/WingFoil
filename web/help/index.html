@@ -52,8 +52,9 @@
        is in the footer, once, where a reader looks for it.
        ONE HEADER PER PRODUCT: /app/ has its own, the mark and the Menu button, and
        carries no site nav at all. -->
-<!-- sitenav:begin — COPIED VERBATIM ON ALL FOUR READER PAGES (/, /start/, /help/,
-     /privacy/); web/tools/verify_links.py compares this block byte for byte.
+<!-- sitenav:begin — COPIED VERBATIM ON ALL SIX READER PAGES (/, /start/, /beta/,
+     /whats-new/, /help/, /privacy/); web/tools/verify_links.py compares this block byte
+     for byte.
 
      THE WORDMARK AND ONE BUTTON (Jan, 28 September 2026, on a photo of the old header).
      The row carried Get started, Help and Open the app. It is the mark, which links home,
@@ -145,7 +146,7 @@
         <dd>Dry turns per hour, tacks and jibes together. It takes the place of JPH once a session has tacks in it. <span class="muted small" data-copy="aside">Shows on the phone, the share card and the website.</span></dd>
       </div>
       <div class="term">
-        <dt>WPH</dt>
+        <dt>falls / h</dt>
         <dd>How often you fell in, per hour. Every fall counts, in a turn or not. <span class="muted small" data-copy="aside">Shows on the phone, the share card and the website.</span></dd>
       </div>
       <div class="term">
@@ -210,7 +211,7 @@
       <a class="help-chip" href="#section-start">Start here<span class="help-count">3 pages</span></a>
       <a class="help-chip" href="#section-record">Record a session<span class="help-count">3 pages</span></a>
       <a class="help-chip" href="#section-bringIn">Bring it in<span class="help-count">5 pages</span></a>
-      <a class="help-chip" href="#section-readNumbers">Read the numbers<span class="help-count">15 pages</span></a>
+      <a class="help-chip" href="#section-readNumbers">Read the numbers<span class="help-count">16 pages</span></a>
       <a class="help-chip" href="#section-share">Share<span class="help-count">3 pages</span></a>
       <a class="help-chip" href="#section-library">Your library<span class="help-count">4 pages</span></a>
       <a class="help-chip" href="#section-somethingWrong">Something wrong?<span class="help-count">5 pages</span></a>
@@ -279,35 +280,34 @@
         <p>Every watch that records a GPS track works. A number your file cannot support is left blank, never guessed.</p>
         <p>Two things set the rows apart. First, <strong>measured speed</strong>: your file holds the watch&rsquo;s own speed, so your speed records count. Without it, speed is worked out from positions and the records are marked estimated.</p>
         <p><strong>Pump strokes and takeoff attempts</strong> need a wrist accelerometer recorded during the session. Only the CleanJibe watch apps record one.</p>
-        <p>Each row ends with the class the Import screen prints.</p>
         <dl class="terms">
           <div class="term">
             <dt>Garmin, with the CleanJibe watch app</dt>
-            <dd>You get everything, and each verdict buzzes on your wrist. It adds pump strokes and takeoff attempts. Class A · Garmin watch app.</dd>
+            <dd>You get everything, and each verdict buzzes on your wrist. It adds pump strokes and takeoff attempts.</dd>
           </div>
           <div class="term">
             <dt>Garmin, with Garmin&rsquo;s own profile or another app</dt>
-            <dd>You get every verdict and flight, with measured speed records. Your old sessions come in through intervals.icu too. Class B · any file with measured speed.</dd>
+            <dd>You get every verdict and flight, with measured speed records. Your old sessions come in through intervals.icu too.</dd>
           </div>
           <div class="term">
             <dt>Apple Watch, with Apple&rsquo;s Workout app</dt>
-            <dd>Bring it in through Strava or intervals.icu. In the beta, Apple Health hands it over with measured speed. Class B · any file with measured speed.</dd>
+            <dd>Bring it in through Strava or intervals.icu. In the beta, Apple Health hands it over with measured speed.</dd>
           </div>
           <div class="term">
             <dt>Apple Watch, with the CleanJibe watch app</dt>
-            <dd>It is in the beta. You get measured speed, plus pump strokes and takeoff attempts from your wrist. Class B+ · Apple Watch app.</dd>
+            <dd>It is in the beta. You get measured speed, plus pump strokes and takeoff attempts from your wrist.</dd>
           </div>
           <div class="term">
             <dt>Polar, Suunto, COROS and the rest</dt>
-            <dd>A FIT gives you measured speed records, through intervals.icu or shared in by hand. A .gpx carries positions only. Class C · positions only.</dd>
+            <dd>A FIT gives you measured speed records, through intervals.icu or shared in by hand. A .gpx carries positions only, so its speed is estimated.</dd>
           </div>
           <div class="term">
             <dt>Anything that ends up on Strava</dt>
-            <dd>You get every verdict and flight, with speed estimated from positions. Connect Strava and pick the sessions. Class C · positions only.</dd>
+            <dd>You get every verdict and flight, with speed estimated from positions. Connect Strava and pick the sessions.</dd>
           </div>
           <div class="term">
             <dt>A phone in a pouch, or no watch at all</dt>
-            <dd>Your flights, turns and map, with speed estimated from positions. Record with any GPS app and share the file in. Class C · positions only.</dd>
+            <dd>Your flights, turns and map, with speed estimated from positions. Record with any GPS app and share the file in.</dd>
           </div>
         </dl>
         <p class="piece-foot" data-copy="related">Read next: <a href="#help-shareFromWatchApp">Share from your watch app straight into CleanJibe</a> · <a href="#help-appleWatchApp">Recording with the CleanJibe Apple Watch app</a> · <a href="#help-stravaImport">Import from Strava</a></p>
@@ -386,7 +386,7 @@
         </div>
         <p class="what">Ride with a tracker app on a phone in a pouch. It comes in through Strava or as a file.</p>
         <p>A phone records a GPS track as well as most watches do. CleanJibe reads it the same way.</p>
-        <p>The Import screen calls it Class C · positions only, because the speed is worked out from the positions.</p>
+        <p>The Import screen calls it positions only, because the speed is worked out from the positions.</p>
         <p>Foil time, flights, every turn verdict and clean jibe, the wind axis. Speed records are estimated from positions and marked so, and there are no pump strokes or takeoff attempts.</p>
         <p>Keep the phone dry, still and facing the sky. A waterproof pouch on the upper arm or high on the chest works.</p>
         <p>A pocket at hip height spends half the session underwater. Start the recording on the beach.</p>
@@ -447,7 +447,7 @@
           </div>
           <div class="term">
             <dt>Where Garmin Connect shows the jibes</dt>
-            <dd>Under Connect IQ on the activity page: jibes, tacks, foil time, flights and the best 2 seconds. They appear once you have set a wind direction on the watch.</dd>
+            <dd>Under Connect IQ on the activity page: jibes, tacks, foil time, flights and the best 2 seconds. The watch works the wind direction out after a few minutes of flying.</dd>
           </div>
           <div class="term">
             <dt>Why the Runs card stays empty</dt>
@@ -490,6 +490,10 @@
           <div class="term">
             <dt>If connecting is refused</dt>
             <dd>Strava lets a new app connect a limited number of riders. That says nothing about your account. Tell us through Menu &rarr; Support &amp; ideas.</dd>
+          </div>
+          <div class="term">
+            <dt>Strava full? Take the file</dt>
+            <dd>On a computer, open the activity on strava.com and choose ⋯ &rarr; Export Original. AirDrop it to the iPhone, then Import &rarr; FIT or ZIP….</dd>
           </div>
           <div class="term">
             <dt>Disconnecting</dt>
@@ -548,6 +552,10 @@
             <dd>It reads a .fit, a .gpx or a .tcx from any watch. It has no beta, so every rider gets the same version.</dd>
           </div>
           <div class="term">
+            <dt>From a Garmin</dt>
+            <dd>Garmin Connect&rsquo;s phone app cannot export. Paste your intervals.icu key into the browser app&rsquo;s Settings instead, or export the file at connect.garmin.com on a computer.</dd>
+          </div>
+          <div class="term">
             <dt>Install it from the browser</dt>
             <dd>If your browser offers it, install the page. It gets an icon on your home screen, opens like an app and works with no signal.</dd>
           </div>
@@ -586,7 +594,7 @@
     <details id="section-readNumbers">
       <summary class="what">
         <span class="what-line">Read the numbers</span>
-        <span class="what-more">15 pages</span>
+        <span class="what-more">16 pages</span>
       </summary>
 
       <h3 class="help-group">On the foil</h3>
@@ -607,7 +615,7 @@
           </div>
           <div class="term">
             <dt>The dots</dt>
-            <dd>Verdicts on one ladder: green flew through, orange touched down, red fell in. Grey is a course change and no verdict at all.</dd>
+            <dd>Verdicts on one ladder: green flew through, orange touchdown, red fell in. Grey is a course change and no verdict at all.</dd>
           </div>
           <div class="term">
             <dt>Solid or hollow</dt>
@@ -768,7 +776,7 @@
           <h3>Turn outcomes: flew through, touchdown, fell in</h3>
         </div>
         <p class="what">What actually happened to the foil in the turn.</p>
-        <p>Every turn ends one of three ways: you flew through, touched down, or fell in. CleanJibe watches from the turn start until you are flying again.</p>
+        <p>Every turn ends one of three ways: flew through, touchdown, or fell in. CleanJibe watches from the turn start until you are flying again.</p>
         <p>Flying again means 2 s back above 70 % of your entry speed. The window closes after 12 s.</p>
         <p>A jibe exited at marginal speed can bleed off for 6 to 12 seconds before the foil stalls. That mush-out is the jibe&rsquo;s fault. A jibe you power out of closes its window in a second or two.</p>
         <p>Inside that window, your speed is always read. So is the barometer, because a wrist under water looks like a huge drop in altitude. On a CleanJibe watch recording, the accelerometer is read too.</p>
@@ -813,7 +821,21 @@
             <dd>The share of your entry speed you held through the turn, 0 to 100. It is the evidence behind &ldquo;clean&rdquo;, printed beside every turn.</dd>
           </div>
         </dl>
-        <p class="piece-foot" data-copy="related">Read next: <a href="#help-turnOutcomes">Turn outcomes: flew through, touchdown, fell in</a></p>
+        <p class="piece-foot" data-copy="related">Read next: <a href="#help-turnOutcomes">Turn outcomes: flew through, touchdown, fell in</a> · <a href="#help-rates">Rates</a></p>
+      </article>
+
+      <article class="panel piece" id="help-rates">
+        <div class="piece-head">
+          <h3>Rates</h3>
+        </div>
+        <p class="what">Your jibes and falls per hour on the water, and when a session is too short for one.</p>
+        <p>A rate is a count per hour on the water. The hour is your timer time: the recording minus its pauses and gaps.</p>
+        <p><strong>CPH</strong> counts your clean jibes, the jibe you were working for.</p>
+        <p><strong>JPH</strong> counts your dry jibes: flew through or touchdown. Falling in more often never raises it.</p>
+        <p>Once a session has a tack, <strong>TPH</strong> takes its place and counts your dry turns.</p>
+        <p><strong>falls / h</strong> counts every fall, in a turn or not.</p>
+        <p>Under 20 minutes on the timer, a session shows no rate. Five clean jibes in ten minutes would read as 30 an hour. Trends and records leave it out too.</p>
+        <p class="piece-foot" data-copy="related">Read next: <a href="#help-turnSuccess">Clean jibes</a> · <a href="#help-falls">Fell in</a></p>
       </article>
 
       <article class="panel piece" id="help-portStarboard">
@@ -939,7 +961,7 @@
           <h3>Share cards</h3>
         </div>
         <p class="what">One picture of a session, made to post.</p>
-        <p>Any session becomes a card. It holds the track, the numbers that matter, and where the analysis came from. Pick a shape and the big number: clean jibes, top speed or tacks. A photo of yours can go behind it.</p>
+        <p>Any session becomes a card. It holds the track, the numbers that matter, and where the analysis came from. Pick a shape and the big number: clean jibes, best 2 s or tacks. Your own photo can go behind it.</p>
         <p>Or pick the map as the background and the track is drawn over the water you rode. That one needs a connection. Without one the card comes out plain.</p>
         <p>A trip, a month or a season makes a card too. Draw all its tracks on one another, one session big, or a collage of them.</p>
         <p>The card is made on your phone and goes nowhere until you send it.</p>
@@ -1002,6 +1024,10 @@
             <dt>A newer backup</dt>
             <dd>CleanJibe will not open a backup from a newer version of itself. Update the app and try again. An older backup is brought up to date.</dd>
           </div>
+          <div class="term">
+            <dt>Leaving the beta</dt>
+            <dd>Back up in the beta, then install the App Store version. If the beta updated your library, a later App Store update opens that backup.</dd>
+          </div>
         </dl>
         <p class="piece-foot" data-copy="related">Read next: <a href="#help-riderAttribution">Sessions someone else rode</a> · <a href="#help-shareFit">Sending a session to a friend</a> · <a href="#help-privacy">What leaves your phone</a></p>
       </article>
@@ -1022,7 +1048,7 @@
           <h3>What leaves your phone</h3>
         </div>
         <p class="what">There is no account and no server, and nothing is uploaded. The whole policy is on the web.</p>
-        <p>There is no CleanJibe account and no CleanJibe server. A session you import is analysed on this phone and stays on it. There is no advertising, no analytics and no tracking of any kind.</p>
+        <p>There is no CleanJibe account and no CleanJibe server. A session you import is analysed on this phone and stays on it. The iPhone app has no advertising, no analytics and no tracking.</p>
         <p>The app talks to four places, each only when you use it. Your own login goes to intervals.icu and Strava. Apple Maps loads while a map is on screen. To name a new spot, it sends one rounded position.</p>
         <p>On the App Store release, CleanJibe never asks for your location. Every coordinate it draws was already inside a file you imported. The beta and dev builds ask for one, in one place each. The privacy page says where.</p>
         <dl class="terms">
@@ -1033,6 +1059,10 @@
           <div class="term">
             <dt>Treat it like a password</dt>
             <dd>It opens your intervals.icu account. Clear the field in Settings to remove it, or regenerate it in Developer Settings. The old key stops working at once.</dd>
+          </div>
+          <div class="term">
+            <dt>What the website counts</dt>
+            <dd>cleanjibe.org and the browser app count page views and taps with umami. It sets no cookies. It never sees your sessions, your files or any number off a ride.</dd>
           </div>
         </dl>
         <p class="piece-foot" data-copy="related">Read next: <a href="#help-shareFit">Sending a session to a friend</a> · <a href="#help-libraryBackup">Backing up your library</a></p>
@@ -1197,7 +1227,7 @@
 
 <footer>
   <p>CleanJibe is open wingfoil tracking: a watch app, an iPhone app and a browser app.</p>
-<!-- sitefoot:begin — COPIED VERBATIM ON ALL SIX READER PAGES, and compared byte for byte
+<!-- sitefoot:begin — COPIED VERBATIM ON EVERY READER PAGE AND /app/, and compared byte for byte
      by web/tools/verify_links.py exactly the way the site nav in the topbar is. Until
      15 September 2026 every footer carried a different subset of the site; it names every
      page now, in the site nav's own order, with the door as a text link and Privacy
@@ -1205,7 +1235,9 @@
      is non-commercial and not a trader, so none is owed — Jan). It lost three rows on
      19 September 2026 and a fourth on the 20th,
      because the pages went: Which watch is /start/#watches, What it measures is /help/,
-     What's new is /start/#whats-new, and Get the beta is /start/#apps.
+     What's new was /start/#whats-new, and Get the beta is /start/#apps. It gained two on
+     9 October 2026, when /start/ split into three pages with one job each (rider review
+     S9): The beta (/beta/) and What's new (/whats-new/).
 
      The hrefs are ROOT-RELATIVE for the same reason the site nav's are: one block has to
      serve a page at the site root and a page a directory down.
@@ -1213,11 +1245,13 @@
      The Tell us line is here rather than in <main>. It used to be a 55-word paragraph inside
      the body of six pages, saying the same thing six times; the sentence itself is
      docs/copy/feedback.json's `invitation` and is pinned by web/tools/verify_copy.py, so it
-     may move but it may not be reworded. The real ask is /start/#tell, which is where a
+     may move but it may not be reworded. The real ask is /beta/#tell, which is where a
      tester with something to say is standing. -->
   <p>
     <a href="/">About CleanJibe</a> ·
     <a href="/start/">Get started</a> ·
+    <a href="/beta/">The beta</a> ·
+    <a href="/whats-new/">What&rsquo;s new</a> ·
     <a href="/help/">Help</a> ·
     <a href="/app/">Open the app</a> ·
     <a href="https://github.com/JanLahmann/WingFoil" rel="noopener" data-umami-event="CleanJibe: github">GitHub</a> ·

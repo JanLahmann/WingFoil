@@ -219,7 +219,36 @@ export async function putSession({ digest, analysisJson, fitBytes, replaceId = n
   kept.push(entry);
   kept.sort(newestFirst);
   await writeIndex(kept);
+  // After the write, so the browser is asked about a library that has something in it.
+  // Not for the example: nobody's afternoon is lost if the bundled one is cleared.
+  if (!entry.example) keepData();
   return entry;
+}
+
+/**
+ * Ask the browser to keep this site's data (rider review X3, 9 Oct 2026).
+ *
+ * By default a browser may clear a site's storage under pressure, and a rider who comes
+ * back to an empty library has lost every afternoon he saved here. `persist()` asks for the
+ * storage to be kept until he clears it himself. Chrome and Safari answer from how the site
+ * is used, with no dialog. Firefox asks the rider, which is why this runs after a session
+ * of his own is saved, the moment the question has an obvious reason, and at most once per
+ * page load. A browser that has already said yes is not asked again, and one without the
+ * API is simply not asked. Nothing waits on the answer.
+ *
+ * It is not promised to lift Safari's seven-day rule for a site opened in a tab, so
+ * Settings → Your data says that one in words (js/appshell.js, `renderSafariNote`).
+ */
+let keepAsked = false;
+
+export async function keepData() {
+  if (keepAsked) return;
+  keepAsked = true;
+  try {
+    if (!navigator.storage?.persist) return;
+    if (await navigator.storage.persisted?.()) return;
+    await navigator.storage.persist();
+  } catch { /* a refusal or a missing API leaves things as they were */ }
 }
 
 /**

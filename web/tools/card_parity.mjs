@@ -129,7 +129,10 @@ const out = [];
 for (const path of process.argv.slice(2)) {
   const facts = JSON.parse(readFileSync(path, "utf8"));
   const document = facts.document;
+  // `missing` is the reason a cell draws where its number goes (a record not set, a rate
+  // under the floor): the block prints it, so the check reads it beside the value.
   const pair = (e) => ({ key: e.key, label: normalize(e.label), value: normalize(e.value),
+                         ...(e.missing ? { missing: normalize(e.missing) } : {}),
                          tally: e.tally ?? null });
   out.push({
     file: `fixtures/goldens/${path.split("/").pop()}`,

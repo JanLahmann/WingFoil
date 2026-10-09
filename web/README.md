@@ -37,6 +37,15 @@ web/
 │                               SHUT, which is what lets forty pages of reference live on a
 │                               site with word budgets. No section nav: the ten handles are
 │                               the contents. No JS, not precached.
+├── start/index.html            GET STARTED (cleanjibe.org/start/) — ONE JOB since 9 Oct
+│                               2026 (rider review S9): install, and get the first session
+│                               in. The three apps, a panel each (S10); the ways in, each
+│                               with a browser line, the dry run and If something does not
+│                               work, all make_start.py's; Which watch, with every Garmin by
+│                               family between <!-- devices:begin --> and <!-- devices:end -->
+│                               (make_devices.py, S8); Your old sessions. A closing "Testing
+│                               the beta?" section carries the old #report, #tell, #coming
+│                               and #whats-new anchors, and a script forwards them.
 ├── invite/index.html           A REDIRECT STUB since 20 September 2026 → /start/#apps.
 │                               The beta page's two jobs — hand over the Connect IQ link
 │                               and the TestFlight link, and say where to send what you
@@ -46,15 +55,26 @@ web/
 │                               address stays because it is in every TestFlight mail we
 │                               have sent and in the iPhone app's own "Coming in a future
 │                               release" screen.
-├── learn/ watches/             FOUR REDIRECT STUBS (19 and 20 Sep 2026). A meta refresh, one
+├── beta/index.html             THE TESTER'S PAGE since 9 October 2026 (rider review S9:
+│                               /start/ did five jobs). What to test and What a good report
+│                               says are make_start.py's, between <!-- guide:begin --> and
+│                               <!-- guide:end -->; Where to send it (the three doors) and
+│                               Coming in a future release (the two channel lists, the one
+│                               page that prints them) are hand-written. /start/#report,
+│                               #tell and #coming forward here.
+├── whats-new/index.html        THE RELEASE NOTES, a page of their own again since 9 October
+│                               2026 (the foot of /invite/ and then /start/ from 19 Sep).
+│                               make_whats_new.py writes the cards between
+│                               <!-- whats-new:begin --> and <!-- whats-new:end -->; the one
+│                               `dated` page of the site. /start/#whats-new forwards here.
+├── learn/ watches/             THREE REDIRECT STUBS (19 and 20 Sep 2026). A meta refresh, one
 │                               sentence and the link a reader uses when the refresh does
 │                               not fire: /learn/ → /help/#numbers, /watches/ →
-│                               /start/#watches, /whats-new/ → /start/#whats-new,
-│                               /invite/ → /start/#apps. They keep
+│                               /start/#watches, /invite/ → /start/#apps. They keep
 │                               their addresses because a link somebody sent a friend in
 │                               March must not answer 404, and they carry no site nav, no
 │                               footer, no word budget and no copy pin — `verify_links.py`
-│                               waives all four for a page that is on screen for a frame,
+│                               waives all three for a page that is on screen for a frame,
 │                               and checks their own link like any other.
 ├── app/index.html              the APP (cleanjibe.org/app/) — a PORT OF THE iPHONE APP
 │                               since 19 September 2026 (Jan: "iOS is the reference, the web
@@ -335,7 +355,7 @@ python3 docs/copy/check_voice.py --report # the numbers only, never fails
 an exemption in `docs/copy/voice-exemptions.json`, each with its `why`, printed on every run:
 a sentence **the kit owns** and the page only prints (the hero `promise`, two
 `recording-classes` cells, the Connect IQ listing title with its brackets), and the **dated
-release notes** inside the `data-copy="whats-new"` block on `/invite/`, which say what was true on the
+release notes** inside the `data-copy="whats-new"` block on `/whats-new/`, which say what was true on the
 day they shipped and are not rewritten later.
 
 ## Words the site does not own
@@ -369,18 +389,18 @@ structural rather than named strings:
 | what | who decides it | how the site stays honest (and what pins it) |
 |---|---|---|
 | Garmin product count, watch app version | `garmin/manifest.xml` (+ `-beta`, `-dev`) | `docs/copy/garmin-devices.json`, written by `tools/make_devices.py`; the pages carry `<span data-copy="garmin-count">` / `garmin-version` and the script rewrites them. `--check` runs with `verify_links.py` |
-| which feature is in which channel | `docs/channels.md` → `docs/copy/channels.json` | the `#coming` lists on **`/invite/` only** since 15 Sep 2026 are a reading of it and of nothing else (a dev list on the front door is a promise to a stranger; the app keeps those rows behind `#if BETA` for the same reason, and `verify_copy.py`'s page map was edited in the same change so a second copy fails rather than drifts): `<ul data-copy="channels-beta">` and `channels-dev` carry the JSON's rows, verbatim, in its order, and the `<h2 data-copy="channels-title">` is the app's own section title. The **Garmin export ZIP is a release door** since 14 Sep 2026 and is on neither list — because it is on neither list in the JSON, and `verify_copy.py` would fail if a page put it back |
-| the three feedback prompts and the invitation sentence | `FeedbackReport.Prompt` and `FeedbackInvitation.sentence` in the kit → `docs/copy/feedback.json` | every `mailto:` body on the site uses the three prompts verbatim, and the *Tell us* line in the **footer of every page** (`data-copy="feedback-invitation"`, inside the copied `sitefoot` block) says *Ideas and wishes are as welcome as bugs.* It was a 55-word paragraph inside `<main>` on six pages until 15 Sep 2026; the two real asks are `/invite/#feedback` and `/start/#tell`. The two extra questions (watch and phone, app version) are web-only on purpose: the browser cannot fill them in and the app does not need to ask |
+| which feature is in which channel | `docs/channels.md` → `docs/copy/channels.json` | the `#coming` lists on **one page only** — `/invite/` from 15 Sep 2026, `/start/` from the 20th, **`/beta/`** since 9 Oct 2026 — are a reading of it and of nothing else (a dev list on the front door is a promise to a stranger; the app keeps those rows behind `#if BETA` for the same reason, and `verify_copy.py`'s page map was edited in the same change so a second copy fails rather than drifts): `<ul data-copy="channels-beta">` and `channels-dev` carry the JSON's rows, verbatim, in its order, and the `<h2 data-copy="channels-title">` is the app's own section title. The **Garmin export ZIP is a release door** since 14 Sep 2026 and is on neither list — because it is on neither list in the JSON, and `verify_copy.py` would fail if a page put it back |
+| the three feedback prompts and the invitation sentence | `FeedbackReport.Prompt` and `FeedbackInvitation.sentence` in the kit → `docs/copy/feedback.json` | every `mailto:` body on the site uses the three prompts verbatim, and the *Tell us* line in the **footer of every page** (`data-copy="feedback-invitation"`, inside the copied `sitefoot` block) says *Ideas and wishes are as welcome as bugs.* It was a 55-word paragraph inside `<main>` on six pages until 15 Sep 2026; the real ask is `/beta/#tell` (`/start/#tell` until 9 Oct 2026; `/invite/` is a redirect). The two extra questions (watch and phone, app version) are web-only on purpose: the browser cannot fill them in and the app does not need to ask |
 | what a rider is told about Strava | `docs/channels.md` → `phrases.json` | one sentence, everywhere: **"Strava lets a new app connect a limited number of riders"**, asserted present on `/help/`, `/start/` and `/privacy/`, plus *tell us if you are told the app is full*. None of `stravaForbidden`'s five phrases may appear on any page — the app has not been reviewed, reviews the app, approves the app, not reviewed, single-rider. A dated release note corrects itself in brackets rather than rewriting its own history |
 | the Connect IQ listing's name | the live store | `<span data-copy="ciq-title">` on `/start/` and `/invite/`. It still prints *CleanJibe Wingfoil Tracker (Beta)* because that is what the store says today; `docs/channels.md` has decided the rename, and the span is so both places flip on the day the store does |
 | the promise, the card CTA and the caption offer | `WelcomeGuide.promise`, `Branding.callToAction`, `ShareCaption.offer` in the kit → `phrases.json` | the hero paragraph on `/` is `<p class="lede" data-copy="promise">` and is the JSON's sentence to the character. The card's two strings are **composed** in `js/cardstats.js` (`cta` and `site` are drawn on separate lines), so `verify_copy.py` reads the parts and re-does the composition rather than looking for the sentence |
-| the four recording classes | `RecordingClass.swift` → `docs/copy/recording-classes.json` | the class table on **one page only** — `/watches/#classes` from 15 Sep 2026, `/start/#watches` from the 19th, when `/start/` absorbed that page — carries the four `name` and four `line` strings in cells marked `data-copy="class-name"` / `class-line`. The four-column shape and the *You record with* and *Route* columns are the web's own; only the cell contents are pinned. **The table's ORDER is the web's own too**, since 16 Sep 2026: the JSON keeps the kit's order (a, b, bPlus, c) and the page prints **A, B+, B, C**, because Apple Watch comes right after Garmin wherever this site lists watches. `verify_copy.py` matches the four cells as a **set** and then checks that each name still carries its own line, so a dropped class, an invented fifth and a mismatched pair all still fail. The second table beside it keeps its own shape and may name no class the JSON does not have |
+| the four recording classes | `RecordingClass.swift` → `docs/copy/recording-classes.json` | the class table on **one page only** — `/watches/#classes` from 15 Sep 2026, `/start/#watches` from the 19th, when `/start/` absorbed that page — carries the four `name` and four `line` strings in cells marked `data-copy="class-name"` / `class-line`. The names say what the rider gets and carry no letter (9 Oct 2026); `verify_copy.py` fails `/start/`, `/help/` or the homepage if one prints "class a/b/c", and holds the second table's *You get* cells to the four names. The four-column shape and the *You record with* and *Route* columns are the web's own; only the cell contents are pinned. **The table's ORDER is the web's own too**, since 16 Sep 2026: the JSON keeps the kit's order (a, b, bPlus, c) and the page prints **A, B+, B, C**, because Apple Watch comes right after Garmin wherever this site lists watches. `verify_copy.py` matches the four cells as a **set** and then checks that each name still carries its own line, so a dropped class, an invented fifth and a mismatched pair all still fail. The second table beside it keeps its own shape and may name no class the JSON does not have |
 | the eleven metric one-liners | `MetricGlossary.swift` → `docs/copy/glossary.json` | `/help/`'s `<dl data-copy="glossary">` carries the eleven `term`/`line` pairs, in the JSON's order, before any `glossary-extra` of its own. It is written by `tools/make_help.py`, so a drift means the generator was not re-run |
 | **every help topic** | `HelpCatalog.swift` → `docs/copy/help.json` | **new on 19 Sep 2026, and the largest thing the site stopped writing.** The kit's `HelpExportTests` writes the catalogue out — ten sections, 42 topics, 94 items, each carrying the channels that may read it — and `tools/make_help.py` renders `/help/` from it. `/learn/` answered four of the same questions in its own words for four months; it is a redirect now. The export is channel-aware: a release topic prints plainly, a beta topic prints with the pill, a dev topic does not print |
 | the intervals.icu setup | `IcuSetupGuide.swift` → `docs/copy/icu-setup.json` | `/start/` names the four step titles (`data-copy="icu-step"`) and the app's own **Save & check** button (`icu-save`), *outside* the generated guide block. The iPhone asks for one thing, the personal API key; the Athlete ID is the browser analyzer's |
 | what a recording that is not a session is called | `NotASessionNote.swift` → `docs/copy/verdicts.json` | the analyzer's session view renders the tag and the line from `js/copy.js`, generated by `tools/make_copy_js.py`. `--check` runs with `verify_links.py` |
 | the rider vocabulary | `CLAUDE.md` → `phrases.json` → `lexicon.banned` | *flew through*, *clean*, *dry*; the streak is the **dry streak**. "carried", "no-fall streak", "clean-jibe percentage", "swim rate" and "success rate" appear in no page's visible text. **HTML only**: `web/js/*.js` is out of scope, because the kit's own exemption for "carried" (`phrases.json`, TurnAnalytics's "not clean · carried 18° past the axis", where the word is the ordinary verb) would have to be repeated here the day the analyzer draws that sentence. It does not today — the turn table prints the score as a number |
-| the routes on `/start/`, and the class each one yields | `docs/guide/getting-started.json` | **The routes lost their letters on 16 Sep 2026.** A route is named by what the rider holds — Garmin, as you ride today · the CleanJibe Apple Watch app · Apple's own Workout app · any watch that writes a .fit · Strava — and what he gets back is the *class*, which is a different ladder with its own names. Each route carries a `class` (`a`, `bPlus`, `b`, `c`), `tools/make_start.py` reads `docs/copy/recording-classes.json` for the name, and the card prints a pill (*You get class B+*) linking to `/start/#watches`. The Swift twin carries the same value as `GettingStartedRoute.classID`. The cards are **generated** into the block between `<!-- guide:begin -->` and `<!-- guide:end -->`; a reference to a route written *outside* that block is hand-kept and is exactly how the page contradicted itself on 14 September |
+| the routes on `/start/`, and the class each one yields | `docs/guide/getting-started.json` | **The routes lost their letters on 16 Sep 2026.** A route is named by what the rider holds — Garmin, as you ride today · the CleanJibe Apple Watch app · Apple's own Workout app · any watch that writes a .fit · Strava — and what he gets back is the *class*, which is a different ladder with its own names. Each route carries a `class` (`a`, `bPlus`, `b`, `c`), `tools/make_start.py` reads `docs/copy/recording-classes.json` for the name, and the card prints a pill (*You get measured speed and the wrist*, the class's name since 9 Oct 2026; it printed the letter, *You get class B+*, until then) linking to `/start/#watches`. The Swift twin carries the same value as `GettingStartedRoute.classID`. The cards are **generated** into the block between `<!-- guide:begin -->` and `<!-- guide:end -->`; a reference to a route written *outside* that block is hand-kept and is exactly how the page contradicted itself on 14 September |
 
 Three rules follow from the table. **Never hand-edit inside `<!-- guide:begin --> … <!-- guide:end -->`** — edit `docs/guide/getting-started.json` and re-run `tools/make_start.py`; the same goes for **`js/copy.js`**, which `tools/make_copy_js.py` writes out of `docs/copy`.
 And **never type a Garmin product count into a page**; put a `data-copy` span there and let
@@ -395,7 +415,7 @@ requests the pages ever make are:
 
 | Request | When | Why |
 |---|---|---|
-| `cdn.jsdelivr.net/pyodide/v0.28.3/…` | first load | the Python runtime + numpy/pandas (~12 MB, then browser- **and** service-worker-cached) |
+| `cdn.jsdelivr.net/pyodide/v0.28.3/…` | first load | the Python runtime + numpy/pandas (~14 MB, then browser- **and** service-worker-cached) |
 | `pypi.org` / `files.pythonhosted.org` | first load | the `fitdecode` wheel (pure Python, ~120 KB) |
 | same-origin `web/…` | first load, then on update | the app shell and `lab_bundle/*.py`, precached by the service worker |
 | `intervals.icu/api/v1/…` | only if you use the intervals.icu panel | your own activity list / FIT |
@@ -625,6 +645,14 @@ python3 tools/bundle_lab.py --check    # exit 1 if the bundle is stale (use this
 `lab_bundle/web_entry.py` and `lab_bundle/library.py` are hand-written and are never touched
 by the bundler — it only lists them in `FILES.json` (see `GLUE` in `tools/bundle_lab.py`).
 
+**The example rides with the bundle** (rider review X4, 9 Oct 2026). *Try the example* draws
+`example/ExampleSession.analysis.json`, the example worked out at build time by
+`tools/make_example.py`, so a first visit sees it without waiting for Pyodide. Writing the
+bundle regenerates it (through `lab/.venv`, or `uv run` when there is none), and `--check`
+fails on a file stamped with another engine version or built from other sources — a change to
+`web_entry.py` or `library.py` included. `docs/testing.md`, "The bundled example session",
+has the file's contents.
+
 ## The session library
 
 Press **Save to library** on a finished analysis and two files are written to this browser's
@@ -769,8 +797,21 @@ choices above are made from the documented behaviour, not from a measured device
 - The **app shell** (HTML/CSS/JS/icons and every file listed in `lab_bundle/FILES.json`) is
   precached at install. The lab module list is read from `FILES.json` rather than hard-coded,
   so adding a lab module never needs an edit in `sw.js`.
-- The **Pyodide CDN and the PyPI wheel** are runtime-cached, cache-first: ~12 MB that never
-  changes for a pinned version. This is the whole offline story.
+- The **Pyodide CDN and the PyPI wheel** are runtime-cached, cache-first: ~14 MB on the wire
+  that never changes for a pinned version. This is the whole offline story. **The cache is
+  named after the two pins** (`wingfoil-runtime-pyodide-<v>-fitdecode-<v>`), not after
+  `VERSION` (rider review X5, 9 Oct 2026): it used to carry the site version, so every deploy
+  threw it away and the next visit downloaded it again. It now goes only when a pin moves.
+  On the first activate of v117 the files of the old `wingfoil-runtime-v116` cache are
+  copied across (`adoptRuntime`), so the change itself costs nobody a download. sw.js spells
+  the two pins again, and `tools/verify_first_run.py` fails when they disagree with
+  `js/worker.js`. The **map tiles** have a cache of their own, still named after `VERSION`,
+  so a deploy still bounds how stale a beach can get.
+- **The library asks to be kept.** After a session of your own is stored, `js/store.js`
+  calls `navigator.storage.persist()`, at most once per page load and never for the example
+  (rider review X3). Safari may still clear a site opened in a tab after seven days without a
+  visit, so Settings → Your data says so in Safari, with *Download all* and, on an iPhone or
+  iPad, the Home Screen.
 - **Updates are offered, never applied behind your back.** A swap mid-analysis would reload
   the page and throw the result away, so a new worker waits and a banner appears with
   *Reload to update*. Bump `VERSION` in `sw.js` whenever anything under `web/` changes; the
@@ -970,7 +1011,7 @@ Icons live in `web/icons/`, copied from `brand/` (`icon-tile-*` for the normal i
 
 ## Verification
 
-Thirteen checks, none of which needs a browser:
+Fourteen checks, none of which needs a browser:
 
 ```bash
 cd /path/to/WingFoil
@@ -1012,13 +1053,20 @@ python3 web/tools/verify_glossary.py
 #     product rather than for the beta
 python3 docs/copy/check_release_copy.py
 
+# 0k. the first run: the pre-analysed example is stamped with this engine and these
+#     sources, sw.js keys the runtime cache to the worker's Pyodide and fitdecode pins, the
+#     library asks for persistent storage, and Your data carries the Safari line
+#     (stdlib only, instant)
+python3 web/tools/verify_first_run.py
+
 # 0i. every rider sentence on the seven prose pages and in /app/ is inside docs/voice.md:
 #     no dash, no semicolon, no parenthesis in a sentence, none over 20 words, mean under
 #     14, none of the banned shapes (stdlib only, instant)
 python3 docs/copy/check_voice.py
 
-# 1. web_entry: the bundle reproduces the goldens exactly, and a track with no GPS fixes
-#    still produces a serializable document (analyze_json uses allow_nan=False)
+# 1. web_entry: the bundle reproduces the goldens exactly, a track with no GPS fixes
+#    still produces a serializable document (analyze_json uses allow_nan=False), and the
+#    shipped example analysis is byte for byte what make_example.py writes today
 lab/.venv/bin/python web/tools/verify_web_entry.py
 
 # 2. library: dedupe edge cases, digest fidelity, records, trends, the zip export
@@ -1192,10 +1240,10 @@ groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 4
    Turns 10 (all jibes), Outcomes 8 / 0 / 2, wind 196°, best 2 s 13.47 kn, and the same
    four badges — `accel` included, because this example ships whole. Key metrics read
    `0:10 · 2.6 km · 7.71 kn`, `13.47 kn` under **max 2 s**, `8 · 0 · 2`
-   (of 10 jibes · 5 clean) on the ladder's colours beside `8 flew · 8 dry`, then `44.7`
-   **JPH**, `27.9` **CPH** (the 5 clean jibes the tally's caption names one row up) and
-   `11.2 WPH`. Being under the 15-minute window, the JPH/WPH peaks equal the whole-session
-   rates.
+   (of 10 jibes · 5 clean) on the ladder's colours beside `8 flew · 8 dry`, then
+   *too short for a rate* under **CPH**, **JPH** and **falls / h**: 640 s on the timer is
+   under the 20-minute floor (docs/algorithms/rates.md, "Too short for a rate"), and the
+   share card's ribbon carries no rate.
 4. **Check the numbers** against the golden above: 23 flights, 60 % on foil, 12.76 km,
    Turns 30, Outcomes 9/9/12, wind 36°, best 2 s 11.36 kn. Badges: `wingfoil`,
    `CIQ dev fields`, `accel`, `HR`.
@@ -1206,7 +1254,7 @@ groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 4
    `2 flew · 4 dry`, then `12.8` under
    **JPH · dry jibes per hour** (the 18 jibes he sailed out of, not all 30 — engine 0.7.0),
    `2.8` under **CPH · clean jibes per hour** (the 4 he actually rode — engine 0.10.0) and
-   `11.3 WPH`. It must read identically to the iOS app's block on the same session —
+   `11.3` under **falls / h**. It must read identically to the iOS app's block on the same session —
    the two halves are `web/js/render.js` `keyMetrics` and `KeyMetrics.swift`, and the
    Swift half is pinned by `PresentationTests.keyMetrics*`.
 4c. **The share card.** Press *Share card* beside *Save to library*. The preview must show
@@ -1333,7 +1381,7 @@ groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 4
 - **Times are shown in your browser's timezone**, not the session's. The FIT's local offset
   lives in the trailing `activity` message, which `parse.py` does not retain, and re-reading
   a 6 MB FIT just for that is not worth the seconds in WASM.
-- First load downloads ~12 MB (Pyodide + numpy + pandas). It is cached afterwards, but the
+- First load downloads ~14 MB (Pyodide + numpy + pandas). It is cached afterwards, but the
   very first analysis on a cold cache takes ~25 s end to end for a 90-minute session.
 - The intervals.icu integration will normally be blocked by CORS. That is not fixable from a
   zero-server app; the panel detects it and explains the manual export path.

@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The beta · CleanJibe</title>
+<meta name="description" content="What to test in the CleanJibe beta: one ordinary session, read against what you remember. What a good report says, where to send it, and what is coming next.">
+<meta name="theme-color" content="#101010" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f5f6f3" media="(prefers-color-scheme: light)">
+<meta name="color-scheme" content="light dark">
+
+<!-- No manifest and no service-worker registration, for the same reason /start/ has
+     neither: the analyzer at /app/ is the installable PWA, and "add to home screen" from a
+     page of instructions must not install a front door. This page is also deliberately NOT
+     in the sw.js precache — it is read once, at a desk, with a watch on the wrist and a
+     phone in the other hand, which is not a situation anyone is offline in. Precaching it
+     would cost every analyzer install bytes for a page almost none of them will open. -->
+<link rel="icon" type="image/svg+xml" href="../icons/icon.svg">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+
+<!-- The same three-layer stack as the homepage, the beta page and the analyzer, in the same
+     order: generated presentation tokens, the app's aesthetic, this page family's layout.
+     Nothing here has a design of its own. -->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/home.css">
+
+<meta property="og:site_name" content="CleanJibe">
+<meta property="og:title" content="The CleanJibe beta">
+<meta property="og:description" content="One ordinary session is the test. Read every verdict against what you remember, tell us where it disagrees, and see what is coming next.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://cleanjibe.org/beta/">
+<!-- Absolute, like every other document on the site: scrapers fetch the tag's value as-is
+     and never resolve it against the page. -->
+<meta property="og:image" content="https://cleanjibe.org/social-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="CleanJibe, a wingfoil track with two flights drawn on the foil, a jibe flown through, a touchdown and a fall.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The CleanJibe beta">
+<meta name="twitter:description" content="One ordinary session is the test. Read every verdict against what you remember, tell us where it disagrees, and see what is coming next.">
+<meta name="twitter:image" content="https://cleanjibe.org/social-card.png">
+<meta name="twitter:image:alt" content="CleanJibe, a wingfoil track with two flights drawn on the foil, a jibe flown through, a touchdown and a fall.">
+
+<!-- Usage analytics: umami, cloud-hosted and cookieless, exactly as on the other three
+     documents — it sees that a page was opened, never who opened it. `data-domains` pins it
+     to the production hostname so local servers stay silent. Full note in web/index.html. -->
+<script defer src="https://cloud.umami.is/script.js" data-website-id="97f347ac-e7ba-4be3-b26f-ab4b328bdbf2" data-domains="cleanjibe.org"></script>
+</head>
+<body class="home">
+
+<header class="topbar">
+  <a class="brand" href="../">
+    <span class="mark" aria-hidden="true"></span>
+    <div>
+      <h1>CleanJibe</h1>
+      <p class="sub">Your WingFoil session, measured.</p>
+    </div>
+  </a>
+  <!-- NOTHING TO THE RIGHT OF THE BRAND. The repo link sat here, in a bar of its
+       own, on every page: a third piece of furniture over a row that already
+       carries two links and two doors (docs/web-design-review.md, finding 15). It
+       is in the footer, once, where a reader looks for it.
+       ONE HEADER PER PRODUCT: /app/ has its own, the mark and the Menu button, and
+       carries no site nav at all. -->
+<!-- sitenav:begin — COPIED VERBATIM ON ALL SIX READER PAGES (/, /start/, /beta/,
+     /whats-new/, /help/, /privacy/); web/tools/verify_links.py compares this block byte
+     for byte.
+
+     THE WORDMARK AND ONE BUTTON (Jan, 28 September 2026, on a photo of the old header).
+     The row carried Get started, Help and Open the app. It is the mark, which links home,
+     and one button into the browser app. Get started and Help are reached from the
+     homepage, from the footer on every page, and from the app's own menu.
+
+     The button's words are the homepage chooser's browser button, "Try it in your
+     browser", from docs/copy/welcome.json. One wording for one door. It is a real
+     button: `a.btn` carries no underline (css/style.css). The href is ROOT-RELATIVE so
+     one block serves a page at the root and a page a directory down. -->
+<nav class="sitenav" aria-label="Site">
+  <a class="btn primary" href="/app/" data-umami-event="CleanJibe: app-cta-nav">Try it in your browser</a>
+</nav>
+<!-- sitenav:end -->
+</header>
+
+<!-- The page's own contents row, sticky under the topbar; the labels are the headings. Below
+     720 px it collapses to one select. See css/home.css and the script at the foot. -->
+<nav class="sectionnav" aria-label="On this page">
+  <div class="sectionnav-inner">
+    <ul>
+      <li><a href="#test">What to test</a></li>
+      <li><a href="#report">What to say</a></li>
+      <li><a href="#tell">Where to send it</a></li>
+      <li><a href="#coming">What is coming</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main>
+
+  <!-- ------------------------------------------------------------------ hero -->
+  <!-- THE TESTER'S PAGE, since 9 October 2026 (rider review S9). /start/ did five jobs: it
+       installed, walked the first session in, briefed a tester, took his report and
+       printed a roadmap and the release notes. It installs now, and this page is the rest
+       of it for the rider who has the beta: what to test, what a good report says, where
+       to send it, and what the beta has that the release does not. The release notes are
+       /whats-new/.
+
+       THE REAL TEST IS A SESSION ON THE WATER, and the hero says the stake. What this
+       thing claims is a verdict on every turn, and the only person who can check a
+       verdict is the rider who remembers the turn. -->
+  <section class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow"><span class="dot" aria-hidden="true"></span>For testers</p>
+      <h1>The beta</h1>
+      <p class="lede">
+        The test is <strong>one ordinary session</strong>. Ride as you always do. Open it on
+        the phone. Read the turns: <em>flew through</em>, <em>touchdown</em>,
+        <em>fell in</em>. The clean jibes are marked among them. Only you know which it
+        really was.
+      </p>
+      <p class="lede">
+        Not installed yet? <a href="/start/#apps" data-umami-event="CleanJibe: beta-apps">Get
+        the apps</a> on Get started. What changed in each build is under
+        <a href="/whats-new/">What&rsquo;s new</a>.
+      </p>
+    </div>
+  </section>
+
+
+<!-- guide:begin -->
+  <!-- GENERATED by web/tools/make_start.py from docs/guide/getting-started.json —
+       the same file the app's Getting started topic is built from, which is what
+       "the same guide, with every step, on the web" means. Do not edit between the
+       markers: regenerate, and `make_start.py --check` fails while it is stale.
+       The head, the hero, the hand-written sections around this block and the
+       footer are the page's own. -->
+
+  <section class="home-section" id="test">
+    <h2>What to test</h2>
+    <p class="section-lede">Five steps, after one ordinary session. The first one matters most.</p>
+
+    <article class="panel piece" id="guide-sayHowItRead">
+      <div class="piece-head">
+        <h3>Tell us what you saw</h3>
+        <span class="status">your verdicts against the engine&rsquo;s</span>
+      </div>
+      <details open>
+        <summary class="what">
+          <span class="what-line">Menu → Support &amp; ideas opens a mail to us, with your app and watch details already in it. Your mail decides what we build next.</span>
+          <span class="what-more">Show the 5 steps</span>
+        </summary>
+        <ol class="steps-flow">
+          <li>
+            <h3>Read the verdicts against your memory</h3>
+            <p>Open the session and go to <strong>Turns</strong>. Every turn says <em>flew through</em>, <em>touchdown</em> or <em>fell in</em>. The clean jibes are marked among them.</p>
+          </li>
+          <li>
+            <h3>Say where it disagrees with you</h3>
+            <p>Maybe it marked a jibe you flew through as a touchdown. Maybe it missed a time you fell in, or found a wind you did not sail in.</p>
+          </li>
+          <li>
+            <h3>Send it from the app</h3>
+            <p>Menu → <strong>Support &amp; ideas</strong> fills in your build, phone, iOS version, watch and library size. You add what happened and press Send.</p>
+          </li>
+          <li>
+            <h3>Attach the file if a session read wrong</h3>
+            <p>With the .fit we can run the detection again and fix it. Without it there is only guesswork. Ideas and wishes are as welcome as faults.</p>
+          </li>
+          <li>
+            <h3>Send a card, and say how it reads</h3>
+            <p>The share button on the session page draws a <strong>share card</strong> with your track and your numbers. Send it to a friend. Say if anything on it reads wrong.</p>
+          </li>
+        </ol>
+      </details>
+    </article>
+
+  </section>
+
+  <section class="home-section" id="report">
+    <h2>What a good report says</h2>
+    <p class="section-lede">Keep it short. A screenshot of the session page beats a paragraph. &ldquo;This number looks wrong&rdquo; is a good report.</p>
+    <dl class="terms">
+      <div class="term">
+        <dt>Which way in</dt>
+        <dd>Garmin, the CleanJibe Apple Watch app, Apple&rsquo;s Workout app, any .fit, or Strava.</dd>
+      </div>
+      <div class="term">
+        <dt>Your watch</dt>
+        <dd>Apple: model and watchOS version, under Settings → General → About. Garmin: model and software version, under Settings → System → About.</dd>
+      </div>
+      <div class="term">
+        <dt>Did it arrive</dt>
+        <dd>Yes or no, and how long it took.</dd>
+      </div>
+      <div class="term">
+        <dt>A screenshot</dt>
+        <dd>The session page. Was the track drawn? Were parts of it teal?</dd>
+      </div>
+      <div class="term">
+        <dt>Anything odd</dt>
+        <dd>A permission you were never asked for. A &ldquo;Nothing to import&rdquo; screen. A NO GPS that never cleared. A crash. Wording you did not understand.</dd>
+      </div>
+    </dl>
+  </section>
+
+<!-- guide:end -->
+
+  <!-- ------------------------------------------------------------------- feedback -->
+  <!-- Three doors, in the order of what they cost the tester. THE APP'S OWN IS FIRST since
+       build 45: Menu → Support writes the build, the phone, the iOS version, the watch and
+       the library's shape into the mail itself, which is the half of a report nobody types
+       correctly from memory and the half that decides whether it can be acted on.
+
+       The section was /start/#tell until 9 October 2026 and moved here with the rest of the
+       tester's half (rider review S9). Its heading is "Where to send it" because the
+       generated card above it is already called "Tell us what you saw". -->
+  <section class="home-section" id="tell">
+    <h2>Where to send it</h2>
+    <!-- Not a second copy of the report lede: that sentence is generated, two sections up,
+         out of docs/guide/getting-started.json. This section answers the other half of the
+         question — not what to say, but where to put it. -->
+    <p class="section-lede">
+      Three doors, all to the same person. What goes in the message is
+      <a href="#report">the checklist above</a>.
+    </p>
+
+    <div class="claims">
+      <article class="panel claim">
+        <h3>Three doors, cheapest first</h3>
+        <ul>
+          <li><strong>Menu &rarr; Support &amp; ideas</strong>, top left on the Sessions tab.
+              It fills in your build, your phone, the paired watch and how big your library
+              is. You add what happened and press Send.</li>
+          <li>A <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener"
+                   data-umami-event="CleanJibe: start-feedback-github">GitHub issue</a> for anything
+              bigger. It stays readable by the next rider with the same question.</li>
+          <li><a href="mailto:info@cleanjibe.org?subject=CleanJibe%20feedback&amp;body=What%20happened%2C%20or%20what%20you%20would%20like%3A%0A%0A%0AWhat%20you%20expected%20instead%3A%0A%0A%0AWhich%20session%2C%20its%20date%20and%20spot%2C%20if%20it%20is%20about%20one%3A%0A%0AYour%20watch%20and%20phone%20%28model%2C%20software%20version%29%3A%0A%0ACleanJibe%20version%20%28Settings%2C%20About%29%3A%0A%0AIdeas%20and%20wishes%20are%20as%20welcome%20as%20bugs.%20Attach%20a%20screenshot%20or%20the%20session%27s%20.fit%20file%20if%20you%20can.%0A"
+                 data-umami-event="CleanJibe: start-feedback-mail">info@cleanjibe.org</a>, which opens
+              with the template already in the body. Attach the <code>.fit</code> if a
+              session read wrong. With the file we can run the detection again and fix it.
+              Without it there is only guesswork.</li>
+        </ul>
+        <!-- The two store doors kept their home when /invite/#feedback folded in here
+             (rule 10 of docs/voice.md: every cut fact keeps a home). They are real doors
+             and they reach the same person, so a page that listed only its own three would
+             be telling a tester those buttons go nowhere. -->
+        <p class="note">
+          Both stores have a report button of their own. In <strong>TestFlight</strong>,
+          <em>Send Beta Feedback</em> arrives with the build and the device attached. On the
+          Connect IQ listing, <em>Contact Developer</em> does the same.
+        </p>
+      </article>
+    </div>
+
+  </section>
+
+  <!-- ------------------------------------------------------------- what is coming -->
+  <!-- Written from docs/channels.md and from nowhere else: that file decides which feature is
+       in which channel, and this list and the app's Beta section are both readings of it. The
+       beta list is what the TestFlight link on /start/#apps hands over today; the dev list is
+       what it deliberately does not, so that nobody installs expecting a Garmin link or an
+       iPad. It was /start/#coming until 9 October 2026. -->
+  <section class="home-section" id="coming">
+    <!-- The heading is the app's own, word for word: Settings → "Coming in a future
+         release" (docs/channels.md, "Feedback and channel furniture"). -->
+    <h2 data-copy="channels-title">Coming in a future release</h2>
+    <p class="section-lede">
+      The App Store release, when it comes, will be the steady half. The beta is ahead of
+      it. A third build, dev, is ahead of the beta and is not public.
+    </p>
+    <div class="claims">
+      <article class="panel claim">
+        <h3>In the beta today</h3>
+        <p>
+          The <a href="/start/#apps">TestFlight link</a> hands over all of it this afternoon.
+          Nothing here is a promise. This is what installs:
+        </p>
+        <ul data-copy="channels-beta">
+          <li>.gpx and .tcx files, so a session exported from a Polar, a Suunto or a COROS opens straight
+              from Files.</li>
+          <li>Apple Health, both ways: what Apple's Workout app recorded is read in, and your sessions are
+              written back as workouts.</li>
+          <li>The CleanJibe Apple Watch app, which records on your wrist and hands the session to the
+              phone.</li>
+          <li>Home-screen widgets and the watch complication.</li>
+          <li>The session video: your afternoon as a film rather than a card.</li>
+          <li>Grouping the library by month, year or spot, and filtering it.</li>
+          <li>The session story: one line over your numbers, and a chip on each record you beat.</li>
+          <li>Send a session and its recording to us from its Share page or a turn, with your notes.</li>
+          <li>Planned: a live view on the Apple Watch. Foil state, flights, records and turn verdicts on
+              the wrist, as the Garmin app shows them.</li>
+        </ul>
+        <!-- The Garmin export ZIP is NOT on this list: it became a release door on
+             14 Sep 2026 (docs/channels.md, "Getting a session in"), so nobody has to join
+             anything for it. -->
+        <p class="note">
+          The <strong>Garmin export ZIP</strong> is in every build, beta or not. It brings
+          your whole history in one import.
+        </p>
+      </article>
+      <article class="panel claim">
+        <h3>Ideas on the bench</h3>
+        <p>
+          Beyond the beta: what we could build next. If one would matter to you, say so.
+        </p>
+        <ul data-copy="channels-dev">
+          <li>The Garmin link: a summary card from your watch the moment you stop. Your spot's map
+              and the wind direction go back to it.</li>
+          <li>Windsurf, foil and fin, with thresholds of its own</li>
+          <li>The tuning page: every analysis threshold on a slider, tried against your own sessions</li>
+          <li>iPad</li>
+          <li data-copy="extra">Your idea here.</li>
+        </ul>
+        <p>
+          <strong>Tell us what you would want.</strong> The ones asked for most move first.
+        </p>
+      </article>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <p>CleanJibe is open wingfoil tracking: a watch app, an iPhone app and a browser app.</p>
+<!-- sitefoot:begin — COPIED VERBATIM ON EVERY READER PAGE AND /app/, and compared byte for byte
+     by web/tools/verify_links.py exactly the way the site nav in the topbar is. Until
+     15 September 2026 every footer carried a different subset of the site; it names every
+     page now, in the site nav's own order, with the door as a text link and Privacy
+     last (the Impressum that used to follow it came out on 30 September 2026: CleanJibe
+     is non-commercial and not a trader, so none is owed — Jan). It lost three rows on
+     19 September 2026 and a fourth on the 20th,
+     because the pages went: Which watch is /start/#watches, What it measures is /help/,
+     What's new was /start/#whats-new, and Get the beta is /start/#apps. It gained two on
+     9 October 2026, when /start/ split into three pages with one job each (rider review
+     S9): The beta (/beta/) and What's new (/whats-new/).
+
+     The hrefs are ROOT-RELATIVE for the same reason the site nav's are: one block has to
+     serve a page at the site root and a page a directory down.
+
+     The Tell us line is here rather than in <main>. It used to be a 55-word paragraph inside
+     the body of six pages, saying the same thing six times; the sentence itself is
+     docs/copy/feedback.json's `invitation` and is pinned by web/tools/verify_copy.py, so it
+     may move but it may not be reworded. The real ask is /beta/#tell, which is where a
+     tester with something to say is standing. -->
+  <p>
+    <a href="/">About CleanJibe</a> ·
+    <a href="/start/">Get started</a> ·
+    <a href="/beta/">The beta</a> ·
+    <a href="/whats-new/">What&rsquo;s new</a> ·
+    <a href="/help/">Help</a> ·
+    <a href="/app/">Open the app</a> ·
+    <a href="https://github.com/JanLahmann/WingFoil" rel="noopener" data-umami-event="CleanJibe: github">GitHub</a> ·
+    <a href="/privacy/">Privacy</a>
+  </p>
+  <p>
+    A verdict you disagree with, or something you want this to do next? Write to
+    <a href="mailto:info@cleanjibe.org?subject=CleanJibe%20feedback&amp;body=What%20happened%2C%20or%20what%20you%20would%20like%3A%0A%0A%0AWhat%20you%20expected%20instead%3A%0A%0A%0AWhich%20session%2C%20its%20date%20and%20spot%2C%20if%20it%20is%20about%20one%3A%0A%0AYour%20watch%20and%20phone%20%28model%2C%20software%20version%29%3A%0A%0ACleanJibe%20version%20%28Settings%2C%20About%29%3A%0A%0AIdeas%20and%20wishes%20are%20as%20welcome%20as%20bugs.%20Attach%20a%20screenshot%20or%20the%20session%27s%20.fit%20file%20if%20you%20can.%0A"
+       data-umami-event="CleanJibe: footer-feedback-mail">info@cleanjibe.org</a>. In the iPhone app,
+    <strong>Menu &rarr; Support &amp; ideas</strong> fills the facts in for you.
+  </p>
+  <p data-copy="feedback-invitation">
+    Ideas and wishes are as welcome as bugs. An
+    <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener">issue</a> works too,
+    and the next rider can read it.
+  </p>
+  <!-- The one measurement this site takes, said out loud rather than behind a banner: umami
+       is cookieless and stores no identifier that survives the visit, so there is nothing to
+       consent to. It does not weaken the app's promise — a .fit file is read in the tab and
+       never leaves the device; what umami sees is that a page was opened. -->
+  <p class="fineprint">
+    We count page views and feature use with umami. It is anonymous and sets no cookies.
+  </p>
+<!-- sitefoot:end -->
+</footer>
+
+<!-- The three moving parts of the page chrome, identical on every document here.
+     `--topbar-h` is MEASURED rather than guessed: the topbar is sticky, carries the site nav
+     and changes height at every breakpoint, and the section nav under it has to stick
+     exactly below it. The `js` class marks a document whose script ran; no stylesheet
+     needs it since the section nav became a row of chips rather than a select, and a page
+     with no JavaScript at all now loses nothing but the measurement. -->
+<script>
+  (function () {
+    var root = document.documentElement, bar = document.querySelector(".topbar");
+    root.classList.add("js");
+    function fit() { root.style.setProperty("--topbar-h", bar.offsetHeight + "px"); }
+    fit();
+    addEventListener("resize", fit);
+  })();
+</script>
+
+</body>
+</html>

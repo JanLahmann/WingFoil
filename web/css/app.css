@@ -454,8 +454,10 @@ main { padding-bottom: calc(var(--tap) + 34px + env(safe-area-inset-bottom)); }
   flex-wrap: wrap;
 }
 
-/* The outcome tally, in the ladder's own inks, each number carrying its word. */
-.tally { display: inline-flex; align-items: baseline; gap: 4px; }
+/* The outcome tally, in the ladder's own inks, each number carrying its word. It wraps
+   rather than overflows: "12 flew · 3 touchdowns · 5 fell in" is wider than the old
+   "touch" and "fell", and a half-width tile on a phone may not hold it (pattern N). */
+.tally { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 0 4px; }
 
 .tally > span { display: inline-flex; align-items: baseline; gap: 3px; }
 
@@ -478,6 +480,13 @@ main { padding-bottom: calc(var(--tap) + 34px + env(safe-area-inset-bottom)); }
 .tally .star::before { content: "★"; margin-right: 2px; }
 .tally .ring::before { content: "○"; margin-right: 2px; }
 .tile .b { font: 600 15px/1.3 var(--sans); font-variant-numeric: tabular-nums; }
+
+/* The example-only Records and Trends: the line's two doors, side by side, wrapping on a
+   phone (js/trends.js, rider review I1). */
+.doors { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+/* The file door is a <label class="btn">, and style.css sizes only button.small-btn: the
+   label gets the same small size, so the two doors stand at one height. */
+.doors .btn.small-btn { font-size: 12px; padding: 5px 9px; }
 
 /* -------------------------------------------------------------- gear, spots, welcome */
 

@@ -159,11 +159,15 @@ function entry(cell, row) {
  *  the block can be drawn from `block` alone. */
 const BLOCK_ONLY = new Set(["best5x10s", "alpha500"]);
 
-/** The captions a speed cell carries when its record was not set — the lab's
- *  `RECORD_MISSING_CAPTIONS`, the kit's `PresentationDocument.recordMissingCaptions`. */
+/** The captions that stand in place of a value: a speed cell whose record was not set —
+ *  the lab's `RECORD_MISSING_CAPTIONS`, the kit's `PresentationDocument.recordMissingCaptions`
+ *  — and a rate cell under the rate floor (`PresentationDocument.missingCaptions`). */
 export const RECORD_MISSING = new Set(["presentation.caption.noMax2s",
                                        "presentation.caption.noBest5x10s",
-                                       "presentation.caption.noAlpha500"]);
+                                       "presentation.caption.noAlpha500",
+                                       // A rate under 20 minutes on the timer (9 Oct
+                                       // 2026): the lab's `RATE_MISSING_CAPTION`.
+                                       "presentation.caption.tooShortForRate"]);
 
 /** The comma a cell's label hangs its caption off: "flew · touch · fell, of 10 jibes". An
  *  em dash until 30 Sep 2026, which docs/voice.md rule 4 forbids in rider text. The same
@@ -315,11 +319,14 @@ export function cardStory(doc, wanted = "clean", { dateLine = "", speedNote = nu
   const falls = Number.isInteger(fallsN) ? fallSegments(fallsN) : [];
 
   const ribbon = [];
-  if (clean !== null && by.cph) {
+  // A rate under the floor carries "too short for a rate" instead of a number (the kit's
+  // `RateFloor`). The card has no room for the sentence, so the ribbon goes without it.
+  const rated = (key) => (by[key] && !by[key].missing ? by[key] : null);
+  if (clean !== null && rated("cph")) {
     ribbon.push({ key: "cph", label: cardWord("rateCph"), value: by.cph.value, clean: true });
   }
-  if (by.tph) ribbon.push({ key: "tph", label: cardWord("rateTph"), value: by.tph.value, clean: false });
-  else if (by.jph) ribbon.push({ key: "jph", label: cardWord("rateJph"), value: by.jph.value, clean: false });
+  if (rated("tph")) ribbon.push({ key: "tph", label: cardWord("rateTph"), value: by.tph.value, clean: false });
+  else if (rated("jph")) ribbon.push({ key: "jph", label: cardWord("rateJph"), value: by.jph.value, clean: false });
   if (speed && kind !== "max2s") {
     ribbon.push({ key: "max2s", label: speed.label, value: speed.value, clean: false });
   }
