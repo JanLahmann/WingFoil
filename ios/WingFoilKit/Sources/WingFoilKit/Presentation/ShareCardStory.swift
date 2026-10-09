@@ -203,10 +203,11 @@ public extension ShareCardStats {
             }
 
             var ribbon: [Cell] = []
-            // A rate under the floor carries "too short for a rate" instead of a number
-            // (`RateFloor`). The block explains itself there; a card has no room for the
-            // sentence, so the ribbon simply goes without the rate.
-            let rates = Dictionary(metrics.rates.filter { $0.missing == nil }
+            // A rate under the floor reads "—" and the block says "too short for a rate"
+            // once under the row (`RateFloor`, `KeyMetrics.ratesNote`). A card has no room
+            // for the sentence and "—" on a picture is a number with no answer, so the
+            // ribbon simply goes without the rates. The bundled example is exempt.
+            let rates = Dictionary((metrics.ratesNote == nil ? metrics.rates : [])
                                        .map { ($0.key, $0) }, uniquingKeysWith: { a, _ in a })
             if clean != nil, let cph = rates["cph"] {
                 ribbon.append(Cell(key: "cph", label: PresentationCopy.card("rateCph"),

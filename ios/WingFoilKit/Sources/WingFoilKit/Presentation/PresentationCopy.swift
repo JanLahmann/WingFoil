@@ -105,8 +105,8 @@ public enum PresentationCopy {
         "noAlpha500": Line("no 500 m out-and-back"),
         "noBest5x10s": Line("no unbroken 10 s of track"),
         "noMax2s": Line("no unbroken 2 s of track"),
-        // Why a rate cell has no number: under 20 minutes on the timer (Jan, 9 Oct 2026,
-        // `RateFloor`, `PresentationDocument.rateMissingCaption`).
+        // Why the rates row has no numbers: under 20 minutes on the timer — the row's one
+        // note (Jan, 9 Oct 2026, `RateFloor`, `PresentationDocument.rateMissingCaption`).
         "tooShortForRate": Line("too short for a rate"),
     ]
 

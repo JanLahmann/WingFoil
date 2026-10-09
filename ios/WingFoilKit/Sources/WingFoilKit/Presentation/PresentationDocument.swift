@@ -132,12 +132,16 @@ public enum PresentationDocument {
     ///   - divergence: the watch-vs-phone banner's lines, when a watch summary was paired.
     ///     The analysis cannot know them, so a document built from an analysis alone
     ///     carries the empty, honest answer.
+    ///   - rateFloorExempt: true for the bundled example session only (`SessionRow.isExample`;
+    ///     Jan, 9 Oct 2026). It shows its rates although it is under `RateFloor.minTimerS`;
+    ///     it is out of records and trends anyway. Twin of the lab's `rate_floor_exempt`.
     public static func build(_ analysis: SessionAnalysis,
                              policy: SpeedRecordPolicy = .preferVerified,
-                             divergence: [Divergence] = []) -> PresentationValue {
+                             divergence: [Divergence] = [],
+                             rateFloorExempt: Bool = false) -> PresentationValue {
         let summary = analysis.summary
         let markers = markerCounts(analysis)
-        let block = blockSection(summary, analysis.records)
+        let block = blockSection(summary, analysis.records, rateFloorExempt: rateFloorExempt)
         let records = recordsSection(analysis, policy: policy)
 
         return .object([
@@ -167,8 +171,10 @@ public enum PresentationDocument {
     /// newline. The twin of `presentation.document_json`.
     public static func json(_ analysis: SessionAnalysis,
                             policy: SpeedRecordPolicy = .preferVerified,
-                            divergence: [Divergence] = []) -> String {
-        build(analysis, policy: policy, divergence: divergence).json() + "\n"
+                            divergence: [Divergence] = [],
+                            rateFloorExempt: Bool = false) -> String {
+        build(analysis, policy: policy, divergence: divergence,
+              rateFloorExempt: rateFloorExempt).json() + "\n"
     }
 
     // MARK: - Cells
@@ -230,8 +236,8 @@ public enum PresentationDocument {
 
     /// `docs/presentation/key-metrics.md`, four rows. Every gate here is that file's, and
     /// a row with no cells is absent rather than empty.
-    static func blockSection(_ summary: SessionSummary, _ records: GP3SRecords)
-    -> PresentationValue {
+    static func blockSection(_ summary: SessionSummary, _ records: GP3SRecords,
+                             rateFloorExempt: Bool = false) -> PresentationValue {
         var rows: [PresentationValue] = []
 
         rows.append(.object(["id": .string("basics"), "cells": .array([
@@ -296,9 +302,16 @@ public enum PresentationDocument {
             rows.append(.object(["id": .string("turns"), "cells": .array(turnCells)]))
         }
 
-        let rates = rateCells(summary)
+        let rates = rateCells(summary, rateFloorExempt: rateFloorExempt)
         if !rates.isEmpty {
-            rows.append(.object(["id": .string("rates"), "cells": .array(rates)]))
+            var row: [String: PresentationValue] = ["id": .string("rates"),
+                                                    "cells": .array(rates)]
+            // **One note for the row** (Jan, 9 Oct 2026): under the floor each cell reads
+            // "—" and the reason is said once, under the row, not in every cell.
+            if !(rateFloorExempt || RateFloor.holds(timerS: summary.timerTimeS)) {
+                row["note"] = caption(rateMissingCaption)
+            }
+            rows.append(.object(row))
         }
         return .object(["rows": .array(rows)])
     }
@@ -353,43 +366,41 @@ public enum PresentationDocument {
     /// **counts**, never on a rate. Twin of the lab's `_rate_cells`.
     ///
     /// **Too short for a rate** (Jan, 9 Oct 2026): under `RateFloor.minTimerS` of timer
-    /// time the same cells are emitted with a null value and `rateMissingCaption`, which
-    /// the renderers draw where the number goes. The cell choice still follows the counts,
-    /// so the row names the rates the session would have had.
-    static func rateCells(_ s: SessionSummary) -> [PresentationValue] {
+    /// time the same cells are emitted with a null value ("—") and no caption; the reason
+    /// is the row's one `note` (`blockSection`). The cell choice still follows the counts,
+    /// so the row names the rates the session would have had. The bundled example is
+    /// exempt (`rateFloorExempt`) and keeps its numbers.
+    static func rateCells(_ s: SessionSummary, rateFloorExempt: Bool = false)
+    -> [PresentationValue] {
         guard let wet = s.wetPerHour else { return [] }
-        let rated = RateFloor.holds(timerS: s.timerTimeS)
-        let why = rated ? [] : [caption(rateMissingCaption)]
+        let rated = rateFloorExempt || RateFloor.holds(timerS: s.timerTimeS)
         func rate(_ value: Double) -> PresentationValue { rated ? number(value, "rate") : .null }
         var out: [PresentationValue] = []
         let jibes = s.turns.jibes
         let tph = s.turnsPerHour ?? 0
         if jibes > 0 || tph <= 0 {
             out.append(cell("cph", "glossary.cph", value: rate(s.cleanJibesPerHour ?? 0),
-                            unitKind: "rate", captions: why))
+                            unitKind: "rate"))
         }
         if s.turns.tacks > 0 || (jibes <= 0 && tph > 0) {
-            out.append(cell("tph", "glossary.tph", value: rate(tph), unitKind: "rate",
-                            captions: why))
+            out.append(cell("tph", "glossary.tph", value: rate(tph), unitKind: "rate"))
         } else {
             out.append(cell("jph", "glossary.jph", value: rate(s.jibesPerHour ?? 0),
-                            unitKind: "rate", captions: why))
+                            unitKind: "rate"))
         }
-        out.append(cell("wph", "glossary.wph", value: rate(wet), unitKind: "rate",
-                        captions: why))
+        out.append(cell("wph", "glossary.wph", value: rate(wet), unitKind: "rate"))
         return out
     }
 
-    /// The caption a rate cell carries on a session under the rate floor — drawn where
-    /// the number goes, like a record's missing reason. Twin of the lab's
+    /// The rates row's `note` on a session under the rate floor — said once, under the
+    /// row, with "—" in each cell (Jan, 9 Oct 2026). Twin of the lab's
     /// `RATE_MISSING_CAPTION`.
     static let rateMissingCaption = "presentation.caption.tooShortForRate"
 
     /// Every caption id that stands **in place of** a value: the three speed records'
-    /// reasons and the rate floor's. A renderer draws these where the number goes.
-    static var missingCaptions: Set<String> {
-        Set(recordMissingCaptions.values).union([rateMissingCaption])
-    }
+    /// reasons. A renderer draws these where the number goes. The rate floor's is a row
+    /// note, not one of these.
+    static var missingCaptions: Set<String> { Set(recordMissingCaptions.values) }
 
     // MARK: - The card
 

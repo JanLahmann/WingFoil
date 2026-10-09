@@ -171,13 +171,19 @@ public struct KeyMetrics: Sendable, Equatable {
     /// CPH, then one dry-turn rate — JPH on a jibes-only session, TPH once tacks exist —
     /// then WPH (Jan, 25 Sep 2026). **Empty** when `durationS <= 0` — the engine reports the
     /// rates as null there, and "no hour to divide by" is an absence, not a 0.0. Under
-    /// `RateFloor.minTimerS` every cell is there with `missing` set to "too short for a
-    /// rate" (Jan, 9 Oct 2026).
+    /// `RateFloor.minTimerS` every cell is there reading "—", and `ratesNote` says why
+    /// (Jan, 9 Oct 2026).
     public let rates: [Metric]
+    /// **The rates row's one note** — "too short for a rate" under the 20-minute floor,
+    /// drawn once under the row rather than in each cell (Jan, 9 Oct 2026). nil when the
+    /// rates hold, and on the bundled example, which is exempt. The document's
+    /// `rows[rates].note`; the web's `.key-note`.
+    public let ratesNote: String?
 
     public init(basics: [Metric], maxSpeed: Metric, speedExtras: [Metric] = [],
                 cleanJibes: Metric? = nil, tally: Tally?, tacks: Tally? = nil,
-                streaks: Metric?, falls: Metric? = nil, rates: [Metric]) {
+                streaks: Metric?, falls: Metric? = nil, rates: [Metric],
+                ratesNote: String? = nil) {
         self.basics = basics
         self.maxSpeed = maxSpeed
         self.speedExtras = speedExtras
@@ -187,6 +193,7 @@ public struct KeyMetrics: Sendable, Equatable {
         self.streaks = streaks
         self.falls = falls
         self.rates = rates
+        self.ratesNote = ratesNote
     }
 
     // MARK: - Building
@@ -204,8 +211,10 @@ public struct KeyMetrics: Sendable, Equatable {
     /// The convenience overload is kept because a caller with an analysis in hand should not
     /// have to build a document to draw a block, and because it is what makes this a
     /// refactor: the same summary and the same records still produce the same strings.
-    public static func make(summary: SessionSummary, records: GP3SRecords) -> KeyMetrics {
-        make(block: PresentationDocument.blockSection(summary, records))
+    public static func make(summary: SessionSummary, records: GP3SRecords,
+                            rateFloorExempt: Bool = false) -> KeyMetrics {
+        make(block: PresentationDocument.blockSection(summary, records,
+                                                      rateFloorExempt: rateFloorExempt))
     }
 
     /// The `block` section of a presentation document as the strings the phone draws.
@@ -216,6 +225,7 @@ public struct KeyMetrics: Sendable, Equatable {
     public static func make(block: PresentationValue) -> KeyMetrics {
         var cells: [String: PresentationValue] = [:]
         var order: [String] = []
+        let ratesRow = (block["rows"]?.arrayValue ?? []).first { $0["id"]?.stringValue == "rates" }
         for row in block["rows"]?.arrayValue ?? [] {
             for cell in row["cells"]?.arrayValue ?? [] {
                 guard let key = cell["key"]?.stringValue else { continue }
@@ -240,7 +250,8 @@ public struct KeyMetrics: Sendable, Equatable {
             falls: metric("falls"),
             // In the document's order, so a rate added to the row lands here with no edit.
             rates: order.filter { ["jph", "cph", "tph", "wph"].contains($0) }
-                .compactMap(metric))
+                .compactMap(metric),
+            ratesNote: ratesRow?["note"].flatMap(PresentationCopy.captionText))
     }
 
     // MARK: - One cell

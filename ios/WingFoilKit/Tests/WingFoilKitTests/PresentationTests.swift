@@ -923,8 +923,9 @@ import Testing
     }
 
     /// **Too short for a rate** (Jan, 9 Oct 2026): under 20 minutes of timer time the same
-    /// three cells are there, each with the reason where the number goes. The rider reads
-    /// which rates the session would have had and why it has none.
+    /// three cells are there, each reading "—", and the row says why **once** — one note
+    /// under the row, not the caption three times. The rider reads which rates the session
+    /// would have had and why it has none.
     @Test func keyMetricsSayTooShortForARateUnderTwentyMinutes() {
         var summary = SessionSummary(foilTimeS: 300, foilPct: 50, flightCount: 2,
                                      longestFlightS: 120, maxFlightM: 400,
@@ -938,9 +939,27 @@ import Testing
         #expect(summary.cleanJibesPerHour != nil)          // the engine keeps its number
         let block = KeyMetrics.make(summary: summary, records: GP3SRecords())
         #expect(block.rates.map(\.key) == ["cph", "jph", "wph"])
-        #expect(block.rates.allSatisfy { $0.missing == "too short for a rate" })
+        #expect(block.ratesNote == "too short for a rate")
+        #expect(block.rates.allSatisfy { $0.missing == nil && $0.caption == nil })
         #expect(block.rates.allSatisfy { $0.value == "—" })
         #expect(block.rates.map(\.label).last == "falls / h")
+        // The document says it once, on the row.
+        let rows = PresentationDocument.blockSection(summary, GP3SRecords())["rows"]?
+            .arrayValue ?? []
+        let rates = rows.first { $0["id"]?.stringValue == "rates" }
+        #expect(rates?["note"]?["id"]?.stringValue == "presentation.caption.tooShortForRate")
+        #expect((rates?["cells"]?.arrayValue ?? []).allSatisfy {
+            $0["captions"]?.arrayValue?.isEmpty == true })
+
+        // **The bundled example is exempt** (Jan, 9 Oct 2026): the same ten-minute numbers
+        // show, with no note. It stays out of records and trends (`isExample`) regardless.
+        let example = KeyMetrics.make(summary: summary, records: GP3SRecords(),
+                                      rateFloorExempt: true)
+        #expect(example.rates.map(\.key) == ["cph", "jph", "wph"])
+        #expect(example.ratesNote == nil)
+        #expect(example.rates.allSatisfy { $0.value != "—" && $0.missing == nil })
+        #expect(example.rates.first?.value
+                    == String(format: "%.1f", (summary.cleanJibesPerHour ?? 0)))
     }
 
     /// An afternoon of jibes he did not ride keeps a **measured** 0.0 CPH beside a JPH that
