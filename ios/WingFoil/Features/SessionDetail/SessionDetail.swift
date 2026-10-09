@@ -317,7 +317,10 @@ struct SessionDetail: Sendable {
         self.divergences = divergences
         // The banner's lines ride in the document with everything else, which is what makes
         // the watch-vs-phone note a fact of the session rather than a view's private state.
-        document = PresentationDocument.build(analysis, divergence: divergences)
+        // The bundled example is exempt from the 20-minute rate floor (Jan, 9 Oct 2026): it
+        // shows its rates on this page and its card, and stays out of records and trends.
+        document = PresentationDocument.build(analysis, divergence: divergences,
+                                              rateFloorExempt: row.isExample)
 
         let pairings = FlightPairing.flights(analysis)
         self.pairings = pairings

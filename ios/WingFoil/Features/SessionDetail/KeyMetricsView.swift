@@ -79,8 +79,18 @@ struct KeyMetricsView: View {
             }
 
             if !metrics.rates.isEmpty {
-                row {
-                    ForEach(metrics.rates) { cell($0) }
+                // Under the 20-minute floor each rate reads "—" and the row says why once,
+                // under it (Jan, 9 Oct 2026) — not the same caption in every cell.
+                VStack(alignment: .leading, spacing: 6) {
+                    row {
+                        ForEach(metrics.rates) { cell($0) }
+                    }
+                    if let note = metrics.ratesNote {
+                        Text(note)
+                            .font(.subheadline)
+                            .foregroundStyle(.readableSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
             }
         }
