@@ -544,10 +544,10 @@ class RecordingView extends WatchUi.View {
             drawHeroPage(dc, c, i, foilArc);
         }
         // The state ring, every page through this one call (0.9.22, W13 on every page): the
-        // whole ring on MAIN and the hero pages, the broken lost-GPS ring in the bezel band
-        // on every other one. Where that band carries the foil-% arc, the broken ring takes
-        // it for as long as the fix is gone — the bezel holds one ring at a time, and the
-        // page shows the same foil % as a number anyway.
+        // whole ring on MAIN and the hero pages, the broken lost-GPS ring and the paused
+        // yellow one in the bezel band on every other one. Where that band carries the foil-%
+        // arc, either ring takes it for as long as the fix is gone or the pause lasts — the
+        // bezel holds one ring at a time, and the page shows the same foil % as a number.
         var bandTaken = drawStateRing(dc, c, ring, foilArc);
         if (foilArc && !bandTaken) {
             drawFoilBezel(dc, c);
@@ -998,6 +998,15 @@ class RecordingView extends WatchUi.View {
         return flying ? RING_FLYING : RING_OFF;
     }
 
+    // Pure, for the suite: whether a page draws a ring this frame. A ring page always does; a
+    // ringless page only for the two "not counting" looks — the lost fix's broken grey and,
+    // since Jan's 9 Oct note, the pause's whole yellow — and always in the band bodyRadius
+    // already keeps clear, so neither look moves a row or changes a font. Paused and lost
+    // together read as paused, as they do on MAIN and the hero pages (ringLook).
+    static function drawsRing(ring as Boolean, look as Number) as Boolean {
+        return ring || look == RING_NO_GPS || look == RING_PAUSED;
+    }
+
     // Twelve 18 deg segments, 12 deg gaps, the first centred on 12 o'clock.
     const NO_GPS_SEGMENTS = 12;
     const NO_GPS_ARC_DEG = 18;
@@ -1005,8 +1014,8 @@ class RecordingView extends WatchUi.View {
     // Which layouts draw the whole state ring: MAIN and the hero pages, and any layout id the
     // firmware hands us out of range, because onUpdate falls back to a hero page for it.
     // Every other page — Records, Turns, Tacks & jibes, Clock, Timeline, the map, the grids,
-    // the foil table and the five large-text pages — draws only the ring's lost-GPS form, in
-    // the bezel band.
+    // the foil table and the five large-text pages — draws only the ring's lost-GPS and paused
+    // forms, in the bezel band.
     static function layoutHasStateRing(layout as Number) as Boolean {
         return layout == PageModel.LAYOUT_HERO || layout == PageModel.LAYOUT_MAIN
             || !(layout == PageModel.LAYOUT_BIG || layout == PageModel.LAYOUT_FOIL
@@ -1060,13 +1069,13 @@ class RecordingView extends WatchUi.View {
     }
 
     // The one helper every recording page's ring goes through. Returns true when it drew the
-    // lost-GPS ring in the bezel band, so the caller leaves the foil-% arc out this frame.
+    // lost-GPS or the paused ring in the bezel band, so the caller leaves the foil-% arc out
+    // this frame.
     hidden function drawStateRing(dc as Dc, c as SessionController, ring as Boolean,
             foilArc as Boolean) as Boolean {
         var look = ringLook(c.state == SessionController.STATE_PAUSED, c.gpsLost(),
             c.engine.detector.state == FlightDetector.STATE_ON);
-        // a ringless page shows only the lost fix: its pause is the banner's
-        if (!ring && look != RING_NO_GPS) {
+        if (!drawsRing(ring, look)) {
             return false;
         }
         var cx = dc.getWidth() / 2;

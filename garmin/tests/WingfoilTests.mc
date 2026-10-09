@@ -2582,6 +2582,35 @@ function everyLayoutRendersHeadless(logger as Test.Logger) as Boolean {
         PageNav.index = p;
         view.onUpdate(dc);
     }
+    // ...and paused, lost fix and all, then with the fix back (Jan, 9 Oct 2026): the
+    // ringless pages draw the yellow ring in the same band, MAIN and HERO their own
+    for (var lost = 0; lost < 2; lost++) {
+        if (lost == 1) {
+            c.gpsLoss.disarm();
+        }
+        c.state = SessionController.STATE_PAUSED;
+        for (var set = 0; set < 2; set++) {
+            if (set == 0) {
+                PageModel.build({});
+            } else {
+                PageModel.buildLarge();
+            }
+            for (var p = 0; p < PageModel.count(); p++) {
+                PageNav.index = p;
+                view.onUpdate(dc);
+            }
+        }
+        for (var i = 0; i < layouts.size(); i++) {
+            PageModel.build({"pg1Layout" => layouts[i], "pg1s1" => PageModel.M_FOIL_PCT,
+                "pg2Layout" => layouts[i], "pg2s1" => PageModel.M_SPEED,
+                "pg3Layout" => 0, "pg4Layout" => 0, "pg5Layout" => 0,
+                "pg6Layout" => 0, "pg7Layout" => 0, "pg8Layout" => 0});
+            for (var p = 0; p < PageModel.count(); p++) {
+                PageNav.index = p;
+                view.onUpdate(dc);
+            }
+        }
+    }
     PageModel.build({});
     PageNav.index = 0;
     c.gpsLoss.disarm();
@@ -3316,6 +3345,7 @@ function ringClearsPage(dc as Graphics.Dc, layout as Number, arc as Boolean,
 
 (:test)
 function gpsRingFitsEveryRecordingPage(logger as Test.Logger) as Boolean {
+    Words.load();
     var dc = testDc();
     // every layout on its own, both ways round
     var layouts = [PageModel.LAYOUT_MAIN, PageModel.LAYOUT_HERO, PageModel.LAYOUT_BIG,
@@ -3350,7 +3380,56 @@ function gpsRingFitsEveryRecordingPage(logger as Test.Logger) as Boolean {
             sets++;
         }
     }
+    // ...and the paused look (Jan, 9 Oct 2026): every ringless page draws the whole yellow
+    // ring in the SAME band while paused, paused-and-lost reads as paused as it does on MAIN
+    // and HERO, a running page with a fix draws nothing there — and not one radius or font
+    // moves. The band (stateRingGeom) and the content radius (bodyRadius) take no state, and
+    // the fitters every body uses take only that radius, so the paused frame is fitted exactly
+    // like the running one; the banner's text and row are asserted alongside.
+    var looks = [[false, false], [true, false], [true, true], [false, true]];
+    var paused = 0;
+    for (var set = 0; set < 3; set++) {
+        if (set == 0) {
+            PageModel.build({});
+        } else if (set == 1) {
+            PageModel.buildLarge();
+        }
+        var n = set == 2 ? layouts.size() * 2 : PageModel.count();
+        for (var p = 0; p < n; p++) {
+            var layout = set == 2 ? layouts[p / 2] : PageModel.layoutAt(p);
+            var arc = set == 2 ? p % 2 == 1 : PageModel.pageDrawsFoilArc(p);
+            var ring = RecordingView.layoutHasStateRing(layout);
+            var what = "set " + set.toString() + " page " + p.toString();
+            var g0 = RecordingView.stateRingGeom(dc, ring, arc);
+            var b0 = RecordingView.bodyRadius(dc, ring, arc);
+            var f0 = RecordingView.fitRadius(dc, ring, arc);
+            var font = TEXT_FONTS[PAUSED_FONT_IDX];
+            var t0 = RecordingView.pausedText(dc, font, b0);
+            var y0 = RecordingView.pausedBannerY(dc, dc.getTextWidthInPixels(t0, font), b0);
+            for (var k = 0; k < looks.size(); k++) {
+                var look = RecordingView.ringLook(looks[k][0], looks[k][1], false);
+                if (looks[k][0]) {
+                    Test.assertMessage(look == RecordingView.RING_PAUSED,
+                        what + ": paused wins over a lost fix");
+                }
+                Test.assertMessage(RecordingView.drawsRing(ring, look)
+                    == (ring || looks[k][0] || looks[k][1]), what + ": who draws the ring");
+                var g = RecordingView.stateRingGeom(dc, ring, arc);
+                Test.assertMessage(g[0] == g0[0] && g[1] == g0[1], what + ": the band moved");
+                var b = RecordingView.bodyRadius(dc, ring, arc);
+                Test.assertMessage(b == b0 && RecordingView.fitRadius(dc, ring, arc) == f0,
+                    what + ": a radius moved");
+                var t = RecordingView.pausedText(dc, font, b);
+                Test.assertMessage(t.equals(t0) && RecordingView.pausedBannerY(dc,
+                    dc.getTextWidthInPixels(t, font), b) == y0, what + ": the banner moved");
+            }
+            if (!ring) {
+                paused++;
+            }
+        }
+    }
     PageModel.build({});
+    logger.debug("paused ring in the band on " + paused.toString() + " ringless pages");
     logger.debug("gps ring clears " + sets.toString() + " pages; ring band "
         + RecordingView.stateRingGeom(dc, false, false).toString() + ", body radius "
         + RecordingView.bodyRadius(dc, false, false).toString() + " on "
