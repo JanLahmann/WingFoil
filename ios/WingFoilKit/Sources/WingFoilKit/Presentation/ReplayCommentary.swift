@@ -221,11 +221,10 @@ public enum ReplayCommentary {
            let best = analysis.records.best2sKn, best > 0 {
             out.append(ReplayMilestone(
                 id: "top-speed", t: window.startTs, kind: .topSpeed,
-                // Not "Top speed — 13.47 kn" full stop: the number is a two-second window,
-                // and `KeyMetrics` refuses to call it a top speed for exactly that reason.
-                // Naming the window keeps the rider's word without making his claim bigger.
-                text: "Top speed · " + KeyMetrics.knots(best) + " over "
-                    + RecordKind.best2s.windowLabel))
+                // Not "Top speed": the number is a two-second window, and `KeyMetrics`
+                // refuses to call it a top speed for exactly that reason. The record's own
+                // name, the one every other screen prints (rider review X2, 9 Oct 2026).
+                text: RecordKind.best2s.label + " · " + KeyMetrics.knots(best)))
         }
         if let longest = analysis.flights.enumerated().max(by: {
             let (a, b) = ($0.element, $1.element)

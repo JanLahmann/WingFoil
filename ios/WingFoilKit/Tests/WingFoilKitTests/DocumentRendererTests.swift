@@ -58,11 +58,11 @@ import Testing
         #expect(block.basics[0].value == "1:59 h")
         #expect(block.basics[1].value == "17.5 km")
 
-        #expect(block.maxSpeed.label == "max 2 s")
+        #expect(block.maxSpeed.label == "best 2 s")
         #expect(block.speedExtras.map(\.label) == ["5×10 s", "alpha 500"])
 
         let tally = try #require(block.tally)
-        #expect(tally.label == "flew · touch · fell")
+        #expect(tally.label == "flew · touchdown · fell in")
         #expect(tally.caption == "of 18 jibes")
         #expect(tally.total == 18)
         // No tack ladder on this afternoon, and the falls cell is the *session*: the tally
@@ -81,7 +81,7 @@ import Testing
         #expect(block.rates.map(\.key) == ["cph", "jph", "wph"])
         #expect(block.rates.map(\.label) == ["CPH · clean jibes per hour",
                                              "JPH · dry jibes per hour",
-                                             "WPH · falls per hour"])
+                                             "falls / h"])
         #expect(block.rates.map(\.value) == ["0.0", "5.4", "6.6"])
     }
 

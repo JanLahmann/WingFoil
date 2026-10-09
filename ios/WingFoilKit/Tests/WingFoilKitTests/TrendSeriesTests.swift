@@ -76,23 +76,24 @@ import Testing
         }
     }
 
-    /// The three rates are one row of the page, not one metric with two optional extras:
-    /// CPH says he rode the jibe, JPH says he got away with it, TPH says how busy the
-    /// afternoon was (docs/algorithms/rates.md, "Session rates"). All three come off the engine,
-    /// and the two new ones have **no** fallback — a row the v17 sweep has not reached has
-    /// a gap in those two lines rather than a number nothing published.
-    @Test func theThreeRatesAreDrawnTogether() async throws {
+    /// **CPH, then ONE dry-turn rate** (rider review I20, 9 Oct 2026): the analyzer draws
+    /// TPH once a session in the range has a tack and JPH otherwise, and the phone picks the
+    /// same one off its own points (`TrendPoint.dryTurnRate`). Both come off the engine, and
+    /// neither has a fallback — a row the v17 sweep has not reached has a gap in the line
+    /// rather than a number nothing published.
+    @Test func cphThenOneDryTurnRate() async throws {
         let fixture = try PeriodTests.loadFixture()
         let keys = fixture.trends.charts.map(\.key)
-        #expect(keys.contains("cph") && keys.contains("jph") && keys.contains("tph"))
+        let dry = keys.filter { $0 == "jph" || $0 == "tph" }
+        #expect(keys.contains("cph") && dry.count == 1)
         let units = Dictionary(uniqueKeysWithValues: fixture.trends.charts.map {
             ($0.key, $0.unit)
         })
         #expect(units["cph"] == "clean jibes / h")
-        #expect(units["jph"] == "jibes / h")
-        #expect(units["tph"] == "turns / h")
+        #expect(units[dry.first ?? ""] == (dry.first == "tph" ? "turns / h" : "jibes / h"))
 
         let points = try await PeriodTests.library(fixture).trend()
+        #expect(TrendPoint.dryTurnRate(points).rawValue == dry.first)
         let a6 = try #require(points.first { $0.sessionId == "a6" })
         #expect(a6.jibesPerHour == nil)
         #expect(a6.turnsPerHour == nil)

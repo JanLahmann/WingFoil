@@ -56,7 +56,7 @@ import Testing
             // jibes · 3 in a row, dry" would print the number twice.
             "3 in a row, dry",
             "4 in a row, dry",
-            "Top speed · 13.47 kn over 2 s",
+            "Best 2 s · 13.47 kn",
             // Where a clean ordinal lands on a streak record they share the frame, strict
             // first: the run is over dry maneuvers, the count beside it is over ridden ones.
             "3 clean jibes · 5 in a row, dry",

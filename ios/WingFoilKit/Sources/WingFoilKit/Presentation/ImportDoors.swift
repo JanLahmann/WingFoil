@@ -108,10 +108,8 @@ public enum ImportDoor: String, CaseIterable, Sendable, Identifiable {
         }
     }
 
-    /// The recording classes this door yields (docs/copy/recording-classes.json), as the
-    /// letter and the thing — the label a rider matches against the table he read on
-    /// cleanjibe.org (pattern H). A label, not a sentence: the *line* about what each class
-    /// costs is the help topic's.
+    /// The recording classes this door yields (docs/copy/recording-classes.json). A fact
+    /// for the label below and for the tests; the letters themselves are never printed.
     public func recordingClasses(channel: HelpChannel) -> [RecordingClass] {
         switch self {
         case .icu: [.a, .b]
@@ -123,11 +121,18 @@ public enum ImportDoor: String, CaseIterable, Sendable, Identifiable {
         }
     }
 
-    /// "Class A · Garmin watch app or Class B · any file with measured speed".
+    /// **What the door gets you, as a label** above its footer: "Measured speed",
+    /// "Positions only" (rider review I7, 9 Oct 2026, replacing "Class A · Garmin watch app
+    /// or Class B · any file with measured speed"). The names of `RecordingClass`, so the
+    /// Import screen and the table on cleanjibe.org say the same words. A door that can bring
+    /// in a CleanJibe recording or any other FIT says what both have, measured speed; the
+    /// wrist is the help topic's to explain.
     public func classLabel(channel: HelpChannel) -> String {
-        let names = recordingClasses(channel: channel).map(\.name)
-        guard names.count > 1 else { return names.first ?? "" }
-        return names.dropLast().joined(separator: ", ") + " or " + names[names.count - 1]
+        let classes = recordingClasses(channel: channel)
+        if classes.count == 1 { return classes[0].name }
+        let measured = RecordingClass.b.name
+        guard classes.contains(.c) else { return measured }
+        return measured + ", or " + RecordingClass.c.name.lowercased() + " from a GPX"
     }
 
     /// **What you get, in one line** (pattern K, and 25 words). Not how to get it: that is
@@ -149,8 +154,8 @@ public enum ImportDoor: String, CaseIterable, Sendable, Identifiable {
               + "here too."
             : "One FIT or ZIP from any watch. AirDrop and the share sheet land here too."
         case .strava:
-            "Sessions you pick from your Strava account. Positions only, so records are "
-            + "estimated. " + Copy.stravaFall
+            "Sessions you pick from your Strava account. Speed records are estimated. "
+            + Copy.stravaFall
         case .garminZip:
             "Every original FIT your Garmin account holds. Ask for the ZIP under "
             + "Account → Export Your Data. Duplicates are skipped."

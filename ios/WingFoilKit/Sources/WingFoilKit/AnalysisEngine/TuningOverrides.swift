@@ -519,7 +519,7 @@ public enum TuningGroup: String, CaseIterable, Sendable {
                 + "to do on top of flying through. Loosen these and the map shows more turns; "
                 + "tighten them and it shows fewer, better-defined ones."
         case .outcomes:
-            "How a turn or a flight ended — flew through, touched down, fell in. One stop "
+            "How a turn or a flight ended — flew through, touchdown, fell in. One stop "
                 + "ladder decides both, so a number moved here moves both verdicts."
         case .flights:
             "When you are on the foil. These decide foil time, the flight count and every "

@@ -26,6 +26,13 @@ public enum Copy {
     /// so the verdict reads touchdown. Said once, on every Strava setup surface.
     public static let stravaFall = "Without the watch's own speed, a fall can read as a touchdown."
 
+    /// Where the CleanJibe watch app's tacks and jibes get their wind (rider review S15):
+    /// `AutoWind` estimates the axis live (docs/algorithms/wind.md, "Watch approximation"),
+    /// and a bearing set by hand still wins. Said in these words on the help's Garmin
+    /// Connect item and on /start/'s watch-app card.
+    public static let watchWind =
+        "The watch works the wind direction out after a few minutes of flying."
+
     // MARK: - The drawn track (the turn page and the flight-end page)
     /// Why a drawn track is north up: no wind direction the engine trusts, none set on
     /// the watch. Said under the orientation switch on the turn page and the flight-end page.
@@ -91,6 +98,20 @@ public enum Copy {
     /// (`strava`), which is the sentence this one follows.
     public static let stravaAskForMore =
         "Tell us under Menu → Support & ideas, and CleanJibe asks Strava for more."
+
+    /// The way in that still works while Strava is full: Strava's own export of the
+    /// original file, then the file door. Settings → Strava and Import → Strava show it under
+    /// the refusal, with the two buttons beside it (rider review I5, 9 Oct 2026), and the
+    /// help topic and the guide say the same path.
+    public static let stravaFullExport =
+        "Your Strava sessions can still come in as files. " + stravaExportOriginal
+        + " AirDrop the file to this iPhone and import it."
+
+    /// Strava's own path to the file it was given, the one sentence the refusal, the help
+    /// topic and the guide share. A computer, because strava.com offers the export only in
+    /// its desktop page.
+    public static let stravaExportOriginal =
+        "On a computer, open the activity on strava.com and choose ⋯ → Export Original."
 
     // MARK: - The feedback mails
 

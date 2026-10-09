@@ -40,7 +40,7 @@ import Testing
             ReplayMilestone(id: "longest-flight", t: 3000, kind: .longestFlight,
                             text: "Longest flight · 11:20"),
             ReplayMilestone(id: "top-speed", t: 4680, kind: .topSpeed,
-                            text: "Top speed · 21.4 kn over 2 s"),
+                            text: "Best 2 s · 21.4 kn"),
             ReplayMilestone(id: "end", t: 7200, kind: .sessionEnd,
                             text: "Session end · 2:00:00 · 41.8 km · 40 dry jibes"),
         ]
@@ -160,7 +160,7 @@ import Testing
                 // start"; what matters here is that it is the *opening* line.
                 "Session start",
                 "Flying! · Longest flight · 6:32",
-                "Top speed · 13.47 kn over 2 s",
+                "Best 2 s · 13.47 kn",
                 "Session end · 10:45 · 2.6 km · 8 dry jibes",
             ])
 

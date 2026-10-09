@@ -54,6 +54,8 @@ import Testing
             "records": ExampleOnlyNote.records,
             "trendsTitle": ExampleOnlyNote.trendsTitle,
             "trends": ExampleOnlyNote.trends,
+            "importButton": ExampleOnlyNote.importButton,
+            "connectButton": ExampleOnlyNote.connectButton,
         ]
         groups["sessionMail"] = [
             "prompt": SessionAnalysisMail.prompt,

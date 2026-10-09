@@ -85,8 +85,8 @@ import Testing
         }
         for detail in [WelcomeGuide.tryExampleDetail, WelcomeGuide.shareCardCaption,
                        FeedbackInvitation.community + " " + WelcomeGuide.footerRelease]
-                      + BetaGuide.howToJoin
-                      + [BetaGuide.community, BetaGuide.whatsNewBeta,
+                      + BetaGuide.howToJoin + BetaGuide.goingBack
+                      + [BetaGuide.leavingTheBeta, BetaGuide.community, BetaGuide.whatsNewBeta,
                          BetaGuide.whatsNewRelease, FeedbackReport.opening]
                       + GettingStartedGuide.appParagraphs {
             #expect(Self.words(detail) <= Self.paragraphBudget)

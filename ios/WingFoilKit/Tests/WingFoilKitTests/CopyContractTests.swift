@@ -526,6 +526,7 @@ import Testing
         Self.same(Branding.tagline, json["tagline"], "phrases.json", "tagline")
         Self.same(ShareCaption.offer, json["captionOffer"], "phrases.json", "captionOffer")
         Self.same(Copy.stravaFall, json["stravaFall"], "phrases.json", "stravaFall")
+        Self.same(Copy.watchWind, json["watchWind"], "phrases.json", "watchWind")
 
         // The hand-authored half. Not kit constants — they are facts about Strava, the
         // stores and the vocabulary — but the file is worthless without them, so their

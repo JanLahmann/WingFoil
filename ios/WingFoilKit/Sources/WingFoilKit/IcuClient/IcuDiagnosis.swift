@@ -209,13 +209,17 @@ public enum IcuOnboarding {
 
     /// - Parameters:
     ///   - sessionCount: rows in the library.
+    ///   - exampleCount: how many of them are the bundled example. **The example is not
+    ///     the rider's** (Jan, 9 Oct 2026; rider review I1): a rider who took *Try the
+    ///     example session* first still has no way in, so a library of the example alone
+    ///     keeps the ways-in card until a session of his own arrives.
     ///   - hasKey: a non-empty API key is stored.
     ///   - lastProblem: the mapped cause of the last sync/check, if it failed.
-    public static func state(sessionCount: Int, hasKey: Bool,
+    public static func state(sessionCount: Int, exampleCount: Int = 0, hasKey: Bool,
                              lastProblem: IcuProblem?) -> IcuOnboardingState {
         // A library with sessions in it is never onboarding, however the last sync went:
         // a failed refresh is an error banner, not a first-run wizard.
-        guard sessionCount == 0 else { return .ready }
+        guard sessionCount <= exampleCount else { return .ready }
         // No key beats every stored problem — the fix is the same four steps either way.
         guard hasKey else { return .setup }
         if let lastProblem { return .problem(lastProblem) }

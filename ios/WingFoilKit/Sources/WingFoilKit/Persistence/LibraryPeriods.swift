@@ -385,7 +385,7 @@ extension LibraryStore {
         if let outcomes {
             card.dryKind = (tacks ?? 0) == 0 && jibes == outcomes.total ? "jibes" : "turns"
             let timer = laddered.reduce(0.0) { $0 + $1.timerSeconds }
-            if timer > 0 {
+            if RateFloor.holds(timerS: timer) {             // the rate floor (9 Oct 2026)
                 card.dryRate = KeyMetrics.rate(
                     Double(outcomes.flewThrough + outcomes.touchdown) / (timer / 3600))
             }
@@ -423,7 +423,11 @@ extension LibraryStore {
         // second local rather than a reuse of `f.hours`: the one line that blurred them is
         // the bug this pair replaces.
         let timerSeconds = rows.reduce(0.0) { $0 + $1.timerSeconds }
-        let rateHours: Double? = timerSeconds > 0 ? timerSeconds / 3600 : nil
+        // The rate floor, over the period's own total (`RateFloor`, 9 Oct 2026): a month
+        // holding one ten-minute paddle has no rate to print, a month of ten of them has
+        // 100 minutes.
+        let rateHours: Double? = RateFloor.holds(timerS: timerSeconds)
+            ? timerSeconds / 3600 : nil
         f.distanceKm = sum { $0.distanceKm }
         f.flights = sum { $0.flightCount }
         // The engine's own denominator for its own foil share, recovered the way the analyzer

@@ -89,7 +89,7 @@ import Testing
     /// decision, and this is where it is written down.
     @Test func theAppDrawsItsSectionsInItsOrder() {
         #expect(WelcomeSections.app.map(\.id) == [
-            .identity, .legend, .example, .measures, .getStarted, .family, .community,
+            .identity, .legend, .example, .getStarted, .measures, .family, .community,
             .footerLinks,
         ])
     }

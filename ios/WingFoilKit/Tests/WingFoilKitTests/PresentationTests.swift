@@ -144,7 +144,8 @@ import Testing
                                      .notifications])
         #expect(listed(.readNumbers) == [.numbers, .mapLegend, .flights, .speedRecords,
                                          .verifiedRecords, .turnTypes, .turnOutcomes,
-                                         .turnSuccess, .portStarboard, .falls, .glideOuts,
+                                         .turnSuccess, .rates, .portStarboard, .falls,
+                                         .glideOuts,
                                          .takeoffAttempts, .pumpsToTakeoff, .pumpStrokes,
                                          .heartRate, .windAxis, .windsurf])
         #expect(listed(.share) == [.shareCard, .replayClip, .shareFit])
@@ -355,45 +356,47 @@ import Testing
         #expect(rider.lowercased().contains("trends"))
     }
 
-    /// The source topic, and the one line the de-jargoning rule was actually about.
+    /// The source topic says what each watch gets, in the rider's words, and no class.
     ///
-    /// A bare letter — "class b", on its own, with nothing beside it — still answers nothing
-    /// a rider asked, and is still forbidden. What changed on 14 Sep 2026 is that the classes
-    /// acquired **names**, printed on cleanjibe.org and on the Import screen before a rider
-    /// has anything to import, so the topic now has to spell them exactly as the website does
-    /// or the reader cannot match the row he read to the screen he is on.
+    /// From 14 Sep 2026 each row ended with "Class B · any file with measured speed", the
+    /// letter and the thing. The rider review of 9 Oct 2026 (X9) read it as a question —
+    /// *which class am I?* — that the sentence before it had already answered. So the
+    /// letters are gone from the topic, in either case, and every row says measured or
+    /// estimated speed instead.
     @Test func theSourceTopicAnswersDoINeedTheWatchApp() {
-        // One topic since 26 September 2026: the watch table, each row naming its class.
         let topic = HelpCatalog.topic(.whichWatch)
         let all = ([topic.title, topic.summary] + topic.body
                    + topic.items.flatMap { [$0.term, $0.detail] }).joined(separator: " ")
-        // Every name the class is given, in the web's spelling.
-        for recording in RecordingClass.allCases {
-            #expect(all.contains(recording.name),
-                    "the source topic does not name \(recording.name)")
-        }
-        // The bare lower-case letter, unaccompanied, is still jargon.
         for jargon in ["class a", "class b", "class c"] {
-            #expect(!all.contains(jargon), "the source topic still says \"\(jargon)\"")
+            #expect(!all.lowercased().contains(jargon), "the source topic still says \"\(jargon)\"")
         }
         #expect(all.contains("CleanJibe watch app"))
-        // Rows by watch, and every row names its class.
+        // Rows by watch, and every row says what it gets: everything, measured speed, or
+        // speed estimated from positions.
         #expect(topic.items.allSatisfy { item in
-            RecordingClass.allCases.contains { item.detail.contains($0.name) }
+            ["everything", "measured speed", "estimated"].contains {
+                item.detail.lowercased().contains($0)
+            }
         })
+        // A COROS FIT carries measured speed; only its GPX is positions only (the code:
+        // `SourceCapabilities.sourceClass` is "b" for any file with a speed channel).
+        let others = topic.items.first { $0.term.hasPrefix("Polar") }?.detail ?? ""
+        #expect(others.contains("A FIT gives you measured speed"))
     }
 
-    /// The class names are a contract with the website and with docs/channels.md: the same
-    /// four strings, in the same spelling, or a rider cannot match the table he read before
-    /// the import to the footer he reads during it.
+    /// The class names are a contract with the website: the same four strings, in the same
+    /// spelling, or a rider cannot match the table he read before the import to the label
+    /// he reads during it. What the rider gets, never a letter.
     @Test func theRecordingClassesAreNamedTheWayTheWebsiteNamesThem() {
-        #expect(RecordingClass.a.name == "Class A · Garmin watch app")
-        #expect(RecordingClass.b.name == "Class B · any file with measured speed")
-        #expect(RecordingClass.bPlus.name == "Class B+ · Apple Watch app")
-        #expect(RecordingClass.c.name == "Class C · positions only")
+        #expect(RecordingClass.a.name == "Everything")
+        #expect(RecordingClass.b.name == "Measured speed")
+        #expect(RecordingClass.bPlus.name == "Measured speed and the wrist")
+        #expect(RecordingClass.c.name == "Positions only")
         for recording in RecordingClass.allCases {
             #expect(!recording.footerLine.contains("—"), "\(recording.name) uses an em dash")
             #expect(recording.footerLine.hasPrefix(recording.name))
+            #expect(!recording.footerLine.lowercased().contains("class "),
+                    "\(recording.name) still names a class")
         }
     }
 
@@ -414,7 +417,7 @@ import Testing
         #expect(all.contains("Strava"))
         #expect(all.contains(".fit") && all.contains(".gpx"))
         // The class it costs, and the pouch that keeps the track from dropping out.
-        #expect(all.contains(RecordingClass.c.name))
+        #expect(all.contains(RecordingClass.c.name.lowercased()))
         #expect(all.lowercased().contains("pouch"))
         // Strava's phone app has no export, so the topic must not send anyone looking for
         // one.
@@ -763,7 +766,7 @@ import Testing
         // 11.77 km/h in the app's own unit — every other speed on the screen is knots.
         #expect(block.basics[2].value == "6.36 kn")
         #expect(block.maxSpeed.value == "13.21 kn")
-        #expect(block.maxSpeed.label == "max 2 s")
+        #expect(block.maxSpeed.label == "best 2 s")
         #expect(block.tally?.flewThrough == 35)
         #expect(block.tally?.touchdown == 8)
         #expect(block.tally?.fellIn == 7)
@@ -821,7 +824,7 @@ import Testing
         let cell = stats.stats.first { $0.key == "tacks" }
         #expect(cell?.value == "3 · 5 · 6")
         #expect(cell?.caption == "of 14 tacks")
-        #expect(cell?.label == "flew · touch · fell")
+        #expect(cell?.label == "flew · touchdown · fell in")
         #expect(cell?.tally == block.tacks)
     }
 
@@ -892,7 +895,7 @@ import Testing
 
         #expect(block.rates.map(\.key) == ["tph", "wph"])
         #expect(!block.rates.contains { $0.key == "cph" })
-        #expect(block.rates[0].label == "TPH · turns per hour")
+        #expect(block.rates[0].label == "TPH · dry turns per hour")
         #expect(block.rates[0].value == "12.0")
         // …and the fallback caption carries **no** clean clause. It used to append
         // `turnsSuccessful` there — the engine's score verdict over every counted turn —
@@ -909,13 +912,35 @@ import Testing
         var summary = SessionSummary(foilTimeS: 30, foilPct: 50, flightCount: 1,
                                      longestFlightS: 30, maxFlightM: 100,
                                      distanceKm: 0.226)
-        summary.apply(SessionRates(durationS: 59, timerTimeS: 59, distanceM: 226, dryTurns: 0,
-                                   dryJibes: 0, fellIn: 0))
+        // Half an hour on the timer: over the rate floor, so the zeroes are printed.
+        summary.apply(SessionRates(durationS: 1800, timerTimeS: 1800, distanceM: 226,
+                                   dryTurns: 0, dryJibes: 0, fellIn: 0))
         let block = KeyMetrics.make(summary: summary, records: GP3SRecords())
         #expect(block.rates.map(\.key) == ["cph", "jph", "wph"])
         #expect(block.rates[0].value == "0.0")
         #expect(block.rates[1].value == "0.0")
         #expect(block.tally == nil)
+    }
+
+    /// **Too short for a rate** (Jan, 9 Oct 2026): under 20 minutes of timer time the same
+    /// three cells are there, each with the reason where the number goes. The rider reads
+    /// which rates the session would have had and why it has none.
+    @Test func keyMetricsSayTooShortForARateUnderTwentyMinutes() {
+        var summary = SessionSummary(foilTimeS: 300, foilPct: 50, flightCount: 2,
+                                     longestFlightS: 120, maxFlightM: 400,
+                                     distanceKm: 2.5)
+        summary.turns.jibes = 10
+        summary.turns.turnsCounted = 10
+        summary.turns.jibesSuccessful = 5
+        summary.apply(SessionRates(durationS: 7200, timerTimeS: RateFloor.minTimerS - 1,
+                                   distanceM: 2500, dryTurns: 8, dryJibes: 8, fellIn: 2,
+                                   cleanJibes: 5))
+        #expect(summary.cleanJibesPerHour != nil)          // the engine keeps its number
+        let block = KeyMetrics.make(summary: summary, records: GP3SRecords())
+        #expect(block.rates.map(\.key) == ["cph", "jph", "wph"])
+        #expect(block.rates.allSatisfy { $0.missing == "too short for a rate" })
+        #expect(block.rates.allSatisfy { $0.value == "—" })
+        #expect(block.rates.map(\.label).last == "falls / h")
     }
 
     /// An afternoon of jibes he did not ride keeps a **measured** 0.0 CPH beside a JPH that
@@ -1689,11 +1714,12 @@ import Testing
 
     /// A short evening cannot hold the JPH record for the same reason it cannot hold
     /// "Best CPH": a rate a rider sets by going home early is not a personal best
-    /// (`SessionRecordKind.cphMinDurationS`).
-    @Test func widgetJphTakesTheSameDurationFloorAsCph() {
+    /// (`RateFloor`, 20 minutes on the timer). An afternoon long on the clock but short on
+    /// the timer is the case the floor reads: the timer is what the rate divides by.
+    @Test func widgetJphTakesTheSameTimerFloorAsCph() {
         let now = day(2026, 8, 15)
         var quick = seasonRow("quick", day(2026, 7, 3))
-        quick.rateDurationS = SessionRecordKind.cphMinDurationS - 60
+        quick.timerTimeS = RateFloor.minTimerS - 60
         let long = seasonRow("long", day(2026, 7, 4))
         let snapshot = WidgetSnapshot.make(sessions: [quick, long], now: now,
                                            jibesPerHour: ["quick": 40, "long": 9]) { $0.id }

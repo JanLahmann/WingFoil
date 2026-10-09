@@ -351,26 +351,44 @@ public enum PresentationDocument {
     /// rate, then WPH** (Jan, 25 Sep 2026): JPH while every counted turn is a jibe, TPH once
     /// a tack is among them, and CPH absent where the wind axis named no jibes. Gated on the
     /// **counts**, never on a rate. Twin of the lab's `_rate_cells`.
+    ///
+    /// **Too short for a rate** (Jan, 9 Oct 2026): under `RateFloor.minTimerS` of timer
+    /// time the same cells are emitted with a null value and `rateMissingCaption`, which
+    /// the renderers draw where the number goes. The cell choice still follows the counts,
+    /// so the row names the rates the session would have had.
     static func rateCells(_ s: SessionSummary) -> [PresentationValue] {
         guard let wet = s.wetPerHour else { return [] }
+        let rated = RateFloor.holds(timerS: s.timerTimeS)
+        let why = rated ? [] : [caption(rateMissingCaption)]
+        func rate(_ value: Double) -> PresentationValue { rated ? number(value, "rate") : .null }
         var out: [PresentationValue] = []
         let jibes = s.turns.jibes
         let tph = s.turnsPerHour ?? 0
         if jibes > 0 || tph <= 0 {
-            out.append(cell("cph", "glossary.cph",
-                            value: number(s.cleanJibesPerHour ?? 0, "rate"),
-                            unitKind: "rate"))
+            out.append(cell("cph", "glossary.cph", value: rate(s.cleanJibesPerHour ?? 0),
+                            unitKind: "rate", captions: why))
         }
         if s.turns.tacks > 0 || (jibes <= 0 && tph > 0) {
-            out.append(cell("tph", "glossary.tph", value: number(tph, "rate"),
-                            unitKind: "rate"))
+            out.append(cell("tph", "glossary.tph", value: rate(tph), unitKind: "rate",
+                            captions: why))
         } else {
-            out.append(cell("jph", "glossary.jph",
-                            value: number(s.jibesPerHour ?? 0, "rate"), unitKind: "rate"))
+            out.append(cell("jph", "glossary.jph", value: rate(s.jibesPerHour ?? 0),
+                            unitKind: "rate", captions: why))
         }
-        out.append(cell("wph", "glossary.wph", value: number(wet, "rate"),
-                        unitKind: "rate"))
+        out.append(cell("wph", "glossary.wph", value: rate(wet), unitKind: "rate",
+                        captions: why))
         return out
+    }
+
+    /// The caption a rate cell carries on a session under the rate floor — drawn where
+    /// the number goes, like a record's missing reason. Twin of the lab's
+    /// `RATE_MISSING_CAPTION`.
+    static let rateMissingCaption = "presentation.caption.tooShortForRate"
+
+    /// Every caption id that stands **in place of** a value: the three speed records'
+    /// reasons and the rate floor's. A renderer draws these where the number goes.
+    static var missingCaptions: Set<String> {
+        Set(recordMissingCaptions.values).union([rateMissingCaption])
     }
 
     // MARK: - The card

@@ -170,7 +170,9 @@ public struct KeyMetrics: Sendable, Equatable {
     public let falls: Metric?
     /// CPH, then one dry-turn rate — JPH on a jibes-only session, TPH once tacks exist —
     /// then WPH (Jan, 25 Sep 2026). **Empty** when `durationS <= 0` — the engine reports the
-    /// rates as null there, and "no hour to divide by" is an absence, not a 0.0.
+    /// rates as null there, and "no hour to divide by" is an absence, not a 0.0. Under
+    /// `RateFloor.minTimerS` every cell is there with `missing` set to "too short for a
+    /// rate" (Jan, 9 Oct 2026).
     public let rates: [Metric]
 
     public init(basics: [Metric], maxSpeed: Metric, speedExtras: [Metric] = [],
@@ -260,7 +262,7 @@ public struct KeyMetrics: Sendable, Equatable {
         // The document emits a record's missing-reason caption only on a record the session
         // did not set, so the id is the whole test: nothing is re-derived here.
         let isMissing = first?["id"]?.stringValue.map { id in
-            PresentationDocument.recordMissingCaptions.values.contains(id)
+            PresentationDocument.missingCaptions.contains(id)
         } ?? false
         return Metric(key: key,
                       label: PresentationCopy.text(labelID, glossary: glossaryForm(key)) ?? "",

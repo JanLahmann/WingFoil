@@ -45,4 +45,11 @@ public enum ExampleOnlyNote {
         "The example session is on loan, not ridden, so it is kept out of your trends on "
         + "purpose. Import a .fit file, or connect intervals.icu in Settings, and the "
         + "charts fill as you ride."
+
+    /// **The two doors the lines name, as buttons** (rider review I1, 9 Oct 2026). A
+    /// sentence that says *import a file, or connect intervals.icu* and offers neither
+    /// leaves the rider hunting for the menu. Same words as the sentence, so the button is
+    /// the step it just read.
+    public static let importButton = "Import a file"
+    public static let connectButton = "Connect intervals.icu"
 }

@@ -62,10 +62,13 @@ public struct StravaClient: Sendable {
             case .notConfigured: "this build has no Strava application configured"
             case .notConnected: "no Strava account is connected"
             case .unauthorized: "Strava rejected the connection — connect it again"
+            // The cause, then the way in that still works (rider review I5, 9 Oct 2026):
+            // the refusal used to end on a menu path and no next step. The buttons live on
+            // the Strava section that was refused (`StravaFullFix`, `Copy.stravaFullExport`).
             case .athleteLimit:
                 "Strava lets a new app connect a limited number of riders, and CleanJibe is "
-                    + "full — Menu → Support & ideas is the way to say so, and Strava is "
-                    + "asked for more"
+                    + "full right now. Your sessions can still come in as files exported "
+                    + "from strava.com"
             case .rateLimited(let after):
                 if let after {
                     "Strava asked us to wait about \(max(1, after / 60)) more minute"

@@ -203,7 +203,11 @@ public extension ShareCardStats {
             }
 
             var ribbon: [Cell] = []
-            let rates = Dictionary(metrics.rates.map { ($0.key, $0) }, uniquingKeysWith: { a, _ in a })
+            // A rate under the floor carries "too short for a rate" instead of a number
+            // (`RateFloor`). The block explains itself there; a card has no room for the
+            // sentence, so the ribbon simply goes without the rate.
+            let rates = Dictionary(metrics.rates.filter { $0.missing == nil }
+                                       .map { ($0.key, $0) }, uniquingKeysWith: { a, _ in a })
             if clean != nil, let cph = rates["cph"] {
                 ribbon.append(Cell(key: "cph", label: PresentationCopy.card("rateCph"),
                                    value: cph.value, clean: true))

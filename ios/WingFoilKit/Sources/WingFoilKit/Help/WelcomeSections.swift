@@ -30,8 +30,12 @@ import Foundation
 public enum WelcomeSections {
 
     /// The sections, top to bottom.
+    ///
+    /// **Get started sits straight under the example** (rider review I10, 9 Oct 2026): the
+    /// two ways on are one decision, *show me* or *bring mine in*, and with the glossary
+    /// between them the second was a screen further down than the first.
     public static let all: [WelcomeSection] = [
-        hero, identity, legend, example, measures, verdicts, getStarted,
+        hero, identity, legend, example, getStarted, measures, verdicts,
         family, chooser, oldSessions, watchApp, trust, community, footerLinks,
     ]
 
@@ -73,7 +77,7 @@ public enum WelcomeSections {
         id: .identity, surfaces: .app,
         title: Branding.tagline,
         lede: "CleanJibe shows your time on the foil, every flight and every touchdown. Each jibe "
-            + "gets a verdict: flew through, touched down, or fell in. You see your dry streak "
+            + "gets a verdict: flew through, touchdown, or fell in. You see your dry streak "
             + "and your fastest seconds. The replay comes with a commentary.")
 
     // MARK: - What you get

@@ -209,7 +209,7 @@ public enum MetricGlossary {
             sentence: "whether you flew through it, touched down, or fell in",
             surfaces: [.ios, .watch, .web, .appstore, .ciq],
             places: [.watchPage, .fitField, .phonePage, .card, .web, .help],
-            labels: ["Turn verdicts", "flew · touch · fell"],
+            labels: ["Turn verdicts", "flew · touchdown · fell in"],
             fit: "turn_marker"),
 
         MetricGlossaryEntry(
@@ -256,24 +256,29 @@ public enum MetricGlossary {
             id: "tph",
             term: "TPH",
             short: "TPH",
-            expansion: "turns per hour",
+            // "dry turns per hour", the twin of JPH's "dry jibes per hour" (rider review
+            // X8, 9 Oct 2026): "turns per hour" read as every turn, and it counts the dry
+            // ones only.
+            expansion: "dry turns per hour",
             line: "Dry turns per hour, tacks and jibes together. It takes the place of "
                 + "JPH once a session has tacks in it.",
-            sentence: "your turns per hour",
+            sentence: "your dry turns per hour",
             surfaces: [.ios, .web],
             places: [.phonePage, .card, .web, .help],
-            labels: ["TPH", "TPH · turns per hour"]),
+            labels: ["TPH", "TPH · dry turns per hour"]),
 
+        // **"falls / h", not "WPH"** (Jan, 9 Oct 2026; rider review X1): "what is the W in
+        // WPH?" The rider text says what it counts. The acronym stays as `short`, for a
+        // place too tight for the words; the id keeps it, because ids outlive wordings.
         MetricGlossaryEntry(
             id: "wph",
-            term: "WPH",
+            term: "falls / h",
             short: "WPH",
-            expansion: "falls per hour",
             line: "How often you fell in, per hour. Every fall counts, in a turn or not.",
             sentence: "how often you fell in per hour",
             surfaces: [.ios, .web],
             places: [.phonePage, .card, .web, .help],
-            labels: ["WPH", "WPH · falls per hour"]),
+            labels: ["falls / h", "WPH"]),
 
         MetricGlossaryEntry(
             id: "speedRecords",
@@ -285,7 +290,7 @@ public enum MetricGlossary {
             surfaces: [.ios, .watch, .web, .appstore, .ciq],
             places: [.watchPage, .fitField, .connectField, .phoneRow, .phonePage,
                      .card, .web, .help],
-            labels: ["Speed records", "max 2 s", "avg speed",
+            labels: ["Speed records", "avg speed",
                      windowLabel("best2s"), windowLabel("best10s"),
                      windowLabel("best100m"), windowLabel("best250m"),
                      windowLabel("best500m"), windowLabel("bestNm"),

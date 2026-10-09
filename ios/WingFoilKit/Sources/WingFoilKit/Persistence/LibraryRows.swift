@@ -174,16 +174,18 @@ public enum SessionRecordKind: String, CaseIterable, Sendable, Codable {
     /// obeys is the rule the reader is told. `library.MIN_JIBES_FOR_RATE` is its twin.
     public static let minJibesForRate = 5
 
-    /// A session must last one rate window to hold the **CPH** record —
-    /// `PersonalBestDetector.cphMinDurationS`, and `library.CPH_MIN_DURATION_S` in the
-    /// analyzer.
+    /// A session must hold a rate to hold the **CPH** record: 20 minutes on the timer,
+    /// `RateFloor.minTimerS` (Jan, 9 Oct 2026) — `PersonalBestDetector.cphMinTimerS`, and
+    /// `library.RATE_MIN_TIMER_S` in the analyzer.
     ///
-    /// The celebration has applied this since engine 0.10.0 and the table did not, so a
+    /// The celebration has applied a floor since engine 0.10.0 and the table did not, so a
     /// four-minute evening could hold the row while the confetti named a different
     /// afternoon, both labelled "Best CPH" (docs/presentation/records.md, "All-time records").
     /// One clean jibe in four minutes is fifteen an hour, and a personal best a rider can
-    /// set by going home early is not one. The *count* takes no such floor.
-    public static let cphMinDurationS = PersonalBestDetector.cphMinDurationS
+    /// set by going home early is not one. The *count* takes no such floor. Until 9 Oct
+    /// 2026 the floor was one rate window (15 min) of elapsed time; it is now the session
+    /// page's own "too short for a rate", on the clock the rate divides by.
+    public static let cphMinTimerS = RateFloor.minTimerS
 
     /// How the value should read. The view formats; the kit does not build strings.
     public enum Unit: Sendable { case seconds, count, percent, perHour, km }
@@ -217,8 +219,8 @@ public enum SessionRecordKind: String, CaseIterable, Sendable, Codable {
     public var caption: String? {
         switch self {
         case .bestCph:
-            "Clean jibes per hour of session time. Sessions of at least "
-                + String(Int(Self.cphMinDurationS / 60)) + " minutes."
+            "Clean jibes per hour on the timer. Sessions of at least "
+                + String(Int(Self.cphMinTimerS / 60)) + " minutes."
         case .bestCleanJibeRate: "Sessions with at least \(Self.minJibesForRate) jibes."
         case .longestDryStreak: "Turns in a row without falling in."
         case .longestFlewStreak: "Turns in a row that never touched down."
@@ -238,11 +240,11 @@ public enum SessionRecordKind: String, CaseIterable, Sendable, Codable {
         case .bestFoilPct: row.foilPct
         case .mostCleanJibes: row.jibesSuccessful.map(Double.init)
         // The floor is the celebration's own, so the table and the confetti can never name
-        // two different afternoons under the words "Best CPH". It gates on `rateSeconds`
-        // because it is a *length* and not a denominator — "sessions of at least 15 minutes"
-        // means the afternoon lasted a quarter of an hour, not that the recorder ran for
-        // one. The rate it gates is the engine's, divided by timer time.
-        case .bestCph: row.rateSeconds >= Self.cphMinDurationS ? row.cleanJibesPerHour : nil
+        // two different afternoons under the words "Best CPH". It gates on `timerSeconds`,
+        // the clock the rate divides by (`RateFloor`, 9 Oct 2026): the session page says
+        // "too short for a rate" below it, and a record may not hold a rate the page
+        // refuses to print.
+        case .bestCph: RateFloor.gate(row.cleanJibesPerHour, timerS: row.timerSeconds)
         case .bestCleanJibeRate: row.cleanJibeRatePct
         case .longestDryStreak: row.longestDryStreak.map(Double.init)
         case .longestFlewStreak: row.longestFlewStreak.map(Double.init)

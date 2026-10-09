@@ -62,9 +62,10 @@ public struct GettingStartedRoute: Sendable, Equatable, Identifiable {
 /// The app used to say "the same guide, on the web" about a page that had been written
 /// separately and said different things (Jan, 15 September 2026). It is the same guide
 /// now: `docs/guide/getting-started.json` holds the framing, the routes, the steps and the
-/// two Settings sentences, and `web/tools/make_start.py` writes this file and the block of
-/// `web/start/index.html` from it. `--check` fails while either is stale, and
-/// `GettingStartedGuideTests` fails if the help topic stops matching this data.
+/// two Settings sentences, and `web/tools/make_start.py` writes this file and the generated
+/// blocks of `web/start/index.html` and `web/beta/index.html` from it. `--check` fails while
+/// any of the three is stale, and `GettingStartedGuideTests` fails if the help topic stops
+/// matching this data.
 public enum GettingStartedGuide {
 
     /// The one sentence that opens both the topic and the page: what the
@@ -133,13 +134,14 @@ public enum GettingStartedGuide {
                           + "**Save**."),
                 .init(number: 6,
                       title: "No intervals.icu? The long way",
-                      detail: "connect.garmin.com → the activity → the gear icon → **Export "
-                          + "File**. AirDrop it to the iPhone, then Import → **FIT or ZIP…**."),
+                      detail: "Garmin Connect's phone app cannot export. On a computer, "
+                          + "connect.garmin.com → the activity → gear icon → **Export File**. "
+                          + "AirDrop it to the iPhone, then Import → **FIT or ZIP…**."),
                 .init(number: 7,
                       title: "Garmin calls it Windsurf",
                       detail: "Garmin has no wingfoil profile, so Garmin and Strava call the "
-                          + "session Windsurf. The jibes and the numbers are in CleanJibe, "
-                          + "not in Garmin Connect or Strava."),
+                          + "session Windsurf. With the watch app, Garmin Connect also shows "
+                          + "foil time and flights. Strava does not."),
             ]),
         GettingStartedRoute(
             id: "appleWatchApp",
@@ -264,8 +266,13 @@ public enum GettingStartedGuide {
                 .init(number: 5,
                       title: "If connecting is refused",
                       detail: "Strava lets a new app connect a limited number of riders. That "
-                          + "is nothing to do with your account. Menu → Support & ideas says "
-                          + "so."),
+                          + "is nothing to do with your account. Tell us through Menu → "
+                          + "Support & ideas."),
+                .init(number: 6,
+                      title: "Strava full? Take the file",
+                      detail: "On a computer, open the activity on strava.com and choose ⋯ → "
+                          + "**Export Original**. AirDrop it to the iPhone, then Import → "
+                          + "**FIT or ZIP…**."),
             ]),
     ]
 
@@ -307,8 +314,8 @@ public enum GettingStartedGuide {
                 .init(number: 1,
                       title: "Read the verdicts against your memory",
                       detail: "Open the session and go to **Turns**. Every turn says *flew "
-                          + "through*, *touched down* or *fell in*. The clean jibes are "
-                          + "marked among them."),
+                          + "through*, *touchdown* or *fell in*. The clean jibes are marked "
+                          + "among them."),
                 .init(number: 2,
                       title: "Say where it disagrees with you",
                       detail: "Maybe it marked a jibe you flew through as a touchdown. Maybe "

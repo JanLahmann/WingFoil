@@ -266,9 +266,9 @@ extension WidgetSnapshot {
         case .best2s: row.best2sKn
         case .longestFlight: row.longestFlightS
         // The same floor "Best CPH" takes, for the same reason: a rate a rider can set by
-        // going home early is not a personal best (`SessionRecordKind.cphMinDurationS`).
+        // going home early is not a personal best (`RateFloor`, 20 minutes on the timer).
         case .bestJph:
-            row.rateSeconds >= SessionRecordKind.cphMinDurationS ? jibesPerHour[row.id] : nil
+            RateFloor.gate(jibesPerHour[row.id], timerS: row.timerSeconds)
         case .longestDryStreak: row.longestDryStreak.map(Double.init)
         case .onThisDay: nil
         }

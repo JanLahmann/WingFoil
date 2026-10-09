@@ -285,7 +285,10 @@ public enum HelpTopicID: String, CaseIterable, Sendable, Identifiable {
     case speedRecords
     /// Settings → Speed records: which records a track with no speed channel may hold.
     case verifiedRecords
-    case turnTypes, turnOutcomes, turnSuccess, portStarboard, falls, glideOuts
+    case turnTypes, turnOutcomes, turnSuccess
+    /// CPH, JPH or TPH, and falls / h: which clock, which count, and the 20-minute floor.
+    case rates
+    case portStarboard, falls, glideOuts
     case takeoffAttempts, pumpsToTakeoff, pumpStrokes
     case heartRate
     case windAxis
@@ -347,16 +350,16 @@ public enum HelpCatalog {
         // 26 September 2026 it is also *what your recording can show*: the two topics
         // answered the same question in two shapes, one by brand and one by class. The rows
         // are by watch, because that is what a rider knows about his own setup, and each
-        // row names its class in the spelling the Import screen and the session log print.
-        // The letters a/b/c survive in the code (`SessionRow.sourceClass`); on screen they
-        // are always the letter *and* the thing (`RecordingClass.name`).
+        // row says what it gets in the words the Import screen prints: measured speed, or
+        // speed estimated from positions. The letters a/b/c survive in the code
+        // (`SessionRow.sourceClass`) and nowhere on screen (rider review X9, 9 Oct 2026).
         HelpTopic(
             id: .whichWatch, section: .start, title: "Which watches work with CleanJibe",
             summary: "Every watch works, one way or another. Each row says what yours "
                 + "can show.",
-            // **What you get first, the class after** (UX review, 27 September 2026). Jan
-            // kept the classes on the Import screen, so each row still ends with the name
-            // the screen prints, but the line opens with what the rider gets from his watch.
+            // **What you get, and no class after it** (rider review X9, 9 October 2026).
+            // The rows used to end with "Class B · any file with measured speed", which made
+            // a rider ask which class he was; the sentence before it had already answered.
             body: [
                 "Every watch that records a GPS track works. A number your file cannot "
                 + "support is left blank, never guessed.",
@@ -365,37 +368,30 @@ public enum HelpCatalog {
                 + "worked out from positions and the records are marked estimated.",
                 "**Pump strokes and takeoff attempts** need a wrist accelerometer recorded "
                 + "during the session. Only the CleanJibe watch apps record one.",
-                "Each row ends with the class the Import screen prints.",
             ],
             items: [
                 .init(term: "Garmin, with the CleanJibe watch app",
                       detail: "You get everything, and each verdict buzzes on your wrist. "
-                          + "It adds pump strokes and takeoff attempts. "
-                          + RecordingClass.a.name + "."),
+                          + "It adds pump strokes and takeoff attempts."),
                 .init(term: "Garmin, with Garmin's own profile or another app",
                       detail: "You get every verdict and flight, with measured speed "
-                          + "records. Your old sessions come in through intervals.icu too. "
-                          + RecordingClass.b.name + "."),
+                          + "records. Your old sessions come in through intervals.icu too."),
                 .init(term: "Apple Watch, with Apple's Workout app",
                       detail: "Bring it in through Strava or intervals.icu. In the beta, "
-                          + "Apple Health hands it over with measured speed. "
-                          + RecordingClass.b.name + "."),
+                          + "Apple Health hands it over with measured speed."),
                 .init(term: "Apple Watch, with the CleanJibe watch app",
                       detail: "It is in the beta. You get measured speed, plus pump strokes and "
-                          + "takeoff attempts from your wrist. " + RecordingClass.bPlus.name
-                          + "."),
+                          + "takeoff attempts from your wrist."),
                 .init(term: "Polar, Suunto, COROS and the rest",
                       detail: "A FIT gives you measured speed records, through intervals.icu "
-                          + "or shared in by hand. A .gpx carries positions only. "
-                          + RecordingClass.c.name + "."),
+                          + "or shared in by hand. A .gpx carries positions only, so its "
+                          + "speed is estimated."),
                 .init(term: "Anything that ends up on Strava",
                       detail: "You get every verdict and flight, with speed estimated from "
-                          + "positions. Connect Strava and pick the sessions. "
-                          + RecordingClass.c.name + "."),
+                          + "positions. Connect Strava and pick the sessions."),
                 .init(term: "A phone in a pouch, or no watch at all",
                       detail: "Your flights, turns and map, with speed estimated from "
-                          + "positions. Record with any GPS app and share the file in. "
-                          + RecordingClass.c.name + "."),
+                          + "positions. Record with any GPS app and share the file in."),
             ],
             related: [.shareFromWatchApp, .appleWatchApp, .stravaImport]),
 
@@ -500,8 +496,8 @@ public enum HelpCatalog {
             body: [
                 "A phone records a GPS track as well as most watches do. CleanJibe reads it "
                 + "the same way.",
-                "The Import screen calls it " + RecordingClass.c.name + ", because the "
-                + "speed is worked out from the positions.",
+                "The Import screen calls it " + RecordingClass.c.name.lowercased()
+                + ", because the speed is worked out from the positions.",
                 RecordingClass.c.line,
                 "Keep the phone dry, still and facing the sky. A waterproof "
                 + "pouch on the upper arm or high on the chest works.",
@@ -560,10 +556,12 @@ public enum HelpCatalog {
                 // showed "-- Runs" and he looked for the jibes. The watch app writes its
                 // numbers as Connect IQ fields, which Garmin Connect lists under its own
                 // heading; the Runs card is the windsurf profile's and no app can fill it.
+                // "Once you have set a wind direction" was the watch before 0.9.0 (rider
+                // review S15): it works the axis out itself (AutoWind), and /start/ says so
+                // in the same words, `Copy.watchWind`.
                 .init(term: "Where Garmin Connect shows the jibes",
                       detail: "Under Connect IQ on the activity page: jibes, tacks, foil "
-                          + "time, flights and the best 2 seconds. They appear once "
-                          + "you have set a wind direction on the watch."),
+                          + "time, flights and the best 2 seconds. " + Copy.watchWind),
                 .init(term: "Why the Runs card stays empty",
                       detail: "Runs belong to Garmin's own windsurf profile. No Connect IQ "
                           + "app can fill that card. CleanJibe's flights are the runs."),
@@ -617,6 +615,9 @@ public enum HelpCatalog {
                       detail: "Strava lets a new app connect a limited number of riders. "
                           + "That says nothing about your account. "
                           + "Tell us through Menu → Support & ideas."),
+                .init(term: "Strava full? Take the file",
+                      detail: Copy.stravaExportOriginal
+                          + " AirDrop it to the iPhone, then Import → FIT or ZIP…."),
                 .init(term: "Disconnecting",
                       detail: "Settings → Strava → Disconnect Strava. The sessions you "
                           + "already imported stay in your library. They are yours now, "
@@ -713,6 +714,12 @@ public enum HelpCatalog {
                 .init(term: "What it reads",
                       detail: "It reads a .fit, a .gpx or a .tcx from any watch. It has no "
                           + "beta, so every rider gets the same version."),
+                // Rider review S2 (9 Oct 2026): a Garmin rider on a phone was told to drop
+                // a file he cannot get. Said where he reads it, with the two ways that work.
+                .init(term: "From a Garmin",
+                      detail: "Garmin Connect's phone app cannot export. Paste your "
+                          + "intervals.icu key into the browser app's Settings instead, or "
+                          + "export the file at connect.garmin.com on a computer."),
                 .init(term: "Install it from the browser",
                       detail: "If your browser offers it, install the page. It gets an "
                           + "icon on your home screen, opens like an app and works with no "
@@ -758,7 +765,7 @@ public enum HelpCatalog {
 
         // MARK: Read the numbers
         //
-        // One section of seventeen topics, sub-headed (`HelpSubsection`) so it still reads
+        // One section of eighteen topics, sub-headed (`HelpSubsection`) so it still reads
         // in the parts the old sections were. The glossary opens it, then the map.
         //
         // **The glossary, rendered.** Every term, its one-line rule, and where it shows.
@@ -823,8 +830,8 @@ public enum HelpCatalog {
                           + "were not. Small chevrons along it point the way you were "
                           + "riding."),
                 .init(term: "The dots",
-                      detail: "Verdicts on one ladder: green flew through, orange touched "
-                          + "down, red fell in. Grey is a course change and no verdict at "
+                      detail: "Verdicts on one ladder: green flew through, orange "
+                          + "touchdown, red fell in. Grey is a course change and no verdict at "
                           + "all."),
                 .init(term: "Solid or hollow",
                       detail: "The fill tells two kinds of mark apart without a second "
@@ -1011,8 +1018,8 @@ public enum HelpCatalog {
             title: "Turn outcomes: flew through, touchdown, fell in",
             summary: "What actually happened to the foil in the turn.",
             body: [
-                "Every turn ends one of three ways: you flew through, touched down, or fell "
-                + "in. CleanJibe watches from the turn start until you are flying again.",
+                "Every turn ends one of three ways: flew through, touchdown, or fell in. "
+                + "CleanJibe watches from the turn start until you are flying again.",
                 "Flying again means 2 s back above 70 % of your entry speed. The window "
                 + "closes after 12 s.",
                 "A jibe exited at marginal speed can bleed off for 6 to 12 seconds before "
@@ -1077,7 +1084,31 @@ public enum HelpCatalog {
                           + "0 to 100. It is the evidence behind \"clean\", printed beside "
                           + "every turn."),
             ],
-            related: [.numbers, .turnOutcomes]),
+            related: [.numbers, .turnOutcomes, .rates]),
+
+        // **The rates, explained once** (rider review X1, 9 Oct 2026): *"CPH 4.2, JPH 9.1.
+        // Is that good, per hour of what, and what is the W in WPH?"* The glossary held one
+        // line per rate and no page said which clock they share, why JPH leaves the swims
+        // out, when TPH takes its place, or that a short session has none. The numbers are
+        // docs/algorithms/rates.md's: timer time, the dry rule, the 20-minute floor
+        // (`RateFloor`).
+        HelpTopic(
+            id: .rates, section: .readNumbers, subsection: .turns, title: "Rates",
+            summary: "Your jibes and falls per hour on the water, and when a session is too "
+                + "short for one.",
+            body: [
+                "A rate is a count per hour on the water. The hour is your timer time: the "
+                + "recording minus its pauses and gaps.",
+                "**CPH** counts your clean jibes, the jibe you were working for.",
+                "**JPH** counts your dry jibes: flew through or touchdown. Falling in more "
+                + "often never raises it.",
+                "Once a session has a tack, **TPH** takes its place and counts your dry turns.",
+                "**falls / h** counts every fall, in a turn or not.",
+                "Under " + String(Int(RateFloor.minTimerS / 60)) + " minutes on the timer, a "
+                + "session shows no rate. Five clean jibes in ten minutes would read as 30 an "
+                + "hour. Trends and records leave it out too.",
+            ],
+            related: [.numbers, .turnSuccess, .falls]),
 
         HelpTopic(
             id: .portStarboard, section: .readNumbers, subsection: .turns,
@@ -1280,8 +1311,7 @@ public enum HelpCatalog {
             body: [
                 "Any session becomes a card. It holds the track, the numbers that matter, "
                 + "and where the analysis came from. Pick a shape and the big "
-                + "number: clean jibes, top speed or tacks. A photo of yours can go behind "
-                + "it.",
+                + "number: clean jibes, best 2 s or tacks. Your own photo can go behind it.",
                 "Or pick the map as the background and the track is drawn over the water "
                 + "you rode. That one needs a connection. Without one the card comes out "
                 + "plain.",
@@ -1376,6 +1406,12 @@ public enum HelpCatalog {
                       detail: "CleanJibe will not open a backup from a newer version of "
                           + "itself. Update the app and try again. An older backup is "
                           + "brought up to date."),
+                // Rider review I6: the Beta page and the newer-library screen both open
+                // this topic, so the way back from the beta is said here once.
+                .init(term: "Leaving the beta",
+                      detail: "Back up in the beta, then install the App Store version. "
+                          + "If the beta updated your library, a later App Store update "
+                          + "opens that backup."),
             ],
             related: [.riderAttribution, .shareFit, .privacy]),
 
@@ -1412,9 +1448,12 @@ public enum HelpCatalog {
             summary: "There is no account and no server, and nothing is uploaded. The "
                 + "whole policy is on the web.",
             body: [
+                // "No analytics" was the iPhone app's truth printed on a website that
+                // loads umami (rider review X10, 9 Oct 2026). The sentence now names the
+                // app it is true of, and the item below says what the site counts.
                 "There is no CleanJibe account and no CleanJibe server. A session you "
-                + "import is analysed on this phone and stays on it. There is no advertising, "
-                + "no analytics and no tracking of any kind.",
+                + "import is analysed on this phone and stays on it. The iPhone app has no "
+                + "advertising, no analytics and no tracking.",
                 "The app talks to four places, each only when you use it. Your own "
                 + "login goes to intervals.icu and Strava. Apple Maps loads while a "
                 + "map is on screen. To name a new spot, it sends one rounded position.",
@@ -1438,6 +1477,12 @@ public enum HelpCatalog {
                       detail: "It opens your intervals.icu account. Clear the field in "
                           + "Settings to remove it, or regenerate it in Developer Settings. "
                           + "The old key stops working at once."),
+                // The website's one counter, in the privacy page's own terms
+                // (web/privacy/index.html, "umami", and docs/analytics.md).
+                .init(term: "What the website counts",
+                      detail: "\(Branding.site) and the browser app count page views and "
+                          + "taps with umami. It sets no cookies. It never sees your "
+                          + "sessions, your files or any number off a ride."),
             ],
             links: [HelpLink(title: "Open \(Branding.site)/privacy",
                              url: URL(string: Branding.siteURL + "/privacy/")!)],

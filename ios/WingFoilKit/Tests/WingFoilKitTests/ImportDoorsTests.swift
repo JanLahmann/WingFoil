@@ -81,6 +81,24 @@ struct ImportDoorsTests {
         #expect(ImportDoor.file.recordingClasses(channel: .beta) == [.a, .b, .c])
     }
 
+    /// Rider review I7 (9 Oct 2026): *"What is Class A or Class B?"* The label above each
+    /// footer says what the door gets you, and never a letter.
+    @Test("the label says what you get, never a class letter")
+    func theLabelSaysWhatYouGet() {
+        #expect(ImportDoor.icu.classLabel(channel: .release) == "Measured speed")
+        #expect(ImportDoor.strava.classLabel(channel: .release) == "Positions only")
+        #expect(ImportDoor.appleWatchApp.classLabel(channel: .beta)
+                == "Measured speed and the wrist")
+        #expect(ImportDoor.file.classLabel(channel: .release) == "Measured speed")
+        #expect(ImportDoor.file.classLabel(channel: .beta)
+                == "Measured speed, or positions only from a GPX")
+        for channel in HelpChannel.allCases {
+            for door in ImportDoor.ordered(channel: channel) {
+                #expect(!door.classLabel(channel: channel).lowercased().contains("class"))
+            }
+        }
+    }
+
     /// The two doors that need an account keep their row and change its label; the rest have
     /// no Settings section to be sent to.
     @Test("only the account doors offer a way to Settings")

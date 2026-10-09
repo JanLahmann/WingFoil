@@ -51,9 +51,10 @@ public enum PresentationCopy {
     /// The key-metrics block's own labels — the word under a number.
     ///
     /// Lowercase on purpose: they are captions under a value, not titles
-    /// (`docs/presentation/labels.md`, "Label table"). `max 2 s` is the one sanctioned
-    /// divergence from `RecordKind.label`'s `Best 2 s`, because this names the *window* the
-    /// number was measured over rather than the record it set.
+    /// (`docs/presentation/labels.md`, "Label table"). `best 2 s` is `RecordKind.label`'s
+    /// `Best 2 s` in caption case. It was `max 2 s` until 9 Oct 2026, a divergence meant to
+    /// name the window rather than the record; the rider review read it as a fourth name for
+    /// one number ("max 2 s", "Best 2 s", "top speed", "Best 2s"), and the glossary won.
     public static let label: [String: String] = [
         "alpha500": "alpha 500",
         "avgSpeed": "avg speed",
@@ -61,8 +62,8 @@ public enum PresentationCopy {
         "cleanJibes": "clean jibes",
         "distance": "distance",
         "duration": "duration",
-        "max2s": "max 2 s",
-        "outcomeLadder": "flew · touch · fell",
+        "max2s": "best 2 s",
+        "outcomeLadder": "flew · touchdown · fell in",
         "streaks": "best streaks",
     ]
 
@@ -104,6 +105,9 @@ public enum PresentationCopy {
         "noAlpha500": Line("no 500 m out-and-back"),
         "noBest5x10s": Line("no unbroken 10 s of track"),
         "noMax2s": Line("no unbroken 2 s of track"),
+        // Why a rate cell has no number: under 20 minutes on the timer (Jan, 9 Oct 2026,
+        // `RateFloor`, `PresentationDocument.rateMissingCaption`).
+        "tooShortForRate": Line("too short for a rate"),
     ]
 
     /// "Wrist under" — the submersion callout's title and its `during` clause.
@@ -151,7 +155,7 @@ public enum PresentationCopy {
     /// (did not fall in), which is what the JPH and TPH numerators count.
     public static let card: [String: Line] = [
         "heroClean": Line("clean jibes", one: "clean jibe"),
-        "heroMax2s": Line("top speed · best 2 s"),
+        "heroMax2s": Line("best 2 s"),
         "heroTacks": Line("tacks", one: "tack"),
         "heroTacksDry": Line("{dry} dry"),
         "heroTacksBeside": Line("{dry} dry · beside {jibes}"),
@@ -173,7 +177,7 @@ public enum PresentationCopy {
         "speedEstimated": Line("speed estimated from GPS positions"),
         "optionTitle": Line("Big number"),
         "optionClean": Line("Clean jibes"),
-        "optionMax2s": Line("Top speed"),
+        "optionMax2s": Line("Best 2 s"),
         "optionTacks": Line("Tacks"),
         "optionSessions": Line("Sessions"),
     ]

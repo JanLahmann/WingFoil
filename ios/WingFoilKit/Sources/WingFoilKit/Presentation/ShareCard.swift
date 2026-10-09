@@ -305,7 +305,7 @@ public struct ShareCardStats: Sendable, Equatable {
                  value: KeyMetrics.duration(row.rateSeconds)),
             Stat(key: Key.distance, label: "distance",
                  value: row.distanceKm.map(KeyMetrics.km) ?? "—"),
-            Stat(key: Key.maxSpeed, label: "max 2 s",
+            Stat(key: Key.maxSpeed, label: PresentationCopy.label["max2s"] ?? "best 2 s",
                  value: KeyMetrics.knots(row.best2sKn)),
         ]
     }

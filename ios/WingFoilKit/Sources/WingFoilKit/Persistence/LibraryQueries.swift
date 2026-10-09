@@ -117,6 +117,9 @@ public struct TrendPoint: Sendable, Identifiable, Equatable {
     /// v17 sweep has not reached (docs/algorithms/rates.md "Session rates").
     public var jibesPerHour: Double?
     public var turnsPerHour: Double?
+    /// Counted tacks in the session, nil on a row that has no count. Read by
+    /// `dryTurnRate(_:)` and by nothing else.
+    public var tacks: Int?
     public var avgPumpsToTakeoff: Double?
     public var portSharePct: Double?
     public var best2sKn: Double?
@@ -131,6 +134,16 @@ public struct TrendPoint: Sendable, Identifiable, Equatable {
     public var turnSides = TurnSideSplit()
 
     public var id: String { sessionId }
+
+    /// **CPH, then ONE dry-turn rate**, over a range (Jan, 25 Sep 2026; rider review I20,
+    /// 9 Oct 2026): JPH while no session in the range has a tack, TPH once one does. On a
+    /// jibes-only library the two were the same line drawn twice. The twin of
+    /// `library.dry_turn_rate_key`.
+    public enum DryTurnRate: String, Sendable { case jph, tph }
+
+    public static func dryTurnRate(_ points: [TrendPoint]) -> DryTurnRate {
+        points.contains { ($0.tacks ?? 0) > 0 } ? .tph : .jph
+    }
 
     /// Port entry success, nil when he never entered a turn on port that session.
     public var portFlewThroughPct: Double? { turnSides.portSuccessPct }
@@ -150,9 +163,13 @@ public struct TrendPoint: Sendable, Identifiable, Equatable {
         flewThroughPct = row.flewThroughPct
         turnSuccessPct = (row.turnsCounted ?? 0) > 0 ? row.turnSuccessPct : nil
         cleanJibes = row.jibesSuccessful
-        cleanJibesPerHour = row.cleanJibesPerHour
-        jibesPerHour = row.jibesPerHour
-        turnsPerHour = row.turnsPerHour
+        // **No rate point under the floor** (`RateFloor`, 9 Oct 2026): a ten-minute
+        // paddle's 28 clean jibes an hour is a spike the afternoon never earned, and the
+        // session's own page prints "too short for a rate" there.
+        cleanJibesPerHour = RateFloor.gate(row.cleanJibesPerHour, timerS: row.timerSeconds)
+        jibesPerHour = RateFloor.gate(row.jibesPerHour, timerS: row.timerSeconds)
+        turnsPerHour = RateFloor.gate(row.turnsPerHour, timerS: row.timerSeconds)
+        tacks = row.tacks
         avgPumpsToTakeoff = row.avgPumpsToTakeoff
         portSharePct = row.portSharePct
         best2sKn = row.best2sKn

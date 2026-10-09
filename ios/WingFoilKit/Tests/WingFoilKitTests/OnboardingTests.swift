@@ -435,6 +435,17 @@ import Testing
                                     lastProblem: IcuProblem(kind: .unauthorized)) == .ready)
     }
 
+    @Test func theExampleAloneIsStillOnboarding() {
+        // Rider review I1: the example is ours, so the ways in stay until his own arrives.
+        #expect(IcuOnboarding.state(sessionCount: 1, exampleCount: 1, hasKey: false,
+                                    lastProblem: nil) == .setup)
+        let problem = IcuProblem(kind: .unauthorized)
+        #expect(IcuOnboarding.state(sessionCount: 1, exampleCount: 1, hasKey: true,
+                                    lastProblem: problem) == .problem(problem))
+        #expect(IcuOnboarding.state(sessionCount: 2, exampleCount: 1, hasKey: false,
+                                    lastProblem: nil) == .ready)
+    }
+
     @Test func problemsSurviveTheRoundTripThroughUserDefaults() throws {
         // The card must still name the cause after a relaunch, so the problem is stored.
         let problem = IcuProblem(kind: .server, detail: "HTTP 502")
@@ -498,7 +509,7 @@ import Testing
         }
         // The three verdicts, in the ladder's own order.
         #expect(WelcomeGuide.lede.contains("flew through"))
-        #expect(WelcomeGuide.lede.contains("touched down"))
+        #expect(WelcomeGuide.lede.contains("touchdown, or fell in"))
         #expect(WelcomeGuide.lede.contains("fell in"))
     }
 
@@ -539,6 +550,18 @@ import Testing
         #expect(BetaGuide.whatsNewClosing(for: .dev) == BetaGuide.whatsNewBeta)
         #expect(BetaGuide.whatsNewClosing(for: .release)
                 .contains("Menu → " + AppMenuRow.beta.title(in: .release)))
+    }
+
+    /// Rider review I6 (Jan, 9 Oct 2026: "back up first"). The way in starts with a backup
+    /// made in the App Store version, names the Settings section that makes it, and nothing
+    /// on the page promises a way back that the newer-library screen then refuses.
+    @Test func theBetaPageSaysBackUpFirst() {
+        #expect(BetaGuide.howToJoin.first == BetaGuide.backupFirst)
+        #expect(BetaGuide.backupFirst.contains("Settings → "
+                                               + SettingsCopy.section("backup").title))
+        let page = BetaGuide.howToJoin + BetaGuide.goingBack + [BetaGuide.leavingTheBeta]
+        #expect(!page.contains { $0.contains("whenever you like") })
+        #expect(BetaGuide.goingBack.first?.hasPrefix("Back up in the beta first") == true)
     }
 
     /// One sentence of the community message, said by the welcome's footer and the Beta

@@ -229,7 +229,7 @@ import Testing
         let highlights = ReplayCommentary.highlights(milestones)
 
         #expect(highlights.map(\.text) == [
-            "Top speed · 13.47 kn over 2 s",
+            "Best 2 s · 13.47 kn",
             // Eight, not the three/four/five/six/seven it passed on the way there.
             "8 in a row, dry",
             // Collapsed with the first takeoff at the same instant, exactly as the caption
@@ -247,7 +247,7 @@ import Testing
     @Test func theHighlightLimitTakesFromTheTop() throws {
         let milestones = try script()
         #expect(ReplayCommentary.highlights(milestones, limit: 2).map(\.text)
-                == ["Top speed · 13.47 kn over 2 s", "8 in a row, dry"])
+                == ["Best 2 s · 13.47 kn", "8 in a row, dry"])
         #expect(ReplayCommentary.highlights(milestones, limit: 0).isEmpty)
     }
 }

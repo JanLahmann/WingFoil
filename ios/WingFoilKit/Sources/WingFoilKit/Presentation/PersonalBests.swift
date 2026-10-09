@@ -183,14 +183,16 @@ public struct NewCleanJibeBest: Sendable, Equatable, Identifiable {
 
 extension PersonalBestDetector {
 
-    /// A session must last at least this long to hold the **CPH** record.
+    /// A session must have at least this much **timer time** to hold the **CPH** record —
+    /// `RateFloor.minTimerS`, 20 minutes (Jan, 9 Oct 2026; docs/algorithms/rates.md, "Too
+    /// short for a rate").
     ///
-    /// The rule the rolling window already obeys (`docs/algorithms/rates.md`, "Never a flattering
-    /// peak"): one clean jibe in a four-minute evening sail is fifteen an hour, and a
-    /// personal best a rider can set by going home early is not one. A rate window is the
-    /// shortest span this engine is willing to call an hour's worth of anything. The *count*
-    /// takes no such floor — nine clean jibes are nine clean jibes however long it took.
-    public static let cphMinDurationS: Double = 15 * 60
+    /// One clean jibe in a four-minute evening sail is fifteen an hour, and a personal best
+    /// a rider can set by going home early is not one. The session page prints no rate under
+    /// the same floor, so no record may hold one either. The *count* takes no such floor —
+    /// nine clean jibes are nine clean jibes however long it took. (Until 9 Oct 2026 it was
+    /// one rate window, 15 min, of elapsed time.)
+    public static let cphMinTimerS: Double = RateFloor.minTimerS
 
     /// Counts have to move by a whole one; rates by the corpus tolerance for a rate.
     static func epsilon(_ kind: CleanJibeRecordKind) -> Double {
@@ -213,13 +215,12 @@ extension PersonalBestDetector {
         for session in sessions.sorted(by: { $0.startDate < $1.startDate }) {
             guard let clean = session.jibesSuccessful, clean > 0 else { continue }
             consider(.cleanJibes, Double(clean), session.id, into: &best)
-            // Two clocks, two jobs. The floor is a **length** and is measured on
-            // `rateSeconds` (T1): "at least 15 minutes" means the afternoon lasted a quarter
-            // of an hour. The rate itself divides by `timerSeconds` (T2), which is what
-            // `summary.cleanJibesPerHour` divides by since engine 0.13.0 — so the
-            // celebration's CPH and the records table's can never name two different numbers
-            // for one session (docs/presentation/one-clock.md, "One clock").
-            guard session.rateSeconds >= cphMinDurationS else { continue }
+            // One clock for the floor and the rate: `timerSeconds` (T2), which is what
+            // `summary.cleanJibesPerHour` divides by since engine 0.13.0 and what the
+            // session page's "too short for a rate" reads (`RateFloor`, 9 Oct 2026) — so the
+            // celebration's CPH, the records table's and the page can never disagree about
+            // whether a session holds one (docs/presentation/one-clock.md, "One clock").
+            guard RateFloor.holds(timerS: session.timerSeconds) else { continue }
             consider(.cleanJibesPerHour, Double(clean) / (session.timerSeconds / 3600),
                      session.id, into: &best)
         }
