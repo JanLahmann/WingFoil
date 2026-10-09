@@ -1107,6 +1107,7 @@ public enum HelpCatalog {
                 "Under " + String(Int(RateFloor.minTimerS / 60)) + " minutes on the timer, a "
                 + "session shows no rate. Five clean jibes in ten minutes would read as 30 an "
                 + "hour. Trends and records leave it out too.",
+                "The example session keeps its rates, so you can see them before your own.",
             ],
             related: [.numbers, .turnSuccess, .falls]),
 
