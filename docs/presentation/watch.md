@@ -565,11 +565,11 @@ large-text pages — draws the broken ring at the **bezel edge**, through the sa
   goes — and it is kept thin because every pixel of it is radius taken from pages whose whole
   trade is digit height: the Clock page's *23:59* in the largest number font sits within
   7 px of the bezel on a fenix 8 47 mm, and the 4 px ring is what it can give without dropping
-  a rung. The large-text set keeps its rule of no state ring; this is the lost fix only.
+  a rung. The large-text set keeps its rule of no state ring; this is the lost fix and the pause only.
 - **With the foil-% arc:** the broken ring takes the arc's band and the arc is left out for as
   long as the fix is gone — the bezel holds one ring at a time, and the page shows the same
   foil % as a number anyway. The first usable fix brings the arc back.
-- A ringless page shows only the lost fix. Its pause stays the banner's job, as before.
+- **Paused, a ringless page draws the same ring whole in the pause yellow** (Jan, 9 October 2026), in the same band, the arc's included, with the banner as before; paused with the fix gone reads as paused, as on Main and the hero pages. No row, radius or font moves (`gpsRingFitsEveryRecordingPage`).
 
 Both are in every stream's code from 0.9.22 and reach riders through the beta listing first
 (docs/channels.md, "The watch"). Tests: `pauseReminderBuzzesEveryTwoMinutes`,
