@@ -105,8 +105,11 @@ print, in this order and for this reason:
    lists; `web/tools/make_start.py` writes both copies from it — the kit's
    `Help/GettingStartedGuide.swift`, which this topic's `summary`, `body` and `items:` are,
    and the block of `web/start/index.html` between its `<!-- guide:begin -->` and
-   `<!-- guide:end -->` markers. The app shows a route's **title and summary**; the web shows
-   **title, summary and the numbered steps**, which is why the last item reads *"The same
+   `<!-- guide:end -->` markers (since 9 October 2026 also the same block on
+   `web/beta/index.html`: the tester's note and the report checklist, where `webPage` says
+   `beta`, rider review S9). The app shows a route's **title and summary**; the web shows
+   **title, summary, a browser line and the numbered steps** (the browser line since rider
+   review S10), which is why the last item reads *"The same
    guide, with every step, on the web"*. `make_start.py --check` fails while either copy is
    stale and `web/tools/verify_links.py` runs it; `GettingStartedGuideTests` fails if the
    topic stops being the guide, so a route typed straight into `HelpCatalog` is caught too.

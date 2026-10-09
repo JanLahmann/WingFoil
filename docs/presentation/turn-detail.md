@@ -393,6 +393,27 @@ read off a fact the line already stated (`TurnCoach.Tip`, `TurnSliceTests`):
 No tip on a clean jibe, on `cleanAndFast` or `plain`, and none where the halfway point cannot
 be placed. The web's `coachLine` has not taken the tips yet (app first).
 
+**The tips, summed up: *Next session*** (rider review I2, 9 Oct 2026, beta and dev). A rider
+asked *"what do I practise next?"* had to open ten turn pages to find out. The Turns tab now
+opens with one card that answers it for the whole session (`NextSessionCoach`,
+`NextSessionCoachTests`; drawn by `NextSessionCard`, `#if BETA`):
+
+- **The commonest tip**, in the turn page's own sentence, over *It came up on 4 of your 12
+  turns.* Counted over the counted turns, each turn's tip as its page gives it. A tie goes to
+  the tip first in the table above, entry before exit. The jibe's wording only when every turn
+  behind the tip was a jibe. No tip on any turn, no tip line.
+- **Port against starboard**, one row per entry tack: clean jibes per tack (*3 of 8 jibes
+  clean*) when the session has jibes, else flew through over every counted turn, the Trends
+  side split's measure. With three or more turns on each side and 20 points between the two
+  shares the card says *Work on your starboard entry next.* and sets that row bold; with a
+  smaller gap *Your port and starboard entries went much the same.*; with fewer turns the two
+  counts and no verdict. A side with no jibe on it (on a tacks-only session, no turn) means
+  no comparison: a port that only jibed against a starboard that only tacked would weigh a
+  jibe against a tack.
+- **Session-wide.** It sits above the cards, which count the whole afternoon, and the
+  type/side filters do not move it. Absent when it has neither line. The web has no card yet
+  (docs/screens.md, the Turns row: web later).
+
 **"Not how I remember it?"** — a button under the numbers, in every channel, with the turn
 named for the rider: *Jibe 2 of 5 at 42:15. CleanJibe says: touchdown.* (`TurnDoubt.note`).
 Beta and dev open *Send this session to us* with that line starting the note and the scrubbed

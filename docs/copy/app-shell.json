@@ -76,7 +76,7 @@
       {
         "id": "garmin",
         "here": true,
-        "line": "Paste your intervals.icu key in Settings. Sessions arrive by themselves."
+        "line": "Paste your intervals.icu key in Settings. Sessions arrive by themselves. Garmin Connect's phone app cannot export a file."
       },
       {
         "id": "appleWatchApp",

@@ -30,6 +30,21 @@
     "otherwise: the troubleshooting list and the report checklist are web-only (the app has",
     "its own troubleshooting topics), and the line naming the web page is app-only.",
     "",
+    "`notice` is a route's one warning, web only: the card shows it above the fold, beside",
+    "the class pill, so a reader sees it before choosing the route. The Strava card carries",
+    "the seat cap there (rider review S5, 9 Oct 2026). The app says the same thing on the",
+    "screen that connects, so its help topic shows no notice.",
+    "",
+    "`browser` is a route's line for the browser app, web only: the card prints it above the",
+    "fold, under the summary, so every way in says what the third app does with it (rider review",
+    "S10, 9 Oct 2026). A route the browser cannot take says so and names the way round. The",
+    "app's help topic is the iPhone's own and shows no browser line.",
+    "",
+    "`webPage` says which page of the site an extra is printed on: \"start\" (the default) or",
+    "\"beta\". /start/ installs and gets the first session in; /beta/ says what to test and what",
+    "a good report says (rider review S9, 9 Oct 2026). The report checklist is on /beta/ too.",
+    "The app's help topic lists every extra whatever its page.",
+    "",
     "`{site}` becomes Branding.site in Swift and cleanjibe.org on the web.",
     "`**bold**` is markdown in the app and <strong> on the web; *italic* likewise."
   ],
@@ -56,6 +71,10 @@
       "title": "If something does not work",
       "lede": "Try the line that matches. Then tell us how it went, either way."
     },
+    "test": {
+      "title": "What to test",
+      "lede": "Five steps, after one ordinary session. The first one matters most."
+    },
     "report": {
       "title": "What a good report says",
       "lede": "Keep it short. A screenshot of the session page beats a paragraph. \"This number looks wrong\" is a good report."
@@ -73,6 +92,7 @@
       ],
       "class": "b",
       "summary": "Ride as always, with Windsurf or any watersport profile. Connect intervals.icu once, and your old sessions come in too. The CleanJibe watch app adds verdicts on your wrist.",
+      "browser": "Paste your intervals.icu key into its Settings. Your Garmin sessions arrive there too, on any computer or phone.",
       "steps": [
         {
           "title": "Ride as always",
@@ -96,11 +116,11 @@
         },
         {
           "title": "No intervals.icu? The long way",
-          "detail": "connect.garmin.com → the activity → the gear icon → **Export File**. AirDrop it to the iPhone, then Import → **FIT or ZIP…**."
+          "detail": "Garmin Connect's phone app cannot export. On a computer, connect.garmin.com → the activity → gear icon → **Export File**. AirDrop it to the iPhone, then Import → **FIT or ZIP…**."
         },
         {
           "title": "Garmin calls it Windsurf",
-          "detail": "Garmin has no wingfoil profile, so Garmin and Strava call the session Windsurf. The jibes and the numbers are in CleanJibe, not in Garmin Connect or Strava."
+          "detail": "Garmin has no wingfoil profile, so Garmin and Strava call the session Windsurf. With the watch app, Garmin Connect also shows foil time and flights. Strava does not."
         }
       ]
     },
@@ -114,6 +134,7 @@
       ],
       "class": "bPlus",
       "summary": "Install it with the CleanJibe beta and record on your wrist. The watch only records, and the iPhone does the analysis.",
+      "browser": "This way in needs the iPhone app. A browser cannot reach your watch.",
       "steps": [
         {
           "title": "Put it on the watch",
@@ -143,6 +164,7 @@
       ],
       "class": "b",
       "summary": "No extra app on the watch: record a Surfing workout and import it from Apple Health.",
+      "browser": "This way in needs the iPhone app. Apple Health is closed to a browser.",
       "steps": [
         {
           "title": "Start a Surfing workout",
@@ -177,6 +199,7 @@
       ],
       "class": "b",
       "summary": "Sync it through intervals.icu, or share the file into CleanJibe from Files, Mail, AirDrop or any share sheet.",
+      "browser": "Drop the .fit into it, on a computer or any phone. The file never leaves the tab.",
       "steps": [
         {
           "title": "Record on your own watch",
@@ -210,7 +233,9 @@
         "dev"
       ],
       "class": "c",
+      "notice": "Strava lets a new app connect a limited number of riders. If connecting is refused, export the original on strava.com from a computer and import that file.",
       "summary": "Settings → Strava → Connect with Strava, then Import → Import from Strava…. Strava keeps your track but not your watch's speed, so records are estimated.",
+      "browser": "Strava sign-in needs the iPhone app. Export Original on strava.com gives you a file the browser app opens.",
       "steps": [
         {
           "title": "Connect once",
@@ -230,7 +255,11 @@
         },
         {
           "title": "If connecting is refused",
-          "detail": "Strava lets a new app connect a limited number of riders. That is nothing to do with your account. Menu → Support & ideas says so."
+          "detail": "Strava lets a new app connect a limited number of riders. That is nothing to do with your account. Tell us through Menu → Support & ideas."
+        },
+        {
+          "title": "Strava full? Take the file",
+          "detail": "On a computer, open the activity on strava.com and choose ⋯ → **Export Original**. AirDrop it to the iPhone, then Import → **FIT or ZIP…**."
         }
       ]
     }
@@ -274,11 +303,12 @@
         "beta",
         "dev"
       ],
+      "webPage": "beta",
       "summary": "Menu → Support & ideas opens a mail to us, with your app and watch details already in it. Your mail decides what we build next.",
       "steps": [
         {
           "title": "Read the verdicts against your memory",
-          "detail": "Open the session and go to **Turns**. Every turn says *flew through*, *touched down* or *fell in*. The clean jibes are marked among them."
+          "detail": "Open the session and go to **Turns**. Every turn says *flew through*, *touchdown* or *fell in*. The clean jibes are marked among them."
         },
         {
           "title": "Say where it disagrees with you",
@@ -350,7 +380,7 @@
     "entries": [
       {
         "term": "Which way in",
-        "detail": "Garmin, any .fit, Strava, the CleanJibe watch app, or Apple's Workout app."
+        "detail": "Garmin, the CleanJibe Apple Watch app, Apple's Workout app, any .fit, or Strava."
       },
       {
         "term": "Your watch",

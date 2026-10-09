@@ -18,9 +18,9 @@ when `WelcomeView.swift` types a word a shared section owns instead of reading t
 | `identity` | app only | the mark, the name, the tagline and one paragraph | — |
 | `legend` | both | under the track drawing | the three verdicts under the promise, as coloured marks |
 | `example` | both | the green button, its line, and the small card beside its caption | the hero's first button, the line under it, and the card's caption |
+| `getStarted` | app only | the white button that opens Getting started | — |
 | `measures` | both | the vocabulary card | What you get, left column |
 | `verdicts` | homepage only | — | What you get, right column, with the clean star |
-| `getStarted` | app only | the white button that opens Getting started | — |
 | `family` | both | the family cards, with the app it is marked as this one | inside the chooser: its intro is the lede, each card prints its apps' lines |
 | `chooser` | homepage only | — | Which way in is yours?, one card per rider's kit |
 | `oldSessions` | homepage only | — | its own band |

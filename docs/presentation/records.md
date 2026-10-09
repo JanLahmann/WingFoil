@@ -46,6 +46,11 @@ flew streak` · `Longest session` · `Most distance`.
   hour of **timer** time: the hour the recorder was running, not the elapsed span it was
   running across, so a paused break does not quietly deflate the number a rider quotes.
   `durationS` is still what the row prints as the session's *duration*.
+- **Best CPH needs 20 minutes on the timer** (Jan, 9 Oct 2026; docs/algorithms/rates.md,
+  "Too short for a rate"). A session under the floor prints no rate on its own page, so it
+  holds no rate record either; the row says *"Clean jibes per hour on the timer. Sessions of
+  at least 20 minutes."* (`SessionRecordKind.cphMinTimerS`, `library.RATE_MIN_TIMER_S`). It
+  was one rate window, 15 min, of elapsed time. The widget's best JPH takes the same floor.
 - **The clean-jibe rate needs at least five jibes**, and the row says so. Four out of four is
   a good afternoon; it is not a rate. The floor is one constant on each side
   (`SessionRecordKind.minJibesForRate`, `library.MIN_JIBES_FOR_RATE`).
@@ -78,4 +83,11 @@ purpose. Import a .fit file, or connect intervals.icu in Settings, and your own 
 here.* Its title is a promise rather than a fault — *Your records start with your first
 session* — because nothing is broken and nothing is missing; the records have not been earned
 yet. Trends says the same in its own terms, and neither title mentions a range.
+
+**And the two steps it names are buttons** (Jan, 9 Oct 2026; rider review I1). Under the
+line sit *Import a file* (the Import sheet) and *Connect intervals.icu* (Settings), on
+Records and on Trends, in `ExampleOnlyNote`'s words (`importButton`, `connectButton`) and
+through `ExampleOnlyDoors`, which draws a button only where the tab's host hands its action
+down. The browser draws the same two from the same export: a `<label for="file">` onto the
+ways-in card's picker, and *Connect intervals.icu* into Settings, where the key is kept.
 

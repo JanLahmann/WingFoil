@@ -29,7 +29,11 @@ graph has loaded — writes the same guard out longhand and says so.
 
 The privacy page carries the disclosure in one sentence, in the voice
 (`web/privacy/index.html`, *umami — anonymous, cookie-free page counts*): *"It also counts
-named actions like a card made, with only a format, a count or a tab name."* The footer's
+named actions like a card made, with only a format, a count or a tab name."* The help's
+privacy topic (*What leaves your phone*) says it too since 9 October 2026 (rider review X10):
+its body had said *no analytics* of the whole product on a page that loads umami, so the
+sentence now names the iPhone app it is true of, and an item, *What the website counts*, says
+page views and taps, no cookies, never a session. The footer's
 line on every page is unchanged, because it already covered this: *"Anonymous, cookie-free
 usage stats and feature counts by umami."*
 
@@ -133,9 +137,9 @@ Every one of these goes through `track()` in `web/js/track.js`.
 
 | event | properties | where it fires | the question | funnel |
 |---|---|---|---|---|
-| `app-file-analyzed` | `format` (`fit`/`gpx`/`tcx`/`zip`), `source` (`drop`/`picker`/`example`/`shared`/`icu`) | `js/app.js`, after a successful analysis | **the one number this site is for.** How many sessions the engine finished, and which way in and which format they came through | 3 |
+| `app-file-analyzed` | `format` (`fit`/`gpx`/`tcx`/`zip`), `source` (`drop`/`picker`/`example`/`shared`/`icu`) | `js/app.js`, after a successful analysis — and, for `source: "example"`, when the pre-analysed example reaches the screen (since 9 Oct 2026, rider review X4: the example is analysed at build time, so its report is not an engine run in the tab) | **the one number this site is for.** How many sessions the engine finished, and which way in and which format they came through | 3 |
 | `app-file-rejected` | `source` | `js/app.js`, the extension guard | are riders arriving with a format CleanJibe does not take | 3 |
-| `app-example-loaded` | — | `js/app.js`, the example press | the gap to `app-file-analyzed` is the 12 MB runtime download people wait out or do not | 3 |
+| `app-example-loaded` | — | `js/app.js`, the example press | the gap to `app-file-analyzed`. Until 9 Oct 2026 it was the 14 MB runtime download people waited out or did not; since the example ships pre-analysed it is the 1 MB recording and its 90 KB answer, so a gap that stays is a fetch that failed | 3 |
 | `app-session-saved` | `replaced` | `js/app.js`, after the write | does a visitor keep a session or only look at it | 3 |
 | `app-session-opened` | `from` (`library`/`record`/`trend`) | `js/app.js` `openStored` | which list people re-open a session from | 3 |
 | `app-tab-switched` | `tab` (the four) | `js/appshell.js`, the tab press only | are Records, Trends and Gear ever reached | 3 |

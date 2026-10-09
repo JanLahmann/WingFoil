@@ -121,7 +121,10 @@ about, and a tree comparison would pass it.
   same absence — carries its reason as its only caption (`presentation.caption.noMax2s`,
   `noBest5x10s`, `noAlpha500`, the engine's own condition per record), and the renderer
   draws that caption where the number goes. The id is the whole test; no renderer
-  re-derives it (`KeyMetrics.metric`, `entry` in `web/js/cardstats.js`).
+  re-derives it (`KeyMetrics.metric`, `entry` in `web/js/cardstats.js`). **The rate row's
+  cells are the second** (9 Oct 2026): under 20 minutes of timer time each is `null` with
+  `presentation.caption.tooShortForRate` (docs/algorithms/rates.md, "Too short for a rate");
+  the set of such ids is `PresentationDocument.missingCaptions` and `RECORD_MISSING`.
 - `captions` — zero or more. A list rather than an optional because a cell that grows a
   second qualifier should not change shape.
 - Two optional fields, and a cell has at most one of them:
@@ -295,7 +298,7 @@ the document must never try to make it:
 - **The words.** The document names an id; `docs/copy` holds the sentence and the renderer
   interpolates the arguments, including plurals ("of 1 tack") and the discipline lexicon
   (`planing` for `flying`). A cell's label and its caption join on one line with a comma,
-  never a dash: "flew · touch · fell, of 10 jibes", "fell in, 2 in a turn · 0 in a straight
+  never a dash: "flew · touchdown · fell in, of 10 jibes", "fell in, 2 in a turn · 0 in a straight
   line" (30 Sep 2026, docs/voice.md rule 4). `captionSep` in `KeyMetricsView` and
   `CAPTION_SEP` in `web/js/cardstats.js` spell it; `verify_glossary.py` holds them together.
 - **Layout.** Grid, column count, wrapping, which cells share a row at which width, the

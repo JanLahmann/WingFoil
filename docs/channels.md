@@ -7,7 +7,8 @@ other way round.
 
 **Its machine-readable twin is `docs/copy/channels.json`** — the same beta and dev rows, the
 same section title, in a form a test and a Python verifier can read. `ChannelFeatures` in the
-kit is asserted equal to it by `CopyContractTests`, the website's two lists by the web
+kit is asserted equal to it by `CopyContractTests`, the website's two lists (on
+cleanjibe.org/beta#coming since 9 October 2026, the tester's page) by the web
 verifier, and `docs/copy/check_release_copy.py` asserts that no release copy names a door the
 release lacks. Edit this file first, then the JSON and the kit together.
 
@@ -30,7 +31,13 @@ back on a phone a newer beta has already migrated is the real case — so `AppDa
 `PRAGMA user_version` and the applied migration list before it migrates anything and throws
 `LibraryNewerThanApp`, which `RootView` turns into one full screen with *Open TestFlight* and
 *Restore from backup* on it; docs/testing.md says how to raise that screen in the simulator
-with one `sqlite3` line.
+with one `sqlite3` line. A backup the beta writes at the newer schema is refused by the same
+older build (`LibraryBackupManifest.compatibility`), so the promise is **back up first**
+(rider review I6, Jan 9 Oct 2026): the Beta page's way in starts with a backup made in the
+App Store version, its *Going back* section says back up in the beta and that a library the
+beta updated waits for a later App Store update, and the release's blocking screen says the
+same under its buttons with the backup topic one tap away. Dev, an app of its own beside the
+App Store one, has no *Going back* section. Nothing says "go back whenever you like".
 
 Gates in code: `#if BETA` for beta rows (also true in dev), `#if DEV` for dev rows (also
 `TUNING` for the tuning page, which predates this file). The kit compiles everything; gating
@@ -183,7 +190,7 @@ the phone showed. Both open with the build and the device.
 
 The order here is the order every rider-facing table prints, and it is the site's one
 rule for watches: **Apple Watch comes right after Garmin**. So a, b + wrist, b, c — on
-/watches, on /start and here. `docs/copy/recording-classes.json` keeps the kit's own
+/start#watches and here. `docs/copy/recording-classes.json` keeps the kit's own
 order (`RecordingClass.allCases`) and is not reordered for a table.
 
 | class | you record with | you get | you do not get |
@@ -196,6 +203,13 @@ order (`RecordingClass.allCases`) and is not reordered for a table.
 Release: classes a and b through intervals.icu or a file, class c through Strava. Beta: class
 c through GPX and TCX as well. The app's `sourceClass` column is the source of truth
 (docs/algorithms.md).
+
+**The letters are this table's and the engine's, never a rider's** (rider review X9 and I7,
+9 Oct 2026). Every screen and page names a class by what it gets — `RecordingClass.name`:
+**Everything** (a), **Measured speed and the wrist** (b + wrist), **Measured speed** (b),
+**Positions only** (c) — and `web/tools/verify_copy.py` fails a rider page that prints
+"class a/b/c". A COROS, Polar or Suunto FIT is b (it carries the watch's speed); only its
+GPX, or a TCX without speed, is c.
 
 ## Feature by channel
 
@@ -217,10 +231,11 @@ c through GPX and TCX as well. The app's `sourceClass` column is the source of t
 | feature | channel | note |
 |---|---|---|
 | Engine 0.28.0: foil time, flights, touchdowns, falls, wind axis | release | the number is the engine the three channels share; `docs/algorithms.md` is the contract and `tools/check_release.py` holds this row to it |
-| Turn verdicts, clean jibes, JPH · CPH · WPH, dry streaks | release | |
+| Turn verdicts, clean jibes, CPH · JPH or TPH · falls / h, dry streaks | release | the 20-minute rate floor ("too short for a rate", 9 Oct 2026) and the **Rates** help topic are a correction to numbers every channel already prints, so they ship in all three at once (docs/algorithms/rates.md, "Too short for a rate") |
 | GP3S record set, uncertified marking | release | |
 | Pump strokes, takeoff attempts | release | class a and the Apple Watch app (wrist accelerometer); absence shown as absence |
 | Turn page and flight-end page with the three strips | release | |
+| The **Next session** card at the top of the Turns tab: the commonest *Next time…* tip of the session with how many turns it came up on, and port against starboard (clean jibes per entry tack, or flew through on a session with no jibes), naming the side to work on | beta | rider review I2, 9 Oct 2026. `#if BETA` in the app target (`NextSessionCard`, placed by `SessionTurnsSection`); the rule is the kit's (`NextSessionCoach`), the tip's sentence the turn page's own. The release build's Turns tab starts with its cards, as before. Not on the beta list (`ChannelFeatures.beta`) yet. Before release: **rule 1**, the card read on ten sessions from two riders with no tip or side Jan disputes, and a line in the **Turn outcomes** help topic |
 | "Wrist under" layer, why-line on every touchdown | release | |
 | Windsurf discipline (foil, fin), per-discipline thresholds | dev | experimental |
 | Tuning page, sliders, turn workbench, tuned chips | dev | listed as a potential beta feature on request |
@@ -259,7 +274,7 @@ c through GPX and TCX as well. The app's `sourceClass` column is the source of t
 |---|---|---|
 | Apple Watch app: recording, live numbers, transfer to the phone | beta | in the beta from day one; release once Jan's daughters' sessions arrive by themselves |
 | Home-screen widgets (last session, this week — "since your last session" in a week off the water — and personal bests) and the watch complication | beta | need the app group before they show anything |
-| Garmin link: summary card from the watch | dev | |
+| Garmin link: summary card from the watch | dev | the watch's switch, *Send summary to phone app* (`phonePush`), is dev too since 0.9.22 (rider review W11): its property and row live in `resources-dev/base/`, `AppSettings.readPhonePush` is `(:notdev)` false, so a release or beta watch has no row and sends nothing a release or beta phone cannot receive. It moves up with this row |
 | Direct transfer from the Garmin watch | dev | issue #14, ADR-027, docs/transfer-format.md. The recording itself over the Connect IQ link, in 8 KB pages, about twenty seconds on the beach. No new switch on either side: it rides the card's `phonePush`. All four rules are **unmet** — (1) nothing has crossed on the water yet, only the probe of 19 Sep 2026 and the tests; (2) Garmin Connect Mobile owns the link and keeps the whole Garmin story in dev until it has real sessions behind it; (3) it is days old, not a fortnight; (4) it cannot be reviewed without a watch, because there is no way to see it from the example session or a shared file. Before beta: ten sessions across two riders, a help topic on what arrives and what still comes from the FIT, the privacy page naming the link as a way a recording reaches the phone, and a `cutShort` column so a transfer the rider walked away from says so on the session and not only in Settings |
 | Garmin watch: the crash breadcrumb | dev | The watch has no crash reporting: an unhandled exception drops the rider to the watch face and writes `CIQ_LOG.YML` on a watch on a beach. `CrashBreadcrumb` counts the runs that never reached `onStop` and keeps the screen the last of them was on; the dev build prints `crashes N (last: view)` on the link probe's Results page at start, and the summary card carries the count as `cx` in **every** stream (docs/testing.md, "The watch's crash hunt"). **Closed on the phone side, 20 Sep 2026**: `CompanionSummary` takes `cx` off the card (optional, and never a reason to refuse a card), `SessionIngestor` keeps it on the session the card wrote (`SessionRow.watchCrashes`, GRDB v18) and the feedback mail prints one line under the phone's own "Recent crashes" — *Watch app: 3 runs ended without a save*, *Watch app: no crashes reported* when the watch has lost none, nothing when no card ever said. No Settings row and no screen: a crash count is a diagnostic, and the mail is the one reader who can act on it (docs/transfer-format.md) |
 | Garmin link: send wind to watch | dev | potential feature on request only |
@@ -271,7 +286,7 @@ c through GPX and TCX as well. The app's `sourceClass` column is the source of t
 | feature | channel | note |
 |---|---|---|
 | Feedback mail with prefilled facts, footers on every page, menu Support, the turn page's *Not how I remember it?* (release: the mail with the turn named, no file) | release | |
-| "Coming in a future release" section with the TestFlight link and the beta list | release | named *"Curious about what is coming"* until 14 Sep 2026 and *"What is being tested"* until 15 Sep; the row answers the rider's own question — when do I get these — rather than naming the room they are tried in. **Settings only**: it had a row in the library menu in the release channel and lost it on 15 Sep, because the menu is for what a rider needs now (Jan, build 58). It lists the **beta** rows of this file and nothing else: the dev rows are `#if BETA`, because a handful of hand-picked phones is not a promise to anybody on the App Store. On the page, *How to join the beta* is the **first section and a step** — one tap, library kept, a prominent TestFlight button — not a footnote under the lists. The beta shows the same list without the join section, and the dev rows under it as *Further out*. It is the only surface either list appears on: the Beta section stopped repeating the beta rows on 15 Sep (Jan, dev 68). **The release's page opens on the community sentence** (`BetaGuide.community`, Jan, 30 Sep 2026) |
+| "Coming in a future release" section with the TestFlight link and the beta list | release | named *"Curious about what is coming"* until 14 Sep 2026 and *"What is being tested"* until 15 Sep; the row answers the rider's own question — when do I get these — rather than naming the room they are tried in. **Settings only**: it had a row in the library menu in the release channel and lost it on 15 Sep, because the menu is for what a rider needs now (Jan, build 58). It lists the **beta** rows of this file and nothing else: the dev rows are `#if BETA`, because a handful of hand-picked phones is not a promise to anybody on the App Store. On the page, *How to join the beta* is the **first section and a step** — one tap, library kept, a prominent TestFlight button — not a footnote under the lists. Its footer ends on `BetaGuide.backupFirst` (rider review I6) where it said *Go back to the App Store version whenever you like*. The beta shows the same list without the join section, and the dev rows under it as *Further out*. It is the only surface either list appears on: the Beta section stopped repeating the beta rows on 15 Sep (Jan, dev 68). **The release's page opens on the community sentence** (`BetaGuide.community`, Jan, 30 Sep 2026) |
 | The Beta page: Menu → *Join the beta*, the welcome's footer and the Apple Watch app's card | release | 25 Sep 2026 (Jan's plan of 24 Sep, section 5). Every channel has it, gated inside: the release titles it *Join the beta* and carries the public TestFlight link (`AppChannel.testFlight`); the beta and dev title it *You are in the beta* and have no join step. The list on it is this file's beta rows (`ChannelFeatures.beta`), not a second list. The web has the release's page (`#/beta`). **Community driven** (Jan, 30 Sep 2026): both open on one sentence, `BetaGuide.community` — *CleanJibe is built with its riders. New features land in the beta first, and move to the App Store once testers have proven them.* — which the welcome's footer, the homepage, *Coming in a future release*, the App Store description and the TestFlight notes say too. The beta and dev pages end on two buttons, *Tell us how it works* (the feedback sheet at the beta features' ticks) and *What should we test next?* (the same sheet, the cursor in *Your idea*); the page raises the sheet itself, so every door onto it has both. What's new ends on the kit's ask (`BetaGuide.whatsNewClosing`): *Tried it? Tell us in Menu → Support & ideas.* in the beta, *Want new features first? Menu → Join the beta.* in the release, each a button onto that door. **Not built, on purpose:** a nudge to join or to write after N sessions (Jan, 30 Sep 2026: not now) |
 | The Beta chip: *Beta* on every beta feature in the beta and dev app, a tap opens the Beta page | beta | Jan, 30 Sep 2026. One component, `BetaChip`, `#if BETA` as a whole type, so the release binary has no chip. On the session story's line (its record chips belong to it), the card preview when the card wears the record ribbon (on the preview, never in the shared picture), the share composer's *Export video* and *Send to us*, the library's grouping control and its Apple Watch way in, Settings → Apple Health and every Import door the release lacks. Not on the Records tab's badge: a tab-bar count has no room for one |
 | Beta section: request a feature, extended feedback mail with usage and feature statistics, check for a newer build, start over | beta | counters kept on the phone, sent only in a mail the rider edits. **Actions only, no list**: it checked the beta rows off one row above the page that lists them again, so a tester read them twice on one screen (Jan, dev 68) |
@@ -311,7 +326,8 @@ every build, with a `-devN` suffix on the version string, and is where the exper
 
 **Gates in code.** Monkey C has no `#if`; the jungles exclude annotations instead. `(:dev)`
 marks an experiment and its switch (today: the map after save, GitHub #4, whose property and
-setting live in `resources-dev/base/`; the link probe, GitHub #14, a hidden item under
+setting live in `resources-dev/base/`; *Send summary to phone app*, `phonePush`, since 0.9.22,
+because its receiver is the dev iPhone app; the link probe, GitHub #14, a hidden item under
 Wind from that times a page of bytes to the phone, docs/direct-transfer.md; and since 0.9.16
 the **per-page data-screen editor**, below); a `(:notdev)` twin with the same name stands in
 for it everywhere else. `monkey.jungle` and `monkey-beta.jungle` exclude `dev`, `monkey-dev.jungle`
@@ -327,6 +343,8 @@ deliberately opposite ways:
 |---|---|---|
 | **Page set: standard / large text** — one Garmin Connect enum, five big screens or the eight standard ones (docs/presentation/watch.md, "The watch's two page sets") | **release** | it is one enum with two values, it needs no explanation, and it is the answer to the one piece of feedback that started the round ("I need my glasses"). A rider who never opens it gets exactly the app he had |
 | **The per-page editor** — eight screens, each a layout plus five metric slots, plus *Reset pages to defaults* (`pg1Layout` … `pg8s5`, `resetPages`) | **dev** | 49 rows in Garmin Connect for a rider who mostly wants one thing bigger. It is a tuning instrument, and it moved out of `resources/settings/` into `resources-dev/base/settings/` in this round along with its strings; `PageModel._store` is the `(:notdev)` twin that answers with the default table, so release and beta show the eight pages the table holds. **Candidate for beta the day a rider asks for it**: one jungle line moves the resources, and the four rules are already met on the code (it shipped to every rider from 0.8.2 to 0.9.15 with no report against it) — what it lacks is anyone asking |
+| **The watch says when it stops counting** (rider review W1, W13) — pause and resume buzz on their own shapes, a pressed pause buzzes again every two minutes, a PAUSED / RECORDING flash, the state ring yellow while paused and grey and broken after 5 s without a usable fix (docs/presentation/watch.md, "When the watch stops counting") | **beta**, from 0.9.22 | every stream compiles it — the watch has no flag for it — and it goes where every new version goes: the beta listing first, the release listing with the version once the four rules are met. Rule 4 is met (the simulator shows every look); rules 1 to 3 wait for ten sessions from two riders on a real wrist, where the buzz shapes are the thing to prove through a hood |
+| **A wind set by hand lives one session** (rider review W4, W5) — the save retires it, the next start page asks *Same wind?* (Yes keeps it for that session, anything else is auto-wind), and with auto-wind on the start page says *wind auto* in white rather than *set wind* (docs/presentation/watch.md, "The start page's wind row") | **beta**, from 0.9.22 | the same path as the row above: every stream compiles it, the beta listing carries it first. Rule 4 is met (the simulator shows the question and all three wind rows); rules 1 to 3 wait for ten sessions from two riders, the question answered both ways at two spots |
 | **The direct transfer's progress line and its buzz** — `phone 4/13`, then `wrist 2/8`, then `phone ok` on the SAVED and start screens, one tick when the last stream is whole | **dev** | it rides with the direct transfer itself (below), and moves when that does |
 | **The wrist stream** — the 25 Hz magnitudes as a second stream after the recording (docs/transfer-format.md §2b, ADR-031), and the **packed page** that lets the pre-6.0.0 fleet carry either | **dev** | same: it is part of the direct transfer and has no life without it. The packed encoder is untested on hardware until a fenix 5 Plus runs the probe (docs/direct-transfer.md §5) |
 

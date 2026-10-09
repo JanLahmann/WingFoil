@@ -1,5 +1,5 @@
 {
-  "version": "0.9.21",
+  "version": "0.9.22",
   "count": 42,
   "minApiLevel": "3.3.3",
   "store": {
@@ -118,5 +118,87 @@
       "instinct3amoled50mm"
     ],
     "tactix / quatix": []
+  },
+  "models": {
+    "fenix 8": [
+      "fenix 8 43 mm",
+      "fenix 8 47 mm and 51 mm",
+      "fenix 8 Solar 47 mm",
+      "fenix 8 Solar 51 mm",
+      "fenix 8 Pro 47 mm and 51 mm, and fenix 8 MicroLED"
+    ],
+    "fenix 7": [
+      "fenix 7",
+      "fenix 7S",
+      "fenix 7X",
+      "fenix 7 Pro",
+      "fenix 7S Pro",
+      "fenix 7X Pro",
+      "fenix 7 Pro Solar without Wi-Fi",
+      "fenix 7X Pro Solar without Wi-Fi"
+    ],
+    "fenix 5 Plus": [
+      "fenix 5 Plus",
+      "fenix 5S Plus",
+      "fenix 5X Plus"
+    ],
+    "epix 2": [
+      "epix Gen 2",
+      "epix Pro Gen 2 42 mm",
+      "epix Pro Gen 2 47 mm",
+      "epix Pro Gen 2 51 mm"
+    ],
+    "Forerunner": [
+      "Forerunner 255",
+      "Forerunner 265",
+      "Forerunner 570 42 mm",
+      "Forerunner 570 47 mm",
+      "Forerunner 955 and 955 Solar",
+      "Forerunner 965",
+      "Forerunner 970"
+    ],
+    "MARQ 2": [
+      "MARQ Gen 2 Athlete, Adventurer, Captain, Golfer, Carbon and Commander",
+      "MARQ Gen 2 Aviator"
+    ],
+    "Enduro": [
+      "Enduro 3",
+      "Enduro 2"
+    ],
+    "D2": [
+      "D2 Mach 1",
+      "D2 Mach 2",
+      "D2 Mach 1 Pro"
+    ],
+    "Descent": [
+      "Descent Mk3 43 mm and Mk3i 43 mm"
+    ],
+    "Venu": [
+      "Venu 2",
+      "Venu 2S",
+      "Venu 2 Plus",
+      "Venu 3",
+      "Venu 3S"
+    ],
+    "vívoactive": [
+      "vívoactive 5",
+      "vívoactive 6"
+    ],
+    "Instinct 3 AMOLED": [
+      "Instinct 3 AMOLED 45 mm",
+      "Instinct 3 AMOLED 50 mm"
+    ],
+    "tactix / quatix": [
+      "tactix 8 47 mm and 51 mm",
+      "quatix 8 47 mm and 51 mm",
+      "tactix 8 Solar 51 mm",
+      "quatix 8 Pro 47 mm and 51 mm",
+      "quatix 7",
+      "tactix 7",
+      "quatix 7X Solar",
+      "quatix 7 Sapphire",
+      "quatix 7 Pro",
+      "tactix 7 AMOLED"
+    ]
   }
 }

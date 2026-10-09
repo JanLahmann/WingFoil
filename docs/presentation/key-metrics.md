@@ -10,9 +10,9 @@ screens below a map, ten legend chips and three paragraphs of legend documentati
 | row | content |
 |---|---|
 | 1 | duration (`10:45 min` / `1:57 h`) · distance · average speed |
-| 2 | the best 2 s record, labelled **"max 2 s"**, in the largest type · beside it **5×10 s** and **alpha 500** at the ordinary size (since 6 Sep 2026). A record the session did not set says **why, where the number goes** (30 Sep 2026): *no unbroken 2 s of track*, *no unbroken 10 s of track* (5×10 s averages however many disjoint 10 s windows exist, so it is missing exactly when no 10 s window is), *no 500 m out-and-back*. The cell's caption carries it (`presentation.caption.noMax2s` / `noBest5x10s` / `noAlpha500`), and the value is left as it was. These two are **block-only**: the share card is the block *minus* them — one speed on a card, the one a rider quotes; the Records page owns the set. The web renders them with the `extra` class, which is how `card_parity.mjs` tells them apart |
+| 2 | the best 2 s record, labelled **"best 2 s"** (it was "max 2 s" until 9 Oct 2026), in the largest type · beside it **5×10 s** and **alpha 500** at the ordinary size (since 6 Sep 2026). A record the session did not set says **why, where the number goes** (30 Sep 2026): *no unbroken 2 s of track*, *no unbroken 10 s of track* (5×10 s averages however many disjoint 10 s windows exist, so it is missing exactly when no 10 s window is), *no 500 m out-and-back*. The cell's caption carries it (`presentation.caption.noMax2s` / `noBest5x10s` / `noAlpha500`), and the value is left as it was. These two are **block-only**: the share card is the block *minus* them — one speed on a card, the one a rider quotes; the Records page owns the set. The web renders them with the `extra` class, which is how `card_parity.mjs` tells them apart |
 | 3 | **the clean jibes, in a cell of their own** with the star in the clean ink (25 Sep 2026) · the jibe tally on the ladder's inks, captioned "of N jibes" · **the tack tally beside it** where the session had tacks (22 Sep 2026) · every fall of the afternoon · the two turn streaks, the flew half in the ladder's green |
-| 4 | **CPH first, then one dry-turn rate — JPH on a jibes-only session, TPH once tacks exist — then WPH** (Jan, 25 Sep 2026; `docs/algorithms/rates.md` "Session rates"), one decimal |
+| 4 | **CPH first, then one dry-turn rate — JPH on a jibes-only session, TPH once tacks exist — then falls / h** (Jan, 25 Sep 2026; `docs/algorithms/rates.md` "Session rates"), one decimal. **Under 20 minutes of timer time (`timerTimeS < 1200.0` s) every cell reads *"too short for a rate"* where its number goes** (Jan, 9 Oct 2026; `presentation.caption.tooShortForRate`, "Too short for a rate" below) |
 
 The rules, which are the only thing the two implementations can disagree about:
 
@@ -38,9 +38,10 @@ The rules, which are the only thing the two implementations can disagree about:
   other speed in both apps is knots, and a km/h number in a column of knots is a misread
   waiting to happen. It is a session-shape number — elapsed time, gaps included — and never
   a record: the GP3S block is still the only place records live.
-- **Row 2 names the window, not the peak.** "max 2 s", the same rule the record picker's
-  chip follows; "max speed" over a 2 s window would be the overclaim that rule exists to
-  prevent.
+- **Row 2 names the window, not the peak.** "best 2 s", the record's own name and the
+  same rule the record picker's chip follows; "max speed" or "top speed" over a 2 s window
+  would be the overclaim that rule exists to prevent. One name for this number everywhere
+  (rider review X2, 9 Oct 2026).
 - **Row 3 is the jibe ladder**, and the caption says what the three numbers are out of and
   how many were **clean** ("of 50 jibes · 12 clean"). A session whose wind axis never
   resolved has no jibes at all, so it falls back to every counted turn ("of 51
@@ -123,17 +124,22 @@ actually chases, and they are kept beside the nine (`CleanJibeRecordKind`,
 | record | what it is | why it is separate |
 |---|---|---|
 | **Clean jibes** | most clean jibes in one session (`SessionRow.jibesSuccessful`) | the afternoon he rode the most |
-| **Best CPH** | best `jibesSuccessful / (durationS/3600)` | the afternoon he rode them *fastest*, which a short evening in good wind wins |
+| **Best CPH** | best `jibesSuccessful / (timerTimeS/3600)` | the afternoon he rode them *fastest*, which a short evening in good wind wins |
 
-- **A session must last one rate window (15 min) to hold the CPH record.** The rolling
-  window's "never a flattering peak" rule (docs/algorithms.md) applied to a session: one
-  clean jibe in a four-minute sail is fifteen an hour, and a personal best a rider can set by
-  going home early is not one. The *count* takes no such floor.
+- **A session must hold a rate — 20 minutes on the timer — to hold the CPH record** (Jan,
+  9 Oct 2026; it was one rate window, 15 min, of elapsed time). The rolling window's "never a
+  flattering peak" rule (docs/algorithms.md) applied to a session: one clean jibe in a
+  four-minute sail is fifteen an hour, and a personal best a rider can set by going home
+  early is not one. The floor is the session page's own "too short for a rate"
+  (`RateFloor.minTimerS`, `library.RATE_MIN_TIMER_S`), so no record holds a rate the page
+  refuses to print. The *count* takes no such floor.
   - **The floor is on the records table too**, not only on the celebration (7 Sep 2026).
     `SessionRecordKind.bestCph` and `library._cph_record` apply it; before that the table
     had no floor and the confetti did, so "Best CPH" could name two different afternoons
     in one app. It bites on this corpus: the highest CPH of all belongs to a session under
-    eleven minutes, and `verify_library.py` asserts that it does not hold the row.
+    eleven minutes, and `verify_library.py` asserts that it does not hold the row. The row's
+    caption states it: *"Clean jibes per hour on the timer. Sessions of at least 20
+    minutes."*
 - **Ties keep the earlier session**, the way the window peak keeps the earliest window.
 - **One burst for both kinds.** A speed record and a clean-jibe record are the same moment to
   a rider, so `RecordsView` fires one confetti burst and one haptic for either, with a line
@@ -168,6 +174,21 @@ actually chases, and they are kept beside the nine (`CleanJibeRecordKind`,
 - **No duration, no row.** `durationS <= 0` makes the engine report all four rates as
   null, and row 4 disappears — the general rule ("a missing value is absent, never 0")
   applied to the one place where a 0.0 would read as a verdict on the rider.
+- **Too short for a rate: under 20 minutes on the timer** (Jan, 9 Oct 2026; rider review I12,
+  *"a ten-minute paddle shows 28 clean jibes an hour"*). `timerTimeS < 1200.0` s — the clock
+  every rate divides by, `>=` holds — keeps row 4 and its cells (the same CPH · JPH or TPH ·
+  falls / h the counts choose) and sets each `value` to null with the caption
+  `presentation.caption.tooShortForRate`, **"too short for a rate"**. Both renderers draw that
+  caption where the number goes, as they do a record's missing reason
+  (`PresentationDocument.missingCaptions`, `cardstats.js` `RECORD_MISSING`), and the value
+  string is "—". The engine's `summary.*PerHour` are untouched — the floor is a reading rule
+  (docs/algorithms/rates.md, "Too short for a rate"). The **share card's ribbon leaves the
+  rates out** below the floor: a card has no room for the sentence, and "—" on a picture is a
+  number with no answer. The four 2026-08-30 Torbole fixtures (635–640 s) and the 60 s smoke
+  fixture are the corpus's cases, pinned in `fixtures/presentation/`.
+- **WPH is written "falls / h"** (Jan, 9 Oct 2026; rider review X1, *"what is the W in
+  WPH?"*). The glossary's `term` for `wph` is `falls / h` with no expansion; the acronym
+  survives as `short`, for a place too tight for the words, and as the id.
 
 
 ## The session tells its story — and a record shows where it happened
@@ -200,7 +221,7 @@ a record was only celebrated on the Records tab, the next time the rider opened 
   story:)`). The web's caption is still the story-less one, byte for byte.
 - **The record on its cell.** A cell whose number is an all-time or season record wears a
   chip, *Best ever* or *Season best* (`SessionStory.chip(forCell:)`). The kinds are clean
-  jibes, best 2 s, the dry streak (three or more), CPH (15-minute floor), alpha 500, 5×10 s,
+  jibes, best 2 s, the dry streak (three or more), CPH (20 minutes on the timer), alpha 500, 5×10 s,
   distance and duration. A month best is said in the line only: a chip on every cell of a
   good week is wallpaper.
 - **The card's ribbon.** A card whose session holds an all-time or season record wears

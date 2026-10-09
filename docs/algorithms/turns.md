@@ -1028,6 +1028,14 @@ The rate that left the wrist, and the parked data field (ADR-020).
   side is not conservative — which is why it is written down rather than left to be discovered.
   Pinned by `cphIsARatePerHourWithAMinuteFloor` and `cleanMetricsReadTheDetectorAndTheTimer` in
   `garmin/field/tests/FieldTests.mc`.
+- **The 20-minute rate floor is NOT ported to the watch** (Jan, 9 Oct 2026;
+  docs/algorithms/rates.md, "Too short for a rate"). The phone and the web print no rate under
+  1200 s of timer time; the watch keeps its **60 s** floor, a divergence on purpose. The
+  device app prints no rate at all since 0.9.18, so it has nothing to gate. The data field is
+  parked (ADR-020) and is not ported to — its CPH is a *live* number, asked during the
+  session, where a 20-minute "--" would blank the first third of an evening sail. Should CPH
+  come back to the device app, the floor comes with it, and that is a beta/dev change first
+  (docs/channels.md).
 - **The data field is also the only one of the three that WRITES the clean count**
   (`clean_jibes`, session field 51 — docs/fit-schema.md). The device app's session message is
   full, so its count lives on the glass and nowhere else. Neither writes the rate.

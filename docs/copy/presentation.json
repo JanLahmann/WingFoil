@@ -49,7 +49,8 @@
       "one": "of 1 tack",
       "other": "of {tacks} tacks"
     },
-    "ofTurns": "of {turns} turns"
+    "ofTurns": "of {turns} turns",
+    "tooShortForRate": "too short for a rate"
   },
   "card": {
     "barClean": "{clean} clean",
@@ -65,7 +66,7 @@
       "one": "clean jibe",
       "other": "clean jibes"
     },
-    "heroMax2s": "top speed · best 2 s",
+    "heroMax2s": "best 2 s",
     "heroSessions": {
       "one": "session",
       "other": "sessions"
@@ -85,7 +86,7 @@
       "other": "{jibes} jibes"
     },
     "optionClean": "Clean jibes",
-    "optionMax2s": "Top speed",
+    "optionMax2s": "Best 2 s",
     "optionSessions": "Sessions",
     "optionTacks": "Tacks",
     "optionTitle": "Big number",
@@ -111,8 +112,8 @@
     "cleanJibes": "clean jibes",
     "distance": "distance",
     "duration": "duration",
-    "max2s": "max 2 s",
-    "outcomeLadder": "flew · touch · fell",
+    "max2s": "best 2 s",
+    "outcomeLadder": "flew · touchdown · fell in",
     "streaks": "best streaks"
   },
   "rowMetric": {

@@ -31,7 +31,8 @@ version it is stamped for.
 - [`algorithms/not-a-session.md`](algorithms/not-a-session.md) — when a recording is not a
   session at all: the beach recording, the provisional card, and a land sport (a run, a ride).
 - [`algorithms/rates.md`](algorithms/rates.md) — session rates: duration, average speed,
-  turns/jibes/clean-jibes/wet per hour, window rates.
+  turns/jibes/clean-jibes/wet per hour, window rates, and the 20-minute floor under which
+  no surface prints a rate (`RATE_MIN_TIMER_S = 1200`, timer time).
 - [`algorithms/wind.md`](algorithms/wind.md) — wind axis estimation on the phone.
 - [`algorithms/watch-pump.md`](algorithms/watch-pump.md) — pump / takeoff detection live, on
   the watch.

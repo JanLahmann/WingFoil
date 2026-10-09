@@ -725,7 +725,8 @@ promise nobody made, and it fails with the links. It reads the JSON at run time 
 retypes a sentence — the hero's promise, the card CTA and the caption offer composed out of
 `js/cardstats.js`'s own parts, the Strava sentence and the five phrases that may not
 accompany it, the Connect IQ listing name, the beta and dev lists and the section title on
-`/invite/` — the one page that prints them since 15 September 2026 — the four
+`/beta/` — the one page that prints them, since 9 October 2026 (`/invite/` from 15
+September, `/start/` from the 20th) — the four
 recording-class names and lines in `/start/#watches`, likewise the one table that carries
 them, the glossary entries on `/help/`, the three feedback prompts in every `mailto:` body
 and the
@@ -2312,7 +2313,9 @@ xcrun simctl launch booted de.lahmann.wingfoil
 ```
 
 The app opens on *This library was last used by a newer CleanJibe* with **Open TestFlight**
-and **Restore from backup**, and nothing behind it. Put it back with
+and **Restore from backup**, in the release build the way out for good under them (*Leaving the
+beta for good? Back up there first…*, rider review I6), and **How to back up**, which opens the backup topic, and
+nothing behind it. Put it back with
 `sqlite3 … "PRAGMA user_version=15;"` — the number is `AppDatabase.schemaVersion`, which every
 successful open stamps for itself, so any value at or below it simply opens. Restoring instead
 moves the too-new file aside to `wingfoil.sqlite.v99.newer` and builds a fresh one from the
@@ -2537,9 +2540,10 @@ original's, byte for byte of meaning. Nothing degrades, so there is no degradati
 
 What the example therefore shows: 645 s elapsed, **67.9 %** on foil (431 s), **2** flights
 (the long one 392 s / 2 222 m), **2.559 km**, **10** counted jibes and no tacks — 8 flown
-through, 2 fallen, 5 clean, 5 port / 5 starboard — **44.7 JPH**, **27.9 CPH** and
-**11.2 WPH**, best 2 s
-**13.47 kn**, alpha 500 **11.70 kn**, wind from **196°** at full confidence, 4 takeoff
+through, 2 fallen, 5 clean, 5 port / 5 starboard — in the engine's summary **45.0 JPH**,
+**28.1 CPH** and **11.2** falls / h, which the page prints as *too short for a rate*: 640 s on
+the timer is under the 20-minute floor (docs/algorithms/rates.md, "Too short for a rate") —
+best 2 s **13.47 kn**, alpha 500 **11.70 kn**, wind from **196°** at full confidence, 4 takeoff
 attempts of which 2 succeeded on **31** pump strokes (286 before engine 0.8.0 taught the
 total to reject chop — docs/algorithms/pumping.md "The session total") of which **5** in flight (60
 before 0.8.1 put the same amplitude gate on that count — "In-flight strokes"), and an average
@@ -2562,6 +2566,25 @@ it). The row is badged *Example*. A session someone else rode is the same proble
 other direction and gets the same treatment: the web save asks *Whose session is this?* and
 stores a `rider` name, which excludes it identically. An entry saved before either field
 existed has neither, and missing reads as *mine, not example*.
+
+**Pre-analysed on the web** (rider review X4, 9 Oct 2026). *Try the example* no longer runs
+the engine in the tab: a first visitor waited out the whole ~14 MB runtime before a single
+number. `web/tools/make_example.py` analyses `web/example/ExampleSession.fit` at build time
+with the worker's own two calls (`web_entry.analyze_bytes` under the name
+`example-nago-torbole-2026-08-30.fit`, then `library.digest`) and writes
+`web/example/ExampleSession.analysis.json` (90 KB, 16 KB gzipped): the analysis document,
+one presentation document per Settings → Speed records choice, the digest, and its stamp —
+the engine version, the recording's size and sha256, and one hash over every lab module, the
+two glue modules and the FIT. The page draws that the moment the recording has come down,
+while the runtime keeps loading behind it for the rider's own file; the service worker
+precaches both. It falls back to the live analysis when the file is missing, describes
+another recording, or the worker has already reported another engine.
+
+It is regenerated with the bundle: `web/tools/bundle_lab.py` runs `make_example.py` (through
+the lab venv) after every copy, so an engine change refreshes it in the same step. Three
+checks hold it: `bundle_lab.py --check` and `web/tools/verify_first_run.py` (stdlib, in
+`make web-verify`) fail on a stamp from another engine version or other sources, and
+`verify_web_entry.py` regenerates it in memory and compares the bytes.
 
 **Dedupe decision.** The example is a *real* recording, so its owner will one day import it
 for real and land on the ±60 s dedupe key. That resolves **in favour of the real import**:

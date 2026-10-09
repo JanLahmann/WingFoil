@@ -158,20 +158,20 @@ Top to bottom (portrait): the title; the date **and start time** on the session'
 **hero number**; the jibe outcome bar (flew through · touchdown · fell in in the ladder's
 colours, a zero dimmed rather than dropped); a **tack bar** on the same ladder whenever the
 session had a tack, even one; the best-streak line with the session's falls; one **ribbon**
-— the rates in words, then max 2 s, duration and distance; the footer. The square moves the
+— the rates in words, then best 2 s, duration and distance; the footer. The square moves the
 track beside the title when that draws the ride larger, and drops the streak line; the
 landscape puts the track left and everything else in a 43 % column on the right.
 
 | slot | what it prints |
 |---|---|
-| hero (the rider's choice, per device; clean jibes by default) | **★ 25 clean jibes / of 56 jibes**, or **13.21 kn / top speed · best 2 s**, or **3 tacks / 0 dry · beside 58 jibes** (offered only when the session has tacks) |
+| hero (the rider's choice, per device; clean jibes by default) | **★ 25 clean jibes / of 56 jibes**, or **13.21 kn / best 2 s**, or **3 tacks / 0 dry · beside 58 jibes** (offered only when the session has tacks) |
 | jibe bar caption | nothing beside the clean hero; "of 56 jibes · 25 clean ★" beside any other hero |
-| ribbon | "clean jibes / h" (CPH, in the clean ink) · "dry jibes / h" (JPH) on a jibes-only session or "dry turns / h" (TPH) once tacks exist · max 2 s (unless it is the hero) · duration · distance. No bare acronym, and WPH is not on the card |
-| speed note | "speed estimated from GPS positions" on a positions-only (class c) recording, next to the speed: under the hero, or under the ribbon from the max 2 s cell on |
+| ribbon | "clean jibes / h" (CPH, in the clean ink) · "dry jibes / h" (JPH) on a jibes-only session or "dry turns / h" (TPH) once tacks exist · best 2 s (unless it is the hero) · duration · distance. No bare acronym, and WPH is not on the card |
+| speed note | "speed estimated from GPS positions" on a positions-only (class c) recording, next to the speed: under the hero, or under the ribbon from the best 2 s cell on |
 
 **With 0 clean jibes the clean number is left out everywhere** (Jan, 26 Sep 2026): the hero
 falls back to the best 2 s (then the tacks), the bar carries no clean clause and the ribbon no
-clean jibes / h. The fallback order for any hero a session cannot carry is clean → max 2 s →
+clean jibes / h. The fallback order for any hero a session cannot carry is clean → best 2 s →
 tacks → none, and the composer offers only the heroes the session can carry.
 
 Every number is still a tile of `card.tiles`, which §5 holds to the block; what the story
@@ -641,7 +641,7 @@ change — rendered once through `ImageRenderer` and cross-faded in over the fin
 Using the clip's card rather than drawing a new one is what guarantees the footer is *the
 share card's*: the mark, the wordmark, **the call to action and the QR**, in that order and
 character for character (`Branding.callToAction`, `BrandQRImage`). Its numbers are
-`ShareCardStats.outro` — duration, distance, avg speed, max 2 s, the flew · touchdown · fell
+`ShareCardStats.outro` — duration, distance, avg speed, best 2 s, the flew · touchdown · fell in
 tally with its clean caption, the longest flight, and JPH / CPH / WPH.
 
 ### Where the file goes

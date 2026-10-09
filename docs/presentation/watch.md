@@ -49,7 +49,9 @@ impossible to re-read) every on-water alert that vibrates also shows itself, in 
   black on it, pulsing on frame parity like the PB flash: a resolved turn as *FLEW*, *TOUCH*
   or *FELL* with the outcome symbol the Turns page already draws, a clean jibe as *CLEAN* with
   the star, a dry-streak mark as the number and *DRY* (5, then every ten), a new longest
-  flight as its duration and *LONGEST*. A pumped takeoff is a **ring** only — a thick circle
+  flight as its duration and *LONGEST*, and since 0.9.22 a pause as *PAUSED* with the two bars
+  in the banner's yellow and a resume as *RECORDING* with the play triangle in white (next
+  section). A pumped takeoff is a **ring** only — a thick circle
   inside the bezel for 0.7 s, the page left readable — because it is frequent. The speed PB
   keeps its own orange flash with the value.
 - **The afterglow, 20 s.** A line at the top of whatever page is up keeps the last event:
@@ -441,6 +443,26 @@ false. Those builds therefore show exactly the eight pages the table holds — a
 setting a rider asking for bigger text was actually looking for. Moving the editor up to beta
 is one jungle line and one resource move; docs/channels.md names it as the candidate it is.
 
+## Where the session goes next, under SAVED (rider review W8, every stream)
+
+*"Is it on my phone now?"* SAVED said what the watch had done and nothing about what comes
+next. Since 9 October 2026 the eyebrow band under the pill says it: **`next: CleanJibe`**
+(`Words.SUM_AFTER_SYNC`, docs/copy/watch.json `SumAfterSync`). The review asked for *In
+CleanJibe after Garmin syncs*; even the short form, *in CleanJibe after sync*, is 313 px at FONT_XTINY on a fenix 8, whose top band holds 256, and
+fitted no glass; `next: CleanJibe` is 210 there and 100 of 140 on a fenix 7S, drawn at the top
+on both (measured 9 October 2026). The fenix 5 Plus family drops it, as it drops the progress
+line: its hero block leaves neither slot free. It uses the dev
+stream's progress line slot and its rules, below: the pill lifts one eyebrow line, the line
+takes the band it vacated, the bottom band above the dots is the fallback, and neither slot
+may touch the verdict's digits. One rule is new, because a sentence is wider than
+`phone 4/13`: the slot also has to hold the line's **width** at its own depth on the foil-%
+arc (`SummaryView.savedLineFits`), or the line is dropped, never shrunk.
+
+`SummaryView.savedLine` picks the words: the direct transfer's progress while it has
+something to say (dev), otherwise the hint after a good save, and nothing under NOT SAVED.
+`phoneProgressLineNeverTouchesWhatMatters` asserts every placed line fits, and logs per glass
+whether it went top, low or was dropped.
+
 ## The direct transfer's progress, on the glass (0.9.16, dev)
 
 The recording crosses to the phone in 8 KB pages over about twenty seconds on the beach, and
@@ -482,6 +504,79 @@ nothing else is buzzing; a floor shared with the turn verdicts would have swallo
 one session where the last jibe and the last page arrive inside the same five seconds. Behind
 no toggle, like the auto-wind lock: the transfer itself is the switch, and a rider who turned
 it on wants to know when he can walk away.
+
+## When the watch stops counting — the pause and the GPS (rider review W1, W13; 0.9.22)
+
+Two ways the watch records nothing while the rider rides on, and until 0.9.22 neither one made
+a sound or changed the page.
+
+*"I bumped START with the wing handle. The rest of the session has no turns."* START is one
+press, and Jan kept it one press (9 October 2026): Garmin's own Resume / Save / Discard stop
+was the alternative, and it costs every deliberate pause a second step. Instead the pause is
+**loud**:
+
+- **It buzzes, both ways.** One family, two endings, both opening on the same long pulse — *the
+  recording changed* — with the tail saying which way. **Pause:** a second long pulse,
+  *looong, looong* (100 % 500 ms, 250 ms gap, 100 % 500 ms). **Resume:** two quick ticks,
+  *looong, ti-tik* (100 % 500 ms, then two 100 ms ticks). No turn verdict, record or flight
+  alert has two long pulses or opens on a long one (`AlertManager.PAUSE_VIBE`, `RESUME_VIBE`).
+  The pressed pause and the automatic one buzz the same.
+- **It is never swallowed.** Every other alert waits out its channel's 5 s and the 1 s floor;
+  this one plays at once, because it says what the watch is doing *now*. A rider who presses
+  START twice inside a second feels the second press, not a stale *paused*. Behind no switch:
+  it is the safety net under the one-press pause.
+- **It reminds.** A pressed pause buzzes the pause shape again **every two minutes** for as
+  long as it lasts, and flashes again with it (`PauseReminder`, counted from the press, once
+  per window — after a gap with no samples it buzzes once, never a catch-up burst). An
+  auto-pause is not reminded: it resumes itself the moment the board moves, so it cannot be
+  ridden through, and a rider waiting for a gust on the beach is not buzzed for it.
+- **It shows.** The press paints a 1.5 s flash like every other event — *PAUSED* and the two
+  bars on the banner's yellow, *RECORDING* and the play triangle on white — then the page
+  carries the pause for as long as it lasts: the **state ring turns yellow** on the pages that
+  draw it (Main and the hero pages), and the banner (`PAUSED · BACK saves` where it fits,
+  `PAUSED` where it does not) stays on every other page, as before. The flash obeys *Show
+  alerts on screen*; the ring and the banner do not, because they are state, not alerts.
+  Neither flash takes the afterglow from the last turn.
+
+*"The watch counted 12 turns, the phone 19, and nothing told me the GPS dropped."* Below
+`Position.QUALITY_USABLE` the engine feeds the detectors nothing — no flight, no turn, no
+record (the gap branch of `MetricsEngine.tick`) — and the page looked exactly as it did with
+a fix. Since 0.9.22 **the state ring breaks**: after **5 s** without a usable fix it is drawn
+in the dim grey as twelve segments with gaps, and the first usable fix makes it whole again.
+Broken and not only grey, because off the foil the ring is already the dim grey; colour alone
+would show nothing for half of every session. Five seconds rather than one, so a single poor
+fix under a wave never flickers it; time since the last usable fix rather than a count of bad
+ones, so a receiver that stops calling back altogether reads as lost too, from the page's next
+redraw — the position callback is what asks for one (`GpsLoss`). The ring
+says it only while recording: a paused ring is the pause's yellow, which wins, and before the
+start the start page says *GPS weak* in words. Pages without the state ring (Records, Turns,
+the map and the rest) show nothing for it; the default first page, Main, has the ring. The
+**large-text page set has no state ring at all**, so a rider on it is not told of a lost fix
+yet — open, and Jan's to decide: a ring on the big pages, or the small GPS mark the review
+offered as the other way.
+
+Both are in every stream's code from 0.9.22 and reach riders through the beta listing first
+(docs/channels.md, "The watch"). Tests: `pauseReminderBuzzesEveryTwoMinutes`,
+`gpsLossGreysTheRingAfterFiveSeconds`, `pauseAndResumeBuzzOnTheirOwnShapes`, and the
+rendering of both flashes and the broken ring in `everyLayoutRendersHeadless`.
+
+## The start page's wind row and *Same wind?* (rider review W4, W5; 0.9.22)
+
+*"It keeps telling me to set the wind, but the listing says the watch works it out."* The
+wind row has three states. A bearing: *wind 225° SW*, or *wind ~200° SSW* for the watch's
+own estimate, white. No bearing with auto-wind on (the default): **wind auto**, white — a
+state, not a task, because the watch works the axis out on the water. No bearing with
+auto-wind off: *set wind · hold MENU*, amber, the one case where the rider has something to
+do before START (`StartView.windText`, `windColor`).
+
+*"At a new spot the watch still uses Saturday's wind and calls my jibes tacks."* A wind set by
+hand now lives one session: the save retires it, and the next start page asks **Same wind?**
+once, over the page, a Menu2 of *Yes* (the bearing under it) and *No* (*wind auto* under it),
+opened on No. Yes keeps it for that session; No, BACK, or START before the question is up
+leave the axis to auto-wind. A Menu2 and not a Confirmation, for the fenix 5 Plus reason the
+discard question is one. The rule and its edges are in docs/algorithms/wind.md, "A wind set by
+hand lives one session". In every stream's code from 0.9.22, beta listing first, like the
+section above. Tests: `handSetWindLivesOneSession` and the start-page test's wind rows.
 
 ## The watch's words for a stranger (0.9.11)
 

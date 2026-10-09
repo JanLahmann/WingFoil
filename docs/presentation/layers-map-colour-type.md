@@ -181,6 +181,12 @@ drew a clean jibe as a plain outcome dot, which made the star look like a proper
 session map rather than of the jibe; it now answers to the `cleanJibe` chip there under the
 same one-mark-one-chip rule (`TurnOutcomeKind.layer(clean:)`).
 
+**And so does the Turns tab's list** (rider review I3, 9 Oct 2026, every channel). A tester:
+*"It says 5 clean jibes, but the list shows 8 green ticks."* The row's outcome glyph is the
+star in the clean ink on a clean jibe, replacing the tick as the pin does, so the list shows
+as many stars as the map and the tally's clean caption count. The row's spoken label already
+said *clean*.
+
 The speed strip shares the visibility model, so a star hidden on the map is hidden there too,
 and the web keeps its numbered marks in step with the Turns table: the number rides with the
 mark and disappears with it.

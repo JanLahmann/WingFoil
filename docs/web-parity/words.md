@@ -171,9 +171,9 @@ phone authors it. `*` marks a key the file picks at run time (`say(`turnCoach.${
 | `turnPage.noGeometry` | AppShellCopy.TurnPage (TurnDetailView, TurnHeadingStripView) | turnpage.js | No GPS fixes through this turn. Numbers only. |
 | `turnPage.nothingToCompare` | AppShellCopy.TurnPage (TurnDetailView, TurnHeadingStripView) | turnpage.js | Nothing to compare with. This session has no other jibe that flew through the same way round. |
 | `turns.cleanRule` | AppShellCopy.Turns (TurnsAnalysisView) | render.js | Clean: you flew through, held at least {pct} % of your entry speed, then {quiet} quiet seconds on the foil. |
-| `recordingClass.a` | RecordingClass.line (recording-classes.json) | render.js* | Everything. Foil time, flights, every turn verdict and clean jibe, measured speed records, the wind axis. P… |
+| `recordingClass.a` | RecordingClass.line (recording-classes.json) | render.js* | Foil time, flights, every turn verdict and clean jibe, measured speed records, the wind axis. Pump strok… |
 | `recordingClass.b` | RecordingClass.line (recording-classes.json) | render.js* | Everything except pump strokes and takeoff attempts, which need a wrist accelerometer nothing else records. |
-| `recordingClass.bPlus` | RecordingClass.line (recording-classes.json) | render.js* | Everything class B gets, plus pump strokes and takeoff attempts. The watch app records the wrist at 50 Hz. … |
+| `recordingClass.bPlus` | RecordingClass.line (recording-classes.json) | render.js* | Everything a file with measured speed gets, plus pump strokes and takeoff attempts. The watch app recor… |
 | `recordingClass.c` | RecordingClass.line (recording-classes.json) | render.js* | Foil time, flights, every turn verdict and clean jibe, the wind axis. Speed records are estimated from posi… |
 
 **Exported, not yet shown by the browser — 24.** The phone says them; the browser's
@@ -204,7 +204,8 @@ file), and a sentence another verifier already pins to the phone (`pinned:`).
 | 〃 | app/index.html | Strava sign-in needs it. |
 | the analyzer's own card: the formats a dropped file may take | app/index.html | .fit, .gpx and .tcx all work. |
 | the analyzer's privacy line: the analysis runs in the tab | app/index.html | Your file never leaves this browser tab. |
-| the Pyodide engine download, which the phone does not have | app/index.html | The engine downloads once, about 12 MB |
+| the Pyodide engine download, which the phone does not have | app/index.html | The engine downloads once, about 14 MB |
+| Safari's seven-day rule for a site's storage in a tab (rider review X3) | app/index.html | Safari may clear this site's data after seven days without a visit. |
 | 〃 | js/worker.js | Could not reach the Pyodide CDN |
 | the Pyodide engine's progress, which the phone does not have | app/index.html | The tab is working, not stuck. |
 | the analyzer's rejected-file help: the phone's pickers only offer files it reads | app/index.html | Most often the file is not a FIT recording. |
@@ -441,7 +442,7 @@ the screen. Counts: 50 app twin, same words, 45 web-only or reworded (step 2), 1
 | 1223 | Square | app twin, same words |
 | 1224 | Landscape | app twin, same words |
 | 1230 | Clean jibes | app twin, same words |
-| 1231 | Top speed | app twin, same words |
+| 1231 | Best 2 s | app twin, same words |
 | 1232 | Tacks | app twin, same words |
 | 1241 | Map background | app twin, same words |
 | 1247 | PNG · | web-only or reworded (step 2) |

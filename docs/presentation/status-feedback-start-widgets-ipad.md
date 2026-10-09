@@ -418,8 +418,8 @@ sits beside the speed and the flight here, and displaces CPH nowhere. The speed 
 **certified sources only** (`RecordBest.certified`) — a class (c) recording can misreport a
 speed, and a personal best nobody can stand behind is worse than none — while the flight and
 the rate take no such filter, because how long an afternoon flew is not a claim its speed
-channel makes. JPH takes the same session-length floor "Best CPH" takes
-(`SessionRecordKind.cphMinDurationS`): a rate a rider can set by going home early is not a
+channel makes. JPH takes the same floor "Best CPH" takes — 20 minutes on the timer
+(`RateFloor.minTimerS`, 9 Oct 2026): a rate a rider can set by going home early is not a
 record. JPH itself is the engine's — dry jibes over timer hours, read back off the `turn`
 table by `LibraryStore.jibeRates`, because the session index denormalizes CPH and not JPH.
 

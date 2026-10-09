@@ -114,7 +114,7 @@
       "id" : "turnVerdicts",
       "labels" : [
         "Turn verdicts",
-        "flew · touch · fell"
+        "flew · touchdown · fell in"
       ],
       "line" : "Every turn gets one: flew through, touchdown, or fell in.",
       "places" : [
@@ -215,12 +215,12 @@
       "term" : "CPH"
     },
     {
-      "expansion" : "turns per hour",
+      "expansion" : "dry turns per hour",
       "fit" : "",
       "id" : "tph",
       "labels" : [
         "TPH",
-        "TPH · turns per hour"
+        "TPH · dry turns per hour"
       ],
       "line" : "Dry turns per hour, tacks and jibes together. It takes the place of JPH once a session has tacks in it.",
       "places" : [
@@ -229,7 +229,7 @@
         "web",
         "help"
       ],
-      "sentence" : "your turns per hour",
+      "sentence" : "your dry turns per hour",
       "short" : "TPH",
       "surfaces" : [
         "ios",
@@ -238,12 +238,12 @@
       "term" : "TPH"
     },
     {
-      "expansion" : "falls per hour",
+      "expansion" : "",
       "fit" : "",
       "id" : "wph",
       "labels" : [
-        "WPH",
-        "WPH · falls per hour"
+        "falls / h",
+        "WPH"
       ],
       "line" : "How often you fell in, per hour. Every fall counts, in a turn or not.",
       "places" : [
@@ -258,7 +258,7 @@
         "ios",
         "web"
       ],
-      "term" : "WPH"
+      "term" : "falls / h"
     },
     {
       "expansion" : "",
@@ -266,7 +266,6 @@
       "id" : "speedRecords",
       "labels" : [
         "Speed records",
-        "max 2 s",
         "avg speed",
         "Best 2 s",
         "Best 10 s",

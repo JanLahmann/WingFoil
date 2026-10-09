@@ -15,8 +15,8 @@ three numbers, none of them clean jibes.
 | **Flew-through rate** | counted turns that never lost the foil, over counted turns |
 | **Clean jibes** | `jibesSuccessful`, per session |
 | **CPH** — iOS: *Clean jibes an hour (CPH)* | `cleanJibesPerHour` |
-| **JPH** — iOS: *Dry jibes an hour (JPH)* | `jibesPerHour` — dry jibes per hour |
-| **TPH** — iOS: *Dry turns an hour (TPH)* | `turnsPerHour` — dry counted turns per hour |
+| **JPH** — iOS: *Dry jibes an hour (JPH)* — **or** | `jibesPerHour` — dry jibes per hour, while no session in the range has a tack |
+| **TPH** — iOS: *Dry turns an hour (TPH)* | `turnsPerHour` — dry counted turns per hour, once one does |
 | **Best 2 s** | `records.best2sKn`, in knots |
 | **Flew through by entry tack** | the flew-through share of the turns *entered* on each tack |
 
@@ -26,14 +26,20 @@ to the outcome on the web side, which is digest schema 8 (`bySide.flewThroughPct
 session stored before it has no point on that chart, which is what a gap in a line already
 means.
 
-**The three rates are one row of this table, not one metric with two optional extras.**
-Rates are additive (docs/algorithms/rates.md, "Session rates"): TPH says how busy the afternoon
-was, JPH says he got away with the jibes, CPH says he rode them, and a page that draws only
-the strictest of the three answers one of the three questions a rider asks. They sit in that
-order, each reading its own engine field — the two new ones are digest **schema 11** and GRDB
-**v17**, and neither is derived by a reader, because both numerators are *dry* counts and
-neither the digest nor the session row carries the jibe-level `fellIn` tally to subtract with.
-A row written before them has a gap in those two lines, never a zero.
+**CPH, then ONE dry-turn rate — the session page's rule over a range** (Jan, 25 Sep 2026;
+rider review I20, 9 Oct 2026). JPH while no session in the range has a counted tack, TPH once
+one does (`TrendPoint.dryTurnRate`, `library.dry_turn_rate_key`). Until 9 Oct both were
+drawn, and on a jibes-only library they were the same line twice. Each reads its own engine
+field — digest **schema 11** and GRDB **v17**, never derived by a reader, because both
+numerators are *dry* counts and neither the digest nor the session row carries the
+jibe-level `fellIn` tally to subtract with. A row written before them has a gap, never a zero.
+
+**No rate point under 20 minutes on the timer** (Jan, 9 Oct 2026; docs/algorithms/rates.md,
+"Too short for a rate"). A ten-minute paddle's 28 clean jibes an hour is a spike the
+afternoon never earned, and its own page says "too short for a rate". CPH and the dry-turn
+line drop that session — a gap, counted in the chart's "cannot report this" caption on iOS —
+while the clean-jibe *count* keeps its point. The month headline (`TrendHeadline`, over
+hours) reads the same points, so it leaves the session out too.
 
 **Best 2 s is the one speed series, and the only chart that marks its own points.** Knots on
 both platforms, like every other speed in both apps. A class-(c) session differentiated its
@@ -64,8 +70,8 @@ is going; the web page follows in its own round and still draws the bare codes.
   this month's clean jibes. Over the season on every range but **All**, where the run is
   counted over every week and the best is the all-time one, "your best run ever" (Jan,
   28 Sep 2026). This month's clean jibes are the same on every range.
-- **Order**: On foil, Clean jibes, Best 2 s, Longest flight, Flew-through rate, the three
-  rates, Sessions per week; Pumps to takeoff, Port / starboard and Flew through by entry
+- **Order**: On foil, Clean jibes, Best 2 s, Longest flight, Flew-through rate, CPH and the
+  one dry-turn rate, Sessions per week; Pumps to takeoff, Port / starboard and Flew through by entry
   tack fold under **More**, open or shut per device (`trendsShowMore`).
 - **Footers obey Settings → How much to say** (`ExplainedFootnote`): the weeks caption,
   the custom range and the period page show one line concise; how a week is cut and how a
@@ -157,7 +163,7 @@ hand-written test suites agreeing today is not two implementations that cannot d
 | 7 | `cph` | CPH · clean jibes per hour | clean jibes ÷ Σ `summary.timerTimeS` (T2) |
 | 8 | `turns` | turns | Σ counted turns |
 | 9 | `cleanJibeRate` | clean-jibe rate | Σ clean ÷ Σ jibes, ≥ 5 jibes |
-| 10 | `wph` | WPH · falls per hour | Σ fell-in flight ends ÷ Σ `summary.timerTimeS` (T2) |
+| 10 | `wph` | falls / h | Σ fell-in flight ends ÷ Σ `summary.timerTimeS` (T2) |
 | 11 | `best2s` | best 2 s | max |
 | 12 | `best10s` | best 10 s | max |
 | 13 | `longestFlight` | longest flight | max |
@@ -193,6 +199,11 @@ hand-written test suites agreeing today is not two implementations that cannot d
   `summary.wetPerHour` counts, and emphatically not the turn ladder's `fellIn`: most of a
   session's falls happen outside a counted turn, and the water does not care. Both platforms
   store the count (digest `wetExits`, GRDB v12).
+- **A period's rates need 20 minutes on its own timer** (Jan, 9 Oct 2026; docs/algorithms/
+  rates.md, "Too short for a rate"). The floor is on Σ `summary.timerTimeS`, not per session:
+  ten 10-minute sessions are 100 minutes and hold a CPH, one of them alone does not. Under it
+  CPH and falls / h are omitted (the rule below) and the period card has no dry rate
+  (`LibraryStore.facts` / `card`, `library._period_facts` / `period_card`).
 - **The clean-jibe rate keeps its ≥ 5 jibes floor**, over the *period's* total: four clean
   out of four is a good week and it is still not a rate. One constant on each side
   (`SessionRecordKind.minJibesForRate`, `library.MIN_JIBES_FOR_RATE`).
@@ -217,9 +228,9 @@ Lean/Complete presets any more. What differs is only what is being described.
 | | session card | period card |
 |---|---|---|
 | numbers | the key-metrics block | the aggregate block, and `card` beside it (below) |
-| heroes | clean jibes → max 2 s → tacks | clean jibes → best 2 s → tacks → **sessions** ("12 sessions / at 3 spots") |
+| heroes | clean jibes → best 2 s → tacks | clean jibes → best 2 s → tacks → **sessions** ("12 sessions / at 3 spots") |
 | bars | jibes, and tacks where there were any | the same, summed per kind; one turn bar only where a row carries no split |
-| ribbon | clean jibes / h · dry jibes or turns / h · max 2 s · duration · distance | clean jibes / h · dry jibes or turns / h · sessions · time on the water · distance |
+| ribbon | clean jibes / h · dry jibes or turns / h · best 2 s · duration · distance | clean jibes / h · dry jibes or turns / h · sessions · time on the water · distance |
 | date line | the session's day and start | the period's span |
 | title default | the session's name | the period's title |
 | artwork | the track outline | **a choice of three**: every outline stacked, one session big, or a collage |

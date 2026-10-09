@@ -96,7 +96,9 @@ passes while every door above the release is still caught:
 ### `recording-classes.json`
 
 `classes`: `[{ "id", "name", "line", "footerLine" }]` — all four cases of `RecordingClass`, in
-order, wholly kit-owned. `footerLine` is `name + ". " + line`.
+order, wholly kit-owned. `footerLine` is `name + ". " + line`. The `name` is what the rider
+gets ("Measured speed", "Positions only") and carries no class letter since 9 October 2026;
+the `id` keeps the engine's letter.
 
 ### `glossary.json`
 
@@ -223,7 +225,7 @@ to — the exact shape of the drift this folder exists to stop. `COPY_WRITE=1 sw
 
 | group | holds |
 |---|---|
-| `label` | the key-metrics block's own labels — `duration`, `max 2 s`, `flew · touchdown · fell` |
+| `label` | the key-metrics block's own labels — `duration`, `best 2 s`, `flew · touchdown · fell in` |
 | `rowMetric` | the library row's short spelling of each metric, deliberately shorter than the glossary term because it sits under a value in caption type beside two others |
 | `turnKind` | the rider's word for a kind of sweep, interpolated *into* a caption rather than named by a `labelId` |
 | `caption` | the small line under a cell. A caption with a `one` key has a singular form, used when its first argument is 1 |
@@ -288,7 +290,9 @@ website's own pass; three of the four had been answered differently in the app f
 
 ### `garmin-devices.json`
 
-Generated from `garmin/manifest*.xml` — the product count, the version and the families. Not
+Generated from `garmin/manifest*.xml` — the product count, the version, the families and,
+since 9 October 2026, `models`: every watch by Garmin's own name, per family, which
+`web/tools/make_devices.py` also prints on /start/#watches (rider review S8). Not
 kit-owned and not checked by `CopyContractTests`; the app names no count and no model on
 purpose (`HelpCatalog.whichWatch`: "CleanJibe analyses a recording, not a brand"). See the
 web tooling for its schema.
@@ -308,8 +312,9 @@ first, one entry per shipped build:
 | `lines` | [string], ≤ 20 words each | register 1 of docs/voice.md, one thought per line |
 
 Three renderings, one source: `web/tools/make_whats_new.py` writes the cards on
-`web/invite/index.html` (`/whats-new/` until 19 September 2026, and a redirect to
-`/invite/#whats-new` since) and the kit's `Help/WhatsNew.swift` (the app's *What's new*
+`web/whats-new/index.html` (its own page until 19 September 2026, the foot of /invite/ and
+then of /start/ after that, and its own page again since 9 October 2026, rider review S9)
+and the kit's `Help/WhatsNew.swift` (the app's *What's new*
 screen), and `ios/tools/testflight_publish.py` reads the newest entry of the channel it is
 publishing to as that build's *What to Test*. `make_whats_new.py --check` runs inside
 `web/tools/verify_links.py` and fails while either generated output is stale. The word
@@ -317,10 +322,10 @@ rules are enforced on the source, so a long or dashed line fails at the generato
 
 **Dates are allowed in these sentences and nowhere else in the app.** A release note that
 does not say when it shipped is not a release note; the condition is that a generator
-writes them, which is why `/invite/` and `WhatsNew.swift` are the two `dated` targets of
+writes them, which is why `/whats-new/` and `WhatsNew.swift` are the two `dated` targets of
 `check_voice.py` rather than a list of exemptions. On the page the generated block is
 wrapped in `data-copy="whats-new"` and stripped the way a generated `garmin-count` span is,
-so only the release notes are excused and the rest of the beta page is still held to the
+so only the release notes are excused and the rest of the page is still held to the
 rule.
 
 ### `watch.json`

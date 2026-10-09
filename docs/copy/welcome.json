@@ -28,7 +28,7 @@
 
       ],
       "kicker" : "",
-      "lede" : "CleanJibe shows your time on the foil, every flight and every touchdown. Each jibe gets a verdict: flew through, touched down, or fell in. You see your dry streak and your fastest seconds. The replay comes with a commentary.",
+      "lede" : "CleanJibe shows your time on the foil, every flight and every touchdown. Each jibe gets a verdict: flew through, touchdown, or fell in. You see your dry streak and your fastest seconds. The replay comes with a commentary.",
       "note" : "",
       "surfaces" : "app",
       "title" : "Your WingFoil session, measured."
@@ -95,6 +95,20 @@
       "note" : "Every session gives you a card like this to share.",
       "surfaces" : "both",
       "title" : "Try the example session"
+    },
+    {
+      "actions" : [
+
+      ],
+      "id" : "getStarted",
+      "items" : [
+
+      ],
+      "kicker" : "",
+      "lede" : "",
+      "note" : "",
+      "surfaces" : "app",
+      "title" : "Get started"
     },
     {
       "actions" : [
@@ -217,20 +231,6 @@
       "note" : "",
       "surfaces" : "web",
       "title" : "Every turn, judged"
-    },
-    {
-      "actions" : [
-
-      ],
-      "id" : "getStarted",
-      "items" : [
-
-      ],
-      "kicker" : "",
-      "lede" : "",
-      "note" : "",
-      "surfaces" : "app",
-      "title" : "Get started"
     },
     {
       "actions" : [

@@ -138,6 +138,23 @@ header and the session menu, `wind ~200° SSW` on the start screen — because a
 rider cannot tell from a measurement is worse than no estimate. One vibe (`AlertManager`
 channel `CH_WIND`, two rising ticks) when it first locks.
 
+**A wind set by hand lives one session** (watch 0.9.22, rider review W4). *"At a new spot the
+watch still uses Saturday's wind and calls my jibes tacks."* Until 0.9.22 the bearing was
+written once to `windDirDeg` and read at every start for ever, and manual always wins, so a
+stale one beat a fresh estimate all session. Now the save (and a discard) retires it
+(`AppSettings.retireHandWind`): `windDirDeg` goes back to unset and the bearing moves to the
+app's Storage (`windLast`, not a Garmin Connect row). The session that just ended keeps its
+own axis — the FIT's field 39 is written before, the summary pages read it after. The next
+start page asks once, *Same wind?*, a Menu2 of **Yes** (the bearing under it) and **No**
+(*wind auto* under it), opened on No so a rider pressing through it at a new spot does not
+keep the old spot's wind. Yes stores the bearing again for that session, to be retired at its
+save and asked about at the next start; No, BACK, or START pressed before the question is up
+leave the axis to auto-wind and forget the bearing. A bearing given since the save — the wind
+menu, the phone, Garmin Connect — answers the question and stands unasked. With auto-wind on
+and no axis yet, the start page's wind row reads *wind auto* in white (W5); the amber *set
+wind · hold MENU* is for the rider who turned auto-wind off. Tests:
+`handSetWindLivesOneSession`, and the wind row's three states in the start-page test.
+
 **The one-shot backfill.** Turns are normally classified with the wind in effect at the time
 and never re-judged. Auto wind is the single exception, and only at its first lock:
 `TurnDetector.backfillWindSplit` replays the logged sweeps once, so the session's tack / jibe /

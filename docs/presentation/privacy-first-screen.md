@@ -142,3 +142,25 @@ card rather than with the steps: a key that has been typed and refused is the on
 of doors cannot say for itself, so `.problem` still prints the cause, the fix and *What to
 check* above the rows.
 
+**The example is not a way in** (Jan, 9 Oct 2026; rider review I1: *"I tried the example, and
+now I can't see how to get my own sessions in"*). The card used to leave with the first row
+in the library, and the first row of the one-tap first run is the example — so the rider who
+took the welcome's first offer lost the list of doors the moment he had seen what they lead
+to. `IcuOnboarding.state` takes `exampleCount` now and does not count the example: a library
+of the example alone is still `.setup` (or `.problem`), and the Sessions tab draws
+**How your sessions get in** above the example's row until a session of the rider's own
+arrives. The *What CleanJibe does · Try the example session* row stays off that screen,
+because the example it offers is already in the list. The browser keeps the same rule: its
+ways-in card shrinks to the drop row only when a saved session is not the example
+(`setSessionCount(n, own)`).
+
+**The welcome's two ways on sit together** (rider review I10). *Get started* is straight
+under *Try the example session* (`WelcomeSections.all`), not under the glossary card a screen
+further down: *show me* and *bring mine in* are one decision. The browser's dialog had them
+side by side already, as its last two buttons.
+
+**And the browser's welcome never opens over a session** (rider review S3). `/app/#example`,
+an analysis in flight or a session on screen means the reader has already taken a way on;
+`offerWelcome` marks the offer spent instead of opening a dialog that repeats the homepage,
+with a second *Try the example session*, on top of the example loading.
+

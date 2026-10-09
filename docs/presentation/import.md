@@ -8,7 +8,7 @@ Strava, and the Garmin GDPR ZIP **last** — `ImportDoor.ordered(channel:)` in t
 against `GettingStartedGuide.routes` per channel. Every door is always drawn (pattern E/G): a
 Strava section without keys, a Health section before the first import, a sync row without a
 key all keep their row and change only their label and footer. Each footer says **what the
-door brings in, in one line** (pattern K, at most 25 words) with the recording class above it
+door brings in, in one line** (pattern K, at most 25 words) with what the door gets you above it
 and a link to the help topic below; the *how* lives in the topic, not in the footer.
 
 Until 18 September 2026 the order was the ZIP first, the Strava and Health doors appeared only
@@ -41,7 +41,7 @@ sheet opens at the top and intervals.icu and Strava are its first two sections. 
 no Strava keys says *"Not available in this build"* in both places, in the same words.
 
 **And the footers stay on their own side of the split.** Import's say what the door brings in
-— the recording class, then the prose (`ImportClass`) — and Settings' say what the account is
+— what the door gets you, then the prose (`ImportClass`) — and Settings' say what the account is
 for (`GettingStartedGuide.settingsIcu` / `settingsStrava` as the section's first line, the
 detail underneath). One string moved with the buttons: the Strava footer opened on *"Connect
 your Strava account and import the sessions you pick…"* and now opens on *"Imports the
@@ -51,31 +51,30 @@ Settings** for the same reason: fetching sessions is an import, and Import's *Sy
 intervals.icu* and a pull on the Sessions list are the two doors onto that one call. There
 was a third, *Sync now* on the first-run setup card, and it went with the card on dev 70.
 
-### The recording class opens every footer
+### What the door gets you opens every footer
 
-Every section footer now **begins with the class the door brings in**, in the names
-docs/channels.md settled on and cleanjibe.org prints (`RecordingClass` in the kit, one source
-for the app, the help catalogue and the website):
+Every section footer **begins with what the door gets you**, as a label —
+`ImportDoor.classLabel(channel:)`, built from the names of `RecordingClass` in the kit, one
+source for the app, the help catalogue and the website:
 
-| name | the door that brings it | one line on what you get |
+| label | the door that prints it | the classes behind it |
 |---|---|---|
-| **Class A · Garmin watch app** | Full history, Single sessions | everything, the wrist included |
-| **Class B · any file with measured speed** | Full history, Single sessions, Apple Health | everything except pump strokes and takeoff attempts; speed records measured |
-| **Class B+ · Apple Watch app** | *no import at all* — named in the Apple Health footer, because that is where an Apple Watch owner is standing | everything class B gets, plus the wrist at 50 Hz |
-| **Class C · positions only** | Strava; the picker's GPX and TCX in the beta | the analysis, with speed records estimated from positions and marked so |
+| **Measured speed** | Full history (intervals.icu), Apple Health, the Garmin ZIP, Single sessions in the release | a and b: a CleanJibe recording or any other file with the watch's own speed |
+| **Measured speed and the wrist** | the Apple Watch app (beta) | b + wrist: measured speed plus the 50 Hz wrist accelerometer |
+| **Measured speed, or positions only from a GPX** | Single sessions in the beta, whose picker also opens GPX and TCX | a, b and c |
+| **Positions only** | Strava | c: the analysis, with speed records estimated from positions and marked so |
 
-The letters were kept out of the copy for months, deliberately — "class b" names a bucket in
-somebody else's taxonomy and answers nothing a rider asked. What changed on 14 September 2026
-is that the question moved *in front of* the import: cleanjibe.org and /watches print the table
-as "what you need, what you get", so a rider arrives at this screen looking for the row he has
-already read. The rule that replaced the old one is that **the letter is never alone** — it is
-always the letter and the thing, "Class A · Garmin watch app", which reads as a label to
-somebody who has seen the table and as a plain description to somebody who has not. A bare
-lower-case "class b" is still forbidden, and `PresentationTests` still asserts it.
+**No class letter, anywhere a rider reads** (rider review I7 and X9, 9 October 2026). From
+14 September the label was "the letter and the thing" — "Class A · Garmin watch app or
+Class B · any file with measured speed" — so a rider who had read the table on
+cleanjibe.org could match the row. Riders asked *"What is Class A or Class B?"* instead: a
+letter in somebody else's taxonomy answers nothing, and the thing beside it already said
+everything. So the names became the thing alone, said as what you get, and the letters
+stayed in the engine (`sourceClass`) and in docs/channels.md. The Strava footer no longer
+repeats *positions only* under a label that says it.
 
-The **Single sessions** footer names the classes its picker can actually open: A, B and C in
-the beta, A and B in the release, which has no GPX or TCX door (docs/channels.md). The help
-topic *What your recording can and cannot show* carries the same four, in the same words.
+The help topic *Which watches work with CleanJibe* says the same per watch: every row says
+measured or estimated speed, and none ends on a class name any more.
 
 **The release footer names no beta.** It used to close on *"Their own GPX and TCX files are
 read by the CleanJibe beta"*, which answers a Polar owner's question with a build he does not
@@ -115,12 +114,26 @@ same session is on intervals.icu, take it from there instead.*
   number, in the same words on the Import screen and in the help topic, which used to disagree
   with each other — and a run that hits it stops and reports *"Strava asked us to wait"* rather
   than retrying into the quota. The rider ceiling is its own sentence too, but a neutral one:
-  *"Strava lets a new app connect a limited number of riders. If connecting is refused because
-  CleanJibe is full … Menu → Support & ideas is the way to say so, and Strava is asked for
-  more."* It used to read *"Strava has not reviewed CleanJibe yet"*, which tells an App Store
+  *"Strava lets a new app connect a limited number of riders, and CleanJibe is full right now.
+  Your sessions can still come in as files exported from strava.com"* (since 9 October 2026,
+  next bullet; before, it ended on *Menu → Support & ideas is the way to say so*). It used to read *"Strava has not reviewed CleanJibe yet"*, which tells an App Store
   rider that the app in his hand is waiting for permission to exist. A server error is neutral
   in the other direction as well: *"Strava answered with an error (HTTP 502)"*, never the
   response body, which can echo a request — and a token — straight back at the screen.
+* **A refusal for the cap offers the way in that still works** (rider review I5, 9 October
+  2026; Jan's decision the same day: keep offering Strava). The eleventh rider used to get a
+  modal with the cap, a menu path and only *OK*. Now there is no modal for it: the Strava
+  section he tapped from (Settings → Strava, and the Import screen's connect fallback) keeps
+  the refusal under the button for as long as it is true — *"Last try failed: Strava is full
+  for new riders"* — with `Copy.stravaFullExport` under it (*on a computer, open the activity
+  on strava.com and choose ⋯ → Export Original; AirDrop the file to this iPhone and import
+  it*) and two buttons: **Import a file instead**, the file picker itself, and **Tell us
+  Strava is full**, the Support & ideas mail. `StravaFullFix` draws all of it, in every
+  channel, because the refusal, the file door and the mail are all in the release. The
+  library footer's *"Strava is full for new riders · Settings → Strava"* points at it, and
+  the trouble clears on the next successful connect. The help topic carries the same path as
+  its item *Strava full? Take the file*, and /start/'s Strava card says it above the fold
+  (`notice` in docs/guide/getting-started.json, rider review S5).
 * **Strava's brand, used Strava's way** (developers.strava.com/guidelines, read 14 September
   2026; `ios/WingFoil/Features/Import/StravaBrand.swift`). Three rules, and breaking one can
   cost the application and with it a whole import door: (1) the connect action is **Strava's
@@ -198,7 +211,7 @@ public beta, and the sentence names Strava and intervals.icu as the route that w
 because a release reader must not be told that the answer to his question is a build he does
 not have. It says where the phone goes — a waterproof pouch on
 the upper arm or high on the chest, not a hip pocket that spends the bottom of every jibe
-underwater — and it says what it costs: Class C · positions only.
+underwater — and it says what it costs: positions only, so the speed is estimated.
 
 ### Which watches work with CleanJibe
 
@@ -229,17 +242,23 @@ The **same table is public**, at cleanjibe.org/start#watches since 19 September 
 (cleanjibe.org/watches until then, and a redirect to it since), beside one generated
 sentence about the watch app’s Connect IQ product count — so “will my watch work” has one
 answer for a rider who has installed nothing yet and the same answer inside the app. The
-family-by-family product list is gone from the site: it was `garmin/manifest.xml` typed out
-by hand, and the store’s own install button is the only honest answer to “is mine on the
-list”. The public copy carries one column
-this one does not: the **recording class** (a / b / b + wrist / c, docs/channels.md), printed
-above it as its own table — “what you need, what you get” — and repeated on the homepage,
+family-by-family product list **came back on 9 October 2026** (rider review S8: *"The store
+says my fenix 6 is not compatible, and the site never says what to do then"*), generated
+this time: `web/tools/make_devices.py` writes every watch by family from the three
+manifests, with Garmin’s own device names, into docs/copy/garmin-devices.json (`models`)
+and under the table, and ends on *Not on the list? Ride with Garmin's Windsurf profile. You
+still get every verdict.* A watch added to the jungles with no name there fails the
+generator. The public copy carries one column
+this one does not: **what each kind of recording gets you** (Everything, Measured speed and
+the wrist, Measured speed, Positions only — the classes a / b + wrist / b / c of
+docs/channels.md, never printed as letters), as its own table above it — “what you need, what you get” — and repeated on the homepage,
 since the question arrives before the import rather than after it. The CleanJibe Apple Watch
 app is **b + wrist**: class b speed, plus the 50 Hz wrist accelerometer (ADR-016) the phone
 analyses afterwards, which is why its row here says *yes* to pump and takeoff effort and
 Apple's own Workout app does not. The public page also answers *no watch at all* with real
-instructions: which phone apps record a track and can export it. The public release notes live beside
-it at cleanjibe.org/invite#whats-new, generated from `docs/copy/whats-new.json`.
+instructions: which phone apps record a track and can export it. The public release notes are
+cleanjibe.org/whats-new (a page of its own again since 9 October 2026), generated from
+`docs/copy/whats-new.json`.
 
 **Where the public vocabulary lives, since 14 September 2026.** Jan: *"The entry web page is
 quite long."* The homepage (`web/index.html`) is now the short half — the share card as the

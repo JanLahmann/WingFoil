@@ -145,8 +145,13 @@ TARGETS: list[Target] = [
     # way a generated garmin-count span is, so the rest of the page is still held to the
     # stale-fact rule. The `dated` flag is the second belt on the same trousers: a date
     # that escapes the block still has to be a date a generator wrote.
-    Target("web · /start/", "web/start/index.html", "html", dated=True,
-           strip=("channels-beta", "channels-dev", "whats-new")),
+    # /start/ split in three on 9 October 2026 (rider review S9). The dated half went to
+    # /whats-new/ and the two channel lists to /beta/, so /start/ is held to every rule.
+    Target("web · /start/", "web/start/index.html", "html"),
+    Target("web · /beta/", "web/beta/index.html", "html",
+           strip=("channels-beta", "channels-dev")),
+    Target("web · /whats-new/", "web/whats-new/index.html", "html", dated=True,
+           strip=("whats-new",)),
     # **The app's help, rendered** (web/tools/make_help.py out of docs/copy/help.json).
     # Every sentence on it is already judged one target above, in the kit's Help sources,
     # which is where it can be edited; it is read again here because the page also carries
@@ -176,7 +181,9 @@ TARGETS: list[Target] = [
 ]
 
 #: data-copy marks a generator writes; their text is never judged (it cannot go stale by hand).
-GENERATED = ("garmin-version", "garmin-count", "ciq-title", "appstore-name")
+#: `garmin-models` is the Garmin watch list on /start/#watches, written by make_devices.py
+#: out of the manifests: product names, not sentences (rider review S8, 9 Oct 2026).
+GENERATED = ("garmin-version", "garmin-count", "garmin-models", "ciq-title", "appstore-name")
 
 SKIP_LITERAL = re.compile(r"^(https?://|[\w.]+/|%|[A-Za-z]+\.[A-Za-z]+$|\\\()|→|\{[^}]*\}")
 #: The same, for a whole paragraph. A path notation inside it (`Settings → Garmin watch`)

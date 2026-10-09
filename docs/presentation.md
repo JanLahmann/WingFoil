@@ -69,7 +69,8 @@ version it is stamped for.
   sees at all, and the tuning sliders in the dev build.
 - [`presentation/watch.md`](presentation/watch.md) — the watch: layout rules, event flash,
   Turns and Tacks & jibes pages, page sets, show/hide switches, the after-save pages, the
-  per-page editor, the direct transfer's progress, the watch's words, the watch link.
+  per-page editor, the direct transfer's progress, the pause and a lost GPS, the watch's
+  words, the watch link.
 - [`presentation/not-a-session-spots.md`](presentation/not-a-session-spots.md) — not a
   session, and how a spot gets its name.
 - [`presentation/privacy-first-screen.md`](presentation/privacy-first-screen.md) — what

@@ -90,8 +90,13 @@
     },
     {
       "path": "web/app/index.html",
-      "text": "The engine downloads once, about 12 MB",
+      "text": "The engine downloads once, about 14 MB",
       "reason": "the Pyodide engine download, which the phone does not have"
+    },
+    {
+      "path": "web/app/index.html",
+      "text": "Safari may clear this site's data after seven days without a visit.",
+      "reason": "Safari's seven-day rule for a site's storage in a tab (rider review X3); the phone's library is the app's own and nothing clears it"
     },
     {
       "path": "web/app/index.html",

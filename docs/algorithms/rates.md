@@ -1,6 +1,6 @@
 > Part of `docs/algorithms.md`. Engine 0.28.0.
 
-## Session rates (phone, engine ≥ 0.6.0) — `durationS` · `avgSpeedKmh` · `turnsPerHour` · `jibesPerHour` · `cleanJibesPerHour` · `wetPerHour` · `windowRates`
+## Session rates (phone, engine ≥ 0.6.0) — `durationS` · `avgSpeedKmh` · `turnsPerHour` · `jibesPerHour` · `cleanJibesPerHour` · `wetPerHour` · `windowRates` · the 20-minute floor
 
 A tally answers "how many"; a rate answers "how busy". Forty jibes is a good session in an
 hour and a slow one in four, and until 0.6.0 nothing in the summary could tell those apart —
@@ -109,6 +109,44 @@ series. Zero would claim "he did nothing in an hour on the water"; null says the
 to divide by. `durationS` and `timerTimeS` themselves stay 0.0. Rates are computed from
 unrounded inputs and rounded only on the way into JSON.
 
+### Too short for a rate — **20 minutes of timer time** (Jan, 9 Oct 2026)
+
+**`RATE_MIN_TIMER_S = 1200`** — a session whose `timerTimeS` is **below 1200.0 s** holds **no
+rate**, on any surface. `>=`: exactly 1200.0 s holds one. The clock is the one every rate
+already divides by (`timerTimeS`, T2), so "20 minutes" is 20 minutes of the hour the number
+is per: two hours on the clock with ten minutes on the timer is a ten-minute rate.
+
+Why: the ten-minute Torbole paddle of 2026-08-30 (635 s of timer, 5 clean jibes) read
+**28.3 clean jibes an hour** on its page, its card and its Trends point — a rider review
+quote (I12, *"a ten-minute paddle shows 28 clean jibes an hour"*). Scaling a fragment to the
+hour is the same flattering lie the rolling window refuses below (*Never a flattering
+peak*), and the record floor has refused since 0.10.0. One floor now answers all of it.
+
+What it does, and what it leaves alone:
+
+| where | under the floor | implemented in |
+|---|---|---|
+| the engine's `summary.*PerHour`, `windowRates` | **unchanged** — the arithmetic is right; no engine output moved and no version bump | — |
+| session key metrics, row 4 | the same cells the counts choose (CPH · JPH or TPH · falls / h), each `value: null` with caption `presentation.caption.tooShortForRate` (*"too short for a rate"*), drawn where the number goes | lab `presentation._rate_cells`, kit `PresentationDocument.rateCells` |
+| share card ribbon | the rate tiles are left out (no room for the sentence) | kit `ShareCardStats.Story`, web `cardstats.js` |
+| Trends (CPH and the one dry-turn line) | no point for that session — a gap, like any session that cannot report a number | kit `TrendPoint.init`, web `library._rated` |
+| records: Best CPH, the widget's best JPH, the CPH celebration | the session cannot hold them; the *count* records take no floor | kit `SessionRecordKind.bestCph`, `PersonalBestDetector.cleanJibeBests`, `WidgetSnapshot.value`; web `library._cph_record` |
+| a period (month, season, trip, custom range) and its card | the floor is on the period's own **Σ timer time**: CPH, falls / h and the card's dry rate are absent when it is under 1200 s. Ten 10-minute sessions are 100 minutes and hold a rate; one alone does not | kit `LibraryStore.facts` / `card`, web `library._period_facts` / `period_card` |
+
+The constant is written three times and held to one number: the lab's
+`presentation.RATE_MIN_TIMER_S` (with `rate_holds`), the analyzer's `library.RATE_MIN_TIMER_S`
+(with `_rate_holds`, asserted equal by `lab/tests/test_library.py`), and the kit's
+`RateFloor.minTimerS` (with `holds` / `gate`, `RateFloorTests`). It **replaces** the CPH
+record's own floor, which was one rate window (15 min) of *elapsed* time (T1): a record may
+not hold a rate the session's own page refuses to print, and the page reads the timer.
+
+On the corpus it bites on the four 2026-08-30 Torbole fixtures (635–640 s) and the 60 s
+smoke fixture; every other session is over 2400 s and reads exactly as before.
+
+**The watch is not under this rule.** The device app prints no rate since 0.9.18 (the CPH row
+left the Turns page); the parked data field (ADR-020) keeps its CPH with a 60 s floor — see
+docs/algorithms/turns.md, the watch divergences.
+
 Corpus, for scale — the two CIQ sessions, regenerated from `fixtures/goldens/` at
 engine 0.13.0:
 
@@ -162,6 +200,9 @@ over the span it actually lasted — the 60 s smoke fixture reports one series p
 equal to it, flagged as nothing special because nothing special happened. This is the mirror
 of the never-a-flattering-zero rule the four rates follow (docs/testing.md): an absence must
 not read as a verdict, and a fragment must not read as a peak.
+
+The rider-facing floor on top of these numbers — no rate under 20 minutes of timer time — is
+"Too short for a rate" above; it reads the rates, it does not change them.
 
 Implemented once per engine: `session_rates` / `window_rates` in
 `lab/src/wingfoil_lab/goldens.py`, `SessionRates` / `SessionWindowRates` in
