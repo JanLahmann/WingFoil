@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /strava/callback/
+
+Sitemap: https://cleanjibe.org/sitemap.xml

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The public pages of cleanjibe.org, for search engines. Redirect pages (/invite/, /learn/,
+     /watches/, noindex) and /strava/callback/ are left out on purpose. A new public page gets
+     a line here. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://cleanjibe.org/</loc></url>
+  <url><loc>https://cleanjibe.org/start/</loc></url>
+  <url><loc>https://cleanjibe.org/app/</loc></url>
+  <url><loc>https://cleanjibe.org/help/</loc></url>
+  <url><loc>https://cleanjibe.org/beta/</loc></url>
+  <url><loc>https://cleanjibe.org/whats-new/</loc></url>
+  <url><loc>https://cleanjibe.org/privacy/</loc></url>
+</urlset>
