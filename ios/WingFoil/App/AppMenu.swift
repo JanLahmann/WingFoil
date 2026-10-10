@@ -132,7 +132,7 @@ private struct AppMenuHost: ViewModifier {
 
 /// **The two doors under *Your records start with your first session* and *Your trends
 /// start with your first session*** (Jan, 9 Oct 2026; rider review I1). The sentence names
-/// them — import a .fit file, or connect intervals.icu in Settings — and the screen used to
+/// them — connect intervals.icu in Settings, or import a .fit file — and the screen used to
 /// offer neither, so a rider who had only tried the example had to find the menu. The
 /// words are the kit's (`ExampleOnlyNote`), the actions the host's: Import and Settings,
 /// the same sheets the Sessions tab opens. A host that hands no action down draws no
@@ -142,12 +142,13 @@ struct ExampleOnlyDoors: View {
     @Environment(\.openIcuSettings) private var openSettings
 
     var body: some View {
-        if let openImport {
-            Button(ExampleOnlyNote.importButton) { openImport() }
-                .buttonStyle(.borderedProminent)
-        }
+        // intervals.icu first, then the file: the ways-in order (pattern J).
         if let openSettings {
             Button(ExampleOnlyNote.connectButton) { openSettings() }
+                .buttonStyle(.borderedProminent)
+        }
+        if let openImport {
+            Button(ExampleOnlyNote.importButton) { openImport() }
         }
     }
 }
