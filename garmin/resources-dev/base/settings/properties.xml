@@ -113,4 +113,8 @@
     <property id="pg8s3" type="number">0</property>
     <property id="pg8s4" type="number">0</property>
     <property id="pg8s5" type="number">0</property>
+
+    <!-- 0.9.23, rider review W15: 0 = a lap for every flight and gap, 1 = one for the
+         session. AppSettings.lapPerFlight; a release build has no row and reads 0. -->
+    <property id="lapMode" type="number">0</property>
 </properties>

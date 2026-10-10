@@ -36,6 +36,16 @@
             <iq:product id="fenix5plus"/>
             <iq:product id="fenix5splus"/>
             <iq:product id="fenix5xplus"/>
+            <!-- fenix 6 Pro family and Forerunner 245 Music / 945 / 945 LTE (0.9.23, rider review S8):
+                 Connect IQ 3.3-3.4, 1.3 MB app memory, MIP 240/260/280 px, 40 px launcher. Beta and
+                 dev only until a real wrist has ridden one (channels.md). The plain fenix 6/6S and
+                 FR 245 have 128 KB and cannot run the app. -->
+            <iq:product id="fenix6pro"/>
+            <iq:product id="fenix6spro"/>
+            <iq:product id="fenix6xpro"/>
+            <iq:product id="fr245m"/>
+            <iq:product id="fr945"/>
+            <iq:product id="fr945lte"/>
             <iq:product id="fenix7"/>
             <iq:product id="fenix7s"/>
             <iq:product id="fenix7x"/>

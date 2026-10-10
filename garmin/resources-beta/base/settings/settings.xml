@@ -1,0 +1,11 @@
+<settings>
+    <!-- 0.9.23, rider review W15 ("Garmin Connect shows 140 laps, half of them not flying"):
+         a lap for every flight and every gap, or one lap for the session. Beta and dev only;
+         the release has neither the row nor the property and keeps a lap per flight. -->
+    <setting propertyKey="@Properties.lapMode" title="@Strings.SetLaps">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.LapsPerFlight</listEntry>
+            <listEntry value="1">@Strings.LapsSession</listEntry>
+        </settingConfig>
+    </setting>
+</settings>

@@ -2354,6 +2354,39 @@ class RecordingView extends WatchUi.View {
         drawVerdictRow(dc, cx, turnsRowY(cy, hT, hG, hD, hK, hS, bias, 4), cy, radius, t);
     }
 
+    // ---- the after-save verdict's ladder hero (0.9.23, rider review W20) ----
+    //
+    // "The product's promise is the turn verdict", and the first page after a save led with
+    // foil %. With a turn to talk about the SAVED page now leads with the Turns page's first
+    // three rows instead: the legend, the ladder row on the equator, the dot strip under it.
+    // The pill, the phone line and the foil arc keep their places; foil % moves to the Foil
+    // page one swipe on. The block is stacked tight (no bias, no streak or side rows) so it
+    // sits well inside the band the foil hero used, which the layout test checks per glass.
+    function drawLadderHero(dc as Dc, c as SessionController) as Void {
+        var t = c.engine.turns;
+        var cx = dc.getWidth() / 2;
+        var cy = dc.getHeight() / 2;
+        var radius = fitRadius(dc, false, true);
+        var hT = dc.getFontHeight(Graphics.FONT_XTINY);
+        var hG = inkH(dc, Graphics.FONT_NUMBER_MEDIUM);
+        var hD = stripBandH(dc);
+        drawLadderHeader(dc, cx, ladderHeroY(cy, hT, hG, hD, 0), cy, radius, true);
+        drawLadderRow(dc, cx, cy, cy, radius,
+            ladderOf(t.cleanJibeCount, t.flewCount, t.touchdownCount, t.fellCount),
+            LADDER_FROM);
+        var y = ladderHeroY(cy, hT, hG, hD, 2);
+        drawOutcomeStrip(dc, cx, y, rowBudget(radius, y - cy, hD), c.engine.history);
+    }
+
+    // Row centres of that block: 0 the legend, 1 the ladder (the equator), 2 the strip.
+    // Shared with the layout test.
+    static function ladderHeroY(cy as Number, hT as Number, hG as Number, hD as Number,
+            row as Number) as Number {
+        if (row == 0) { return cy - hG / 2 - hT / 2; }
+        if (row == 1) { return cy; }
+        return cy + hG / 2 + hD / 2;
+    }
+
     // ---- TACKS & JIBES: the kinds page (0.9.17) ----
     //
     // Jan, 21 September 2026, from a tester practising tacks: the Turns page says how the

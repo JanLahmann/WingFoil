@@ -26,6 +26,14 @@ fenix7s.resourcePath = $(fenix7s.resourcePath);resources-icon40;resources-dev/ic
 fenix5plus.resourcePath = $(fenix5plus.resourcePath);resources-icon40;resources-dev/icon40
 fenix5splus.resourcePath = $(fenix5splus.resourcePath);resources-icon40;resources-dev/icon40
 fenix5xplus.resourcePath = $(fenix5xplus.resourcePath);resources-icon40;resources-dev/icon40
+# fenix 6 Pro family and FR 245 Music / 945 / 945 LTE (0.9.23, beta and dev only until a real
+# wrist has ridden one): 1.3 MB, MIP, 40x40 launcher, the fenix 5 Plus cut.
+fenix6pro.resourcePath = $(fenix6pro.resourcePath);resources-icon40;resources-dev/icon40
+fenix6spro.resourcePath = $(fenix6spro.resourcePath);resources-icon40;resources-dev/icon40
+fenix6xpro.resourcePath = $(fenix6xpro.resourcePath);resources-icon40;resources-dev/icon40
+fr245m.resourcePath = $(fr245m.resourcePath);resources-icon40;resources-dev/icon40
+fr945.resourcePath = $(fr945.resourcePath);resources-icon40;resources-dev/icon40
+fr945lte.resourcePath = $(fr945lte.resourcePath);resources-icon40;resources-dev/icon40
 fenix7x.resourcePath = $(fenix7x.resourcePath);resources-icon40;resources-dev/icon40
 fenix7pro.resourcePath = $(fenix7pro.resourcePath);resources-icon40;resources-dev/icon40
 fenix7pronowifi.resourcePath = $(fenix7pronowifi.resourcePath);resources-icon40;resources-dev/icon40

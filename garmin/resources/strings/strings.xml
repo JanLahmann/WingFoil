@@ -33,12 +33,17 @@
     <string id="SetAlertTurn">Vibrate on turn outcome</string>
     <string id="SetAlertCleanJibe">Vibrate on clean jibe</string>
     <string id="SetAlertCleanJibeNote">A clean jibe gets its own rising three-tick buzz. Clean: you flew through, held your speed, then 10 quiet seconds on the foil. Off: every turn gets the plain outcome buzz.</string>
-    <string id="SetWindDir">Wind direction (deg from, -1 = unset)</string>
+    <string id="SetWindDir">Wind direction, this session (deg from, -1 = auto)</string>
     <string id="SetAutoWind">Estimate wind on the watch</string>
     <string id="SetTurnHabit">I mostly do</string>
     <string id="TurnHabitJibes">Jibes</string>
     <string id="TurnHabitTacks">Tacks</string>
     <string id="TurnHabitBalanced">About the same</string>
+
+    <!-- Beta and dev rows only (0.9.23, rider review W15); the string ships in every build. -->
+    <string id="SetLaps">Laps</string>
+    <string id="LapsPerFlight">Every flight and gap</string>
+    <string id="LapsSession">One for the session</string>
     <string id="SetAutoPause">Auto-pause when stopped</string>
     <string id="SetAutoPauseDelay">Auto-pause delay (s)</string>
     <string id="SetVisualAlerts">Show alerts on screen</string>

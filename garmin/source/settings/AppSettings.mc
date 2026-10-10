@@ -46,6 +46,10 @@ module AppSettings {
     // beside it. Off = glyph only, which buys the value row its width back on the tight
     // bottom row of a 2x2 grid.
     var showLabels as Boolean = true;
+    // A lap for every flight and every gap (true, the release's only behaviour), or one lap
+    // for the session. The Garmin Connect row is in the beta and dev streams only (0.9.23,
+    // rider review W15); a release build has no property and reads the default.
+    var lapPerFlight as Boolean = true;
 
     // ---- the page SET (0.9.16) ----
     // standard = the eight shipped screens; large = seven screens with one
@@ -136,6 +140,7 @@ module AppSettings {
         autoPause = _bool("autoPause", false);
         autoPauseDelayS = _clamped("autoPauseDelayS", 5.0, 2.0, 60.0).toNumber();
         showLabels = _bool("showLabels", true);
+        lapPerFlight = _num("lapMode", 0.0).toNumber() != 1;
         phonePush = readPhonePush();
         pageSet = _num("pageSet", PageModel.PAGE_SET_STANDARD.toFloat()).toNumber();
         if (pageSet != PageModel.PAGE_SET_LARGE) {
@@ -182,6 +187,12 @@ module AppSettings {
         cfg.setWindDirection(deg);
         if (cfg.windManual >= 0) {
             windEverSet = true;      // sticky: clearing the axis does not unclassify the past
+        } else {
+            // Unset clears last time's bearing too, or the next start asks Same wind? about it
+            try {
+                Storage.deleteValue(STORE_WIND_LAST);
+            } catch (e) {
+            }
         }
         try {
             Properties.setValue("windDirDeg", cfg.windManual);

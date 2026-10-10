@@ -10,7 +10,7 @@ Rewrite drafts are a separate thing, with one exception written down where it si
 watch app's description carries the 26 September 2026 draft for Jan's sign-off.
 
 Both apps: developer **JanRL** (`7d829c3a-3343-46f5-b946-4556e4579f53`), support
-`info@cleanjibe.org`, website `https://github.com/JanLahmann/WingFoil`, free,
+`info@cleanjibe.org`, website `https://cleanjibe.org` (was the GitHub repo until rider review S14; set in the store form with the next upload), free,
 open beta, English only.
 
 ---
@@ -74,6 +74,10 @@ What changed and why:
 * **Pasted: one sentence more, 1174 characters** (Jan, 30 September 2026). *CleanJibe is built
   with its riders.* opens the beta's own reason under THIS IS THE BETA, the community message
   every other surface says (`BetaGuide.community`).
+* **To paste with the next upload (rider review S14, 10 October 2026):** the feedback pointer
+  is *cleanjibe.org/beta/#tell*, the beta page's "Where to send it". It said
+  *cleanjibe.org/invite*, which redirects to install links. The Website field becomes
+  cleanjibe.org. Same length within a few characters.
 * **Pasted 9 October 2026 with 0.9.22: AFTERWARDS says the way that works from a phone** (rider review W3,
   9 October 2026). It used to say *Drop the FIT file into cleanjibe.org*, and Garmin Connect's
   phone app gives a rider no file. It now names intervals.icu first and the computer export
@@ -85,7 +89,7 @@ Did you fly through that jibe? CleanJibe on your Garmin tells you while you ride
 
 THIS IS THE BETA
 
-It is free and open to anyone, with no key and no account. CleanJibe is built with its riders. New versions come here first. Tell us what looks wrong at cleanjibe.org/invite.
+It is free and open to anyone, with no key and no account. CleanJibe is built with its riders. New versions come here first. Tell us what looks wrong at cleanjibe.org/beta/#tell.
 
 ON THE WATER
 

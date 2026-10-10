@@ -4261,6 +4261,15 @@ function handSetWindLivesOneSession(logger as Test.Logger) as Boolean {
     Test.assertEqual(AppSettings.windOffer, -1);
     Test.assertEqual(AppSettings.lastHandWind(), -1);
 
+    // Unset in the wind menu forgets last time's bearing too: no Same wind? about it later.
+    AppSettings.storeWindDirection(135);
+    AppSettings.retireHandWind();
+    Test.assertEqual(AppSettings.lastHandWind(), 135);
+    AppSettings.storeWindDirection(-1);
+    Test.assertEqual(AppSettings.lastHandWind(), -1);
+    AppSettings.load();
+    Test.assertEqual(AppSettings.windOffer, -1);
+
     // A bearing the rider gave in Garmin Connect since the save stands, unasked.
     Storage.setValue(AppSettings.STORE_WIND_LAST, 270);
     Properties.setValue("windDirDeg", 180);
@@ -4274,6 +4283,7 @@ function handSetWindLivesOneSession(logger as Test.Logger) as Boolean {
     Storage.setValue(AppSettings.STORE_WIND_LAST, "SW");
     Test.assertEqual(AppSettings.lastHandWind(), -1);
 
+    AppSettings.storeWindDirection(before);      // first: an unset clears STORE_WIND_LAST
     if (wasLast == null) {
         Storage.deleteValue(AppSettings.STORE_WIND_LAST);
     } else {
@@ -4281,7 +4291,6 @@ function handSetWindLivesOneSession(logger as Test.Logger) as Boolean {
     }
     AppSettings.windOffer = -1;
     AppSettings.cfg.setAutoWind(wasAuto);
-    AppSettings.storeWindDirection(before);
     AppSettings.windEverSet = wasSet;
     logger.debug("hand-set wind: retired at save, asked once, kept only on Yes");
     return true;
@@ -6780,6 +6789,49 @@ function phoneProgressLineNeverTouchesWhatMatters(logger as Test.Logger) as Bool
         "the renderer drops it instead; this is the measurement");
     logger.debug("start phone line at y=" + sy.toString() + ", corner r=" + r.format("%.0f")
         + " vs radius " + radius.toString());
+    return true;
+}
+
+// ---- the SAVED page's ladder hero (0.9.23, rider review W20) ----
+// With turns the SAVED page leads with the Turns page's legend, ladder row and dot strip in
+// the foil hero's place. The pill, the phone line (in whichever slot it takes) and the page
+// dots keep their places, so the block has to sit between them on every glass.
+(:test)
+function savedLadderHeroClearsTheSavedBand(logger as Test.Logger) as Boolean {
+    Words.load();
+    var dc = testDc();
+    var cy = screenPx() / 2;
+    var hT = dc.getFontHeight(Graphics.FONT_XTINY);
+    var hG = RecordingView.inkH(dc, Graphics.FONT_NUMBER_MEDIUM);
+    var hD = RecordingView.stripBandH(dc);
+    var top = RecordingView.ladderHeroY(cy, hT, hG, hD, 0) - hT / 2;
+    var bottom = RecordingView.ladderHeroY(cy, hT, hG, hD, 2) + hD / 2;
+    Test.assertEqual(RecordingView.ladderHeroY(cy, hT, hG, hD, 1), cy);
+    // the rows do not touch each other
+    Test.assertMessage(RecordingView.ladderHeroY(cy, hT, hG, hD, 0) + hT / 2 <= cy - hG / 2 + 1,
+        "the legend reaches the ladder row");
+    // the top: under the pill (lifted or not, with its badge) and under a top phone line
+    var line = SummaryView.savedLine(true);
+    var slot = SummaryView.phoneLineSlot(dc, line);
+    var above = SummaryView.savedY(dc) + Brand.badgeH() / 2;
+    if (slot == PHONE_LINE_TOP) {
+        above = SummaryView.phoneLineY(dc) + hT / 2;
+    }
+    Test.assertMessage(top > above, "the ladder hero reaches the SAVED band: top "
+        + top.toString() + " vs " + above.toString());
+    // the bottom: over a low phone line, and over the page dots
+    var below = screenPx() - SummaryView.dotBand(dc);
+    if (slot == PHONE_LINE_LOW) {
+        below = SummaryView.phoneLineLowY(dc) - hT / 2;
+    }
+    Test.assertMessage(bottom < below, "the ladder hero reaches the bottom band: bottom "
+        + bottom.toString() + " vs " + below.toString());
+    // ...and it is no taller than the foil hero it replaces, so nothing the slot logic
+    // measured against the foil hero can be wrong for it
+    Test.assertMessage(top >= SummaryView.verdictDigitTop(dc), "ladder above the foil digits");
+    Test.assertMessage(bottom <= SummaryView.heroBlockBottom(dc), "ladder below the foil hero");
+    logger.debug("ladder hero " + top.toString() + "-" + bottom.toString() + ", band to "
+        + above.toString() + ", bottom limit " + below.toString());
     return true;
 }
 

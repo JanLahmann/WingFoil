@@ -124,14 +124,19 @@ class SessionController {
 
             if (flightEvent == FlightDetector.EVENT_START
                 || flightEvent == FlightDetector.EVENT_END) {
-                if (_session != null) {
-                    // lap dev fields take the values held when the lap closes
-                    if (_fit != null) {
-                        _fit.setLap(engine.turns);
+                // A lap for every flight and every gap, unless the rider asked for one lap
+                // for the whole session (rider review W15: "Garmin Connect shows 140 laps").
+                // With laps off the lap counters run on, and finishSave writes the totals.
+                if (AppSettings.lapPerFlight) {
+                    if (_session != null) {
+                        // lap dev fields take the values held when the lap closes
+                        if (_fit != null) {
+                            _fit.setLap(engine.turns);
+                        }
+                        _session.addLap();
                     }
-                    _session.addLap();
+                    engine.turns.resetLap();
                 }
-                engine.turns.resetLap();
                 if (flightEvent == FlightDetector.EVENT_END
                     && engine.detector.longestS > _prevLongest) {
                     _prevLongest = engine.detector.longestS;
@@ -424,6 +429,9 @@ class SessionController {
         if (_fit != null) {
             _fit.updateSession(engine.detector, engine.records, engine.timerS, engine.turns,
                 engine.pump);
+            // The lap the save closes takes its own values, not the previous lap's; with
+            // laps off that is the one lap, and these are the session's totals.
+            _fit.setLap(engine.turns);
         }
         _captureElapsed();
         // GPS off BEFORE save, not after (0.9.14). A rider who paused on the water, drove to

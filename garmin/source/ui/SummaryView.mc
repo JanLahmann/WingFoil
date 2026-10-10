@@ -69,10 +69,17 @@ module SummaryNav {
     function build(c as SessionController) as Void {
         var e = c.engine;
         var p = [S_VERDICT] as Array<Number>;
+        // With turns the SAVED page leads with the ladder and foil % moves to the Foil page,
+        // so that page comes second (0.9.23, rider review W20). Without turns SAVED still
+        // shows foil %, and the records come next as before.
+        var foilFirst = e.turns.turnCount > 0;
+        if (foilFirst && PageModel.shown(PageModel.SHOW_FOIL)) {
+            p.add(S_FOIL);
+        }
         if (PageModel.shown(PageModel.SHOW_RECORDS)) {
             p.add(S_SPEED);
         }
-        if (PageModel.shown(PageModel.SHOW_FOIL)) {
+        if (!foilFirst && PageModel.shown(PageModel.SHOW_FOIL)) {
             p.add(S_FOIL);
         }
         if (e.turns.turnCount > 0 && PageModel.shown(PageModel.SHOW_TURNS)) {
@@ -239,12 +246,25 @@ class SummaryView extends WatchUi.View {
     }
 
     // ---- S1 Verdict: the page the rider lands on ----
-    // Foil % is the one number that answers "was that a good session", it is already the
+    // With turns, the turn ladder is the hero (0.9.23, rider review W20). Without, foil % is
+    // the one number that answers "was that a good session", it is already the
     // giant on recording page 2, and the arc gives it a shape read before the digits are.
     // "SAVED" is an acknowledgement in the corner, not a headline: he pressed save.
     hidden function drawVerdict(dc as Dc, c as SessionController) as Void {
         var e = c.engine;
         _painter.drawFoilBezel(dc, c);
+        // With a turn to talk about, the turn verdict leads (0.9.23, rider review W20): the
+        // Turns page's ladder in the hero's place, and foil % one swipe on, on the Foil page.
+        if (e.turns.turnCount > 0) {
+            _painter.drawLadderHero(dc, c);
+        } else {
+            drawFoilHero(dc, c);
+        }
+        drawSavedBand(dc);
+    }
+
+    hidden function drawFoilHero(dc as Dc, c as SessionController) as Void {
+        var e = c.engine;
         // Rows stay SHORT on purpose. The chord at the two sub-row depths on a 454 px glass
         // is ~250 px once the arc has taken its 11, which is about fourteen characters at
         // FONT_SMALL — and a row that has to shrink past FONT_SMALL to fit is the old
@@ -253,6 +273,9 @@ class SummaryView extends WatchUi.View {
             PageModel.fmtTime(e.detector.foilTimeS) + Words.SUM_HERO_FOIL,
             Words.SUM_HERO_OF + PageModel.fmtTime(elapsed(c)),
             Ink.phaseFlying(), true);
+    }
+
+    hidden function drawSavedBand(dc as Dc) as Void {
         // The pill and the phone line are drawn as a PAIR: with a line to show, the pill
         // moves up one eyebrow line so the two together end where the pill alone used to,
         // and nothing else on the page moves. Without one (NOT SAVED, or a glass whose arc

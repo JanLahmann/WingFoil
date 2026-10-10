@@ -19,4 +19,8 @@
          only the SensorLogger: the live PumpDetector registers its own listener from
          SessionController._startAccel(), behind `pumpDetection`, and is untouched here. -->
     <property id="accelLogging" type="boolean">false</property>
+
+    <!-- 0.9.23, rider review W15: 0 = a lap for every flight and gap, 1 = one for the
+         session. AppSettings.lapPerFlight; a release build has no row and reads 0. -->
+    <property id="lapMode" type="number">0</property>
 </properties>
