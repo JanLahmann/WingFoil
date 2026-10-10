@@ -17,7 +17,7 @@ import { closePopover, render, renderFigures, renderGlossary, resetSession } fro
 import { CANCELLED, analyze as runAnalysis, cancel as cancelWorker, on, warmUp } from "./rpc.js";
 import { mountSections, resetSections } from "./sections.js";
 import { mountShareCard, openPeriodCard, openShareCard } from "./sharecard.js";
-import { getFitBlob, listEntries } from "./store.js";
+import { getFitBlob, listEntries, putSession } from "./store.js";
 import { CONSENT, PROMPT, send as sendToDeveloper } from "./senddev.js";
 import { track } from "./track.js";
 import { esc, hms, int, nf } from "./viz.js";
@@ -29,7 +29,7 @@ import { invalidateTrends, mountTrends, redrawTrends, showPeriodPage, showPeriod
 import { mountBackup } from "./backup.js";
 import { mountRange } from "./daterange.js";
 import { mountDeleted } from "./deleted.js";
-import { mountGear, onGearChange } from "./gear.js";
+import { mountGear, moveGear, onGearChange } from "./gear.js";
 import { refreshLog, showLog } from "./log.js";
 
 const el = (id) => document.getElementById(id);
@@ -53,6 +53,9 @@ const state = {
   // Bumped by every example tap and by Cancel, so an example fetch that lands after a
   // Cancel puts nothing on screen.
   exampleRun: 0,
+  // The shipped analysis the example on screen came from (its `inputs`), or null when it
+  // was analysed live. Saved with it, so a later deploy can tell it is out of date.
+  exampleStamp: null,
 };
 
 /* The four tabs and the pages behind the menu are js/appshell.js's; this file moves bytes
@@ -484,7 +487,7 @@ function exampleAnalysis(pre, fitBytes) {
     if (doc.engineVersion !== pre.engineVersion) return null;
     if (state.engineVersion && state.engineVersion !== pre.engineVersion) return null;
     doc.presentation = pre.presentations?.[speedRecords()] ?? doc.presentation;
-    return { doc, digest: pre.digest };
+    return { doc, digest: pre.digest, stamp: pre.inputs || null };
   } catch {
     return null;
   }
@@ -515,6 +518,7 @@ async function runExample() {
     const pre = exampleAnalysis(await shipped, bytes.byteLength);
     if (run !== state.exampleRun) return;                 // Cancel was pressed meanwhile
     state.busy = false;
+    state.exampleStamp = pre ? pre.stamp : null;
     if (pre) {
       showResult(pre.doc, { digest: pre.digest, bytes, isExample: true });
       track("app-file-analyzed", { format: "fit", source: "example" });
@@ -534,6 +538,51 @@ async function runExample() {
 
 function wireExample() {
   for (const b of exampleTriggers()) b.addEventListener("click", runExample);
+}
+
+/**
+ * **An example saved before an update is brought up to date** (rider review, Jan
+ * 10 October 2026). A stored session is drawn from the document saved with it, never
+ * re-analysed, so the example a visitor saved last month kept last month's presentation
+ * after every deploy. The bundled example is the one session this site wrote itself, so
+ * when its stamp (`exampleStamp`, the shipped file's `inputs`) is not the one this deploy
+ * ships, the stored copy is replaced with the shipped one: same recording, same entry, the
+ * day it was first saved kept. An entry with no stamp predates the stamp and is swapped too.
+ *
+ * **Only entries marked `example`.** A rider's own sessions, and a friend's, are never
+ * touched here: their analysis is theirs until they re-analyse it. Nothing is asked and
+ * nothing is said, because nothing the visitor typed changes. Returns whether it swapped.
+ */
+async function refreshStoredExample() {
+  try {
+    const stale = (await listEntries()).filter((e) => e.example === true);
+    if (!stale.length) return false;
+    const shipped = await fetchExampleAnalysis();
+    if (!shipped?.inputs) return false;
+    let swapped = false;
+    for (const entry of stale) {
+      if (entry.exampleStamp === shipped.inputs) continue;
+      // The stored recording when it is the one that ships, else the shipped file.
+      let bytes = entry.bytesFit === shipped.fitBytes
+        ? await (await getFitBlob(entry.id)).arrayBuffer() : null;
+      if (!bytes) {
+        const res = await fetch(new URL("../example/ExampleSession.fit", import.meta.url));
+        if (!res.ok) continue;
+        bytes = await res.arrayBuffer();
+      }
+      const pre = exampleAnalysis(structuredClone(shipped), bytes.byteLength);
+      if (!pre) continue;
+      await putSession({ digest: pre.digest, analysisJson: JSON.stringify(pre.doc),
+                         fitBytes: bytes, replaceId: entry.id, example: true,
+                         exampleStamp: pre.stamp, savedUtc: entry.savedUtc });
+      if (pre.digest.id !== entry.id) await moveGear(entry.id, pre.digest.id);
+      swapped = true;
+    }
+    return swapped;
+  } catch {
+    // Storage or the network said no: the stored copy stays as it was, for the next load.
+    return false;
+  }
 }
 
 function wireDownload() {
@@ -662,6 +711,7 @@ function wireSave() {
         analysisJson: JSON.stringify(state.last),
         fitBytes: state.lastBytes,
         example: state.isExample,
+        exampleStamp: state.isExample ? state.exampleStamp : null,
       });
       if (outcome.saved) {
         invalidateTrends();
@@ -968,6 +1018,12 @@ mountShell({
   onStartOver: async () => { invalidateTrends(); },
 });
 warmUp();
+// After the library is mounted, so the swap is drawn the moment it lands.
+refreshStoredExample().then((swapped) => {
+  if (!swapped) return;
+  invalidateTrends();
+  refreshLibrary().catch(() => {});
+});
 if (openExampleOnLoad) runExample();
 if (openSharedOnLoad) {
   history.replaceState(null, "", location.pathname + location.hash);

@@ -162,6 +162,10 @@ function familyHtml() {
  * TestFlight link: the community sentence, the way in, the list. The beta is the iPhone
  * app's, so the one line of its own this page has (`webJoin`) says so; the list is
  * docs/copy/channels.json's beta rows.
+ *
+ * **Back up first** (rider review I6): the phone's `backupFirst` before the TestFlight
+ * button and its *Going back to the App Store version* section after the list, in the
+ * kit's words, with the backup topic one tap away.
  */
 function renderBeta() {
   const host = el("beta-body");
@@ -172,11 +176,15 @@ function renderBeta() {
     <p>${esc(beta.community)}</p>
     <h3 class="sub-head">${esc(beta.howToJoinTitle)}</h3>
     <p class="muted small">${esc(beta.webJoin)}</p>
+    <p class="small">${esc(beta.backupFirst)}</p>
     <p><a class="btn primary" href="${esc(beta.joinURL)}" rel="noopener">${
       esc(beta.joinButton)}</a></p>
     <h3 class="sub-head">${esc(beta.inItNowTitle)}</h3>
     <ul class="beta-features">${(beta.features || []).map((f) =>
-      `<li class="small">${esc(f)}</li>`).join("")}</ul>`;
+      `<li class="small">${esc(f)}</li>`).join("")}</ul>
+    <h3 class="sub-head">${esc(beta.goingBackTitle)}</h3>
+    ${(beta.goingBack || []).map((line) => `<p class="small">${esc(line)}</p>`).join("")}
+    <p class="small"><a href="#/help/libraryBackup">${esc(beta.backupHelpLabel)}</a></p>`;
 }
 
 /**
@@ -204,9 +212,10 @@ function renderGettingStarted() {
   // lands on whichever of them the browser saw first.
   host.innerHTML = `
     <p class="what">${esc(topic.summary)}</p>
-    ${(topic.body || []).map((p) => `<p>${esc(p)}</p>`).join("")}
+    ${topicBodyHtml(topic)}
     ${(topic.items || []).length ? `<dl class="glossary-list">${topic.items.map((i) => `
-      <div class="g-entry"><dt>${esc(i.term)}</dt><dd>${esc(i.detail)}</dd></div>`)
+      <div class="g-entry"><dt>${esc(i.term)}</dt><dd>${
+        i.iphoneOnly ? phoneTag() : ""}${esc(i.detail)}</dd></div>`)
       .join("")}</dl>` : ""}
     <p><button type="button" class="ghost" id="started-welcome">${esc(welcomeRowTitle())}</button></p>`;
   // The phone's second door on this page (Jan, 26 September 2026): the welcome again, under
@@ -660,13 +669,29 @@ const glossaryHtml = () =>
 const topicHtml = (topic) => `
   <article class="help-topic" id="help-topic-${esc(topic.id)}"
            data-find="${esc(`${topic.title} ${topic.summary}`.toLowerCase())}">
-    <h4>${esc(topic.title)}</h4>
+    <h4>${esc(topic.title)}${topic.iphoneOnly ? phoneTag() : ""}</h4>
     <p class="what">${esc(topic.summary)}</p>
-    ${(topic.body || []).map((p) => `<p>${esc(p)}</p>`).join("")}
+    ${topicBodyHtml(topic)}
     ${(topic.items || []).length ? `<dl class="glossary-list">${topic.items.map((i) => `
-      <div class="g-entry"><dt>${itemTerm(i)}</dt><dd>${esc(i.detail)}</dd></div>`)
+      <div class="g-entry"><dt>${itemTerm(i)}</dt><dd>${
+        i.iphoneOnly ? phoneTag() : ""}${esc(i.detail)}</dd></div>`)
       .join("")}</dl>` : ""}
   </article>`;
+
+/** **On the iPhone app** (rider review X10). The help is the phone's, and the kit marks
+ *  the topics, paragraphs and items a browser cannot follow (`HelpCatalog.surfaces`); the
+ *  label is the export's own word. */
+const phoneTag = () => HELP.iphoneTag
+  ? `<span class="tag phone">${esc(HELP.iphoneTag)}</span>` : "";
+
+/** A topic's body, each marked paragraph labelled, then the browser's own way where the
+ *  kit wrote one (`browser`). */
+function topicBodyHtml(topic) {
+  const marked = new Set(topic.iphoneOnlyBody || []);
+  return (topic.body || []).map((p, i) =>
+    `<p>${marked.has(i) ? phoneTag() : ""}${esc(p)}</p>`).join("")
+    + (topic.browser || []).map((line) => `<p class="browser-line">${esc(line)}</p>`).join("");
+}
 
 const itemTerm = (item) => item.link && helpTopic(item.link)
   ? `<a href="#/help/${esc(item.link)}">${esc(item.term)}</a>`

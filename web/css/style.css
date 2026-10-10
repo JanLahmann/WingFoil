@@ -328,6 +328,12 @@ input:focus-visible, button:focus-visible, .btn:focus-visible, .dropzone:focus-v
   color: var(--ink-3); border: 1px solid var(--line); border-radius: 999px; padding: 4px 7px;
   vertical-align: middle; margin-left: 6px;
 }
+/* **On the iPhone app** (rider review X10): the help is the phone's, and a sentence a
+   browser cannot follow says so in a small grey label rather than being left out. It leads
+   the paragraph or item it marks, so its margin sits on the right; on a heading it trails. */
+.tag.phone { text-transform: none; letter-spacing: .02em; margin-left: 0; margin-right: 6px;
+  vertical-align: 1px; white-space: nowrap; }
+h3 .tag.phone, h4 .tag.phone { margin-left: 6px; margin-right: 0; }
 
 /* ------------------------------------------------------------------- steps */
 

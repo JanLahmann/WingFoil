@@ -169,7 +169,7 @@ export const GLOSSARY = [
     "term": "Touchdown",
     "short": "touch",
     "expansion": "",
-    "line": "The foil went in and you kept going. Dry, and not clean."
+    "line": "Your board touched the water and you got going again without falling in. A stop under 5 s counts as a touchdown. Longer, and it counts as a fall."
   },
   {
     "id": "fellIn",

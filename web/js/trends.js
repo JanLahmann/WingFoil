@@ -177,10 +177,11 @@ function draw(agg, trendAgg = agg) {
     // them (rider review I1, 9 Oct 2026). *Import a file* is a real `<label for="file">`,
     // the ways-in card's own picker, so it opens where scripted clicks are refused; the
     // intervals.icu key is kept in Settings, as on the phone.
-    const exampleDoors = `<p class="doors"><label class="btn primary small-btn" for="file">${
-      esc(say("exampleOnly.importButton"))}</label>
-      <button class="ghost small-btn" type="button" data-goto="settings">${
-      esc(say("exampleOnly.connectButton"))}</button></p>`;
+    // intervals.icu first, then the file: the ways-in order (pattern J, 10 Oct 2026).
+    const exampleDoors = `<p class="doors"><button class="btn primary small-btn" type="button"
+      data-goto="settings">${esc(say("exampleOnly.connectButton"))}</button>
+      <label class="btn ghost small-btn" for="file">${
+      esc(say("exampleOnly.importButton"))}</label></p>`;
     const note = (kind) => (onlyExample
       ? `<p class="note"><strong>${esc(say(`exampleOnly.${kind}Title`))}</strong><br>${
         esc(say(`exampleOnly.${kind}`))}</p>${exampleDoors}`
@@ -249,7 +250,7 @@ function draw(agg, trendAgg = agg) {
     // same word, and the same reason, the records table uses.
     box.innerHTML = `<div class="trend-head"><h4>${esc(chartTitle(chart))}</h4>` +
       (chart.unit ? `<span class="trend-unit">${esc(chartUnit(chart))}</span>` : "") +
-      (chart.uncertified ? UNCERTIFIED : "") +
+      (chart.uncertified ? ESTIMATED : "") +
       `</div><div class="figure"></div>`;
     charts.appendChild(box);
     drawChart(box.querySelector(".figure"), chart, trendAgg.trends.sessions);
@@ -284,15 +285,17 @@ function renderTotals(host, t) {
 }
 
 /** The mark on a record no recording could certify (engine 0.9.0, `library.py._stamp`).
+ *  **"estimated"**, the phone's word (`RecordsView`'s badge, `SpeedRecordPolicy`): one
+ *  word for one fact on every surface (Jan, 10 October 2026). The field stays `certified`.
  *
  *  It sits beside the *value*, not beside the session, because the value is the claim: a
  *  class-(c) session had its speed differentiated from positions rather than measured by
  *  the receiver, and a differentiated speed is noisier and can read high. The record is
  *  still shown — it is still the rider's afternoon — and it is shown marked, because an
  *  all-time best is exactly where an unverifiable number does the most damage. */
-const UNCERTIFIED = ' <span class="badge" title="This session had no speed channel, a '
-  + 'GPX or another degraded source. Its speed was differentiated from positions, which is '
-  + 'noisier and can read high, so this record cannot be certified.">uncertified</span>';
+const ESTIMATED = ' <span class="badge" title="This session had no speed channel. Its '
+  + 'speed was worked out from positions, which reads high, so this record is marked '
+  + 'estimated.">estimated</span>';
 
 /** The phone's chart title for an engine chart key (`TrendsView`, the rate codes spelled
  *  out). A key the phone has no chart for keeps the engine's label. */
@@ -329,7 +332,7 @@ function renderRecords(table, records) {
         <td class="l stack-lead" data-th="record">${esc(r.label)}</td>
         <td data-th="value"><strong>${nf(speedValue(r.value) ?? r.value, 2)}</strong>
           <span class="dim">${esc(r.unit === "kn" ? speedUnit() : r.unit)}</span>${
-          r.certified === false ? UNCERTIFIED : ""}</td>
+          r.certified === false ? ESTIMATED : ""}</td>
         <td class="l" data-th="session">${esc(sessionLabel(r, r.fileName, r.id))}</td>
         <td class="l dim" data-th="date">${esc(localDate(r) || "—")}</td>
         <td class="l stack-actions" data-th="">${windowDoor(r)}</td>
@@ -670,7 +673,7 @@ function drawChart(host, chart, sessions) {
       const html = `<b>${esc(sessionLabel(s, s.id))}</b><br>${esc(localDate(s))}<br>` +
                    `${esc(chart.label)} · ${esc(line.label)}: ` +
                    `<b>${nf(p.v, 2)}</b> ${esc(chartUnit(chart))}` +
-                   (open ? "<br>uncertified, speed from positions" : "");
+                   (open ? "<br>estimated, speed from positions" : "");
       dot.addEventListener("pointerenter", (ev) => showTip(ev, html));
       dot.addEventListener("pointermove", (ev) => showTip(ev, html));
       dot.addEventListener("pointerleave", hideTip);

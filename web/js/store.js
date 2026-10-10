@@ -190,7 +190,8 @@ const newestFirst = (a, b) =>
  * "mine, not example" everywhere.
  */
 export async function putSession({ digest, analysisJson, fitBytes, replaceId = null,
-                                   rider = null, example = false }) {
+                                   rider = null, example = false, exampleStamp = null,
+                                   savedUtc = null }) {
   const be = await backend();
   const id = digest.id;
   const entries = await listEntries();
@@ -215,6 +216,12 @@ export async function putSession({ digest, analysisJson, fitBytes, replaceId = n
     rider: (typeof rider === "string" && rider.trim()) ? rider.trim() : null,
     example: example === true,
   };
+  // The bundled example remembers which shipped analysis it is (`inputs` of
+  // example/ExampleSession.analysis.json), so a later deploy can tell that the copy in
+  // this browser is an older one and swap it (js/app.js, `refreshStoredExample`).
+  if (entry.example && exampleStamp) entry.exampleStamp = exampleStamp;
+  // A swap keeps the day it was first saved: it is the same entry, brought up to date.
+  if (savedUtc) entry.savedUtc = savedUtc;
   const kept = entries.filter((e) => e.id !== id && e.id !== replaceId);
   kept.push(entry);
   kept.sort(newestFirst);

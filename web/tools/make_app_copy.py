@@ -224,7 +224,10 @@ def render() -> str:
                for entry in whats_new["entries"]
                if entry.get("channel") in WEB_CHANNELS]
 
+    # `iphoneTag` is the label the Help page puts on what only the iPhone app can do
+    # (rider review X10); the marks ride on the topics and items themselves.
     help_out = {"stub": bool(help_doc.get("stub")),
+                "iphoneTag": help_doc.get("iphoneTag", ""),
                 "sections": [{key: section[key] for key in section if key != "_readme"}
                              for section in help_doc["sections"]]}
 

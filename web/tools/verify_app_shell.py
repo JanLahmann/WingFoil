@@ -280,8 +280,10 @@ def ios_beta() -> dict:
                      CHANNEL_LINK.read_text(encoding="utf-8"))
     # `whatsNewBeta` is not the web's to print: it is carried for the TestFlight notes
     # (ios/tools/testflight_publish.py), which end on the same ask the app's What's new does.
+    # `backupFirst`, `goingBack…` and `backupHelpLabel` are the phone's "back up first"
+    # (rider review I6, Jan 9 Oct 2026), said on the web's Beta page in the same words.
     keys = ("joinTitle", "community", "inItNowTitle", "howToJoinTitle", "joinButton",
-            "whatsNewBeta")
+            "whatsNewBeta", "backupFirst", "goingBackTitle", "goingBack", "backupHelpLabel")
     # `howToJoin` is the phone's ("in place of this app"); the browser says its own line,
     # `webJoin`, because the beta it joins is the iPhone app's.
     return {key: constants.get(key, "") for key in keys} | {

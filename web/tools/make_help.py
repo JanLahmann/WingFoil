@@ -34,6 +34,13 @@ it absorbed; each is an empty anchor at the top of the article, so ``#help-foilP
 opens the fold and lands on Flights and foil time. An item's ``link`` is the topic it is
 the signpost for, drawn as a link on its term when that topic is printed.
 
+**SURFACE-AWARE, since 10 October 2026** (rider review X10). The phone's help names
+paths a browser does not have (*Settings → Library backup*, *Import → Apple Health*, a
+swipe). The kit marks them (``HelpCatalog.surfaces``, exported as ``iphoneOnly``,
+``iphoneOnlyBody`` and ``browser``), and this page puts the export's ``iphoneTag`` label on
+each marked topic, paragraph and item, and prints the topic's ``browser`` lines after its
+body.
+
 **CHANNEL-AWARE, the same way the release notes are.** Every topic and every item carries
 the channels that may read it. A row the release has is printed plainly; a row only the
 beta has is printed with the ``beta`` pill and the one legend sentence this site uses for
@@ -100,6 +107,19 @@ def public(row: dict) -> bool:
 def pill(row: dict) -> str:
     """The `beta` pill, on anything the App Store release does not have."""
     return "" if "release" in row["channels"] else '<span class="tag beta">beta</span>'
+
+
+#: The label on what only the iPhone app can do (rider review X10, Jan 10 October 2026),
+#: read from the export (`HelpSurfaces.iPhoneTag`) by `main`, so it is the kit's word.
+IPHONE_TAG = "On the iPhone app"
+
+
+def phone_tag(marked: bool) -> str:
+    """The small `On the iPhone app` label, on a topic, paragraph or item the kit marks
+    (`HelpCatalog.surfaces`). ``data-copy="surface"`` is a label, not a sentence, so
+    docs/copy/check_voice.py strips it the way it strips the "Read next" row."""
+    return (f'<span class="tag phone" data-copy="surface">{html_text(IPHONE_TAG)}</span> '
+            if marked else "")
 
 
 # --------------------------------------------------------------------------- the glossary
@@ -170,7 +190,10 @@ def render_glossary(entries: list[dict]) -> list[str]:
     ]
     for entry in entries:
         places = where_it_shows(entry)
-        aside = (f' <span class="muted small" data-copy="aside">{places}</span>'
+        # On a line of its own (10 October 2026): the places are an index of screens,
+        # not part of the definition, and a `<br>` is where the paragraph rule cuts, so a
+        # three-sentence line (Touchdown's) keeps its places without going over 40 words.
+        aside = (f'<br><span class="muted small" data-copy="aside">{places}</span>'
                  if places else "")
         lines += [
             '      <div class="term">',
@@ -193,12 +216,18 @@ def render_topic(topic: dict, printed: set[str], titles: dict[str, str],
         lines.append(f'{pad}  <span class="help-alias" id="help-{alias}"></span>')
     lines += [
         f'{pad}  <div class="piece-head">',
-        f'{pad}    <h3>{html_text(topic["title"])}{pill(topic)}</h3>',
+        f'{pad}    <h3>{html_text(topic["title"])}{pill(topic)}'
+        f'{" " + phone_tag(True).rstrip() if topic.get("iphoneOnly") else ""}</h3>',
         f"{pad}  </div>",
         f'{pad}  <p class="what">{html_text(topic["summary"])}</p>',
     ]
-    for paragraph in topic["body"]:
-        lines.append(f"{pad}  <p>{html_text(paragraph)}</p>")
+    # A paragraph only the iPhone app can follow wears the label (X10); the browser's own
+    # way, where it has one, follows the body.
+    phone_body = set(topic.get("iphoneOnlyBody", []))
+    for index, paragraph in enumerate(topic["body"]):
+        lines.append(f"{pad}  <p>{phone_tag(index in phone_body)}{html_text(paragraph)}</p>")
+    for line in topic.get("browser", []):
+        lines.append(f'{pad}  <p class="browser-line">{html_text(line)}</p>')
 
     items = [item for item in topic["items"] if public(item)]
     if items:
@@ -210,7 +239,8 @@ def render_topic(topic: dict, printed: set[str], titles: dict[str, str],
             lines += [
                 f'{pad}    <div class="term">',
                 f"{pad}      <dt>{term}{pill(item)}</dt>",
-                f"{pad}      <dd>{html_text(item['detail'])}</dd>",
+                f"{pad}      <dd>{phone_tag(item.get('iphoneOnly', False))}"
+                f"{html_text(item['detail'])}</dd>",
                 f"{pad}    </div>",
             ]
         lines.append(f"{pad}  </dl>")
@@ -392,7 +422,10 @@ def main(argv=None) -> int:
               file=sys.stderr)
         return 1
 
-    sections = json.loads(HELP.read_text(encoding="utf-8"))["sections"]
+    document = json.loads(HELP.read_text(encoding="utf-8"))
+    sections = document["sections"]
+    global IPHONE_TAG
+    IPHONE_TAG = document.get("iphoneTag", IPHONE_TAG)
     glossary = json.loads(GLOSSARY.read_text(encoding="utf-8"))["entries"]
 
     page = splice(PAGE.read_text(encoding="utf-8"), render_html(sections, glossary))

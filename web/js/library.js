@@ -57,7 +57,8 @@ export function mountLibrary(options) {
  * a friend's afternoon must not become the reader's personal best. Dismissing the prompt
  * saves nothing; see js/rider.js.
  */
-export async function saveSession({ digest, analysisJson, fitBytes, example = false }) {
+export async function saveSession({ digest, analysisJson, fitBytes, example = false,
+                                    exampleStamp = null }) {
   const index = await listEntries();
   const hit = await ask("dedupe", {
     digestJson: JSON.stringify(digest),
@@ -104,7 +105,8 @@ export async function saveSession({ digest, analysisJson, fitBytes, example = fa
     rider = answer.rider;
   }
 
-  const entry = await putSession({ digest, analysisJson, fitBytes, replaceId, rider, example });
+  const entry = await putSession({ digest, analysisJson, fitBytes, replaceId, rider, example,
+                                  exampleStamp: example ? exampleStamp : null });
   if (replaceId) await moveGear(replaceId, entry.id);
   invalidateTrends();
   await refresh();

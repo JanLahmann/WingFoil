@@ -8,7 +8,9 @@ later edit could break without any other check noticing:
    with the lab's `ENGINE_VERSION` and the hash of the sources it was built from, it
    describes the FIT that ships beside it, the service worker precaches both, and the page
    asks for it under the name the generator used (X4). The byte-for-byte regeneration
-   needs the engine and is `verify_web_entry.py`'s; this is the stamp.
+   needs the engine and is `verify_web_entry.py`'s; this is the stamp. An example a
+   visitor saved before a deploy is swapped for the shipped one on load, by that stamp,
+   and no other session is touched (Jan, 10 October 2026).
 2. **The runtime survives a deploy.** sw.js names its runtime cache after the Pyodide and
    fitdecode pins, never after `VERSION`, and its two pins are the worker's (X5).
 3. **The library asks to be kept.** js/store.js calls `navigator.storage.persist()` (X3).
@@ -80,6 +82,25 @@ def main() -> int:
     check(const(app, "EXAMPLE_NAME") == make_example.NAME,
           f"js/app.js EXAMPLE_NAME is not make_example.NAME ({make_example.NAME})")
     check("ExampleSession.analysis.json" in app, "js/app.js does not read the example analysis")
+    # 1b. an example stored before a deploy is swapped for the shipped one (Jan, 10 October
+    # 2026), and nothing else in the library is. The stamp it is compared by is the
+    # shipped file's `inputs`, which the stamp check above already holds to the engine.
+    swap = re.search(r"async function refreshStoredExample\(\) \{(.*?)\n\}", app, re.S)
+    check(swap is not None, "js/app.js lost refreshStoredExample (the stored example's swap)")
+    if swap:
+        body = swap.group(1)
+        check("e.example === true" in body,
+              "refreshStoredExample does not keep to entries marked example")
+        check("entry.exampleStamp === shipped.inputs" in body,
+              "refreshStoredExample does not compare the stored stamp with the shipped inputs")
+        check("example: true" in body and "replaceId: entry.id" in body,
+              "refreshStoredExample does not replace the example entry in place")
+    check(re.search(r"^refreshStoredExample\(\)", app, re.M) is not None,
+          "js/app.js never runs refreshStoredExample at load")
+    check("entry.exampleStamp = exampleStamp" in store and "entry.example && exampleStamp" in store,
+          "js/store.js does not stamp the stored example")
+    check("stamp: pre.inputs" in app,
+          "js/app.js does not carry the shipped stamp from exampleAnalysis")
 
     # 2. the runtime cache
     sw_pyodide, sw_fit = const(sw, "PYODIDE_VERSION"), const(sw, "FITDECODE_VERSION")
@@ -110,7 +131,8 @@ def main() -> int:
         for f in failures:
             print(f"FAIL  {f}", file=sys.stderr)
         return 1
-    print(f"first run: example pre-analysed (engine {make_example.engine_version()}), "
+    print(f"first run: example pre-analysed (engine {make_example.engine_version()}) "
+          "and a stale stored copy swapped, "
           f"runtime cache keyed to pyodide {sw_pyodide} + fitdecode {sw_fit}, "
           "persist asked, Safari line present")
     return 0

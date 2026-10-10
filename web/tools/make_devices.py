@@ -5,10 +5,13 @@
     python3 web/tools/make_devices.py --check    # exit 1 if the JSON or a page is stale
 
 Source: ``garmin/manifest.xml`` and its ``-beta`` / ``-dev`` twins. All three ship the same
-binary to the same watches under three app ids (docs/channels.md, "The watch — the same
-three streams"), so the three product sets are asserted **identical** here: a product added
-to one jungle and not the others is a watch that can install the beta and not the release,
-which is the kind of thing nobody notices until a rider writes in.
+binary under three app ids (docs/channels.md, "The watch — the same three streams"). The
+beta and dev sets are asserted **identical**, and the release set a **subset** of them: a
+watch nobody has ridden yet goes to the beta and dev manifests first and reaches the release
+once a real wrist has proved it (0.9.23, rider review S8: the fenix 6 Pro family and the
+Forerunner 245 Music / 945 / 945 LTE). Anything else is a jungle edited by halves. The JSON
+lists the beta set, which is what the public listing installs, with ``betaOnly`` naming the
+watches the release does not have yet.
 
 Output: ``docs/copy/garmin-devices.json`` — the version, the count, the minimum Connect IQ
 level, the product ids in sorted order, and the ids grouped into the families
@@ -74,6 +77,7 @@ IQ = "{http://www.garmin.com/xml/connectiq}"
 FAMILIES = [
     ("fenix 8", ("fenix8",)),
     ("fenix 7", ("fenix7",)),
+    ("fenix 6 Pro", ("fenix6",)),
     ("fenix 5 Plus", ("fenix5plus", "fenix5splus", "fenix5xplus")),
     ("epix 2", ("epix2",)),
     ("Forerunner", ("fr",)),
@@ -105,6 +109,9 @@ MODELS = {
     "fenix7xpro": "fenix 7X Pro",
     "fenix7pronowifi": "fenix 7 Pro Solar without Wi-Fi",
     "fenix7xpronowifi": "fenix 7X Pro Solar without Wi-Fi",
+    "fenix6pro": "fenix 6 Pro, 6 Sapphire, 6 Pro Solar and 6 Pro Dual Power",
+    "fenix6spro": "fenix 6S Pro, 6S Sapphire, 6S Pro Solar and 6S Pro Dual Power",
+    "fenix6xpro": "fenix 6X Pro, 6X Sapphire and 6X Pro Solar",
     "fenix5plus": "fenix 5 Plus",
     "fenix5splus": "fenix 5S Plus",
     "fenix5xplus": "fenix 5X Plus",
@@ -112,6 +119,9 @@ MODELS = {
     "epix2pro42mm": "epix Pro Gen 2 42 mm",
     "epix2pro47mm": "epix Pro Gen 2 47 mm",
     "epix2pro51mm": "epix Pro Gen 2 51 mm",
+    "fr245m": "Forerunner 245 Music",
+    "fr945": "Forerunner 945",
+    "fr945lte": "Forerunner 945 LTE",
     "fr255": "Forerunner 255",
     "fr265": "Forerunner 265",
     "fr57042mm": "Forerunner 570 42 mm",
@@ -148,6 +158,9 @@ ALSO = {
     "fenix7x": [("tactix / quatix", "tactix 7"), ("tactix / quatix", "quatix 7X Solar"),
                 ("Enduro", "Enduro 2")],
     "epix2": [("tactix / quatix", "quatix 7 Sapphire")],
+    "fenix6pro": [("tactix / quatix", "quatix 6")],
+    "fenix6xpro": [("tactix / quatix", "tactix Delta Sapphire, Solar and Solar Ballistics"),
+                   ("tactix / quatix", "quatix 6X, 6X Solar and 6X Dual Power")],
     "epix2pro47mm": [("tactix / quatix", "quatix 7 Pro")],
     "epix2pro51mm": [("tactix / quatix", "tactix 7 AMOLED"), ("D2", "D2 Mach 1 Pro")],
 }
@@ -215,8 +228,14 @@ def read_store():
 
 
 def build():
-    version, min_api, ids = read_manifest(MANIFESTS[0])
+    version, min_api, release_ids = read_manifest(MANIFESTS[0])
+    _, _, ids = read_manifest(MANIFESTS[1])
     base = set(ids)
+    not_in_beta = sorted(set(release_ids) - base)
+    if not_in_beta:
+        raise SystemExit("%s lists watches %s does not: %s" % (
+            MANIFESTS[0].relative_to(REPO), MANIFESTS[1].relative_to(REPO),
+            ", ".join(not_in_beta)))
     for path in MANIFESTS[1:]:
         v, m, other_ids = read_manifest(path)
         if set(other_ids) != base:
@@ -224,7 +243,7 @@ def build():
             extra = sorted(set(other_ids) - base)
             raise SystemExit(
                 "%s lists a different product set than %s%s%s" % (
-                    path.relative_to(REPO), MANIFESTS[0].relative_to(REPO),
+                    path.relative_to(REPO), MANIFESTS[1].relative_to(REPO),
                     ("\n  missing: " + ", ".join(missing)) if missing else "",
                     ("\n  extra:   " + ", ".join(extra)) if extra else ""))
         if (v, m) != (version, min_api):
@@ -250,6 +269,7 @@ def build():
         "minApiLevel": min_api,
         "store": {"version": store[0], "count": store[1]},
         "products": sorted(ids),
+        "betaOnly": sorted(base - set(release_ids)),
         "families": families,
         "models": models(ids),
     }

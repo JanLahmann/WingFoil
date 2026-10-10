@@ -115,8 +115,15 @@ export const SHELL = {
     "community": "CleanJibe is built with its riders. New features land in the beta first, and move to the App Store once testers have proven them.",
     "inItNowTitle": "In the beta right now",
     "howToJoinTitle": "How to join",
+    "backupFirst": "Back up first, in Settings → Library backup. Save the file in Files or iCloud Drive.",
     "joinButton": "Open TestFlight",
     "joinURL": "https://testflight.apple.com/join/nygqGGcn",
+    "goingBackTitle": "Going back to the App Store version",
+    "goingBack": [
+      "Back up in the beta first, then install CleanJibe from the App Store.",
+      "If the beta has updated your library, the App Store version cannot open it yet. Open the beta again, or restore a backup made before you joined."
+    ],
+    "backupHelpLabel": "How to back up",
     "whatsNewBeta": "Tried it? Tell us in Menu → Support & ideas. Every mail shapes the next build.",
     "webJoin": "The beta is the iPhone app's. Open the link on your iPhone, and TestFlight installs it.",
     "features": [
@@ -967,9 +974,9 @@ export const WHATS_NEW = [
       "**Imports take GPX and TCX** as well as FIT.",
       "A Polar, Suunto or COROS session comes in through intervals.icu.",
       "It also comes straight from the vendor's app through the share sheet.",
-      "Without a speed channel the speed records are estimated and marked uncertified.",
+      "Without a speed channel the speed records are estimated, and marked so.",
       "**Import from Strava:** connect your account under Import and pick the sessions.",
-      "Positions only, so speed records are uncertified.",
+      "Positions only, so speed records are estimated.",
       "One connected rider at the time this build shipped.",
       "*[Since 14 September: Strava lets a new app connect a limited number of riders.]*",
       "Analysis engine 0.18.0: the pump rung now asks the minimum foil speed.",
@@ -997,6 +1004,7 @@ export const WHATS_NEW = [
  *  export is still to come, and the page says so. */
 export const HELP = {
   "stub": false,
+  "iphoneTag": "On the iPhone app",
   "sections": [
     {
       "id": "start",
@@ -1017,6 +1025,9 @@ export const HELP = {
             "dev"
           ],
           "id": "gettingStarted",
+          "iphoneOnlyBody": [
+            3
+          ],
           "items": [
             {
               "channels": [
@@ -1034,6 +1045,7 @@ export const HELP = {
                 "dev"
               ],
               "detail": "Install it with the CleanJibe beta and record on your wrist. The watch only records, and the iPhone does the analysis.",
+              "iphoneOnly": true,
               "link": "appleWatchApp",
               "term": "The CleanJibe Apple Watch app"
             },
@@ -1043,6 +1055,7 @@ export const HELP = {
                 "dev"
               ],
               "detail": "No extra app on the watch: record a Surfing workout and import it from Apple Health.",
+              "iphoneOnly": true,
               "link": "appleWorkoutApp",
               "term": "Apple's own Workout app"
             },
@@ -1063,6 +1076,7 @@ export const HELP = {
                 "dev"
               ],
               "detail": "Settings → Strava → Connect with Strava, then Import → Import from Strava…. Strava keeps your track but not your watch's speed, so records are estimated.",
+              "iphoneOnly": true,
               "link": "stravaImport",
               "term": "Strava"
             },
@@ -1194,6 +1208,9 @@ export const HELP = {
             "dev"
           ],
           "id": "exampleSession",
+          "iphoneOnlyBody": [
+            2
+          ],
           "items": [],
           "related": [
             "icuSetup"
@@ -1211,13 +1228,14 @@ export const HELP = {
           "aliases": [],
           "body": [
             "The watch app records the GPS track, your heart rate and the wrist accelerometer at 50 Hz. Start it on the watch, ride, and end the workout. The session moves to the phone while both are in range.",
-            "Because the wrist is recorded, pump strokes and failed takeoff attempts are analysed on the phone. The speed is the watch's own, so the records certify."
+            "Because the wrist is recorded, pump strokes and failed takeoff attempts are analysed on the phone. The speed is the watch's own, so the records are measured."
           ],
           "channels": [
             "beta",
             "dev"
           ],
           "id": "appleWatchApp",
+          "iphoneOnly": true,
           "items": [
             {
               "channels": [
@@ -1258,6 +1276,7 @@ export const HELP = {
             "dev"
           ],
           "id": "appleWorkoutApp",
+          "iphoneOnly": true,
           "items": [
             {
               "channels": [
@@ -1317,6 +1336,7 @@ export const HELP = {
                 "dev"
               ],
               "detail": "Record in the Strava app and connect Strava here. Strava's phone app cannot export a file, so the import reads the activity out of your account instead.",
+              "iphoneOnly": true,
               "term": "Strava, the way in that needs no file"
             },
             {
@@ -1334,7 +1354,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Pick FIT. CleanJibe reads a .fit in every build, and a file with the watch's own speed certifies its records. A .gpx or a .tcx opens in the CleanJibe beta.",
+              "detail": "Pick FIT. CleanJibe reads a .fit in every build, and a file with the watch's own speed gives measured records. A .gpx or a .tcx opens in the CleanJibe beta.",
               "term": "Which format, if you are offered a choice"
             }
           ],
@@ -1418,8 +1438,17 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Under Connect IQ on the activity page: jibes, tacks, foil time, flights and the best 2 seconds. The watch works the wind direction out after a few minutes of flying.",
+              "detail": "Under Connect IQ on the activity page: foil time, flights, the best 2 seconds, jibes and tacks.",
               "term": "Where Garmin Connect shows the jibes"
+            },
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail": "They appear after a few minutes of flying, once the watch has worked out the wind. Set it by hand to have them from the start.",
+              "term": "When the jibes and tacks show up"
             },
             {
               "channels": [
@@ -1445,7 +1474,7 @@ export const HELP = {
             "CleanJibe lists your Strava sessions and imports the ones you pick. It only reads. It never writes, renames or posts to your account.",
             "A Strava session still shows foil time, flights, every turn verdict, the wind axis and the map.",
             "Strava keeps your track but not your watch's own speed, so the speed records are marked estimated. Without the watch's own speed, a fall can read as a touchdown. Your wrist was not recorded, so there are no pump strokes.",
-            "If the same afternoon is also on intervals.icu, import it from there instead. That is the original file off your watch, so those records certify. Importing both is harmless, because the same session is never added twice."
+            "If the same afternoon is also on intervals.icu, import it from there instead. That is the original file off your watch, so those records are measured. Importing both is harmless, because the same session is never added twice."
           ],
           "channels": [
             "release",
@@ -1453,6 +1482,7 @@ export const HELP = {
             "dev"
           ],
           "id": "stravaImport",
+          "iphoneOnly": true,
           "items": [
             {
               "channels": [
@@ -1540,7 +1570,7 @@ export const HELP = {
           "body": [
             "Every watch app can export a recording as a file, and CleanJibe reads .fit files. Export the session as a FIT and pick CleanJibe from the share sheet.",
             "If it is not in the row, Save to Files and open it from there.",
-            "If you are asked for a format, pick FIT. A FIT carries the watch's own speed, so its records certify.",
+            "If you are asked for a format, pick FIT. A FIT carries the watch's own speed, so its records are measured.",
             "A .gpx or a .tcx carries positions only, so its records are marked estimated. Those two formats open in the CleanJibe beta.",
             "Garmin Connect's phone app has no export at all. Garmin owners have two better ways in: intervals.icu, or connect.garmin.com on a computer."
           ],
@@ -1594,6 +1624,7 @@ export const HELP = {
                 "dev"
               ],
               "detail": "If an app can produce a FIT, CleanJibe reads it. Take it from AirDrop, Mail or Files. A ZIP of recordings works too: Import → FIT or ZIP….",
+              "iphoneOnly": true,
               "term": "Anything else"
             }
           ],
@@ -1678,6 +1709,7 @@ export const HELP = {
             "dev"
           ],
           "id": "notifications",
+          "iphoneOnly": true,
           "items": [
             {
               "channels": [
@@ -1864,8 +1896,17 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "The foil went in and you kept going. Dry, and not clean. Also on the watch.",
+              "detail": "Your board touched the water and you got going again without falling in. Also on the watch.",
               "term": "Touchdown"
+            },
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail": "A stop under 5 s counts as a touchdown. Longer, and it counts as a fall.",
+              "term": "Touchdown or fall"
             },
             {
               "channels": [
@@ -2251,6 +2292,7 @@ export const HELP = {
                 "dev"
               ],
               "detail": "Sessions already in your library change only when you re-run the analysis, from Settings → Storage.",
+              "iphoneOnly": true,
               "term": "Changing it later"
             }
           ],
@@ -2298,7 +2340,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "You lost the foil but not the session: you stopped for 3 s or less, or pumped it back up. Borderline between 3 s and 5 s.",
+              "detail": "Your board touched the water and you got going again without falling in. A stop under 5 s counts as a touchdown. Longer, and it counts as a fall.",
               "term": "Touchdown"
             },
             {
@@ -2766,6 +2808,7 @@ export const HELP = {
             "dev"
           ],
           "id": "replayClip",
+          "iphoneOnly": true,
           "items": [],
           "related": [
             "shareCard",
@@ -2809,12 +2852,19 @@ export const HELP = {
             "The file holds every recording you imported, and what nothing else can bring back. That is each session's name and caption, whose it was, its gear. Your spot names and the sessions you deleted on purpose are there too.",
             "Restoring never overwrites. Sessions already in your library keep their own analysis. Details you changed since are left alone. Restoring the same file twice does nothing the second time. Sessions you deleted after the backup stay deleted."
           ],
+          "browser": [
+            "In the browser app, Settings → Your data is the backup. Download all saves one zip, and Restore from a backup reads it back."
+          ],
           "channels": [
             "release",
             "beta",
             "dev"
           ],
           "id": "libraryBackup",
+          "iphoneOnlyBody": [
+            0,
+            1
+          ],
           "items": [
             {
               "channels": [
@@ -2823,6 +2873,7 @@ export const HELP = {
                 "dev"
               ],
               "detail": "Back up library makes the file, and Save… puts it in Files, iCloud Drive or on a Mac. CleanJibe keeps no copy.",
+              "iphoneOnly": true,
               "term": "Save the file yourself"
             },
             {
@@ -2899,12 +2950,21 @@ export const HELP = {
             "The app talks to four places, each only when you use it. Your own login goes to intervals.icu and Strava. Apple Maps loads while a map is on screen. To name a new spot, it sends one rounded position.",
             "On the App Store release, CleanJibe never asks for your location. Every coordinate it draws was already inside a file you imported. The beta and dev builds ask for one, in one place each. The privacy page says where."
           ],
+          "browser": [
+            "In the browser app, a session is analysed in your browser and stays in its storage. Nothing is uploaded.",
+            "Your intervals.icu key stays in this browser too. It goes to intervals.icu itself and nowhere else."
+          ],
           "channels": [
             "release",
             "beta",
             "dev"
           ],
           "id": "privacy",
+          "iphoneOnlyBody": [
+            0,
+            1,
+            2
+          ],
           "items": [
             {
               "channels": [
@@ -2913,6 +2973,7 @@ export const HELP = {
                 "dev"
               ],
               "detail": "Kept in this iPhone's Keychain, never copied to iCloud and never written to a log. It goes to intervals.icu itself, encrypted, and nowhere else.",
+              "iphoneOnly": true,
               "term": "Your intervals.icu key"
             },
             {
@@ -2954,6 +3015,9 @@ export const HELP = {
             "dev"
           ],
           "id": "engineVersion",
+          "iphoneOnlyBody": [
+            2
+          ],
           "items": [],
           "related": [
             "divergence"
@@ -3013,6 +3077,7 @@ export const HELP = {
                 "dev"
               ],
               "detail": "The sync looks two years back and skips what the library already holds. For more, use Import → FIT or ZIP… with the Garmin export ZIP.",
+              "iphoneOnly": true,
               "term": "Older sessions are missing"
             }
           ],
@@ -3081,6 +3146,9 @@ export const HELP = {
             "dev"
           ],
           "id": "sendingFeedback",
+          "iphoneOnlyBody": [
+            3
+          ],
           "items": [
             {
               "channels": [
@@ -3089,6 +3157,7 @@ export const HELP = {
                 "dev"
               ],
               "detail": "Under a line of dashes: app and engine version, tuned thresholds, your phone, iOS and locale. The paired watch is there, with how many sessions came in each way.",
+              "iphoneOnly": true,
               "term": "What is already in the mail"
             },
             {
@@ -3107,6 +3176,7 @@ export const HELP = {
                 "dev"
               ],
               "detail": "Every line is there to read and to edit. If this phone has no mail account, the app hands the same text to whatever you do use.",
+              "iphoneOnly": true,
               "term": "Read it before you send"
             },
             {
@@ -3116,6 +3186,7 @@ export const HELP = {
                 "dev"
               ],
               "detail": "A screenshot taken inside the app offers Send Beta Feedback. That attaches the screenshot and the device logs. Take it for a crash.",
+              "iphoneOnly": true,
               "term": "If you are on the beta"
             },
             {
@@ -3332,9 +3403,9 @@ export const WORDS = {
   "exampleOnly": {
     "connectButton": "Connect intervals.icu",
     "importButton": "Import a file",
-    "records": "The example session is on loan, not ridden, so it is kept out of your personal records on purpose. Import a .fit file, or connect intervals.icu in Settings, and your own bests appear here.",
+    "records": "The example session is on loan, not ridden, so it is kept out of your personal records on purpose. Connect intervals.icu in Settings, or import a .fit file, and your own bests appear here.",
     "recordsTitle": "Your records start with your first session",
-    "trends": "The example session is on loan, not ridden, so it is kept out of your trends on purpose. Import a .fit file, or connect intervals.icu in Settings, and the charts fill as you ride.",
+    "trends": "The example session is on loan, not ridden, so it is kept out of your trends on purpose. Connect intervals.icu in Settings, or import a .fit file, and the charts fill as you ride.",
     "trendsTitle": "Your trends start with your first session"
   },
   "flightEndPage": {

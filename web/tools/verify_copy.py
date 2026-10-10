@@ -23,8 +23,8 @@ WHAT IS PINNED, and where it bites
                      composed from the same two parts
     `strava`         present on /help/, /start/ and /privacy/ …
     `stravaForbidden`… and none of those five phrases anywhere under web/**.html
-    `watchWind`      on /help/ and /start/: where the watch app's tacks and jibes get their
-                     wind (Copy.watchWind, rider review S15)
+    `watchWind`      on /start/: where the watch app's tacks and jibes get their wind
+                     (Copy.watchWind, rider review S15)
     `ciqListingTitle` every <span data-copy="ciq-title">
     `appStoreName` / `appStoreSubtitle`
                      NOT PINNED: the site never names the App Store app. Nothing on any
@@ -380,17 +380,19 @@ def pin_strava(site: Site, phrases: dict, report: Report):
                     nearest(site.text["start/index.html"], fall))
     else:
         report.ok("phrases.stravaFall → web/start/index.html")
-    # where the watch app's tacks and jibes get their wind (rider review S15): the help's
-    # Garmin Connect item, rendered from the kit, and /start/'s watch-app card, typed
+    # where the watch app's tacks and jibes get their wind (rider review S15): /start/'s
+    # watch-app card, typed. The help's Garmin Connect items say it at more length since
+    # 10 October 2026 (when they appear, and that a wind set by hand has them from the
+    # start), in the kit's own words, so the pin is /start/'s alone.
     wind = phrases["watchWind"]
-    missing = [page for page in ("help/index.html", "start/index.html")
+    missing = [page for page in ("start/index.html",)
                if wind not in site.text[page]]
     for page in missing:
         report.fail("web/" + page, "phrases.watchWind",
                     "the watch's wind sentence is not on this page",
                     nearest(site.text[page], wind))
     if not missing:
-        report.ok("phrases.watchWind → web/help/index.html, web/start/index.html")
+        report.ok("phrases.watchWind → web/start/index.html")
 
     hits = 0
     for page in PAGES:
