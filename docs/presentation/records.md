@@ -31,7 +31,7 @@ points lower and the block is the contract the card mirrors (6 Sep 2026).
 ## All-time records — two tables, one page
 
 The **speed table** is the nine GP3S kinds above, and it is the only one that can carry the
-`uncertified` mark (§ "Uncertified speed"). Under it sits the **session records** table: the
+`estimated` mark (§ "Estimated speed" in session-time-video.md). Under it sits the **session records** table: the
 best *afternoons* rather than the best windows, in this order on both platforms —
 
 `Longest flight` (captioned `max N m in one flight` — `summary.maxFlightM`, the **furthest
@@ -79,15 +79,18 @@ the example** (`SessionStore.hasOnlyExampleSessions`, the clause restated on the
 list), and **a filter that really is set**, which keeps the sentence it was written for. The
 middle branch says the fact in the rider's words and ends on the step that changes it: *the
 example session is on loan, not ridden, so it is kept out of your personal records on
-purpose. Import a .fit file, or connect intervals.icu in Settings, and your own bests appear
+purpose. Connect intervals.icu in Settings, or import a .fit file, and your own bests appear
 here.* Its title is a promise rather than a fault — *Your records start with your first
 session* — because nothing is broken and nothing is missing; the records have not been earned
 yet. Trends says the same in its own terms, and neither title mentions a range.
 
 **And the two steps it names are buttons** (Jan, 9 Oct 2026; rider review I1). Under the
-line sit *Import a file* (the Import sheet) and *Connect intervals.icu* (Settings), on
-Records and on Trends, in `ExampleOnlyNote`'s words (`importButton`, `connectButton`) and
+line sit *Connect intervals.icu* (Settings) and *Import a file* (the Import sheet), on
+Records and on Trends, in `ExampleOnlyNote`'s words (`connectButton`, `importButton`) and
 through `ExampleOnlyDoors`, which draws a button only where the tab's host hands its action
-down. The browser draws the same two from the same export: a `<label for="file">` onto the
-ways-in card's picker, and *Connect intervals.icu* into Settings, where the key is kept.
+down. **intervals.icu comes first, in the sentence and in the buttons** (Jan, 10 Oct 2026,
+pattern J): the Garmin door leads the ways in everywhere, so it leads here, and it is the
+prominent button. The browser draws the same two from the same export: *Connect
+intervals.icu* into Settings, where the key is kept, and a `<label for="file">` onto the
+ways-in card's picker.
 

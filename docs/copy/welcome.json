@@ -197,7 +197,7 @@
 
           ],
           "beta" : false,
-          "detail" : "The foil went in and you kept going. Dry, and not clean.",
+          "detail" : "Your board touched the water and you got going again without falling in. A stop under 5 s counts as a touchdown. Longer, and it counts as a fall.",
           "id" : "touchdown",
           "term" : "Touchdown"
         },

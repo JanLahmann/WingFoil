@@ -25,7 +25,7 @@ Three traits, and what each one rules out:
 |---|---|
 | **about you first.** "You flew through eight of them." "Your best 2 s all season." Then, for the interested rider, how the app did it. | **mechanics with no rider in the sentence.** "It proves the route from the watch to the phone." "Opens a mail with the facts filled in." |
 | **natural rhythm.** A short sentence, then a longer one that carries a thought, the way you would say it. | **fragments and staccato.** "Settings → intervals.icu, 4 steps, once." "Free." |
-| **wingfoiler words**, including the insider ones: *flew through, touchdown, dry streak, best 2 s, alpha 500, uncertified record, upwind, foil up, pump*. | **IT words.** *route, door, class (b), pipeline, re-derive, digest, ingest, sync target, payload.* |
+| **wingfoiler words**, including the insider ones: *flew through, touchdown, dry streak, best 2 s, alpha 500, estimated record, upwind, foil up, pump*. | **IT words.** *route, door, class (b), pipeline, re-derive, digest, ingest, sync target, payload.* |
 
 **The beach test.** Read the sentence aloud to a mate at the van. If you would not say it
 that way, rewrite it. This test beats every rule below; the rules exist so that a lint can
@@ -100,7 +100,7 @@ retired for rider text. It lives on in code comments and in `docs/`, where it be
 > as a touchdown.*
 >
 > After: *Strava keeps the track but not the watch's speed measurement. Falls are harder to
-> tell from touchdowns, and the speed records count as uncertified.*
+> tell from touchdowns, and the speed records count as estimated.*
 
 **Getting started, framing (register 1)**
 > Before: *The real test is one session on the water: record it the way you always do, bring it

@@ -20,9 +20,9 @@
     "exampleOnly" : {
       "connectButton" : "Connect intervals.icu",
       "importButton" : "Import a file",
-      "records" : "The example session is on loan, not ridden, so it is kept out of your personal records on purpose. Import a .fit file, or connect intervals.icu in Settings, and your own bests appear here.",
+      "records" : "The example session is on loan, not ridden, so it is kept out of your personal records on purpose. Connect intervals.icu in Settings, or import a .fit file, and your own bests appear here.",
       "recordsTitle" : "Your records start with your first session",
-      "trends" : "The example session is on loan, not ridden, so it is kept out of your trends on purpose. Import a .fit file, or connect intervals.icu in Settings, and the charts fill as you ride.",
+      "trends" : "The example session is on loan, not ridden, so it is kept out of your trends on purpose. Connect intervals.icu in Settings, or import a .fit file, and the charts fill as you ride.",
       "trendsTitle" : "Your trends start with your first session"
     },
     "flightEndPage" : {

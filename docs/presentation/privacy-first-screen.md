@@ -108,7 +108,7 @@ sessions get in*. Each row is an icon, the action, and one line of at most twelv
 |---|---|---|---|
 | **Set up intervals.icu in Settings** | Garmin has no open API. intervals.icu is the bridge. | Settings | release |
 | **Record on your Apple Watch** `BETA` | The session comes to the phone by itself. | the help topic *Recording with the CleanJibe Apple Watch app* | beta |
-| **Set up Strava in Settings** | Strava hands over positions. Records are uncertified. | Settings | release, and only where the build carries Strava keys |
+| **Set up Strava in Settings** | Strava hands over positions. Records are estimated. | Settings | release, and only where the build carries Strava keys |
 | **Import a file** | A FIT from any watch. AirDrop and Files work. | the file picker, `ImportView.importableTypes` | release |
 
 Five rules hold that table together.

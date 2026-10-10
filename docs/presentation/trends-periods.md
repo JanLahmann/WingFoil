@@ -47,7 +47,7 @@ speed from positions, which reads high, so its point is drawn — it is still hi
 and drawn marked, the same claim in the same word the Records table makes about an all-time
 best. The two platforms say it in the idiom each already has: the analyzer draws that point
 as an **open ring** (shape, not a second hue, so it survives a colour-vision check) with the
-word in its tooltip and an `uncertified` badge on the chart head, and iOS writes one caption
+word in its tooltip and an `estimated` badge on the chart head, and iOS writes one caption
 line under the chart — *"1 of 10 had no speed channel…"* — beside the caption it already uses
 for sessions that cannot report a metric at all.
 

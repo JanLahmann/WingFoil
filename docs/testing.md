@@ -2588,6 +2588,15 @@ checks hold it: `bundle_lab.py --check` and `web/tools/verify_first_run.py` (std
 `make web-verify`) fail on a stamp from another engine version or other sources, and
 `verify_web_entry.py` regenerates it in memory and compares the bytes.
 
+**A stored example is swapped on load** (Jan, 10 October 2026). A saved session is drawn
+from its stored document and never re-analysed, so an example a visitor saved before a
+deploy kept the old presentation. The saved example now carries `exampleStamp`, the shipped
+file's `inputs`, and on every load `refreshStoredExample` (js/app.js) replaces each entry
+marked `example` whose stamp differs, in place, with the shipped document, keeping the day
+it was first saved and its gear. No other entry is touched. `verify_first_run.py` holds the
+shape: the filter on `example`, the stamp comparison, the in-place replace, the call at load
+and the stamp written by js/store.js.
+
 **Dedupe decision.** The example is a *real* recording, so its owner will one day import it
 for real and land on the ±60 s dedupe key. That resolves **in favour of the real import**:
 `SessionIngestor.note` clears `isExample`, merges the sources (`"example+icu"`) and the row

@@ -382,7 +382,12 @@ which the phone app still refers to by that name where it means that app.
 The same footer closes a replay clip (`ReplayClipCards`), which is the frame a viewer is left
 staring at while the clip loops — the one frame worth pointing a camera at.
 
-### Uncertified speed — the one mark a degraded source always wears
+### Estimated speed — the one mark a degraded source always wears
+
+**One word, *estimated*, on every surface** (Jan, 10 October 2026). The records table, the
+trends chart's badge and tooltip, the help, the release notes and the store texts say
+*estimated*; *uncertified* is gone from rider text. The engine's field stays `certified`,
+and this section keeps its old anchor name in the links that point at it.
 
 A speed record is only trustworthy when it came off the receiver's Doppler channel. A source
 that carries positions but no speed channel — **every GPX** (engine 0.9.0), a **TCX without
@@ -415,7 +420,7 @@ knows the word GPX:
 | surface | mark |
 |---|---|
 | session badge | `limited data` (web `render.js`), `SessionDisplay.sourceClassNote` (iOS) — the title/subtitle names both absences: estimated speed, no pump data |
-| records table | an `uncertified` chip beside the **value** (web `trends.js`, iOS `RecordsView`) — beside the claim, not beside the session |
+| records table | an `estimated` chip beside the **value** (web `trends.js`, iOS `RecordsView`) — beside the claim, not beside the session |
 | personal bests | the celebration reads the same rule the table does (`PersonalBestDetector.improvements(previous:current:policy:)`). The clean-jibe records are exempt: a jibe count is not a speed and a bad fix cannot inflate it |
 | share card | "speed estimated from GPS positions" (`ShareCardStats.speedEstimated`, `cardDisclaimer`), next to the speed it qualifies — the card leaves the device, so it cannot be read as a speed claim |
 
@@ -630,7 +635,7 @@ session clock, so an outcome lands as it happens.
 - **The header**, top left: the session's title and date line, from the same `ShareCardStats`
   the card's header uses.
 - **A progress hairline** across the very bottom.
-- The **uncertified mark** rides on the strip on a class-(c) source, exactly as it rides on
+- The **estimated mark** rides on the strip on a class-(c) source, exactly as it rides on
   the card: the video leaves the device, so it cannot be read as a speed claim.
 
 ### The end card

@@ -267,9 +267,20 @@ out of `HelpCatalog`; read by `web/tools/make_help.py`, which renders
 `web/help/index.html`.
 
 ```
+iphoneTag: "On the iPhone app"
 sections: [{ id, title, topics: [{ id, title, summary, body[], items[{term, detail,
-             channels[]}], related[], channels[] }] }]
+             channels[], iphoneOnly?}], related[], channels[], iphoneOnly?,
+             iphoneOnlyBody?[], browser?[] }] }]
 ```
+
+**What only the iPhone app can do is marked** (rider review X10, 10 October 2026).
+`HelpCatalog.surfaces` names the topics (`iphoneOnly`), the body paragraphs by position
+(`iphoneOnlyBody`) and the items by term (`iphoneOnly` on the item) that a browser cannot
+follow, and the lines the browser app says instead (`browser`). The phone ignores the
+marks. `/help/` and the browser app's Help put the `iphoneTag` label on each marked row and
+print the browser lines after the body. `HelpExportTests` fails a mark that lands on
+nothing, and an unmarked sentence that names a Settings section the browser does not draw,
+*Settings → Strava*, *Import →* or a swipe.
 
 Ten sections, 42 topics, 94 items today. `channels` is **the list of channels that may read
 that row** (docs/channels.md) — `["release","beta","dev"]` for almost everything, `["beta",

@@ -21,7 +21,7 @@
   },
   {
     "path": "docs/copy/watch.json",
-    "text": "(deg from, -1 = unset)",
+    "text": "(deg from, -1 = auto)",
     "why": "a unit or a range in a Garmin Connect setting title; the bracket is the convention every other Connect IQ app uses there"
   },
   {

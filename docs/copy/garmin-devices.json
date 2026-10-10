@@ -1,6 +1,6 @@
 {
   "version": "0.9.22",
-  "count": 42,
+  "count": 48,
   "minApiLevel": "3.3.3",
   "store": {
     "version": "0.9.21",
@@ -18,6 +18,9 @@
     "fenix5plus",
     "fenix5splus",
     "fenix5xplus",
+    "fenix6pro",
+    "fenix6spro",
+    "fenix6xpro",
     "fenix7",
     "fenix7pro",
     "fenix7pronowifi",
@@ -31,10 +34,13 @@
     "fenix8pro47mm",
     "fenix8solar47mm",
     "fenix8solar51mm",
+    "fr245m",
     "fr255",
     "fr265",
     "fr57042mm",
     "fr57047mm",
+    "fr945",
+    "fr945lte",
     "fr955",
     "fr965",
     "fr970",
@@ -49,6 +55,14 @@
     "venu3s",
     "vivoactive5",
     "vivoactive6"
+  ],
+  "betaOnly": [
+    "fenix6pro",
+    "fenix6spro",
+    "fenix6xpro",
+    "fr245m",
+    "fr945",
+    "fr945lte"
   ],
   "families": {
     "fenix 8": [
@@ -68,6 +82,11 @@
       "fenix7xpro",
       "fenix7xpronowifi"
     ],
+    "fenix 6 Pro": [
+      "fenix6pro",
+      "fenix6spro",
+      "fenix6xpro"
+    ],
     "fenix 5 Plus": [
       "fenix5plus",
       "fenix5splus",
@@ -80,10 +99,13 @@
       "epix2pro51mm"
     ],
     "Forerunner": [
+      "fr245m",
       "fr255",
       "fr265",
       "fr57042mm",
       "fr57047mm",
+      "fr945",
+      "fr945lte",
       "fr955",
       "fr965",
       "fr970"
@@ -137,6 +159,11 @@
       "fenix 7 Pro Solar without Wi-Fi",
       "fenix 7X Pro Solar without Wi-Fi"
     ],
+    "fenix 6 Pro": [
+      "fenix 6 Pro, 6 Sapphire, 6 Pro Solar and 6 Pro Dual Power",
+      "fenix 6S Pro, 6S Sapphire, 6S Pro Solar and 6S Pro Dual Power",
+      "fenix 6X Pro, 6X Sapphire and 6X Pro Solar"
+    ],
     "fenix 5 Plus": [
       "fenix 5 Plus",
       "fenix 5S Plus",
@@ -149,6 +176,9 @@
       "epix Pro Gen 2 51 mm"
     ],
     "Forerunner": [
+      "Forerunner 245 Music",
+      "Forerunner 945",
+      "Forerunner 945 LTE",
       "Forerunner 255",
       "Forerunner 265",
       "Forerunner 570 42 mm",
@@ -197,6 +227,9 @@
       "tactix 7",
       "quatix 7X Solar",
       "quatix 7 Sapphire",
+      "quatix 6",
+      "tactix Delta Sapphire, Solar and Solar Ballistics",
+      "quatix 6X, 6X Solar and 6X Dual Power",
       "quatix 7 Pro",
       "tactix 7 AMOLED"
     ]

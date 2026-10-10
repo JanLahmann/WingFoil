@@ -157,7 +157,9 @@ TARGETS: list[Target] = [
     # which is where it can be edited; it is read again here because the page also carries
     # its own hero and its own section ledes, and those are nobody else's.
     # `related` is the row of "Read next" links under a topic: navigation, not a sentence.
-    Target("web · /help/", "web/help/index.html", "html", strip=("related",)),
+    # `surface` is the "On the iPhone app" label (rider review X10): a label on a sentence,
+    # not one, the way the `beta` pill is.
+    Target("web · /help/", "web/help/index.html", "html", strip=("related", "surface")),
     Target("web · /app/", "web/app/index.html", "html"),
     # **The rider text the browser app writes at run time.** A page is linted where it is
     # typed; a sentence a script builds out of literals was linted nowhere until now, and

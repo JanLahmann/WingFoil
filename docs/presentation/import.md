@@ -151,7 +151,7 @@ same session is on intervals.icu, take it from there instead.*
   asset catalogue has lost the artwork falls back to the same spec drawn by hand — `#FC5200`,
   white text, 48 pt — and never to a label of our own spelling.
 * **Class (c), and the mark that follows from it.** A Strava session is positions-only, so
-  every speed record it produces wears the `uncertified` chip and the session badge names both
+  every speed record it produces wears the `estimated` chip and the session badge names both
   absences. Nothing about that is special-cased: the mapper writes a GPX, and the rest of the
   app has never known the word Strava.
 
@@ -227,8 +227,8 @@ takeoff effort** (was a wrist accelerometer recorded, which only the CleanJibe w
 | Apple Watch (Workout app) | Strava or intervals.icu; Apple Health in the beta | certified where the watch's own speed came with it | no |
 | Apple Watch + the CleanJibe watch app | straight to the phone (beta) | certified | yes |
 | Polar / Suunto / COROS | intervals.icu, or a FIT through the share sheet | FIT certifies; GPX and TCX do not | no |
-| Anything that reaches Strava | Import → Strava | uncertified | no |
-| A phone in a pocket | Strava, or the file: .fit anywhere, .gpx in the beta | uncertified | no |
+| Anything that reaches Strava | Import → Strava | estimated | no |
+| A phone in a pocket | Strava, or the file: .fit anywhere, .gpx in the beta | estimated | no |
 
 **Every row of it is true in every channel** (14 September 2026). The Bluetooth summary card
 is a dev door and the Health import and the Apple Watch app are beta doors, so the rows that

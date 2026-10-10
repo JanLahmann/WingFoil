@@ -35,7 +35,9 @@
     "that is the browser's own: the beta it joins is the iPhone app's. `community` is the",
     "one sentence of the community message (BetaGuide.community). `whatsNewBeta` is the ask",
     "the app's What's new ends on in the beta; ios/tools/testflight_publish.py ends the",
-    "TestFlight notes on it."
+    "TestFlight notes on it. `backupFirst`, `goingBackTitle`, `goingBack` and",
+    "`backupHelpLabel` are the phone's back-up-first lines (BetaGuide, rider review I6), the",
+    "same words on the web's Beta page."
   ],
   "schema": "cleanjibe.app-shell/1",
   "tabs": [
@@ -136,8 +138,15 @@
     "community": "CleanJibe is built with its riders. New features land in the beta first, and move to the App Store once testers have proven them.",
     "inItNowTitle": "In the beta right now",
     "howToJoinTitle": "How to join",
+    "backupFirst": "Back up first, in Settings → Library backup. Save the file in Files or iCloud Drive.",
     "joinButton": "Open TestFlight",
     "joinURL": "https://testflight.apple.com/join/nygqGGcn",
+    "goingBackTitle": "Going back to the App Store version",
+    "goingBack": [
+      "Back up in the beta first, then install CleanJibe from the App Store.",
+      "If the beta has updated your library, the App Store version cannot open it yet. Open the beta again, or restore a backup made before you joined."
+    ],
+    "backupHelpLabel": "How to back up",
     "whatsNewBeta": "Tried it? Tell us in Menu → Support & ideas. Every mail shapes the next build.",
     "webJoin": "The beta is the iPhone app's. Open the link on your iPhone, and TestFlight installs it."
   }
