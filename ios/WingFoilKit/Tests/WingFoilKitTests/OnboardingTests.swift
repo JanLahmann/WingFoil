@@ -73,8 +73,9 @@ import Testing
         // The card and the topic render the *same* steps — asserted, not assumed. The topic
         // adds three items the card has no room for: why Garmin calls the session Windsurf,
         // where Garmin Connect shows the jibes, and why its Runs card stays empty (Alfred,
-        // 18 September 2026); the guide's Garmin route says the first one too.
-        #expect(setup.items.count == IcuSetupGuide.steps.count + 3)
+        // 18 September 2026); the guide's Garmin route says the first one too. The fourth,
+        // when the jibes and tacks show up, was split off the second on 10 October 2026.
+        #expect(setup.items.count == IcuSetupGuide.steps.count + 4)
         #expect(setup.items.first?.term.hasPrefix("1.") == true)
         #expect(setup.items[IcuSetupGuide.steps.count - 1].term.hasPrefix("4.") == true)
         #expect(setup.items[IcuSetupGuide.steps.count].term == "Why Garmin says Windsurf")

@@ -57,6 +57,8 @@ import Testing
             for listed in HelpCatalog.topics(in: section)
             where !HelpCatalog.offIndex.contains(listed.id) {
                 let topic = HelpCatalog.topic(listed.id, channel: .dev)
+                // Which of it is the iPhone app's alone (X10): the web tags those.
+                let marks = HelpCatalog.surfaces(of: listed.id)
                 let items: [[String: Any]] = topic.items.map { item in
                     let lowest = ladder.first { channel in
                         HelpCatalog.topic(listed.id, channel: channel).items.contains(item)
@@ -65,6 +67,7 @@ import Testing
                                               "channels": channels(from: lowest)]
                     // The signpost's topic, which the web draws as a link on the term.
                     if let link = item.link { row["link"] = link.rawValue }
+                    if marks.items.contains(item.term) { row["iphoneOnly"] = true }
                     return row
                 }
                 var row: [String: Any] = [
@@ -79,6 +82,9 @@ import Testing
                     // `/help/#help-foilPct` or `#/help/sourceClass` still arrives.
                     "aliases": HelpCatalog.aliases(of: topic.id),
                 ]
+                if marks.wholeTopic { row["iphoneOnly"] = true }
+                if !marks.body.isEmpty { row["iphoneOnlyBody"] = marks.body }
+                if !marks.browser.isEmpty { row["browser"] = marks.browser }
                 // The sub-heading inside "Read the numbers".
                 if let sub = topic.subsection {
                     row["group"] = ["id": sub.rawValue, "title": sub.title]
@@ -88,7 +94,7 @@ import Testing
             sections.append(["id": section.rawValue, "title": section.title,
                              "topics": topics])
         }
-        return ["sections": sections]
+        return ["sections": sections, "iphoneTag": HelpSurfaces.iPhoneTag]
     }
 
     /// Writes the file whole.
@@ -125,6 +131,7 @@ import Testing
                     + "author; web/tools/make_help.py renders web/help/index.html from this "
                     + "file. Do not edit by hand.",
                 "sections": document["sections"]!,
+                "iphoneTag": document["iphoneTag"]!,
             ])
             return
         }
@@ -132,6 +139,8 @@ import Testing
         let json = try CopyContractTests.load(Self.file)
         let want = try Self.canonical(document["sections"]!)
         let got = try Self.canonical(json["sections"] ?? [])
+        #expect(json["iphoneTag"] as? String == HelpSurfaces.iPhoneTag,
+                "docs/copy/help.json carries another iPhone tag. Regenerate it.")
         #expect(got == want,
                 """
                 docs/copy/help.json is out of step with HelpCatalog. Regenerate it:
@@ -190,6 +199,53 @@ import Testing
     @Test func theFourQuestionsFromTheOldLearnPageHaveTopics() {
         for id in [HelpTopicID.browserApp, .stravaImport, .turnSuccess, .privacy] {
             #expect(HelpCatalog.topic(id).id == id)
+        }
+    }
+
+    /// **Every iPhone-only mark still lands** (X10). A mark is by position or by term, so a
+    /// paragraph moved or an item renamed would leave it pointing at nothing, or at the
+    /// wrong sentence; this fails first.
+    @Test func everyIPhoneMarkLandsOnASentence() {
+        for (id, marks) in HelpCatalog.surfaces {
+            let topic = HelpCatalog.topic(id, channel: .dev)
+            for index in marks.body {
+                #expect(topic.body.indices.contains(index),
+                        "\(id.rawValue): no body paragraph \(index) to mark")
+            }
+            for term in marks.items {
+                #expect(topic.items.contains { $0.term == term },
+                        "\(id.rawValue): no item \"\(term)\" to mark")
+            }
+            #expect(!(marks.wholeTopic && (!marks.body.isEmpty || !marks.items.isEmpty)),
+                    "\(id.rawValue): a whole-topic mark needs no paragraph marks")
+            for line in marks.browser {
+                #expect(HelpBudgetTests.words(line) <= HelpBudgetTests.paragraphBudget,
+                        "\(id.rawValue): a browser line is over the paragraph budget")
+            }
+        }
+    }
+
+    /// **No unmarked sentence the website prints names a door only the phone has** (X10).
+    /// The doors are the Settings sections the browser app does not draw
+    /// (`SettingsCopy.sections`, `web == false`), Strava's sign-in, the Import sheet and
+    /// the swipe. A new sentence that names one is marked, or it fails here.
+    @Test func noUnmarkedSentenceNamesAnIPhoneDoor() {
+        let arrow = " \u{2192} "
+        let doors = SettingsCopy.sections.filter { !$0.web }.map { "Settings" + arrow + $0.title }
+            + ["Settings" + arrow + "Strava", "Import" + arrow, "swipe"]
+        for listed in HelpCatalog.topics where !HelpCatalog.offIndex.contains(listed.id) {
+            let marks = HelpCatalog.surfaces(of: listed.id)
+            if marks.wholeTopic { continue }
+            let topic = HelpCatalog.topic(listed.id, channel: .dev)
+            var unmarked = topic.body.enumerated()
+                .filter { !marks.body.contains($0.offset) }.map(\.element)
+            unmarked += topic.items.filter { !marks.items.contains($0.term) }.map(\.detail)
+            for sentence in unmarked {
+                for door in doors where sentence.contains(door) {
+                    #expect(Bool(false),
+                            "\(listed.id.rawValue) names \"\(door)\" unmarked: \(sentence.prefix(60))…")
+                }
+            }
         }
     }
 }

@@ -430,7 +430,7 @@ public enum HelpCatalog {
                 + "The session moves to the phone while both are in range.",
                 "Because the wrist is recorded, pump strokes and failed takeoff attempts "
                 + "are analysed on the phone. The speed is the watch's own, so the records "
-                + "certify.",
+                + "are measured.",
             ],
             items: [
                 // Jan, 15 Sep 2026: it said "keep the wrist above water" — wrong, a wrist
@@ -515,7 +515,7 @@ public enum HelpCatalog {
                           + "CleanJibe. Or open it from Files."),
                 .init(term: "Which format, if you are offered a choice",
                       detail: "Pick FIT. CleanJibe reads a .fit in every build, and a file "
-                          + "with the watch's own speed certifies its records. A .gpx or a "
+                          + "with the watch's own speed gives measured records. A .gpx or a "
                           + ".tcx opens in the CleanJibe beta."),
             ],
             related: [.stravaImport, .shareFromWatchApp, .whichWatch]),
@@ -557,11 +557,17 @@ public enum HelpCatalog {
                 // numbers as Connect IQ fields, which Garmin Connect lists under its own
                 // heading; the Runs card is the windsurf profile's and no app can fill it.
                 // "Once you have set a wind direction" was the watch before 0.9.0 (rider
-                // review S15): it works the axis out itself (AutoWind), and /start/ says so
-                // in the same words, `Copy.watchWind`.
+                // review S15): it works the axis out itself (AutoWind). Jan, 10 October
+                // 2026: say when the jibes and tacks appear, and that a wind set by hand
+                // has them from the start. Its own item, because the two together are over
+                // the item budget. /start/ keeps the shorter `Copy.watchWind`.
                 .init(term: "Where Garmin Connect shows the jibes",
-                      detail: "Under Connect IQ on the activity page: jibes, tacks, foil "
-                          + "time, flights and the best 2 seconds. " + Copy.watchWind),
+                      detail: "Under Connect IQ on the activity page: foil time, flights, "
+                          + "the best 2 seconds, jibes and tacks."),
+                .init(term: "When the jibes and tacks show up",
+                      detail: "They appear after a few minutes of flying, once the watch "
+                          + "has worked out the wind. Set it by hand to have them from the "
+                          + "start."),
                 .init(term: "Why the Runs card stays empty",
                       detail: "Runs belong to Garmin's own windsurf profile. No Connect IQ "
                           + "app can fill that card. CleanJibe's flights are the runs."),
@@ -587,7 +593,7 @@ public enum HelpCatalog {
                 + "not recorded, so there are no pump strokes.",
                 "If the same afternoon is also on intervals.icu, import it from there "
                 + "instead. That is the original file off your watch, so those records "
-                + "certify. Importing both is harmless, because the same session is never "
+                + "are measured. Importing both is harmless, because the same session is never "
                 + "added twice.",
             ],
             items: [
@@ -640,7 +646,7 @@ public enum HelpCatalog {
                 + "sheet.",
                 "If it is not in the row, Save to Files and open it from there.",
                 "If you are asked for a format, pick FIT. A FIT carries the watch's own "
-                + "speed, so its records certify.",
+                + "speed, so its records are measured.",
                 "A .gpx or a .tcx carries positions only, so its records are marked "
                 + "estimated. Those two formats open in the CleanJibe beta.",
                 "Garmin Connect's phone app has no export at all. Garmin owners have two "
@@ -797,10 +803,20 @@ public enum HelpCatalog {
             // Garmin Connect prints, which is where the three numbers disagreed. The full
             // "where it shows" list is `places` in docs/copy/glossary.json, and the site
             // renders it from there.
-            items: MetricGlossary.entries.map {
-                let also = MetricGlossary.alsoOn($0)
-                return .init(term: $0.term,
-                             detail: also.isEmpty ? $0.line : $0.line + " " + also)
+            //
+            // Touchdown's line carries the stop rule since 10 October 2026 (X6), and with
+            // its "Also on the watch." that is over the item budget. The rule becomes an item
+            // of its own here, split rather than compressed; the glossary keeps the one line.
+            items: MetricGlossary.entries.flatMap { entry -> [HelpTopic.Item] in
+                let also = MetricGlossary.alsoOn(entry)
+                if entry.id == "touchdown" {
+                    let lead = MetricGlossary.touchdownLine
+                    return [.init(term: entry.term,
+                                  detail: also.isEmpty ? lead : lead + " " + also),
+                            .init(term: "Touchdown or fall", detail: MetricGlossary.stopRule)]
+                }
+                return [.init(term: entry.term,
+                              detail: also.isEmpty ? entry.line : entry.line + " " + also)]
             },
             related: [.turnSuccess, .speedRecords, .divergence]),
 
@@ -1032,9 +1048,11 @@ public enum HelpCatalog {
             items: [
                 .init(term: "Flew through",
                       detail: "You never left the foil. No sample in the window is off-foil."),
+                // Jan, 10 October 2026 (X6): the rider's definition, and which verdict a
+                // 3 to 5 s stop gets. The engine's 3 s plain and 3 to 5 s borderline
+                // touchdown are both a touchdown to the rider (docs/algorithms/turns.md).
                 .init(term: "Touchdown",
-                      detail: "You lost the foil but not the session: you stopped for 3 s or "
-                          + "less, or pumped it back up. Borderline between 3 s and 5 s."),
+                      detail: MetricGlossary.touchdownLine + " " + MetricGlossary.stopRule),
                 .init(term: "Fell in",
                       detail: "You stopped for more than 5 s, or the barometer says your wrist "
                           + "went under."),
@@ -1845,5 +1863,81 @@ public enum HelpCatalog {
                 $0.term.lowercased().contains(needle) || $0.detail.lowercased().contains(needle)
             }
         }
+    }
+}
+
+/// **Which help sentences are the iPhone app's alone** (rider review X10, Jan 10 October
+/// 2026).
+///
+/// cleanjibe.org/help and the browser app's Help render this catalogue whole, and a reader
+/// in a browser met *Settings → Library backup*, *Import → Apple Health* and *swipe to
+/// delete*, none of which a browser has. The phone ignores this table: every sentence in it
+/// is true on the phone. The website reads it out of `docs/copy/help.json` and puts the
+/// small `iPhoneTag` label on what it marks, and prints `browser` where the browser really
+/// does it another way.
+///
+/// It lives beside the topics rather than in the web renderer because the catalogue is
+/// where a sentence is written, and `HelpExportTests` asserts that every mark still lands
+/// on a paragraph or an item, and that no unmarked sentence a browser prints names a door
+/// only the phone has.
+public struct HelpSurfaces: Sendable, Equatable {
+    /// The whole topic is about something only the iPhone app does.
+    public var wholeTopic: Bool
+    /// The body paragraphs, by position, that only the iPhone app can follow.
+    public var body: [Int]
+    /// The items, by term, that only the iPhone app can follow.
+    public var items: [String]
+    /// What the website prints after the body instead: how the browser app does it.
+    public var browser: [String]
+
+    public init(wholeTopic: Bool = false, body: [Int] = [], items: [String] = [],
+                browser: [String] = []) {
+        self.wholeTopic = wholeTopic
+        self.body = body
+        self.items = items
+        self.browser = browser
+    }
+
+    /// The label the website puts on a marked topic, paragraph or item.
+    public static let iPhoneTag = "On the iPhone app"
+}
+
+extension HelpCatalog {
+
+    /// The marks, per topic. A topic that is not here is true everywhere it is printed.
+    public static let surfaces: [HelpTopicID: HelpSurfaces] = [
+        .gettingStarted: HelpSurfaces(
+            body: [3],
+            items: ["The CleanJibe Apple Watch app", "Apple's own Workout app", "Strava"]),
+        .exampleSession: HelpSurfaces(body: [2]),
+        .appleWatchApp: HelpSurfaces(wholeTopic: true),
+        .appleWorkoutApp: HelpSurfaces(wholeTopic: true),
+        .notifications: HelpSurfaces(wholeTopic: true),
+        .stravaImport: HelpSurfaces(wholeTopic: true),
+        .replayClip: HelpSurfaces(wholeTopic: true),
+        .phoneOnly: HelpSurfaces(items: ["Strava, the way in that needs no file"]),
+        .shareFromWatchApp: HelpSurfaces(items: ["Anything else"]),
+        .icuTroubleshooting: HelpSurfaces(items: ["Older sessions are missing"]),
+        .turnTypes: HelpSurfaces(items: ["Changing it later"]),
+        .engineVersion: HelpSurfaces(body: [2]),
+        .libraryBackup: HelpSurfaces(
+            body: [0, 1], items: ["Save the file yourself"],
+            browser: ["In the browser app, Settings → Your data is the backup. Download all "
+                      + "saves one zip, and Restore from a backup reads it back."]),
+        .privacy: HelpSurfaces(
+            body: [0, 1, 2], items: ["Your intervals.icu key"],
+            browser: ["In the browser app, a session is analysed in your browser and stays "
+                      + "in its storage. Nothing is uploaded.",
+                      "Your intervals.icu key stays in this browser too. It goes to "
+                      + "intervals.icu itself and nowhere else."]),
+        .sendingFeedback: HelpSurfaces(
+            body: [3],
+            items: ["What is already in the mail", "Read it before you send",
+                    "If you are on the beta"]),
+    ]
+
+    /// The marks for one topic; empty when it is true everywhere.
+    public static func surfaces(of id: HelpTopicID) -> HelpSurfaces {
+        surfaces[id] ?? HelpSurfaces()
     }
 }

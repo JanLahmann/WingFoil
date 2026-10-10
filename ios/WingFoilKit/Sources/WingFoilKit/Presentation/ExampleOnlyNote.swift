@@ -32,7 +32,7 @@ public enum ExampleOnlyNote {
     /// The Records screen's line.
     public static let records =
         "The example session is on loan, not ridden, so it is kept out of your personal "
-        + "records on purpose. Import a .fit file, or connect intervals.icu in Settings, "
+        + "records on purpose. Connect intervals.icu in Settings, or import a .fit file, "
         + "and your own bests appear here."
 
     /// The Trends screen's title. The range picker is innocent, so the title does not
@@ -43,13 +43,15 @@ public enum ExampleOnlyNote {
     /// need more than one session before they are a line rather than a dot.
     public static let trends =
         "The example session is on loan, not ridden, so it is kept out of your trends on "
-        + "purpose. Import a .fit file, or connect intervals.icu in Settings, and the "
+        + "purpose. Connect intervals.icu in Settings, or import a .fit file, and the "
         + "charts fill as you ride."
 
     /// **The two doors the lines name, as buttons** (rider review I1, 9 Oct 2026). A
-    /// sentence that says *import a file, or connect intervals.icu* and offers neither
+    /// sentence that says *connect intervals.icu, or import a file* and offers neither
     /// leaves the rider hunting for the menu. Same words as the sentence, so the button is
-    /// the step it just read.
-    public static let importButton = "Import a file"
+    /// the step it just read. **intervals.icu first, then the file** (pattern J, Jan
+    /// 10 October 2026): Garmin leads the ways in everywhere, so the sentence and the
+    /// buttons name the Garmin door first.
     public static let connectButton = "Connect intervals.icu"
+    public static let importButton = "Import a file"
 }

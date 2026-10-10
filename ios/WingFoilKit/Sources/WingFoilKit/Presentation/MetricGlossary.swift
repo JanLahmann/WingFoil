@@ -155,6 +155,16 @@ public struct MetricGlossaryEntry: Sendable, Equatable, Identifiable {
 /// rider's turns, and not one of them named the measurement it was.
 public enum MetricGlossary {
 
+    /// **What a touchdown is, in the rider's words** (Jan, 10 October 2026, X6). The
+    /// glossary's line and Turn outcomes' item both say it from here.
+    public static let touchdownLine =
+        "Your board touched the water and you got going again without falling in."
+    /// **Which verdict a stop gets.** The engine has a plain touchdown up to 3 s and a
+    /// borderline one from 3 to 5 s (`turnTouchdownMaxStop`, `turnFallStop`,
+    /// docs/algorithms/turns.md); to the rider both are a touchdown, and past 5 s he fell in.
+    public static let stopRule =
+        "A stop under 5 s counts as a touchdown. Longer, and it counts as a fall."
+
     /// A record window's label, from the design tokens rather than retyped: `design/tokens.json`
     /// owns the eight window names, and the picker, the tiles and the share card all draw
     /// them from there. A glossary that spelled one of them itself would be a ninth copy.
@@ -392,7 +402,7 @@ public enum MetricGlossary {
             id: "touchdown",
             term: "Touchdown",
             short: "touch",
-            line: "The foil went in and you kept going. Dry, and not clean.",
+            line: touchdownLine + " " + stopRule,
             sentence: "where you touched down",
             surfaces: [.ios, .watch, .web],
             places: [.watchPage, .fitField, .phonePage, .card, .web, .help],
