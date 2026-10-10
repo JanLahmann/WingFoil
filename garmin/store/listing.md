@@ -178,6 +178,16 @@ app* is dev only (rider review W11), and the Data screens prompt counts five lar
 
 0.9.22: Your wrist tells you when it stops counting. A pause buzzes, and buzzes again every two minutes until you resume. When the GPS drops, a broken ring shows it on every page. A wind you set by hand now lasts one session, and the next start asks Same wind? While the watch estimates the wind itself, the start page says wind auto.
 
+**0.9.23 built 10 October 2026, not uploaded yet** (the beta for the public listing, 0.9.23-dev1 for the private one): the SAVED page
+leads with the turn ladder once there are turns (rider review W20), a *Laps* setting, one lap
+per flight or one for the session (W15), a wind set by hand leaves nothing behind in storage
+(W4 follow-up), and the beta and dev streams add fenix 6 Pro / 6S Pro / 6X Pro, Forerunner 945
+/ 945 LTE and Forerunner 245 Music (S8; the release manifest is unchanged). Paste the S14
+Website field and feedback pointer above with this upload. Draft What's New paragraph, to go on
+top of the 0.9.22 one:
+
+0.9.23: After a session with turns, the SAVED page shows your turn ladder first. A new Laps setting gives one lap per flight or one lap for the whole session. Now also on fenix 6 Pro, Forerunner 945 and Forerunner 245 Music.
+
 The divergences left are listed under "Not ported yet".
 
 ---
