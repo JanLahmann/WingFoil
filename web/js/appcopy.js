@@ -394,6 +394,19 @@ export const WELCOME = {
 export const WHATS_NEW = [
   {
     "version": "1.0.1",
+    "build": 131,
+    "channel": "beta",
+    "date": "2026-10-14",
+    "title": "Said plainly",
+    "lines": [
+      "Help marks the answers that are about the iPhone app.",
+      "Help says when your jibes and tacks appear on the watch, and when a touchdown is a fall.",
+      "Every estimated number now says estimated.",
+      "The feedback mail counts jibes and tacks apart, and no longer reports a takeoff gap that is not one."
+    ]
+  },
+  {
+    "version": "1.0.1",
     "build": 129,
     "channel": "beta",
     "date": "2026-10-01",
