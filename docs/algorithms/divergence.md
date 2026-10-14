@@ -15,6 +15,11 @@ watch's own divergence list says *will* differ on installed watches. The check e
 catch a *recording* fault (a channel the watch and the phone read differently), not to police
 metrics whose divergences are already enumerated and intended above; adding clean jibes would
 mean picking a threshold for a metric whose watch-side evidence is documented as coarser.
+**Takeoff attempts are compared only when the file carries the accelerometer** (rider feedback,
+13 Oct 2026). Without it the phone cannot see a failed takeoff and counts flights alone, so a
+beta watch — which logs no raw accel — would always show its failed efforts as a disagreement
+("watch 31, phone 19"). The phone's `total_pump_strokes` is `None` exactly then, and that is
+the test; flights and takeoff successes are still compared.
 The foil-time comparison is of the **seconds**, not the percentage, which matters because the
 two sides normalise that percentage by different clocks (see the watch divergence list).
 
