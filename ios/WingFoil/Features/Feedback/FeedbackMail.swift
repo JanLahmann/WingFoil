@@ -217,12 +217,16 @@ enum FeedbackMail {
             + ", delta " + DivergenceText.delta(line)
     }
 
-    /// "18 flew through · 4 touchdown · 2 fell in", or nil when no turn was counted at
-    /// all. The rider's three words, in the rider's order (CLAUDE.md, "Rider vocabulary").
+    /// "20 jibes, 4 tacks · 18 flew through · 4 touchdown · 2 fell in", or nil when no turn
+    /// was counted at all. The ladder covers every counted turn, so the line names both
+    /// kinds first; the rider's three words follow in the rider's order (CLAUDE.md,
+    /// "Rider vocabulary").
     private static func tallyLine(_ summary: SessionSummary) -> String? {
         let turns = summary.turns
         guard turns.turnsCounted > 0 else { return nil }
-        return String(turns.outcomes.flewThrough) + " flew through · "
+        return String(turns.jibes) + (turns.jibes == 1 ? " jibe, " : " jibes, ")
+            + String(turns.tacks) + (turns.tacks == 1 ? " tack · " : " tacks · ")
+            + String(turns.outcomes.flewThrough) + " flew through · "
             + String(turns.outcomes.touchdown) + " touchdown · "
             + String(turns.outcomes.fellIn) + " fell in"
     }
