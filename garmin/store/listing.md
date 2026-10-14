@@ -182,7 +182,7 @@ app* is dev only (rider review W11), and the Data screens prompt counts five lar
 leads with the turn ladder once there are turns (rider review W20), a *Laps* setting, one lap
 per flight or one for the session (W15), a wind set by hand leaves nothing behind in storage
 (W4 follow-up), and the beta and dev streams add fenix 6 Pro / 6S Pro / 6X Pro, Forerunner 945
-/ 945 LTE and Forerunner 245 Music (S8; the release manifest is unchanged). The feedback pointer went in with this upload; the store form has no Website field: Edit Details carries only a *Source Code URL* (the GitHub repo) and a contact email (jan@lahmann-online.de, not info@cleanjibe.org), both left as they are for Jan to decide. Draft What's New paragraph, to go on
+/ 945 LTE and Forerunner 245 Music (S8; the release manifest is unchanged). The feedback pointer went in with this upload; the store form has no Website field: Edit Details carries only a *Source Code URL* (the GitHub repo) and a contact email, set to info@cleanjibe.org on both listings on 14 October 2026 (Jan); the Source Code URL stays the GitHub repo. Draft What's New paragraph, to go on
 top of the 0.9.22 one:
 
 0.9.23: After a session with turns, the SAVED page shows your turn ladder first. A new Laps setting gives one lap per flight or one lap for the whole session. Now also on fenix 6 Pro, Forerunner 945 and Forerunner 245 Music.
