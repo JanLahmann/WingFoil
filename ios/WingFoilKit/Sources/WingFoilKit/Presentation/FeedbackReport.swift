@@ -262,7 +262,10 @@ public struct FeedbackFacts: Sendable, Equatable {
 
         /// "12.4 km", as the key-metrics block spells it.
         public let distance: String?
-        /// "18 flew through · 4 touchdown · 2 fell in", the jibe ladder as one line.
+        /// "20 jibes, 4 tacks · 18 flew through · 4 touchdown · 2 fell in": every counted
+        /// turn and its outcome ladder, printed as "Turns …". It said "Jibes" over a ladder
+        /// that counts the tacks too (rider feedback, 13 Oct 2026: "Jibes 37 flew through"
+        /// on a session of 33 jibes and 14 tacks).
         public let tally: String?
         /// Where the wind axis came from: the engine's own word for it.
         public let windSource: String?
@@ -730,7 +733,7 @@ public enum FeedbackReport {
         // The headline numbers, where the caller gathered them. Only the analysis mail
         // does; the ordinary feedback mail prints the three lines above and stops.
         if let distance = session.distance { lines.append("Distance " + distance) }
-        if let tally = session.tally { lines.append("Jibes " + tally) }
+        if let tally = session.tally { lines.append("Turns " + tally) }
         if let wind = session.windSource { lines.append("Wind " + wind) }
         lines.append("Session id \(session.id)")
         return lines

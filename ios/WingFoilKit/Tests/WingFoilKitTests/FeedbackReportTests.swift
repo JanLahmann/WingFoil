@@ -270,7 +270,7 @@ import Testing
             discipline: "Wingfoil", duration: "1:42:11", sourceClass: "a",
             engineStamp: "0.23.0",
             distance: "18.4 km",
-            tally: "18 flew through \u{00B7} 4 touchdown \u{00B7} 2 fell in",
+            tally: "20 jibes, 4 tacks \u{00B7} 18 flew through \u{00B7} 4 touchdown \u{00B7} 2 fell in",
             windSource: "estimate \u{00B7} axis 212\u{00B0}",
             divergences: ["Best 2 s: watch 24.10 kn, phone 23.80 kn, delta 0.30 kn"])
     }
@@ -338,7 +338,7 @@ import Testing
                          "30 August 2026 \u{00B7} Torbole",
                          "Source class a \u{00B7} Wingfoil \u{00B7} 1:42:11",
                          "Distance 18.4 km",
-                         "Jibes 18 flew through \u{00B7} 4 touchdown \u{00B7} 2 fell in",
+                         "Turns 20 jibes, 4 tacks \u{00B7} 18 flew through \u{00B7} 4 touchdown \u{00B7} 2 fell in",
                          "Wind estimate \u{00B7} axis 212\u{00B0}",
                          "Session id A1B2C3",
                          "Attached",
@@ -362,7 +362,7 @@ import Testing
         // And the headline lines are absent too, rather than printed as zeros: a mail that
         // said "0.0 km" would send a reader looking for a bug in the distance.
         #expect(!body.contains("Distance"))
-        #expect(!body.contains("Jibes "))
+        #expect(!body.contains("Turns "))
     }
 
     /// Three attachments, three sentences. A session that arrived as positions says so, and

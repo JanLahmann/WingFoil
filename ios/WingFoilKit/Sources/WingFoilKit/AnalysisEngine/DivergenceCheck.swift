@@ -101,11 +101,17 @@ public enum DivergenceCheck {
                                   unitKind: "speedKn"))
         }
 
+        // Attempts only when the file carries the accelerometer: without it the phone cannot
+        // see a failed takeoff and counts flights alone, so the row would report the watch's
+        // failed efforts as a disagreement (a beta watch logs no raw accel; rider feedback,
+        // 13 Oct 2026, "watch 31, phone 19"). `totalPumpStrokes` is nil exactly then.
+        let phoneHasAccel = phone.summary.takeoff.totalPumpStrokes != nil
         let counts: [(String, Int?, Int)] = [
             ("flights", watch.flightCount, phone.summary.flightCount),
             ("tacks", watch.tackCount, phone.summary.turns.tacks),
             ("jibes", watch.jibeCount, phone.summary.turns.jibes),
-            ("takeoffAttempts", watch.takeoffAttempts, phone.summary.takeoff.takeoffAttempts),
+            ("takeoffAttempts", phoneHasAccel ? watch.takeoffAttempts : nil,
+             phone.summary.takeoff.takeoffAttempts),
             ("takeoffs", watch.takeoffSuccesses, phone.summary.takeoff.takeoffSuccesses),
         ]
         for (id, watchCount, phoneCount) in counts {

@@ -707,6 +707,27 @@ import Testing
         #expect(DivergenceCheck.compare(watch: WatchSummary(), phone: analysis).isEmpty)
     }
 
+    /// **No accelerometer in the file, no attempts row** (rider feedback, 13 Oct 2026: a beta
+    /// watch logs no raw accel, so the phone counts flights alone and "watch 31, phone 19"
+    /// was the watch's twelve failed efforts, not a disagreement). The flights row stays.
+    @Test func attemptsAreComparedOnlyWhenThePhoneCouldSeeThem() {
+        var analysis = SessionSummarizer.analyze(syntheticFlightTrack())
+        analysis.summary.flightCount = 19
+        analysis.summary.takeoff.takeoffSuccesses = 19
+        analysis.summary.takeoff.takeoffAttempts = 19
+        var watch = WatchSummary()
+        watch.flightCount = 19
+        watch.takeoffSuccesses = 19
+        watch.takeoffAttempts = 31
+
+        analysis.summary.takeoff.totalPumpStrokes = nil
+        #expect(DivergenceCheck.compare(watch: watch, phone: analysis).isEmpty)
+
+        analysis.summary.takeoff.totalPumpStrokes = 569
+        #expect(DivergenceCheck.compare(watch: watch, phone: analysis).map(\.metricId)
+                == ["takeoffAttempts"])
+    }
+
     /// **The banner and the table print exactly what they printed before the numbers went
     /// raw** (ADR-033, round 2).
     ///
