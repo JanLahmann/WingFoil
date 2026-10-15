@@ -392,6 +392,18 @@ struct SessionTakeoffSection: View {
                                          + "\(k.inFlightEpisodes) episodes",
                                      help: .pumpStrokes)
                         }
+                        #if BETA
+                        // **Jumps** (engine 0.29.0, beta, Jan 15 Oct 2026): the count and the
+                        // highest. The height reads low on the one rider who has judged it
+                        // (docs/algorithms/jumps.md), so it is never shown without "estimated".
+                        // No card with no jump: a rider who never jumps sees nothing new.
+                        if hasAccel, let j = summary.jumps, j.count > 0 {
+                            StatCard(title: "Jumps", value: "\(j.count)",
+                                     caption: j.highestM.map {
+                                         "highest " + String(format: "%.1f", $0) + " m, estimated"
+                                     } ?? "estimated")
+                        }
+                        #endif
                     }
                 }
                 // **One small note instead of a row of dashes** (Jan, F12a). Every card that
