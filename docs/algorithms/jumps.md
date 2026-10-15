@@ -12,6 +12,24 @@
 > water — and is reproduced by `uv run python lab/tools/jump_report.py`. The watch does not
 > detect jumps.
 
+### Watch approximation — the live count (dev, 0.9.23-dev2)
+
+`garmin/source/detectors/JumpDetector.mc` counts jumps on the wrist; it gives **no height**.
+It reads the pump chain's 25 Hz grid (`PumpDetector._pushGrid`) and every threshold above, in
+the same order, with three deviations:
+
+- a jump is decided `jumpSpikeWindow` after the landing (the impact search), so the count and
+  its buzz land about a second late;
+- the foil state, the speed and the sweep come from the 1 Hz tick, so those three gates are
+  ±1 s fuzzy; the sweep gate is a `ST_SWEEP` tick from 1 s before the takeoff to 0.5 s after
+  the landing (the watch's sweep, not the lab's `start_t`–`end_t`);
+- a low-g window that opens while the previous one still waits for its impact is dropped.
+
+Held to the lab by `jumpCountMatchesTheLab` (garmin/tests): `fixtures/synthetic/jumps.json`
+replayed at 25 Hz, 2 jumps as the lab counts, and none of the four events the gates refuse.
+Each jump buzzes three quick ticks and flashes JUMP over the count (docs/presentation/watch.md).
+Dev only: `MetricsEngine._makeJumps` is a `(:notdev)` null in the beta and the release.
+
 ### The physics — why hang time alone lies
 
 The textbook formula `h = g·T²/8` assumes an unsupported ballistic body. A wingfoiler is not

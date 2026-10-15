@@ -44,6 +44,7 @@ class SessionController {
     hidden var _logger;
     hidden var _accelOn as Boolean = false;
     hidden var _prevLongest as Float = 0.0;
+    hidden var _prevJumps as Number = 0;
     hidden var _apLastMs as Number = 0;
     hidden var _timeMark as Number = -1;    // last crossed time-alert boundary (-1 = armed)
     hidden var _distMark as Number = -1;
@@ -168,6 +169,13 @@ class SessionController {
             }
             if (pumpEvent == PumpDetector.EVENT_TAKEOFF) {
                 AlertManager.takeoff();
+            }
+            // A jump is decided in the accelerometer callback, a second after the landing;
+            // the tick is where it is told (dev only: the count stays 0 elsewhere).
+            var jumps = engine.jumpCount();
+            if (jumps > _prevJumps) {
+                _prevJumps = jumps;
+                AlertManager.jump(jumps);
             }
             // The watch has an axis of its own for the first time: from here the Turns page
             // reads "tack / jibe ~SSW" instead of "turns", so the rider is told.

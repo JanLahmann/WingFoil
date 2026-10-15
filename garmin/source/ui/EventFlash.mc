@@ -63,7 +63,9 @@ module EventFlash {
         // paused the banner says it for as long as it is true, and "recording" is the normal
         // case the page itself shows.
         EV_PAUSED = 8,
-        EV_RESUMED = 9
+        EV_RESUMED = 9,
+        // 0.9.23-dev2: a jump, with the session's count (JumpDetector, dev only).
+        EV_JUMP = 10
     }
 
     // The flash being drawn.
@@ -102,6 +104,10 @@ module EventFlash {
 
     function fireTakeoff() as Void {
         _start(EV_TAKEOFF, TurnDetector.KIND_NONE, 0);
+    }
+
+    function fireJump(n as Number) as Void {
+        _start(EV_JUMP, TurnDetector.KIND_NONE, n);
     }
 
     function fireLongest(seconds as Number) as Void {
@@ -235,6 +241,8 @@ module EventFlash {
             return v.toString() + Words.FLASH_DRY;
         } else if (k == EV_LONGEST) {
             return Words.FLASH_LONGEST;
+        } else if (k == EV_JUMP) {
+            return Words.FLASH_JUMP;
         } else if (k == EV_PAUSED) {
             return Words.PAUSED_TEXT;
         } else if (k == EV_RESUMED) {
@@ -267,6 +275,8 @@ module EventFlash {
             return v.toString() + Words.FLASH_DRY;
         } else if (k == EV_LONGEST) {
             return Words.FLASH_LONGEST + " " + mmss(v);
+        } else if (k == EV_JUMP) {
+            return Words.FLASH_JUMP + " " + v.toString();
         }
         return "";
     }

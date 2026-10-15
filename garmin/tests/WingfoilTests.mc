@@ -1642,6 +1642,13 @@ function eventFlashPaintsEveryVerdict(logger as Test.Logger) as Boolean {
     Test.assertEqual(EventFlash.stripText(EventFlash.EV_LONGEST, TurnDetector.KIND_NONE, 134),
         "LONGEST 2:14");
 
+    // a jump carries the session's count (0.9.23-dev2), in the flight events' teal
+    EventFlash.fireJump(3);
+    Test.assertEqual(EventFlash.word(EventFlash.kind, EventFlash.value), "JUMP");
+    Test.assertEqual(EventFlash.stripText(EventFlash.EV_JUMP, TurnDetector.KIND_NONE, 3),
+        "JUMP 3");
+    Test.assertEqual(EventFlash.baseColor(EventFlash.EV_JUMP), Ink.phaseFlying());
+
     // save and discard end the story
     EventFlash.clearAll();
     Test.assertMessage(!EventFlash.active() && !EventFlash.stripActive(System.getTimer()),
@@ -3843,9 +3850,9 @@ function summaryPagesBuildAndRenderHeadless(logger as Test.Logger) as Boolean {
 // shared timestamp made the more informative of the two silently disappear.
 (:test)
 function alertDebounceIsPerChannelNotGlobal(logger as Test.Logger) as Boolean {
-    // Eight channels since 0.9.16: PB · flight · interval · takeoff · turn · auto wind ·
-    // clean jibe · the direct transfer reaching the phone whole.
-    Test.assertEqual(AlertManager.CH_COUNT, 8);
+    // Nine channels since 0.9.23-dev2: PB · flight · interval · takeoff · turn · auto wind ·
+    // clean jibe · the direct transfer reaching the phone whole · a jump.
+    Test.assertEqual(AlertManager.CH_COUNT, 9);
     Test.assertMessage(AlertManager._lastMs.size() == AlertManager.CH_COUNT,
         "the timestamp array must have a slot per channel — a short one writes out of bounds "
         + "the first time the new channel fires, on the water and nowhere else");
@@ -7068,5 +7075,94 @@ function submersionSettleReleaseReadsLevelsAndSpikes(logger as Test.Logger) as B
         + " wet ticks before a held +400 Pa level is accepted (BARO_SETTLE_S = " + n.toString()
         + " ticks, +/-" + e.BARO_SETTLE_PA.format("%.0f")
         + " Pa); dunk, slosh, weather and pause all read the way they should");
+    return true;
+}
+
+
+// ---- jumps (JumpDetector, 0.9.23-dev2) ----------------------------------------------------
+//
+// The live count against the lab's (docs/algorithms/jumps.md "Watch approximation"): the
+// synthetic trace of fixtures/synthetic/jumps.json, replayed sample by sample with the 1 Hz
+// context ticked in front of each second. Two jumps count; the chop hop, the slow hop, the
+// one inside a sweep and the one off the foil do not.
+(:test)
+function jumpCountMatchesTheLab(logger as Test.Logger) as Boolean {
+    var det = new JumpDetector();
+    var enc = JumpFixtures.mag().toCharArray();
+    var n = JumpFixtures.samples();
+    var step = JumpFixtures.stepMs();
+    var speeds = JumpFixtures.speedMps();
+    var flights = JumpFixtures.flights();
+    var turns = JumpFixtures.turns();
+    var nextTick = 0;
+    for (var i = 0; i < n; i++) {
+        var t = i * step;
+        while (nextTick <= t) {
+            var sec = nextTick / 1000;
+            var v = sec < speeds.size() ? speeds[sec] : 0.0;
+            det.tick(nextTick, _inSpans(flights, nextTick), _inSpans(turns, nextTick), v);
+            nextTick += 1000;
+        }
+        var g = (_jumpCell(enc[2 * i]) * 90 + _jumpCell(enc[2 * i + 1])) / 1000.0;
+        det.push(g.toFloat(), t);
+    }
+    // the last jump is decided a spike window after its landing: a quiet second closes it
+    for (var k = 1; k <= 30; k++) {
+        det.push(1.0, n * step + k * step);
+    }
+    logger.debug("jumps " + det.count);
+    Test.assertEqual(det.count, JumpFixtures.jumps());
+    return true;
+}
+
+// The fixture's own encoding undone: 33 + v, stepping over the quote (34) and the backslash (92).
+function _jumpCell(c as Char) as Number {
+    var x = c.toNumber();
+    if (x > 92) {
+        x -= 1;
+    }
+    if (x > 34) {
+        x -= 1;
+    }
+    return x - 33;
+}
+
+function _inSpans(spans as Array<Array<Number> >, t as Number) as Boolean {
+    for (var i = 0; i < spans.size(); i++) {
+        if (t >= spans[i][0] && t <= spans[i][1]) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// A hole in the stream drops the window it falls in: the same jump, reset mid-air, is not
+// counted, and the count already made stays.
+(:test)
+function jumpWindowDiesWithAGap(logger as Test.Logger) as Boolean {
+    var det = new JumpDetector();
+    var t = 0;
+    for (var s1 = 0; s1 <= 5; s1++) {
+        det.tick(s1 * 1000, true, false, 8.0);
+    }
+    // 4 s of a steady wrist, a 3 g pop, 0.8 s at 0.3 g, a 4 g landing, 2 s steady
+    for (var q1 = 0; q1 < 100; q1++) { det.push(1.0, t); t += 40; }
+    for (var q2 = 0; q2 < 3; q2++) { det.push(3.0, t); t += 40; }
+    for (var q3 = 0; q3 < 20; q3++) { det.push(0.3, t); t += 40; }
+    for (var q4 = 0; q4 < 3; q4++) { det.push(4.0, t); t += 40; }
+    for (var q5 = 0; q5 < 50; q5++) { det.push(1.0, t); t += 40; }
+    Test.assertEqual(det.count, 1);
+    for (var s2 = 7; s2 <= 13; s2++) {
+        det.tick(s2 * 1000, true, false, 8.0);
+    }
+    t = 9000;
+    for (var q6 = 0; q6 < 25; q6++) { det.push(1.0, t); t += 40; }
+    for (var q7 = 0; q7 < 3; q7++) { det.push(3.0, t); t += 40; }
+    for (var q8 = 0; q8 < 10; q8++) { det.push(0.3, t); t += 40; }
+    det.reset();
+    for (var q9 = 0; q9 < 10; q9++) { det.push(0.3, t); t += 40; }
+    for (var q10 = 0; q10 < 3; q10++) { det.push(4.0, t); t += 40; }
+    for (var q11 = 0; q11 < 50; q11++) { det.push(1.0, t); t += 40; }
+    Test.assertEqual(det.count, 1);
     return true;
 }

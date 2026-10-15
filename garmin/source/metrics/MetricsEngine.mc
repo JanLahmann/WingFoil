@@ -110,6 +110,7 @@ class MetricsEngine {
         records = new SpeedRecords();
         history = new SessionHistory();
         pump = new PumpDetector(AppSettings.cfg);
+        pump.jumps = _makeJumps();
         _settleRing = new [BARO_SETTLE_S] as Array<Float>;
         for (var i = 0; i < BARO_SETTLE_S; i++) {
             _settleRing[i] = 0.0;
@@ -197,6 +198,11 @@ class MetricsEngine {
         // Priced against the effort the detector just reported, on this same heart rate: the
         // window opens when he starts pumping and stays open 30 s, takeoff or not.
         hrCost.tick(dt, hr, pump.attemptOpen(), pumpEvent == PumpDetector.EVENT_TAKEOFF);
+        // The jump count's context (dev): the same flight, sweep and speed this sample judged.
+        if (pump.jumps != null) {
+            (pump.jumps as JumpDetector).tick(now, detector.state == FlightDetector.STATE_ON,
+                turns.state == TurnDetector.ST_SWEEP, speedMps);
+        }
 
         history.tick(dt, detector.state == FlightDetector.STATE_ON, speedMps);
         if (turnEvent >= TurnDetector.EVENT_FLEW && turnEvent <= TurnDetector.EVENT_FELL) {
@@ -439,5 +445,22 @@ class MetricsEngine {
     // clawed back more than it gave; callers guard on distM instead of on this.
     function foilDistPct() as Float {
         return distM > 0 ? detector.foilDistM / distM * 100.0 : 0.0;
+    }
+
+    // The live jump count is a dev experiment (docs/channels.md): the beta and the release
+    // carry the class and never build one.
+    (:dev)
+    hidden function _makeJumps() as JumpDetector? {
+        return new JumpDetector();
+    }
+
+    (:notdev)
+    hidden function _makeJumps() as JumpDetector? {
+        return null;
+    }
+
+    // Jumps so far: 0 outside the dev build.
+    function jumpCount() as Number {
+        return pump.jumps != null ? (pump.jumps as JumpDetector).count : 0;
     }
 }

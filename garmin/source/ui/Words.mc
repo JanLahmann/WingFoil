@@ -105,6 +105,7 @@ module Words {
     var FLASH_CLEAN_JIBE as String = "";
     var FLASH_DRY as String = "";
     var FLASH_LONGEST as String = "";
+    var FLASH_JUMP as String = "";
     var FLASH_JIBE as String = "";
     var FLASH_TACK as String = "";
     var FLASH_TURN as String = "";
@@ -217,6 +218,7 @@ module Words {
         FLASH_CLEAN_JIBE = WatchUi.loadResource(Rez.Strings.FlashCleanJibe) as String;
         FLASH_DRY = " " + (WatchUi.loadResource(Rez.Strings.FlashDry) as String);
         FLASH_LONGEST = WatchUi.loadResource(Rez.Strings.FlashLongest) as String;
+        FLASH_JUMP = WatchUi.loadResource(Rez.Strings.FlashJump) as String;
         FLASH_JIBE = WatchUi.loadResource(Rez.Strings.FlashJibe) as String;
         FLASH_TACK = WatchUi.loadResource(Rez.Strings.FlashTack) as String;
         FLASH_TURN = WatchUi.loadResource(Rez.Strings.FlashTurn) as String;

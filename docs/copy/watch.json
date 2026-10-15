@@ -202,6 +202,7 @@
     { "id": "FlashCleanJibe", "text": "CLEAN JIBE", "term": "clean", "why": "the banner names ONE jibe, so the noun is singular; the glossary's spellings are the plural count.", "var": "FLASH_CLEAN_JIBE", "where": "the last-event line · a clean jibe" },
     { "id": "FlashDry", "text": "DRY", "term": "dryStreak", "pad": "leading", "var": "FLASH_DRY", "where": "the event flash · after the streak count" },
     { "id": "FlashLongest", "text": "LONGEST", "term": "flights", "why": "the flash is one word across a 240 px glass and the clock follows it on the same line; `Longest flight` would take the line twice over.", "var": "FLASH_LONGEST", "where": "the event flash · a new longest flight" },
+    { "id": "FlashJump", "text": "JUMP", "var": "FLASH_JUMP", "where": "the event flash · a jump, under the session's count (dev, 0.9.23-dev2); the last-event line `JUMP 3`" },
     { "id": "FlashJibe", "text": "JIBE", "var": "FLASH_JIBE", "where": "the event flash · the kind of sweep, before the verdict" },
     { "id": "FlashTack", "text": "TACK", "var": "FLASH_TACK", "where": "the event flash · the kind of sweep, before the verdict" },
     { "id": "FlashTurn", "text": "TURN", "var": "FLASH_TURN", "where": "the event flash · the kind of sweep, where the wind named neither" },

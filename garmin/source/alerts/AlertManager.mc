@@ -38,10 +38,13 @@ module AlertManager {
         // shared with the turn verdicts would have swallowed it on the one session where
         // the last jibe and the last page land inside the same five seconds.
         CH_PHONE = 7,
-        CH_COUNT = 8
+        // 0.9.23-dev2: a jump (JumpDetector, dev only). Its own channel because a jump is
+        // so often followed by a turn, and the turn's verdict must not eat it.
+        CH_JUMP = 8,
+        CH_COUNT = 9
     }
 
-    var _lastMs as Array<Number> = [0, 0, 0, 0, 0, 0, 0, 0];
+    var _lastMs as Array<Number> = [0, 0, 0, 0, 0, 0, 0, 0, 0];
     var _lastAnyMs as Number = 0;
 
     // Pure decision half, so the debounce rules are testable without a vibration motor.
@@ -108,6 +111,22 @@ module AlertManager {
                 new Attention.VibeProfile(50, 150),
                 new Attention.VibeProfile(0, 80),
                 new Attention.VibeProfile(100, 350)
+            ]);
+        }
+    }
+
+    // A jump counted (dev): three quick ticks, "hop-hop-hop", a shape no other alert has,
+    // and the flash with the count. Behind the takeoff toggle, the other alert the
+    // accelerometer gives.
+    function jump(n as Number) as Void {
+        if (AppSettings.alertTakeoff) {
+            EventFlash.fireJump(n);
+            _fire(CH_JUMP, [
+                new Attention.VibeProfile(100, 70),
+                new Attention.VibeProfile(0, 60),
+                new Attention.VibeProfile(100, 70),
+                new Attention.VibeProfile(0, 60),
+                new Attention.VibeProfile(100, 70)
             ]);
         }
     }

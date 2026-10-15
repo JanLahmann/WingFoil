@@ -94,6 +94,9 @@ class PumpDetector {
     var available as Boolean = false;   // a sensor listener is actually feeding us
 
     hidden var _cfg as Config;
+    // The live jump count (JumpDetector), dev build only: MetricsEngine sets it, and null
+    // elsewhere costs the grid one comparison.
+    var jumps as JumpDetector? = null;
 
     // filter state
     hidden var _taps as Array<Float>;
@@ -215,6 +218,9 @@ class PumpDetector {
         _burstPeakG = 0.0;
         _burstMoving = 0;
         _burstCounted = false;
+        if (jumps != null) {
+            (jumps as JumpDetector).reset();
+        }
         for (var i = 0; i < N_TAPS; i++) {
             _hist[i] = 0.0;
         }
@@ -306,6 +312,9 @@ class PumpDetector {
         // the same way, and not a second reading of the sensor. `DirectSend.wrist` is a
         // `(:notdev)` no-op in the beta and the release, so this costs them one empty call.
         DirectSend.wrist(magG, tMs);
+        if (jumps != null) {
+            (jumps as JumpDetector).push(magG, tMs);
+        }
         if (!_haveLevel) {
             _haveLevel = true;
             _level = magG;

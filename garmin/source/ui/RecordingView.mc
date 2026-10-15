@@ -617,7 +617,8 @@ class RecordingView extends WatchUi.View {
             Glyphs.drawPlay(dc, cx, gy, s * 2 / 3);
         } else {
             // a streak count or a duration: digits are the glyph
-            var v = k == EventFlash.EV_STREAK ? EventFlash.value.toString()
+            var v = (k == EventFlash.EV_STREAK || k == EventFlash.EV_JUMP)
+                ? EventFlash.value.toString()
                 : EventFlash.mmss(EventFlash.value);
             dc.drawText(cx, gy, fitFont(dc, NUMBER_FONTS, 0, v,
                 rowBudget(radius, gy - cy, inkH(dc, Graphics.FONT_NUMBER_HOT))), v, CV);
