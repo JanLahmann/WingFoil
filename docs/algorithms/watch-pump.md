@@ -1,4 +1,4 @@
-> Part of `docs/algorithms.md`. Engine 0.28.0.
+> Part of `docs/algorithms.md`. Engine 0.29.0.
 
 ## Pump / takeoff detection (watch, live) — `garmin/source/detectors/PumpDetector.mc`
 

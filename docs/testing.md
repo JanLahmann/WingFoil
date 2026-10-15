@@ -508,6 +508,16 @@ same ownership window to tell a `recovery` pump burst from a failed takeoff atte
 one accelerometer fixture attempts go 37 → 34, failed 14 → 11, unknown 1 → 0 and recovery
 0 → 4 (`test_pump_episodes_are_serialized_whole`).
 
+Engine 0.29.0 (jumps, 15 Oct 2026) moves **no committed number**: every golden gains a
+top-level `jumps` (null without an accelerometer or on a windsurf preset) and `summary.jumps`
+(count and highest), and on the three accelerometer fixtures both are empty — the two chop hops
+that passed the signal gates in August (0.09 and 0.16 m) popped at 8.0 and 8.8 kn and stop at
+`too_slow`. Because no committed recording holds a real jump (the rider's sessions stay local),
+the detector's parity rests on **`fixtures/synthetic/jumps.json`**: a 25 Hz trace with two
+jumps, a chop hop and one event for each context gate, written with the lab's answers by
+`lab/tools/make_jump_fixture.py` and asserted by `test_jump.py` (current) and
+`JumpParityTests` in the kit (to the digit).
+
 Engine 0.28.0 (ADR-038, amended the same day) moves **no committed golden** beyond the version
 and four `config` keys (`turnPositionalMinSweepS`, `turnPositionalSpikePct`,
 `turnPositionalMaxStepDeg`, `turnRecordingEndS`): the three positional rules ask only of a

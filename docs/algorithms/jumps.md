@@ -1,14 +1,16 @@
-> Part of `docs/algorithms.md`. Engine 0.28.0.
+> Part of `docs/algorithms.md`. Engine 0.29.0.
 
-## Jumps (theoretical, uncalibrated)
+## Jumps (counted since engine 0.29.0; heights uncalibrated)
 
-> **Nothing in this section has ever been checked against a jump.** Jan does not jump (yet),
-> so the corpus contains no labelled jump and no calibration exists. Every accuracy figure
-> below was measured against a synthetic generator built from the physics we assume — it
-> validates the *maths*, not the water. Lab-only: `lab/src/wingfoil_lab/jump.py`, reproduced
-> by `uv run python lab/tools/jump_report.py`. It feeds no golden, no watch field, no phone
-> metric, and `ENGINE_VERSION` is untouched. The day a real jump is recorded, every threshold
-> here is a starting point to be re-tuned, not a setting to be trusted.
+> **The count is checked against two of one rider's sessions; the height is not calibrated.**
+> Freddy's 18 Sep and 10 Oct 2026 sessions (kept locally, not in the corpus) are the only
+> recordings with labelled jumps, and his own estimate ("at most 1.5 m") is the only height
+> anyone has given. Since engine 0.29.0 the detector runs in every engine on every wingfoil
+> recording with an accelerometer (`jumps`, `summary.jumps` in the golden), and every surface
+> that shows a height calls it an estimate. The physics study below was measured against a
+> synthetic generator built from the physics we assume — it validates the *maths*, not the
+> water — and is reproduced by `uv run python lab/tools/jump_report.py`. The watch does not
+> detect jumps.
 
 ### The physics — why hang time alone lies
 
@@ -57,9 +59,11 @@ caveat; a wrist watch cannot.
 | `jumpMaxAirtime` | 4.0 | s | longer is a dropout. 4.0 s covers a 5 m jump at s = 0.7 (T = 3.69 s) |
 | `jumpTakeoffMinG` | 1.8 | g | pop spike required in the 0.5 s before the window |
 | `jumpImpactMinG` | 2.5 | g | landing spike required in the 0.5 s after it |
-| `jumpSpikeWindow` | 0.5 | s | search span for both spikes |
+| `jumpSpikeWindow` | **1.0** | s | search span for both spikes. 0.5 until engine 0.29.0: on Freddy's 18 Sep session the pop sits ~0.7 s before the window and the impact more than 0.5 s after it, so 0.5 s found 1 of his 5 jumps; 1.0 s finds all 5 and no hop on Jan's sessions |
 | `jumpRefractory` | 2.0 | s | dead time after an accepted jump |
 | `jumpMaxGap` | 0.1 | s | a sensor hole inside the window voids it |
+| `jumpMinSpeedKmh` | **18** | km/h | peak Doppler speed in the `jumpSpeedWindow` before the takeoff (engine 0.29.0). Every real jump popped at 11 kn (20 km/h) or more, every chop hop that passed the signal gates at 8.0–8.8 kn |
+| `jumpSpeedWindow` | 3.0 | s | span before the takeoff that speed is read over |
 | `jumpSupportSigma` | 0.1 | | assumed error on the support profile (the wrist-vs-COM term) |
 | `jumpBaroContext` | 5.0 | s | baseline span each side of the window for the template fit |
 | `jumpBaroMinSamples` | 2 | | fewer in-window altitude samples ⇒ "insufficient samples", no number |
@@ -70,11 +74,13 @@ track itself (flights and turn sweeps, the engine's own):
 | gate | rule | candidate reason |
 |---|---|---|
 | on the foil | the takeoff lies inside a flight | `off_foil` |
+| at speed | the peak speed over `jumpSpeedWindow` before the takeoff is at least `jumpMinSpeedKmh` | `too_slow` |
 | not in a turn | the airborne window does not overlap a turn's sweep (`start_t`–`end_t`) | `inside_turn` |
 
-Both come from the first labelled jumps (Freddy, 10 Oct 2026, below): a pop while pumping up
-at 3.7 kn passed every signal gate, and the one "jump" inside a sweep was a failed manoeuvre in
-which the board flew on without the rider. A turn that *starts after the landing* does not
+All three come from the first labelled jumps (Freddy, below): a pop while pumping up at
+3.7 kn passed every signal gate, the one "jump" inside a sweep was a failed manoeuvre in which
+the board flew on without the rider, and the hops that pass the signal gates on sessions with
+no jump at all (Jan's two in August, one of Freddy's on 18 Sep) all popped below 9 kn. A turn that *starts after the landing* does not
 void the jump — a jump followed by a turn is the normal case (five of the eleven).
 
 A **median** filter, not the box average `pump.py` uses: a box drags the tail of the takeoff
@@ -295,7 +301,8 @@ jump**, and they are all labelled `candidate` because there is nothing here to c
 | 4149.9 | 0.43 s | 0.52 g | gated out, `no_takeoff_spike` | 0.1 s before a `fell_in` flight end |
 
 **The one candidate that passed every gate estimates to 9 cm** — chop, not air, and the
-estimator says so. The important structural finding is the other four: **three of them sit
+estimator says so. (Engine 0.29.0: it popped at 8.0 kn and stops at `too_slow`; so does the 29 Aug one, 0.16 m at
+8.8 kn.) The important structural finding is the other four: **three of them sit
 within 7 s of a `fell_in` flight end**, and the fourth of an `unknown` one. That is not a
 coincidence — *a fall has the same shape as a jump through this sensor*: the wrist unweights as
 the rider drops off the foil, then the water delivers a 5 g impact. Falls are the dominant
@@ -314,17 +321,25 @@ confirmed the count ("could be about right"), the spacing, and a highest jump of
 | 15:12:57 | off the foil at 3.7 kn, pumping up | `off_foil` |
 | 13:49:31 | heading sweeps 134° through the window, the tack ends `fell_in`, the flight 6 s later — the failed manoeuvre | `inside_turn` |
 
-**11 jumps remain.** The integrated heights run 0.10–0.65 m against his "at most 1.5 m", so
-they read low by up to ~2x; this is 25 Hz, where the grid above already reads short at
-higher support. One rider's estimate is not a calibration: the heights stay *estimated*.
-No other recording with accel changes (the four others: 2, 1, 1 and 0 jumps, as before).
+With the 0.5 s spike window that left 11. **Engine 0.29.0 counts 14**: the 1.0 s window (set
+on 18 Sep, below) adds 12:43:56 (0.08 m, 12.7 kn), 13:26:35 (0.33 m, 15.9 kn) and 15:27:15
+(0.21 m, 15.6 kn); the last two look like the others, the first is the weakest of the
+session. He did not note times, so the 14 stand unconfirmed one by one. The integrated heights
+run 0.08–0.71 m against his "at most 1.5 m", so they read low by up to ~2x; this is 25 Hz,
+where the grid above already reads short at higher support. One rider's estimate is not a
+calibration: the heights stay *estimated*.
+
+**18 Sep 2026, Epplesee** (25 Hz, labelled on 21 Sep from the accelerometer and the speed:
+five jumps at t+199, 512, 1014, 2417 and 2569 s). The 0.5 s window found one; 1.0 s finds all
+five, and `too_slow` removes the one hop that passed at 0.5 s (t+1373, 8.6 kn). On the three
+committed accelerometer fixtures (Jan's, who does not jump) the count is 0.
 
 ### Status and what would change it
 
 | | |
 |---|---|
-| validated against | a synthetic generator built from the assumed physics — **nothing else** |
-| never validated against | a real jump, at any height, by anyone |
+| validated against | the synthetic generator (the maths); **the count** against two of Freddy's sessions (5 of 5 on 18 Sep; 14 on 10 Oct against his "about right" for 12) |
+| never validated against | a measured height. His one estimate ("at most 1.5 m") says the integrated heights read low by up to ~2x |
 | accuracy claim | ±1.3 % noise-free, ±2 % with measured noise, for s ≤ 0.6 at 100 Hz — **of the model** |
 | honest per-jump uncertainty | ±0.14 m on a 1 m jump, 97 % of it the wrist-vs-COM proxy |
 | what would make it real | a session with jumps, each height independently measured (video against a fixed reference, or a second IMU on the torso). Ten labelled jumps would settle `jumpAirborneMaxG`, the true `s` range, and whether the wrist proxy holds at all |

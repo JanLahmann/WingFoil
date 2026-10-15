@@ -1,5 +1,5 @@
 {
-  "_readme": [
+  "_readme" : [
     "WHICH FEATURE IS IN WHICH CHANNEL, IN THE RIDER'S WORDS.",
     "",
     "docs/channels.md is the author. This is its machine-readable twin: the same beta and",
@@ -16,63 +16,67 @@
     "`forbiddenInRelease` is the guard on the release copy, not a list of rows: no release",
     "text may contain any of these, case-insensitively, as a substring. See README.md."
   ],
-  "beta": [
+  "beta" : [
     {
-      "id": "gpxTcx",
-      "text": ".gpx and .tcx files, so a session exported from a Polar, a Suunto or a COROS opens straight from Files."
+      "id" : "gpxTcx",
+      "text" : ".gpx and .tcx files, so a session exported from a Polar, a Suunto or a COROS opens straight from Files."
     },
     {
-      "id": "appleHealth",
-      "text": "Apple Health, both ways: what Apple's Workout app recorded is read in, and your sessions are written back as workouts."
+      "id" : "appleHealth",
+      "text" : "Apple Health, both ways: what Apple's Workout app recorded is read in, and your sessions are written back as workouts."
     },
     {
-      "id": "appleWatchApp",
-      "text": "The CleanJibe Apple Watch app, which records on your wrist and hands the session to the phone."
+      "id" : "appleWatchApp",
+      "text" : "The CleanJibe Apple Watch app, which records on your wrist and hands the session to the phone."
     },
     {
-      "id": "widgets",
-      "text": "Home-screen widgets and the watch complication."
+      "id" : "widgets",
+      "text" : "Home-screen widgets and the watch complication."
     },
     {
-      "id": "sessionVideo",
-      "text": "The session video: your afternoon as a film rather than a card."
+      "id" : "sessionVideo",
+      "text" : "The session video: your afternoon as a film rather than a card."
     },
     {
-      "id": "grouping",
-      "text": "Grouping the library by month, year or spot, and filtering it."
+      "id" : "grouping",
+      "text" : "Grouping the library by month, year or spot, and filtering it."
     },
     {
-      "id": "sessionStory",
-      "text": "The session story: one line over your numbers, and a chip on each record you beat."
+      "id" : "sessionStory",
+      "text" : "The session story: one line over your numbers, and a chip on each record you beat."
     },
     {
-      "id": "sendToDeveloper",
-      "text": "Send a session and its recording to us from its Share page or a turn, with your notes."
+      "id" : "sendToDeveloper",
+      "text" : "Send a session and its recording to us from its Share page or a turn, with your notes."
     },
     {
-      "id": "appleWatchLive",
-      "text": "Planned: a live view on the Apple Watch. Foil state, flights, records and turn verdicts on the wrist, as the Garmin app shows them."
+      "id" : "jumps",
+      "text" : "Jumps: how many you jumped, and an estimate of the highest, from the watch's motion sensor."
+    },
+    {
+      "id" : "appleWatchLive",
+      "text" : "Planned: a live view on the Apple Watch. Foil state, flights, records and turn verdicts on the wrist, as the Garmin app shows them."
     }
   ],
-  "dev": [
+  "dev" : [
     {
-      "id": "garminLink",
-      "text": "The Garmin link: a summary card from your watch the moment you stop. Your spot's map and the wind direction go back to it."
+      "id" : "garminLink",
+      "text" : "The Garmin link: a summary card from your watch the moment you stop. Your spot's map and the wind direction go back to it."
     },
     {
-      "id": "windsurf",
-      "text": "Windsurf, foil and fin, with thresholds of its own"
+      "id" : "windsurf",
+      "text" : "Windsurf, foil and fin, with thresholds of its own"
     },
     {
-      "id": "tuning",
-      "text": "The tuning page: every analysis threshold on a slider, tried against your own sessions"
+      "id" : "tuning",
+      "text" : "The tuning page: every analysis threshold on a slider, tried against your own sessions"
     },
     {
-      "id": "ipad",
-      "text": "iPad"
+      "id" : "ipad",
+      "text" : "iPad"
     }
   ],
-  "forbiddenInRelease": [
+  "forbiddenInRelease" : [
     "session story",
     "gpx",
     "tcx",
@@ -88,5 +92,5 @@
     "windsurf",
     "tuning"
   ],
-  "sectionTitle": "Coming in a future release"
+  "sectionTitle" : "Coming in a future release"
 }

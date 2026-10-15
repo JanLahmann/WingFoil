@@ -1,4 +1,4 @@
-> Part of `docs/algorithms.md`. Engine 0.28.0.
+> Part of `docs/algorithms.md`. Engine 0.29.0.
 
 ## Disciplines — one engine, three rigs (engine ≥ 0.18.0, EXPERIMENTAL)
 

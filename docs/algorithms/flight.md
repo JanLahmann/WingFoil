@@ -1,4 +1,4 @@
-> Part of `docs/algorithms.md`. Engine 0.28.0.
+> Part of `docs/algorithms.md`. Engine 0.29.0.
 
 ## Flight (foil) detection — hysteresis state machine
 

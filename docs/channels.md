@@ -230,10 +230,11 @@ GPX, or a TCX without speed, is c.
 
 | feature | channel | note |
 |---|---|---|
-| Engine 0.28.0: foil time, flights, touchdowns, falls, wind axis | release | the number is the engine the three channels share; `docs/algorithms.md` is the contract and `tools/check_release.py` holds this row to it |
+| Engine 0.29.0: foil time, flights, touchdowns, falls, wind axis | release | the number is the engine the three channels share; `docs/algorithms.md` is the contract and `tools/check_release.py` holds this row to it |
 | Turn verdicts, clean jibes, CPH · JPH or TPH · falls / h, dry streaks | release | the 20-minute rate floor ("too short for a rate", 9 Oct 2026) and the **Rates** help topic are a correction to numbers every channel already prints, so they ship in all three at once (docs/algorithms/rates.md, "Too short for a rate") |
 | GP3S record set, uncertified marking | release | |
 | Pump strokes, takeoff attempts | release | class a and the Apple Watch app (wrist accelerometer); absence shown as absence |
+| **Jumps**: the count and the highest, the height marked estimated, on the Flights tab | beta | engine 0.29.0 (docs/algorithms/jumps.md); wingfoil recordings with an accelerometer only, nothing shown without one or with no jump. Beta because Freddy rides it (Jan, 15 Oct 2026). The web computes it and shows nothing yet; the watch detects nothing. Before release: a second rider's jumps agree with the count, and a height measured against something other than the wrist |
 | Turn page and flight-end page with the three strips | release | |
 | The **Next session** card at the top of the Turns tab: the commonest *Next time…* tip of the session with how many turns it came up on, and port against starboard (clean jibes per entry tack, or flew through on a session with no jibes), naming the side to work on | beta | rider review I2, 9 Oct 2026. `#if BETA` in the app target (`NextSessionCard`, placed by `SessionTurnsSection`); the rule is the kit's (`NextSessionCoach`), the tip's sentence the turn page's own. The release build's Turns tab starts with its cards, as before. Not on the beta list (`ChannelFeatures.beta`) yet. Before release: **rule 1**, the card read on ten sessions from two riders with no tip or side Jan disputes, and a line in the **Turn outcomes** help topic |
 | "Wrist under" layer, why-line on every touchdown | release | |

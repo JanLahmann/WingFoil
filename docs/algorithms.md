@@ -6,7 +6,7 @@ Single source of truth for detection/metric parameters. Three implementations fo
 re-tuned in lab notebooks against the labeled fixture corpus; changed defaults are updated HERE
 first, with the tuning notebook referenced in the commit.
 
-`ENGINE_VERSION`: **0.28.0** (bump on any change that alters outputs; triggers phone re-analysis)
+`ENGINE_VERSION`: **0.29.0** (bump on any change that alters outputs; triggers phone re-analysis)
 
 This file is an index. Every threshold, clock and verdict lives in the topic files under
 `docs/algorithms/`; each one carries a one-line header naming this file and the engine
@@ -42,4 +42,4 @@ version it is stamped for.
   heartbeats.
 - [`algorithms/divergence.md`](algorithms/divergence.md) — the divergence check, for source
   class (a) recordings only.
-- [`algorithms/jumps.md`](algorithms/jumps.md) — jumps: theoretical, uncalibrated.
+- [`algorithms/jumps.md`](algorithms/jumps.md) — jumps: detected on the foil, at speed and outside a turn (engine 0.29.0); heights uncalibrated.
