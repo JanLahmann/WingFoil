@@ -38,7 +38,7 @@ module AlertManager {
         // shared with the turn verdicts would have swallowed it on the one session where
         // the last jibe and the last page land inside the same five seconds.
         CH_PHONE = 7,
-        // 0.9.23-dev2: a jump (JumpDetector, dev only). Its own channel because a jump is
+        // 0.9.24: a jump (JumpDetector, beta and dev). Its own channel because a jump is
         // so often followed by a turn, and the turn's verdict must not eat it.
         CH_JUMP = 8,
         CH_COUNT = 9
@@ -115,7 +115,7 @@ module AlertManager {
         }
     }
 
-    // A jump counted (dev): three quick ticks, "hop-hop-hop", a shape no other alert has,
+    // A jump counted (beta and dev): three quick ticks, "hop-hop-hop", a shape no other alert has,
     // and the flash with the count. Behind the takeoff toggle, the other alert the
     // accelerometer gives.
     function jump(n as Number) as Void {

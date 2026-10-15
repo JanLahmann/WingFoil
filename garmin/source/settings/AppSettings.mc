@@ -16,6 +16,7 @@ module AppSettings {
 
     var sportChoice as Number = 0;      // 0 windsurf(43), 1 kitesurf(44), 2 generic
     var accelLogging as Boolean = true;     // raw accel into the FIT (phone/lab validation)
+    var jumpCount as Boolean = false;       // the live jump count: beta and dev only (0.9.24)
     var pumpDetection as Boolean = true;    // live PumpDetector (a second accel consumer)
     var alertPb as Boolean = true;
     var alertFlight as Boolean = true;
@@ -127,6 +128,7 @@ module AppSettings {
         cfg.useKnots = _bool("useKnots", false);
         sportChoice = _clamped("sportChoice", 0.0, 0.0, 2.0).toNumber();
         accelLogging = _bool("accelLogging", true);
+        jumpCount = _bool("jumpCount", false);
         pumpDetection = _bool("pumpDetection", true);
         alertPb = _bool("alertPb", true);
         alertFlight = _bool("alertFlight", true);

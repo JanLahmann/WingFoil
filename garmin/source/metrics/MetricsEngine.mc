@@ -198,7 +198,7 @@ class MetricsEngine {
         // Priced against the effort the detector just reported, on this same heart rate: the
         // window opens when he starts pumping and stays open 30 s, takeoff or not.
         hrCost.tick(dt, hr, pump.attemptOpen(), pumpEvent == PumpDetector.EVENT_TAKEOFF);
-        // The jump count's context (dev): the same flight, sweep and speed this sample judged.
+        // The jump count's context (beta and dev): the same flight, sweep and speed this sample judged.
         if (pump.jumps != null) {
             (pump.jumps as JumpDetector).tick(now, detector.state == FlightDetector.STATE_ON,
                 turns.state == TurnDetector.ST_SWEEP, speedMps);
@@ -447,16 +447,11 @@ class MetricsEngine {
         return distM > 0 ? detector.foilDistM / distM * 100.0 : 0.0;
     }
 
-    // The live jump count is a dev experiment (docs/channels.md): the beta and the release
-    // carry the class and never build one.
-    (:dev)
+    // The live jump count is a beta and dev feature (docs/channels.md). Monkey C has no
+    // beta annotation, so the switch is a property only those two streams' resources carry
+    // (`jumpCount`); the release carries the class and never builds one.
     hidden function _makeJumps() as JumpDetector? {
-        return new JumpDetector();
-    }
-
-    (:notdev)
-    hidden function _makeJumps() as JumpDetector? {
-        return null;
+        return AppSettings.jumpCount ? new JumpDetector() : null;
     }
 
     // Jumps so far: 0 outside the dev build.

@@ -1642,7 +1642,7 @@ function eventFlashPaintsEveryVerdict(logger as Test.Logger) as Boolean {
     Test.assertEqual(EventFlash.stripText(EventFlash.EV_LONGEST, TurnDetector.KIND_NONE, 134),
         "LONGEST 2:14");
 
-    // a jump carries the session's count (0.9.23-dev2), in the flight events' teal
+    // a jump carries the session's count (0.9.24), in the flight events' teal
     EventFlash.fireJump(3);
     Test.assertEqual(EventFlash.word(EventFlash.kind, EventFlash.value), "JUMP");
     Test.assertEqual(EventFlash.stripText(EventFlash.EV_JUMP, TurnDetector.KIND_NONE, 3),
@@ -3850,7 +3850,7 @@ function summaryPagesBuildAndRenderHeadless(logger as Test.Logger) as Boolean {
 // shared timestamp made the more informative of the two silently disappear.
 (:test)
 function alertDebounceIsPerChannelNotGlobal(logger as Test.Logger) as Boolean {
-    // Nine channels since 0.9.23-dev2: PB · flight · interval · takeoff · turn · auto wind ·
+    // Nine channels since 0.9.24: PB · flight · interval · takeoff · turn · auto wind ·
     // clean jibe · the direct transfer reaching the phone whole · a jump.
     Test.assertEqual(AlertManager.CH_COUNT, 9);
     Test.assertMessage(AlertManager._lastMs.size() == AlertManager.CH_COUNT,
@@ -7079,7 +7079,7 @@ function submersionSettleReleaseReadsLevelsAndSpikes(logger as Test.Logger) as B
 }
 
 
-// ---- jumps (JumpDetector, 0.9.23-dev2) ----------------------------------------------------
+// ---- jumps (JumpDetector, 0.9.24) ----------------------------------------------------
 //
 // The live count against the lab's (docs/algorithms/jumps.md "Watch approximation"): the
 // synthetic trace of fixtures/synthetic/jumps.json, replayed sample by sample with the 1 Hz

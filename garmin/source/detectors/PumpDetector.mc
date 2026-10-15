@@ -94,7 +94,7 @@ class PumpDetector {
     var available as Boolean = false;   // a sensor listener is actually feeding us
 
     hidden var _cfg as Config;
-    // The live jump count (JumpDetector), dev build only: MetricsEngine sets it, and null
+    // The live jump count (JumpDetector), beta and dev only: MetricsEngine sets it, and null
     // elsewhere costs the grid one comparison.
     var jumps as JumpDetector? = null;
 

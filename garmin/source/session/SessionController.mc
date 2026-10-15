@@ -171,7 +171,7 @@ class SessionController {
                 AlertManager.takeoff();
             }
             // A jump is decided in the accelerometer callback, a second after the landing;
-            // the tick is where it is told (dev only: the count stays 0 elsewhere).
+            // the tick is where it is told (beta and dev: the count stays 0 in the release).
             var jumps = engine.jumpCount();
             if (jumps > _prevJumps) {
                 _prevJumps = jumps;

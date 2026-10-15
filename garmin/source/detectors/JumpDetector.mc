@@ -1,6 +1,6 @@
 import Toybox.Lang;
 
-// Live jump COUNT from the wrist accelerometer — dev build only (0.9.23-dev2).
+// Live jump COUNT from the wrist accelerometer — beta and dev (0.9.24).
 // Watch twin of lab/src/wingfoil_lab/jump.py `detect_jumps_from_arrays`, engine 0.29.0
 // (docs/algorithms/jumps.md, and its "Watch approximation"). Every threshold below is the
 // lab default; nothing is re-tuned here. No HEIGHT: the integrated estimate needs the whole
@@ -8,9 +8,9 @@ import Toybox.Lang;
 // watch only counts.
 //
 // Fed from PumpDetector._pushGrid, the one place every 25 Hz grid magnitude passes, so it
-// reads exactly the numbers the pump chain reads. MetricsEngine creates it in the dev build
-// only (`_makeJumps`, a `(:notdev)` null everywhere else), so the beta and the release
-// carry the class and never run it.
+// reads exactly the numbers the pump chain reads. MetricsEngine creates it where the `jumpCount`
+// property is on (`_makeJumps`): the beta and the dev build. The release has no such
+// property, so it carries the class and never runs it.
 //
 // Per grid sample, O(1), no allocation:
 //   |a| -> 3-sample running median (jumpSmooth 0.06 s at 25 Hz, the lab's width)

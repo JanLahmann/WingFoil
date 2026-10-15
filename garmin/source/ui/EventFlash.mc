@@ -64,7 +64,7 @@ module EventFlash {
         // case the page itself shows.
         EV_PAUSED = 8,
         EV_RESUMED = 9,
-        // 0.9.23-dev2: a jump, with the session's count (JumpDetector, dev only).
+        // 0.9.24: a jump, with the session's count (JumpDetector, beta and dev).
         EV_JUMP = 10
     }
 

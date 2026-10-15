@@ -51,12 +51,12 @@ impossible to re-read) every on-water alert that vibrates also shows itself, in 
   the star, a dry-streak mark as the number and *DRY* (5, then every ten), a new longest
   flight as its duration and *LONGEST*, and since 0.9.22 a pause as *PAUSED* with the two bars
   in the banner's yellow and a resume as *RECORDING* with the play triangle in white (next
-  section). In the dev build since 0.9.23-dev2 a jump is the session's jump count and *JUMP*
+  section). In the beta and dev builds since 0.9.24 a jump is the session's jump count and *JUMP*
   in the flight teal, with three quick ticks (docs/algorithms/jumps.md, "Watch approximation"). A pumped takeoff is a **ring** only — a thick circle
   inside the bezel for 0.7 s, the page left readable — because it is frequent. The speed PB
   keeps its own orange flash with the value.
 - **The afterglow, 20 s.** A line at the top of whatever page is up keeps the last event:
-  *JIBE · flew*, *TACK · touch*, *TURN · fell*, *CLEAN JIBE*, *10 DRY*, *LONGEST 2:14*, *JUMP 3* (dev). On the
+  *JIBE · flew*, *TACK · touch*, *TURN · fell*, *CLEAN JIBE*, *10 DRY*, *LONGEST 2:14*, *JUMP 3* (beta and dev). On the
   main page it is the top row itself, in the event's ink, where the clock and PAUSED live; on
   every other page it sits where the pause banner sits, black on the ink. A running flash and
   PAUSED both take precedence over it.
