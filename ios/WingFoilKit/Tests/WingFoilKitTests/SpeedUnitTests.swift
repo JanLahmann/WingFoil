@@ -144,6 +144,9 @@ import Testing
             "help prose teaches the setting, and has to be able to name both units",
         "ios/WingFoilKit/Sources/WingFoilKit/Presentation/SettingsCopy.swift":
             "the Units section's own footer, which names what the picker switches between",
+        "ios/WingFoilKit/Sources/WingFoilKit/Presentation/AssistantState.swift":
+            "the Ask CleanJibe state names the schema's unit tokens and its knot keys: "
+            + "a contract with the assistant, never a reading on a screen",
     ]
 
     /// **The lint has teeth**, which a lint that scans a clean tree cannot otherwise show.

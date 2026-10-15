@@ -168,11 +168,11 @@
   <section class="home-section" id="app-network">
     <h2>The iPhone app — what leaves your phone</h2>
     <p class="section-lede">
-      Ten entries, and not one of them is a surprise: an account you connected, something a
+      Eleven entries, and not one of them is a surprise: an account you connected, something a
       map needs, the name of a place you sail, a mail you wrote and sent yourself, what iOS
-      itself already knew about a crash on this phone, and — while this is a beta — Apple&rsquo;s
-      own crash reports and one small file the app reads to see whether your build is still the
-      current one. There is no eleventh.
+      itself already knew about a crash on this phone, a question you asked, and — while this is
+      a beta — Apple&rsquo;s own crash reports and one small file the app reads to see whether
+      your build is still the current one. There is no twelfth.
     </p>
 
     <dl class="terms">
@@ -338,6 +338,23 @@
           told nothing and the app simply tries again tomorrow. GitHub Pages, which serves this
           site, sees it the way it sees any page load here: a URL, a time and an IP address.
           The App Store build does not do this at all.
+        </dd>
+      </div>
+      <div class="term">
+        <dt>Ask CleanJibe — a question you send, in the development build</dt>
+        <dd>
+          Help and a session's page have a box where you can ask a question. The first time, a
+          page says what is sent; nothing is sent until you send a question. Then your question,
+          the app's version and your units go through Cloudflare to Anthropic, whose Claude writes
+          the answer from our help texts. Asked from a session, that session's numbers go too:
+          its date and times, speeds, flights and every turn's verdict, but no map, no
+          positions and no name. We keep the question and the answer for 30 days to improve the
+          answers, then they are deleted. Apple's App Attest confirms that the question comes
+          from this app, which counts the daily limit of 20 questions: a key made on your phone
+          for that alone, deleted on our side after 30 days unused. No account, no cookie.
+          Anthropic's privacy policy is at
+          <a href="https://www.anthropic.com/legal/privacy" rel="noopener">anthropic.com/legal/privacy</a>.
+          The App Store build and the beta do not have it yet.
         </dd>
       </div>
     </dl>

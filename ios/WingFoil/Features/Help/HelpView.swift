@@ -45,6 +45,9 @@ private struct HelpIndexList: View {
 
     @State private var query = ""
     @State private var selected: HelpTopicID?
+    #if DEV
+    @State private var asking = false
+    #endif
 
     /// What this index may list: the catalogue, minus the topics this **channel** does not
     /// have a door for and minus the ones a feature switch is hiding
@@ -98,6 +101,26 @@ private struct HelpIndexList: View {
                     .listRowBackground(Color.clear)
                 }
             }
+            #if DEV
+            // Ask CleanJibe (dev only, docs/channels.md): the question box over these same texts.
+            if query.trimmingCharacters(in: .whitespaces).isEmpty {
+                Section {
+                    Button { asking = true } label: {
+                        Label {
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("Ask CleanJibe").font(.subheadline.weight(.semibold))
+                                Text("A question in your own words, answered from these pages.")
+                                    .font(.footnote)
+                                    .foregroundStyle(.readableSecondary)
+                            }
+                        } icon: {
+                            Image(systemName: "bubble.left.and.text.bubble.right")
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            #endif
             ForEach(sections, id: \.section.id) { group in
                 Section {
                     ForEach(Array(group.topics.enumerated()), id: \.element.id) { index, topic in
@@ -126,6 +149,9 @@ private struct HelpIndexList: View {
         }
         .searchable(text: $query, prompt: "Search help")
         .sheet(item: $selected) { HelpTopicSheet(id: $0) }
+        #if DEV
+        .sheet(isPresented: $asking) { AskView(context: .help, state: AskState.help(store)) }
+        #endif
         .task {
             // Deep link from a `?` or from a card: the topic sheet has to wait for
             // the index's own presentation to finish, or UIKit drops the second one.

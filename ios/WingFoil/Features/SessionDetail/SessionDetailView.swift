@@ -96,6 +96,10 @@ struct SessionDetailView: View {
     /// second and every one of those re-evaluates every view on this page.
     @State private var milestones: [ReplayMilestone] = []
     @State private var showShare = false
+    #if DEV
+    /// Ask CleanJibe about this session (dev only, docs/channels.md).
+    @State private var asking = false
+    #endif
     /// Bumped the first time a record-setting session opens (`SessionStore.takeRecordConfetti`).
     @State private var confetti: Int?
     #if DEBUG && targetEnvironment(simulator)
@@ -407,6 +411,15 @@ struct SessionDetailView: View {
                 .disabled(row == nil)
                 .accessibilityHint("Rename this session")
             }
+            #if DEV
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { asking = true } label: {
+                    Label("Ask CleanJibe", systemImage: "bubble.left.and.text.bubble.right")
+                }
+                // The answer reads the analysis, so it waits for it.
+                .disabled(row == nil || detail == nil)
+            }
+            #endif
             ToolbarItem(placement: .topBarTrailing) {
                 Button { showShare = true } label: {
                     Label("Share", systemImage: "square.and.arrow.up")
@@ -423,6 +436,14 @@ struct SessionDetailView: View {
         .sheet(isPresented: $renaming) {
             if let row { RenameSessionSheet(row: row, draft: $titleDraft) }
         }
+        #if DEV
+        .sheet(isPresented: $asking) {
+            if let row, let detail {
+                AskView(context: .session,
+                        state: AskState.session(store, row: row, analysis: detail.analysis))
+            }
+        }
+        #endif
         .task(id: shown) { await load() }
         // A rename, an import or a Speed records change can move what the session holds.
         .onChange(of: "\(store.libraryGeneration)|\(store.speedRecordPolicy.rawValue)") {
