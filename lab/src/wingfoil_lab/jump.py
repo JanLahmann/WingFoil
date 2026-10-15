@@ -57,12 +57,13 @@ Takeoff spike (the pop off the water) -> a sustained low-g phase (the airborne w
 a landing impact spike. Thresholds are the ``jump*`` parameters in docs/algorithms.md.
 Sources without an accel stream (native / other-app FITs) get ``None``, as everywhere else.
 
-Two context gates follow the signal gates (Freddy, 10 Oct 2026, the first labelled jumps):
+Three context gates follow the signal gates (Freddy, 10 Oct 2026, the first labelled jumps):
 the takeoff must lie **inside a flight** (``off_foil`` -- a pop while pumping up off the
-water is not a jump), and the airborne window must not overlap **a turn's sweep**
-(``inside_turn`` -- the one "jump" inside a turn was a failed manoeuvre in which the board
-flew on without the rider). ``detect_jumps`` derives both from the track itself unless the
-caller hands in the spans.
+water is not a jump), the rider must have been **fast** just before it (``too_slow`` -- every
+real jump popped at 11 kn or more, every chop hop at 9 kn or less), and the airborne window
+must not overlap **a turn's sweep** (``inside_turn`` -- the one "jump" inside a turn was a
+failed manoeuvre in which the board flew on without the rider). ``detect_jumps`` derives
+all three from the track itself unless the caller hands them in.
 """
 
 from __future__ import annotations
@@ -98,9 +99,11 @@ class JumpConfig:
     max_airtime_s: float = 4.0          # jumpMaxAirtime: longer is a dropout, not a jump
     takeoff_min_g: float = 1.8          # jumpTakeoffMinG: pop spike before the window
     impact_min_g: float = 2.5           # jumpImpactMinG: landing spike after the window
-    spike_window_s: float = 0.5         # jumpSpikeWindow: search span for both spikes
+    spike_window_s: float = 1.0         # jumpSpikeWindow: search span for both spikes
     refractory_s: float = 2.0           # jumpRefractory: dead time after an accepted jump
     max_gap_s: float = 0.1              # jumpMaxGap: a sensor hole voids the window
+    min_speed_kmh: float = 18.0         # jumpMinSpeedKmh: peak speed before the pop
+    speed_window_s: float = 3.0         # jumpSpeedWindow: ... over this span before t0
 
     # --- height estimation ---
     support_max: float = 1.0            # s(t) clipped to [0, support_max] before integrating
@@ -209,11 +212,13 @@ Span = tuple[float, float]
 
 def detect_jumps(track: RawTrack, config: JumpConfig | None = None,
                  flight_spans: list[Span] | None = None,
-                 turn_spans: list[Span] | None = None) -> JumpResult | None:
+                 turn_spans: list[Span] | None = None,
+                 speed: tuple[np.ndarray, np.ndarray] | None = None) -> JumpResult | None:
     """Detect jumps in a parsed source, or None when it carries no accelerometer stream.
 
-    `flight_spans` / `turn_spans` (seconds on the records' base) feed the two context gates;
-    left out, they are derived from the track by `session_context`.
+    `flight_spans` / `turn_spans` (seconds on the records' base) and `speed` (time, m/s on
+    the same base) feed the context gates; left out, they are derived from the track by
+    `session_context`.
     """
     accel = track.accel
     if accel is None or accel.empty:
@@ -222,17 +227,20 @@ def detect_jumps(track: RawTrack, config: JumpConfig | None = None,
                   + accel["ay"].to_numpy(float) ** 2
                   + accel["az"].to_numpy(float) ** 2)
     alt_t, alt_m = _altitude_channel(track)
-    if flight_spans is None or turn_spans is None:
-        flights, turns = session_context(track)
+    if flight_spans is None or turn_spans is None or speed is None:
+        flights, turns, v = session_context(track)
         flight_spans = flights if flight_spans is None else flight_spans
         turn_spans = turns if turn_spans is None else turn_spans
+        speed = v if speed is None else speed
     return detect_jumps_from_arrays(accel["t"].to_numpy(float), mag, config,
                                     alt_t=alt_t, alt_m=alt_m,
-                                    flight_spans=flight_spans, turn_spans=turn_spans)
+                                    flight_spans=flight_spans, turn_spans=turn_spans,
+                                    speed=speed)
 
 
-def session_context(track: RawTrack) -> tuple[list[Span], list[Span]]:
-    """The flights and the turn sweeps of a track, as (start, end) spans for the gates."""
+def session_context(track: RawTrack) -> tuple[list[Span], list[Span],
+                                               tuple[np.ndarray, np.ndarray]]:
+    """The flights, the turn sweeps and the speed of a track, for the context gates."""
     # Imported here: the engine stages do not depend on this module, and keeping it that
     # way keeps jump.py a side study the pipeline can ignore.
     from .filters import clean
@@ -244,7 +252,13 @@ def session_context(track: RawTrack) -> tuple[list[Span], list[Span]]:
     fr = segment_flights(ct)
     turns = detect_turns(ct, fr, estimate_wind(ct, fr))
     return ([(f.start_t, f.end_t) for f in fr.flights],
-            [(tu.start_t, tu.end_t) for tu in turns])
+            [(tu.start_t, tu.end_t) for tu in turns],
+            clean_speed(ct))
+
+
+def clean_speed(ct) -> tuple[np.ndarray, np.ndarray]:
+    """The cleaned track's Doppler speed (m/s) on the records' base, for `too_slow`."""
+    return ct.records["t"].to_numpy(float), ct.records["doppler_mps"].to_numpy(float)
 
 
 def detect_jumps_from_arrays(t: np.ndarray, mag: np.ndarray,
@@ -252,7 +266,8 @@ def detect_jumps_from_arrays(t: np.ndarray, mag: np.ndarray,
                              alt_t: np.ndarray | None = None,
                              alt_m: np.ndarray | None = None,
                              flight_spans: list[Span] | None = None,
-                             turn_spans: list[Span] | None = None) -> JumpResult:
+                             turn_spans: list[Span] | None = None,
+                             speed: tuple[np.ndarray, np.ndarray] | None = None) -> JumpResult:
     """Detect jumps in raw (time, |a| in g) samples — unit tests and synthetic traces.
 
     Spike -> sustained low-g -> impact, in that order, with a refractory dead time. Spans
@@ -308,6 +323,8 @@ def detect_jumps_from_arrays(t: np.ndarray, mag: np.ndarray,
             cand.reason = "no_landing_impact"
         elif flight_spans is not None and not any(a <= t0 <= b for a, b in flight_spans):
             cand.reason = "off_foil"
+        elif speed is not None and _peak_speed_kmh(speed, t0, cfg) < cfg.min_speed_kmh:
+            cand.reason = "too_slow"
         elif turn_spans is not None and any(a <= t1 and t0 <= b for a, b in turn_spans):
             cand.reason = "inside_turn"
         elif t0 - last_end < cfg.refractory_s:
@@ -849,6 +866,14 @@ def _crossing(t: np.ndarray, y: np.ndarray, i_out: int, i_in: int, level: float)
     frac = (y0 - level) / (y0 - y1)
     frac = min(max(frac, 0.0), 1.0)
     return float(t[i_out] + frac * (t[i_in] - t[i_out]))
+
+
+def _peak_speed_kmh(speed: tuple[np.ndarray, np.ndarray], t0: float, cfg: JumpConfig) -> float:
+    """Peak speed over `jumpSpeedWindow` before the takeoff, km/h; 0 with no sample there."""
+    st, sv = speed
+    v = np.asarray(sv, float)[(np.asarray(st) >= t0 - cfg.speed_window_s) & (np.asarray(st) <= t0)]
+    v = v[np.isfinite(v)]
+    return float(v.max()) * 3.6 if v.size else 0.0
 
 
 def _peak_in(t: np.ndarray, y: np.ndarray, a: float, b: float) -> float:

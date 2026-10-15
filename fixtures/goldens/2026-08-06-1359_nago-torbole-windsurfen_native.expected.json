@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.28.0",
+  "engineVersion": "0.29.0",
   "config": {
     "foilEntrySpeed": 12.0,
     "entryHold": 2.0,
@@ -2039,6 +2039,7 @@
       "swimCostTotal": 7
     }
   },
+  "jumps": null,
   "summary": {
     "isSession": true,
     "notASessionReason": null,
@@ -2369,6 +2370,7 @@
       "avgPumpsWhenPumped": null,
       "avgTakeoffS": 11.471,
       "medianTakeoffS": 11.0
-    }
+    },
+    "jumps": null
   }
 }

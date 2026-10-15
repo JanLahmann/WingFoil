@@ -76,6 +76,20 @@ def test_a_pop_off_the_foil_is_not_a_jump():
     assert [c.reason for c in res.candidates] == ["off_foil"]
 
 
+def test_a_hop_at_low_speed_is_not_a_jump():
+    """Jan's two chop hops of August popped at 8.0 and 8.8 kn; every real jump at 11 kn or more."""
+    sj = J.simulate_jump(1.0, 0.2, "const", noise=NOISE_FREE)
+    st = np.arange(sj.t[0], sj.t[-1], 1.0)
+
+    def run(kmh: float):
+        return J.detect_jumps_from_arrays(sj.t, sj.mag, speed=(st, np.full(st.size, kmh / 3.6)))
+
+    assert len(run(28.0).jumps) == 1
+    slow = run(15.0)
+    assert slow.jumps == []
+    assert [c.reason for c in slow.candidates] == ["too_slow"]
+
+
 def test_a_jump_inside_a_turn_is_not_a_jump():
     """Freddy, 10 Oct 2026: the one "jump" inside a sweep was a failed manoeuvre -- the board
     flew on without him. A turn that starts after the landing does not void the jump."""
@@ -355,3 +369,19 @@ def test_validation_grid_shape_and_headline():
         assert r["detect_rate"] == 1.0
         assert r["integrated_mean"] == pytest.approx(1.0, rel=0.03)
         assert r["naive_ratio"] == pytest.approx(1.0 / (1.0 - r["s"]), rel=0.03)
+
+
+def test_the_cross_implementation_fixture_is_current():
+    """fixtures/synthetic/jumps.json holds the Swift port to this module; it must still be
+    this module's answer (regenerate with lab/tools/make_jump_fixture.py)."""
+    import json
+    doc = json.loads((FIXTURES / "synthetic" / "jumps.json").read_text())
+    res = J.detect_jumps_from_arrays(
+        np.array(doc["t"]), np.array(doc["mag"]),
+        flight_spans=[tuple(f) for f in doc["flightSpans"]],
+        turn_spans=[tuple(x) for x in doc["turnSpans"]],
+        speed=(np.array(doc["speedT"]), np.array(doc["speedMps"])))
+    exp = doc["expected"]
+    assert [round(j.height.integrated_m, 4) for j in res.jumps] == \
+        [j["heightM"] for j in exp["jumps"]]
+    assert [c.reason for c in res.candidates] == [c["reason"] for c in exp["candidates"]]

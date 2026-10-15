@@ -12,10 +12,10 @@ Module map (mirrors the analysis pipeline in docs/plan.md §3.3):
     pump     pump-stroke detection from wrist accel                   [phase 3]
     takeoff  takeoff runs, attempts, in-flight pumping                 [phase 3]
     hrcost   HR cost of pumping: per takeoff, fatigue, recovery        [phase 3, exploratory]
-    jump     jump detection + support-corrected height        [theoretical, UNCALIBRATED]
+    jump     jump detection + support-corrected height        [heights UNCALIBRATED]
     goldens  golden-file writer/loader (schema: docs/testing.md)
     discipline  wingfoil / windsurfFoil / windsurfFin presets     [EXPERIMENTAL]
 Canonical parameters live in docs/algorithms.md — keep code defaults in sync.
 """
 
-ENGINE_VERSION = "0.28.0"
+ENGINE_VERSION = "0.29.0"
