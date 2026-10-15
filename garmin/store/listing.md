@@ -187,6 +187,10 @@ top of the 0.9.22 one:
 
 0.9.23: After a session with turns, the SAVED page shows your turn ladder first. A new Laps setting gives one lap per flight or one lap for the whole session. Now also on fenix 6 Pro, Forerunner 945 and Forerunner 245 Music.
 
+**0.9.24 uploaded 15 October 2026** (the beta to the public listing, 0.9.24-dev1 to the private one; Description unchanged): the live jump count in the beta and dev streams, so Freddy can test it on the beta listing (docs/algorithms/jumps.md, "Watch approximation"). What's New, on top of the 0.9.23 paragraph:
+
+0.9.24: The watch counts your jumps. Each one buzzes three quick ticks and shows JUMP with your count.
+
 The divergences left are listed under "Not ported yet".
 
 ---
