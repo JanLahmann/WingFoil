@@ -135,6 +135,7 @@ export const SHELL = {
       "Grouping the library by month, year or spot, and filtering it.",
       "The session story: one line over your numbers, and a chip on each record you beat.",
       "Send a session and its recording to us from its Share page or a turn, with your notes.",
+      "Jumps: how many you jumped, and an estimate of the highest, from the watch's motion sensor.",
       "Planned: a live view on the Apple Watch. Foil state, flights, records and turn verdicts on the wrist, as the Garmin app shows them."
     ]
   }
@@ -392,6 +393,18 @@ export const WELCOME = {
 
 /** What's new, release and beta only — the filter /whats-new/ uses. */
 export const WHATS_NEW = [
+  {
+    "version": "1.0.1",
+    "build": 133,
+    "channel": "beta",
+    "date": "2026-10-15",
+    "title": "Jumps",
+    "lines": [
+      "The Flights tab counts your jumps and estimates the highest, from the watch's motion sensor.",
+      "A jump counts only on the foil, at speed and outside a turn.",
+      "Your sessions are worked out again, so jumps appear on the ones you already have."
+    ]
+  },
   {
     "version": "1.0.1",
     "build": 131,

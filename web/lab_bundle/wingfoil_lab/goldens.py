@@ -283,6 +283,14 @@ one step of `turnPositionalMaxStepDeg` (150 deg) or more is not a turn, nor is a
 speed reaches `turnPositionalSpikePct` before a standstill; and on every class a turn after
 which the recording ends within `turnRecordingEndS` (30 s), the rider stopped and never flying
 again, fell in (his 10 Aug 2025 tack, which read touchdown).
+
+Engine 0.29.0 (Jan, 15 Oct 2026) moves **jumps** out of the lab-only study and into the
+document (docs/algorithms/jumps.md). Freddy's 10 Oct session was the first with labelled
+jumps; the detector now runs on every wingfoil recording with an accelerometer, on the flights,
+turns and speed of this same analysis (a takeoff inside a flight at 18 km/h or more, an
+airborne window outside every turn's sweep), and `jumps` lists them with the integrated height, which stays an estimate.
+`summary.jumps` is the count and the highest. Both are null on a recording with no
+accelerometer and on the windsurf presets, where the wrist hears the rig.
 """
 
 from __future__ import annotations
@@ -301,6 +309,7 @@ from .flightend import (FlightEnd, FlightEndConfig, FlightEndSummary, OutcomeSpl
                         assign_end_ownership, classify_flight_ends, split_outcomes,
                         summarize_flight_ends)
 from .gp3s import GP3SRecords, RecordWindow
+from .jump import Jump, JumpResult, clean_speed, detect_jumps
 from .hrcost import (Coverage, FatigueBin, HrAnalysis, HrConfig, HrEvent, HrSummary,
                      PumpCruiseHr, analyze_hr)
 from . import discipline as discipline_preset
@@ -368,6 +377,9 @@ class Analysis:
     #: Which preset produced this document (docs/algorithms/disciplines.md "Disciplines"). Defaulted so
     #: every existing construction of `Analysis` still reads as what it was: a wingfoil run.
     discipline: Discipline = Discipline.WINGFOIL
+    #: Jumps (engine 0.29.0, docs/algorithms/jumps.md). None with no accelerometer stream and
+    #: on a preset without pumping, the same absence the pump stages report.
+    jumps: JumpResult | None = None
 
 
 def analyze(path: str | Path, filter_config: FilterConfig | None = None,
@@ -437,6 +449,13 @@ def analyze(path: str | Path, filter_config: FilterConfig | None = None,
     # it joins to three earlier phases at once (runs, ends, turns) -- so it runs last.
     hr = analyze_hr(track, fr, takeoffs, ends, pt, turns, hcfg)
 
+    # Jumps on this analysis's own flights and turns (engine 0.29.0): the two context gates
+    # read the same spans every other stage reports, not a second pass of the pipeline.
+    jumps = (detect_jumps(track, flight_spans=[(f.start_t, f.end_t) for f in fr.flights],
+                          turn_spans=[(t.start_t, t.end_t) for t in turns],
+                          speed=clean_speed(ct))
+             if discipline.pumping else None)
+
     # `ends` because the streaks span both channels: a straight-line swim ends a run of
     # clean turns too (docs/algorithms/pumping.md "Turn streaks").
     turn_summary = summarize_turns(turns, ends, tcfg)
@@ -451,7 +470,7 @@ def analyze(path: str | Path, filter_config: FilterConfig | None = None,
         takeoffs=takeoffs, takeoff_summary=summarize_takeoffs(takeoffs), pump=pt, hr=hr,
         wind_config=wcfg, turn_config=tcfg, flight_end_config=fecfg,
         pump_config=pcfg, takeoff_config=tocfg, hr_config=hcfg, rate_config=rcfg,
-        discipline=discipline,
+        discipline=discipline, jumps=jumps,
     )
 
 
@@ -855,6 +874,7 @@ def build_golden(a: Analysis) -> dict:
         "takeoffs": [_takeoff_json(k) for k in a.takeoffs.takeoffs],
         "pumpEpisodes": [_episode_json(e) for e in a.takeoffs.episodes],
         "hr": _hr_json(a.hr),
+        "jumps": None if a.jumps is None else [_jump_json(j) for j in a.jumps.jumps],
         "summary": {
             # Is this recording a session at all (engine 0.19.0, docs/algorithms/not-a-session.md "Not a
             # session")? `isSession` is true for every recording in which the rider flew,
@@ -889,6 +909,7 @@ def build_golden(a: Analysis) -> dict:
             "flightEnds": _end_summary_json(a.flight_end_summary),
             "outcomeSplit": _split_json(a.outcome_split),
             "takeoff": _takeoff_summary_json(a.takeoff_summary),
+            "jumps": _jump_summary_json(a.jumps),
         },
     }
 
@@ -1228,6 +1249,26 @@ def _episode_json(e: PumpEpisode) -> dict:
         "turnIndex": e.turn_index,                # the turn whose recovery it is
         "lookaheadS": round(e.lookahead_s, 2),    # gap-free record past the last stroke
     }
+
+
+def _jump_json(j: Jump) -> dict:
+    return {
+        "startTs": round(j.t_start, 2), "endTs": round(j.t_end, 2),
+        "airtimeS": round(j.height.airtime_s, 3),
+        # The integrated estimate (docs/algorithms/jumps.md), uncalibrated: an estimate on
+        # every surface that shows it.
+        "heightM": round(j.height.integrated_m, 2),
+        "sigmaM": round(j.height.sigma_m, 2),
+        "takeoffG": round(j.takeoff_g, 2), "impactG": round(j.impact_g, 2),
+    }
+
+
+def _jump_summary_json(r: JumpResult | None) -> dict | None:
+    if r is None:
+        return None
+    return {"count": len(r.jumps),
+            "highestM": (round(max(j.height.integrated_m for j in r.jumps), 2)
+                         if r.jumps else None)}
 
 
 def _hr_json(h: HrAnalysis) -> dict:
