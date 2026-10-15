@@ -61,6 +61,7 @@ public enum MostWanted {
         Wish(id: "grouping", label: "Grouping and filters", channel: .beta),
         Wish(id: "sessionStory", label: "The session story", channel: .beta),
         Wish(id: "sendToDeveloper", label: "Send a session to us", channel: .beta),
+        Wish(id: "jumps", label: "Jumps", channel: .beta),
         Wish(id: "appleWatchLive", label: "A live view on the Apple Watch", channel: .beta,
              planned: true),
         Wish(id: "garminLink", label: "The Garmin link", channel: .dev),

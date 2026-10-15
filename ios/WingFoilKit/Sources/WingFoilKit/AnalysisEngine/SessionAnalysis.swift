@@ -273,7 +273,17 @@ public enum AnalysisEngine {
     /// not a turn; and on every class a turn after which the recording ends within
     /// `turnRecordingEndS`, the rider stopped and never recovered, fell in. Four config keys;
     /// no committed golden moves beyond them.
-    public static let version = "0.28.0"
+    ///
+    /// 0.29.0 moves **jumps** out of the lab-only study and into the document
+    /// (docs/algorithms/jumps.md, `JumpDetector`). Freddy's 10 Oct session was the first with
+    /// labelled jumps; the detector now runs on every wingfoil recording with an
+    /// accelerometer, on this analysis's own flights, turns and Doppler speed (a takeoff
+    /// inside a flight at 18 km/h or more, an airborne window outside every turn's sweep),
+    /// and `jumps` lists them with the integrated height, which stays an estimate.
+    /// `summary.jumps` is the count and the highest. Both are null on a recording with no
+    /// accelerometer and on the windsurf presets, where the wrist hears the rig. No
+    /// committed golden holds a jump; every one moves by the version and the two keys.
+    public static let version = "0.29.0"
 }
 
 /// **Is this recording a session?** — docs/algorithms/not-a-session.md "Not a session" (engine 0.19.0).
@@ -1231,6 +1241,68 @@ public struct PumpEpisodeRecord: Sendable, Codable, Equatable {
 /// Every rate is nil rather than 0 when there is no timer time to divide by: a one-sample
 /// track has no answer, and a zero would read as "he did nothing". Mirrors
 /// `lab/src/wingfoil_lab/goldens.py` `session_rates`.
+/// Golden-schema jump (engine 0.29.0, docs/algorithms/jumps.md "Jumps"). Mirrors the lab's
+/// `_jump_json`, unrounded: the airborne window, its airtime, the **integrated** height and
+/// its 1σ, and the two spikes that framed it. The height is uncalibrated — an estimate on
+/// every surface that shows it.
+public struct JumpRecord: Sendable, Codable, Equatable {
+    public var startTs: Double
+    public var endTs: Double
+    public var airtimeS: Double
+    public var heightM: Double
+    public var sigmaM: Double
+    public var takeoffG: Double
+    public var impactG: Double
+
+    public init(startTs: Double, endTs: Double, airtimeS: Double, heightM: Double,
+                sigmaM: Double, takeoffG: Double, impactG: Double) {
+        self.startTs = startTs
+        self.endTs = endTs
+        self.airtimeS = airtimeS
+        self.heightM = heightM
+        self.sigmaM = sigmaM
+        self.takeoffG = takeoffG
+        self.impactG = impactG
+    }
+
+    public init(_ jump: Jump) {
+        self.init(startTs: jump.tStart, endTs: jump.tEnd, airtimeS: jump.height.airtimeS,
+                  heightM: jump.height.integratedM, sigmaM: jump.height.sigmaM,
+                  takeoffG: jump.takeoffG, impactG: jump.impactG)
+    }
+}
+
+/// The session's jumps in two numbers (engine 0.29.0). Mirrors the lab's
+/// `_jump_summary_json`: `highestM` is nil exactly when `count` is 0.
+public struct JumpSummary: Sendable, Codable, Equatable {
+    public var count: Int
+    /// The highest integrated height, m — an estimate.
+    public var highestM: Double?
+
+    public init(count: Int, highestM: Double?) {
+        self.count = count
+        self.highestM = highestM
+    }
+
+    public init(_ jumps: [JumpRecord]) {
+        self.init(count: jumps.count, highestM: jumps.map(\.heightM).max())
+    }
+
+    enum CodingKeys: String, CodingKey { case count, highestM }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        count = try c.decode(Int.self, forKey: .count)
+        highestM = try c.decodeIfPresent(Double.self, forKey: .highestM)
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(count, forKey: .count)
+        try c.encode(highestM, forKey: .highestM)          // explicit null per schema
+    }
+}
+
 public struct SessionRates: Sendable, Equatable {
     public var durationS: Double
     /// Timer time (s, T2) — the rate denominator since engine 0.13.0.
@@ -1439,6 +1511,9 @@ public struct SessionSummary: Sendable, Codable, Equatable {
     public var flightEnds = FlightEndSummary()
     public var outcomeSplit = OutcomeSplit()
     public var takeoff = TakeoffSummary()
+    /// Jumps counted (engine 0.29.0): nil with no accelerometer and on a preset without
+    /// pumping — and on every stored document from before the block.
+    public var jumps: JumpSummary?
 
     public init(foilTimeS: Double, foilPct: Double, flightCount: Int, longestFlightS: Double,
                 maxFlightM: Double, distanceKm: Double) {
@@ -1455,7 +1530,7 @@ public struct SessionSummary: Sendable, Codable, Equatable {
         case foilTimeS, foilPct, flightCount, longestFlightS, maxFlightM, distanceKm
         case durationS, timerTimeS, avgSpeedKmh, turnsPerHour, jibesPerHour
         case cleanJibesPerHour, wetPerHour, windowRates, turns, flightEnds
-        case outcomeSplit, takeoff
+        case outcomeSplit, takeoff, jumps
         /// The pre-0.13.0 spelling of `maxFlightM`, read so a stored document still opens.
         case longestFlightM
     }
@@ -1495,6 +1570,8 @@ public struct SessionSummary: Sendable, Codable, Equatable {
                                              forKey: .outcomeSplit) ?? OutcomeSplit()
         takeoff = try c.decodeIfPresent(TakeoffSummary.self,
                                         forKey: .takeoff) ?? TakeoffSummary()
+        // 0.29.0. Absent on every older document, which reads as "not counted".
+        jumps = try c.decodeIfPresent(JumpSummary.self, forKey: .jumps)
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -1520,6 +1597,7 @@ public struct SessionSummary: Sendable, Codable, Equatable {
         try c.encode(flightEnds, forKey: .flightEnds)
         try c.encode(outcomeSplit, forKey: .outcomeSplit)
         try c.encode(takeoff, forKey: .takeoff)
+        try c.encode(jumps, forKey: .jumps)                // explicit null per schema
     }
 
     /// Fills the seven session-rate fields from one computed rate block.
@@ -1562,11 +1640,16 @@ public struct SessionAnalysis: Sendable, Codable, Equatable {
     /// `analysis.json` written before the block existed still decodes; a fresh analysis
     /// always fills it, with `hasHR: false` when the source carries no heart rate.
     public var hr: HrAnalysis?
+    /// Every accepted jump in time order (engine 0.29.0, docs/algorithms/jumps.md). Nil —
+    /// not empty — with no accelerometer stream and on a preset without pumping, the same
+    /// absence the pump stages report; and nil on a stored document from before the block,
+    /// which is stale by `engineVersion` and re-derived by `reanalyzeStale()`.
+    public var jumps: [JumpRecord]?
     public var summary: SessionSummary
 
     enum CodingKeys: String, CodingKey {
         case engineVersion, config, capabilities, flights, turns, flightEnds, submersions
-        case records, wind, takeoffs, pumpEpisodes, hr, summary
+        case records, wind, takeoffs, pumpEpisodes, hr, jumps, summary
     }
 
     public init(engineVersion: String, config: AnalysisConfig, capabilities: AnalysisCapabilities,
@@ -1574,7 +1657,8 @@ public struct SessionAnalysis: Sendable, Codable, Equatable {
                 submersions: [SubmersionRecord] = [],
                 records: GP3SRecords, wind: WindEstimate?, takeoffs: [TakeoffRecord],
                 pumpEpisodes: [PumpEpisodeRecord] = [],
-                hr: HrAnalysis? = nil, summary: SessionSummary) {
+                hr: HrAnalysis? = nil, jumps: [JumpRecord]? = nil,
+                summary: SessionSummary) {
         self.engineVersion = engineVersion
         self.config = config
         self.capabilities = capabilities
@@ -1587,6 +1671,7 @@ public struct SessionAnalysis: Sendable, Codable, Equatable {
         self.takeoffs = takeoffs
         self.pumpEpisodes = pumpEpisodes
         self.hr = hr
+        self.jumps = jumps
         self.summary = summary
     }
 
@@ -1606,6 +1691,7 @@ public struct SessionAnalysis: Sendable, Codable, Equatable {
         pumpEpisodes = try c.decodeIfPresent([PumpEpisodeRecord].self,
                                              forKey: .pumpEpisodes) ?? []
         hr = try c.decodeIfPresent(HrAnalysis.self, forKey: .hr)
+        jumps = try c.decodeIfPresent([JumpRecord].self, forKey: .jumps)
         summary = try c.decode(SessionSummary.self, forKey: .summary)
     }
 
@@ -1623,6 +1709,7 @@ public struct SessionAnalysis: Sendable, Codable, Equatable {
         try c.encode(takeoffs, forKey: .takeoffs)
         try c.encode(pumpEpisodes, forKey: .pumpEpisodes)
         try c.encode(hr, forKey: .hr)              // explicit null per schema
+        try c.encode(jumps, forKey: .jumps)        // explicit null per schema
         try c.encode(summary, forKey: .summary)
     }
 }
@@ -1705,6 +1792,16 @@ public enum SessionSummarizer {
         // and it joins to three earlier phases at once (runs, ends, turns) — so it runs last.
         let hr = HrCost.analyze(raw, flights: segmentation, takeoffs: takeoffs,
                                 flightEnds: ends, pump: pump, turns: turns, config: hrConfig)
+        // Jumps on this analysis's own flights, turns and Doppler speed (engine 0.29.0): the
+        // context gates read the same spans every other stage reports. Gated like `pump` —
+        // no wing, no jump — and nil without an accelerometer.
+        let jumps: [JumpRecord]? = discipline.pumping
+            ? JumpDetector.detect(raw,
+                                  flightSpans: segmentation.flights.map { ($0.startT, $0.endT) },
+                                  turnSpans: turns.map { ($0.startT, $0.endT) },
+                                  speed: JumpDetector.cleanSpeed(clean))?
+                .jumps.map(JumpRecord.init)
+            : nil
 
         // `ends` because the streaks span both channels: a straight-line swim ends a run of
         // clean turns too (docs/algorithms/pumping.md "Turn streaks").
@@ -1723,6 +1820,7 @@ public enum SessionSummarizer {
         summary.flightEnds = endSummary
         summary.outcomeSplit = FlightEndClassifier.split(turns: turnSummary, ends: endSummary)
         summary.takeoff = TakeoffAnalyzer.summarize(takeoffs)
+        summary.jumps = jumps.map(JumpSummary.init)
         // Session rates (docs/algorithms/rates.md "Session rates"): **timer time** as the one
         // denominator since engine 0.13.0 — the hour a rate divides by has to be an hour
         // the recorder was running — *dry* turns and *dry* jibes as the TPH/JPH numerators
@@ -1775,6 +1873,7 @@ public enum SessionSummarizer {
             takeoffs: takeoffs.takeoffs.map(TakeoffRecord.init),
             pumpEpisodes: takeoffs.episodes.map(PumpEpisodeRecord.init),
             hr: hr,
+            jumps: jumps,
             summary: summary)
     }
 

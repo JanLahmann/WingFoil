@@ -45,6 +45,8 @@ import Testing
         "pumps to takeoff": "a stroke count, under the takeoffs term",
         "takeoff run": "a clock, under the takeoffs term",
         "pump strokes": "a stroke count",
+        "jumps": "a beta card (engine 0.29.0). Not a glossary term until it reaches release: "
+            + "the glossary is printed in the release app's help and on cleanjibe.org/help",
         "failed attempts": "the attempts term's complement, spelled on the same card",
         "run to planing": "the windsurf lexicon's spelling of the takeoff run",
         "heart rate": "a sensor reading, not a CleanJibe verdict",

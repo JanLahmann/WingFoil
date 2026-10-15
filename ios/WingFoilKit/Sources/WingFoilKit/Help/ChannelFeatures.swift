@@ -56,6 +56,8 @@ public enum ChannelFeatures {
             + "beat.",
         "Send a session and its recording to us from its Share page or a turn, with "
             + "your notes.",
+        "Jumps: how many you jumped, and an estimate of the highest, from the watch's "
+            + "motion sensor.",
         // Not a build, a plan (Jan, 19 Sep 2026: "mention it on the beta outlook explicitly").
         // The row says so in its first word, so the list stays honest about what installs.
         "Planned: a live view on the Apple Watch. Foil state, flights, records and turn "

@@ -157,7 +157,51 @@ import Testing
         checkTakeoffs(stem, json, analysis)
         checkPumpEpisodes(stem, json, analysis)
         checkHr(stem, json, analysis)
+        checkJumps(stem, json, analysis)
         checkSummary(stem, json, analysis)
+    }
+
+    // MARK: - Engine 0.29.0 (jumps)
+
+    /// `jumps` and `summary.jumps` (docs/algorithms/jumps.md "Jumps"). Null-ness and the
+    /// count exact; the window edges at the timestamp row's ± 1 s; heights, σ and airtime at
+    /// ± 0.05 (the golden rounds them to 2–3 dp); the spikes at ± 0.05 g.
+    private func checkJumps(_ stem: String, _ json: [String: Any], _ analysis: SessionAnalysis) {
+        if json.keys.contains("jumps") {
+            switch (json["jumps"] as? [[String: Any]], analysis.jumps) {
+            case (nil, nil):
+                break
+            case let (exp?, act?):
+                #expect(act.count == exp.count,
+                        "\(stem) jumps: count \(act.count) != \(exp.count)")
+                for (i, (e, a)) in zip(exp, act).enumerated() {
+                    for (key, value, tol) in [("startTs", a.startTs, 1.0), ("endTs", a.endTs, 1.0),
+                                              ("airtimeS", a.airtimeS, 0.05),
+                                              ("heightM", a.heightM, 0.05),
+                                              ("sigmaM", a.sigmaM, 0.05),
+                                              ("takeoffG", a.takeoffG, 0.05),
+                                              ("impactG", a.impactG, 0.05)] {
+                        expectOptional(stem, "jumps[\(i)].\(key)", num(e[key]), value,
+                                       tolerance: tol)
+                    }
+                }
+            case let (exp, act):
+                Issue.record("\(stem) jumps: expected \(exp == nil ? "null" : "a list"), got \(act == nil ? "null" : "a list")")
+            }
+        }
+        guard let expSummary = json["summary"] as? [String: Any],
+              expSummary.keys.contains("jumps") else { return }
+        switch (expSummary["jumps"] as? [String: Any], analysis.summary.jumps) {
+        case (nil, nil):
+            break
+        case let (e?, a?):
+            #expect(int(e["count"]) == a.count,
+                    "\(stem) summary.jumps.count: \(a.count) vs \(describe(int(e["count"])))")
+            expectOptional(stem, "summary.jumps.highestM", num(e["highestM"]), a.highestM,
+                           tolerance: 0.05)
+        case let (e, a):
+            Issue.record("\(stem) summary.jumps: expected \(e == nil ? "null" : "a block"), got \(a == nil ? "null" : "a block")")
+        }
     }
 
     // MARK: - Phase 1 (capabilities, flights, records)
@@ -1061,14 +1105,14 @@ import Testing
         raw.capabilities.hasSpeed = true
         raw.capabilities.sampleRateHz = 1
         let analysis = SessionSummarizer.analyze(raw)
-        #expect(analysis.engineVersion == "0.28.0")
+        #expect(analysis.engineVersion == "0.29.0")
         #expect(analysis.flights.count == 1)
 
         let data = try JSONEncoder().encode(analysis)
         let obj = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
         #expect(Set(obj.keys) == ["engineVersion", "config", "capabilities", "flights",
                                   "turns", "flightEnds", "submersions", "records", "wind",
-                                  "takeoffs", "pumpEpisodes", "hr", "summary"])
+                                  "takeoffs", "pumpEpisodes", "hr", "jumps", "summary"])
         // No altitude channel at all ⇒ no submersion episodes, and an empty list rather
         // than a missing key: "this source has no barometer" is a fact about the source.
         #expect((obj["submersions"] as? [Any])?.isEmpty == true)
@@ -1134,7 +1178,12 @@ import Testing
                                       "turnsPerHour",
                                       "jibesPerHour", "cleanJibesPerHour",
                                       "wetPerHour", "windowRates",
-                                      "turns", "flightEnds", "outcomeSplit", "takeoff"])
+                                      "turns", "flightEnds", "outcomeSplit", "takeoff",
+                                      "jumps"])
+        // No accelerometer ⇒ no jump detection: explicit nulls, never an empty list or a
+        // zero count — "not measured" must not read as "he did not jump".
+        #expect(obj["jumps"] is NSNull)
+        #expect(summary["jumps"] is NSNull)
         // 120 s of synthetic, one flight, no turns: the duration is real and the rates are
         // real zeroes — "he did no jibes in that hour", not "unknown".
         #expect(abs((num(summary["durationS"]) ?? 0) - 120) <= 0.1)

@@ -64,6 +64,18 @@ public enum WhatsNew {
     public static let entries: [WhatsNewEntry] = [
         WhatsNewEntry(
             version: "1.0.1",
+            build: 133,
+            channel: .beta,
+            date: "2026-10-15",
+            dateText: "15 October 2026",
+            title: "Jumps",
+            lines: [
+                "The Flights tab counts your jumps and estimates the highest, from the watch's motion sensor.",
+                "A jump counts only on the foil, at speed and outside a turn.",
+                "Your sessions are worked out again, so jumps appear on the ones you already have.",
+            ]),
+        WhatsNewEntry(
+            version: "1.0.1",
             build: 131,
             channel: .beta,
             date: "2026-10-14",
