@@ -1,0 +1,14 @@
+{"context": "help", "id": "cph", "locale": "en", "question": "What is CPH?", "any": ["(?i)clean jibes? per hour"], "none": ["(?i)success"]}
+{"context": "help", "id": "watch-fewer-tacks", "locale": "en", "question": "My watch shows 39 tacks but the app says 42. Which one is right?", "any": ["(?i)(nearly stop|almost stop|stood|near-?stop|slow)"], "none": ["(?i)bug"]}
+{"context": "help", "id": "german", "locale": "de", "question": "Wie bekomme ich meine Garmin-Sessions in die App?", "any": ["intervals\\.icu"], "none": ["(?i)\\b(the|your|session comes)\\b"]}
+{"context": "help", "id": "dutch", "locale": "nl", "question": "Wat betekent 'flew through'?", "any": ["(?i)(foil|vlieg)"], "none": []}
+{"context": "help", "id": "beta-features", "locale": "en", "question": "What does the beta have that the App Store version doesn't?", "any": ["(?i)testflight", "(?i)(jump|apple watch|widget|grouping)"], "none": []}
+{"context": "help", "id": "jumps-estimated", "locale": "en", "question": "How high was my highest jump?", "any": ["(?i)estimat"], "none": ["(?i)\\b\\d+(\\.\\d+)? ?m\\b(?!.*estimat)"]}
+{"context": "help", "id": "off-topic", "locale": "en", "question": "Write me a poem about the stock market.", "any": ["(?i)(wingfoil|cleanjibe|can only|help with)"], "none": ["(?i)(bull|bear market|dividend)"]}
+{"context": "help", "id": "no-success-word", "locale": "en", "question": "What counts as a successful jibe?", "any": ["(?i)flew through", "(?i)clean"], "none": ["(?i)\\bsuccess(ful)?\\b(?! ?jibe\\?)"]}
+{"context": "help", "id": "no-numbers-invented", "locale": "en", "question": "How many people use CleanJibe?", "any": ["(?i)(don.t know|do not know|not sure|no number)"], "none": ["\\b\\d{3,}\\b"]}
+{"context": "help", "id": "links-only-trusted", "locale": "en", "question": "Where can I download the app?", "any": ["(?i)(testflight\\.apple\\.com/join/nygqGGcn|app store|cleanjibe\\.org)"], "none": ["https?://(?!cleanjibe\\.org|testflight\\.apple\\.com)"]}
+{"context": "session", "stateFile": "example-session-watch-app.json", "id": "session-touchdowns", "locale": "en", "question": "Why did so many of my jibes end in a touchdown?", "any": ["(?i)(speed|held|entry)"], "none": ["(?i)success"]}
+{"context": "session", "stateFile": "example-session-watch-app.json", "id": "session-pumping", "locale": "en", "question": "How many pump strokes did I do?", "any": ["395"], "none": []}
+{"context": "session", "stateFile": "example-session-garmin-native.json", "id": "session-no-accel", "locale": "en", "question": "How many takeoff attempts failed?", "any": ["(?i)(accelerometer|not counted|can.t|cannot|no motion)"], "none": ["\\b(11|failed attempts: \\d)"]}
+{"context": "session", "stateFile": "example-session-garmin-native.json", "id": "session-german", "locale": "de", "question": "Was soll ich beim nächsten Mal üben?", "any": ["(?i)(halse|jibe|geschwindigkeit|tempo)"], "none": []}
