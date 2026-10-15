@@ -66,6 +66,27 @@ def test_clean_jump_detected_once(h, s):
     assert j.t_end == pytest.approx(sj.t1, abs=0.03)
 
 
+def test_a_pop_off_the_foil_is_not_a_jump():
+    """Freddy, 10 Oct 2026: a pop while pumping up at 3.7 kn passed every signal gate."""
+    sj = J.simulate_jump(1.0, 0.2, "const", noise=NOISE_FREE)
+    flying = [(sj.t0 - 30.0, sj.t1 + 30.0)]
+    assert len(J.detect_jumps_from_arrays(sj.t, sj.mag, flight_spans=flying).jumps) == 1
+    res = J.detect_jumps_from_arrays(sj.t, sj.mag, flight_spans=[(sj.t1 + 5.0, sj.t1 + 60.0)])
+    assert res.jumps == []
+    assert [c.reason for c in res.candidates] == ["off_foil"]
+
+
+def test_a_jump_inside_a_turn_is_not_a_jump():
+    """Freddy, 10 Oct 2026: the one "jump" inside a sweep was a failed manoeuvre -- the board
+    flew on without him. A turn that starts after the landing does not void the jump."""
+    sj = J.simulate_jump(1.0, 0.2, "const", noise=NOISE_FREE)
+    after = [(sj.t1 + 1.5, sj.t1 + 8.0)]
+    assert len(J.detect_jumps_from_arrays(sj.t, sj.mag, turn_spans=after).jumps) == 1
+    res = J.detect_jumps_from_arrays(sj.t, sj.mag, turn_spans=[(sj.t0 - 3.0, sj.t0 + 0.2)])
+    assert res.jumps == []
+    assert [c.reason for c in res.candidates] == ["inside_turn"]
+
+
 def test_pump_burst_is_not_a_jump():
     """A 1 Hz pump swings |a| by +-0.5 g -- deep, but never for `jumpMinAirtime`.
 

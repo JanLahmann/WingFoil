@@ -64,6 +64,19 @@ caveat; a wrist watch cannot.
 | `jumpBaroContext` | 5.0 | s | baseline span each side of the window for the template fit |
 | `jumpBaroMinSamples` | 2 | | fewer in-window altitude samples ⇒ "insufficient samples", no number |
 
+Two **context gates** run after the signal gates, on spans `detect_jumps` derives from the
+track itself (flights and turn sweeps, the engine's own):
+
+| gate | rule | candidate reason |
+|---|---|---|
+| on the foil | the takeoff lies inside a flight | `off_foil` |
+| not in a turn | the airborne window does not overlap a turn's sweep (`start_t`–`end_t`) | `inside_turn` |
+
+Both come from the first labelled jumps (Freddy, 10 Oct 2026, below): a pop while pumping up
+at 3.7 kn passed every signal gate, and the one "jump" inside a sweep was a failed manoeuvre in
+which the board flew on without the rider. A turn that *starts after the landing* does not
+void the jump — a jump followed by a turn is the normal case (five of the eleven).
+
 A **median** filter, not the box average `pump.py` uses: a box drags the tail of the takeoff
 spike into the first samples of the airborne window and shortens the measured airtime by ~4 %,
 and `h` goes as `T²`. The median rejects the spike and preserves the step edge. Window edges
@@ -289,6 +302,22 @@ the rider drops off the foil, then the water delivers a 5 g impact. Falls are th
 false-positive class, and the obvious next gate is a cross-check the lab already has: **a jump
 must be followed by continued flight, a fall is followed by a flight end.** Worth wiring in
 before this is ever shown to a rider.
+
+### The first labelled jumps — Freddy, 10 Oct 2026
+
+Rheinstetten, 1 Hz GPS with accel at 25 Hz, 3 h 49 min (kept locally, not in the corpus). Freddy
+confirmed the count ("could be about right"), the spacing, and a highest jump of **at most
+1.5 m**. The signal gates alone found 13; the context gates drop two:
+
+| time | why it is no jump | gate |
+|---|---|---|
+| 15:12:57 | off the foil at 3.7 kn, pumping up | `off_foil` |
+| 13:49:31 | heading sweeps 134° through the window, the tack ends `fell_in`, the flight 6 s later — the failed manoeuvre | `inside_turn` |
+
+**11 jumps remain.** The integrated heights run 0.10–0.65 m against his "at most 1.5 m", so
+they read low by up to ~2x; this is 25 Hz, where the grid above already reads short at
+higher support. One rider's estimate is not a calibration: the heights stay *estimated*.
+No other recording with accel changes (the four others: 2, 1, 1 and 0 jumps, as before).
 
 ### Status and what would change it
 

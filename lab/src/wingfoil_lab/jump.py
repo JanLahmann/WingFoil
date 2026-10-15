@@ -56,6 +56,13 @@ Detection
 Takeoff spike (the pop off the water) -> a sustained low-g phase (the airborne window) ->
 a landing impact spike. Thresholds are the ``jump*`` parameters in docs/algorithms.md.
 Sources without an accel stream (native / other-app FITs) get ``None``, as everywhere else.
+
+Two context gates follow the signal gates (Freddy, 10 Oct 2026, the first labelled jumps):
+the takeoff must lie **inside a flight** (``off_foil`` -- a pop while pumping up off the
+water is not a jump), and the airborne window must not overlap **a turn's sweep**
+(``inside_turn`` -- the one "jump" inside a turn was a failed manoeuvre in which the board
+flew on without the rider). ``detect_jumps`` derives both from the track itself unless the
+caller hands in the spans.
 """
 
 from __future__ import annotations
@@ -197,8 +204,17 @@ class JumpResult:
 # detection
 # --------------------------------------------------------------------------------------
 
-def detect_jumps(track: RawTrack, config: JumpConfig | None = None) -> JumpResult | None:
-    """Detect jumps in a parsed source, or None when it carries no accelerometer stream."""
+Span = tuple[float, float]
+
+
+def detect_jumps(track: RawTrack, config: JumpConfig | None = None,
+                 flight_spans: list[Span] | None = None,
+                 turn_spans: list[Span] | None = None) -> JumpResult | None:
+    """Detect jumps in a parsed source, or None when it carries no accelerometer stream.
+
+    `flight_spans` / `turn_spans` (seconds on the records' base) feed the two context gates;
+    left out, they are derived from the track by `session_context`.
+    """
     accel = track.accel
     if accel is None or accel.empty:
         return None
@@ -206,19 +222,43 @@ def detect_jumps(track: RawTrack, config: JumpConfig | None = None) -> JumpResul
                   + accel["ay"].to_numpy(float) ** 2
                   + accel["az"].to_numpy(float) ** 2)
     alt_t, alt_m = _altitude_channel(track)
+    if flight_spans is None or turn_spans is None:
+        flights, turns = session_context(track)
+        flight_spans = flights if flight_spans is None else flight_spans
+        turn_spans = turns if turn_spans is None else turn_spans
     return detect_jumps_from_arrays(accel["t"].to_numpy(float), mag, config,
-                                    alt_t=alt_t, alt_m=alt_m)
+                                    alt_t=alt_t, alt_m=alt_m,
+                                    flight_spans=flight_spans, turn_spans=turn_spans)
+
+
+def session_context(track: RawTrack) -> tuple[list[Span], list[Span]]:
+    """The flights and the turn sweeps of a track, as (start, end) spans for the gates."""
+    # Imported here: the engine stages do not depend on this module, and keeping it that
+    # way keeps jump.py a side study the pipeline can ignore.
+    from .filters import clean
+    from .flight import segment_flights
+    from .turns import detect_turns
+    from .wind import estimate_wind
+
+    ct = clean(track)
+    fr = segment_flights(ct)
+    turns = detect_turns(ct, fr, estimate_wind(ct, fr))
+    return ([(f.start_t, f.end_t) for f in fr.flights],
+            [(tu.start_t, tu.end_t) for tu in turns])
 
 
 def detect_jumps_from_arrays(t: np.ndarray, mag: np.ndarray,
                              config: JumpConfig | None = None,
                              alt_t: np.ndarray | None = None,
-                             alt_m: np.ndarray | None = None) -> JumpResult:
+                             alt_m: np.ndarray | None = None,
+                             flight_spans: list[Span] | None = None,
+                             turn_spans: list[Span] | None = None) -> JumpResult:
     """Detect jumps in raw (time, |a| in g) samples — unit tests and synthetic traces.
 
     Spike -> sustained low-g -> impact, in that order, with a refractory dead time. Spans
     that have jump-like duration but fail a gate come back as `candidates`, so a sweep over
-    real sessions can be eyeballed without anything being mislabelled a jump.
+    real sessions can be eyeballed without anything being mislabelled a jump. A context gate
+    runs only when its spans are given (None = no gate, the synthetic traces' case).
     """
     cfg = config or JumpConfig()
     t = np.asarray(t, float)
@@ -266,6 +306,10 @@ def detect_jumps_from_arrays(t: np.ndarray, mag: np.ndarray,
             cand.reason = "no_takeoff_spike"
         elif post < cfg.impact_min_g:
             cand.reason = "no_landing_impact"
+        elif flight_spans is not None and not any(a <= t0 <= b for a, b in flight_spans):
+            cand.reason = "off_foil"
+        elif turn_spans is not None and any(a <= t1 and t0 <= b for a, b in turn_spans):
+            cand.reason = "inside_turn"
         elif t0 - last_end < cfg.refractory_s:
             cand.reason = "refractory"
 
