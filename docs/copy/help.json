@@ -127,7 +127,7 @@
                 "beta",
                 "dev"
               ],
-              "detail" : "You get everything, and each verdict buzzes on your wrist. It adds pump strokes and takeoff attempts.",
+              "detail" : "You get everything, and each verdict buzzes on your wrist. Pump strokes and takeoff attempts need Log wrist motion on. It makes the transfer time to Garmin Connect much longer.",
               "term" : "Garmin, with the CleanJibe watch app"
             },
             {

@@ -191,6 +191,10 @@ top of the 0.9.22 one:
 
 0.9.24: The watch counts your jumps. Each one buzzes three quick ticks and shows JUMP with your count.
 
+**0.9.25 built 16 October 2026, not uploaded yet**: the transfer time of Log wrist motion said where it is switched and where it costs (docs/presentation/watch.md, "Motion log on"). What's New, on top of the 0.9.24 paragraph:
+
+0.9.25: With Log wrist motion on, the transfer time to Garmin Connect is much longer. The watch now asks once whether to keep it, and says so after the save.
+
 The divergences left are listed under "Not ported yet".
 
 ---

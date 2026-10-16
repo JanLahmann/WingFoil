@@ -32,6 +32,11 @@ module Words {
     var WIND_ASK as String = "";
     var WIND_ASK_YES as String = "";
     var WIND_ASK_NO as String = "";
+    var ACCEL_ASK as String = "";
+    var ACCEL_ASK_KEEP as String = "";
+    var ACCEL_ASK_KEEP_SUB as String = "";
+    var ACCEL_ASK_OFF as String = "";
+    var ACCEL_ASK_OFF_SUB as String = "";
     var START_GPS_GOOD as String = "";
     var START_GPS_READY as String = "";
     var START_GPS_WEAK as String = "";
@@ -79,6 +84,7 @@ module Words {
     var SUM_SAVED as String = "";
     var SUM_NOT_SAVED as String = "";
     var SUM_AFTER_SYNC as String = "";
+    var SUM_LONG_TRANSFER as String = "";
     var SUM_HERO_ON_FOIL as String = "";
     var SUM_HERO_FOIL as String = "";
     var SUM_HERO_OF as String = "";
@@ -145,6 +151,11 @@ module Words {
         WIND_ASK = WatchUi.loadResource(Rez.Strings.WindAsk) as String;
         WIND_ASK_YES = WatchUi.loadResource(Rez.Strings.WindAskYes) as String;
         WIND_ASK_NO = WatchUi.loadResource(Rez.Strings.WindAskNo) as String;
+        ACCEL_ASK = WatchUi.loadResource(Rez.Strings.AccelAsk) as String;
+        ACCEL_ASK_KEEP = WatchUi.loadResource(Rez.Strings.AccelAskKeep) as String;
+        ACCEL_ASK_KEEP_SUB = WatchUi.loadResource(Rez.Strings.AccelAskKeepSub) as String;
+        ACCEL_ASK_OFF = WatchUi.loadResource(Rez.Strings.AccelAskOff) as String;
+        ACCEL_ASK_OFF_SUB = WatchUi.loadResource(Rez.Strings.AccelAskOffSub) as String;
         START_GPS_GOOD = WatchUi.loadResource(Rez.Strings.StartGpsGood) as String;
         START_GPS_READY = WatchUi.loadResource(Rez.Strings.StartGpsReady) as String;
         START_GPS_WEAK = WatchUi.loadResource(Rez.Strings.StartGpsWeak) as String;
@@ -192,6 +203,7 @@ module Words {
         SUM_SAVED = WatchUi.loadResource(Rez.Strings.SumSaved) as String;
         SUM_NOT_SAVED = WatchUi.loadResource(Rez.Strings.SumNotSaved) as String;
         SUM_AFTER_SYNC = WatchUi.loadResource(Rez.Strings.SumAfterSync) as String;
+        SUM_LONG_TRANSFER = WatchUi.loadResource(Rez.Strings.SumLongTransfer) as String;
         SUM_HERO_ON_FOIL = WatchUi.loadResource(Rez.Strings.SumHeroOnFoil) as String;
         SUM_HERO_FOIL = " " + (WatchUi.loadResource(Rez.Strings.SumHeroFoil) as String);
         SUM_HERO_OF = (WatchUi.loadResource(Rez.Strings.SumHeroOf) as String) + " ";

@@ -580,6 +580,30 @@ radius, every layout with and without the arc, the shipped and the large-text se
 and the rendering of both flashes and the broken ring on every layout in
 `everyLayoutRendersHeadless`.
 
+## *Motion log on* — the transfer time, asked once (Jan, 16 Oct 2026; 0.9.25)
+
+*Log wrist motion* (the `accelLogging` property, a Garmin Connect setting) records the 100 Hz
+accelerometer into the FIT, which makes the file about 20 times larger, and its **transfer
+time** to Garmin Connect after a session goes from seconds to many minutes (Freddy, fenix 5
+Plus, 15 Oct 2026). Garmin Connect's settings page cannot ask, so the watch does, in three places:
+
+* **The start page asks once per switch-on**: *Motion log on*, a Menu2 of *Keep it* (*long
+  transfer time* under it) and *Turn off* (*fast transfer*), opened on Keep it, on the tick
+  after *Same wind?* is answered (`AccelAsk`, `AppSettings.accelAsk`). Keep it is stored
+  (`accelOk`) until the setting goes off, which forgets it, so the next switch-on asks again.
+  Turn off writes the property back to off for this and every later session. BACK, or START
+  before the question is up, decides nothing and asks again at the next launch. Never asked on a
+  watch without SensorLogging.
+* **The line under SAVED** reads *long transfer time* in place of *next: CleanJibe* when that
+  session logged motion (`SessionController.logsMotion`), so a slow sync does not look like a
+  broken one; the same width rule drops it on a glass that cannot hold it.
+* **The setting's own words**: *Log wrist motion · long transfer time*, its note naming the
+  transfer time to Garmin Connect, and the **Which watches** help topic saying the same.
+
+No number of minutes anywhere: the time depends on the session's length, the watch and the
+Bluetooth link, so a figure would be an example read as a promise. Test:
+`accelQuestionAsksOncePerSwitchOn`.
+
 ## The start page's wind row and *Same wind?* (rider review W4, W5; 0.9.22)
 
 *"It keeps telling me to set the wind, but the listing says the watch works it out."* The

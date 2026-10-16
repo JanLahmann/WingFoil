@@ -24,8 +24,8 @@
     <string id="SportWindsurf">Windsurf (recommended)</string>
     <string id="SportKitesurf">Kitesurf</string>
     <string id="SportGeneric">Generic</string>
-    <string id="SetAccelLogging">Log accelerometer for pump analysis</string>
-    <string id="SetAccelLoggingNote">Your wrist motion is recorded, so the phone can count your pump strokes. The file gets about 20 times larger and can take several minutes to reach Garmin Connect. Leave it off for a fast transfer.</string>
+    <string id="SetAccelLogging">Log wrist motion · long transfer time</string>
+    <string id="SetAccelLoggingNote">Records your wrist motion for pump strokes and jumps. The file gets about 20 times larger. Its transfer time to Garmin Connect is then much longer, often many minutes. Leave it off for a fast transfer.</string>
     <string id="SetPumpDetection">Detect pumping + takeoffs</string>
     <string id="SetAlertTakeoff">Vibrate on pumped takeoff</string>
     <string id="SetAlertPb">Vibrate on a new best speed</string>
@@ -123,6 +123,15 @@
     <string id="WindAsk">Same wind?</string>
     <string id="WindAskYes">Yes</string>
     <string id="WindAskNo">No</string>
+
+    <!-- Asked once per switch-on: Keep it is remembered until the setting is turned off, Turn
+        off writes the setting back to off. BACK or START before the question is up asks again
+        at the next launch. A Menu2 like the same-wind question, opening on Keep it. -->
+    <string id="AccelAsk">Motion log on</string>
+    <string id="AccelAskKeep">Keep it</string>
+    <string id="AccelAskKeepSub">long transfer time</string>
+    <string id="AccelAskOff">Turn off</string>
+    <string id="AccelAskOffSub">fast transfer</string>
     <string id="StartGpsGood">GPS good</string>
     <string id="StartGpsReady">GPS ready</string>
     <string id="StartGpsWeak">GPS weak</string>
@@ -165,6 +174,7 @@
     <string id="SumSaved">SAVED</string>
     <string id="SumNotSaved">NOT SAVED</string>
     <string id="SumAfterSync">next: CleanJibe</string>
+    <string id="SumLongTransfer">long transfer time</string>
     <string id="SumHeroOnFoil">on foil</string>
     <string id="SumHeroFoil">foil</string>
     <string id="SumHeroOf">of</string>

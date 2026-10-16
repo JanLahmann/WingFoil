@@ -128,6 +128,9 @@ module AppSettings {
         cfg.useKnots = _bool("useKnots", false);
         sportChoice = _clamped("sportChoice", 0.0, 0.0, 2.0).toNumber();
         accelLogging = _bool("accelLogging", true);
+        if (!accelLogging) {
+            _forgetAccelAnswer();    // switched off: the next switch-on asks again
+        }
         jumpCount = _bool("jumpCount", false);
         pumpDetection = _bool("pumpDetection", true);
         alertPb = _bool("alertPb", true);
@@ -261,6 +264,50 @@ module AppSettings {
             cfg.setWindDirection(-1);
         }
         return windOffer;
+    }
+
+    // ---- the motion-log question (Jan, 16 Oct 2026) ----
+    // Log wrist motion makes the FIT about 20 times larger, and its transfer to Garmin Connect
+    // takes many minutes instead of seconds. The setting lives in Garmin Connect, which cannot
+    // ask, so the start page asks once per switch-on: Keep it is remembered until the setting
+    // goes off again (load() forgets it), Turn off writes the setting back. BACK asks again at
+    // the next launch, and so does START pressed before the question is up.
+    const STORE_ACCEL_OK = "accelOk";
+    var accelAsked as Boolean = false;       // asked once this launch
+
+    function accelAsk() as Boolean {
+        if (!accelLogging || accelAsked || !(Toybox has :SensorLogging)) {
+            return false;
+        }
+        try {
+            return Storage.getValue(STORE_ACCEL_OK) != true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function answerAccel(keep as Boolean) as Void {
+        accelAsked = true;
+        if (keep) {
+            try {
+                Storage.setValue(STORE_ACCEL_OK, true);
+            } catch (e) {
+            }
+            return;
+        }
+        accelLogging = false;
+        try {
+            Properties.setValue("accelLogging", false);
+        } catch (e) {
+        }
+        _forgetAccelAnswer();
+    }
+
+    function _forgetAccelAnswer() as Void {
+        try {
+            Storage.deleteValue(STORE_ACCEL_OK);
+        } catch (e) {
+        }
     }
 
     // Yes: the same bearing, stored like any pick and retired again at this session's save.

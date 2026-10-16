@@ -372,7 +372,8 @@ public enum HelpCatalog {
             items: [
                 .init(term: "Garmin, with the CleanJibe watch app",
                       detail: "You get everything, and each verdict buzzes on your wrist. "
-                          + "It adds pump strokes and takeoff attempts."),
+                          + "Pump strokes and takeoff attempts need Log wrist motion on. It makes "
+                          + "the transfer time to Garmin Connect much longer."),
                 .init(term: "Garmin, with Garmin's own profile or another app",
                       detail: "You get every verdict and flight, with measured speed "
                           + "records. Your old sessions come in through intervals.icu too."),

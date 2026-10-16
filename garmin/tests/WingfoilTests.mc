@@ -7166,3 +7166,49 @@ function jumpWindowDiesWithAGap(logger as Test.Logger) as Boolean {
     Test.assertEqual(det.count, 1);
     return true;
 }
+
+// The motion-log question (Jan, 16 Oct 2026): asked once per switch-on, Keep it remembered
+// until the setting goes off, Turn off writes the setting back, BACK decides nothing.
+(:test)
+function accelQuestionAsksOncePerSwitchOn(logger as Test.Logger) as Boolean {
+    var saved = AppSettings.accelLogging;
+    Properties.setValue("accelLogging", true);
+    AppSettings.load();
+    AppSettings._forgetAccelAnswer();
+    AppSettings.accelAsked = false;
+    var can = Toybox has :SensorLogging;
+    Test.assertEqual(AppSettings.accelAsk(), can);
+    if (!can) {
+        return true;                          // a watch that cannot log is never asked
+    }
+    var menu = AccelAsk.build();
+    Test.assertEqual(menu.getItem(0).getId(), :keep);
+    Test.assertEqual(menu.getItem(0).getSubLabel(), Words.ACCEL_ASK_KEEP_SUB);
+    Test.assertEqual(menu.getItem(1).getId(), :off);
+
+    // Keep it: not asked again, this launch or the next, while the setting stays on.
+    AppSettings.answerAccel(true);
+    Test.assert(!AppSettings.accelAsk());
+    AppSettings.accelAsked = false;           // a new launch
+    AppSettings.load();
+    Test.assert(!AppSettings.accelAsk());
+
+    // Switched off and on again in Garmin Connect: asked again.
+    Properties.setValue("accelLogging", false);
+    AppSettings.load();
+    Properties.setValue("accelLogging", true);
+    AppSettings.load();
+    Test.assert(AppSettings.accelAsk());
+
+    // Turn off: the setting itself goes off, and this launch logs nothing.
+    AppSettings.answerAccel(false);
+    Test.assert(!AppSettings.accelLogging);
+    Test.assertEqual(Properties.getValue("accelLogging"), false);
+    Test.assert(!AppSettings.accelAsk());
+
+    Properties.setValue("accelLogging", saved);
+    AppSettings.load();
+    AppSettings._forgetAccelAnswer();
+    AppSettings.accelAsked = false;
+    return true;
+}

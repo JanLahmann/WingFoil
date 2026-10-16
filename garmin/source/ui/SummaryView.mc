@@ -300,6 +300,10 @@ class SummaryView extends WatchUi.View {
         if (progress != null) {
             return progress;
         }
+        // A FIT with wrist motion in it is about 20 times larger: say the wait is expected.
+        if (saveOk && getApp().controller.logsMotion()) {
+            return Words.SUM_LONG_TRANSFER;
+        }
         return saveOk ? Words.SUM_AFTER_SYNC : null;
     }
 

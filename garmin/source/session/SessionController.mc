@@ -297,6 +297,11 @@ class SessionController {
 
     // ---- session lifecycle ----
 
+    // This session records wrist motion into its FIT (the save page's long-transfer line).
+    function logsMotion() as Boolean {
+        return _logger != null;
+    }
+
     function startSession() as Boolean {
         if (_session != null) {
             return false;
@@ -306,6 +311,7 @@ class SessionController {
             :sport => _sport(),
             :subSport => Activity.SUB_SPORT_GENERIC
         };
+        _logger = null;
         if (AppSettings.accelLogging && (Toybox has :SensorLogging)) {
             try {
                 _logger = new SensorLogging.SensorLogger({

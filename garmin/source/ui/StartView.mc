@@ -83,6 +83,12 @@ class StartView extends WatchUi.View {
             WatchUi.pushView(WindAsk.build(deg), new WindAskDelegate(), WatchUi.SLIDE_UP);
             return;
         }
+        // Then the motion-log question, on the tick after the wind one is answered.
+        if (AppSettings.accelAsk()) {
+            AppSettings.accelAsked = true;
+            WatchUi.pushView(AccelAsk.build(), new AccelAskDelegate(), WatchUi.SLIDE_UP);
+            return;
+        }
         WatchUi.requestUpdate();
     }
 
@@ -339,6 +345,36 @@ class WindAskDelegate extends WatchUi.Menu2InputDelegate {
 
     function onBack() as Void {
         AppSettings.answerWindOffer(false);
+        WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
+    }
+}
+
+// The motion-log question (Jan, 16 Oct 2026): Log wrist motion is on, and its cost is the
+// transfer time. A Menu2 for the same reason as WindAsk; it opens on Keep it, because the
+// rider switched it on themselves. One pop, onto StartView.
+module AccelAsk {
+    function build() as WatchUi.Menu2 {
+        var menu = new WatchUi.Menu2({:title => Words.ACCEL_ASK, :focus => 0});
+        menu.addItem(new WatchUi.MenuItem(Words.ACCEL_ASK_KEEP, Words.ACCEL_ASK_KEEP_SUB,
+            :keep, null));
+        menu.addItem(new WatchUi.MenuItem(Words.ACCEL_ASK_OFF, Words.ACCEL_ASK_OFF_SUB,
+            :off, null));
+        return menu;
+    }
+}
+
+class AccelAskDelegate extends WatchUi.Menu2InputDelegate {
+    function initialize() {
+        Menu2InputDelegate.initialize();
+    }
+
+    function onSelect(item as WatchUi.MenuItem) as Void {
+        AppSettings.answerAccel(item.getId() == :keep);
+        WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
+    }
+
+    // BACK decides nothing: logging stays on, and the next launch asks again.
+    function onBack() as Void {
         WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
     }
 }

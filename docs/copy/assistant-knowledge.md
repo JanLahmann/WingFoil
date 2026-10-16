@@ -89,7 +89,7 @@ Every watch works, one way or another. Each row says what yours can show.
 Every watch that records a GPS track works. A number your file cannot support is left blank, never guessed.
 Two things set the rows apart. First, **measured speed**: your file holds the watch's own speed, so your speed records count. Without it, speed is worked out from positions and the records are marked estimated.
 **Pump strokes and takeoff attempts** need a wrist accelerometer recorded during the session. Only the CleanJibe watch apps record one.
-- Garmin, with the CleanJibe watch app: You get everything, and each verdict buzzes on your wrist. It adds pump strokes and takeoff attempts.
+- Garmin, with the CleanJibe watch app: You get everything, and each verdict buzzes on your wrist. Pump strokes and takeoff attempts need Log wrist motion on. It makes the transfer time to Garmin Connect much longer.
 - Garmin, with Garmin's own profile or another app: You get every verdict and flight, with measured speed records. Your old sessions come in through intervals.icu too.
 - Apple Watch, with Apple's Workout app: Bring it in through Strava or intervals.icu. In the beta, Apple Health hands it over with measured speed.
 - Apple Watch, with the CleanJibe watch app: It is in the beta. You get measured speed, plus pump strokes and takeoff attempts from your wrist.
