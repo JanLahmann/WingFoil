@@ -253,7 +253,7 @@ struct LibraryView: View {
             #if BETA
             // On the list, not on the card: the card is removed the moment either button
             // is tapped, and a sheet hung on it would never present.
-            .usageReportMail(on: $usageRequest)
+            .feedbackMail(on: $usageRequest, usageAsk: true)
             // Asked when the list settles rather than at every redraw — the card must not
             // appear underneath a rider's finger mid-scroll — and re-asked after an import,
             // which is the event that moves the count along.

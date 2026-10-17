@@ -202,10 +202,11 @@ phone: `appOpen`, five import routes (`importIcu`, `importFile`, `importStrava`,
 `importHealth`, `importShareSheet`, `importZip`), `sessionOpened`, `turnPage`, `shareCard`,
 `clipExported`, `videoExported`, `backupMade`, `backupRestored`, `settingsOpened`,
 `feedbackMail`, `stravaConnected` — a count and a last-used date each, plus up to twenty
-deduplicated failure sentences. It lives in that phone's `UserDefaults`, it is `#if BETA`
-only, and the only way a number leaves is a mail the rider opens, reads and sends from his
-own account with every line editable first (`UsageReportMail`, Settings → Beta → *Send
-usage report*, and the card the library offers every fifth session).
+deduplicated failure sentences. It lives in that phone's `UserDefaults`, it counts in every
+channel since 17 Oct 2026 (one mail, one sheet), and the only way a number leaves is the
+feedback mail the rider opens, reads and sends from his own account with *Usage statistics*
+on and every line editable first (the feedback sheet, and in the beta the card the library
+offers every fifth session).
 
 **How its counters could become a funnel.** The seventeen features already map onto the web
 events above almost one for one: `importFile`/`importIcu`/`importShareSheet` are

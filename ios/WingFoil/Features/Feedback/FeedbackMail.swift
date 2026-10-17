@@ -369,9 +369,11 @@ extension View {
                       subject: String? = nil,
                       note: String? = nil,
                       focusIdea: Bool = false,
+                      usageAsk: Bool = false,
                       stagesFallbackHook: Bool = false) -> some View {
         modifier(FeedbackMailPresenter(request: request, session: session, card: card,
                                        subject: subject, note: note, focusIdea: focusIdea,
+                                       usageAsk: usageAsk,
                                        stagesFallbackHook: stagesFallbackHook))
     }
 }
@@ -432,6 +434,9 @@ private struct FeedbackMailPresenter: ViewModifier {
     let note: String?
     /// See `feedbackMail(on:…focusIdea:)`.
     let focusIdea: Bool
+    /// Opened from the library's usage card: answering it spends the ask
+    /// (`Usage.askAnswered`), whichever button of the sheet the rider then taps.
+    let usageAsk: Bool
     /// Exactly one presenter answers `UI_FEEDBACK=fallback` — the Settings row's. With a
     /// footer on every page there are five on screen at launch, and five would raise five
     /// sheets on top of each other.
@@ -447,6 +452,7 @@ private struct FeedbackMailPresenter: ViewModifier {
     /// the sheet has gone, because one view cannot present two sheets at once.
     @State private var askingWishes = false
     @State private var vote: MostWanted.Vote?
+    @State private var usageChoice = UsageReportText.defaultChoice(for: AppChannel.channel)
 
     /// A composed report, held only while one of the two sheets is up.
     private struct Draft: Identifiable {
@@ -456,9 +462,14 @@ private struct FeedbackMailPresenter: ViewModifier {
         let subjectOverride: String?
         var vote = MostWanted.Vote()
         var note: String?
+        /// The counters, when the rider left *Usage statistics* on (one mail, one sheet:
+        /// Jan, 17 Oct 2026).
+        var usage: UsageReportText.Attached?
 
         var subject: String { subjectOverride ?? FeedbackReport.subject(facts) }
-        var body: String { FeedbackReport.body(facts, mostWanted: vote, note: note) }
+        var body: String {
+            FeedbackReport.body(facts, mostWanted: vote, note: note, usage: usage)
+        }
     }
 
     func body(content: Content) -> some View {
@@ -471,9 +482,12 @@ private struct FeedbackMailPresenter: ViewModifier {
             .sheet(isPresented: $askingWishes, onDismiss: {
                 guard let answered = vote else { return }
                 vote = nil
-                compose(vote: answered)
+                compose(vote: answered, usage: usageChoice)
             }) {
-                FeedbackAskSheet(focusIdea: focusIdea) { vote = $0 }
+                FeedbackAskSheet(focusIdea: focusIdea) { answer, choice in
+                    vote = answer
+                    usageChoice = choice
+                }
             }
             .sheet(item: $draft) { draft in
                 MailComposeView(subject: draft.subject, messageBody: draft.body,
@@ -505,22 +519,33 @@ private struct FeedbackMailPresenter: ViewModifier {
             #endif
     }
 
-    private func compose(vote: MostWanted.Vote = .init()) {
-        // Every feedback door ends here, so this is the one place the beta counts them.
+    /// `usage` defaults to the channel's: a session's *Report a problem* goes straight to
+    /// the composer, and its mail carries the counters at the default, where the rider can
+    /// still read and delete every line before sending.
+    private func compose(vote: MostWanted.Vote = .init(),
+                         usage: UsageReportText.Choice =
+                            UsageReportText.defaultChoice(for: AppChannel.channel)) {
+        // Every feedback door ends here, so this is the one place the app counts them.
         // The try is counted now and its answer when Mail says sent (`MailComposeView`).
         Usage.started(.feedbackMail)
+        if usageAsk { Usage.askAnswered(snooze: false) }
         let ticks = vote.ticked.count + vote.checks.count
         if ticks > 0 { Usage.record(.mostWanted, times: ticks) }
+        if usage.layout != nil { Usage.record(.usageReport, detail: usage.rawValue) }
+        // Read after the counts above, so the mail carries this send too.
+        let attached = usage.layout.map {
+            UsageReportText.Attached(counters: Usage.counters, layout: $0)
+        }
         let png = card()
         let attachment = png.flatMap { data in
             session.map { FeedbackMail.Attachment.card(png: data, sessionID: $0.id) }
         }
         let composed = Draft(facts: FeedbackMail.facts(store: store, session: session),
                              attachment: attachment, subjectOverride: subject, vote: vote,
-                             note: note)
+                             note: note, usage: attached)
         guard MFMailComposeViewController.canSendMail() else {
             guard let url = FeedbackReport.mailtoURL(composed.facts, mostWanted: vote,
-                                                     note: note) else {
+                                                     note: note, usage: attached) else {
                 fallback = composed
                 return
             }
@@ -546,12 +571,14 @@ private struct FeedbackMailPresenter: ViewModifier {
 /// carries no block at all.
 struct FeedbackAskSheet: View {
     var focusIdea = false
-    let onWrite: (MostWanted.Vote) -> Void
+    let onWrite: (MostWanted.Vote, UsageReportText.Choice) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var ticked: Set<String> = []
     @State private var checks: [String: MostWanted.Verdict] = [:]
     @State private var note = ""
+    /// Not remembered: the channel's default each time (Jan, 17 Oct 2026).
+    @State private var usage = UsageReportText.defaultChoice(for: AppChannel.channel)
     @FocusState private var ideaFocused: Bool
 
     private let offered = MostWanted.offered(in: AppChannel.channel)
@@ -585,6 +612,21 @@ struct FeedbackAskSheet: View {
                             .focused($ideaFocused)
                             .id("idea")
                     }
+
+                    // **Usage statistics** (one mail, one sheet: Jan, 17 Oct 2026). What
+                    // the app counted on this phone rides under the facts of the same mail.
+                    Section {
+                        Picker(UsageReportText.heading, selection: $usage) {
+                            ForEach(UsageReportText.Choice.allCases) {
+                                Text($0.label).tag($0)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                    } header: {
+                        Text(UsageReportText.heading)
+                    } footer: {
+                        Text(UsageReportText.choiceFooter)
+                    }
                 }
                 .task {
                     guard focusIdea else { return }
@@ -601,7 +643,8 @@ struct FeedbackAskSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Write mail") {
-                        onWrite(MostWanted.Vote(ticked: ticked, checks: checks, note: note))
+                        onWrite(MostWanted.Vote(ticked: ticked, checks: checks, note: note),
+                                usage)
                         dismiss()
                     }
                 }

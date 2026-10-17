@@ -281,7 +281,8 @@ out*, and no join section — the reader is already through the door it offers.
 **The list has one home, and this page is it** (Jan, dev 68). The beta and dev channels
 printed the beta rows twice on one screen: checked off at the top of the **Beta** section,
 and again one row below under *In the public beta*. The Beta section is **actions only**
-now — *Request a feature*, *Send usage report*, *Check for a newer build* with its status
+now — *Send feedback* (one mail, one sheet since 17 Oct 2026, with the usage statistics in it;
+*Request a feature* and *Send usage report* were two rows until then), *Check for a newer build* with its status
 line, *Start over* — under one short footer: what the page below lists, what the two mails
 do and that neither sends anything until Send is tapped, and what Start over takes, in two
 sentences. The four paragraphs it carried are gone; what they said lives on that page, on the

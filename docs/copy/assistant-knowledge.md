@@ -510,6 +510,7 @@ The mail asks three questions, with a blank line under each.
 [iPhone app only] Nothing leaves the phone until you tap Send. It is Apple's own composer, and it comes to us at info@cleanjibe.org. We read every mail. No part of CleanJibe sends anything by itself.
 - What is already in the mail [iPhone app only]: Under a line of dashes: app and engine version, tuned thresholds, your phone, iOS and locale. The paired watch is there, with how many sessions came in each way.
 - From a session: It also carries that session's date, spot and length, what recorded it and which app version read it. Its share card is attached.
+- Usage statistics: The sheet before the mail can add what this phone counted. That is which features you used, and whether they worked. Switch it off there, or delete any line.
 - Read it before you send [iPhone app only]: Every line is there to read and to edit. If this phone has no mail account, the app hands the same text to whatever you do use.
 - If you are on the beta [iPhone app only]: A screenshot taken inside the app offers Send Beta Feedback. That attaches the screenshot and the device logs. Take it for a crash.
 - About the watch app itself: Anything about the watch app can go through its Connect IQ store listing. For a number that looks wrong, the mail here is the one worth sending.

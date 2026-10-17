@@ -1,8 +1,9 @@
 import Foundation
 import WingFoilKit
 
-/// **The beta's counters, from the app's side** — one call per door, and nothing at all in
-/// the release build.
+/// **The app's counters, from the app's side** — one call per door, in every channel since
+/// 17 Oct 2026 (Jan: one feedback mail, one sheet, everywhere; asking riders what works is how
+/// a community-driven app decides what ships). The App Store build counted nothing until then.
 ///
 /// The shape of the numbers, the wording of the report and the rule for when to ask live in
 /// the kit (`UsageCounters`), where the test suite reads them. What lives here is the two
@@ -16,13 +17,11 @@ import WingFoilKit
 /// `Usage.record(.shareCard)` costs one dictionary write and one defaults write, on the
 /// main actor, next to work measured in seconds.
 ///
-/// **Outside `BETA` every function here is an empty body.** Not a flag checked at runtime:
-/// the release binary contains no counter, no key and no blob, and a `usage.counters.v1`
-/// left in defaults by a beta on the same phone is never read — the same rule the tuning
-/// overrides and the windsurf switch already keep (docs/channels.md).
+/// **Nothing leaves the phone on its own.** The counters are sent only inside a feedback
+/// mail the rider writes and sends, with *Usage statistics* on (Normal by default in the
+/// App Store build, Extended in the beta and dev), and every line can be deleted there. A
+/// beta-only door simply does not exist in the release, so it is never counted there.
 enum Usage {
-
-    #if BETA
 
     /// One use that worked, start to finish: a page opened, a setting changed, a file
     /// written. `detail` is a short variant code, never free text.
@@ -151,19 +150,4 @@ enum Usage {
             ?? UsageCounters(firstLaunch: Date())
     }
 
-    #else
-
-    /// The release channel. Every call site above compiles to nothing.
-    static func record(_ feature: UsageCounters.Feature, times: Int = 1,
-                       detail: String? = nil) {}
-    static func failed(_ feature: UsageCounters.Feature, reason: String) {}
-    static func failed(_ feature: UsageCounters.Feature, error: any Error) {}
-    static func started(_ feature: UsageCounters.Feature) {}
-    static func finished(_ feature: UsageCounters.Feature, failure: String? = nil,
-                         detail: String? = nil) {}
-    static func recordImport(_ source: ImportSource, automatic: Bool = false,
-                             imported: Int, failed: Int) {}
-    static func failure(_ message: String) {}
-
-    #endif
 }

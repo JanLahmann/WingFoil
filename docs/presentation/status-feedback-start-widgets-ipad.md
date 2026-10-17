@@ -123,7 +123,8 @@ once**: `FeedbackInvitation.sentence` opened the summary *and* the first paragra
 under the other, and it now stays in the summary, which is the line the index shows.
 
 **The feedback sheet** (Jan, 23 Sep 2026; reshaped 30 Sep 2026). A general feedback door —
-the menu, the page footers, *Request a feature*, the Beta page's two buttons — opens a short
+the menu, the page footers, Settings → Beta → *Send feedback*, the Beta page's two buttons, the
+library's usage card — opens a short
 sheet before the mail. In the beta and dev build it opens on **Beta features**: every beta
 door the build has, each with *Works* and *Has a problem* (`MostWanted.checked(in:)`). Then
 **Your wishlist** (*Most wanted* until 30 Sep, Jan): what the build has not got as ticks
@@ -137,48 +138,54 @@ vote leaves no block. The mail opens on *Your mail shows us what riders use and 
 read every one.* (`FeedbackReport.opening`). *Report a problem with this session…* goes
 straight to the mail: a wish list in front of a bug report is in the way.
 
-### The beta's usage report
+### Feedback and usage, one mail (Jan, 17 Oct 2026)
 
-**Beta only** (`#if BETA`, docs/channels.md). The door opens a short sheet first, **Usage
-report**: a **Your feedback** field on top, focused, with *What works, what does not, what you
-miss* as its placeholder, and under it a **Normal · Extended** switch that opens on Normal
-(*Normal gives one line per feature you used. Extended adds dates and the last error.*).
-**Write mail** composes the mail (`UsageReportText`, asserted in `UsageCountersTests`) and
-hands it to Mail, where every line is still the rider's to delete. The subject is its own —
-**`CleanJibe beta usage report`** — so a mailbox sorted by subject does not file it as a bug
-report.
+**Every channel.** Until 17 Oct 2026 the beta had two mails: the feedback mail, and a *usage
+report* with its own sheet (*Your feedback* and a Normal · Extended switch) and its own subject,
+*CleanJibe beta usage report*; *Request a feature* was a third subject on the first. Jan: **one
+mail, one sheet** — "this is a key part of us being community driven". So the feedback sheet
+above ends on a **Usage statistics** choice, **Off · Normal · Extended**, with the footer
+*Counts of what you used, what worked and what failed, kept on this phone. You see every line in
+the mail and can delete it.* It opens on **Extended in the beta and dev** and **Normal in the App
+Store build** (`UsageReportText.defaultChoice(for:)`), every time; the choice is not remembered.
+A session's *Report a problem…* skips the sheet and carries the counters at that default.
 
-The body, in order: *Your feedback:* and his words; the rule and one sentence, *"Below is what
-the beta counts on this phone. It shows which features work. Delete any line you would rather
-not send."*; the App, Phone, Watch and Library blocks every feedback mail carries; then the
-counters, headed **Usage and features** (`UsageCounters.report`). Their first line is the build
-and the device, in both layouts — a count without the build it was counted on cannot gate a
-release. Then the first-launch date, the active days and the day written; then the used
-features under their groups (Sources, Watch, Analysis, Reading, Share, Library, Settings,
-Feedback), one line each — `Send map to watch ✓ 12 · ✗ 1`; then, on **one** line, every door
-this build has that nobody opened, which is the half that decides what ships. **Extended**
-adds to each line the tries still without an answer, the first date, the last success, the
-last failure and its reason (a short code, never a file name or a place), the variants under
-it (the share card's shape, hero and background), and at the end the failure sentences the
-phone showed, newest first, deduplicated with a count.
+The mail is the feedback mail, subject `CleanJibe feedback · build N · watch`, and when the
+choice is not Off the counters ride **under the facts** (`FeedbackReport.body(…usage:)`,
+asserted in `UsageCountersTests`): the heading *Usage statistics:*, the sentence *"Below is what
+the app counts on this phone. It shows which features work. Delete any line you would rather
+not send."*, then the block `UsageCounters.report` writes, headed **Usage and features**. Its
+first line is the build and the device, in both layouts — a count without the build it was
+counted on cannot gate a release. Then the first-launch date, the active days and the day
+written; then the used features under their groups (Sources, Watch, Analysis, Reading, Share,
+Library, Settings, Feedback), one line each — `Send map to watch ✓ 12 · ✗ 1`; then, on **one**
+line, every door this build has that nobody opened, which is the half that decides what ships.
+**Extended** adds to each line the tries still without an answer, the first date, the last
+success, the last failure and its reason (a short code, never a file name or a place), the
+variants under it (the share card's shape, hero and background), and at the end the failure
+sentences the phone showed, newest first, deduplicated with a count. The tally lines above
+the rule (`· <id>`) are unchanged.
 
 The features are the table under "What the usage report counts" in docs/channels.md,
 generated from `UsageCounters.Feature` and checked by the kit's suite. Each counts **tried,
 worked, failed** at the point where the outcome is known — an import when its files are read,
 a map when Connect IQ says delivered, a mail when Mail says sent — so "used" and "works" are
-two numbers, and the release gate in channels.md reads the second. A blob from build 107 or
-older decodes, each old count read as that many successes. They live in this phone's
-`UserDefaults` (`usage.counters.v1`), they are never uploaded, and the only way a number
-leaves the phone is that mail.
+two numbers, and the release gate in channels.md reads the second. **The App Store build counts
+too since 17 Oct 2026** (`App/Usage.swift` lost its `#if BETA`); a beta-only door does not
+exist there, so it is never counted there. A blob from build 107 or older decodes, each old
+count read as that many successes. They live in this phone's `UserDefaults`
+(`usage.counters.v1`), they are never uploaded, and the only way a number leaves the phone is
+that mail.
 
-**The ask.** After every fifth session imported, or a fortnight since the last ask — whichever
-comes first — the library shows one card at the top of the list: *Help the beta: send your
-usage report*, with **Write the mail** and **Not now**. A card in the list rather than an
-alert, because the honest answer is often "not while I am standing on a beach": it waits where
-the rider is already looking, and "Not now" buys a fortnight of quiet rather than ending the
-conversation. Either button answers it and the card is gone. **Settings → Beta → Send usage
-report** is the permanent door, for the rider who did not wait to be asked and the one who
-said Not now and changed his mind.
+**The ask** (beta and dev). After every fifth session imported, or a fortnight since the last
+ask — whichever comes first — the library shows one card at the top of the list: *Help the beta:
+send your feedback*, with **Write the mail** and **Not now** (`UsageAskCard`). *Write the mail*
+opens the same feedback sheet. A card in the list rather than an alert, because the honest
+answer is often "not while I am standing on a beach": it waits where the rider is already
+looking, and "Not now" buys a fortnight of quiet rather than ending the conversation. Either
+button answers it and the card is gone. **Settings → Beta → Send feedback** is the permanent
+door in the beta; *Request a feature* and *Send usage report* are gone, and the Beta page's
+*What should we test next?* is the way in with the cursor in *Your idea*.
 
 ### The beta's update reminder
 

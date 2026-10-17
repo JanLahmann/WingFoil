@@ -45,8 +45,8 @@ enum AppChannel {
 // MARK: - The beta's own section
 
 #if BETA
-/// **Settings → Beta.** The four things a tester does: ask for a feature, send what this
-/// phone has counted, check for a newer build, start again from nothing.
+/// **Settings → Beta.** The three things a tester does: send feedback (with what this phone
+/// has counted), check for a newer build, start again from nothing.
 ///
 /// No list here. What this build has and the App Store one does not is one row below, on
 /// "Coming in a future release" under the heading "In the public beta" (Jan, dev 68).
@@ -58,23 +58,15 @@ struct BetaSectionView: View {
 
     var body: some View {
         Section {
-            // The existing composer, with a subject of its own: a feature request filed as
-            // "CleanJibe 0.15.0 (52): …" reads like a bug report and gets answered like one.
+            // **One mail, one sheet** (Jan, 17 Oct 2026). "Request a feature" and "Send usage
+            // report" were two mails with two subjects; both are this door now, the same
+            // sheet every feedback door opens, with *Usage statistics* on Extended. The
+            // session-video test ask that lived here (Jan, dev 70) is in its own help topic
+            // since 17 Oct 2026 (`HelpTopicID.sessionVideo`, "Testing it?").
             VStack(alignment: .leading, spacing: 4) {
-                FeedbackMailRow(title: "Request a feature", systemImage: "lightbulb",
-                                subjectOverride: "CleanJibe feature request")
-                // The session-video test ask that lived here (Jan, dev 70) is in its own
-                // help topic since 17 Oct 2026 (`HelpTopicID.sessionVideo`, "Testing it?").
-                note("Opens a mail with this build already filled in.")
-            }
-            // The usage and feature statistics docs/channels.md promises the beta:
-            // counters kept on the phone, sent only in a mail the rider edits. Permanent,
-            // because the library's own card (`UsageAskCard`) is occasional and because
-            // "not now" has to leave a way back.
-            VStack(alignment: .leading, spacing: 4) {
-                UsageReportRow()
-                note("Adds what this phone has counted to a mail. Nothing goes until you "
-                     + "tap Send.")
+                FeedbackMailRow(title: "Send feedback", systemImage: "envelope")
+                note("Your words, your wishes and what this phone counted, in one mail. "
+                     + "Nothing goes until you tap Send.")
             }
             // "Check for a newer build now", with the last check and the verdict — the
             // manual door to the once-a-day check (`UpdateReminder`). Its own status line

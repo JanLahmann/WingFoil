@@ -295,28 +295,49 @@ import Testing
             session: nil, crashes: [])
     }
 
-    @Test func theMailOpensWithTheRidersFeedback() {
-        let body = UsageReportText.body(facts: facts, feedback: "  The map never arrives.\n",
-                                        counters: filledIn(), layout: .normal,
-                                        now: date(14), timeZone: zone)
-        let lines = body.split(separator: "\n", omittingEmptySubsequences: false)
-        #expect(lines[0] == "Your feedback:")
-        #expect(lines[1] == "The map never arrives.")
+    // MARK: - One mail, one sheet (Jan, 17 Oct 2026)
+
+    @Test func theCountersRideUnderTheFactsOfTheFeedbackMail() throws {
+        let usage = UsageReportText.Attached(counters: filledIn(), layout: .normal,
+                                             now: date(14), timeZone: zone)
+        let body = FeedbackReport.body(facts, note: "The map never arrives.", usage: usage)
+        // The rider's half still opens the mail; the counters come after the facts.
+        #expect(body.hasPrefix(FeedbackReport.opening))
+        let factsAt = try #require(body.range(of: "CleanJibe 1.1.0 (107) · beta build"))
+        let countersAt = try #require(body.range(of: UsageReportText.heading + ":"))
+        #expect(factsAt.lowerBound < countersAt.lowerBound)
         #expect(body.contains(UsageReportText.separator))
-        // The build and the device, in the facts and in the counters.
-        #expect(body.contains("CleanJibe 1.1.0 (107) · beta build"))
         #expect(body.contains("  CleanJibe 1.1.0 (107) · iPhone 17 Pro Max (iPhone18,2)"))
         #expect(body.hasSuffix("sent from CleanJibe"))
     }
 
-    @Test func theLayoutSwitchChangesOnlyTheCounters() {
-        let normal = UsageReportText.body(facts: facts, feedback: "", counters: filledIn(),
-                                          layout: .normal, now: date(14), timeZone: zone)
-        let extended = UsageReportText.body(facts: facts, feedback: "", counters: filledIn(),
-                                            layout: .extended, now: date(14), timeZone: zone)
+    @Test func theChoiceChangesOnlyTheCounters() {
+        let off = FeedbackReport.body(facts)
+        let normal = FeedbackReport.body(facts, usage: .init(counters: filledIn(),
+                                                             layout: .normal,
+                                                             now: date(14), timeZone: zone))
+        let extended = FeedbackReport.body(facts, usage: .init(counters: filledIn(),
+                                                               layout: .extended,
+                                                               now: date(14), timeZone: zone))
+        #expect(!off.contains(UsageReportText.heading))
         #expect(!normal.contains("worked 14 Sep"))
         #expect(extended.contains("worked 14 Sep"))
-        #expect(normal.hasPrefix("Your feedback:\n\n"))
+        // Everything above the counters is the same mail.
+        let head = off.components(separatedBy: "sent from")[0]
+        #expect(normal.hasPrefix(head) && extended.hasPrefix(head))
+    }
+
+    @Test func extendedInTheBetaNormalInTheRelease() {
+        #expect(UsageReportText.defaultChoice(for: .release) == .normal)
+        #expect(UsageReportText.defaultChoice(for: .beta) == .extended)
+        #expect(UsageReportText.defaultChoice(for: .dev) == .extended)
+        #expect(UsageReportText.Choice.off.layout == nil)
+        #expect(UsageReportText.Choice.allCases.map(\.label) == ["Off", "Normal", "Extended"])
+    }
+
+    @Test func oneSubjectWhateverTheMailCarries() {
+        // The usage report's own subject is gone: one thread in a mailbox sorted by subject.
+        #expect(FeedbackReport.subject(facts).hasPrefix("CleanJibe feedback · build 107"))
     }
 
     // MARK: - The feature list is docs/channels.md's

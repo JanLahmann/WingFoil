@@ -3033,6 +3033,15 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
+              "detail": "The sheet before the mail can add what this phone counted. That is which features you used, and whether they worked. Switch it off there, or delete any line.",
+              "term": "Usage statistics"
+            },
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
               "detail": "Every line is there to read and to edit. If this phone has no mail account, the app hands the same text to whatever you do use.",
               "iphoneOnly": true,
               "term": "Read it before you send"

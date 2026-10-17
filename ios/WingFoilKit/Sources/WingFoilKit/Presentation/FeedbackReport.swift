@@ -482,8 +482,12 @@ public enum FeedbackReport {
     /// `note` answers the first question for him where the app already knows it: the turn
     /// page's "Not how I remember it?" writes which turn and what the app called it
     /// (`TurnDoubt.note`), and the rider is left the second question, what he remembers.
+    ///
+    /// `usage` adds the counters under the facts (`UsageReportText`), when the rider left
+    /// *Usage statistics* on in the sheet: one mail, one sheet (Jan, 17 Oct 2026).
     public static func body(_ facts: FeedbackFacts, mostWanted: MostWanted.Vote = .init(),
-                            note: String? = nil) -> String {
+                            note: String? = nil,
+                            usage: UsageReportText.Attached? = nil) -> String {
         var out: [String] = [opening, ""]
         out += prompt(Prompt.what, answer: note)
         out += prompt(Prompt.expected)
@@ -495,6 +499,9 @@ public enum FeedbackReport {
         out.append(Separator.note)
         out.append("")
         out += blocks(facts)
+        if let usage {
+            out += UsageReportText.block(usage, facts: facts)
+        }
         out.append("sent from \(Branding.appName)")
         return out.joined(separator: "\n")
     }
@@ -535,11 +542,12 @@ public enum FeedbackReport {
     /// would be cut short at that character, or arrive with a `+` read back as a space.
     public static func mailtoURL(_ facts: FeedbackFacts,
                                  mostWanted: MostWanted.Vote = .init(),
-                                 note: String? = nil) -> URL? {
+                                 note: String? = nil,
+                                 usage: UsageReportText.Attached? = nil) -> URL? {
         let allowed = CharacterSet.urlQueryAllowed
             .subtracting(CharacterSet(charactersIn: "&=+?"))
         guard let subject = subject(facts).addingPercentEncoding(withAllowedCharacters: allowed),
-              let body = body(facts, mostWanted: mostWanted, note: note)
+              let body = body(facts, mostWanted: mostWanted, note: note, usage: usage)
                 .addingPercentEncoding(withAllowedCharacters: allowed)
         else { return nil }
         var components = URLComponents()

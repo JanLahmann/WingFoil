@@ -1706,6 +1706,10 @@ public enum HelpCatalog {
                       detail: "It also carries that session's date, spot and length, "
                           + "what recorded it and which app version read it. Its share "
                           + "card is attached."),
+                .init(term: "Usage statistics",
+                      detail: "The sheet before the mail can add what this phone counted. "
+                          + "That is which features you used, and whether they worked. Switch "
+                          + "it off there, or delete any line."),
                 .init(term: "Read it before you send",
                       detail: "Every line is there to read and to edit. If this phone has no "
                           + "mail account, the app hands the same text to whatever you do "

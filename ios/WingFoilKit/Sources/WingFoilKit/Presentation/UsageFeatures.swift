@@ -186,7 +186,7 @@ extension UsageCounters {
             case .notifications: "Notifications delivered"
             case .healthExport: "Apple Health export"
             case .feedbackMail: "Feedback mail"
-            case .usageReport: "Usage report"
+            case .usageReport: "Usage statistics sent"
             case .mostWanted: "Wishlist ticks"
             }
         }
@@ -197,7 +197,7 @@ extension UsageCounters {
         public var channel: HelpChannel {
             switch self {
             case .importHealth, .healthAutoImport, .appleWatchRecording, .filters, .grouping,
-                 .videoExported, .sendToDeveloper, .startOver, .healthExport, .usageReport,
+                 .videoExported, .sendToDeveloper, .startOver, .healthExport,
                  .sessionStory:
                 .beta
             case .watchTransfer, .mapToWatch, .windToWatch, .chooseWatch, .tuning,
