@@ -46,6 +46,15 @@ module AlertManager {
 
     var _lastMs as Array<Number> = [0, 0, 0, 0, 0, 0, 0, 0, 0];
     var _lastAnyMs as Number = 0;
+    var _lastAnyCh as Number = -1;
+
+    // The verdict wins over a jump (rider review, 17 Oct 2026): a jump is decided a second
+    // after the landing, so on a jump-jibe the two land inside the global floor, and the
+    // verdict is the buzz the product promises. A turn verdict that follows a jump inside the
+    // floor still plays; it replaces the jump's tail rather than being dropped.
+    function overridesFloor(ch as Number, lastAnyCh as Number) as Boolean {
+        return (ch == CH_TURN || ch == CH_CLEAN) && lastAnyCh == CH_JUMP;
+    }
 
     // Pure decision half, so the debounce rules are testable without a vibration motor.
     // `lastCh` / `lastAny` are the two timestamps; returns true when the alert may play.
@@ -57,11 +66,13 @@ module AlertManager {
         var now = System.getTimer();
         // A fresh boot reads 0 for every channel, which `allows` would treat as "buzzed at
         // t=0" — harmless, because System.getTimer() starts well past DEBOUNCE_MS.
-        if (!allows(now, _lastMs[ch], _lastAnyMs)) {
+        var lastAny = overridesFloor(ch, _lastAnyCh) ? 0 : _lastAnyMs;
+        if (!allows(now, _lastMs[ch], lastAny)) {
             return;
         }
         _lastMs[ch] = now;
         _lastAnyMs = now;
+        _lastAnyCh = ch;
         if (Attention has :vibrate) {
             Attention.vibrate(profiles as Array<Attention.VibeProfile>);
         }
@@ -73,6 +84,7 @@ module AlertManager {
             _lastMs[i] = 0;
         }
         _lastAnyMs = 0;
+        _lastAnyCh = -1;
     }
 
     // New 2 s / 10 s speed PB: double short buzz
@@ -121,12 +133,14 @@ module AlertManager {
     function jump(n as Number) as Void {
         if (AppSettings.alertTakeoff) {
             EventFlash.fireJump(n);
+            // Long then short, "daa-dit" (rider review, 17 Oct 2026). It was three quick
+            // hard ticks until 0.9.26, which through a hood is the fell-in triple and the
+            // clean-jibe rise. No other alert opens long and ends short: the takeoff is
+            // short-then-long, longest flight and pause are one long pulse.
             _fire(CH_JUMP, [
-                new Attention.VibeProfile(100, 70),
-                new Attention.VibeProfile(0, 60),
-                new Attention.VibeProfile(100, 70),
-                new Attention.VibeProfile(0, 60),
-                new Attention.VibeProfile(100, 70)
+                new Attention.VibeProfile(100, 260),
+                new Attention.VibeProfile(0, 120),
+                new Attention.VibeProfile(70, 80)
             ]);
         }
     }

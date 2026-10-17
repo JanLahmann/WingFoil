@@ -147,6 +147,9 @@
     <string id="PausedLong">PAUSED · BACK saves</string>
     <string id="TurnsPort">P</string>
     <string id="TurnsStbd">S</string>
+    <string id="TurnsPortLong">port</string>
+    <string id="TurnsStbdLong">stbd</string>
+    <string id="StreakFlew">flew</string>
     <string id="Foil">foil</string>
     <string id="Time">time</string>
     <string id="Km">km</string>

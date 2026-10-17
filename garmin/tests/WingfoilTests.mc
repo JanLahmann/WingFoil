@@ -7212,3 +7212,14 @@ function accelQuestionAsksOncePerSwitchOn(logger as Test.Logger) as Boolean {
     AppSettings.accelAsked = false;
     return true;
 }
+
+// A turn verdict right after a jump plays; nothing else jumps the floor (rider review, 17 Oct).
+(:test)
+function aVerdictWinsOverAJumpInsideTheFloor(logger as Test.Logger) as Boolean {
+    Test.assert(AlertManager.overridesFloor(AlertManager.CH_TURN, AlertManager.CH_JUMP));
+    Test.assert(AlertManager.overridesFloor(AlertManager.CH_CLEAN, AlertManager.CH_JUMP));
+    Test.assert(!AlertManager.overridesFloor(AlertManager.CH_JUMP, AlertManager.CH_TURN));
+    Test.assert(!AlertManager.overridesFloor(AlertManager.CH_TURN, AlertManager.CH_PB));
+    Test.assert(!AlertManager.overridesFloor(AlertManager.CH_PB, AlertManager.CH_JUMP));
+    return true;
+}

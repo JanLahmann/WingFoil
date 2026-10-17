@@ -52,6 +52,9 @@ module Words {
     var PAUSED_TEXT_LONG as String = "";
     var TURNS_PORT as String = "";
     var TURNS_STBD as String = "";
+    var TURNS_PORT_LONG as String = "";
+    var TURNS_STBD_LONG as String = "";
+    var STREAK_FLEW as String = "";
     var FOIL_TITLE as String = "";
     var LBL_FOIL as String = "";
     var FOIL_COL_TIME as String = "";
@@ -171,6 +174,9 @@ module Words {
         PAUSED_TEXT_LONG = WatchUi.loadResource(Rez.Strings.PausedLong) as String;
         TURNS_PORT = WatchUi.loadResource(Rez.Strings.TurnsPort) as String;
         TURNS_STBD = WatchUi.loadResource(Rez.Strings.TurnsStbd) as String;
+        TURNS_PORT_LONG = WatchUi.loadResource(Rez.Strings.TurnsPortLong) as String;
+        TURNS_STBD_LONG = WatchUi.loadResource(Rez.Strings.TurnsStbdLong) as String;
+        STREAK_FLEW = WatchUi.loadResource(Rez.Strings.StreakFlew) as String;
         FOIL_TITLE = WatchUi.loadResource(Rez.Strings.Foil) as String;
         LBL_FOIL = FOIL_TITLE;
         FOIL_COL_TIME = WatchUi.loadResource(Rez.Strings.Time) as String;

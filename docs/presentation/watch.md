@@ -52,7 +52,7 @@ impossible to re-read) every on-water alert that vibrates also shows itself, in 
   flight as its duration and *LONGEST*, and since 0.9.22 a pause as *PAUSED* with the two bars
   in the banner's yellow and a resume as *RECORDING* with the play triangle in white (next
   section). In the beta and dev builds since 0.9.24 a jump is the session's jump count and *JUMP*
-  in the flight teal, with three quick ticks (docs/algorithms/jumps.md, "Watch approximation"). A pumped takeoff is a **ring** only — a thick circle
+  in the flight teal, with a long-then-short buzz (0.9.27; three quick ticks until then, which a hood made the fell-in triple; docs/algorithms/jumps.md, "Watch approximation"). A turn verdict that lands within the 1 s floor of a jump still plays (`AlertManager.overridesFloor`), and LONGEST and NEW BEST wait for the session's third flight or two minutes on the foil (`SessionController._settledIn`), because every early flight is a record. A pumped takeoff is a **ring** only — a thick circle
   inside the bezel for 0.7 s, the page left readable — because it is frequent. The speed PB
   keeps its own orange flash with the value.
 - **The afterglow, 20 s.** A line at the top of whatever page is up keeps the last event:
@@ -136,8 +136,8 @@ resolutions. It has **five** now, and one of them is the page:
   clean · flew · touch · fell  ↘
        ★34  63 · 21 · 12
     ● ● ● ● ● ● ● ● ● ● ● ● ●
-       streak: 4/9  7/12
-            P29/S22
+     flew 4/9  dry 7/12
+       port 29 · stbd 22
 ```
 
 - **The ladder row is the page**, and it is lifted onto the equator (`turnsBias`). Four counts
@@ -603,6 +603,13 @@ Plus, 15 Oct 2026). Garmin Connect's settings page cannot ask, so the watch does
 No number of minutes anywhere: the time depends on the session's length, the watch and the
 Bluetooth link, so a figure would be an example read as a promise. Test:
 `accelQuestionAsksOncePerSwitchOn`.
+
+## Turns page words (rider review, 17 Oct 2026; 0.9.27)
+
+The streak row names its two runs, *flew 4/9  dry 7/12*, and the entry-side row spells the
+sides out, *port 29 · stbd 22*, wherever the row's bottom-arc chord holds them at the row's
+font; on a narrower glass they fall back to the colour-keyed *streak: 4/9 7/12* and *P29/S22*
+they replaced. Never shrunk for the words: the numbers keep their rung and the words go first.
 
 ## The start page's wind row and *Same wind?* (rider review W4, W5; 0.9.22)
 

@@ -155,6 +155,8 @@ const STREAK_SEP_TIGHT = "/";
 // in his layout review of 21 September 2026: flewCount over turnCount is arithmetic on two
 // numbers the ladder row above already prints, so the page was stating one fact twice.
 const TURNS_SIDE_SEP = "/";
+// The separator of the spelled-out pair, "port 29 · stbd 22".
+const SIDE_SEP_LONG = "·";
 // The rung that row's VALUES start at, as a TEXT_FONTS index — FONT_MEDIUM, which is also the
 // band the row reserves. It steps down from there to TALLY_FLOOR (FONT_SMALL), where every
 // other count on the watch stops.
@@ -2648,6 +2650,22 @@ class RecordingView extends WatchUi.View {
         var budget = rowBudget(radius, y - cy, inkH(dc, Graphics.FONT_MEDIUM));
         var f = streakRow2Font(dc, fNow, fBest, dNow, dBest, budget, live);
         var LV = Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER;
+        // Each run named where the chord holds it, "flew 2/5 · dry 7/11" (rider review, 17 Oct
+        // 2026: the colours alone were the only key, and the orange run read as touchdowns).
+        var named = streakRow2WidthNamed(dc, fNow, fBest, dNow, dBest, f, live) <= budget;
+        if (named) {
+            var nx = cx - streakRow2WidthNamed(dc, fNow, fBest, dNow, dBest, f, live) / 2;
+            dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(nx, y, Graphics.FONT_XTINY, Words.STREAK_FLEW, LV);
+            nx += dc.getTextWidthInPixels(Words.STREAK_FLEW, Graphics.FONT_XTINY) + GLYPH_GAP;
+            nx = drawStreakRun(dc, nx, y, fNow, fBest, f, live, Ink.ladderFlew());
+            nx += TURNS_OK_GAP;
+            dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(nx, y, Graphics.FONT_XTINY, Words.STREAK_CAPTION, LV);
+            nx += dc.getTextWidthInPixels(Words.STREAK_CAPTION, Graphics.FONT_XTINY) + GLYPH_GAP;
+            drawStreakRun(dc, nx, y, dNow, dBest, f, live, Ink.ladderTouchdown());
+            return;
+        }
         var x = cx - streakRow2Width(dc, fNow, fBest, dNow, dBest, f, live) / 2;
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, y, Graphics.FONT_XTINY, Words.STREAK_ROW_CAPTION, LV);
@@ -2692,6 +2710,15 @@ class RecordingView extends WatchUi.View {
             + streakRunWidth(dc, dNow, dBest, f, live);
     }
 
+    // "flew 2/5  dry 7/11" at `f`: each run behind its own word, no row caption.
+    static function streakRow2WidthNamed(dc as Dc, fNow as String, fBest as String,
+            dNow as String, dBest as String, f as Graphics.FontType, live as Boolean) as Number {
+        return dc.getTextWidthInPixels(Words.STREAK_FLEW, Graphics.FONT_XTINY) + GLYPH_GAP
+            + streakRunWidth(dc, fNow, fBest, f, live) + TURNS_OK_GAP
+            + dc.getTextWidthInPixels(Words.STREAK_CAPTION, Graphics.FONT_XTINY) + GLYPH_GAP
+            + streakRunWidth(dc, dNow, dBest, f, live);
+    }
+
     static function streakRow2Font(dc as Dc, fNow as String, fBest as String, dNow as String,
             dBest as String, budget as Number, live as Boolean) as Graphics.FontType {
         for (var i = 1; i < TALLY_FLOOR; i++) {
@@ -2729,21 +2756,47 @@ class RecordingView extends WatchUi.View {
         }
         var LV = Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER;
         var f = verdictFont(dc, p, s, budget);
-        var x = cx - verdictWidth(dc, p, s, f) / 2;
+        // Spelled out where the chord holds it (rider review, 17 Oct 2026: "P29/S22" left the
+        // rider to guess whether P meant the tack he came in on); the letters are the fallback.
+        var long = verdictWidthLong(dc, p, s, f) <= budget;
+        var x = cx - (long ? verdictWidthLong(dc, p, s, f) : verdictWidth(dc, p, s, f)) / 2;
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        if (long) {
+            x = _wordThen(dc, x, y, Words.TURNS_PORT_LONG, p, f);
+            dc.drawText(x + GLYPH_GAP, y, Graphics.FONT_XTINY, SIDE_SEP_LONG, LV);
+            x += GLYPH_GAP + dc.getTextWidthInPixels(SIDE_SEP_LONG, Graphics.FONT_XTINY) + GLYPH_GAP;
+            _wordThen(dc, x, y, Words.TURNS_STBD_LONG, s, f);
+            return;
+        }
         dc.drawText(x, y, Graphics.FONT_XTINY, Words.TURNS_PORT, LV);
         x += dc.getTextWidthInPixels(Words.TURNS_PORT, Graphics.FONT_XTINY);
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, y, f, p, LV);
         x += dc.getTextWidthInPixels(p, f);
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, y, Graphics.FONT_XTINY, TURNS_SIDE_SEP, LV);
         x += dc.getTextWidthInPixels(TURNS_SIDE_SEP, Graphics.FONT_XTINY);
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, y, Graphics.FONT_XTINY, Words.TURNS_STBD, LV);
         x += dc.getTextWidthInPixels(Words.TURNS_STBD, Graphics.FONT_XTINY);
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, y, f, s, LV);
+    }
+
+    // An XTINY word, a glyph gap, then `value` in `f`; returns the x after the value.
+    hidden function _wordThen(dc as Dc, x as Number, y as Number, word as String,
+            value as String, f as Graphics.FontType) as Number {
+        var LV = Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER;
+        dc.drawText(x, y, Graphics.FONT_XTINY, word, LV);
+        x += dc.getTextWidthInPixels(word, Graphics.FONT_XTINY) + GLYPH_GAP;
+        dc.drawText(x, y, f, value, LV);
+        return x + dc.getTextWidthInPixels(value, f);
+    }
+
+    // "port 29 · stbd 22" at `f`.
+    static function verdictWidthLong(dc as Dc, p as String, s as String,
+            f as Graphics.FontType) as Number {
+        return dc.getTextWidthInPixels(Words.TURNS_PORT_LONG, Graphics.FONT_XTINY) + GLYPH_GAP
+            + dc.getTextWidthInPixels(p, f)
+            + 2 * GLYPH_GAP + dc.getTextWidthInPixels(SIDE_SEP_LONG, Graphics.FONT_XTINY)
+            + dc.getTextWidthInPixels(Words.TURNS_STBD_LONG, Graphics.FONT_XTINY) + GLYPH_GAP
+            + dc.getTextWidthInPixels(s, f);
     }
 
     // The row's font: the largest from TEXT_FONTS[VERDICT_FROM] that fits, floored at

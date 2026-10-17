@@ -141,10 +141,13 @@ class SessionController {
                 if (flightEvent == FlightDetector.EVENT_END
                     && engine.detector.longestS > _prevLongest) {
                     _prevLongest = engine.detector.longestS;
-                    AlertManager.longestFlight(engine.detector.longestS.toNumber());
+                    if (_settledIn()) {
+                        AlertManager.longestFlight(engine.detector.longestS.toNumber());
+                    }
                 }
             }
-            if (pbEvents != 0 && engine.speedMps >= AppSettings.cfg.foilEntryMps) {
+            if (pbEvents != 0 && engine.speedMps >= AppSettings.cfg.foilEntryMps
+                    && _settledIn()) {
                 AlertManager.speedPb();
                 // best-2s only: the 10 s record creeps up behind it and would make the
                 // celebration routine rather than an event.
@@ -303,6 +306,18 @@ class SessionController {
     }
 
     // ---- session lifecycle ----
+
+    // The records are still being set (rider review, 17 Oct 2026): every early flight is the
+    // longest so far and every early run the best, so LONGEST and NEW BEST buzzed on almost
+    // every flight of the first minutes and the rider learned to ignore both. They wait for
+    // the third flight or two minutes on the foil; the records themselves are kept throughout.
+    const SETTLE_FLIGHTS = 3;
+    const SETTLE_FOIL_S = 120.0;
+
+    hidden function _settledIn() as Boolean {
+        return engine.detector.flightCount >= SETTLE_FLIGHTS
+            || engine.detector.foilTimeS >= SETTLE_FOIL_S;
+    }
 
     // This session records wrist motion into its FIT (the save page's long-transfer line).
     function logsMotion() as Boolean {
