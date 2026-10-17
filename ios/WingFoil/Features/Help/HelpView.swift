@@ -617,9 +617,11 @@ struct JumpChips: View {
     let chips: [Chip]
     let jump: (String) -> Void
 
+    // Wrapped into lines, not a sideways scroll: in a scroll the last chip was cut mid-word
+    // at the row's inset ("Notificatio"), which reads as clipped text rather than as more to
+    // swipe to (screenshot review, 16 Oct 2026). `WrapRow` is the map legend's own layout.
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
+        WrapRow(spacing: 6) {
                 ForEach(chips) { chip in
                     Button { jump(chip.id) } label: {
                         Group {
@@ -637,10 +639,10 @@ struct JumpChips: View {
                     }
                     .buttonStyle(.plain)
                     .accessibilityHint("Jumps to that section")
+                    .fixedSize()
                 }
-            }
-            .padding(.vertical, 2)
         }
+        .padding(.vertical, 2)
     }
 }
 

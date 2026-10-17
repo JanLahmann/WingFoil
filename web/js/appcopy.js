@@ -112,13 +112,13 @@ export const SHELL = {
   },
   "beta": {
     "joinTitle": "Join the beta",
-    "community": "CleanJibe is built with its riders. New features land in the beta first, and move to the App Store once testers have proven them.",
+    "community": "CleanJibe is built with its riders. New features land in the beta first. Once testers have proven them, they go into the App Store version, which is coming.",
     "inItNowTitle": "In the beta right now",
     "howToJoinTitle": "How to join",
     "backupFirst": "Back up first, in Settings → Library backup. Save the file in Files or iCloud Drive.",
     "joinButton": "Open TestFlight",
     "joinURL": "https://testflight.apple.com/join/nygqGGcn",
-    "goingBackTitle": "Going back to the App Store version",
+    "goingBackTitle": "Going to the App Store version, when it is out",
     "goingBack": [
       "Back up in the beta first, then install CleanJibe from the App Store.",
       "If the beta has updated your library, the App Store version cannot open it yet. Open the beta again, or restore a backup made before you joined."
@@ -2755,7 +2755,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Back up in the beta, then install the App Store version. If the beta updated your library, a later App Store update opens that backup.",
+              "detail": "When the App Store version is out, back up in the beta first, then install it. If the beta updated your library, a later App Store update opens that backup.",
               "term": "Leaving the beta"
             }
           ],
@@ -2792,13 +2792,13 @@ export const HELP = {
             "icuPrivacy"
           ],
           "body": [
-            "There is no CleanJibe account and no CleanJibe server. A session you import is analysed on this phone and stays on it. The iPhone app has no advertising, no analytics and no tracking.",
-            "The app talks to four places, each only when you use it. Your own login goes to intervals.icu and Strava. Apple Maps loads while a map is on screen. To name a new spot, it sends one rounded position.",
-            "On the App Store release, CleanJibe never asks for your location. Every coordinate it draws was already inside a file you imported. The beta and dev builds ask for one, in one place each. The privacy page says where."
+            "There is no CleanJibe account, and no session you import is sent to a CleanJibe server. It is analysed on this phone and stays on it. The iPhone app has no advertising, no analytics and no tracking.",
+            "The app talks to four places, each only when you use it. Your own login goes to intervals.icu and Strava. Apple Maps loads while a map is on screen. To name a new spot, it sends one rounded position."
           ],
           "browser": [
             "In the browser app, a session is analysed in your browser and stays in its storage. Nothing is uploaded.",
-            "Your intervals.icu key stays in this browser too. It goes to intervals.icu itself and nowhere else."
+            "Your intervals.icu key stays in this browser too. It goes to intervals.icu itself and nowhere else.",
+            "Ask CleanJibe on the Help page sends a question only when you send one. It is kept 30 days."
           ],
           "channels": [
             "release",
@@ -2808,8 +2808,7 @@ export const HELP = {
           "id": "privacy",
           "iphoneOnlyBody": [
             0,
-            1,
-            2
+            1
           ],
           "items": [
             {
@@ -2845,7 +2844,7 @@ export const HELP = {
             "shareFit",
             "libraryBackup"
           ],
-          "summary": "There is no account and no server, and nothing is uploaded. The whole policy is on the web.",
+          "summary": "There is no account, and no session of yours is uploaded. The whole policy is on the web.",
           "title": "What leaves your phone"
         },
         {

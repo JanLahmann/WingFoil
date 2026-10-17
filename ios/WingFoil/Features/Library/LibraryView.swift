@@ -465,6 +465,7 @@ struct LibraryView: View {
         switch which {
         case .settings: SettingsView()
         case .importer: ImportView()
+        case .stravaImport: StravaImportView()
         case .beta: BetaView()
         case .help: HelpView()
         case .helpTopic(let topic): HelpTopicSheet(id: topic)
@@ -558,7 +559,8 @@ struct LibraryView: View {
     /// has always said how much there is; under a filter it has to say how much there is
     /// *and* how much it is not showing, or the number becomes a quiet lie about the library.
     private func countLine(showing: Int, of total: Int) -> String {
-        let tail = " · pull to sync intervals.icu"
+        // The pull is an intervals.icu sync, so it is offered only with a key to sync.
+        let tail = store.apiKey.isEmpty ? "" : " · pull to sync intervals.icu"
         guard filter.isActive else { return LibraryListing.sessionCount(total) + tail }
         return "\(showing) of \(LibraryListing.sessionCount(total))" + tail
     }
@@ -735,7 +737,15 @@ struct LibraryView: View {
             // "Not available in this build", and a first screen does not offer a door onto
             // that sentence (the same rule the filter menu keeps — a door that can bring
             // nothing in is not offered).
-            if store.isStravaConfigured {
+            // Connected already (a positive flag, pattern E): the row is the import itself.
+            if store.isStravaConfigured && store.isStravaConnected {
+                WayInRow(icon: "figure.wave",
+                         label: "Import from Strava…",
+                         line: "Pick the sessions you want. Strava gives your track but not "
+                             + "your speed.") {
+                    sheet = .stravaImport
+                }
+            } else if store.isStravaConfigured {
                 WayInRow(icon: "figure.wave",
                          label: "Set up Strava in Settings",
                          line: "Strava gives your track but not your speed.") {
@@ -1019,6 +1029,8 @@ private struct WayInRow: View {
 enum LibrarySheet: Identifiable, Hashable {
     case settings
     case importer
+    /// Import from Strava, straight from the empty library once Strava is connected.
+    case stravaImport
     /// The Beta page (`AppMenuRow.beta`): join it, or, in the beta, what is in it.
     case beta
     /// The Help index (the menu row reads "Help").
@@ -1043,6 +1055,7 @@ enum LibrarySheet: Identifiable, Hashable {
         switch self {
         case .settings: "settings"
         case .importer: "importer"
+        case .stravaImport: "stravaImport"
         case .beta: "beta"
         case .help: "help"
         case .helpTopic(let topic): "help.\(topic.rawValue)"

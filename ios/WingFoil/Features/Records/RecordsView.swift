@@ -538,9 +538,11 @@ private struct RecordRowView: View {
 
     /// When and where the record was set — the fourth column, or the second line.
     ///
-    /// As a column it is two lines: the date, which must read in full, and the spot under
-    /// it, which is the one text in the row allowed to truncate. Stacked it is one sentence
-    /// that wraps.
+    /// As a column it is the date, which must read in full, and the session under it, which
+    /// wraps to a second line before it may truncate: one line cut "Nago Torbole Wingfoil"
+    /// and "Nago Torbole Foilmotion" to the same "Nago Torbole…" (screenshot review, 16 Oct
+    /// 2026), and the part that tells two sessions apart is the end. Stacked it is one
+    /// sentence that wraps.
     @ViewBuilder private var provenance: some View {
         let date = Fmt.shortDate(best.achievedAt, zone: best.displayZone)
         if stacked {
@@ -555,8 +557,9 @@ private struct RecordRowView: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
                 Text(title)
-                    .lineLimit(1)
+                    .lineLimit(2)
                     .truncationMode(.tail)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .font(.caption)
             .foregroundStyle(.readableSecondary)

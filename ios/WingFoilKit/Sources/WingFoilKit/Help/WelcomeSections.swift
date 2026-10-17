@@ -228,7 +228,7 @@ public enum WelcomeSections {
                 id: "account", term: "No account",
                 detail: "You sign up for nothing, here or in the apps."),
             WelcomeItem(
-                id: "server", term: "No server",
+                id: "server", term: "Your sessions stay with you",
                 detail: "Your sessions stay on your phone or in your browser. We only see one "
                     + "if you send it to us."),
             WelcomeItem(

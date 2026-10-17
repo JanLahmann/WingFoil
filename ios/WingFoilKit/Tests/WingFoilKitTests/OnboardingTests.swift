@@ -595,6 +595,14 @@ import Testing
         }
         #expect(!WelcomePrompt.shouldShow(realSessionCount: 0, icuConnected: true,
                                           shownThisLaunch: false))
+        // Another way in set up (Strava connected, Health auto-import): not a newcomer
+        // either (rider review, 17 Oct 2026).
+        #expect(!WelcomePrompt.shouldShow(realSessionCount: 0, icuConnected: false,
+                                          otherWayInSet: true, shownThisLaunch: false))
+        // ...and a request still outranks it.
+        #expect(WelcomePrompt.shouldShow(realSessionCount: 0, icuConnected: false,
+                                         otherWayInSet: true, shownThisLaunch: false,
+                                         requested: true))
     }
 
     /// **Start over asks for the screen, and nothing may argue it away** (Jan, build 63).

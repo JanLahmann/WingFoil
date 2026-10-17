@@ -34,8 +34,8 @@ public enum BetaGuide {
     /// **The one sentence of the community message.** Every surface that says what the beta
     /// is for says this, in these words.
     public static let community =
-        "CleanJibe is built with its riders. New features land in the beta first, and move "
-        + "to the App Store once testers have proven them."
+        "CleanJibe is built with its riders. New features land in the beta first. Once "
+        + "testers have proven them, they go into the App Store version, which is coming."
 
     public static let inItNowTitle = "In the beta right now"
 
@@ -62,7 +62,14 @@ public enum BetaGuide {
     /// when he wants out. What the App Store version does with a library the beta has moved
     /// on is the blocking screen's (`leavingTheBeta`), said here in the order a rider meets
     /// it.
-    public static let goingBackTitle = "Going back to the App Store version"
+    ///
+    /// **`appStoreLive` is the switch** (rider review, 17 Oct 2026): until the first App
+    /// Store version is on sale, a line that says "install the App Store version" sends a
+    /// tester to something that does not exist. Flip it the day 1.0.1 goes on sale, in the
+    /// release commit (docs/channels.md, "Before the release is submitted").
+    public static let appStoreLive = false
+    // "Going back to the App Store version" the day `appStoreLive` flips.
+    public static let goingBackTitle = "Going to the App Store version, when it is out"
     public static let goingBack = [
         "Back up in the beta first, then install CleanJibe from the App Store.",
         "If the beta has updated your library, the App Store version cannot open it yet. "

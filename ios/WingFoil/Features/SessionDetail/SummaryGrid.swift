@@ -409,7 +409,7 @@ struct SessionTakeoffSection: View {
                             StatCard(title: "Jumps", value: "\(j.count)",
                                      caption: j.highestM.map {
                                          "highest " + String(format: "%.1f", $0) + " m, estimated"
-                                     } ?? "estimated")
+                                     } ?? "estimated", help: .jumps)
                         }
                         #endif
                     }

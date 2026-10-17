@@ -45,7 +45,7 @@ public enum HealthSwitch: String, CaseIterable, Sendable, Identifiable {
     /// The topic that answers *how*.
     public var helpTopic: HelpTopicID {
         switch self {
-        case .write: .privacy
+        case .write: .healthExport
         case .autoImport: .appleWorkoutApp
         }
     }

@@ -67,15 +67,17 @@ enum StripChrome {
     /// One of the engine's windows, shaded, with its name under it.
     ///
     /// The word goes on the **bottom** edge, always: that is where window names live on every
-    /// strip, which is what lets the top edge belong entirely to the numbers. A band with no
+    /// strip, which is what lets the top edge belong entirely to the numbers. It sits *inside*
+    /// the band, on its foot, rather than under the plot: under it, the word shared a row with
+    /// the time axis and "outcome" printed over its "5" (screenshot review, 16 Oct 2026). A band with no
     /// caption is one drawn inside another (the recovery inside the outcome window), where a
     /// second word would claim a second window.
     @ChartContentBuilder
     static func band(from: Double, to: Double, tint: Color, caption: String?) -> some ChartContent {
         RectangleMark(xStart: .value("From", from), xEnd: .value("To", to))
             .foregroundStyle(tint)
-            .annotation(position: .bottom, alignment: .center, spacing: 2) {
-                if let caption { label(caption) }
+            .annotation(position: .overlay, alignment: .bottom, spacing: 0) {
+                if let caption { label(caption).padding(.bottom, 2) }
             }
     }
 
@@ -89,10 +91,30 @@ enum StripChrome {
         RuleMark(x: .value("Seconds", rt))
             .lineStyle(StrokeStyle(lineWidth: width, dash: dash))
             .foregroundStyle(tint)
-            .annotation(position: onTop ? .top : .bottom, alignment: .center,
-                        spacing: spacing) {
-                if let caption { label(caption) }
+            .annotation(position: onTop ? .top : .overlay,
+                        alignment: onTop ? .center : .bottom,
+                        spacing: onTop ? spacing : 0) {
+                // a bottom word sits inside the plot, above the time axis (see `band`)
+                if let caption { label(caption).padding(.bottom, onTop ? 0 : 2) }
             }
+    }
+
+    /// Room past the plot's right edge for the last time-axis label, which is centred on the
+    /// edge and was cut to "…" there (screenshot review, 16 Oct 2026).
+    static let axisLabelRoom: CGFloat = 10
+
+    /// The time axis of a speed strip: whole seconds, each label at its own width, so the
+    /// last one beside the speed axis prints as "15" and not as "…".
+    static func timeAxis() -> some AxisContent {
+        AxisMarks(values: .automatic) { value in
+            AxisGridLine()
+            AxisTick()
+            AxisValueLabel {
+                if let s = value.as(Double.self) {
+                    Text(String(Int(s.rounded()))).fixedSize()
+                }
+            }
+        }
     }
 
     /// **The one playhead**, on every strip at once — the same rule the map and the session

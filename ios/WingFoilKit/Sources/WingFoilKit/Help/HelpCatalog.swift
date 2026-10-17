@@ -296,6 +296,9 @@ public enum HelpTopicID: String, CaseIterable, Sendable, Identifiable {
     /// The Share page's beta door: this session's recording, to the developer, by mail.
     case sendSessionToDeveloper
     case divergence, engineVersion, windsurf
+    // The beta's features, each with its page (rider review, 17 Oct 2026: a beta door with
+    // no `?` fails rule 2 of docs/channels.md before it is even tried).
+    case jumps, sessionStory, nextSession, sessionVideo, libraryGrouping, widgets, healthExport
 
     public var id: String { rawValue }
 }
@@ -906,6 +909,28 @@ public enum HelpCatalog {
             ],
             related: [.turnOutcomes, .takeoffAttempts, .whichWatch]),
 
+        HelpTopic(
+            id: .jumps, section: .readNumbers, subsection: .foil, channel: .beta,
+            title: "Jumps",
+            summary: "How many times you jumped, and an estimate of the highest.",
+            body: [
+                "The motion sensor on your wrist feels each jump. It notices the pop off "
+                + "the water, the time in the air and the landing. A jump counts only on the "
+                + "foil, at speed and outside a turn.",
+                "The height is worked out from that motion, so it is always marked "
+                + "estimated. No jump, no card.",
+            ],
+            items: [
+                .init(term: "Where it shows",
+                      detail: "On the Flights tab of a wingfoil session. It needs your "
+                          + "wrist's motion: the CleanJibe Apple Watch app, or the Garmin app "
+                          + "with Log wrist motion on."),
+                .init(term: "On the Garmin watch",
+                      detail: "The beta counts your jumps live. Each one buzzes and shows "
+                          + "JUMP with your count."),
+            ],
+            related: [.flights, .whichWatch]),
+
         // MARK: Speed records
         //
         // **One topic, and its items are the windows** (Jan, dev 65: *"do we really need
@@ -999,6 +1024,18 @@ public enum HelpCatalog {
                 + "Settings \u{2192} Speed records is where you choose.",
             ],
             related: [.speedRecords, .whichWatch, .stravaImport]),
+
+        HelpTopic(
+            id: .sessionStory, section: .readNumbers, subsection: .records, channel: .beta,
+            title: "The session story",
+            summary: "One line over your numbers, and a chip on each record you beat.",
+            body: [
+                "Over a session's key numbers, one line says what stood out. That can be "
+                + "your clean jibes, or a record you beat this month, this season or ever.",
+                "Each record you beat gets a chip on its cell. With nothing to celebrate, "
+                + "the line is the plain tally.",
+            ],
+            related: [.speedRecords, .rates]),
 
         HelpTopic(
             id: .turnTypes, section: .readNumbers, subsection: .turns,
@@ -1175,6 +1212,19 @@ public enum HelpCatalog {
                 + "tally.",
             ],
             related: [.falls, .turnOutcomes]),
+
+        HelpTopic(
+            id: .nextSession, section: .readNumbers, subsection: .turns, channel: .beta,
+            title: "The Next session card",
+            summary: "One thing to work on next time, from this session's turns.",
+            body: [
+                "The card sits at the top of the Turns tab. It names the tip that came up "
+                + "most often, and on how many of your turns.",
+                "It also compares your port and starboard entries and names the side to "
+                + "work on. It does that only with at least \(NextSessionCoach.minSideTurns) "
+                + "turns on each side.",
+            ],
+            related: [.turnOutcomes, .portStarboard]),
 
         HelpTopic(
             // **"Getting up", not "success rate"** (20 September 2026). The word is
@@ -1433,7 +1483,10 @@ public enum HelpCatalog {
                 // Rider review I6: the Beta page and the newer-library screen both open
                 // this topic, so the way back from the beta is said here once.
                 .init(term: "Leaving the beta",
-                      detail: "Back up in the beta, then install the App Store version. "
+                      detail: (BetaGuide.appStoreLive
+                          ? "Back up in the beta, then install the App Store version. "
+                          : "When the App Store version is out, back up in the beta first, "
+                          + "then install it. ")
                           + "If the beta updated your library, a later App Store update "
                           + "opens that backup."),
             ],
@@ -1468,29 +1521,70 @@ public enum HelpCatalog {
         // says of everything: it goes to intervals.icu and nowhere else. `icuPrivacy` still
         // opens this page (`HelpCatalog.redirects`).
         HelpTopic(
+            id: .sessionVideo, section: .share, channel: .beta,
+            title: "The session video",
+            summary: "Your session as a short film, made on this phone.",
+            body: [
+                "Open a session, tap Share, then Export video. Pick a length and, if you "
+                + "like, music you may share.",
+                "A photo you took during the session drops in at the moment you took it.",
+            ],
+            items: [
+                .init(term: "Testing it?",
+                      detail: "Keep the 20 s length, wait for the bar to finish, then share "
+                          + "the clip."),
+            ],
+            related: [.shareCard, .replayClip]),
+
+        HelpTopic(
+            id: .libraryGrouping, section: .library, channel: .beta,
+            title: "Grouping and filtering the library",
+            summary: "Group your sessions by month, year or spot, and narrow the list.",
+            body: [
+                "The control over the list groups your sessions: All, Month, Year or Spot.",
+                "The filter narrows the list to a spot or to dates. It narrows this list "
+                + "only, never your records.",
+            ],
+            related: [.libraryBackup]),
+
+        HelpTopic(
+            id: .widgets, section: .library, channel: .beta,
+            title: "Widgets and the watch complication",
+            summary: "Your numbers on the home screen, and a one-tap start on the watch.",
+            body: [
+                "Three widgets: Last session, This week, your time on the foil over seven "
+                + "days, and Personal bests. Add them from the home screen like any widget.",
+                "On the Apple Watch, the Start session complication starts a wingfoil "
+                + "recording in one tap.",
+            ],
+            related: [.appleWatchApp]),
+
+        HelpTopic(
+            id: .healthExport, section: .library, channel: .beta,
+            title: "Adding sessions to Apple Health",
+            summary: "Each session can go to Apple Health as a workout.",
+            body: [
+                "Switch on Settings → Apple Health → Add sessions to Apple Health. Each "
+                + "session is then added as a Surfing workout.",
+                "A session you imported from Health is left alone. Apple Health keeps the "
+                + "workout on your phone, and CleanJibe sends it nowhere.",
+            ],
+            related: [.appleWorkoutApp, .privacy]),
+
+        HelpTopic(
             id: .privacy, section: .library, title: "What leaves your phone",
-            summary: "There is no account and no server, and nothing is uploaded. The "
-                + "whole policy is on the web.",
+            summary: "There is no account, and no session of yours is uploaded. The whole "
+                + "policy is on the web.",
             body: [
                 // "No analytics" was the iPhone app's truth printed on a website that
                 // loads umami (rider review X10, 9 Oct 2026). The sentence now names the
                 // app it is true of, and the item below says what the site counts.
-                "There is no CleanJibe account and no CleanJibe server. A session you "
-                + "import is analysed on this phone and stays on it. The iPhone app has no "
-                + "advertising, no analytics and no tracking.",
+                "There is no CleanJibe account, and no session you import is sent to a "
+                + "CleanJibe server. It is analysed on this phone and stays on it. The iPhone "
+                + "app has no advertising, no analytics and no tracking.",
                 "The app talks to four places, each only when you use it. Your own "
                 + "login goes to intervals.icu and Strava. Apple Maps loads while a "
                 + "map is on screen. To name a new spot, it sends one rounded position.",
-                // Release-only, deliberately: the beta and dev builds ship a watch app and
-                // a Garmin link this body cannot name (only `items`, not `body`, is allowed
-                // to branch by channel — see `HelpTopic.withItems`), and each of those does
-                // ask for a location once, in one place (docs/release/privacy-labels.md
-                // audit, 26 September 2026: this line used to say "never", full stop, which
-                // was true on the App Store and false on both other channels).
-                "On the App Store release, CleanJibe never asks for your location. Every "
-                + "coordinate it draws was already inside a file you imported. The beta "
-                + "and dev builds ask for one, in one place each. The privacy page says "
-                + "where.",
             ],
             items: [
                 .init(term: "Your intervals.icu key",
@@ -1703,8 +1797,43 @@ public enum HelpCatalog {
     private static func resolved(_ topic: HelpTopic, channel: HelpChannel) -> HelpTopic {
         switch topic.id {
         case .gettingStarted: topic.withItems(gettingStartedItems(for: channel))
+        case .privacy: topic.withItems(privacyItems(for: channel) + topic.items)
         default: topic
         }
+    }
+
+    /// **What leaves the phone, per channel** (rider review, 17 Oct 2026). The body is true
+    /// of every build; what only the beta or the dev build sends is an item of that channel,
+    /// so the App Store page never names a door it does not have.
+    static func privacyItems(for channel: HelpChannel) -> [HelpTopic.Item] {
+        var items: [HelpTopic.Item] = [
+            channel == .release
+                ? .init(term: "Your location",
+                        detail: "Never asked for. Every coordinate a map draws was already "
+                            + "inside a file you imported.")
+                : .init(term: "Your location",
+                        detail: "The Apple Watch app reads it while a workout you started is "
+                            + "running. It goes to your own iPhone and nowhere else."),
+        ]
+        if channel >= .beta {
+            items.append(.init(term: "A daily look for a newer build",
+                               detail: "Once a day the beta asks \(Branding.site) whether "
+                                   + "a newer build exists. It sends nothing about you."))
+        }
+        if channel == .dev {
+            items.append(.init(term: "Ask CleanJibe",
+                               detail: "Ask CleanJibe sends your question, and a session's "
+                                   + "numbers when you ask from one, to Anthropic's Claude. "
+                                   + "It is kept 30 days."))
+            items.append(.init(term: "iCloud Drive",
+                               detail: "Your library can live in your own iCloud Drive, so "
+                                   + "your iPhone and iPad share it. It is your iCloud, not "
+                                   + "a server of ours."))
+            items.append(.init(term: "The Garmin watch map",
+                               detail: "Where I am now asks for one position, to draw the "
+                                   + "map your Garmin watch shows."))
+        }
+        return items
     }
 
     /// **The topic each way in is the signpost for.** `GettingStartedGuide` is generated
@@ -1930,11 +2059,13 @@ extension HelpCatalog {
             browser: ["In the browser app, Settings → Your data is the backup. Download all "
                       + "saves one zip, and Restore from a backup reads it back."]),
         .privacy: HelpSurfaces(
-            body: [0, 1, 2], items: ["Your intervals.icu key"],
+            body: [0, 1], items: ["Your intervals.icu key", "Your location"],
             browser: ["In the browser app, a session is analysed in your browser and stays "
                       + "in its storage. Nothing is uploaded.",
                       "Your intervals.icu key stays in this browser too. It goes to "
-                      + "intervals.icu itself and nowhere else."]),
+                      + "intervals.icu itself and nowhere else.",
+                      "Ask CleanJibe on the Help page sends a question only when you send "
+                      + "one. It is kept 30 days."]),
         .sendingFeedback: HelpSurfaces(
             body: [3],
             items: ["What is already in the mail", "Read it before you send",

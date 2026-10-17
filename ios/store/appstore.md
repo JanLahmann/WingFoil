@@ -117,7 +117,7 @@ Connect intervals.icu once and your Garmin history comes in. New sessions then a
 
 GET MORE WITH THE WATCH APP
 
-The free CleanJibe watch app for Garmin buzzes each verdict on your wrist while you ride. It also counts your pump strokes and takeoff attempts. It is in open beta on the Connect IQ store.
+The free CleanJibe watch app for Garmin buzzes each verdict on your wrist while you ride. It also counts your pump strokes and takeoff attempts, live. For the pump analysis on the phone, switch on its Log wrist motion setting, which makes the transfer much longer. It is in open beta on the Connect IQ store.
 
 YOUR SESSIONS STAY ON YOUR PHONE
 
@@ -125,7 +125,7 @@ There is no account, no CleanJibe server and no tracking. The engine is open sou
 
 BUILT WITH ITS RIDERS
 
-CleanJibe is built with its riders. New features land in the beta first, and move to the App Store once testers have proven them. Tell us what you saw at info@cleanjibe.org.
+CleanJibe is built with its riders. New features land in the beta first. Once testers have proven them, they go into the App Store version, which is coming. Tell us what you saw at info@cleanjibe.org.
 ```
 
 **Built with its riders** (Jan, 30 September 2026): the last section is the community sentence, `BetaGuide.community`, word for word, and the mail address. The promotional text stays as it is: 153 of 170 characters are used and the sentence is 129, so it does not fit.

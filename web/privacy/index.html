@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Privacy — CleanJibe</title>
-<meta name="description" content="What the CleanJibe iPhone app and cleanjibe.org do with your data. Short version: the analysis runs on your own device, there is no CleanJibe account and no CleanJibe server, and your sessions are never uploaded. Every exception is named: Strava, Apple Maps, the map drawn for the watch, the feedback mail.">
+<meta name="description" content="What the CleanJibe iPhone app and cleanjibe.org do with your data. Short version: the analysis runs on your own device, there is no CleanJibe account, and your sessions are never uploaded. Every exception is named: Strava, Apple Maps, the map drawn for the watch, the feedback mail, Ask CleanJibe.">
 <meta name="theme-color" content="#101010" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#f5f6f3" media="(prefers-color-scheme: light)">
 <meta name="color-scheme" content="light dark">
@@ -30,7 +30,7 @@
      explaining. `robots` stays default — this page should be findable. -->
 <meta property="og:site_name" content="CleanJibe">
 <meta property="og:title" content="Privacy — CleanJibe">
-<meta property="og:description" content="The analysis runs on your own device. No account, no CleanJibe server, and your sessions are never uploaded. Here is every exception, named.">
+<meta property="og:description" content="The analysis runs on your own device. No account, and your sessions are never uploaded. Here is every exception, named.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://cleanjibe.org/privacy/">
 
@@ -107,12 +107,13 @@
        will read, and because it is short enough to be true without a footnote. Everything
        below it exists to name the exceptions rather than to qualify the promise. -->
   <section class="hero">
-    <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Effective 14 September 2026</p>
+    <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Effective 17 October 2026</p>
     <h1>Privacy</h1>
     <p class="lede">
       CleanJibe analyses your wingfoil sessions on the device you are holding. There is no
-      CleanJibe account, no CleanJibe login, and no CleanJibe server that your sessions are
-      sent to — because there is no CleanJibe server at all.
+      CleanJibe account and no CleanJibe login, and no session of yours is ever sent to a
+      server of ours. The one thing we keep is a question you send to Ask CleanJibe, for 30
+      days, then it is deleted.
     </p>
     <p class="lede">
       That is the whole policy. The rest of this page names every exception to it, because a
@@ -345,11 +346,12 @@
         <dd>
           Help and a session's page have a box where you can ask a question. The first time, a
           page says what is sent; nothing is sent until you send a question. Then your question,
-          the app's version and your units go through Cloudflare to Anthropic, whose Claude writes
+          the conversation so far, the app's version, build and language, and your units go
+          through Cloudflare to Anthropic, whose Claude writes
           the answer from our help texts. Asked from a session, that session's numbers go too:
           its date and times, speeds, flights and every turn's verdict, but no map, no
-          positions and no name. We keep the question and the answer for 30 days to improve the
-          answers, then they are deleted. Apple's App Attest confirms that the question comes
+          positions and no name. We keep the question, the answer and a thumbs up or down if you
+          give one for 30 days to improve the answers, then they are deleted. Apple's App Attest confirms that the question comes
           from this app, which counts the daily limit of 20 questions: a key made on your phone
           for that alone, deleted on our side after 30 days unused. No account, no cookie.
           Anthropic's privacy policy is at
@@ -373,8 +375,8 @@
   <section class="home-section" id="permissions">
     <h2>What the app asks permission for</h2>
     <p class="section-lede">
-      Five prompts exist, all of them optional, and none of them appears until you use the
-      feature behind it.
+      Five prompts exist on the phone and four on the CleanJibe Apple Watch app, all of them
+      optional, and none of them appears until you use the feature behind it.
     </p>
 
     <dl class="terms">
@@ -402,7 +404,7 @@
         </dd>
       </div>
       <div class="term">
-        <dt>Location — one tick, one fix per map you send</dt>
+        <dt>Location — one tick, one fix per map you send, in the development build</dt>
         <dd>
           There is exactly one reason CleanJibe ever asks where you are, and you have to ask
           for it first. Under Settings &rarr; Garmin watch &rarr; <em>Map for the watch</em>
@@ -421,7 +423,7 @@
         </dd>
       </div>
       <div class="term">
-        <dt>Bluetooth — for the Garmin handoff</dt>
+        <dt>Bluetooth — for the Garmin handoff, in the development build</dt>
         <dd>
           Used to talk to a Garmin running the CleanJibe watch app: to receive the session
           summary it sends when you stop recording, to send the wind direction back, and to
@@ -437,14 +439,26 @@
           Leave it off and the app schedules no background work.
         </dd>
       </div>
+      <div class="term">
+        <dt>The CleanJibe Apple Watch app — four prompts, in the beta</dt>
+        <dd>
+          <strong>Location:</strong> the watch's GPS records your track and speed only while a
+          session you started is running, and keeps doing so with your wrist down until you
+          end it. <strong>Motion:</strong> your wrist motion during the session, for your pump
+          strokes and takeoff attempts. <strong>Health:</strong> your heart rate while you
+          ride, and the finished session saved as a workout. Everything goes from the watch
+          straight to your own iPhone, and nothing about it is uploaded anywhere.
+        </dd>
+      </div>
     </dl>
 
     <p class="note">
       <strong>The app never follows you around.</strong> There is one location prompt, the one
       above, and it exists so a map can be drawn for your watch: one fix at the moment you send
-      a map, with the app in front of you, never in the background, and never at launch unless
-      you had already allowed it. No background location, no geofence, no visit history, and
-      nowhere that a position of yours is kept.
+      a map, with the app in front of you; the phone never reads it in the background, and never
+      at launch unless you had already allowed it. The watch app records positions only during
+      a session you started. No geofence, no visit history, and nowhere on a server that a
+      position of yours is kept.
     </p>
   </section>
 
@@ -525,10 +539,12 @@
       <div class="term">
         <dt>Ask CleanJibe — the help desk on the Help page</dt>
         <dd>
-          The Help page has a box where you can ask a question. Nothing is sent until you send
-          one. Then your question and the answer go through Cloudflare to Anthropic, whose
-          Claude writes the answer from our help texts only. We keep the question and the
-          answer for 30 days to improve the answers, then they are deleted. A daily limit of 20
+          The Help page has a box where you can ask a question. Opening the page loads the box
+          from our Cloudflare Worker, which sees your IP address the way any page load does.
+          Nothing else is sent until you send a question. Then your question and the
+          conversation so far go through Cloudflare to Anthropic, whose Claude writes the
+          answer from our help texts only. We keep the question, the answer and a thumbs up or
+          down if you give one for 30 days to improve the answers, then they are deleted. A daily limit of 20
           questions is counted with a pseudonym derived from your IP address that changes every
           day, and the address itself is not stored. No account, no cookie, no location. Please
           do not type personal details into the box. Anthropic's privacy policy is at
@@ -591,8 +607,8 @@
   <section class="home-section" id="retention">
     <h2>Keeping it, and getting rid of it</h2>
     <p class="section-lede">
-      There is no retention period, because there is nowhere for anything to be retained.
-      What exists is on your device, and you control all of it.
+      We keep no sessions. The questions you send to Ask CleanJibe are kept 30 days, then
+      deleted. Everything else is on your device, and you control all of it.
     </p>
 
     <dl class="terms">
@@ -619,10 +635,11 @@
         <dt>Your rights, and why they are quick to exercise</dt>
         <dd>
           Under the GDPR you have the right to access, correct, export, delete and object to
-          the processing of your personal data. Because CleanJibe holds none of it — no
-          account, no server, no copy of any session — there is nothing for us to hand over
-          or erase on request, and the delete controls above are the whole of it. If you
-          think that is wrong, write to us and we will look. You can also complain to a data
+          the processing of your personal data. CleanJibe holds no account and no copy of
+          any session, so the delete controls above cover your sessions. The one thing we
+          hold is the questions you sent to Ask CleanJibe, for 30 days; to have yours deleted
+          sooner, write to info@cleanjibe.org with roughly when you asked. If you think
+          anything here is wrong, write to us and we will look. You can also complain to a data
           protection authority in your country.
         </dd>
       </div>

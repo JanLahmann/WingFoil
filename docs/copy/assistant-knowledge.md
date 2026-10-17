@@ -249,6 +249,13 @@ Taxiing, time in the water and the drift upwind count against your time on foil.
 - Longest flight: Your longest flight by time, with its distance underneath. Many short flights and one long one can give the same On foil.
 - Distance: How far you went, flying, taxiing and drifting. It adds up the watch's measured speed rather than positions, because position noise inflates a distance at low speed.
 
+#### Jumps [only in: beta, dev]
+How many times you jumped, and an estimate of the highest.
+The motion sensor on your wrist feels each jump. It notices the pop off the water, the time in the air and the landing. A jump counts only on the foil, at speed and outside a turn.
+The height is worked out from that motion, so it is always marked estimated. No jump, no card.
+- Where it shows: On the Flights tab of a wingfoil session. It needs your wrist's motion: the CleanJibe Apple Watch app, or the Garmin app with Log wrist motion on.
+- On the Garmin watch: The beta counts your jumps live. Each one buzzes and shows JUMP with your count.
+
 #### Speed records
 Your fastest 2 seconds, 10 seconds, 500 m and nautical mile. The speedsurfing world uses the same windows.
 The set is fixed, so your numbers compare with anyone's. It holds the four windows below, 100 m, 250 m and your best hour.
@@ -271,6 +278,11 @@ A measured record comes off a recording that carries your watch's own Doppler sp
 Only measured keeps estimated records out of your all-time table, your trends and your cards. The session that set one still shows it, marked.
 Prefer measured is the default. A measured record wins its row, and an estimated one fills a row no measured record has reached.
 Include estimated counts every record and marks the estimated ones. Settings → Speed records is where you choose.
+
+#### The session story [only in: beta, dev]
+One line over your numbers, and a chip on each record you beat.
+Over a session's key numbers, one line says what stood out. That can be your clean jibes, or a record you beat this month, this season or ever.
+Each record you beat gets a chip on its cell. With nothing to celebrate, the line is the plain tally.
 
 #### Tacks, jibes and course changes
 What counts as a turn, and what is just a change of direction.
@@ -331,6 +343,11 @@ The jibe tally is a different question. Its three counts are out of your jibes, 
 Flights that ended without ever stopping.
 The flight ended and you kept moving. You settled onto the board and taxied on, or you chose to stop riding. No stop was ever measured, so this is not counted as a loss.
 When a flight ends because the recording stopped, CleanJibe calls it unknown. There is nothing there to judge, so it stays out of every tally.
+
+#### The Next session card [only in: beta, dev]
+One thing to work on next time, from this session's turns.
+The card sits at the top of the Turns tab. It names the tip that came up most often, and on how many of your turns.
+It also compares your port and starboard entries and names the side to work on. It does that only with at least 3 turns on each side.
 
 #### Attempts & getting up
 How often you pumped, including the times you did not get up.
@@ -401,6 +418,12 @@ Share the original recording, stripped of anything identifying.
 You can share the original .fit file of any session. The watch serial, your rider profile and your lifetime totals are removed first. The ride itself is untouched, so the analysis your friend gets is identical to yours.
 They can open it in CleanJibe, or drop it into the free browser app at cleanjibe.org without installing anything.
 
+#### The session video [only in: beta, dev]
+Your session as a short film, made on this phone.
+Open a session, tap Share, then Export video. Pick a length and, if you like, music you may share.
+A photo you took during the session drops in at the moment you took it.
+- Testing it?: Keep the 20 s length, wait for the bar to finish, then share the clip.
+
 ### Your library
 
 #### Backing up your library
@@ -413,7 +436,7 @@ Restoring never overwrites. Sessions already in your library keep their own anal
 - Your own recordings, nothing stripped: The .fit and .gpx files inside are the originals. Nothing is removed. A session you send a friend is stripped first. This file is for you, not for sharing.
 - How big it will be: A session recorded with the CleanJibe watch app carries a 100 Hz accelerometer recording, about 95 % of its size. The app estimates the total before it starts.
 - A newer backup: CleanJibe will not open a backup from a newer version of itself. Update the app and try again. An older backup is brought up to date.
-- Leaving the beta: Back up in the beta, then install the App Store version. If the beta updated your library, a later App Store update opens that backup.
+- Leaving the beta: When the App Store version is out, back up in the beta first, then install it. If the beta updated your library, a later App Store update opens that backup.
 In the browser: In the browser app, Settings → Your data is the backup. Download all saves one zip, and Restore from a backup reads it back.
 
 #### Sessions someone else rode
@@ -421,15 +444,34 @@ A friend's session is shown in full but kept out of your records.
 When you import a file, CleanJibe asks whose session it is. A friend's session is saved and shown in full: map, replay, every turn. It stays out of your records, trends and gear totals.
 Their fast run never becomes your personal best. The name you give is stored on your phone only.
 
+#### Grouping and filtering the library [only in: beta, dev]
+Group your sessions by month, year or spot, and narrow the list.
+The control over the list groups your sessions: All, Month, Year or Spot.
+The filter narrows the list to a spot or to dates. It narrows this list only, never your records.
+
+#### Widgets and the watch complication [only in: beta, dev]
+Your numbers on the home screen, and a one-tap start on the watch.
+Three widgets: Last session, This week, your time on the foil over seven days, and Personal bests. Add them from the home screen like any widget.
+On the Apple Watch, the Start session complication starts a wingfoil recording in one tap.
+
+#### Adding sessions to Apple Health [only in: beta, dev]
+Each session can go to Apple Health as a workout.
+Switch on Settings → Apple Health → Add sessions to Apple Health. Each session is then added as a Surfing workout.
+A session you imported from Health is left alone. Apple Health keeps the workout on your phone, and CleanJibe sends it nowhere.
+
 #### What leaves your phone
-There is no account and no server, and nothing is uploaded. The whole policy is on the web.
-[iPhone app only] There is no CleanJibe account and no CleanJibe server. A session you import is analysed on this phone and stays on it. The iPhone app has no advertising, no analytics and no tracking.
+There is no account, and no session of yours is uploaded. The whole policy is on the web.
+[iPhone app only] There is no CleanJibe account, and no session you import is sent to a CleanJibe server. It is analysed on this phone and stays on it. The iPhone app has no advertising, no analytics and no tracking.
 [iPhone app only] The app talks to four places, each only when you use it. Your own login goes to intervals.icu and Strava. Apple Maps loads while a map is on screen. To name a new spot, it sends one rounded position.
-[iPhone app only] On the App Store release, CleanJibe never asks for your location. Every coordinate it draws was already inside a file you imported. The beta and dev builds ask for one, in one place each. The privacy page says where.
+- Your location [only in: beta, dev] [iPhone app only]: The Apple Watch app reads it while a workout you started is running. It goes to your own iPhone and nowhere else.
+- A daily look for a newer build [only in: beta, dev]: Once a day the beta asks cleanjibe.org whether a newer build exists. It sends nothing about you.
+- Ask CleanJibe [only in: dev]: Ask CleanJibe sends your question, and a session's numbers when you ask from one, to Anthropic's Claude. It is kept 30 days.
+- iCloud Drive [only in: dev]: Your library can live in your own iCloud Drive, so your iPhone and iPad share it. It is your iCloud, not a server of ours.
+- The Garmin watch map [only in: dev]: Where I am now asks for one position, to draw the map your Garmin watch shows.
 - Your intervals.icu key [iPhone app only]: Kept in this iPhone's Keychain, never copied to iCloud and never written to a log. It goes to intervals.icu itself, encrypted, and nowhere else.
 - Treat it like a password: It opens your intervals.icu account. Remove it in Settings → intervals.icu, or regenerate it in Developer Settings. The old key stops working at once.
 - What the website counts: cleanjibe.org and the browser app count page views and taps with umami. It sets no cookies. It never sees your sessions, your files or any number off a ride.
-In the browser: In the browser app, a session is analysed in your browser and stays in its storage. Nothing is uploaded. Your intervals.icu key stays in this browser too. It goes to intervals.icu itself and nowhere else.
+In the browser: In the browser app, a session is analysed in your browser and stays in its storage. Nothing is uploaded. Your intervals.icu key stays in this browser too. It goes to intervals.icu itself and nowhere else. Ask CleanJibe on the Help page sends a question only when you send one. It is kept 30 days.
 
 #### Analysis engine version
 When the analysis improves, your old sessions are worked out again.

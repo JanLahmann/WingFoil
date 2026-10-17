@@ -46,7 +46,7 @@ There is no account, no CleanJibe server and no tracking. The engine is open sou
 
 BUILT WITH ITS RIDERS
 
-CleanJibe is built with its riders. New features land in the beta first, and move to the App Store once testers have proven them.
+CleanJibe is built with its riders. New features land in the beta first. Once testers have proven them, they go into the App Store version, which is coming.
 ```
 
 **The App Store description's voice, on purpose** (9 October 2026). The first two paragraphs

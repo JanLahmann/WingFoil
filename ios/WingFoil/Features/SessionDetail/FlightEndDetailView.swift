@@ -499,6 +499,8 @@ private struct FlightEndStripView: View {
         .chartYScale(domain: 0...ceiling)
         .padding(.top, CGFloat(captionRows.max() ?? 0) * StripChrome.captionRowStep)
         .chartXAxisLabel("s from the end")
+        .chartPlotStyle { $0.padding(.trailing, StripChrome.axisLabelRoom) }
+        .chartXAxis { StripChrome.timeAxis() }
         .chartYAxisLabel(Fmt.knUnit)
         .chartOverlay { proxy in
             StripChrome.scrubSurface(proxy, domain: domain, playheadRt: $playheadRt)

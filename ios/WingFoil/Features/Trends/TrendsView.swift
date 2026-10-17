@@ -492,6 +492,7 @@ struct TrendsView: View {
                 .chartYAxis { AxisMarks(position: .leading) }
                 .chartLegend(position: .bottom, alignment: .leading)
                 .frame(height: 150)
+                .padding(.top, 8)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(series.map { line in
                     SpokenFigures.series(title: line.side + ", flew through",
@@ -632,7 +633,10 @@ private struct TrendChart: View {
                     .foregroundStyle(.readableSecondary)
                     .frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
             } else {
+                // Room for the top y-axis label, which touched the headline above it
+                // (screenshot review, 16 Oct 2026).
                 chart
+                    .padding(.top, 8)
                 if series.count < points.count {
                     let missing = String(points.count - series.count) + " of "
                         + String(points.count) + " sessions " + missingReason

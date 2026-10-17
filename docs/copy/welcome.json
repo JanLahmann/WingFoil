@@ -524,7 +524,7 @@
           "beta" : false,
           "detail" : "Your sessions stay on your phone or in your browser. We only see one if you send it to us.",
           "id" : "server",
-          "term" : "No server"
+          "term" : "Your sessions stay with you"
         },
         {
           "actions" : [
@@ -566,7 +566,7 @@
 
       ],
       "kicker" : "",
-      "lede" : "CleanJibe is built with its riders. New features land in the beta first, and move to the App Store once testers have proven them.",
+      "lede" : "CleanJibe is built with its riders. New features land in the beta first. Once testers have proven them, they go into the App Store version, which is coming.",
       "note" : "",
       "surfaces" : "both",
       "title" : ""

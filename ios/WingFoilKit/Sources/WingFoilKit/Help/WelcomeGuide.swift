@@ -151,6 +151,9 @@ public enum WelcomePrompt {
     ///   - realSessionCount: rows in the library that are the rider's own — the example
     ///     session is not counted.
     ///   - icuConnected: an intervals.icu key is stored.
+    ///   - otherWayInSet: another way in is set up — Strava connected, or in the beta
+    ///     Health workouts imported automatically (rider review, 17 Oct 2026). A rider who
+    ///     chose one is not a newcomer, even before the first session arrives.
     ///   - shownThisLaunch: the screen already went up in this process. Once per launch:
     ///     the question is re-asked on every library change, and "raise it again" would put
     ///     the screen straight back over the example its own button just opened.
@@ -161,11 +164,12 @@ public enum WelcomePrompt {
     ///     Settings → Beta → *Start over* (`SessionStore.startOver`). A request outranks
     ///     the library and the key; only `isPresenting` may defer it.
     public static func shouldShow(realSessionCount: Int, icuConnected: Bool,
+                                  otherWayInSet: Bool = false,
                                   shownThisLaunch: Bool,
                                   isPresenting: Bool = false,
                                   requested: Bool = false) -> Bool {
         guard !isPresenting else { return false }
         if requested { return true }
-        return !shownThisLaunch && realSessionCount == 0 && !icuConnected
+        return !shownThisLaunch && realSessionCount == 0 && !icuConnected && !otherWayInSet
     }
 }

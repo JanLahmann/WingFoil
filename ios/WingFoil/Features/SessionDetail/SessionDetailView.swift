@@ -79,6 +79,12 @@ struct SessionDetailView: View {
     /// (`pinnedBar`).
     @State private var barTop: CGFloat = .greatestFiniteMagnitude
     @State private var barPinned = false
+    /// The bar's height and the scroll's offset, so a jump can land BELOW the pinned bar
+    /// rather than under it (screenshot review, 16 Oct 2026: the first card's labels sat half
+    /// under the switcher after a jump).
+    @State private var barHeight: CGFloat = 0
+    @State private var scrollOffsetY: CGFloat = 0
+    @State private var scrollPosition = ScrollPosition()
     /// Engine window key of the GP3S effort highlighted on the map and chart. Transient by
     /// design (`RecordWindowSelection`): every session opens on the 2 s peak.
     @State private var selectedEffort: String? = RecordWindowSelection.defaultKey
@@ -251,6 +257,9 @@ struct SessionDetailView: View {
                         .onGeometryChange(for: CGFloat.self) { proxy in
                             proxy.frame(in: .named(Self.pageSpace)).minY
                         } action: { barTop = $0 }
+                        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: {
+                            barHeight = $0
+                        }
                     VStack(alignment: .leading, spacing: 20) {
                         body(of: tab, detail: detail)
                     }
@@ -349,6 +358,10 @@ struct SessionDetailView: View {
         } action: { _, pinned in
             barPinned = pinned
         }
+        .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y } action: { _, y in
+            scrollOffsetY = y
+        }
+        .scrollPosition($scrollPosition)
         .overlay(alignment: .top) {
             if barPinned, let detail, row?.isProvisional != true {
                 pinnedBar(detail)
@@ -564,6 +577,14 @@ struct SessionDetailView: View {
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(400))
             withAnimation(.snappy) { proxy.scrollTo(anchor, anchor: .top) }
+            // `.top` puts the anchor at the top of the scroll view, which is where the pinned
+            // bar is drawn over it: step back by the bar's height once it has pinned.
+            try? await Task.sleep(for: .milliseconds(350))
+            if barPinned, barHeight > 0 {
+                withAnimation(.snappy) {
+                    scrollPosition.scrollTo(y: max(0, scrollOffsetY - barHeight - 8))
+                }
+            }
         }
     }
 

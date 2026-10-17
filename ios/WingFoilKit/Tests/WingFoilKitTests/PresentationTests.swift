@@ -73,7 +73,7 @@ import Testing
         // Two pages since 22 September 2026: the set, and the setting that decides which
         // of them may stand (Settings → Speed records).
         #expect(HelpCatalog.topics.filter { $0.subsection == .records }.map(\.id)
-                == [.speedRecords, .verifiedRecords])
+                == [.speedRecords, .verifiedRecords, .sessionStory])
 
         let topic = HelpCatalog.topic(.speedRecords)
         #expect(topic.title == "Speed records")
@@ -142,15 +142,16 @@ import Testing
         #expect(listed(.record) == [.appleWatchApp, .appleWorkoutApp, .phoneOnly])
         #expect(listed(.bringIn) == [.icuSetup, .stravaImport, .shareFromWatchApp, .browserApp,
                                      .notifications])
-        #expect(listed(.readNumbers) == [.numbers, .mapLegend, .flights, .speedRecords,
-                                         .verifiedRecords, .turnTypes, .turnOutcomes,
+        #expect(listed(.readNumbers) == [.numbers, .mapLegend, .flights, .jumps,
+                                         .speedRecords, .verifiedRecords, .sessionStory,
+                                         .turnTypes, .turnOutcomes,
                                          .turnSuccess, .rates, .portStarboard, .falls,
-                                         .glideOuts,
+                                         .glideOuts, .nextSession,
                                          .takeoffAttempts, .pumpsToTakeoff, .pumpStrokes,
                                          .heartRate, .windAxis, .windsurf])
-        #expect(listed(.share) == [.shareCard, .replayClip, .shareFit])
-        #expect(listed(.library) == [.libraryBackup, .riderAttribution, .privacy,
-                                     .engineVersion])
+        #expect(listed(.share) == [.shareCard, .replayClip, .shareFit, .sessionVideo])
+        #expect(listed(.library) == [.libraryBackup, .riderAttribution, .libraryGrouping,
+                                     .widgets, .healthExport, .privacy, .engineVersion])
         #expect(listed(.somethingWrong) == [.icuTroubleshooting, .watchUpdateStuck,
                                             .divergence, .sendingFeedback,
                                             .sendSessionToDeveloper])
@@ -330,7 +331,7 @@ import Testing
     /// index never lists it.
     @Test func theSharingSectionIsWrittenAndSaysWhereThingsGo() {
         #expect(HelpCatalog.topics(in: .share).map(\.id)
-                == [.shareCard, .replayClip, .shareFit])
+                == [.shareCard, .replayClip, .shareFit, .sessionVideo])
 
         // The card and the clip are both rendered locally, and both say so — that is the
         // half of each topic a rider is actually deciding on.

@@ -63,13 +63,9 @@ struct BetaSectionView: View {
             VStack(alignment: .leading, spacing: 4) {
                 FeedbackMailRow(title: "Request a feature", systemImage: "lightbulb",
                                 subjectOverride: "CleanJibe feature request")
-                // **The one test ask that had no home** (Jan, dev 70). It lived on /start,
-                // which was cut; a beta door's ask belongs beside the beta's own feedback
-                // doors (docs/channels.md, "Feedback and channel furniture"). It names the
-                // three things a tester gets wrong: the preset, the wait, the share.
-                note("Opens a mail with this build already filled in.",
-                     more: ["Testing the session video? Keep the 20 s preset, wait for the "
-                            + "bar, then share the clip."])
+                // The session-video test ask that lived here (Jan, dev 70) is in its own
+                // help topic since 17 Oct 2026 (`HelpTopicID.sessionVideo`, "Testing it?").
+                note("Opens a mail with this build already filled in.")
             }
             // The usage and feature statistics docs/channels.md promises the beta:
             // counters kept on the phone, sent only in a mail the rider edits. Permanent,

@@ -2399,7 +2399,11 @@ final class SessionStore {
         reloadApiKeyIfMissing()
         let key = apiKey
         guard !key.isEmpty else {
-            status = "Add your intervals.icu API key in Settings"
+            // A pull on a library that came in another way: say what the pull does
+            // rather than ask for a key the rider may not want.
+            status = otherWayInIsSet
+                ? "Pull to refresh syncs intervals.icu. Add its key in Settings to use it."
+                : "Add your intervals.icu API key in Settings"
             setProblem(IcuProblem(kind: .noKey))
             return
         }
@@ -2789,6 +2793,7 @@ final class SessionStore {
         let realSessions = sessions.filter { !$0.isExample && $0.isSession }.count
         guard WelcomePrompt.shouldShow(realSessionCount: realSessions,
                                        icuConnected: !apiKey.isEmpty,
+                                       otherWayInSet: otherWayInIsSet,
                                        shownThisLaunch: didShowWelcomeThisLaunch,
                                        isPresenting: isPresentingSomething,
                                        requested: requested)
@@ -2801,6 +2806,14 @@ final class SessionStore {
         UserDefaults.standard.removeObject(forKey: Self.welcomeRequestedKey)
         didShowWelcomeThisLaunch = true
         isShowingWelcome = true
+    }
+
+    /// **A way in other than intervals.icu is set up** (rider review, 17 Oct 2026): Strava
+    /// connected, or in the beta Health workouts imported automatically. Positive flags
+    /// (pattern E), each true from the moment the rider sets it, so a rider who chose Strava
+    /// is not greeted as a newcomer at every launch until a session arrives.
+    var otherWayInIsSet: Bool {
+        isStravaConnected || healthAutoImport
     }
 
     /// "What CleanJibe does", from Settings. Deliberately does **not** touch the flag: this

@@ -119,6 +119,8 @@ struct TurnDetailStripView: View {
         // not print over the figure above the strip.
         .padding(.top, CGFloat(captionRows.max() ?? 0) * StripChrome.captionRowStep)
         .chartXAxisLabel("s from the turn")
+        .chartPlotStyle { $0.padding(.trailing, StripChrome.axisLabelRoom) }
+        .chartXAxis { StripChrome.timeAxis() }
         .chartYAxisLabel(Fmt.knUnit)
         .chartOverlay { proxy in
             StripChrome.scrubSurface(proxy, domain: domain, playheadRt: $playheadRt)
