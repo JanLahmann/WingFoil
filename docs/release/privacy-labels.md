@@ -80,12 +80,12 @@ Location row, so **Not Collected** there too. This record needs its own copy of 
 questionnaire in App Store Connect; nothing above transfers automatically between the two
 apps.
 
-**Ask CleanJibe (dev only, 15 Oct 2026)** is the first door that sends rider-typed content to a
+**Ask CleanJibe (dev 15 Oct 2026, beta from build 136 on 17 Oct)** is the first door that sends rider-typed content to a
 server: the question, the app's version and units, and from a session its numbers (no
 positions), to the assistant Worker on Cloudflare and on to Anthropic, kept 30 days
 (docs/channels.md, "Ask CleanJibe"). Proposed answers for the dev record: **User Content —
 Other User Content: Collected, Not Linked to You, App Functionality** (the question); **Other
 Data — session numbers: Collected, Not Linked to You, App Functionality**; no tracking. The
 App Attest key id identifies an install, not a person, and is not used across apps. **Flag for
-Jan**: before Ask reaches the beta, the main record's label needs the same rows; until then the
-main record is unchanged.
+Jan**: Ask is in the beta now, which shares the main record; its label needs the same rows
+before the App Store release.

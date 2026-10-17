@@ -136,6 +136,7 @@ export const SHELL = {
       "The session story: one line over your numbers, and a chip on each record you beat.",
       "Send a session and its recording to us from its Share page or a turn, with your notes.",
       "Jumps: how many you jumped, and an estimate of the highest, from the watch's motion sensor.",
+      "Ask CleanJibe: a question in your own words, answered from the help and, on a session, from its numbers.",
       "Planned: a live view on the Apple Watch. Foil state, flights, records and turn verdicts on the wrist, as the Garmin app shows them."
     ]
   }
@@ -393,6 +394,18 @@ export const WELCOME = {
 
 /** What's new, release and beta only — the filter /whats-new/ uses. */
 export const WHATS_NEW = [
+  {
+    "version": "1.0.1",
+    "build": 136,
+    "channel": "beta",
+    "date": "2026-10-17",
+    "title": "Ask CleanJibe",
+    "lines": [
+      "Ask CleanJibe answers a question in your own words, from the help texts.",
+      "Asked from a session, it reads that session's numbers and never guesses one.",
+      "Help has its row at the top, and a session has its button in the bar."
+    ]
+  },
   {
     "version": "1.0.1",
     "build": 133,

@@ -1,4 +1,4 @@
-#if DEV
+#if BETA
 import Foundation
 import WingFoilKit
 

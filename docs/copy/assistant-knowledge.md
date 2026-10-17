@@ -465,7 +465,7 @@ There is no account, and no session of yours is uploaded. The whole policy is on
 [iPhone app only] The app talks to four places, each only when you use it. Your own login goes to intervals.icu and Strava. Apple Maps loads while a map is on screen. To name a new spot, it sends one rounded position.
 - Your location [only in: beta, dev] [iPhone app only]: The Apple Watch app reads it while a workout you started is running. It goes to your own iPhone and nowhere else.
 - A daily look for a newer build [only in: beta, dev]: Once a day the beta asks cleanjibe.org whether a newer build exists. It sends nothing about you.
-- Ask CleanJibe [only in: dev]: Ask CleanJibe sends your question, and a session's numbers when you ask from one, to Anthropic's Claude. It is kept 30 days.
+- Ask CleanJibe [only in: beta, dev]: Ask CleanJibe sends your question, and a session's numbers when you ask from one, to Anthropic's Claude. It is kept 30 days.
 - iCloud Drive [only in: dev]: Your library can live in your own iCloud Drive, so your iPhone and iPad share it. It is your iCloud, not a server of ours.
 - The Garmin watch map [only in: dev]: Where I am now asks for one position, to draw the map your Garmin watch shows.
 - Your intervals.icu key [iPhone app only]: Kept in this iPhone's Keychain, never copied to iCloud and never written to a log. It goes to intervals.icu itself, encrypted, and nowhere else.
@@ -535,6 +535,7 @@ Beta adds:
 - The session story: one line over your numbers, and a chip on each record you beat.
 - Send a session and its recording to us from its Share page or a turn, with your notes.
 - Jumps: how many you jumped, and an estimate of the highest, from the watch's motion sensor.
+- Ask CleanJibe: a question in your own words, answered from the help and, on a session, from its numbers.
 - Planned: a live view on the Apple Watch. Foil state, flights, records and turn verdicts on the wrist, as the Garmin app shows them.
 
 Dev adds:
@@ -579,6 +580,11 @@ Dev adds:
 
 ## The newest release notes
 
+### 1.0.1 (136, beta, 2026-10-17): Ask CleanJibe
+- Ask CleanJibe answers a question in your own words, from the help texts.
+- Asked from a session, it reads that session's numbers and never guesses one.
+- Help has its row at the top, and a session has its button in the bar.
+
 ### 1.0.1 (133, beta, 2026-10-15): Jumps
 - The Flights tab counts your jumps and estimates the highest, from the watch's motion sensor.
 - A jump counts only on the foil, at speed and outside a turn.
@@ -605,8 +611,3 @@ Dev adds:
 - A small Beta mark sits on every feature that is still being tried.
 - The feedback mail has your wishlist and a line for your own idea.
 - Scrolling back up works again when your thumb starts on a filter row.
-
-### 1.0.1 (123, beta, 2026-09-30): Every name in full
-- The map tells you once or twice to use two fingers.
-- Every record name reads in full on the Records tab, even on the widest iPhone.
-- The session's numbers read with commas, not dashes.

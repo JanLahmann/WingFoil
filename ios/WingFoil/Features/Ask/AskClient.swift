@@ -1,9 +1,9 @@
-#if DEV
+#if BETA
 import CryptoKit
 import DeviceCheck
 import Foundation
 
-/// **Ask CleanJibe's line to the assistant** — dev only (docs/channels.md).
+/// **Ask CleanJibe's line to the assistant** — beta and dev (docs/channels.md).
 ///
 /// The assistant is the shared Worker the Fun with Quantum site runs (site `cleanjibe`,
 /// JanLahmann/Fun-with-Quantum `assistant/src/app-auth.ts`). A native app has no Origin to be

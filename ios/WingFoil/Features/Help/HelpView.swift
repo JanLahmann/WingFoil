@@ -45,7 +45,7 @@ private struct HelpIndexList: View {
 
     @State private var query = ""
     @State private var selected: HelpTopicID?
-    #if DEV
+    #if BETA
     @State private var asking = false
     #endif
 
@@ -101,14 +101,17 @@ private struct HelpIndexList: View {
                     .listRowBackground(Color.clear)
                 }
             }
-            #if DEV
-            // Ask CleanJibe (dev only, docs/channels.md): the question box over these same texts.
+            #if BETA
+            // Ask CleanJibe (beta and dev, docs/channels.md): the question box over these same texts.
             if query.trimmingCharacters(in: .whitespaces).isEmpty {
                 Section {
                     Button { asking = true } label: {
                         Label {
                             VStack(alignment: .leading, spacing: 3) {
-                                Text("Ask CleanJibe").font(.subheadline.weight(.semibold))
+                                HStack(spacing: 6) {
+                                    Text("Ask CleanJibe").font(.subheadline.weight(.semibold))
+                                    BetaChip()
+                                }
                                 Text("A question in your own words, answered from these pages.")
                                     .font(.footnote)
                                     .foregroundStyle(.readableSecondary)
@@ -149,7 +152,7 @@ private struct HelpIndexList: View {
         }
         .searchable(text: $query, prompt: "Search help")
         .sheet(item: $selected) { HelpTopicSheet(id: $0) }
-        #if DEV
+        #if BETA
         .sheet(isPresented: $asking) { AskView(context: .help, state: AskState.help(store)) }
         #endif
         .task {

@@ -1,8 +1,8 @@
-#if DEV
+#if BETA
 import SwiftUI
 import WingFoilKit
 
-/// **Ask CleanJibe** — dev only (docs/channels.md). A question box over the help texts, or
+/// **Ask CleanJibe** — beta and dev (docs/channels.md). A question box over the help texts, or
 /// over one session's numbers when it is opened from a session.
 ///
 /// The first time, the consent page comes first (the iPhone's consent is a one-time page,

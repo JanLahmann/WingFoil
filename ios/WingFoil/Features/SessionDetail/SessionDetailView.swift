@@ -102,8 +102,8 @@ struct SessionDetailView: View {
     /// second and every one of those re-evaluates every view on this page.
     @State private var milestones: [ReplayMilestone] = []
     @State private var showShare = false
-    #if DEV
-    /// Ask CleanJibe about this session (dev only, docs/channels.md).
+    #if BETA
+    /// Ask CleanJibe about this session (beta and dev, docs/channels.md).
     @State private var asking = false
     #endif
     /// Bumped the first time a record-setting session opens (`SessionStore.takeRecordConfetti`).
@@ -424,7 +424,7 @@ struct SessionDetailView: View {
                 .disabled(row == nil)
                 .accessibilityHint("Rename this session")
             }
-            #if DEV
+            #if BETA
             ToolbarItem(placement: .topBarTrailing) {
                 Button { asking = true } label: {
                     Label("Ask CleanJibe", systemImage: "bubble.left.and.text.bubble.right")
@@ -449,7 +449,7 @@ struct SessionDetailView: View {
         .sheet(isPresented: $renaming) {
             if let row { RenameSessionSheet(row: row, draft: $titleDraft) }
         }
-        #if DEV
+        #if BETA
         .sheet(isPresented: $asking) {
             if let row, let detail {
                 AskView(context: .session,

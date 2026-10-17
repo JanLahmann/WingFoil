@@ -54,6 +54,10 @@
       "text" : "Jumps: how many you jumped, and an estimate of the highest, from the watch's motion sensor."
     },
     {
+      "id" : "askCleanJibe",
+      "text" : "Ask CleanJibe: a question in your own words, answered from the help and, on a session, from its numbers."
+    },
+    {
       "id" : "appleWatchLive",
       "text" : "Planned: a live view on the Apple Watch. Foil state, flights, records and turn verdicts on the wrist, as the Garmin app shows them."
     }

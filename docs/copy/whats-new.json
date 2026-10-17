@@ -6,6 +6,18 @@
   "entries": [
     {
       "version": "1.0.1",
+      "date": "2026-10-17",
+      "title": "Ask CleanJibe",
+      "build": 136,
+      "channel": "beta",
+      "lines": [
+        "Ask CleanJibe answers a question in your own words, from the help texts.",
+        "Asked from a session, it reads that session's numbers and never guesses one.",
+        "Help has its row at the top, and a session has its button in the bar."
+      ]
+    },
+    {
+      "version": "1.0.1",
       "date": "2026-10-15",
       "title": "Jumps",
       "build": 133,

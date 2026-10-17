@@ -1820,11 +1820,13 @@ public enum HelpCatalog {
                                detail: "Once a day the beta asks \(Branding.site) whether "
                                    + "a newer build exists. It sends nothing about you."))
         }
-        if channel == .dev {
+        if channel >= .beta {
             items.append(.init(term: "Ask CleanJibe",
                                detail: "Ask CleanJibe sends your question, and a session's "
                                    + "numbers when you ask from one, to Anthropic's Claude. "
                                    + "It is kept 30 days."))
+        }
+        if channel == .dev {
             items.append(.init(term: "iCloud Drive",
                                detail: "Your library can live in your own iCloud Drive, so "
                                    + "your iPhone and iPad share it. It is your iCloud, not "

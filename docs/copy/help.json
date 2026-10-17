@@ -2277,6 +2277,7 @@
             },
             {
               "channels" : [
+                "beta",
                 "dev"
               ],
               "detail" : "Ask CleanJibe sends your question, and a session's numbers when you ask from one, to Anthropic's Claude. It is kept 30 days.",
