@@ -191,11 +191,11 @@ top of the 0.9.22 one:
 
 0.9.24: The watch counts your jumps. Each one buzzes three quick ticks and shows JUMP with your count.
 
-**0.9.25 built 16 October 2026, not uploaded yet**: the transfer time of Log wrist motion said where it is switched and where it costs (docs/presentation/watch.md, "Motion log on"). What's New, on top of the 0.9.24 paragraph:
+**0.9.25 built 16 October 2026, shipped inside 0.9.26**: the transfer time of Log wrist motion said where it is switched and where it costs (docs/presentation/watch.md, "Motion log on"). What's New, on top of the 0.9.24 paragraph:
 
 0.9.25: With Log wrist motion on, the transfer time to Garmin Connect is much longer. The watch now asks once whether to keep it, and says so after the save.
 
-**0.9.26 built 16 October 2026, not uploaded yet**: the rider review's watch fixes (Resume resumes a paused session; the 5th or 10th dry turn flashes on a clean jibe too; NEW BEST obeys its two switches; the Tacks & jibes page says wind auto while the watch works the wind out) and a gap or a pause now ends a turn's outcome window, as on the phone (docs/algorithms/turns.md). What's New, on top of the 0.9.25 paragraph:
+**0.9.26 uploaded 17 October 2026** (the beta to the public listing, 0.9.26-dev1 to the private one; it carries 0.9.25, which was never uploaded on its own; Description unchanged): the rider review's watch fixes (Resume resumes a paused session; the 5th or 10th dry turn flashes on a clean jibe too; NEW BEST obeys its two switches; the Tacks & jibes page says wind auto while the watch works the wind out) and a gap or a pause now ends a turn's outcome window, as on the phone (docs/algorithms/turns.md). What's New, on top of the 0.9.25 paragraph:
 
 0.9.26: Resume in the session menu now restarts a paused session. After a GPS gap or a pause, the turn you were in is judged on what happened before it.
 
