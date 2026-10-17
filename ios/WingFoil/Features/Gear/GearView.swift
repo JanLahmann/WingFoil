@@ -66,9 +66,9 @@ struct GearView: View {
                 Section {
                     Toggle("Show retired gear", isOn: $showRetired)
                 } footer: {
-                    Text("Retiring keeps a wing's history. Its sessions still reference it. "
-                         + "It only drops out of the pickers. Swipe to delete removes the "
-                         + "link for good.")
+                    Text("Retired gear keeps its sessions and leaves the pickers. Turn off "
+                         + "In the quiver to retire it. Swipe left to delete it from every "
+                         + "session.")
                 }
                 FeedbackFooter.section
             }
@@ -125,7 +125,7 @@ struct GearView: View {
             Button {
                 Task { await store.reclusterSpots() }
             } label: {
-                Label("Re-cluster spots", systemImage: "arrow.triangle.merge")
+                Label("Rebuild spots", systemImage: "arrow.triangle.merge")
                     .font(.footnote)
             }
             .disabled(store.sessions.isEmpty)
@@ -224,10 +224,10 @@ private struct GearRowView: View {
             }
             HStack(spacing: 14) {
                 stat("\(entry.sessions)", "sessions")
-                stat(String(format: "%.0f h", entry.hours), "time")
+                stat(String(format: "%.0f h", entry.hours), "on the water")
                 stat(Fmt.pct(entry.foilPct), "foil")
-                stat(Fmt.kn(entry.best2sKn), "best 2s")
-                stat(Fmt.pct(entry.jibeFlewThroughPct), "jibes")
+                stat(Fmt.kn(entry.best2sKn), "best 2 s")
+                stat(Fmt.pct(entry.jibeFlewThroughPct), "jibes flew")
             }
             .font(.caption)
             // Five figures in one line. They scale, and stop where five of them stop

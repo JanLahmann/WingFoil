@@ -86,7 +86,7 @@ struct DevTuningDiffView: View {
                 Text(Fmt.clock(change.ts))
                     .font(.caption2.monospacedDigit())
                     .foregroundStyle(.readableSecondary)
-                    .scaledColumn(46, relativeTo: .caption2)
+                    .scaledColumn(56, relativeTo: .caption2)
                 Text(change.kind.label)
                     .font(.caption2.weight(.medium))
                     .padding(.horizontal, 6)

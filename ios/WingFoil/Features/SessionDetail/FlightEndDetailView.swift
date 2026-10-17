@@ -95,16 +95,16 @@ struct FlightEndDetailSheet: View {
         return "Flight end \(position) of \(indices.count)"
     }
 
-    /// "Flight 12 · fell in · swipe for the next" — the rider's own ordinal, which is the
+    /// "Flight 12 · fell in" — the rider's own ordinal, which is the
     /// *flight's* number and not the end's position in the list. He remembers the ride, not
     /// the tally.
     private var subtitle: String {
         guard detail.analysis.flightEnds.indices.contains(selection) else {
-            return "swipe for the next"
+            return ""
         }
         let end = detail.analysis.flightEnds[selection]
         return "Flight " + String(end.flightIndex + 1) + " · "
-            + FlightEndAnalytics.outcomeLabel(end.outcome) + " · swipe for the next"
+            + FlightEndAnalytics.outcomeLabel(end.outcome)
     }
 }
 
@@ -286,12 +286,12 @@ private struct FlightEndDetailPage: View {
                 cell("Stopped", String(format: "%.0f s", end.stoppedS))
                 cell("Off foil", FlightEndAnalytics.offFoilText(end.offFoilS))
                 cell("Flight", "#\(end.flightIndex + 1)")
-                cell("Evidence", String(format: "%.0f s", end.windowS))
+                cell("Recorded after the end", String(format: "%.0f s", end.windowS))
             }
 
-            HStack(spacing: 8) {
+            WrapRow(spacing: 8) {
                 chip(FlightEndAnalytics.outcomeLabel(end.outcome)
-                        + (end.borderline ? " (borderline)" : ""),
+                        + (end.borderline ? ", borderline" : ""),
                      // A glide-out wears its own neutral ring, never the flew check (F9e).
                      symbol: FlightPairing.Outcome(endOutcome: end.outcome,
                                                    truncated: end.truncated).symbolName,
@@ -305,8 +305,8 @@ private struct FlightEndDetailPage: View {
                     chip("wrist under", symbol: DesignTokens.Glyph.splash,
                          tint: DesignTokens.Effort.splash)
                 }
-                Spacer(minLength: 0)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             Text(FlightEndAnalytics.outcomeText(end))
                 .font(.subheadline)

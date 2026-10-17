@@ -185,7 +185,7 @@ export function flightFacts(g) {
 const pairTakeoff = (f) =>
   `starts flight ${f.index + 1} · ${hms(f.endTs - f.startTs)} · ended: ${f.outcome}`;
 
-const pairFailed = (strokes) => `no flight · ${plural(strokes, "stroke")}`;
+const pairFailed = (strokes) => `no flight · ${plural(strokes, "pump")}`;
 
 /* ------------------------------------------------------------------ wrist under
  *

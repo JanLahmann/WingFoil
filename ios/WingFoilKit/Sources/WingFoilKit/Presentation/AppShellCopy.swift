@@ -41,7 +41,7 @@ public enum AppShellCopy {
         public static let compareWithBest = "Compare with best clean jibe"
         public static let nothingToCompare =
             "Nothing to compare with. "
-            + "This session has no other jibe that flew through the same way round."
+            + "No other clean jibe this session turned the same way round."
         public static let footDrawn = "The drawing is {before} s before the sweep and {after} s after it."
         public static let footTicks = "Ticks are one second apart."
         public static let footRamp =
@@ -86,7 +86,7 @@ public enum AppShellCopy {
             + "Ticks are one second apart."
         public static let footEntryBand = "The bands are the engine's windows. \"Entry\" is the {seconds} s the flight was ending at."
         public static let footEvidence =
-            "\"Evidence\" is how much gap-free recording there actually was."
+            "\"Recorded after the end\" is how much gap-free recording there was after it."
         public static let footLow =
             "Only \"low\" is the engine's. "
             + "It is the slowest sample of the off-foil run, placed where this window "
@@ -206,14 +206,14 @@ public enum AppShellCopy {
 
     /// `RecordsView`: the footers and the empty table.
     public enum Records {
-        public static let speedHead = "Doppler speed, GP3S windows. {certified} of {count} have measured speed."
+        public static let speedHead = "{certified} of {count} records come from the watch's measured speed."
         public static let speedMeasured =
             "Measured speed comes from the watch's own speed channel. "
             + "Speed estimated from positions is marked."
         public static let speedFreshness =
             "The dot on a record's name says how fresh it is. "
-            + "Filled within a month. Hollow within the season. "
-            + "Faint when it is older than 6 months."
+            + "Filled within a month. Hollow within six months. "
+            + "Faint when it is older."
         public static let sessionRecordsFooter =
             "These are your best afternoons rather than your best windows, so nothing here "
             + "is marked estimated. A poor recording can get a speed wrong, but the jibe "
@@ -238,6 +238,9 @@ public enum AppShellCopy {
     /// the rate codes out (pattern H); the code stays beside the words.
     public enum Trends {
         public static let nothingInRange = "Nothing in this range"
+        public static let emptyLibrary =
+            "Connect intervals.icu in Settings, or import a .fit file, and the charts fill "
+            + "as you ride."
         public static let widenTheRange =
             "Widen the range or clear the spot and gear filters."
         public static let onFoil = "On foil"
@@ -276,6 +279,7 @@ public enum AppShellCopy {
 
         static let all: [String: String] = [
             "nothingInRange": nothingInRange, "widenTheRange": widenTheRange,
+            "emptyLibrary": emptyLibrary,
             "onFoil": onFoil, "cleanJibes": cleanJibes, "cleanJibesNote": cleanJibesNote,
             "best2s": best2s, "best2sNote": best2sNote, "longestFlight": longestFlight,
             "flewThrough": flewThrough, "flewThroughNote": flewThroughNote, "cph": cph,
@@ -291,8 +295,7 @@ public enum AppShellCopy {
     public enum Periods {
         public static let empty = "No periods yet"
         public static let emptyLine =
-            "A session needs a recorded start before it can belong to a month. "
-            + "Import one and the months, seasons and trips fill in."
+            "Your months, seasons and trips fill in as your sessions arrive."
         public static let trips = "Trips"
         public static let tripsNote = "Spells at one spot. A holiday the library noticed. No gap wider than {days} days, at least {sessions} sessions."
         public static let months = "Months"
@@ -326,7 +329,7 @@ public enum AppShellCopy {
     public enum Gear {
         public static let noSpots = "No spots yet"
         public static let noSpotsLine = "Spots appear once sessions with GPS are in the library."
-        public static let spotsFooter = "Tap a spot to rename it. A name you type sticks through a re-cluster. Sessions starting within {radius} m of each other are one spot. Names come from the map when the network allows."
+        public static let spotsFooter = "Tap a spot to rename it. A name you type stays when you rebuild spots. Sessions starting within {radius} m of each other are one spot. Names come from the map when the network allows."
         public static let nameExample = "e.g. \"Duotone Unit 5 m\", \"Armstrong HA 925\"."
         public static let notesPlaceholder = "Size, year, anything worth remembering"
         public static let inTheQuiver = "In the quiver"

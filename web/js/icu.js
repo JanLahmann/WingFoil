@@ -148,7 +148,7 @@ async function listActivities(key, athlete, analyzeBuffer) {
           ${esc(a.type || "?")} · ${((a.distance || 0) / 1000).toFixed(1)} km</div>
       </div>
       <button class="ghost" type="button" data-id="${esc(a.id)}"
-              data-name="${esc(a.name || a.id)}">Analyze</button>
+              data-name="${esc(a.name || a.id)}">Analyse</button>
     </div>`).join("")}</div>`;
 
   for (const btn of el("icu-results").querySelectorAll("button[data-id]")) {

@@ -75,8 +75,9 @@ struct HealthImportView: View {
         } header: {
             Text("Recorded with Apple's Workout app?")
         } footer: {
-            Text("Record on an Apple Watch with Apple's own Workout app, under Surfing, "
-                 + "Water Sports or Sailing.\n\n"
+            // Sailing is off by default (the switches below), so it is not named as a way in.
+            Text("Record on an Apple Watch with Apple's own Workout app, under Surfing "
+                 + "or Water Sports.\n\n"
                  + "The GPS track and heart rate are then in the Health app.\n\n"
                  + "CleanJibe analyses them like any other recording. It reads the workouts "
                  + "you pick and nothing else.\n\n"

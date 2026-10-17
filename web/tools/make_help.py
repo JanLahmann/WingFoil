@@ -86,7 +86,10 @@ def html_text(text: str) -> str:
     out = re.sub(r"(?<![\w*])\*(.+?)\*(?![\w*])", r"<em>\1</em>", out)
     out = re.sub(r'"([^"]*)"', r"&ldquo;\1&rdquo;", out)
     out = out.replace("'", "&rsquo;")
-    return out.replace("→", "&rarr;")
+    out = out.replace("→", "&rarr;")
+    # The phone's `numbers` topic is this page's first section (SKIP_TOPICS), so a sentence
+    # that names it points at it, rather than naming a place without a way there (pattern B).
+    return out.replace("What the numbers mean", '<a href="#numbers">What the numbers mean</a>')
 
 
 #: Topics this page does **not** print as a fold, and why.

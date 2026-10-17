@@ -371,18 +371,18 @@ public enum HelpCatalog {
             ],
             items: [
                 .init(term: "Garmin, with the CleanJibe watch app",
-                      detail: "You get everything, and each verdict buzzes on your wrist. "
-                          + "Pump strokes and takeoff attempts need Log wrist motion on. It makes "
-                          + "the transfer time to Garmin Connect much longer."),
+                      detail: "You get everything: each verdict buzzes, and pumps count live. The "
+                          + "phone's pump analysis needs Log wrist motion on, which makes the "
+                          + "transfer time to Garmin Connect much longer."),
                 .init(term: "Garmin, with Garmin's own profile or another app",
                       detail: "You get every verdict and flight, with measured speed "
                           + "records. Your old sessions come in through intervals.icu too."),
-                .init(term: "Apple Watch, with Apple's Workout app",
-                      detail: "Bring it in through Strava or intervals.icu. In the beta, "
-                          + "Apple Health hands it over with measured speed."),
                 .init(term: "Apple Watch, with the CleanJibe watch app",
                       detail: "It is in the beta. You get measured speed, plus pump strokes and "
                           + "takeoff attempts from your wrist."),
+                .init(term: "Apple Watch, with Apple's Workout app",
+                      detail: "Bring it in through Strava or intervals.icu. In the beta, "
+                          + "Apple Health hands it over with measured speed."),
                 .init(term: "Polar, Suunto, COROS and the rest",
                       detail: "A FIT gives you measured speed records, through intervals.icu "
                           + "or shared in by hand. A .gpx carries positions only, so its "
@@ -461,7 +461,7 @@ public enum HelpCatalog {
                 // ever reading it. /help/ renders this on the web, where there is no arrow
                 // rule, and it failed on the first run.
                 "Open Import → Apple Health, allow CleanJibe to read workouts, and pick the "
-                + "ones you want. After the first one, switch on \"Import new Health "
+                + "ones you want. Switch on \"Import new Health "
                 + "workouts automatically\". The next session is then waiting when you open "
                 + "the app.",
                 "Speed comes off the watch's own GPS receiver, so these speed records are "
@@ -613,8 +613,9 @@ public enum HelpCatalog {
                           + "default. Sail can be switched on. Anything named wing, foil, "
                           + "kite, surf or SUP is offered too."),
                 .init(term: "Keep it automatic",
-                      detail: "Once one session has come in this way, a switch appears. "
-                          + "With it on, CleanJibe checks Strava whenever you open the app."),
+                      detail: "Import from Strava… has a switch, Import new Strava "
+                          + "activities automatically. With it on, CleanJibe checks Strava "
+                          + "whenever you open the app."),
                 .init(term: "A long history takes its time",
                       detail: "Strava lets an app ask 200 times every 15 minutes. A first "
                           + "import of many seasons may ask you to come back later."),
@@ -749,7 +750,7 @@ public enum HelpCatalog {
                 + "you do.",
             body: [
                 "While the phone is idle, CleanJibe asks intervals.icu for new activity. It "
-                + "looks for windsurf, wing, kite, surf and SUP, from any watch that syncs "
+                + "looks for windsurf, wing, kite, sail, surf and SUP, from any watch that syncs "
                 + "there.",
                 "You hear about the ones that are not in your library yet. The session is "
                 + "downloaded and analysed in the background, so tapping the notification "
@@ -1008,15 +1009,15 @@ public enum HelpCatalog {
                 + "heading change inside 8 s, on the foil or within 3 s of it.",
                 "It must also carve a real arc. That means at least 12 m of path, at a "
                 + "radius of 6 m or more. Spinning around beside the board carves no arc.",
-                "What kind of turn it was depends on the wind axis:",
+                "What kind of turn it was depends on the wind axis. A tack or a jibe needs "
+                + "90° of heading change and a crossing of the axis:",
             ],
             items: [
                 .init(term: "Jibe", detail: "Your course crosses the wind axis through downwind."),
                 .init(term: "Tack", detail: "Your course crosses the wind axis through upwind."),
                 .init(term: "Bear-away / round-up",
-                      detail: "A real course change that never crosses the axis. Counted "
-                          + "separately and left out of the tack and jibe tallies. It is not "
-                          + "a manoeuvre you either made or blew."),
+                      detail: "A course change under 90°, or one that never crosses "
+                          + "the axis. It stays out of the tack and jibe tallies."),
                 .init(term: "Turn",
                       detail: "A turn on a session where the wind axis was too uncertain to "
                           + "name it. It is still counted, just unnamed."),
@@ -1047,6 +1048,9 @@ public enum HelpCatalog {
                 + "watch recording, the accelerometer is read too.",
             ],
             items: [
+                .init(term: "If you never get going again",
+                      detail: "The window follows you for up to 30 s instead of 12. The "
+                          + "stop you end in is then this turn's."),
                 .init(term: "Flew through",
                       detail: "You never left the foil. No sample in the window is off-foil."),
                 // Jan, 10 October 2026 (X6): the rider's definition, and which verdict a
@@ -1494,8 +1498,8 @@ public enum HelpCatalog {
                           + "never written to a log. It goes to intervals.icu itself, "
                           + "encrypted, and nowhere else."),
                 .init(term: "Treat it like a password",
-                      detail: "It opens your intervals.icu account. Clear the field in "
-                          + "Settings to remove it, or regenerate it in Developer Settings. "
+                      detail: "It opens your intervals.icu account. Remove it in "
+                          + "Settings → intervals.icu, or regenerate it in Developer Settings. "
                           + "The old key stops working at once."),
                 // The website's one counter, in the privacy page's own terms
                 // (web/privacy/index.html, "umami", and docs/analytics.md).

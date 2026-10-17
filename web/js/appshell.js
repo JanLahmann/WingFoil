@@ -317,8 +317,9 @@ function buildLine() {
 /** The feedback door, composed out of docs/copy/feedback.json rather than typed. The three
  *  prompts and the invitation are what `verify_copy.py` demands of every mailto on this
  *  site, so composing beats retyping in two ways at once. */
-function feedbackMail() {
-  const body = FEEDBACK.prompts.map((p) => `${p}\n\n\n`).join("")
+export function feedbackMail(firstLine = "") {
+  const body = (firstLine ? `${firstLine}\n\n` : "")
+    + FEEDBACK.prompts.map((p) => `${p}\n\n\n`).join("")
     + "Your browser and device:\n\n"
     + `${buildLine()}\n\n`
     + `${FEEDBACK.invitation} Attach a screenshot or the session's .fit file if you can.\n`;
@@ -533,7 +534,8 @@ function renderWhatsNew() {
   }
   host.innerHTML = WHATS_NEW.map((entry) => `
     <article class="release">
-      <h3>${esc(heading(entry))}</h3>
+      <h3>${esc(heading(entry))}${entry.channel === "beta"
+        ? ' <span class="tag beta">beta</span>' : ""}</h3>
       <p class="dim small">${esc(entry.title)} · ${esc(dayText(entry.date))}</p>
       <ul>${entry.lines.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>
     </article>`).join("");

@@ -10,6 +10,9 @@ import WingFoilKit
 /// a wind axis — is **absent**, not zero: those sessions drop out of their chart and the
 /// chart says how many are missing rather than plotting a flat, flattering line.
 struct TrendsView: View {
+    /// A rate point is missing under the 20-minute floor: "N of M sessions were too short
+    /// for a rate", the session page's own words.
+    static let tooShort = "were too short for a rate"
     @Environment(SessionStore.self) private var store
     @Environment(\.dynamicTypeSize) private var typeSize
 
@@ -30,7 +33,7 @@ struct TrendsView: View {
     @State private var sharing: Period?
 
     enum TrendRange: String, CaseIterable, Identifiable {
-        case fourWeeks = "4 w"
+        case fourWeeks = "4 weeks"
         case season = "Season"
         case all = "All"
 
@@ -87,17 +90,20 @@ struct TrendsView: View {
                         //
                         // The example-only line names two doors, and since 9 Oct 2026 the
                         // screen offers them (rider review I1, `ExampleOnlyDoors`).
+                        // A library with no session at all is the first run too: the same
+                        // title and the same two doors, never "widen the range".
+                        let firstRun = store.sessions.isEmpty || store.hasOnlyExampleSessions
                         ContentUnavailableView {
-                            Label(store.hasOnlyExampleSessions
+                            Label(firstRun
                                       ? ExampleOnlyNote.trendsTitle
                                       : AppShellCopy.Trends.nothingInRange,
                                   systemImage: "chart.xyaxis.line")
                         } description: {
-                            Text(store.hasOnlyExampleSessions
-                                     ? ExampleOnlyNote.trends
-                                     : AppShellCopy.Trends.widenTheRange)
+                            Text(store.sessions.isEmpty ? AppShellCopy.Trends.emptyLibrary
+                                 : store.hasOnlyExampleSessions ? ExampleOnlyNote.trends
+                                 : AppShellCopy.Trends.widenTheRange)
                         } actions: {
-                            if store.hasOnlyExampleSessions { ExampleOnlyDoors() }
+                            if firstRun { ExampleOnlyDoors() }
                         }
                         .frame(maxWidth: .infinity, minHeight: 220)
                     } else {
@@ -360,7 +366,8 @@ struct TrendsView: View {
         TrendChart(title: AppShellCopy.Trends.cph, unit: "clean jibes / h",
                    points: points, tone: Color.accentColor,
                    value: \.cleanJibesPerHour,
-                   headline: TrendHeadline.cleanJibesPerHour)
+                   headline: TrendHeadline.cleanJibesPerHour,
+                   missingReason: Self.tooShort)
         // **CPH, then ONE dry-turn rate** (rider review I20, 9 Oct 2026): JPH while no
         // session in the range has a tack, TPH once one does — the session page's rule over
         // a range. On a jibes-only library the two were one line drawn twice. Every rate
@@ -371,13 +378,15 @@ struct TrendsView: View {
                        tone: Color.accentColor,
                        value: \.jibesPerHour,
                        note: AppShellCopy.Trends.jphNote,
-                       headline: TrendHeadline.jibesPerHour)
+                       headline: TrendHeadline.jibesPerHour,
+                       missingReason: Self.tooShort)
         case .tph:
             TrendChart(title: AppShellCopy.Trends.tph, unit: "turns / h", points: points,
                        tone: Color.accentColor,
                        value: \.turnsPerHour,
                        note: AppShellCopy.Trends.tphNote,
-                       headline: TrendHeadline.turnsPerHour)
+                       headline: TrendHeadline.turnsPerHour,
+                       missingReason: Self.tooShort)
         }
         weeklyChart
         DisclosureGroup(isExpanded: $showMore) {
@@ -558,11 +567,15 @@ private struct TrendChart: View {
     var uncertified: ((TrendPoint) -> Bool)?
     /// How the one-line verdict above the chart sums up a month (`TrendHeadline`).
     var headline: TrendHeadline.Spec?
+    /// Why a point is missing, after "N of M sessions …". A rate chart's points are missing
+    /// because the session was under the 20-minute rate floor (`RateFloor`), and says so.
+    var missingReason: String
 
     init(title: String, unit: String, points: [TrendPoint], tone: Color,
          value: @escaping (TrendPoint) -> Double?, domain: ClosedRange<Double>? = nil,
          reference: Double? = nil, uncertified: ((TrendPoint) -> Bool)? = nil,
-         note: String? = nil, headline: TrendHeadline.Spec? = nil) {
+         note: String? = nil, headline: TrendHeadline.Spec? = nil,
+         missingReason: String = "cannot report this") {
         self.title = title
         self.unit = unit
         self.points = points
@@ -573,6 +586,7 @@ private struct TrendChart: View {
         self.uncertified = uncertified
         self.note = note
         self.headline = headline
+        self.missingReason = missingReason
     }
 
     /// This month against the one before, from the points the chart draws. Hours are the
@@ -621,7 +635,7 @@ private struct TrendChart: View {
                 chart
                 if series.count < points.count {
                     let missing = String(points.count - series.count) + " of "
-                        + String(points.count) + " sessions cannot report this"
+                        + String(points.count) + " sessions " + missingReason
                     let tail = note.map { " · " + $0 } ?? ""
                     Text(missing + tail)
                         .font(.caption2)

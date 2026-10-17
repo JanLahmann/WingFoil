@@ -331,7 +331,10 @@ const totalFoil = (members) => members.reduce((t, m) => t + (m.foilTimeS || 0), 
 
 const lastVisit = (members) => {
   const dates = members.map((m) => m.startUtc).filter(Boolean).sort();
-  return dates.length ? dates[dates.length - 1].slice(0, 10) : null;
+  if (!dates.length) return null;
+  // "12 Oct", the library's own spelling of a day, rather than an ISO stamp.
+  const d = new Date(dates[dates.length - 1]);
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
 };
 
 /**
@@ -356,13 +359,13 @@ export function renderSpots(host, entries, onChanged) {
       return `<li>
         <button type="button" class="linkish spot-name" data-spot="${index}">${
           esc(spot.name)}</button>
-        <span class="dim">${spot.members.length} sessions ·
+        <span class="dim">${spot.members.length} ${spot.members.length === 1 ? "session" : "sessions"} ·
           ${nf(totalKm(spot.members), 1)} km ·
           ${hms(totalFoil(spot.members))} on foil${last ? ` · last ${esc(last)}` : ""}</span>
       </li>`;
     }).join("")}</ul>
     <p class="spot-actions">
-      <button type="button" class="ghost small-btn" id="spot-recluster">Re-cluster
+      <button type="button" class="ghost small-btn" id="spot-recluster">Rebuild
         spots</button>
       <button type="button" class="ghost small-btn" id="spot-lookup"${
         anyAuto ? "" : " disabled"}>Look up names again</button>
@@ -387,7 +390,7 @@ export function renderSpots(host, entries, onChanged) {
   }
   host.querySelector("#spot-recluster").addEventListener("click", () => {
     const fresh = spotsFor(entries);
-    status.textContent = `Re-clustered into ${fresh.length} `
+    status.textContent = `Sorted into ${fresh.length} `
       + `${fresh.length === 1 ? "spot" : "spots"}`;
     if (onChanged) onChanged();
   });

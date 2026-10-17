@@ -48,9 +48,9 @@ struct SpotsView: View {
                 Button("Look up names again") { Task { await store.nameSpots() } }
                     .disabled(!spots.contains { $0.spot.autoNamed })
             } footer: {
-                Text("Rebuild spots sorts your sessions into spots again, "
-                     + String(Int(SpotClusterer.defaultRadiusM))
-                     + " m apart. Names you typed stay.")
+                // The Gear & spots tab's own footer line, so one fact has one sentence.
+                Text(AppShellCopy.fill(AppShellCopy.Gear.spotsFooter,
+                                       ["radius": String(Int(SpotClusterer.defaultRadiusM))]))
             }
         }
         .navigationTitle("Spots")
@@ -76,12 +76,11 @@ struct SpotsView: View {
                         .foregroundStyle(.readableSecondary)
                 }
                 Spacer()
-                Text("\(entry.sessions)")
-                    .font(.subheadline.monospacedDigit())
-                    .foregroundStyle(.readableSecondary)
             }
+            // "3 sessions · last 12 Oct": a bare count and four-decimal coordinates were
+            // numbers a rider could not name.
             HStack(spacing: 6) {
-                Text(String(format: "%.4f, %.4f", entry.spot.lat, entry.spot.lon))
+                Text("\(entry.sessions) " + (entry.sessions == 1 ? "session" : "sessions"))
                 if let last = entry.lastVisit {
                     // `.current`: a spot spans sessions and has no one zone of its own. The
                     // date is "how long since I was there", asked from where you are now.

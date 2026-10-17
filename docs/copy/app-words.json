@@ -32,7 +32,7 @@
       "footChannel" : "Speed here is the manoeuvre channel, derived from position. The GPS Doppler speed the records use is smoothed. It would read differently.",
       "footDrawn" : "The drawing is {before} s before the end and {after} s after it.",
       "footEntryBand" : "The bands are the engine's windows. \"Entry\" is the {seconds} s the flight was ending at.",
-      "footEvidence" : "\"Evidence\" is how much gap-free recording there actually was.",
+      "footEvidence" : "\"Recorded after the end\" is how much gap-free recording there was after it.",
       "footInOut" : "\"In\" is the fastest sample of the entry window. \"Out\" is where the speed came back to the engine's flying-again threshold.",
       "footLow" : "Only \"low\" is the engine's. It is the slowest sample of the off-foil run, placed where this window comes nearest it.",
       "footMarks" : "The thick, coloured part is the flight. Everything past the dot is already off the foil. Ticks are one second apart.",
@@ -47,7 +47,7 @@
       "noSpotsLine" : "Spots appear once sessions with GPS are in the library.",
       "notesPlaceholder" : "Size, year, anything worth remembering",
       "retire" : "Turn off to retire it without losing its sessions.",
-      "spotsFooter" : "Tap a spot to rename it. A name you type sticks through a re-cluster. Sessions starting within {radius} m of each other are one spot. Names come from the map when the network allows."
+      "spotsFooter" : "Tap a spot to rename it. A name you type stays when you rebuild spots. Sessions starting within {radius} m of each other are one spot. Names come from the map when the network allows."
     },
     "icu" : {
       "emptyFix" : "Connect Garmin in intervals.icu (Settings → device connections). The back-fill takes a few minutes. If it is already connected, you may simply have no windsurf, wing, kite, surf or SUP activity there yet.",
@@ -77,7 +77,7 @@
     "periods" : {
       "bothDatesCount" : "Both dates count.",
       "empty" : "No periods yet",
-      "emptyLine" : "A session needs a recorded start before it can belong to a month. Import one and the months, seasons and trips fill in.",
+      "emptyLine" : "Your months, seasons and trips fill in as your sessions arrive.",
       "months" : "Months",
       "monthsNote" : "Calendar months, by the day you rode.",
       "noSessionInRange" : "No session in that range.",
@@ -95,8 +95,8 @@
       "noQualifying" : "No qualifying speed window under this filter.",
       "noRecords" : "No records yet",
       "sessionRecordsFooter" : "These are your best afternoons rather than your best windows, so nothing here is marked estimated. A poor recording can get a speed wrong, but the jibe count and the minutes are not about speed.",
-      "speedFreshness" : "The dot on a record's name says how fresh it is. Filled within a month. Hollow within the season. Faint when it is older than 6 months.",
-      "speedHead" : "Doppler speed, GP3S windows. {certified} of {count} have measured speed.",
+      "speedFreshness" : "The dot on a record's name says how fresh it is. Filled within a month. Hollow within six months. Faint when it is older.",
+      "speedHead" : "{certified} of {count} records come from the watch's measured speed.",
       "speedMeasured" : "Measured speed comes from the watch's own speed channel. Speed estimated from positions is marked."
     },
     "rider" : {
@@ -154,6 +154,7 @@
       "cleanJibes" : "Clean jibes",
       "cleanJibesNote" : "Jibes that flew through, held at least 70 % of their entry speed, then 10 quiet seconds on the foil.",
       "cph" : "Clean jibes an hour (CPH)",
+      "emptyLibrary" : "Connect intervals.icu in Settings, or import a .fit file, and the charts fill as you ride.",
       "flewThrough" : "Flew-through rate",
       "flewThroughNote" : "Turns that never lost the foil. Every counted turn, not jibes alone.",
       "jph" : "Dry jibes an hour (JPH)",
@@ -220,7 +221,7 @@
       "footTicks" : "Ticks are one second apart.",
       "noBearings" : "No usable bearings through this window. The steps were shorter than the receiver's own scatter.",
       "noGeometry" : "No GPS fixes through this turn. Numbers only.",
-      "nothingToCompare" : "Nothing to compare with. This session has no other jibe that flew through the same way round."
+      "nothingToCompare" : "Nothing to compare with. No other clean jibe this session turned the same way round."
     },
     "turns" : {
       "cleanRule" : "Clean: you flew through, held at least {pct} % of your entry speed, then {quiet} quiet seconds on the foil.",

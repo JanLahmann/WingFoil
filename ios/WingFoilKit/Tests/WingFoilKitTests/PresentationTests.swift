@@ -2406,7 +2406,7 @@ import Testing
         #expect(!card.headlineMissing)
         #expect(card.headlineCaption == "median takeoff cost · 23 of 23 takeoffs")
         #expect(card.warning == nil, "76 % usable and 23/23 measured is not a thin session")
-        #expect(card.footnote == "HR usable 76% of the session · peak 20 s after the effort")
+        #expect(card.footnote == "Heart rate usable 76 % of the session · peak 20 s after the effort")
     }
 
     /// A native recording anchors on the flight start instead of the first pump stroke —
@@ -2417,7 +2417,7 @@ import Testing
         s.takeoffCostCoverage = HrCoverage(valid: 52, total: 52)
         let card = try #require(HrCostCard.make(analysis(s)))
         #expect(card.headlineCaption
-            == "median takeoff cost · 52 of 52 takeoffs · 52 anchored on the flight start")
+            == "median takeoff cost · 52 of 52 takeoffs · 52 timed from the moment you flew")
     }
 
     /// Every secondary number that could not be measured says why, and none of them
@@ -2438,7 +2438,7 @@ import Testing
         #expect(card.stats.allSatisfy { !$0.caption.isEmpty }, "a dash without a reason")
         #expect(card.stats[0].caption == "no takeoffs to rate")
         #expect(card.stats[1].caption == "no pump bursts on this source")
-        #expect(card.stats[2].caption == "no takeoff raised HR enough to recover from")
+        #expect(card.stats[2].caption == "no takeoff raised your heart rate enough to recover from")
         #expect(card.baselineNote == nil, "no bins, nothing to say about drift")
         #expect(card.binCaption == nil)
     }
@@ -2451,8 +2451,8 @@ import Testing
         s.medianSwimRecoveryS = nil
         s.swimRecoveryCoverage = HrCoverage(valid: 0, total: 0)      // never rose at all
         let card = try #require(HrCostCard.make(analysis(s)))
-        #expect(card.stats[2].caption == "HR never fell halfway back within 2 min")
-        #expect(card.stats[3].caption == "no fall raised HR enough to recover from")
+        #expect(card.stats[2].caption == "Heart rate never fell halfway back within 2 min")
+        #expect(card.stats[3].caption == "no fall raised your heart rate enough to recover from")
     }
 
     /// The happy-path secondary numbers, including the one decimal the pumping/cruising
@@ -2460,7 +2460,7 @@ import Testing
     @Test func hrCardSecondaryStatsQuoteTheirDenominators() throws {
         let card = try #require(HrCostCard.make(analysis(exampleSummary())))
         #expect(card.stats[0].value == "0.76 bpm")
-        #expect(card.stats[0].caption == "median 0.75 · 23 of 23 takeoffs")
+        #expect(card.stats[0].caption == "median 0.75 bpm · 23 of 23 takeoffs")
         #expect(card.stats[1].value == "+5.6 bpm")
         // One decimal on the operands too — see `hrPumpCruiseDeltaAgreesWithItsOperands`.
         #expect(card.stats[1].caption == "101.6 vs 96.0 bpm on the foil")
@@ -2482,7 +2482,7 @@ import Testing
         s.takeoffRecoveryCoverage = HrCoverage(valid: 2, total: 9)
         let card = try #require(HrCostCard.make(analysis(s)))
         let warning = try #require(card.warning)
-        #expect(warning.contains("only 38% of the session"))
+        #expect(warning.contains("only 38 % of the session"))
         #expect(warning.contains("only 3 of 40 takeoffs could be measured"))
         #expect(card.stats[2].thin, "2 of 9 recoveries is a number to distrust")
         #expect(!card.stats[0].thin, "23 of 23 stroke ratios is not")
@@ -2495,7 +2495,7 @@ import Testing
         s.pumpCruise.pumpingCoveredS = 200
         s.pumpCruise.pumpingSpanS = 455.64
         let card = try #require(HrCostCard.make(analysis(s)))
-        #expect(card.stats[1].caption == "101.6 vs 96.0 bpm on the foil · 44% covered")
+        #expect(card.stats[1].caption == "101.6 vs 96.0 bpm on the foil · 44 % covered")
         #expect(card.stats[1].thin)
     }
 
@@ -2579,7 +2579,7 @@ import Testing
         #expect(card.binCaption?.contains("20-minute bins") == true)
         #expect(card.bins[1].accessibilityText == "20–40 min, cost not measurable")
         #expect(card.bins[2].accessibilityText
-            == "40–92 min, cost -9 bpm, 33% of 3 attempts, from 103 bpm")
+            == "40–92 min, cost -9 bpm, 33 % of 3 attempts, from 103 bpm")
     }
 
     /// The sentence that stops a falling cost curve being read as "it got easier".
@@ -3306,8 +3306,8 @@ import Testing
                 == "ends flight 12 · started 41:07 · 7 pumps")
         #expect(FlightPairing.flightLine(flight)
                 == "flight 12 of 55 · 1:23 · 272 m · ended: touchdown")
-        #expect(FlightPairing.failedLine(strokes: 3) == "no flight · 3 strokes")
-        #expect(FlightPairing.failedLine(strokes: 1) == "no flight · 1 stroke")
+        #expect(FlightPairing.failedLine(strokes: 3) == "no flight · 3 pumps")
+        #expect(FlightPairing.failedLine(strokes: 1) == "no flight · 1 pump")
     }
 
     /// Absence is absence: no accelerometer means the stroke count is *missing*, and a

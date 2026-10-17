@@ -719,7 +719,14 @@ struct LibraryView: View {
                 sheet = .helpTopic(.appleWatchApp)
             }
             #endif
-            // 3 · Strava. **Not labelled "Connect Strava"**: Strava's guidelines reserve
+            // 3 · The door that needs no account at all, and the only row that acts on this
+            // screen rather than opening another one.
+            WayInRow(icon: "doc.badge.plus",
+                     label: "Import a file",
+                     line: "A FIT from any watch. AirDrop and Files work.") {
+                showFileImporter = true
+            }
+            // 4 · Strava, last: the ways-in order (docs/guide/getting-started.json, pattern J). **Not labelled "Connect Strava"**: Strava's guidelines reserve
             // the connect action for their own button and their own wording, *Connect with
             // Strava* (`StravaBrand`), and that button lives in Settings → Strava. This row
             // is the way to it, so it is named the way the intervals.icu row above it is.
@@ -734,13 +741,6 @@ struct LibraryView: View {
                          line: "Strava gives your track but not your speed.") {
                     openSettings()
                 }
-            }
-            // 4 · The door that needs no account at all, and the only row that acts on this
-            // screen rather than opening another one.
-            WayInRow(icon: "doc.badge.plus",
-                     label: "Import a file",
-                     line: "A FIT from any watch. AirDrop and Files work.") {
-                showFileImporter = true
             }
         }
         .padding(16)
@@ -783,16 +783,11 @@ struct LibraryView: View {
         sheet = .settings
     }
 
-    /// The Garmin export ZIP is a beta door (docs/channels.md), so only the beta's empty
-    /// state offers it as the way in.
-    #if BETA
+    /// The Garmin export ZIP is in every channel since 14 Sep 2026 (docs/channels.md), so one
+    /// sentence for all three, intervals.icu first (pattern J). "Pull down to sync" was said
+    /// by the footer and the button already.
     private static let emptyLibraryHint =
-        "Import a FIT file or a Garmin export ZIP, or sync your intervals.icu "
-        + "activities. Pull down to sync."
-    #else
-    private static let emptyLibraryHint =
-        "Import a FIT file, or sync your intervals.icu activities. Pull down to sync."
-    #endif
+        "Sync intervals.icu, or import a FIT or a Garmin export ZIP."
 
     /// **"3 new sessions analysed as Wingfoil · Review".**
     ///

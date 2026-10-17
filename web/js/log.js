@@ -128,7 +128,7 @@ function renderDivergence(result) {
     return;
   }
   host.innerHTML = `<div class="table-scroll"><table class="divergence-table">
-    <thead><tr><th>metric</th><th>watch</th><th>phone</th><th>&Delta;</th></tr></thead>
+    <thead><tr><th>metric</th><th>watch</th><th>analysis</th><th>difference</th></tr></thead>
     <tbody>${rows.map((r) => `<tr>
       <td>${esc(r.metric)}</td><td>${esc(r.watch)}</td><td>${esc(r.phone)}</td>
       <td class="delta">${esc(r.delta)}</td></tr>`).join("")}</tbody></table></div>

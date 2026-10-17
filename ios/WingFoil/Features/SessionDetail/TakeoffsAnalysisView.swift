@@ -65,8 +65,12 @@ struct TakeoffsAnalysisView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
+            // Filtered, the heading counts what the list shows: "4 of 23 attempts · failed".
             Text(words.pumping
-                 ? "All " + String(detail.takeoffMarks.count) + " attempts"
+                 ? (filter == .all
+                    ? "All " + String(detail.takeoffMarks.count) + " attempts"
+                    : String(attempts.count) + " of " + String(detail.takeoffMarks.count)
+                        + " attempts · " + filter.label.lowercased())
                  : "All " + String(detail.takeoffMarks.count) + " planing starts")
                 .font(.headline)
             if words.pumping { chips }
@@ -170,6 +174,21 @@ struct TakeoffsAnalysisView: View {
             wristUnder: visibility.isVisible(.splash) ? detail.splashMarks.count : 0)
     }
 
+    /// One empty line per filter: each says what this filter found, and only the one that
+    /// could be blind says so. (The Failed segment is not offered without an accelerometer.)
+    private var emptyLine: String {
+        switch filter {
+        case .free: return "No free takeoffs this session. Every one took pumping."
+        case .failed: return "No failed attempts this session."
+        case .success: return "No takeoffs this session."
+        case .all:
+            return detail.analysis.capabilities.hasAccel
+                ? "No takeoffs this session."
+                : "No takeoffs this session. A recording without a wrist accelerometer "
+                    + "cannot see a failed attempt."
+        }
+    }
+
     // MARK: - List
 
     @ViewBuilder
@@ -177,10 +196,7 @@ struct TakeoffsAnalysisView: View {
         if attempts.isEmpty {
             ContentUnavailableView("No \(filter.description)",
                                    systemImage: "arrow.up.circle",
-                                   description: Text("This session has none. A recording "
-                                                     + "without a wrist accelerometer "
-                                                     + "cannot see a failed attempt at "
-                                                     + "all."))
+                                   description: Text(emptyLine))
                 .frame(maxWidth: .infinity, minHeight: 160)
         } else {
             VStack(spacing: 0) {
@@ -204,7 +220,7 @@ struct TakeoffsAnalysisView: View {
 
     private var headerRow: some View {
         HStack(spacing: 10) {
-            Text("at").scaledColumn(46, relativeTo: .caption)
+            Text("at").scaledColumn(56, relativeTo: .caption)
             // The stroke column is not blanked on a windsurf session, it is **not drawn**:
             // a column of dashes is a measurement that failed, and nothing was measured.
             if words.pumping {
@@ -228,7 +244,7 @@ struct TakeoffsAnalysisView: View {
             Text(words.pumping
                  ? "An attempt is a pumping burst and what came of it. "
                     + "The ones that got up are takeoffs. "
-                    + "The ones that did not are failed pumping episodes. "
+                    + "The ones that did not are failed attempts. "
                     + "A recording with no accelerometer shows the takeoffs only."
                  : "A planing start is the speed rise that ended in a planing run. "
                     + "Windsurf analysis reads no pump channel. "
@@ -236,7 +252,7 @@ struct TakeoffsAnalysisView: View {
                     + "Every start listed here is one that worked.")
             if k.runsTruncated > 0 {
                 Text(String(k.runsTruncated) + (k.runsTruncated == 1 ? " run" : " runs")
-                     + " not in the record. "
+                     + " cut short by the recording. "
                      + "The recording started or stopped inside them, so they have no "
                      + "time to foil.")
             }
@@ -264,7 +280,7 @@ private struct AttemptRowView: View {
             Text(Fmt.clock(mark.t))
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(.readableSecondary)
-                .scaledColumn(46, relativeTo: .caption)
+                .scaledColumn(56, relativeTo: .caption)
             if pumping {
                 Text(mark.pumps.map(String.init) ?? "—")
                     .font(.subheadline.monospacedDigit())

@@ -168,7 +168,7 @@ struct TrackMapView: View {
     /// session. Both tolerances scale with how much water the map is showing — the span the
     /// camera has *now*, not the one it opened on, which is what keeps them a fingertip after
     /// the rider has zoomed into one jibe.
-    /// What "Details ›" opens, or nil where there is nothing to open.
+    /// What "Open turn ›" / "Open flight end ›" opens, or nil where there is nothing to open.
     private func drillIn(_ callout: SessionDetail.Callout) -> (() -> Void)? {
         if let index = callout.turnIndex {
             return { openedTurn = TurnDetailRequest(id: index) }
@@ -276,7 +276,9 @@ private struct TrackCalloutCard: View {
                     .accessibilityIdentifier("pairing-line")
             }
             if open != nil {
-                Text("Details ›")
+                // Names what it opens: "Details" was also the name of the page's fourth tab.
+                Text(callout.flightEndIndex != nil && callout.turnIndex == nil
+                     ? "Open flight end ›" : "Open turn ›")
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(Color.accentColor)
                     .accessibilityIdentifier("turn-details-link")

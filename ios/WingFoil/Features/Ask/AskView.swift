@@ -64,6 +64,9 @@ private struct AskConsent: View {
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
                 .padding(.top, 8)
+                Link("CleanJibe's privacy page",
+                     destination: URL(string: Branding.siteURL + "/privacy/")!)
+                    .font(.footnote)
                 Link("Anthropic's privacy policy",
                      destination: URL(string: "https://www.anthropic.com/legal/privacy")!)
                     .font(.footnote)
@@ -97,6 +100,7 @@ private struct AskChat: View {
         var failed = false
     }
 
+    @AppStorage("ask.consented") private var consented = true
     @State private var messages: [Message] = []
     @State private var draft = ""
     @State private var asking: Task<Void, Never>?
@@ -142,6 +146,9 @@ private struct AskChat: View {
                 Label(AskClient.Failure.unsupported.message, systemImage: "exclamationmark.triangle")
                     .font(.subheadline)
             }
+            // The consent page again, on request (rider review, 16 Oct 2026): it shows once.
+            Button("What is sent") { consented = false }
+                .font(.footnote)
             ForEach(starters, id: \.self) { q in
                 Button(q) { send(q) }
                     .buttonStyle(.bordered)

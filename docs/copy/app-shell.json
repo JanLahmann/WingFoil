@@ -98,7 +98,7 @@
       {
         "id": "strava",
         "here": false,
-        "line": "Take this one on the iPhone app. Strava sign-in needs it."
+        "line": "Strava sign-in needs the iPhone app. Export Original on strava.com gives you a file the browser app opens."
       }
     ]
   },

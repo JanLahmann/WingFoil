@@ -211,7 +211,9 @@ struct RecordsView: View {
             Text(emptyMessage)
         } actions: {
             // The line names two doors; these are them (rider review I1).
-            if loaded && store.hasOnlyExampleSessions { ExampleOnlyDoors() }
+            if loaded && (store.sessions.isEmpty || store.hasOnlyExampleSessions) {
+                ExampleOnlyDoors()
+            }
         }
     }
 
@@ -233,7 +235,8 @@ struct RecordsView: View {
 
     private var emptyTitle: String {
         guard loaded else { return "Loading…" }
-        return store.hasOnlyExampleSessions ? ExampleOnlyNote.recordsTitle : AppShellCopy.Records.noRecords
+        return store.sessions.isEmpty || store.hasOnlyExampleSessions
+            ? ExampleOnlyNote.recordsTitle : AppShellCopy.Records.noRecords
     }
 
     private var recordsHeader: some View { RecordTableHeader() }
@@ -608,7 +611,7 @@ enum Medal {
     var label: String {
         switch self {
         case .gold: "set within the last month"
-        case .silver: "set this season"
+        case .silver: "set in the last six months"
         case .bronze: "older than six months"
         }
     }

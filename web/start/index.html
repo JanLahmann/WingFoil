@@ -88,8 +88,8 @@
   <div class="sectionnav-inner">
     <ul>
       <li><a href="#apps">Get the apps</a></li>
-      <li><a href="#routes">The ways in</a></li>
-      <li><a href="#stuck">If something breaks</a></li>
+      <li><a href="#routes">The ways in, one per watch</a></li>
+      <li><a href="#stuck">If something does not work</a></li>
       <li><a href="#watches">Which watch</a></li>
       <li><a href="#history">Your old sessions</a></li>
     </ul>
@@ -166,8 +166,8 @@
         <!-- The version and the count are written by web/tools/make_devices.py out of
              garmin/manifest.xml; never type them. -->
         <p class="note">
-          <span data-copy="garmin-count">42</span> watches at
-          <strong><span data-copy="garmin-version">0.9.21</span></strong>.
+          <span data-copy="garmin-count">48</span> watches at
+          <strong><span data-copy="garmin-version">0.9.24</span></strong>.
           <a href="#garmin-list">The list</a> names every one, and says what to do if yours
           is not on it.
         </p>
@@ -344,7 +344,7 @@
           </li>
           <li>
             <h3>Import it on the iPhone</h3>
-            <p>Import → <strong>Apple Health</strong>. Allow CleanJibe to read workouts and routes. Switch every one on, or there is nothing to read. Then pick yours.</p>
+            <p>Import → <strong>Import from Health…</strong>. Allow CleanJibe to read workouts and routes. Switch every one on, or there is nothing to read. Then pick yours.</p>
           </li>
           <li>
             <h3>Keep it automatic</h3>
@@ -419,7 +419,7 @@
           </li>
           <li>
             <h3>Keep it automatic</h3>
-            <p>Once one session has come in this way a toggle appears, and CleanJibe checks Strava whenever you open the app.</p>
+            <p>Import from Strava… has a switch, <strong>Import new Strava activities automatically</strong>. With it on, CleanJibe checks Strava whenever you open the app.</p>
           </li>
           <li>
             <h3>What it costs</h3>
@@ -598,10 +598,10 @@
       <article class="panel claim">
         <h3>Garmin</h3>
         <p>
-          <span data-copy="garmin-count">42</span> Garmin watches run the CleanJibe watch
+          <span data-copy="garmin-count">48</span> Garmin watches run the CleanJibe watch
           app, fenix 8 down to v&iacute;voactive. <a href="#garmin-list">The list</a> below
           names them by family. Watch app
-          <strong><span data-copy="garmin-version">0.9.21</span></strong> today.
+          <strong><span data-copy="garmin-version">0.9.24</span></strong> today.
         </p>
         <p class="note">
           <strong>Only the fenix 8 has been ridden on real water by us.</strong> Every other
@@ -740,7 +740,7 @@
           <tr>
             <td class="l stack-lead">A phone in a pouch, any GPX</td>
             <td class="l" data-th="You get">Positions only</td>
-            <td class="l" data-th="How it gets in">The iOS share sheet, or the browser app</td>
+            <td class="l" data-th="How it gets in">The iOS share sheet <span class="tag beta">beta</span>, or the browser app</td>
           </tr>
         </tbody>
       </table>
@@ -748,7 +748,10 @@
 
     <p class="note">
       <strong>No watch at all works.</strong> A phone in a waterproof pouch on your body
-      records a <code>.gpx</code>. You get the track, the flights, the jibes and their
+      records a <code>.gpx</code>. The browser app and the CleanJibe beta read it.
+    </p>
+    <p class="note">
+      You get the track, the flights, the jibes and their
       verdicts, with speed estimated from positions. <a href="../help/#help-phoneOnly">Help</a> says where to
       put the phone.
     </p>
@@ -799,24 +802,20 @@
       CleanJibe imports is analysed as it lands, so Records and Trends fill up by themselves.
     </p>
     <p>
-      One button, <code>+</code>, holds every door. <strong>Import from Health</strong> takes an
-      Apple Watch. <strong>Sync intervals.icu</strong> and the <strong>Garmin export ZIP</strong>
-      take a Garmin. The ZIP carries your whole history in one import.
+      One button, <code>+</code>, brings everything in. <strong>Sync intervals.icu</strong>
+      and the <strong>Garmin export ZIP</strong> take a Garmin. The ZIP carries your whole
+      history in one import.
     </p>
     <p>
-      <strong>Strava</strong> takes anything that reaches it. <strong>FIT, GPX, TCX or
-      ZIP</strong> takes a Polar, a Suunto, a COROS or any file at all.
+      <strong>Import from Health</strong> <span class="tag beta">beta</span> takes an Apple
+      Watch. <strong>FIT, GPX, TCX or ZIP</strong> takes a Polar, a Suunto, a COROS or any
+      file. <strong>Strava</strong> takes anything that reaches it.
     </p>
     <p class="note">
       Strava hands over positions, not the speed your watch measured. Those sessions&rsquo;
       speed records are marked <em>estimated</em>. Without the watch&rsquo;s own speed, a
       fall can read as a touchdown. Take the same afternoon off intervals.icu instead where
       you can.
-    </p>
-    <p class="note">
-      Strava lets a new app connect a limited number of riders, and the app says so plainly.
-      If you are told the app is full, tell us. <a href="#guide-strava">The Strava card</a>
-      shows the way in through a file.
     </p>
 
     <!-- THE FOUR STEPS, and they are not this page's to word: docs/copy/icu-setup.json,
@@ -841,7 +840,10 @@
       <p>
         Step four ends on the app's own button, <strong data-copy="icu-save">Save &amp; check</strong>.
         It verifies the key and says how many activities it can see. The iPhone asks
-        for one thing, your personal API key. The Athlete ID is the browser analyzer's.
+        for one thing, your personal API key.
+      </p>
+      <p>
+        The browser app also has an Athlete ID field. You can leave it at 0.
       </p>
     </details>
   </section>

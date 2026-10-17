@@ -117,7 +117,7 @@ export async function showTrends(saved) {
   const signature = `${entries.map((e) => e.id).join("|")}|${rangeKey()}|${policy}`;
   if (cache.signature !== signature) {
     for (const host of hosts()) {
-      host.innerHTML = `<p class="note">Aggregating ${entries.length} sessions in Python…</p>`;
+      host.innerHTML = `<p class="note">Adding up your ${entries.length} sessions…</p>`;
     }
     try {
       const data = await ask("aggregate", { digestsJson: JSON.stringify(entries),
@@ -130,9 +130,8 @@ export async function showTrends(saved) {
       cache = { signature, data, ranged };
     } catch (err) {
       for (const host of hosts()) {
-        host.innerHTML = `<p class="note">Could not aggregate the library: ${esc(err.message)}
-          <br><br>Records and trends need the Python runtime. The library list does not, so
-          your sessions are still there and still openable.</p>`;
+        host.innerHTML = `<p class="note">Records and trends could not be worked out. Your
+          sessions are safe and still open. <span class="dim small">${esc(err.message)}</span></p>`;
       }
       return;
     }
@@ -554,7 +553,7 @@ async function showRange(from, to) {
   if (!out) return;
   rangeFrom = from || "";
   rangeTo = to || "";
-  out.innerHTML = `<p class="note">Aggregating that range in Python…</p>`;
+  out.innerHTML = `<p class="note">Adding up that range…</p>`;
   try {
     const period = await ask("period", { digestsJson: JSON.stringify(entries),
                                          start: from || null, end: to || null });
@@ -720,7 +719,7 @@ function drawWeeks(host, weeks) {
   // The count is the phone's line. How a week is cut is the browser's own: the phone's
   // week runs on the phone's clock, and this one on each session's local time.
   note.textContent = `${say("trends.weeksOnTheWater", { ridden, weeks: weeks.length })} `
-    + "Weeks start on Monday, the ISO-8601 week. "
+    + "Weeks start on Monday. "
     + "Each session counts in its own local time.";
   box.appendChild(note);
 

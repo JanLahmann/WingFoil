@@ -31,6 +31,7 @@ import { KNOTS, speed, speedNumber, speedUnit } from "./appsettings.js";
 import { lexicon } from "./lexicon.js";
 import { track } from "./track.js";
 import { say } from "./appcopy.js";
+import { feedbackMail } from "./appshell.js";
 import {
   C, OUTCOME_COLOR, OUTCOME_LABEL, clockAt, esc, figureWidth, nf, outcomeText, svg,
 } from "./viz.js";
@@ -254,8 +255,13 @@ function draw() {
   const set = setFor(open.kind);
   const at = set.indexOf(open.index) + 1;
 
-  el("turn-page-title").textContent = pageTitle(turn, end, g);
-  el("turn-page-count").textContent = `${at} of ${set.length}`;
+  // The phone's two lines (TurnDetailView / FlightEndDetailView): the title counts the
+  // afternoon's jibes (or its flight ends), the caption says when and where in the swipe
+  // set — two ordinals that used to sit stacked with nothing to tell them apart.
+  el("turn-page-title").textContent = pageTitle(turn, end, at, set.length);
+  el("turn-page-count").textContent = end
+    ? "Flight " + (end.flightIndex + 1) + " · " + endOutcomeLabel(end.outcome)
+    : `${clockAt(doc.meta, turn.ts)} · turn ${at} of ${set.length}`;
   el("turn-page-prev").disabled = at <= 1;
   el("turn-page-next").disabled = at >= set.length;
 
@@ -266,7 +272,9 @@ function draw() {
     + `<div class="figure tp-strip" id="turn-strip-heading"></div>`
     + `<div class="figure tp-strip" id="turn-strip-foil"></div>`
     + (turn ? turnNumbers(turn, figure) : endNumbers(end, figure))
+    + (turn ? `<p class="tp-verdict">${esc(OUTCOME_LABEL[turn.outcome] || turn.outcome)}</p>` : "")
     + (turn ? `<p class="tp-coach">${esc(coachLine(turn, figure))}</p>` : "")
+    + (turn ? doubtLine(turn, at) : "")
     + footnote(turn, end, figure);
 
   wireControls();
@@ -274,12 +282,26 @@ function draw() {
   body.scrollTop = 0;
 }
 
-function pageTitle(turn, end, g) {
-  if (end) return "Flight " + (end.flightIndex + 1) + " · " + endOutcomeLabel(end.outcome);
+/** **"Not how I remember it?"** — the phone's door in every channel (TurnDoubt, 27 Sep
+ *  2026). The App Store build opens the feedback mail with the turn named in its first line,
+ *  and so does the browser: `TurnDoubt.note`'s words, the verdict after a colon. */
+function doubtLine(turn, at) {
+  const verdict = (OUTCOME_LABEL[turn.outcome] || turn.outcome).toLowerCase();
+  const note = `${pageTitle(turn, null, at, 0)} at ${clockAt(doc.meta, turn.ts)}. `
+    + `CleanJibe says: ${verdict}.`;
+  return `<p class="tp-doubt"><a href="${esc(feedbackMail(note))}">Not how I remember it?</a>
+    <span class="muted small">Tell us what you saw. The mail names this turn for you.</span></p>`;
+}
+
+function pageTitle(turn, end, at, count) {
+  if (end) return `Flight end ${at} of ${count}`;
   const ordinal = ordinalOf(open.index);
   const kind = typeLabel(turn.type);
-  const head = ordinal === null ? kind : `${kind} ${ordinal}`;
-  return `${head} · ${OUTCOME_LABEL[turn.outcome] || turn.outcome}`;
+  if (ordinal === null) return kind;
+  const strip = doc?.presentation?.turns?.strip || [];
+  const typeId = strip[open.index]?.typeId;
+  const ofKind = strip.filter((e) => e.counted && e.typeId === typeId).length;
+  return `${kind} ${ordinal} of ${ofKind}`;
 }
 
 const noGeometryLine = () => (open.kind === "turn"
@@ -696,7 +718,7 @@ function drawCallout(host, figure) {
   }
   if (figure.windDirDeg !== null && figure.windDirDeg !== undefined
       && point.headingDeg !== null && point.headingDeg !== undefined) {
-    parts.push(`${nf(Math.abs(deltaDeg(figure.windDirDeg, point.headingDeg)), 0)}° TWA`);
+    parts.push(`${nf(Math.abs(deltaDeg(figure.windDirDeg, point.headingDeg)), 0)}° to the wind`);
   }
   const box = document.createElement("div");
   box.className = "tp-callout";
@@ -966,7 +988,7 @@ function drawHeadingStrip() {
                                "font-size": 9, fill: C.ink, "fill-opacity": 0.55 }, root);
     text.textContent = "axis";
   }
-  stripAxis(frame, domain, angles.isTwa ? "TWA °" : "heading °",
+  stripAxis(frame, domain, angles.isTwa ? "wind angle °" : "heading °",
             open.kind === "turn" ? "s from the turn" : "s from the end");
   stripPlayhead(frame);
 }
@@ -1105,7 +1127,7 @@ function endNumbers(end, figure) {
       ${cell("Stopped", `${nf(end.stoppedS, 0)} s`)}
       ${cell("Off foil", endOffFoilText(end.offFoilS))}
       ${cell("Flight", `#${end.flightIndex + 1}`)}
-      ${cell("Evidence", `${nf(end.windowS, 0)} s`)}
+      ${cell("Recorded after the end", `${nf(end.windowS, 0)} s`)}
     </div>
     <p class="tp-chips">${chips.join(" ")}</p>
     <p class="muted small">${esc(endOutcomeText(end))}</p>

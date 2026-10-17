@@ -244,7 +244,14 @@ function renderSummary(result, isExample = false) {
   if (meta.sport) badges.push([meta.sport, false]);
   if (caps.hasAccel) badges.push(["accelerometer", false]);
   if (caps.hasWatchLaps) badges.push([`${meta.laps} laps`, false]);
-  if (caps.hasHR) badges.push(["HR", false]);
+  if (caps.hasHR) badges.push(["heart rate", false]);
+  // The badges' titles are tooltips, which a phone cannot open: the Details tab says the
+  // recording's class in words, with the phone's own line for it (rider review, 16 Oct 2026).
+  const facts = el("recording-facts");
+  if (facts) {
+    const name = { a: "Everything", b: "Measured speed", c: "Positions only" }[meta.sourceClass];
+    facts.textContent = name ? `${name}. ${say(`recordingClass.${meta.sourceClass}`)}` : "";
+  }
   el("session-badges").innerHTML = badges
     .map(([t, accent, title]) => `<span class="badge${accent ? " accent" : ""}"` +
          (title ? ` title="${esc(title)}"` : "") + `>${esc(t)}</span>`).join("");
@@ -267,7 +274,7 @@ function renderSummary(result, isExample = false) {
               ? `${windLow ? " · " : ""}watch says ${nf(meta.windDirUserDeg, 0)}°` : "") +
            (meta.windDirAutoDeg !== null && meta.windDirAutoDeg !== undefined
               ? ` · watch estimated ~${nf(meta.windDirAutoDeg, 0)}°` : "") }
-    : { k: "Wind axis", v: "—", n: "no usable axis in the COG distribution" };
+    : { k: "Wind axis", v: "—", n: "no usable wind axis" };
 
   // **Each kind of turn with its whole breakdown, as numbers in their inks** (Jan, F9a/b):
   // the clean jibes first with the star, then the ladder. The phone's Jibes and Tacks
@@ -452,20 +459,33 @@ function renderTakeoffs(host, g, meta) {
       : `${int(k.takeoffSuccesses)} · one starts every flight`],
   ];
   if (accel) rows.push(["Failed attempts", int(k.failedAttempts)]);
-  rows.push(["Avg time to foil", k.avgTakeoffS === null ? "—" : `${nf(k.avgTakeoffS, 1)} s`]);
-  rows.push(["Median time to foil", k.medianTakeoffS === null ? "—" : `${nf(k.medianTakeoffS, 1)} s`]);
-  const pumpRows = [
-    ["Avg pumps to takeoff", nf(k.avgPumpsToTakeoff, 1)],
-    ["Median pumps to takeoff", nf(k.medianPumpsToTakeoff, 1)],
-    ["Total pump strokes", int(k.totalPumpStrokes)],
-    ["In-flight pump strokes", `${int(k.inFlightPumpStrokes)} in ${int(k.inFlightEpisodes)} episodes`],
-    ["Free takeoffs (no pumping)", int(k.freeTakeoffs)],
-  ];
+  // The phone's cards, in its order and with its words (SummaryGrid, "Takeoff & pumping"):
+  // a value and its caption on one row. No dash for a run the recording cut: the row is
+  // left out and the note under the rows says why, as on the phone (30 Sep 2026).
+  if (accel && k.avgPumpsToTakeoff !== null && k.avgPumpsToTakeoff !== undefined) {
+    const median = k.medianPumpsToTakeoff ?? k.avgPumpsToTakeoff;
+    rows.push(["Pumps to takeoff",
+      `${nf(k.avgPumpsToTakeoff, 1)} · median ${nf(median, 0)} · ${int(k.freeTakeoffs)} free`]);
+  }
+  if (k.avgTakeoffS !== null && k.avgTakeoffS !== undefined) {
+    rows.push(["Takeoff run", `${nf(k.avgTakeoffS, 1)} s · ` + (k.runsTruncated > 0
+      ? `average of ${int(k.runsJudged)} runs · ${int(k.runsTruncated)} cut short by the recording`
+      : `average over ${int(k.runsJudged)} runs`)]);
+  }
+  if (accel && k.totalPumpStrokes !== null && k.totalPumpStrokes !== undefined) {
+    const bursts = k.inFlightEpisodes === 1 ? "burst" : "bursts";
+    rows.push(["Pump strokes", `${int(k.totalPumpStrokes)} · ${int(k.inFlightPumpStrokes ?? 0)} `
+      + `in flight, in ${int(k.inFlightEpisodes)} ${bursts}`]);
+  }
+  const notes = [];
+  if (k.avgTakeoffS === null || k.avgTakeoffS === undefined) {
+    notes.push("The recording cut every takeoff run short, so none is measured.");
+  }
+  if (!accel) notes.push("No accelerometer in this recording, so pumps and failed attempts are not counted.");
   host.innerHTML = `
-    <div class="kv">${(accel ? rows.concat(pumpRows) : rows)
+    <div class="kv">${rows
       .map(([a, b]) => `<div class="row"><span>${esc(a)}</span><span>${esc(b)}</span></div>`).join("")}</div>
-    ${accel ? "" : `<p class="muted small" style="margin-top:10px">No accelerometer in this
-      recording, so pumps and failed attempts are not counted.</p>`}`;
+    ${notes.map((n) => `<p class="muted small" style="margin-top:10px">${esc(n)}</p>`).join("")}`;
 }
 
 /**
@@ -548,7 +568,7 @@ function renderTurns(table, caption, result, meta) {
   // no dash and no bracket, the middot separates and the comma groups.
   caption.textContent =
     `${s.turnsCounted} counted · ${s.jibes} jibes, ${s.tacks} tacks · ` +
-    `${s.rejected} bear-aways rejected · ` +
+    `${s.rejected} ${s.rejected === 1 ? "course change" : "course changes"} excluded · ` +
     `${o.flewThrough} flew through, ` +
     `${pct(100 * o.flewThrough / (s.turnsCounted || 1))} of them · ` +
     `${o.touchdown} touchdown, ${o.fellIn} fell in · ` +
@@ -564,10 +584,10 @@ function renderTurns(table, caption, result, meta) {
   // this says which rung of the ladder decided. Empty on a fly-through, which needs no reason.
   // The two speed columns carry the unit in the head, so the cells are numbers — and the
   // head is the rider's unit rather than a literal (js/appsettings.js).
-  const head = ["#", "time", "type", "turn", "tack", `entry ${speedUnit()}`,
+  const head = ["#", "time", "type", "turn", "side", `entry ${speedUnit()}`,
                 `min ${speedUnit()}`, "held",
-                "clean", "outcome", "why", "stop s", "off foil s", "pump", "wet",
-                "arc m", "R m"];
+                "clean", "outcome", "why", "stop s", "off foil s", "pump", "wrist under",
+                "arc m", "radius m"];
   table.innerHTML = `<thead><tr>${head
     .map((h, i) => `<th${i <= 4 || i === 9 || i === 10 ? ' class="l"' : ""}>${esc(h)}</th>`).join("")}</tr></thead>
     <tbody>${strip.map((e) => {
@@ -615,10 +635,10 @@ function renderEnds(table, caption, g, meta) {
     `${e.all.fellIn} fell in · ${e.inTurn.fellIn} in a turn / ` +
     `${e.straight.fellIn} in a straight line · ` +
     `${sp.turnTouchdowns} touchdowns in turns / ${sp.straightTouchdowns} straight-line · ` +
-    `${sp.glideOuts} glide-outs` + (sp.unknownEnds ? ` · ${sp.unknownEnds} truncated by a gap` : "");
+    `${sp.glideOuts} glide-outs` + (sp.unknownEnds ? ` · ${sp.unknownEnds} ${sp.unknownEnds === 1 ? "end" : "ends"} cut by the recording` : "");
 
   const head = ["flight", "time", "outcome", "stop s", "off foil s", `min ${speedUnit()}`,
-                "pump", "wet", "window s", "in turn"];
+                "pump", "wrist under", "window s", "in turn"];
   table.innerHTML = `<thead><tr>${head
     .map((h, i) => `<th${i <= 2 || i === 9 ? ' class="l"' : ""}>${esc(h)}</th>`).join("")}</tr></thead>
     <tbody>${g.flightEnds.map((x) => `

@@ -199,7 +199,7 @@ export const WAYS_IN = {
     {
       "id": "strava",
       "title": "Strava",
-      "line": "Take this one on the iPhone app. Strava sign-in needs it.",
+      "line": "Strava sign-in needs the iPhone app. Export Original on strava.com gives you a file the browser app opens.",
       "here": false,
       "href": "/start/#guide-strava",
       "status": "any watch that syncs to Strava"
@@ -295,7 +295,7 @@ export const SETTINGS_SECTIONS = [
     "title": "Notifications",
     "lead": "Hear about a new session while the phone is idle.",
     "footer": [
-      "While the phone is idle, CleanJibe asks intervals.icu for new activity.\n\nIt looks for windsurf, wing, kite, surf and SUP, from any watch that syncs there.\n\nYou hear about the ones that are not in your library yet.\n\nThe session is downloaded and analysed in the background, so tapping the notification usually opens a finished analysis."
+      "While the phone is idle, CleanJibe asks intervals.icu for new activity.\n\nIt looks for windsurf, wing, kite, sail, surf and SUP, from any watch that syncs there.\n\nYou hear about the ones that are not in your library yet.\n\nThe session is downloaded and analysed in the background, so tapping the notification usually opens a finished analysis."
     ],
     "help": "notifications",
     "phoneOnly": true
@@ -303,7 +303,7 @@ export const SETTINGS_SECTIONS = [
   {
     "id": "analysis",
     "title": "Analysis",
-    "lead": "Say which way your turns usually go, so a flat day still reads right.",
+    "lead": "Say whether you mostly jibe or tack. It picks the wind's side when your track cannot.",
     "footer": [],
     "help": "turnTypes",
     "phoneOnly": true
@@ -1067,26 +1067,6 @@ export const HELP = {
             },
             {
               "channels": [
-                "beta",
-                "dev"
-              ],
-              "detail": "Install it with the CleanJibe beta and record on your wrist. The watch only records, and the iPhone does the analysis.",
-              "iphoneOnly": true,
-              "link": "appleWatchApp",
-              "term": "The CleanJibe Apple Watch app"
-            },
-            {
-              "channels": [
-                "beta",
-                "dev"
-              ],
-              "detail": "No extra app on the watch: record a Surfing workout and import it from Apple Health.",
-              "iphoneOnly": true,
-              "link": "appleWorkoutApp",
-              "term": "Apple's own Workout app"
-            },
-            {
-              "channels": [
                 "release",
                 "beta",
                 "dev"
@@ -1153,7 +1133,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "You get everything, and each verdict buzzes on your wrist. Pump strokes and takeoff attempts need Log wrist motion on. It makes the transfer time to Garmin Connect much longer.",
+              "detail": "You get everything: each verdict buzzes, and pumps count live. The phone's pump analysis needs Log wrist motion on, which makes the transfer time to Garmin Connect much longer.",
               "term": "Garmin, with the CleanJibe watch app"
             },
             {
@@ -1171,8 +1151,8 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Bring it in through Strava or intervals.icu. In the beta, Apple Health hands it over with measured speed.",
-              "term": "Apple Watch, with Apple's Workout app"
+              "detail": "It is in the beta. You get measured speed, plus pump strokes and takeoff attempts from your wrist.",
+              "term": "Apple Watch, with the CleanJibe watch app"
             },
             {
               "channels": [
@@ -1180,8 +1160,8 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "It is in the beta. You get measured speed, plus pump strokes and takeoff attempts from your wrist.",
-              "term": "Apple Watch, with the CleanJibe watch app"
+              "detail": "Bring it in through Strava or intervals.icu. In the beta, Apple Health hands it over with measured speed.",
+              "term": "Apple Watch, with Apple's Workout app"
             },
             {
               "channels": [
@@ -1213,7 +1193,6 @@ export const HELP = {
           ],
           "related": [
             "shareFromWatchApp",
-            "appleWatchApp",
             "stravaImport"
           ],
           "summary": "Every watch works, one way or another. Each row says what yours can show.",
@@ -1222,7 +1201,7 @@ export const HELP = {
         {
           "aliases": [],
           "body": [
-            "A real wingfoil session on Lake Garda. Ten minutes, 2 flights, 10 jibes, 2.6 km and 68 % foil time. The track, the speed chart, the turn outcomes, the pump counts and the heart-rate cost are all filled in.",
+            "A real wingfoil session on Lake Garda. Ten minutes, 2 flights, 10 jibes, 2.6 km and 68 % foil time. The track, the speed chart, the turn outcomes and the heart-rate cost are all filled in.",
             "It is not your data. CleanJibe marks it EXAMPLE in the list and on its own page. It stays out of Records, Trends and your gear totals.",
             "Delete it with a swipe. You can load it again from here.",
             "We recorded it at Nago-Torbole, Lake Garda with the CleanJibe watch app and removed everything that identifies the rider. We left the accelerometer out, because it is bigger than the whole app.",
@@ -1250,95 +1229,6 @@ export const HELP = {
       "id": "record",
       "title": "Record a session",
       "topics": [
-        {
-          "aliases": [],
-          "body": [
-            "The watch app records the GPS track, your heart rate and the wrist accelerometer at 50 Hz. Start it on the watch, ride, and end the workout. The session moves to the phone while both are in range.",
-            "Because the wrist is recorded, pump strokes and failed takeoff attempts are analysed on the phone. The speed is the watch's own, so the records are measured."
-          ],
-          "channels": [
-            "beta",
-            "dev"
-          ],
-          "id": "appleWatchApp",
-          "iphoneOnly": true,
-          "items": [
-            {
-              "channels": [
-                "release",
-                "beta",
-                "dev"
-              ],
-              "detail": "When your wrist goes under, the watch's pressure sensor notices, and that counts as a fall. The gap in the GPS track is marked, not filled in.",
-              "term": "The wrist may go under"
-            },
-            {
-              "channels": [
-                "release",
-                "beta",
-                "dev"
-              ],
-              "detail": "The watch sends the session once you end the workout. If it is not in the list yet, look again in a minute.",
-              "term": "Let the workout finish"
-            }
-          ],
-          "related": [
-            "appleWorkoutApp",
-            "whichWatch"
-          ],
-          "summary": "Record on your Apple Watch. The session comes to the phone by itself.",
-          "title": "Recording with the CleanJibe Apple Watch app"
-        },
-        {
-          "aliases": [],
-          "body": [
-            "Record a session with Apple's own Workout app and analyse it here. You need no Garmin, no account and no cable.",
-            "Health has no wingfoil workout type. CleanJibe reads the one you picked as a wingfoil session, because you asked it to.",
-            "Open Import → Apple Health, allow CleanJibe to read workouts, and pick the ones you want. After the first one, switch on \"Import new Health workouts automatically\". The next session is then waiting when you open the app.",
-            "Speed comes off the watch's own GPS receiver, so these speed records are measured. Nothing records your wrist accelerometer, so there are no pump strokes and no failed takeoff attempts."
-          ],
-          "channels": [
-            "beta",
-            "dev"
-          ],
-          "id": "appleWorkoutApp",
-          "iphoneOnly": true,
-          "items": [
-            {
-              "channels": [
-                "release",
-                "beta",
-                "dev"
-              ],
-              "detail": "Both are on by default, and Surfing is what CleanJibe's own watch app writes. Sailing works too. Switch it on in Import → Apple Health.",
-              "term": "Pick Surfing or Water Sports"
-            },
-            {
-              "channels": [
-                "release",
-                "beta",
-                "dev"
-              ],
-              "detail": "The route is written to Health when you end the workout. The watch may take a minute to hand it over.",
-              "term": "Let the workout finish saving"
-            },
-            {
-              "channels": [
-                "release",
-                "beta",
-                "dev"
-              ],
-              "detail": "CleanJibe reads the route and the heart rate of the workouts you pick, and analyses them on your phone. It never reads anything else in Health.",
-              "term": "Nothing is uploaded"
-            }
-          ],
-          "related": [
-            "appleWatchApp",
-            "whichWatch"
-          ],
-          "summary": "No Garmin, no extra app: record on your Apple Watch and import from Health.",
-          "title": "Recording with the Apple Workout app"
-        },
         {
           "aliases": [],
           "body": [
@@ -1543,7 +1433,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Once one session has come in this way, a switch appears. With it on, CleanJibe checks Strava whenever you open the app.",
+              "detail": "Import from Strava… has a switch, Import new Strava activities automatically. With it on, CleanJibe checks Strava whenever you open the app.",
               "term": "Keep it automatic"
             },
             {
@@ -1724,7 +1614,7 @@ export const HELP = {
         {
           "aliases": [],
           "body": [
-            "While the phone is idle, CleanJibe asks intervals.icu for new activity. It looks for windsurf, wing, kite, surf and SUP, from any watch that syncs there.",
+            "While the phone is idle, CleanJibe asks intervals.icu for new activity. It looks for windsurf, wing, kite, sail, surf and SUP, from any watch that syncs there.",
             "You hear about the ones that are not in your library yet. The session is downloaded and analysed in the background, so tapping the notification usually opens a finished analysis.",
             "iOS decides when a background app may run. It learns your habits and may hold a check back for hours. It never runs in Low Power Mode.",
             "It never runs while Background App Refresh is off, under Settings → General → Background App Refresh. Pull down on Sessions to sync now."
@@ -1823,8 +1713,8 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Dry jibes per hour. Falling in more often cannot raise it.",
-              "term": "JPH"
+              "detail": "Clean jibes per hour. Clean: flew through, held your speed, and 10 quiet seconds after. Also on the watch.",
+              "term": "CPH"
             },
             {
               "channels": [
@@ -1832,8 +1722,8 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Clean jibes per hour. Clean: flew through, held your speed, and 10 quiet seconds after. Also on the watch.",
-              "term": "CPH"
+              "detail": "Dry jibes per hour. Falling in more often cannot raise it.",
+              "term": "JPH"
             },
             {
               "channels": [
@@ -2253,7 +2143,7 @@ export const HELP = {
           "body": [
             "Every jibe and tack you carve counts as a turn. To count, it needs 60° of heading change inside 8 s, on the foil or within 3 s of it.",
             "It must also carve a real arc. That means at least 12 m of path, at a radius of 6 m or more. Spinning around beside the board carves no arc.",
-            "What kind of turn it was depends on the wind axis:"
+            "What kind of turn it was depends on the wind axis. A tack or a jibe needs 90° of heading change and a crossing of the axis:"
           ],
           "channels": [
             "release",
@@ -2290,7 +2180,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "A real course change that never crosses the axis. Counted separately and left out of the tack and jibe tallies. It is not a manoeuvre you either made or blew.",
+              "detail": "A course change under 90°, or one that never crosses the axis. It stays out of the tack and jibe tallies.",
               "term": "Bear-away / round-up"
             },
             {
@@ -2351,6 +2241,15 @@ export const HELP = {
           },
           "id": "turnOutcomes",
           "items": [
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail": "The window follows you for up to 30 s instead of 12. The stop you end in is then this turn's.",
+              "term": "If you never get going again"
+            },
             {
               "channels": [
                 "release",
@@ -2712,85 +2611,6 @@ export const HELP = {
           ],
           "summary": "The wind direction worked out from how you actually rode.",
           "title": "Wind axis & confidence"
-        },
-        {
-          "aliases": [],
-          "body": [
-            "A session can be analysed as **Wingfoil**, **Windsurf foil** or **Windsurf fin**. The row is on the session's Details tab, under \"Analyse as\". Changing it works that one session out again, and nothing else.",
-            "None of Garmin, Strava, intervals.icu and Apple Health has a wingfoil sport. Most riders record under the windsurf profile. A new session cannot say which rig it was ridden on.",
-            "So CleanJibe reads it as whatever you set under Settings → \"I mostly ride\". It is marked with a **?** until you have looked, and listed after each import. Sessions from the CleanJibe watch app are never asked about."
-          ],
-          "channels": [
-            "dev"
-          ],
-          "group": {
-            "id": "effortWind",
-            "title": "Effort & wind"
-          },
-          "id": "windsurf",
-          "items": [
-            {
-              "channels": [
-                "release",
-                "beta",
-                "dev"
-              ],
-              "detail": "Jibes and tacks are the same detector, the same thresholds and the same three verdicts. So are the speed records, the wind axis, the wrist-under marks and the map.",
-              "term": "What works"
-            },
-            {
-              "channels": [
-                "release",
-                "beta",
-                "dev"
-              ],
-              "detail": "Pumping. With no wing to load, pump chips, stroke counts, pumps-to-takeoff and the heart-rate cost are **absent rather than zero**. A takeoff becomes a planing start.",
-              "term": "What is off"
-            },
-            {
-              "channels": [
-                "release",
-                "beta",
-                "dev"
-              ],
-              "detail": "The wingfoil reading with pumping switched off. Every speed and every threshold is the same, because a foil flies the same way under either rig.",
-              "term": "Windsurf foil"
-            },
-            {
-              "channels": [
-                "release",
-                "beta",
-                "dev"
-              ],
-              "detail": "Also moves the two speeds that decide when you are going. 20 km/h starts planing and 15 km/h stops it, against 12 and 8 on a foil.",
-              "term": "Windsurf fin"
-            },
-            {
-              "channels": [
-                "release",
-                "beta",
-                "dev"
-              ],
-              "detail": "They are a first guess, because we have no real fin sessions yet. If your planing time looks wrong, tell us that number.",
-              "term": "Those two speeds are provisional"
-            },
-            {
-              "channels": [
-                "release",
-                "beta",
-                "dev"
-              ],
-              "detail": "\"Foil time\" means planing time here, and \"lost the foil\" means stopped planing. Windsurf sessions count towards your trends. There is no separate record set.",
-              "term": "In the library"
-            }
-          ],
-          "related": [
-            "flights",
-            "turnOutcomes",
-            "pumpsToTakeoff"
-          ],
-          "summary": "The same engine without the wing. The planing speeds are a guess.",
-          "title": "Windsurf (experimental)"
         }
       ]
     },
@@ -3008,7 +2828,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "It opens your intervals.icu account. Clear the field in Settings to remove it, or regenerate it in Developer Settings. The old key stops working at once.",
+              "detail": "It opens your intervals.icu account. Remove it in Settings → intervals.icu, or regenerate it in Developer Settings. The old key stops working at once.",
               "term": "Treat it like a password"
             },
             {
@@ -3227,32 +3047,10 @@ export const HELP = {
           ],
           "related": [
             "divergence",
-            "engineVersion",
-            "sendSessionToDeveloper"
+            "engineVersion"
           ],
           "summary": "The app fills in build, phone and session. You write the sentence. Ideas and wishes are as welcome as bugs.",
           "title": "Sending feedback"
-        },
-        {
-          "aliases": [],
-          "body": [
-            "We can only chase a wrong number on the recording that produced it. This puts the recording, your notes and the app's details into one mail.",
-            "The file holds your track, your heart rate and your times. We use it only to improve the analysis, and we never publish it.",
-            "You see the whole mail before it goes. Edit any line, delete any line, or close it and nothing is sent.",
-            "Open a session, tap Share, then Send this session to us."
-          ],
-          "channels": [
-            "beta",
-            "dev"
-          ],
-          "id": "sendSessionToDeveloper",
-          "items": [],
-          "related": [
-            "shareFit",
-            "divergence"
-          ],
-          "summary": "Mail us one session and your notes, so we can chase a wrong number.",
-          "title": "Send a session to us"
         }
       ]
     }
@@ -3441,7 +3239,7 @@ export const WORDS = {
     "footChannel": "Speed here is the manoeuvre channel, derived from position. The GPS Doppler speed the records use is smoothed. It would read differently.",
     "footDrawn": "The drawing is {before} s before the end and {after} s after it.",
     "footEntryBand": "The bands are the engine's windows. \"Entry\" is the {seconds} s the flight was ending at.",
-    "footEvidence": "\"Evidence\" is how much gap-free recording there actually was.",
+    "footEvidence": "\"Recorded after the end\" is how much gap-free recording there was after it.",
     "footInOut": "\"In\" is the fastest sample of the entry window. \"Out\" is where the speed came back to the engine's flying-again threshold.",
     "footLow": "Only \"low\" is the engine's. It is the slowest sample of the off-foil run, placed where this window comes nearest it.",
     "footMarks": "The thick, coloured part is the flight. Everything past the dot is already off the foil. Ticks are one second apart.",
@@ -3456,7 +3254,7 @@ export const WORDS = {
     "noSpotsLine": "Spots appear once sessions with GPS are in the library.",
     "notesPlaceholder": "Size, year, anything worth remembering",
     "retire": "Turn off to retire it without losing its sessions.",
-    "spotsFooter": "Tap a spot to rename it. A name you type sticks through a re-cluster. Sessions starting within {radius} m of each other are one spot. Names come from the map when the network allows."
+    "spotsFooter": "Tap a spot to rename it. A name you type stays when you rebuild spots. Sessions starting within {radius} m of each other are one spot. Names come from the map when the network allows."
   },
   "icu": {
     "emptyFix": "Connect Garmin in intervals.icu (Settings → device connections). The back-fill takes a few minutes. If it is already connected, you may simply have no windsurf, wing, kite, surf or SUP activity there yet.",
@@ -3486,7 +3284,7 @@ export const WORDS = {
   "periods": {
     "bothDatesCount": "Both dates count.",
     "empty": "No periods yet",
-    "emptyLine": "A session needs a recorded start before it can belong to a month. Import one and the months, seasons and trips fill in.",
+    "emptyLine": "Your months, seasons and trips fill in as your sessions arrive.",
     "months": "Months",
     "monthsNote": "Calendar months, by the day you rode.",
     "noSessionInRange": "No session in that range.",
@@ -3504,8 +3302,8 @@ export const WORDS = {
     "noQualifying": "No qualifying speed window under this filter.",
     "noRecords": "No records yet",
     "sessionRecordsFooter": "These are your best afternoons rather than your best windows, so nothing here is marked estimated. A poor recording can get a speed wrong, but the jibe count and the minutes are not about speed.",
-    "speedFreshness": "The dot on a record's name says how fresh it is. Filled within a month. Hollow within the season. Faint when it is older than 6 months.",
-    "speedHead": "Doppler speed, GP3S windows. {certified} of {count} have measured speed.",
+    "speedFreshness": "The dot on a record's name says how fresh it is. Filled within a month. Hollow within six months. Faint when it is older.",
+    "speedHead": "{certified} of {count} records come from the watch's measured speed.",
     "speedMeasured": "Measured speed comes from the watch's own speed channel. Speed estimated from positions is marked."
   },
   "rider": {
@@ -3563,6 +3361,7 @@ export const WORDS = {
     "cleanJibes": "Clean jibes",
     "cleanJibesNote": "Jibes that flew through, held at least 70 % of their entry speed, then 10 quiet seconds on the foil.",
     "cph": "Clean jibes an hour (CPH)",
+    "emptyLibrary": "Connect intervals.icu in Settings, or import a .fit file, and the charts fill as you ride.",
     "flewThrough": "Flew-through rate",
     "flewThroughNote": "Turns that never lost the foil. Every counted turn, not jibes alone.",
     "jph": "Dry jibes an hour (JPH)",
@@ -3629,7 +3428,7 @@ export const WORDS = {
     "footTicks": "Ticks are one second apart.",
     "noBearings": "No usable bearings through this window. The steps were shorter than the receiver's own scatter.",
     "noGeometry": "No GPS fixes through this turn. Numbers only.",
-    "nothingToCompare": "Nothing to compare with. This session has no other jibe that flew through the same way round."
+    "nothingToCompare": "Nothing to compare with. No other clean jibe this session turned the same way round."
   },
   "turns": {
     "cleanRule": "Clean: you flew through, held at least {pct} % of your entry speed, then {quiet} quiet seconds on the foil.",

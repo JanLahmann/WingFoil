@@ -744,12 +744,17 @@ struct SettingsView: View {
     private var comingSoonSection: some View { ComingSoonSection() }
 
     private var storageSection: some View {
-        Section(SettingsCopy.section("storage").title) {
+        Section {
             LabeledContent("Sessions", value: "\(store.storage.sessionCount)")
             LabeledContent("FIT archive", value: Fmt.bytes(store.storage.archiveBytes))
             LabeledContent("Database", value: Fmt.bytes(store.storage.databaseBytes))
             Button("Re-run analysis") { confirmReanalyze = true }
                 .disabled(store.isBusy || store.sessions.isEmpty)
+        } header: {
+            Text(SettingsCopy.section("storage").title)
+        } footer: {
+            // Its line and `?` were defined and never drawn (rider review, 16 Oct 2026).
+            settingFooter("storage")
         }
     }
 
@@ -778,6 +783,13 @@ struct SettingsView: View {
             // report that comes back from TestFlight.
             LabeledContent("App", value: SessionStore.appVersion + Self.variantSuffix)
             LabeledContent("Analysis engine", value: AnalysisEngine.version)
+            // The release notes' one door (rider review, 16 Oct 2026): the Help topic is off
+            // the index and the menu has no row, so without this nothing opened them.
+            NavigationLink {
+                WhatsNewPage()
+            } label: {
+                Label("What's new", systemImage: "sparkles")
+            }
             // **The policy, reachable from inside the app** (15 September 2026). It was
             // not: docs/channels.md makes privacy-page coverage one of the four rules a
             // feature meets before it moves up a channel, and the App Store record carries

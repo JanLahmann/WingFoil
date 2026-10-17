@@ -139,7 +139,7 @@ struct StravaImportView: View {
             Button(role: .destructive) {
                 Task { await store.disconnectStrava() }
             } label: {
-                Label("Disconnect", systemImage: "link.badge.plus")
+                Label("Disconnect", systemImage: "xmark.circle")
             }
             .disabled(store.isBusy)
         } header: {

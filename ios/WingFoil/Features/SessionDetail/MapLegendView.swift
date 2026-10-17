@@ -356,7 +356,7 @@ private struct LegendChip: View {
 /// the edge, and a chip whose label is gone is not a legend entry. Written against
 /// `Layout` rather than a `LazyVGrid` because the chips are different widths and should
 /// keep them — a grid would give "splash" the same column as "course change".
-private struct WrapRow: Layout {
+struct WrapRow: Layout {
     var spacing: CGFloat = 6
     /// Vertical gap between wrapped lines; a touch tighter than the horizontal one, which
     /// reads as one block rather than two rows.

@@ -203,7 +203,7 @@ async function renderSub(entries) {
   // (docs/screens.md, the web's Sessions empty state).
   if (!entries.length) {
     el("lib-sub").textContent =
-      "Nothing saved yet. Analyze a file and press Save to library.";
+      "Nothing saved yet. Analyse a file and press Save to library.";
     return;
   }
   const u = await usage();

@@ -79,7 +79,7 @@ public enum SettingsCopy {
     /// message, which is what "with the switch's own explanation" means.
     public static let notifyExplanation =
         "While the phone is idle, CleanJibe asks intervals.icu for new activity.\n\n"
-        + "It looks for windsurf, wing, kite, surf and SUP, from any watch that syncs "
+        + "It looks for windsurf, wing, kite, sail, surf and SUP, from any watch that syncs "
         + "there.\n\n"
         + "You hear about the ones that are not in your library yet.\n\n"
         + "The session is downloaded and analysed in the background, so tapping the "
@@ -146,7 +146,8 @@ public enum SettingsCopy {
         SettingsSectionCopy(
             id: "analysis",
             title: "Analysis",
-            lead: "Say which way your turns usually go, so a flat day still reads right.",
+            lead: "Say whether you mostly jibe or tack. It picks the wind's side when your "
+                + "track cannot.",
             help: .turnTypes),
 
         SettingsSectionCopy(

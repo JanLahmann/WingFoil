@@ -139,7 +139,7 @@ public enum FlightPairing {
     /// `no flight · 3 strokes` — the one mark in the takeoff layer that starts no flight,
     /// so it names no flight either.
     public static func failedLine(strokes: Int) -> String {
-        let noun = strokes == 1 ? " stroke" : " strokes"
+        let noun = strokes == 1 ? " pump" : " pumps"
         return "no flight · " + String(strokes) + noun
     }
 

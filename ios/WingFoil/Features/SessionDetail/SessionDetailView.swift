@@ -629,7 +629,11 @@ struct SessionDetailView: View {
         case .takeoffs where !detail.takeoffMarks.isEmpty
                 && detail.row.analysisDiscipline.lexicon.pumping:
             Picker("Outcome", selection: $takeoffFilter) {
-                ForEach(TakeoffOutcomeFilter.allCases) { Text($0.label).tag($0) }
+                // Without a wrist accelerometer a failed attempt cannot be seen at all, so
+                // the segment is not offered rather than answering "none".
+                ForEach(TakeoffOutcomeFilter.allCases.filter {
+                    $0 != .failed || detail.analysis.capabilities.hasAccel
+                }) { Text($0.label).tag($0) }
             }
             .pickerStyle(.segmented)
             .accessibilityLabel("Attempt outcome")
@@ -886,8 +890,8 @@ struct SessionDetailView: View {
         HStack(spacing: 6) {
             Image(systemName: "clock.badge.questionmark")
                 .foregroundStyle(.readableSecondary)
-            Text("Times estimated from the track's position. "
-                 + "This recording has no time zone.")
+            Text("This recording has no time zone, so times are worked out from where "
+                 + "you rode. They can be off by an hour.")
                 .fixedSize(horizontal: false, vertical: true)
         }
         .font(.caption)
@@ -900,8 +904,8 @@ struct SessionDetailView: View {
     private var exampleNote: some View {
         HStack(spacing: 8) {
             ExampleBadge(font: .caption)
-            Text("Bundled demo session. " + ExampleSession.place
-                 + ". Not counted in your records or trends.")
+            Text("This is an example session from " + ExampleSession.place
+                 + ". It does not count in your records or trends.")
                 .font(.caption)
                 .foregroundStyle(.readableSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -927,7 +931,8 @@ struct SessionDetailView: View {
     }
 
     private var noTrackNote: some View {
-        Label("This recording has no GPS positions. Chart and records only.",
+        Label("This recording has no GPS positions. You still get the speed chart and the "
+              + "records.",
               systemImage: "location.slash")
             .font(.footnote)
             .foregroundStyle(.readableSecondary)

@@ -103,7 +103,7 @@ enum SessionDisplay {
     /// the watch and will be replaced" is not something a rider can be expected to infer
     /// from a badge — and the numbers on the row look exactly like any other session's.
     static func provisionalNote(_ row: SessionRow) -> String? {
-        row.isProvisional ? "From your watch — the recording has not synced yet" : nil
+        row.isProvisional ? "From your watch. The recording has not synced yet." : nil
     }
 
     /// The line under the source badge on the session page.
@@ -122,15 +122,15 @@ enum SessionDisplay {
     /// sentence over a session that visibly *has* a pump chart would read as a bug.
     static func sourceClassNote(_ sourceClass: String, importSource: String? = nil) -> String {
         if sourceClass == "b", ImportSource.appleWatch.isNamed(in: importSource) {
-            return "Recorded on your Apple Watch — GPS speed, heart rate and pump effort"
+            return "Measured speed. Recorded on your Apple Watch, with heart rate and pump effort."
         }
         switch sourceClass {
-        case "a": return "Recorded with the CleanJibe watch app — all metrics available"
+        case "a": return "Everything. Recorded with the CleanJibe watch app."
         // Not "Standard Garmin recording" any more: a TCX from a Polar, Suunto or Coros
         // that states `TPX/Speed` is class (b) too, and it did not come off a Garmin.
         // What the class actually says is that the file measured its own speed.
-        case "b": return "Measured speed channel — everything except pump and takeoff effort"
-        default: return "No speed channel in this file — speed records are estimated"
+        case "b": return "Measured speed. Pumps and takeoff attempts need the CleanJibe watch app."
+        default: return "Positions only. The speed records are estimated from GPS positions."
         }
     }
 }
@@ -281,10 +281,10 @@ enum Fmt {
         return "\(s) s"
     }
 
-    /// mm:ss for chart axes.
+    /// m:ss, or h:mm:ss past an hour: the kit's one session clock (`FlightPairing.clock`), so
+    /// flight 30 is "1:23:12" in the Flights list and on the map alike, never "83:12".
     static func clock(_ seconds: Double) -> String {
-        let total = max(0, Int(seconds.rounded()))
-        return String(format: "%d:%02d", total / 60, total % 60)
+        FlightPairing.clock(seconds)
     }
 
     static func km(_ value: Double?) -> String {

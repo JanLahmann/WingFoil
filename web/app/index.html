@@ -297,7 +297,7 @@
         <li class="way elsewhere" data-way="strava">
           <div class="way-body">
             <p class="way-title"><a href="/start/#guide-strava" data-umami-event="CleanJibe: app-way-strava">Strava</a></p>
-            <p class="way-line">Take this one on the iPhone app. Strava sign-in needs it.</p>
+            <p class="way-line">Strava sign-in needs the iPhone app. Export Original on strava.com gives you a file the browser app opens.</p>
           </div>
         </li>
 
@@ -383,7 +383,7 @@
   </section>
 
   <section id="error" class="panel error" hidden role="alert">
-    <h2>That file could not be analyzed</h2>
+    <h2>That file could not be analysed</h2>
     <!-- The commonest cause by a distance, and the fix, stated before the technical text:
          a rider who exported from a tool that re-wrote the file gets a FIT the engine
          cannot read, and "Download original file" is the one instruction that helps. -->
@@ -449,8 +449,8 @@
            (ux-audit A3.3, change #10). One line, on the result head, naming the control
            by the label it wears. Same words as the line under the homepage's hero card. -->
       <p class="note" id="card-offer">
-        <strong>Make a card of this.</strong> <em>Share</em> is above. Your track, your
-        numbers, one picture, drawn here and saved here.
+        <strong>Make a card of this.</strong> <em>Share</em> above draws your track and
+        your numbers as one picture, and saves it here.
       </p>
       <p class="note highlight-note" id="highlight-note" hidden></p>
       <!-- The four rows that answer "was that a good session" — duration/distance/speed,
@@ -610,7 +610,7 @@
     <section class="panel" data-section="log" id="log-gear-panel">
       <div class="panel-head"><h2>Gear</h2></div>
       <div id="log-gear" data-screen="Gear"
-           data-empty="Add your wings, boards and foils on the Gear tab. Then every session knows what you rode."></div>
+           data-empty="Add your wings, boards and foils on the Gear &amp; spots tab. Then every session knows what you rode."></div>
     </section>
 
     <section class="panel is-absent" data-section="log" id="log-divergence-panel">
@@ -622,8 +622,7 @@
 
     <section class="panel" data-section="log">
       <div class="panel-head"><h2>The recording</h2></div>
-      <p class="muted small">The wind and the source of this recording are in the badges
-        above.</p>
+      <p class="muted small" id="recording-facts"></p>
     </section>
 
     <section class="panel" data-section="log">
@@ -805,7 +804,7 @@
   </section>
 
   <section class="panel" data-settings="strava">
-    <p class="muted small">Strava is on the iPhone app. Signing in needs it.</p>
+    <p class="muted small">Strava sign-in needs the iPhone app. Export Original on strava.com gives you a file the browser app opens.</p>
   </section>
 
   <!-- THE FOUR SECTIONS A BROWSER CANNOT DO, in the phone's own place in the order
@@ -1268,9 +1267,9 @@
         <input type="checkbox" id="card-map">
         <span>Map background</span>
       </label>
-      <p class="muted small">Draws the track over OpenStreetMap. Nothing else on this page
-        fetches anything. It takes map tiles for the area you sailed, nothing about
-        your session. Offline it is skipped and you still get the card.</p>
+      <p class="muted small">Draws the track over OpenStreetMap. It fetches map tiles for
+        the area you sailed, nothing about your session. Offline it is skipped and you
+        still get the card.</p>
     </div>
     <p class="muted small">PNG · <span id="card-size"></span> · nothing leaves this device
       until you send it.</p>

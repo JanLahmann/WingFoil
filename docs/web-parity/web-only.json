@@ -75,7 +75,7 @@
     },
     {
       "path": "web/app/index.html",
-      "text": "Strava sign-in needs it.",
+      "text": "Export Original on strava.com gives you a file the browser app opens.",
       "reason": "pinned: verify_app_shell.py holds the ways-in rows to docs/copy/app-shell.json (waysIn, the web's half of the empty Sessions tab)"
     },
     {
@@ -140,7 +140,7 @@
     },
     {
       "path": "web/app/index.html",
-      "text": "Add your wings, boards and foils on the Gear tab.",
+      "text": "Add your wings, boards and foils on the Gear & spots tab.",
       "reason": "pinned: verify_app_shell.py holds the data-empty sentence of a ported screen to the phone (PORTED_SCREENS)"
     },
     {
@@ -157,11 +157,6 @@
       "path": "web/app/index.html",
       "text": "No deleted sessions yet.",
       "reason": "pinned: verify_app_shell.py holds the data-empty sentence of a ported screen to the phone (PORTED_SCREENS)"
-    },
-    {
-      "path": "web/app/index.html",
-      "text": "The wind and the source of this recording are in the badges above.",
-      "reason": "the browser's Log tab lede; the phone's Log carries the badges in place"
     },
     {
       "path": "web/app/index.html",
@@ -194,14 +189,34 @@
       "reason": "a page lede under the title: the phone's tab has a large title and no lede (step 2 decides)"
     },
     {
-      "path": "web/app/index.html",
-      "text": "Your API key stays in this browser",
-      "reason": "where the key is kept: the phone keeps it in its keychain and says so in its own Settings"
+      "path": "web/js/turnpage.js",
+      "text": "Not how I remember it? Tell us what you saw. The mail names this turn for you.",
+      "reason": "the turn page's doubt door, the phone's TurnDoubt.button and TurnDoubt.releaseHint word for word (FeedbackReport.swift); TurnDoubt is not in the app-words export yet, so the twin is typed here until it is"
+    },
+    {
+      "path": "web/js/render.js",
+      "text": "average of … runs · … cut short by the recording",
+      "reason": "the takeoff rows, the phone's SummaryGrid cards (\"Takeoff & pumping\") word for word; those cards are typed in the app target, not the kit, so there is no export to say them through yet"
+    },
+    {
+      "path": "web/js/render.js",
+      "text": "… · … in flight, in … …",
+      "reason": "the takeoff rows, the phone's SummaryGrid cards (\"Takeoff & pumping\") word for word; those cards are typed in the app target, not the kit, so there is no export to say them through yet"
+    },
+    {
+      "path": "web/js/render.js",
+      "text": "The recording cut every takeoff run short, so none is measured.",
+      "reason": "the takeoff rows, the phone's SummaryGrid cards (\"Takeoff & pumping\") word for word; those cards are typed in the app target, not the kit, so there is no export to say them through yet"
+    },
+    {
+      "path": "web/js/render.js",
+      "text": "No accelerometer in this recording, so pumps and failed attempts are not counted.",
+      "reason": "the takeoff rows, the phone's SummaryGrid cards (\"Takeoff & pumping\") word for word; those cards are typed in the app target, not the kit, so there is no export to say them through yet"
     },
     {
       "path": "web/app/index.html",
-      "text": "Strava is on the iPhone app. Signing in needs it.",
-      "reason": "a phone-only Settings section, said where it is (settings.json phoneOnly)"
+      "text": "Your API key stays in this browser",
+      "reason": "where the key is kept: the phone keeps it in its keychain and says so in its own Settings"
     },
     {
       "path": "web/app/index.html",
@@ -520,7 +535,7 @@
     },
     {
       "path": "web/js/library.js",
-      "text": "Nothing saved yet. Analyze a file and press Save to library.",
+      "text": "Nothing saved yet. Analyse a file and press Save to library.",
       "reason": "the browser's library starts empty and saves on request (docs/screens.md, Sessions)"
     },
     {
@@ -630,7 +645,7 @@
     },
     {
       "path": "web/js/trends.js",
-      "text": "Records and trends need the Python runtime.",
+      "text": "Records and trends could not be worked out.",
       "reason": "the Pyodide engine, which the phone does not have"
     },
     {
@@ -655,7 +670,7 @@
     },
     {
       "path": "web/js/trends.js",
-      "text": "Weeks start on Monday, the ISO-8601 week.",
+      "text": "Weeks start on Monday.",
       "reason": "how the browser's weeks are cut, each session in its own local time; the phone's run on the phone's clock"
     },
     {

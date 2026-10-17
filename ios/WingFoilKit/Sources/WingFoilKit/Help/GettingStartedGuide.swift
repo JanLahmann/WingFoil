@@ -190,9 +190,9 @@ public enum GettingStartedGuide {
                           + "Health when the workout finishes, which can take a minute."),
                 .init(number: 3,
                       title: "Import it on the iPhone",
-                      detail: "Import → **Apple Health**. Allow CleanJibe to read workouts and "
-                          + "routes. Switch every one on, or there is nothing to read. Then "
-                          + "pick yours."),
+                      detail: "Import → **Import from Health…**. Allow CleanJibe to read "
+                          + "workouts and routes. Switch every one on, or there is nothing to "
+                          + "read. Then pick yours."),
                 .init(number: 4,
                       title: "Keep it automatic",
                       detail: "Switch on *Import new Health workouts automatically* and the "
@@ -256,8 +256,9 @@ public enum GettingStartedGuide {
                           + "new**."),
                 .init(number: 3,
                       title: "Keep it automatic",
-                      detail: "Once one session has come in this way a toggle appears, and "
-                          + "CleanJibe checks Strava whenever you open the app."),
+                      detail: "Import from Strava… has a switch, **Import new Strava "
+                          + "activities automatically**. With it on, CleanJibe checks Strava "
+                          + "whenever you open the app."),
                 .init(number: 4,
                       title: "What it costs",
                       detail: "Strava hands over positions rather than the speed your watch "

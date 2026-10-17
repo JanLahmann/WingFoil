@@ -29,11 +29,13 @@ struct LibraryFilterBar: View {
             menu(title: spotTitle, symbol: "mappin.and.ellipse", active: filter.spotId != nil) {
                 Button("All spots") { filter.spotId = nil }
                 Divider()
-                ForEach(store.spots) { entry in
+                // Only spots with a session in them (the Gear & spots tab's rule), labelled
+                // "Hvide Sande · 3" without the brackets.
+                ForEach(store.spots.filter { $0.sessions > 0 }) { entry in
                     Button {
                         filter.spotId = entry.spot.id
                     } label: {
-                        Text("\(entry.spot.name) (\(entry.sessions))")
+                        Text("\(entry.spot.name) · \(entry.sessions)")
                     }
                 }
                 Divider()

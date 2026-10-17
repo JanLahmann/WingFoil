@@ -70,7 +70,7 @@ struct SessionFoilGrid: View {
             // quantities (docs/presentation/labels.md, "Label table"). The duration is still here,
             // in the caption, which is where it now reads as what the share is a share of.
             StatCard(title: words.onFoil, value: Fmt.pct(summary.foilPct),
-                     caption: Fmt.duration(summary.foilTimeS) + " " + words.foilTimeLower)
+                     caption: KeyMetrics.duration(summary.foilTimeS) + " " + words.foilTimeLower)
             // **No "Flights · N detected" card** (Jan, 25 Sep 2026, F8k): a count with
             // nothing to open meant nothing to a rider. The flights are a list now, one
             // row each, on the Flights tab (`FlightsListView`), with the count in its head.
@@ -78,7 +78,8 @@ struct SessionFoilGrid: View {
             // went, which is not in general the longest one's own distance. It used to read
             // "N m" under "Longest flight" and so claimed a fact the number does not carry.
             StatCard(title: "Longest flight",
-                     value: Fmt.duration(summary.longestFlightS),
+                     // The Flights tab's own clock ("Flight 12 · 2:13"), one spelling a tap apart.
+                     value: FlightPairing.clock(summary.longestFlightS),
                      caption: "max " + Fmt.meters(summary.maxFlightM) + " in one flight")
             // The caption is the **engine's** cleaned span (`summary.durationS`), the same
             // number and the same spelling the key-metrics block prints two cards up. It
@@ -141,7 +142,7 @@ struct SessionRecordsTable: View {
                 HelpButton(topic: .speedRecords, size: .footnote)
                 Spacer()
                 if !detail.efforts.isEmpty {
-                    Text(selectedEffort == nil ? "tap to locate" : "tap again for 2 s")
+                    Text(selectedEffort == nil ? "tap to locate" : "tap again for best 2 s")
                         .font(.caption2).foregroundStyle(.readableSecondary)
                 }
             }
@@ -169,7 +170,7 @@ struct SessionRecordsTable: View {
             // name when the phone is set to a larger text size.
             Text("record").scaledColumn(92, relativeTo: .subheadline)
             Text(Fmt.knUnit).scaledColumn(74, alignment: .trailing, relativeTo: .subheadline)
-            Text("where").frame(maxWidth: .infinity, alignment: .leading)
+            Text("when").frame(maxWidth: .infinity, alignment: .leading)
         }
         .font(.caption2)
         .foregroundStyle(.readableSecondary)
@@ -274,11 +275,17 @@ struct SessionTurnsSection: View {
                                       ? [BreakdownPart.clean(t.jibesSuccessful)]
                                         + BreakdownPart.ladder(t.jibeOutcomes)
                                       : [],
-                                  caption: t.jibes > 0 ? nil : "none detected",
+                                  // Turns that were never named are not "none detected": the
+                                  // Unclassified card below says why.
+                                  caption: t.jibes > 0 ? nil
+                                      : (t.unclassified > 0 ? "not named, no wind axis"
+                                                            : "none detected"),
                                   help: .turnTypes)
                     BreakdownCard(title: "Tacks", value: "\(t.tacks)",
                                   parts: t.tacks > 0 ? BreakdownPart.ladder(t.tackOutcomes) : [],
-                                  caption: t.tacks > 0 ? nil : "none detected",
+                                  caption: t.tacks > 0 ? nil
+                                      : (t.unclassified > 0 ? "not named, no wind axis"
+                                                            : "none detected"),
                                   help: .turnTypes)
                     if t.unclassified > 0 {
                         StatCard(title: "Unclassified turns", value: "\(t.unclassified)",
@@ -388,8 +395,9 @@ struct SessionTakeoffSection: View {
                         if let avg = k.avgTakeoffS { runCard(k, avg: avg, title: "Takeoff run") }
                         if hasAccel, let strokes = k.totalPumpStrokes {
                             StatCard(title: "Pump strokes", value: "\(strokes)",
-                                     caption: "\(k.inFlightPumpStrokes ?? 0) in flight · "
-                                         + "\(k.inFlightEpisodes) episodes",
+                                     caption: "\(k.inFlightPumpStrokes ?? 0) in flight, in "
+                                         + "\(k.inFlightEpisodes) "
+                                         + (k.inFlightEpisodes == 1 ? "burst" : "bursts"),
                                      help: .pumpStrokes)
                         }
                         #if BETA
@@ -435,8 +443,8 @@ struct SessionTakeoffSection: View {
         StatCard(title: title,
                  value: String(format: "%.1f s", avg),
                  caption: k.runsTruncated > 0
-                     ? String(k.runsJudged) + " judged · "
-                         + String(k.runsTruncated) + " not in the record"
+                     ? "average of " + String(k.runsJudged) + " runs · "
+                         + String(k.runsTruncated) + " cut short by the recording"
                      : "average over " + String(k.runsJudged) + " runs")
     }
 
@@ -576,7 +584,7 @@ struct BreakdownPart: Hashable {
     /// A glide-out's own neutral ring (`FlightPairing.Outcome.glidedOut`), the hollow mark
     /// the map draws it as — never the flew-through check (F9e).
     static func glideOut(_ n: Int) -> BreakdownPart {
-        BreakdownPart(value: n, word: "glide-out",
+        BreakdownPart(value: n, word: n == 1 ? "glide-out" : "glide-outs",
                       symbol: FlightPairing.Outcome.glidedOut.symbolName,
                       color: .readableSecondary)
     }

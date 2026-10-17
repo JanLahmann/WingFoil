@@ -55,7 +55,12 @@ struct TurnsAnalysisView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("All \(detail.analysis.summary.turns.turnsCounted) turns")
+            // "All 51 turns" only while nothing is filtered: over a filtered list it named a
+            // count the list was not showing. Filtered: "9 of 51 turns · jibes entered on port".
+            Text(filter.isEverything
+                 ? "All \(detail.analysis.summary.turns.turnsCounted) turns"
+                 : "\(items.count) of \(detail.analysis.summary.turns.turnsCounted) turns · "
+                    + filter.description)
                 .font(.headline)
                 .accessibilityIdentifier("turnsHeading")
             filters
@@ -358,15 +363,16 @@ private struct TurnRowView: View {
             Text(Fmt.clock(item.ts))
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(.readableSecondary)
-                .scaledColumn(46, relativeTo: .caption)
+                .scaledColumn(56, relativeTo: .caption)
             VStack(alignment: .leading, spacing: 1) {
                 Text("\(item.typeLabel) · \(item.sideLabel)")
                     .font(.subheadline)
+                // Wraps rather than ellipses: "18.2 → 9.5 km/h · stopped 3 s · wrist under ·
+                // pumped out" is the turn's why, and it was cut on a 17 Pro.
                 Text(item.detail)
                     .font(.caption2)
                     .foregroundStyle(.readableSecondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
             // **The score says what it is** (Jan, 25 Sep 2026, F9f): a bare "74" beside a

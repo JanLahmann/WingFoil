@@ -34,9 +34,15 @@ struct PeriodsView: View {
             customSection
 
             if loaded && periods.isEmpty {
-                ContentUnavailableView(
-                    AppShellCopy.Periods.empty, systemImage: "calendar",
-                    description: Text(AppShellCopy.Periods.emptyLine))
+                ContentUnavailableView {
+                    Label(AppShellCopy.Periods.empty, systemImage: "calendar")
+                } description: {
+                    Text(AppShellCopy.Periods.emptyLine)
+                } actions: {
+                    if store.sessions.isEmpty || store.hasOnlyExampleSessions {
+                        ExampleOnlyDoors()
+                    }
+                }
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color.clear)
             }

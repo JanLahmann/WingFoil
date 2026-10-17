@@ -425,7 +425,8 @@ private struct TurnDetailPage: View {
             // The outcome and the star are the hero's now (`verdict`), so the chips are the
             // facts beside the verdict: why a flown jibe lost its star, the pump-out, the
             // wrist. Saying "touchdown" large and again in a chip was one fact twice.
-            HStack(spacing: 8) {
+            // They wrap (`WrapRow`, the map legend's): three in one line ellipsed on every phone.
+            WrapRow(spacing: 8) {
                 if !turn.clean, let reason = notCleanText(turn) {
                     // A jibe that flew through and held its speed and is still not clean
                     // (engine 0.17.0). Without this the page said "flew through", said
@@ -454,8 +455,8 @@ private struct TurnDetailPage: View {
                          symbol: DesignTokens.Glyph.splash,
                          tint: DesignTokens.Effort.splash)
                 }
-                Spacer(minLength: 0)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             // **Why it ended that way** (engine 0.18.0), directly under the chips. Jan asked
             // for "a short comment for the user why a jibe is a touchdown or a fall": the

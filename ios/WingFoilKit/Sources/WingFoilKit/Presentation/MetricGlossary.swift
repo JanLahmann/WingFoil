@@ -233,17 +233,6 @@ public enum MetricGlossary {
             places: [.watchPage, .phoneRow, .phonePage, .card, .web, .help],
             labels: ["Dry streak", "dry streak", "best streaks"]),
 
-        MetricGlossaryEntry(
-            id: "jph",
-            term: "JPH",
-            short: "JPH",
-            expansion: "dry jibes per hour",
-            line: "Dry jibes per hour. Falling in more often cannot raise it.",
-            sentence: "your dry jibes per hour",
-            surfaces: [.ios, .web],
-            places: [.phonePage, .card, .web, .help],
-            labels: ["JPH", "JPH · dry jibes per hour"]),
-
         // The clean-jibe line, and the only place in the glossary the rule is stated. The
         // quiet tail is the third requirement (engine 0.17.0, docs/algorithms.md) and was
         // missing from the phone's own wording for three weeks.
@@ -258,6 +247,17 @@ public enum MetricGlossary {
             surfaces: [.ios, .watch, .web, .appstore, .ciq],
             places: [.watchPage, .phonePage, .card, .web, .help],
             labels: ["CPH", "CPH · clean jibes per hour"]),
+
+        MetricGlossaryEntry(
+            id: "jph",
+            term: "JPH",
+            short: "JPH",
+            expansion: "dry jibes per hour",
+            line: "Dry jibes per hour. Falling in more often cannot raise it.",
+            sentence: "your dry jibes per hour",
+            surfaces: [.ios, .web],
+            places: [.phonePage, .card, .web, .help],
+            labels: ["JPH", "JPH · dry jibes per hour"]),
 
         // **The one dry-turn rate once tacks exist** (Jan, 25 Sep 2026): CPH first, then JPH
         // on a jibes-only session or TPH on one with tacks in it, then WPH. It also stands

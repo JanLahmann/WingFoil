@@ -228,8 +228,7 @@ def render() -> str:
     # (rider review X10); the marks ride on the topics and items themselves.
     help_out = {"stub": bool(help_doc.get("stub")),
                 "iphoneTag": help_doc.get("iphoneTag", ""),
-                "sections": [{key: section[key] for key in section if key != "_readme"}
-                             for section in help_doc["sections"]]}
+                "sections": _release_sections(help_doc["sections"])}
 
     feedback_out = {key: feedback[key]
                     for key in ("doors", "invitation", "prompts", "subjectPrefix")}
@@ -344,6 +343,34 @@ def render_page(text: str, words: dict) -> str:
         return (match.group(1) + html.escape(say(words, match.group("key")), quote=False)
                 + match.group(5))
     return DATA_W.sub(fill, text)
+
+
+def _released(entry: dict) -> bool:
+    """A topic or an item the App Store release has. The browser app runs the release
+    analysis and is the release's twin (docs/screens.md), so the Help page lists what the
+    release lists: the kit marks each topic and item with its channels, and a topic the
+    release lacks (the Apple Watch apps, windsurf, sending a session in) is a door the
+    browser does not have either (rider review, 16 Oct 2026)."""
+    return "release" in entry.get("channels", ["release"])
+
+
+def _release_sections(sections: list[dict]) -> list[dict]:
+    kept = {t["id"] for sec in sections for t in sec.get("topics", []) if _released(t)}
+    out = []
+    for section in sections:
+        entry = {key: section[key] for key in section if key not in ("_readme", "topics")}
+        entry["topics"] = []
+        for t in section.get("topics", []):
+            if not _released(t):
+                continue
+            t = dict(t)
+            if "items" in t:
+                t["items"] = [i for i in t["items"] if _released(i)]
+            if "related" in t:
+                t["related"] = [r for r in t["related"] if r in kept]
+            entry["topics"].append(t)
+        out.append(entry)
+    return out
 
 
 def main(argv=None) -> int:

@@ -88,18 +88,18 @@ export const GLOSSARY = [
     "line": "How many jibes in a row you stayed out of the water, and the best run of the day."
   },
   {
-    "id": "jph",
-    "term": "JPH",
-    "short": "JPH",
-    "expansion": "dry jibes per hour",
-    "line": "Dry jibes per hour. Falling in more often cannot raise it."
-  },
-  {
     "id": "cph",
     "term": "CPH",
     "short": "CPH",
     "expansion": "clean jibes per hour",
     "line": "Clean jibes per hour. Clean: flew through, held your speed, and 10 quiet seconds after."
+  },
+  {
+    "id": "jph",
+    "term": "JPH",
+    "short": "JPH",
+    "expansion": "dry jibes per hour",
+    "line": "Dry jibes per hour. Falling in more often cannot raise it."
   },
   {
     "id": "tph",

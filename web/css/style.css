@@ -334,6 +334,11 @@ input:focus-visible, button:focus-visible, .btn:focus-visible, .dropzone:focus-v
 .tag.phone { text-transform: none; letter-spacing: .02em; margin-left: 0; margin-right: 6px;
   vertical-align: 1px; white-space: nowrap; }
 h3 .tag.phone, h4 .tag.phone { margin-left: 6px; margin-right: 0; }
+/* The beta pill on the app's What's new cards: the reader pages' own (home.css), so a beta
+   note reads as one in the app as it does on /whats-new/. */
+.tag.beta { text-transform: none; letter-spacing: .02em; color: var(--series-1);
+  border-color: color-mix(in srgb, var(--series-1) 45%, var(--line)); }
+h3 .tag.beta { vertical-align: 2px; margin-left: 6px; }
 
 /* ------------------------------------------------------------------- steps */
 

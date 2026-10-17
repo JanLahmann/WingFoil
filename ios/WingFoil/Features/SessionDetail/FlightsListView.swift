@@ -94,7 +94,7 @@ struct FlightsListView: View {
 
     private var headerRow: some View {
         HStack(spacing: 10) {
-            Text("up at").scaledColumn(46, relativeTo: .caption)
+            Text("took off").scaledColumn(56, relativeTo: .caption)
             Text("flight").frame(maxWidth: .infinity, alignment: .leading)
             Text("ended").scaledColumn(96, relativeTo: .caption)
         }
@@ -112,7 +112,7 @@ struct FlightsListView: View {
                 Text(Fmt.clock(flight.startTs))
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.readableSecondary)
-                    .scaledColumn(46, relativeTo: .caption)
+                    .scaledColumn(56, relativeTo: .caption)
                 VStack(alignment: .leading, spacing: 1) {
                     Text("Flight " + String(flight.number) + " · "
                          + FlightPairing.clock(flight.durationS))
@@ -167,13 +167,18 @@ struct FlightsListView: View {
         return parts.isEmpty ? " " : parts.joined(separator: " · ")
     }
 
-    /// "in jibe 3" — the turn an end inside a turn's window belongs to. Its page is the
+    /// "during jibe 3" — the turn an end inside a turn's window belongs to ("in" doubled
+    /// under "fell in", screenshot review 16 Oct 2026). Its page is the
     /// turn's, on Turns; this row only says where to find it.
     private func owningTurn(_ end: Int?) -> String? {
         guard let end, detail.analysis.flightEnds.indices.contains(end),
               let turn = detail.analysis.flightEnds[end].ownedByTurn,
               detail.analysis.turns.indices.contains(turn) else { return nil }
-        return "in a " + TurnAnalytics.typeLabel(detail.analysis.turns[turn].type).lowercased()
+        // "during jibe 3", the turn page's own ordinal, so the rider can find it on Turns.
+        if let pos = TurnDetailSheet.kindPosition(of: turn, in: detail) {
+            return "during " + pos.kind.lowercased() + " " + String(pos.ordinal)
+        }
+        return "during a " + TurnAnalytics.typeLabel(detail.analysis.turns[turn].type).lowercased()
     }
 }
 

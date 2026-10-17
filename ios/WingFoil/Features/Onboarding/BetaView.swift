@@ -49,9 +49,13 @@ struct BetaView: View {
                 #endif
 
                 #if !BETA
-                // The one thing on the page a rider can act on today, so it comes first
-                // and it is a prominent button rather than a line of blue text.
+                // The one thing on the page a rider can act on today, so it is a prominent
+                // button rather than a line of blue text, under the steps that come before
+                // it: "Back up first" is read before the tap (docs/screens.md).
                 Section {
+                    ForEach(BetaGuide.howToJoin, id: \.self) { line in
+                        Text(line).font(.callout)
+                    }
                     Link(destination: AppChannel.testFlight) {
                         Label(BetaGuide.joinButton, systemImage: "arrow.up.forward.app")
                             .font(.headline)
@@ -61,9 +65,6 @@ struct BetaView: View {
                     .buttonStyle(.borderedProminent)
                     .listRowBackground(Color.clear)
                     .listRowInsets(.init(top: 4, leading: 0, bottom: 4, trailing: 0))
-                    ForEach(BetaGuide.howToJoin, id: \.self) { line in
-                        Text(line).font(.callout)
-                    }
                 } header: {
                     Text(BetaGuide.howToJoinTitle)
                 }

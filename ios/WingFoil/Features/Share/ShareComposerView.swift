@@ -457,14 +457,18 @@ struct ShareComposerView: View {
         .padding(12)
         .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 14))
 
-        Toggle(isOn: $includeAccelerometer) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Include accelerometer data")
-                Text("The 100 Hz stream is 95 % of the file and only needed to recount "
-                     + "pump strokes. Off keeps the attachment small enough for a chat app.")
-                    .font(.caption)
-                    .foregroundStyle(.readableSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+        // Only where there is a stream to leave out: on a file without one the switch did
+        // nothing. While the detail loads it shows, as it always did.
+        if detail?.analysis.capabilities.hasAccel != false {
+            Toggle(isOn: $includeAccelerometer) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Include accelerometer data")
+                    Text("Keeps pumps, failed takeoffs and jumps for whoever opens it. "
+                         + "Off keeps the file small enough for a chat app.")
+                        .font(.caption)
+                        .foregroundStyle(.readableSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
         }
 

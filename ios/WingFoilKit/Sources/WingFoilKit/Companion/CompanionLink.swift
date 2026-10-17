@@ -106,14 +106,14 @@ extension CompanionLinkState {
             "Choose your watch in Garmin Connect. CleanJibe only ever talks to the watch "
             + "you pick here."
         case .deviceOffline:
-            "Sessions still reach the library through the FIT file — the watch link only "
+            "Sessions still reach the library through the FIT file. The watch link only "
             + "makes them arrive sooner. Bring the watch into range to send wind to it."
         case .appNotRunning:
             "Open CleanJibe on the watch: it only listens while it is running. "
             + "Session summaries are sent when you save, whether this app is open or not."
         case .ready:
-            "Your watch sends a session summary the moment you save, and accepts a wind "
-            + "direction from here."
+            "Your watch sends a session summary the moment you save. The wind and your "
+            + "spot's map go back to it from here."
         }
     }
 }

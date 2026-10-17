@@ -46,8 +46,8 @@ public enum ExampleSession {
     /// hiding, which is what the rule says it always is.
     public static let blurb =
         "A real wingfoil session on Lake Garda. Ten minutes, 2 flights, 10 jibes, 2.6 km "
-        + "and 68 % foil time. The track, the speed chart, the turn outcomes, the pump "
-        + "counts and the heart-rate cost are all filled in."
+        + "and 68 % foil time. The track, the speed chart, the turn outcomes and the "
+        + "heart-rate cost are all filled in."
 
     /// The bundled FIT inside the kit's resource bundle.
     public static var url: URL? {

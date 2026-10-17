@@ -136,6 +136,15 @@ struct BetaSectionView: View {
     /// Every line of it is a thing that actually goes. A confirmation that says "all data"
     /// is a confirmation the rider cannot check, and the two items he would never guess at
     /// — the keychain pair — are the whole reason this row exists, so they are named.
+    // The watch's map picks and the tuning sliders are dev-only doors (rider review, 16 Oct
+    // 2026): the beta's warning names only what the beta has.
+    #if DEV
+    private static let channelItems =
+        "• The notification choices, the map picks for the watch, and the tuning sliders.\n"
+    #else
+    private static let channelItems = "• The notification choices.\n"
+    #endif
+
     private static let warning =
         "CleanJibe goes back to the day you installed it. This cannot be undone.\n\n"
         + "• Your whole library. Every session, its analysis and its archived recording, "
@@ -144,8 +153,7 @@ struct BetaSectionView: View {
         + "keychain. Deleting the app leaves them behind. This does not.\n"
         + "• Every setting: the welcome screen's flag, map style and layers, replay "
         + "length, framing and music.\n"
-        + "• The notification choices, the map picks for the watch, and the tuning "
-        + "sliders.\n"
+        + Self.channelItems
         + "• The beta's usage counters and the widgets' snapshot.\n"
         + "• Cached thumbnails, imported files and anything half-exported.\n\n"
         + "Nothing leaves this phone, and nothing elsewhere is touched.\n\n"
@@ -194,8 +202,8 @@ struct ComingSoonSection: View {
         + "have tried."
     #else
     private static let footer =
-        "These features are not in this app yet. Ride every one of them today in the "
-        + "public beta.\n\n"
+        "These features are not in this app yet. Most of them are in the public beta "
+        + "today. The last one is still a plan.\n\n"
         + "Joining takes one tap, and your library comes with you."
     #endif
 }
@@ -239,7 +247,7 @@ struct ComingSoonPage: View {
             } header: {
                 Text("In the public beta")
             } footer: {
-                Text("Testers ride with these every week and tell us how they went.\n\n"
+                Text("Testers ride with the built ones every week and tell us how they went.\n\n"
                      + "A feature reaches the App Store app with ten sessions from two "
                      + "riders behind it. It also needs a help topic and no open report.")
             }
@@ -302,7 +310,8 @@ struct ComingSoonPage: View {
     // The community message on top (Jan, 30 September 2026), then what the list is.
     private static let intro =
         BetaGuide.community + "\n\n"
-        + "These features come in a future release. Ride them now in the public beta."
+        + "These features come in a future release. Most of them are in the public beta "
+        + "today."
     #endif
 
     private func row(_ feature: String) -> some View {

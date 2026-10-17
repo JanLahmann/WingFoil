@@ -96,7 +96,7 @@ public struct HrCostCard: Sendable, Equatable {
             var parts = [label]
             parts.append(costBpm.map { "cost \(HrCostCard.bpm($0))" } ?? "cost not measurable")
             if let successPct {
-                parts.append(String(format: "%.0f%% of %d attempts", successPct, attempts))
+                parts.append(String(format: "%.0f %% of %d attempts", successPct, attempts))
             }
             if let baselineBpm {
                 parts.append(String(format: "from %.0f bpm", baselineBpm))
@@ -177,7 +177,7 @@ public struct HrCostCard: Sendable, Equatable {
         // number, weaker claim, so it is said on the headline rather than buried in help.
         if s.approximateTakeoffs > 0 {
             captionParts.append(String(s.approximateTakeoffs)
-                                + " anchored on the flight start")
+                                + " timed from the moment you flew")
         }
 
         return HrCostCard(
@@ -200,7 +200,7 @@ public struct HrCostCard: Sendable, Equatable {
     static func warning(_ s: HrSummary) -> String? {
         var reasons: [String] = []
         if let usable = s.usablePct, usable < thinCoveragePct {
-            reasons.append(String(format: "the sensor held a usable reading for only %.0f%% "
+            reasons.append(String(format: "the sensor held a usable reading for only %.0f %% "
                                   + "of the session", usable))
         }
         let coverage = s.takeoffCostCoverage
@@ -217,8 +217,8 @@ public struct HrCostCard: Sendable, Equatable {
     /// Where the numbers come from, in the tertiary voice the page's other footers use.
     static func footnote(_ s: HrSummary) -> String {
         var parts: [String] = []
-        parts.append(s.usablePct.map { String(format: "HR usable %.0f%% of the session", $0) }
-            ?? "HR coverage unknown")
+        parts.append(s.usablePct.map { String(format: "Heart rate usable %.0f %% of the session", $0) }
+            ?? "Heart rate coverage unknown")
         if let lag = s.medianPeakLagS {
             parts.append(String(format: "peak %.0f s after the effort", lag))
         }
@@ -254,7 +254,7 @@ public struct HrCostCard: Sendable, Equatable {
                             : "no stroke counts on this source",
                         missing: true)
         }
-        var caption = s.medianBpmPerStroke.map { String(format: "median %.2f", $0) } ?? ""
+        var caption = s.medianBpmPerStroke.map { String(format: "median %.2f bpm", $0) } ?? ""
         if let text = coverageText(coverage, noun: "takeoff") {
             caption = caption.isEmpty ? text : caption + " · " + text
         }
@@ -272,7 +272,7 @@ public struct HrCostCard: Sendable, Equatable {
               let cruising = pc.cruisingBpm else {
             return Stat(key: "pumpCruise", label: "Pumping vs cruising", value: "—",
                         caption: pc.pumpingSpans == 0 ? "no pump bursts on this source"
-                            : "not enough usable HR in one of the two",
+                            : "not enough usable heart rate in one of the two",
                         missing: true)
         }
         // **The delta and its operands are printed from the SAME rounded numbers.**
@@ -294,7 +294,7 @@ public struct HrCostCard: Sendable, Equatable {
         // seconds, so the honest denominator is seconds, not events.
         let covered = min(pc.pumpingCoverage ?? 1, pc.cruisingCoverage ?? 1)
         if covered < 0.995 {
-            caption += String(format: " · %.0f%% covered", covered * 100)
+            caption += String(format: " · %.0f %% covered", covered * 100)
         }
         return Stat(key: "pumpCruise", label: "Pumping vs cruising",
                     value: bpm(shownPumping - shownCruising, decimals: 1),
@@ -318,8 +318,8 @@ public struct HrCostCard: Sendable, Equatable {
             // and there was nothing to recover from; some of them and the decay never landed
             // inside the 2-minute window, or ran into a recording hole.
             let why: String = coverage.total == 0
-                ? "no " + event + " raised HR enough to recover from"
-                : "HR never fell halfway back within 2 min"
+                ? "no " + event + " raised your heart rate enough to recover from"
+                : "Heart rate never fell halfway back within 2 min"
             return Stat(key: key, label: label, value: "—", caption: why, missing: true)
         }
         var caption = "halfway back"

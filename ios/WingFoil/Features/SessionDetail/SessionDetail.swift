@@ -754,9 +754,11 @@ struct SessionDetail: Sendable {
         }
 
         for takeoff in analysis.takeoffs {
-            var detail = "up at " + Fmt.kn(takeoff.entryKn, digits: 1)
+            // "flying at": "up at" is the Flights list's clock column, a time, not a speed.
+            // "pumps", the Flights list's own word for the same count.
+            var detail = "flying at " + Fmt.kn(takeoff.entryKn, digits: 1)
             if let pumps = takeoff.pumps {
-                let noun = pumps == 1 ? "stroke" : "strokes"
+                let noun = pumps == 1 ? "pump" : "pumps"
                 detail += " · " + String(pumps) + " " + noun
             }
             if !takeoff.truncated {
@@ -776,7 +778,7 @@ struct SessionDetail: Sendable {
         // The episode's *first* stroke, not its last: the marker should sit where he
         // started trying, which is where the pumping run he can recognise begins.
         for episode in PresentationRules.failedAttempts(analysis) {
-            let strokeNoun = episode.strokes == 1 ? "stroke" : "strokes"
+            let strokeNoun = episode.strokes == 1 ? "pump" : "pumps"
             var detail = String(episode.strokes) + " " + strokeNoun
             let duration = episode.endTs - episode.startTs
             if duration >= 1 { detail += String(format: " · %.0f s", duration) }

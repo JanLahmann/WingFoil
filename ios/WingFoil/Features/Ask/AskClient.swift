@@ -42,7 +42,7 @@ actor AskClient {
 
         var message: String {
             switch self {
-            case .unsupported: "Ask CleanJibe needs a real iPhone."
+            case .unsupported: "Ask CleanJibe needs a real iPhone or iPad."
             case .limit: "That was today's 20 questions. Ask again tomorrow."
             case .busy: "Ask CleanJibe has answered all it can today. Try again tomorrow."
             case .attest: "This iPhone could not be confirmed as CleanJibe. Try again later."
