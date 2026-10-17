@@ -47,6 +47,8 @@ public enum MostWanted {
 
     /// The beta features' footer in the sheet.
     public static let checkFooter = "Ridden with one of these? Tell us how it went."
+    /// The one row the list folds into, closed until tapped (Jan, 17 Oct 2026).
+    public static let checkOpen = "Works or has a problem"
 
     /// The free line's placeholder, and its label in the mail.
     public static let notePrompt = "Your idea"

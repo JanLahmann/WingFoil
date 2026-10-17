@@ -465,13 +465,13 @@ There is no account, and no session of yours is uploaded. The whole policy is on
 [iPhone app only] The app talks to four places, each only when you use it. Your own login goes to intervals.icu and Strava. Apple Maps loads while a map is on screen. To name a new spot, it sends one rounded position.
 - Your location [only in: beta, dev] [iPhone app only]: The Apple Watch app reads it while a workout you started is running. It goes to your own iPhone and nowhere else.
 - A daily look for a newer build [only in: beta, dev]: Once a day the beta asks cleanjibe.org whether a newer build exists. It sends nothing about you.
-- Ask CleanJibe [only in: beta, dev]: Ask CleanJibe sends your question, and a session's numbers when you ask from one, to Anthropic's Claude. It is kept 30 days.
+- Ask CleanJibe [only in: beta, dev]: Ask CleanJibe sends your question, and a session's numbers when you ask from one, to Anthropic's Claude. It is kept 30 days. An idea you share is kept a year for the team.
 - iCloud Drive [only in: dev]: Your library can live in your own iCloud Drive, so your iPhone and iPad share it. It is your iCloud, not a server of ours.
 - The Garmin watch map [only in: dev]: Where I am now asks for one position, to draw the map your Garmin watch shows.
 - Your intervals.icu key [iPhone app only]: Kept in this iPhone's Keychain, never copied to iCloud and never written to a log. It goes to intervals.icu itself, encrypted, and nowhere else.
 - Treat it like a password: It opens your intervals.icu account. Remove it in Settings → intervals.icu, or regenerate it in Developer Settings. The old key stops working at once.
 - What the website counts: cleanjibe.org and the browser app count page views and taps with umami. It sets no cookies. It never sees your sessions, your files or any number off a ride.
-In the browser: In the browser app, a session is analysed in your browser and stays in its storage. Nothing is uploaded. Your intervals.icu key stays in this browser too. It goes to intervals.icu itself and nowhere else. Ask CleanJibe on the Help page sends a question only when you send one. It is kept 30 days.
+In the browser: In the browser app, a session is analysed in your browser and stays in its storage. Nothing is uploaded. Your intervals.icu key stays in this browser too. It goes to intervals.icu itself and nowhere else. Ask CleanJibe on the Help page sends a question only when you send one. It is kept 30 days, an idea for the team a year.
 
 #### Analysis engine version
 When the analysis improves, your old sessions are worked out again.
@@ -513,6 +513,7 @@ The mail asks three questions, with a blank line under each.
 - Usage statistics: The sheet before the mail can add what this phone counted. That is which features you used, and whether they worked. Switch it off there, or delete any line.
 - Read it before you send [iPhone app only]: Every line is there to read and to edit. If this phone has no mail account, the app hands the same text to whatever you do use.
 - If you are on the beta [iPhone app only]: A screenshot taken inside the app offers Send Beta Feedback. That attaches the screenshot and the device logs. Take it for a crash.
+- An idea, told to Ask CleanJibe: Ask CleanJibe, on the Help page of the beta and of cleanjibe.org, passes an idea on to the team. The team reads every one.
 - About the watch app itself: Anything about the watch app can go through its Connect IQ store listing. For a number that looks wrong, the mail here is the one worth sending.
 
 #### Send a session to us [only in: beta, dev]
@@ -536,7 +537,7 @@ Beta adds:
 - The session story: one line over your numbers, and a chip on each record you beat.
 - Send a session and its recording to us from its Share page or a turn, with your notes.
 - Jumps: how many you jumped, and an estimate of the highest, from the watch's motion sensor.
-- Ask CleanJibe: a question in your own words, answered from the help and, on a session, from its numbers.
+- Ask CleanJibe: a question in your own words, answered from the help and, on a session, from its numbers. Tell it your ideas, and the team reads them.
 - Planned: a live view on the Apple Watch. Foil state, flights, records and turn verdicts on the wrist, as the Garmin app shows them.
 
 Dev adds:

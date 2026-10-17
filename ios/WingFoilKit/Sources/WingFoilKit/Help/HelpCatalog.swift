@@ -1718,6 +1718,12 @@ public enum HelpCatalog {
                       detail: "A screenshot taken inside the app offers "
                           + FeedbackDoors.testflight + ". That attaches the screenshot and "
                           + "the device logs. Take it for a crash."),
+                // Ideas told to the help desk reach the team too (Jan, 17 Oct 2026: "a key
+                // part of us being community driven"); the Worker keeps them apart, a year.
+                .init(term: "An idea, told to Ask CleanJibe",
+                      detail: "Ask CleanJibe, on the Help page of the beta and of "
+                          + Branding.site + ", passes an idea on to the team. The team "
+                          + "reads every one."),
                 .init(term: "About the watch app itself",
                       detail: "Anything about the watch app can go through its Connect IQ "
                           + "store listing. For a number that looks wrong, the mail here is "
@@ -1828,7 +1834,8 @@ public enum HelpCatalog {
             items.append(.init(term: "Ask CleanJibe",
                                detail: "Ask CleanJibe sends your question, and a session's "
                                    + "numbers when you ask from one, to Anthropic's Claude. "
-                                   + "It is kept 30 days."))
+                                   + "It is kept 30 days. An idea you share is kept a year "
+                                   + "for the team."))
         }
         if channel == .dev {
             items.append(.init(term: "iCloud Drive",
@@ -2071,7 +2078,7 @@ extension HelpCatalog {
                       "Your intervals.icu key stays in this browser too. It goes to "
                       + "intervals.icu itself and nowhere else.",
                       "Ask CleanJibe on the Help page sends a question only when you send "
-                      + "one. It is kept 30 days."]),
+                      + "one. It is kept 30 days, an idea for the team a year."]),
         .sendingFeedback: HelpSurfaces(
             body: [3],
             items: ["What is already in the mail", "Read it before you send",

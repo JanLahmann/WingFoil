@@ -136,7 +136,7 @@ export const SHELL = {
       "The session story: one line over your numbers, and a chip on each record you beat.",
       "Send a session and its recording to us from its Share page or a turn, with your notes.",
       "Jumps: how many you jumped, and an estimate of the highest, from the watch's motion sensor.",
-      "Ask CleanJibe: a question in your own words, answered from the help and, on a session, from its numbers.",
+      "Ask CleanJibe: a question in your own words, answered from the help and, on a session, from its numbers. Tell it your ideas, and the team reads them.",
       "Planned: a live view on the Apple Watch. Foil state, flights, records and turn verdicts on the wrist, as the Garmin app shows them."
     ]
   }
@@ -2811,7 +2811,7 @@ export const HELP = {
           "browser": [
             "In the browser app, a session is analysed in your browser and stays in its storage. Nothing is uploaded.",
             "Your intervals.icu key stays in this browser too. It goes to intervals.icu itself and nowhere else.",
-            "Ask CleanJibe on the Help page sends a question only when you send one. It is kept 30 days."
+            "Ask CleanJibe on the Help page sends a question only when you send one. It is kept 30 days, an idea for the team a year."
           ],
           "channels": [
             "release",
@@ -3055,6 +3055,15 @@ export const HELP = {
               "detail": "A screenshot taken inside the app offers Send Beta Feedback. That attaches the screenshot and the device logs. Take it for a crash.",
               "iphoneOnly": true,
               "term": "If you are on the beta"
+            },
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail": "Ask CleanJibe, on the Help page of the beta and of cleanjibe.org, passes an idea on to the team. The team reads every one.",
+              "term": "An idea, told to Ask CleanJibe"
             },
             {
               "channels": [

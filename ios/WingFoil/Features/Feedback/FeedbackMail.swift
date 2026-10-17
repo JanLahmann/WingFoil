@@ -577,6 +577,7 @@ struct FeedbackAskSheet: View {
     @State private var ticked: Set<String> = []
     @State private var checks: [String: MostWanted.Verdict] = [:]
     @State private var note = ""
+    @State private var checksOpen = false
     /// Not remembered: the channel's default each time (Jan, 17 Oct 2026).
     @State private var usage = UsageReportText.defaultChoice(for: AppChannel.channel)
     @FocusState private var ideaFocused: Bool
@@ -588,9 +589,20 @@ struct FeedbackAskSheet: View {
         NavigationStack {
             ScrollViewReader { proxy in
                 Form {
+                    // **Closed until asked** (Jan, 17 Oct 2026, on a screenshot of build 138:
+                    // "Shall we collapse this long list?"). A dozen rows of two buttons each
+                    // stood between the rider and the one line most of them came to write;
+                    // the row says how many are answered, so a tester sees their ticks.
                     if !checked.isEmpty {
                         Section {
-                            ForEach(checked) { wish in checkRow(wish) }
+                            DisclosureGroup(isExpanded: $checksOpen) {
+                                ForEach(checked) { wish in checkRow(wish) }
+                            } label: {
+                                LabeledContent(MostWanted.checkOpen,
+                                               value: checks.isEmpty
+                                                   ? "\(checked.count)"
+                                                   : "\(checks.count) of \(checked.count)")
+                            }
                         } header: {
                             Text(MostWanted.checkHeading)
                         } footer: {

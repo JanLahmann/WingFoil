@@ -83,7 +83,7 @@ apps.
 **Ask CleanJibe (dev 15 Oct 2026, beta from build 136 on 17 Oct)** is the first door that sends rider-typed content to a
 server: the question, the app's version and units, and from a session its numbers (no
 positions), to the assistant Worker on Cloudflare and on to Anthropic, kept 30 days
-(docs/channels.md, "Ask CleanJibe"). Proposed answers for the dev record: **User Content —
+(docs/channels.md, "Ask CleanJibe"); an idea the rider shares there is kept a year for the team, with the date, channel and version and no key id — the same User Content row covers it. Proposed answers for the dev record: **User Content —
 Other User Content: Collected, Not Linked to You, App Functionality** (the question); **Other
 Data — session numbers: Collected, Not Linked to You, App Functionality**; no tracking. The
 App Attest key id identifies an install, not a person, and is not used across apps. **Flag for

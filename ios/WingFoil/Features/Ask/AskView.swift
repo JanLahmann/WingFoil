@@ -55,6 +55,7 @@ private struct AskConsent: View {
                     point("paperplane", "Your question goes with the app's version and your units, through Cloudflare, to Anthropic. Their Claude answers from our help texts.")
                     point("list.bullet.rectangle", "Asked from a session, that session's numbers go too: date, times, speeds, flights and every turn's verdict. No map, no positions, no name.")
                     point("clock", "We keep the question and the answer for 30 days to improve the answers, then they are deleted.")
+                    point("lightbulb", "An idea you share is kept a year for the team. Only the date and the app version go with it.")
                     point("iphone", "Apple confirms the question comes from this app. That is how we count 20 questions a day. No account, no cookie.")
                     point("hand.raised", "Please don't type personal details into the box.")
                 }
@@ -139,7 +140,7 @@ private struct AskChat: View {
         VStack(alignment: .leading, spacing: 10) {
             Text(context == .session
                  ? "Ask about this session. The answer reads its numbers and never guesses one."
-                 : "Ask how CleanJibe works or what a number means.")
+                 : "Ask how CleanJibe works or what a number means. Got an idea for the app? Tell it here. The team reads every one.")
                 .font(.subheadline)
                 .foregroundStyle(.readableSecondary)
             if !AskClient.isSupported {

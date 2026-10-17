@@ -112,7 +112,7 @@ private struct HelpIndexList: View {
                                     Text("Ask CleanJibe").font(.subheadline.weight(.semibold))
                                     BetaChip()
                                 }
-                                Text("A question in your own words, answered from these pages.")
+                                Text("A question in your own words, answered from these pages. Or an idea for the team.")
                                     .font(.footnote)
                                     .foregroundStyle(.readableSecondary)
                             }
