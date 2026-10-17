@@ -172,8 +172,8 @@ import Testing
         }
         #expect(columns.isSuperset(of: ["longestDryStreak", "longestFlewStreak"]))
         #expect(stale == harness.v1Ids.count)
-        #expect(AppDatabase.migrationNames.last == "v20")
-        #expect(AppDatabase.schemaVersion == 20)
+        #expect(AppDatabase.migrationNames.last == "v21")
+        #expect(AppDatabase.schemaVersion == 21)
 
         _ = try await harness.ingestor.reanalyzeStale()
         for session in try await harness.ingestor.allSessions() {
@@ -237,6 +237,29 @@ import Testing
         _ = try await harness.ingestor.reanalyzeStale()
         for session in try await harness.ingestor.allSessions() {
             #expect(session.watchCrashes == nil)
+        }
+    }
+
+    /// v21 adds the direct transfer's cut-short flag. Like v18 it is a fact no engine can
+    /// re-derive, so every row that predates the column comes out NULL — "the whole session
+    /// is here" — and re-analysis leaves it so.
+    @Test func v21AddsTheCutShortFlagAndLeavesOldRowsWhole() async throws {
+        let harness = try migratedV1Library()
+        defer { try? FileManager.default.removeItem(at: harness.root.deletingLastPathComponent()) }
+
+        let (columns, unmarked) = try await harness.database.writer.read { db in
+            (Set(try db.columns(in: "session").map(\.name)),
+             try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM session "
+                              + "WHERE transferCutShort IS NULL"))
+        }
+        #expect(columns.contains("transferCutShort"))
+        #expect(unmarked == harness.v1Ids.count)
+
+        _ = try await harness.ingestor.reanalyzeStale()
+        for session in try await harness.ingestor.allSessions() {
+            #expect(session.transferCutShort == nil)
+            // Not a direct stream, so nothing may mark it either.
+            #expect(try await harness.ingestor.markTransferCutShort(session) == false)
         }
     }
 

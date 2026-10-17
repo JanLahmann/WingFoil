@@ -7,10 +7,10 @@
     <property id="mapAfterSave" type="boolean">false</property>
 
     <!-- Phase 5: BLE summary card to the paired iPhone app after a save, and the direct
-         transfer that rides on it. Dev only since 0.9.22 (rider review W11, "I turned it on
-         and nothing ever arrived"): the phone half, Settings → Garmin watch, is in the dev
-         iPhone app only, so on a release or beta watch the switch promised a card nothing
-         received. AppSettings.readPhonePush is (:notdev) false there. -->
+         transfer that rides on it. Beta and dev since 0.9.28 (the same property sits in
+         resources-beta/base); dev only 0.9.22–0.9.27 (rider review W11, "I turned it on and
+         nothing ever arrived") while the phone half was in the dev iPhone app only. The
+         release has no property, and AppSettings.readPhonePush is its (:nolink) false. -->
     <property id="phonePush" type="boolean">false</property>
 
     <!-- The per-page data-screen editor's properties (dev only since 0.9.16).

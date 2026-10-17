@@ -711,6 +711,19 @@ struct LibraryView: View {
                      line: "Garmin has no open API. intervals.icu is the bridge.") {
                 openSettings()
             }
+            #if BETA
+            // 1b · The same Garmin, straight to the phone: the summary card and the
+            // recording over the watch link, beta since 17 Oct 2026 (docs/channels.md). Under
+            // the intervals.icu row rather than above it, because that row also brings the
+            // seasons the watch already holds. The row opens the help topic, which says
+            // which switch on the watch and which button here.
+            WayInRow(icon: "applewatch.radiowaves.left.and.right",
+                     label: "Send it straight from your Garmin watch",
+                     line: "The CleanJibe watch app sends it when you save.",
+                     isBeta: true) {
+                sheet = .helpTopic(.garminDirect)
+            }
+            #endif
             // 2 · The Apple Watch, straight after the Garmin row: it is the other watch a
             // rider is likely to be wearing. BETA, like the watch app itself
             // (docs/channels.md), and the App Store build shows no row and no pill.

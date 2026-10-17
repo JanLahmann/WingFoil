@@ -193,15 +193,14 @@ extension UsageCounters {
 
         /// The lowest channel whose build has this door (docs/channels.md, "Feature by
         /// channel"). The report names a door as "not used yet" only in a build that has it,
-        /// so a beta phone is never asked about the dev-only Garmin link.
+        /// so a beta phone is never asked about the dev-only wind and map pushes.
         public var channel: HelpChannel {
             switch self {
             case .importHealth, .healthAutoImport, .appleWatchRecording, .filters, .grouping,
                  .videoExported, .sendToDeveloper, .startOver, .healthExport,
-                 .sessionStory:
+                 .sessionStory, .watchTransfer, .chooseWatch:
                 .beta
-            case .watchTransfer, .mapToWatch, .windToWatch, .chooseWatch, .tuning,
-                 .windsurfMode, .iCloudSync:
+            case .mapToWatch, .windToWatch, .tuning, .windsurfMode, .iCloudSync:
                 .dev
             default:
                 .release

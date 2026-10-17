@@ -40,6 +40,11 @@
     <string id="TurnHabitTacks">Tacks</string>
     <string id="TurnHabitBalanced">About the same</string>
 
+    <!-- Beta and dev rows since 0.9.28, with the Garmin link (docs/channels.md, Watches; dev
+        only 0.9.22–0.9.27, rider review W11, while the phone half was in the dev iPhone app
+        only); the string ships in every build. -->
+    <string id="SetPhonePush">Send summary to phone app</string>
+
     <!-- Beta and dev rows only (0.9.23, rider review W15); the string ships in every build. -->
     <string id="SetLaps">Laps in Garmin Connect</string>
     <string id="LapsPerFlight">Every flight and gap</string>

@@ -231,7 +231,7 @@ takeoff effort** (was a wrist accelerometer recorded, which only the CleanJibe w
 | A phone in a pocket | Strava, or the file: .fit anywhere, .gpx in the beta | estimated | no |
 
 **Every row of it is true in every channel** (14 September 2026). The Bluetooth summary card
-is a dev door and the Health import and the Apple Watch app are beta doors, so the rows that
+is a beta door (a dev one until 17 October 2026) and the Health import and the Apple Watch app are beta doors, so the rows that
 used to promise them — *"or over Bluetooth as a summary the moment you stop"*, *"Import →
 Apple Health"* — now either name the door that exists in every build or say plainly where
 the other one lives. A `HelpTopic` body cannot branch on the channel (the catalogue is pure

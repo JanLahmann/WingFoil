@@ -36,7 +36,7 @@
     <!-- Feature 5 (UI polish): cell glyphs carry the metric family; this keeps or drops the
          word beside them. -->
     <property id="showLabels" type="boolean">true</property>
-    <!-- `phonePush` lives in resources-dev/base/settings/ since 0.9.22 (rider review W11). -->
+    <!-- `phonePush` lives in resources-beta/base and resources-dev/base since 0.9.28 (dev only from 0.9.22). -->
 
     <!-- 0.9.16: the page SET (AppSettings.pageSet, PageModel.PAGE_SET_*).
          0 standard — the eight shipped screens (seven until 0.9.17).

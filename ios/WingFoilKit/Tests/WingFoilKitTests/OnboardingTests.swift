@@ -95,10 +95,11 @@ import Testing
         #expect(key.contains("Developer Settings"))
 
         // The sources a session comes in by, in the order a rider meets them: the
-        // intervals.icu bridge first, then Strava and the share sheet, the browser, and the
-        // notification that says a new one arrived.
+        // intervals.icu bridge first, then the same Garmin straight to the phone (beta), then
+        // Strava and the share sheet, the browser, and the notification that says a new one
+        // arrived.
         #expect(HelpCatalog.topics(in: .bringIn).map(\.id)
-                == [.icuSetup, .stravaImport, .shareFromWatchApp, .browserApp,
+                == [.icuSetup, .garminDirect, .stravaImport, .shareFromWatchApp, .browserApp,
                     .notifications])
     }
 

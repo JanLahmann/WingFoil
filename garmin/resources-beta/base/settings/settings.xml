@@ -8,4 +8,11 @@
             <listEntry value="1">@Strings.LapsSession</listEntry>
         </settingConfig>
     </setting>
+    <!-- 0.9.28, with the Garmin link (docs/channels.md, Watches): the summary card and the
+         direct transfer that rides on it. The same row as in resources-dev/base; the
+         release has neither the row nor the property, and AppSettings.readPhonePush is its
+         (:nolink) false. -->
+    <setting propertyKey="@Properties.phonePush" title="@Strings.SetPhonePush">
+        <settingConfig type="boolean"/>
+    </setting>
 </settings>

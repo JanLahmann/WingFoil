@@ -140,8 +140,8 @@ import Testing
         }
         #expect(listed(.start) == [.gettingStarted, .whichWatch, .exampleSession])
         #expect(listed(.record) == [.appleWatchApp, .appleWorkoutApp, .phoneOnly])
-        #expect(listed(.bringIn) == [.icuSetup, .stravaImport, .shareFromWatchApp, .browserApp,
-                                     .notifications])
+        #expect(listed(.bringIn) == [.icuSetup, .garminDirect, .stravaImport,
+                                     .shareFromWatchApp, .browserApp, .notifications])
         #expect(listed(.readNumbers) == [.numbers, .mapLegend, .flights, .jumps,
                                          .speedRecords, .verifiedRecords, .sessionStory,
                                          .turnTypes, .turnOutcomes,

@@ -420,14 +420,14 @@ import Testing
     }
 
     @Test func theBetaFeaturesTravelAboveTheWishlist() {
-        let vote = MostWanted.Vote(ticked: ["garminLink"],
+        let vote = MostWanted.Vote(ticked: ["watchMapWind"],
                                    checks: ["sessionVideo": .problem, "appleWatchApp": .works])
         #expect(vote.lines == ["Beta features",
                                "  ✓ The Apple Watch app · works · appleWatchApp",
                                "  ✗ The session video · has a problem · sessionVideo",
                                "",
                                "Your wishlist",
-                               "  ✓ The Garmin link · garminLink",
+                               "  ✓ Map and wind to the Garmin watch · watchMapWind",
                                ""])
         #expect(MostWanted.Vote(checks: ["grouping": .works]).lines
                 == ["Beta features", "  ✓ Grouping and filters · works · grouping", ""])

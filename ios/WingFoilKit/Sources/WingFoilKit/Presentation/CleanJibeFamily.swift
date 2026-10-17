@@ -20,9 +20,11 @@ import Foundation
 /// is already in, or from the page he is already on. The one link is the beta's, on the
 /// Apple Watch app, in the channel that is not in the beta yet.
 ///
-/// **The direct Garmin link is not named.** It is a dev door (docs/channels.md), and text
+/// **The direct Garmin link is not named.** It is a beta door since 17 Oct 2026
+/// (docs/channels.md), this section is shared with the release and the browser, and text
 /// that lists doors takes the channel that asks (docs/review-checklist.md, pattern D). The
-/// route every rider actually has is intervals.icu, so that is the route this says.
+/// route every rider has is intervals.icu, so that is the route this says; the beta names
+/// the link on the empty library's ways in and in its own help topic.
 public enum CleanJibeFamily {
 
     /// The section's title on *What CleanJibe does*, where the family has lived since

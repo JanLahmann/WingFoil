@@ -55,8 +55,9 @@ struct WingFoilApp: App {
                 // task from the load above because it never finishes: it is a stream, not
                 // a step, and it must not delay the library appearing.
                 //
-                // DEV only, with the rest of the Garmin link (docs/channels.md).
-                #if DEV
+                // BETA (and dev), with the rest of the Garmin link (docs/channels.md, moved
+                // up from dev by Jan on 17 Oct 2026). The release has no link at all.
+                #if BETA
                 .task { await store.watchForCompanionCards() }
                 // And the recording behind the card, when the watch sends it straight over
                 // (docs/transfer-format.md). A separate task because it is a sweep and not a
@@ -89,10 +90,10 @@ struct WingFoilApp: App {
                 // Two kinds of URL land here: Garmin Connect returning the watch the rider
                 // picked, and the share sheet handing us a recording. The companion link
                 // answers only on its own scheme, so it gets first refusal — and only in the
-                // dev channel, which is the only one that ever sent the rider to Garmin
+                // beta and dev channels, the only ones that ever send the rider to Garmin
                 // Connect in the first place (docs/channels.md).
                 .onOpenURL { url in
-                    #if DEV
+                    #if BETA
                     guard !store.handleCompanionURL(url) else { return }
                     #endif
                     Task { await store.importPicked(urls: [url]) }

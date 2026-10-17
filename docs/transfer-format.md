@@ -347,14 +347,15 @@ banner, which is the honest answer rather than an empty one.
   on the START screen (docs/presentation.md), and one short buzz when the **last** stream is
   whole, because that is when the rider can walk away. A device app has no notification API;
   the page is the notification.
-- **Dev only, and no new switch.** `(:dev)` annotated, and gated on the **existing
+- **Beta and dev, and no new switch.** `(:link)` annotated since 0.9.28 (`(:dev)` before;
+  the release compiles the `(:nolink)` stubs), and gated on the **existing
   `phonePush`** setting — the card's switch. A rider who lets the watch talk to the phone
   gets the recording as well as the card; a rider who does not gets neither. Nothing new
   appears in Garmin Connect's settings and nothing new appears in the app.
 - **Sizes.** `PhoneLink.estimateBytes` is not the ceiling for pages; the measured ceiling
   is. A page message is never larger than 8 000 payload bytes plus its five keys.
 
-## 5 · The phone (dev build)
+## 5 · The phone (beta and dev builds, since 17 Oct 2026)
 
 - `ConnectIQCompanionLink.receivedMessage` hands a `cjr` message to `DirectTransferInbox`,
   which writes the page to `Application Support/GarminInbox/<sid>/<st>/p<i>.bin` and
@@ -379,10 +380,18 @@ banner, which is the honest answer rather than an empty one.
   local clock that the stream does not (`SessionIngestor.yields`).
 - A stream that never completes stays in the inbox; after 24 h without a page it is
   assembled up to its first gap and imported as far as it goes. **It is marked cut short on
-  the transfer's receipt and not on the session row**: the library has no such column, and
-  adding one for a dev door would be a schema migration every channel then carries. Settings
-  → Garmin watch says "cut short" beside that transfer. A `cutShort` column is the right
-  answer the day the door moves up a channel.
+  the session row** since the door reached the beta (17 Oct 2026, docs/channels.md): the
+  inbox writes an empty `<sid>.cut` beside the assembled `<sid>.cjr` (and removes one when a
+  stream completes whole), `SessionStore.importDirectInbox` reads it before the import, and
+  after the import `SessionIngestor.markTransferCutShort` sets `SessionRow.transferCutShort`
+  (GRDB v21) on the row found by the ±60 s start key — **only while that row still holds the
+  stream** (its `originalFilename` is a `.cjr` and `watchdirect` is among its sources). A FIT
+  that already had the afternoon makes the stream a duplicate and the row is left alone; a
+  FIT that arrives later writes a fresh row, so the flag goes with the stream it described.
+  The session page says it under the date, `SessionProvenance.line(for:)`: *Garmin watch,
+  direct · part of it*. Settings → Garmin watch keeps its receipt line, with the same three
+  words (`SessionProvenance.cutShortMark`). A refused stream's marker moves to `refused/`
+  with it.
 - **What the rider sees.** Nothing new to switch on. Settings → Garmin watch shows the last
   direct session (start, pages, seconds) under the link probe row; the session appears in
   the list with the watch source, "Garmin watch, direct".

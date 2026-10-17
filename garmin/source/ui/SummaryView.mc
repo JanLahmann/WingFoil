@@ -317,11 +317,11 @@ class SummaryView extends WatchUi.View {
             y - dc.getHeight() / 2, RecordingView.inkH(dc, Graphics.FONT_XTINY));
     }
 
-    // ---- the direct transfer's progress (0.9.16, dev stream) ----
+    // ---- the direct transfer's progress (0.9.16, beta and dev since 0.9.28) ----
     // "phone 4/13" while the recording's pages cross to the iPhone, "phone ok" when the
-    // stream is whole, nothing at all in every other stream and on every session that is
-    // not being sent (DirectSend.statusLine is a `(:notdev)` null everywhere else, so this
-    // call compiles in all three and draws in one).
+    // stream is whole, nothing at all in the release and on every session that is not being
+    // sent (DirectSend.statusLine is a `(:nolink)` null there, so this call compiles in all
+    // three and draws in two).
     //
     // UNDER the pill and in the pill's own font: it is the same kind of sentence — an
     // acknowledgement of something the watch is doing on the rider's behalf — and the eyebrow

@@ -97,23 +97,32 @@ extension CompanionLinkState {
         }
     }
 
-    public var detail: String {
+    /// The Settings footer under it, **for the channel that draws it** (pattern D,
+    /// docs/review-checklist.md). The beta has the summary card and the direct transfer
+    /// since 17 Oct 2026, but not the wind push or the map, which stayed dev; a footer that
+    /// promised those on a beta phone would describe two rows that are not there.
+    public func detail(in channel: HelpChannel) -> String {
+        let sendsBack = channel >= .dev
         switch self {
         case .noConnectMobile:
-            "The link goes through the Garmin Connect app, which owns the Bluetooth "
-            + "connection to your watch. Install it and pair your watch there first."
+            return "The link goes through the Garmin Connect app, which owns the Bluetooth "
+                + "connection to your watch. Install it and pair your watch there first."
         case .noDevice:
-            "Choose your watch in Garmin Connect. CleanJibe only ever talks to the watch "
-            + "you pick here."
+            return "Choose your watch in Garmin Connect. CleanJibe only ever talks to the "
+                + "watch you pick here."
         case .deviceOffline:
-            "Sessions still reach the library through the FIT file. The watch link only "
-            + "makes them arrive sooner. Bring the watch into range to send wind to it."
+            return "Sessions still reach the library through the FIT file. The watch link "
+                + "only makes them arrive sooner."
+                + (sendsBack ? " Bring the watch into range to send wind to it." : "")
         case .appNotRunning:
-            "Open CleanJibe on the watch: it only listens while it is running. "
-            + "Session summaries are sent when you save, whether this app is open or not."
+            return "Open CleanJibe on the watch: it only listens while it is running. "
+                + "Session summaries are sent when you save, whether this app is open or not."
         case .ready:
-            "Your watch sends a session summary the moment you save. The wind and your "
-            + "spot's map go back to it from here."
+            return sendsBack
+                ? "Your watch sends a session summary the moment you save. The wind and "
+                    + "your spot's map go back to it from here."
+                : "Your watch sends a session summary the moment you save. Keep this app "
+                    + "open, and the whole session follows."
         }
     }
 }

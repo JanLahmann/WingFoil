@@ -362,7 +362,11 @@ of the 32 counted turns flipped and the wrist's ladder became the phone's, 11 / 
 (algorithms/turns.md, "Watch approximation"). The data field stays parked (ADR-020).
 
 ## ADR-031 · The wrist stream is **windowed 25 Hz**, not decimated and not summarised
-**Status: Proposed** (dev channel; docs/channels.md, all four rules unmet).
+**Status: Proposed, in the beta** (17 Oct 2026; docs/channels.md). In the beta with the summary card by
+Jan's call, which overrides rule 1: the beta riders bring the ten sessions from two riders.
+Was *Proposed* in the dev channel, all four rules unmet. The three prerequisites the channel
+file set for the beta are met: the help topic, the privacy page, and the `transferCutShort`
+column (GRDB v21) that puts a cut-short transfer on its session.
 
 ADR-027 built the direct transfer and left the wrist magnitudes for later, because the
 recording alone is 97 KB and the accelerometer is two orders more. Jan's call of 19 September
@@ -591,7 +595,11 @@ is 5 s. That is a flight-end question — what a stop that runs into a long gap 
 ADR deliberately does not answer it.
 
 ## ADR-027 · The direct transfer's wire format — our own delta stream in 8 KB pages, not FIT
-**Status: Proposed** (dev channel; docs/channels.md, all four rules unmet).
+**Status: Proposed, in the beta** (17 Oct 2026; docs/channels.md). In the beta with the summary card by
+Jan's call, which overrides rule 1: the beta riders bring the ten sessions from two riders.
+Was *Proposed* in the dev channel, all four rules unmet. The three prerequisites the channel
+file set for the beta are met: the help topic, the privacy page, and the `transferCutShort`
+column (GRDB v21) that puts a cut-short transfer on its session.
 
 Issue #14 asks for a Garmin session on the phone without intervals.icu, Strava or a cable.
 The research spike (docs/direct-transfer.md) ranked five options and the probe of 19 September

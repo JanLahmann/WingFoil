@@ -14,7 +14,7 @@
              prompt="@Strings.SetMapAfterSaveNote">
         <settingConfig type="boolean"/>
     </setting>
-    <!-- Dev only since 0.9.22 (rider review W11): its receiver is the dev iPhone app. -->
+    <!-- Beta and dev since 0.9.28, with the Garmin link (the same row is in resources-beta/base). -->
     <setting propertyKey="@Properties.phonePush" title="@Strings.SetPhonePush">
         <settingConfig type="boolean"/>
     </setting>

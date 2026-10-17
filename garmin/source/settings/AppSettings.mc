@@ -429,16 +429,17 @@ module AppSettings {
         return false;                              // no map experiment outside the dev stream
     }
 
-    // The summary card and the direct transfer behind it (rider review W11, 0.9.22). Their
-    // receiver is the dev iPhone app only, so a release or beta watch has no switch for them
-    // and never sends: the property and the row live in resources-dev/base.
-    (:dev)
+    // The summary card and the direct transfer behind it. Their receiver is the beta and dev
+    // iPhone app since 0.9.28 (dev only from 0.9.22, rider review W11), so a release watch has
+    // no switch for them and never sends: the property and the row live in resources-beta/base
+    // and resources-dev/base.
+    (:link)
     function readPhonePush() as Boolean {
         return _bool("phonePush", false);
     }
 
-    (:notdev)
+    (:nolink)
     function readPhonePush() as Boolean {
-        return false;                              // nothing on a release or beta phone listens
+        return false;                              // nothing on a release phone listens
     }
 }

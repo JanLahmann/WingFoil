@@ -18,6 +18,10 @@
   ],
   "beta" : [
     {
+      "id" : "garminLink",
+      "text" : "The Garmin link: your watch sends a summary the moment you save, then the whole session."
+    },
+    {
       "id" : "gpxTcx",
       "text" : ".gpx and .tcx files, so a session exported from a Polar, a Suunto or a COROS opens straight from Files."
     },
@@ -64,8 +68,8 @@
   ],
   "dev" : [
     {
-      "id" : "garminLink",
-      "text" : "The Garmin link: a summary card from your watch the moment you stop. Your spot's map and the wind direction go back to it."
+      "id" : "watchMapWind",
+      "text" : "Your spot's map and the wind direction, sent from the phone to your Garmin watch."
     },
     {
       "id" : "windsurf",

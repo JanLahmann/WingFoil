@@ -1,16 +1,20 @@
-// Settings → Garmin watch — a DEV door (docs/channels.md).
-#if DEV
+// Settings → Garmin watch — a BETA door (docs/channels.md; moved up from dev by Jan on
+// 17 Oct 2026). The wind and map rows inside it stay dev.
+#if BETA
 import SwiftUI
 import WingFoilKit
 
 /// The watch link, in Settings (phase 5).
 ///
 /// Everything on this screen is a fact the rider can act on: which watch, whether it is
-/// reachable, when a session last came through, and one button that pushes the wind. There
-/// is no "connect" button, because there is nothing to connect — Garmin Connect Mobile owns
-/// the Bluetooth link and this app is a guest on it.
+/// reachable, when a session last came through, and — in the dev build — the buttons that
+/// push the wind and the map. There is no "connect" button, because there is nothing to
+/// connect — Garmin Connect Mobile owns the Bluetooth link and this app is a guest on it.
 struct WatchLinkSection: View {
     @Environment(SessionStore.self) private var store
+    /// Opens a help topic in the sheet Settings already owns, the way every other footer
+    /// there does (`ExplainedFootnote`).
+    var openTopic: (HelpTopicID) -> Void = { _ in }
 
     private var state: CompanionLinkState { store.companionState }
 
@@ -31,8 +35,11 @@ struct WatchLinkSection: View {
                     Label("Choose your watch…", systemImage: "applewatch.radiowaves.left.and.right")
                 }
             default:
+                // Back to the watch: dev only, both of them (docs/channels.md).
+                #if DEV
                 windRow
                 mapRow
+                #endif
                 Button { store.chooseWatch() } label: {
                     Label("Choose a different watch…", systemImage: "arrow.triangle.2.circlepath")
                 }
@@ -55,13 +62,20 @@ struct WatchLinkSection: View {
             }
             linkDetails
         } header: {
-            Text("Garmin watch")
+            HStack(spacing: 6) {
+                Text("Garmin watch")
+                BetaChip()
+            }
         } footer: {
-            Text(state.detail)
+            // What you get in one line, the how one tap away (pattern K): the watch's own
+            // switch and the twenty seconds on the beach are in the help topic.
+            ExplainedFootnote(line: state.detail(in: AppChannel.channel),
+                              topic: .garminDirect, open: openTopic)
         }
         .task { store.refreshCompanionState() }
     }
 
+    #if DEV
     /// The wind push. A compass picker rather than a free 0–359 field: nobody knows the
     /// wind to the degree, the watch only uses it to decide which side of the axis a turn
     /// happened on, and a wrong 12° costs nothing while a wrong 120° relabels every tack.
@@ -121,14 +135,20 @@ struct WatchLinkSection: View {
             .disabled(!state.canSend || store.isSendingWatchMap)
         }
     }
+    #endif
 
     /// **The link's own numbers, folded away** (Jan, dev 106: "1 page · 0 s" is
-    /// meaningless to a rider). Pages, seconds, the probe and the answer are how the dev
-    /// build proves the radio (docs/direct-transfer.md). They stay one tap away for that,
-    /// and out of the rows a rider reads. Absent when there is nothing to show.
+    /// meaningless to a rider). Pages, seconds and the answer are how a tester proves the
+    /// radio (docs/direct-transfer.md), so the beta keeps them one tap away; the probe is
+    /// the dev build's alone. Out of the rows a rider reads, and absent when there is
+    /// nothing to show.
     @ViewBuilder
     private var linkDetails: some View {
+        #if DEV
         let probe = store.lastLinkProbe
+        #else
+        let probe: String? = nil
+        #endif
         let pages = store.directPageLine
         let answer = store.directAnswerLine
         let direct = store.lastDirectTransfer
@@ -155,10 +175,11 @@ struct WatchLinkSection: View {
 
     /// "Sat 19 Sep 19:42", or "Sat 19 Sep 19:42 · part of it" where the transfer stopped
     /// part way: which session, and whether the whole of it is on the phone. The pages and
-    /// seconds are in Link details.
+    /// seconds are in Link details. The mark is `SessionProvenance.cutShortMark`, the same
+    /// words the session's own page says it in since schema v21.
     static func directLine(_ receipt: DirectTransferReceipt) -> String {
         let when = Fmt.date(receipt.sessionStart, zone: .current)
-        return receipt.cutShort ? "\(when) · part of it" : when
+        return receipt.cutShort ? when + " · " + SessionProvenance.cutShortMark : when
     }
 
     /// "18 Sep 14:07 · 13 pages · 26 s", and "cut short" where the transfer stopped part
@@ -178,6 +199,7 @@ struct WatchLinkSection: View {
         return parts.joined(separator: " · ")
     }
 
+    #if DEV
     /// Sixteen points, the same ones the watch's own Wind from menu offers
     /// (`RecordingDelegate`, 22.5° steps in integer arithmetic), so a wind set on either side
     /// reads back as the same point on the other. Eight was too coarse for a spot where the
@@ -188,6 +210,7 @@ struct WatchLinkSection: View {
         ("S", 180), ("SSW", 202), ("SW", 225), ("WSW", 247),
         ("W", 270), ("WNW", 292), ("NW", 315), ("NNW", 337),
     ]
+    #endif
 }
 
 #endif

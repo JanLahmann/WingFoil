@@ -8,8 +8,9 @@ import Toybox.Timer;
 import Toybox.WatchUi;
 
 // The direct transfer, watch side (0.9.18-dev1). docs/transfer-format.md is the contract;
-// lab/tools/cjr_ref.py is the reference the bytes are tested against. Dev stream only: the
-// (:notdev) stubs below are what the beta and the release compile.
+// lab/tools/cjr_ref.py is the reference the bytes are tested against. Beta and dev since 0.9.28
+// (`link`, docs/channels.md, Watches; dev only before): the (:nolink) stubs below are what the
+// release compiles.
 //
 // Three things live here. The RECORD ENCODER turns every GPS fix of a recording into a
 // record of the `rec.v1` stream — a 22-byte keyframe or a 13-byte delta — and closes a page
@@ -99,120 +100,120 @@ module DirectSend {
 
     // ---- the stubs every other build compiles ----
 
-    (:notdev)
+    (:nolink)
     function begin(startEpochS as Number, windDir as Number) as Void {
     }
 
-    (:notdev)
+    (:nolink)
     function record(info as Position.Info, speedMps as Float, hr as Number?,
                     foil as Number, cadence as Number, marker as Number,
                     tick as Number) as Void {
     }
 
-    (:notdev)
+    (:nolink)
     function finish() as Void {
     }
 
     // The 25 Hz grid, from PumpDetector._pushGrid. A no-op here, so the release and the beta
     // pay one empty call per sample and carry no wrist encoder at all.
-    (:notdev)
+    (:nolink)
     function wrist(magG as Float, tMs as Number) as Void {
     }
 
-    (:notdev)
+    (:nolink)
     function wristFlag(open as Boolean) as Void {
     }
 
-    (:notdev)
+    (:nolink)
     function pump() as Void {
     }
 
-    (:notdev)
+    (:nolink)
     function applyMessage(d as Dictionary) as Boolean {
         return false;
     }
 
-    (:notdev)
+    (:nolink)
     function persist() as Void {
     }
 
-    (:notdev)
+    (:nolink)
     function restore() as Void {
     }
 
-    (:notdev)
+    (:nolink)
     function statusLine() as String? {
         return null;
     }
 
-    (:notdev)
+    (:nolink)
     function discard() as Void {
     }
 
-    (:notdev)
+    (:nolink)
     function reopen() as Void {
     }
 
     // ---- state (dev) ----
 
-    (:dev) var _buf as ByteArray?;           // the open page
-    (:dev) var _len as Number = 0;
-    (:dev) var _pages as Array<ByteArray> = [] as Array<ByteArray>;   // closed, index = page
-    (:dev) var _acked as Array<Boolean> = [] as Array<Boolean>;
-    (:dev) var _sid as Number = 0;
-    (:dev) var _ended as Boolean = false;
-    (:dev) var _recording as Boolean = false;
-    (:dev) var _sinceKey as Number = KEYFRAME_EVERY;
-    (:dev) var _qlat as Number = 0;          // 1e-7 degrees, the tracked state
-    (:dev) var _qlon as Number = 0;
-    (:dev) var _prevT as Number = 0;
-    (:dev) var _prevAlt as Number = ALT_NONE;
-    (:dev) var _inFlight as Number = -1;     // page index on the radio, -1 = none
-    (:dev) var _awaitingAck as Boolean = false;
-    (:dev) var _attempts as Number = 0;
-    (:dev) var _timer as Timer.Timer?;
-    (:dev) var _sentOk as Number = 0;        // pages the phone acknowledged, for the status line
-    (:dev) var _lastMs as Number = 0;
-    (:dev) var _partial as Boolean = false;  // persisted with pages dropped
-    (:dev) var reachableOverride as Boolean? = null;   // tests: the simulator has no phone
-    (:dev) var utcOffsetOverride as Number? = null;   // tests: minutes east of UTC
-    (:dev) var packedOverride as Boolean? = null;     // tests: the pre-6.0.0 wire, on any device
-    (:dev) var _pacer as Timer.Timer?;
-    (:dev) var _paceTimer as PaceTimer = new PaceTimer();
-    (:dev) var _stream as Number = STREAM_RECORD;    // the stream the sender is working on
+    (:link) var _buf as ByteArray?;           // the open page
+    (:link) var _len as Number = 0;
+    (:link) var _pages as Array<ByteArray> = [] as Array<ByteArray>;   // closed, index = page
+    (:link) var _acked as Array<Boolean> = [] as Array<Boolean>;
+    (:link) var _sid as Number = 0;
+    (:link) var _ended as Boolean = false;
+    (:link) var _recording as Boolean = false;
+    (:link) var _sinceKey as Number = KEYFRAME_EVERY;
+    (:link) var _qlat as Number = 0;          // 1e-7 degrees, the tracked state
+    (:link) var _qlon as Number = 0;
+    (:link) var _prevT as Number = 0;
+    (:link) var _prevAlt as Number = ALT_NONE;
+    (:link) var _inFlight as Number = -1;     // page index on the radio, -1 = none
+    (:link) var _awaitingAck as Boolean = false;
+    (:link) var _attempts as Number = 0;
+    (:link) var _timer as Timer.Timer?;
+    (:link) var _sentOk as Number = 0;        // pages the phone acknowledged, for the status line
+    (:link) var _lastMs as Number = 0;
+    (:link) var _partial as Boolean = false;  // persisted with pages dropped
+    (:link) var reachableOverride as Boolean? = null;   // tests: the simulator has no phone
+    (:link) var utcOffsetOverride as Number? = null;   // tests: minutes east of UTC
+    (:link) var packedOverride as Boolean? = null;     // tests: the pre-6.0.0 wire, on any device
+    (:link) var _pacer as Timer.Timer?;
+    (:link) var _paceTimer as PaceTimer = new PaceTimer();
+    (:link) var _stream as Number = STREAM_RECORD;    // the stream the sender is working on
 
     // ---- stream 1's state ----
-    (:dev) var _wPages as Array<ByteArray> = [] as Array<ByteArray>;  // page 0 is the header
-    (:dev) var _wAcked as Array<Boolean> = [] as Array<Boolean>;
-    (:dev) var _wBuf as ByteArray?;          // the open page
-    (:dev) var _wLen as Number = 0;
-    (:dev) var _wWin as ByteArray?;          // the open window, closed whole into a page
-    (:dev) var _wWinLen as Number = 0;
-    (:dev) var _wWinN as Number = 0;
-    (:dev) var _wPrevMag as Number = -1;     // centi-g of the window's previous sample
-    (:dev) var _wLeadMag as Array<Number> = [] as Array<Number>;   // the look-back ring
-    (:dev) var _wLeadMs as Array<Number> = [] as Array<Number>;
-    (:dev) var _wLeadPos as Number = 0;
-    (:dev) var _wLeadN as Number = 0;
-    (:dev) var _wFlag as Boolean = false;    // the 1 Hz flag SessionController sets
-    (:dev) var _wFlagMs as Number = 0;       // the last time it was true
-    (:dev) var _wBytes as Number = 0;        // closed wrist pages, header page excluded
-    (:dev) var _wBudget as Number = WRIST_BUDGET_SMALL;
-    (:dev) var _wThin as Number = 1;         // admit one window in _wThin
-    (:dev) var _wSeen as Number = 0;
-    (:dev) var _wThinned as Number = 0;      // how often the budget bit, for the probe log
-    (:dev) var _wOn as Boolean = false;      // the wrist encoder is recording
-    (:dev) var _wSentOk as Number = 0;
-    (:dev) var _wWhole as Boolean = false;
-    (:dev) var _wAnchorEpoch as Number = 0;   // epoch seconds of the last 1 Hz fix
-    (:dev) var _wAnchorMs as Number = 0;      // System.getTimer() at that fix
-    (:dev) var _wLastMs as Number = 0;        // the last grid sample's timer ms
-    (:dev) var _wHaveLast as Boolean = false;
-    (:dev) var _modeLogged as Number = -1;    // the stream whose wire encoding is in the log
+    (:link) var _wPages as Array<ByteArray> = [] as Array<ByteArray>;  // page 0 is the header
+    (:link) var _wAcked as Array<Boolean> = [] as Array<Boolean>;
+    (:link) var _wBuf as ByteArray?;          // the open page
+    (:link) var _wLen as Number = 0;
+    (:link) var _wWin as ByteArray?;          // the open window, closed whole into a page
+    (:link) var _wWinLen as Number = 0;
+    (:link) var _wWinN as Number = 0;
+    (:link) var _wPrevMag as Number = -1;     // centi-g of the window's previous sample
+    (:link) var _wLeadMag as Array<Number> = [] as Array<Number>;   // the look-back ring
+    (:link) var _wLeadMs as Array<Number> = [] as Array<Number>;
+    (:link) var _wLeadPos as Number = 0;
+    (:link) var _wLeadN as Number = 0;
+    (:link) var _wFlag as Boolean = false;    // the 1 Hz flag SessionController sets
+    (:link) var _wFlagMs as Number = 0;       // the last time it was true
+    (:link) var _wBytes as Number = 0;        // closed wrist pages, header page excluded
+    (:link) var _wBudget as Number = WRIST_BUDGET_SMALL;
+    (:link) var _wThin as Number = 1;         // admit one window in _wThin
+    (:link) var _wSeen as Number = 0;
+    (:link) var _wThinned as Number = 0;      // how often the budget bit, for the probe log
+    (:link) var _wOn as Boolean = false;      // the wrist encoder is recording
+    (:link) var _wSentOk as Number = 0;
+    (:link) var _wWhole as Boolean = false;
+    (:link) var _wAnchorEpoch as Number = 0;   // epoch seconds of the last 1 Hz fix
+    (:link) var _wAnchorMs as Number = 0;      // System.getTimer() at that fix
+    (:link) var _wLastMs as Number = 0;        // the last grid sample's timer ms
+    (:link) var _wHaveLast as Boolean = false;
+    (:link) var _modeLogged as Number = -1;    // the stream whose wire encoding is in the log
 
     // ---- the encoder ----
 
-    (:dev)
+    (:link)
     function begin(startEpochS as Number, windDir as Number) as Void {
         if (!AppSettings.phonePush) {
             _recording = false;
@@ -241,7 +242,7 @@ module DirectSend {
     // stream 0 is whole. Its header is page 0 on its own — twenty bytes and one message —
     // because the pages after it are dropped under budget pressure and their indices are not
     // fixed until save, so the header cannot ride on a page that might not survive.
-    (:dev)
+    (:link)
     function _wBegin(windDir as Number) as Void {
         _wPages = [] as Array<ByteArray>;
         _wAcked = [] as Array<Boolean>;
@@ -296,7 +297,7 @@ module DirectSend {
     // The same twenty bytes as stream 0's header with `stream` = 1. The wind axis and the
     // discipline are repeated rather than zeroed: a stream that arrives on its own still
     // says which afternoon and which sport it belongs to.
-    (:dev)
+    (:link)
     function _wristHeader(windDir as Number) as ByteArray {
         var b = new [HEADER_BYTES]b;
         b[0] = 0x43; b[1] = 0x4A; b[2] = 0x52; b[3] = 0x31;      // "CJR1"
@@ -317,7 +318,7 @@ module DirectSend {
         return b;
     }
 
-    (:dev)
+    (:link)
     function _utcOffset() as Number {
         var off = utcOffsetOverride;
         if (off == null) {
@@ -330,7 +331,7 @@ module DirectSend {
         return off as Number;
     }
 
-    (:dev)
+    (:link)
     function _header(windDir as Number) as Void {
         var b = _buf as ByteArray;
         b[0] = 0x43; b[1] = 0x4A; b[2] = 0x52; b[3] = 0x31;      // "CJR1"
@@ -348,43 +349,43 @@ module DirectSend {
         _len = HEADER_BYTES;
     }
 
-    (:dev) function _u8(off as Number, v as Number) as Void {
+    (:link) function _u8(off as Number, v as Number) as Void {
         (_buf as ByteArray)[off] = v & 0xFF;
     }
-    (:dev) function _u16(off as Number, v as Number) as Void {
+    (:link) function _u16(off as Number, v as Number) as Void {
         (_buf as ByteArray).encodeNumber(v, Lang.NUMBER_FORMAT_UINT16,
             {:offset => off, :endianness => Lang.ENDIAN_LITTLE});
     }
-    (:dev) function _s16(off as Number, v as Number) as Void {
+    (:link) function _s16(off as Number, v as Number) as Void {
         (_buf as ByteArray).encodeNumber(v, Lang.NUMBER_FORMAT_SINT16,
             {:offset => off, :endianness => Lang.ENDIAN_LITTLE});
     }
-    (:dev) function _u32(off as Number, v as Number) as Void {
+    (:link) function _u32(off as Number, v as Number) as Void {
         (_buf as ByteArray).encodeNumber(v, Lang.NUMBER_FORMAT_UINT32,
             {:offset => off, :endianness => Lang.ENDIAN_LITTLE});
     }
-    (:dev) function _s32(off as Number, v as Number) as Void {
+    (:link) function _s32(off as Number, v as Number) as Void {
         (_buf as ByteArray).encodeNumber(v, Lang.NUMBER_FORMAT_SINT32,
             {:offset => off, :endianness => Lang.ENDIAN_LITTLE});
     }
 
     // Degrees to integer units, half away from zero — `_q` in cjr_ref.py. Double in, so a
     // fix at 45.8710050° keeps its seventh decimal; a 32-bit Float would not.
-    (:dev)
+    (:link)
     function quantize(deg as Double, scale as Double) as Number {
         var x = deg * scale;
         return (x >= 0 ? x + 0.5 : x - 0.5).toNumber();
     }
 
     // The tracked 1e-7 position as the 1e-6 base of a delta — `_base6` in cjr_ref.py.
-    (:dev)
+    (:link)
     function base6(q7 as Number) as Number {
         return (q7 >= 0 ? q7 + 5 : q7 - 5) / 10;
     }
 
     // One fix. Called from SessionController.onPosition while recording, after the engine
     // ticked, with the same four developer values the FIT record gets.
-    (:dev)
+    (:link)
     function record(info as Position.Info, speedMps as Float, hr as Number?,
                     foil as Number, cadence as Number, marker as Number,
                     tick as Number) as Void {
@@ -407,7 +408,7 @@ module DirectSend {
 
     // The four developer values in one Number: older runtimes allow nine arguments to a
     // function, and the fix needs ten.
-    (:dev)
+    (:link)
     function devPack(foil as Number, cadence as Number, marker as Number, tick as Number)
             as Number {
         return (foil & 0xFF) | ((cadence & 0xFF) << 8) | ((marker & 0xFF) << 16)
@@ -417,7 +418,7 @@ module DirectSend {
     // The fix as numbers, the part a test can drive: degrees as Doubles, epoch seconds,
     // cm/s, metres (ALT_NONE for none), bpm (0 for none), and the four developer values
     // packed by devPack.
-    (:dev)
+    (:link)
     function recordFix(latDeg as Double, lonDeg as Double, t as Number, spd as Number,
                        alt as Number, h as Number, dev as Number) as Void {
         if (!_recording || _buf == null) {
@@ -513,7 +514,7 @@ module DirectSend {
     // a turn window is open, or the live detector picked a stroke recently — the three
     // states the phone's pump chain has anything to find in. Everything else is left off the
     // wire, which is the whole of ADR-031.
-    (:dev)
+    (:link)
     function wristFlag(open as Boolean) as Void {
         _wFlag = open;
         if (open) {
@@ -524,7 +525,7 @@ module DirectSend {
     // One sample of the 25 Hz grid, in g, from PumpDetector._pushGrid — the single point
     // every magnitude the watch's own detector sees passes through, so the phone is handed
     // exactly the numbers the watch filtered and not a second reading of the sensor.
-    (:dev)
+    (:link)
     function wrist(magG as Float, tMs as Number) as Void {
         // No fix yet means no clock: a window header states an epoch and the sensor
         // callback only ever knows the milliseconds since boot.
@@ -572,7 +573,7 @@ module DirectSend {
     // Opens a window at the oldest look-back sample and writes the ring into it, then this
     // sample. The window's own header is written first, with the epoch time of that oldest
     // sample; every sample after it is one WRIST_STEP_MS later by construction.
-    (:dev)
+    (:link)
     function _wOpenWindow(tMs as Number, mag as Number) as Void {
         var k = _wLeadN;
         var firstMs = k > 0 ? _wLeadMs[(_wLeadPos - k + WRIST_LEAD) % WRIST_LEAD] : tMs;
@@ -600,7 +601,7 @@ module DirectSend {
 
     // One magnitude: an 8-bit delta where it holds, a two-byte escape where it does not.
     // The first sample of a window always escapes, so the window decodes on its own.
-    (:dev)
+    (:link)
     function _wPushSample(mag as Number) as Void {
         if (_wWinLen + 3 > WINDOW_SCRATCH || _wWinN >= WINDOW_MAX_SAMPLES) {
             return;
@@ -622,7 +623,7 @@ module DirectSend {
 
     // Patches the sample count in and admits the window — or drops it, because the budget
     // has bitten and this is one of the windows the thinning skips.
-    (:dev)
+    (:link)
     function _wCloseWindow() as Void {
         if (_wWinN <= 0) {
             _wWinLen = 0;
@@ -654,7 +655,7 @@ module DirectSend {
         _wLen += len;
     }
 
-    (:dev)
+    (:link)
     function _wClosePage() as Void {
         if (_wBuf == null || _wLen == 0) {
             return;
@@ -672,7 +673,7 @@ module DirectSend {
     // and the first — and half of what would arrive goes with it, so the coverage that
     // survives is spread across the whole session rather than being its first twenty
     // minutes. Geometric, so a six-hour session thins four times and stops.
-    (:dev)
+    (:link)
     function _wThinPages() as Void {
         var kept = [_wPages[0], _wPages[1]] as Array<ByteArray>;
         var bytes = _wPages[1].size();
@@ -695,7 +696,7 @@ module DirectSend {
 
     // Save: the open window and the open page close, and the stream is ready to go the
     // moment stream 0 is whole. A stream with nothing but its header is not sent at all.
-    (:dev)
+    (:link)
     function _wFinish() as Void {
         if (!_wOn) {
             return;
@@ -711,7 +712,7 @@ module DirectSend {
         }
     }
 
-    (:dev)
+    (:link)
     function _closePage(last as Boolean) as Void {
         if (_buf == null || _len == 0) {
             return;
@@ -727,7 +728,7 @@ module DirectSend {
 
     // Save: the open page closes as the last one, and sending goes on while the SAVED
     // screen is up. Nothing is transmitted from here that was not already queued.
-    (:dev)
+    (:link)
     function finish() as Void {
         if (!_recording) {
             return;
@@ -751,17 +752,17 @@ module DirectSend {
 
     // The pages of whichever stream the sender is working on. Stream 0 crosses whole first
     // and stream 1 follows — Jan's call, 19 September 2026: "Send it later, not first."
-    (:dev)
+    (:link)
     function _curPages() as Array<ByteArray> {
         return _stream == STREAM_WRIST ? _wPages : _pages;
     }
 
-    (:dev)
+    (:link)
     function _curAcked() as Array<Boolean> {
         return _stream == STREAM_WRIST ? _wAcked : _acked;
     }
 
-    (:dev)
+    (:link)
     function pump() as Void {
         if (_curPages().size() == 0) {
             _stopPacer();
@@ -794,7 +795,7 @@ module DirectSend {
         _send(i);
     }
 
-    (:dev)
+    (:link)
     function _nextUnacked() as Number {
         var acked = _curAcked();
         for (var i = 0; i < acked.size(); i++) {
@@ -805,7 +806,7 @@ module DirectSend {
         return -1;
     }
 
-    (:dev)
+    (:link)
     function _send(i as Number) as Void {
         var pages = _curPages();
         // Stream 1 is never open: it is only sent once the recording is saved.
@@ -850,7 +851,7 @@ module DirectSend {
     // Can this watch put a ByteArray on the radio? Only from Connect IQ 6.0.0 — the fenix 8,
     // the fr970 and the enduro 3 can, the fenix 7 (5.2.0) and the fenix 5 Plus (3.3.3)
     // cannot. A capability probe and not a family list, because the answer is the API's.
-    (:dev)
+    (:link)
     function packed() as Boolean {
         if (packedOverride != null) {
             return packedOverride as Boolean;
@@ -867,7 +868,7 @@ module DirectSend {
     // never have carried one. Four to a Number costs the same five bytes for four, so the
     // page costs 10 KB and the 5 Plus family is back in. The last word is zero-filled and
     // `bl` on the message carries the true length.
-    (:dev)
+    (:link)
     function wire(page as ByteArray) as Object {
         if (!packed()) {
             return page;
@@ -886,7 +887,7 @@ module DirectSend {
         return arr;
     }
 
-    (:dev)
+    (:link)
     function onRadioComplete(i as Number) as Void {
         if (_inFlight != i) {
             return;
@@ -895,7 +896,7 @@ module DirectSend {
         _startTimer();
     }
 
-    (:dev)
+    (:link)
     function onRadioError(i as Number) as Void {
         if (_inFlight != i) {
             return;
@@ -905,7 +906,7 @@ module DirectSend {
         _retryOrWait();
     }
 
-    (:dev)
+    (:link)
     function _retryOrWait() as Void {
         _attempts += 1;
         pump();      // bounded by RETRIES inside; the pacer reopens it
@@ -914,7 +915,7 @@ module DirectSend {
     // The pacer: while pages wait, every PACE_MS the retry budget is reset and the sender
     // tries again — the moment the rider opens the phone app is not an event the watch can
     // see, so it looks every twenty seconds instead.
-    (:dev)
+    (:link)
     function _startPacer() as Void {
         if (_pacer != null) {
             return;
@@ -924,7 +925,7 @@ module DirectSend {
         t.start(_paceTimer.method(:fire), PACE_MS, true);
     }
 
-    (:dev)
+    (:link)
     function _stopPacer() as Void {
         if (_pacer != null) {
             (_pacer as Timer.Timer).stop();
@@ -932,7 +933,7 @@ module DirectSend {
         }
     }
 
-    (:dev)
+    (:link)
     function onPace() as Void {
         if (_pages.size() == 0) {
             _stopPacer();
@@ -944,7 +945,7 @@ module DirectSend {
 
     // The connected edge and a settings change from the phone (PhoneLink): the budget
     // reopens, because both mean a phone that was not there a moment ago.
-    (:dev)
+    (:link)
     function reopen() as Void {
         _attempts = 0;
         pump();
@@ -952,9 +953,9 @@ module DirectSend {
 
     // The timer callback belongs to an object, never to this module: PhoneLink's header
     // records the fenix 7 runtime wedging on a module-scoped `method()`.
-    (:dev) var _ackTimer as AckTimer = new AckTimer();
+    (:link) var _ackTimer as AckTimer = new AckTimer();
 
-    (:dev)
+    (:link)
     function _startTimer() as Void {
         _stopTimer();
         var t = new Timer.Timer();
@@ -962,7 +963,7 @@ module DirectSend {
         t.start(_ackTimer.method(:fire), ACK_TIMEOUT_MS, false);
     }
 
-    (:dev)
+    (:link)
     function _stopTimer() as Void {
         if (_timer != null) {
             (_timer as Timer.Timer).stop();
@@ -970,7 +971,7 @@ module DirectSend {
         }
     }
 
-    (:dev)
+    (:link)
     function onAckTimeout() as Void {
         _timer = null;
         if (_inFlight < 0 || !_awaitingAck) {
@@ -987,7 +988,7 @@ module DirectSend {
     // Two shapes are taken. The flat one — three keys, integers and a comma-joined
     // string — is what the phone sends since the field test of 19 September 2026 showed
     // that a nested array never leaves Garmin's phone SDK; the array one stays readable.
-    (:dev)
+    (:link)
     function applyMessage(d as Dictionary) as Boolean {
         var ack = d[KEY_ACK];
         if (ack instanceof Lang.Array) {
@@ -1012,10 +1013,10 @@ module DirectSend {
     // The string is the PHONE'S, so its length is not ours to assume: a 20 KB value of commas
     // is twenty thousand substrings inside one radio callback. A need list can name at most
     // one page per page we hold, and the longest honest one is a few hundred bytes.
-    (:dev)
+    (:link)
     const NEED_MAX_CHARS = 1024;
 
-    (:dev)
+    (:link)
     function _pageList(s as String) as Array<Number> {
         var out = [] as Array<Number>;
         if (s.length() > NEED_MAX_CHARS) {
@@ -1035,7 +1036,7 @@ module DirectSend {
         return out;
     }
 
-    (:dev)
+    (:link)
     function _onAck(a as Array) as Boolean {
         if (a.size() != 3 || !(a[0] instanceof Lang.Number) || !(a[2] instanceof Lang.Number)
                 || !(a[1] instanceof Lang.Number)) {
@@ -1080,7 +1081,7 @@ module DirectSend {
         return true;
     }
 
-    (:dev)
+    (:link)
     function _onNeed(a as Array) as Boolean {
         if (a.size() != 3 || a[0] != _sid || !(a[1] instanceof Lang.Number)
                 || !(a[2] instanceof Lang.Array)) {
@@ -1109,7 +1110,7 @@ module DirectSend {
     // A stream is whole on the phone: free it. Stream 0 hands over to the wrist stream if
     // there is one; the buzz and "phone ok" wait for the LAST stream, because one short
     // tick means "you can walk away" and that is only true when everything has crossed.
-    (:dev)
+    (:link)
     function _onWhole(st as Number) as Boolean {
         LinkProbe.append("cjr s" + st + " whole");
         _stopTimer();
@@ -1145,7 +1146,7 @@ module DirectSend {
     // recording is still crossing, stream 1 once it has. The other one is lost, and that is
     // the honest trade: two streams of ten pages would be twice the Storage this app has,
     // and a wrist stream whose record stream never landed has nothing to attach to anyway.
-    (:dev)
+    (:link)
     function persist() as Void {
         _stopTimer();
         var pages = _curPages();
@@ -1181,7 +1182,7 @@ module DirectSend {
         }
     }
 
-    (:dev)
+    (:link)
     function restore() as Void {
         var idx = null;
         try {
@@ -1251,7 +1252,7 @@ module DirectSend {
         pump();
     }
 
-    (:dev)
+    (:link)
     function _clearStore() as Void {
         try {
             Storage.deleteValue(STORE_IDX);
@@ -1276,7 +1277,7 @@ module DirectSend {
     // morning is looking at the one screen that can tell him yesterday's session is still
     // in the queue. Null on both when there is nothing waiting, so neither screen grows a
     // row it does not need.
-    (:dev)
+    (:link)
     function statusLine() as String? {
         if (_stream == STREAM_WRIST && _wPages.size() > 0) {
             return "wrist " + _wSentOk + "/" + _wPages.size();
@@ -1289,61 +1290,61 @@ module DirectSend {
 
     // ---- for the tests ----
 
-    (:dev)
+    (:link)
     function pageCount() as Number {
         return _pages.size();
     }
 
-    (:dev)
+    (:link)
     function page(i as Number) as ByteArray {
         return _pages[i];
     }
 
-    (:dev)
+    (:link)
     function openBytes() as ByteArray? {
         return _buf == null ? null : (_buf as ByteArray).slice(0, _len);
     }
 
-    (:dev)
+    (:link)
     function inFlight() as Number {
         return _inFlight;
     }
 
-    (:dev)
+    (:link)
     function acked(i as Number) as Boolean {
         return _acked[i];
     }
 
-    (:dev)
+    (:link)
     function wristPageCount() as Number {
         return _wPages.size();
     }
 
-    (:dev)
+    (:link)
     function wristPage(i as Number) as ByteArray {
         return _wPages[i];
     }
 
-    (:dev)
+    (:link)
     function wristBudget() as Number {
         return _wBudget;
     }
 
-    (:dev)
+    (:link)
     function wristThin() as Number {
         return _wThin;
     }
 
     // The tests' clock. On a watch this is set by every 1 Hz fix; a test has no fixes and
     // no control over `System.getTimer()`, so it says what the mapping is.
-    (:dev)
+    (:link)
     function wristAnchor(epochS as Number, timerMs as Number) as Void {
         _wAnchorEpoch = epochS;
         _wAnchorMs = timerMs;
     }
 
     // Discard, and the tests' reset: everything of both streams goes.
-    (:dev)
+    (:link)
     function discard() as Void {
         _stopTimer();
         _stopPacer();
@@ -1382,7 +1383,7 @@ module DirectSend {
     }
 }
 
-(:dev)
+(:link)
 class PaceTimer {
     function initialize() {
     }
@@ -1392,7 +1393,7 @@ class PaceTimer {
     }
 }
 
-(:dev)
+(:link)
 class AckTimer {
     function initialize() {
     }
@@ -1402,7 +1403,7 @@ class AckTimer {
     }
 }
 
-(:dev)
+(:link)
 class PageListener extends Communications.ConnectionListener {
     hidden var _i as Number;
 

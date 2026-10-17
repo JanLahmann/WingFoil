@@ -37,7 +37,8 @@ and no line of the copy above may imply otherwise:
 | `.gpx` and `.tcx` import | beta | no document type, no parser path in the shipped binary |
 | Apple Health, both ways | beta | **no HealthKit entitlement and no Health usage string** |
 | The CleanJibe Apple Watch app, and the widgets and complication beside it | beta | **no watch extension and no widget extension embedded** |
-| The Garmin link, windsurf, the tuning page, iPad | dev | a second app, a second ASC record |
+| The Garmin link (the summary card and the session straight from the watch) | beta, since 17 Oct 2026 | **no ConnectIQ framework and no Bluetooth usage string** |
+| The map and the wind sent to the Garmin watch, windsurf, the tuning page, iPad | dev | a second app, a second ASC record |
 
 `docs/copy/channels.json` holds that list as `forbiddenInRelease`, and
 `python3 docs/copy/check_release_copy.py` asserts none of it appears in the blocks below.

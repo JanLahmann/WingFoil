@@ -66,8 +66,9 @@ What changed and why:
 * **The iPhone paragraph** says the Analyzer is on its way to the App Store and points at
   TestFlight until then. The day 1.0.1 is on sale, the last two sentences become one: *Find
   it on the App Store.*
-* **Nothing from the dev stream**: no shore map from the phone, no direct transfer, no page
-  editor. The eight pages, the seven show/hide switches and the large-text set are what
+* **Nothing from the dev stream**: no shore map from the phone, no page editor. The direct
+  transfer and the summary card are in the beta since 0.9.28 (Jan, 17 October 2026), and the
+  What's New says so; the Description does not name them until they have real sessions behind them. The eight pages, the seven show/hide switches and the large-text set are what
   0.9.19 ships.
 * Every sentence is register 1, at most 20 words, with no dash, semicolon or parenthesis.
   `docs/copy/check_voice.py` reads this block.
@@ -202,6 +203,10 @@ top of the 0.9.22 one:
 **0.9.27 uploaded 17 October 2026** (the beta to the public listing, 0.9.27-dev1 to the private one; Description unchanged): the rider review's open calls on the wrist (docs/presentation/watch.md, "Turns page words"): a jump buzzes long-then-short, a turn verdict is never swallowed by a jump, LONGEST and NEW BEST wait for the third flight, and the Turns page spells out flew/dry and port/stbd where it fits. What's New, on top of the 0.9.26 paragraph:
 
 0.9.27: A jump now buzzes long then short, so it never feels like a fall. Your turn's verdict always buzzes, even right after a jump. Longest flight and new best wait until your third flight. The Turns page spells out flew and dry, port and stbd, where they fit.
+
+**0.9.28 built 17 October 2026, not uploaded yet** (the beta to the public listing, 0.9.28-dev1 to the private one; Description unchanged): the Garmin link moves to the beta (docs/channels.md, Watches). *Send summary to phone app* is a beta row again, and with it on the watch sends its summary card and then the whole recording straight to the beta iPhone app (beta 146). Pair with iPhone beta 146 and dev 147. What's New, on top of the 0.9.27 paragraph:
+
+0.9.28: Your watch can send each session straight to the CleanJibe beta app on your iPhone. Turn on Send summary to phone app in Garmin Connect.
 
 The divergences left are listed under "Not ported yet".
 

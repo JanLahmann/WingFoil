@@ -109,12 +109,13 @@ enum FeedbackMail {
         return identifier.isEmpty ? "unknown" : identifier
     }
 
-    /// The Garmin half is nil outside the dev channel, which is the only one with a link to
-    /// report on (docs/channels.md) — and `nil` is already what this type means by "no
-    /// Garmin watch", so the report reads the same as it does on a phone that has none.
+    /// The Garmin half is nil in the release, which has no link to report on
+    /// (docs/channels.md; the beta has had one since 17 Oct 2026) — and `nil` is already what
+    /// this type means by "no Garmin watch", so the report reads the same as it does on a
+    /// phone that has none.
     @MainActor
     private static func watchFacts(store: SessionStore) -> FeedbackFacts.Watch {
-        #if DEV
+        #if BETA
         let garminModel = store.companionState.deviceName
         let garminAppVersion = store.lastCardWatchAppVersion.flatMap(watchAppVersion)
         let garminCrashRuns = watchCrashRuns(store: store)
@@ -141,7 +142,7 @@ enum FeedbackMail {
                                    garminCrashRuns: garminCrashRuns)
     }
 
-    #if DEV
+    #if BETA
     /// The watch app's own crash count off the **newest card that carried one**
     /// (`SessionRow.watchCrashes`), or nil when none ever has.
     ///

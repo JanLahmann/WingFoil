@@ -1,9 +1,11 @@
-// The Garmin link is a DEV channel door (docs/channels.md): the release and beta binaries
-// carry no ConnectIQ framework, no Bluetooth code and no companion object at all. Gating the
-// whole file — the `import ConnectIQ` included — is what makes that true of the binary and
-// not merely of the UI. The kit's `CompanionLink` protocol stays compiled in every channel;
-// it is this adapter that is dev-only.
-#if DEV
+// The Garmin link is a BETA channel door (docs/channels.md; moved up from dev by Jan on
+// 17 Oct 2026): the release binary carries no ConnectIQ framework, no Bluetooth code and no
+// companion object at all. Gating the whole file — the `import ConnectIQ` included — is what
+// makes that true of the binary and not merely of the UI. The kit's `CompanionLink` protocol
+// stays compiled in every channel; it is this adapter that is beta and dev only. The wind
+// and map sends below compile in the beta too, because the protocol asks for them, but
+// nothing in a beta build calls them: their buttons are `#if DEV`.
+#if BETA
 import ConnectIQ
 import Foundation
 import OSLog
@@ -376,6 +378,8 @@ extension ConnectIQCompanionLink: IQAppMessageDelegate {
         #if DEV
         // The dev build's link probe (docs/direct-transfer.md): a page of bytes with its
         // size under "pr". Counted and sized here, never stored; the watch keeps the timing.
+        // Dev only: a beta build drops a probe page as an invalid card below, and the beta
+        // watch has no probe item to send one.
         if let dict = message as? [String: Any], let size = dict["pr"] as? Int {
             let seq = dict["q"] as? Int ?? 0
             let got: Int
@@ -390,6 +394,7 @@ extension ConnectIQCompanionLink: IQAppMessageDelegate {
             }
             return
         }
+        #endif
         // A page of the direct transfer (docs/transfer-format.md §3). Decoded HERE, on the
         // delegate thread, so that only a `Sendable` `DirectPage` crosses to the main actor
         // — the payload itself is an untyped ObjC dictionary and must not. The card path
@@ -404,7 +409,6 @@ extension ConnectIQCompanionLink: IQAppMessageDelegate {
             }
             return
         }
-        #endif
         guard let card = try? CompanionSummary(payload: message) else {
             Task { @MainActor in self.rejectedCards += 1 }
             return

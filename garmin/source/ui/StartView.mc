@@ -239,8 +239,8 @@ class StartView extends WatchUi.View {
     // `DirectSend.restore()` brings an unfinished stream back over an app exit, so a rider
     // who walked away from the beach mid-transfer opens the app the next morning to a start
     // screen that would otherwise say nothing about the session sitting in the queue — and
-    // the transfer resumes from here whether he reads the line or not. Null in every other
-    // stream and whenever nothing is waiting (the `(:notdev)` stub), so this is normally an
+    // the transfer resumes from here whether he reads the line or not. Null in the release
+    // and whenever nothing is waiting (the `(:nolink)` stub), so this is normally an
     // unchanged screen.
     //
     // It rides in the AIR under the hint row, the mirror of where the brand mark rides above

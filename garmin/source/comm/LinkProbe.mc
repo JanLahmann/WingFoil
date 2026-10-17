@@ -180,6 +180,12 @@ module LinkProbe {
         return [] as Array<String>;
     }
 
+    // The beta's sender (DirectSend, `link`) logs here too; the beta has no probe and no log
+    // screen, so its line goes nowhere.
+    (:notdev)
+    function append(line as String) as Void {
+    }
+
     (:dev)
     function append(line as String) as Void {
         var log = readLog();

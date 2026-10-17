@@ -20,8 +20,9 @@
     <setting propertyKey="@Properties.showLabels" title="@Strings.SetShowLabels">
         <settingConfig type="boolean"/>
     </setting>
-    <!-- `phonePush` (Send summary to phone app) moved to resources-dev/base/settings/ in
-         0.9.22, rider review W11: its receiver is the dev iPhone app only. -->
+    <!-- `phonePush` (Send summary to phone app) is a beta and dev row since 0.9.28, in
+         resources-beta/base and resources-dev/base: its receiver is the beta and dev iPhone
+         app (dev only from 0.9.22, rider review W11). -->
     <setting propertyKey="@Properties.sportChoice" title="@Strings.SetSport">
         <settingConfig type="list">
             <listEntry value="0">@Strings.SportWindsurf</listEntry>

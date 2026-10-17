@@ -466,12 +466,12 @@ something to say (dev), otherwise the hint after a good save, and nothing under 
 `phoneProgressLineNeverTouchesWhatMatters` asserts every placed line fits, and logs per glass
 whether it went top, low or was dropped.
 
-## The direct transfer's progress, on the glass (0.9.16, dev)
+## The direct transfer's progress, on the glass (0.9.16, beta and dev since 0.9.28)
 
 The recording crosses to the phone in 8 KB pages over about twenty seconds on the beach, and
 until this round nothing on the watch said so. `DirectSend.statusLine()` is that sentence —
 `phone 4/13` while pages are moving, `phone ok` when everything is across, and null when there
-is nothing to say, which is what a release or beta build always gets.
+is nothing to say, which is what a release build always gets (the `(:nolink)` stub).
 
 **Since 0.9.18-dev1 there is a second wait, and it says so in its own word**: the wrist
 stream follows the recording (docs/transfer-format.md §2b), so the line reads `phone 4/13`,
@@ -672,11 +672,19 @@ the wrist in the same change, or a check goes red.
 
 ## The watch link — Settings → Garmin watch
 
+**Beta and dev since 17 Oct 2026** (docs/channels.md): the header wears the *Beta* chip, and
+the wind and map rows below are dev only, inside the section.
+
 One section, and every row in it is a fact the rider can act on: which watch, whether it is
-reachable, when a summary last came through, and the two things this phone can push to it.
-There is no "connect" button, because there is nothing here to connect — Garmin Connect
-Mobile owns the Bluetooth link and this app is a guest on it, so each state says what is
-missing (`CompanionLinkState.headline` / `.detail`) rather than that something failed.
+reachable, when a summary last came through, and in the dev build the two things this phone
+can push to it. There is no "connect" button, because there is nothing here to connect —
+Garmin Connect Mobile owns the Bluetooth link and this app is a guest on it, so each state
+says what is missing (`CompanionLinkState.headline` / `.detail(in:)`) rather than that
+something failed. The footer is channel-bound (pattern D): ready, the beta's says *Your watch
+sends a session summary the moment you save. Keep this app open, and the whole session
+follows.*, the dev build's names the wind and the map instead; and it carries the link to the
+help topic *Sessions straight from your Garmin watch*, which says where the watch's switch is
+(pattern K).
 
 **Send wind to watch.** A sixteen-point compass, not a 0–359 field: nobody knows the wind to
 the degree, the watch only uses it to decide which side of the axis a turn happened on, and a
@@ -691,7 +699,9 @@ unsettable (Jan, dev 106). Manual by decision (ADR-013).
 straight over, with *part of it* where the transfer stopped part way. *Last summary from the
 watch* is when the last summary card arrived. The link's own numbers (pages, seconds, the
 probe, the answer the phone sent back) sit folded under **Link details**, because `1 page · 0
-s` means nothing to a rider and everything to the dev build proving the radio.
+s` means nothing to a rider and everything to a tester proving the radio. The probe line is
+the dev build's alone. A transfer that stopped part way says so on its session too, under the
+date (docs/presentation/gear-list-session-page.md).
 
 **Send map to watch.** The watch cannot have a Garmin map — the firmware's own map view kills
 the app on the fenix 8 (docs/watch-map-snapshot.md, GitHub #4) — so the phone draws one for

@@ -125,12 +125,15 @@ struct BetaSectionView: View {
     /// is a confirmation the rider cannot check, and the two items he would never guess at
     /// — the keychain pair — are the whole reason this row exists, so they are named.
     // The watch's map picks and the tuning sliders are dev-only doors (rider review, 16 Oct
-    // 2026): the beta's warning names only what the beta has.
+    // 2026): the beta's warning names only what the beta has. The Garmin watch the rider
+    // chose is in both since the link reached the beta (17 Oct 2026).
     #if DEV
     private static let channelItems =
-        "• The notification choices, the map picks for the watch, and the tuning sliders.\n"
+        "• The notification choices, the Garmin watch you chose, the map picks for the "
+        + "watch, and the tuning sliders.\n"
     #else
-    private static let channelItems = "• The notification choices.\n"
+    private static let channelItems =
+        "• The notification choices and the Garmin watch you chose.\n"
     #endif
 
     private static let warning =

@@ -29,4 +29,9 @@
          the dev build; a release build has no property and reads false
          (MetricsEngine._makeJumps). -->
     <property id="jumpCount" type="boolean">true</property>
+
+    <!-- 0.9.28: the summary card to the paired iPhone app after a save, and the direct
+         transfer that rides on it — the beta iPhone app receives both since beta 146. Off
+         until the rider turns it on; AppSettings.readPhonePush. -->
+    <property id="phonePush" type="boolean">false</property>
 </properties>

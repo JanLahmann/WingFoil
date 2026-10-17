@@ -299,6 +299,9 @@ public enum HelpTopicID: String, CaseIterable, Sendable, Identifiable {
     // The beta's features, each with its page (rider review, 17 Oct 2026: a beta door with
     // no `?` fails rule 2 of docs/channels.md before it is even tried).
     case jumps, sessionStory, nextSession, sessionVideo, libraryGrouping, widgets, healthExport
+    /// The Garmin link: the summary card and the recording straight off the watch
+    /// (docs/transfer-format.md). Beta since 17 Oct 2026.
+    case garminDirect
 
     public var id: String { rawValue }
 }
@@ -579,6 +582,48 @@ public enum HelpCatalog {
             links: [HelpLink(title: "Open intervals.icu", url: IcuSetupGuide.intervalsURL)],
             action: .openIcuSettings,
             related: [.icuTroubleshooting, .notifications, .privacy]),
+
+        // **The Garmin link** (docs/transfer-format.md, docs/channels.md: beta since 17 Oct
+        // 2026). Right after intervals.icu because it is the Garmin rider's other way in,
+        // and the one that arrives first. What it brings and what still comes from the FIT
+        // is the whole of the topic: a rider who reads the session off the link and then
+        // sees it change when the FIT lands has to know that was the plan. "Part of it" is
+        // the mark Settings and the session page both use (`SessionProvenance.cutShortMark`).
+        HelpTopic(
+            id: .garminDirect, section: .bringIn, channel: .beta,
+            title: "Sessions straight from your Garmin watch",
+            summary: "The CleanJibe watch app sends your session to your phone over "
+                + "Bluetooth, before intervals.icu has it.",
+            body: [
+                "When you save, your watch sends a summary to your phone at once. The "
+                + "whole recording follows, page by page, through the Garmin Connect app.",
+                "Keep CleanJibe open on your phone for about twenty seconds after you save. "
+                + "The watch buzzes once and shows phone ok when it is all across.",
+                "You get the full analysis: foil time, flights, every turn verdict and "
+                + "measured speed records.",
+                "The FIT still brings the laps. When it arrives through intervals.icu, it "
+                + "takes the session over. The name you gave it, your gear and your notes "
+                + "stay.",
+            ],
+            items: [
+                .init(term: "Switch it on, on the watch",
+                      detail: "In Garmin Connect, open the CleanJibe app's settings and "
+                          + "switch on Send summary to phone app."),
+                .init(term: "Choose your watch, on the phone",
+                      detail: "Settings → Garmin watch → Choose your watch. Pick it in "
+                          + "Garmin Connect, which hands you back here."),
+                .init(term: "What part of it means",
+                      detail: "The transfer stopped before the end, and nothing more came "
+                          + "for a day. CleanJibe keeps what arrived and marks the session "
+                          + "part of it. The FIT replaces it in full."),
+                .init(term: "Walked away too soon",
+                      detail: "The watch keeps what it has not sent yet. Start the watch app "
+                          + "near your phone, and it tries again."),
+                .init(term: "Where it goes",
+                      detail: "From your watch to your phone, through the Garmin Connect "
+                          + "app. It goes to no server on the way."),
+            ],
+            related: [.icuSetup, .whichWatch, .privacy]),
 
         // The second cloud source (ADR-023). What it costs is said early, because a rider
         // who finds out afterwards that his speed records are uncertified has been told
@@ -1831,6 +1876,12 @@ public enum HelpCatalog {
                                    + "a newer build exists. It sends nothing about you."))
         }
         if channel >= .beta {
+            items.append(.init(term: "The Garmin link",
+                               detail: "Your Garmin watch sends each session to this phone "
+                                   + "over Bluetooth, through the Garmin Connect app. It "
+                                   + "goes nowhere else."))
+        }
+        if channel >= .beta {
             items.append(.init(term: "Ask CleanJibe",
                                detail: "Ask CleanJibe sends your question, and a session's "
                                    + "numbers when you ask from one, to Anthropic's Claude. "
@@ -2059,6 +2110,7 @@ extension HelpCatalog {
         .exampleSession: HelpSurfaces(body: [2]),
         .appleWatchApp: HelpSurfaces(wholeTopic: true),
         .appleWorkoutApp: HelpSurfaces(wholeTopic: true),
+        .garminDirect: HelpSurfaces(wholeTopic: true),
         .notifications: HelpSurfaces(wholeTopic: true),
         .stravaImport: HelpSurfaces(wholeTopic: true),
         .replayClip: HelpSurfaces(wholeTopic: true),

@@ -152,6 +152,18 @@ The file your watch left there decides how much you get. A FIT gives you the ful
 - When the jibes and tacks show up: They appear after a few minutes of flying, once the watch has worked out the wind. Set it by hand to have them from the start.
 - Why the Runs card stays empty: Runs belong to Garmin's own windsurf profile. No Connect IQ app can fill that card. CleanJibe's flights are the runs.
 
+#### Sessions straight from your Garmin watch [only in: beta, dev] [iPhone app only]
+The CleanJibe watch app sends your session to your phone over Bluetooth, before intervals.icu has it.
+When you save, your watch sends a summary to your phone at once. The whole recording follows, page by page, through the Garmin Connect app.
+Keep CleanJibe open on your phone for about twenty seconds after you save. The watch buzzes once and shows phone ok when it is all across.
+You get the full analysis: foil time, flights, every turn verdict and measured speed records.
+The FIT still brings the laps. When it arrives through intervals.icu, it takes the session over. The name you gave it, your gear and your notes stay.
+- Switch it on, on the watch: In Garmin Connect, open the CleanJibe app's settings and switch on Send summary to phone app.
+- Choose your watch, on the phone: Settings → Garmin watch → Choose your watch. Pick it in Garmin Connect, which hands you back here.
+- What part of it means: The transfer stopped before the end, and nothing more came for a day. CleanJibe keeps what arrived and marks the session part of it. The FIT replaces it in full.
+- Walked away too soon: The watch keeps what it has not sent yet. Start the watch app near your phone, and it tries again.
+- Where it goes: From your watch to your phone, through the Garmin Connect app. It goes to no server on the way.
+
 #### Import from Strava [iPhone app only]
 Connect once, then pick the sessions you want. Strava keeps your track but not your watch's speed.
 CleanJibe lists your Strava sessions and imports the ones you pick. It only reads. It never writes, renames or posts to your account.
@@ -465,6 +477,7 @@ There is no account, and no session of yours is uploaded. The whole policy is on
 [iPhone app only] The app talks to four places, each only when you use it. Your own login goes to intervals.icu and Strava. Apple Maps loads while a map is on screen. To name a new spot, it sends one rounded position.
 - Your location [only in: beta, dev] [iPhone app only]: The Apple Watch app reads it while a workout you started is running. It goes to your own iPhone and nowhere else.
 - A daily look for a newer build [only in: beta, dev]: Once a day the beta asks cleanjibe.org whether a newer build exists. It sends nothing about you.
+- The Garmin link [only in: beta, dev]: Your Garmin watch sends each session to this phone over Bluetooth, through the Garmin Connect app. It goes nowhere else.
 - Ask CleanJibe [only in: beta, dev]: Ask CleanJibe sends your question, and a session's numbers when you ask from one, to Anthropic's Claude. It is kept 30 days. An idea you share is kept a year for the team.
 - iCloud Drive [only in: dev]: Your library can live in your own iCloud Drive, so your iPhone and iPad share it. It is your iCloud, not a server of ours.
 - The Garmin watch map [only in: dev]: Where I am now asks for one position, to draw the map your Garmin watch shows.
@@ -528,6 +541,7 @@ Open a session, tap Share, then Send this session to us.
 The iPhone app comes in three channels from one build: release (App Store), beta (TestFlight, public link testflight.apple.com/join/nygqGGcn) and dev (a second app for a few hand-picked testers). Beta has everything below; dev has beta's features and the dev list. The website runs the release analysis.
 
 Beta adds:
+- The Garmin link: your watch sends a summary the moment you save, then the whole session.
 - .gpx and .tcx files, so a session exported from a Polar, a Suunto or a COROS opens straight from Files.
 - Apple Health, both ways: what Apple's Workout app recorded is read in, and your sessions are written back as workouts.
 - The CleanJibe Apple Watch app, which records on your wrist and hands the session to the phone.
@@ -541,7 +555,7 @@ Beta adds:
 - Planned: a live view on the Apple Watch. Foil state, flights, records and turn verdicts on the wrist, as the Garmin app shows them.
 
 Dev adds:
-- The Garmin link: a summary card from your watch the moment you stop. Your spot's map and the wind direction go back to it.
+- Your spot's map and the wind direction, sent from the phone to your Garmin watch.
 - Windsurf, foil and fin, with thresholds of its own
 - The tuning page: every analysis threshold on a slider, tried against your own sessions
 - iPad

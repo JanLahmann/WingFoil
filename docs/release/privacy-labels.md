@@ -53,8 +53,11 @@ Not Collected, when nothing is retained past the on-device use):
 
 - **Location When In Use** (beta/dev only) — one fix, on request, for the watch map. Say so;
   do not let the follow-up default to a broader description than `NSLocationWhenInUseUsageDescription`'s own text.
-- **Bluetooth** (beta/dev only) — the Garmin Connect Mobile handoff. No pairing of our own,
-  no network.
+- **Bluetooth** (beta/dev only) — the Garmin Connect Mobile handoff: since 17 Oct 2026 the
+  beta receives the session summary and the recording itself (the direct transfer, ADR-027)
+  from the CleanJibe watch app, both onto the rider's own phone and analysed there. No pairing
+  of our own, no network, no server — so the "collected" table above does not move (the
+  recording is the rider's own content, on-device before and after, like an imported FIT).
 - **Health** (beta only) — both directions, both opt-in, both on-device only.
 - **Photo Library Additions** (release + beta) — add-only, never read.
 
@@ -72,9 +75,9 @@ Not Collected, when nothing is retained past the on-device use):
 
 ## The dev app record (`de.lahmann.wingfoil.dev`) — a shorter, separate label
 
-Everything above, plus the dev-only doors: the Garmin data link (session summary in over
-Bluetooth, wind direction back — still no network, ADR-013 says it carries a card, not raw
-data) and iCloud Drive library sync (ADR-026), which is the rider's own iCloud container, not
+Everything above, plus the dev-only doors: the wind direction and the watch map sent back
+over the Garmin link (the summary and the recording coming in are the beta's since 17 Oct
+2026, under the Bluetooth line above — still no network) and iCloud Drive library sync (ADR-026), which is the rider's own iCloud container, not
 a CleanJibe server — same "Apple framework, on-device before and after" reasoning as the
 Location row, so **Not Collected** there too. This record needs its own copy of the
 questionnaire in App Store Connect; nothing above transfers automatically between the two

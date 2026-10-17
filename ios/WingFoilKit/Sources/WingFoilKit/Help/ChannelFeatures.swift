@@ -41,6 +41,10 @@ public enum ChannelFeatures {
     /// 14 September 2026 when it became a release feature, and the release's own Import
     /// screen has offered it all along ("FIT or ZIP…").
     public static let beta: [String] = [
+        // Beta since 17 Oct 2026 (Jan): the summary card and the direct transfer. First,
+        // because Garmin comes first wherever the ways in are listed (pattern J).
+        "The Garmin link: your watch sends a summary the moment you save, then the whole "
+            + "session.",
         ".gpx and .tcx files, so a session exported from a Polar, a Suunto or a COROS "
             + "opens straight from Files.",
         "Apple Health, both ways: what Apple's Workout app recorded is read in, and your "
@@ -72,8 +76,9 @@ public enum ChannelFeatures {
     /// **Beta and dev only.** None of these is promised to anybody on the App Store: the
     /// release build lists what is being tested one channel up, and nothing beyond it.
     public static let dev: [String] = [
-        "The Garmin link: a summary card from your watch the moment you stop. "
-            + "Your spot's map and the wind direction go back to it.",
+        // What stayed dev of the Garmin link on 17 Oct 2026: the two things that go back
+        // to the watch, and with the map the app's only location prompt.
+        "Your spot's map and the wind direction, sent from the phone to your Garmin watch.",
         "Windsurf, foil and fin, with thresholds of its own",
         "The tuning page: every analysis threshold on a slider, tried against your own "
             + "sessions",

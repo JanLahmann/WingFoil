@@ -131,6 +131,7 @@ export const SHELL = {
     "whatsNewBeta": "Tried it? Tell us in Menu → Support & ideas. Every mail shapes the next build.",
     "webJoin": "The beta is the iPhone app's. Open the link on your iPhone, and TestFlight installs it.",
     "features": [
+      "The Garmin link: your watch sends a summary the moment you save, then the whole session.",
       ".gpx and .tcx files, so a session exported from a Polar, a Suunto or a COROS opens straight from Files.",
       "Apple Health, both ways: what Apple's Workout app recorded is read in, and your sessions are written back as workouts.",
       "The CleanJibe Apple Watch app, which records on your wrist and hands the session to the phone.",

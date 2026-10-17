@@ -1,9 +1,10 @@
-// The direct transfer is a DEV channel door (docs/channels.md, docs/transfer-format.md §5):
-// the release and beta binaries carry no inbox, no page assembler and no `.cjr` on their
-// share sheets. Gating the whole file is what makes that true of the binary rather than only
-// of the UI. The kit's `DirectStream`, `DirectPage` and `DirectStreamParser` compile in every
-// channel and are tested there; it is this receiver that is dev-only.
-#if DEV
+// The direct transfer is a BETA channel door (docs/channels.md, docs/transfer-format.md §5;
+// moved up from dev by Jan on 17 Oct 2026): the release binary carries no inbox, no page
+// assembler and no `.cjr` on its share sheet. Gating the whole file is what makes that true
+// of the binary rather than only of the UI. The kit's `DirectStream`, `DirectPage` and
+// `DirectStreamParser` compile in every channel and are tested there; it is this receiver
+// that is beta and dev only.
+#if BETA
 import Foundation
 import OSLog
 import WingFoilKit
@@ -202,6 +203,20 @@ final class DirectTransferInbox {
             ? inbox.appendingPathComponent("\(session).\(TrackFormat.direct.fileExtension)")
             : inbox.appendingPathComponent("\(session).\(Self.wristExtension)")
         try archive.write(to: destination, options: .atomic)
+        // **Cut short travels with the file, as a marker beside it** (docs/transfer-format.md
+        // §5). The receipt alone said it only in Settings, and only for the last transfer;
+        // the session row is where a rider reads it. An empty `<sid>.cut` is the smallest
+        // thing that survives the app being killed before the import runs, and `pending()`
+        // never hands it to the importer because it filters on `.cjr`. A whole stream
+        // removes a marker an earlier cut-short pass may have left for the same session.
+        if stream == DirectStream.recordStream {
+            let marker = Self.cutShortMarker(for: destination)
+            if cutShort {
+                try? Data().write(to: marker, options: .atomic)
+            } else {
+                try? FileManager.default.removeItem(at: marker)
+            }
+        }
         // The pages go only after the file they became is on disk. This stream's directory
         // and not the session's: dev3's wrist stream is a sibling of it and is not this
         // one's to delete. The session's own directory follows once it is empty.
@@ -226,14 +241,42 @@ final class DirectTransferInbox {
         onArrival?()
     }
 
-    /// A stream the import refused, out of the sweep's way but not gone.
+    /// A stream the import refused, out of the sweep's way but not gone. Its cut-short
+    /// marker goes with it, so a later build that finds it there still knows.
     static func setAside(_ url: URL) {
         guard let inbox = try? garminInboxURL() else { return }
         let refused = inbox.appendingPathComponent("refused", isDirectory: true)
         try? FileManager.default.createDirectory(at: refused, withIntermediateDirectories: true)
-        let destination = refused.appendingPathComponent(url.lastPathComponent)
-        try? FileManager.default.removeItem(at: destination)
-        try? FileManager.default.moveItem(at: url, to: destination)
+        for file in [url, cutShortMarker(for: url)]
+        where FileManager.default.fileExists(atPath: file.path) {
+            let destination = refused.appendingPathComponent(file.lastPathComponent)
+            try? FileManager.default.removeItem(at: destination)
+            try? FileManager.default.moveItem(at: file, to: destination)
+        }
+    }
+
+    /// An assembled stream and everything beside it, gone once it is in the library.
+    static func remove(_ url: URL) {
+        try? FileManager.default.removeItem(at: url)
+        try? FileManager.default.removeItem(at: cutShortMarker(for: url))
+    }
+
+    // MARK: - Cut short
+
+    /// The extension of the empty marker that says `<sid>.cjr` was assembled after a day of
+    /// silence rather than completed. Not `.cjr`, so the sweep never imports it.
+    static let cutShortExtension = "cut"
+
+    /// `<sid>.cut` beside `<sid>.cjr`.
+    static func cutShortMarker(for url: URL) -> URL {
+        url.deletingPathExtension().appendingPathExtension(cutShortExtension)
+    }
+
+    /// Whether the assembled stream at `url` is only part of the session: the importer
+    /// reads this before the file goes, and `SessionIngestor.markTransferCutShort` puts it
+    /// on the row.
+    static func wasCutShort(_ url: URL) -> Bool {
+        FileManager.default.fileExists(atPath: cutShortMarker(for: url).path)
     }
 
     // MARK: - The sweep

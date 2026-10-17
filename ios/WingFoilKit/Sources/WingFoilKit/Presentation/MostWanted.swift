@@ -55,6 +55,7 @@ public enum MostWanted {
     static let noteLabel = notePrompt + ": "
 
     public static let all: [Wish] = [
+        Wish(id: "garminLink", label: "The Garmin link", channel: .beta),
         Wish(id: "gpxTcx", label: "GPX and TCX files", channel: .beta),
         Wish(id: "appleHealth", label: "Apple Health, both ways", channel: .beta),
         Wish(id: "appleWatchApp", label: "The Apple Watch app", channel: .beta),
@@ -67,7 +68,7 @@ public enum MostWanted {
         Wish(id: "askCleanJibe", label: "Ask CleanJibe", channel: .beta),
         Wish(id: "appleWatchLive", label: "A live view on the Apple Watch", channel: .beta,
              planned: true),
-        Wish(id: "garminLink", label: "The Garmin link", channel: .dev),
+        Wish(id: "watchMapWind", label: "Map and wind to the Garmin watch", channel: .dev),
         Wish(id: "windsurf", label: "Windsurf, foil and fin", channel: .dev),
         Wish(id: "tuning", label: "The tuning page", channel: .dev),
         Wish(id: "ipad", label: "iPad", channel: .dev),
@@ -131,7 +132,7 @@ public enum MostWanted {
         ///       ✗ The session video · has a problem · sessionVideo
         ///
         ///     Your wishlist
-        ///       ✓ The Garmin link · garminLink
+        ///       ✓ Map and wind to the Garmin watch · watchMapWind
         ///       Your idea: dark mode
         public var lines: [String] {
             guard !isEmpty else { return [] }

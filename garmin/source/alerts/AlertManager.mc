@@ -169,7 +169,7 @@ module AlertManager {
     //
     // Deliberately behind no toggle, like `autoWindLocked`: the transfer itself is the
     // switch (`phonePush`), and a rider who turned it on wants to know when he can walk away.
-    // The call site is `(:dev)`, so no other stream ever reaches it.
+    // The call site is `(:link)`, so the release never reaches it.
     function phoneStreamWhole() as Void {
         _fire(CH_PHONE, [new Attention.VibeProfile(75, 180)]);
     }

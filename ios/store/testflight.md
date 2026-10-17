@@ -4,7 +4,7 @@ Source of truth for the App Store Connect beta metadata. This file **mirrors** w
 ASC (app `6800401377`, bundle `de.lahmann.wingfoil`); edit here first, then push the same text
 to ASC so the two never drift.
 
-Last synced to ASC: 2026-10-09 — beta app description (en-US), pushed through the API and read back identical. "What to Test" is per build (below).
+Last synced to ASC: 2026-10-09 — beta app description (en-US), pushed through the API and read back identical. **Not yet pushed:** the Garmin link sentence of 17 Oct 2026 in *Bring the watch you already have*. "What to Test" is per build (below).
 
 > **This file is the TestFlight half only.** Since 2026-09-02 the public App Store listing
 > has its own source of truth in **`ios/store/appstore.md`** — app name, subtitle,
@@ -28,7 +28,7 @@ Nail a jibe and it gets a star. Your clean jibes, your dry streak and your best 
 
 BRING THE WATCH YOU ALREADY HAVE
 
-On a Garmin, connect intervals.icu once and your history comes in. New sessions then arrive by themselves. On an Apple Watch, record with the CleanJibe Apple Watch app, which comes with this beta. Or record a Surfing workout in Apple's Workout app and import it from Apple Health.
+On a Garmin, connect intervals.icu once and your history comes in. New sessions then arrive by themselves. With the CleanJibe watch app, a new session also comes straight from your watch the moment you save. On an Apple Watch, record with the CleanJibe Apple Watch app, which comes with this beta. Or record a Surfing workout in Apple's Workout app and import it from Apple Health.
 
 Any watch that syncs to Strava works through Strava. Strava keeps your track but not your watch's speed, so those records are estimated. Any other watch works through its FIT file, opened from Files, Mail or AirDrop. An example session is built in, so you can try every page first.
 

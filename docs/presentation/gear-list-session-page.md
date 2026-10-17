@@ -204,9 +204,14 @@ on it, and cannot be drawn inside a Settings menu picker).
 ## The session page: source, name, neighbours
 
 The header names where the recording came from in one line under the date
-(`SessionProvenance.line(importSource:)`: *Apple Watch · CleanJibe*, *intervals.icu*, *Strava*,
-*Apple Health*, *File*) — provenance used to live on the Details tab only, so an Apple Watch
-recording and a Health import looked alike. The title is a button: a tap opens a rename sheet
+(`SessionProvenance.line(for:)`: *Apple Watch · CleanJibe*, *intervals.icu*, *Strava*,
+*Apple Health*, *File*, *Garmin watch, direct*) — provenance used to live on the Details tab
+only, so an Apple Watch recording and a Health import looked alike. A direct transfer from the
+Garmin watch that stopped part way (beta, docs/transfer-format.md §5) says so on the same
+line: *Garmin watch, direct · part of it*, from `SessionRow.transferCutShort` (GRDB v21), the
+same three words Settings → Garmin watch puts beside that transfer
+(`SessionProvenance.cutShortMark`). The mark goes when a FIT takes the session over, because
+the row is then the FIT's. The title is a button: a tap opens a rename sheet
 writing the same `customTitle` the share composer's field writes, so renaming is not a
 side-effect of sharing. A swipe moves to the neighbouring session among the ones the list is
 showing (`SessionStore.visibleSessionIDs`), **in time order** whatever the list's grouping:

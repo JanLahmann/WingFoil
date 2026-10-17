@@ -35,7 +35,8 @@ packages:
   # WingFoilKit/Sources/WingFoilKit/Companion/CompanionLink.swift) and never of
   # `WingFoilRelease`, which ships no Garmin link at all (docs/channels.md). The kit stays
   # buildable and testable on a machine with no framework and no watch; only the thin adapter
-  # that actually calls `ConnectIQ.sharedInstance()` lives behind the app's `#if DEV` import.
+  # that actually calls `ConnectIQ.sharedInstance()` lives behind the app's `#if BETA` import
+  # (beta and dev since 17 Oct 2026, docs/channels.md).
   ConnectIQ:
     url: https://github.com/garmin/connectiq-companion-app-sdk-ios
     from: 1.8.0
@@ -332,10 +333,11 @@ targets:
   #
   # `Beta Debug`/`Beta Release` define `BETA`: the GPX/TCX door, the Garmin export ZIP, Apple
   # Health both ways, the Apple Watch app and the widgets, the session video export, the
-  # library grouping and filter controls and the Beta section in Settings.
+  # library grouping and filter controls, the Beta section in Settings, and the Garmin link
+  # (the summary card and the direct transfer, since 17 Oct 2026).
   #
-  # `Dev Debug`/`Dev Release` define `BETA DEV TUNING` on top: the Garmin link, the windsurf
-  # discipline, the tuning page, and iPad. They also move the app sideways — its own bundle
+  # `Dev Debug`/`Dev Release` define `BETA DEV TUNING` on top: the wind and the map sent back
+  # to the Garmin watch, the link probe, the windsurf discipline, the tuning page, and iPad. They also move the app sideways — its own bundle
   # id, its own display name, its own URL scheme and its own BGTask identifier — so the dev
   # build installs beside the release one rather than over it.
   # =======================================================================================
@@ -487,15 +489,16 @@ targets:
         # iOS demands both strings from any app whose process touches Bluetooth, and the
         # ConnectIQ SDK does on our behalf. Real sentences, not placeholders: TestFlight
         # review rejects the build otherwise, and the rider deserves to know why we are
-        # asking. The Garmin link is a dev door, but the plist is per target rather than per
-        # configuration, so the beta carries the strings and never asks.
+        # asking. The Garmin link is a beta door since 17 Oct 2026, and the plist is per target
+        # rather than per configuration, so beta and dev share one wording: what both do. The
+        # dev build's wind and map pushes ride the same link and are covered by "exchange".
         NSBluetoothAlwaysUsageDescription: >-
-          CleanJibe uses Bluetooth to receive a session summary from your Garmin watch the
-          moment you stop recording, and to send the wind direction back to it. All of it
-          goes through the Garmin Connect app; CleanJibe never pairs with anything itself.
+          CleanJibe uses Bluetooth to receive your session from your Garmin watch the moment
+          you save it. All of it goes through the Garmin Connect app; CleanJibe never pairs
+          with anything itself.
         NSBluetoothPeripheralUsageDescription: >-
-          CleanJibe uses Bluetooth to exchange session summaries and wind direction with
-          your Garmin watch through the Garmin Connect app.
+          CleanJibe uses Bluetooth to exchange sessions with your Garmin watch through the
+          Garmin Connect app.
         # --- phase 5, companion link (docs/decisions.md ADR-013) ---
         # Without this entry `canOpenURL` returns false for Garmin Connect Mobile even
         # when it is installed, and the SDK concludes there is no path to the watch.

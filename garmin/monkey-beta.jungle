@@ -9,7 +9,9 @@ project.manifest = manifest-beta.xml
 # all-zero pepper in every stream.
 base.sourcePath = source;tests;source-nopepper
 base.barrelPath = barrel/WingFoilCore/barrel.jungle
-base.excludeAnnotations = dev
+# `nolink` stubs out: the Garmin link (DirectSend, the phonePush switch) is in the beta since
+# 0.9.28, its `link` half compiled here as in dev (docs/channels.md, Watches).
+base.excludeAnnotations = dev;nolink
 base.resourcePath = $(base.resourcePath);resources-beta/base;resources-beta/icon65
 
 # The BETA stream's brand cuts (docs/channels.md, "Telling the channels apart"): the

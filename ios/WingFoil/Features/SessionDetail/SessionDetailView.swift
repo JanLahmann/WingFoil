@@ -842,7 +842,7 @@ struct SessionDetailView: View {
 
     @ViewBuilder
     private func sourceText(_ row: SessionRow) -> some View {
-        if let source = SessionProvenance.line(importSource: row.importSource) {
+        if let source = SessionProvenance.line(for: row) {
             Text(source)
                 .font(.caption)
                 .foregroundStyle(.readableSecondary)

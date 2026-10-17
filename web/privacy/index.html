@@ -133,7 +133,8 @@
         <h3>The analysis runs on the phone</h3>
         <p>
           When you import a <code>.fit</code> or <code>.gpx</code> file — or a workout you
-          recorded with Apple's Workout app — the app reads it and works out the flights, the
+          recorded with Apple's Workout app, or, in the beta, a session your Garmin watch sent
+          straight over — the app reads it and works out the flights, the
           turn verdicts, the speed records and the wind axis itself, on the device. Nothing is
           sent anywhere to be analysed, and there is nowhere it could be sent to.
         </p>
@@ -432,13 +433,17 @@
         </dd>
       </div>
       <div class="term">
-        <dt>Bluetooth — for the Garmin handoff, in the development build</dt>
+        <dt>Bluetooth — for the Garmin link, in the beta</dt>
         <dd>
-          Used to talk to a Garmin running the CleanJibe watch app: to receive the session
-          summary it sends when you stop recording, to send the wind direction back, and to
-          push the kilobyte or two of coastline the watch draws under its breadcrumb. All of it
-          rides on the Garmin Connect app's own link; CleanJibe pairs with nothing itself, and
-          none of it goes over a network.
+          Used to talk to a Garmin running the CleanJibe watch app, once you switch on
+          <em>Send summary to phone app</em> in its settings in Garmin Connect. When you save a
+          session, the watch sends a summary of it, and then the recording itself, page by
+          page, to your own iPhone. Both travel over Bluetooth through the
+          <strong>Garmin Connect app's own link</strong>: CleanJibe pairs with nothing itself,
+          and neither goes over a network or to a server of ours. The recording is then
+          analysed and kept on the phone like any file you import. In the development build the
+          same link also carries the wind direction back to the watch, and the kilobyte or two
+          of coastline it draws under its breadcrumb.
         </dd>
       </div>
       <div class="term">

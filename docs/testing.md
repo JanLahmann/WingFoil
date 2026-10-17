@@ -2187,6 +2187,24 @@ cd ios && xcodegen generate
 grep -c "NSHealth\|NSLocation\|NSBluetooth\|gpx\|tcx" WingFoil/Info-Release.plist   # 0
 ```
 
+**The Garmin link is beta since 17 October 2026, its sends back to the watch dev.** The beta
+binary links ConnectIQ and compiles the card, the direct transfer and Settings → Garmin watch
+(`#if BETA`); the wind push, the watch map with its one location prompt and the link probe
+stay `#if DEV` inside them. So after a beta export `strings` finds the Settings row and
+not the map's, and the release binary finds neither. The kit compiles everything in every
+channel, so the probes are strings only the app target writes (`cjrAck`, *Map for the watch*
+and *Link probe* are also kit literals and prove nothing):
+
+```sh
+strings build/exportBeta/WingFoil.app/WingFoil | grep -c "Last session from the watch"   # ≥ 1
+strings build/exportBeta/WingFoil.app/WingFoil | grep -c "Drawing the map"                # 0
+strings build/exportRelease/WingFoil.app/WingFoil | grep -c "Last session from the watch" # 0
+```
+
+The beta and dev Info.plist is one file (per target), so the Bluetooth strings say what both
+do — receive the session — and the location string is the Apple Watch app's, which the beta
+already carried. Nothing new is declared for the beta.
+
 **And the mark check.** Each channel wears its own cut of the brand mark (docs/channels.md,
 "Telling the channels apart"), picked per configuration; the same `-showBuildSettings` lines
 with `grep "APPICON_NAME\|CJ_SPLASH_MARK"` must print `AppIcon` / `SplashMark` for the release,

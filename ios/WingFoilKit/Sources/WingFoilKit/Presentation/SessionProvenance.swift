@@ -29,6 +29,22 @@ public enum SessionProvenance {
         return label(source)
     }
 
+    /// **The line for one row**: the door, and where a direct transfer stopped part way,
+    /// that too (schema v21, docs/transfer-format.md §5). "Garmin watch, direct · part of it"
+    /// — the same three words Settings → Garmin watch puts beside that transfer, so the two
+    /// places say one thing. The session's own numbers are what arrived; the help topic on
+    /// the direct transfer says what "part of it" means.
+    public static func line(for row: SessionRow) -> String? {
+        guard let line = line(importSource: row.importSource) else { return nil }
+        guard row.transferCutShort == true,
+              order.first(where: { $0.isNamed(in: row.importSource) }) == .watchDirect
+        else { return line }
+        return line + " · " + cutShortMark
+    }
+
+    /// What a cut-short direct transfer is called, on the session and in Settings.
+    public static let cutShortMark = "part of it"
+
     /// The door in the rider's words. `.appleWatch` is the one that needs two: the app that
     /// recorded it, after the wrist it was recorded on.
     public static func label(_ source: ImportSource) -> String {

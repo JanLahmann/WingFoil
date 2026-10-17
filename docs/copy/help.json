@@ -485,6 +485,77 @@
 
           ],
           "body" : [
+            "When you save, your watch sends a summary to your phone at once. The whole recording follows, page by page, through the Garmin Connect app.",
+            "Keep CleanJibe open on your phone for about twenty seconds after you save. The watch buzzes once and shows phone ok when it is all across.",
+            "You get the full analysis: foil time, flights, every turn verdict and measured speed records.",
+            "The FIT still brings the laps. When it arrives through intervals.icu, it takes the session over. The name you gave it, your gear and your notes stay."
+          ],
+          "channels" : [
+            "beta",
+            "dev"
+          ],
+          "id" : "garminDirect",
+          "iphoneOnly" : true,
+          "items" : [
+            {
+              "channels" : [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail" : "In Garmin Connect, open the CleanJibe app's settings and switch on Send summary to phone app.",
+              "term" : "Switch it on, on the watch"
+            },
+            {
+              "channels" : [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail" : "Settings → Garmin watch → Choose your watch. Pick it in Garmin Connect, which hands you back here.",
+              "term" : "Choose your watch, on the phone"
+            },
+            {
+              "channels" : [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail" : "The transfer stopped before the end, and nothing more came for a day. CleanJibe keeps what arrived and marks the session part of it. The FIT replaces it in full.",
+              "term" : "What part of it means"
+            },
+            {
+              "channels" : [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail" : "The watch keeps what it has not sent yet. Start the watch app near your phone, and it tries again.",
+              "term" : "Walked away too soon"
+            },
+            {
+              "channels" : [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail" : "From your watch to your phone, through the Garmin Connect app. It goes to no server on the way.",
+              "term" : "Where it goes"
+            }
+          ],
+          "related" : [
+            "icuSetup",
+            "whichWatch",
+            "privacy"
+          ],
+          "summary" : "The CleanJibe watch app sends your session to your phone over Bluetooth, before intervals.icu has it.",
+          "title" : "Sessions straight from your Garmin watch"
+        },
+        {
+          "aliases" : [
+
+          ],
+          "body" : [
             "CleanJibe lists your Strava sessions and imports the ones you pick. It only reads. It never writes, renames or posts to your account.",
             "A Strava session still shows foil time, flights, every turn verdict, the wind axis and the map.",
             "Strava keeps your track but not your watch's own speed, so the speed records are marked estimated. Without the watch's own speed, a fall can read as a touchdown. Your wrist was not recorded, so there are no pump strokes.",
@@ -2274,6 +2345,14 @@
               ],
               "detail" : "Once a day the beta asks cleanjibe.org whether a newer build exists. It sends nothing about you.",
               "term" : "A daily look for a newer build"
+            },
+            {
+              "channels" : [
+                "beta",
+                "dev"
+              ],
+              "detail" : "Your Garmin watch sends each session to this phone over Bluetooth, through the Garmin Connect app. It goes nowhere else.",
+              "term" : "The Garmin link"
             },
             {
               "channels" : [

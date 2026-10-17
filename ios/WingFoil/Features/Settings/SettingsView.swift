@@ -56,11 +56,11 @@ struct SettingsView: View {
                 #endif
                 notificationsSection
                     .id("notifications")
-                // 2 · Your watch. Settings → Garmin watch: DEV (docs/channels.md). Garmin
-                // Connect Mobile owns the Bluetooth link and it stays behind the flag until
-                // the link has real sessions behind it.
-                #if DEV
-                WatchLinkSection()
+                // 2 · Your watch. Settings → Garmin watch: BETA (docs/channels.md), since
+                // 17 Oct 2026 — the summary card and the direct transfer. Its wind and map
+                // rows stay dev, inside the section.
+                #if BETA
+                WatchLinkSection { setupTopic = $0 }
                     .id("watch")
                 #endif
                 // 3 · How it reads. Windsurf is a row of Analysis in dev, because it
@@ -188,8 +188,8 @@ struct SettingsView: View {
     // MARK: - Finding your way
 
     /// **The chips that jump to a section** (F15a). One per section this build draws, in
-    /// the page's order, each the section's own header; `Health` and `Beta` only where the
-    /// channel has them, the dev rows only in dev. The ids are the `.id(…)`s in `body`,
+    /// the page's order, each the section's own header; `Health`, `Watch` and `Beta` only
+    /// where the channel has them, the dev rows only in dev. The ids are the `.id(…)`s in `body`,
     /// which `UI_SCROLL_TO` uses as well.
     private var jumpChips: [JumpChips.Chip] {
         var chips: [JumpChips.Chip] = [
@@ -200,7 +200,7 @@ struct SettingsView: View {
         chips.append(.init(id: "health", title: "Apple Health"))
         #endif
         chips.append(.init(id: "notifications", title: "Notifications"))
-        #if DEV
+        #if BETA
         chips.append(.init(id: "watch", title: "Watch"))
         #endif
         chips += [

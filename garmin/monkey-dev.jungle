@@ -5,7 +5,8 @@ project.manifest = manifest-dev.xml
 # source-nopepper/ = zero pepper = no invite lock; see monkey.jungle and ADR-012
 base.sourcePath = source;tests;source-nopepper
 base.barrelPath = barrel/WingFoilCore/barrel.jungle
-base.excludeAnnotations = notdev
+# `nolink` stubs out as in the beta: the Garmin link's `link` half compiles here too.
+base.excludeAnnotations = notdev;nolink
 base.resourcePath = $(base.resourcePath);resources-dev/base;resources-dev/icon65
 
 # The DEV channel's brand cuts (docs/channels.md, "Telling the channels apart"): the

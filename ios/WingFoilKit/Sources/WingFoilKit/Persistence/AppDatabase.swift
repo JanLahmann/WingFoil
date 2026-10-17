@@ -117,7 +117,7 @@ public struct AppDatabase: Sendable {
     /// database moves through all of them.
     public static let migrationNames = ["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9",
                                         "v10", "v11", "v12", "v13", "v14", "v15", "v16",
-                                        "v17", "v18", "v19", "v20"]
+                                        "v17", "v18", "v19", "v20", "v21"]
 
     /// The schema version this build writes — the `N` of the last `vN` migration.
     ///
@@ -576,6 +576,27 @@ public struct AppDatabase: Sendable {
                 t.column("checkedAt", .datetime).notNull()
             }
         }
+
+        // v21: **a direct transfer the rider walked away from** (docs/transfer-format.md §5;
+        // docs/channels.md, the last prerequisite before the direct transfer reached the
+        // beta on 17 Oct 2026).
+        //
+        // A stream that goes a day without a page is assembled up to its first gap and
+        // imported as far as it got. Until this column only the transfer's receipt said so,
+        // in Settings and for the last transfer only, so a session that had lost its last
+        // hour looked like a short session on its own page. `transferCutShort` is set by
+        // `SessionIngestor.markTransferCutShort` after such a stream is imported, and only
+        // while the row still holds that stream: the recording behind a row is replaced
+        // whole, never patched, so a FIT that takes the afternoon over writes a fresh row
+        // and the flag is gone with the stream it described.
+        //
+        // No sweep and no default: every row before this migration is NULL, which reads as
+        // "not cut short", and that is true of all of them except a dev phone's handful.
+        migrator.registerMigration("v21") { db in
+            try db.alter(table: "session") { t in
+                t.add(column: "transferCutShort", .boolean)
+            }
+        }
         return migrator
     }
 
@@ -1024,6 +1045,14 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
     /// reader is the feedback mail's crash block (docs/channels.md, "Garmin watch: the crash
     /// breadcrumb").
     public var watchCrashes: Int?
+
+    // MARK: schema v21
+    /// True when the recording behind this row is a **direct transfer that stopped part way**
+    /// and was imported as far as it got (docs/transfer-format.md §5). nil on every other
+    /// row, which is what "the whole session is here" looks like. Set only by
+    /// `SessionIngestor.markTransferCutShort`; read through `SessionProvenance.line(for:)`,
+    /// which is where the session page says it.
+    public var transferCutShort: Bool?
 
     // MARK: schema v19
     /// The rest of the two per-kind ladders (`summary.turns.jibeOutcomes` / `tackOutcomes`):

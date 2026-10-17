@@ -661,6 +661,76 @@ import Testing
         #expect(try await ingestor.allSessions().count == 1)
     }
 
+    /// **Cut short, on the session** (schema v21). A stream the inbox assembled after a day
+    /// of silence is imported as far as it got, and the row it became says so in the line
+    /// under the date — the same words Settings puts beside the transfer. Marking is
+    /// idempotent, and a whole stream's row reads as it always did.
+    @Test func aCutShortStreamSaysSoOnTheSession() async throws {
+        let (ingestor, root) = try makeIngestor()
+        defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
+        guard case .imported(let row) = try await ingestor.ingest(
+            fitData: sessionBytes(), filename: "1756556820.cjr", source: .watchDirect) else {
+            Issue.record("expected the stream to import")
+            return
+        }
+        #expect(row.transferCutShort == nil)
+        #expect(SessionProvenance.line(for: row) == "Garmin watch, direct")
+
+        #expect(try await ingestor.markTransferCutShort(row))
+        let marked = try #require(try await ingestor.allSessions().first)
+        #expect(marked.transferCutShort == true)
+        #expect(SessionProvenance.line(for: marked) == "Garmin watch, direct · part of it")
+        #expect(SessionProvenance.cutShortMark == "part of it")
+        // A second pass changes nothing and says so.
+        #expect(try await ingestor.markTransferCutShort(marked) == false)
+    }
+
+    /// **The flag describes the stream, and goes with it.** A FIT that takes a marked row
+    /// over writes a fresh row, so "part of it" never survives onto the whole session; and
+    /// a cut-short stream that arrives after the FIT is a duplicate, whose row must not be
+    /// called part of anything.
+    @Test func aCutShortMarkNeverOutlivesTheStream() async throws {
+        let fit = try #require(allFixtureFITs().first)
+        let fitData = try Data(contentsOf: fit)
+        let fitTrack = try FitSessionParser.parse(data: fitData)
+        let fitStart = try #require(fitTrack.startDate)
+        let fitDuration = (fitTrack.samples.last?.t ?? 0) - (fitTrack.samples.first?.t ?? 0)
+        let stream = Self.streamBytes(startEpoch: Int(fitStart.timeIntervalSince1970),
+                                      seconds: Int(fitDuration.rounded()))
+
+        // Stream first, marked, then the FIT: the mark is gone.
+        let (ingestor, root) = try makeIngestor()
+        defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
+        guard case .imported(let direct) = try await ingestor.ingest(
+            fitData: stream, filename: "session.cjr", source: .watchDirect) else {
+            Issue.record("expected the stream to import")
+            return
+        }
+        #expect(try await ingestor.markTransferCutShort(direct))
+        guard case .imported(let replaced) = try await ingestor.ingest(
+            fitData: fitData, filename: fit.lastPathComponent, source: .icu) else {
+            Issue.record("expected the FIT to take the direct row over")
+            return
+        }
+        #expect(replaced.id == direct.id)
+        #expect(replaced.transferCutShort == nil)
+        #expect(SessionProvenance.line(for: replaced) == "Garmin watch, direct")
+        #expect(try await ingestor.markTransferCutShort(replaced) == false)
+
+        // FIT first, then the cut-short stream: a duplicate, and the row is left alone.
+        let (ingestor2, root2) = try makeIngestor()
+        defer { try? FileManager.default.removeItem(at: root2.deletingLastPathComponent()) }
+        _ = try await ingestor2.ingest(fitData: fitData, filename: fit.lastPathComponent,
+                                       source: .icu)
+        guard case .duplicate(let merged) = try await ingestor2.ingest(
+            fitData: stream, filename: "session.cjr", source: .watchDirect) else {
+            Issue.record("expected the late stream to dedupe")
+            return
+        }
+        #expect(try await ingestor2.markTransferCutShort(merged) == false)
+        #expect(try await ingestor2.allSessions().first?.transferCutShort == nil)
+    }
+
     @Test func theDoorIsNamedInTheRidersWords() {
         #expect(ImportSource.watchDirect.rawValue == "watchdirect")
         #expect(ImportSource.watchDirect.libraryFilterLabel == "Garmin watch, direct")

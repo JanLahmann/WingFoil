@@ -31,7 +31,8 @@ public enum ImportSource: String, Sendable, CaseIterable {
     /// Health itself, live, with the ring credit the phone's after-the-fact stub cannot give).
     case appleWatch = "applewatch"
     /// The Garmin watch's **direct** stream (docs/transfer-format.md), sent page by page over
-    /// the Connect IQ link and imported as a `.cjr` — a DEV door (docs/channels.md).
+    /// the Connect IQ link and imported as a `.cjr` — a BETA door since 17 Oct 2026
+    /// (docs/channels.md).
     ///
     /// The fourth source with a watch in its story and the fourth that means something else
     /// by it. `.watch` is the Garmin summary card, twenty integers with no recording behind
@@ -1039,6 +1040,33 @@ public struct SessionIngestor: Sendable {
                 .min { abs($0.startDate.timeIntervalSince(start))
                      < abs($1.startDate.timeIntervalSince(start)) }
         }
+    }
+
+    /// **A direct transfer that stopped part way, said on the session it became**
+    /// (schema v21, docs/transfer-format.md §5). The app calls this after it has imported a
+    /// stream the inbox assembled after a day of silence.
+    ///
+    /// Only while the row **still holds that stream**: its archived original is a `.cjr` and
+    /// no other recording has taken the afternoon over. A FIT that was already here makes the
+    /// cut-short stream a duplicate, and the whole session it brought must not be called
+    /// part of one. Returns whether the row changed; marking twice is a no-op.
+    @discardableResult
+    public func markTransferCutShort(_ row: SessionRow) async throws -> Bool {
+        guard Self.holdsDirectStream(row), row.transferCutShort != true else { return false }
+        var marked = row
+        marked.transferCutShort = true
+        let updated = marked
+        try await database.writer.write { db in try updated.update(db) }
+        return true
+    }
+
+    /// Whether the recording behind `row` is the watch's direct stream: the file it was
+    /// imported from is a `.cjr` and the direct link is among its sources. A takeover by a FIT
+    /// writes the FIT's own file name, so this answers false from that moment on.
+    static func holdsDirectStream(_ row: SessionRow) -> Bool {
+        guard ImportSource.watchDirect.isNamed(in: row.importSource),
+              let name = row.originalFilename else { return false }
+        return (name as NSString).pathExtension.lowercased() == TrackFormat.direct.fileExtension
     }
 
     /// Records that an existing session was seen again from another source.

@@ -11,7 +11,9 @@ project.manifest = manifest.xml
 # false and the lock screen unreachable (docs/decisions.md ADR-012; the invite lock is
 # retired since 0.9.11 — every stream compiles the zero pepper).
 base.sourcePath = source;tests;source-nopepper
-base.excludeAnnotations = dev
+# `link` is the Garmin link's half (DirectSend, the phonePush switch): beta and dev compile it
+# since 0.9.28, the release keeps the `nolink` stubs (docs/channels.md, Watches).
+base.excludeAnnotations = dev;link
 
 # WingFoilCore = the shared detection core (RingBuffer/SpeedRecords/FlightDetector/
 # TurnDetector/Config), linked as a Monkey Barrel PROJECT dependency (not a packaged

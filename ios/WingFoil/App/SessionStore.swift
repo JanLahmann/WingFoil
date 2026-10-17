@@ -2981,11 +2981,13 @@ final class SessionStore {
 
     // MARK: - Companion link (phase 5)
     //
-    // DEV ONLY (docs/channels.md). Garmin Connect Mobile owns the Bluetooth link and the
-    // link has no real sessions behind it yet, so the release and beta binaries hold no
-    // companion object, no ConnectIQ framework and no watch map. The kit's `CompanionLink`
-    // protocol is compiled in every channel; only this half of it moves with the flag.
-    #if DEV
+    // BETA AND DEV (docs/channels.md). The summary card and the direct transfer moved up from
+    // dev on 17 Oct 2026, Jan's call: the beta riders are the ten sessions rule 1 asks for.
+    // The release binary still holds no companion object and no ConnectIQ framework. What
+    // stayed dev rides on the same object but has its own gate below: the wind push, the
+    // watch map with its location fix, and the link probe. The kit's `CompanionLink`
+    // protocol is compiled in every channel; only this half of it moves with the flags.
+    #if BETA
 
     /// The watch link. Concrete rather than `any CompanionLink` because the app is also
     /// the only place that does the two things the protocol deliberately leaves out —
@@ -3030,6 +3032,7 @@ final class SessionStore {
         set { UserDefaults.standard.set(newValue, forKey: "lastCompanionCardApp") }
     }
 
+    #if DEV
     /// The wind the rider last pushed, remembered so the next push starts where the last
     /// one left off (the wind at a spot rarely changes by 180° between sessions).
     ///
@@ -3049,6 +3052,7 @@ final class SessionStore {
     private static var storedWindToSend: Int {
         UserDefaults.standard.object(forKey: windToSendKey) as? Int ?? 225
     }
+    #endif
 
     #endif
 
@@ -3082,7 +3086,7 @@ final class SessionStore {
         for url in pending { try? FileManager.default.removeItem(at: url) }
     }
 
-    #if DEV
+    #if BETA
 
     /// Runs for the life of the app: one `for await` over every card the watch sends.
     /// Cards are already validated when they get here — an invalid one never leaves the
@@ -3140,9 +3144,11 @@ final class SessionStore {
         DirectTransferInbox.shared.onPage = { [weak self] line in
             self?.directPageLine = line
         }
+        #if DEV
         companion.onProbe = { [weak self] line in
             self?.linkProbeLine = line
         }
+        #endif
         companion.onDirectAnswer = { [weak self] line in
             self?.directAnswerLine = line
         }
@@ -3160,7 +3166,10 @@ final class SessionStore {
         guard !pending.isEmpty else { return }
         // `.watchDirect`, never `.watch` — that one is the summary card, and a row tagged
         // with it would claim a provenance this session does not have.
+        // Read before the import, because the import is what makes the files go.
+        let cutShort = pending.filter(DirectTransferInbox.wasCutShort)
         let summary = await importFiles(urls: pending, source: .watchDirect)
+        await markCutShort(cutShort, failed: summary.failed)
         // A stream the import refused is kept, not retried: the first real one
         // (19 September 2026) was dropped as "no FIT found" by a classifier that did not
         // know the format, and deleting it would have cost the session for good — while
@@ -3171,10 +3180,26 @@ final class SessionStore {
             if summary.failed.contains(where: { $0.hasPrefix(name) }) {
                 DirectTransferInbox.setAside(url)
             } else {
-                try? FileManager.default.removeItem(at: url)
+                DirectTransferInbox.remove(url)
             }
         }
         await attachPendingWristStreams()
+    }
+
+    /// **A transfer the rider walked away from says so on the session** (docs/channels.md,
+    /// the direct transfer's last prerequisite for the beta). The stream's file name is its
+    /// session start, so the row is found by the same ±60 s key the wrist stream uses, and
+    /// the kit decides whether the row still holds that stream: a FIT that already had the
+    /// afternoon makes the cut-short copy a duplicate, and the row is not touched.
+    private func markCutShort(_ urls: [URL], failed: [String]) async {
+        var marked = false
+        for url in urls where !failed.contains(where: { $0.hasPrefix(url.lastPathComponent) }) {
+            guard let epoch = Int(url.deletingPathExtension().lastPathComponent) else { continue }
+            let start = Date(timeIntervalSince1970: Double(epoch))
+            guard let row = try? await ingestor.session(nearStart: start) else { continue }
+            if (try? await ingestor.markTransferCutShort(row)) == true { marked = true }
+        }
+        if marked { await load() }
     }
 
     /// **The wrist stream, landing after its session.**
@@ -3244,7 +3269,14 @@ final class SessionStore {
         return true
     }
 
+    #endif
+
     // MARK: The map snapshot
+    //
+    // DEV only, with the wind push below and the one location prompt in the app: these went
+    // back to the watch, and they stayed dev when the card and the direct transfer moved to
+    // the beta (docs/channels.md, 17 Oct 2026).
+    #if DEV
 
     /// Which maps the rider asked the watch to hold (`WatchMapChoice`). Empty means
     /// automatic — the two most-ridden spots, which is what every install had before there
@@ -3400,6 +3432,7 @@ final class SessionStore {
     /// The release and beta channels have no watch map to push, but the three import paths
     /// that used to offer one call this in the middle of unrelated work — a no-op here is
     /// one line against three `#if DEV` islands in code that has nothing to do with Garmin.
+    /// The beta has the link but not the map, so it takes this no-op too.
     func refreshWatchMapIfNeeded() async {}
 
     #endif
@@ -3824,7 +3857,15 @@ final class SessionStore {
         replayClipLength = Self.storedReplayClipLength
         replayFraming = Self.storedReplayFraming
         replayMusic = Self.storedReplayMusic
-        // The Garmin link's own two, which only the dev channel has (docs/channels.md).
+        // The Garmin watch the rider chose: its defaults key went with the domain, and the
+        // link object still holds the watch in memory until it is told (docs/channels.md,
+        // beta since 17 Oct 2026).
+        #if BETA
+        companion.forgetDevice()
+        companionState = companion.state
+        #endif
+        // The watch map's own two, which only the dev channel has (docs/channels.md): the
+        // map to the watch stayed dev when the rest of the Garmin link moved to the beta.
         #if DEV
         watchMapChoice = WatchMapChoice.load(from: .standard)
         watchMapStatus = nil

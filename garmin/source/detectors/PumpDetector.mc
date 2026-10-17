@@ -310,7 +310,7 @@ class PumpDetector {
         // stream can be fed from (docs/transfer-format.md §2b): the phone is handed exactly
         // the numbers this detector filtered, decimated the same way, sniffed for milli-g
         // the same way, and not a second reading of the sensor. `DirectSend.wrist` is a
-        // `(:notdev)` no-op in the beta and the release, so this costs them one empty call.
+        // `(:nolink)` no-op in the release, so this costs it one empty call.
         DirectSend.wrist(magG, tMs);
         if (jumps != null) {
             (jumps as JumpDetector).push(magG, tMs);
