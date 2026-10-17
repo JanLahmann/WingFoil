@@ -2417,8 +2417,10 @@ class RecordingView extends WatchUi.View {
 
         if (noWind) {
             dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+            // "wind not set" only when the watch is not working it out: with auto-wind on it
+            // is the start page's "wind auto", a state and not a task (rider review W5, again).
             dc.drawText(cx, kindsRowY(cy, hT, hG, noWind, 0), Graphics.FONT_XTINY,
-                Words.KINDS_NO_WIND, CV);
+                AppSettings.autoWind ? Words.START_WIND_AUTO : Words.KINDS_NO_WIND, CV);
         }
 
         // rows 1-2 the jibes (word above its row), rows 3-4 the tacks (word below its own).

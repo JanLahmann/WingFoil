@@ -18,7 +18,7 @@ effort is over while the burst that would join it is still forming — row 5a be
 It lives in the **device app, not the WingFoilCore barrel**: every `Toybox.Sensor` entry point
 crashes a data field (docs/fit-schema.md, source class d), so the shared core must not even
 reference one. It is also the *second* consumer of the accelerometer — `SensorLogging` keeps
-writing the raw stream into the FIT for the phone and the lab (`accelLogging`, default **on**,
+writing the raw stream into the FIT for the phone and the lab (`accelLogging`, default **off** in every stream since afc35e79,
 the validation vehicle), while this listener hands the same motion to the live detector. Only
 one sensor-data listener may exist per app, so registration is attempted once per session
 inside a `try`: any refusal leaves the pump counters at zero and raw logging untouched.

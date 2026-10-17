@@ -1953,4 +1953,41 @@ function aSwimInsideABearAwayEndsTheRun(logger as Test.Logger) as Boolean {
     return true;
 }
 
+// ---- A GAP ENDS THE TAIL (watch 0.9.26; docs/algorithms/turns.md, the phone's outcome_tail) ----
+// The mush-out above, with a hole in it: ten seconds of mush, a GPS gap, then a standstill.
+// The phone closes the window at the gap and calls what it saw (the foil lost, no stop): a
+// touchdown. The stop on the far side is no evidence about this turn.
+(:test)
+function turnGapEndsTheOutcomeWindow(logger as Test.Logger) as Boolean {
+    var d = new TurnDetector(coreDefaults());
+    runStraight(d, 5, 90.0, 8.0);
+    runSweep(d, 90.0, 30.0, 6, 8.0);
+    runTail(d, 1, 270.0, 1.5, false, false);    // the sweep confirms the turn
+    var ev = runTail(d, 9, 270.0, 1.5, false, false);
+    Test.assertMessage(ev == TurnDetector.EVENT_NONE && d.state == TurnDetector.ST_OUTCOME,
+        "the window is open before the gap, event " + ev.toString());
+    d.onGap();
+    d.onGap();                                  // a hole is several bad ticks
+    ev = d.tick(1.0, 270.0, 0.2, 0.2, false, false);
+    Test.assertMessage(ev == TurnDetector.EVENT_TOUCHDOWN,
+        "called at the first sample after the gap, from before it, event " + ev.toString());
+    ev = runTail(d, 12, 270.0, 0.2, false, false);
+    Test.assertMessage(d.fellCount == 0 && d.touchdownCount == 1 && d.turnCount == 1,
+        "the stop after the gap is not the turn's fall: " + d.fellCount.toString() + " / "
+        + d.touchdownCount.toString());
+    Test.assertMessage(d.dryStreak == 1, "a touchdown keeps him dry");
+
+    // A gap with no window open changes nothing about the next turn.
+    var q = new TurnDetector(coreDefaults());
+    runStraight(q, 5, 90.0, 8.0);
+    q.onGap();
+    runStraight(q, 3, 90.0, 8.0);
+    runSweep(q, 90.0, 30.0, 6, 8.0);
+    ev = runStraight(q, 6, 270.0, 8.0);
+    Test.assertMessage(ev == TurnDetector.EVENT_FLEW, "flew through after an idle gap, event "
+        + ev.toString());
+    logger.debug("gap: the open window is called from the evidence before the hole");
+    return true;
+}
+
 }

@@ -25,7 +25,7 @@
     <string id="SportKitesurf">Kitesurf</string>
     <string id="SportGeneric">Generic</string>
     <string id="SetAccelLogging">Log wrist motion · long transfer time</string>
-    <string id="SetAccelLoggingNote">Records your wrist motion for pump strokes and jumps. The file gets about 20 times larger. Its transfer time to Garmin Connect is then much longer, often many minutes. Leave it off for a fast transfer.</string>
+    <string id="SetAccelLoggingNote">Records your wrist motion for the phone's pump analysis and jumps. The watch counts pumps live without it. The file gets about 20 times larger, and its transfer time to Garmin Connect much longer.</string>
     <string id="SetPumpDetection">Detect pumping + takeoffs</string>
     <string id="SetAlertTakeoff">Vibrate on pumped takeoff</string>
     <string id="SetAlertPb">Vibrate on a new best speed</string>
@@ -33,7 +33,7 @@
     <string id="SetAlertTurn">Vibrate on turn outcome</string>
     <string id="SetAlertCleanJibe">Vibrate on clean jibe</string>
     <string id="SetAlertCleanJibeNote">A clean jibe gets its own rising three-tick buzz. Clean: you flew through, held your speed, then 10 quiet seconds on the foil. Off: every turn gets the plain outcome buzz.</string>
-    <string id="SetWindDir">Wind direction, this session (deg from, -1 = auto)</string>
+    <string id="SetWindDir">Wind direction, this session (deg from, -1 = none)</string>
     <string id="SetAutoWind">Estimate wind on the watch</string>
     <string id="SetTurnHabit">I mostly do</string>
     <string id="TurnHabitJibes">Jibes</string>
@@ -41,13 +41,13 @@
     <string id="TurnHabitBalanced">About the same</string>
 
     <!-- Beta and dev rows only (0.9.23, rider review W15); the string ships in every build. -->
-    <string id="SetLaps">Laps</string>
+    <string id="SetLaps">Laps in Garmin Connect</string>
     <string id="LapsPerFlight">Every flight and gap</string>
     <string id="LapsSession">One for the session</string>
     <string id="SetAutoPause">Auto-pause when stopped</string>
     <string id="SetAutoPauseDelay">Auto-pause delay (s)</string>
     <string id="SetVisualAlerts">Show alerts on screen</string>
-    <string id="SetVisualAlertsNote">Every buzz also shows on screen. The glass flashes the verdict for 1.5 s. A line at the top keeps the last one for 20 s.</string>
+    <string id="SetVisualAlertsNote">Most buzzes also show on screen. The glass flashes the event for 1.5 s. A line at the top keeps it for 20 s.</string>
     <string id="SetAlertIntervalMin">Interval alert (min, 0 = off)</string>
     <string id="SetAlertIntervalKm">Interval alert (km, 0 = off)</string>
 

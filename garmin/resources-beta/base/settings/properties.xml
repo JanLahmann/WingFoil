@@ -1,5 +1,6 @@
 <properties>
-    <!-- Raw 100 Hz accelerometer into the FIT: ON everywhere else, OFF for beta riders.
+    <!-- Raw 100 Hz accelerometer into the FIT: OFF in every stream since afc35e79 (the shared
+         resources/settings/properties.xml says false too); this row pins it for the beta.
          It is ~96 % of a session file — about 10 MB for two hours — and every byte of that
          crosses BLE to the phone before the activity appears in Garmin Connect. On the dev
          build that trade is worth it: the raw stream is the validation vehicle the whole

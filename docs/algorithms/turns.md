@@ -756,13 +756,15 @@ the track, and a fixed ring of memory.
 - **Doppler only.** There is no positional speed channel live, so the sharp `min(Doppler,
   positional)` test degrades to the firmware's ~3–4 s smoothed Doppler: short touchdowns the
   positional channel would expose can read as fly-throughs on the watch.
-- **A pause freezes the window; it does not close it.** The phone's tail ends at a recording
-  gap and calls what it saw. The watch is not called at all while the session is paused (auto
-  or manual) or while the fix is below `Position.QUALITY_USABLE`, so an open outcome window
-  *resumes* on the far side of the hole. Auto-pause is off by default and its delay is 5 s, so
-  a rider who has it on and stops in the water can pause inside the longer window; the evidence
-  already collected is kept and the verdict is reached when he moves again. Closing the window
-  at the gap instead is in the third group below.
+- **A gap or a pause ends the window, as on the phone** (watch 0.9.26; it froze the window
+  until 0.9.25). The phone's tail ends at a recording gap and calls what it saw. The watch is
+  not called while the session is paused or while the fix is below `Position.QUALITY_USABLE`;
+  each such sample calls `TurnDetector.onGap`, and so does every resume (`SessionController._resume`).
+  An outcome window open at that moment is resolved on the **first sample after the hole,
+  before that sample is tracked**, so the verdict is the evidence seen before it, and a quiet
+  tail it opens is settled at the same hole. Test: `turnGapEndsTheOutcomeWindow`. One
+  difference stays: the phone also reports such a window as *not* not-recovered, which only
+  its other channels read; the watch has no reader for it.
 - **Foil % is the same ratio over a different clock.** The phone divides `foilTimeS` by
   `timerTimeS` (T2, the cleaned track's non-gap total); the watch's screens and FIT field 22
   divide by `Activity.Info.timerTime`, its own native moving clock. Both exclude pauses, so
@@ -969,14 +971,6 @@ Each of these is a rule the watch **could** share. None is a thing a live detect
 so each carries a reason and a note on what it would cost, and the phone recompute is what the
 rider sees until then.
 
-- **A gap ends the tail on the phone; it freezes the window on the watch.** `outcome_tail`
-  closes at a recording gap and reports *not* not-recovered — the samples the far side of a
-  hole are not evidence that the rider failed to recover, they are no evidence at all. The
-  watch resumes instead (the first group's pause bullet). **Not ported** because `onGap` would
-  have to *resolve* an open window rather than merely restart the ring, which means a verdict,
-  an event, a buzz and a FIT marker fired from the one path that today only forgets things; it
-  is a round of its own, and the longer not-recovered window is what makes it worth doing.
-  `TurnDetector.onGap` already settles the clean tail exactly this way, so the shape exists.
 - **No pump corroboration** (step 3 of the ladder, engine 0.18.0; corrected 9 Sep 2026 — an
   earlier version of this list claimed the watch "keeps the old rule at the old speed", and it
   does not and never did). `TurnDetector._resolve` has three rungs — submerged-or-stop → fell

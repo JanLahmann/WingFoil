@@ -634,6 +634,8 @@ class TurnDetector {
     // time and must never share a stop spell.
     hidden var _wasFlying as Boolean = false;
     hidden var _endOpen as Boolean = false;
+    // A gap (or a resume after a pause) arrived while the outcome window was open (onGap).
+    hidden var _gapClose as Boolean = false;
     hidden var _endStartS as Float = 0.0;
     hidden var _endWet as Boolean = false;
     hidden var _endStopRun as Float = 0.0;
@@ -716,6 +718,14 @@ class TurnDetector {
             }
         } else if (state == ST_SWEEP) {
             event = _sweep(dt, u, speedMps, submerged);
+        } else if (_gapClose) {
+            // judged before this sample is tracked (onGap)
+            event = _resolve();
+            // ...and its quiet tail, if it opened one, is called at the same hole: the phone's
+            // window stops at a gap and calls what it saw. Settled on the next tick.
+            if (cleanPending) {
+                _cleanPendingUntil = _clockS;
+            }
         } else {
             event = _outcomeTick(dt, speedMps, submerged);
         }
@@ -776,6 +786,15 @@ class TurnDetector {
 
     // GPS gap / pause: heading continuity and the detection window are both broken.
     function onGap() as Void {
+        // A GAP ENDS THE TAIL (watch 0.9.26, the phone's `outcome_tail`). An open outcome
+        // window is called on the first sample after the hole, from what was seen before it:
+        // the samples on the far side are no evidence about this turn. Until 0.9.25 the window
+        // resumed there, so a stop after a smart-recording hole or a dropped fix could still
+        // become the turn's fall. The verdict is reached in `tick`, the one path that returns
+        // events, so the buzz, the FIT marker and the Turns page follow as for any verdict.
+        if (state == ST_OUTCOME) {
+            _gapClose = true;
+        }
         _haveCog = false;
         _joinOk = false;
         _sCount = 0;            // the phone's arrays end at a gap too
@@ -1430,6 +1449,7 @@ class TurnDetector {
     }
 
     hidden function _resolve() as Number {
+        _gapClose = false;
         // judged on the evidence at the recovery, where the phone's window ends
         if (_recovered) {
             _lostFoil = _recLost;

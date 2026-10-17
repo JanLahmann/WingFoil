@@ -112,6 +112,12 @@ class StopMenuDelegate extends WatchUi.Menu2InputDelegate {
             // puts the rider straight back on the water rather than one menu up from it
             WatchUi.pushView(WindMenu.build(), new WindMenuDelegate(2), WatchUi.SLIDE_UP);
         } else {
+            // Resume means resume (rider review, 16 Oct 2026): BACK from a paused session
+            // opens this menu, and its first row only closed it, leaving the timer stopped.
+            // While recording it just closes the menu, as Garmin's own Resume does.
+            if (id == :resume && c.state == SessionController.STATE_PAUSED) {
+                c.togglePause();
+            }
             WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
         }
     }

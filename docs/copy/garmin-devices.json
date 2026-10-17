@@ -1,10 +1,10 @@
 {
-  "version": "0.9.25",
+  "version": "0.9.26",
   "count": 48,
   "minApiLevel": "3.3.3",
   "store": {
-    "version": "0.9.21",
-    "count": 42
+    "version": "0.9.24",
+    "count": 48
   },
   "products": [
     "d2mach1",

@@ -15,7 +15,7 @@ module AppSettings {
     var cfg as WingFoilCore.Config = new WingFoilCore.Config();
 
     var sportChoice as Number = 0;      // 0 windsurf(43), 1 kitesurf(44), 2 generic
-    var accelLogging as Boolean = true;     // raw accel into the FIT (phone/lab validation)
+    var accelLogging as Boolean = false;    // raw accel into the FIT (off in every stream)
     var jumpCount as Boolean = false;       // the live jump count: beta and dev only (0.9.24)
     var pumpDetection as Boolean = true;    // live PumpDetector (a second accel consumer)
     var alertPb as Boolean = true;
@@ -127,7 +127,7 @@ module AppSettings {
         cfg.minFlightS = _clamped("minFlightS", 5.0, 2.0, 30.0).toNumber();
         cfg.useKnots = _bool("useKnots", false);
         sportChoice = _clamped("sportChoice", 0.0, 0.0, 2.0).toNumber();
-        accelLogging = _bool("accelLogging", true);
+        accelLogging = _bool("accelLogging", false);
         if (!accelLogging) {
             _forgetAccelAnswer();    // switched off: the next switch-on asks again
         }

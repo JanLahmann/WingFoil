@@ -148,7 +148,8 @@ class SessionController {
                 AlertManager.speedPb();
                 // best-2s only: the 10 s record creeps up behind it and would make the
                 // celebration routine rather than an event.
-                if ((pbEvents & SpeedRecords.PB_2S) != 0) {
+                if ((pbEvents & SpeedRecords.PB_2S) != 0
+                        && AppSettings.alertPb && AppSettings.visualAlerts) {
                     PbFlash.fire(engine.records.best2sMps);
                 }
             }
@@ -166,6 +167,9 @@ class SessionController {
             } else if (turnEvent == TurnDetector.EVENT_CLEAN_SETTLED) {
                 AlertManager.turnResolved(TurnDetector.OUTCOME_FLEW,
                     engine.turns.lastCleanJibe, engine.turns.lastKind);
+                // A clean candidate skipped the branch above, so a 5th or 10th dry turn that
+                // was also a clean one is told here, after its verdict (rider review, 16 Oct).
+                AlertManager.dryStreak(engine.turns.dryStreak);
             }
             if (pumpEvent == PumpDetector.EVENT_TAKEOFF) {
                 AlertManager.takeoff();
@@ -266,6 +270,9 @@ class SessionController {
         // A pause is a hole in the pressure stream (MetricsEngine.restartBaseline): the
         // ambient level on the other side of it is a new fact, not a dunk.
         engine.restartBaseline();
+        // ...and a hole in the track: an outcome window open at the pause is called from what
+        // was seen before it, as the phone's tail ends at a recording gap (0.9.26).
+        engine.turns.onGap();
         AlertManager.pauseState(false);
         EventFlash.firePauseState(false);
     }
