@@ -470,6 +470,7 @@ struct LibraryView: View {
         case .help: HelpView()
         case .helpTopic(let topic): HelpTopicSheet(id: topic)
         #if BETA
+        case .ask: AskView(context: .help, state: AskState.help(store))
         case .dateRange: LibraryDateRangeSheet(filter: $filter, seed: rangeSeed)
         case .rider(let id):
             if let row = store.sessions.first(where: { $0.id == id }) {
@@ -1041,6 +1042,8 @@ enum LibrarySheet: Identifiable, Hashable {
     // There is no `comingSoon` case: "Coming in a future release" left this menu on
     // 15 September 2026 and has one home, Settings (docs/channels.md).
     #if BETA
+    /// Ask CleanJibe from the menu (`AppMenuRow.ask`), the help context.
+    case ask
     /// The filter menu's "Custom range…" editor.
     case dateRange
     /// "Whose session is this?" for one session already in the library — the row's swipe.
@@ -1060,6 +1063,7 @@ enum LibrarySheet: Identifiable, Hashable {
         case .help: "help"
         case .helpTopic(let topic): "help.\(topic.rawValue)"
         #if BETA
+        case .ask: "ask"
         case .dateRange: "dateRange"
         case .rider(let id): "rider.\(id)"
         #endif

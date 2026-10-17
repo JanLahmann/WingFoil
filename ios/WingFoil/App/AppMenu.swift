@@ -30,7 +30,8 @@ struct AppMenuButton: View {
 
     var body: some View {
         Menu {
-            ForEach(AppMenuRow.ordered) { row in
+            // Ask CleanJibe is beta and dev only: a release build draws no row for it.
+            ForEach(AppMenuRow.ordered.filter { $0.isShown(in: AppChannel.channel) }) { row in
                 if row.opensAfterDivider { Divider() }
                 Button { tap(row) } label: {
                     // The beta row names where the rider is in the beta and the dev build
@@ -54,6 +55,10 @@ struct AppMenuButton: View {
         case .gettingStarted: sheet = .helpTopic(.gettingStarted)
         case .settings: sheet = .settings
         case .help: sheet = .help
+        case .ask:
+            #if BETA
+            sheet = .ask
+            #endif
         case .support: supportRequest += 1
         }
     }
@@ -88,6 +93,9 @@ private struct AppMenuHost: ViewModifier {
                 case .beta: BetaView()
                 case .help: HelpView()
                 case .helpTopic(let topic): HelpTopicSheet(id: topic)
+                #if BETA
+                case .ask: AskView(context: .help, state: AskState.help(store))
+                #endif
                 default: EmptyView()
                 }
             }

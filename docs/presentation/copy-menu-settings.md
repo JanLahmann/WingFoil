@@ -157,6 +157,14 @@ switches are, what its numbers mean, who to write to — and a list of what this
 have is none of those. It has one home, Settings → **Coming in a future release**, described
 under "Settings" below.
 
+**Ask CleanJibe is the seventh row in the beta** (Jan, 17 October 2026), under *Help*: the
+question box over the same texts, one tap from every tab, and the way a rider's idea reaches
+the team (the help desk passes ideas on; docs/channels.md, "Ask CleanJibe"). It opens
+`AskView` in its help context, the screen Help's own row opens. The App Store build has no
+Ask CleanJibe, so it draws no row (`AppMenuRow.isShown(in:)`) and keeps six. The browser
+app, whose Help page has the help desk for everyone, shows the row and opens `/help/#ask`,
+which opens the chat.
+
 **The welcome screen closes.** It has a circular ✕ at the top right, on a blurred header bar
 the page scrolls under (25 Sep 2026), because a page whose only exits are ways in reads as a
 gate (Jan, 13 Sep 2026). Since 25 September its ways on are *Try the example session* and

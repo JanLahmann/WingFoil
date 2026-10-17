@@ -349,7 +349,7 @@ def main(argv=None) -> int:
 
     json_menu = [(m["id"], m["title"], bool(m.get("afterDivider")))
                  for m in shell["menu"]]
-    same("the six menu rows are the phone's", json_menu, ios_menu())
+    same("the seven menu rows are the phone's", json_menu, ios_menu())
 
     json_sections = [(s["id"], s["title"]) for s in shell["sessionSections"]]
     same("the session sub-tabs are the phone's", json_sections, ios_sections())

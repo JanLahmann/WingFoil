@@ -53,6 +53,10 @@ export const SHELL = {
       "title": "Help"
     },
     {
+      "id": "ask",
+      "title": "Ask CleanJibe"
+    },
+    {
       "id": "support",
       "title": "Support & ideas"
     },

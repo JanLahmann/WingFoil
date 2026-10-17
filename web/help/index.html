@@ -1410,6 +1410,23 @@
     addEventListener("resize", fit);
   })();
 </script>
+<!-- #ask opens the help desk (the app menu's Ask CleanJibe row, 17 Oct 2026). The chat is
+     the Fun with Quantum widget in a shadow root; its own button opens it, once it is there. -->
+<script>
+  (function () {
+    if (location.hash !== "#ask") return;
+    var tries = 0;
+    (function open() {
+      var host = document.getElementById("fwq-assistant");
+      var button = host && host.shadowRoot && host.shadowRoot.querySelector(".fa-open");
+      if (button) {
+        if (button.getAttribute("aria-expanded") !== "true") button.click();
+        var box = host.shadowRoot.querySelector("textarea");
+        if (box) box.focus();
+      } else if (++tries < 40) setTimeout(open, 150);
+    })();
+  })();
+</script>
 
 </body>
 </html>

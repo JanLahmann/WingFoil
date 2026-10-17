@@ -1,6 +1,6 @@
 {
   "_readme": [
-    "THE APP SHELL, IN ONE FILE: THE FOUR TABS, THE SIX MENU ROWS, THE FOUR SESSION TABS.",
+    "THE APP SHELL, IN ONE FILE: THE FOUR TABS, THE SEVEN MENU ROWS, THE FOUR SESSION TABS.",
     "",
     "The iPhone app is the author of all three lists. The kit and the app hold them:",
     "",
@@ -51,6 +51,7 @@
     { "id": "gettingStarted", "title": "Getting started" },
     { "id": "settings", "title": "Settings", "afterDivider": true },
     { "id": "help", "title": "Help" },
+    { "id": "ask", "title": "Ask CleanJibe" },
     { "id": "support", "title": "Support & ideas" },
     { "id": "beta", "title": "Join the beta" }
   ],

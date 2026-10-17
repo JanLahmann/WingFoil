@@ -145,10 +145,10 @@ struct HealthSwitchesTests {
 /// **The app's one menu, in one order** (pattern M).
 struct AppMenuRowsTests {
 
-    @Test("six rows, in the order a rider meets the app")
+    @Test("seven rows, in the order a rider meets the app")
     func theOrderIsFixed() {
         #expect(AppMenuRow.ordered == [.whatItDoes, .gettingStarted, .settings,
-                                       .help, .support, .beta])
+                                       .help, .ask, .support, .beta])
         #expect(Set(AppMenuRow.ordered) == Set(AppMenuRow.allCases))
     }
 
@@ -170,6 +170,15 @@ struct AppMenuRowsTests {
             .flatMap { $0.split(separator: " ") }
             .count
         #expect(words <= 120, "\(words) words")
+    }
+
+    /// Ask CleanJibe is a beta door: the App Store build draws six rows, the beta seven.
+    @Test("the ask row is in the beta and dev only")
+    func askIsBeta() {
+        #expect(!AppMenuRow.ask.isShown(in: .release))
+        #expect(AppMenuRow.ask.isShown(in: .beta))
+        #expect(AppMenuRow.ask.isShown(in: .dev))
+        #expect(AppMenuRow.ordered.filter { $0.isShown(in: .release) }.count == 6)
     }
 
     @Test("one divider, and it falls before Settings")

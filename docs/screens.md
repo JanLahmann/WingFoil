@@ -34,8 +34,8 @@ page has one job (rider review S9): `/start/` installs and gets the first sessio
 
 Channel is the lowest channel that has the screen (`docs/channels.md`). "Doors" are the
 buttons and links that leave the screen. *Menu* is the app menu (**What CleanJibe does ·
-Getting started · Settings · Help · Support & ideas · Join the beta**, the last one *You are in
-the beta* in the beta and dev builds), which sits on
+Getting started · Settings · Help · Ask CleanJibe · Support & ideas · Join the beta**, the last one *You are in
+the beta* in the beta and dev builds; *Ask CleanJibe* is in the beta, dev and the web only), which sits on
 all four tab roots in the same place (pattern M).
 
 | tab / home | screen | what it shows | empty state | doors | channel | web | watch |

@@ -12,6 +12,11 @@ import Foundation
 /// row went. *Join the beta* sits next to *Support & ideas* (Jan's plan of 24 September,
 /// section 6): both are how a rider takes part in what the app becomes.
 ///
+/// *Ask CleanJibe* sits under *Help* from 17 October 2026 (Jan: "Shall we add it to the
+/// main menu?"): the question box over the same texts, one tap from every tab, and the door
+/// a rider's idea takes to the team. It is a beta door, so the App Store build leaves the
+/// row out (`isShown(in:)`); the website, which has Ask CleanJibe for everyone, shows it.
+///
 /// It is here rather than in the app for the ordinary reason: it is copy, and one order on
 /// four tab roots is a rule a test can hold (`AppMenuRowsTests`). The app draws the rows and
 /// decides what each one opens.
@@ -24,6 +29,8 @@ public enum AppMenuRow: String, CaseIterable, Sendable, Identifiable {
     case settings
     /// The Help index.
     case help
+    /// The question box, `AskView` in its help context (beta and dev; the web's Help page).
+    case ask
     /// The composer, `FeedbackDoors.menuRow`.
     case support
     /// The Beta page (`BetaGuide`): how to join, or, in the beta, what the rider is in.
@@ -33,7 +40,7 @@ public enum AppMenuRow: String, CaseIterable, Sendable, Identifiable {
 
     /// The order, once. Nothing reads `allCases` for it.
     public static let ordered: [AppMenuRow] = [
-        .whatItDoes, .gettingStarted, .settings, .help, .support, .beta,
+        .whatItDoes, .gettingStarted, .settings, .help, .ask, .support, .beta,
     ]
 
     public var title: String {
@@ -42,6 +49,7 @@ public enum AppMenuRow: String, CaseIterable, Sendable, Identifiable {
         case .gettingStarted: "Getting started"
         case .settings: "Settings"
         case .help: "Help"
+        case .ask: "Ask CleanJibe"
         case .support: FeedbackDoors.menuRow
         case .beta: "Join the beta"
         }
@@ -53,6 +61,7 @@ public enum AppMenuRow: String, CaseIterable, Sendable, Identifiable {
         case .gettingStarted: "book"
         case .settings: "gearshape"
         case .help: "questionmark.circle"
+        case .ask: "bubble.left.and.text.bubble.right"
         case .support: "envelope"
         case .beta: "testtube.2"
         }
@@ -63,6 +72,12 @@ public enum AppMenuRow: String, CaseIterable, Sendable, Identifiable {
     /// (`BetaGuide.title(for:)`). The website is not a channel and shows `title`.
     public func title(in channel: HelpChannel) -> String {
         self == .beta ? BetaGuide.title(for: channel) : title
+    }
+
+    /// Whether a build on `channel` draws this row: Ask CleanJibe is in the beta and dev
+    /// only (docs/channels.md), so a release build has no row for it.
+    public func isShown(in channel: HelpChannel) -> Bool {
+        self != .ask || channel >= .beta
     }
 
     /// Whether a separator is drawn above this row. One divider, and it falls where reading

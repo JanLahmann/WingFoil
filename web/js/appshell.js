@@ -290,8 +290,8 @@ function wireMenu() {
   for (const button of menu.querySelectorAll("button[data-menu]")) {
     button.addEventListener("click", () => {
       const row = button.dataset.menu;
-      // Five rows, one closed set, one event. The menu is the phone's menu, so the same
-      // question is asked on both surfaces: which of the five is ever pressed.
+      // Seven rows, one closed set, one event. The menu is the phone's menu, so the same
+      // question is asked on both surfaces: which of the seven is ever pressed.
       track("app-menu-row-opened", { row });
       closeMenu();
       if (row === "whatItDoes") openWelcome();
@@ -299,6 +299,8 @@ function wireMenu() {
       else if (row === "gettingStarted") showPage("started");
       else if (row === "settings") showPage("settings");
       else if (row === "help") showPage("help");
+      // The help desk lives on /help/, which opens its chat on #ask.
+      else if (row === "ask") location.href = "../help/#ask";
       else if (row === "support") location.href = feedbackMail();
     });
   }
