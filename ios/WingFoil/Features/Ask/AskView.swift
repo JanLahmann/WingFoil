@@ -13,6 +13,8 @@ struct AskView: View {
     /// The app's facts, and with the session context that session's numbers
     /// (`AssistantState`, docs/copy/assistant/session-state.schema.json).
     let state: Data
+    /// Which conversation to show (`AskThreads`): Help's and the menu's, or one session's.
+    var thread: String = AskThreads.help
 
     @Environment(\.dismiss) private var dismiss
     @AppStorage("ask.consented") private var consented = false
@@ -21,7 +23,7 @@ struct AskView: View {
         NavigationStack {
             Group {
                 if consented {
-                    AskChat(context: context, state: state)
+                    AskChat(context: context, state: state, thread: thread)
                 } else {
                     AskConsent(context: context) { consented = true }
                 }
@@ -57,6 +59,7 @@ private struct AskConsent: View {
                     point("clock", "We keep the question and the answer for 30 days to improve the answers, then they are deleted.")
                     point("lightbulb", "An idea you share is kept a year for the team. Only the date and the app version go with it.")
                     point("iphone", "Apple confirms the question comes from this app. That is how we count 20 questions a day. No account, no cookie.")
+                    point("tray", "Your conversation stays on this phone for a day, or until you start a new one.")
                     point("hand.raised", "Please don't type personal details into the box.")
                 }
                 Button(action: agree) {
@@ -91,18 +94,14 @@ private struct AskConsent: View {
 private struct AskChat: View {
     let context: AskClient.Context
     let state: Data
+    /// Which conversation this is (`AskThreads`): Help's, or one session's.
+    let thread: String
 
-    struct Message: Identifiable {
-        let id = UUID()
-        var mine: Bool
-        var text: String
-        var answerId: String?
-        var vote = 0
-        var failed = false
-    }
+    typealias Message = AskMessage
 
     @AppStorage("ask.consented") private var consented = true
     @State private var messages: [Message] = []
+    @State private var loaded = false
     @State private var draft = ""
     @State private var asking: Task<Void, Never>?
     @FocusState private var focused: Bool
@@ -133,7 +132,31 @@ private struct AskChat: View {
             }
         }
         .safeAreaInset(edge: .bottom) { composer }
-        .onDisappear { asking?.cancel() }
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    asking?.cancel()
+                    asking = nil
+                    messages = []
+                    AskThreads.clear(thread)
+                } label: {
+                    Label("New conversation", systemImage: "square.and.pencil")
+                }
+                .disabled(messages.isEmpty)
+            }
+        }
+        // The conversation from before, kept on the phone for a day (`AskThreads`).
+        .onAppear {
+            guard !loaded else { return }
+            messages = AskThreads.load(thread)
+            loaded = true
+        }
+        .onChange(of: busy) { _, now in if !now { AskThreads.save(thread, messages) } }
+        .onChange(of: messages.map(\.vote)) { AskThreads.save(thread, messages) }
+        .onDisappear {
+            asking?.cancel()
+            AskThreads.save(thread, messages)
+        }
     }
 
     private var intro: some View {
@@ -235,21 +258,27 @@ private struct AskChat: View {
         }
         draft = ""
         messages.append(Message(mine: true, text: question))
-        messages.append(Message(mine: false, text: ""))
-        let index = messages.count - 1
+        let answer = Message(mine: false, text: "")
+        messages.append(answer)
+        // By id, not by position: *New conversation* can empty the list mid-answer.
+        func edit(_ change: (inout Message) -> Void) {
+            if let i = messages.firstIndex(where: { $0.id == answer.id }) { change(&messages[i]) }
+        }
         asking = Task {
             do {
                 for try await event in await AskClient.shared.ask(
                     question, context: context, state: state, history: history) {
                     switch event {
-                    case .delta(let t): messages[index].text += t
-                    case .done(let id): messages[index].answerId = id
+                    case .delta(let t): edit { $0.text += t }
+                    case .done(let id): edit { $0.answerId = id }
                     }
                 }
             } catch {
                 let failure = error as? AskClient.Failure ?? .server
-                if messages[index].text.isEmpty { messages[index].text = failure.message }
-                messages[index].failed = true
+                edit {
+                    if $0.text.isEmpty { $0.text = failure.message }
+                    $0.failed = true
+                }
             }
             asking = nil
         }

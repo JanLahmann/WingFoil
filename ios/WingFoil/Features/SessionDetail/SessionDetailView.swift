@@ -453,7 +453,8 @@ struct SessionDetailView: View {
         .sheet(isPresented: $asking) {
             if let row, let detail {
                 AskView(context: .session,
-                        state: AskState.session(store, row: row, analysis: detail.analysis))
+                        state: AskState.session(store, row: row, analysis: detail.analysis),
+                        thread: AskThreads.key(session: row.id))
             }
         }
         #endif
