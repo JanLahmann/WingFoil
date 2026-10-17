@@ -1,0 +1,242 @@
+{
+  "appVersion" : "1.0.1",
+  "build" : 135,
+  "channel" : "beta",
+  "engineVersion" : "0.29.0",
+  "session" : {
+    "date" : "2026-08-06",
+    "distanceKm" : 10.699999999999999,
+    "durationMin" : 58,
+    "flights" : 17,
+    "foilPct" : 50,
+    "jumps" : null,
+    "longestFlightS" : 249,
+    "rates" : {
+      "cph" : 2.1000000000000001,
+      "jph" : 12.5,
+      "tooShort" : false,
+      "tph" : null,
+      "wph" : 7.2999999999999998
+    },
+    "records" : {
+      "alpha500Kn" : 10.5,
+      "best2sKn" : 13.9,
+      "best10sKn" : 12,
+      "best500mKn" : 11.199999999999999,
+      "estimated" : false
+    },
+    "source" : {
+      "hasAccel" : false,
+      "hasDoppler" : true,
+      "kind" : "garminNative"
+    },
+    "startClock" : "13:59",
+    "takeoff" : {
+      "attempts" : null,
+      "pumpStrokes" : null,
+      "successes" : 17
+    },
+    "turnList" : [
+      {
+        "clean" : false,
+        "clock" : "14:03:21",
+        "entryKn" : 11.5,
+        "heldPct" : 35,
+        "kind" : "jibe",
+        "minKn" : 4.0999999999999996,
+        "outcome" : "touchdown",
+        "reason" : "offFoil",
+        "side" : "port",
+        "tip" : null
+      },
+      {
+        "clean" : false,
+        "clock" : "14:05:17",
+        "entryKn" : 11.5,
+        "heldPct" : 49,
+        "kind" : "jibe",
+        "minKn" : 5.7000000000000002,
+        "outcome" : "fellIn",
+        "reason" : "stop",
+        "side" : "starboard",
+        "tip" : null
+      },
+      {
+        "clean" : true,
+        "clock" : "14:07:25",
+        "entryKn" : 10.4,
+        "heldPct" : 80,
+        "kind" : "jibe",
+        "minKn" : 8.3000000000000007,
+        "outcome" : "flewThrough",
+        "reason" : null,
+        "side" : "port",
+        "tip" : null
+      },
+      {
+        "clean" : false,
+        "clock" : "14:09:00",
+        "entryKn" : 11.1,
+        "heldPct" : 48,
+        "kind" : "jibe",
+        "minKn" : 5.2999999999999998,
+        "outcome" : "touchdown",
+        "reason" : "offFoil",
+        "side" : "starboard",
+        "tip" : null
+      },
+      {
+        "clean" : true,
+        "clock" : "14:11:53",
+        "entryKn" : 10.6,
+        "heldPct" : 88,
+        "kind" : "jibe",
+        "minKn" : 9.3000000000000007,
+        "outcome" : "flewThrough",
+        "reason" : null,
+        "side" : "port",
+        "tip" : null
+      },
+      {
+        "clean" : false,
+        "clock" : "14:16:41",
+        "entryKn" : 10.800000000000001,
+        "heldPct" : 54,
+        "kind" : "jibe",
+        "minKn" : 5.9000000000000004,
+        "outcome" : "touchdown",
+        "reason" : "offFoil",
+        "side" : "starboard",
+        "tip" : null
+      },
+      {
+        "clean" : false,
+        "clock" : "14:21:53",
+        "entryKn" : 10.300000000000001,
+        "heldPct" : 67,
+        "kind" : "jibe",
+        "minKn" : 6.7999999999999998,
+        "outcome" : "touchdown",
+        "reason" : "stop",
+        "side" : "port",
+        "tip" : null
+      },
+      {
+        "clean" : false,
+        "clock" : "14:24:43",
+        "entryKn" : 11,
+        "heldPct" : 48,
+        "kind" : "jibe",
+        "minKn" : 5.2000000000000002,
+        "outcome" : "touchdown",
+        "reason" : "stop",
+        "side" : "starboard",
+        "tip" : null
+      },
+      {
+        "clean" : false,
+        "clock" : "14:27:00",
+        "entryKn" : 9.4000000000000004,
+        "heldPct" : 44,
+        "kind" : "jibe",
+        "minKn" : 4.0999999999999996,
+        "outcome" : "fellIn",
+        "reason" : "stop",
+        "side" : "port",
+        "tip" : null
+      },
+      {
+        "clean" : false,
+        "clock" : "14:30:55",
+        "entryKn" : 12.5,
+        "heldPct" : 60,
+        "kind" : "jibe",
+        "minKn" : 7.5,
+        "outcome" : "flewThrough",
+        "reason" : null,
+        "side" : "starboard",
+        "tip" : null
+      },
+      {
+        "clean" : false,
+        "clock" : "14:33:36",
+        "entryKn" : 9.5999999999999996,
+        "heldPct" : 72,
+        "kind" : "jibe",
+        "minKn" : 6.9000000000000004,
+        "outcome" : "fellIn",
+        "reason" : "stop",
+        "side" : "port",
+        "tip" : null
+      },
+      {
+        "clean" : false,
+        "clock" : "14:37:30",
+        "entryKn" : 10.1,
+        "heldPct" : 80,
+        "kind" : "jibe",
+        "minKn" : 8.0999999999999996,
+        "outcome" : "touchdown",
+        "reason" : "offFoil",
+        "side" : "starboard",
+        "tip" : null
+      },
+      {
+        "clean" : false,
+        "clock" : "14:43:28",
+        "entryKn" : 10.6,
+        "heldPct" : 70,
+        "kind" : "jibe",
+        "minKn" : 7.4000000000000004,
+        "outcome" : "flewThrough",
+        "reason" : null,
+        "side" : "starboard",
+        "tip" : null
+      },
+      {
+        "clean" : false,
+        "clock" : "14:43:53",
+        "entryKn" : 9,
+        "heldPct" : 43,
+        "kind" : "jibe",
+        "minKn" : 3.7999999999999998,
+        "outcome" : "touchdown",
+        "reason" : "offFoil",
+        "side" : "port",
+        "tip" : null
+      },
+      {
+        "clean" : false,
+        "clock" : "14:45:46",
+        "entryKn" : 10.4,
+        "heldPct" : 48,
+        "kind" : "jibe",
+        "minKn" : 4.9000000000000004,
+        "outcome" : "touchdown",
+        "reason" : "offFoil",
+        "side" : "starboard",
+        "tip" : null
+      }
+    ],
+    "turns" : {
+      "clean" : 2,
+      "fellIn" : 3,
+      "flewThrough" : 4,
+      "jibes" : 15,
+      "longestDryStreak" : 4,
+      "tacks" : 0,
+      "touchdown" : 8,
+      "unclassified" : 0
+    },
+    "wind" : {
+      "confidence" : 1,
+      "fromDeg" : 209,
+      "setByRider" : false
+    }
+  },
+  "surface" : "ios",
+  "units" : {
+    "distance" : "km",
+    "speed" : "kn"
+  }
+}

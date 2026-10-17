@@ -1,0 +1,182 @@
+{
+  "appVersion" : "1.0.1",
+  "build" : 135,
+  "channel" : "beta",
+  "engineVersion" : "0.29.0",
+  "session" : {
+    "date" : "2026-08-30",
+    "distanceKm" : 2.5,
+    "durationMin" : 11,
+    "flights" : 2,
+    "foilPct" : 67,
+    "jumps" : null,
+    "longestFlightS" : 392,
+    "rates" : {
+      "cph" : null,
+      "jph" : null,
+      "tooShort" : true,
+      "tph" : null,
+      "wph" : null
+    },
+    "records" : {
+      "alpha500Kn" : 11.6,
+      "best2sKn" : 13.699999999999999,
+      "best10sKn" : 13,
+      "best500mKn" : 11.4,
+      "estimated" : true
+    },
+    "source" : {
+      "hasAccel" : false,
+      "hasDoppler" : false,
+      "kind" : "positionsOnly"
+    },
+    "startClock" : "14:07",
+    "takeoff" : {
+      "attempts" : null,
+      "pumpStrokes" : null,
+      "successes" : 2
+    },
+    "turnList" : [
+      {
+        "clean" : false,
+        "clock" : "14:09:31",
+        "entryKn" : 11,
+        "heldPct" : 67,
+        "kind" : "jibe",
+        "minKn" : 7.4000000000000004,
+        "outcome" : "flewThrough",
+        "reason" : null,
+        "side" : "port",
+        "tip" : null
+      },
+      {
+        "clean" : true,
+        "clock" : "14:10:42",
+        "entryKn" : 9.4000000000000004,
+        "heldPct" : 73,
+        "kind" : "jibe",
+        "minKn" : 6.7999999999999998,
+        "outcome" : "flewThrough",
+        "reason" : null,
+        "side" : "starboard",
+        "tip" : null
+      },
+      {
+        "clean" : true,
+        "clock" : "14:11:15",
+        "entryKn" : 11.6,
+        "heldPct" : 80,
+        "kind" : "jibe",
+        "minKn" : 9.3000000000000007,
+        "outcome" : "flewThrough",
+        "reason" : null,
+        "side" : "port",
+        "tip" : null
+      },
+      {
+        "clean" : false,
+        "clock" : "14:11:38",
+        "entryKn" : 12.5,
+        "heldPct" : 66,
+        "kind" : "jibe",
+        "minKn" : 8.1999999999999993,
+        "outcome" : "flewThrough",
+        "reason" : null,
+        "side" : "starboard",
+        "tip" : null
+      },
+      {
+        "clean" : true,
+        "clock" : "14:12:20",
+        "entryKn" : 11.800000000000001,
+        "heldPct" : 73,
+        "kind" : "jibe",
+        "minKn" : 8.5999999999999996,
+        "outcome" : "flewThrough",
+        "reason" : null,
+        "side" : "port",
+        "tip" : null
+      },
+      {
+        "clean" : true,
+        "clock" : "14:13:02",
+        "entryKn" : 11.6,
+        "heldPct" : 80,
+        "kind" : "jibe",
+        "minKn" : 9.3000000000000007,
+        "outcome" : "flewThrough",
+        "reason" : null,
+        "side" : "starboard",
+        "tip" : null
+      },
+      {
+        "clean" : true,
+        "clock" : "14:13:39",
+        "entryKn" : 11.800000000000001,
+        "heldPct" : 72,
+        "kind" : "jibe",
+        "minKn" : 8.4000000000000004,
+        "outcome" : "flewThrough",
+        "reason" : null,
+        "side" : "port",
+        "tip" : null
+      },
+      {
+        "clean" : false,
+        "clock" : "14:14:21",
+        "entryKn" : 12.5,
+        "heldPct" : 54,
+        "kind" : "jibe",
+        "minKn" : 6.7000000000000002,
+        "outcome" : "flewThrough",
+        "reason" : null,
+        "side" : "starboard",
+        "tip" : null
+      },
+      {
+        "clean" : false,
+        "clock" : "14:14:47",
+        "entryKn" : 12.699999999999999,
+        "heldPct" : 25,
+        "kind" : "jibe",
+        "minKn" : 3.2000000000000002,
+        "outcome" : "fellIn",
+        "reason" : "stop",
+        "side" : "port",
+        "tip" : null
+      },
+      {
+        "clean" : false,
+        "clock" : "14:16:30",
+        "entryKn" : 11.1,
+        "heldPct" : 13,
+        "kind" : "jibe",
+        "minKn" : 1.3999999999999999,
+        "outcome" : "fellIn",
+        "reason" : "stop",
+        "side" : "starboard",
+        "tip" : null
+      }
+    ],
+    "turns" : {
+      "clean" : 5,
+      "fellIn" : 2,
+      "flewThrough" : 8,
+      "jibes" : 10,
+      "longestDryStreak" : 8,
+      "tacks" : 0,
+      "touchdown" : 0,
+      "unclassified" : 0
+    },
+    "wind" : {
+      "confidence" : 1,
+      "fromDeg" : 196,
+      "setByRider" : false
+    }
+  },
+  "surface" : "ios",
+  "units" : {
+    "distance" : "km",
+    "speed" : "kn"
+  }
+}

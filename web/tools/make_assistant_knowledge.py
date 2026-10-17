@@ -118,7 +118,17 @@ def build() -> str:
         "Answering rules: use only facts from this file and from the state you are given. "
         "Never estimate a number yourself. A number marked estimated stays estimated. If "
         "the answer is not here, say you do not know and point to cleanjibe.org/beta/#tell. "
-        "Answer in the language of the question. Keep the rider vocabulary below exactly.",
+        "Answer in the language of the question. Keep the rider vocabulary below exactly. "
+        "A session's speeds come in knots (the fields ending in Kn); say every speed in the "
+        "rider's unit from units.speed, converted (1 kn = 1.852 km/h = 1.151 mph = 0.514 m/s), "
+        "and never give the knots beside it unless asked. The help's thresholds are written "
+        "in km/h; convert those to the rider's unit too. "
+        "The state names no place: never say where a session was ridden. The example session "
+        "below (Lake Garda) is the app's demo, never the rider's. "
+        "There is no Android app; on Android, CleanJibe is the browser app at cleanjibe.org/app. "
+        "The vocabulary rule holds in every language: never \"success\", \"successful\" or "
+        "\"carried\", nor their translations (German \"erfolgreich\", \"Erfolg\"); say flew "
+        "through, clean, dry, touchdown or fell in.",
         "",
     ]
     parts = head + voice_rules() + glossary() + help_topics() + channels() + turn_coach() \
