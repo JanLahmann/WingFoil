@@ -204,7 +204,7 @@ top of the 0.9.22 one:
 
 0.9.27: A jump now buzzes long then short, so it never feels like a fall. Your turn's verdict always buzzes, even right after a jump. Longest flight and new best wait until your third flight. The Turns page spells out flew and dry, port and stbd, where they fit.
 
-**0.9.28 built 17 October 2026, not uploaded yet** (the beta to the public listing, 0.9.28-dev1 to the private one; Description unchanged): the Garmin link moves to the beta (docs/channels.md, Watches). *Send summary to phone app* is a beta row again, and with it on the watch sends its summary card and then the whole recording straight to the beta iPhone app (beta 146). Pair with iPhone beta 146 and dev 147. What's New, on top of the 0.9.27 paragraph:
+**0.9.28 uploaded 18 October 2026** (the beta to the public listing, 0.9.28-dev1 to the private one; Description unchanged): the Garmin link moves to the beta (docs/channels.md, Watches). *Send summary to phone app* is a beta row again, and with it on the watch sends its summary card and then the whole recording straight to the beta iPhone app (beta 146). Pair with iPhone beta 146 and dev 147. What's New, on top of the 0.9.27 paragraph:
 
 0.9.28: Your watch can send each session straight to the CleanJibe beta app on your iPhone. Turn on Send summary to phone app in Garmin Connect.
 
