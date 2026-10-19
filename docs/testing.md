@@ -1508,7 +1508,7 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    | `help-session-detail` | `UI_LOAD_EXAMPLE=1 UI_OPEN_SESSION=example` | header + key-metrics block |
    | `help-turn-list` | `UI_OPEN_SESSION=example UI_SCROLL_TO=turnList` | the turn rows |
    | `help-replay` | `UI_OPEN_SESSION=example UI_REPLAY_LENGTH=60 UI_REPLAY_RECORD=0` | track + commentary bubble + progress bar |
-   | `help-share-composer` | `UI_OPEN_SESSION=example UI_SHEET=share UI_SHAPE=portrait UI_STATS=complete` | the whole sheet |
+   | `help-share-composer` | `UI_OPEN_SESSION=example UI_SHEET=share UI_SHAPE=portrait` | the whole sheet |
    | `help-map-layers` | `UI_OPEN_SESSION=example UI_FULLSCREEN_MAP=1 UI_HIDE_LAYERS=fellIn` | track + both chip rows |
 
    Two traps found while making them. `UI_SHEET=help` and `UI_HELP_TOPIC=…` are **mutually

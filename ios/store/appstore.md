@@ -412,6 +412,10 @@ simulator, which it deletes afterwards. It was written on 26 September 2026 at n
 the Mac's screen was locked, and a locked screen hangs every `simctl launch`. The script
 refuses to start while the screen is locked. Run it from the repo root on an unlocked Mac:
 `ios/store/screenshots/1.0.1/shoot.sh`, about eight minutes.
+`OUT=<dir>` writes the shots somewhere else and `ONLY=<file>` takes one of them, so a smoke
+run never touches this directory: `OUT=/tmp/shots ONLY=01-welcome.png ios/store/screenshots/1.0.1/shoot.sh`.
+Checked against the UI of 18 October 2026: every hook below still exists, and `UI_STATS`,
+which went with the Lean/Complete presets, is `UI_HERO` and `UI_SHAPE` now.
 
 | # | file | what it shows | hooks |
 |---|---|---|---|
@@ -420,7 +424,7 @@ refuses to start while the screen is locked. Run it from the repo root on an unl
 | 3 | `03-turns.png` | the Turns tab's list: every turn with its verdict | `+ UI_OPEN_TURNS=1 UI_SCROLL_TO=turnList` |
 | 4 | `04-turn.png` | one turn's page, the speed through the turn and the why-line | `+ UI_OPEN_TURN=3` |
 | 5 | `05-records.png` | the Records tab across the fixture corpus | `UI_TAB=records` |
-| 6 | `06-share-card.png` | the share card with the map behind the track | `UI_SHEET=share UI_MAP=1 UI_STATS=complete` |
+| 6 | `06-share-card.png` | the share card with the map behind the track | `UI_SHEET=share UI_MAP=1 UI_HERO=clean UI_SHAPE=portrait` |
 
 The library is the scrubbed fixture corpus plus the bundled example
 (`UI_RESET=1 UI_IMPORT_FIXTURES=1 UI_LOAD_EXAMPLE=1`, once). Look at shot 4 before uploading:
