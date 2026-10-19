@@ -158,6 +158,17 @@ public enum ShareCaption {
                                   cleanJibes: nil)
     }
 
+    /// **A period card's sentence** — the web's `shareCaption` fallback for a card with no
+    /// single analysis behind it: the card's own title and date line, the aggregate block's
+    /// `cleanJibes` cell where it has one, then the offer. No foil share, because a period
+    /// card does not carry one as a single number the web would quote either.
+    public static func line(period card: ShareCardStats) -> String {
+        let clean = card.stats.first { $0.key == ShareCardStats.Key.cleanJibes }
+            .flatMap { Int($0.value) }
+        return line(title: card.title, dateLine: card.dateLine, foilPct: nil,
+                    cleanJibes: clean)
+    }
+
     /// The **subject** the share sheet offers where a subject exists at all — mail, and
     /// nothing else. The facts without the offer: a subject line is a name for the thing, and
     /// an invitation in it reads as an advertisement rather than as a message from a friend.

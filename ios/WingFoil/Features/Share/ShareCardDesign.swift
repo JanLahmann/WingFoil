@@ -262,7 +262,8 @@ struct ShareCardDesignControls: View {
 }
 
 /// The share button and the line under it: the rendered PNG straight into the share sheet,
-/// nothing uploaded. `message` is the session card's caption; a period card has none.
+/// nothing uploaded. `message` is the caption beside the image: `ShareCaption.line` for a
+/// session card, `ShareCaption.line(period:)` for a period card.
 struct ShareCardExportRow: View {
     @Bindable var design: ShareCardDesign
     let title: String

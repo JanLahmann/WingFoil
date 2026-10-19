@@ -123,6 +123,25 @@ import Testing
         }
     }
 
+    /// A period card travels with a sentence too, so a week shared into a chat still names
+    /// itself and carries the link: title, date line, the block's clean jibes, the offer.
+    @Test func aPeriodCardCarriesTheOfferAndTheLink() {
+        let week = ShareCardStats(
+            title: "Garda trip", dateLine: "24 – 30 August 2026",
+            stats: [.init(key: "sessions", label: "sessions", value: "5"),
+                    .init(key: ShareCardStats.Key.cleanJibes, label: "clean jibes",
+                          value: "42")],
+            disclaimer: nil)
+        #expect(ShareCaption.line(period: week)
+                == "Garda trip · 24 – 30 August 2026 · 42 clean jibes "
+                   + "· analysed with CleanJibe, free at cleanjibe.org")
+        let quiet = ShareCardStats(title: "September", dateLine: "September 2026",
+                                   stats: [], disclaimer: nil)
+        #expect(ShareCaption.line(period: quiet)
+                == "September · September 2026 · analysed with CleanJibe, free at cleanjibe.org")
+        #expect(ShareCaption.line(period: week).contains(Branding.site))
+    }
+
     /// The subject is the facts and not the offer: an invitation in a mail's subject line
     /// reads as an advertisement rather than as a message from somebody you know.
     @Test func theSubjectCarriesNoInvitation() {

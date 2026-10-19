@@ -116,6 +116,7 @@ struct PeriodShareView: View {
                                                 : ShareCardDesignControls.mapNoteStack)
                     ShareCardExportRow(design: design, title: stats.title,
                                        subject: stats.title,
+                                       message: ShareCaption.line(period: stats),
                                        onShare: {
                                            Usage.record(.periodShare,
                                                         detail: design.variant(

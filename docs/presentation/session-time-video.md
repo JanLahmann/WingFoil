@@ -149,7 +149,10 @@ clause rather than printing a zero. `ShareLink`'s `subject:` is the same sentenc
 the offer — a subject line is a name for the thing, and an invitation in one reads as an
 advertisement. Where the browser will not carry text beside a file
 (`navigator.canShare({files, text})` false), the file still goes and the sentence goes on the
-clipboard instead, with *Caption copied* under the dialog's buttons.
+clipboard instead, with *Caption copied* under the dialog's buttons. A **period card** carries
+the same sentence from its own title, date line and the aggregate block's clean-jibe cell, no
+foil share (`shareCaption`'s fallback on the web, `ShareCaption.line(period:)` on iOS since
+18 October 2026; before that the iOS period card shared the picture alone).
 
 **Layout B v2 — the jibe story** (Jan, 26 Sep 2026; proposal
 `docs/proposals/2026-09-25-share-card.md`). The session card is no longer a grid of tiles.
