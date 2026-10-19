@@ -111,8 +111,7 @@ the way the feedback mail itself is a template and not a form letter.
 **Acknowledging a feature idea** (a wishlist tick, a mail, or an issue):
 
 > Thanks for the idea, it goes on the list. CleanJibe is built with its riders. New features
-> land in the beta first. Once testers have proven them, they go into the App Store version,
-> which is coming.
+> land in the beta first. Once testers have proven them, they go into the App Store version.
 
 (the last two sentences are `BetaGuide.community`, already the one wording for this on the
 footer, the Beta page, *Coming in a future release* and the TestFlight notes — a reply that said it differently would be a fourth spelling of

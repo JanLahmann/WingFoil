@@ -46,7 +46,7 @@ There is no account, no CleanJibe server and no tracking. The beta counts which 
 
 BUILT WITH ITS RIDERS
 
-CleanJibe is built with its riders. New features land in the beta first. Once testers have proven them, they go into the App Store version, which is coming.
+CleanJibe is built with its riders. New features land in the beta first. Once testers have proven them, they go into the App Store version.
 ```
 
 **The App Store description's voice, on purpose** (9 October 2026). The first two paragraphs

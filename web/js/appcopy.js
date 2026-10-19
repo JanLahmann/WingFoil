@@ -116,7 +116,7 @@ export const SHELL = {
   },
   "beta": {
     "joinTitle": "Join the beta",
-    "community": "CleanJibe is built with its riders. New features land in the beta first. Once testers have proven them, they go into the App Store version, which is coming.",
+    "community": "CleanJibe is built with its riders. New features land in the beta first. Once testers have proven them, they go into the App Store version.",
     "inItNowTitle": "In the beta right now",
     "howToJoinTitle": "How to join",
     "backupFirst": "Back up first, in Settings → Library backup. Save the file in Files or iCloud Drive.",

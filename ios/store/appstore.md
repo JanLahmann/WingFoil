@@ -7,8 +7,9 @@ text, description, keywords and What's New blocks below are the **draft** in the
 of `docs/voice.md`, written against the release column of `docs/channels.md`. They are not
 in App Store Connect yet. The 1.0.0 text they replace, which is what ASC last held, is in git
 at `2c12c1c`, this file. 1.0.0 was pulled from review on 21 September and never went on sale,
-so 1.0.1 is the first version the public sees. The app name, URLs, age rating, review notes
-and privacy answers are unchanged from build 60, 15 September 2026.
+so 1.0.1 is the first version the public sees. The app name, URLs, age rating and review notes
+are unchanged from build 60, 15 September 2026; the privacy answers were republished on 19
+October 2026 (Precise Location only, Fitness removed).
 
 The day Jan pastes the draft into ASC, this paragraph goes back to "a record of the live
 listing", and `docs/copy/phrases.json` → `appStoreSubtitle` flips to the new subtitle in the
@@ -126,7 +127,7 @@ There is no account, no CleanJibe server and no tracking. The engine is open sou
 
 BUILT WITH ITS RIDERS
 
-CleanJibe is built with its riders. New features land in the beta first. Once testers have proven them, they go into the App Store version, which is coming. Tell us what you saw at info@cleanjibe.org.
+CleanJibe is built with its riders. New features land in the beta first. Once testers have proven them, they go into the App Store version. Tell us what you saw at info@cleanjibe.org.
 ```
 
 **Built with its riders** (Jan, 30 September 2026): the last section is the community sentence, `BetaGuide.community`, word for word, and the mail address. The promotional text stays as it is: 153 of 170 characters are used and the sentence is 129, so it does not fit.

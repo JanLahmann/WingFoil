@@ -35,7 +35,7 @@ public enum BetaGuide {
     /// is for says this, in these words.
     public static let community =
         "CleanJibe is built with its riders. New features land in the beta first. Once "
-        + "testers have proven them, they go into the App Store version, which is coming."
+        + "testers have proven them, they go into the App Store version."
 
     public static let inItNowTitle = "In the beta right now"
 
