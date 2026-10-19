@@ -61,7 +61,8 @@
      `python3 -m http.server` and every preview stay silent, and the script is external and
      deliberately NOT in sw.js's precache, so the installed app opens offline without it.
      Full note in web/index.html. -->
-<script defer src="https://cloud.umami.is/script.js" data-website-id="97f347ac-e7ba-4be3-b26f-ab4b328bdbf2" data-domains="cleanjibe.org"></script>
+<script>(function(){try{var q=location.search;if(/[?&]notrack\b/.test(q))localStorage.setItem('umami.disabled','1');if(/[?&]track\b/.test(q))localStorage.removeItem('umami.disabled')}catch(e){}window.fwqUmamiBeforeSend=function(t,p){var n=navigator;return(n.webdriver||/HeadlessChrome|bot|crawl|spider|Lighthouse|PageSpeed/i.test(n.userAgent))?false:p}})();</script>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="97f347ac-e7ba-4be3-b26f-ab4b328bdbf2" data-domains="cleanjibe.org" data-before-send="fwqUmamiBeforeSend"></script>
 <!-- The analyzer's favicon is INLINE, unlike the homepage's: it is the one asset a
      cold tab would otherwise fetch before anything is on screen, and at 64 px it is
      cheaper as bytes in this file than as a request. It is brand/icon-tile-64.png,

@@ -11,6 +11,14 @@ script is `defer`, third-party, and deliberately **not** in `sw.js`'s precache â
 page renders whole without it. Nothing in the product depends on it and nothing waits for
 it.
 
+**The family guard (19 Oct 2026, Jan via the family coordinator).** Every page carries the
+family's standard inline guard before the tracker, wired in as `data-before-send`: a browser
+that says it is driven (`navigator.webdriver`) or whose agent reads as headless, a bot, a
+crawler or Lighthouse sends nothing, and `?notrack` on any URL switches the counter off in
+that browser for good (umami's own `umami.disabled` key; `?track` switches it back on) â€” so
+our own test browsers stop counting as riders. The same snippet sits on every family site;
+change it there, not here.
+
 ## The rule for event properties
 
 **No personal data reaches an event. Ever.** Not a file name, not a coordinate, not a spot
