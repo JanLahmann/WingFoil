@@ -60,20 +60,14 @@ prepared *Application description* and the *Images* list are already written in
 
 ## 4. The App Store Connect privacy answers
 
-`docs/release/privacy-labels.md` is a draft, not a submission — every row is "ready for Jan to
-click in," and three rows are explicitly flagged as his judgment call rather than a fact this
-document can settle on its own:
-
-- **Location — Coarse**: recommended Not Collected, flagged as the row App Review is most
-  likely to query given the location prompt in beta/dev.
-- **Identifiers** (the feedback mail's device facts) and **Diagnostics — Crash Data** (the
-  MetricKit digest): both recommended Not Collected on the "a rider composing his own mail is
-  not the app transmitting to a server" reasoning, with "Not Linked to You / App Functionality"
-  named as the safe fallback if he would rather declare defensively.
+**Decided 19 October 2026** (docs/release/privacy-labels.md): the label covers the
+App Store build only; Location is Precise, Collected, Not Linked, App Functionality; the
+feedback mail is not declared (Apple's optional-disclosure exception). What is left is the
+clicking in App Store Connect.
 
 The questionnaire itself only exists inside App Store Connect's own UI (App → App Privacy),
-one record for release + beta and a second, shorter one for the dev app
-(`de.lahmann.wingfoil.dev`) — no API reaches it from here.
+for the App Store record; the dev app stays on TestFlight and needs none. No API reaches it
+from here.
 
 ## 5. Submit
 

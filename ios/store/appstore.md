@@ -329,6 +329,11 @@ version: **nothing is collected, because there is no server to collect it to** �
 definition of "collect" covers data transmitted off the device even transiently, so the
 honest answers are not all "no".
 
+**Settled by Jan, 19 October 2026** (docs/release/privacy-labels.md has the evidence): the
+label describes **this build only**, beta and dev doors are not on it; Location is **Precise,
+Collected, Not Linked, App Functionality**; the feedback mail is **not declared**, under
+Apple's optional-disclosure exception.
+
 **Top-level questions**
 
 | Question | Answer |
@@ -364,6 +369,12 @@ Two of those deserve a note, because a careful reader will wonder:
   pick photos and music for a replay clip. None of it is *collected*: it is written to the
   local database and never transmitted. Apple's definition turns on transmission off the
   device, so the answer is No.
+* **Contact Info / Diagnostics: the feedback mail.** *Send feedback* opens a mail with the
+  phone model, iOS version, the on-phone counts and, if there is one, a crash summary. The
+  rider reads it and sends it himself, and his reply carries his address. Rare, optional and
+  shown in full before sending, so it falls under Apple's optional-disclosure exception (Jan,
+  19 Oct 2026). If App Review insists: Contact Info → Email Address, Linked, App
+  Functionality, plus Diagnostics → Other Diagnostic Data, Not Linked.
 * **Usage Data / Diagnostics** — there is no analytics SDK and no crash reporter in the
   **App Store** build. The usage counters never leave the phone except inside a mail the
   rider composes and edits himself. The `umami` counter in the privacy policy is on the
