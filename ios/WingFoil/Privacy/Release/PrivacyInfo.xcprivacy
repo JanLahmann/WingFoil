@@ -2,9 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- The honest summary of ios/store/appstore.md's privacy table: nothing is
-	     tracked, nothing is collected off-device. The one required-reason API the
-	     app touches is UserDefaults, for its own settings (CA92.1). -->
+	<!-- THE RELEASE (App Store) MANIFEST. The honest summary of ios/store/appstore.md's
+	     privacy table: nothing is tracked, nothing is collected off-device. The one
+	     required-reason API the app touches is UserDefaults, for its own settings
+	     (CA92.1). The beta and dev builds ship ../Beta/PrivacyInfo.xcprivacy instead,
+	     which adds the anonymous umami counts (docs/analytics.md, ADR-039); this one
+	     must stay empty until that door moves to the release. -->
 	<key>NSPrivacyTracking</key>
 	<false/>
 	<key>NSPrivacyTrackingDomains</key>

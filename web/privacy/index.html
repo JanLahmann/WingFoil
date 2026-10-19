@@ -108,7 +108,7 @@
        will read, and because it is short enough to be true without a footnote. Everything
        below it exists to name the exceptions rather than to qualify the promise. -->
   <section class="hero">
-    <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Effective 17 October 2026</p>
+    <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Effective 18 October 2026</p>
     <h1>Privacy</h1>
     <p class="lede">
       CleanJibe analyses your wingfoil sessions on the device you are holding. There is no
@@ -171,11 +171,12 @@
   <section class="home-section" id="app-network">
     <h2>The iPhone app — what leaves your phone</h2>
     <p class="section-lede">
-      Eleven entries, and not one of them is a surprise: an account you connected, something a
+      Twelve entries, and not one of them is a surprise: an account you connected, something a
       map needs, the name of a place you sail, a mail you wrote and sent yourself, what iOS
       itself already knew about a crash on this phone, a question you asked, and — while this is
-      a beta — Apple&rsquo;s own crash reports and one small file the app reads to see whether
-      your build is still the current one. There is no twelfth.
+      a beta — Apple&rsquo;s own crash reports, one small file the app reads to see whether
+      your build is still the current one, and anonymous counts of what you tap. There is no
+      thirteenth.
     </p>
 
     <dl class="terms">
@@ -370,11 +371,29 @@
           The App Store version will not have it at first.
         </dd>
       </div>
+      <!-- Jan, 18 Oct 2026 (docs/analytics.md, ADR-039): the beta and dev apps send umami
+           the same anonymous counts the website does. The App Store build has no sender at
+           all, so the note below still says "no analytics" of it. -->
+      <div class="term">
+        <dt>Anonymous counts of what you tap — in the beta</dt>
+        <dd>
+          The beta and dev apps count which screens you open and which features work, like a
+          card made or a session imported. They send each count to umami, the same counter
+          this website uses. It sets no cookie, and the app keeps no ID of any kind, so a count
+          cannot be traced back to you or your phone. What travels is the screen, a fixed word
+          like a card shape or a tab name, a count, and your phone&rsquo;s language and screen
+          size. Never a session, a file, a place, a date, a name or any number off a ride.
+          Offline, nothing is kept for later: the count is simply dropped. Umami Cloud sees your
+          IP address the way any web request does, and does not store it.
+          <strong>The App Store version sends no such counts.</strong>
+        </dd>
+      </div>
     </dl>
 
     <p class="note">
-      <strong>And nothing else.</strong> The app contains no analytics, no crash reporter, no
-      advertising, and no third-party tracking code of any kind — the crash reports above are
+      <strong>And nothing else.</strong> The App Store app contains no analytics, no crash
+      reporter, no advertising, and no third-party tracking code of any kind. The beta adds
+      only the anonymous counts above, and no tracking code. The crash reports above are
       Apple's, collected by TestFlight around the app rather than by anything we put inside it.
       It never asks for the App Tracking Transparency permission because it has nothing to ask
       for. Your data is not sold, rented or shared with anyone, and there is no one to share it
@@ -672,8 +691,8 @@
       <div class="term">
         <dt>Children</dt>
         <dd>
-          CleanJibe is a sports tool suitable for all ages and collects nothing from anyone,
-          including children. It contains no advertising, no purchases and no way to reach
+          CleanJibe is a sports tool suitable for all ages and collects nothing that
+          identifies anyone, including children. It contains no advertising, no purchases and no way to reach
           another person.
         </dd>
       </div>

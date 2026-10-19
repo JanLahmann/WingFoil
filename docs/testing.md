@@ -2205,6 +2205,28 @@ The beta and dev Info.plist is one file (per target), so the Bluetooth strings s
 do — receive the session — and the location string is the Apple Watch app's, which the beta
 already carried. Nothing new is declared for the beta.
 
+**And the analytics check** (18 October 2026, ADR-039). The beta and dev builds send
+anonymous umami counts; the release build must have no sender, no endpoint and a privacy
+manifest that collects nothing. `Analytics` (`ios/WingFoil/App/Analytics.swift`) is `#if BETA`
+from its first line to its last and is the only app file that names `cloud.umami.is`; the kit's
+`UmamiEvent` builds the body and knows no URL, so a kit linked into the release carries no
+host either. Each target ships its own `PrivacyInfo.xcprivacy` — `Privacy/Release/` on
+`WingFoilRelease`, `Privacy/Beta/` on `WingFoil` — and both are excluded from the shared
+sources. `make release-check` holds all three from the sources (the `analytics` line), and
+after a build the strings check finds the host in the beta and not in the release. A Debug
+build keeps its code in `WingFoil.debug.dylib` beside the stub executable, so look there:
+
+```sh
+strings build/exportBeta/WingFoil.app/WingFoil | grep -c "cloud.umami.is"      # ≥ 1
+strings build/exportRelease/WingFoil.app/WingFoil | grep -c "cloud.umami.is"   # 0
+grep -c ProductInteraction build/exportRelease/WingFoil.app/PrivacyInfo.xcprivacy  # 0
+make release-check BINARY=ios/build/exportRelease/WingFoil.app/WingFoil
+```
+
+No real event is ever sent from a desk: the sender is silent in the simulator and under any
+`UI_*` hook or XCTest, and nothing in the repo calls the collector by hand. The payload is
+tested in the kit (`UmamiEventTests`); the dashboard is where a device build's events are seen.
+
 **And the mark check.** Each channel wears its own cut of the brand mark (docs/channels.md,
 "Telling the channels apart"), picked per configuration; the same `-showBuildSettings` lines
 with `grep "APPICON_NAME\|CJ_SPLASH_MARK"` must print `AppIcon` / `SplashMark` for the release,

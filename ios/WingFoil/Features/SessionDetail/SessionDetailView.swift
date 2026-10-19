@@ -390,6 +390,9 @@ struct SessionDetailView: View {
                      },
                      page: page.id(shown),
                      preview: { id in preview(id) })
+        #if BETA
+        .onAppear { Analytics.screen(.session) }
+        #endif
         .onChange(of: neighboursKey, initial: true) { neighbours = findNeighbours() }
         .navigationTitle(row.map(SessionDisplay.title) ?? "Session")
         .navigationBarTitleDisplayMode(.inline)

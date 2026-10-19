@@ -121,6 +121,9 @@ struct SettingsView: View {
                 }
             }
             .task {
+                #if BETA
+                Analytics.screen(.settings)
+                #endif
                 Usage.record(.settingsOpened)
                 await store.refreshStorage()
             }

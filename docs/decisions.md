@@ -14,6 +14,40 @@ apart is a history, not a contract. There are four:
 An Accepted entry may carry a clause saying what a later ADR narrowed or what has moved since.
 That is the point of the line: it says which half of an old paragraph is still load-bearing.
 
+## ADR-039 · The beta app counts with umami; the App Store app still does not
+**Status: Accepted** (Jan, 18 October 2026; beta and dev channels only).
+
+Context: docs/analytics.md answered Jan's *"can we also analyse the iOS app?"* of 19 September
+2026 with a recommendation to keep the promise — *no analytics* in the app, as the privacy page
+and the App Store listing say — and to read the voluntary usage mail and App Store Connect's own
+analytics instead. A month of beta showed the mail's limit: it answers *"is this door ever
+opened by anybody"* once a tester chooses to write, which is too slow for a release gate that
+wants to know whether a beta door works on more than one phone (docs/channels.md, "The release
+gate").
+
+Decision: **the beta and dev iPhone apps send anonymous umami counts; the App Store app sends
+none.** A pageview per top-level screen and one event per feature the usage counters count as
+working, to the umami website cleanjibe.org already reports to, as hostname
+`ios.cleanjibe.org`, with the web's event names wherever docs/analytics.md maps one. The body
+and its guard are the kit's (`UmamiEvent`, track.js's rules: 32-character strings, finite
+numbers and booleans only, six properties, the `CleanJibe: ` prefix in one place). The sender is
+the app target's, `#if BETA` as a whole file: one ephemeral `URLSession`, a Mobile Safari user
+agent (umami discards CFNetwork's as a bot), fire and forget, no identifier of any kind, no
+retry and no queue, never in the simulator or under a `UI_*` hook. Failures and the sentences
+a rider was shown never travel. Each target ships its own privacy manifest: the beta's declares
+product interaction for analytics, not linked and not tracking; the release's collects nothing.
+
+Consequences: the release's *no analytics* sentences — the privacy page's note and the App Store
+privacy answers in ios/store/appstore.md — stay true, and `tools/check_release.py` proves it from
+both sides: the umami host only inside whole-file `#if BETA`, the two manifests in the right
+targets, and `cloud.umami.is` among the strings a release binary must not contain. The help's
+*What leaves your phone* lost *no analytics* from its body, which every channel shares, and
+says it per channel in a *Usage counts* item instead. TestFlight's beta description names the
+counts. Moving them to the release is a separate decision: it needs the App Store privacy
+label changed to *Usage Data → Product Interaction, Analytics, not linked* before that build is
+submitted, the release target switched to the beta's manifest, and every *no analytics*
+sentence rewritten (docs/channels.md, the row's "Before release").
+
 ## ADR-038 · A jump is not a turn: two class (c) rules for a GPS fix thrown sideways
 **Status: Accepted** (Jan, 1 October 2026; engine 0.28.0, release channel).
 

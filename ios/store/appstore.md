@@ -364,12 +364,20 @@ Two of those deserve a note, because a careful reader will wonder:
   pick photos and music for a replay clip. None of it is *collected*: it is written to the
   local database and never transmitted. Apple's definition turns on transmission off the
   device, so the answer is No.
-* **Usage Data / Diagnostics** — there is no analytics SDK and no crash reporter in the app.
-  The usage counters are a **beta** feature and never leave the phone except inside a mail
-  the rider composes and edits himself. (The `umami` counter mentioned in the privacy policy
-  is on the **website only** and is not part of the app. Do not declare it here.) Apple's own
-  crash reporting, which the user opts into at the OS level, is not the developer's
-  declaration to make.
+* **Usage Data / Diagnostics** — there is no analytics SDK and no crash reporter in the
+  **App Store** build. The usage counters never leave the phone except inside a mail the
+  rider composes and edits himself. The `umami` counter in the privacy policy is on the
+  website and, since 18 October 2026, in the **beta and dev** builds only (ADR-039): the
+  release target compiles no sender and ships a privacy manifest that collects nothing, so
+  **do not declare it for the App Store build.** Apple's own crash reporting, which the user
+  opts into at the OS level, is not the developer's declaration to make.
+
+**When the umami counts reach the release** (a separate decision, docs/channels.md): before
+that build is submitted, change this table to **Usage Data → Product Interaction: Collected
+Yes, Purpose Analytics, Linked No, Tracking No**, take *Usage Data* off the not-collected list
+above, switch the release target to `ios/WingFoil/Privacy/Beta/PrivacyInfo.xcprivacy` (the
+same declaration), and check the description's *no tracking* lines still read true
+(they do: umami is not tracking in Apple's sense). Until then nothing here changes. TestFlight builds carry their own manifest and need no ASC label.
 
 **Permissions the release actually asks for**, which is the list the review notes give and
 the shortest check on everything above: **Photos**, add-only, only when saving a recorded
@@ -427,8 +435,8 @@ Things the App Store submission needs that are **not** in this repo:
   standard encryption within the OS).
 * **Content Rights** — the app contains no third-party content. The bundled example session
   is the developer's own.
-* **`PrivacyInfo.xcprivacy`** — the app target does not currently ship a privacy manifest.
-  Not blocking (no signature-required SDK is used), but worth adding before submission: it
-  should declare `NSPrivacyTracking: false`, an empty collected-data array, and a
-  required-reason entry for `NSPrivacyAccessedAPICategoryUserDefaults` (`CA92.1`). Filed
-  here rather than fixed, because it is a build change and this was a metadata task.
+* **`PrivacyInfo.xcprivacy`** — shipped, one per channel since 18 October 2026: the release
+  target's `ios/WingFoil/Privacy/Release/` declares `NSPrivacyTracking: false`, an empty
+  collected-data array and the `UserDefaults` required reason (`CA92.1`); the beta and dev
+  target's `Privacy/Beta/` adds product interaction for analytics, not linked. `make
+  release-check` holds the two apart.

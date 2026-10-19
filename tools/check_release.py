@@ -16,8 +16,8 @@ same for the other five.
 **A channel ships a door it does not have.** docs/testing.md, "Three channels", names four
 greps that prove a release binary carries no beta or dev feature. They were prose. They are
 this file now: the compile flags, the generated Info.plist, the channel's cut of the brand
-mark, and — over a built binary — the two strings the beta and the dev doors cannot be built
-without.
+mark, the beta's privacy manifest and its umami sender (beta only since 18 Oct 2026), and —
+over a built binary — the strings the beta and the dev doors cannot be built without.
 
 Stdlib only, like every other check in this repo, so it runs on a bare interpreter in CI.
 Exit code 0 when everything agrees, 1 on the first disagreement (all of them are printed).
@@ -25,6 +25,7 @@ Exit code 0 when everything agrees, 1 on the first disagreement (all of them are
 from __future__ import annotations
 
 import argparse
+import plistlib
 import re
 import subprocess
 import sys
@@ -45,6 +46,10 @@ KIT_ANALYSIS = ROOT / "ios" / "WingFoilKit" / "Sources" / "WingFoilKit" / "Analy
 ALGORITHMS = ROOT / "docs" / "algorithms.md"
 CHANNELS = ROOT / "docs" / "channels.md"
 INFO_RELEASE = ROOT / "ios" / "WingFoil" / "Info-Release.plist"
+APP_SOURCES = ROOT / "ios" / "WingFoil"
+MANIFEST_RELEASE = APP_SOURCES / "Privacy" / "Release" / "PrivacyInfo.xcprivacy"
+MANIFEST_BETA = APP_SOURCES / "Privacy" / "Beta" / "PrivacyInfo.xcprivacy"
+PRODUCT_INTERACTION = "NSPrivacyCollectedDataTypeProductInteraction"
 
 # The release channel's Info.plist may not name a permission or a document type that only the
 # beta or dev channel has a door for (docs/testing.md, "Three channels" — the plist check).
@@ -54,6 +59,7 @@ PLIST_FORBIDDEN = re.compile(r"NSHealth|NSLocation|NSBluetooth|gpx|tcx")
 # pinned in docs/testing.md with the same `strings … | grep -c` one-liners this replaces.
 BINARY_NEEDLES = [
     ("version.json", "release", "the beta's update check (#if BETA)"),
+    ("cloud.umami.is", "release", "the beta's anonymous umami counts (#if BETA, App/Analytics.swift)"),
     ("Sync the library with iCloud Drive", "release, beta", "the dev iCloud Drive door (#if DEV)"),
 ]
 
@@ -289,6 +295,53 @@ def check_binary(binary: Path | None) -> None:
         ok("strings", f"{binary.name} carries none of the {len(BINARY_NEEDLES)} beta/dev door strings")
 
 
+def check_analytics() -> None:
+    """The beta's anonymous umami counts stay out of the release (docs/analytics.md, ADR-039).
+
+    Three halves of one promise, checked from the sources so a clean checkout proves them:
+    every app file that names the umami host is `#if BETA` from its first line to its last;
+    the release target ships the manifest that collects nothing and the beta target the one
+    that declares product interaction; and the two manifests say exactly that. The strings
+    check over a built binary (`--binary`) is the fourth, with `cloud.umami.is` among its
+    needles.
+    """
+    stray = []
+    for path in sorted(APP_SOURCES.rglob("*.swift")):
+        text = path.read_text(encoding="utf-8")
+        if "cloud.umami.is" not in text:
+            continue
+        lines = [line.strip() for line in text.splitlines() if line.strip()]
+        if not lines or lines[0] != "#if BETA" or lines[-1] != "#endif":
+            stray.append(str(path.relative_to(ROOT)))
+    if stray:
+        fail("analytics", "names the umami host outside a whole-file #if BETA: " + ", ".join(stray))
+
+    blocks = target_blocks()
+    if "WingFoil/Privacy/Release/PrivacyInfo.xcprivacy" not in blocks.get("WingFoilRelease", ""):
+        fail("analytics", "the release target does not ship Privacy/Release/PrivacyInfo.xcprivacy")
+    if "Privacy/Beta" in blocks.get("WingFoilRelease", ""):
+        fail("analytics", "the release target ships the beta's privacy manifest")
+    if "WingFoil/Privacy/Beta/PrivacyInfo.xcprivacy" not in blocks.get("WingFoil", ""):
+        fail("analytics", "the beta/dev target does not ship Privacy/Beta/PrivacyInfo.xcprivacy")
+
+    def collected(path: Path) -> list[str] | None:
+        if not path.exists():
+            fail("analytics", f"{path.relative_to(ROOT)} is missing")
+            return None
+        with path.open("rb") as handle:
+            data = plistlib.load(handle)
+        return [entry.get("NSPrivacyCollectedDataType", "")
+                for entry in data.get("NSPrivacyCollectedDataTypes", [])]
+
+    release, beta = collected(MANIFEST_RELEASE), collected(MANIFEST_BETA)
+    if release:
+        fail("analytics", f"the release manifest declares collected data: {release}")
+    if beta is not None and PRODUCT_INTERACTION not in beta:
+        fail("analytics", "the beta manifest does not declare product interaction")
+    if not any(f.startswith("analytics") for f in failures):
+        ok("analytics", "umami is #if BETA only; release manifest collects nothing, beta declares product interaction")
+
+
 def check_watch_words() -> None:
     """The watch's words are the ones docs/copy/watch.json holds (ADR-034).
 
@@ -325,6 +378,7 @@ def main(argv: list[str] | None = None) -> int:
     check_flags()
     check_plist()
     check_marks()
+    check_analytics()
     check_binary(args.binary)
 
     print()

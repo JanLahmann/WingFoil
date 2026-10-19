@@ -21,6 +21,11 @@ import WingFoilKit
 /// mail the rider writes and sends, with *Usage statistics* on (Normal by default in the
 /// App Store build, Extended in the beta and dev), and every line can be deleted there. A
 /// beta-only door simply does not exist in the release, so it is never counted there.
+///
+/// **In the beta and dev, a success is also one anonymous umami event** (Jan, 18 Oct 2026;
+/// docs/analytics.md, ADR-039): `record`, a successful `finished` and an import that brought
+/// sessions hand the same feature and its variant code to `Analytics`, which is `#if BETA` as
+/// a whole. Failures, their reasons and the sentences the rider was shown never travel.
 enum Usage {
 
     /// One use that worked, start to finish: a page opened, a setting changed, a file
@@ -28,6 +33,9 @@ enum Usage {
     static func record(_ feature: UsageCounters.Feature, times: Int = 1,
                        detail: String? = nil) {
         mutate { $0.record(feature, times: times, detail: detail) }
+        #if BETA
+        Analytics.counted(feature, times: times, detail: detail)
+        #endif
     }
 
     /// One use that went wrong, start to finish. `reason` is a short code with nothing
@@ -55,6 +63,9 @@ enum Usage {
                 $0.succeeded(feature, detail: detail)
             }
         }
+        #if BETA
+        if failure == nil { Analytics.counted(feature, times: 1, detail: detail) }
+        #endif
     }
 
     /// An import run through one door. One tally per run, not per session: a sync that
@@ -72,6 +83,9 @@ enum Usage {
             }
             if imported > 0 { $0.sessionsSinceAsk += imported }
         }
+        #if BETA
+        if failed == 0 { Analytics.imported(source, automatic: automatic, sessions: imported) }
+        #endif
     }
 
     /// A failure the rider was shown, in the words he was shown it in.

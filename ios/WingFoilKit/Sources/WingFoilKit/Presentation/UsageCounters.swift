@@ -16,6 +16,9 @@ import Foundation
 /// the rider opens, reads in full and sends from his own account — with every line of it
 /// editable first. A counter that cannot be read before it is sent would be telemetry with
 /// a longer path; one printed as plain text in a mail body is a rider telling us something.
+/// Since 18 Oct 2026 the beta and dev builds also send each success as one anonymous umami
+/// event (`UmamiEvent`, docs/decisions.md ADR-039); this blob, its dates and its failure
+/// sentences still leave only in that mail, and the App Store build sends no event at all.
 ///
 /// **Counts, not events.** Per feature, how often it was tried, how often it worked, how
 /// often it failed, and the dates of the last of each (`Tally`), never a timestamped trail:

@@ -261,6 +261,8 @@ struct LibraryView: View {
             .onChange(of: store.libraryGeneration) { _, _ in
                 if !showUsageAsk { showUsageAsk = Usage.askIsDue }
             }
+            // One anonymous pageview per return to the list (docs/analytics.md).
+            .onAppear { Analytics.screen(.library) }
             #endif
             // The setup topic offers "Open CleanJibe Settings"; only this screen knows how
             // to get there, so it hands the action down rather than Help guessing.

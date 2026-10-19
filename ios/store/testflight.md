@@ -4,7 +4,7 @@ Source of truth for the App Store Connect beta metadata. This file **mirrors** w
 ASC (app `6800401377`, bundle `de.lahmann.wingfoil`); edit here first, then push the same text
 to ASC so the two never drift.
 
-Last synced to ASC: 2026-10-09 — beta app description (en-US), pushed through the API and read back identical. **Not yet pushed:** the Garmin link sentence of 17 Oct 2026 in *Bring the watch you already have*. "What to Test" is per build (below).
+Last synced to ASC: 2026-10-09 — beta app description (en-US), pushed through the API and read back identical. **Not yet pushed:** the Garmin link sentence of 17 Oct 2026 in *Bring the watch you already have*, and the anonymous-counts sentence of 18 Oct 2026 in *Your sessions stay on your phone*. "What to Test" is per build (below).
 
 > **This file is the TestFlight half only.** Since 2026-09-02 the public App Store listing
 > has its own source of truth in **`ios/store/appstore.md`** — app name, subtitle,
@@ -42,7 +42,7 @@ Ride one ordinary session. Open it, go to Turns, and read each verdict against w
 
 YOUR SESSIONS STAY ON YOUR PHONE
 
-There is no account, no CleanJibe server and no tracking. The engine is open source. No iPhone at hand? The same analysis runs free in any browser at cleanjibe.org.
+There is no account, no CleanJibe server and no tracking. The beta counts which screens you open and which features work, anonymously and without cookies, so we see what gets used. The engine is open source. No iPhone at hand? The same analysis runs free in any browser at cleanjibe.org.
 
 BUILT WITH ITS RIDERS
 
@@ -51,7 +51,10 @@ CleanJibe is built with its riders. New features land in the beta first. Once te
 
 **The App Store description's voice, on purpose** (9 October 2026). The first two paragraphs
 are `ios/store/appstore.md`'s, word for word: a tester who later meets the store listing
-reads the same promise. What differs is what the beta has. The Apple Watch app and Apple
+reads the same promise. What differs is what the beta has. The anonymous umami counts
+(ADR-039, 18 Oct 2026) are the beta's alone, so the beta description names them in one
+sentence and the store description does not; they need no App Store privacy label while
+they stay out of the release (ios/store/appstore.md). The Apple Watch app and Apple
 Health are beta doors (docs/channels.md), so they are named here and not on the store, and
 the ways in follow the one order (pattern J): Garmin, Apple Watch, Strava, any FIT. The
 Strava sentence says what a Strava session costs, because the rider who asked the question

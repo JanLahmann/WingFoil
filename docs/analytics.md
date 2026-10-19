@@ -2,8 +2,8 @@
 
 Jan, 19 September 2026: *"review the umami instrumentation. should we adjust / extend it?
 Can we also analyse the iOS app?"* This file is the answer to both. It is the event map for
-cleanjibe.org, the rule every event name and every event property obeys, and the decision on
-the iPhone app at the end.
+cleanjibe.org, the rule every event name and every event property obeys, and — since Jan's
+decision of 18 October 2026 — the event map of the beta and dev iPhone apps at the end.
 
 One counter, one place: **umami**, cloud-hosted at `cloud.umami.is`, cookie-free, pinned to
 `cleanjibe.org` by `data-domains` so a local server and every preview stay silent. The
@@ -41,7 +41,9 @@ named actions like a card made, with only a format, a count or a tab name."* The
 privacy topic (*What leaves your phone*) says it too since 9 October 2026 (rider review X10):
 its body had said *no analytics* of the whole product on a page that loads umami, so the
 sentence now names the iPhone app it is true of, and an item, *What the website counts*, says
-page views and taps, no cookies, never a session. The footer's
+page views and taps, no cookies, never a session. Since 18 October 2026 the body says only
+*no advertising and no tracking*, which every channel is true of, and a per-channel item,
+*Usage counts*, says the App Store app sends none and the beta counts with umami. The footer's
 line on every page is unchanged, because it already covered this: *"Anonymous, cookie-free
 usage stats and feature counts by umami."*
 
@@ -190,18 +192,91 @@ Name these before reading any number off the dashboard.
 - **Why somebody left.** No scroll depth, no dwell time, no heatmap, no recording. If a
   page needs that question answered, it needs `docs/review-checklist.md` run over it
   instead.
-- **The iPhone app.** Nothing in `ios/` calls umami and nothing will. See below.
+- **The App Store iPhone app.** The release build has no umami sender and no path to one
+  (`#if BETA`, proven by `tools/check_release.py`). Only the beta and dev apps count, and
+  they are TestFlight's few hundred phones, not the App Store's riders. See below.
+- **The beta app offline, or in the simulator.** An event that cannot go at once is
+  dropped, never queued, and a simulator or screenshot-hook run sends nothing.
 
 ---
 
-## The iPhone app — a decision for Jan
+## The iPhone app — Jan's decision of 18 October 2026
 
-**The promise stands.** `web/privacy/index.html`: *"The app contains no analytics, no crash
-reporter, no third-party tracking code."* `ios/store/appstore.md`, in the App Store
-description and again in the privacy answers: *"there is no analytics SDK and no crash
-reporter in the app."* An SDK in the app would break a sentence riders were shown, on the
-store page they decided from. **Recommendation: keep the promise, and use (a) and (b),
-which need no code and break nothing.**
+**The beta and dev apps count with umami; the App Store app does not** (docs/decisions.md
+ADR-039). Until this date the recommendation here was to keep the promise and count nothing
+in the app, and to lean on (a) to (d) below. Jan overruled it: the beta is where a feature
+proves itself before it reaches the release (docs/channels.md, "The release gate"), and the
+voluntary usage mail answers *"is this door ever opened by anybody"* far too slowly for a
+round of a fortnight. So the beta and dev builds send the same anonymous, cookie-free counts
+the website sends, to the same umami website, under their own hostname.
+
+**The release keeps its sentence.** The App Store build compiles no sender — `Analytics` in
+`ios/WingFoil/App/Analytics.swift` is `#if BETA` from its first line to its last — so its
+binary carries no `cloud.umami.is`, its privacy manifest (`ios/WingFoil/Privacy/Release/`)
+collects nothing, and *"no analytics"* on the privacy page and *"no analytics SDK"* in the
+App Store privacy answers stay true of it. Moving the counts to the release is a
+separate decision, with a nutrition-label change attached (ios/store/appstore.md).
+
+### How it is built
+
+- **The body is the kit's** (`UmamiEvent`, `WingFoilKit/Presentation/UmamiEvent.swift`,
+  tested by `UmamiEventTests`): `{"type":"event","payload":{website, hostname, url, title,
+  language, screen, name, data}}` for `POST https://cloud.umami.is/api/send`, a pageview
+  without `name` and `data`. **track.js's guard, rule for rule**: strings trimmed and capped
+  at 32 characters, only a string, a finite number or a boolean, at most six properties, and
+  the `CleanJibe: ` prefix added in one place (`body`). Hostname `ios.cleanjibe.org` keeps
+  the app's screens apart from cleanjibe.org's pages in the shared dashboard; `url` is
+  `/<screen>`, `title` the screen's name, `language` the phone's first preferred language,
+  `screen` its size in points.
+- **The sender is the app's, beta and dev only.** One ephemeral `URLSession`, no cookie
+  store, no cache, `waitsForConnectivity` off. Fire and forget: the answer is never read,
+  nothing is retried and nothing is queued, so an event offline is dropped. **No identifier
+  of any kind** is made or stored. The `User-Agent` is Mobile Safari's shape with the phone's
+  own iOS version, because umami files CFNetwork's default agent as a bot. Nothing is logged.
+  Never in the simulator, under a UI test or under any `UI_*` screenshot hook.
+- **One hook.** `Usage.record`, a successful `Usage.finished` and `Usage.recordImport`
+  (ios/WingFoil/App/Usage.swift), the single place the usage counters increment, hand the
+  same feature and its variant code to `Analytics`. Failures, their reasons and the failure
+  sentences a rider was shown are never sent. A pageview fires when one of six top-level
+  screens appears.
+- **Properties come from closed sets.** `UmamiEvent.counted` turns a counter's own variant
+  code (`detail`) into a property only for the features listed below, and drops it on every
+  other feature, so a future call site cannot leak a file name by passing one.
+
+### The iOS event map
+
+Every name reaches umami as `CleanJibe: <name>`, on hostname `ios.cleanjibe.org`. Where the
+web has the same question, the web's name is kept, so one dashboard filter shows both.
+
+| event | properties | where it fires | the question | funnel |
+|---|---|---|---|---|
+| pageview `/library`, `/session`, `/turn`, `/share`, `/settings`, `/help` | — | `LibraryView`, `SessionDetailView`, `TurnDetailView`, `ShareComposerView`, `SettingsView`, the help index (`.onAppear`) | which screens a beta rider reaches at all, and the denominator for every event below | 3 |
+| `app-opened` | — | `appOpen`, `RootView` | visits, for every rate | 3 |
+| `app-file-analyzed` | `source` (`icu`/`icu-auto`/`picker`/`shared`/`zip`/`strava`/`health`/`health-auto`/`apple-watch`/`watch-direct`), `sessions` | `Usage.recordImport`, a run with no file that would not read and at least one session in | **the one number, as on the web**: sessions in, and which way | 3 |
+| `app-icu-sync-finished`, `app-strava-import-finished`, `app-health-import-finished`, `app-file-imported`, `app-shared-file-taken`, `app-zip-imported`, `app-apple-watch-recorded`, `app-watch-transfer-finished`, `app-health-auto-imported`, `app-icu-check-finished` | — | the import counters, when one is recorded by name outside `recordImport` (today `app-icu-check-finished`, the background check) | which way in works, beside `app-file-analyzed` | 3 |
+| `app-strava-connected` | — | Settings / Import → Strava | how close the Strava cap is | 3 |
+| `app-session-opened` | — | `sessionOpened` | sessions read per visit | 3 |
+| `app-turn-page-opened` | `kind` (`turn`/`end`) | `turnPage`, `flightEndPage` | is the turn page read, or only the table | 3 |
+| `app-tab-switched` | `tab` (`trends`/`records`) | `RootView` | are Records and Trends reached | 3 |
+| `app-period-opened`, `app-story-shown`, `app-session-paged`, `app-replay-played` (`fullScreen`), `app-replay-recorded`, `app-map-style-set` (`style`), `app-map-opened-full`, `app-filter-set`, `app-grouping-set` (`grouping`) | as named | the Reading counters | which reading aids earn their place | 3 |
+| `app-card-made` | `how` (`share`), `kind` (`session`/`period`), `shape`, `hero`, `map`, and `photo` on a session or `tracks` on a period | `shareCard`, `periodShare` | **the growth channel**, as on the web | 4 |
+| `app-clip-saved`, `app-video-exported`, `app-fit-shared` (`wrist`), `app-session-sent` | as named | the Share counters | which of the other things a rider makes is made | 4 |
+| `app-session-renamed`, `app-rider-assigned` (`mine`), `app-gear-set` (`what`: `spot`/`gear`/`assign`), `app-session-deleted`, `app-deleted-restored`, `app-icloud-synced`, `app-start-over-done` | as named | the Library counters | does the library's machinery get used | 3 |
+| `app-backup-exported`, `app-backup-restored` | — | `backupMade`, `backupRestored` | the web's backup pair | 3 |
+| `app-watch-chosen` (`action`: `choose`/`forget`), `app-watch-map-sent` (`automatic`), `app-watch-wind-sent` | as named | the Watch counters | does the Garmin link hold up in the beta | 3 |
+| `app-analysis-rerun`, `app-tuning-changed`, `app-windsurf-set` (`on`), `app-turn-direction-set` | as named | the Analysis counters | dev's tools, counted where they exist | 3 |
+| `app-settings-opened`, `app-units-set` (`units`), `app-speed-rule-set` (`rule`), `app-row-metrics-set`, `app-notification-delivered`, `app-health-exported` | as named | the Settings counters | which settings anybody changes | 3 |
+| `app-feedback-sent`, `app-usage-report-added` (`layout`), `app-wishlist-ticked` (`ticks`) | as named | the Feedback counters | does the feedback mail get sent, with the counts on | 4 |
+
+A counter recorded several times at once carries `times`. The table and
+`UsageCounters.Feature.umamiName` are the same list; `UmamiEventTests` holds the web's names
+to it.
+
+### What it still cannot answer
+
+Everything in *What umami cannot answer* above holds for the app as well: counts of visits,
+not riders; no funnel joined up person by person; nothing offline; nothing about a session.
+The beta sample is small and self-selected, so a share of riders is a share of testers.
 
 ### (a) The beta's opt-in usage report — already built, already shipping
 
@@ -228,7 +303,9 @@ the backup pair. What is missing is the denominator and the arithmetic, and both
    rider before he sends them: sessions imported per app open, turn pages per session
    opened, share cards per session opened.
 3. Keep the mail as it is otherwise. The moment a counter is uploaded rather than mailed,
-   it is telemetry with a longer path, and the sentence in the store text is false.
+   it is telemetry with a longer path, and the sentence in the store text is false. That is
+   why the umami counts above are the beta's and dev's alone: the mail stays the only way a
+   number leaves an App Store phone.
 
 The cost of (a) is that the sample is the beta and the send is voluntary, so it answers
 *"is this door ever opened by anybody"* and never *"by what share of riders"*.
@@ -291,9 +368,8 @@ version of the door does the same thing with `navigator.share` or a download plu
 
 The privacy page names it under what leaves the device.
 
-### What is not recommended
+### What is still not done
 
-A self-hosted umami, a Sentry, a TelemetryDeck or any opt-in SDK inside the iPhone app. Each
-would work, each would be honestly disclosable, and every one of them costs the sentence in
-the store description that a privacy-first product is bought on. The two free sources above
-answer the questions that actually change what gets built next.
+A self-hosted umami, a Sentry, a TelemetryDeck or any SDK inside the iPhone app. The beta's
+counts are a few dozen lines of our own over one HTTPS request, with nothing of a third
+party's linked into the binary, and the App Store build has none of them.

@@ -90,13 +90,18 @@ anchors:
 
   # Both app targets compile the same directory. The four generated files are excluded from
   # the compile sources group: two Info.plists and two entitlements, one pair per channel.
+  # So are the two privacy manifests, which must both be named `PrivacyInfo.xcprivacy` at the
+  # bundle's root: each target adds its own below (`Privacy/Release`, `Privacy/Beta`). The
+  # beta and dev declare the anonymous umami counts (docs/analytics.md, ADR-039); the release
+  # collects nothing and its manifest says so.
   appSources: &appSources
-    - path: WingFoil
-      excludes:
-        - "Info.plist"
-        - "Info-Release.plist"
-        - "WingFoil.entitlements"
-        - "WingFoilRelease.entitlements"
+    path: WingFoil
+    excludes:
+      - "Info.plist"
+      - "Info-Release.plist"
+      - "WingFoil.entitlements"
+      - "WingFoilRelease.entitlements"
+      - "Privacy/**"
 
   appSettings: &appSettings
     PRODUCT_NAME: WingFoil
@@ -272,7 +277,10 @@ targets:
     type: application
     platform: iOS
     deploymentTarget: "18.0"
-    sources: *appSources
+    sources:
+      - *appSources
+      - path: WingFoil/Privacy/Release/PrivacyInfo.xcprivacy
+        buildPhase: resources
     dependencies:
       # WingFoilKit only. No ConnectIQ (so no `-ObjC` either), no widgets, no watch app.
       - package: WingFoilKit
@@ -345,7 +353,10 @@ targets:
     type: application
     platform: iOS
     deploymentTarget: "18.0"
-    sources: *appSources
+    sources:
+      - *appSources
+      - path: WingFoil/Privacy/Beta/PrivacyInfo.xcprivacy
+        buildPhase: resources
     dependencies:
       - package: WingFoilKit
         product: WingFoilKit

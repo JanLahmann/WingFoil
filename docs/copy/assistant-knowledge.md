@@ -473,9 +473,10 @@ A session you imported from Health is left alone. Apple Health keeps the workout
 
 #### What leaves your phone
 There is no account, and no session of yours is uploaded. The whole policy is on the web.
-[iPhone app only] There is no CleanJibe account, and no session you import is sent to a CleanJibe server. It is analysed on this phone and stays on it. The iPhone app has no advertising, no analytics and no tracking.
+[iPhone app only] There is no CleanJibe account, and no session you import is sent to a CleanJibe server. It is analysed on this phone and stays on it. The iPhone app has no advertising and no tracking.
 [iPhone app only] The app talks to four places, each only when you use it. Your own login goes to intervals.icu and Strava. Apple Maps loads while a map is on screen. To name a new spot, it sends one rounded position.
 - Your location [only in: beta, dev] [iPhone app only]: The Apple Watch app reads it while a workout you started is running. It goes to your own iPhone and nowhere else.
+- Usage counts [only in: beta, dev] [iPhone app only]: The beta counts which screens you open and which features work, with umami like the website. It sets no cookies and keeps no ID. It never sees a session.
 - A daily look for a newer build [only in: beta, dev]: Once a day the beta asks cleanjibe.org whether a newer build exists. It sends nothing about you.
 - The Garmin link [only in: beta, dev]: Your Garmin watch sends each session to this phone over Bluetooth, through the Garmin Connect app. It goes nowhere else.
 - Ask CleanJibe [only in: beta, dev]: Ask CleanJibe sends your question, and a session's numbers when you ask from one, to Anthropic's Claude. It is kept 30 days. An idea you share is kept a year for the team.

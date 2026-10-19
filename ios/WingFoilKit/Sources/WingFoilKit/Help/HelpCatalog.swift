@@ -1622,11 +1622,12 @@ public enum HelpCatalog {
                 + "policy is on the web.",
             body: [
                 // "No analytics" was the iPhone app's truth printed on a website that
-                // loads umami (rider review X10, 9 Oct 2026). The sentence now names the
-                // app it is true of, and the item below says what the site counts.
+                // loads umami (rider review X10, 9 Oct 2026). Since 18 Oct 2026 the beta
+                // app counts too (ADR-039), so the body says what every build is true of
+                // and the counting is a per-channel item (`privacyItems`).
                 "There is no CleanJibe account, and no session you import is sent to a "
                 + "CleanJibe server. It is analysed on this phone and stays on it. The iPhone "
-                + "app has no advertising, no analytics and no tracking.",
+                + "app has no advertising and no tracking.",
                 "The app talks to four places, each only when you use it. Your own "
                 + "login goes to intervals.icu and Strava. Apple Maps loads while a "
                 + "map is on screen. To name a new spot, it sends one rounded position.",
@@ -1870,6 +1871,16 @@ public enum HelpCatalog {
                         detail: "The Apple Watch app reads it while a workout you started is "
                             + "running. It goes to your own iPhone and nowhere else."),
         ]
+        // The anonymous counts (docs/analytics.md, ADR-039): none in the App Store build,
+        // which says so, and umami in the beta and dev, said in the privacy page's terms.
+        items.append(channel == .release
+            ? .init(term: "Usage counts",
+                    detail: "The app sends no usage counts anywhere. What it counts on this "
+                        + "phone leaves only in a feedback mail you send.")
+            : .init(term: "Usage counts",
+                    detail: "The beta counts which screens you open and which features "
+                        + "work, with umami like the website. It sets no cookies and keeps "
+                        + "no ID. It never sees a session."))
         if channel >= .beta {
             items.append(.init(term: "A daily look for a newer build",
                                detail: "Once a day the beta asks \(Branding.site) whether "
@@ -2124,7 +2135,7 @@ extension HelpCatalog {
             browser: ["In the browser app, Settings → Your data is the backup. Download all "
                       + "saves one zip, and Restore from a backup reads it back."]),
         .privacy: HelpSurfaces(
-            body: [0, 1], items: ["Your intervals.icu key", "Your location"],
+            body: [0, 1], items: ["Your intervals.icu key", "Your location", "Usage counts"],
             browser: ["In the browser app, a session is analysed in your browser and stays "
                       + "in its storage. Nothing is uploaded.",
                       "Your intervals.icu key stays in this browser too. It goes to "

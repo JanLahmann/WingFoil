@@ -2310,7 +2310,7 @@
             "icuPrivacy"
           ],
           "body" : [
-            "There is no CleanJibe account, and no session you import is sent to a CleanJibe server. It is analysed on this phone and stays on it. The iPhone app has no advertising, no analytics and no tracking.",
+            "There is no CleanJibe account, and no session you import is sent to a CleanJibe server. It is analysed on this phone and stays on it. The iPhone app has no advertising and no tracking.",
             "The app talks to four places, each only when you use it. Your own login goes to intervals.icu and Strava. Apple Maps loads while a map is on screen. To name a new spot, it sends one rounded position."
           ],
           "browser" : [
@@ -2337,6 +2337,15 @@
               "detail" : "The Apple Watch app reads it while a workout you started is running. It goes to your own iPhone and nowhere else.",
               "iphoneOnly" : true,
               "term" : "Your location"
+            },
+            {
+              "channels" : [
+                "beta",
+                "dev"
+              ],
+              "detail" : "The beta counts which screens you open and which features work, with umami like the website. It sets no cookies and keeps no ID. It never sees a session.",
+              "iphoneOnly" : true,
+              "term" : "Usage counts"
             },
             {
               "channels" : [

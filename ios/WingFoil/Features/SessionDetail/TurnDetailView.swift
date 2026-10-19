@@ -71,6 +71,9 @@ struct TurnDetailSheet: View {
                          onTurn: { id in if let index = Int(id) { selection = index } },
                          page: TurnDetailPage(detail: detail, index: selection).id(selection),
                          preview: { id in TurnDetailPage(detail: detail, index: Int(id) ?? selection) })
+            #if BETA
+            .onAppear { Analytics.screen(.turn) }
+            #endif
             // One per visit to the turn page, not one per swipe: the question the beta has
             // is whether the page is reached at all.
             .task { Usage.record(.turnPage) }

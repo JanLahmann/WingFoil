@@ -258,6 +258,9 @@ struct ShareComposerView: View {
             // `.large` detent gives it on a phone.
             .presentationSizing(.page)
         }
+        #if BETA
+        .onAppear { Analytics.screen(.share) }
+        #endif
     }
 
     #if BETA

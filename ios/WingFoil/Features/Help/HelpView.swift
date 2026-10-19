@@ -154,6 +154,8 @@ private struct HelpIndexList: View {
         .sheet(item: $selected) { HelpTopicSheet(id: $0) }
         #if BETA
         .sheet(isPresented: $asking) { AskView(context: .help, state: AskState.help(store)) }
+        // The index from the menu and from Settings alike: one anonymous pageview.
+        .onAppear { Analytics.screen(.help) }
         #endif
         .task {
             // Deep link from a `?` or from a card: the topic sheet has to wait for

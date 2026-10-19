@@ -2810,7 +2810,7 @@ export const HELP = {
             "icuPrivacy"
           ],
           "body": [
-            "There is no CleanJibe account, and no session you import is sent to a CleanJibe server. It is analysed on this phone and stays on it. The iPhone app has no advertising, no analytics and no tracking.",
+            "There is no CleanJibe account, and no session you import is sent to a CleanJibe server. It is analysed on this phone and stays on it. The iPhone app has no advertising and no tracking.",
             "The app talks to four places, each only when you use it. Your own login goes to intervals.icu and Strava. Apple Maps loads while a map is on screen. To name a new spot, it sends one rounded position."
           ],
           "browser": [
