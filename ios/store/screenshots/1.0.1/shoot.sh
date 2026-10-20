@@ -50,7 +50,9 @@ take() {
 }
 
 # Once: the fresh install, the fixture corpus and the example. The app takes ~75 s.
-launch 120 UI_RESET=1 UI_IMPORT_FIXTURES=1 UI_LOAD_EXAMPLE=1
+# The corpus holds the example's own recording; imported, it would win the dedupe and turn
+# the example into a ten-minute session of the rider's, rates "—" under the 20-minute floor.
+launch 120 UI_RESET=1 UI_IMPORT_FIXTURES=1 UI_FIXTURES_SKIP=2026-08-30-1407 UI_LOAD_EXAMPLE=1
 
 take 01-welcome.png 20 UI_WELCOME=1
 take 02-session.png 25 UI_OPEN_SESSION=latest

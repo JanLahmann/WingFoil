@@ -1178,6 +1178,15 @@ final class SessionStore {
             .compactMap { $0 as? URL }
             .filter { $0.pathExtension.lowercased() == "fit" } ?? [])
             .sorted { $0.lastPathComponent < $1.lastPathComponent }
+            // `UI_FIXTURES_SKIP=<text>` leaves out every fixture whose name contains it. The
+            // store shots skip the corpus's own copy of the example's recording: imported
+            // with the example, it wins the dedupe and clears `isExample`, so the session
+            // page showed the 20-minute rate floor's "—" where the example has its rates.
+            .filter { url in
+                guard let skip = ProcessInfo.processInfo.environment["UI_FIXTURES_SKIP"],
+                      !skip.isEmpty else { return true }
+                return !url.lastPathComponent.contains(skip)
+            }
         guard !urls.isEmpty else {
             errorMessage = "No fixtures at \(Self.fixturesPath)"
             return
