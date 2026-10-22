@@ -597,6 +597,11 @@ Dev adds:
 
 ## The newest release notes
 
+### 1.0.1 (151, beta, 2026-10-22): Best turns first
+- The Turns list sorts by time or best first.
+- A turn's page swipes through the list as you see it, filtered and sorted.
+- A tack is compared with your best tack, a jibe with your best clean jibe.
+
 ### 1.0.1 (136, beta, 2026-10-17): Ask CleanJibe
 - Ask CleanJibe answers a question in your own words, from the help texts.
 - Asked from a session, it reads that session's numbers and never guesses one.
@@ -622,9 +627,3 @@ Dev adds:
 ### 1.0.1 (127, beta, 2026-09-30): Scrolls both ways
 - The session page scrolls back up smoothly, however long the turn list is.
 - On Turns and Flights, the filters stay at the top while you scroll.
-
-### 1.0.1 (125, beta, 2026-09-30): Built with its riders
-- The Beta page asks how the new features work for you, and what we should test next.
-- A small Beta mark sits on every feature that is still being tried.
-- The feedback mail has your wishlist and a line for your own idea.
-- Scrolling back up works again when your thumb starts on a filter row.

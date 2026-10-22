@@ -401,6 +401,18 @@ export const WELCOME = {
 export const WHATS_NEW = [
   {
     "version": "1.0.1",
+    "build": 151,
+    "channel": "beta",
+    "date": "2026-10-22",
+    "title": "Best turns first",
+    "lines": [
+      "The Turns list sorts by time or best first.",
+      "A turn's page swipes through the list as you see it, filtered and sorted.",
+      "A tack is compared with your best tack, a jibe with your best clean jibe."
+    ]
+  },
+  {
+    "version": "1.0.1",
     "build": 136,
     "channel": "beta",
     "date": "2026-10-17",
