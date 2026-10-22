@@ -219,7 +219,8 @@ function abortPasses(kind as Number, uIn as Float, uOut as Float, windDeg as Num
 //
 // The trigger opens a SWEEP phase that follows the rotation while it keeps turning
 // (CONTINUE_RATE_DEG_S, capped at MAX_DURATION_S from the sweep start), so tack/jibe
-// classification sees the whole sweep rather than its first 60 deg. The sweep end confirms the
+// classification sees the whole sweep rather than its first 60 deg; a sweep the cap leaves
+// unnamed is followed up to NAME_FOLLOW_S further for its name alone. The sweep end confirms the
 // turn (EVENT_TURN) and opens the recovery-gated outcome window: it stays open until the rider
 // is demonstrably flying again (RECOVER_PCT of entry speed, floored at foilEntry, held
 // RECOVER_HOLD_S), capped at LOOKAHEAD_NOT_RECOVERED_S past the sweep (0.9.19: the phone's
@@ -276,6 +277,18 @@ class TurnDetector {
     const MAX_DURATION_S = 8.0;     // measured 7 Sep 2026: 12 s bought 6 jibes and cost 26 clean ones on the corpus, so it stays
     const PEAK_RATE_DEG_S = 18.0;   // engine 0.14.0 (was 25): a carved jibe at 11 kn on 25 m turns at a steady ~13–22°/s and never spikes to 25
     const CONTINUE_RATE_DEG_S = 5.0;
+    // THE NAMING FOLLOW-THROUGH (Jan, 22 Oct 2026). A jibe that starts slowly — 3–5 s at
+    // 6–13 °/s, then 20–35 °/s — has its start found back in the lead-in, so the
+    // MAX_DURATION_S cap lands while the board is still carving and the sweep closes 3–35°
+    // short of downwind: a course change, no marker (De Nes, 20 Oct 2026: 8 of 102 jibes).
+    // When the cap is hit with the heading still turning the sweep's own way at
+    // >= NAME_FOLLOW_RATE_DEG_S and the capped sweep names NOTHING, the heading is followed up
+    // to NAME_FOLLOW_S more FOR THE NAME ONLY: `_endT`, the score window, the outcome window
+    // and the quiet tail all stay at the cap. A sweep the cap already named is never
+    // followed — `classifyTurn` names by the first crossing, so a longer sweep could not rename
+    // it — and the price is that such a turn is announced up to NAME_FOLLOW_S later.
+    const NAME_FOLLOW_S = 3.0;
+    const NAME_FOLLOW_RATE_DEG_S = 5.0;     // = CONTINUE_RATE_DEG_S
     const COG_SPEED_FLOOR = 2.0;
     const MIN_ARC_M = 12.0;
     const MIN_RADIUS_M = 6.0;
@@ -550,6 +563,10 @@ class TurnDetector {
     hidden var _startU as Float = 0.0;
     hidden var _endT as Float = 0.0;
     hidden var _endU as Float = 0.0;
+    // the naming follow-through past the cap (NAME_FOLLOW_S): on, and the heading followed
+    hidden var _nameFollow as Boolean = false;
+    hidden var _nameU as Float = 0.0;
+    hidden var _nameT as Float = 0.0;
     hidden var _entrySpeed as Float = 0.0;
     hidden var _minSpeed as Float = 0.0;
     hidden var _minT as Float = 0.0;      // the clock of the speed minimum: recovery is searched after it
@@ -922,6 +939,7 @@ class TurnDetector {
         _capT = _startT;
         _endT = _clockS;
         _endU = u;
+        _nameFollow = false;
 
         // R5: a sweep that closed at most JOIN_GAP_S before this one started, turning the
         // same way in the same sailing run. When the axis was crossed in the gap, neither
@@ -1250,31 +1268,55 @@ class TurnDetector {
         return _resolve();
     }
 
-    // Follow the rotation while it is still turning, so classification sees the whole sweep.
+    // Follow the rotation while it is still turning, up to the cap — and, for a sweep the cap
+    // leaves unnamed, a little past it for the name (NAME_FOLLOW_S).
     hidden function _sweep(dt as Float, u as Float?, speedMps as Float,
             submerged as Boolean) as Number {
         _track(dt, speedMps, submerged);
         if (u != null) {
-            var step = _clockS - _endT;
-            var rate = step > 0.0 ? ((u as Float) - _endU) / step : 0.0;
-            // the cap runs from the sweep's own start: a join (R5) adds the gap, not a limit
-            if (rate.abs() >= CONTINUE_RATE_DEG_S && _clockS - _capT <= MAX_DURATION_S) {
-                _endU = u as Float;
-                _endT = _clockS;
-                return EVENT_NONE;
+            var uu = u as Float;
+            if (!_nameFollow) {
+                var step = _clockS - _endT;
+                var rate = step > 0.0 ? (uu - _endU) / step : 0.0;
+                // the cap runs from the sweep's own start: a join (R5) adds the gap, not a limit
+                if (rate.abs() >= CONTINUE_RATE_DEG_S && _clockS - _capT <= MAX_DURATION_S) {
+                    _endU = uu;
+                    _endT = _clockS;
+                    return EVENT_NONE;
+                }
+                // The cap, not the rotation, ended it, and what it holds names nothing: follow
+                // on for the name. One classification on the one tick the cap is hit.
+                if (_clockS - _capT > MAX_DURATION_S && _followsOn(rate)
+                        && _classify(_startU, _endU) == KIND_REJECT) {
+                    _nameFollow = true;
+                    _nameU = uu;
+                    _nameT = _clockS;
+                    return EVENT_NONE;
+                }
+            } else {
+                var step = _clockS - _nameT;
+                if (_followsOn(step > 0.0 ? (uu - _nameU) / step : 0.0)) {
+                    _nameU = uu;
+                    _nameT = _clockS;
+                    return EVENT_NONE;
+                }
             }
         }
+        // The heading the turn is NAMED by: the cap's, or the follow-through's.
+        var nameU = _nameFollow ? _nameU : _endU;
+        _nameFollow = false;
         // Published before the verdict, so the geometry is fresh whatever the verdict is. The
         // sweep's OWN geometry: it is what AutoWind learns from (the phone's wind never sees a
-        // join) and what the log keeps, with the gap beside it (`_joinLogAdd`).
+        // join) and what the log keeps, with the gap beside it (`_joinLogAdd`). It reaches the
+        // NAMED heading, so a rebuild under a later axis re-types the sweep that was named.
         lastEntryU = _ownStartU;
-        lastNetDeg = _endU - _ownStartU;
+        lastNetDeg = nameU - _ownStartU;
         // R5's memory, for a sweep that starts within JOIN_GAP_S of this one's end
         _joinOk = _haveCog;     // a sweep the sailing run ended has nothing to join
         _joinT = _endT;
         _joinU = _endU;
         _joinDir = _endU >= _ownStartU ? 1 : -1;
-        var kind = _classify(_startU, _endU);
+        var kind = _classify(_startU, nameU);
         if (kind == KIND_REJECT) {
             rejectedCount++;        // bear-away / round-up: real course change, not a maneuver
             state = ST_IDLE;
@@ -1294,6 +1336,14 @@ class TurnDetector {
         countEntrySide(_startU);
         state = ST_OUTCOME;
         return EVENT_TURN;
+    }
+
+    // Is `rate` still the sweep turning its own way, fast enough and inside the follow-through?
+    // A reversal is the next maneuver, not more of this one.
+    hidden function _followsOn(rate as Float) as Boolean {
+        var signed = _endU >= _startU ? rate : -rate;
+        return signed >= NAME_FOLLOW_RATE_DEG_S
+            && _clockS - _capT <= MAX_DURATION_S + NAME_FOLLOW_S;
     }
 
     hidden function _outcomeTick(dt as Float, speedMps as Float,
@@ -1344,7 +1394,9 @@ class TurnDetector {
             _wet = true;
         }
         var newMin = false;
-        if (state != ST_OUTCOME || _clockS <= _endT + MIN_SPEED_LAG_S) {
+        // the naming follow-through is past `_endT` like the outcome window: the score keeps
+        // its own window, the cap plus MIN_SPEED_LAG_S
+        if ((state != ST_OUTCOME && !_nameFollow) || _clockS <= _endT + MIN_SPEED_LAG_S) {
             if (speedMps < _minSpeed) {
                 _minSpeed = speedMps;
                 _minT = _clockS;

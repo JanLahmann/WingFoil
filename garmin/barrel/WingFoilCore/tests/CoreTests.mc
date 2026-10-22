@@ -515,6 +515,60 @@ function turnJibeClassifiedWithWind(logger as Test.Logger) as Boolean {
     return true;
 }
 
+// ---- THE NAMING FOLLOW-THROUGH (Jan, 22 Oct 2026) ----
+//
+// The De Nes jibe: a slow lead-in the scan reaches back through, so the 8 s cap lands while
+// the board is still carving and the capped sweep (60 -> 160, TWA 60 -> 160) crosses neither
+// axis end. Until the fix it was a course change with no marker. Now the heading is followed
+// up to 3 s past the cap for the name only: 220 crosses downwind, so it is a jibe, and the
+// score window still ends at the cap plus the 2 s lag — the dip on the last followed second
+// is outside it.
+(:test)
+function turnSlowStartJibeIsNamedPastTheCap(logger as Test.Logger) as Boolean {
+    var cfg = coreDefaults();
+    cfg.setWindDirection(0);                    // wind from north -> downwind is 180
+    var d = new TurnDetector(cfg);
+    runStraight(d, 5, 60.0, 8.0);
+    runSweep(d, 60.0, 8.0, 5, 8.0);             // lead-in 60 -> 100 at 8 deg/s
+    runSweep(d, 100.0, 20.0, 5, 8.0);           // 120 .. 200: the cap lands at 160 (t = 8)
+    var ev = d.tick(1.0, 220.0, 4.0, 4.0, true, false);     // t = 11, the last followed second
+    Test.assertMessage(ev == TurnDetector.EVENT_NONE && d.state == TurnDetector.ST_SWEEP,
+        "still following for the name at the cap + 3 s, event " + ev.toString());
+    ev = d.tick(1.0, 220.0, 8.0, 8.0, true, false);         // it stops turning: named now
+    Test.assertMessage(ev == TurnDetector.EVENT_TURN,
+        "announced when the follow-through ends, event " + ev.toString());
+    Test.assertMessage(d.lastKind == TurnDetector.KIND_JIBE, "named a jibe, kind "
+        + d.lastKind.toString());
+    Test.assertMessage(d.rejectedCount == 0, "not a course change");
+    Test.assertMessage((d.lastNetDeg - 160.0).abs() < 0.01,
+        "the log keeps the named sweep, net " + d.lastNetDeg.format("%.1f"));
+    ev = runStraight(d, 3, 220.0, 8.0);         // before the quiet tail settles (cap + 10 s)
+    Test.assertMessage(ev == TurnDetector.EVENT_FLEW, "flew through, event " + ev.toString());
+    Test.assertMessage(d.jibeCount == 1 && d.turnCount == 1, "one jibe counted");
+    Test.assertMessage(d.lastScorePct >= 95,
+        "the score window stays at the cap, got " + d.lastScorePct.toString());
+    return true;
+}
+
+// The follow-through never renames: a sweep the cap already named is confirmed on the tick
+// the cap is hit, as before, however long the rider keeps turning.
+(:test)
+function turnNamedAtTheCapIsNotFollowed(logger as Test.Logger) as Boolean {
+    var cfg = coreDefaults();
+    cfg.setWindDirection(0);
+    var d = new TurnDetector(cfg);
+    runStraight(d, 5, 100.0, 8.0);
+    runSweep(d, 100.0, 8.0, 5, 8.0);            // lead-in 100 -> 140
+    runSweep(d, 140.0, 20.0, 3, 8.0);           // 160 .. 200: downwind crossed by the cap
+    var ev = d.tick(1.0, 220.0, 8.0, 8.0, true, false);     // t = 9: past the cap, still turning
+    Test.assertMessage(ev == TurnDetector.EVENT_TURN,
+        "confirmed at the cap, event " + ev.toString());
+    Test.assertMessage(d.lastKind == TurnDetector.KIND_JIBE, "a jibe");
+    Test.assertMessage((d.lastNetDeg - 100.0).abs() < 0.01,
+        "net at the cap, got " + d.lastNetDeg.format("%.1f"));
+    return true;
+}
+
 // ---- the per-kind LADDER adds up (device app 0.9.18) ----
 //
 // The Tacks & jibes page draws each kind's whole outcome ladder now, so the six per-kind

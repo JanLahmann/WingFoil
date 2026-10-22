@@ -743,8 +743,31 @@ the track, and a fixed ring of memory.
 
 - **No non-maximum suppression.** The first sweep that clears the gates opens a candidate and
   the detector then *follows* the rotation while it keeps turning (`turnContinueRate`, capped
-  at `turnMaxDuration`), so classification still sees the whole sweep. The lab instead scores
-  every candidate and keeps the widest. Two turns inside one 8 s window merge into one.
+  at `turnMaxDuration` from the candidate's start), so classification sees the sweep up to
+  that cap — the whole sweep only when the rotation ends inside 8 s. The lab instead scores
+  every candidate and keeps the widest, so its 8 s are the best 8 s of the carve, where the
+  watch's are the first 8 s from wherever the scan found the start. Two turns inside one 8 s
+  window merge into one.
+
+  **The naming follow-through** (Jan, 22 Oct 2026; `NAME_FOLLOW_S`, `NAME_FOLLOW_RATE_DEG_S`
+  in `TurnDetector.mc`). A slow-starting jibe — 3–5 s at 6–13 °/s, then 20–35 °/s — has its
+  start found back in the lead-in, the 8 s cap lands while the board is still carving, and
+  the capped sweep stops 3–35° short of downwind: a course change, no marker. The tester's De
+  Nes session of 20 Oct 2026 lost 8 of 102 jibes this way. Now, when the cap is hit while the
+  heading still turns the sweep's own way at ≥ 5 °/s **and the capped sweep names nothing**,
+  the watch keeps following up to 3 s more **for the name only**: `classifyTurn` runs on the
+  later heading, and the turn log and AutoWind get that net too, so a rebuild under a later
+  axis re-types the same sweep. `_endT`, the score window (cap + `turnMinSpeedLag`), the
+  outcome window and the quiet tail all stay at the cap. A sweep the cap already named is
+  never followed — `classifyTurn` names by the first crossing, so a longer sweep could not
+  rename it — and a reversal ends the follow-through, being the next maneuver. The price: such
+  a turn is **announced up to 3 s later** (its kind marker, the Turns page). Measured by a
+  replay of the detector over every local watch recording (8 inbox files, the 2 `ciq`
+  fixtures): it only ever turns a course change into a turn the phone also has — 5 of the
+  replay's 5 De Nes rejects at the recorded axis (all 8 of the watch's across 95–130°), 1 at
+  Rheinstetten 22 Oct, 5 on the two nago fixtures — and adds no turn the phone lacks, flips
+  no kind and loses no turn. Tests: `turnSlowStartJibeIsNamedPastTheCap`,
+  `turnNamedAtTheCapIsNotFollowed`.
 - **Edge trim is the scan itself.** Walking back from the newest sample stops at the first
   step below `turnContinueRate`, which trims both edges greedily. A genuine turn containing a
   ≤5 °/s lull is split at the lull rather than spanning it.
