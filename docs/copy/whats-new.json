@@ -6,6 +6,18 @@
   "entries": [
     {
       "version": "1.0.1",
+      "date": "2026-10-22",
+      "title": "Best turns first",
+      "build": 151,
+      "channel": "beta",
+      "lines": [
+        "The Turns list sorts by time or best first.",
+        "A turn's page swipes through the list as you see it, filtered and sorted.",
+        "A tack is compared with your best tack, a jibe with your best clean jibe."
+      ]
+    },
+    {
+      "version": "1.0.1",
       "date": "2026-10-17",
       "title": "Ask CleanJibe",
       "build": 136,
