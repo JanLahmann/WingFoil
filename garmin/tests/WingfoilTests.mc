@@ -4080,6 +4080,28 @@ function pumpBreatherDoesNotSplitOneAttempt(logger as Test.Logger) as Boolean {
     return true;
 }
 
+// ---- FIT: a turn marker reaches a record (Jan, 22 Oct 2026) ----
+// Two engine ticks inside one record second: the second tick's 0 must not erase the first
+// tick's marker before the firmware writes the record. Held under 1000 ms, never longer, and
+// a new marker always wins.
+(:test)
+function fitMarkerIsHeldOverAZeroInTheSameSecond(logger as Test.Logger) as Boolean {
+    Test.assertEqual(FitFields.heldMarker(FitFields.MARK_NONE, FitFields.MARK_JIBE, 400),
+        FitFields.MARK_JIBE);
+    Test.assertEqual(FitFields.heldMarker(FitFields.MARK_NONE, FitFields.MARK_JIBE, 999),
+        FitFields.MARK_JIBE);
+    Test.assertEqual(FitFields.heldMarker(FitFields.MARK_NONE, FitFields.MARK_JIBE, 1000),
+        FitFields.MARK_NONE);
+    Test.assertEqual(FitFields.heldMarker(FitFields.MARK_FLEW, FitFields.MARK_JIBE, 300),
+        FitFields.MARK_FLEW);
+    Test.assertEqual(FitFields.heldMarker(FitFields.MARK_NONE, FitFields.MARK_NONE, 300),
+        FitFields.MARK_NONE);
+    // a wrapped System.getTimer reads as a negative age: no hold
+    Test.assertEqual(FitFields.heldMarker(FitFields.MARK_NONE, FitFields.MARK_TACK, -5),
+        FitFields.MARK_NONE);
+    return true;
+}
+
 // ---- FIT: the wind-derived session fields ----
 // Without a wind axis the classifier calls every sweep a generic turn, so tack_count and
 // jibe_count are structurally 0 — and "0 tacks, 0 jibes" is indistinguishable from a rider

@@ -1,6 +1,7 @@
 import Toybox.ActivityRecording;
 import Toybox.FitContributor;
 import Toybox.Lang;
+import Toybox.System;
 import WingFoilCore;
 
 // Sole writer of FIT developer fields. WHAT fields exist is `FitSchema`'s table (the
@@ -29,6 +30,11 @@ class FitFields {
     // One entry per FitSchema slot, in slot order. Indexed by the SES_*/REC_*/LAP_* enum, so
     // a renamed or reordered row cannot silently write to the wrong field.
     hidden var _f as Array<FitContributor.Field>;
+
+    // The last non-zero turn marker and when it was set (System.getTimer ms): see setRecord.
+    enum { MARKER_HOLD_MS = 1000 }      // an enum, so the static heldMarker can read it
+    hidden var _markHeld as Number = MARK_NONE;
+    hidden var _markAtMs as Number = 0;
 
     function initialize(session as ActivityRecording.Session) {
         _f = new Array<FitContributor.Field>[FitSchema.SLOT_COUNT];
@@ -64,6 +70,16 @@ class FitFields {
         return MARK_NONE;
     }
 
+    // The value the record field takes: this tick's marker, or — when this tick has none and
+    // the last marker was set less than MARKER_HOLD_MS ago — that marker. Static so the test
+    // can assert it without a FIT session.
+    static function heldMarker(marker as Number, held as Number, sinceMs as Number) as Number {
+        if (marker == MARK_NONE && held != MARK_NONE && sinceMs >= 0 && sinceMs < MARKER_HOLD_MS) {
+            return held;
+        }
+        return marker;
+    }
+
     // Whether this session may write the wind-derived session fields at all.
     //
     // 0.8.1's rule was "the rider set an axis". 0.9.0 widens it by exactly one word: EITHER a
@@ -86,14 +102,29 @@ class FitFields {
     }
 
     // Called every engine tick (values persist at last level between writes) — turnMarker is
-    // therefore rewritten every second, so a marker marks exactly its own second.
+    // therefore rewritten every second, so a marker marks its own second.
+    //
+    // A MARKER IS HELD OVER THE NEXT ZERO FOR MARKER_HOLD_MS (Jan, 22 Oct 2026). The firmware
+    // writes the record once a second with whatever the fields hold at that moment, and the
+    // engine ticks on the position callback, which is not locked to it: two ticks can land in
+    // one record second, and the second one's 0 overwrote the first one's marker before the
+    // record was written (De Nes, 20 Oct 2026: 69 such seconds, one jibe's kind marker lost).
+    // So a 0 that arrives less than MARKER_HOLD_MS after a marker keeps the marker. The price
+    // is that a marker can now sit in two consecutive records; readers count a run of equal
+    // markers once (docs/fit-schema.md). Every other record field is a level, not an event,
+    // and needs no hold.
     function setRecord(foilState as Number, tick as Number, turnMarker as Number,
             pumpCadence as Number) as Void {
         _f[FitSchema.REC_FOIL_STATE].setData(foilState);
         // 0 = not pumping (or no detector); 254 caps a uint8 that can never legitimately
         // exceed ~150 spm anyway (pumpRefractory bounds it at 150).
         _f[FitSchema.REC_PUMP_CADENCE].setData(_u8(pumpCadence));
-        _f[FitSchema.REC_TURN_MARKER].setData(turnMarker);
+        var now = System.getTimer();
+        _f[FitSchema.REC_TURN_MARKER].setData(heldMarker(turnMarker, _markHeld, now - _markAtMs));
+        if (turnMarker != MARK_NONE) {
+            _markHeld = turnMarker;
+            _markAtMs = now;
+        }
         // 0xFF is FIT's uint8 invalid sentinel -- roll 0-254 so no tick decodes as absent.
         _f[FitSchema.REC_TICK].setData(tick % 255);
     }

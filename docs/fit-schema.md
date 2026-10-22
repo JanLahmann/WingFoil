@@ -52,9 +52,20 @@ The device app writes `foil_state`(0) · `pump_cadence`(2) · `turn_marker`(3) �
 **`turn_marker` is two events on two different seconds, not one.** 1–3 mark the second the COG
 sweep is *confirmed* and say what kind of maneuver it was; 4–6 mark the second its *outcome*
 resolves — the end of the recovery-gated window, which is 2–14 s later (docs/algorithms/pumping.md
-"Turn outcome"). A detected turn therefore writes exactly two non-zero markers, and the
-watch's `tack_count`/`jibe_count` equal the number of 1/2 markers. The field is rewritten
-every record, so a marker never bleeds into the following second. Values 4–6 are an addition
+"Turn outcome"). A detected turn therefore writes exactly two marker *events*, and the
+watch's `tack_count`/`jibe_count` equal the number of 1/2 events. The field is rewritten on
+every engine tick, but the engine ticks on the position callback, which is not locked to the
+firmware's record write: two ticks can fall into one record second, and until 22 Oct 2026 the
+second tick's 0 overwrote the first one's marker before the record was written (a tester's
+session of 20 Oct 2026: 69 such seconds, one jibe's kind marker lost). **Since then a 0
+arriving less than 1000 ms after a non-zero marker keeps the marker** (`FitFields.setRecord`,
+`MARKER_HOLD_MS`; Jan, 22 Oct 2026), so every marker reaches a record — and one may now sit
+in **two consecutive records**. A reader counts a run of consecutive equal non-zero values as
+**one** event; two genuine markers are never adjacent (the outcome lands ≥ 2 s after the kind,
+and no second turn is detected inside an outcome window), so the collapse loses nothing. No
+reader counts markers today — the lab keeps the column, the kit keeps `RawTrack.turnMarker`,
+and the divergence check compares the session counts — so this is the rule for the first one
+that does. Values 4–6 are an addition
 within `SCHEMA_VERSION` 1: readers written against the original 0–3 enum keep working
 (1/2/3 unchanged) and must ignore markers they do not know rather than fail.
 Bear-aways and round-ups (a course change that crosses neither wind-axis end) are dropped by
