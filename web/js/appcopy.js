@@ -3450,7 +3450,7 @@ export const WORDS = {
     "steadyExit": "Next time, stay low and steady on the way out."
   },
   "turnPage": {
-    "compareWithBest": "Compare with best clean jibe",
+    "compareWithBest": "Compare with best clean {kind}",
     "drawnNorthUp": "The turn is drawn north up.",
     "footAxis": "The tick marked \"axis\" is the moment the board went through the wind axis. That is dead downwind on a jibe, head to wind on a tack. The turn is named after that crossing.",
     "footDrawn": "The drawing is {before} s before the sweep and {after} s after it.",
@@ -3463,7 +3463,7 @@ export const WORDS = {
     "footTicks": "Ticks are one second apart.",
     "noBearings": "No usable bearings through this window. The steps were shorter than the receiver's own scatter.",
     "noGeometry": "No GPS fixes through this turn. Numbers only.",
-    "nothingToCompare": "Nothing to compare with. No other clean jibe this session turned the same way round."
+    "nothingToCompare": "Nothing to compare with. No other clean {kind} this session turned the same way round."
   },
   "turns": {
     "cleanRule": "Clean: you flew through, held at least {pct} % of your entry speed, then {quiet} quiet seconds on the foil.",

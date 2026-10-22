@@ -2682,6 +2682,48 @@ import Testing
             .map(\.ts) == [500])
     }
 
+    /// Best first is the held share as the row prints it, highest first; a tie on the
+    /// printed number goes to the earlier turn (Jan, 22 Oct 2026). Time is the default.
+    @Test func bestFirstSortsByThePrintedShareAndBreaksTiesByTime() throws {
+        var turns = try turnSet()
+        // 0.8249 prints "82", the same as the 0.82 at 100 s: a tie, and the earlier wins.
+        turns.append(try turn(900, type: "jibe", side: "port", direction: "starboard",
+                              outcome: "flew_through", score: 0.8249))
+        #expect(TurnFilter().sort == .time)
+        #expect(TurnAnalytics.items(turns, filter: TurnFilter()).map(\.ts)
+            == [100, 200, 300, 400, 500, 600, 900])
+        #expect(TurnAnalytics.items(turns, filter: TurnFilter(sort: .best)).map(\.ts)
+            == [400, 100, 900, 300, 600, 500, 200])
+        // The sort composes with both filters: it orders what they keep, nothing else.
+        #expect(TurnAnalytics.items(turns, filter: TurnFilter(type: .jibes, side: .port,
+                                                               sort: .best)).map(\.ts)
+            == [100, 900, 200])
+        #expect(TurnSortOrder.allCases.map(\.label) == ["Time", "Best first"])
+    }
+
+    /// The turn page swipes through the list as shown, and counts "Jibe n of m" in it (Jan,
+    /// 22 Oct 2026). Opened on a turn the filter does not keep, it falls back to every
+    /// counted turn in time order.
+    @Test func theSwipeSetIsTheListAsShown() throws {
+        let turns = try turnSet()
+        let bestJibes = TurnFilter(type: .jibes, sort: .best)
+        let set = TurnAnalytics.swipeSet(turns, filter: bestJibes, start: 3)
+        #expect(set == [3, 0, 2, 1], "jibes only, best first, as turn indices")
+        let pos = try #require(TurnAnalytics.kindPosition(of: 3, in: set, turns: turns))
+        #expect(pos.kind == "Jibe" && pos.ordinal == 1 && pos.count == 4)
+
+        // A tack the jibe filter hides (a session-map dot): every counted turn, time order.
+        let fallback = TurnAnalytics.swipeSet(turns, filter: bestJibes, start: 5)
+        #expect(fallback == [0, 1, 2, 3, 4, 5])
+        let tack = try #require(TurnAnalytics.kindPosition(of: 5, in: fallback, turns: turns))
+        #expect(tack.kind == "Tack" && tack.ordinal == 2 && tack.count == 2)
+
+        // A filter written before the sort existed decodes in time order.
+        let old = try JSONDecoder().decode(TurnFilter.self,
+                                           from: Data(#"{"type":"jibes","side":"both"}"#.utf8))
+        #expect(old == TurnFilter(type: .jibes))
+    }
+
     /// The filter reads `side` (the tack entered on), never `direction` (the rotation).
     /// Every jibe in the set turns the opposite way to the tack it came in on, so a filter
     /// on the wrong field would return the other pair.

@@ -23,7 +23,7 @@
 
 import {
   MIN_REFERENCE_KN, MIN_SPAN_M, angleDomain, bestCleanTurn, cfg, deltaDeg, figureBounds,
-  figurePoints, flightEndFigure, foilSpans, hasGeometry, legendBottomKn, legendTopKn,
+  figurePoints, flightEndFigure, foilSpans, hasGeometry, kindWord, legendBottomKn, legendTopKn,
   pathLabels, pointAtRelative, pointNear, rampColor, rampColorFor, rampPosition, scaleBarM,
   sliceAngles, turnFigure, typeLabel,
 } from "./maneuverfigure.js";
@@ -265,7 +265,7 @@ function draw() {
   el("turn-page-prev").disabled = at <= 1;
   el("turn-page-next").disabled = at >= set.length;
 
-  body.innerHTML = controlsMarkup(figure, ghost)
+  body.innerHTML = controlsMarkup(figure, ghost, turn)
     + `<div class="figure tp-figure" id="turn-figure"></div>`
     + (hasGeometry(figure) ? "" : `<p class="note">${esc(noGeometryLine())}</p>`)
     + `<div class="figure tp-strip" id="turn-strip-speed"></div>`
@@ -322,16 +322,17 @@ function endOutcomeLabel(outcome) {
 
 const NO_WIND_FOR_ORIENTATION = say("copy.noWindForOrientation");
 
-function controlsMarkup(figure, ghost) {
+function controlsMarkup(figure, ghost, turn) {
   const known = windKnown();
+  const kind = { kind: kindWord(turn ? turn.type : null) };
   const up = windUpOn();
   const tail = " " + (open.kind === "turn"
     ? say("turnPage.drawnNorthUp") : say("flightEndPage.drawnNorthUp"));
   const ghostRow = open.kind !== "turn" ? ""
     : (ghost && hasGeometry(ghost)
         ? `<label class="tp-switch"><input type="checkbox" id="turn-ghost"${
-            ghostOn() ? " checked" : ""}> <span>${esc(say("turnPage.compareWithBest"))}</span></label>`
-        : `<p class="muted small">${esc(say("turnPage.nothingToCompare"))}</p>`);
+            ghostOn() ? " checked" : ""}> <span>${esc(say("turnPage.compareWithBest", kind))}</span></label>`
+        : `<p class="muted small">${esc(say("turnPage.nothingToCompare", kind))}</p>`);
   return `<div class="tp-controls">
     <div class="seg" role="group" aria-label="Map orientation">
       <button type="button" class="seg-btn" data-orient="north"
@@ -746,7 +747,9 @@ function spokenFigure() {
   if (figure.axisRt !== null && figure.axisRt !== undefined) {
     parts.push(`through the wind axis ${nf(figure.axisRt, 0)} seconds in`);
   }
-  if (ghost && ghostOn()) parts.push("compared with your best clean jibe, dashed");
+  if (ghost && ghostOn() && turn) {
+    parts.push(`compared with your best clean ${kindWord(turn.type)}, dashed`);
+  }
   return parts.join(", ");
 }
 

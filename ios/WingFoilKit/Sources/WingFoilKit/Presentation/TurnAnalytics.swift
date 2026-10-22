@@ -78,14 +78,51 @@ public enum TurnSideFilter: String, CaseIterable, Sendable, Identifiable, Codabl
     }
 }
 
-/// Both segmented controls, applied together (AND).
+/// The order the Turns list is in (Jan, 22 Oct 2026, from a tester's feedback).
+///
+/// `time` is the default and the engine's own order. `best` puts the highest **held** share
+/// first — the percentage the row prints, compared as it prints, so two rows that both say
+/// "74 %" are a tie — and a tie goes to the earlier turn, so the order is a function of the
+/// session rather than of the score's hidden decimals.
+public enum TurnSortOrder: String, CaseIterable, Sendable, Identifiable, Codable {
+    case time
+    case best
+
+    public var id: String { rawValue }
+
+    public var label: String {
+        switch self {
+        case .time: return "Time"
+        case .best: return "Best first"
+        }
+    }
+}
+
+/// Both segmented controls, applied together (AND), and the order the rows come in.
+///
+/// The order rides here because **the list as shown is one thing**: the turn page swipes
+/// through exactly these rows, in exactly this order (Jan, 22 Oct 2026), so whatever holds
+/// the filter holds the sort beside it.
 public struct TurnFilter: Sendable, Equatable, Codable {
     public var type: TurnTypeFilter
     public var side: TurnSideFilter
+    public var sort: TurnSortOrder
 
-    public init(type: TurnTypeFilter = .both, side: TurnSideFilter = .both) {
+    public init(type: TurnTypeFilter = .both, side: TurnSideFilter = .both,
+                sort: TurnSortOrder = .time) {
         self.type = type
         self.side = side
+        self.sort = sort
+    }
+
+    private enum CodingKeys: String, CodingKey { case type, side, sort }
+
+    /// A filter written before the sort existed decodes in time order.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        type = try c.decode(TurnTypeFilter.self, forKey: .type)
+        side = try c.decode(TurnSideFilter.self, forKey: .side)
+        sort = try c.decodeIfPresent(TurnSortOrder.self, forKey: .sort) ?? .time
     }
 
     public var isEverything: Bool { type == .both && side == .both }
@@ -324,13 +361,54 @@ public enum TurnAnalytics {
             && filter.side.accepts(side: turn.side)
     }
 
-    /// The rows for a filter, in time order (the engine already emits turns in time order).
+    /// The rows for a filter, in the filter's order: time order by default (the engine
+    /// already emits turns in time order), or best first — the held share as the row prints
+    /// it, highest first, a tie going to the earlier turn.
     public static func items(_ turns: [TurnRecord],
                              filter: TurnFilter = TurnFilter()) -> [TurnListItem] {
-        turns.enumerated().compactMap { index, turn in
+        let rows: [TurnListItem] = turns.enumerated().compactMap { index, turn in
             guard matches(turn, filter) else { return nil }
             return item(turn, id: index)
         }
+        switch filter.sort {
+        case .time:
+            return rows
+        case .best:
+            return rows.sorted { first, second in
+                let a = shownPercent(first.score), b = shownPercent(second.score)
+                return a == b ? first.ts < second.ts : a > b
+            }
+        }
+    }
+
+    /// The held share as a whole percent, the number `scoreText` prints.
+    static func shownPercent(_ score: Double) -> Int {
+        Int((score * 100).rounded())
+    }
+
+    /// **The turn page's swipe set: the list as shown** (Jan, 22 Oct 2026) — the turns the
+    /// filter keeps, in the filter's order, as indices into the analysis.
+    ///
+    /// Opened on a turn the filter does not keep (the session map's dots know no filter,
+    /// and the dev diff opens whatever it changed), the set is every counted turn in time
+    /// order — the page must always hold the turn it was opened on.
+    public static func swipeSet(_ turns: [TurnRecord], filter: TurnFilter = TurnFilter(),
+                                start: Int) -> [Int] {
+        let shown = items(turns, filter: filter).map(\.id)
+        if shown.contains(start) { return shown }
+        return turns.indices.filter { turns[$0].counted }
+    }
+
+    /// "Jibe 4 of 10" — the turn's place among the turns of its own kind **in the swipe
+    /// set**, in the set's order, and how many of that kind the set holds. nil when the
+    /// set does not hold it.
+    public static func kindPosition(of index: Int, in set: [Int], turns: [TurnRecord])
+        -> (kind: String, ordinal: Int, count: Int)? {
+        guard turns.indices.contains(index) else { return nil }
+        let type = turns[index].type
+        let same = set.filter { turns.indices.contains($0) && turns[$0].type == type }
+        guard let at = same.firstIndex(of: index) else { return nil }
+        return (typeLabel(type), at + 1, same.count)
     }
 
     /// One row from one turn. `id` is the turn's index in the analysis, not its position in

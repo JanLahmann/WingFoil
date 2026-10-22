@@ -12,10 +12,17 @@ struct TurnDetailRequest: Identifiable, Equatable {
 ///
 /// **Why it is a sheet over a swipeable set and not a pushed page.** A rider reading his jibes
 /// is comparing them: the question after "how was that one" is always "how was the next one",
-/// and a push-and-pop between every pair is four taps to answer it. So the sheet holds *every
-/// counted turn of the session* in time order and swipes between them, whichever one it was
-/// opened on and whatever filter the Turns tab happened to be showing — the filter is a way of
-/// looking at the list, not a claim about which turns exist.
+/// and a push-and-pop between every pair is four taps to answer it. So the sheet holds a set
+/// of turns and swipes between them.
+///
+/// **The set is the list as shown** (Jan, 22 Oct 2026, reversing the rule of 27 Sep). Opened
+/// from the Turns tab, the sheet swipes through exactly the rows the list is showing: the
+/// current filter (kind and entry tack) and the current order (time, or best first). A rider
+/// who filtered to his port jibes and sorted them best first is asking "how do my best port
+/// jibes compare", and a swipe that walked off into his tacks answered a different question.
+/// "Jibe 4 of 10" counts within that set (`TurnAnalytics.swipeSet`, `kindPosition(of:in:)`).
+/// Opened from somewhere that knows no filter — the session map's dots, the dev workbench —
+/// the set is every counted turn in time order, as before.
 ///
 /// **Course changes are not in the set.** A bear-away has no verdict, no score, no entry tack
 /// and no outcome word; the numbers row would be five dashes and the coach line would have
@@ -25,6 +32,9 @@ struct TurnDetailSheet: View {
     let detail: SessionDetail
     /// The turn the rider tapped.
     let start: Int
+    /// The Turns list's filter and order at the moment the sheet opened; the default (every
+    /// counted turn, in time order) from anywhere that has none.
+    let filter: TurnFilter
 
     @Environment(\.dismiss) private var dismiss
     @State private var selection: Int
@@ -35,16 +45,17 @@ struct TurnDetailSheet: View {
     /// The pager's ‹ › request; the sheet has no buttons for it, so it stays nil.
     @State private var pageRequest: SessionPaging.Step?
 
-    init(detail: SessionDetail, start: Int) {
+    init(detail: SessionDetail, start: Int, filter: TurnFilter = TurnFilter()) {
         self.detail = detail
         self.start = start
+        self.filter = filter
         _selection = State(initialValue: start)
     }
 
-    /// Every counted turn, in time order — the engine already emits turns in time order, so
-    /// this is the array's own order with the course changes taken out.
+    /// The list as shown: the turns the filter keeps, in its order — or every counted turn
+    /// in time order when the filter does not hold the turn the sheet was opened on.
     private var indices: [Int] {
-        detail.analysis.turns.indices.filter { detail.analysis.turns[$0].counted }
+        TurnAnalytics.swipeSet(detail.analysis.turns, filter: filter, start: start)
     }
 
     private var position: Int? {
@@ -117,31 +128,40 @@ struct TurnDetailSheet: View {
         cheers += 1
     }
 
-    /// **"Jibe 2 of 5"** — the turn, counted among its own kind (UX review #5, 27 Sep 2026).
+    /// **"Jibe 2 of 5"** — the turn, counted among its own kind (UX review #5, 27 Sep 2026)
+    /// **within the swipe set** (Jan, 22 Oct 2026).
     ///
     /// "Jibe 2" is what a rider means: his second jibe, not the second thing the detector
     /// saw. The title used to be "Turn 7 of 12" (pattern A: a screen needs a name, and the
     /// verdict is content), and it still is no verdict: that moved to the hero word under
-    /// the drawing, where it is large. "of 5" says how many jibes the afternoon held.
+    /// the drawing, where it is large. "of 5" says how many jibes the set holds; in time
+    /// order and unfiltered that is the afternoon's jibes, sorted best first "Jibe 1" is the
+    /// best of them.
     private var title: String {
-        TurnDetailSheet.kindPosition(of: selection, in: detail)
+        TurnAnalytics.kindPosition(of: selection, in: indices, turns: detail.analysis.turns)
             .map { "\($0.kind) \($0.ordinal) of \($0.count)" } ?? "Turn"
     }
 
     /// "42:15 · turn 7 of 12" — when on the session clock, as the Turns list prints it, and
-    /// where in the swipe set you are. The set mixes jibes and tacks, so the title's "of 5"
-    /// is not the swipe count and this line is. "swipe for the next" went: the page dots of
-    /// every iPhone pager say it, and it sat inside the content line (UX review #5).
+    /// where in the swipe set you are. A set that mixes jibes and tacks makes the title's
+    /// "of 5" a different count from the swipe's, so this line says the swipe's; a set of one
+    /// kind would only say the title again, so there it is the clock alone. "swipe for the
+    /// next" went: the page dots of every iPhone pager say it (UX review #5).
     private var subtitle: String {
         guard detail.analysis.turns.indices.contains(selection), let position else {
             return ""
         }
-        let turn = detail.analysis.turns[selection]
-        return Fmt.clock(turn.ts) + " · turn \(position) of \(indices.count)"
+        let turns = detail.analysis.turns
+        let turn = turns[selection]
+        let oneKind = indices.allSatisfy { turns[$0].type == turn.type }
+        return oneKind ? Fmt.clock(turn.ts)
+            : Fmt.clock(turn.ts) + " · turn \(position) of \(indices.count)"
     }
 
-    /// The turn's kind, its ordinal among the counted turns of that kind, and how many
-    /// there are — the title's three numbers and the doubt mail's first line.
+    /// The turn's kind, its ordinal among the session's counted turns of that kind in time
+    /// order, and how many there are — the doubt mail's first line and the flight list's
+    /// "during jibe 3". The session's own numbering, whatever the list's filter: a mail and
+    /// a cross-reference have to name the turn the same way every time.
     static func kindPosition(of index: Int, in detail: SessionDetail)
         -> (kind: String, ordinal: Int, count: Int)? {
         let turns = detail.analysis.turns
@@ -366,10 +386,11 @@ private struct TurnDetailPage: View {
             #endif
 
             if ghost != nil {
-                Toggle(AppShellCopy.TurnPage.compareWithBest, isOn: $ghostEnabled)
+                Toggle(AppShellCopy.TurnPage.compareWithBest(type: turn?.type ?? ""),
+                       isOn: $ghostEnabled)
                     .font(.subheadline)
             } else {
-                Text(AppShellCopy.TurnPage.nothingToCompare)
+                Text(AppShellCopy.TurnPage.nothingToCompare(type: turn?.type ?? ""))
                     .font(.caption2)
                     .foregroundStyle(.readableSecondary)
                     .fixedSize(horizontal: false, vertical: true)

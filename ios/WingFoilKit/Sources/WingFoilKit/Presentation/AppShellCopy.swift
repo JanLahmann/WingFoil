@@ -38,10 +38,31 @@ public enum AppShellCopy {
     public enum TurnPage {
         public static let noGeometry = "No GPS fixes through this turn. Numbers only."
         public static let drawnNorthUp = "The turn is drawn north up."
-        public static let compareWithBest = "Compare with best clean jibe"
+        /// `{kind}` is the turn's own kind, lower case: "jibe" on a jibe, "tack" on a tack —
+        /// the ghost is only ever a turn of the same kind (Jan, 22 Oct 2026).
+        public static let compareWithBest = "Compare with best clean {kind}"
         public static let nothingToCompare =
             "Nothing to compare with. "
-            + "No other clean jibe this session turned the same way round."
+            + "No other clean {kind} this session turned the same way round."
+
+        /// The toggle's label for a turn of this engine `type`.
+        public static func compareWithBest(type: String) -> String {
+            AppShellCopy.fill(compareWithBest, ["kind": kindWord(type)])
+        }
+
+        /// The sentence that stands in for the toggle when there is no model.
+        public static func nothingToCompare(type: String) -> String {
+            AppShellCopy.fill(nothingToCompare, ["kind": kindWord(type)])
+        }
+
+        /// "jibe" | "tack" | "turn" — the word the two sentences above fill in.
+        public static func kindWord(_ type: String) -> String {
+            switch type {
+            case "jibe": return "jibe"
+            case "tack": return "tack"
+            default: return "turn"
+            }
+        }
         public static let footDrawn = "The drawing is {before} s before the sweep and {after} s after it."
         public static let footTicks = "Ticks are one second apart."
         public static let footRamp =

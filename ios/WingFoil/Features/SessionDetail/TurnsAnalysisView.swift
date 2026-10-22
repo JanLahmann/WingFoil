@@ -30,9 +30,10 @@ struct TurnsAnalysisView: View {
     /// deliberately its own.
     @Environment(SessionStore.self) private var store
 
-    /// The two filters. Their controls are in the session page's pinned bar, under the
-    /// switcher (`SessionDetailView.filterRows`), so the state is the page's; everything this
-    /// view draws obeys it.
+    /// The two filters and the list's order. Their controls are in the session page's pinned
+    /// bar, under the switcher (`SessionDetailView.filterRows`), so the state is the page's;
+    /// everything this view draws obeys it, and the turn page swipes through the rows it
+    /// leaves, in the order it puts them.
     @Binding var filter: TurnFilter
     /// The row the reader tapped, drawn larger on the map. Transient, like the record
     /// window picker — it is a way of pointing, not a preference.
@@ -77,7 +78,8 @@ struct TurnsAnalysisView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .sheet(item: $opened) { request in
-            TurnDetailSheet(detail: detail, start: request.id)
+            // The list as shown: the sheet swipes through these rows, in this order.
+            TurnDetailSheet(detail: detail, start: request.id, filter: filter)
         }
         #if DEBUG && targetEnvironment(simulator)
         // Screenshot hook, same family as `UI_HIDE_LAYERS`: `simctl` cannot tap a segment,
@@ -94,6 +96,7 @@ struct TurnsAnalysisView: View {
                 let key = token.trimmingCharacters(in: .whitespaces)
                 if let type = TurnTypeFilter(rawValue: key) { filter.type = type }
                 if let side = TurnSideFilter(rawValue: key) { filter.side = side }
+                if let sort = TurnSortOrder(rawValue: key) { filter.sort = sort }
             }
         }
         #endif

@@ -451,20 +451,22 @@ public struct TurnSlice: Sendable, Equatable {
 
     // MARK: - Ghost
 
-    /// The session's best clean jibe of the same rotation — the dashed outline the sheet lays
-    /// under the drawn turn.
+    /// The session's best clean turn of the same **kind** and the same rotation — the dashed
+    /// outline the sheet lays under the drawn turn.
     ///
     /// **The rule, and why each half of it.** Same session, because a comparison against an
-    /// afternoon in different wind is not a comparison. Same `direction`, because a jibe spun
-    /// to starboard and one spun to port are mirror images and laying one on the other would
-    /// say the rider went the wrong way round. **Clean** (engine 0.12.0), because the model
-    /// has to be a turn that worked — which since 0.12.0 means it flew through *and* held its
-    /// speed, where before it only had to fly through. Highest `score`, because among the
-    /// ones that worked that is the one he carried most speed through — the shape worth
-    /// copying. And never the turn itself,
-    /// which would draw a dashed line exactly under the solid one and read as a rendering bug.
+    /// afternoon in different wind is not a comparison. **Same kind** (Jan, 22 Oct 2026): a
+    /// tack is compared with tacks and a jibe with jibes. Until then only the rotation was
+    /// matched, so a tack's page could lay a jibe under it while its toggle promised "the
+    /// best clean jibe" — two different maneuvers drawn as if one were the model for the
+    /// other. Same `direction`, because a turn spun to starboard and one spun to port are
+    /// mirror images and laying one on the other would say the rider went the wrong way
+    /// round. **Clean** (`isComparisonModel`), because the model has to be a turn that
+    /// worked. Highest `score`, because among the ones that worked that is the one he carried
+    /// most speed through — the shape worth copying. And never the turn itself, which would
+    /// draw a dashed line exactly under the solid one and read as a rendering bug.
     ///
-    /// nil when the session has no other such jibe, which is common and not an error: the
+    /// nil when the session has no other such turn, which is common and not an error: the
     /// toggle simply says there is nothing to compare with.
     public static func ghost(for turn: TurnRecord, in turns: [TurnRecord],
                              samples: [Sample], windDirDeg: Double?,
@@ -482,12 +484,29 @@ public struct TurnSlice: Sendable, Equatable {
         turns
             .filter {
                 $0.ts != turn.ts
-                    && $0.clean
+                    && $0.type == turn.type
                     && $0.direction == turn.direction
+                    && isComparisonModel($0)
             }
             .max { first, second in
                 first.score == second.score ? first.ts > second.ts : first.score < second.score
             }
+    }
+
+    /// Whether a turn may be the model another turn is compared with.
+    ///
+    /// A jibe: the engine's own `clean` verdict, read and never re-derived. A tack: the
+    /// engine keeps `clean` for jibes, so a tack qualifies by the same two halves the clean
+    /// rule starts from — it flew through and it passed the score verdict (`success`). The
+    /// jibe's quiet tail is not asked of it, because the engine does not measure one for a
+    /// tack. Anything else (an unnamed turn, a course change) is never a model.
+    public static func isComparisonModel(_ turn: TurnRecord) -> Bool {
+        guard turn.counted else { return false }
+        switch turn.type {
+        case "jibe": return turn.clean
+        case "tack": return turn.success && turn.outcome == "flew_through"
+        default: return false
+        }
     }
 
     // MARK: - Helpers

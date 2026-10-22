@@ -582,7 +582,10 @@ struct TurnDetailMapView: View {
         if let axisRt = slice.axisRt {
             parts.append(String(format: "through the wind axis %.0f seconds in", axisRt))
         }
-        if hasGhost { parts.append("compared with your best clean jibe, dashed") }
+        if hasGhost {
+            parts.append("compared with your best clean "
+                         + AppShellCopy.TurnPage.kindWord(turn.type) + ", dashed")
+        }
         return parts.joined(separator: ", ")
     }
 }

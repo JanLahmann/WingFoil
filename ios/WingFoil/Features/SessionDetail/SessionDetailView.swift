@@ -69,7 +69,8 @@ struct SessionDetailView: View {
     /// enum, its words, the anchor mapping and the routing rule live in the kit
     /// (`SessionSection`) so they are testable.
     @State private var tab = SessionSection.ride
-    /// The Turns tab's two filters and the Flights tab's outcome filter. Held here, not in
+    /// The Turns tab's two filters (with the list's order) and the Flights tab's outcome
+    /// filter. Held here, not in
     /// the tab bodies, because the controls live in the pinned header while the tally, the
     /// map and the list they filter live in the scroll below it (`filterRows`). Per session,
     /// like everything else on the page: the next session opens unfiltered.
@@ -638,12 +639,25 @@ struct SessionDetailView: View {
     private func filterRows(_ detail: SessionDetail) -> some View {
         switch tab {
         case .turns where detail.analysis.summary.turns.turnsCounted > 0:
-            Picker("Manoeuvre", selection: $turnFilter.type) {
-                ForEach(TurnTypeFilter.allCases) { Text($0.label).tag($0) }
+            // The order sits beside the kind, in the same segmented style and on the same
+            // row, so the bar grows no third row (Jan, 22 Oct 2026). Per session like the
+            // filters: the next session opens in time order.
+            HStack(spacing: 8) {
+                Picker("Manoeuvre", selection: $turnFilter.type) {
+                    ForEach(TurnTypeFilter.allCases) { Text($0.label).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .accessibilityLabel("Manoeuvre type")
+                .accessibilityIdentifier("turnTypeFilter")
+
+                Picker("Order", selection: $turnFilter.sort) {
+                    ForEach(TurnSortOrder.allCases) { Text($0.label).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .fixedSize()
+                .accessibilityLabel("Turn order")
+                .accessibilityIdentifier("turnSortOrder")
             }
-            .pickerStyle(.segmented)
-            .accessibilityLabel("Manoeuvre type")
-            .accessibilityIdentifier("turnTypeFilter")
 
             Picker("Entry tack", selection: $turnFilter.side) {
                 ForEach(TurnSideFilter.allCases) { Text($0.label).tag($0) }

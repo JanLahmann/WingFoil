@@ -7,11 +7,18 @@ kilometres of it, and at session scale it is four pixels. **Turn detail** is the
 tapping a turn's dot on the map (via the callout's "Details" affordance, or the card itself)
 or a row in the Turns tab opens a sheet holding that one maneuver.
 
-**The set is every counted turn of the session, in time order, swipeable, with a "3 of 14"
-position.** Not the Turns tab's *filtered* set — a filter is a way of looking at the list, not
-a claim about which turns exist — and not the course changes either: a bear-away has no
+**The set is the list as shown** (Jan, 22 Oct 2026, from a tester's feedback; it reverses
+the rule of 27 September). Opened from the Turns list, the page swipes through exactly the
+rows the list is showing — the current filter (kind and entry tack) and the current order
+(**Time** or **Best first**) — with a "3 of 14" position counted in that set. A rider who
+filtered to his port jibes and sorted them best first is comparing his best port jibes, and a
+swipe that walked off into his tacks answered another question. Opened from a turn the
+filter does not keep — the session map's dots know no filter — the set is every counted turn
+in time order (iOS: `TurnAnalytics.swipeSet`). Never the course changes: a bear-away has no
 verdict, no score and no entry tack, so the affordance is simply absent on its grey dot
-(iOS: `SessionDetail.EventMarker.turnIndex` is nil unless the turn is counted).
+(iOS: `SessionDetail.EventMarker.turnIndex` is nil unless the turn is counted). The browser
+has no sort and filters its table with the map's chips, so its page still swipes every
+counted turn in time order (docs/screens.md, deviation 21).
 
 **The framing rule.** The drawn window is `[ts − pad, endTs + pad]` with `pad = 8 s`, because
 a jibe drawn from its first frame to its last is an arc with no approach and no exit, and the
@@ -135,14 +142,22 @@ line is coloured with. Absent — silently, like the wind arrow — where the en
 crossing: a course change, a session with no usable wind, or an analysis stored before 0.15.0.
 
 **The ghost.** One comparison turn may be laid underneath, dashed, in the clean-jibe ink
-(`clean.jibe`) at low opacity, behind a remembered toggle. The selection rule is exact:
+(`clean.jibe`) at low opacity, behind a remembered toggle that names the kind: *Compare with
+best clean jibe* on a jibe, *Compare with best clean tack* on a tack. The selection rule is
+exact:
 
-> the **highest-`score`** **clean** jibe of the **same session** with the **same `direction`**
-> (rotation, not entry tack) as the turn being read — **never the turn itself**. Ties go to
-> the earlier turn.
+> the **highest-`score`** **clean** turn of the **same kind** in the **same session** with
+> the **same `direction`** (rotation, not entry tack) as the turn being read — **never the
+> turn itself**. Ties go to the earlier turn. A jibe qualifies by the engine's `clean`; a tack,
+> which the engine never calls clean, by the two halves the clean rule starts from: it flew
+> through and passed the score verdict (`success`). No quiet tail is asked of a tack, because
+> the engine measures none (`TurnSlice.isComparisonModel`, `isComparisonModel` in
+> js/maneuverfigure.js).
 
-Same session, because a comparison against different wind is not a comparison. Same rotation,
-because a jibe spun to starboard and one spun to port are mirror images. **Clean** (engine
+Same session, because a comparison against different wind is not a comparison. **Same kind**
+(Jan, 22 Oct 2026): until then only the rotation was matched, and a tack's page could lay a
+jibe under it while the toggle promised the best clean jibe. Same rotation, because a turn
+spun to starboard and one spun to port are mirror images. **Clean** (engine
 0.12.0), because the model has to be a turn that worked — which now means it flew through
 *and* carried its speed, where before it only had to fly through. Never itself, because a
 dashed line exactly under the solid one reads as a rendering bug. No such turn ⇒ no ghost,
@@ -376,8 +391,13 @@ outcome and clean chips left the chip row: the hero says the verdict, the chips 
 beside it (why a flown jibe is not clean, pumped out, wrist under). A clean jibe coming on
 screen, on open or by a swipe, gets one short success haptic.
 
-**The title** is the turn counted among its own kind, *Jibe 2 of 5*; the caption under it is
-the session clock and the swipe position, *42:15 · turn 7 of 12*. "swipe for the next" went.
+**The title** is the turn counted among its own kind **in the swipe set**, in the set's
+order, *Jibe 2 of 5* — sorted best first, *Jibe 1* is the best of them (22 Oct 2026). The
+caption under it is the session clock and the swipe position, *42:15 · turn 7 of 12*; on a
+set of one kind the position would only repeat the title, so the caption is the clock alone.
+The doubt mail and the flight list's *during jibe 3* keep the session's own time-order
+numbering, so they name a turn the same way whatever the list showed. "swipe for the next"
+went.
 
 **The tip.** A coach line on a turn that was not clean ends with one sentence to try next time,
 read off a fact the line already stated (`TurnCoach.Tip`, `TurnSliceTests`):

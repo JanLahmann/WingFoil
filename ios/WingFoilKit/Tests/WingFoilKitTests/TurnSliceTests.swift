@@ -415,6 +415,41 @@ import Testing
         #expect(TurnSlice.bestClean(for: turns[3], in: alone) == nil)
     }
 
+    /// A tack is compared with tacks and a jibe with jibes (Jan, 22 Oct 2026): until then a
+    /// tack's page laid the best clean *jibe* of the same rotation under it.
+    @Test func theGhostIsAlwaysTheSameKind() throws {
+        var turns = try session()
+        // The tack under the microscope: same rotation as every starboard jibe above.
+        let tack = try turn(ts: 800, endTs: 806, type: "tack", score: 0.4,
+                            direction: "starboard", outcome: "touchdown")
+        turns.append(tack)
+        let model = try #require(TurnSlice.bestClean(for: tack, in: turns))
+        #expect(model.type == "tack" && model.ts == 600,
+                "the flown, carried tack — never the 0.88 jibe")
+        // And a jibe is never compared with that tack, though it scored 0.97.
+        #expect(TurnSlice.bestClean(for: turns[0], in: turns)?.type == "jibe")
+        // A tack that touched down or came in slow is no model; nor is a tack of the other
+        // rotation.
+        let poor = [tack,
+                    try turn(ts: 900, endTs: 906, type: "tack", score: 0.95, success: true,
+                             direction: "starboard", outcome: "touchdown"),
+                    try turn(ts: 1000, endTs: 1006, type: "tack", score: 0.95, success: false,
+                             direction: "starboard", outcome: "flew_through"),
+                    try turn(ts: 1100, endTs: 1106, type: "tack", score: 0.95, success: true,
+                             direction: "port", outcome: "flew_through")]
+        #expect(TurnSlice.bestClean(for: tack, in: poor) == nil)
+    }
+
+    /// The toggle names the kind it compares with.
+    @Test func theCompareLabelNamesTheKind() {
+        #expect(AppShellCopy.TurnPage.compareWithBest(type: "jibe")
+            == "Compare with best clean jibe")
+        #expect(AppShellCopy.TurnPage.compareWithBest(type: "tack")
+            == "Compare with best clean tack")
+        #expect(AppShellCopy.TurnPage.nothingToCompare(type: "tack")
+            == "Nothing to compare with. No other clean tack this session turned the same way round.")
+    }
+
     /// Both slices are anchored at their own entry points, so the comparison is already
     /// aligned — in space at the origin, and in time at t = 0.
     @Test func theGhostArrivesAlreadyLaidOverTheTurn() throws {

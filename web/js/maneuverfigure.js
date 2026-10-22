@@ -498,21 +498,40 @@ export function midRotation(points) {
 }
 
 /**
- * The session's best clean jibe of the same rotation — the dashed outline laid under the
- * drawn turn.
+ * The session's best clean turn of the same kind and the same rotation — the dashed outline
+ * laid under the drawn turn. The phone's `TurnSlice.bestClean`, rule for rule.
  *
  * Same session, because a comparison against an afternoon in different wind is not a
- * comparison. Same rotation, because a jibe spun to starboard and one spun to port are
- * mirror images. Clean, because the model has to be a turn that worked. Highest score among
+ * comparison. Same kind (Jan, 22 Oct 2026): a tack with tacks, a jibe with jibes — until then
+ * a tack could be laid over a jibe under a toggle that promised "the best clean jibe". Same
+ * rotation, because a turn spun to starboard and one spun to port are mirror images. Clean
+ * (`isComparisonModel`), because the model has to be a turn that worked. Highest score among
  * those, because that is the one he carried most speed through. Ties go to the earlier turn.
  */
 export function bestCleanTurn(turn, turns) {
   let best = null;
   for (const other of turns) {
-    if (other.ts === turn.ts || !other.clean || other.direction !== turn.direction) continue;
+    if (other.ts === turn.ts || other.type !== turn.type
+        || other.direction !== turn.direction || !isComparisonModel(other)) continue;
     if (!best || other.score > best.score) best = other;
   }
   return best;
+}
+
+/** Whether a turn may be the model another is compared with. A jibe: the engine's `clean`.
+ *  A tack: the engine keeps `clean` for jibes, so a tack qualifies by the two halves the
+ *  clean rule starts from — it flew through and passed the score verdict (`success`).
+ *  Anything else is never a model. The phone's `TurnSlice.isComparisonModel`. */
+export function isComparisonModel(turn) {
+  if (!turn.counted) return false;
+  if (turn.type === "jibe") return !!turn.clean;
+  if (turn.type === "tack") return !!turn.success && turn.outcome === "flew_through";
+  return false;
+}
+
+/** "jibe" | "tack" | "turn" — the word the compare toggle and its empty line fill in. */
+export function kindWord(type) {
+  return type === "jibe" || type === "tack" ? type : "turn";
 }
 
 /* ---------------------------------------------------------------- one flight end */
