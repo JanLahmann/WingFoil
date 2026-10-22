@@ -208,6 +208,10 @@ top of the 0.9.22 one:
 
 0.9.28: Your watch can send each session straight to the CleanJibe beta app on your iPhone. Turn on Send summary to phone app in Garmin Connect.
 
+**0.9.29 uploaded 22 October 2026** (the beta to the public listing, 0.9.29-dev1 to the private one; Description unchanged): a second rider's feedback (De Nes, 20 Oct) — a new best 2 s holds for 3 s (`PbFlash.HOLD_MS`), a sweep the 8 s cap leaves unnamed is followed up to 3 s further for its name (docs/algorithms/turns.md), and a turn marker survives two ticks in one record second (docs/fit-schema.md). Pair with iPhone beta 151 and dev 152. What's New, on top of the 0.9.28 paragraph:
+
+0.9.29: A new best 2 s stays big on your wrist for 3 seconds. A jibe you start slowly now counts as a jibe, not a course change, and no turn goes missing from the saved file.
+
 The divergences left are listed under "Not ported yet".
 
 ---
