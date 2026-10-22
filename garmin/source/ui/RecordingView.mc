@@ -572,10 +572,11 @@ class RecordingView extends WatchUi.View {
         // gave the banner back.
         if (c.state == SessionController.STATE_PAUSED && layout != PageModel.LAYOUT_MAIN) {
             drawPausedBanner(dc, bodyRadius(dc, ring, foilArc));
-        } else if (layout != PageModel.LAYOUT_MAIN && !EventFlash.active()
+        } else if (layout != PageModel.LAYOUT_MAIN && !EventFlash.active() && !PbFlash.active()
                 && EventFlash.stripActive(System.getTimer())) {
             // The afterglow: the last verdict, where the banner would be. MAIN carries it in
-            // its own top row, as it carries PAUSED. Never under a running flash, and never
+            // its own top row, as it carries PAUSED. Never over a running flash (the PB hold
+            // after a verdict included: the strip would cut its "NEW PB" row), and never
             // instead of PAUSED — a paused session is the more urgent fact.
             drawEventStrip(dc, bodyRadius(dc, ring, foilArc));
         }
@@ -721,8 +722,9 @@ class RecordingView extends WatchUi.View {
     }
 
     // ---- PB celebration ----
-    // The whole screen goes the effort orange for ~700 ms with the new best on it. Frame
-    // parity picks the shade, which is what turns a flash into a pulse (see PbFlash). Orange
+    // The whole screen goes the effort orange for 3 s with the new best on it: 700 ms where
+    // frame parity picks the shade, which is what turns a flash into a pulse, then the full
+    // shade held still so the number reads (see PbFlash). Orange
     // and not green: a record is an EFFORT event, not a verdict, and green on this app is the
     // outcome ladder's "flew through" (docs/presentation.md).
     hidden function drawPbFlash(dc as Dc) as Void {

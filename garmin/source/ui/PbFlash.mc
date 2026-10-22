@@ -7,8 +7,20 @@ import Toybox.WatchUi;
 //
 // A PB is the one thing on the water worth interrupting the rider for, and the existing double
 // buzz (AlertManager.speedPb) is easy to miss with a wetsuit hood on. This adds the visual half:
-// the whole screen strobes green for ~700 ms with the new number on it, then the page comes
-// back exactly as it was.
+// the whole screen strobes orange for 700 ms with the new number on it, then HOLDS that number
+// steadily until HOLD_MS (3 s) have passed, then the page comes back exactly as it was.
+//
+// Why strobe-then-hold (Jan, 22 Oct 2026, from a tester: "display 2 sec speed record in big
+// numbers for some seconds"): the strobe is what catches the eye at the moment of the buzz, and
+// a number on a strobing ground is the hardest thing on the glass to read. A rider who looks
+// down a second or two after the buzz — which is when he looks, once he has the board settled —
+// gets a still card he can read in one glance. A strobe for the full 3 s would be both
+// tiring and less legible; a hold with no strobe at all would lose the "something happened".
+//
+// A turn verdict (EventFlash) paints over this while it runs — the verdict is the newer fact.
+// The PB clock keeps running underneath, so when the 1.5 s verdict ends the hold shows for
+// whatever is left of its 3 s, or not at all; it never restarts, so a PB cannot reappear
+// seconds later and read as a second one.
 //
 // Timing is frame-driven, not sample-driven: the position callback only fires at 1 Hz, so a
 // flash that lived on requestUpdate() alone would be one static frame. A single repeating
@@ -20,7 +32,9 @@ import Toybox.WatchUi;
 // View (see PageNav), and a celebration must not die because the rider happened to be scrolling.
 module PbFlash {
     const FRAME_MS = 100;
-    const FRAMES = 7;              // 7 x 100 ms = 700 ms
+    const STROBE_FRAMES = 7;       // 7 x 100 ms = 700 ms of strobe ...
+    const HOLD_MS = 3000;          // ... inside 3 s on screen in all (Jan, 22 Oct 2026)
+    const FRAMES = HOLD_MS / FRAME_MS;
 
     var frame as Number = -1;      // -1 = idle
     var best2sMps as Float = 0.0;
@@ -42,6 +56,8 @@ module PbFlash {
     }
 
     // One frame older. Auto-clears at FRAMES so a flash can never get stuck on screen.
+    // During the hold nothing changes on screen, so only the strobe frames and the end ask
+    // for a repaint (the 1 Hz position callback repaints the page anyway).
     function tick() as Void {
         if (frame < 0) {
             return;
@@ -49,8 +65,14 @@ module PbFlash {
         frame++;
         if (frame >= FRAMES) {
             stop();
+        } else if (frame > STROBE_FRAMES) {
+            return;
         }
         WatchUi.requestUpdate();
+    }
+
+    function strobing() as Boolean {
+        return frame >= 0 && frame < STROBE_FRAMES;
     }
 
     // Idempotent: safe from onHide, from the save/discard path and from the timer itself.
@@ -61,7 +83,8 @@ module PbFlash {
         }
     }
 
-    // Alternating shades are what makes it read as a PULSE rather than a still card.
+    // Alternating shades are what makes it read as a PULSE rather than a still card; after
+    // STROBE_FRAMES the full shade holds still.
     //
     // The ink is the EFFORT window orange, not green: a personal best is something the rider
     // did, not a verdict on a maneuver, and green on this app is the outcome ladder's "flew
@@ -70,7 +93,7 @@ module PbFlash {
     // keeps the hue exactly and cannot drift from the token it came from.
     function color() as Number {
         var c = Ink.effortWindow();
-        return frame % 2 == 0 ? c : (c >> 1) & 0x7F7F7F;
+        return (!strobing() || frame % 2 == 0) ? c : (c >> 1) & 0x7F7F7F;
     }
 }
 

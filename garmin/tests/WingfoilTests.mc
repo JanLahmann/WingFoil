@@ -1714,11 +1714,65 @@ function pbFlashPulsesThenClears(logger as Test.Logger) as Boolean {
     PbFlash.fire(13.0);
     PbFlash.stop();
     Test.assertMessage(!PbFlash.active(), "stop() clears it");
-    Test.assertMessage(PbFlash.FRAMES * PbFlash.FRAME_MS >= 500
-        && PbFlash.FRAMES * PbFlash.FRAME_MS <= 1000,
-        "celebration length " + (PbFlash.FRAMES * PbFlash.FRAME_MS).toString() + " ms");
+    // Jan, 22 Oct 2026: the new number stays big for 3 s in all, the strobe its first 700 ms
+    Test.assertEqual(PbFlash.HOLD_MS, 3000);
+    Test.assertEqual(PbFlash.FRAMES * PbFlash.FRAME_MS, PbFlash.HOLD_MS);
+    Test.assertMessage(PbFlash.STROBE_FRAMES * PbFlash.FRAME_MS >= 500
+        && PbFlash.STROBE_FRAMES * PbFlash.FRAME_MS <= 1000,
+        "strobe length " + (PbFlash.STROBE_FRAMES * PbFlash.FRAME_MS).toString() + " ms");
     logger.debug("PB flash: " + PbFlash.FRAMES.toString() + " frames x "
-        + PbFlash.FRAME_MS.toString() + " ms");
+        + PbFlash.FRAME_MS.toString() + " ms, strobing the first "
+        + PbFlash.STROBE_FRAMES.toString());
+    return true;
+}
+
+// The strobe gives way to a still card: after STROBE_FRAMES the full shade holds until the
+// 3 s are up, then it clears itself.
+(:test)
+function pbFlashHoldsTheNumberStill(logger as Test.Logger) as Boolean {
+    PbFlash.stop();
+    PbFlash.fire(12.5);
+    for (var i = 0; i < PbFlash.STROBE_FRAMES; i++) {
+        PbFlash.tick();
+    }
+    Test.assertMessage(PbFlash.active() && !PbFlash.strobing(), "the hold follows the strobe");
+    for (var i = PbFlash.STROBE_FRAMES; i < PbFlash.FRAMES - 1; i++) {
+        Test.assertEqual(PbFlash.color(), Ink.effortWindow());
+        PbFlash.tick();
+    }
+    Test.assertMessage(PbFlash.active(), "still up one frame before 3 s");
+    PbFlash.tick();
+    Test.assertMessage(!PbFlash.active(), "gone at 3 s");
+    return true;
+}
+
+// A turn verdict during the hold wins while it shows (RecordingView draws EventFlash after
+// PbFlash); the PB clock keeps running underneath, so the hold shows what is left of its 3 s
+// once the verdict ends and never outlives them.
+(:test)
+function pbFlashHoldYieldsToAVerdict(logger as Test.Logger) as Boolean {
+    var vis = AppSettings.visualAlerts;
+    AppSettings.visualAlerts = true;
+    EventFlash.clearAll();
+    PbFlash.stop();
+    PbFlash.fire(13.7);
+    for (var i = 0; i < 10; i++) {                       // 1 s in: holding
+        PbFlash.tick();
+    }
+    EventFlash.fireTurn(TurnDetector.OUTCOME_FLEW, false, TurnDetector.KIND_JIBE);
+    for (var i = 0; i < EventFlash.FRAMES_FULL; i++) {   // the verdict's 1.5 s
+        Test.assertMessage(EventFlash.active(), "the verdict shows for its full length");
+        PbFlash.tick();
+        EventFlash.tick();
+    }
+    Test.assertMessage(!EventFlash.active(), "the verdict ended");
+    Test.assertMessage(PbFlash.active(), "the PB hold resumes for its last 0.5 s");
+    for (var i = 10 + EventFlash.FRAMES_FULL; i < PbFlash.FRAMES; i++) {
+        PbFlash.tick();
+    }
+    Test.assertMessage(!PbFlash.active(), "and ends at 3 s from the PB, not later");
+    EventFlash.clearAll();
+    AppSettings.visualAlerts = vis;
     return true;
 }
 

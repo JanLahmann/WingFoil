@@ -54,7 +54,14 @@ impossible to re-read) every on-water alert that vibrates also shows itself, in 
   section). In the beta and dev builds since 0.9.24 a jump is the session's jump count and *JUMP*
   in the flight teal, with a long-then-short buzz (0.9.27; three quick ticks until then, which a hood made the fell-in triple; docs/algorithms/jumps.md, "Watch approximation"). A turn verdict that lands within the 1 s floor of a jump still plays (`AlertManager.overridesFloor`), and LONGEST and NEW BEST wait for the session's third flight or two minutes on the foil (`SessionController._settledIn`), because every early flight is a record. A pumped takeoff is a **ring** only — a thick circle
   inside the bezel for 0.7 s, the page left readable — because it is frequent. The speed PB
-  keeps its own orange flash with the value.
+  keeps its own orange flash with the value, and the new best 2 s stays big on the glass for
+  **3 s** (Jan, 22 Oct 2026, from a tester: "display 2 sec speed record in big numbers for
+  some seconds"): it strobes for the first 0.7 s, which is what catches the eye with the
+  buzz, then holds still in the full orange, because a number on a strobing ground is the
+  hardest thing to read and the rider looks down a second or two later. A fixed length
+  (`PbFlash.HOLD_MS`), not a setting. A turn verdict that lands during it paints over it for
+  its 1.5 s; the PB's clock runs on underneath, so the hold shows what is left of its 3 s
+  afterwards and never restarts, and the afterglow strip waits until it has ended.
 - **The afterglow, 20 s.** A line at the top of whatever page is up keeps the last event:
   *JIBE · flew*, *TACK · touch*, *TURN · fell*, *CLEAN JIBE*, *10 DRY*, *LONGEST 2:14*, *JUMP 3* (beta and dev). On the
   main page it is the top row itself, in the event's ink, where the clock and PAUSED live; on
