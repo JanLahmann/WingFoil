@@ -445,9 +445,9 @@ import Testing
         #expect(AppShellCopy.TurnPage.compareWithBest(type: "jibe")
             == "Compare with best clean jibe")
         #expect(AppShellCopy.TurnPage.compareWithBest(type: "tack")
-            == "Compare with best clean tack")
+            == "Compare with best tack")
         #expect(AppShellCopy.TurnPage.nothingToCompare(type: "tack")
-            == "Nothing to compare with. No other clean tack this session turned the same way round.")
+            == "Nothing to compare with. No other tack that flew through and held its speed this session turned the same way round.")
     }
 
     /// Both slices are anchored at their own entry points, so the comparison is already

@@ -143,8 +143,8 @@ crossing: a course change, a session with no usable wind, or an analysis stored 
 
 **The ghost.** One comparison turn may be laid underneath, dashed, in the clean-jibe ink
 (`clean.jibe`) at low opacity, behind a remembered toggle that names the kind: *Compare with
-best clean jibe* on a jibe, *Compare with best clean tack* on a tack. The selection rule is
-exact:
+best clean jibe* on a jibe, *Compare with best tack* on a tack (Jan, 22 Oct 2026: *clean* is
+a jibe word and stays one, so a tack's toggle does not say it). The selection rule is exact:
 
 > the **highest-`score`** **clean** turn of the **same kind** in the **same session** with
 > the **same `direction`** (rotation, not entry tack) as the turn being read — **never the

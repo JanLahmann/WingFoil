@@ -324,7 +324,11 @@ const NO_WIND_FOR_ORIENTATION = say("copy.noWindForOrientation");
 
 function controlsMarkup(figure, ghost, turn) {
   const known = windKnown();
-  const kind = { kind: kindWord(turn ? turn.type : null) };
+  // "best tack", not "best clean tack": clean is a jibe word (Jan, 22 Oct 2026).
+  const type = turn ? turn.type : null;
+  const kind = { best: type === "jibe" ? say("turnPage.cleanJibe") : kindWord(type),
+                 model: type === "jibe" ? say("turnPage.cleanJibe")
+                   : type === "tack" ? say("turnPage.modelTack") : kindWord(type) };
   const up = windUpOn();
   const tail = " " + (open.kind === "turn"
     ? say("turnPage.drawnNorthUp") : say("flightEndPage.drawnNorthUp"));

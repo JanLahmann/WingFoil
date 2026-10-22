@@ -38,24 +38,43 @@ public enum AppShellCopy {
     public enum TurnPage {
         public static let noGeometry = "No GPS fixes through this turn. Numbers only."
         public static let drawnNorthUp = "The turn is drawn north up."
-        /// `{kind}` is the turn's own kind, lower case: "jibe" on a jibe, "tack" on a tack —
-        /// the ghost is only ever a turn of the same kind (Jan, 22 Oct 2026).
-        public static let compareWithBest = "Compare with best clean {kind}"
+        /// The ghost is only ever a turn of the same kind (Jan, 22 Oct 2026). `{best}` is
+        /// "clean jibe" on a jibe and "tack" on a tack: *clean* is a jibe word, so a tack is
+        /// compared with the best tack that flew through and held its speed, and the toggle
+        /// says "best tack" (Jan, 22 Oct 2026). `{model}` names that model in full.
+        public static let compareWithBest = "Compare with best {best}"
+        /// The two fill-ins the web reads too (`say("turnPage.cleanJibe")`).
+        public static let cleanJibe = "clean jibe"
+        public static let modelTack = "tack that flew through and held its speed"
         public static let nothingToCompare =
             "Nothing to compare with. "
-            + "No other clean {kind} this session turned the same way round."
+            + "No other {model} this session turned the same way round."
 
         /// The toggle's label for a turn of this engine `type`.
         public static func compareWithBest(type: String) -> String {
-            AppShellCopy.fill(compareWithBest, ["kind": kindWord(type)])
+            AppShellCopy.fill(compareWithBest, ["best": bestWord(type)])
         }
 
         /// The sentence that stands in for the toggle when there is no model.
         public static func nothingToCompare(type: String) -> String {
-            AppShellCopy.fill(nothingToCompare, ["kind": kindWord(type)])
+            AppShellCopy.fill(nothingToCompare, ["model": modelWord(type)])
         }
 
-        /// "jibe" | "tack" | "turn" — the word the two sentences above fill in.
+        /// "clean jibe" | "tack" | "turn" — the toggle's words for the comparison turn.
+        public static func bestWord(_ type: String) -> String {
+            type == "jibe" ? cleanJibe : kindWord(type)
+        }
+
+        /// The comparison turn in full, for the sentence that stands in when there is none.
+        public static func modelWord(_ type: String) -> String {
+            switch type {
+            case "jibe": return cleanJibe
+            case "tack": return modelTack
+            default: return "turn"
+            }
+        }
+
+        /// "jibe" | "tack" | "turn".
         public static func kindWord(_ type: String) -> String {
             switch type {
             case "jibe": return "jibe"
@@ -87,6 +106,7 @@ public enum AppShellCopy {
         static let all: [String: String] = [
             "noGeometry": noGeometry, "drawnNorthUp": drawnNorthUp,
             "compareWithBest": compareWithBest, "nothingToCompare": nothingToCompare,
+            "cleanJibe": cleanJibe, "modelTack": modelTack,
             "footDrawn": footDrawn, "footTicks": footTicks, "footRamp": footRamp,
             "footTap": footTap, "footEntryBand": footEntryBand, "footSweepBand": footSweepBand,
             "footLighterBand": footLighterBand, "footQuiet": footQuiet, "footAxis": footAxis,
