@@ -269,9 +269,21 @@ struct ShareCardExportRow: View {
     let title: String
     let subject: String
     var message: String?
+    /// Which half this instance draws. The session composer pins the button in a bar at the
+    /// foot of the sheet and leaves the line in the scroll (rider review I4: "Where's the
+    /// share button?"); the period card still draws both in place.
+    var part: Part = .all
     let onShare: () -> Void
 
+    enum Part { case all, button, footnote }
+
     var body: some View {
+        if part != .footnote { button }
+        if part != .button { footnote }
+    }
+
+    @ViewBuilder
+    private var button: some View {
         if let rendered = design.rendered {
             Group {
                 if let message {
@@ -290,7 +302,9 @@ struct ShareCardExportRow: View {
         } else {
             ProgressView().frame(maxWidth: .infinity, minHeight: 44)
         }
+    }
 
+    private var footnote: some View {
         Text("The card is rendered at " + String(Int(design.shape.size.width)) + " × "
              + String(Int(design.shape.size.height))
              + " px. " + Copy.straightToTheShareSheet)

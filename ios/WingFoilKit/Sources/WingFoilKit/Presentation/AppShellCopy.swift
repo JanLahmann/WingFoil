@@ -172,6 +172,49 @@ public enum AppShellCopy {
         ]
     }
 
+    /// `SessionDetailView`: the page when the stored recording will not open (rider review
+    /// I13, *"How? There is no button."*). The release keeps `line`, with no button; the beta
+    /// names the way back in that sits right under it, Import… for a file and Fetch again for
+    /// an intervals.icu session, with Send this to us beside it.
+    public enum Unreadable {
+        public static let title = "Could not open this session"
+        public static let line =
+            "The recording could not be read. It may still be downloading, "
+            + "or the stored file is damaged. Import the session again."
+        public static let importLine =
+            "The recording could not be read. It may still be downloading, "
+            + "or the stored file is damaged. Import the file again and the page opens."
+        public static let fetchLine =
+            "The recording could not be read. It may still be downloading, "
+            + "or the stored file is damaged. Fetch it again from intervals.icu "
+            + "and the page opens."
+        public static let importButton = "Import…"
+        public static let fetchButton = "Fetch again"
+        public static let sendToUs = "Send this to us"
+        /// Under the buttons while Fetch again runs, and when it cannot start or finish.
+        /// A download that fails says intervals.icu's own sentence (`IcuProblem`) instead.
+        public static let fetching = "Fetching the recording from intervals.icu…"
+        public static let busy =
+            "CleanJibe is busy with a sync right now. Try again when it has finished."
+        public static let stillUnreadable =
+            "This copy could not be read either. Send it to us and we will look at it."
+        /// The note the analysis mail opens with, so the error travels with the file.
+        public static let note = "This session would not open. The app said: {error}"
+
+        /// The sentence for this session: `fetchLine` when it came from intervals.icu and
+        /// the phone still has the key to fetch it, `importLine` otherwise.
+        public static func betaLine(canFetch: Bool) -> String {
+            canFetch ? fetchLine : importLine
+        }
+
+        static let all: [String: String] = [
+            "title": title, "line": line, "importLine": importLine, "fetchLine": fetchLine,
+            "importButton": importButton, "fetchButton": fetchButton, "sendToUs": sendToUs,
+            "note": note, "fetching": fetching, "busy": busy,
+            "stillUnreadable": stillUnreadable,
+        ]
+    }
+
     /// `ShareComposerView`: the row that sends a session to the developer.
     public enum Share {
         public static let sendToUs = "Send this session to us"
@@ -456,6 +499,7 @@ public enum AppShellCopy {
         "flightEndPage": FlightEndPage.all,
         "sessionLog": SessionLog.all,
         "share": Share.all,
+        "unreadable": Unreadable.all,
         "rider": Rider.all,
         "library": Library.all,
         "turns": Turns.all,

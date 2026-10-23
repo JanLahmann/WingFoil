@@ -144,6 +144,23 @@ import Testing
         }
     }
 
+    /// Rider review I13: the unreadable page names the button under it. The release keeps
+    /// its sentence word for word; the beta's two say Import or Fetch, never both.
+    @Test func theUnreadablePageNamesItsOwnButton() {
+        typealias U = AppShellCopy.Unreadable
+        #expect(U.line == "The recording could not be read. It may still be downloading, "
+                + "or the stored file is damaged. Import the session again.")
+        #expect(U.betaLine(canFetch: true) == U.fetchLine)
+        #expect(U.betaLine(canFetch: false) == U.importLine)
+        #expect(U.fetchLine.contains("Fetch it again") && !U.fetchLine.contains("Import"))
+        #expect(U.importLine.contains("Import the file again") && !U.importLine.contains("Fetch"))
+        #expect(AppShellCopy.fill(U.note, ["error": "noRecords"])
+                == "This session would not open. The app said: noRecords")
+        #expect(AppShellCopy.groups["unreadable"]?["fetchButton"] == "Fetch again")
+        #expect(AppShellCopy.groups["unreadable"]?["stillUnreadable"] == U.stillUnreadable)
+        #expect(U.stillUnreadable.contains("Send it to us"))
+    }
+
     /// The coach's templates say what `TurnCoach.line` says, rung for rung — the sentence
     /// the phone prints is the template filled, not a second wording beside it.
     @Test func theCoachReadsItsOwnTable() {

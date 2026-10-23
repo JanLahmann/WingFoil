@@ -142,6 +142,33 @@ public struct SessionArchive: Sendable {
         return try TrackParser.parse(data: data)
     }
 
+    /// **Whether the stored original reads**, as cheaply as the answer allows (I13's
+    /// repair). The same bytes as `incoming`, which has just parsed, read by definition, so
+    /// a bulk re-import of identical files pays one comparison and no parse. A missing file
+    /// or a FIT whose header promises more bytes than are there does not read, without a
+    /// parse. Only what passes both is parsed in full.
+    public func storedCopyReads(for id: String, comparedWith incoming: Data) -> Bool {
+        guard let stored = try? originalData(for: id) else { return false }
+        if stored == incoming { return true }
+        guard Self.fitHeaderIsPlausible(stored) else { return false }
+        return (try? rawTrack(for: id)) != nil
+    }
+
+    /// A FIT's 12- or 14-byte header names `.FIT` and the size of the records behind it; a
+    /// file shorter than that was cut off. Anything that is not FIT-shaped passes here and
+    /// is left to the full parse.
+    static func fitHeaderIsPlausible(_ data: Data) -> Bool {
+        guard TrackParser.format(data) == .fit else { return true }
+        let bytes = [UInt8](data.prefix(14))
+        guard bytes.count >= 12 else { return false }
+        let headerSize = Int(bytes[0])
+        guard headerSize == 12 || headerSize == 14,
+              bytes[8...11].elementsEqual(".FIT".utf8) else { return false }
+        let dataSize = Int(bytes[4]) | Int(bytes[5]) << 8 | Int(bytes[6]) << 16
+            | Int(bytes[7]) << 24
+        return data.count >= headerSize + dataSize
+    }
+
     public func writeAnalysis(_ analysis: SessionAnalysis, id: String) throws {
         try FileManager.default.createDirectory(at: directory(for: id),
                                                 withIntermediateDirectories: true)
