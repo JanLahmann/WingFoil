@@ -256,6 +256,11 @@ private struct LegendChip: View {
     let label: String
     let swatch: Swatch
     @Environment(\.accessibilityDifferentiateWithoutColor) private var withoutColour
+    /// The glyph swatches scale with the chip's own text (rider review X20, 23 Oct 2026),
+    /// 10 pt at the default size and capped at 14, so a chip at a large text size does not
+    /// carry a pin-sized mark beside a full-size word.
+    @ScaledMetric(relativeTo: .caption) private var glyphScaled: CGFloat = 10
+    private var glyphSize: CGFloat { min(glyphScaled, 14) }
 
     /// The outcome glyph this chip's marks wear with Differentiate Without Color on.
     private var outcomeSymbol: String? {
@@ -330,10 +335,10 @@ private struct LegendChip: View {
             // The chip looks like the mark it toggles, and with Differentiate Without
             // Color on the mark is the rung's glyph (`OutcomeDot`).
             Image(systemName: outcomeSymbol ?? "circle")
-                .font(.system(size: 10, weight: .bold))
+                .font(.system(size: glyphSize, weight: .bold))
                 .foregroundStyle(color)
                 .opacity(isOn ? 1 : 0.55)
-                .frame(width: 11, height: 11)
+                .frame(width: glyphSize + 1, height: glyphSize + 1)
         case .dot(let color):
             Circle()
                 .fill(isOn ? color : Color.clear)
@@ -341,10 +346,10 @@ private struct LegendChip: View {
                 .frame(width: 9, height: 9)
         case .glyph(let name, let color):
             Image(systemName: name)
-                .font(.system(size: 10))
+                .font(.system(size: glyphSize))
                 .foregroundStyle(color)
                 .opacity(isOn ? 1 : 0.55)
-                .frame(width: 11, height: 11)
+                .frame(width: glyphSize + 1, height: glyphSize + 1)
         }
     }
 }

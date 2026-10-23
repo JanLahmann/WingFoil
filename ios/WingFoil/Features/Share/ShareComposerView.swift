@@ -330,8 +330,7 @@ struct ShareComposerView: View {
                     .onChange(of: titleDraft) { _, new in
                         titleDraft = String(new.prefix(SessionNaming.titleLimit))
                     }
-                Text("Names the session. The list, the card, the clip and the shared file "
-                     + "all follow.")
+                Text(AppShellCopy.Share.nameLine)
                     .font(.caption2)
                     .foregroundStyle(.readableSecondary)
             }
@@ -348,7 +347,7 @@ struct ShareComposerView: View {
                         noteDraft = String(new.prefix(SessionNaming.noteLimit))
                     }
                 HStack(alignment: .firstTextBaseline) {
-                    Text("One line on the card and on the clip's opening frame.")
+                    Text(AppShellCopy.Share.captionLine)
                         .font(.caption2)
                         .foregroundStyle(.readableSecondary)
                     Spacer(minLength: 8)

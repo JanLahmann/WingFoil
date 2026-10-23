@@ -127,8 +127,9 @@ to it.
 ## Tables over tile walls
 
 Where a screen shows one number per row with the same shape on every row, it is a table:
-`record | value | at` for the session's speed records, `record | value | +Δ PB | when ·
-where` for the all-time ones. Eight 2-up cards spent ~520 pt and ~2 000 pt respectively to
+`record | value | at` for the session's speed records, `record | value | beat by | when ·
+where` for the all-time ones (the header said `+Δ PB` until rider review I14, 23 Oct 2026;
+the freshness dots' key moved from the footer to the top of the table in the same round). Eight 2-up cards spent ~520 pt and ~2 000 pt respectively to
 show eight numbers each, and the values could not be compared by eye because they did not
 line up in a column (`app-ui-review.md` §1.4, §6.2). A table also has no odd-count parity
 problem, which is what left `Glide-outs 0` alone beside an empty cell.

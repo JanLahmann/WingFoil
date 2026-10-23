@@ -154,7 +154,12 @@ struct TurnDetailSheet: View {
         let turns = detail.analysis.turns
         let turn = turns[selection]
         let oneKind = indices.allSatisfy { turns[$0].type == turn.type }
-        return oneKind ? Fmt.clock(turn.ts)
+        // Rider review I19: "Jibe 4 of 10 · turn 4 of 10" said one position twice. Wherever
+        // the title's count is the swipe's count, the clock stands alone.
+        let kind = TurnAnalytics.kindPosition(of: selection, in: indices, turns: turns)
+        let sameCount = kind.map { $0.ordinal == position && $0.count == indices.count }
+            ?? false
+        return oneKind || sameCount ? Fmt.clock(turn.ts)
             : Fmt.clock(turn.ts) + " · turn \(position) of \(indices.count)"
     }
 

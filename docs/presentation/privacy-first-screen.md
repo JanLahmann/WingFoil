@@ -107,15 +107,22 @@ sessions get in*. Each row is an icon, the action, and one line of at most twelv
 | row | line under it | where it goes | channel |
 |---|---|---|---|
 | **Set up intervals.icu in Settings** | Garmin has no open API. intervals.icu is the bridge. | Settings | release |
+| **Send it straight from your Garmin watch** `BETA` | The CleanJibe watch app sends it when you save. | the help topic on sending from the Garmin watch | beta |
 | **Record on your Apple Watch** `BETA` | The session comes to the phone by itself. | the help topic *Recording with the CleanJibe Apple Watch app* | beta |
-| **Set up Strava in Settings** | Strava hands over positions. Records are estimated. | Settings | release, and only where the build carries Strava keys |
+| **Record with Apple's Workout app** `BETA` | Pick Surfing on the watch, then import it from Health. | the help topic on Apple's Workout app | beta (rider review I8, 23 Oct 2026) |
 | **Import a file** | A FIT from any watch. AirDrop and Files work. | the file picker, `ImportView.importableTypes` | release |
+| **Set up Strava in Settings** | Strava keeps positions only, so speed records are estimated. | Settings | release, and only where the build carries Strava keys |
+
+The row order is docs/guide/getting-started.json's route order, so the card, the guide and
+`/start` name the doors in one sequence (pattern J). The Strava line says the Import footer's
+fact (rider review I17): *"gives your track but not your speed"* read as a contradiction of
+the speeds the app then shows.
 
 Five rules hold that table together.
 
 * **The order is the order a rider meets a watch**, Apple straight after Garmin. They are the
-  same doors `GettingStartedGuide.routes` carries — `garmin`, `appleWatchApp`, `strava`,
-  `fit` — so the empty state, the Getting started topic and `/start` name the same four. The
+  same doors `GettingStartedGuide.routes` carries — `garmin`, `appleWatchApp`,
+  `appleWorkoutApp`, `fit`, `strava` — so the empty state, the Getting started topic and `/start` name the same four. The
   generated guide is reordered from the web side, so nothing in the app reads that array by
   position: the rows are declared here, and the route ids are the seam.
 * **The rows name the action, the routes name the door.** This is a list of things to *do*;

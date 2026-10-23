@@ -289,7 +289,7 @@ struct SessionTurnsSection: View {
                                   help: .turnTypes)
                     if t.unclassified > 0 {
                         StatCard(title: "Unclassified turns", value: "\(t.unclassified)",
-                                 caption: "no usable wind axis", help: .windAxis)
+                                 caption: AppShellCopy.Turns.noWindAxis, help: .windAxis)
                     }
                     StatCard(title: "Port / starboard",
                              value: "\(t.port) / \(t.starboard)",

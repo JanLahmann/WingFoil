@@ -138,11 +138,15 @@
       </div>
       <div class="term">
         <dt>Dry streak</dt>
-        <dd>How many jibes in a row you stayed out of the water, and the best run of the day.<br><span class="muted small" data-copy="aside">Shows on the watch, the phone, the share card and the website.</span></dd>
+        <dd>How many turns in a row you stayed out of the water, tacks and jibes alike. A fall anywhere ends the run.<br><span class="muted small" data-copy="aside">Shows on the watch, the phone, the share card and the website.</span></dd>
+      </div>
+      <div class="term">
+        <dt>Flew streak</dt>
+        <dd>How many turns in a row you flew through, tacks and jibes alike. A touchdown or a fall anywhere ends it.<br><span class="muted small" data-copy="aside">Shows on the phone, the share card and the website.</span></dd>
       </div>
       <div class="term">
         <dt>CPH</dt>
-        <dd>Clean jibes per hour. Clean: flew through, held your speed, and 10 quiet seconds after.<br><span class="muted small" data-copy="aside">Shows on the watch, the phone, the share card and the website.</span></dd>
+        <dd>Clean jibes per hour. Every jibe that passes the three clean gates counts.<br><span class="muted small" data-copy="aside">Shows on the watch, the phone, the share card and the website.</span></dd>
       </div>
       <div class="term">
         <dt>JPH</dt>
@@ -174,7 +178,7 @@
       </div>
       <div class="term">
         <dt>Clean</dt>
-        <dd>A jibe that flew through, held 70 % of its entry speed, and stayed quiet for 10 s.<br><span class="muted small" data-copy="aside">Shows on the watch, the phone, the share card and the website. In the FIT as clean_jibes.</span></dd>
+        <dd>A jibe that flew through and held 70 % of its entry speed. Then 10 s with no touchdown, fall or second off the foil.<br><span class="muted small" data-copy="aside">Shows on the watch, the phone, the share card and the website. In the FIT as clean_jibes.</span></dd>
       </div>
       <div class="term">
         <dt>Speed kept</dt>
@@ -191,6 +195,14 @@
       <div class="term">
         <dt>Fell in</dt>
         <dd>Every time you ended up in the water, in a turn or in a straight line.<br><span class="muted small" data-copy="aside">Shows on the watch, the phone, the share card and the website. In the FIT as turn_marker.</span></dd>
+      </div>
+      <div class="term">
+        <dt>Glide-out</dt>
+        <dd>A flight that ended without a stop. You settled onto the board and rode on, so it is not a loss.<br><span class="muted small" data-copy="aside">Shows on the phone and the website.</span></dd>
+      </div>
+      <div class="term">
+        <dt>Aborted turn</dt>
+        <dd>A turn you started and fell in before it was done. It counts as a turn that fell in.<br><span class="muted small" data-copy="aside">Shows on the website.</span></dd>
       </div>
       <div class="term">
         <dt>Takeoffs</dt>
@@ -777,6 +789,10 @@
             <dd>Sessions a friend sent you stay out of your records, trends and totals.</dd>
           </div>
           <div class="term">
+            <dt>GP3S and Doppler</dt>
+            <dd>GP3S is the rule set speedsurfers use for these windows. Doppler speed is what your watch measures from the satellite signal itself, not from positions.</dd>
+          </div>
+          <div class="term">
             <dt>&ldquo;Estimated&rdquo;</dt>
             <dd>A recording with positions but no speed channel has its speed worked out from them, which reads high. Every GPX is one, and some converted exports. It is marked everywhere.</dd>
           </div>
@@ -885,10 +901,10 @@
           <h3>Clean jibes</h3>
         </div>
         <p class="what">The jibe you were working for: foil up the whole way, speed held, straight back to riding.</p>
-        <p>This is the jibe you were working for. A <strong>clean</strong> jibe passes three gates: you flew through, held your speed, then 10 quiet seconds on the foil.</p>
+        <p>This is the jibe you were working for. A <strong>clean</strong> jibe passes three gates. You flew through, held your speed, then rode 10 s with no touchdown, fall or second off the foil.</p>
         <p><strong>Flew through</strong> means you never lost the foil until you were flying again.</p>
         <p>Holding the speed means your slowest point stays at or above 70 % of your entry speed. You never drop below the foil exit speed.</p>
-        <p>Staying quiet means the 10 s after the turn hold no touchdown or fall. They also hold no second or more off the foil, and no wrist under water.</p>
+        <p>Those 10 s start when the turn ends. A wrist under water in them counts as a fall.</p>
         <p>Every clean jibe also flew through. A jibe that flew through can still miss clean, if you lost speed or touched down coming out.</p>
         <dl class="terms">
           <div class="term">
@@ -923,6 +939,7 @@
           <h3>Port / starboard</h3>
         </div>
         <p class="what">Which tack you were on going in, and which side you avoid.</p>
+        <p>Your entry tack is the tack you came into the turn on. It is not which way the board rotated.</p>
         <p>The side is read from your wind angle before the turn. A 50/50 split means you work both sides equally. A lopsided split is the tack you quietly stop choosing, and usually the one worth practising.</p>
         <p>The Trends screen plots this over time as &ldquo;% port&rdquo;, with 50 % marked.</p>
         <p class="piece-foot" data-copy="related">Read next: <a href="#help-turnTypes">Tacks, jibes and course changes</a> · <a href="#help-windAxis">Wind axis &amp; confidence</a></p>
@@ -1255,7 +1272,7 @@
         <dl class="terms">
           <div class="term">
             <dt>&ldquo;intervals.icu rejected the API key&rdquo;</dt>
-            <dd>The key is wrong, or you made a new one after pasting it. Copy it again from intervals.icu, Settings &rarr; Developer Settings. A stray space at either end breaks it.</dd>
+            <dd>The key is wrong, or you made a new one after pasting it. Copy it again from intervals.icu, Settings &rarr; Developer Settings.</dd>
           </div>
           <div class="term">
             <dt>The sync succeeds but the list stays empty</dt>

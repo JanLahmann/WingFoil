@@ -58,7 +58,9 @@ public enum PresentationCopy {
     public static let label: [String: String] = [
         "alpha500": "alpha 500",
         "avgSpeed": "avg speed",
-        "best5x10s": "5×10 s",
+        // "best 5×10 s", not "5×10 s" (rider review I11, 23 Oct 2026): the bare window read
+        // as a sum, and its neighbour is "best 2 s".
+        "best5x10s": "best 5×10 s",
         "cleanJibes": "clean jibes",
         "distance": "distance",
         "duration": "duration",

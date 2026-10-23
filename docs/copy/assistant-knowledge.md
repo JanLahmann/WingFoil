@@ -48,8 +48,9 @@ Answering rules: use only facts from this file and from the state you are given.
 - **On foil**: How much of your session you spent flying rather than just moving. Also printed as: Foil time, foil, foil time.
 - **Flights & touchdowns**: One takeoff starts a flight. A touchdown or a fall ends it. Both are counted. Also printed as: Flights, Longest flight, flights, longest flight.
 - **Turn verdicts**: Every turn gets one: flew through, touchdown, or fell in. Also printed as: flew · touchdown · fell in.
-- **Dry streak**: How many jibes in a row you stayed out of the water, and the best run of the day. Also printed as: best streaks.
-- **CPH**: Clean jibes per hour. Clean: flew through, held your speed, and 10 quiet seconds after. Also printed as: CPH · clean jibes per hour.
+- **Dry streak**: How many turns in a row you stayed out of the water, tacks and jibes alike. A fall anywhere ends the run. Also printed as: best streaks.
+- **Flew streak**: How many turns in a row you flew through, tacks and jibes alike. A touchdown or a fall anywhere ends it.
+- **CPH**: Clean jibes per hour. Every jibe that passes the three clean gates counts. Also printed as: CPH · clean jibes per hour.
 - **JPH**: Dry jibes per hour. Falling in more often cannot raise it. Also printed as: JPH · dry jibes per hour.
 - **TPH**: Dry turns per hour, tacks and jibes together. It takes the place of JPH once a session has tacks in it. Also printed as: TPH · dry turns per hour.
 - **falls / h**: How often you fell in, per hour. Every fall counts, in a turn or not. Also printed as: WPH.
@@ -57,11 +58,13 @@ Answering rules: use only facts from this file and from the state you are given.
 - **Best 5×10 s**: The mean of your best five separate 10-second runs. They may not overlap, so one lucky reach cannot carry it. Also printed as: 5×10 s.
 - **Alpha 500**: Your fastest 500 m that ends within 50 m of where it started. It contains a jibe, so it measures the turn as well as the speed.
 - **Flew through**: The turn kept the foil, from the sweep until you were flying again. Also printed as: flew.
-- **Clean**: A jibe that flew through, held 70 % of its entry speed, and stayed quiet for 10 s. Also printed as: Clean jibes, clean jibes.
+- **Clean**: A jibe that flew through and held 70 % of its entry speed. Then 10 s with no touchdown, fall or second off the foil. Also printed as: Clean jibes, clean jibes.
 - **Speed kept**: The share of counted turns that held 70 % of their entry speed and never dropped off the foil.
 - **Dry**: You did not fall in. A touchdown still counts as dry.
 - **Touchdown**: Your board touched the water and you got going again without falling in. A stop under 5 s counts as a touchdown. Longer, and it counts as a fall. Also printed as: Touchdowns, touchdowns.
 - **Fell in**: Every time you ended up in the water, in a turn or in a straight line. Also printed as: Falls, falls, fell.
+- **Glide-out**: A flight that ended without a stop. You settled onto the board and rode on, so it is not a loss. Also printed as: Glide-outs, glide-outs.
+- **Aborted turn**: A turn you started and fell in before it was done. It counts as a turn that fell in. Also printed as: aborted.
 - **Takeoffs**: How many times you got up on the foil. One takeoff starts every flight. Also printed as: Got up, Planing starts, got up.
 - **Attempts**: Every pumping burst, whether you got up or not. Attempts are takeoffs plus failed attempts. Also printed as: Failed attempts, Takeoff attempts, failed attempts.
 
@@ -219,8 +222,9 @@ Each number has one word, on the watch, the phone, the card and the site. If you
 - On foil: How much of your session you spent flying rather than just moving. Also on the watch and in Garmin Connect.
 - Flights & touchdowns: One takeoff starts a flight. A touchdown or a fall ends it. Both are counted. Also on the watch and in Garmin Connect.
 - Turn verdicts: Every turn gets one: flew through, touchdown, or fell in. Also on the watch.
-- Dry streak: How many jibes in a row you stayed out of the water, and the best run of the day. Also on the watch.
-- CPH: Clean jibes per hour. Clean: flew through, held your speed, and 10 quiet seconds after. Also on the watch.
+- Dry streak: How many turns in a row you stayed out of the water, tacks and jibes alike. A fall anywhere ends the run. Also on the watch.
+- Flew streak: How many turns in a row you flew through, tacks and jibes alike. A touchdown or a fall anywhere ends it.
+- CPH: Clean jibes per hour. Every jibe that passes the three clean gates counts. Also on the watch.
 - JPH: Dry jibes per hour. Falling in more often cannot raise it.
 - TPH: Dry turns per hour, tacks and jibes together. It takes the place of JPH once a session has tacks in it.
 - falls / h: How often you fell in, per hour. Every fall counts, in a turn or not.
@@ -228,12 +232,14 @@ Each number has one word, on the watch, the phone, the card and the site. If you
 - Best 5×10 s: The mean of your best five separate 10-second runs. They may not overlap, so one lucky reach cannot carry it.
 - Alpha 500: Your fastest 500 m that ends within 50 m of where it started. It contains a jibe, so it measures the turn as well as the speed.
 - Flew through: The turn kept the foil, from the sweep until you were flying again. Also on the watch.
-- Clean: A jibe that flew through, held 70 % of its entry speed, and stayed quiet for 10 s. Also on the watch.
+- Clean: A jibe that flew through and held 70 % of its entry speed. Then 10 s with no touchdown, fall or second off the foil. Also on the watch.
 - Speed kept: The share of counted turns that held 70 % of their entry speed and never dropped off the foil. Also on the watch and in Garmin Connect.
 - Dry: You did not fall in. A touchdown still counts as dry.
 - Touchdown: Your board touched the water and you got going again without falling in. Also on the watch.
 - Touchdown or fall: A stop under 5 s counts as a touchdown. Longer, and it counts as a fall.
 - Fell in: Every time you ended up in the water, in a turn or in a straight line. Also on the watch.
+- Glide-out: A flight that ended without a stop. You settled onto the board and rode on, so it is not a loss.
+- Aborted turn: A turn you started and fell in before it was done. It counts as a turn that fell in.
 - Takeoffs: How many times you got up on the foil. One takeoff starts every flight. Also on the watch.
 - Attempts: Every pumping burst, whether you got up or not. Attempts are takeoffs plus failed attempts. Also on the watch.
 
@@ -282,6 +288,7 @@ A record counts as measured only when the recording holds the receiver's own spe
 - Knots or km/h: Knots by default. Settings → Units switches every speed on the phone to km/h.
 - The other three readers: The watch app has its own switch, under Garmin Connect → CleanJibe → Settings. Garmin Connect follows its own. Strava shows windsurf in knots.
 - A friend's session: Sessions a friend sent you stay out of your records, trends and totals.
+- GP3S and Doppler: GP3S is the rule set speedsurfers use for these windows. Doppler speed is what your watch measures from the satellite signal itself, not from positions.
 - "Estimated": A recording with positions but no speed channel has its speed worked out from them, which reads high. Every GPX is one, and some converted exports. It is marked everywhere.
 
 #### Measured and estimated speed records
@@ -322,10 +329,10 @@ Inside that window, your speed is always read. So is the barometer, because a wr
 
 #### Clean jibes
 The jibe you were working for: foil up the whole way, speed held, straight back to riding.
-This is the jibe you were working for. A **clean** jibe passes three gates: you flew through, held your speed, then 10 quiet seconds on the foil.
+This is the jibe you were working for. A **clean** jibe passes three gates. You flew through, held your speed, then rode 10 s with no touchdown, fall or second off the foil.
 **Flew through** means you never lost the foil until you were flying again.
 Holding the speed means your slowest point stays at or above 70 % of your entry speed. You never drop below the foil exit speed.
-Staying quiet means the 10 s after the turn hold no touchdown or fall. They also hold no second or more off the foil, and no wrist under water.
+Those 10 s start when the turn ends. A wrist under water in them counts as a fall.
 Every clean jibe also flew through. A jibe that flew through can still miss clean, if you lost speed or touched down coming out.
 - Jibes only: A tack has no clean reading to carry, so the Tacks card reports only how its tacks ended.
 - Score: The share of your entry speed you held through the turn, 0 to 100. It is the evidence behind "clean", printed beside every turn.
@@ -342,6 +349,7 @@ The example session keeps its rates, so you can see them before your own.
 
 #### Port / starboard
 Which tack you were on going in, and which side you avoid.
+Your entry tack is the tack you came into the turn on. It is not which way the board rotated.
 The side is read from your wind angle before the turn. A 50/50 split means you work both sides equally. A lopsided split is the tack you quietly stop choosing, and usually the one worth practising.
 The Trends screen plots this over time as "% port", with 50 % marked.
 
@@ -498,7 +506,7 @@ When a new version would give a session different numbers, CleanJibe works it ou
 #### When the sync does not work
 The four things that actually go wrong, and the fix for each.
 CleanJibe tells you what went wrong, because each problem has its own fix. A rejected key means your key. An empty list usually means Garmin is not connected yet. A network error is neither.
-- "intervals.icu rejected the API key": The key is wrong, or you made a new one after pasting it. Copy it again from intervals.icu, Settings → Developer Settings. A stray space at either end breaks it.
+- "intervals.icu rejected the API key": The key is wrong, or you made a new one after pasting it. Copy it again from intervals.icu, Settings → Developer Settings.
 - The sync succeeds but the list stays empty: Either Garmin is not connected in intervals.icu yet, or none of your activities is a watersport. CleanJibe takes Windsurf, Kitesurf, Sail, Surfing, SUP and anything named wing or foil.
 - "Could not reach intervals.icu": The connection dropped, and your key is fine. Nothing was lost or half-imported. Check your connection and sync again.
 - Older sessions are missing [iPhone app only]: The sync looks two years back and skips what the library already holds. For more, use Import → FIT or ZIP… with the Garmin export ZIP.
@@ -563,8 +571,10 @@ Dev adds:
 
 ## The turn coach (what the turn page says, with its tips)
 
-- Clean: you flew through, held at least {pct} % of your entry speed, then {quiet} quiet seconds on the foil.
+- Clean: you flew through and held at least {pct} % of your entry speed. Then {quiet} s with no touchdown, fall or second off the foil.
+- no clear wind direction in your track
 - Flew through / touchdown / fell in is the outcome. It says how the turn ended. Held is how much of your entry speed you kept through it, 0 to 100 %.
+- {pct} % confident, can't tell tacks from jibes
 - You held {score} of your entry speed. The board did not come far enough past the wind axis. This one is not clean.
 - Clean, and you barely slowed. You held {score} of your entry speed all the way round.
 - You flew all the way through, and it cost you speed. {entry} in, {low} at the low point.

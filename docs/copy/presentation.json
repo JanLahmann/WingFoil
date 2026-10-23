@@ -1,5 +1,5 @@
 {
-  "_readme": [
+  "_readme" : [
     "THE WORDS THE PRESENTATION DOCUMENT POINTS AT.",
     "",
     "`docs/presentation/document.md` is the schema. The document carries no rider sentence:",
@@ -31,119 +31,119 @@
     "six the check reports are speed records and are named by tokens.recordWindow.<id>.",
     "`banner` is the one sentence the renderer BUILDS rather than names, like turnKind."
   ],
-  "banner": {
-    "divergence": "Watch and phone disagree on {metrics}",
-    "divergenceMore": "{first} and {rest} more",
-    "divergencePair": "{first} and {second}"
+  "banner" : {
+    "divergence" : "Watch and phone disagree on {metrics}",
+    "divergenceMore" : "{first} and {rest} more",
+    "divergencePair" : "{first} and {second}"
   },
-  "caption": {
-    "fallsSplit": "{inTurn} in a turn · {straight} in a straight line",
-    "noAlpha500": "no 500 m out-and-back",
-    "noBest5x10s": "no unbroken 10 s of track",
-    "noMax2s": "no unbroken 2 s of track",
-    "ofJibes": {
-      "one": "of 1 jibe",
-      "other": "of {jibes} jibes"
+  "caption" : {
+    "fallsSplit" : "{inTurn} in a turn · {straight} in a straight line",
+    "noAlpha500" : "no 500 m out-and-back",
+    "noBest5x10s" : "no unbroken 10 s of track",
+    "noMax2s" : "no unbroken 2 s of track",
+    "ofJibes" : {
+      "one" : "of 1 jibe",
+      "other" : "of {jibes} jibes"
     },
-    "ofTacks": {
-      "one": "of 1 tack",
-      "other": "of {tacks} tacks"
+    "ofTacks" : {
+      "one" : "of 1 tack",
+      "other" : "of {tacks} tacks"
     },
-    "ofTurns": "of {turns} turns",
-    "tooShortForRate": "too short for a rate"
+    "ofTurns" : "of {turns} turns",
+    "tooShortForRate" : "too short for a rate"
   },
-  "card": {
-    "barClean": "{clean} clean",
-    "barJibes": "jibes",
-    "barTacks": "tacks",
-    "barTurns": "turns",
-    "fellIn": {
-      "one": "fell in once",
-      "other": "fell in {falls} times"
+  "card" : {
+    "barClean" : "{clean} clean",
+    "barJibes" : "jibes",
+    "barTacks" : "tacks",
+    "barTurns" : "turns",
+    "fellIn" : {
+      "one" : "fell in once",
+      "other" : "fell in {falls} times"
     },
-    "fellInNone": "never fell in",
-    "heroClean": {
-      "one": "clean jibe",
-      "other": "clean jibes"
+    "fellInNone" : "never fell in",
+    "heroClean" : {
+      "one" : "clean jibe",
+      "other" : "clean jibes"
     },
-    "heroMax2s": "best 2 s",
-    "heroSessions": {
-      "one": "session",
-      "other": "sessions"
+    "heroMax2s" : "best 2 s",
+    "heroSessions" : {
+      "one" : "session",
+      "other" : "sessions"
     },
-    "heroSessionsSpots": {
-      "one": "at one spot",
-      "other": "at {spots} spots"
+    "heroSessionsSpots" : {
+      "one" : "at one spot",
+      "other" : "at {spots} spots"
     },
-    "heroTacks": {
-      "one": "tack",
-      "other": "tacks"
+    "heroTacks" : {
+      "one" : "tack",
+      "other" : "tacks"
     },
-    "heroTacksBeside": "{dry} dry · beside {jibes}",
-    "heroTacksDry": "{dry} dry",
-    "jibeCount": {
-      "one": "1 jibe",
-      "other": "{jibes} jibes"
+    "heroTacksBeside" : "{dry} dry · beside {jibes}",
+    "heroTacksDry" : "{dry} dry",
+    "jibeCount" : {
+      "one" : "1 jibe",
+      "other" : "{jibes} jibes"
     },
-    "optionClean": "Clean jibes",
-    "optionMax2s": "Best 2 s",
-    "optionSessions": "Sessions",
-    "optionTacks": "Tacks",
-    "optionTitle": "Big number",
-    "rateCph": "clean jibes / h",
-    "rateJph": "dry jibes / h",
-    "rateTph": "dry turns / h",
-    "ribbonHours": "time on the water",
-    "speedEstimated": "speed estimated from GPS positions",
-    "streak": "best streak"
+    "optionClean" : "Clean jibes",
+    "optionMax2s" : "Best 2 s",
+    "optionSessions" : "Sessions",
+    "optionTacks" : "Tacks",
+    "optionTitle" : "Big number",
+    "rateCph" : "clean jibes / h",
+    "rateJph" : "dry jibes / h",
+    "rateTph" : "dry turns / h",
+    "ribbonHours" : "time on the water",
+    "speedEstimated" : "speed estimated from GPS positions",
+    "streak" : "best streak"
   },
-  "divergence": {
-    "flights": "Flights",
-    "foilTime": "Foil time",
-    "jibes": "Jibes",
-    "tacks": "Tacks",
-    "takeoffAttempts": "Takeoff attempts",
-    "takeoffs": "Takeoffs"
+  "divergence" : {
+    "flights" : "Flights",
+    "foilTime" : "Foil time",
+    "jibes" : "Jibes",
+    "tacks" : "Tacks",
+    "takeoffAttempts" : "Takeoff attempts",
+    "takeoffs" : "Takeoffs"
   },
-  "label": {
-    "alpha500": "alpha 500",
-    "avgSpeed": "avg speed",
-    "best5x10s": "5×10 s",
-    "cleanJibes": "clean jibes",
-    "distance": "distance",
-    "duration": "duration",
-    "max2s": "best 2 s",
-    "outcomeLadder": "flew · touchdown · fell in",
-    "streaks": "best streaks"
+  "label" : {
+    "alpha500" : "alpha 500",
+    "avgSpeed" : "avg speed",
+    "best5x10s" : "best 5×10 s",
+    "cleanJibes" : "clean jibes",
+    "distance" : "distance",
+    "duration" : "duration",
+    "max2s" : "best 2 s",
+    "outcomeLadder" : "flew · touchdown · fell in",
+    "streaks" : "best streaks"
   },
-  "rowMetric": {
-    "best10s": "best 10 s",
-    "best2s": "best 2 s",
-    "cleanJibes": "clean",
-    "distance": "distance",
-    "dryStreak": "dry streak",
-    "duration": "time",
-    "falls": "fell in",
-    "flights": "flights",
-    "foilShare": "foil",
-    "jibes": "jibes",
-    "turns": "turns"
+  "rowMetric" : {
+    "best2s" : "best 2 s",
+    "best10s" : "best 10 s",
+    "cleanJibes" : "clean",
+    "distance" : "distance",
+    "dryStreak" : "dry streak",
+    "duration" : "time",
+    "falls" : "fell in",
+    "flights" : "flights",
+    "foilShare" : "foil",
+    "jibes" : "jibes",
+    "turns" : "turns"
   },
-  "schema": 1,
-  "turnKind": {
-    "bearAway": "bear-away",
-    "jibe": "jibe",
-    "roundUp": "round-up",
-    "tack": "tack",
-    "turn": "turn"
+  "schema" : 1,
+  "turnKind" : {
+    "bearAway" : "bear-away",
+    "jibe" : "jibe",
+    "roundUp" : "round-up",
+    "tack" : "tack",
+    "turn" : "turn"
   },
-  "wristUnder": {
-    "afterFlight": "after flight {flight} ended",
-    "afterFlightStopped": "after flight {flight} ended, stopped {stoppedS} s",
-    "duringAnyTurn": "during a {turn}",
-    "duringTurn": "during {turn} {ordinal}",
-    "offFoil": "while off foil",
-    "title": "Wrist under",
-    "titleFor": "Wrist under · {durationS} s"
+  "wristUnder" : {
+    "afterFlight" : "after flight {flight} ended",
+    "afterFlightStopped" : "after flight {flight} ended, stopped {stoppedS} s",
+    "duringAnyTurn" : "during a {turn}",
+    "duringTurn" : "during {turn} {ordinal}",
+    "offFoil" : "while off foil",
+    "title" : "Wrist under",
+    "titleFor" : "Wrist under · {durationS} s"
   }
 }

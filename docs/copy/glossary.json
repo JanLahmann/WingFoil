@@ -145,7 +145,7 @@
         "dry streak",
         "best streaks"
       ],
-      "line" : "How many jibes in a row you stayed out of the water, and the best run of the day.",
+      "line" : "How many turns in a row you stayed out of the water, tacks and jibes alike. A fall anywhere ends the run.",
       "places" : [
         "watchPage",
         "phoneRow",
@@ -165,6 +165,29 @@
       "term" : "Dry streak"
     },
     {
+      "expansion" : "",
+      "fit" : "",
+      "id" : "flewStreak",
+      "labels" : [
+        "Flew streak",
+        "flew streak"
+      ],
+      "line" : "How many turns in a row you flew through, tacks and jibes alike. A touchdown or a fall anywhere ends it.",
+      "places" : [
+        "phonePage",
+        "card",
+        "web",
+        "help"
+      ],
+      "sentence" : "your longest run of turns flown through",
+      "short" : "flew",
+      "surfaces" : [
+        "ios",
+        "web"
+      ],
+      "term" : "Flew streak"
+    },
+    {
       "expansion" : "clean jibes per hour",
       "fit" : "",
       "id" : "cph",
@@ -172,7 +195,7 @@
         "CPH",
         "CPH · clean jibes per hour"
       ],
-      "line" : "Clean jibes per hour. Clean: flew through, held your speed, and 10 quiet seconds after.",
+      "line" : "Clean jibes per hour. Every jibe that passes the three clean gates counts.",
       "places" : [
         "watchPage",
         "phonePage",
@@ -308,6 +331,7 @@
       "id" : "best5x10s",
       "labels" : [
         "Best 5×10 s",
+        "best 5×10 s",
         "5×10 s"
       ],
       "line" : "The mean of your best five separate 10-second runs. They may not overlap, so one lucky reach cannot carry it.",
@@ -383,7 +407,7 @@
         "Clean jibes",
         "clean jibes"
       ],
-      "line" : "A jibe that flew through, held 70 % of its entry speed, and stayed quiet for 10 s.",
+      "line" : "A jibe that flew through and held 70 % of its entry speed. Then 10 s with no touchdown, fall or second off the foil.",
       "places" : [
         "watchPage",
         "fitField",
@@ -505,6 +529,51 @@
         "web"
       ],
       "term" : "Fell in"
+    },
+    {
+      "expansion" : "",
+      "fit" : "",
+      "id" : "glideOut",
+      "labels" : [
+        "Glide-out",
+        "glide-out",
+        "Glide-outs",
+        "glide-outs"
+      ],
+      "line" : "A flight that ended without a stop. You settled onto the board and rode on, so it is not a loss.",
+      "places" : [
+        "phonePage",
+        "web",
+        "help"
+      ],
+      "sentence" : "the flights you settled out of",
+      "short" : "glide",
+      "surfaces" : [
+        "ios",
+        "web"
+      ],
+      "term" : "Glide-out"
+    },
+    {
+      "expansion" : "",
+      "fit" : "",
+      "id" : "abortedTurn",
+      "labels" : [
+        "Aborted turn",
+        "aborted turn",
+        "aborted"
+      ],
+      "line" : "A turn you started and fell in before it was done. It counts as a turn that fell in.",
+      "places" : [
+        "web",
+        "help"
+      ],
+      "sentence" : "the turns you fell out of halfway",
+      "short" : "aborted",
+      "surfaces" : [
+        "web"
+      ],
+      "term" : "Aborted turn"
     },
     {
       "expansion" : "",

@@ -679,8 +679,8 @@ struct LibraryView: View {
     /// **"How your sessions get in"** — one row per way in, and not one of them repeats a
     /// setup (Jan, dev 70).
     ///
-    /// Four rows in the beta, three in the App Store build, in the order a rider meets
-    /// them: the Garmin bridge, the Apple Watch, Strava, a file. They are the same doors
+    /// Six rows in the beta, three in the App Store build, in the guide's order: the Garmin
+    /// bridge, the Garmin watch app, the Apple Watch, Apple's Workout app, a file, Strava. They are the same doors
     /// `GettingStartedGuide.routes` lists — `garmin`, `appleWatchApp`, `strava`, `fit` —
     /// and the generated guide is reordered from the web side, so nothing here reads that
     /// array by position or by index. What each row says is the *action*, because this is
@@ -736,6 +736,16 @@ struct LibraryView: View {
                      isBeta: true) {
                 sheet = .helpTopic(.appleWatchApp)
             }
+            // 2b · Apple's own Workout app, through Health: the guide's next route
+            // (`appleWorkoutApp`, docs/guide/getting-started.json), beta like the Import
+            // door it ends in (rider review I8). The row opens the help topic, which says
+            // which workout to pick and where the import is.
+            WayInRow(icon: "heart.text.square",
+                     label: AppShellCopy.Library.healthRow,
+                     line: AppShellCopy.Library.healthRowLine,
+                     isBeta: true) {
+                sheet = .helpTopic(.appleWorkoutApp)
+            }
             #endif
             // 3 · The door that needs no account at all, and the only row that acts on this
             // screen rather than opening another one.
@@ -757,14 +767,13 @@ struct LibraryView: View {
             if store.isStravaConfigured && store.isStravaConnected {
                 WayInRow(icon: "figure.wave",
                          label: "Import from Strava…",
-                         line: "Pick the sessions you want. Strava gives your track but not "
-                             + "your speed.") {
+                         line: AppShellCopy.Library.stravaPickLine) {
                     sheet = .stravaImport
                 }
             } else if store.isStravaConfigured {
                 WayInRow(icon: "figure.wave",
                          label: "Set up Strava in Settings",
-                         line: "Strava gives your track but not your speed.") {
+                         line: AppShellCopy.Library.stravaRowLine) {
                     openSettings()
                 }
             }

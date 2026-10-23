@@ -105,19 +105,12 @@ struct TurnsAnalysisView: View {
     // MARK: - Filters
 
     /// The segmented controls themselves are in the pinned bar (segmented controls live in
-    /// the fixed header, never in the scrolling content — docs/presentation/scrub-pairing.md);
-    /// the sentence that explains the second of them stays here, at the top of what they
-    /// filter.
+    /// the fixed header, never in the scrolling content — docs/presentation/scrub-pairing.md).
+    /// The sentence that explained the entry tack went behind the `?` beside its control
+    /// (rider review I21, 23 Oct 2026): it is the *Port / starboard* topic's first line now,
+    /// and the page opens on the tally. The anchor stays, for `UI_SCROLL_TO=filters`.
     private var filters: some View {
-        // Said once, here, rather than trusted to the word "port": the rider's other
-        // mental model of a jibe is which way the board spun, and that is a different
-        // field of the same turn.
-        Text("Entry tack is the tack you came into the turn on. "
-             + "It is not which way the board rotated.")
-            .font(.caption2)
-            .foregroundStyle(.readableSecondary)
-            .fixedSize(horizontal: false, vertical: true)
-            .id("filters")
+        Color.clear.frame(height: 0).id("filters")
     }
 
     // MARK: - Tally

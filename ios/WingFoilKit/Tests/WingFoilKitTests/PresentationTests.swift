@@ -97,8 +97,9 @@ import Testing
         // 28 Sep 2026): a friend's session stays out of them.
         #expect(terms.contains("A friend's session"))
         // The four windows the glossary does not define, the two unit lines, the friend's
-        // session and the mark.
-        #expect(terms.count == 8)
+        // session, GP3S and Doppler (rider review I14) and the mark.
+        #expect(terms.contains("GP3S and Doppler"))
+        #expect(terms.count == 9)
 
         // What a rider actually types. Each has to reach this one page.
         for needle in ["2 s", "10 s", "500 m", "alpha", "nautical", "estimated",
@@ -520,7 +521,7 @@ import Testing
         records.best5x10sKn = 11.5
         let block = KeyMetrics.make(summary: torboleSummary(), records: records)
         #expect(block.speedExtras.map(\.key) == ["best5x10s", "alpha500"])
-        #expect(block.speedExtras.map(\.label) == ["5×10 s", "alpha 500"])
+        #expect(block.speedExtras.map(\.label) == ["best 5×10 s", "alpha 500"])
         #expect(block.speedExtras.map(\.value) == ["11.50 kn", "—"])
         let stats = ShareCardStats.make(row: sampleRow(), title: "Torbole", metrics: block,
                                         timeZone: TimeZone(identifier: "UTC")!)
@@ -2044,15 +2045,15 @@ import Testing
 
     /// The defaults, which are the part a rider meets before he has touched anything.
     ///
-    /// Ride hides nothing — that contract predates the split, and a rider who never touched
-    /// a chip must not discover the app decided to hide half the session for him. The two
-    /// analysis maps each open without the one category that is texture rather than subject.
+    /// No map hides anything — a rider who never touched a chip must not discover the app
+    /// decided to hide part of the session for him. Ride always kept that contract; the two
+    /// analysis maps keep it since rider review I21 (*"Layers · 1 hidden. What did I hide?"*).
     @Test func eachMapOpensOnItsOwnSensibleDefaults() {
         #expect(MapLayerScope.ride.hiddenByDefault.isEmpty)
         #expect(MapLayerScope.ride.defaultVisibility.isEverythingVisible)
 
-        #expect(MapLayerScope.turns.hiddenByDefault == [.direction, .courseChange])
-        #expect(MapLayerScope.takeoffs.hiddenByDefault == [.direction])
+        #expect(MapLayerScope.turns.hiddenByDefault.isEmpty)
+        #expect(MapLayerScope.takeoffs.hiddenByDefault.isEmpty)
 
         for scope in MapLayerScope.allCases {
             // A default may only hide something the map can draw, or it is hiding nothing

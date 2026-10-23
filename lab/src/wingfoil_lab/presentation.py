@@ -373,11 +373,18 @@ def _falls_cell(summary):
              + all_ends.get("fellIn", 0))
     if total <= 0:
         return None
+    # **No split without a straight-line fall** (rider review I11, 23 Oct 2026: *"falls are
+    # counted twice"*). With none in a straight line every fall is a turn's, the turn
+    # ladders beside this cell already print them, and "3 in a turn · 0 in a straight line"
+    # only said the number a second time.
+    straight = ends.get("straight", {}).get("fellIn", 0)
+    captions = None
+    if straight > 0:
+        captions = [_caption("presentation.caption.fallsSplit",
+                             inTurn=ends.get("inTurn", {}).get("fellIn", 0),
+                             straight=straight)]
     return _cell("falls", "glossary.fellIn", value=all_ends.get("fellIn", 0),
-                 unit_kind="count",
-                 captions=[_caption("presentation.caption.fallsSplit",
-                                    inTurn=ends.get("inTurn", {}).get("fellIn", 0),
-                                    straight=ends.get("straight", {}).get("fellIn", 0))])
+                 unit_kind="count", captions=captions)
 
 
 def _rate_cells(summary, turns, rate_floor_exempt=False):

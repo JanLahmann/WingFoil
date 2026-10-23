@@ -1042,6 +1042,12 @@ public enum HelpCatalog {
                 .init(term: "A friend's session",
                       detail: "Sessions a friend sent you stay out of your records, trends "
                           + "and totals."),
+                // Rider review I14, 23 Oct 2026: the two words a speedsurfer brings to a
+                // records table, and no topic said them.
+                .init(term: "GP3S and Doppler",
+                      detail: "GP3S is the rule set speedsurfers use for these windows. "
+                          + "Doppler speed is what your watch measures from the satellite "
+                          + "signal itself, not from positions."),
                 .init(term: "\"Estimated\"",
                       detail: "A recording with positions but no speed channel has its "
                           + "speed worked out from them, which reads high. Every GPX is "
@@ -1166,13 +1172,16 @@ public enum HelpCatalog {
             summary: "The jibe you were working for: foil up the whole way, speed held, "
                 + "straight back to riding.",
             body: [
-                "This is the jibe you were working for. A **clean** jibe passes three gates: "
-                + "you flew through, held your speed, then 10 quiet seconds on the foil.",
+                // The third gate in the glossary's words (rider review X7, 23 Oct 2026):
+                // "quiet" was the engine's word and left a rider asking "quiet how?".
+                "This is the jibe you were working for. A **clean** jibe passes three gates. "
+                + "You flew through, held your speed, then rode 10 s with no touchdown, fall "
+                + "or second off the foil.",
                 "**Flew through** means you never lost the foil until you were flying again.",
                 "Holding the speed means your slowest point stays at or above 70 % of your "
                 + "entry speed. You never drop below the foil exit speed.",
-                "Staying quiet means the 10 s after the turn hold no touchdown or fall. They "
-                + "also hold no second or more off the foil, and no wrist under water.",
+                "Those 10 s start when the turn ends. A wrist under water in them counts as "
+                + "a fall.",
                 "Every clean jibe also flew through. A jibe that flew through can still "
                 + "miss clean, if you lost speed or touched down coming out.",
             ],
@@ -1221,6 +1230,10 @@ public enum HelpCatalog {
             title: "Port / starboard",
             summary: "Which tack you were on going in, and which side you avoid.",
             body: [
+                // From the Turns page's caption (rider review I21, 23 Oct 2026): the `?`
+                // beside the entry-tack filter opens this topic.
+                "Your entry tack is the tack you came into the turn on. It is not which way "
+                + "the board rotated.",
                 "The side is read from your wind angle before the turn. A 50/50 split "
                 + "means you work both sides equally. A lopsided split is the tack you "
                 + "quietly stop choosing, and usually the one worth practising.",
