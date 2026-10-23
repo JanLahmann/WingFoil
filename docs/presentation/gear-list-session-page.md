@@ -270,3 +270,23 @@ the queue. Map snapshots run two at a time. The row draws exactly what it drew b
 `LibraryScrollUITests` guards the hitch ratio (docs/testing.md). The app-wide menu (What CleanJibe does · Getting started ·
 Settings · Help · Support & ideas) is one `AppMenuButton` on all four tab roots (pattern M).
 
+### When the recording will not open
+
+The page says *Could not open this session*, one sentence, and the raw error under it in
+caption size, because the error is what makes a report about the session actionable. Rider
+review I13, 23 Oct 2026: the sentence said *Import the session again* with no button under
+it (*"How? There is no button."*). **In the beta and dev the way back in sits under the
+sentence** (`AppShellCopy.Unreadable`): **Fetch again** for a session that came from
+intervals.icu while the phone holds the key, which downloads that one activity again
+(`SessionStore.fetchAgainFromIntervals`), and **Import…** for every other, the Import
+screen's file picker. Under either, **Send this to us** opens the analysis mail
+(`SendToDeveloperSheet`) with the error written into the note. The sentence names the button
+under it (`Unreadable.betaLine(canFetch:)`). The release keeps its sentence and has no button.
+
+Both ways work because a re-import **replaces a stored copy that will not parse**
+(`SessionIngestor.ingest`, `IngestTests.aReimportReplacesAnUnreadableStoredCopy`): the new
+file matched the row, so it takes the row's archive, and the row keeps its id, name, gear and
+rider. A readable stored copy is never touched by a duplicate. Until 23 Oct the import called
+the new file a duplicate and kept the broken one, so the release's sentence was advice that
+could not work. The page reads the session again when the library changes under it.
+

@@ -80,6 +80,51 @@ import Testing
         #expect(ingestor.archive.sessionDirectories().count == 1)
     }
 
+    /// Rider review I13: the page says "import it again" when the stored copy will not
+    /// parse, and the import used to call the new file a duplicate and keep the broken one.
+    @Test func aReimportReplacesAnUnreadableStoredCopy() async throws {
+        let (ingestor, root) = try makeIngestor()
+        defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
+        let (data, name) = try fixtureData()
+        guard case .imported(let row) = try await ingestor.ingest(
+            fitData: data, filename: name, source: .file) else {
+            Issue.record("expected a fresh import")
+            return
+        }
+        try await ingestor.library.renameSession(id: row.id, to: "My afternoon")
+        let archive = ingestor.archive
+        try Data(data.prefix(40)).write(to: archive.originalURL(for: row.id))
+        #expect((try? archive.rawTrack(for: row.id)) == nil)
+
+        let again = try await ingestor.ingest(fitData: data, filename: name, source: .icu,
+                                              icuActivityId: "i4242")
+        guard case .duplicate(let kept) = again else {
+            Issue.record("expected the re-import to land on the same row")
+            return
+        }
+        #expect(kept.id == row.id)
+        #expect(kept.customTitle == "My afternoon")
+        #expect(kept.importSource == "file+icu")
+        #expect(try archive.originalData(for: row.id) == data)
+        #expect((try? archive.rawTrack(for: row.id)) != nil)
+        #expect(try await ingestor.allSessions().count == 1)
+    }
+
+    /// A readable stored copy is never touched by a duplicate: the archive is immutable.
+    @Test func aReimportLeavesAReadableStoredCopyAlone() async throws {
+        let (ingestor, root) = try makeIngestor()
+        defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
+        let (data, name) = try fixtureData()
+        guard case .imported(let row) = try await ingestor.ingest(
+            fitData: data, filename: name, source: .file) else { return }
+        let before = try FileManager.default.attributesOfItem(
+            atPath: ingestor.archive.originalURL(for: row.id).path)[.modificationDate] as? Date
+        _ = try await ingestor.ingest(fitData: data, filename: name, source: .file)
+        let after = try FileManager.default.attributesOfItem(
+            atPath: ingestor.archive.originalURL(for: row.id).path)[.modificationDate] as? Date
+        #expect(before == after)
+    }
+
     @Test func differentSessionsCoexist() async throws {
         let fits = allFixtureFITs()
         try #require(fits.count >= 2, "need two fixtures")

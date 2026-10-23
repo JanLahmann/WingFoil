@@ -3483,6 +3483,16 @@ export const WORDS = {
     "cleanRule": "Clean: you flew through, held at least {pct} % of your entry speed, then {quiet} quiet seconds on the foil.",
     "outcomeAndHeld": "Flew through / touchdown / fell in is the outcome. It says how the turn ended. Held is how much of your entry speed you kept through it, 0 to 100 %."
   },
+  "unreadable": {
+    "fetchButton": "Fetch again",
+    "fetchLine": "The recording could not be read. It may still be downloading, or the stored file is damaged. Fetch it again from intervals.icu and the page opens.",
+    "importButton": "Import…",
+    "importLine": "The recording could not be read. It may still be downloading, or the stored file is damaged. Import the file again and the page opens.",
+    "line": "The recording could not be read. It may still be downloading, or the stored file is damaged. Import the session again.",
+    "note": "This session would not open. The app said: {error}",
+    "sendToUs": "Send this to us",
+    "title": "Could not open this session"
+  },
   "recordingClass": {
     "a": "Foil time, flights, every turn verdict and clean jibe, measured speed records, the wind axis. Pump strokes and takeoff attempts too.",
     "b": "Everything except pump strokes and takeoff attempts, which need a wrist accelerometer nothing else records.",

@@ -104,6 +104,9 @@ struct SessionDetailView: View {
     @State private var milestones: [ReplayMilestone] = []
     @State private var showShare = false
     #if BETA
+    /// The unreadable page's two doors (rider review I13).
+    @State private var showUnreadableImporter = false
+    @State private var showUnreadableSend = false
     /// Ask CleanJibe about this session (beta and dev, docs/channels.md).
     @State private var asking = false
     #endif
@@ -269,17 +272,27 @@ struct SessionDetailView: View {
                     // smaller and underneath, because it is the only thing that makes a
                     // report about this session actionable — it is just not the message.
                     ContentUnavailableView {
-                        Label("Could not open this session",
+                        Label(AppShellCopy.Unreadable.title,
                               systemImage: "exclamationmark.triangle")
                     } description: {
                         VStack(spacing: 8) {
-                            Text("The recording could not be read. It may still be "
-                                 + "downloading, or the stored file is damaged. "
-                                 + "Import the session again.")
+                            #if BETA
+                            Text(AppShellCopy.Unreadable.betaLine(
+                                canFetch: row.map { store.canFetchAgain($0) } ?? false))
+                            #else
+                            Text(AppShellCopy.Unreadable.line)
+                            #endif
                             Text(failure)
                                 .font(.caption2)
                                 .foregroundStyle(.readableSecondary)
                         }
+                    } actions: {
+                        // The way back in, under the sentence that names it (rider review
+                        // I13, "How? There is no button."). BETA: the release keeps its
+                        // sentence and has no button here (docs/channels.md).
+                        #if BETA
+                        if let row { unreadableActions(row, failure: failure) }
+                        #endif
                     }
                 } else {
                     ProgressView("Analysing…")
@@ -466,6 +479,11 @@ struct SessionDetailView: View {
         // A rename, an import or a Speed records change can move what the session holds.
         .onChange(of: "\(store.libraryGeneration)|\(store.speedRecordPolicy.rawValue)") {
             tellStory()
+            #if BETA
+            // An import that landed on this session may have replaced the copy that would
+            // not open (the Import… button above, through the rider prompt).
+            if failure != nil { Task { await retryLoad() } }
+            #endif
         }
         // The record, celebrated where it happened: once, the first time the session that
         // set it opens after the import (the Records tab keeps its own burst too).
@@ -510,6 +528,61 @@ struct SessionDetailView: View {
             failure = "\(error)"
         }
     }
+
+    #if BETA
+    // MARK: - A recording that will not open
+
+    /// Fetch again for an intervals.icu session the phone can still reach, Import… for every
+    /// other, and Send this to us under either, with the error written into the note.
+    @ViewBuilder
+    private func unreadableActions(_ row: SessionRow, failure: String) -> some View {
+        VStack(spacing: 10) {
+            if store.canFetchAgain(row) {
+                Button {
+                    Task {
+                        if await store.fetchAgainFromIntervals(row) { await retryLoad() }
+                    }
+                } label: {
+                    Label(AppShellCopy.Unreadable.fetchButton,
+                          systemImage: "arrow.down.circle")
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(store.isBusy)
+            } else {
+                Button { showUnreadableImporter = true } label: {
+                    Label(AppShellCopy.Unreadable.importButton,
+                          systemImage: "square.and.arrow.down")
+                }
+                .buttonStyle(.borderedProminent)
+            }
+            Button { showUnreadableSend = true } label: {
+                Label(AppShellCopy.Unreadable.sendToUs, systemImage: "text.bubble")
+            }
+            .buttonStyle(.bordered)
+            BetaChip()
+        }
+        .fileImporter(isPresented: $showUnreadableImporter,
+                      allowedContentTypes: ImportView.importableTypes,
+                      allowsMultipleSelection: false) { result in
+            if case .success(let urls) = result {
+                Task { await store.importPicked(urls: urls) }
+            }
+        }
+        .sheet(isPresented: $showUnreadableSend) {
+            SendToDeveloperSheet(row: row,
+                                 prefill: AppShellCopy.fill(AppShellCopy.Unreadable.note,
+                                                            ["error": failure]))
+        }
+    }
+
+    /// Clears the failure and reads the session again, after a fetch or an import that may
+    /// have replaced the stored copy.
+    private func retryLoad() async {
+        guard failure != nil else { return }
+        failure = nil
+        await load()
+    }
+    #endif
 
     // MARK: - The card, before the recording
 

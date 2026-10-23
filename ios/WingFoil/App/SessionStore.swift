@@ -2729,6 +2729,45 @@ final class SessionStore {
         }
     }
 
+    /// Whether `fetchAgainFromIntervals` can run for this row: it came from intervals.icu
+    /// and the phone holds the key. Read in a view body, so it touches no keychain.
+    func canFetchAgain(_ row: SessionRow) -> Bool {
+        row.icuActivityId != nil && !apiKey.isEmpty
+    }
+
+    /// **One session's recording, downloaded again** — the unreadable page's Fetch again
+    /// (rider review I13, BETA). The same download the sync makes, ingested the same way:
+    /// the dedupe finds the row by its activity id, and a stored copy that will not parse
+    /// is replaced by this one (`SessionIngestor.ingest`). True when the file arrived.
+    func fetchAgainFromIntervals(_ row: SessionRow) async -> Bool {
+        reloadApiKeyIfMissing()
+        guard !isBusy, let activityID = row.icuActivityId, canFetchAgain(row) else {
+            return false
+        }
+        isBusy = true
+        defer { isBusy = false }
+        status = "Fetching the recording from intervals.icu…"
+        let key = apiKey
+        let ingestor = self.ingestor
+        let filename = row.originalFilename
+        do {
+            try await Task.detached(priority: .userInitiated) {
+                let fit = try await IcuClient(apiKey: key)
+                    .originalRecording(activityID: activityID)
+                _ = try await ingestor.ingest(fitData: fit, filename: filename, source: .icu,
+                                              icuActivityId: activityID)
+            }.value
+            status = nil
+            await load()
+            return true
+        } catch {
+            status = nil
+            Usage.failed(.importIcu, error: error)
+            errorMessage = IcuDiagnosis.describe(error).alertText
+            return false
+        }
+    }
+
     /// Picks up what a background wake imported while the app was away. Cheap and silent:
     /// on the ordinary foreground, where nothing happened, it does nothing at all.
     func absorbBackgroundImports() async {

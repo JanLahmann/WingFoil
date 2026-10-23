@@ -472,6 +472,23 @@ between them; the browser draws the same three as a segmented group with the sam
 (`SpeedRecordPolicy.summary`, `SPEED_RECORD_SUMMARY` in `web/js/appshell.js`). Under **Only
 verified** a table that empties says why rather than going blank (pattern G).
 
+### The Share page — the button never scrolls
+
+Rider review I4, 23 Oct 2026: *"Where's the share button?"* It sat under the preview, the two
+naming fields above the switcher and the design controls, so on a phone it was below the fold
+on every aspect. **The share button is pinned** in a bar over the foot of the sheet
+(`ShareComposerView.shareBar`, a bottom `safeAreaInset` on the `.bar` material), in every
+channel, for whichever tab shows: *Share card* on the card tab, *Share <file> · <size>* on the
+FIT tab, with its spinner or its failure line in the same place while the file is prepared.
+The inset keeps the end of the scroll clear of it and lifts it over the keyboard while a field
+is typed in. The line about the card's pixel size stays in the scroll
+(`ShareCardExportRow.part`).
+
+The order in the scroll is **switcher, Send this session to us (beta), preview, then the two
+fields**: the card is what the rider came to see, and the title and caption are what he
+changes on it once he has seen it. The FIT tab carries the same two fields under its scrub
+note, because the title is the file's name. The period card's sheet is unchanged.
+
 ### Send this session to us — the Share page's third thing (beta)
 
 Jan, 21 September 2026. The Card and FIT file segments answer one request, *send this to

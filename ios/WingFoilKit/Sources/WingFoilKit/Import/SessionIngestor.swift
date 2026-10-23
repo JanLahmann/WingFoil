@@ -277,7 +277,21 @@ public struct SessionIngestor: Sendable {
                                           icuActivityId: icuActivityId)
         if let existing, !existing.isProvisional,
            !Self.yields(existing, to: source, sourceClass: caps.sourceClass) {
-            let merged = try await note(existing, source: source, icuActivityId: icuActivityId)
+            // **A copy that cannot be read is replaced by one that can** (rider review I13).
+            // The session page tells a rider whose stored recording will not parse to
+            // import it again, and until this branch the import found the row, called the
+            // new file a duplicate and kept the broken one. The new bytes have just parsed
+            // and matched this row, so they take its archive; the row keeps its id, name,
+            // gear and rider, and only its derived columns move (`reanalyze`).
+            var held = existing
+            if (try? archive.rawTrack(for: existing.id)) == nil {
+                try archive.storeOriginal(fitData, id: existing.id)
+                try await reanalyze(existing)
+                // The row as `reanalyze` left it, so the note below does not write the
+                // stale snapshot back over the columns it just derived.
+                held = try await session(id: existing.id) ?? existing
+            }
+            let merged = try await note(held, source: source, icuActivityId: icuActivityId)
             return .duplicate(merged)
         }
         // F-6: the row this recording takes over is a positions-only copy, not a card or a
