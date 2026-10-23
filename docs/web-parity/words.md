@@ -60,7 +60,7 @@ phone authors it. `*` marks a key the file picks at run time (`say(`turnCoach.${
 | `icu.noKeyFix` | IcuProblem (title / message / fix) | icu.js | Paste your personal API key: intervals.icu → Settings → Developer Settings. |
 | `icu.serverFix` | IcuProblem (title / message / fix) | icu.js | This is usually temporary. Try again in a few minutes. |
 | `icu.serverMessageDetail` | IcuProblem (title / message / fix) | icu.js | intervals.icu answered with an error ({detail}). That is its end, not yours. |
-| `icu.unauthorizedFix` | IcuProblem (title / message / fix) | icu.js | Copy the key again from intervals.icu → Settings → Developer Settings and paste it fresh — a stray space at… |
+| `icu.unauthorizedFix` | IcuProblem (title / message / fix) | icu.js | Copy the key again from intervals.icu → Settings → Developer Settings and paste it fresh. |
 | `icu.unauthorizedMessage` | IcuProblem (title / message / fix) | icu.js | The key is wrong, or it was regenerated in intervals.icu after you pasted it here. |
 | `library.noMatch` | AppShellCopy.Library (LibraryView) | trends.js | No session matches these filters |
 | `library.noMatchLine` | AppShellCopy.Library (LibraryView) | trends.js | Nothing in the library answers to all of them at once. |
@@ -108,7 +108,7 @@ phone authors it. `*` marks a key the file picks at run time (`say(`turnCoach.${
 | `trends.bySideEmpty` | AppShellCopy.Trends (TrendsView) | trends.js* | No session in this range has turns with a usable entry tack. That needs a wind direction the app can trust. |
 | `trends.bySideNote` | AppShellCopy.Trends (TrendsView) | trends.js* | Each line splits your turns by the tack you came in on. Course changes do not count. |
 | `trends.cleanJibes` | AppShellCopy.Trends (TrendsView) | trends.js (CHART_TITLE), trends.js* | Clean jibes |
-| `trends.cleanJibesNote` | AppShellCopy.Trends (TrendsView) | trends.js* | Jibes that flew through, held at least 70 % of their entry speed, then 10 quiet seconds on the foil. |
+| `trends.cleanJibesNote` | AppShellCopy.Trends (TrendsView) | trends.js* | You flew through and held 70 % of your entry speed. Then you rode 10 s with no touchdown, fall or second off the foil. |
 | `trends.cph` | AppShellCopy.Trends (TrendsView) | trends.js (CHART_TITLE), trends.js* | Clean jibes an hour (CPH) |
 | `trends.flewThrough` | AppShellCopy.Trends (TrendsView) | trends.js (CHART_TITLE), trends.js* | Flew-through rate |
 | `trends.flewThroughNote` | AppShellCopy.Trends (TrendsView) | trends.js* | Turns that never lost the foil. Every counted turn, not jibes alone. |
@@ -170,7 +170,9 @@ phone authors it. `*` marks a key the file picks at run time (`say(`turnCoach.${
 | `turnPage.noBearings` | AppShellCopy.TurnPage (TurnDetailView, TurnHeadingStripView) | turnpage.js | No usable bearings through this window. The steps were shorter than the receiver's own scatter. |
 | `turnPage.noGeometry` | AppShellCopy.TurnPage (TurnDetailView, TurnHeadingStripView) | turnpage.js | No GPS fixes through this turn. Numbers only. |
 | `turnPage.nothingToCompare` | AppShellCopy.TurnPage (TurnDetailView, TurnHeadingStripView) | turnpage.js | Nothing to compare with. This session has no other jibe that flew through the same way round. |
-| `turns.cleanRule` | AppShellCopy.Turns (TurnsAnalysisView) | render.js | Clean: you flew through, held at least {pct} % of your entry speed, then {quiet} quiet seconds on the foil. |
+| `turns.cleanRule` | AppShellCopy.Turns (TurnsAnalysisView) | render.js | Clean: you flew through and held at least {pct} % of your entry speed. Then you rode {quiet} s with no touchdown, fall or second off the foil. |
+| `turns.windWeak` | AppShellCopy.Turns (SessionDetailView, SessionLogView) | render.js | {pct} % confident, can't tell tacks from jibes |
+| `turns.noWindAxis` | AppShellCopy.Turns (SummaryGrid) | render.js | no clear wind direction in your track |
 | `recordingClass.a` | RecordingClass.line (recording-classes.json) | render.js* | Foil time, flights, every turn verdict and clean jibe, measured speed records, the wind axis. Pump strok… |
 | `recordingClass.b` | RecordingClass.line (recording-classes.json) | render.js* | Everything except pump strokes and takeoff attempts, which need a wrist accelerometer nothing else records. |
 | `recordingClass.bPlus` | RecordingClass.line (recording-classes.json) | render.js* | Everything a file with measured speed gets, plus pump strokes and takeoff attempts. The watch app recor… |

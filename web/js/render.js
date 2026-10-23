@@ -267,12 +267,12 @@ function renderSummary(result, isExample = false) {
   // `windMinConfidence` (0.5): below it the axis is too weak to name tacks and jibes, the
   // one case where the number changes what the page says. The phone's wind line, twinned.
   // The words are the rider's, not the engine's (rider review X19, 23 Oct 2026: "too weak
-  // to name turns", "no usable wind axis"); the phone's twin in SessionDetailView still says
-  // the old line and follows in an iOS round.
+  // to name turns", "no usable wind axis"). The words are the kit's, `AppShellCopy.Turns`,
+  // which the phone's wind line and Unclassified card say too.
   const windLow = Boolean(w) && w.usable === false;
   const windTile = w
     ? { k: "Wind axis", v: `${nf(w.dirDeg, 0)}°`, unit: "from",
-        n: (windLow ? `${pct(100 * w.confidence)} confident, can't tell tacks from jibes` : "") +
+        n: (windLow ? say("turns.windWeak", { pct: String(Math.round(100 * w.confidence)) }) : "") +
            // What the watch had to go on. The rider's own bearing is stated flat; an axis the
            // watch ESTIMATED (session field 44, app >= 0.9.0) carries the same leading "~" it
            // wears on the watch, because an estimate that reads like a measurement is worse
@@ -281,7 +281,7 @@ function renderSummary(result, isExample = false) {
               ? `${windLow ? " · " : ""}watch says ${nf(meta.windDirUserDeg, 0)}°` : "") +
            (meta.windDirAutoDeg !== null && meta.windDirAutoDeg !== undefined
               ? ` · watch estimated ~${nf(meta.windDirAutoDeg, 0)}°` : "") }
-    : { k: "Wind axis", v: "—", n: "no clear wind direction in your track" };
+    : { k: "Wind axis", v: "—", n: say("turns.noWindAxis") };
 
   // The touchdown tile's numbers in their inks (Jan, F9e). The jibe and tack tiles that
   // drew the whole ladder this way are gone: block row 3 prints the same tallies.

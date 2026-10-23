@@ -122,7 +122,7 @@ Five rules hold that table together.
 
 * **The order is the order a rider meets a watch**, Apple straight after Garmin. They are the
   same doors `GettingStartedGuide.routes` carries — `garmin`, `appleWatchApp`,
-  `appleWorkoutApp`, `fit`, `strava` — so the empty state, the Getting started topic and `/start` name the same four. The
+  `appleWorkoutApp`, `fit`, `strava` — so the empty state, the Getting started topic and `/start` name the same five routes (the Garmin watch app row is part of `garmin`). The
   generated guide is reordered from the web side, so nothing in the app reads that array by
   position: the rows are declared here, and the route ids are the seam.
 * **The rows name the action, the routes name the door.** This is a list of things to *do*;

@@ -38,8 +38,8 @@ reads is:
 | **clean** | that, **and** did it hold its speed, **and** were the ten seconds after it quiet — a jibe word | the per-turn `clean` flag |
 
 **The rider never reads "quiet"** (rider review X7, 23 Oct 2026: *"Clean means ten quiet
-seconds. Quiet how?"*). The definition is said once, as `MetricGlossary.cleanLine`: *A jibe
-that flew through and held 70 % of its entry speed. Then 10 s with no touchdown, fall or
+seconds. Quiet how?"*). The definition is said once, as `MetricGlossary.cleanLine`: *You
+flew through and held 70 % of your entry speed. Then you rode 10 s with no touchdown, fall or
 second off the foil.* That is the quiet tail's three tests in rider words — a touchdown or
 fall end, an off-foil spell of 1 s or more, a wrist under (which the rider knows as a fall).
 The glossary's Clean line and the Trends note are that constant; the Turns footnote

@@ -155,7 +155,7 @@ export const GLOSSARY = [
     "term": "Clean",
     "short": "clean",
     "expansion": "",
-    "line": "A jibe that flew through and held 70 % of its entry speed. Then 10 s with no touchdown, fall or second off the foil."
+    "line": "You flew through and held 70 % of your entry speed. Then you rode 10 s with no touchdown, fall or second off the foil."
   },
   {
     "id": "speedKept",

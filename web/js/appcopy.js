@@ -1930,7 +1930,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "A jibe that flew through and held 70 % of its entry speed. Then 10 s with no touchdown, fall or second off the foil. Also on the watch.",
+              "detail": "You flew through and held 70 % of your entry speed. Then you rode 10 s with no touchdown, fall or second off the foil. Also on the watch.",
               "term": "Clean"
             },
             {
@@ -3486,7 +3486,7 @@ export const WORDS = {
     "healthRowLine": "Pick Surfing on the watch, then import it from Health.",
     "noMatch": "No session matches these filters",
     "noMatchLine": "Nothing in the library answers to all of them at once.",
-    "stravaPickLine": "Pick the sessions you want. Strava keeps positions only, so speed records are estimated.",
+    "stravaPickLine": "Pick sessions. Strava keeps positions only, so records are estimated.",
     "stravaRowLine": "Strava keeps positions only, so speed records are estimated."
   },
   "periods": {
@@ -3573,7 +3573,7 @@ export const WORDS = {
     "bySideEmpty": "No session in this range has turns with a usable entry tack. That needs a wind direction the app can trust.",
     "bySideNote": "Each line splits your turns by the tack you came in on. Course changes do not count.",
     "cleanJibes": "Clean jibes",
-    "cleanJibesNote": "A jibe that flew through and held 70 % of its entry speed. Then 10 s with no touchdown, fall or second off the foil.",
+    "cleanJibesNote": "You flew through and held 70 % of your entry speed. Then you rode 10 s with no touchdown, fall or second off the foil.",
     "cph": "Clean jibes an hour (CPH)",
     "emptyLibrary": "Connect intervals.icu in Settings, or import a .fit file, and the charts fill as you ride.",
     "flewThrough": "Flew-through rate",
@@ -3647,7 +3647,7 @@ export const WORDS = {
     "nothingToCompare": "Nothing to compare with. No other {model} this session turned the same way round."
   },
   "turns": {
-    "cleanRule": "Clean: you flew through and held at least {pct} % of your entry speed. Then {quiet} s with no touchdown, fall or second off the foil.",
+    "cleanRule": "Clean: you flew through and held at least {pct} % of your entry speed. Then you rode {quiet} s with no touchdown, fall or second off the foil.",
     "noWindAxis": "no clear wind direction in your track",
     "outcomeAndHeld": "Flew through / touchdown / fell in is the outcome. It says how the turn ended. Held is how much of your entry speed you kept through it, 0 to 100 %.",
     "windWeak": "{pct} % confident, can't tell tacks from jibes"

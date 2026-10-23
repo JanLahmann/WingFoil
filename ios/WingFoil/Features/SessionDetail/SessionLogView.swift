@@ -76,10 +76,13 @@ private struct WindDetailCard: View {
                     }
                     if let wind = detail.analysis.wind {
                         let confidence = String(Int((wind.confidence * 100).rounded()))
-                        let weak = wind.usable ? "" : ". Too weak to name turns"
+                        // The wind line's own words when it is weak (rider review X19).
                         row("Estimated from the track",
                             "\(Fmt.compass(wind.dirDeg)) · \(Int(wind.dirDeg.rounded()))°",
-                            note: confidence + " % confident" + weak)
+                            note: wind.usable
+                                ? confidence + " % confident"
+                                : AppShellCopy.fill(AppShellCopy.Turns.windWeak,
+                                                    ["pct": confidence]))
                     }
                 }
                 Text(consequence)

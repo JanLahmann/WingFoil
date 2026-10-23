@@ -680,13 +680,14 @@ struct LibraryView: View {
     /// setup (Jan, dev 70).
     ///
     /// Six rows in the beta, three in the App Store build, in the guide's order: the Garmin
-    /// bridge, the Garmin watch app, the Apple Watch, Apple's Workout app, a file, Strava. They are the same doors
-    /// `GettingStartedGuide.routes` lists — `garmin`, `appleWatchApp`, `strava`, `fit` —
+    /// bridge, the Garmin watch app, the Apple Watch, Apple's Workout app, a file, Strava.
+    /// They are the doors `GettingStartedGuide.routes` lists — `garmin`, `appleWatchApp`,
+    /// `appleWorkoutApp`, `fit`, `strava`, the Garmin watch app being part of `garmin` —
     /// and the generated guide is reordered from the web side, so nothing here reads that
     /// array by position or by index. What each row says is the *action*, because this is
     /// a list of things to do and the guide is a list of things to read.
     ///
-    /// **Two of the four end in Settings, and say so in their own label.** Settings is
+    /// **Two of the rows end in Settings, and say so in their own label.** Settings is
     /// where an account is kept (*Import does, Settings configures*, build 63), and the
     /// sheet opens on intervals.icu and Strava — the first two sections of the form — so
     /// there is nothing to scroll to and no anchor to miss. Both rows take the one action

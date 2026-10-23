@@ -58,7 +58,7 @@ Answering rules: use only facts from this file and from the state you are given.
 - **Best 5×10 s**: The mean of your best five separate 10-second runs. They may not overlap, so one lucky reach cannot carry it. Also printed as: 5×10 s.
 - **Alpha 500**: Your fastest 500 m that ends within 50 m of where it started. It contains a jibe, so it measures the turn as well as the speed.
 - **Flew through**: The turn kept the foil, from the sweep until you were flying again. Also printed as: flew.
-- **Clean**: A jibe that flew through and held 70 % of its entry speed. Then 10 s with no touchdown, fall or second off the foil. Also printed as: Clean jibes, clean jibes.
+- **Clean**: You flew through and held 70 % of your entry speed. Then you rode 10 s with no touchdown, fall or second off the foil. Also printed as: Clean jibes, clean jibes.
 - **Speed kept**: The share of counted turns that held 70 % of their entry speed and never dropped off the foil.
 - **Dry**: You did not fall in. A touchdown still counts as dry.
 - **Touchdown**: Your board touched the water and you got going again without falling in. A stop under 5 s counts as a touchdown. Longer, and it counts as a fall. Also printed as: Touchdowns, touchdowns.
@@ -232,7 +232,7 @@ Each number has one word, on the watch, the phone, the card and the site. If you
 - Best 5×10 s: The mean of your best five separate 10-second runs. They may not overlap, so one lucky reach cannot carry it.
 - Alpha 500: Your fastest 500 m that ends within 50 m of where it started. It contains a jibe, so it measures the turn as well as the speed.
 - Flew through: The turn kept the foil, from the sweep until you were flying again. Also on the watch.
-- Clean: A jibe that flew through and held 70 % of its entry speed. Then 10 s with no touchdown, fall or second off the foil. Also on the watch.
+- Clean: You flew through and held 70 % of your entry speed. Then you rode 10 s with no touchdown, fall or second off the foil. Also on the watch.
 - Speed kept: The share of counted turns that held 70 % of their entry speed and never dropped off the foil. Also on the watch and in Garmin Connect.
 - Dry: You did not fall in. A touchdown still counts as dry.
 - Touchdown: Your board touched the water and you got going again without falling in. Also on the watch.
@@ -571,7 +571,7 @@ Dev adds:
 
 ## The turn coach (what the turn page says, with its tips)
 
-- Clean: you flew through and held at least {pct} % of your entry speed. Then {quiet} s with no touchdown, fall or second off the foil.
+- Clean: you flew through and held at least {pct} % of your entry speed. Then you rode {quiet} s with no touchdown, fall or second off the foil.
 - no clear wind direction in your track
 - Flew through / touchdown / fell in is the outcome. It says how the turn ended. Held is how much of your entry speed you kept through it, 0 to 100 %.
 - {pct} % confident, can't tell tacks from jibes

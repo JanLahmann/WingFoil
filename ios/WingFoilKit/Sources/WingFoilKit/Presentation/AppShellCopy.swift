@@ -240,7 +240,7 @@ public enum AppShellCopy {
         /// web wind tile's words: an axis below `windMinConfidence`, and no axis at all.
         public static let windWeak = "{pct} % confident, can't tell tacks from jibes"
         public static let noWindAxis = "no clear wind direction in your track"
-        public static let cleanRule = "Clean: you flew through and held at least {pct} % of your entry speed. Then {quiet} s with no touchdown, fall or second off the foil."
+        public static let cleanRule = "Clean: you flew through and held at least {pct} % of your entry speed. Then you rode {quiet} s with no touchdown, fall or second off the foil."
 
         static let all: [String: String] = [
             "outcomeAndHeld": outcomeAndHeld, "cleanRule": cleanRule,
@@ -260,7 +260,8 @@ public enum AppShellCopy {
         /// speeds from a Strava copy, so "not your speed" read as a contradiction.
         public static let stravaRowLine =
             "Strava keeps positions only, so speed records are estimated."
-        public static let stravaPickLine = "Pick the sessions you want. " + stravaRowLine
+        /// Twelve words at most, the card's line budget: the connected row's line.
+        public static let stravaPickLine = "Pick sessions. Strava keeps positions only, so records are estimated."
 
         static let all: [String: String] = [
             "noMatch": noMatch, "noMatchLine": noMatchLine,

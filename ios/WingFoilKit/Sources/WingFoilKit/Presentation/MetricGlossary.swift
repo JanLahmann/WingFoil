@@ -174,8 +174,8 @@ public enum MetricGlossary {
     /// line, the Trends note and the help say it from here; the Turns footnote and the turn
     /// page say it with the analysis' own two numbers (`AppShellCopy.Turns.cleanRule`).
     public static let cleanLine =
-        "A jibe that flew through and held 70 % of its entry speed. "
-        + "Then 10 s with no touchdown, fall or second off the foil."
+        "You flew through and held 70 % of your entry speed. "
+        + "Then you rode 10 s with no touchdown, fall or second off the foil."
 
     /// A record window's label, from the design tokens rather than retyped: `design/tokens.json`
     /// owns the eight window names, and the picker, the tiles and the share card all draw
@@ -243,7 +243,7 @@ public enum MetricGlossary {
             // pumping.md, "Turn streaks").
             line: "How many turns in a row you stayed out of the water, tacks and jibes "
                 + "alike. A fall anywhere ends the run.",
-            sentence: "your longest run of jibes without falling in",
+            sentence: "your longest run of turns without falling in",
             surfaces: [.ios, .watch, .web, .appstore],
             places: [.watchPage, .phoneRow, .phonePage, .card, .web, .help],
             labels: ["Dry streak", "dry streak", "best streaks"]),
