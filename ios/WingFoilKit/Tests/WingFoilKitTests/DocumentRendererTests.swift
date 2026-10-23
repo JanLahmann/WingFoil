@@ -59,7 +59,7 @@ import Testing
         #expect(block.basics[1].value == "17.5 km")
 
         #expect(block.maxSpeed.label == "best 2 s")
-        #expect(block.speedExtras.map(\.label) == ["5×10 s", "alpha 500"])
+        #expect(block.speedExtras.map(\.label) == ["best 5×10 s", "alpha 500"])
 
         let tally = try #require(block.tally)
         #expect(tally.label == "flew · touchdown · fell in")

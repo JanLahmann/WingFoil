@@ -793,12 +793,17 @@ struct SessionDetailView: View {
                 .accessibilityIdentifier("turnSortOrder")
             }
 
-            Picker("Entry tack", selection: $turnFilter.side) {
-                ForEach(TurnSideFilter.allCases) { Text($0.label).tag($0) }
+            // The `?` says what "entry tack" means (rider review I21): the caption that
+            // said it under the bar is the Port / starboard topic's first line now.
+            HStack(spacing: 8) {
+                Picker("Entry tack", selection: $turnFilter.side) {
+                    ForEach(TurnSideFilter.allCases) { Text($0.label).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .accessibilityLabel("Entry tack")
+                .accessibilityIdentifier("turnSideFilter")
+                HelpButton(topic: .portStarboard, size: .body, ink: .readableSecondary)
             }
-            .pickerStyle(.segmented)
-            .accessibilityLabel("Entry tack")
-            .accessibilityIdentifier("turnSideFilter")
         case .takeoffs where !detail.takeoffMarks.isEmpty
                 && detail.row.analysisDiscipline.lexicon.pumping:
             Picker("Outcome", selection: $takeoffFilter) {
@@ -1159,7 +1164,8 @@ private struct WindRow: View {
             var line = "Wind from " + bearing
             if isLow {
                 let confidence = Int((wind.confidence * 100).rounded())
-                line += " · " + String(confidence) + " % confident, too weak to name turns"
+                line += " · " + AppShellCopy.fill(AppShellCopy.Turns.windWeak,
+                                                 ["pct": String(confidence)])
             }
             parts.append(line)
         }

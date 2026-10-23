@@ -90,19 +90,12 @@ public enum MapLayerScope: String, CaseIterable, Sendable, Identifiable, Codable
 
     /// What is off when a rider first opens this map.
     ///
-    /// Ride hides nothing — that contract predates the split and is the one a rider who
-    /// never touches a chip relies on. The two analysis maps each hide the one category that
-    /// is texture rather than subject: the direction chevrons, which on a small figure full
-    /// of pins read as a second dotted line. Turns also opens without the grey course
-    /// changes, because the page's headline is a percentage of *maneuvers* and a bear-away
-    /// is not one.
-    public var hiddenByDefault: Set<MapLayer> {
-        switch self {
-        case .ride: return []
-        case .turns: return [.direction, .courseChange]
-        case .takeoffs: return [.direction]
-        }
-    }
+    /// **Nothing, on every map** (rider review I21, 23 Oct 2026): *"Layers · 1 hidden. What
+    /// did I hide?"* Turns used to open without the direction chevrons and the grey course
+    /// changes, and Flights without the chevrons, so a rider who had never touched a chip
+    /// was told he had hidden something. Ride always hid nothing; the two analysis maps now
+    /// keep the same contract, and a chip is off only because the rider turned it off.
+    public var hiddenByDefault: Set<MapLayer> { [] }
 
     public var defaultVisibility: MapLayerVisibility {
         MapLayerVisibility(hidden: hiddenByDefault)

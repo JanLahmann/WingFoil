@@ -93,7 +93,7 @@ public enum AppShellCopy {
         public static let footSweepBand = "\"Sweep\" is where the heading turned. The low point is searched to {seconds} s past the sweep, so it can sit after \"out\"."
         public static let footLighterBand =
             "The lighter band inside it ends where you were flying again."
-        public static let footQuiet = "A clean jibe also needs {seconds} s after the sweep with no touchdown, fall or wrist under."
+        public static let footQuiet = "A clean jibe also needs {seconds} s after the sweep with no touchdown, fall or second off the foil."
         public static let footAxis =
             "The tick marked \"axis\" is the moment the board went through the wind axis. "
             + "That is dead downwind on a jibe, head to wind on a tack. "
@@ -220,6 +220,11 @@ public enum AppShellCopy {
         public static let sendToUs = "Send this session to us"
         public static let sendToUsLine =
             "A number looks wrong? Send the recording with your notes."
+        /// The two footers under the title and caption fields (rider review I24, 23 Oct
+        /// 2026): what the rider gets, not which files follow the name. The clip is a
+        /// beta door, so neither line names it (docs/channels.md).
+        public static let nameLine = "Your name for this session, on the card and in your list."
+        public static let captionLine = "One line of your own under the name on the card."
 
         /// The card's background, on the session card and the period card alike
         /// (`ShareCardDesignControls`): the dark card, the map under the track, a photo.
@@ -238,6 +243,7 @@ public enum AppShellCopy {
 
         static let all: [String: String] = [
             "sendToUs": sendToUs, "sendToUsLine": sendToUsLine,
+            "nameLine": nameLine, "captionLine": captionLine,
             "background": background, "dark": dark, "map": map, "photo": photo,
             "tracks": tracks, "allSessions": allSessions, "oneSession": oneSession,
             "collage": collage, "collageNote": collageNote,
@@ -271,19 +277,40 @@ public enum AppShellCopy {
             "Flew through / touchdown / fell in is the outcome. It says how the turn ended. "
             + "Held is how much of your entry speed you kept through it, 0 to 100 %."
         /// The three gates, with the analysis' own two numbers.
-        public static let cleanRule = "Clean: you flew through, held at least {pct} % of your entry speed, then {quiet} quiet seconds on the foil."
+        /// Said as `MetricGlossary.cleanLine` says it (rider review X7), with the numbers
+        /// this analysis ran at.
+        /// The wind line's two engine-free clauses (rider review X19, 23 Oct 2026), the
+        /// web wind tile's words: an axis below `windMinConfidence`, and no axis at all.
+        public static let windWeak = "{pct} % confident, can't tell tacks from jibes"
+        public static let noWindAxis = "no clear wind direction in your track"
+        public static let cleanRule = "Clean: you flew through and held at least {pct} % of your entry speed. Then you rode {quiet} s with no touchdown, fall or second off the foil."
 
         static let all: [String: String] = [
             "outcomeAndHeld": outcomeAndHeld, "cleanRule": cleanRule,
+            "windWeak": windWeak, "noWindAxis": noWindAxis,
         ]
     }
 
-    /// `LibraryView`: a filter that leaves nothing.
+    /// `LibraryView`: a filter that leaves nothing, and two rows of the ways-in card.
     public enum Library {
         public static let noMatch = "No session matches these filters"
         public static let noMatchLine = "Nothing in the library answers to all of them at once."
+        /// The Health row of *How your sessions get in*, beta like the door it leads to
+        /// (rider review I8, 23 Oct 2026). It opens the help topic, as the Apple Watch row does.
+        public static let healthRow = "Record with Apple's Workout app"
+        public static let healthRowLine = "Pick Surfing on the watch, then import it from Health."
+        /// The Strava rows, in the Import footer's terms (rider review I17): the app shows
+        /// speeds from a Strava copy, so "not your speed" read as a contradiction.
+        public static let stravaRowLine =
+            "Strava keeps positions only, so speed records are estimated."
+        /// Twelve words at most, the card's line budget: the connected row's line.
+        public static let stravaPickLine = "Pick sessions. Strava keeps positions only, so records are estimated."
 
-        static let all: [String: String] = ["noMatch": noMatch, "noMatchLine": noMatchLine]
+        static let all: [String: String] = [
+            "noMatch": noMatch, "noMatchLine": noMatchLine,
+            "healthRow": healthRow, "healthRowLine": healthRowLine,
+            "stravaRowLine": stravaRowLine, "stravaPickLine": stravaPickLine,
+        ]
     }
 
     // MARK: - Records, Trends, Periods
@@ -309,12 +336,14 @@ public enum AppShellCopy {
             + "from positions. Settings has the other two answers."
         public static let noQualifying = "No qualifying speed window under this filter."
         public static let noRecords = "No records yet"
+        /// The margin column's header (rider review I14): "+Δ PB" was two codes.
+        public static let beatBy = "beat by"
 
         static let all: [String: String] = [
             "speedHead": speedHead, "speedMeasured": speedMeasured,
             "speedFreshness": speedFreshness, "sessionRecordsFooter": sessionRecordsFooter,
             "emptyLibrary": emptyLibrary, "noMeasured": noMeasured,
-            "noQualifying": noQualifying, "noRecords": noRecords,
+            "noQualifying": noQualifying, "noRecords": noRecords, "beatBy": beatBy,
         ]
     }
 
@@ -329,9 +358,8 @@ public enum AppShellCopy {
             "Widen the range or clear the spot and gear filters."
         public static let onFoil = "On foil"
         public static let cleanJibes = "Clean jibes"
-        public static let cleanJibesNote =
-            "Jibes that flew through, held at least 70 % of their entry speed, then 10 quiet "
-            + "seconds on the foil."
+        /// The glossary's own line (rider review X7): one definition of clean.
+        public static let cleanJibesNote = MetricGlossary.cleanLine
         public static let best2s = "Best 2 s"
         public static let best2sNote = "Your quickest two seconds of the session."
         public static let longestFlight = "Longest flight"

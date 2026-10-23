@@ -37,6 +37,16 @@ reads is:
 | **flew through** | did the foil survive the turn *and* the recovery out of it — no touchdown, no swim | `outcome == flew_through` |
 | **clean** | that, **and** did it hold its speed, **and** were the ten seconds after it quiet — a jibe word | the per-turn `clean` flag |
 
+**The rider never reads "quiet"** (rider review X7, 23 Oct 2026: *"Clean means ten quiet
+seconds. Quiet how?"*). The definition is said once, as `MetricGlossary.cleanLine`: *You
+flew through and held 70 % of your entry speed. Then you rode 10 s with no touchdown, fall or
+second off the foil.* That is the quiet tail's three tests in rider words — a touchdown or
+fall end, an off-foil spell of 1 s or more, a wrist under (which the rider knows as a fall).
+The glossary's Clean line and the Trends note are that constant; the Turns footnote
+(`AppShellCopy.Turns.cleanRule`), the turn page's footnote and the *Clean jibes* help topic
+say the same three gates with the analysis' own numbers. The CPH line points at the gates
+rather than restating them, so the word has one definition to drift from, not two.
+
 `success` / `turnsSuccessful` / `successPct` / `tacksSuccessful` — the score verdict on its
 own, over every counted turn — is an **internal** quantity. It is the input to `clean` and
 it is never a label: no card, row, chart, caption, column or total may print it under any

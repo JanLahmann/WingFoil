@@ -19,6 +19,9 @@ struct IcuKeyEntry: View {
     @State private var draft = ""
     /// True while a saved key is being replaced, which brings the field back.
     @State private var replacing = false
+    /// The draft shown as text rather than dots. Only the beta has the control that sets
+    /// it (rider review I18); the release never leaves the secure field.
+    @State private var showsDraft = false
 
     private var hasSavedKey: Bool { !store.apiKey.isEmpty }
 
@@ -101,12 +104,24 @@ struct IcuKeyEntry: View {
             // with `systemBackground`, which is pure black in dark mode, and this field is
             // drawn on the setup card's near-black `secondarySystemBackground` — the two
             // together were a solid black bar with nothing in it to tap (Jan, build 58).
-            SecureField(replacing ? "New API key" : "Personal API key", text: $draft)
-                .textContentType(.password)
-                .autocorrectionDisabled()
-                .textInputAutocapitalization(.never)
-                .appTextFieldChrome()
+            HStack(spacing: 8) {
+                draftField
+                #if BETA
+                // **Show what was pasted** (rider review I18, 23 Oct 2026): *"I can't see
+                // what I pasted."* A secure field shows dots, so a key copied with the
+                // label beside it, or half a key, looked the same as a good one. The eye
+                // shows the draft, never the saved key. Beta, as a new control on a
+                // release screen (docs/channels.md, "Four rules for proven").
+                Button {
+                    showsDraft.toggle()
+                } label: {
+                    Image(systemName: showsDraft ? "eye.slash" : "eye")
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel(showsDraft ? "Hide the key" : "Show the key")
                 .disabled(store.apiKeyIsInjected)
+                #endif
+            }
 
             HStack(spacing: 12) {
                 Button {
@@ -125,6 +140,19 @@ struct IcuKeyEntry: View {
                 .buttonStyle(.borderedProminent)
                 .disabled(store.apiKeyIsInjected || store.isCheckingKey
                           || draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+                #if BETA
+                // The system's Paste button reads the clipboard only when tapped, so it
+                // asks no permission (rider review I18). Beta with the eye above.
+                if draft.isEmpty && !store.apiKeyIsInjected {
+                    PasteButton(payloadType: String.self) { strings in
+                        draft = strings.first?
+                            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                    }
+                    .labelStyle(.titleOnly)
+                    .buttonBorderShape(.capsule)
+                }
+                #endif
 
                 if replacing {
                     // Back to the saved key, untouched.
@@ -162,6 +190,24 @@ struct IcuKeyEntry: View {
         case nil:
             EmptyView()
         }
+    }
+
+    /// The key being typed: dots by default, the text itself once the eye is on (beta).
+    @ViewBuilder
+    private var draftField: some View {
+        let prompt = replacing ? "New API key" : "Personal API key"
+        Group {
+            if showsDraft {
+                TextField(prompt, text: $draft)
+            } else {
+                SecureField(prompt, text: $draft)
+                    .textContentType(.password)
+            }
+        }
+        .autocorrectionDisabled()
+        .textInputAutocapitalization(.never)
+        .appTextFieldChrome()
+        .disabled(store.apiKeyIsInjected)
     }
 
     private func line(_ symbol: String, _ tone: Color, _ text: String) -> some View {

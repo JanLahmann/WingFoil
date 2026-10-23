@@ -185,15 +185,7 @@
               "value": null
             },
             {
-              "captions": [
-                {
-                  "args": {
-                    "inTurn": 2,
-                    "straight": 0
-                  },
-                  "id": "presentation.caption.fallsSplit"
-                }
-              ],
+              "captions": [],
               "colourRole": "neutral",
               "key": "falls",
               "labelId": "glossary.fellIn",
@@ -329,15 +321,7 @@
           "value": null
         },
         {
-          "captions": [
-            {
-              "args": {
-                "inTurn": 2,
-                "straight": 0
-              },
-              "id": "presentation.caption.fallsSplit"
-            }
-          ],
+          "captions": [],
           "colourRole": "neutral",
           "key": "falls",
           "labelId": "glossary.fellIn",

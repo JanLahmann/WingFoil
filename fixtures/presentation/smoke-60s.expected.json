@@ -158,15 +158,7 @@
         {
           "cells": [
             {
-              "captions": [
-                {
-                  "args": {
-                    "inTurn": 0,
-                    "straight": 0
-                  },
-                  "id": "presentation.caption.fallsSplit"
-                }
-              ],
+              "captions": [],
               "colourRole": "neutral",
               "key": "falls",
               "labelId": "glossary.fellIn",
@@ -254,15 +246,7 @@
           "value": 11.879
         },
         {
-          "captions": [
-            {
-              "args": {
-                "inTurn": 0,
-                "straight": 0
-              },
-              "id": "presentation.caption.fallsSplit"
-            }
-          ],
+          "captions": [],
           "colourRole": "neutral",
           "key": "falls",
           "labelId": "glossary.fellIn",

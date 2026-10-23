@@ -224,8 +224,10 @@ import Testing
         let json = try Self.load("glossary.json")
         let listed = try #require(json["entries"] as? [[String: Any]],
                                   "glossary.json · entries is not a list of objects")
-        #expect(listed.count == 19,
-                "the glossary is nineteen entries, found \(listed.count)")
+        // Twenty-two since 23 Oct 2026: flew streak (rider review X23), glide-out and
+        // aborted turn (X19).
+        #expect(listed.count == 22,
+                "the glossary is twenty-two entries, found \(listed.count)")
         #expect(listed.count == MetricGlossary.entries.count)
         for (kit, file) in zip(MetricGlossary.entries, listed) {
             Self.same(kit.id, file["id"], "glossary.json", "\(kit.id).id")

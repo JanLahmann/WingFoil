@@ -68,6 +68,14 @@ struct RecordsView: View {
                 }
                 if !records.isEmpty {
                     Section {
+                        // The dots' key above the dots (rider review I14): at the foot of
+                        // the table it was read after the question, not before it.
+                        Text(AppShellCopy.Records.speedFreshness)
+                            .font(.caption)
+                            .foregroundStyle(.readableSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .listRowInsets(EdgeInsets(top: 8, leading: 16,
+                                                      bottom: 4, trailing: 16))
                         // Absent, not empty, where the rows stack (`RecordColumns.stacks`):
                         // they are no longer columns there, so an empty list row with a
                         // separator would be the only thing left of the header.
@@ -252,8 +260,7 @@ struct RecordsView: View {
         let head = AppShellCopy.fill(AppShellCopy.Records.speedHead,
                                      ["certified": String(certified),
                                       "count": String(records.count)])
-        return head + " " + AppShellCopy.Records.speedMeasured + "\n\n"
-            + AppShellCopy.Records.speedFreshness
+        return head + " " + AppShellCopy.Records.speedMeasured
     }
 
     private func title(of sessionID: String) -> String {
@@ -405,7 +412,10 @@ private struct RecordTableHeader: View {
                 Text("record").scaledColumn(columns.name, relativeTo: .subheadline)
                 Text(Fmt.knUnit)
                     .scaledColumn(columns.value, alignment: .trailing, relativeTo: .subheadline)
-                Text("+Δ PB")
+                // "beat by", not "+Δ PB" (rider review I14, 23 Oct 2026): two codes in a
+                // header read as "what are these?". The column is how much the record beat
+                // the one before it.
+                Text(AppShellCopy.Records.beatBy)
                     .scaledColumn(columns.delta, alignment: .trailing, relativeTo: .caption)
                 Text("when · where").frame(maxWidth: .infinity, alignment: .leading)
             }

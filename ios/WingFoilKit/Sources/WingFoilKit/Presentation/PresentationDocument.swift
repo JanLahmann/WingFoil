@@ -353,11 +353,15 @@ public enum PresentationDocument {
     static func fallsCell(_ s: SessionSummary) -> PresentationValue? {
         let ends = s.flightEnds
         guard ends.all.total > 0 else { return nil }
+        // No split without a straight-line fall (rider review I11, 23 Oct 2026): every
+        // fall is then a turn's, which the ladders beside this cell already print.
+        let split = ends.straight.fellIn > 0
+            ? [caption("presentation.caption.fallsSplit",
+                       ["inTurn": .int(ends.inTurn.fellIn),
+                        "straight": .int(ends.straight.fellIn)])]
+            : []
         return cell("falls", "glossary.fellIn", value: .int(ends.all.fellIn),
-                    unitKind: "count",
-                    captions: [caption("presentation.caption.fallsSplit",
-                                       ["inTurn": .int(ends.inTurn.fellIn),
-                                        "straight": .int(ends.straight.fellIn)])])
+                    unitKind: "count", captions: split)
     }
 
     /// Row 4. Empty where there is no hour to divide by. **CPH first, then one dry-turn

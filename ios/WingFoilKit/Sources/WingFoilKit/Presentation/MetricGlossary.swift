@@ -131,7 +131,8 @@ public struct MetricGlossaryEntry: Sendable, Equatable, Identifiable {
     }
 }
 
-/// **The nineteen words the product is made of**, each in one line.
+/// **The twenty-two words the product is made of**, each in one line (nineteen until rider
+/// review X19/X23 added the flew streak, the glide-out and the aborted turn, 23 Oct 2026).
 ///
 /// There were three copies of this glossary on 15 September 2026: `web/learn`'s definition
 /// list, the welcome screen's four highlights, and the summaries of the matching `HelpCatalog`
@@ -147,7 +148,7 @@ public struct MetricGlossaryEntry: Sendable, Equatable, Identifiable {
 ///
 /// **What is *not* here.** The long explanations — the 12 / 8 km/h foil gates, the 70 % score,
 /// the outcome ladder — stay in `HelpCatalog`, which is a reference work behind a `?` and has
-/// no equivalent on the site. These nineteen are the index lines: enough to read a session page
+/// no equivalent on the site. These are the index lines: enough to read a session page
 /// with, short enough that nobody skips them.
 ///
 /// **Eight were added on 20 September 2026** — the verdict words. The reason is under the
@@ -164,6 +165,17 @@ public enum MetricGlossary {
     /// docs/algorithms/turns.md); to the rider both are a touchdown, and past 5 s he fell in.
     public static let stopRule =
         "A stop under 5 s counts as a touchdown. Longer, and it counts as a fall."
+
+    /// **What clean means, said once** (rider review X7, 23 Oct 2026: *"Clean means ten
+    /// quiet seconds. Quiet how?"*). The three gates of docs/algorithms/turns.md, "Glossary
+    /// — clean jibe": flew through, `turnSuccessPct` of the entry speed held, and the quiet
+    /// tail of `turnCleanQuietS` with no touchdown or fall end, no off-foil spell of 1 s or
+    /// more, and no wrist under (which the rider knows as a fall). The glossary's Clean
+    /// line, the Trends note and the help say it from here; the Turns footnote and the turn
+    /// page say it with the analysis' own two numbers (`AppShellCopy.Turns.cleanRule`).
+    public static let cleanLine =
+        "You flew through and held 70 % of your entry speed. "
+        + "Then you rode 10 s with no touchdown, fall or second off the foil."
 
     /// A record window's label, from the design tokens rather than retyped: `design/tokens.json`
     /// owns the eight window names, and the picker, the tiles and the share card all draw
@@ -226,12 +238,29 @@ public enum MetricGlossary {
             id: "dryStreak",
             term: "Dry streak",
             short: "dry",
-            line: "How many jibes in a row you stayed out of the water, and the best "
-                + "run of the day.",
-            sentence: "your longest run of jibes without falling in",
+            // Turns, not jibes (rider review X23, 23 Oct 2026): a streak counts every
+            // counted turn, tacks too, and a fall anywhere ends it (docs/algorithms/
+            // pumping.md, "Turn streaks").
+            line: "How many turns in a row you stayed out of the water, tacks and jibes "
+                + "alike. A fall anywhere ends the run.",
+            sentence: "your longest run of turns without falling in",
             surfaces: [.ios, .watch, .web, .appstore],
             places: [.watchPage, .phoneRow, .phonePage, .card, .web, .help],
             labels: ["Dry streak", "dry streak", "best streaks"]),
+
+        // **The other half of "best streaks: 3 flew · 5 dry"** (rider review X23, 23 Oct
+        // 2026: *"What is a flew streak? Do tacks count?"*). The strict run: a touchdown
+        // ends it as well as a fall (docs/algorithms/pumping.md, "Turn streaks").
+        MetricGlossaryEntry(
+            id: "flewStreak",
+            term: "Flew streak",
+            short: "flew",
+            line: "How many turns in a row you flew through, tacks and jibes alike. A "
+                + "touchdown or a fall anywhere ends it.",
+            sentence: "your longest run of turns flown through",
+            surfaces: [.ios, .web],
+            places: [.phonePage, .card, .web, .help],
+            labels: ["Flew streak", "flew streak"]),
 
         // The clean-jibe line, and the only place in the glossary the rule is stated. The
         // quiet tail is the third requirement (engine 0.17.0, docs/algorithms.md) and was
@@ -241,8 +270,10 @@ public enum MetricGlossary {
             term: "CPH",
             short: "CPH",
             expansion: "clean jibes per hour",
-            line: "Clean jibes per hour. Clean: flew through, held your speed, and "
-                + "10 quiet seconds after.",
+            // The gates are Clean's own line, one entry down the list (rider review X7):
+            // two definitions of one word were two chances to drift.
+            line: "Clean jibes per hour. Every jibe that passes the three clean gates "
+                + "counts.",
             sentence: "your clean jibes per hour",
             surfaces: [.ios, .watch, .web, .appstore, .ciq],
             places: [.watchPage, .phonePage, .card, .web, .help],
@@ -321,7 +352,7 @@ public enum MetricGlossary {
             sentence: "your best five ten-second runs",
             surfaces: [.ios, .web],
             places: [.phonePage, .web, .help],
-            labels: [windowLabel("best5x10s"), "5×10 s"]),
+            labels: [windowLabel("best5x10s"), "best 5×10 s", "5×10 s"]),
 
         MetricGlossaryEntry(
             id: "alpha500",
@@ -364,8 +395,7 @@ public enum MetricGlossary {
             id: "clean",
             term: "Clean",
             short: "clean",
-            line: "A jibe that flew through, held 70 % of its entry speed, and stayed "
-                + "quiet for 10 s.",
+            line: cleanLine,
             sentence: "which of your jibes were clean",
             surfaces: [.ios, .watch, .web],
             places: [.watchPage, .fitField, .phoneRow, .phonePage, .card, .web, .help],
@@ -424,6 +454,33 @@ public enum MetricGlossary {
             places: [.watchPage, .fitField, .phoneRow, .phonePage, .card, .web, .help],
             labels: ["Fell in", "fell in", "fell", "Falls", "falls"],
             fit: "turn_marker"),
+
+        // **The two flight-end and turn words the session pages print and no glossary
+        // line taught** (rider review X19, 23 Oct 2026: *"Glide-outs, aborted."*). The
+        // glide-out is the Glide-outs topic's summary in a sentence; the aborted turn is
+        // docs/algorithms/turns.md, "The aborted turn": a sweep that ended in the water
+        // before it was done, kept as a turn that fell in.
+        MetricGlossaryEntry(
+            id: "glideOut",
+            term: "Glide-out",
+            short: "glide",
+            line: "A flight that ended without a stop. You settled onto the board and rode "
+                + "on, so it is not a loss.",
+            sentence: "the flights you settled out of",
+            surfaces: [.ios, .web],
+            places: [.phonePage, .web, .help],
+            labels: ["Glide-out", "glide-out", "Glide-outs", "glide-outs"]),
+
+        MetricGlossaryEntry(
+            id: "abortedTurn",
+            term: "Aborted turn",
+            short: "aborted",
+            line: "A turn you started and fell in before it was done. It counts as a turn "
+                + "that fell in.",
+            sentence: "the turns you fell out of halfway",
+            surfaces: [.web],
+            places: [.web, .help],
+            labels: ["Aborted turn", "aborted turn", "aborted"]),
 
         MetricGlossaryEntry(
             id: "takeoffs",

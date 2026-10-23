@@ -1840,7 +1840,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "How many jibes in a row you stayed out of the water, and the best run of the day. Also on the watch.",
+              "detail": "How many turns in a row you stayed out of the water, tacks and jibes alike. A fall anywhere ends the run. Also on the watch.",
               "term": "Dry streak"
             },
             {
@@ -1849,7 +1849,16 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "Clean jibes per hour. Clean: flew through, held your speed, and 10 quiet seconds after. Also on the watch.",
+              "detail": "How many turns in a row you flew through, tacks and jibes alike. A touchdown or a fall anywhere ends it.",
+              "term": "Flew streak"
+            },
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail": "Clean jibes per hour. Every jibe that passes the three clean gates counts. Also on the watch.",
               "term": "CPH"
             },
             {
@@ -1921,7 +1930,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "A jibe that flew through, held 70 % of its entry speed, and stayed quiet for 10 s. Also on the watch.",
+              "detail": "You flew through and held 70 % of your entry speed. Then you rode 10 s with no touchdown, fall or second off the foil. Also on the watch.",
               "term": "Clean"
             },
             {
@@ -1968,6 +1977,24 @@ export const HELP = {
               ],
               "detail": "Every time you ended up in the water, in a turn or in a straight line. Also on the watch.",
               "term": "Fell in"
+            },
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail": "A flight that ended without a stop. You settled onto the board and rode on, so it is not a loss.",
+              "term": "Glide-out"
+            },
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
+              "detail": "A turn you started and fell in before it was done. It counts as a turn that fell in.",
+              "term": "Aborted turn"
             },
             {
               "channels": [
@@ -2235,6 +2262,15 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
+              "detail": "GP3S is the rule set speedsurfers use for these windows. Doppler speed is what your watch measures from the satellite signal itself, not from positions.",
+              "term": "GP3S and Doppler"
+            },
+            {
+              "channels": [
+                "release",
+                "beta",
+                "dev"
+              ],
               "detail": "A recording with positions but no speed channel has its speed worked out from them, which reads high. Every GPX is one, and some converted exports. It is marked everywhere.",
               "term": "\"Estimated\""
             }
@@ -2434,10 +2470,10 @@ export const HELP = {
         {
           "aliases": [],
           "body": [
-            "This is the jibe you were working for. A **clean** jibe passes three gates: you flew through, held your speed, then 10 quiet seconds on the foil.",
+            "This is the jibe you were working for. A **clean** jibe passes three gates. You flew through, held your speed, then rode 10 s with no touchdown, fall or second off the foil.",
             "**Flew through** means you never lost the foil until you were flying again.",
             "Holding the speed means your slowest point stays at or above 70 % of your entry speed. You never drop below the foil exit speed.",
-            "Staying quiet means the 10 s after the turn hold no touchdown or fall. They also hold no second or more off the foil, and no wrist under water.",
+            "Those 10 s start when the turn ends. A wrist under water in them counts as a fall.",
             "Every clean jibe also flew through. A jibe that flew through can still miss clean, if you lost speed or touched down coming out."
           ],
           "channels": [
@@ -2511,6 +2547,7 @@ export const HELP = {
         {
           "aliases": [],
           "body": [
+            "Your entry tack is the tack you came into the turn on. It is not which way the board rotated.",
             "The side is read from your wind angle before the turn. A 50/50 split means you work both sides equally. A lopsided split is the tack you quietly stop choosing, and usually the one worth practising.",
             "The Trends screen plots this over time as \"% port\", with 50 % marked."
           ],
@@ -3030,7 +3067,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "The key is wrong, or you made a new one after pasting it. Copy it again from intervals.icu, Settings → Developer Settings. A stray space at either end breaks it.",
+              "detail": "The key is wrong, or you made a new one after pasting it. Copy it again from intervals.icu, Settings → Developer Settings.",
               "term": "\"intervals.icu rejected the API key\""
             },
             {
@@ -3315,7 +3352,7 @@ export const PRESENTATION = {
   "label": {
     "alpha500": "alpha 500",
     "avgSpeed": "avg speed",
-    "best5x10s": "5×10 s",
+    "best5x10s": "best 5×10 s",
     "cleanJibes": "clean jibes",
     "distance": "distance",
     "duration": "duration",
@@ -3324,8 +3361,8 @@ export const PRESENTATION = {
     "streaks": "best streaks"
   },
   "rowMetric": {
-    "best10s": "best 10 s",
     "best2s": "best 2 s",
+    "best10s": "best 10 s",
     "cleanJibes": "clean",
     "distance": "distance",
     "dryStreak": "dry streak",
@@ -3424,7 +3461,7 @@ export const WORDS = {
     "spotsFooter": "Tap a spot to rename it. A name you type stays when you rebuild spots. Sessions starting within {radius} m of each other are one spot. Names come from the map when the network allows."
   },
   "icu": {
-    "emptyFix": "Connect Garmin in intervals.icu (Settings → device connections). The back-fill takes a few minutes. If it is already connected, you may simply have no windsurf, wing, kite, surf or SUP activity there yet.",
+    "emptyFix": "Connect Garmin in intervals.icu (Settings → device connections). The back-fill takes a few minutes. If it is already connected, you may simply have no windsurf, wing, kite, surf or SUP activity there yet. Recorded as Other? Rename the activity so its name has wing or foil in it.",
     "emptyMessage": "intervals.icu accepted the key but has no watersport activities to hand over yet.",
     "emptyTitle": "Connected, but nothing came back",
     "networkFix": "Check your connection and sync again.",
@@ -3437,7 +3474,7 @@ export const WORDS = {
     "serverMessage": "intervals.icu answered with an error. That is its end, not yours.",
     "serverMessageDetail": "intervals.icu answered with an error ({detail}). That is its end, not yours.",
     "serverTitle": "intervals.icu had a problem",
-    "unauthorizedFix": "Copy the key again from intervals.icu → Settings → Developer Settings and paste it fresh. A stray space at either end is enough to break it.",
+    "unauthorizedFix": "Copy the key again from intervals.icu → Settings → Developer Settings and paste it fresh.",
     "unauthorizedMessage": "The key is wrong, or it was regenerated in intervals.icu after you pasted it here.",
     "unauthorizedTitle": "intervals.icu rejected the key",
     "unknownFix": "Try the sync again. If it keeps failing, check the key in Settings.",
@@ -3445,8 +3482,12 @@ export const WORDS = {
     "unknownTitle": "The sync did not finish"
   },
   "library": {
+    "healthRow": "Record with Apple's Workout app",
+    "healthRowLine": "Pick Surfing on the watch, then import it from Health.",
     "noMatch": "No session matches these filters",
-    "noMatchLine": "Nothing in the library answers to all of them at once."
+    "noMatchLine": "Nothing in the library answers to all of them at once.",
+    "stravaPickLine": "Pick sessions. Strava keeps positions only, so records are estimated.",
+    "stravaRowLine": "Strava keeps positions only, so speed records are estimated."
   },
   "periods": {
     "bothDatesCount": "Both dates count.",
@@ -3464,6 +3505,7 @@ export const WORDS = {
     "tripsNote": "Spells at one spot. A holiday the library noticed. No gap wider than {days} days, at least {sessions} sessions."
   },
   "records": {
+    "beatBy": "beat by",
     "emptyLibrary": "Import or sync a session and its speed records appear here.",
     "noMeasured": "No measured speed record yet. These recordings worked their speed out from positions. Settings has the other two answers.",
     "noQualifying": "No qualifying speed window under this filter.",
@@ -3501,10 +3543,12 @@ export const WORDS = {
   "share": {
     "allSessions": "All sessions",
     "background": "Background",
+    "captionLine": "One line of your own under the name on the card.",
     "collage": "Collage",
     "collageNote": "The last {limit} sessions, each on its own, in the order you rode them.",
     "dark": "Dark",
     "map": "Map",
+    "nameLine": "Your name for this session, on the card and in your list.",
     "oneSession": "One session",
     "photo": "Photo",
     "sendToUs": "Send this session to us",
@@ -3529,7 +3573,7 @@ export const WORDS = {
     "bySideEmpty": "No session in this range has turns with a usable entry tack. That needs a wind direction the app can trust.",
     "bySideNote": "Each line splits your turns by the tack you came in on. Course changes do not count.",
     "cleanJibes": "Clean jibes",
-    "cleanJibesNote": "Jibes that flew through, held at least 70 % of their entry speed, then 10 quiet seconds on the foil.",
+    "cleanJibesNote": "You flew through and held 70 % of your entry speed. Then you rode 10 s with no touchdown, fall or second off the foil.",
     "cph": "Clean jibes an hour (CPH)",
     "emptyLibrary": "Connect intervals.icu in Settings, or import a .fit file, and the charts fill as you ride.",
     "flewThrough": "Flew-through rate",
@@ -3592,7 +3636,7 @@ export const WORDS = {
     "footDrawn": "The drawing is {before} s before the sweep and {after} s after it.",
     "footEntryBand": "The bands under the strip are the engine's windows. \"Entry\" is the {seconds} s before the sweep, where the entry speed is the maximum.",
     "footLighterBand": "The lighter band inside it ends where you were flying again.",
-    "footQuiet": "A clean jibe also needs {seconds} s after the sweep with no touchdown, fall or wrist under.",
+    "footQuiet": "A clean jibe also needs {seconds} s after the sweep with no touchdown, fall or second off the foil.",
     "footRamp": "The line is coloured by speed on the ramp at the foot of the picture. Cold is a standstill, teal is the speed you came in at, hot is above it.",
     "footSweepBand": "\"Sweep\" is where the heading turned. The low point is searched to {seconds} s past the sweep, so it can sit after \"out\".",
     "footTap": "Tap the drawing for the reading at that sample. The strips follow it.",
@@ -3603,8 +3647,10 @@ export const WORDS = {
     "nothingToCompare": "Nothing to compare with. No other {model} this session turned the same way round."
   },
   "turns": {
-    "cleanRule": "Clean: you flew through, held at least {pct} % of your entry speed, then {quiet} quiet seconds on the foil.",
-    "outcomeAndHeld": "Flew through / touchdown / fell in is the outcome. It says how the turn ended. Held is how much of your entry speed you kept through it, 0 to 100 %."
+    "cleanRule": "Clean: you flew through and held at least {pct} % of your entry speed. Then you rode {quiet} s with no touchdown, fall or second off the foil.",
+    "noWindAxis": "no clear wind direction in your track",
+    "outcomeAndHeld": "Flew through / touchdown / fell in is the outcome. It says how the turn ended. Held is how much of your entry speed you kept through it, 0 to 100 %.",
+    "windWeak": "{pct} % confident, can't tell tacks from jibes"
   },
   "unreadable": {
     "busy": "CleanJibe is busy with a sync right now. Try again when it has finished.",
