@@ -105,8 +105,8 @@ One real session ships with the app. Load it before you connect anything.
 A real wingfoil session on Lake Garda. Ten minutes, 2 flights, 10 jibes, 2.6 km and 68 % foil time. The track, the speed chart, the turn outcomes and the heart-rate cost are all filled in.
 It is not your data. CleanJibe marks it EXAMPLE in the list and on its own page. It stays out of Records, Trends and your gear totals.
 [iPhone app only] Delete it with a swipe. You can load it again from here.
-We recorded it at Nago-Torbole, Lake Garda with the CleanJibe watch app and removed everything that identifies the rider. We left the accelerometer out, because it is bigger than the whole app.
-So pump strokes and takeoff effort show as unavailable.
+We recorded it at Nago-Torbole, Lake Garda with the CleanJibe watch app and removed everything that identifies the rider. The rest of the recording is all there.
+That includes the wrist accelerometer, so you see its pump strokes and failed takeoff attempts.
 
 ### Record a session
 
@@ -612,28 +612,28 @@ Dev adds:
 - A turn's page swipes through the list as you see it, filtered and sorted.
 - A tack is compared with your best tack, a jibe with your best clean jibe.
 
+### 0.9.29 (None, beta, 2026-10-22): A new best stays up longer
+- A new best 2 s stays big on your wrist for 3 seconds.
+- A jibe you start slowly now counts as a jibe, not a course change.
+- No turn goes missing from the saved file.
+
+### 0.9.28 (None, beta, 2026-10-18): Sessions straight to the iPhone beta
+- Your watch can send each session straight to the CleanJibe beta app on your iPhone.
+- Turn on Send summary to phone app in Garmin Connect.
+
 ### 1.0.1 (136, beta, 2026-10-17): Ask CleanJibe
 - Ask CleanJibe answers a question in your own words, from the help texts.
 - Asked from a session, it reads that session's numbers and never guesses one.
 - Help has its row at the top, and a session has its button in the bar.
 
-### 1.0.1 (133, beta, 2026-10-15): Jumps
-- The Flights tab counts your jumps and estimates the highest, from the watch's motion sensor.
-- A jump counts only on the foil, at speed and outside a turn.
-- Your sessions are worked out again, so jumps appear on the ones you already have.
+### 0.9.27 (None, beta, 2026-10-17): A jump never feels like a fall
+- A jump now buzzes long then short, so it never feels like a fall.
+- Your turn's verdict always buzzes, even right after a jump.
+- Longest flight and new best wait until your third flight.
+- The Turns page spells out flew and dry, port and stbd, where they fit.
 
-### 1.0.1 (131, beta, 2026-10-14): Said plainly
-- Help marks the answers that are about the iPhone app.
-- Help says when your jibes and tacks appear on the watch, and when a touchdown is a fall.
-- Every estimated number now says estimated.
-- The feedback mail counts jibes and tacks apart, and no longer reports a takeoff gap that is not one.
-
-### 1.0.1 (129, beta, 2026-10-01): The watch file wins
-- A Strava copy no longer invents a tack out of a GPS jump while you are in the water.
-- A turn that ends your session in the water counts as a fall.
-- Your watch's recording from intervals.icu replaces a Strava copy, in the background too.
-- The session list scrolls smoothly from the first swipe.
-
-### 1.0.1 (127, beta, 2026-09-30): Scrolls both ways
-- The session page scrolls back up smoothly, however long the turn list is.
-- On Turns and Flights, the filters stay at the top while you scroll.
+### 0.9.26 (None, beta, 2026-10-17): Resume restarts a paused session
+- Resume in the session menu now restarts a paused session.
+- After a GPS gap or a pause, the turn you were in is judged on what happened before it.
+- With Log wrist motion on, the transfer time to Garmin Connect is much longer.
+- The watch now asks once whether to keep it, and says so after the save.

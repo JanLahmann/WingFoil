@@ -28,9 +28,11 @@ function ensure() {
   worker.onmessage = (ev) => route(ev.data);
   worker.onerror = (ev) => {
     const message = ev.message || "Worker failed to start";
-    for (const [, p] of pending) p.reject(new Error(message));
+    for (const [, p] of pending) {
+      p.reject(Object.assign(new Error(message), { failure: "network" }));
+    }
     pending.clear();
-    emit("result", { type: "error", message });
+    emit("result", { type: "error", message, cause: "network", summary: message });
   };
   return worker;
 }
@@ -58,7 +60,11 @@ function route(msg) {
       const p = pending.get(msg.id);
       if (p) {
         pending.delete(msg.id);
-        p.reject(new Error(msg.message));
+        // The worker names the kind of failure (`cause`, kept here as `failure`) and the
+        // exception's own last line (`summary`); js/app.js `fail` turns them into the
+        // rider's sentence (X15).
+        p.reject(Object.assign(new Error(msg.message),
+                               { failure: msg.cause, summary: msg.summary }));
       } else {
         emit("result", msg);
       }

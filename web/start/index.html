@@ -177,10 +177,25 @@
 
       <article class="panel claim">
         <h3>The iPhone app</h3>
+        <!-- A BUTTON, AND A QR AT WIDE WIDTHS (rider review S13, 23 Oct 2026: "It says open it
+             on the iPhone. How do I get it there?"). The bare URL gave a laptop reader nothing
+             to do. The QR is a static SVG drawn once by web/tools/make_qr.swift, which reads
+             it back before writing it; verify_links.py holds the URL in its first comment to
+             this href. It is hidden on a narrow screen, where the reader is on the phone. -->
+        <div class="tf-join">
+          <p>
+            <a class="btn primary" href="https://testflight.apple.com/join/nygqGGcn" rel="noopener"
+               data-umami-event="CleanJibe: invite-testflight">Join the beta on TestFlight</a>
+          </p>
+          <figure class="tf-qr">
+            <img src="../img/qr-testflight.svg" width="128" height="128" loading="lazy"
+                 alt="QR code for the TestFlight link">
+            <figcaption>On a computer? Scan this with the iPhone camera.</figcaption>
+          </figure>
+        </div>
         <p>
-          <a href="https://testflight.apple.com/join/nygqGGcn" rel="noopener"
-             data-umami-event="CleanJibe: invite-testflight">testflight.apple.com/join/nygqGGcn</a>,
-          opened on the iPhone itself. No address to submit and no invite mail to wait for.
+          Open the link on the iPhone itself. No address to submit and no invite mail to wait
+          for.
         </p>
         <p>
           You need Apple&rsquo;s <strong>TestFlight</strong> app if you do not have it. The

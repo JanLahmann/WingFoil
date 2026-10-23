@@ -96,8 +96,11 @@ all four tab roots in the same place (pattern M).
 order: **Sessions**, **Records**, **Trends**, **Gear & spots**, with the app menu top right
 on every one of them. Sessions is the library and, over it, the ways-in card — the drop
 zone, *Load the example session*, and one row per route — plus the four progress steps and
-an error panel that names the likely cause. A row opens the **session page**: the key
-metrics, *Share*, *Save to library*, the glossary fold **? What these numbers mean**, and
+an error panel: one sentence about the file in the kit's words (`AppShellCopy.FileProblem`),
+the traceback behind a closed *Details* fold, and *Try the example session* and *Send it to
+us* under it (rider review X15). A row opens the **session page**: the date, one folded line
+about the file and its tags, the key metrics, *Share*, *Save to library*, the glossary fold
+**? What these numbers mean**, and
 the four sub-tabs **Ride · Turns · Flights · Details**, as a switcher on a narrow screen
 and as one scrolling document on a wide one. Records and Trends are two tabs over one
 aggregate, under the **All spots** chip, and Trends pushes **Periods**, which pushes one
@@ -105,7 +108,8 @@ aggregate, under the **All spots** chip, and Trends pushes **Periods**, which pu
 **Getting started**, **What's new**, **Join the beta**, and the two above. Five
 dialogs: the welcome, *Whose session is this?*, *New gear*, *Custom range*, the **Share**
 dialog with its two segments and its report row, and the turn page a card or a row opens.
-Two banners: a new version, and the install offer. Six reader pages carry the site nav
+Two banners: a new version, and the install offer. The install offer stands clear of the
+rail on a wide screen and is not raised over `/app/#example` on arrival (rider review S19). Six reader pages carry the site nav
 (the wordmark and *Try it in your browser* as its one door) and the same footer with its
 prefilled feedback mail: `/`, `/start/`, `/beta/`, `/whats-new/`, `/help/` and `/privacy/`. There is no Impressum:
 CleanJibe is non-commercial and not a trader (Jan, 30 Sep 2026).
@@ -237,6 +241,10 @@ app, any .fit, Strava, and the Garmin ZIP last.
     are lines in a closing *Testing the beta?* section, and a script forwards a reader who
     lands on one. The phone has no such split to make: its Getting started, What's new and
     Join the beta are three screens already.
+
+    **The iPhone panel is a button, with a QR beside it on a wide screen** (rider review
+    S13, 23 Oct 2026): *Join the beta on TestFlight*, and `img/qr-testflight.svg` for the
+    reader on a laptop, hidden under 761 px where the reader holds the phone already.
 
     **Three apps, named** (rider review S10). `/start/` says *three apps* — the watch app,
     the iPhone app, the browser app — with a panel for each in *Get the apps*, and every way-in
