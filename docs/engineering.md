@@ -307,6 +307,34 @@ read at the start of every session. One decision per file:
   tool, top-ten item 2 is the work still outstanding) and the footage, which is gigabytes and
   is already ignored path by path.
 
+## The vendored wheel — `web/lab_bundle/wheels/`
+
+The browser engine is Pyodide 0.28.3 from cdn.jsdelivr.net plus one Python package of its
+own, **fitdecode 0.11.0**. Until 23 Oct 2026 (rider review X14) the worker installed it from
+PyPI with micropip, so behind a school or company proxy two foreign hosts had to answer
+before a first analysis. The wheel now ships with the site:
+
+| | |
+|---|---|
+| file | `web/lab_bundle/wheels/fitdecode-0.11.0-py3-none-any.whl` (109 961 bytes, pure Python, MIT) |
+| from | `https://files.pythonhosted.org/packages/7b/7b/75829f9b77b2546f955ec265de10de993939bf3218b5d957ca79803a2d28/fitdecode-0.11.0-py3-none-any.whl` |
+| sha256 | `a1bdb9b4d1e9ebac0001fc58c22fe07a3f9967ca4e13258c6ef99cdb8d697a78` (PyPI's own digest, checked on download) |
+
+`js/worker.js` carries the pin (`FITDECODE`), the file name (`FITDECODE_WHEEL`) and the hash
+(`FITDECODE_SHA256`). It fetches the wheel from the site's own origin, checks the SHA-256
+with `crypto.subtle` and installs it from the Pyodide filesystem with `deps: false` (the
+wheel's `Requires-Dist` are dev extras only). A wheel that is missing or does not match is
+never installed; the worker installs `fitdecode==0.11.0` from PyPI instead, the old path, as
+the fallback only. `sw.js` precaches the wheel with the shell. `bundle_lab.py --check` (in
+`make web-verify` and both workflows) fails when the file is missing, hashes otherwise, is
+not the pure-Python wheel of the pin, is not precached, or has a stray wheel beside it.
+
+**To move the pin:** download the new `py3-none-any` wheel from files.pythonhosted.org,
+compare its sha256 with the one PyPI's JSON API lists, replace the file, change the three
+constants in `worker.js` and `FITDECODE_VERSION` in `sw.js` (`verify_first_run.py` holds the
+two pins together), update this table, and bump `VERSION` in `sw.js`. Pyodide itself still
+comes from the CDN; self-hosting it is security finding F-02's remaining half.
+
 ## ADR statuses
 
 All 26 ADRs now open with a `Status:` line and `docs/decisions.md`'s head says what the four

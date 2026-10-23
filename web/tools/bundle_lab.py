@@ -20,6 +20,12 @@ so a first visit draws it without waiting for Pyodide. That document is a functi
 exactly the sources this script copies, so writing the bundle regenerates it
 (`make_example.py`, which needs the lab venv), and `--check` fails on one stamped with
 another engine version or built from other sources.
+
+**The fitdecode wheel rides with the bundle too** (rider review X14, 23 Oct 2026).
+`lab_bundle/wheels/` holds the one pure-Python wheel the worker installs, so the first
+analysis needs no PyPI. It is vendored by hand, never written by this script; `--check`
+holds it to js/worker.js: the file named by `FITDECODE_WHEEL` exists, carries the version
+of the `FITDECODE` pin, hashes to `FITDECODE_SHA256`, and sw.js precaches it.
 """
 
 from __future__ import annotations
@@ -27,6 +33,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -44,6 +51,40 @@ MANIFEST = WEB / "lab_bundle" / "MANIFEST.json"
 # Hand-written, not generated: the browser-only Python that sits on top of the lab.
 # Listed here so `FILES.json` (the worker's mount list) stays complete.
 GLUE = ["web_entry.py", "library.py"]
+
+WHEELS = WEB / "lab_bundle" / "wheels"
+WORKER = WEB / "js" / "worker.js"
+SW = WEB / "sw.js"
+
+
+def _const(text: str, name: str) -> str | None:
+    m = re.search(rf'^const {name} = "([^"]+)";', text, re.M)
+    return m.group(1) if m else None
+
+
+def wheel_problems() -> list[str]:
+    """The vendored wheel against the worker's pin and hash, and the worker's precache."""
+    worker = WORKER.read_text()
+    pin = (_const(worker, "FITDECODE") or "").partition("==")[2]
+    name = _const(worker, "FITDECODE_WHEEL")
+    want = _const(worker, "FITDECODE_SHA256")
+    if not (pin and name and want):
+        return ["js/worker.js lost FITDECODE, FITDECODE_WHEEL or FITDECODE_SHA256"]
+    problems = []
+    if not name.startswith(f"fitdecode-{pin}-") or not name.endswith("-none-any.whl"):
+        problems.append(f"{name} is not the pure-Python wheel of fitdecode=={pin}")
+    wheel = WHEELS / name
+    if not wheel.exists():
+        problems.append(f"lab_bundle/wheels/{name} is missing")
+    elif hashlib.sha256(wheel.read_bytes()).hexdigest() != want:
+        problems.append(f"lab_bundle/wheels/{name} does not hash to FITDECODE_SHA256")
+    if f'"lab_bundle/wheels/{name}"' not in SW.read_text():
+        problems.append(f"sw.js does not precache lab_bundle/wheels/{name}")
+    others = (sorted(p.name for p in WHEELS.glob("*.whl") if p.name != name)
+              if WHEELS.is_dir() else [])
+    if others:
+        problems.append(f"lab_bundle/wheels/ holds wheels the worker never installs: {others}")
+    return problems
 
 
 def _sources() -> list[Path]:
@@ -75,6 +116,13 @@ def check() -> int:
                 print(f"  differs: {name}", file=sys.stderr)
         return 1
     print(f"lab_bundle is current ({len(want['files'])} modules)")
+    wheel = wheel_problems()
+    if wheel:
+        print("lab_bundle/wheels is out of step with js/worker.js:", file=sys.stderr)
+        for p in wheel:
+            print(f"  {p}", file=sys.stderr)
+        return 1
+    print(f"vendored wheel is current ({_const(WORKER.read_text(), 'FITDECODE_WHEEL')})")
     problems = make_example.stamp_problems()
     if problems:
         print("example/ExampleSession.analysis.json is STALE — run: python3 tools/bundle_lab.py",

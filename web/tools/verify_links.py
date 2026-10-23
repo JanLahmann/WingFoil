@@ -306,6 +306,28 @@ if feet:
     print("footer: identical on %d of %d pages" % (
         sum(1 for b in feet.values() if b == reference), len(FOOT_PAGES)))
 
+# ---------------------------------------------------------------- the QR codes
+# A QR is a link a reader cannot hover (rider review S13). web/tools/make_qr.swift writes the
+# URL it encoded, after reading the symbol back, into the SVG's first comment; the page that
+# shows the QR must link the same URL in the same card, or a scanned code goes somewhere the
+# button does not.
+QR_SVG = re.compile(r'<img src="([^"]*qr-[^"]*\.svg)"')
+for page in NAV_PAGES:
+    src = io.open(os.path.join(ROOT, page), encoding="utf-8").read()
+    for m in QR_SVG.finditer(src):
+        svg_path = resolve(page, m.group(1))
+        if not os.path.exists(svg_path):
+            continue  # the link loop above already said so
+        head = io.open(svg_path, encoding="utf-8").read(400)
+        enc = re.search(r"<!-- (\S+) ", head)
+        card = src[src.rfind("<article", 0, m.start()):m.start()]
+        if not enc or ('href="%s"' % enc.group(1)) not in card:
+            errors.append("%s: %s encodes %s, which its card does not link — regenerate it "
+                          "with `swift web/tools/make_qr.swift <url> <svg>`"
+                          % (page, m.group(1), enc.group(1) if enc else "no URL"))
+        else:
+            print("qr: %s encodes the link beside it (%s)" % (m.group(1), enc.group(1)))
+
 # The generated half of /start/ is a link problem of its own kind: a guide block that no
 # longer matches docs/guide/getting-started.json is a page saying something the app does
 # not. `make_start.py --check` is stdlib-only and takes milliseconds, so it runs here,
