@@ -3774,10 +3774,19 @@ function summaryBackTurnsBackAndNeverExits(logger as Test.Logger) as Boolean {
     Test.assertMessage(d.onBack(), "and again");
     Test.assertEqual(SummaryNav.index, 0);
     view.onUpdate(dc);                       // the verdict page paints with the hint on it
-    // the hint is the line under SAVED: wherever the after-sync line has a slot, so does it
-    if (SummaryView.phoneLineSlot(dc, Words.SUM_AFTER_SYNC) != PHONE_LINE_NONE) {
-        Test.assertMessage(SummaryView.phoneLineSlot(dc, Words.SUM_EXIT_HINT) != PHONE_LINE_NONE,
-            "START to exit fits where next: CleanJibe fits");
+    // the hint is drawn wherever the glass can hold it: in the line under SAVED where that
+    // has a slot, in the pill's own place where it has none. The fenix 5 Plus family holds it
+    // in neither (top band 92 px against 114, bottom band into the hero's second row, measured
+    // 23 Oct 2026), and the log says so rather than the page overprinting the foil arc.
+    var hintSlot = SummaryView.phoneLineSlot(dc, Words.SUM_EXIT_HINT);
+    var inPill = SummaryView.hintInPill(dc, SummaryView.pillY(dc, false));
+    if (inPill) {
+        Test.assertMessage(SummaryView.savedLineFits(dc, Words.SUM_EXIT_HINT,
+            SummaryView.pillY(dc, false)), "START to exit fits in the pill's place");
+    } else if (hintSlot != PHONE_LINE_NONE) {
+        Test.assertEqual(SummaryView.bandLine(true), Words.SUM_EXIT_HINT);
+    } else {
+        logger.debug("summary BACK: START to exit fits nowhere on this glass");
     }
     // a page turn takes it away; UP/DOWN still wrap as before
     d.onNextPage();
@@ -3786,8 +3795,8 @@ function summaryBackTurnsBackAndNeverExits(logger as Test.Logger) as Boolean {
     SummaryNav.index = 0;
     d.onPreviousPage();
     Test.assertEqual(SummaryNav.index, n - 1);
-    logger.debug("summary BACK: " + n.toString() + " pages, hint slot "
-        + SummaryView.phoneLineSlot(dc, Words.SUM_EXIT_HINT).toString());
+    logger.debug("summary BACK: " + n.toString() + " pages, hint slot " + hintSlot.toString()
+        + (inPill ? " (in the pill)" : ""));
     c.engine = saved;
     SummaryNav.index = 0;
     return true;

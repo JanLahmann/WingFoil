@@ -33,7 +33,7 @@
     <string id="SetAlertFlight">Vibrate on longest flight</string>
     <string id="SetAlertTurn">Vibrate on turn outcome</string>
     <string id="SetAlertCleanJibe">Vibrate on clean jibe</string>
-    <string id="SetAlertCleanJibeNote">A clean jibe gets its own rising three-tick buzz. Clean: you flew through and held 70 % of your entry speed. Then 10 s on the foil, with no touchdown or fall. Off: every turn gets the plain outcome buzz.</string>
+    <string id="SetAlertCleanJibeNote">A clean jibe buzzes three rising ticks. Clean: you flew through and held 70 % of your entry speed. Then you rode 10 s with no touchdown, fall or second off the foil. Off: every turn buzzes its outcome.</string>
     <string id="SetWindDir">Wind from, this session (0-359°, -1 = none)</string>
     <string id="SetAutoWind">Estimate wind on the watch</string>
     <string id="SetTurnHabit">I mostly do</string>

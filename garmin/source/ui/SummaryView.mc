@@ -300,10 +300,10 @@ class SummaryView extends WatchUi.View {
         // moves up one eyebrow line so the two together end where the pill alone used to,
         // and nothing else on the page moves. Without one (NOT SAVED, or a glass whose arc
         // cannot hold the line), this is the screen that shipped until rider review W8.
-        var line = SummaryNav.exitHint ? Words.SUM_EXIT_HINT
-            : savedLine(getApp().controller.lastSaveOk);
+        var line = bandLine(getApp().controller.lastSaveOk);
         var slot = phoneLineSlot(dc, line);
-        drawSavedPill(dc, pillY(dc, slot == PHONE_LINE_TOP));
+        var y = pillY(dc, slot == PHONE_LINE_TOP);
+        drawSavedPill(dc, y, hintInPill(dc, y) ? Words.SUM_EXIT_HINT : null);
         if (slot != PHONE_LINE_NONE) {
             drawPhoneLine(dc, slot == PHONE_LINE_TOP ? phoneLineY(dc) : phoneLineLowY(dc),
                 line as String);
@@ -326,6 +326,34 @@ class SummaryView extends WatchUi.View {
             return Words.SUM_LONG_TRANSFER;
         }
         return saveOk ? Words.SUM_AFTER_SYNC : null;
+    }
+
+    // The line under SAVED once BACK has asked for the way out (rider review W7): the hint,
+    // unless the direct transfer is counting — its progress wins, because it changes on its
+    // own clock and the hint can go elsewhere (`hintInPill`).
+    static function bandLine(saveOk as Boolean) as String? {
+        if (SummaryNav.exitHint && DirectSend.statusLine() == null) {
+            return Words.SUM_EXIT_HINT;
+        }
+        return savedLine(saveOk);
+    }
+
+    // Where the line has no room for the hint — the fenix 5 Plus family, whose hero block
+    // leaves neither slot free, or a transfer whose progress holds the line — the hint takes
+    // the pill's own place: SAVED has been read by the time BACK is pressed, and a BACK that
+    // shows nothing looks broken.
+    // Only where it fits there, under the same chord rule as the line: on the fenix 5 Plus
+    // family the top band is 92 px and the hint 114 (measured 23 Oct 2026), so that family
+    // keeps SAVED and BACK on the first page simply does nothing there.
+    static function hintInPill(dc as Dc, y as Number) as Boolean {
+        if (!SummaryNav.exitHint) {
+            return false;
+        }
+        if (DirectSend.statusLine() == null
+                && phoneLineSlot(dc, Words.SUM_EXIT_HINT) != PHONE_LINE_NONE) {
+            return false;
+        }
+        return savedLineFits(dc, Words.SUM_EXIT_HINT, y);
     }
 
     // Does `text` fit the glass at ink centre `y`? The verdict page paints the foil-% arc,
@@ -749,8 +777,13 @@ class SummaryView extends WatchUi.View {
     // mark signing an acknowledgement is what a lockup is for. It stays subordinate by
     // construction: the badge is cut to the height of the LINE (asserted), so the pair is one
     // eyebrow's worth of ink on the arc over a giant that owns the middle of the page.
-    hidden function drawSavedPill(dc as Dc, y as Number) as Void {
+    hidden function drawSavedPill(dc as Dc, y as Number, hint as String?) as Void {
         var cx = dc.getWidth() / 2;
+        if (hint != null) {
+            dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, y, Graphics.FONT_XTINY, hint, CV);
+            return;
+        }
         var bw = Brand.badgeW();
         // A save that failed says so, in red, without the badge: nothing to sign.
         var ok = getApp().controller.lastSaveOk;

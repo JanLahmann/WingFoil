@@ -510,13 +510,19 @@ BACK both exited the after-save pages, and the summary is a screen there is no w
 Now BACK is **one page back** and never wraps (`SummaryNav.back`); UP and DOWN still cycle and
 wrap as before. On the first page there is nothing behind it: BACK leaves the app running,
 keeps the page, and puts **`START to exit`** (`Words.SUM_EXIT_HINT`, `SumExitHint`) in the line
-under SAVED, in the slot and under the width rule of the section above; any page turn takes
-the hint away again. **Only START exits** — except on the Track page with the dev map
+under SAVED, in the slot and under the width rule of the section above
+(`SummaryView.bandLine`). Where that line has no slot for it — the fenix 5 Plus family, whose
+hero block leaves neither free — or while the direct transfer's progress holds the line
+(progress wins), the hint takes the SAVED pill's own place instead (`hintInPill`), where it fits there:
+SAVED has been read by then, and a BACK that shows nothing looks broken. **The fenix 5 Plus
+family holds it nowhere** (measured 23 Oct 2026): its top band is 92 px inside the foil arc
+and the hint is 114, and the bottom band runs 17 px into the hero's second row. There BACK on
+the first page keeps the page and shows nothing; an open question, not a fix. Any page turn
+takes the hint away again. **Only START exits** — except on the Track page with the dev map
 experiment on, where it opens the map as before. The delegate always handles BACK: an
 unhandled BACK on the bottom view ends the app, which is the lost summary this replaced.
 `summaryBackTurnsBackAndNeverExits` drives the delegate from the last page to the first and
-past it, and asserts the hint fits wherever `next: CleanJibe` does (top slot on a fenix 8 and
-a fenix 7S, measured).
+past it, and asserts the hint fits wherever it is drawn, logging a glass that holds it nowhere.
 
 ## The direct transfer's progress, on the glass (0.9.16, beta and dev since 0.9.28)
 

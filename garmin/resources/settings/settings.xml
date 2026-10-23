@@ -1,6 +1,7 @@
 <settings>
-    <!-- THE ORDER IS THE PAGE (rider review W10, 23 Oct 2026: "Foil entry speed and entry hold
-         come first"). Garmin Connect draws the rows in file order, and every resource path's
+    <!-- THE ORDER IS THE PAGE. Rider review W10, 23 Oct 2026: the settings opened with foil
+         entry speed and entry hold, tuning knobs, ahead of the screens a rider came for.
+         Garmin Connect draws the rows in file order, and every resource path's
          settings.xml is appended after the one before it, so the order a rider reads is:
            1. screens          this file
            2. units            this file
