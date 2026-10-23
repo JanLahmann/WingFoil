@@ -157,6 +157,8 @@ import Testing
         #expect(AppShellCopy.fill(U.note, ["error": "noRecords"])
                 == "This session would not open. The app said: noRecords")
         #expect(AppShellCopy.groups["unreadable"]?["fetchButton"] == "Fetch again")
+        #expect(AppShellCopy.groups["unreadable"]?["stillUnreadable"] == U.stillUnreadable)
+        #expect(U.stillUnreadable.contains("Send it to us"))
     }
 
     /// The coach's templates say what `TurnCoach.line` says, rung for rung — the sentence

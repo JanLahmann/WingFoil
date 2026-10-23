@@ -107,6 +107,25 @@ struct SessionDetailView: View {
     /// The unreadable page's two doors (rider review I13).
     @State private var showUnreadableImporter = false
     @State private var showUnreadableSend = false
+    /// What the last way back in came to, said under the buttons rather than in the
+    /// library's status line, which a rider who came from Records never sees.
+    @State private var unreadableNote: UnreadableNote?
+    /// Set when the page's own Import… handed a file over, so the next library change that
+    /// still leaves the page unreadable is told as "this copy could not be read either".
+    @State private var awaitingImport = false
+
+    private enum UnreadableNote: Equatable {
+        case fetching, busy, stillUnreadable, failed(IcuProblem)
+
+        var text: String {
+            switch self {
+            case .fetching: AppShellCopy.Unreadable.fetching
+            case .busy: AppShellCopy.Unreadable.busy
+            case .stillUnreadable: AppShellCopy.Unreadable.stillUnreadable
+            case .failed(let problem): problem.message + " " + problem.fix
+            }
+        }
+    }
     /// Ask CleanJibe about this session (beta and dev, docs/channels.md).
     @State private var asking = false
     #endif
@@ -177,6 +196,10 @@ struct SessionDetailView: View {
         shownID = id
         detail = nil
         failure = nil
+        #if BETA
+        unreadableNote = nil
+        awaitingImport = false
+        #endif
         playhead = nil
         flightFocus = nil
         chartZoom = nil
@@ -482,7 +505,7 @@ struct SessionDetailView: View {
             #if BETA
             // An import that landed on this session may have replaced the copy that would
             // not open (the Import… button above, through the rider prompt).
-            if failure != nil { Task { await retryLoad() } }
+            if failure != nil { Task { await retryAfterLibraryChange() } }
             #endif
         }
         // The record, celebrated where it happened: once, the first time the session that
@@ -539,15 +562,13 @@ struct SessionDetailView: View {
         VStack(spacing: 10) {
             if store.canFetchAgain(row) {
                 Button {
-                    Task {
-                        if await store.fetchAgainFromIntervals(row) { await retryLoad() }
-                    }
+                    Task { await fetchAgain(row) }
                 } label: {
                     Label(AppShellCopy.Unreadable.fetchButton,
                           systemImage: "arrow.down.circle")
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(store.isBusy)
+                .disabled(unreadableNote == .fetching)
             } else {
                 Button { showUnreadableImporter = true } label: {
                     Label(AppShellCopy.Unreadable.importButton,
@@ -559,12 +580,25 @@ struct SessionDetailView: View {
                 Label(AppShellCopy.Unreadable.sendToUs, systemImage: "text.bubble")
             }
             .buttonStyle(.bordered)
+            if let unreadableNote {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    if unreadableNote == .fetching { ProgressView().controlSize(.small) }
+                    Text(unreadableNote.text)
+                        .font(.footnote)
+                        .foregroundStyle(unreadableNote == .fetching
+                                         ? Color.readableSecondary : .orange)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .multilineTextAlignment(.center)
+            }
             BetaChip()
         }
         .fileImporter(isPresented: $showUnreadableImporter,
                       allowedContentTypes: ImportView.importableTypes,
                       allowsMultipleSelection: false) { result in
             if case .success(let urls) = result {
+                unreadableNote = nil
+                awaitingImport = true
                 Task { await store.importPicked(urls: urls) }
             }
         }
@@ -575,12 +609,39 @@ struct SessionDetailView: View {
         }
     }
 
+    /// Fetch again, with its progress and its answer under the buttons. A download that
+    /// reads is loaded again; if the page still cannot open it (the analysis, not the file,
+    /// failed), that is said too.
+    private func fetchAgain(_ row: SessionRow) async {
+        unreadableNote = .fetching
+        switch await store.fetchAgainFromIntervals(row) {
+        case .readable:
+            unreadableNote = nil
+            await retryLoad()
+            if failure != nil { unreadableNote = .stillUnreadable }
+        case .stillUnreadable: unreadableNote = .stillUnreadable
+        case .busy: unreadableNote = .busy
+        case .failed(let problem): unreadableNote = .failed(problem)
+        }
+    }
+
     /// Clears the failure and reads the session again, after a fetch or an import that may
     /// have replaced the stored copy.
     private func retryLoad() async {
         guard failure != nil else { return }
         failure = nil
         await load()
+        if failure == nil { unreadableNote = nil }
+    }
+
+    /// The library moved under an unreadable page: read it again, and if the page's own
+    /// import was what moved it and the page still does not open, say so.
+    private func retryAfterLibraryChange() async {
+        guard failure != nil else { return }
+        let imported = awaitingImport
+        awaitingImport = false
+        await retryLoad()
+        if imported, failure != nil { unreadableNote = .stillUnreadable }
     }
     #endif
 

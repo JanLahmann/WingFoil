@@ -283,10 +283,20 @@ screen's file picker. Under either, **Send this to us** opens the analysis mail
 (`SendToDeveloperSheet`) with the error written into the note. The sentence names the button
 under it (`Unreadable.betaLine(canFetch:)`). The release keeps its sentence and has no button.
 
-Both ways work because a re-import **replaces a stored copy that will not parse**
-(`SessionIngestor.ingest`, `IngestTests.aReimportReplacesAnUnreadableStoredCopy`): the new
-file matched the row, so it takes the row's archive, and the row keeps its id, name, gear and
-rider. A readable stored copy is never touched by a duplicate. Until 23 Oct the import called
-the new file a duplicate and kept the broken one, so the release's sentence was advice that
-could not work. The page reads the session again when the library changes under it.
+Both ways work because, in the beta, a re-import **replaces a stored copy that will not
+parse** (`SessionIngestor.repairsUnreadable`, off by default, `IngestTests`): the new file
+matched the row, so it takes the row's archive, and the row keeps its id, name, gear and
+rider. A readable stored copy is never touched. The check is cheap where it can be
+(`SessionArchive.storedCopyReads`): identical bytes read without a parse, a FIT whose header
+promises more bytes than the file holds does not, and only what passes both is parsed. The
+release keeps the broken copy, as it always did. The repaired copy stays on the phone: library
+sync uploads only a folder copy that is missing or positions-only, so another device keeps
+its own (a known limit).
+
+**What happened is said under the buttons**, not in the library's status line, which a rider
+who opened the session from Records never sees: *Fetching the recording from intervals.icu…*
+with a spinner, intervals.icu's own sentence when the download fails (`IcuProblem`), *busy
+with a sync* when one holds the store, and *This copy could not be read either. Send it to us
+and we will look at it.* when the new copy, or the page's own import, still does not open.
+The page reads the session again when the library changes under it.
 

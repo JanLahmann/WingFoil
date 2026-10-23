@@ -225,6 +225,7 @@ GPX, or a TCX without speed, is c.
 | Garmin export ZIP (full history) | **release** | moved up 14 Sep 2026 from the release walkthrough: the release already declares `public.zip-archive`, its button already says "FIT or ZIP…" and `ZipWalker` / `ingestContainer` are ungated, so the door was open and only the list said otherwise. The beta keeps the dedicated **Garmin export ZIP…** button with the Export-Your-Data walkthrough on it |
 | Apple Health, read Apple Workout recordings | beta | unproven; off until switched on |
 | Apple Health, write sessions as workouts | beta | unproven; the release has no HealthKit entitlement |
+| A session whose stored copy will not open: *Fetch again* (intervals.icu) or *Import…* and *Send this to us* on its page, and a re-import that replaces the broken copy | beta | rider review I13, 23 Oct 2026. `SessionIngestor.repairsUnreadable`, off by default and set `#if BETA`; the release keeps the broken copy on a re-import and its page keeps the sentence *Import the session again* with no button. The repaired copy does not reach iCloud: library sync uploads only a missing or positions-only folder copy (known limit). Before release: **rule 1**, a broken copy repaired on a real device by each of the two ways |
 | Discipline review after import ("Which rig?") | dev | part of windsurf |
 
 ### The analysis

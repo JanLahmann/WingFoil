@@ -209,6 +209,10 @@ public struct SessionIngestor: Sendable {
     /// is the file talking, not a setting.
     public var windsurfEnabled = true
     public var dedupeToleranceS: TimeInterval = 60
+    /// **Whether a duplicate may replace a stored copy that will not parse** (rider review
+    /// I13). Off by default, so the release keeps its behaviour until the repair is proven
+    /// on a device (docs/channels.md); the app turns it on under `#if BETA`.
+    public var repairsUnreadable = false
     public var spotRadiusM: Double = SpotClusterer.defaultRadiusM
 
     public init(database: AppDatabase, archive: SessionArchive) {
@@ -277,14 +281,15 @@ public struct SessionIngestor: Sendable {
                                           icuActivityId: icuActivityId)
         if let existing, !existing.isProvisional,
            !Self.yields(existing, to: source, sourceClass: caps.sourceClass) {
-            // **A copy that cannot be read is replaced by one that can** (rider review I13).
+            // **A copy that cannot be read is replaced by one that can** (rider review I13,
+            // beta: `repairsUnreadable`).
             // The session page tells a rider whose stored recording will not parse to
             // import it again, and until this branch the import found the row, called the
             // new file a duplicate and kept the broken one. The new bytes have just parsed
             // and matched this row, so they take its archive; the row keeps its id, name,
             // gear and rider, and only its derived columns move (`reanalyze`).
             var held = existing
-            if (try? archive.rawTrack(for: existing.id)) == nil {
+            if repairsUnreadable, !archive.storedCopyReads(for: existing.id, comparedWith: fitData) {
                 try archive.storeOriginal(fitData, id: existing.id)
                 try await reanalyze(existing)
                 // The row as `reanalyze` left it, so the note below does not write the

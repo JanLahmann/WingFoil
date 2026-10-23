@@ -191,6 +191,13 @@ public enum AppShellCopy {
         public static let importButton = "Import…"
         public static let fetchButton = "Fetch again"
         public static let sendToUs = "Send this to us"
+        /// Under the buttons while Fetch again runs, and when it cannot start or finish.
+        /// A download that fails says intervals.icu's own sentence (`IcuProblem`) instead.
+        public static let fetching = "Fetching the recording from intervals.icu…"
+        public static let busy =
+            "CleanJibe is busy with a sync right now. Try again when it has finished."
+        public static let stillUnreadable =
+            "This copy could not be read either. Send it to us and we will look at it."
         /// The note the analysis mail opens with, so the error travels with the file.
         public static let note = "This session would not open. The app said: {error}"
 
@@ -203,7 +210,8 @@ public enum AppShellCopy {
         static let all: [String: String] = [
             "title": title, "line": line, "importLine": importLine, "fetchLine": fetchLine,
             "importButton": importButton, "fetchButton": fetchButton, "sendToUs": sendToUs,
-            "note": note,
+            "note": note, "fetching": fetching, "busy": busy,
+            "stillUnreadable": stillUnreadable,
         ]
     }
 

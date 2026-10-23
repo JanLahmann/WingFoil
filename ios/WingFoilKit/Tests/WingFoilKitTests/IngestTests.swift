@@ -83,7 +83,8 @@ import Testing
     /// Rider review I13: the page says "import it again" when the stored copy will not
     /// parse, and the import used to call the new file a duplicate and keep the broken one.
     @Test func aReimportReplacesAnUnreadableStoredCopy() async throws {
-        let (ingestor, root) = try makeIngestor()
+        var (ingestor, root) = try makeIngestor()
+        ingestor.repairsUnreadable = true
         defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
         let (data, name) = try fixtureData()
         guard case .imported(let row) = try await ingestor.ingest(
@@ -108,6 +109,43 @@ import Testing
         #expect(try archive.originalData(for: row.id) == data)
         #expect((try? archive.rawTrack(for: row.id)) != nil)
         #expect(try await ingestor.allSessions().count == 1)
+    }
+
+    /// Off by default: the release keeps a broken stored copy exactly as it did, and the
+    /// re-import is a plain duplicate (docs/channels.md, the repair is beta).
+    @Test func theRepairIsOffByDefault() async throws {
+        let (ingestor, root) = try makeIngestor()
+        defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
+        #expect(ingestor.repairsUnreadable == false)
+        let (data, name) = try fixtureData()
+        guard case .imported(let row) = try await ingestor.ingest(
+            fitData: data, filename: name, source: .file) else { return }
+        let broken = Data(data.prefix(40))
+        try broken.write(to: ingestor.archive.originalURL(for: row.id))
+        guard case .duplicate = try await ingestor.ingest(
+            fitData: data, filename: name, source: .file) else {
+            Issue.record("expected a duplicate")
+            return
+        }
+        #expect(try ingestor.archive.originalData(for: row.id) == broken)
+    }
+
+    /// The cheap checks in front of the full parse: same bytes read, a cut-off FIT does not.
+    @Test func theStoredCopyCheckIsCheapWhereItCanBe() async throws {
+        let (ingestor, root) = try makeIngestor()
+        defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
+        let (data, name) = try fixtureData()
+        guard case .imported(let row) = try await ingestor.ingest(
+            fitData: data, filename: name, source: .file) else { return }
+        let archive = ingestor.archive
+        #expect(archive.storedCopyReads(for: row.id, comparedWith: data))
+        #expect(archive.storedCopyReads(for: row.id, comparedWith: Data([1, 2, 3])))
+        #expect(SessionArchive.fitHeaderIsPlausible(data))
+        #expect(!SessionArchive.fitHeaderIsPlausible(data.prefix(data.count / 2)))
+        #expect(!SessionArchive.fitHeaderIsPlausible(Data([14, 0x20])))
+        try Data(data.prefix(data.count / 2)).write(to: archive.originalURL(for: row.id))
+        #expect(!archive.storedCopyReads(for: row.id, comparedWith: data))
+        #expect(!archive.storedCopyReads(for: "no-such-session", comparedWith: data))
     }
 
     /// A readable stored copy is never touched by a duplicate: the archive is immutable.
