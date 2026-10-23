@@ -102,8 +102,8 @@ One real session ships with the app. Load it before you connect anything.
 A real wingfoil session on Lake Garda. Ten minutes, 2 flights, 10 jibes, 2.6 km and 68 % foil time. The track, the speed chart, the turn outcomes and the heart-rate cost are all filled in.
 It is not your data. CleanJibe marks it EXAMPLE in the list and on its own page. It stays out of Records, Trends and your gear totals.
 [iPhone app only] Delete it with a swipe. You can load it again from here.
-We recorded it at Nago-Torbole, Lake Garda with the CleanJibe watch app and removed everything that identifies the rider. We left the accelerometer out, because it is bigger than the whole app.
-So pump strokes and takeoff effort show as unavailable.
+We recorded it at Nago-Torbole, Lake Garda with the CleanJibe watch app and removed everything that identifies the rider. The rest of the recording is all there.
+That includes the wrist accelerometer, so you see its pump strokes and failed takeoff attempts.
 
 ### Record a session
 

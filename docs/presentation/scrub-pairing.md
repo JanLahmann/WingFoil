@@ -59,6 +59,16 @@
   place where "Turns & losses" comes back into view, and the page stack's own estimate swung
   by 3 000 pt. `LongTurnsScrollUITests` takes the longest fixture session deep into its list
   and back up to the cards.
+- **The web's speed strip takes the keyboard** (rider review X13, 23 Oct 2026). The strip's
+  figure is focusable, wears the 2 px focus ring the buttons wear, and is a `role="slider"`
+  over the same one playhead: ← → (and ↑ ↓) move it a hundredth of the window on screen,
+  at least 1 s; Shift or PgUp/PgDn a tenth; Home and End go to the window's ends; Esc
+  clears it. The first key places it at the window's start (or end). It stays inside the
+  window, so a zoomed strip never pans by itself, and nothing animates, which is what
+  `prefers-reduced-motion` asks. `aria-valuetext` says what the readout says — clock,
+  elapsed, speed in knots, flying or off foil — and its label is the kit's
+  (`AppShellCopy.FileProblem.stripKeys`). The map stays pointer-only, with its `role=img`
+  summary; the strip is the one way to walk a session by key.
 - Zoom state is transient per session view — but it survives a section change, which is not
   a new session view (see "Sections" above). On iOS that means the window is owned by
   `SessionDetailView`, not by the chart.

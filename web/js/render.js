@@ -14,9 +14,9 @@
  *   marker number is the turn's row number in the Turns table
  */
 
-import { speed, speedNumber, speedUnit } from "./appsettings.js";
+import { speedNumber, speedUnit } from "./appsettings.js";
 import { keyMetricEntries } from "./cardstats.js";
-import { captionText, hm, text } from "./presentation.js";
+import { captionText, text } from "./presentation.js";
 import { GLOSSARY, NOT_A_SESSION } from "./copy.js";
 import { say } from "./appcopy.js";
 import { EXPERIMENTAL_NOTE, lexicon } from "./lexicon.js";
@@ -185,16 +185,11 @@ const recordKn = (doc, key) =>
 
 const recordLabel = (key) => text(`tokens.recordWindow.${key}`) ?? key;
 
-/** A record's tile: its number, or — where the session did not set it (`achieved` false)
- *  — the reason in the number's place, from the caption the block's cell carries. */
+/** Whether the session set this record (`achieved`). A tile is drawn only for one it set:
+ *  the three the block carries say why where they are missing, and the tiles below it
+ *  never repeat them (rider review S17). */
 const recordAchieved = (doc, key) =>
   (doc?.records?.kinds || []).find((k) => k.key === key)?.achieved === true;
-
-function recordTile(doc, key, reasonId, note) {
-  return recordAchieved(doc, key)
-    ? { k: recordLabel(key), v: speedNumber(recordKn(doc, key)), unit: speedUnit(), n: note }
-    : { k: recordLabel(key), why: text(`presentation.caption.${reasonId}`) ?? "", n: note };
-}
 
 function renderSummary(result, isExample = false) {
   const g = result.golden, meta = result.meta, caps = g.capabilities;
@@ -241,6 +236,7 @@ function renderSummary(result, isExample = false) {
                // The phone's own line for the class (`RecordingClass.line`,
                // docs/copy/recording-classes.json), which the Import footers print.
                say(`recordingClass.${meta.sourceClass}`)]);
+  const leadBadges = badges.length;
   if (meta.sport) badges.push([meta.sport, false]);
   if (caps.hasAccel) badges.push(["accelerometer", false]);
   if (caps.hasWatchLaps) badges.push([`${meta.laps} laps`, false]);
@@ -255,6 +251,14 @@ function renderSummary(result, isExample = false) {
   el("session-badges").innerHTML = badges
     .map(([t, accent, title]) => `<span class="badge${accent ? " accent" : ""}"` +
          (title ? ` title="${esc(title)}"` : "") + `>${esc(t)}</span>`).join("");
+  // **One line about the file, folded** (rider review S17, 23 Oct 2026). The first screen
+  // was a file name and six tags before a single number. The fold's line carries the tags
+  // that say whose and what the recording is: the example's disclaimer, the discipline,
+  // the experimental chip and the recording's class, in that order. Opening it shows the
+  // file name, its clock and every tag, the sensors included.
+  el("session-facts-line").textContent = badges.slice(0, leadBadges)
+    .map(([t]) => t).join(" · ");
+  el("session-facts").open = false;
 
   el("key-metrics").innerHTML = keyMetrics(result.presentation);
   renderNotASession(g);
@@ -276,29 +280,24 @@ function renderSummary(result, isExample = false) {
               ? ` · watch estimated ~${nf(meta.windDirAutoDeg, 0)}°` : "") }
     : { k: "Wind axis", v: "—", n: "no usable wind axis" };
 
-  // **Each kind of turn with its whole breakdown, as numbers in their inks** (Jan, F9a/b):
-  // the clean jibes first with the star, then the ladder. The phone's Jibes and Tacks
-  // cards, twinned; the "flew through %" and "Turn verdicts" tiles said the same thing
-  // again and are gone.
-  const t = s.turns, sp = s.outcomeSplit;
+  // The touchdown tile's numbers in their inks (Jan, F9e). The jibe and tack tiles that
+  // drew the whole ladder this way are gone: block row 3 prints the same tallies.
+  const sp = s.outcomeSplit;
   const fig = (cls, n, word, mark = "") =>
     `<span class="${cls}">${mark}${int(n)} <small>${esc(word)}</small></span>`;
-  // The ladder's own three words, the key-metrics caption's "flew · touchdown · fell in"
-  // (rider review I23, 9 Oct 2026: it was "touch" and "fell" here, a third spelling).
+  // The ladder's own word, the key-metrics caption's "flew · touchdown · fell in"
+  // (rider review I23, 9 Oct 2026: it was "touch" here, a third spelling).
   const touchdowns = (n) => (n === 1 ? "touchdown" : "touchdowns");
-  const ladder = (o) => [fig("flew", o.flewThrough, "flew"),
-                         fig("touchdown", o.touchdown, touchdowns(o.touchdown)),
-                         fig("fell", o.fellIn, "fell in")];
   const breakdown = (parts) => `<span class="tally">${parts.join("<i>·</i>")}</span>`;
+  // **One block of numbers** (rider review S17, 23 Oct 2026): the tiles used to open with
+  // duration, distance, best 2 s, 5×10 s, alpha 500 and the jibe and tack tallies, which
+  // the key-metrics block had printed a few pixels above. They carry only what the block
+  // does not: time on the foil, the longest flight, the speed windows the block leaves
+  // out (each only where the session set it), touchdowns and glide-outs, and the wind.
+  const extraRecord = (key) => (recordAchieved(doc, key)
+    ? { k: recordLabel(key), v: speedNumber(recordKn(doc, key)), unit: speedUnit() }
+    : null);
   const tiles = [
-    // **One clock.** The engine's cleaned span (`summary.durationS`), in the block's own
-    // spelling — the same number and the same string the "duration" cell prints a few
-    // pixels above. This tile used to read the FIT's `total_elapsed_time` through `hms`,
-    // so the page carried `1:57 h` over `1:57:12` of a *different* clock. The "moving"
-    // note stays the file's own timer time, which is what that word means here.
-    { k: "Duration", v: hm(s.durationS), n: `moving ${hms(meta.timerTimeS)}` },
-    { k: "Distance", v: nf(s.distanceKm, 1), unit: "km",
-      n: `best 500 m ${speed(recordKn(doc, "best500m"), 1)}` },
     { k: words.onFoil, v: pct(s.foilPct),
       n: `${hms(s.foilTimeS)} ${words.foilTimeLower}` },
     // No "Flights" tile (Jan, F8k): the count is the head of the flight list on Flights.
@@ -306,21 +305,9 @@ function renderSummary(result, isExample = false) {
     { k: "Longest flight", v: hms(s.longestFlightS), n: `max ${int(s.maxFlightM)} m in one flight` },
     // The tiles carry their unit in a `<small>` of their own, so the number comes through
     // `speedNumber` and the word through `speedUnit` — one formatter, whichever half of it
-    // a cell needs (js/appsettings.js; `Speed` in the kit).
-    //
-    // A record the session did not set says why where the number goes — the block's own
-    // caption for it, `presentation.caption.no*` — rather than "—", or the "0.00" an
-    // analysis golden's `0.0` used to print here (30 Sep 2026, "No dash as a heading").
-    recordTile(doc, "best2s", "noMax2s", `10 s ${speed(recordKn(doc, "best10s"))}`),
-    recordTile(doc, "best5x10s", "noBest5x10s", `1 NM ${speed(recordKn(doc, "bestNm"))}`),
-    recordTile(doc, "alpha500", "noAlpha500", `250 m ${speed(recordKn(doc, "best250m"))}`),
-    { k: "Jibes", v: int(t.jibes),
-      html: t.jibes ? breakdown([fig("clean star", t.jibesSuccessful, "clean")]
-                                .concat(ladder(t.jibeOutcomes))) : "",
-      n: t.jibes ? "" : "none detected" },
-    { k: "Tacks", v: int(t.tacks),
-      html: t.tacks ? breakdown(ladder(t.tackOutcomes)) : "",
-      n: t.tacks ? "" : "none detected" },
+    // a cell needs (js/appsettings.js; `Speed` in the kit). The words are the record's
+    // own (`tokens.recordWindow.<id>`), off the document's `records` section.
+    ...["best10s", "best250m", "best500m", "bestNm"].map(extraRecord).filter(Boolean),
     // **Touchdowns and glide-outs on one tile** (Jan, F9e): both a flight that ended
     // without a swim. The glide-out wears its own neutral ring, never the flew colour.
     { k: "Touchdowns · glide-outs", v: "",

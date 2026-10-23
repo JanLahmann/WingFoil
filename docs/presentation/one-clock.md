@@ -13,8 +13,8 @@ There were four clocks in circulation and three of them reached the rider:
 |---|---|---|
 | **cleaned elapsed span** (`summary.durationS`) | the engine's own | the key-metrics block, the period block's hours |
 | raw sample span | last − first *raw* sample, pre-clean | iOS `SessionRow.durationS`: the library row, the Distance card's caption, "Longest session", the widget, the week histogram, the gear rollup |
-| FIT `total_elapsed_time` | the file's own field | the web session tile's "Duration", the web "Longest session", the week bar's tooltip |
-| FIT `total_timer_time` | the file's own field | the web tile's "moving …" note — **still there, and correct**: that note is about the file's moving time |
+| FIT `total_elapsed_time` | the file's own field | the web "Longest session", the week bar's tooltip |
+| FIT `total_timer_time` | the file's own field | the rate floor's timer time. The web tile's "moving …" note went with its "Duration" tile, which repeated the block (rider review S17, 23 Oct 2026) |
 
 They are not close. On the corpus's Rheinstetten afternoon the cleaned span is **7742 s**
 and the raw one **10338 s** — 43 minutes — so the block said `2:09 h` while the tile eight

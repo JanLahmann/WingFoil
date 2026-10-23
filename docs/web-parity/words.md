@@ -206,10 +206,7 @@ file), and a sentence another verifier already pins to the phone (`pinned:`).
 | the analyzer's privacy line: the analysis runs in the tab | app/index.html | Your file never leaves this browser tab. |
 | the Pyodide engine download, which the phone does not have | app/index.html | The engine downloads once, about 14 MB |
 | Safari's seven-day rule for a site's storage in a tab (rider review X3) | app/index.html | Safari may clear this site's data after seven days without a visit. |
-| 〃 | js/worker.js | Could not reach the Pyodide CDN |
 | the Pyodide engine's progress, which the phone does not have | app/index.html | The tab is working, not stuck. |
-| the analyzer's rejected-file help: the phone's pickers only offer files it reads | app/index.html | Most often the file is not a FIT recording. |
-| 〃 | app/index.html | If the message below counts recordings |
 | the browser's pointer to its Share button; the phone's Share is in the toolbar | app/index.html | Make a card of this. |
 | the glossary fold's door to the Help page, a browser layout (step 2) | app/index.html | The rest of the reference is in |
 | the browser's concise line beside a `?` (js/explain.js); the phone shows the `?` alone | app/index.html | The shape of the track carries the outcome. |
@@ -242,8 +239,6 @@ file), and a sentence another verifier already pins to the phone (`pinned:`).
 | 〃 | app/index.html | Ideas and wishes are as welcome as bugs. |
 | the website's analytics note (web/privacy) | app/index.html | We count page views and feature use with umami. |
 | the record-window highlight bar, a browser control | js/app.js | is marked in orange on the track and on the speed strip. |
-| a dropped file of the wrong type: the phone's pickers only offer files it reads | js/app.js | is not a .fit, .gpx, .tcx or .zip file. |
-| 〃 | js/app.js | A .gpx or .tcx works too. |
 | how the browser hands a recording over: the share sheet where there is one, else a mail link that cannot ca… | js/app.js | Handed to your share sheet. |
 | 〃 | js/app.js | The recording was downloaded and a mail opened. |
 | 〃 | js/app.js | Cancelled. Nothing left this browser. |

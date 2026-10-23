@@ -400,6 +400,48 @@ public enum AppShellCopy {
         ]
     }
 
+    // MARK: - The browser's file panel
+
+    /// The browser app's answer to a file it could not analyse (rider review X15, 23 Oct
+    /// 2026): one plain sentence about the file, the Python traceback behind a closed
+    /// Details fold, and two ways on, the example and sending the file to us. The phone
+    /// has no twin, because its pickers only offer files it reads and its parser speaks
+    /// Swift; the words live here so the browser types none of them. The key-strip label is
+    /// the speed strip's keyboard help (rider review X13).
+    public enum FileProblem {
+        public static let title = "That file could not be analysed"
+        public static let notAFile = "{name} is not a .fit, .gpx or .tcx file that CleanJibe can read."
+        public static let original =
+            "Most often it is a converted copy rather than the watch's own file. "
+            + "On intervals.icu or Garmin Connect, choose Download original file."
+        public static let wrongType = "{name} is not a .fit, .gpx, .tcx or .zip file."
+        public static let wrongTypeHelp =
+            "CleanJibe reads the .fit file your watch records. A .gpx or .tcx works too, "
+            + "without pump data. Its speed records are estimated unless the file has its "
+            + "own speed channel."
+        public static let zipMany =
+            "This .zip holds {count} recordings. Unzip it and drop the one session you want."
+        public static let zipEmpty = "This .zip holds no .fit, .gpx or .tcx file."
+        public static let engineFailed =
+            "CleanJibe could not work this session out. Send it to us and we will look at it."
+        public static let offline =
+            "The analysis engine did not download. Check your connection and try again. "
+            + "The example session opens without it."
+        public static let details = "Details"
+        public static let tryExample = "Try the example session"
+        public static let sendIt = "Send it to us"
+        public static let stripKeys =
+            "Speed over time. Use the arrow keys to move the playhead, Home and End for the ends."
+
+        static let all: [String: String] = [
+            "title": title, "notAFile": notAFile, "original": original,
+            "wrongType": wrongType, "wrongTypeHelp": wrongTypeHelp, "zipMany": zipMany,
+            "zipEmpty": zipEmpty, "engineFailed": engineFailed, "offline": offline,
+            "details": details, "tryExample": tryExample, "sendIt": sendIt,
+            "stripKeys": stripKeys,
+        ]
+    }
+
     // MARK: - The export
 
     /// Every group above, by the name the browser keys it on.
@@ -416,5 +458,6 @@ public enum AppShellCopy {
         "periods": Periods.all,
         "gear": Gear.all,
         "backup": Backup.all,
+        "fileProblem": FileProblem.all,
     ]
 }
