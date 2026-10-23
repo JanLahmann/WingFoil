@@ -88,9 +88,8 @@ public enum GettingStartedGuide {
         "On a Garmin, ride as always, with Windsurf or any other watersport profile. Set up "
             + "intervals.icu once in Settings → intervals.icu. It is free, takes about 5 "
             + "minutes, and your old sessions come in too.",
-        "Want more out there? The CleanJibe watch app buzzes each verdict on your wrist. It "
-            + "counts your pump strokes and takeoff attempts, and keeps your dry streak on "
-            + "the glass.",
+        "Want more out there? The CleanJibe watch app buzzes each verdict and counts your pump "
+            + "strokes. Too small to read? Set Data screens to Large text.",
         "You can also open a .fit file straight from Files, Mail or a message. It can be "
             + "yours, or one a friend sent you.",
         "We ride too. We built CleanJibe for the jibes we were chasing ourselves.",
@@ -124,20 +123,25 @@ public enum GettingStartedGuide {
                           + "Sessions and the new one is on top."),
                 .init(number: 4,
                       title: "Want more? Install the watch app",
-                      detail: "**CleanJibe Wingfoil Tracker (Beta)** on Connect IQ buzzes each "
-                          + "verdict on your wrist. It counts pump strokes and takeoff "
-                          + "attempts, and shows your dry streak."),
+                      detail: "**CleanJibe Wingfoil Tracker (Beta)** on Connect IQ installs as "
+                          + "**CleanJibe Beta** on your watch. It buzzes each verdict and "
+                          + "counts pump strokes and takeoff attempts."),
                 .init(number: 5,
                       title: "Record and save with it",
-                      detail: "Press START, pick **CleanJibe**, wait for GPS good and press "
-                          + "START again. To finish, press START to pause, then BACK and "
-                          + "**Save**."),
+                      detail: "Press START, pick **CleanJibe Beta**, wait for GPS good and "
+                          + "press START again. To finish, press START to pause, then BACK "
+                          + "and **Save**."),
                 .init(number: 6,
+                      title: "Numbers too small out there?",
+                      detail: "Garmin Connect → **CleanJibe Beta** → Settings → **Data "
+                          + "screens** → **Large text**. You get five screens, each with one "
+                          + "big number and its word."),
+                .init(number: 7,
                       title: "No intervals.icu? The long way",
                       detail: "Garmin Connect's phone app cannot export. On a computer, "
                           + "connect.garmin.com → the activity → gear icon → **Export File**. "
                           + "AirDrop it to the iPhone, then Import → **FIT or ZIP…**."),
-                .init(number: 7,
+                .init(number: 8,
                       title: "Garmin calls it Windsurf",
                       detail: "Garmin has no wingfoil profile, so Garmin and Strava call the "
                           + "session Windsurf. With the watch app, Garmin Connect also shows "
@@ -301,6 +305,11 @@ public enum GettingStartedGuide {
                       detail: "A map shows your track, with duration and speeds at the top. A "
                           + "speed chart moves when you drag along it."),
                 .init(number: 4,
+                      title: "Feel the buzzes",
+                      detail: "With the CleanJibe watch app, your ride buzzes like a session. "
+                          + "You feel each new best speed and each longer flight. *What each "
+                          + "buzz means* below tells them apart."),
+                .init(number: 5,
                       title: "Turns and jibes reading zero",
                       detail: "Expected on a bike or on foot: there is nothing to jibe. This "
                           + "checks the way in from the watch, never the analysis."),

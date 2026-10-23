@@ -232,7 +232,8 @@ app, any .fit, Strava, and the Garmin ZIP last.
     **One job per first-contact page, since 9 October 2026** (rider review S9, Jan's split:
     *"I wanted to install. I got a tester brief, a bug form, a roadmap and 30 builds of
     release notes"*). `/start/` installs and gets the first session in: the three apps, the
-    ways in, the dry run, *If something does not work*, *Which watch* and *Your old
+    ways in, the dry run, *What each buzz means* (the Garmin watch app's thirteen patterns,
+    rider review W12, 23 Oct 2026), *If something does not work*, *Which watch* and *Your old
     sessions*. `/beta/` is the tester's half: *What to test* (the guide's `sayHowItRead` note,
     open), *What a good report says*, *Where to send it* (the three doors) and *Coming in a
     future release*. `/whats-new/` is the release notes. Both guide halves are written by
