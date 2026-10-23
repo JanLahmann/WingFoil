@@ -32,7 +32,6 @@
       "offline" : "The analysis engine did not download. Check your connection and try again. The example session opens without it.",
       "original" : "Most often it is a converted copy rather than the watch's own file. On intervals.icu or Garmin Connect, choose Download original file.",
       "sendIt" : "Send it to us",
-      "stripKeys" : "Speed over time. Use the arrow keys to move the playhead, Home and End for the ends.",
       "title" : "That file could not be analysed",
       "tryExample" : "Try the example session",
       "wrongType" : "{name} is not a .fit, .gpx, .tcx or .zip file.",
@@ -159,6 +158,9 @@
       "onlyVerifiedSummary" : "Only records your watch measured. Nothing else counts.",
       "preferVerified" : "Prefer measured",
       "preferVerifiedSummary" : "A measured record wins. An estimated one fills an empty row, marked."
+    },
+    "strip" : {
+      "keys" : "Speed over time. Use the arrow keys to move the playhead, Home and End for the ends."
     },
     "trends" : {
       "best2s" : "Best 2 s",

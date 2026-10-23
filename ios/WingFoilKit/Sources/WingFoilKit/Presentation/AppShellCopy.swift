@@ -406,8 +406,7 @@ public enum AppShellCopy {
     /// 2026): one plain sentence about the file, the Python traceback behind a closed
     /// Details fold, and two ways on, the example and sending the file to us. The phone
     /// has no twin, because its pickers only offer files it reads and its parser speaks
-    /// Swift; the words live here so the browser types none of them. The key-strip label is
-    /// the speed strip's keyboard help (rider review X13).
+    /// Swift; the words live here so the browser types none of them.
     public enum FileProblem {
         public static let title = "That file could not be analysed"
         public static let notAFile = "{name} is not a .fit, .gpx or .tcx file that CleanJibe can read."
@@ -430,16 +429,23 @@ public enum AppShellCopy {
         public static let details = "Details"
         public static let tryExample = "Try the example session"
         public static let sendIt = "Send it to us"
-        public static let stripKeys =
-            "Speed over time. Use the arrow keys to move the playhead, Home and End for the ends."
 
         static let all: [String: String] = [
             "title": title, "notAFile": notAFile, "original": original,
             "wrongType": wrongType, "wrongTypeHelp": wrongTypeHelp, "zipMany": zipMany,
             "zipEmpty": zipEmpty, "engineFailed": engineFailed, "offline": offline,
             "details": details, "tryExample": tryExample, "sendIt": sendIt,
-            "stripKeys": stripKeys,
         ]
+    }
+
+    /// The browser's speed strip as a keyboard slider (rider review X13, 23 Oct 2026): the
+    /// label a screen reader announces on focus. The phone does not print it today; the
+    /// words live here so the browser types none of them.
+    public enum Strip {
+        public static let keys =
+            "Speed over time. Use the arrow keys to move the playhead, Home and End for the ends."
+
+        static let all: [String: String] = ["keys": keys]
     }
 
     // MARK: - The export
@@ -459,5 +465,6 @@ public enum AppShellCopy {
         "gear": Gear.all,
         "backup": Backup.all,
         "fileProblem": FileProblem.all,
+        "strip": Strip.all,
     ]
 }

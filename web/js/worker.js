@@ -57,8 +57,16 @@ async function boot() {
   const wheel = await vendoredWheel();
   // `deps: false` on the vendored wheel: fitdecode needs nothing outside the standard
   // library (its Requires-Dist are dev extras), so no index is consulted at all.
-  if (wheel) await micropip.install.callKwargs(wheel, { deps: false });
-  else await micropip.install(FITDECODE);
+  // A vendored wheel that will not install falls back to PyPI too, the same as one that
+  // is missing or altered (docs/engineering.md, "The vendored wheel").
+  let installed = false;
+  if (wheel) {
+    try {
+      await micropip.install.callKwargs(wheel, { deps: false });
+      installed = true;
+    } catch { /* PyPI below */ }
+  }
+  if (!installed) await micropip.install(FITDECODE);
 
   status("engine", "active", "wingfoil_lab");
   await mountLab();
@@ -214,10 +222,16 @@ self.onmessage = async (ev) => {
         break;
     }
   } catch (err) {
+    // A failure before the engine is up is the engine's download, never the file: a
+    // missing wheel behind a proxy that also blocks PyPI raises a Python traceback, and
+    // the rider must read "the engine did not download", not "send us this file". The
+    // traceback still travels as `message`, behind Details.
+    const stage = entry ? "run" : "boot";
     if (!entry) booting = null;           // a failed *boot* must be retryable
     const why = describe(err);
-    self.postMessage({ type: "error", id: msg.id ?? null, kind: msg.type,
-                       cause: why.kind, summary: why.summary, message: why.message });
+    self.postMessage({ type: "error", id: msg.id ?? null, kind: msg.type, stage,
+                       cause: stage === "boot" ? "network" : why.kind,
+                       summary: why.summary, message: why.message });
   }
 };
 

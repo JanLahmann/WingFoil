@@ -67,7 +67,7 @@
   window, so a zoomed strip never pans by itself, and nothing animates, which is what
   `prefers-reduced-motion` asks. `aria-valuetext` says what the readout says — clock,
   elapsed, speed in knots, flying or off foil — and its label is the kit's
-  (`AppShellCopy.FileProblem.stripKeys`). The map stays pointer-only, with its `role=img`
+  (`AppShellCopy.Strip.keys`, `strip.keys` on the web). The map stays pointer-only, with its `role=img`
   summary; the strip is the one way to walk a session by key.
 - Zoom state is transient per session view — but it survives a section change, which is not
   a new session view (see "Sections" above). On iOS that means the window is owned by

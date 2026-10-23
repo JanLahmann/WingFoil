@@ -1385,7 +1385,7 @@ function drawStrip() {
 function wireStripKeys(host) {
   host.tabIndex = 0;
   host.setAttribute("role", "slider");
-  host.setAttribute("aria-label", say("fileProblem.stripKeys"));
+  host.setAttribute("aria-label", say("strip.keys"));
   if (host.dataset.keys) return;
   host.dataset.keys = "on";
   host.addEventListener("keydown", (ev) => {
