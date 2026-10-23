@@ -156,8 +156,8 @@ Every one of these goes through `track()` in `web/js/track.js`.
 | `app-menu-row-opened` | `row` (the seven) | `js/appshell.js`, the app menu | which of the phone's seven menu rows earns its place in the browser | 3 |
 | `app-card-made` | `how` (`download`/`share`), `kind` (`session`/`period`), `shape`, `hero` (`clean`/`max2s`/`tacks`, and `sessions` on a period), `map` | `js/sharecard.js`, after the PNG exists | **the growth channel.** Which shape and which hero a card is actually made in, and whether the map background is on | 4 |
 | `app-icu-sync-started` | — | `js/icu.js`, *List recent activities* | how many riders try the bridge at all | 3 |
-| `app-icu-sync-finished` | `activities` (the watersport count) | `js/icu.js`, after the list | does the bridge ever work from a browser | 3 |
-| `app-icu-sync-failed` | `reason` (`blocked`/`key`/`http`) | `js/icu.js` | `blocked` is the expected CORS wall; a rise in `key` is a wording problem in Settings | 3 |
+| `app-icu-sync-finished` | `activities` (the watersport count) | `js/icu.js`, after the list | how often the bridge is used from a browser (intervals.icu allows cleanjibe.org's origin, checked 8 Oct 2026) | 3 |
+| `app-icu-sync-failed` | `reason` (`blocked`/`key`/`http`) | `js/icu.js` | `blocked` should be rare on cleanjibe.org, which intervals.icu allows; a rise means its CORS policy changed. A rise in `key` is a wording problem in Settings | 3 |
 | `app-install-shown` | `platform` (`chrome`/`ios`) | the inline banner and `js/install.js` | the denominator the accept rate needs | 4 |
 | `app-install-accepted` | `platform` (`chrome`/`browser-menu`) | the inline banner's `userChoice` and `appinstalled` | do people install the PWA | 4 |
 | `app-shared-file-taken` | — | `js/app.js`, `?shared=1` | **does Android's share target work.** The POST never reaches a server, so this is the only evidence it exists | 3 |

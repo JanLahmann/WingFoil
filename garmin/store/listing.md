@@ -18,6 +18,7 @@ open beta, English only.
 ## Watch app — `CleanJibe Wingfoil Tracker (Beta)`
 
 * Store page: <https://apps.garmin.com/apps/e77867b5-e972-4eb2-be1b-90077cfac806>
+* On the watch and in Garmin Connect it installs as **CleanJibe Beta** (`AppNameBeta`), the one name the guide and the help use for it (rider review W17)
 * Type: device app · Version **0.9.24** on the store, **48** products (uploaded 15 Oct 2026; 0.9.23 on 14 Oct, the first with 48; 0.9.22 on 9 Oct, Internal 29; 0.9.21 on 8 Oct, live by 9 Oct; 0.9.20 on 1 Oct, Internal 27; 0.9.19 on 23 Sep, Internal 26; 0.9.18 on 22 Sep, Internal 25; 0.9.17 on 21 Sep, Internal 24; 0.9.16 the same day, Internal 23; 0.9.15 on 20 Sep, Internal 22; 0.9.13 on 17 Sep, Internal 21; 0.9.12 the same day; 0.9.11 on 15 Sep; web/tools/make_devices.py reads this line, keep its shape) · first submitted 2026-08-12, 0.9.4 released 2026-09-01
 * Permissions: Fit, SensorLogging, Communications, Positioning, FitContributor, Sensor
 * Devices (`garmin/manifest-beta.xml`, identical to the release and dev manifests; the count and
@@ -83,6 +84,12 @@ What changed and why:
   9 October 2026). It used to say *Drop the FIT file into cleanjibe.org*, and Garmin Connect's
   phone app gives a rider no file. It now names intervals.icu first and the computer export
   second, 1389 characters with the sentence above and the laps line (W15).
+* **To paste with the next upload (rider review W19, 23 October 2026): AFTERWARDS says the
+  phone takes a second look.** *On the phone, CleanJibe judges each turn again with the whole
+  track, so a verdict can differ from your wrist's.* A turn can change its verdict between the
+  wrist and the phone, and nothing said so (docs/algorithms/turns.md, "What a live detector
+  cannot know"). The text below carries it already; the live store does not until the master
+  pastes it with the next watch upload.
 * **2831 characters, cut to 1138 on 30 September 2026** (Jan: "make this way more concise"): one paragraph per theme, the accelerometer and recording detail left to cleanjibe.org/start. The form rejects `<` and `>`, and there are none.
 
 ```
@@ -100,7 +107,7 @@ Eight pages show speed, session, records, turns, the map and your time on the fo
 
 AFTERWARDS
 
-The watch saves a Windsurf activity with a lap for every flight and one for every stretch off the foil. Connect intervals.icu once, and every session reaches CleanJibe by itself, on the iPhone or at cleanjibe.org. Garmin Connect's phone app cannot export a file. On a computer, export it at connect.garmin.com and drop it on cleanjibe.org, free, with no upload. On an iPhone, CleanJibe Wingfoil Analyzer is open on TestFlight at testflight.apple.com/join/nygqGGcn.
+The watch saves a Windsurf activity with a lap for every flight and one for every stretch off the foil. Connect intervals.icu once, and every session reaches CleanJibe by itself, on the iPhone or at cleanjibe.org. On the phone, CleanJibe judges each turn again with the whole track, so a verdict can differ from your wrist's. Garmin Connect's phone app cannot export a file. On a computer, export it at connect.garmin.com and drop it on cleanjibe.org, free, with no upload. On an iPhone, CleanJibe Wingfoil Analyzer is open on TestFlight at testflight.apple.com/join/nygqGGcn.
 
 New to it? cleanjibe.org/start walks you through a 20-minute test on land.
 ```
@@ -322,8 +329,11 @@ Naming, since 0.9.11 (docs/channels.md, "The watch"): `garmin/tools/package.sh` 
 `CleanJibe-dev-<v>-devN.iq` (953f7547, the private listing). Older files in `garmin/bin/`: the
 `*-beta-*.iq` up to 0.9.10 are the invite/beta UUID, the `*-devbeta-*.iq` the private one.
 Listing titles to set in the store: **CleanJibe Wingfoil Watch App** (release, when opened) and
-**CleanJibe Wingfoil Watch App Beta** (the existing public listing, renamed from "CleanJibe
-Wingfoil Tracker (Beta)"); the names on the watch are CleanJibe / CleanJibe Beta / CleanJibe Dev.
+**CleanJibe Wingfoil Watch App Beta** (the existing public listing, still titled "CleanJibe
+Wingfoil Tracker (Beta)" in the store until the rename is pasted); the names on the watch are
+CleanJibe / CleanJibe Beta / CleanJibe Dev. The guide and the help call the beta app **CleanJibe
+Beta** and nothing else, because that is what installs (rider review W17, 23 Oct 2026); the
+store title appears only as the link text to the listing.
 
 The two listings are told apart on the wrist by their mark since 14 September 2026
 (docs/channels.md, "Telling the channels apart"): the invite build's launcher icon and

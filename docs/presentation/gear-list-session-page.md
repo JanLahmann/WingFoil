@@ -203,6 +203,21 @@ on it, and cannot be drawn inside a Settings menu picker).
 
 ## The session page: source, name, neighbours
 
+**The web's header folds the file into one line** (rider review S17, 23 Oct 2026: *"the
+first screen is a filename, six tags and the same numbers twice"*). Under the date sits one
+closed fold whose line names whose and what the recording is: *Example session*, the
+discipline, the experimental chip where there is one, and the recording's class (*CleanJibe
+recording*, *measured speed*, *positions only*), joined by middle dots. Opening it shows the
+file name with its clock note and every tag, the sensors included (*windsurfing*,
+*accelerometer*, *5 laps*, *heart rate*). The key-metrics block follows straight after, then
+the *Make a card of this* line, the glossary fold and the tiles. **The tiles repeat nothing
+the block prints**: duration, distance, best 2 s, 5×10 s, alpha 500 and the jibe and tack
+tallies are the block's, so the tiles keep *On foil*, *Longest flight*, the speed windows the
+block leaves out (best 10 s, 250 m, 500 m and 1 NM, each only where the session set it),
+*Touchdowns · glide-outs* and *Wind axis*. The ACCELEROMETER tag was right and the help was
+wrong: the example ships whole, its wrist accelerometer included, and the help topic *Look
+around with the example session* now says so.
+
 The header names where the recording came from in one line under the date
 (`SessionProvenance.line(for:)`: *Apple Watch · CleanJibe*, *intervals.icu*, *Strava*,
 *Apple Health*, *File*, *Garmin watch, direct*) — provenance used to live on the Details tab

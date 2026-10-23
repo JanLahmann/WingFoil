@@ -605,7 +605,9 @@ Plus, 15 Oct 2026). Garmin Connect's settings page cannot ask, so the watch does
   session logged motion (`SessionController.logsMotion`), so a slow sync does not look like a
   broken one; the same width rule drops it on a glass that cannot hold it.
 * **The setting's own words**: *Log wrist motion · long transfer time*, its note naming the
-  transfer time to Garmin Connect, and the **Which watches** help topic saying the same.
+  transfer time to Garmin Connect, and the **Which watches** help topic saying it slows the
+  sync. The same row names **Data screens → Large text** (rider review X21, 23 Oct 2026), as
+  the Garmin route of Getting started does.
 
 No number of minutes anywhere: the time depends on the session's length, the watch and the
 Bluetooth link, so a figure would be an example read as a promise. Test:

@@ -377,9 +377,11 @@ public enum HelpCatalog {
             ],
             items: [
                 .init(term: "Garmin, with the CleanJibe watch app",
-                      detail: "You get everything: each verdict buzzes, and pumps count live. The "
-                          + "phone's pump analysis needs Log wrist motion on, which makes the "
-                          + "transfer time to Garmin Connect much longer."),
+                      // Large text named here too (rider review X21, 23 Oct 2026): the small
+                      // captions were the complaint and the fix sat unnamed in Connect settings.
+                      detail: "You get everything: each verdict buzzes, and pumps count live. Log "
+                          + "wrist motion adds the phone's pump analysis but slows the sync. "
+                          + "Data screens → Large text gives big numbers."),
                 .init(term: "Garmin, with Garmin's own profile or another app",
                       detail: "You get every verdict and flight, with measured speed "
                           + "records. Your old sessions come in through intervals.icu too."),
@@ -411,9 +413,13 @@ public enum HelpCatalog {
                 + "own page. It stays out of Records, Trends and your gear totals.",
                 "Delete it with a swipe. You can load it again from here.",
                 "We recorded it at " + ExampleSession.place + " with the CleanJibe watch "
-                + "app and removed everything that identifies the rider. We left the "
-                + "accelerometer out, because it is bigger than the whole app.",
-                "So pump strokes and takeoff effort show as unavailable.",
+                + "app and removed everything that identifies the rider. The rest of the "
+                + "recording is all there.",
+                // Rider review S17 (23 Oct 2026): this said the accelerometer was left out,
+                // while the example's own page wore an ACCELEROMETER tag and counted 31 pump
+                // strokes. The file ships whole (`ExampleSession`), so the help was wrong.
+                "That includes the wrist accelerometer, so you see its pump strokes and "
+                + "failed takeoff attempts.",
             ],
             image: HelpImage(asset: "help-session-detail",
                              caption: "The four rows at the top answer \"was that a good "

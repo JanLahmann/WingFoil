@@ -40,6 +40,10 @@
     "S10, 9 Oct 2026). A route the browser cannot take says so and names the way round. The",
     "app's help topic is the iPhone's own and shows no browser line.",
     "",
+    "`buzzes` is the card that says what each buzz of the Garmin watch app means, web only,",
+    "on /start/ after the ways in (rider review W12, 23 Oct 2026). Each pattern is read from",
+    "garmin/source/alerts/AlertManager.mc: change a pattern there, change its line here.",
+    "",
     "`webPage` says which page of the site an extra is printed on: \"start\" (the default) or",
     "\"beta\". /start/ installs and gets the first session in; /beta/ says what to test and what",
     "a good report says (rider review S9, 9 Oct 2026). The report checklist is on /beta/ too.",
@@ -56,7 +60,7 @@
     "paragraphs": [
       "Ride with the watch you already have. Your session comes into CleanJibe, and every turn gets a verdict.",
       "On a Garmin, ride as always, with Windsurf or any other watersport profile. Set up intervals.icu once in Settings → intervals.icu. It is free, takes about 5 minutes, and your old sessions come in too.",
-      "Want more out there? The CleanJibe watch app buzzes each verdict on your wrist. It counts your pump strokes and takeoff attempts, and keeps your dry streak on the glass.",
+      "Want more out there? The CleanJibe watch app buzzes each verdict and counts your pump strokes. Too small to read? Set Data screens to Large text.",
       "You can also open a .fit file straight from Files, Mail or a message. It can be yours, or one a friend sent you.",
       "We ride too. We built CleanJibe for the jibes we were chasing ourselves."
     ]
@@ -108,11 +112,15 @@
         },
         {
           "title": "Want more? Install the watch app",
-          "detail": "**CleanJibe Wingfoil Tracker (Beta)** on Connect IQ buzzes each verdict on your wrist. It counts pump strokes and takeoff attempts, and shows your dry streak."
+          "detail": "**CleanJibe Wingfoil Tracker (Beta)** on Connect IQ installs as **CleanJibe Beta** on your watch. It buzzes each verdict and counts pump strokes and takeoff attempts."
         },
         {
           "title": "Record and save with it",
-          "detail": "Press START, pick **CleanJibe**, wait for GPS good and press START again. To finish, press START to pause, then BACK and **Save**."
+          "detail": "Press START, pick **CleanJibe Beta**, wait for GPS good and press START again. To finish, press START to pause, then BACK and **Save**."
+        },
+        {
+          "title": "Numbers too small out there?",
+          "detail": "Garmin Connect → **CleanJibe Beta** → Settings → **Data screens** → **Large text**. You get five screens, each with one big number and its word."
         },
         {
           "title": "No intervals.icu? The long way",
@@ -289,6 +297,10 @@
           "detail": "A map shows your track, with duration and speeds at the top. A speed chart moves when you drag along it."
         },
         {
+          "title": "Feel the buzzes",
+          "detail": "With the CleanJibe watch app, your ride buzzes like a session. You feel each new best speed and each longer flight. *What each buzz means* below tells them apart."
+        },
+        {
           "title": "Turns and jibes reading zero",
           "detail": "Expected on a bike or on foot: there is nothing to jibe. This checks the way in from the watch, never the analysis."
         }
@@ -397,6 +409,68 @@
       {
         "term": "Anything odd",
         "detail": "A permission you were never asked for. A \"Nothing to import\" screen. A NO GPS that never cleared. A crash. Wording you did not understand."
+      }
+    ]
+  },
+  "buzzes": {
+    "surfaces": [
+      "web"
+    ],
+    "_note": "Each pattern as garmin/source/alerts/AlertManager.mc plays it. Which ones are on by default is Jan's call and lives in garmin/resources/settings/properties.xml; this list only says what each one means.",
+    "title": "What each buzz means",
+    "lede": "The CleanJibe watch app tells you by feel, so you never look down in a turn. Each pattern means one thing. Most have a switch in Garmin Connect → CleanJibe Beta → Settings.",
+    "entries": [
+      {
+        "term": "One crisp tick",
+        "detail": "You flew through the turn."
+      },
+      {
+        "term": "Two soft ticks",
+        "detail": "The turn had a touchdown."
+      },
+      {
+        "term": "Three hard ticks",
+        "detail": "You fell in during the turn."
+      },
+      {
+        "term": "Three quick ticks, each one stronger",
+        "detail": "A clean jibe. It plays instead of the single tick."
+      },
+      {
+        "term": "Two short buzzes",
+        "detail": "Your best 2 s or 10 s of the session just got faster."
+      },
+      {
+        "term": "One long buzz",
+        "detail": "Your longest flight of the session so far."
+      },
+      {
+        "term": "Short, then long",
+        "detail": "Your pumped takeoff worked. A takeoff in enough wind stays quiet."
+      },
+      {
+        "term": "Long, then short",
+        "detail": "You landed a jump. The screen shows your count."
+      },
+      {
+        "term": "Two rising ticks, once",
+        "detail": "The watch found the wind. From now on it tells tacks from jibes."
+      },
+      {
+        "term": "Two long pulses",
+        "detail": "The recording is paused. It buzzes again every two minutes until you resume."
+      },
+      {
+        "term": "One long pulse, then two quick ticks",
+        "detail": "The recording runs again."
+      },
+      {
+        "term": "One medium buzz",
+        "detail": "An interval you set has passed. It is off until you set minutes or km."
+      },
+      {
+        "term": "One short tick after the save",
+        "detail": "Your session reached the phone in full, with Send summary to phone app on."
       }
     ]
   }

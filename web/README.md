@@ -110,6 +110,10 @@ web/
 │                               the precache, because they are on the app's first screen
 ├── img/share-card@2x.png       the same card at 880x1100, for the hero's srcset on a
 │                               phone's 2x and 3x screen
+├── img/qr-testflight.svg       the TestFlight link as a QR, for /start/'s iPhone card at
+│                               wide widths (rider review S13). Written by
+│                               tools/make_qr.swift, never by hand; verify_links.py holds
+│                               the URL in its first comment to the card's own href
 ├── img/og-card.png             the homepage's Open Graph tile since 28 Sep 2026: the same
 │                               example's LANDSCAPE card, 1120x630 on a 1200x630 plate —
 │                               tools/hero_card.html?shape=landscape&w=1120&h=630
@@ -225,6 +229,10 @@ web/
 │                               catalogue, a stale product count, a page that has drifted
 │                               from docs/copy, a sentence with two homes and a page over
 │                               its word budget all fail with the links
+├── tools/make_qr.swift         `swift tools/make_qr.swift <url> <out.svg>`: a QR as a static
+│                               SVG, from Apple's CIQRCodeGenerator at level M with a
+│                               four-module quiet zone, read back through CIDetector before
+│                               it is written. Mac only, run by hand when a link changes
 ├── tools/make_devices.py       writes ../docs/copy/garmin-devices.json from
 │                               garmin/manifest.xml + -beta + -dev (asserting the three
 │                               product sets are identical), and rewrites the
