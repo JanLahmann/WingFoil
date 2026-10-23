@@ -160,7 +160,7 @@ export const WAYS_IN = {
   "rows": [
     {
       "id": "drop",
-      "title": "Drop a .fit, .gpx or .tcx here",
+      "title": "Drop a .fit, .gpx, .tcx or a Garmin .zip here",
       "line": "Or choose a file. It never leaves this tab.",
       "here": true
     },
@@ -412,6 +412,29 @@ export const WHATS_NEW = [
     ]
   },
   {
+    "version": "0.9.29",
+    "build": null,
+    "channel": "beta",
+    "date": "2026-10-22",
+    "title": "A new best stays up longer",
+    "lines": [
+      "A new best 2 s stays big on your wrist for 3 seconds.",
+      "A jibe you start slowly now counts as a jibe, not a course change.",
+      "No turn goes missing from the saved file."
+    ]
+  },
+  {
+    "version": "0.9.28",
+    "build": null,
+    "channel": "beta",
+    "date": "2026-10-18",
+    "title": "Sessions straight to the iPhone beta",
+    "lines": [
+      "Your watch can send each session straight to the CleanJibe beta app on your iPhone.",
+      "Turn on Send summary to phone app in Garmin Connect."
+    ]
+  },
+  {
     "version": "1.0.1",
     "build": 136,
     "channel": "beta",
@@ -424,6 +447,32 @@ export const WHATS_NEW = [
     ]
   },
   {
+    "version": "0.9.27",
+    "build": null,
+    "channel": "beta",
+    "date": "2026-10-17",
+    "title": "A jump never feels like a fall",
+    "lines": [
+      "A jump now buzzes long then short, so it never feels like a fall.",
+      "Your turn's verdict always buzzes, even right after a jump.",
+      "Longest flight and new best wait until your third flight.",
+      "The Turns page spells out flew and dry, port and stbd, where they fit."
+    ]
+  },
+  {
+    "version": "0.9.26",
+    "build": null,
+    "channel": "beta",
+    "date": "2026-10-17",
+    "title": "Resume restarts a paused session",
+    "lines": [
+      "Resume in the session menu now restarts a paused session.",
+      "After a GPS gap or a pause, the turn you were in is judged on what happened before it.",
+      "With Log wrist motion on, the transfer time to Garmin Connect is much longer.",
+      "The watch now asks once whether to keep it, and says so after the save."
+    ]
+  },
+  {
     "version": "1.0.1",
     "build": 133,
     "channel": "beta",
@@ -433,6 +482,17 @@ export const WHATS_NEW = [
       "The Flights tab counts your jumps and estimates the highest, from the watch's motion sensor.",
       "A jump counts only on the foil, at speed and outside a turn.",
       "Your sessions are worked out again, so jumps appear on the ones you already have."
+    ]
+  },
+  {
+    "version": "0.9.24",
+    "build": null,
+    "channel": "beta",
+    "date": "2026-10-15",
+    "title": "The watch counts your jumps",
+    "lines": [
+      "The watch counts your jumps.",
+      "Each one buzzes three quick ticks and shows JUMP with your count."
     ]
   },
   {
@@ -449,6 +509,45 @@ export const WHATS_NEW = [
     ]
   },
   {
+    "version": "0.9.23",
+    "build": null,
+    "channel": "beta",
+    "date": "2026-10-14",
+    "title": "Your turn ladder first after a save",
+    "lines": [
+      "After a session with turns, the SAVED page shows your turn ladder first.",
+      "A new Laps setting gives one lap per flight or one lap for the whole session.",
+      "Now also on fenix 6 Pro, Forerunner 945 and Forerunner 245 Music."
+    ]
+  },
+  {
+    "version": "0.9.22",
+    "build": null,
+    "channel": "beta",
+    "date": "2026-10-09",
+    "title": "Your wrist says when it stops counting",
+    "lines": [
+      "Your wrist tells you when it stops counting.",
+      "A pause buzzes, and buzzes again every two minutes until you resume.",
+      "When the GPS drops, a broken ring shows it on every page.",
+      "A wind you set by hand now lasts one session, and the next start asks Same wind?",
+      "While the watch estimates the wind itself, the start page says wind auto."
+    ]
+  },
+  {
+    "version": "0.9.21",
+    "build": null,
+    "channel": "beta",
+    "date": "2026-10-08",
+    "title": "Turns named the way the phone names them",
+    "lines": [
+      "Your wrist names turns the way the phone does.",
+      "A jibe you carry on round through the wind is a jibe.",
+      "A turn split by one slow second is one turn.",
+      "A swim during a bear-away now ends your dry streak."
+    ]
+  },
+  {
     "version": "1.0.1",
     "build": 129,
     "channel": "beta",
@@ -459,6 +558,19 @@ export const WHATS_NEW = [
       "A turn that ends your session in the water counts as a fall.",
       "Your watch's recording from intervals.icu replaces a Strava copy, in the background too.",
       "The session list scrolls smoothly from the first swipe."
+    ]
+  },
+  {
+    "version": "0.9.20",
+    "build": null,
+    "channel": "beta",
+    "date": "2026-10-01",
+    "title": "A tack you fall out of counts",
+    "lines": [
+      "A turn you go in halfway through now shows on your wrist as a fall.",
+      "It is named a tack or a jibe by the same rules as the phone.",
+      "A session that ends with you in the water ends with a fall.",
+      "A late brush of the water after a flight no longer breaks your flew streak."
     ]
   },
   {
@@ -921,7 +1033,7 @@ export const WHATS_NEW = [
     "build": null,
     "channel": "release",
     "date": "2026-09-13",
-    "title": "Nine more watches, and the shore",
+    "title": "Nine more watches, and a splash page",
     "lines": [
       "Nine more watches.",
       "**Venu 2, 2S, 2 Plus, 3 and 3S, vívoactive 5 and 6, Instinct 3 AMOLED 45 and 50 mm.**",
@@ -929,12 +1041,6 @@ export const WHATS_NEW = [
       "They pass the layout checks in the simulator.",
       "They have **not been ridden on a real watch**.",
       "If you have one, tell us how the pages look and whether the touch controls behave.",
-      "The live map page and the post-save Track page can draw the shore of your spot.",
-      "The shore is drawn under the trail.",
-      "The CleanJibe iPhone app sends it over Bluetooth.",
-      "Take Settings → Garmin watch → Send map to watch.",
-      "No firmware map view is involved.",
-      "The firmware's own map kills the app on a fenix 8.",
       "A splash page with the mark on the first launch after an install or update.",
       "A larger mark on the start page."
     ]

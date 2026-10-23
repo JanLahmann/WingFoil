@@ -67,7 +67,7 @@
       {
         "id": "drop",
         "here": true,
-        "title": "Drop a .fit, .gpx or .tcx here",
+        "title": "Drop a .fit, .gpx, .tcx or a Garmin .zip here",
         "line": "Or choose a file. It never leaves this tab."
       },
       {

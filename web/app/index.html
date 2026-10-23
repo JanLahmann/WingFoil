@@ -231,7 +231,7 @@
                   stroke-width="2.5" stroke-linecap="round"/>
           </svg>
           <div class="way-body">
-            <p class="way-title">Drop a <strong>.fit</strong>, <strong>.gpx</strong> or <strong>.tcx</strong> here</p>
+            <p class="way-title">Drop a <strong>.fit</strong>, <strong>.gpx</strong>, <strong>.tcx</strong> or a Garmin <strong>.zip</strong> here</p>
             <p class="way-line">Or choose a file. It never leaves this tab.</p>
             <p class="drop-hint">
               <!-- A real <label for> — not a button calling input.click() — so the picker
@@ -366,10 +366,12 @@
       <!-- Step labels a rider can read while waiting. They name what is happening to the
            file, not which module is being imported: "wingfoil_lab" told the one person who
            already knew nothing new, and told everyone else that they had opened a
-           developer tool by mistake. -->
-      <li data-step="runtime"><span class="dot"></span><span class="label">Starting the analyzer</span><span class="detail"></span></li>
+           developer tool by mistake. The parse step says "your file", because a .gpx or a
+           .tcx is read here too, and the four use the site's one spelling, analyse
+           (rider review X16, 23 Oct 2026). -->
+      <li data-step="runtime"><span class="dot"></span><span class="label">Getting the browser ready</span><span class="detail"></span></li>
       <li data-step="engine"><span class="dot"></span><span class="label">Loading the analysis engine</span><span class="detail"></span></li>
-      <li data-step="parse"><span class="dot"></span><span class="label">Reading the FIT file</span><span class="detail"></span></li>
+      <li data-step="parse"><span class="dot"></span><span class="label">Reading your file</span><span class="detail"></span></li>
       <li data-step="analyze"><span class="dot"></span><span class="label">Analysing</span><span class="detail"><span class="elapsed" id="elapsed" hidden></span></span></li>
     </ol>
     <div class="progress-foot">
@@ -1390,6 +1392,11 @@
     var KEY = "cleanjibe.install.dismissed";
     var bar = document.getElementById("install-banner");
     var prompt = null;
+    // Not over the example on arrival (rider review S19, 23 Oct 2026): a reader who came
+    // from the homepage's "Try the example session" is about to see a session, and an
+    // install offer first reads as the page asking before it has shown anything. Read now,
+    // before js/app.js normalises the hash. The prompt is still kept, so the next visit asks.
+    var exampleFirst = location.hash === "#example";
 
     function remembered() {
       try { return localStorage.getItem(KEY) === "1"; } catch (e) { return false; }
@@ -1413,7 +1420,7 @@
       // Keep the event: Chrome only lets it be used later if its own banner was suppressed.
       ev.preventDefault();
       prompt = ev;
-      if (!remembered()) {
+      if (!remembered() && !exampleFirst) {
         bar.hidden = false;
         // The OFFER, not the install. How often a browser says an install is available is
         // the denominator the accept rate below is worth nothing without.

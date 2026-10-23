@@ -20,6 +20,11 @@
     },
     {
       "path": "web/app/index.html",
+      "text": "Drop a .fit, .gpx, .tcx or a Garmin .zip here",
+      "reason": "the drop zone's title, a door only the browser has; verify_app_shell.py pins it to docs/copy/app-shell.json waysIn.drop, its one home (rider review S22: the .zip was accepted and never named)"
+    },
+    {
+      "path": "web/app/index.html",
       "text": "Drop a wingfoil .fit file and get the session back",
       "reason": "the page's own meta description and share-card alt text: the website's, not a screen's"
     },

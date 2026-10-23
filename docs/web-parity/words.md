@@ -373,7 +373,7 @@ the screen. Counts: 50 app twin, same words, 45 web-only or reworded (step 2), 1
 | 321 | Every flight | web-only or reworded (step 2) |
 | 325 | Every turn, judged | web-only or reworded (step 2) |
 | 343 | and | app twin, same words |
-| 367 | Starting the analyzer | web-only or reworded (step 2) |
+| 367 | Getting the browser ready | web-only or reworded (step 2) |
 | 370 | Analysing | web-only or reworded (step 2) |
 | 377 | Cancel | app twin, same words |
 | 388 | Download original file | web-only or reworded (step 2) |
