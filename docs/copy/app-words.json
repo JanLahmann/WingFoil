@@ -254,6 +254,19 @@
       "noWindAxis" : "no clear wind direction in your track",
       "outcomeAndHeld" : "Flew through / touchdown / fell in is the outcome. It says how the turn ended. Held is how much of your entry speed you kept through it, 0 to 100 %.",
       "windWeak" : "{pct} % confident, can't tell tacks from jibes"
+    },
+    "unreadable" : {
+      "busy" : "CleanJibe is busy with a sync right now. Try again when it has finished.",
+      "fetchButton" : "Fetch again",
+      "fetching" : "Fetching the recording from intervals.icu…",
+      "fetchLine" : "The recording could not be read. It may still be downloading, or the stored file is damaged. Fetch it again from intervals.icu and the page opens.",
+      "importButton" : "Import…",
+      "importLine" : "The recording could not be read. It may still be downloading, or the stored file is damaged. Import the file again and the page opens.",
+      "line" : "The recording could not be read. It may still be downloading, or the stored file is damaged. Import the session again.",
+      "note" : "This session would not open. The app said: {error}",
+      "sendToUs" : "Send this to us",
+      "stillUnreadable" : "This copy could not be read either. Send it to us and we will look at it.",
+      "title" : "Could not open this session"
     }
   },
   "schema" : "cleanjibe.app-words/1"

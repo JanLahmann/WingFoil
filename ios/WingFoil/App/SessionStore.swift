@@ -511,6 +511,11 @@ final class SessionStore {
         // so every import is wingfoil and written down as confirmed — and a
         // `windsurfEnabled.v1` left in defaults by a dev build on the same phone is never
         // read, exactly as a leftover tuning blob is not.
+        #if BETA
+        // Rider review I13: a re-import replaces a stored copy that will not parse. Beta
+        // until it is proven on a device; the release keeps the broken copy as it always did.
+        ingestor.repairsUnreadable = true
+        #endif
         #if DEV
         ingestor.windsurfEnabled = Self.storedWindsurfEnabled
         #else
@@ -2726,6 +2731,58 @@ final class SessionStore {
             pendingSessionID = row.id
         } else {
             status = "That session is not on intervals.icu yet — pull to sync"
+        }
+    }
+
+    /// Whether `fetchAgainFromIntervals` can run for this row: it came from intervals.icu
+    /// and the phone holds the key. Read in a view body, so it touches no keychain.
+    func canFetchAgain(_ row: SessionRow) -> Bool {
+        row.icuActivityId != nil && !apiKey.isEmpty
+    }
+
+    /// What Fetch again came to, for the unreadable page to say in place: the store's
+    /// status line and alert belong to the library, and a rider who opened the session from
+    /// Records would never see either.
+    enum FetchAgainResult: Equatable {
+        /// The stored copy reads now; the page loads it again.
+        case readable
+        /// The download arrived and still does not read.
+        case stillUnreadable
+        /// A sync holds the store; nothing was fetched.
+        case busy
+        /// The download failed, in intervals.icu's own words.
+        case failed(IcuProblem)
+    }
+
+    /// **One session's recording, downloaded again** — the unreadable page's Fetch again
+    /// (rider review I13, BETA). The same download the sync makes, ingested the same way:
+    /// the dedupe finds the row by its activity id, and a stored copy that will not parse
+    /// is replaced by this one (`SessionIngestor.repairsUnreadable`). The answer is read
+    /// back off the archive, so a copy that still does not open is told as that.
+    func fetchAgainFromIntervals(_ row: SessionRow) async -> FetchAgainResult {
+        reloadApiKeyIfMissing()
+        guard !isBusy else { return .busy }
+        guard let activityID = row.icuActivityId, canFetchAgain(row) else {
+            return .failed(IcuProblem(kind: .noKey))
+        }
+        isBusy = true
+        defer { isBusy = false }
+        let key = apiKey
+        let ingestor = self.ingestor
+        let filename = row.originalFilename
+        do {
+            let reads = try await Task.detached(priority: .userInitiated) {
+                let fit = try await IcuClient(apiKey: key)
+                    .originalRecording(activityID: activityID)
+                _ = try await ingestor.ingest(fitData: fit, filename: filename, source: .icu,
+                                              icuActivityId: activityID)
+                return (try? ingestor.archive.rawTrack(for: row.id)) != nil
+            }.value
+            await load()
+            return reads ? .readable : .stillUnreadable
+        } catch {
+            Usage.failed(.importIcu, error: error)
+            return .failed(IcuDiagnosis.describe(error))
         }
     }
 
