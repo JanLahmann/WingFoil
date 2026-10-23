@@ -270,7 +270,11 @@ main { padding-bottom: calc(var(--tap) + 34px + env(safe-area-inset-bottom)); }
 
   body > header,
   body > main,
-  body > footer { margin-left: 190px; }
+  body > footer,
+  body > .update-banner { margin-left: 190px; }
+  /* The banners too (rider review S19, 23 Oct 2026): they sit in the body's flow above the
+     header, and the rail covered their first 190 px, so the install offer began
+     ". It gets an icon…" with its own name under the rail. */
 
   main { padding-bottom: 24px; }
 }

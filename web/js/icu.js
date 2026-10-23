@@ -5,10 +5,11 @@
  *   - it is attached ONLY to requests whose origin is https://intervals.icu;
  *   - it is never posted to the host serving this page, never logged, never in a URL.
  *
- * intervals.icu does not publish CORS headers for its API, so a browser will usually
- * refuse these calls. That is expected and cannot be fixed from here — a zero-server app
- * has no proxy to route through. We feature-detect the failure and fall back to telling
- * the user how to export the FIT by hand, which is the supported path.
+ * intervals.icu answers https://cleanjibe.org with CORS allowed (checked 8 Oct 2026), so
+ * on the live site these calls go through. Another origin (a local server, a preview, a
+ * fork) may still be refused, and a zero-server app has no proxy to route through. So the
+ * failure is still feature-detected, and the fallback still tells the rider how to export
+ * the FIT by hand.
  */
 
 import { say } from "./appcopy.js";
@@ -106,9 +107,9 @@ function isoDaysAgo(days) {
 
 async function listActivities(key, athlete, analyzeBuffer) {
   tell("Contacting intervals.icu…");
-  // The bridge, counted at both ends. The browser is expected to refuse this call outright
-  // (no CORS headers on intervals.icu's API), and the pair of started/finished is the only
-  // way to learn whether that expectation still holds for real readers. No key, no athlete
+  // The bridge, counted at both ends. intervals.icu allows cleanjibe.org's origin (checked
+  // 8 Oct 2026), and the pair of started/finished is the only way to learn whether that
+  // still holds for real readers. No key, no athlete
   // id, no activity name ever reaches an event — the finish carries a COUNT.
   track("app-icu-sync-started");
   el("icu-results").innerHTML = "";
@@ -172,7 +173,7 @@ async function fetchAndAnalyze(key, id, name, analyzeBuffer) {
   }
 }
 
-/** The expected failure: the browser blocked the cross-origin call. */
+/** The browser blocked the cross-origin call: another origin, or a changed CORS policy. */
 function corsFallback(err) {
   // The reason word, never the browser's own message: that string is the engine's and can
   // carry a URL with an athlete id in it.
