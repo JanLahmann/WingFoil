@@ -89,7 +89,9 @@ function bar() {
    body put this one hint above the sticky header while Chrome's identical bar sat below
    it; sitting last also makes it the one that stands down when another banner is up
    (css/app.css, "one banner"). */
-if (installableOnIos() && !remembered()) {
+// Not over the example on arrival either (rider review S19): the inline Chrome half says
+// why. Modules run in document order before js/app.js, so the hash is still the link's.
+if (installableOnIos() && !remembered() && location.hash !== "#example") {
   const after = document.getElementById("install-banner");
   if (after) after.after(bar());
   else document.body.prepend(bar());

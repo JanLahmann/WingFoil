@@ -501,6 +501,14 @@ h3 .tag.beta, td .tag.beta, dt .tag.beta, li .tag.beta { vertical-align: 2px; }
 .claim p + p, .claim ul + p { margin-top: 8px; }
 .claim .piece-foot { margin-top: 12px; }
 .claim .piece-foot .btn { text-decoration: none; }
+/* The TestFlight button, and its QR on a wide screen (rider review S13). On a phone the
+   reader is already on the device the link wants, so the QR stays hidden there. The SVG is
+   black on its own white plate in both themes: a decoder needs the light half light. */
+.tf-join { margin-bottom: 10px; }
+.tf-join .btn { text-decoration: none; }
+.tf-qr { display: none; margin: 12px 0 0; }
+.tf-qr img { display: block; width: 128px; height: 128px; border-radius: 6px; }
+.tf-qr figcaption { margin-top: 6px; font-size: 13px; color: var(--ink-3); }
 
 /* -------------------------------------------------------------------- footer */
 
@@ -533,6 +541,7 @@ h3 .tag.beta, td .tag.beta, dt .tag.beta, li .tag.beta { vertical-align: 2px; }
      three in another, and a fixed grid leaves the two-card row with a visible hole where
      the third would have been. */
   .claims { grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); }
+  .tf-qr { display: block; }
   .home-section { padding-top: 46px; }
   /* Two columns of definitions, with the rule between rows still reading left to right. */
   .terms { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 28px; }

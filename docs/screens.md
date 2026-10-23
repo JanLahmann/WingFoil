@@ -108,7 +108,8 @@ aggregate, under the **All spots** chip, and Trends pushes **Periods**, which pu
 **Getting started**, **What's new**, **Join the beta**, and the two above. Five
 dialogs: the welcome, *Whose session is this?*, *New gear*, *Custom range*, the **Share**
 dialog with its two segments and its report row, and the turn page a card or a row opens.
-Two banners: a new version, and the install offer. Six reader pages carry the site nav
+Two banners: a new version, and the install offer. The install offer stands clear of the
+rail on a wide screen and is not raised over `/app/#example` on arrival (rider review S19). Six reader pages carry the site nav
 (the wordmark and *Try it in your browser* as its one door) and the same footer with its
 prefilled feedback mail: `/`, `/start/`, `/beta/`, `/whats-new/`, `/help/` and `/privacy/`. There is no Impressum:
 CleanJibe is non-commercial and not a trader (Jan, 30 Sep 2026).
@@ -240,6 +241,10 @@ app, any .fit, Strava, and the Garmin ZIP last.
     are lines in a closing *Testing the beta?* section, and a script forwards a reader who
     lands on one. The phone has no such split to make: its Getting started, What's new and
     Join the beta are three screens already.
+
+    **The iPhone panel is a button, with a QR beside it on a wide screen** (rider review
+    S13, 23 Oct 2026): *Join the beta on TestFlight*, and `img/qr-testflight.svg` for the
+    reader on a laptop, hidden under 761 px where the reader holds the phone already.
 
     **Three apps, named** (rider review S10). `/start/` says *three apps* — the watch app,
     the iPhone app, the browser app — with a panel for each in *Get the apps*, and every way-in
