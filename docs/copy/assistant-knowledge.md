@@ -73,7 +73,7 @@ Answering rules: use only facts from this file and from the state you are given.
 Your first session on the water, and where to send what you find.
 Ride with the watch you already have. Your session comes into CleanJibe, and every turn gets a verdict.
 On a Garmin, ride as always, with Windsurf or any other watersport profile. Set up intervals.icu once in Settings → intervals.icu. It is free, takes about 5 minutes, and your old sessions come in too.
-Want more out there? The CleanJibe watch app buzzes each verdict on your wrist. It counts your pump strokes and takeoff attempts, and keeps your dry streak on the glass.
+Want more out there? The CleanJibe watch app buzzes each verdict and counts your pump strokes. Too small to read? Set Data screens to Large text.
 [iPhone app only] You can also open a .fit file straight from Files, Mail or a message. It can be yours, or one a friend sent you.
 We ride too. We built CleanJibe for the jibes we were chasing ourselves.
 - Garmin, as you ride today: Ride as always, with Windsurf or any watersport profile. Connect intervals.icu once, and your old sessions come in too. The CleanJibe watch app adds verdicts on your wrist.
@@ -89,7 +89,7 @@ Every watch works, one way or another. Each row says what yours can show.
 Every watch that records a GPS track works. A number your file cannot support is left blank, never guessed.
 Two things set the rows apart. First, **measured speed**: your file holds the watch's own speed, so your speed records count. Without it, speed is worked out from positions and the records are marked estimated.
 **Pump strokes and takeoff attempts** need a wrist accelerometer recorded during the session. Only the CleanJibe watch apps record one.
-- Garmin, with the CleanJibe watch app: You get everything: each verdict buzzes, and pumps count live. The phone's pump analysis needs Log wrist motion on, which makes the transfer time to Garmin Connect much longer.
+- Garmin, with the CleanJibe watch app: You get everything: each verdict buzzes, and pumps count live. Log wrist motion adds the phone's pump analysis but slows the sync. Data screens → Large text gives big numbers.
 - Garmin, with Garmin's own profile or another app: You get every verdict and flight, with measured speed records. Your old sessions come in through intervals.icu too.
 - Apple Watch, with the CleanJibe watch app: It is in the beta. You get measured speed, plus pump strokes and takeoff attempts from your wrist.
 - Apple Watch, with Apple's Workout app: Bring it in through Strava or intervals.icu. In the beta, Apple Health hands it over with measured speed.

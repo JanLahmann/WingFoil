@@ -1071,7 +1071,7 @@ export const HELP = {
           "body": [
             "Ride with the watch you already have. Your session comes into CleanJibe, and every turn gets a verdict.",
             "On a Garmin, ride as always, with Windsurf or any other watersport profile. Set up intervals.icu once in Settings → intervals.icu. It is free, takes about 5 minutes, and your old sessions come in too.",
-            "Want more out there? The CleanJibe watch app buzzes each verdict on your wrist. It counts your pump strokes and takeoff attempts, and keeps your dry streak on the glass.",
+            "Want more out there? The CleanJibe watch app buzzes each verdict and counts your pump strokes. Too small to read? Set Data screens to Large text.",
             "You can also open a .fit file straight from Files, Mail or a message. It can be yours, or one a friend sent you.",
             "We ride too. We built CleanJibe for the jibes we were chasing ourselves."
           ],
@@ -1163,7 +1163,7 @@ export const HELP = {
                 "beta",
                 "dev"
               ],
-              "detail": "You get everything: each verdict buzzes, and pumps count live. The phone's pump analysis needs Log wrist motion on, which makes the transfer time to Garmin Connect much longer.",
+              "detail": "You get everything: each verdict buzzes, and pumps count live. Log wrist motion adds the phone's pump analysis but slows the sync. Data screens → Large text gives big numbers.",
               "term": "Garmin, with the CleanJibe watch app"
             },
             {
