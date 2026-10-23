@@ -46,7 +46,7 @@ import { TOKENS } from "./tokens.js";
 /* The Turns tab's tally. It reads the chips' own decision (`turnRowVisible`) rather than
    deriving a second one, so the cards, this block and the table cannot disagree. */
 import { renderTurnTally } from "./turncards.js";
-import { HELP } from "./appcopy.js";
+import { HELP, say } from "./appcopy.js";
 
 // r3-w2:begin — the ground under the track, and the door that opens it full screen
 import {
@@ -1359,7 +1359,81 @@ function drawStrip() {
 
   state.live.strip = { root, X, Y, head, hline, hdot, box: { W, H, L, R, T, B, t0, t1 } };
   wireStripInput(root, { cross, cline, cdot }, { W, H, L, R, T, B, t0, t1, X, Y });
+  wireStripKeys(host);
   drawStripLegend();
+  applyPlayhead();
+}
+
+/* ------------------------------------------- strip: the keyboard (rider review X13) */
+
+/**
+ * **The speed strip is a slider for the keyboard** (rider review X13, 23 Oct 2026: a
+ * keyboard or screen-reader user got no way to scrub at all). The figure's host, which
+ * outlives every redraw, takes the focus and the slider role; the SVG inside keeps its
+ * picture. It moves the same one playhead a finger does, so the map dot and the readout
+ * follow, and `applyPlayhead` keeps `aria-valuetext` saying what the readout says.
+ *
+ *   ← →  ↑ ↓     a hundredth of the window on screen (at least 1 s)
+ *   Shift, PgUp PgDn   a tenth of it
+ *   Home  End     the start and the end of the window
+ *   Esc           clear the playhead
+ *
+ * The playhead stays inside the window the strip shows, so a zoomed strip never pans by
+ * itself. Nothing here animates: each key moves the playhead in one step, which is also
+ * what `prefers-reduced-motion` asks for.
+ */
+function wireStripKeys(host) {
+  host.tabIndex = 0;
+  host.setAttribute("role", "slider");
+  host.setAttribute("aria-label", say("strip.keys"));
+  if (host.dataset.keys) return;
+  host.dataset.keys = "on";
+  host.addEventListener("keydown", (ev) => {
+    const live = state.live?.strip;
+    if (!live || !state.model?.v?.count) return;
+    const { t0, t1 } = live.box;
+    const small = Math.max(1, (t1 - t0) / 100);
+    const big = Math.max(1, (t1 - t0) / 10);
+    const now = state.playhead;
+    const from = (edge) => (now === null || now === undefined ? edge : now);
+    let t;
+    switch (ev.key) {
+      case "ArrowRight": case "ArrowUp": t = from(t0 - small) + (ev.shiftKey ? big : small); break;
+      case "ArrowLeft": case "ArrowDown": t = from(t1 + small) - (ev.shiftKey ? big : small); break;
+      case "PageUp": t = from(t0 - big) + big; break;
+      case "PageDown": t = from(t1 + big) - big; break;
+      case "Home": t = t0; break;
+      case "End": t = t1; break;
+      case "Escape":
+        if (now === null || now === undefined) return;
+        ev.preventDefault();
+        clearPlayhead();
+        return;
+      default: return;
+    }
+    ev.preventDefault();
+    setPlayhead(Math.min(Math.max(t, t0), t1));
+  });
+}
+
+/** The slider's value, in the readout's own words: clock, elapsed, speed, phase. */
+function stripAria(t, i, flying) {
+  const host = el("strip-figure");
+  const live = state.live?.strip;
+  if (!host || !live) return;
+  host.setAttribute("aria-valuemin", String(Math.round(live.box.t0)));
+  host.setAttribute("aria-valuemax", String(Math.round(live.box.t1)));
+  if (t === null || t === undefined) {
+    host.removeAttribute("aria-valuenow");
+    host.removeAttribute("aria-valuetext");
+    return;
+  }
+  const v = state.model.v;
+  host.setAttribute("aria-valuenow", String(Math.round(v.t[i])));
+  const parts = [clockAt(state.model.meta, v.t[i]), hms(v.t[i]),
+                 `${nf(v.dopplerKn[i] ?? v.speedKn[i], 1)} ${KNOTS}`,
+                 flying ? "flying" : "off foil"];
+  host.setAttribute("aria-valuetext", parts.join(" · "));
 }
 
 function series(root, v, arr, X, Y, color, width, opacity, t0, t1) {
@@ -1734,6 +1808,7 @@ function applyPlayhead() {
     live.map?.head.setAttribute("visibility", "hidden");
     live.strip?.head.setAttribute("visibility", "hidden");
     if (readout) { readout.hidden = true; readout.removeAttribute("data-t"); }
+    stripAria(null);
     return;
   }
   const v = model.v;
@@ -1767,6 +1842,7 @@ function applyPlayhead() {
       live.strip.hdot.setAttribute("cy", Y(v.dopplerKn[i] ?? v.speedKn[i] ?? 0).toFixed(2));
     }
   }
+  stripAria(t, i, flying);
   if (readout) {
     readout.hidden = false;
     readout.setAttribute("data-t", t.toFixed(2));

@@ -387,17 +387,24 @@
     </div>
   </section>
 
+  <!-- A FILE THAT FAILED (rider review X15, 23 Oct 2026). One plain sentence about the
+       file, the fix where there is one, two ways on, and the technical text behind a
+       closed Details fold: a Python traceback was the first thing a rider read, with no
+       button to do anything next. js/app.js `fail` picks the sentence from the kind of
+       failure the worker names; every word is the kit's (`AppShellCopy.FileProblem`). -->
   <section id="error" class="panel error" hidden role="alert">
-    <h2>That file could not be analysed</h2>
-    <!-- The commonest cause by a distance, and the fix, stated before the technical text:
-         a rider who exported from a tool that re-wrote the file gets a FIT the engine
-         cannot read, and "Download original file" is the one instruction that helps. -->
-    <p class="muted small">Most often the file is not a FIT recording. Or it is a converted
-      export rather than the original file from the watch. On intervals.icu or Garmin
-      Connect, choose <em>Download original file</em>.</p>
-    <p class="muted small">If the message below counts recordings, the <code>.zip</code>
-      holds more than one. Unzip it and drop the single session you want.</p>
-    <pre id="error-text"></pre>
+    <h2 data-w="fileProblem.title">That file could not be analysed</h2>
+    <p id="error-lead"></p>
+    <p class="muted small" id="error-hint" hidden></p>
+    <p class="error-actions">
+      <button type="button" class="primary" id="error-example" data-w="fileProblem.tryExample">Try the example session</button>
+      <button type="button" class="ghost" id="error-send" data-w="fileProblem.sendIt" hidden>Send it to us</button>
+    </p>
+    <p class="muted small" id="error-send-status" role="status"></p>
+    <details class="error-details" id="error-details">
+      <summary data-w="fileProblem.details">Details</summary>
+      <pre id="error-text"></pre>
+    </details>
   </section>
 
   <!-- "WHERE THIS LIVES" IS IN SETTINGS NOW, as Settings -> Your data, with the
@@ -437,10 +444,17 @@
                and a badge row — so the badge is the idiom that is already here, in the
                same recessive ink as "measured speed" beside it. -->
           <h1 class="page-title" id="session-title"><span id="session-date">Session</span><span class="badge" id="not-a-session-tag" hidden></span></h1>
-          <p class="muted small" id="session-sub"></p>
+          <!-- ONE LINE ABOUT THE FILE, folded (rider review S17, 23 Oct 2026: "the first
+               screen is a filename, six tags and the same numbers twice"). The line says
+               whose and what the recording is, the example's disclaimer first, and opens
+               to the file name, its clock and every tag. js/render.js fills all three. -->
+          <details class="session-facts" id="session-facts">
+            <summary class="muted small" id="session-facts-line"></summary>
+            <p class="muted small" id="session-sub"></p>
+            <div class="badges" id="session-badges"></div>
+          </details>
         </div>
         <div class="head-right">
-          <div class="badges" id="session-badges"></div>
           <!-- Beside "Save to library", not in the topbar: both buttons act on the ONE
                document this panel is about, and a topbar action would have to say which
                session it meant. Ghost rather than primary — saving is the thing to do with
@@ -449,14 +463,6 @@
           <button class="primary" id="save-session" type="button" hidden>Save to library</button>
         </div>
       </div>
-      <!-- The share card is the growth channel, it is two clicks away, and until now
-           nothing on this page said so before the rider happened to read a ghost button
-           (ux-audit A3.3, change #10). One line, on the result head, naming the control
-           by the label it wears. Same words as the line under the homepage's hero card. -->
-      <p class="note" id="card-offer">
-        <strong>Make a card of this.</strong> <em>Share</em> above draws your track and
-        your numbers as one picture, and saves it here.
-      </p>
       <p class="note highlight-note" id="highlight-note" hidden></p>
       <!-- The four rows that answer "was that a good session" — duration/distance/speed,
            the best 2 s window, the outcome ladder with the two streaks, and the per-hour
@@ -468,6 +474,15 @@
            decided, and a rider whose real session was mis-read has to be able to read it
            against them and disagree rather than be told a verdict. -->
       <p class="note" id="not-a-session-note" hidden></p>
+      <!-- The share card is the growth channel, it is two clicks away, and until now
+           nothing on this page said so before the rider happened to read a ghost button
+           (ux-audit A3.3, change #10). One line naming the control by the label it wears.
+           Same words as the line under the homepage's hero card. Under the block since
+           rider review S17 (23 Oct 2026): the numbers come first, the offer after them. -->
+      <p class="note" id="card-offer">
+        <strong>Make a card of this.</strong> <em>Share</em> above draws your track and
+        your numbers as one picture, and saves it here.
+      </p>
       <!-- THE ANALYZER'S GLOSSARY (ux-audit A3.2). This page prints `On foil`, `JPH`,
            `CPH`, `WPH` and the outcome ladder and had no definition link anywhere in it —
            the only route out was a footer link to /learn/ that does not name a glossary.

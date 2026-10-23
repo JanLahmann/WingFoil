@@ -1340,8 +1340,8 @@ export const HELP = {
             "A real wingfoil session on Lake Garda. Ten minutes, 2 flights, 10 jibes, 2.6 km and 68 % foil time. The track, the speed chart, the turn outcomes and the heart-rate cost are all filled in.",
             "It is not your data. CleanJibe marks it EXAMPLE in the list and on its own page. It stays out of Records, Trends and your gear totals.",
             "Delete it with a swipe. You can load it again from here.",
-            "We recorded it at Nago-Torbole, Lake Garda with the CleanJibe watch app and removed everything that identifies the rider. We left the accelerometer out, because it is bigger than the whole app.",
-            "So pump strokes and takeoff effort show as unavailable."
+            "We recorded it at Nago-Torbole, Lake Garda with the CleanJibe watch app and removed everything that identifies the rider. The rest of the recording is all there.",
+            "That includes the wrist accelerometer, so you see its pump strokes and failed takeoff attempts."
           ],
           "channels": [
             "release",
@@ -3385,6 +3385,20 @@ export const WORDS = {
     "trends": "The example session is on loan, not ridden, so it is kept out of your trends on purpose. Connect intervals.icu in Settings, or import a .fit file, and the charts fill as you ride.",
     "trendsTitle": "Your trends start with your first session"
   },
+  "fileProblem": {
+    "details": "Details",
+    "engineFailed": "CleanJibe could not work this session out. Send it to us and we will look at it.",
+    "notAFile": "{name} is not a .fit, .gpx or .tcx file that CleanJibe can read.",
+    "offline": "The analysis engine did not download. Check your connection and try again. The example session opens without it.",
+    "original": "Most often it is a converted copy rather than the watch's own file. On intervals.icu or Garmin Connect, choose Download original file.",
+    "sendIt": "Send it to us",
+    "title": "That file could not be analysed",
+    "tryExample": "Try the example session",
+    "wrongType": "{name} is not a .fit, .gpx, .tcx or .zip file.",
+    "wrongTypeHelp": "CleanJibe reads the .fit file your watch records. A .gpx or .tcx works too, without pump data. Its speed records are estimated unless the file has its own speed channel.",
+    "zipEmpty": "This .zip holds no .fit, .gpx or .tcx file.",
+    "zipMany": "This .zip holds {count} recordings. Unzip it and drop the one session you want."
+  },
   "flightEndPage": {
     "backAfter": "Back to flying speed {time} after the end.",
     "drawnNorthUp": "The track is drawn north up.",
@@ -3504,6 +3518,9 @@ export const WORDS = {
     "onlyVerifiedSummary": "Only records your watch measured. Nothing else counts.",
     "preferVerified": "Prefer measured",
     "preferVerifiedSummary": "A measured record wins. An estimated one fills an empty row, marked."
+  },
+  "strip": {
+    "keys": "Speed over time. Use the arrow keys to move the playhead, Home and End for the ends."
   },
   "trends": {
     "best2s": "Best 2 s",

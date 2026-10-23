@@ -7,7 +7,7 @@
 
 import { mountShell, noteEngine, offerWelcome, setSessionCount, showPage }
   from "./appshell.js";
-import { WHATS_NEW } from "./appcopy.js";
+import { WHATS_NEW, say } from "./appcopy.js";
 import { onSettingsChange, speedRecords } from "./appsettings.js";
 import { mountIcu } from "./icu.js";
 import { backfillDigests, mountLibrary, openStoredSession, refresh as refreshLibrary,
@@ -56,6 +56,10 @@ const state = {
   // The shipped analysis the example on screen came from (its `inputs`), or null when it
   // was analysed live. Saved with it, so a later deploy can tell it is out of date.
   exampleStamp: null,
+  // The file the last failure was about, `{name, data}` (a File), so the error panel's
+  // "Send it to us" can hand it over (rider review X15). Null when the failure was not a
+  // file's: a library read, a save, the engine download.
+  failedFile: null,
 };
 
 /* The four tabs and the pages behind the menu are js/appshell.js's; this file moves bytes
@@ -76,14 +80,78 @@ on("ready", (msg) => {
 });
 
 // Errors that arrive without a request id (a failed boot) still have to reach the user.
-on("result", (msg) => { if (msg.type === "error") fail(msg.message); });
+on("result", (msg) => {
+  if (msg.type === "error") fail(msg.message, { failure: msg.cause, summary: msg.summary });
+});
 
-function fail(message) {
+/**
+ * The error panel (rider review X15, 23 Oct 2026). A failure the worker names (`failure`:
+ * python, network, other) is said in the kit's words, picked by what the exception's own
+ * last line (`summary`) says; the full text, a traceback as often as not, goes behind the
+ * closed Details fold. A failure with no `failure` is one of this page's own messages
+ * (a save, the example's download) and is printed as it is.
+ *
+ * Two ways on: always the example, and when the failure was a file's, "Send it to us",
+ * which is the Share page's send-to-developer door with the file that failed.
+ */
+function fail(message, { failure = null, summary = "", file = null } = {}) {
   state.busy = false;
+  state.failedFile = failure && failure !== "network" ? file : null;
   stopClock();
   el("progress").hidden = true;
   el("error").hidden = false;
-  el("error-text").textContent = message;
+  const name = file?.name || "";
+  const said = summary || "";
+  const zip = /zip contains (\d+) recordings/.exec(said);
+  let lead = message, hint = "";
+  const details = failure && failure !== "wrongType" ? message : "";
+  if (failure === "wrongType") {
+    lead = say("fileProblem.wrongType", { name });
+    hint = say("fileProblem.wrongTypeHelp");
+  } else if (failure === "network") {
+    lead = say("fileProblem.offline");
+  } else if (zip) {
+    lead = say("fileProblem.zipMany", { count: zip[1] });
+  } else if (/zip contains no /.test(said)) {
+    lead = say("fileProblem.zipEmpty");
+  } else if (/not a FIT, GPX or TCX file/.test(said)) {
+    lead = say("fileProblem.notAFile", { name });
+    hint = say("fileProblem.original");
+  } else if (failure) {
+    lead = say("fileProblem.engineFailed");
+  }
+  el("error-lead").textContent = lead;
+  el("error-hint").textContent = hint;
+  el("error-hint").hidden = !hint;
+  el("error-text").textContent = details;
+  el("error-details").hidden = !details;
+  el("error-details").open = false;
+  el("error-send").hidden = !state.failedFile;
+  el("error-send").disabled = false;
+  el("error-send-status").textContent = "";
+}
+
+/** The panel's two buttons, wired once. */
+function wireErrorPanel() {
+  el("error-example").addEventListener("click", () => runExample());
+  el("error-send").addEventListener("click", async () => {
+    const file = state.failedFile;
+    if (!file) return;
+    const button = el("error-send");
+    const status = el("error-send-status");
+    button.disabled = true;
+    try {
+      const where = await sendToDeveloper({
+        bytes: file.data, filename: file.name, comment: "",
+        facts: { site: location.origin, engine: state.engineVersion || "", file: file.name },
+      });
+      status.textContent = sendStatus(where);
+    } catch (err) {
+      status.textContent = `Could not prepare the recording: ${err.message}`;
+    } finally {
+      button.disabled = false;
+    }
+  });
 }
 
 /* ----------------------------------------------------------------------- progress */
@@ -283,16 +351,10 @@ export async function analyzeFile(file, { isExample = false, source = "drop" } =
     // what the engine reads next: a run of rejections is riders arriving with a format
     // CleanJibe does not take. The extension only, never the name.
     track("app-file-rejected", { source });
-    // Say what to bring instead. The rejection states the rule *and* the way out: since
-    // engine 0.9.0 a GPX is a way out, and a TCX now too — so the formats people used to be
-    // turned away with are offered here instead, with their limits named, because a rider
-    // who brings one should learn what it costs here rather than from a missing section.
-    fail(`"${name}" is not a .fit, .gpx, .tcx or .zip file. ` +
-         `CleanJibe reads the .fit file a watch records. ` +
-         `That is the CleanJibe watch app, Garmin's own Windsurf profile, or another ` +
-         `wingfoil Connect IQ app.\n\n` +
-         `A .gpx or .tcx works too. It carries no pump data. ` +
-         `Speed records are estimates unless the file has its own speed channel.`);
+    // Say what to bring instead: the rule and the way out, in the kit's words
+    // (`fileProblem.wrongType` / `wrongTypeHelp`). Since engine 0.9.0 a GPX is a way out,
+    // and a TCX now too, so the formats people used to be turned away with are offered.
+    fail("", { failure: "wrongType", file: { name, data: file } });
     return;
   }
   state.busy = true;
@@ -321,7 +383,8 @@ export async function analyzeFile(file, { isExample = false, source = "drop" } =
     // has already put the page back, and an "That didn't work" panel on top of it would
     // be the app arguing with them.
     if (err.message === CANCELLED) return;
-    fail(err.message);
+    fail(err.message, { failure: err.failure || "other", summary: err.summary,
+                        file: { name, data: file } });
   }
 }
 
@@ -624,17 +687,23 @@ function wireSendToDeveloper() {
         comment: el("send-dev-note").value,
         facts: developerFacts(),
       });
-      status.textContent = {
-        shared: "Handed to your share sheet. Nothing was sent from here.",
-        mail: "The recording was downloaded and a mail opened. Attach the file to it.",
-        cancelled: "Cancelled. Nothing left this browser.",
-      }[where] || "";
+      status.textContent = sendStatus(where);
     } catch (err) {
       status.textContent = `Could not prepare the recording: ${err.message}`;
     } finally {
       button.disabled = false;
     }
   });
+}
+
+/** What a send did, in one line: the route js/senddev.js took. Shared by the Share page's
+ *  door and the error panel's "Send it to us". */
+function sendStatus(where) {
+  return {
+    shared: "Handed to your share sheet. Nothing was sent from here.",
+    mail: "The recording was downloaded and a mail opened. Attach the file to it.",
+    cancelled: "Cancelled. Nothing left this browser.",
+  }[where] || "";
 }
 
 /** What the mail says about the session, in the strings this page prints. */
@@ -957,6 +1026,7 @@ renderGlossary();
 wireCancel();
 wireDownload();
 wireSendToDeveloper();
+wireErrorPanel();
 wireSave();
 wireShareCard();
 wireSections();

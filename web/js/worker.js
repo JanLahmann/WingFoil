@@ -1,7 +1,8 @@
 /* Pyodide worker — the analysis runs here so the UI thread never blocks.
  *
  * It loads the pinned Pyodide build from the official CDN, micropip-installs fitdecode
- * (pure Python, no wheels to build), mounts web/lab_bundle/ into the Pyodide filesystem
+ * from the wheel vendored in web/lab_bundle/wheels/ (PyPI only as the fallback), mounts
+ * web/lab_bundle/ into the Pyodide filesystem
  * and calls web_entry.analyze_json(). numpy and pandas ship with Pyodide.
  *
  * Every number the app shows — including the library's dedupe key, the all-time records
@@ -25,9 +26,15 @@
 const PYODIDE_VERSION = "0.28.3";
 const PYODIDE_URL = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
 const FITDECODE = "fitdecode==0.11.0";
-// Drop a fitdecode py3-none-any wheel next to this file and point here to run fully
-// offline / behind a PyPI-blocking proxy; null = install from PyPI via micropip.
-const FITDECODE_LOCAL_WHEEL = null;
+/** The same pin, vendored (rider review X14, 23 Oct 2026): behind a school or company proxy
+ *  PyPI was the second host that had to answer before a first analysis. The wheel is pure
+ *  Python (py3-none-any), copied byte for byte from files.pythonhosted.org, and served from
+ *  this site's own origin. Its SHA-256 is checked here before micropip sees it, and
+ *  web/tools/bundle_lab.py --check holds the file on disk to the same hash and to the pin
+ *  above (docs/engineering.md, "The vendored wheel"). PyPI stays as the fallback only: a
+ *  missing or altered wheel installs `FITDECODE` from PyPI as before. */
+const FITDECODE_WHEEL = "fitdecode-0.11.0-py3-none-any.whl";
+const FITDECODE_SHA256 = "a1bdb9b4d1e9ebac0001fc58c22fe07a3f9967ca4e13258c6ef99cdb8d697a78";
 
 let pyodide = null;
 let entry = null;          // lab_bundle/web_entry.py — FIT bytes -> analysis document
@@ -47,7 +54,19 @@ async function boot() {
 
   status("engine", "active", "fitdecode");
   const micropip = pyodide.pyimport("micropip");
-  await micropip.install(FITDECODE_LOCAL_WHEEL || FITDECODE);
+  const wheel = await vendoredWheel();
+  // `deps: false` on the vendored wheel: fitdecode needs nothing outside the standard
+  // library (its Requires-Dist are dev extras), so no index is consulted at all.
+  // A vendored wheel that will not install falls back to PyPI too, the same as one that
+  // is missing or altered (docs/engineering.md, "The vendored wheel").
+  let installed = false;
+  if (wheel) {
+    try {
+      await micropip.install.callKwargs(wheel, { deps: false });
+      installed = true;
+    } catch { /* PyPI below */ }
+  }
+  if (!installed) await micropip.install(FITDECODE);
 
   status("engine", "active", "wingfoil_lab");
   await mountLab();
@@ -57,6 +76,26 @@ async function boot() {
   const version = pyodide.runPython("import wingfoil_lab; wingfoil_lab.ENGINE_VERSION");
   status("engine", "done", `engine ${version}`);
   self.postMessage({ type: "ready", engineVersion: version, pyodideVersion: PYODIDE_VERSION });
+}
+
+/** The vendored fitdecode wheel, written into the Pyodide filesystem, as the `emfs:` URL
+ *  micropip installs from, or null when it cannot be had or does not match its hash. A
+ *  wheel that came down altered is never installed; PyPI is asked instead. */
+async function vendoredWheel() {
+  try {
+    const url = new URL(`../lab_bundle/wheels/${FITDECODE_WHEEL}`, import.meta.url);
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
+    const hex = Array.from(digest, (b) => b.toString(16).padStart(2, "0")).join("");
+    if (hex !== FITDECODE_SHA256) return null;
+    const path = `/tmp/${FITDECODE_WHEEL}`;
+    pyodide.FS.writeFile(path, bytes);
+    return `emfs:${path}`;
+  } catch {
+    return null;
+  }
 }
 
 /** Copy the bundled lab sources into the Pyodide MEMFS. FILES.json is written by
@@ -183,25 +222,37 @@ self.onmessage = async (ev) => {
         break;
     }
   } catch (err) {
+    // A failure before the engine is up is the engine's download, never the file: a
+    // missing wheel behind a proxy that also blocks PyPI raises a Python traceback, and
+    // the rider must read "the engine did not download", not "send us this file". The
+    // traceback still travels as `message`, behind Details.
+    const stage = entry ? "run" : "boot";
     if (!entry) booting = null;           // a failed *boot* must be retryable
-    self.postMessage({ type: "error", id: msg.id ?? null, kind: msg.type,
-                       message: describe(err) });
+    const why = describe(err);
+    self.postMessage({ type: "error", id: msg.id ?? null, kind: msg.type, stage,
+                       cause: stage === "boot" ? "network" : why.kind,
+                       summary: why.summary, message: why.message });
   }
 };
 
+/** What went wrong, for the page to say in the rider's words (rider review X15). The
+ *  worker types no rider sentence: it names the kind of failure and hands over the text.
+ *
+ *    python   a Python exception. `summary` is its last line, the exception's own message
+ *             (web_entry.py's "not a FIT, GPX or TCX file", "zip contains 3 recordings");
+ *             `message` is the whole traceback, which the page keeps behind Details.
+ *    network  the runtime or a bundle file could not be fetched.
+ *    other    anything else, as it came. */
 function describe(err) {
-  if (!err) return "Unknown error";
+  if (!err) return { kind: "other", summary: "Unknown error", message: "Unknown error" };
   const text = err.message || String(err);
   if (/Traceback \(most recent call last\)/.test(text)) {
-    // Lead with what actually went wrong; keep the traceback underneath for debugging.
     const lines = text.trimEnd().split("\n");
-    const last = lines[lines.length - 1].replace(/^\w[\w.]*Error:\s*/, "");
-    return `${last}\n\n${text}`;
+    const summary = lines[lines.length - 1].replace(/^\w[\w.]*Error:\s*/, "");
+    return { kind: "python", summary, message: text };
   }
-  if (/Failed to fetch|NetworkError|dynamically imported module/i.test(text)) {
-    return `${text}\n\nCould not reach the Pyodide CDN at cdn.jsdelivr.net, or PyPI. ` +
-           `Check your connection. ` +
-           `The runtime is downloaded on first use and cached afterwards.`;
+  if (/Failed to fetch|NetworkError|dynamically imported module|HTTP \d{3}/i.test(text)) {
+    return { kind: "network", summary: text, message: text };
   }
-  return text;
+  return { kind: "other", summary: text, message: text };
 }

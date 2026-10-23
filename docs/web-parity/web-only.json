@@ -110,16 +110,6 @@
     },
     {
       "path": "web/app/index.html",
-      "text": "Most often the file is not a FIT recording.",
-      "reason": "the analyzer's rejected-file help: the phone's pickers only offer files it reads"
-    },
-    {
-      "path": "web/app/index.html",
-      "text": "If the message below counts recordings",
-      "reason": "the analyzer's rejected-file help: the phone's pickers only offer files it reads"
-    },
-    {
-      "path": "web/app/index.html",
       "text": "Make a card of this.",
       "reason": "the browser's pointer to its Share button; the phone's Share is in the toolbar"
     },
@@ -292,16 +282,6 @@
       "path": "web/js/app.js",
       "text": "is marked in orange on the track and on the speed strip.",
       "reason": "the record-window highlight bar, a browser control"
-    },
-    {
-      "path": "web/js/app.js",
-      "text": "is not a .fit, .gpx, .tcx or .zip file.",
-      "reason": "a dropped file of the wrong type: the phone's pickers only offer files it reads"
-    },
-    {
-      "path": "web/js/app.js",
-      "text": "A .gpx or .tcx works too.",
-      "reason": "a dropped file of the wrong type: the phone's pickers only offer files it reads"
     },
     {
       "path": "web/js/app.js",
@@ -737,11 +717,6 @@
       "path": "web/js/viz.js",
       "text": "M-2.4,2.6 L-2.4,-0.6",
       "reason": "an SVG path, not a sentence"
-    },
-    {
-      "path": "web/js/worker.js",
-      "text": "Could not reach the Pyodide CDN",
-      "reason": "the Pyodide engine download, which the phone does not have"
     }
   ]
 }
