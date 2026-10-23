@@ -3741,6 +3741,58 @@ function summaryPagesFitRoundDisplay(logger as Test.Logger) as Boolean {
     return true;
 }
 
+// Rider review W7 (23 Oct 2026): "I pressed BACK to go back a page and my summary was gone."
+// BACK is one page back and never wraps; on the first page it leaves the app running and
+// puts "START to exit" under SAVED; any page turn takes the hint away again. Driven through
+// the delegate itself, because what failed was the delegate's System.exit().
+(:test)
+function summaryBackTurnsBackAndNeverExits(logger as Test.Logger) as Boolean {
+    var bmp = testBitmap(screenPx(), screenPx());
+    var dc = (bmp as Graphics.BufferedBitmap).getDc();
+    var c = getApp().controller;
+    var saved = c.engine;
+    c.engine = new MetricsEngine();
+    c.engine.timerS = 600.0;
+    SummaryNav.build(c);
+    var view = new SummaryView();
+    var d = new SummaryDelegate();
+    var n = SummaryNav.count();
+    Test.assertMessage(n >= 2, "a bare session still has more than one page");
+    Test.assertMessage(!SummaryNav.exitHint, "no hint before BACK");
+
+    SummaryNav.index = n - 1;
+    for (var k = n - 1; k > 0; k--) {
+        Test.assertMessage(d.onBack(), "BACK is handled on page " + k.toString());
+        Test.assertEqual(SummaryNav.index, k - 1);
+        Test.assertMessage(!SummaryNav.exitHint, "no hint while there was a page to go back to");
+    }
+    // the first page: nothing behind it, so BACK stays put, says how to leave, and is handled
+    // (an unhandled BACK on the bottom view is the exit this replaced)
+    Test.assertMessage(d.onBack(), "BACK on the first page is handled");
+    Test.assertEqual(SummaryNav.index, 0);
+    Test.assertMessage(SummaryNav.exitHint, "BACK on the first page shows the exit hint");
+    Test.assertMessage(d.onBack(), "and again");
+    Test.assertEqual(SummaryNav.index, 0);
+    view.onUpdate(dc);                       // the verdict page paints with the hint on it
+    // the hint is the line under SAVED: wherever the after-sync line has a slot, so does it
+    if (SummaryView.phoneLineSlot(dc, Words.SUM_AFTER_SYNC) != PHONE_LINE_NONE) {
+        Test.assertMessage(SummaryView.phoneLineSlot(dc, Words.SUM_EXIT_HINT) != PHONE_LINE_NONE,
+            "START to exit fits where next: CleanJibe fits");
+    }
+    // a page turn takes it away; UP/DOWN still wrap as before
+    d.onNextPage();
+    Test.assertEqual(SummaryNav.index, 1);
+    Test.assertMessage(!SummaryNav.exitHint, "a page turn clears the hint");
+    SummaryNav.index = 0;
+    d.onPreviousPage();
+    Test.assertEqual(SummaryNav.index, n - 1);
+    logger.debug("summary BACK: " + n.toString() + " pages, hint slot "
+        + SummaryView.phoneLineSlot(dc, Words.SUM_EXIT_HINT).toString());
+    c.engine = saved;
+    SummaryNav.index = 0;
+    return true;
+}
+
 // The page LIST is per session, and every page must PAINT — the headless twin of paging
 // through the summary after a save.
 (:test)

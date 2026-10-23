@@ -1791,7 +1791,7 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
      Number, a Float, a String and null into fourteen properties in turn and asserts that
      every threshold still lands inside docs/algorithms.md and that the rider is never left
      with a blank watch. `AppSettings.load` clamps to the same min/max
-     `resources/settings/settings.xml` declares; Garmin Connect enforces those on the slider
+     `resources/settings/settings.xml` and `resources-thresholds/settings/settings.xml` declare; Garmin Connect enforces those on the slider
      and nothing enforces them on the value that arrives.
    - **the phone door** — `fuzzPhoneMessagesNeverThrow` puts twenty-six malformed messages
      through `PhoneLink.applyMessage`: not a dictionary, empty, wind as a Float / a String /

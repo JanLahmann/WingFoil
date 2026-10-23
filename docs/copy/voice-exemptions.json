@@ -16,12 +16,12 @@
   },
   {
     "path": "docs/copy/watch.json",
-    "text": "(km, 0 = off)",
+    "text": "(0-359°, -1 = none)",
     "why": "a unit or a range in a Garmin Connect setting title; the bracket is the convention every other Connect IQ app uses there"
   },
   {
     "path": "docs/copy/watch.json",
-    "text": "(deg from, -1 = none)",
+    "text": "(km, 0 = off)",
     "why": "a unit or a range in a Garmin Connect setting title; the bracket is the convention every other Connect IQ app uses there"
   },
   {

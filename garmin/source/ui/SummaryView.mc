@@ -13,8 +13,8 @@ import WingFoilCore;
 //
 // It is now the same shape as the recording screens: pages the rider cycles with UP/DOWN,
 // each one a giant number with its unit line and up to two rows under it, all stacked from
-// dc.getFontHeight() so a row pitch can never again be smaller than a line. START or BACK
-// exits from any page, exactly as before.
+// dc.getFontHeight() so a row pitch can never again be smaller than a line. START exits from
+// any page; BACK goes back one page (rider review W7, see SummaryDelegate).
 //
 // WHAT THE ENGINE STILL HAS. SessionController.finishSave() nulls `_session` and stops GPS
 // but never touches `engine`, so detector / records / turns / pump / hrCost / history /
@@ -105,6 +105,7 @@ module SummaryNav {
         }
         _pages = p;
         index = 0;
+        exitHint = false;
     }
 
     function count() as Number {
@@ -123,7 +124,26 @@ module SummaryNav {
 
     function step(dir as Number) as Void {
         index = wrap(index + dir);
+        exitHint = false;
         WatchUi.requestUpdate();
+    }
+
+    // ---- BACK (rider review W7, 23 Oct 2026) ----
+    // "I pressed BACK to go back a page and my summary was gone." BACK used to exit, like
+    // START, and the summary is a page you cannot get back to. Now BACK is one page back and
+    // never wraps: on the first page there is nothing behind it, so it does nothing to the
+    // session and puts the way out under SAVED instead (`exitHint`, Words.SUM_EXIT_HINT).
+    // Only START leaves. Returns whether a page was turned.
+    var exitHint as Boolean = false;
+
+    function back() as Boolean {
+        if (index > 0) {
+            step(-1);
+            return true;
+        }
+        exitHint = true;
+        WatchUi.requestUpdate();
+        return false;
     }
 }
 
@@ -280,7 +300,8 @@ class SummaryView extends WatchUi.View {
         // moves up one eyebrow line so the two together end where the pill alone used to,
         // and nothing else on the page moves. Without one (NOT SAVED, or a glass whose arc
         // cannot hold the line), this is the screen that shipped until rider review W8.
-        var line = savedLine(getApp().controller.lastSaveOk);
+        var line = SummaryNav.exitHint ? Words.SUM_EXIT_HINT
+            : savedLine(getApp().controller.lastSaveOk);
         var slot = phoneLineSlot(dc, line);
         drawSavedPill(dc, pillY(dc, slot == PHONE_LINE_TOP));
         if (slot != PHONE_LINE_NONE) {
@@ -865,8 +886,9 @@ class SummaryView extends WatchUi.View {
     }
 }
 
-// UP/DOWN cycle the pages, START or BACK exits — the same navigation model as recording, so
-// there is nothing new to learn. Taps are swallowed: a wet screen is not an input device.
+// UP/DOWN cycle the pages, BACK goes one page back (on the first page it only shows the hint
+// under SAVED), START exits (rider review W7). Taps are swallowed: a wet screen is not an
+// input device.
 class SummaryDelegate extends WatchUi.BehaviorDelegate {
 
     function initialize() {
@@ -897,7 +919,10 @@ class SummaryDelegate extends WatchUi.BehaviorDelegate {
         System.exit();
     }
 
+    // Always handled: an unhandled BACK on the bottom view would end the app, which is
+    // the summary-gone-for-good this replaced.
     function onBack() as Boolean {
-        System.exit();
+        SummaryNav.back();
+        return true;
     }
 }

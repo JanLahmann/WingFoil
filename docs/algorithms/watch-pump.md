@@ -24,7 +24,7 @@ one sensor-data listener may exist per app, so registration is attempted once pe
 inside a `try`: any refusal leaves the pump counters at zero and raw logging untouched.
 
 Live output: `pump_cadence` (FIT record 2, strokes/min over the last 10 s), FIT session fields
-35–38, three metric-catalog entries (pump strokes · `attempts>made` · last pumps-to-takeoff),
+35–38, three metric-catalog entries (pump strokes · takeoffs of attempts · last pumps-to-takeoff),
 and one vibe when a pumped effort gets the rider up.
 
 ### Watch approximation — where the live detector differs from the lab

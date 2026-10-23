@@ -1,0 +1,22 @@
+<settings>
+    <!-- 6. THRESHOLDS, last in Garmin Connect (rider review W10, 23 Oct 2026). Their own
+         resource path so that they follow the beta's and dev's rows too: every jungle
+         appends resources-thresholds after its stream's base path, and Garmin Connect draws
+         settings in path order. The bounds are AppSettings.load's `_clamped` bounds; change
+         one here and there together. The properties stay in resources/settings/. -->
+    <setting propertyKey="@Properties.foilEntryKmh" title="@Strings.SetFoilEntry">
+        <settingConfig type="numeric" min="6" max="25"/>
+    </setting>
+    <setting propertyKey="@Properties.foilExitKmh" title="@Strings.SetFoilExit">
+        <settingConfig type="numeric" min="4" max="20"/>
+    </setting>
+    <setting propertyKey="@Properties.entryHoldS" title="@Strings.SetEntryHold">
+        <settingConfig type="numeric" min="1" max="10"/>
+    </setting>
+    <setting propertyKey="@Properties.exitHoldS" title="@Strings.SetExitHold">
+        <settingConfig type="numeric" min="1" max="10"/>
+    </setting>
+    <setting propertyKey="@Properties.minFlightS" title="@Strings.SetMinFlight">
+        <settingConfig type="numeric" min="2" max="30"/>
+    </setting>
+</settings>

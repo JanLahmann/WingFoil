@@ -73,7 +73,7 @@ who cannot tell the ladder's green from its red. The inks are the ladder's for t
 verdicts (the one place outside the Turns page allowed to borrow it: these *are* turn
 outcomes), the clean-jibe ink for a clean jibe, the phase teal for a takeoff and a longest
 flight (phase, not verdict), the ladder's green for a dry streak (a run of verdicts). Not
-flashed on purpose: straight-line flight ends (the Timeline page shows them), interval
+flashed on purpose: straight-line flight ends (the Story page shows them), interval
 alerts and the wind lock.
 
 One switch, *Show alerts on screen*, on by default; the per-alert switches gate the picture
@@ -429,6 +429,36 @@ FONT_XTINY — because a number font has no letters, which is the bug `fitGiant`
 Every `--` the old page printed is simply absent: a takeoff that was never priced is not a fact
 about the session, and a row that is not there says that better than a row of dashes.
 
+## The Garmin Connect settings, in the order a rider reads them (rider review W10)
+
+*"Foil entry speed and entry hold come first; wind is typed as -1 = unset."* Garmin Connect
+draws the rows in file order, and the file opened with the five detector thresholds. Since 23
+October 2026 the order is the rider's, in every stream:
+
+1. **screens** — Data screens (the page set), then the seven *Show the … page* switches;
+2. **units** — knots, cell labels;
+3. **alerts** — every *Vibrate on …*, *Show alerts on screen*, the two interval alerts;
+4. **wind and habit** — *Wind from, this session*, *Estimate wind on the watch*, *I mostly do*;
+5. **recording** — sport, wrist motion, pumping, auto-pause; then the beta's and dev's rows
+   (laps, *Send summary to phone app*; in dev the map experiment and the per-page editor,
+   which is a tuning instrument and so sits with the knobs);
+6. **thresholds** — foil entry and exit speed, the two holds, the minimum flight. Last.
+
+Every resource path's `settings.xml` is appended after the one before it, so the thresholds
+live in their own path, `garmin/resources-thresholds/`, which all three jungles put **last**
+on the base path; screens to recording stay in `resources/settings/settings.xml`. The
+properties did not move.
+
+**The wind stays a number**, titled *Wind from, this session (0-359°, -1 = none)*. The review
+asked for a 17-row list (Unset and the wind picker's sixteen points), and the property type
+would have allowed it: a list on the same number property compiles as `valueType: number`,
+so stored values stay valid. What does not allow it is the string budget. A CIQ 3.x watch
+(the fenix 6 family, beta and dev) compiles at most **254** `Rez.Strings`, and the dev build
+holds exactly 254 — sixteen compass rows took it to 271 and `package.sh` failed on fenix6xpro.
+The exit hint's one new string is paid for by the two identical *long transfer time* words,
+now one entry with two `var`s. A list needs sixteen strings freed first, or a dev build that
+leaves the fenix 6 family out.
+
 ## The watch's per-page editor — and the switch that puts the pages back
 
 **Dev stream only since 0.9.16** (docs/channels.md, "The watch"). The eight data screens are
@@ -442,7 +472,7 @@ eight defaults back into its property store (`PageModel.restoreDefaults`, from t
 `DEF_LAYOUT` / `DEF_SLOTS` table `build()` falls back on), rebuilds the pages and turns the
 switch off again, so the next sync shows it off. Every page key is written, off pages
 included: the rider gets exactly the fresh-install set — Main, Foil, Records, Turns, Tacks &
-jibes, Clock, Timeline, Map — and never a mixture. A dev watch that already carried the seven
+jibes, Clock, Story, Map — and never a mixture. A dev watch that already carried the seven
 older pages keeps them and picks up the new eighth key, so its map page arrives twice until
 it takes the switch; a fresh install gets the shipped order straight away.
 
@@ -472,6 +502,21 @@ arc (`SummaryView.savedLineFits`), or the line is dropped, never shrunk.
 something to say (dev), otherwise the hint after a good save, and nothing under NOT SAVED.
 `phoneProgressLineNeverTouchesWhatMatters` asserts every placed line fits, and logs per glass
 whether it went top, low or was dropped.
+
+## BACK on the summary turns back a page; only START leaves (rider review W7, every stream)
+
+*"I pressed BACK to go back a page and my summary was gone."* Until 23 October 2026 START and
+BACK both exited the after-save pages, and the summary is a screen there is no way back to.
+Now BACK is **one page back** and never wraps (`SummaryNav.back`); UP and DOWN still cycle and
+wrap as before. On the first page there is nothing behind it: BACK leaves the app running,
+keeps the page, and puts **`START to exit`** (`Words.SUM_EXIT_HINT`, `SumExitHint`) in the line
+under SAVED, in the slot and under the width rule of the section above; any page turn takes
+the hint away again. **Only START exits** — except on the Track page with the dev map
+experiment on, where it opens the map as before. The delegate always handles BACK: an
+unhandled BACK on the bottom view ends the app, which is the lost summary this replaced.
+`summaryBackTurnsBackAndNeverExits` drives the delegate from the last page to the first and
+past it, and asserts the hint fits wherever `next: CleanJibe` does (top slot on a fenix 8 and
+a fenix 7S, measured).
 
 ## The direct transfer's progress, on the glass (0.9.16, beta and dev since 0.9.28)
 
@@ -563,7 +608,7 @@ start the start page says *GPS weak* in words.
 
 **Every recording page shows it** (Jan, 9 October 2026: a rider who leaves any page up must see
 that the fix went). Main and the hero pages break their own state ring. Every other page —
-Records, Turns, Tacks & jibes, Clock, Timeline, the map, the grids, the foil table and all five
+Records, Turns, Tacks & jibes, Clock, Story, the map, the grids, the foil table and all five
 large-text pages — draws the broken ring at the **bezel edge**, through the same one helper
 (`RecordingView.drawStateRing`; which pages have the whole ring is `layoutHasStateRing`):
 
@@ -676,6 +721,14 @@ measured before. Every word that names a number carries the glossary id it spell
 spellings — unless the entry says, in one line, what the 240 px row could not take. Fifteen
 do. The point is the one docs/copy exists for: a wording decided on the phone now lands on
 the wrist in the same change, or a check goes red.
+
+The rider review's watch words (23 October 2026): the last-turn cell says **`held`**, the
+phone's word for the same number (the share of entry speed a turn held, *Held* on the turn
+list), not `score` (X7). The page is **Story** everywhere — the dev editor's layout row said
+*Timeline (session story)* beside *Show the Story page*, and the phone calls it the session
+story (X17). The dev editor's metric list spells the glossary: *On foil*, *Takeoffs of
+attempts*, *Dry streak*, *Held, last turn*, *Distance on foil* (X18). The map-after-save note
+is three short sentences (X22).
 
 ## The watch link — Settings → Garmin watch
 

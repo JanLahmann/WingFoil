@@ -26,7 +26,10 @@
          two streams have is `pageSet` in the shared file. docs/channels.md, "The watch",
          names it as the candidate it is: one jungle line and one resource move take it to
          beta the day a rider asks for it. PageModel._store is the (:notdev) twin that makes
-         a build without these rows read the default table instead. -->
+         a build without these rows read the default table instead.
+         Garmin Connect draws it after the recording rows and before the thresholds
+         (resources-thresholds/, last on the path; rider review W10): a tuning instrument
+         sits with the knobs, not ahead of the rider's own screens. -->
     <setting propertyKey="@Properties.resetPages" title="@Strings.SetResetPages"
              prompt="@Strings.SetResetPagesNote">
         <settingConfig type="boolean"/>
