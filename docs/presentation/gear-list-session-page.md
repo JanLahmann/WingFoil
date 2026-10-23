@@ -285,3 +285,33 @@ the queue. Map snapshots run two at a time. The row draws exactly what it drew b
 `LibraryScrollUITests` guards the hitch ratio (docs/testing.md). The app-wide menu (What CleanJibe does · Getting started ·
 Settings · Help · Support & ideas) is one `AppMenuButton` on all four tab roots (pattern M).
 
+### When the recording will not open
+
+The page says *Could not open this session*, one sentence, and the raw error under it in
+caption size, because the error is what makes a report about the session actionable. Rider
+review I13, 23 Oct 2026: the sentence said *Import the session again* with no button under
+it (*"How? There is no button."*). **In the beta and dev the way back in sits under the
+sentence** (`AppShellCopy.Unreadable`): **Fetch again** for a session that came from
+intervals.icu while the phone holds the key, which downloads that one activity again
+(`SessionStore.fetchAgainFromIntervals`), and **Import…** for every other, the Import
+screen's file picker. Under either, **Send this to us** opens the analysis mail
+(`SendToDeveloperSheet`) with the error written into the note. The sentence names the button
+under it (`Unreadable.betaLine(canFetch:)`). The release keeps its sentence and has no button.
+
+Both ways work because, in the beta, a re-import **replaces a stored copy that will not
+parse** (`SessionIngestor.repairsUnreadable`, off by default, `IngestTests`): the new file
+matched the row, so it takes the row's archive, and the row keeps its id, name, gear and
+rider. A readable stored copy is never touched. The check is cheap where it can be
+(`SessionArchive.storedCopyReads`): identical bytes read without a parse, a FIT whose header
+promises more bytes than the file holds does not, and only what passes both is parsed. The
+release keeps the broken copy, as it always did. The repaired copy stays on the phone: library
+sync uploads only a folder copy that is missing or positions-only, so another device keeps
+its own (a known limit).
+
+**What happened is said under the buttons**, not in the library's status line, which a rider
+who opened the session from Records never sees: *Fetching the recording from intervals.icu…*
+with a spinner, intervals.icu's own sentence when the download fails (`IcuProblem`), *busy
+with a sync* when one holds the store, and *This copy could not be read either. Send it to us
+and we will look at it.* when the new copy, or the page's own import, still does not open.
+The page reads the session again when the library changes under it.
+

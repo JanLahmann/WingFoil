@@ -71,8 +71,10 @@ public struct IcuProblem: Sendable, Equatable, Codable {
         case .noKey:
             "Paste your personal API key: intervals.icu → Settings → Developer Settings."
         case .unauthorized:
+            // No stray-space warning (rider review I18): both shells trim the key before
+            // they save it, so the sentence warned about something that cannot happen.
             "Copy the key again from intervals.icu → Settings → Developer Settings and "
-            + "paste it fresh. A stray space at either end is enough to break it."
+            + "paste it fresh."
         case .network:
             "Check your connection and sync again."
         case .server:
@@ -80,7 +82,10 @@ public struct IcuProblem: Sendable, Equatable, Codable {
         case .empty:
             "Connect Garmin in intervals.icu (Settings → device connections). The back-fill "
             + "takes a few minutes. If it is already connected, you may simply have no "
-            + "windsurf, wing, kite, surf or SUP activity there yet."
+            + "windsurf, wing, kite, surf or SUP activity there yet. "
+            // Rider review I16: a session recorded as Other is not a watersport, and the
+            // name is the one thing the import also reads.
+            + "Recorded as Other? Rename the activity so its name has wing or foil in it."
         case .unknown:
             "Try the sync again. If it keeps failing, check the key in Settings."
         }

@@ -91,8 +91,11 @@ Two rules, and they are the whole of it (`MapLayerScope` in the kit, pure and te
 - **Visibility is per map; the collapsed/expanded header state is shared.** Three stored sets
   (`mapLayerVisibility.v1` for the ride map — the original key, so an existing preference
   survives — plus `mapLayerVisibility.turns.v1` and `mapLayerVisibility.takeoffs.v1`), each
-  with its own defaults: ride hides nothing, Turns opens without `direction` and
-  `courseChange`, Takeoffs without `direction`. Hiding "fell in" on Turns, where the page is
+  and every one opens with every layer on (rider review I21, 23 Oct 2026: *"Layers · 1
+  hidden. What did I hide?"* — Turns used to open without `direction` and `courseChange`,
+  Takeoffs without `direction`, so the header named a filter the rider never set). The
+  Turns page's entry-tack caption went behind the `?` beside the entry-tack filter, which
+  opens *Port / starboard*. Hiding "fell in" on Turns, where the page is
   a verdict on maneuvers, is a different intention from hiding it on the ride, which is a
   picture of the afternoon. "Show all" resets **one** map. The expanded state stays shared
   (`mapLegend.expanded.v1`): "I use the chips" is a habit, not a per-map choice.

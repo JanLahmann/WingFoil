@@ -103,6 +103,12 @@ north/wind block top right, and the strip along the foot carrying the scale bar 
 A number that would print over the `axis` word is skipped too — one unreadable mark is better
 than two.
 
+**The drawing's words follow the rider's text size** (rider review X20, 23 Oct 2026): the path
+numbers, the `axis` word, the north and wind letters and the ramp's speeds are 9 pt at the
+default size and scale with `.caption2` up to 13 pt; the unit beside a scrub reading is 8 pt
+up to 12 pt; the legend chips' glyph swatches 10 pt up to 14 pt (`@ScaledMetric`). The caps
+are the legibility of the map itself: past them the labels cover the track they name.
+
 **Tapping the drawing picks the nearest sample.** The drawing had been readable since it was
 built and *inert* since it was built: everything on it was something the page had decided to
 mark, and the rider's own question — "what was I doing **there**, at the top of the arc" — had

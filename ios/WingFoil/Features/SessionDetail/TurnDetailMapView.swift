@@ -54,6 +54,16 @@ struct TurnDetailMapView: View {
         self.spoken = spoken
     }
 
+    /// **The drawing's words grow with the rider's text size** (rider review X20, 23 Oct
+    /// 2026: *"8–10 pt captions stay tiny at any text size"*). 9 pt and 8 pt at the default
+    /// size, as before, scaled with `.caption2` and capped at 13 and 12 pt: past that the
+    /// path numbers, the axis word and the ramp's speeds start covering the track they label,
+    /// and a drawing nobody can read through its own labels is the worse failure.
+    @ScaledMetric(relativeTo: .caption2) private var labelSize: CGFloat = 9
+    @ScaledMetric(relativeTo: .caption2) private var unitSize: CGFloat = 8
+    private var mapLabelSize: CGFloat { min(labelSize, 13) }
+    private var readingUnitSize: CGFloat { min(unitSize, 12) }
+
     /// Layout points reserved on every edge, so a mark centred on the outermost vertex is not
     /// clipped in half against the frame.
     private static let inset: CGFloat = 14
@@ -132,7 +142,8 @@ struct TurnDetailMapView: View {
         HStack(spacing: 2) {
             Text(value).font(.caption2.monospacedDigit())
             if let caption {
-                Text(caption).font(.system(size: 8)).foregroundStyle(.readableSecondary)
+                Text(caption).font(.system(size: readingUnitSize))
+                    .foregroundStyle(.readableSecondary)
             }
         }
     }
@@ -329,7 +340,7 @@ struct TurnDetailMapView: View {
             // mark in a corner that already has two.
             guard !Self.reserved(in: size).contains(where: { $0.contains(at) }) else { continue }
             context.draw(Text(String(format: "%.0f", rt))
-                            .font(.system(size: 9, weight: .medium).monospacedDigit())
+                            .font(.system(size: mapLabelSize, weight: .medium).monospacedDigit())
                             .foregroundStyle(Color(.label).opacity(0.5)),
                          at: at, anchor: .center)
         }
@@ -388,7 +399,7 @@ struct TurnDetailMapView: View {
         context.stroke(tick, with: .color(ink),
                        style: StrokeStyle(lineWidth: 1.8, lineCap: .round))
         // Off the outboard end of the tick, so the word never sits on the track it labels.
-        context.draw(Text("axis").font(.system(size: 9, weight: .semibold))
+        context.draw(Text("axis").font(.system(size: mapLabelSize, weight: .semibold))
                         .foregroundStyle(ink),
                      at: CGPoint(x: centre.x + dx * 1.7, y: centre.y + dy * 1.7),
                      anchor: .center)
@@ -492,7 +503,7 @@ struct TurnDetailMapView: View {
                 .rotated(by: rotationDeg * .pi / 180)
                 .translatedBy(x: -centre.x, y: -centre.y))
         context.fill(rotated, with: .color(Color(.label).opacity(0.5)))
-        context.draw(Text(label).font(.system(size: 9, weight: .semibold))
+        context.draw(Text(label).font(.system(size: mapLabelSize, weight: .semibold))
                         .foregroundStyle(Color(.label).opacity(0.55)),
                      at: CGPoint(x: centre.x, y: centre.y + 7), anchor: .top)
     }
@@ -536,7 +547,8 @@ struct TurnDetailMapView: View {
 
         let label = Color(.label).opacity(0.6)
         func text(_ string: String) -> Text {
-            Text(string).font(.system(size: 9).monospacedDigit()).foregroundStyle(label)
+            Text(string).font(.system(size: mapLabelSize).monospacedDigit())
+                .foregroundStyle(label)
         }
         context.draw(text(Fmt.knValue(bottomKn, digits: 1)),
                      at: CGPoint(x: left, y: y - 2), anchor: .bottomLeading)

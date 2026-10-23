@@ -133,8 +133,6 @@ struct ShareComposerView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 18) {
-                    naming
-
                     Picker("Share", selection: $payload) {
                         ForEach(Payload.allCases) { Text($0.label).tag($0) }
                     }
@@ -170,10 +168,18 @@ struct ShareComposerView: View {
                 }
                 .padding(.horizontal)
                 .padding(.bottom, 28)
-                // The composer is one column — two fields, a switcher, the preview, the
-                // share button — and the preview sizes itself to the column it is in.
+                // The composer is one column — a switcher, the preview, two fields — and
+                // the preview sizes itself to the column it is in.
                 .readableColumn()
             }
+            // **The share button never scrolls** (rider review I4, "Where's the share
+            // button?"). It used to sit under the preview, the two naming fields above it
+            // and the design controls, so on a phone it was below the fold on every aspect
+            // and the one thing the sheet exists to do had to be looked for. Pinned in a
+            // bar over the foot of the sheet, in every channel, for whichever tab shows;
+            // the inset keeps the last of the scroll clear of it and lifts it over the
+            // keyboard while a field is being typed in.
+            .safeAreaInset(edge: .bottom, spacing: 0) { shareBar }
             .navigationTitle("Share")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -252,9 +258,8 @@ struct ShareComposerView: View {
                 }
             }
             #endif
-            // The card is a portrait picture with a share button under it. In the system's
-            // 570 × 640 form sheet the button was below the fold on every aspect, so the one
-            // thing the sheet exists to do could not be seen — `.page` gives it the room the
+            // The card is a portrait picture. In the system's 570 × 640 form sheet it was
+            // squeezed to a thumbnail on every aspect — `.page` gives it the room the
             // `.large` detent gives it on a phone.
             .presentationSizing(.page)
         }
@@ -295,14 +300,16 @@ struct ShareComposerView: View {
 
     // MARK: - Naming the session
 
-    /// Two fields, above the switcher, because they belong to **both** things below it.
+    /// Two fields, on **both** tabs, because they belong to both things the sheet sends —
+    /// under the preview on the card tab, under the scrub note on the file tab (rider
+    /// review I4: the card first, then what you change on it).
     ///
     /// **The title is a rename, not a card option.** Whatever is typed here becomes the
     /// session's name everywhere — the library row, the page header, the card, the clip's
     /// opening frame, the message that travels with the file, and the filename the file
-    /// arrives under. One mental model: you are naming the afternoon. That is why the field
-    /// sits above the Card/FIT switcher rather than inside the card tab, where it would read
-    /// as a caption on one export.
+    /// arrives under. One mental model: you are naming the afternoon. That is why the same
+    /// field is on both tabs rather than on the card's alone, where it would read as a
+    /// caption on one export.
     ///
     /// **The caption is not.** It is a line for whoever receives the picture, so it appears on
     /// the two artefacts that leave the phone — the card, under the date, and the clip's
@@ -330,8 +337,7 @@ struct ShareComposerView: View {
                     .onChange(of: titleDraft) { _, new in
                         titleDraft = String(new.prefix(SessionNaming.titleLimit))
                     }
-                Text("Names the session. The list, the card, the clip and the shared file "
-                     + "all follow.")
+                Text(AppShellCopy.Share.nameLine)
                     .font(.caption2)
                     .foregroundStyle(.readableSecondary)
             }
@@ -348,7 +354,7 @@ struct ShareComposerView: View {
                         noteDraft = String(new.prefix(SessionNaming.noteLimit))
                     }
                 HStack(alignment: .firstTextBaseline) {
-                    Text("One line on the card and on the clip's opening frame.")
+                    Text(AppShellCopy.Share.captionLine)
                         .font(.caption2)
                         .foregroundStyle(.readableSecondary)
                     Spacer(minLength: 8)
@@ -403,6 +409,10 @@ struct ShareComposerView: View {
             #endif
             .padding(.top, 4)
 
+        // Below the preview (I4): the card is what the rider came to see, and the two
+        // fields are what he changes on it once he has seen it.
+        naming
+
         // Shape, the big number (layout B v2, Jan, 26 Sep 2026) and what is behind the
         // numbers: the same three decisions the period card asks (`ShareCardDesignControls`).
         // The map is offered only once the session's geometry is in memory — the sheet can
@@ -411,9 +421,9 @@ struct ShareComposerView: View {
             design: design, story: stats.story, mapOffered: mapSource != nil,
             mapNote: ShareCardDesignControls.mapNoteTrack)
 
+        // The button is in the pinned bar (`shareBar`); the line about it stays here.
         ShareCardExportRow(design: design, title: stats.title, subject: cardSubject,
-                           message: cardCaption,
-                           onShare: { Usage.record(.shareCard, detail: cardVariant) })
+                           message: cardCaption, part: .footnote, onShare: {})
 
         // The other thing a rider makes to show somebody. It sits under the card rather
         // than beside it as a third `Payload` tab, because it is the same picture of the
@@ -460,6 +470,9 @@ struct ShareComposerView: View {
         .padding(12)
         .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 14))
 
+        // The title is the file's name, so the fields are on this tab too.
+        naming
+
         // Only where there is a stream to leave out: on a file without one the switch did
         // nothing. While the detail loads it shows, as it always did.
         if detail?.analysis.capabilities.hasAccel != false {
@@ -475,6 +488,42 @@ struct ShareComposerView: View {
             }
         }
 
+        Text(invitation)
+            .font(.caption2)
+            .foregroundStyle(.readableSecondary)
+            .multilineTextAlignment(.center)
+    }
+
+    // MARK: - The pinned share button
+
+    /// The one button the sheet exists for, over the foot of the sheet whichever tab is
+    /// showing (I4): the rendered card into the share sheet, or the scrubbed recording.
+    /// Its spinner and its failure line stand where the button will be while the file is
+    /// prepared, so the rider always finds the answer in the same place.
+    private var shareBar: some View {
+        VStack(spacing: 0) {
+            Divider()
+            Group {
+                switch payload {
+                case .card:
+                    ShareCardExportRow(design: design, title: stats.title,
+                                       subject: cardSubject, message: cardCaption,
+                                       part: .button,
+                                       onShare: { Usage.record(.shareCard,
+                                                               detail: cardVariant) })
+                case .fit:
+                    fitShareButton
+                }
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 10)
+            .readableColumn()
+        }
+        .background(.bar)
+    }
+
+    @ViewBuilder
+    private var fitShareButton: some View {
         if let fitFile {
             ShareLink(item: fitFile.url,
                       subject: Text(displayTitle),
@@ -499,11 +548,6 @@ struct ShareComposerView: View {
         } else {
             ProgressView().frame(maxWidth: .infinity, minHeight: 44)
         }
-
-        Text(invitation)
-            .font(.caption2)
-            .foregroundStyle(.readableSecondary)
-            .multilineTextAlignment(.center)
     }
 
     /// Goes with the file, so a receiver with no app still has somewhere to open it: the

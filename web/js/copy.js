@@ -85,14 +85,21 @@ export const GLOSSARY = [
     "term": "Dry streak",
     "short": "dry",
     "expansion": "",
-    "line": "How many jibes in a row you stayed out of the water, and the best run of the day."
+    "line": "How many turns in a row you stayed out of the water, tacks and jibes alike. A fall anywhere ends the run."
+  },
+  {
+    "id": "flewStreak",
+    "term": "Flew streak",
+    "short": "flew",
+    "expansion": "",
+    "line": "How many turns in a row you flew through, tacks and jibes alike. A touchdown or a fall anywhere ends it."
   },
   {
     "id": "cph",
     "term": "CPH",
     "short": "CPH",
     "expansion": "clean jibes per hour",
-    "line": "Clean jibes per hour. Clean: flew through, held your speed, and 10 quiet seconds after."
+    "line": "Clean jibes per hour. Every jibe that passes the three clean gates counts."
   },
   {
     "id": "jph",
@@ -148,7 +155,7 @@ export const GLOSSARY = [
     "term": "Clean",
     "short": "clean",
     "expansion": "",
-    "line": "A jibe that flew through, held 70 % of its entry speed, and stayed quiet for 10 s."
+    "line": "You flew through and held 70 % of your entry speed. Then you rode 10 s with no touchdown, fall or second off the foil."
   },
   {
     "id": "speedKept",
@@ -177,6 +184,20 @@ export const GLOSSARY = [
     "short": "fell in",
     "expansion": "",
     "line": "Every time you ended up in the water, in a turn or in a straight line."
+  },
+  {
+    "id": "glideOut",
+    "term": "Glide-out",
+    "short": "glide",
+    "expansion": "",
+    "line": "A flight that ended without a stop. You settled onto the board and rode on, so it is not a loss."
+  },
+  {
+    "id": "abortedTurn",
+    "term": "Aborted turn",
+    "short": "aborted",
+    "expansion": "",
+    "line": "A turn you started and fell in before it was done. It counts as a turn that fell in."
   },
   {
     "id": "takeoffs",

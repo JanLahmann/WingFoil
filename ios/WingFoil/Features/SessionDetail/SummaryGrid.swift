@@ -289,7 +289,7 @@ struct SessionTurnsSection: View {
                                   help: .turnTypes)
                     if t.unclassified > 0 {
                         StatCard(title: "Unclassified turns", value: "\(t.unclassified)",
-                                 caption: "no usable wind axis", help: .windAxis)
+                                 caption: AppShellCopy.Turns.noWindAxis, help: .windAxis)
                     }
                     StatCard(title: "Port / starboard",
                              value: "\(t.port) / \(t.starboard)",
@@ -305,10 +305,14 @@ struct SessionTurnsSection: View {
                     // fallen jibe"). The same number WPH divides and the block prints.
                     StatCard(title: MetricGlossary.entry("fellIn").term,
                              value: "\(summary.flightEnds.all.fellIn)",
-                             caption: String(summary.flightEnds.inTurn.fellIn)
-                                 + " in a turn · "
-                                 + String(summary.flightEnds.straight.fellIn)
-                                 + " in a straight line",
+                             // The document's gate (rider review I11): no split without a
+                             // straight-line fall, where it only says the number again.
+                             caption: summary.flightEnds.straight.fellIn > 0
+                                 ? String(summary.flightEnds.inTurn.fellIn)
+                                     + " in a turn · "
+                                     + String(summary.flightEnds.straight.fellIn)
+                                     + " in a straight line"
+                                 : " ",
                              help: .falls)
                     // **Touchdowns and glide-outs on one card** (Jan, F9e). Both are a
                     // flight that ended without a swim; the engine tells them apart by

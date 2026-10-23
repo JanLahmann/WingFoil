@@ -64,7 +64,7 @@
       "spotsFooter" : "Tap a spot to rename it. A name you type stays when you rebuild spots. Sessions starting within {radius} m of each other are one spot. Names come from the map when the network allows."
     },
     "icu" : {
-      "emptyFix" : "Connect Garmin in intervals.icu (Settings → device connections). The back-fill takes a few minutes. If it is already connected, you may simply have no windsurf, wing, kite, surf or SUP activity there yet.",
+      "emptyFix" : "Connect Garmin in intervals.icu (Settings → device connections). The back-fill takes a few minutes. If it is already connected, you may simply have no windsurf, wing, kite, surf or SUP activity there yet. Recorded as Other? Rename the activity so its name has wing or foil in it.",
       "emptyMessage" : "intervals.icu accepted the key but has no watersport activities to hand over yet.",
       "emptyTitle" : "Connected, but nothing came back",
       "networkFix" : "Check your connection and sync again.",
@@ -77,7 +77,7 @@
       "serverMessage" : "intervals.icu answered with an error. That is its end, not yours.",
       "serverMessageDetail" : "intervals.icu answered with an error ({detail}). That is its end, not yours.",
       "serverTitle" : "intervals.icu had a problem",
-      "unauthorizedFix" : "Copy the key again from intervals.icu → Settings → Developer Settings and paste it fresh. A stray space at either end is enough to break it.",
+      "unauthorizedFix" : "Copy the key again from intervals.icu → Settings → Developer Settings and paste it fresh.",
       "unauthorizedMessage" : "The key is wrong, or it was regenerated in intervals.icu after you pasted it here.",
       "unauthorizedTitle" : "intervals.icu rejected the key",
       "unknownFix" : "Try the sync again. If it keeps failing, check the key in Settings.",
@@ -85,8 +85,12 @@
       "unknownTitle" : "The sync did not finish"
     },
     "library" : {
+      "healthRow" : "Record with Apple's Workout app",
+      "healthRowLine" : "Pick Surfing on the watch, then import it from Health.",
       "noMatch" : "No session matches these filters",
-      "noMatchLine" : "Nothing in the library answers to all of them at once."
+      "noMatchLine" : "Nothing in the library answers to all of them at once.",
+      "stravaPickLine" : "Pick sessions. Strava keeps positions only, so records are estimated.",
+      "stravaRowLine" : "Strava keeps positions only, so speed records are estimated."
     },
     "periods" : {
       "bothDatesCount" : "Both dates count.",
@@ -104,6 +108,7 @@
       "tripsNote" : "Spells at one spot. A holiday the library noticed. No gap wider than {days} days, at least {sessions} sessions."
     },
     "records" : {
+      "beatBy" : "beat by",
       "emptyLibrary" : "Import or sync a session and its speed records appear here.",
       "noMeasured" : "No measured speed record yet. These recordings worked their speed out from positions. Settings has the other two answers.",
       "noQualifying" : "No qualifying speed window under this filter.",
@@ -141,10 +146,12 @@
     "share" : {
       "allSessions" : "All sessions",
       "background" : "Background",
+      "captionLine" : "One line of your own under the name on the card.",
       "collage" : "Collage",
       "collageNote" : "The last {limit} sessions, each on its own, in the order you rode them.",
       "dark" : "Dark",
       "map" : "Map",
+      "nameLine" : "Your name for this session, on the card and in your list.",
       "oneSession" : "One session",
       "photo" : "Photo",
       "sendToUs" : "Send this session to us",
@@ -169,7 +176,7 @@
       "bySideEmpty" : "No session in this range has turns with a usable entry tack. That needs a wind direction the app can trust.",
       "bySideNote" : "Each line splits your turns by the tack you came in on. Course changes do not count.",
       "cleanJibes" : "Clean jibes",
-      "cleanJibesNote" : "Jibes that flew through, held at least 70 % of their entry speed, then 10 quiet seconds on the foil.",
+      "cleanJibesNote" : "You flew through and held 70 % of your entry speed. Then you rode 10 s with no touchdown, fall or second off the foil.",
       "cph" : "Clean jibes an hour (CPH)",
       "emptyLibrary" : "Connect intervals.icu in Settings, or import a .fit file, and the charts fill as you ride.",
       "flewThrough" : "Flew-through rate",
@@ -232,7 +239,7 @@
       "footDrawn" : "The drawing is {before} s before the sweep and {after} s after it.",
       "footEntryBand" : "The bands under the strip are the engine's windows. \"Entry\" is the {seconds} s before the sweep, where the entry speed is the maximum.",
       "footLighterBand" : "The lighter band inside it ends where you were flying again.",
-      "footQuiet" : "A clean jibe also needs {seconds} s after the sweep with no touchdown, fall or wrist under.",
+      "footQuiet" : "A clean jibe also needs {seconds} s after the sweep with no touchdown, fall or second off the foil.",
       "footRamp" : "The line is coloured by speed on the ramp at the foot of the picture. Cold is a standstill, teal is the speed you came in at, hot is above it.",
       "footSweepBand" : "\"Sweep\" is where the heading turned. The low point is searched to {seconds} s past the sweep, so it can sit after \"out\".",
       "footTap" : "Tap the drawing for the reading at that sample. The strips follow it.",
@@ -243,8 +250,23 @@
       "nothingToCompare" : "Nothing to compare with. No other {model} this session turned the same way round."
     },
     "turns" : {
-      "cleanRule" : "Clean: you flew through, held at least {pct} % of your entry speed, then {quiet} quiet seconds on the foil.",
-      "outcomeAndHeld" : "Flew through / touchdown / fell in is the outcome. It says how the turn ended. Held is how much of your entry speed you kept through it, 0 to 100 %."
+      "cleanRule" : "Clean: you flew through and held at least {pct} % of your entry speed. Then you rode {quiet} s with no touchdown, fall or second off the foil.",
+      "noWindAxis" : "no clear wind direction in your track",
+      "outcomeAndHeld" : "Flew through / touchdown / fell in is the outcome. It says how the turn ended. Held is how much of your entry speed you kept through it, 0 to 100 %.",
+      "windWeak" : "{pct} % confident, can't tell tacks from jibes"
+    },
+    "unreadable" : {
+      "busy" : "CleanJibe is busy with a sync right now. Try again when it has finished.",
+      "fetchButton" : "Fetch again",
+      "fetching" : "Fetching the recording from intervals.icu…",
+      "fetchLine" : "The recording could not be read. It may still be downloading, or the stored file is damaged. Fetch it again from intervals.icu and the page opens.",
+      "importButton" : "Import…",
+      "importLine" : "The recording could not be read. It may still be downloading, or the stored file is damaged. Import the file again and the page opens.",
+      "line" : "The recording could not be read. It may still be downloading, or the stored file is damaged. Import the session again.",
+      "note" : "This session would not open. The app said: {error}",
+      "sendToUs" : "Send this to us",
+      "stillUnreadable" : "This copy could not be read either. Send it to us and we will look at it.",
+      "title" : "Could not open this session"
     }
   },
   "schema" : "cleanjibe.app-words/1"

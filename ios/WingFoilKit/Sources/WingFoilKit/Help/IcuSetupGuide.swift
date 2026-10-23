@@ -111,8 +111,7 @@ public enum IcuSetupGuide {
     public static let troubleshooting: [HelpTopic.Item] = [
         .init(term: "\"intervals.icu rejected the API key\"",
               detail: "The key is wrong, or you made a new one after pasting it. Copy it "
-                  + "again from intervals.icu, Settings → Developer Settings. A stray space "
-                  + "at either end breaks it."),
+                  + "again from intervals.icu, Settings → Developer Settings."),
         .init(term: "The sync succeeds but the list stays empty",
               detail: "Either Garmin is not connected in intervals.icu yet, or none of your "
                   + "activities is a watersport. CleanJibe takes Windsurf, Kitesurf, Sail, "
