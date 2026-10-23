@@ -1,91 +1,24 @@
 <settings>
-    <setting propertyKey="@Properties.foilEntryKmh" title="@Strings.SetFoilEntry">
-        <settingConfig type="numeric" min="6" max="25"/>
-    </setting>
-    <setting propertyKey="@Properties.foilExitKmh" title="@Strings.SetFoilExit">
-        <settingConfig type="numeric" min="4" max="20"/>
-    </setting>
-    <setting propertyKey="@Properties.entryHoldS" title="@Strings.SetEntryHold">
-        <settingConfig type="numeric" min="1" max="10"/>
-    </setting>
-    <setting propertyKey="@Properties.exitHoldS" title="@Strings.SetExitHold">
-        <settingConfig type="numeric" min="1" max="10"/>
-    </setting>
-    <setting propertyKey="@Properties.minFlightS" title="@Strings.SetMinFlight">
-        <settingConfig type="numeric" min="2" max="30"/>
-    </setting>
-    <setting propertyKey="@Properties.useKnots" title="@Strings.SetUseKnots">
-        <settingConfig type="boolean"/>
-    </setting>
-    <setting propertyKey="@Properties.showLabels" title="@Strings.SetShowLabels">
-        <settingConfig type="boolean"/>
-    </setting>
-    <!-- `phonePush` (Send summary to phone app) is a beta and dev row since 0.9.28, in
-         resources-beta/base and resources-dev/base: its receiver is the beta and dev iPhone
-         app (dev only from 0.9.22, rider review W11). -->
-    <setting propertyKey="@Properties.sportChoice" title="@Strings.SetSport">
-        <settingConfig type="list">
-            <listEntry value="0">@Strings.SportWindsurf</listEntry>
-            <listEntry value="1">@Strings.SportKitesurf</listEntry>
-            <listEntry value="2">@Strings.SportGeneric</listEntry>
-        </settingConfig>
-    </setting>
-    <setting propertyKey="@Properties.accelLogging" title="@Strings.SetAccelLogging"
-             prompt="@Strings.SetAccelLoggingNote">
-        <settingConfig type="boolean"/>
-    </setting>
-    <setting propertyKey="@Properties.pumpDetection" title="@Strings.SetPumpDetection">
-        <settingConfig type="boolean"/>
-    </setting>
-    <setting propertyKey="@Properties.alertTakeoff" title="@Strings.SetAlertTakeoff">
-        <settingConfig type="boolean"/>
-    </setting>
-    <setting propertyKey="@Properties.visualAlerts" title="@Strings.SetVisualAlerts"
-             prompt="@Strings.SetVisualAlertsNote">
-        <settingConfig type="boolean"/>
-    </setting>
-    <setting propertyKey="@Properties.alertPb" title="@Strings.SetAlertPb">
-        <settingConfig type="boolean"/>
-    </setting>
-    <setting propertyKey="@Properties.alertFlight" title="@Strings.SetAlertFlight">
-        <settingConfig type="boolean"/>
-    </setting>
-    <setting propertyKey="@Properties.alertTurn" title="@Strings.SetAlertTurn">
-        <settingConfig type="boolean"/>
-    </setting>
-    <setting propertyKey="@Properties.alertCleanJibe" title="@Strings.SetAlertCleanJibe"
-             prompt="@Strings.SetAlertCleanJibeNote">
-        <settingConfig type="boolean"/>
-    </setting>
-    <setting propertyKey="@Properties.windDirDeg" title="@Strings.SetWindDir">
-        <settingConfig type="numeric" min="-1" max="359"/>
-    </setting>
-    <setting propertyKey="@Properties.autoWind" title="@Strings.SetAutoWind">
-        <settingConfig type="boolean"/>
-    </setting>
-    <setting propertyKey="@Properties.windDefaultTurnType" title="@Strings.SetTurnHabit">
-        <settingConfig type="list">
-            <listEntry value="0">@Strings.TurnHabitJibes</listEntry>
-            <listEntry value="1">@Strings.TurnHabitTacks</listEntry>
-            <listEntry value="2">@Strings.TurnHabitBalanced</listEntry>
-        </settingConfig>
-    </setting>
-    <setting propertyKey="@Properties.autoPause" title="@Strings.SetAutoPause">
-        <settingConfig type="boolean"/>
-    </setting>
-    <setting propertyKey="@Properties.autoPauseDelayS" title="@Strings.SetAutoPauseDelay">
-        <settingConfig type="numeric" min="2" max="60"/>
-    </setting>
-    <setting propertyKey="@Properties.alertIntervalMin" title="@Strings.SetAlertIntervalMin">
-        <settingConfig type="numeric" min="0" max="120"/>
-    </setting>
-    <setting propertyKey="@Properties.alertIntervalKm" title="@Strings.SetAlertIntervalKm">
-        <settingConfig type="numeric" min="0" max="50"/>
-    </setting>
-    <!-- 0.9.16: the page SET. One enum, in every stream — the per-page editor below moved
-         to the dev stream in the same round, so on a release or beta watch this row is the
-         page control, and it is the one a rider who needs his glasses is actually looking
-         for. Large = five screens, one giant number each (PageModel.buildLarge). -->
+    <!-- THE ORDER IS THE PAGE. Rider review W10, 23 Oct 2026: the settings opened with foil
+         entry speed and entry hold, tuning knobs, ahead of the screens a rider came for.
+         Garmin Connect draws the rows in file order, and every resource path's
+         settings.xml is appended after the one before it, so the order a rider reads is:
+           1. screens          this file
+           2. units            this file
+           3. alerts           this file
+           4. wind and habit   this file
+           5. recording        this file, then the beta's and dev's rows (resources-beta/base,
+                               resources-dev/base: laps, phone push, and in dev the map
+                               experiment and the per-page editor)
+           6. thresholds       resources-thresholds/, the LAST path in all three jungles
+         The detector thresholds are tuning knobs: the rider who needs one knows to scroll for
+         it, and the rider who does not should meet his screens and his units first. -->
+
+    <!-- 1. SCREENS -->
+    <!-- 0.9.16: the page SET. One enum, in every stream — the per-page editor moved to the dev
+         stream in the same round, so on a release or beta watch this row is the page control,
+         and it is the one a rider who needs his glasses is actually looking for. Large = five
+         screens, one giant number each (PageModel.buildLarge). -->
     <setting propertyKey="@Properties.pageSet" title="@Strings.SetPageSet"
              prompt="@Strings.SetPageSetNote">
         <settingConfig type="list">
@@ -121,4 +54,86 @@
     <setting propertyKey="@Properties.showMap" title="@Strings.SetShowMap">
         <settingConfig type="boolean"/>
     </setting>
+
+    <!-- 2. UNITS -->
+    <setting propertyKey="@Properties.useKnots" title="@Strings.SetUseKnots">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.showLabels" title="@Strings.SetShowLabels">
+        <settingConfig type="boolean"/>
+    </setting>
+
+    <!-- 3. ALERTS -->
+    <setting propertyKey="@Properties.alertTakeoff" title="@Strings.SetAlertTakeoff">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.visualAlerts" title="@Strings.SetVisualAlerts"
+             prompt="@Strings.SetVisualAlertsNote">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.alertPb" title="@Strings.SetAlertPb">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.alertFlight" title="@Strings.SetAlertFlight">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.alertTurn" title="@Strings.SetAlertTurn">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.alertCleanJibe" title="@Strings.SetAlertCleanJibe"
+             prompt="@Strings.SetAlertCleanJibeNote">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.alertIntervalMin" title="@Strings.SetAlertIntervalMin">
+        <settingConfig type="numeric" min="0" max="120"/>
+    </setting>
+    <setting propertyKey="@Properties.alertIntervalKm" title="@Strings.SetAlertIntervalKm">
+        <settingConfig type="numeric" min="0" max="50"/>
+    </setting>
+
+    <!-- 4. WIND AND HABIT -->
+    <!-- Still a number (rider review W10 asked for a list of Unset and the wind picker's
+         sixteen points). The property type would have allowed it, but sixteen compass rows
+         are sixteen strings, and the dev build holds exactly the 254 Rez.Strings a CIQ 3.x
+         watch (the fenix 6 family) compiles. The title says the range in words instead. -->
+    <setting propertyKey="@Properties.windDirDeg" title="@Strings.SetWindDir">
+        <settingConfig type="numeric" min="-1" max="359"/>
+    </setting>
+    <setting propertyKey="@Properties.autoWind" title="@Strings.SetAutoWind">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.windDefaultTurnType" title="@Strings.SetTurnHabit">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.TurnHabitJibes</listEntry>
+            <listEntry value="1">@Strings.TurnHabitTacks</listEntry>
+            <listEntry value="2">@Strings.TurnHabitBalanced</listEntry>
+        </settingConfig>
+    </setting>
+
+    <!-- 5. RECORDING -->
+    <!-- `phonePush` (Send summary to phone app) and `lapMode` are beta and dev rows, in
+         resources-beta/base and resources-dev/base, which follow this file: its receiver is
+         the beta and dev iPhone app (dev only from 0.9.22, rider review W11). -->
+    <setting propertyKey="@Properties.sportChoice" title="@Strings.SetSport">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.SportWindsurf</listEntry>
+            <listEntry value="1">@Strings.SportKitesurf</listEntry>
+            <listEntry value="2">@Strings.SportGeneric</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.accelLogging" title="@Strings.SetAccelLogging"
+             prompt="@Strings.SetAccelLoggingNote">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.pumpDetection" title="@Strings.SetPumpDetection">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.autoPause" title="@Strings.SetAutoPause">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.autoPauseDelayS" title="@Strings.SetAutoPauseDelay">
+        <settingConfig type="numeric" min="2" max="60"/>
+    </setting>
+
+    <!-- 6. THRESHOLDS are in resources-thresholds/settings/settings.xml. -->
 </settings>

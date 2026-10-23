@@ -111,7 +111,7 @@ module AppSettings {
     var autoWindEverSet as Boolean = false;
 
     // Every numeric property is read through `_clamped`, with the SAME min/max
-    // resources/settings/settings.xml declares. Garmin Connect enforces those bounds on the
+    // resources/settings/settings.xml and resources-thresholds/ declare. Garmin Connect enforces those bounds on the
     // slider; nothing enforces them on the value that actually arrives. A property store
     // survives an app update, a settings sync can carry a value the current settings.xml no
     // longer allows, and `Properties.setValue` from our own code is unchecked — so a

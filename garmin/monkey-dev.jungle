@@ -7,7 +7,10 @@ base.sourcePath = source;tests;source-nopepper
 base.barrelPath = barrel/WingFoilCore/barrel.jungle
 # `nolink` stubs out as in the beta: the Garmin link's `link` half compiles here too.
 base.excludeAnnotations = notdev;nolink
-base.resourcePath = $(base.resourcePath);resources-dev/base;resources-dev/icon65
+# resources-thresholds goes LAST on the base path in all three jungles: Garmin Connect draws
+# the settings rows in resource-path order, and the detector thresholds are the tuning
+# knobs a rider should meet last (rider review W10; resources/settings/settings.xml).
+base.resourcePath = $(base.resourcePath);resources-dev/base;resources-dev/icon65;resources-thresholds
 
 # The DEV channel's brand cuts (docs/channels.md, "Telling the channels apart"): the
 # launcher icon and the three marks MIRRORED, wing upper right, generated into

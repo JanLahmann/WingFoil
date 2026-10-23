@@ -13,8 +13,8 @@ import WingFoilCore;
 //
 // It is now the same shape as the recording screens: pages the rider cycles with UP/DOWN,
 // each one a giant number with its unit line and up to two rows under it, all stacked from
-// dc.getFontHeight() so a row pitch can never again be smaller than a line. START or BACK
-// exits from any page, exactly as before.
+// dc.getFontHeight() so a row pitch can never again be smaller than a line. START exits from
+// any page; BACK goes back one page (rider review W7, see SummaryDelegate).
 //
 // WHAT THE ENGINE STILL HAS. SessionController.finishSave() nulls `_session` and stops GPS
 // but never touches `engine`, so detector / records / turns / pump / hrCost / history /
@@ -105,6 +105,7 @@ module SummaryNav {
         }
         _pages = p;
         index = 0;
+        exitHint = false;
     }
 
     function count() as Number {
@@ -123,7 +124,26 @@ module SummaryNav {
 
     function step(dir as Number) as Void {
         index = wrap(index + dir);
+        exitHint = false;
         WatchUi.requestUpdate();
+    }
+
+    // ---- BACK (rider review W7, 23 Oct 2026) ----
+    // "I pressed BACK to go back a page and my summary was gone." BACK used to exit, like
+    // START, and the summary is a page you cannot get back to. Now BACK is one page back and
+    // never wraps: on the first page there is nothing behind it, so it does nothing to the
+    // session and puts the way out under SAVED instead (`exitHint`, Words.SUM_EXIT_HINT).
+    // Only START leaves. Returns whether a page was turned.
+    var exitHint as Boolean = false;
+
+    function back() as Boolean {
+        if (index > 0) {
+            step(-1);
+            return true;
+        }
+        exitHint = true;
+        WatchUi.requestUpdate();
+        return false;
     }
 }
 
@@ -280,9 +300,10 @@ class SummaryView extends WatchUi.View {
         // moves up one eyebrow line so the two together end where the pill alone used to,
         // and nothing else on the page moves. Without one (NOT SAVED, or a glass whose arc
         // cannot hold the line), this is the screen that shipped until rider review W8.
-        var line = savedLine(getApp().controller.lastSaveOk);
+        var line = bandLine(getApp().controller.lastSaveOk);
         var slot = phoneLineSlot(dc, line);
-        drawSavedPill(dc, pillY(dc, slot == PHONE_LINE_TOP));
+        var y = pillY(dc, slot == PHONE_LINE_TOP);
+        drawSavedPill(dc, y, hintInPill(dc, y) ? Words.SUM_EXIT_HINT : null);
         if (slot != PHONE_LINE_NONE) {
             drawPhoneLine(dc, slot == PHONE_LINE_TOP ? phoneLineY(dc) : phoneLineLowY(dc),
                 line as String);
@@ -305,6 +326,34 @@ class SummaryView extends WatchUi.View {
             return Words.SUM_LONG_TRANSFER;
         }
         return saveOk ? Words.SUM_AFTER_SYNC : null;
+    }
+
+    // The line under SAVED once BACK has asked for the way out (rider review W7): the hint,
+    // unless the direct transfer is counting — its progress wins, because it changes on its
+    // own clock and the hint can go elsewhere (`hintInPill`).
+    static function bandLine(saveOk as Boolean) as String? {
+        if (SummaryNav.exitHint && DirectSend.statusLine() == null) {
+            return Words.SUM_EXIT_HINT;
+        }
+        return savedLine(saveOk);
+    }
+
+    // Where the line has no room for the hint — the fenix 5 Plus family, whose hero block
+    // leaves neither slot free, or a transfer whose progress holds the line — the hint takes
+    // the pill's own place: SAVED has been read by the time BACK is pressed, and a BACK that
+    // shows nothing looks broken.
+    // Only where it fits there, under the same chord rule as the line: on the fenix 5 Plus
+    // family the top band is 92 px and the hint 114 (measured 23 Oct 2026), so that family
+    // keeps SAVED and BACK on the first page simply does nothing there.
+    static function hintInPill(dc as Dc, y as Number) as Boolean {
+        if (!SummaryNav.exitHint) {
+            return false;
+        }
+        if (DirectSend.statusLine() == null
+                && phoneLineSlot(dc, Words.SUM_EXIT_HINT) != PHONE_LINE_NONE) {
+            return false;
+        }
+        return savedLineFits(dc, Words.SUM_EXIT_HINT, y);
     }
 
     // Does `text` fit the glass at ink centre `y`? The verdict page paints the foil-% arc,
@@ -728,8 +777,13 @@ class SummaryView extends WatchUi.View {
     // mark signing an acknowledgement is what a lockup is for. It stays subordinate by
     // construction: the badge is cut to the height of the LINE (asserted), so the pair is one
     // eyebrow's worth of ink on the arc over a giant that owns the middle of the page.
-    hidden function drawSavedPill(dc as Dc, y as Number) as Void {
+    hidden function drawSavedPill(dc as Dc, y as Number, hint as String?) as Void {
         var cx = dc.getWidth() / 2;
+        if (hint != null) {
+            dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, y, Graphics.FONT_XTINY, hint, CV);
+            return;
+        }
         var bw = Brand.badgeW();
         // A save that failed says so, in red, without the badge: nothing to sign.
         var ok = getApp().controller.lastSaveOk;
@@ -865,8 +919,9 @@ class SummaryView extends WatchUi.View {
     }
 }
 
-// UP/DOWN cycle the pages, START or BACK exits — the same navigation model as recording, so
-// there is nothing new to learn. Taps are swallowed: a wet screen is not an input device.
+// UP/DOWN cycle the pages, BACK goes one page back (on the first page it only shows the hint
+// under SAVED), START exits (rider review W7). Taps are swallowed: a wet screen is not an
+// input device.
 class SummaryDelegate extends WatchUi.BehaviorDelegate {
 
     function initialize() {
@@ -897,7 +952,10 @@ class SummaryDelegate extends WatchUi.BehaviorDelegate {
         System.exit();
     }
 
+    // Always handled: an unhandled BACK on the bottom view would end the app, which is
+    // the summary-gone-for-good this replaced.
     function onBack() as Boolean {
-        System.exit();
+        SummaryNav.back();
+        return true;
     }
 }

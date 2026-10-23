@@ -11,8 +11,9 @@
     <string id="AppNameBeta">CleanJibe Beta</string>
     <string id="AppNameDev">CleanJibe Dev</string>
 
-    <!-- The settings rows, in the order Garmin Connect draws them
-        (resources/settings/settings.xml). -->
+    <!-- The settings rows. Garmin Connect draws them in the order of
+        resources/settings/settings.xml, then the stream's own rows, then resources-thresholds/
+        (rider review W10), not in the order of this file. -->
     <string id="SetFoilEntry">Foil entry speed (km/h)</string>
     <string id="SetFoilExit">Foil exit speed (km/h)</string>
     <string id="SetEntryHold">Entry hold (s)</string>
@@ -32,8 +33,8 @@
     <string id="SetAlertFlight">Vibrate on longest flight</string>
     <string id="SetAlertTurn">Vibrate on turn outcome</string>
     <string id="SetAlertCleanJibe">Vibrate on clean jibe</string>
-    <string id="SetAlertCleanJibeNote">A clean jibe gets its own rising three-tick buzz. Clean: you flew through, held your speed, then 10 quiet seconds on the foil. Off: every turn gets the plain outcome buzz.</string>
-    <string id="SetWindDir">Wind direction, this session (deg from, -1 = none)</string>
+    <string id="SetAlertCleanJibeNote">A clean jibe buzzes three rising ticks. Clean: you flew through and held 70 % of your entry speed. Then you rode 10 s with no touchdown, fall or second off the foil. Off: every turn buzzes its outcome.</string>
+    <string id="SetWindDir">Wind from, this session (0-359°, -1 = none)</string>
     <string id="SetAutoWind">Estimate wind on the watch</string>
     <string id="SetTurnHabit">I mostly do</string>
     <string id="TurnHabitJibes">Jibes</string>
@@ -181,8 +182,8 @@
     <string id="Tacks">tacks</string>
     <string id="SumSaved">SAVED</string>
     <string id="SumNotSaved">NOT SAVED</string>
+    <string id="SumExitHint">START to exit</string>
     <string id="SumAfterSync">next: CleanJibe</string>
-    <string id="SumLongTransfer">long transfer time</string>
     <string id="SumHeroOnFoil">on foil</string>
     <string id="SumHeroFoil">foil</string>
     <string id="SumHeroOf">of</string>
@@ -224,7 +225,7 @@
     <string id="LblLongest">longest</string>
     <string id="LblTimer">timer</string>
     <string id="Bpm">bpm</string>
-    <string id="LblScore">score</string>
+    <string id="LblScore">held</string>
     <string id="LblBatt">batt</string>
     <string id="LblPumps">pumps</string>
     <string id="LblToFoil">to foil</string>
