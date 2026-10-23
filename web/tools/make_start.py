@@ -6,7 +6,7 @@
 
 Source: ``docs/guide/getting-started.json`` — the framing, the routes in order with their
 channels, their steps and their browser lines, the two extras, the two Settings sentences,
-and the web-only troubleshooting and report lists.
+and the web-only buzz card, troubleshooting and report lists.
 
 Outputs:
 
@@ -17,7 +17,7 @@ Outputs:
 2. The block of ``web/start/index.html`` between ``<!-- guide:begin -->`` and
    ``<!-- guide:end -->`` — the route cards with their browser lines, the dry run and the
    troubleshooting list, in the page's own markup (``article.panel.piece`` with an
-   ``ol.steps-flow`` inside, ``dl.terms`` for the list). The head, the hero, the
+   ``ol.steps-flow`` inside, ``dl.terms`` for the lists), the buzz card among them. The head, the hero, the
    hand-written sections around the block and the footer are not touched.
 3. The block of ``web/beta/index.html`` between the same two markers — *What to test* (the
    extras whose ``webPage`` is ``beta``) and the report checklist. /start/ did five jobs
@@ -121,7 +121,7 @@ def check_budgets(doc: dict) -> list[str]:
         budget(problems, f"settings.{key}", doc["settings"][key], SUMMARY_BUDGET)
     for i, para in enumerate(doc["app"].get("paragraphs", []), 1):
         budget(problems, f"app.paragraph {i}", para, FRAMING_BUDGET)
-    for group in ("troubleshooting", "report"):
+    for group in ("troubleshooting", "report", "buzzes"):
         for entry in doc[group]["entries"]:
             budget(problems, f"{group}: {entry['term']}", entry["detail"], SUMMARY_BUDGET)
 
@@ -490,6 +490,22 @@ def render_html(doc: dict) -> str:
     for extra in extras_for(doc, "start"):
         lines += html_card(extra, names)
     lines += ["  </section>", ""]
+
+    # WHAT EACH BUZZ MEANS (rider review W12, 23 Oct 2026: "Was that a flew or a new
+    # best?"). Thirteen patterns, read from garmin/source/alerts/AlertManager.mc, as a term
+    # list right after the ways in, so the dry run's step can point at it. Behind one fold
+    # like the troubleshooting list, with the lede as its handle: a rider without the watch
+    # app reads past one line, not thirteen. Web only. Which buzzes are on by default is not
+    # this file's call.
+    buzzes = doc["buzzes"]
+    lines += [
+        '  <section class="home-section" id="buzzes">',
+        f'    <h2>{html_text(buzzes["title"])}</h2>',
+        "    <details>",
+        f'      <summary class="section-lede">{html_text(buzzes["lede"])}</summary>',
+    ]
+    lines += ["  " + line for line in html_terms(buzzes["entries"])]
+    lines += ["    </details>", "  </section>", ""]
 
     # Seven answers to seven things that go wrong, behind one fold. A reader who is stuck
     # opens it; a reader who is not was reading past 200 words of somebody else's problem to

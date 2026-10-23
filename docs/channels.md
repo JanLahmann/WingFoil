@@ -318,7 +318,7 @@ a watch means its own app.
 | stream | jungle · manifest | app id | listing | name on the watch |
 |---|---|---|---|---|
 | **release** | `monkey.jungle` · `manifest.xml` | `b1ef484c` | **CleanJibe Wingfoil Watch App** — opened when the iPhone app is on the App Store, so the two listings can name each other | CleanJibe |
-| **beta** | `monkey-beta.jungle` · `manifest-beta.xml` | `28942317` | **CleanJibe Wingfoil Watch App Beta** — the existing public listing, open to anyone, no key; it runs ahead of the release and says so | CleanJibe Beta |
+| **beta** | `monkey-beta.jungle` · `manifest-beta.xml` | `28942317` | the existing public listing, open to anyone, no key; it runs ahead of the release and says so. Titled *CleanJibe Wingfoil Tracker (Beta)* in the store today; the rename to **CleanJibe Wingfoil Watch App Beta** is decided and waits for the store form (`ciqListingTitle`, docs/copy/README.md) | CleanJibe Beta — the one name the guide and the help give the beta watch app, because it is what the rider picks on the wrist and in Garmin Connect (rider review W17) |
 | **dev** | `monkey-dev.jungle` · `manifest-dev.xml` | `953f7547` | "CleanJibe – private", installable by Jan's account only, Pending by design | CleanJibe Dev |
 
 The listing's first sentence names the family: *the watch app of CleanJibe Wingfoil Analyzer
